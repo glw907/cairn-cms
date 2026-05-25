@@ -31,6 +31,7 @@ Answer: a **custom in-app admin** = the core of cairn-cms.
 | Editor component | **Carta** `carta-md` v4.11.2 (Svelte 5, unified/remark-native), edits **raw** markdown |
 | Preview | Each site supplies its own `renderPreview(md)` → directive-safe per design |
 | Admin theme | **Neutral, fully self-contained** — one clean theme identical on every site, scoped to `/admin` (`data-theme` + font reset on the layout root), decoupled from host-site tokens/fonts. Shared admin components own their styles (→ clean Pass F extraction); only `siteName` varies via adapter `branding`. The admin is a tool, not a marketing surface |
+| Editor management | **Two-tier roles**, per-site (no cross-site SSO). KV allowlist value carries a role (`owner` vs `editor`); **only `owner`s** see/use the manage-admins UI (add/remove editors, set role), regular `editor`s only edit content. The guard checks role on the management surface — it's a privilege-escalation surface. Revises the earlier "role tiers out of scope" line. Built in **Pass G** |
 | Commit mechanism | **GitHub App** (short-lived install tokens; committer = `cairn-cms[bot]`, author = editor) |
 | Publish flow | Commit to **`main`** → existing CI auto-deploys. `draft` frontmatter = soft gate |
 | Topology | **Embedded per-site library** — admin at each site's `/admin`, in that site's worker |
@@ -103,6 +104,23 @@ previews through the site-supplied `renderPreview`.** cairn-core never assumes d
   both sites depend on it. **Remove `static/admin/`**; close backlog #4; update
   `docs/STATUS.md`, `docs/architecture.md`, `ROADMAP.md` (log the cairn initiative).
 
+> **Note (2026-05-25): E/F were reordered** — see the ⏭ breadcrumb in the progress log.
+> Pass E is now **extract-to-package**; Pass F is now **907.life onboarding + cleanup**.
+> The two lines above keep their original numbering until the new Pass E's Task 3 rewrites them.
+
+### Planned passes beyond F (added 2026-05-25)
+
+- **Pass G — Manage admins (editor management UI).** Owner-gated CRUD over the per-site
+  `AUTH_KV` allowlist: list/add/remove editors, set role (`owner`/`editor`). Add a `role` to
+  the KV value (migrate existing flat entries → `editor`, seed the first `owner`); extend the
+  guard so the manage-admins surface requires `owner`. Reuses the neutral admin chrome. See the
+  "Editor management" locked-decision row. Per-site (no cross-site SSO — unchanged).
+- **Future — Manage media (image/upload UI).** Was out-of-scope; now a roadmap item, still
+  unscheduled. **Open decision: storage** — commit media into the site repo (fits the git-CMS
+  model, reuses the GitHub App `commitFile` path with base64 binary, served as static assets)
+  **vs** Cloudflare R2 / Images (scales, adds infra + a binding). Decide before building. The
+  adapter contract will likely grow a media config (folder/URL-base, or an R2 binding ref).
+
 ## Key new files (in ecnordic during A–D; migrate to package in F)
 
 `src/routes/admin/` — `+layout.server.ts` (`prerender=false`, session→`locals.editor`),
@@ -163,8 +181,11 @@ confirm a `main` commit with **author = editor, committer = bot** and a clean `g
 
 ## Out of scope (initiative)
 
-Media/image upload UI; role tiers / PR-review workflow (`draft` is the gate); editing
-`src/content/events`; cross-site SSO (each site has its own allowlist/session).
+PR-review workflow (`draft` is the gate); editing `src/content/events`; cross-site SSO
+(each site has its own allowlist/session). — **Moved out of "out of scope" (2026-05-25):**
+*editor role tiers* are now in scope as a **two-tier** owner/editor model for admin management
+(Pass G), and *media/image upload* is now a roadmap item (see "Planned passes beyond F"),
+no longer excluded — just unscheduled.
 
 ## Notes / progress log
 

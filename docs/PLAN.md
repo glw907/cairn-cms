@@ -155,3 +155,54 @@ confirm a `main` commit with **author = editor, committer = bot** and a clean `g
 
 Media/image upload UI; role tiers / PR-review workflow (`draft` is the gate); editing
 `src/content/events`; cross-site SSO (each site has its own allowlist/session).
+
+## Notes / progress log
+
+> Session-by-session execution state and post-mortems. The workspace `CLAUDE.md` stays lean
+> (durable orientation only); running progress lives here, in the git-backed plan.
+
+### Pass 0 — bootstrap (2026-05-24)
+
+- **Workspace install:** DONE — `npm install` at root clean (472 pkgs; 9 npm-audit advisories,
+  none blocking — revisit before publish).
+- **Both sites build:** DONE — ecnordic ~2.9s, 907-life ~4.1s, both via
+  `@sveltejs/adapter-cloudflare`; no path/lockfile breakage from the move.
+- **GitHub App:** registered. App ID `3847496`, Installation ID `135372268` (single install
+  covering both repos). Private key stored base64 as `GITHUB_APP_PRIVATE_KEY_B64` in the
+  encrypted registry (machine-local pointers in the workspace `CLAUDE.md`). Commit-path smoke
+  test DONE — App JWT (RS256) → install token → read `package.json` from both repos (HTTP 200);
+  risk #2 retired modulo confirming the same under `nodejs_compat` in Pass A's `wrangler dev`.
+- **Email path:** Email Sending product chosen — see risk #1 follow-up below.
+
+### Pass A — magic-link auth skeleton in ecnordic-ski (2026-05-24)
+
+- **Built.** New: `src/lib/cairn/{auth,email}.ts`, `src/routes/admin/**`
+  (login, page, `auth/request|callback|logout`), `src/tests/cairn/auth.test.ts`. Changed:
+  `app.d.ts` (+`Locals.editor`, AUTH_KV/EMAIL/secrets), `hooks.server.ts` (`/admin/**` guard),
+  `wrangler.toml` (+AUTH_KV `73e2f799e9864398ab5e57c02272fe04`, +EMAIL binding). Removed dead
+  Sveltia `static/admin/` — it was shadowing the new `/admin` route as a static asset (backlog
+  #4 / STATUS reconciliation still deferred to Pass F).
+- **Verified.** `svelte-check` clean; 44/44 vitest (incl. 10 auth crypto / single-use / session
+  tests). Live under `wrangler dev`: anon `/admin`→login; cross-origin POST→403; non-allowlisted
+  rejected; bad/expired token rejected; synthesized valid session renders authenticated `/admin`.
+  AUTH_KV seeded `editor:geoff-login@907.life`→"Geoff Wright" (local + remote).
+- **Outstanding for sign-off.** Live magic-link delivery (blocked on Email Sending provisioning,
+  risk #1). `.dev.vars` holds dev `MAGIC_LINK_SECRET`/`SESSION_SECRET` (gitignored); prod still
+  needs `wrangler secret put` for both. GitHub-App secrets unused until Pass C. Not yet committed.
+
+### Risk #1 follow-up — Cloudflare email (design RESOLVED, provisioning BLOCKED)
+
+Email **Sending** and Email **Routing** are two distinct products under Cloudflare Email Service:
+
+- **Email Sending** (transactional, arbitrary recipients) = `env.EMAIL.send({ to, from, subject,
+  html, text })` — the object-form call. This is what cairn uses (`src/lib/cairn/email.ts`).
+- **Email Routing** (recipient-restricted) = the `cloudflare:email` `EmailMessage` + mimetext MIME
+  form; only sends to *verified* destinations (else `destination address is not a verified address`).
+
+Both ride the **same** `[[send_email]] name="EMAIL"` (+ `remote=true`) binding; the product is
+selected by **call shape**. (This corrects an earlier Pass 0 note that wrongly equated Email
+Sending with "`send_email` minus `destination_address`".) Email Routing for ecnordic.ski was
+enabled via API (MX/SPF/DKIM `cf2024-1._domainkey`, `status: ready`). **Still blocked:** Email
+Sending isn't provisioned — needs (a) **Workers Paid plan**, (b) the domain onboarded at dashboard
+**Email → Email Sending** (the `/email/sending/*` REST endpoints reject the current API token, so
+it's dashboard-gated). **Resend** is the fallback.

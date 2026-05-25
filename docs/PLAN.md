@@ -138,6 +138,10 @@ previews through the site-supplied `renderPreview`.** cairn-core never assumes d
   essentially the SvelteKit/Tailwind/DaisyUI layer + the site's `cairn.config.ts` adapter
   (collections, `renderPreview`, frontmatter). Unscheduled; the open work is defining what a
   "cairn theme" packages and how the scaffold picks one (e.g. a `create-cairn-site` template set).
+  **Implication for now:** themeability means UI components should stay **consistent and
+  themeable** — a strong reason to build on **DaisyUI components where possible** (semantic,
+  theme-driven classes that re-skin via DaisyUI themes) rather than ad-hoc bespoke markup a theme
+  can't restyle. Applies to site components; the admin chrome stays neutral by its own rule.
 - **Exploration (research pass, not a build) — CMS landscape & forward-compatibility review.**
   The real goal: survey mature CMSes (Sveltia, Decap, Keystatic, WordPress, Ghost, Statamic) to
   see *a bit into the future* and make sure **we don't design ourselves into a box** — i.e. that

@@ -186,9 +186,16 @@ Media/image upload UI; role tiers / PR-review workflow (`draft` is the gate); ed
   tests). Live under `wrangler dev`: anon `/admin`→login; cross-origin POST→403; non-allowlisted
   rejected; bad/expired token rejected; synthesized valid session renders authenticated `/admin`.
   AUTH_KV seeded `editor:geoff-login@907.life`→"Geoff Wright" (local + remote).
-- **Outstanding for sign-off.** Live magic-link delivery (blocked on Email Sending provisioning,
-  risk #1). `.dev.vars` holds dev `MAGIC_LINK_SECRET`/`SESSION_SECRET` (gitignored); prod still
-  needs `wrangler secret put` for both. GitHub-App secrets unused until Pass C. Not yet committed.
+- **Committed & pushed.** ecnordic `756c54a` (Pass A code). The skill-rename / `site-pass` split
+  + 907 STATUS reconciliation shipped separately. **cairn-cms now has a remote** (private,
+  `github.com/glw907/cairn-cms`) — created for backup; the dependency-pinning wiring is still
+  a Pass F task. `.dev.vars` holds dev `MAGIC_LINK_SECRET`/`SESSION_SECRET` (gitignored).
+- **Prod `/admin` intentionally dormant** until Email Sending is sorted; it degrades gracefully
+  (login bounce / `?error=config`) without prod secrets — rest of the site is unaffected.
+- **To close out Pass A (all need the user):** (1) enable Email Sending for ecnordic.ski +
+  confirm Workers Paid; (2) `wrangler secret put MAGIC_LINK_SECRET` and `SESSION_SECRET` in prod;
+  (3) live round-trip test (real magic link → authenticated `/admin`) — the one unverified
+  criterion. GitHub-App secrets remain unused until Pass C.
 
 ### Risk #1 follow-up — Cloudflare email (design RESOLVED, provisioning BLOCKED)
 

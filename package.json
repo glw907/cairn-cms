@@ -1,0 +1,17 @@
+{
+  "name": "cairn-cms",
+  "version": "0.0.0",
+  "description": "Embedded, magic-link, GitHub-committing CMS for SvelteKit/Cloudflare sites.",
+  "type": "module",
+  "license": "UNLICENSED",
+  "private": true,
+  "exports": {
+    ".": "./src/lib/index.ts"
+  },
+  "peerDependencies": {
+    "svelte": "^5.0.0"
+  },
+  "files": [
+    "src/lib"
+  ]
+}

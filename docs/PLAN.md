@@ -120,6 +120,15 @@ previews through the site-supplied `renderPreview`.** cairn-core never assumes d
   model, reuses the GitHub App `commitFile` path with base64 binary, served as static assets)
   **vs** Cloudflare R2 / Images (scales, adds infra + a binding). Decide before building. The
   adapter contract will likely grow a media config (folder/URL-base, or an R2 binding ref).
+- **Future exploration (research pass, not a build) — Theme management.** Survey prior art
+  (Sveltia, WordPress, Decap, Keystatic, Ghost) for what "managing themes" can mean and what,
+  if anything, fits Cairn. **Guardrail: Cairn stays lean and uncomplicated** — WordPress is the
+  cautionary tale. **Clarify scope first:** *public-site appearance* (WordPress-style switching/
+  customizing the live site — large, and in tension with Cairn's **design-agnostic** model where
+  the theme *is* code in each site repo via the adapter + site CSS) **vs** *admin appearance*
+  (small; already mostly settled by the neutral self-contained admin-theme decision). Output is a
+  **recommendation**, not an implementation; **"not worth it / out of scope" is a valid verdict.**
+  Bias hard toward the minimal slice that preserves the git-based, zero-bloat ethos.
 
 ## Key new files (in ecnordic during A–D; migrate to package in F)
 

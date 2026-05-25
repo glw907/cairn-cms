@@ -98,15 +98,21 @@ previews through the site-supplied `renderPreview`.** cairn-core never assumes d
   `POST /admin/save` commits via GitHub App (author = editor). End-to-end edit→commit→deploy.
 - **Pass D — cairn-core seam refactor.** Pull generic pieces behind the adapter interface in
   `src/lib/cairn/**`; ecnordic becomes `src/lib/cairn.config.ts`. No behavior change.
-- **Pass E — 907.life onboarding.** Write 907-life's adapter (day-bearing slug codec,
-  `remark-html` preview, its frontmatter). Validates the abstraction on a different design.
-- **Pass F — Extract + cleanup.** Move `src/lib/cairn/**` into the `cairn-cms` package;
-  both sites depend on it. **Remove `static/admin/`**; close backlog #4; update
-  `docs/STATUS.md`, `docs/architecture.md`, `ROADMAP.md` (log the cairn initiative).
-
-> **Note (2026-05-25): E/F were reordered** — see the ⏭ breadcrumb in the progress log.
-> Pass E is now **extract-to-package**; Pass F is now **907.life onboarding + cleanup**.
-> The two lines above keep their original numbering until the new Pass E's Task 3 rewrites them.
+- **Pass E — Extract cairn-core to the package** (reordered: was the extraction half of
+  the old Pass F, pulled ahead of 907-life onboarding to avoid throwaway duplication).
+  Move the six `.ts` modules into `cairn-cms` using the `publishConfig`-swap shape
+  (checked-in `exports`→source for zero-config instant dev across the workspace;
+  `publishConfig.exports`→`dist` for publish; `svelte-package` builds dist at
+  `prepublishOnly`, ready for the Pass F admin `.svelte` shell). Repoint ecnordic to
+  `import … from 'cairn-cms'`; verify check/build/tests/`/admin`. Admin routes + components
+  stay per-site for now. No behavior change.
+- **Pass F — Onboard 907.life** (reordered: the old Pass E, now built against the real
+  package). Write 907-life's adapter (filename-based ids — no slug codec needed; plain
+  `remark-html` preview; its frontmatter + a new validator), its `admin/**` routes, KV/EMAIL
+  bindings, the guard, and private-repo read-token threading. Decide here whether to extract
+  the shared admin Svelte shell into the package (the design difference forces the call).
+  Plus the old-Pass-F cleanup: remove `static/admin/`, close backlog #4, update
+  STATUS/architecture/ROADMAP.
 
 ### Planned passes beyond F (added 2026-05-25)
 
@@ -184,6 +190,9 @@ remove `static/admin/*` · `BACKLOG.md`/`docs/STATUS.md`/`docs/architecture.md`/
    constant-time compare, `httpOnly/Secure/SameSite=Lax`, `/admin` excluded from prerender +
    Pagefind index + sitemap/robots.
 5. **Workspace/CI linking** (LOW) — sites resolve local cairn in dev, pinned version in CI.
+   *Dev half verified (Pass E):* the symlinked package's **source** resolves under `svelte-check`,
+   the Cloudflare `vite build`, and `wrangler dev` with zero consumer config (`publishConfig`-swap
+   exports). The CI pinned-version half is a Pass F concern.
 
 ## Verification (end-to-end, per site)
 
@@ -207,18 +216,18 @@ no longer excluded — just unscheduled.
 > Session-by-session execution state and post-mortems. The workspace `CLAUDE.md` stays lean
 > (durable orientation only); running progress lives here, in the git-backed plan.
 
-> **⏭ NEXT SESSION (start here) — Passes E/F were reordered (2026-05-25).** **Pass E is now
-> EXTRACT cairn-core into the `cairn-cms` package** (pulled ahead of 907.life onboarding to
-> avoid throwaway duplication); **Pass F is now the 907.life onboarding** + old-Pass-F cleanup.
-> The "Phased passes" section above still shows the OLD wording — it gets rewritten in the new
-> Pass E's Task 3. To execute Pass E, **read and follow `docs/plans/2026-05-25-extract-cairn-core.md`
-> in full** (a complete, research-backed, task-by-task plan). Key decisions already locked there:
-> the package uses the **`publishConfig`-swap** shape (checked-in `exports`→source for zero-config
-> workspace dev, `publishConfig.exports`→`dist` for publish via `svelte-package` at `prepublishOnly`);
-> the admin routes/components stay in ecnordic for now; **no slug codec** (the admin is filename-based).
-> A `development`-export-condition approach was researched and rejected (TS always matches
-> `types`/`default`, so it can't drive `svelte-check`). Recommended execution:
-> `superpowers:subagent-driven-development`, fresh subagent per task, review at the Task 1 gate.
+> **⏭ NEXT SESSION (start here) — Pass F: onboard 907.life.** Pass E (extract cairn-core into
+> the `cairn-cms` package) is **DONE** (2026-05-25 — see the Pass E entry below). Pass F is the
+> **907.life onboarding** (the reordered old Pass E) **+ old-Pass-F cleanup**. Write 907-life's
+> adapter against the real package (filename-based ids — **no slug codec**; plain `remark-html`
+> preview; its frontmatter + a new validator), its `admin/**` routes, KV/EMAIL bindings, the
+> guard, and private-repo read-token threading (`github.ts` already takes an optional token).
+> **Decide in F** whether to extract the shared admin Svelte shell into the package — the package
+> shape (`svelte-package`, `files` ships `src/lib`) already supports dropping in uncompiled
+> `.svelte` components. Then the cleanup: remove `static/admin/`, close backlog #4, update
+> STATUS/architecture/ROADMAP. Two carry-over cleanups noted in the Pass E entry: `bytesToB64url`
+> leaks into the public `export *` (move to an unexported `utils.ts`), and the package
+> `tsconfig.json` `include` omits `src/tests` (tests type-checked only by vitest/esbuild today).
 
 ### Pass 0 — bootstrap (2026-05-24)
 
@@ -365,6 +374,71 @@ no longer excluded — just unscheduled.
 - **Note.** No live `wrangler dev` re-run this pass — it's a pure refactor with identical wiring,
   the unit tests pin the decode equivalence, and Pass C already verified the live save→commit
   chain. The adapter shape is what Pass E's 907-life adapter will implement against.
+
+### Pass E — extract cairn-core to the package (2026-05-25)
+
+- **Goal met: cairn-core is now a real workspace package.** The six framework-agnostic `.ts`
+  modules moved out of `ecnordic-ski/src/lib/cairn/` into `cairn-cms/src/lib/`, ecnordic now
+  `import … from 'cairn-cms'`, and nothing changed behaviorally — verified by byte-identity
+  diffs against the pre-move originals and the unchanged test suites.
+- **Clean boundary.** Six modules (`auth`, `email`, `github`, `carta`, `content`, `adapter`)
+  with only sibling `./` cross-imports (`github→auth`, `adapter→carta`/`github`). External
+  surface is tiny: **`gray-matter`** is the only runtime dep; `unified` (in `carta.ts`) and
+  `@cloudflare/workers-types` are **type-only** (devDeps). `carta.ts` deliberately does *not*
+  import `carta-md` (it duck-types a local `PreviewCartaOptions`), so the Svelte editor stays
+  ecnordic's own dep — the core has zero Svelte-component coupling. gray-matter's `fs` require
+  is a non-issue (Pass C already ran `serializeMarkdown` live in the worker).
+- **Package shape — the `publishConfig` swap.** Checked-in `package.json` `exports` point all
+  three conditions (`types`/`svelte`/`default`) at **source** `./src/lib/index.ts`, so every
+  workspace tool (Vite dev *and* the sites' prod worker build, `svelte-check`, vitest) resolves
+  straight to source — instant, no build step, zero consumer config (the npm-workspace symlink
+  `node_modules/cairn-cms → ../cairn-cms` is noExternal by default, so `vite build` transpiles
+  the source into the worker). `publishConfig.exports` swaps those to `./dist/**` **only at
+  `npm publish`**; `svelte-package` builds `dist/` at **`prepublishOnly`** (not `prepare`, so
+  `npm install` never triggers a build). `files` ships `dist` + `src/lib`; `dist` is gitignored.
+  A `tsconfig.json` (scoped to `src/lib/**`) was added beyond the original file list — it's
+  required for `svelte-package`'s declaration emit (the workspace root has none to inherit).
+- **Why not a `development` export condition (the approach I first drafted, then rejected).**
+  Primary-source research ([TS modules reference]) confirmed TypeScript **always** matches
+  `"types"`/`"default"` first regardless of object order and ignores custom conditions for type
+  resolution — so `customConditions:["development"]` + `types→dist` would force a `dist` build
+  just to type-check, defeating instant dev. The **`publishConfig` swap is the proven pattern**
+  (Skeleton's monorepo) and needs no `customConditions`, no consumer config. The source-pointing
+  exports were validated against the worker build at the Task 1 gate — the documented `--watch`
+  fallback was **not** needed.
+- **Public API = flat `export *` barrel** (`src/lib/index.ts`) of all six modules. No
+  export-name collisions (each module's identifiers are distinct).
+- **Importers rewired (10).** `save/+server.ts` (Task 1) + nine more in Task 2: `app.d.ts`,
+  `hooks.server.ts`, `cairn.config.ts`, `admin/+page.server.ts`, the two `edit/[type]/[id]/`
+  files, and the three `auth/*` endpoints. Each `from '$lib/cairn/<mod>'` → `from 'cairn-cms'`,
+  same bindings, type-only stays `import type`; multi-module imports collapsed to one cleanly.
+  `+layout.server.ts` never imported a cairn *module* (only `$lib/cairn.config`), so it was
+  untouched — correct. The in-tree `src/lib/cairn/` + `src/tests/cairn/` dirs are deleted.
+- **Verified.** Package: `npm test` 33/33 across 6 suites (auth crypto/single-use/session,
+  github read, github-commit JWT/commit-body, carta-preview wiring, adapter, content);
+  `npm run package` emits all six modules + `index` as `.js`/`.d.ts`/`.d.ts.map` to `dist/`
+  (publish path sound). ecnordic: `svelte-check` 0/0 (468 files) — proves TS resolves
+  `cairn-cms`→source `.ts` via the `types` condition with no `dist`; Cloudflare `npm run build`
+  succeeds (Carta still client-only, source bundled from the symlink); vitest 34/34 (the six
+  moved suites now live in the package). **Live `/admin` smoke** under `wrangler dev` with a
+  minted session: anon→`303 /admin/login`, authed→`200` (Posts+Pages from the live repo),
+  `edit/pages/training`→`200` — the moved imports load in-worker.
+- **Finding: the locked-decision slug-codec seam is unneeded.** The admin is **filename-based**
+  (`[id]` is the bare filename stem), so day-bearing (907-life) and dayless (ecnordic) filenames
+  already flow through the Pass D abstraction unchanged — the abstraction is cleaner than planned.
+  Recorded so Pass F's 907-life adapter doesn't reintroduce a codec.
+- **Deferred to Pass F (unchanged scope):** sharing the admin **Svelte components**/routes (the
+  package shape now supports it), private-repo read-token threading, removing `static/admin/`,
+  the ROADMAP entry.
+- **Two cheap cleanups surfaced by review (logged for Pass F, not blockers):** (1) `bytesToB64url`
+  is exported from `auth.ts` only because `github.ts` needs it — it leaks into the public
+  `export *`; move it to an unexported `src/lib/utils.ts`. (2) the package `tsconfig.json`
+  `include` omits `src/tests`, so package tests are type-checked only by vitest/esbuild, not
+  `tsc` — widen it (or add a `tsconfig.test.json` + vitest `typecheck`) before the test surface
+  grows. **Note on this pass's ritual:** the code-simplifier step was a no-op — the module/test
+  bodies are *verbatim* moves of already-simplified Pass A–D code (running it would risk breaking
+  the byte-identity the extraction guarantees), and the only genuinely new artifacts are config
+  scaffolding (`package.json`, barrel, `svelte.config.js`, `vitest.config.ts`, `tsconfig.json`).
 
 ### Risk #1 follow-up — Cloudflare email (design RESOLVED, provisioning BLOCKED)
 

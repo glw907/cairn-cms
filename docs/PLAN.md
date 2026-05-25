@@ -282,6 +282,40 @@ Media/image upload UI; role tiers / PR-review workflow (`draft` is the gate); ed
   the adapter a faithful frontmatter serializer (or js-yaml flow options). Logged here, not yet
   ticketed.
 
+### Pass D — cairn-core seam refactor in ecnordic-ski (2026-05-25)
+
+- **Goal met: the adapter contract is real, no behavior change.** All site specifics now sit
+  behind a single `CairnAdapter` the core consumes; cairn-core no longer hard-codes a repo,
+  collection, tag, directive, sender, or site name.
+- **Built.** New: `src/lib/cairn/adapter.ts` — the core interface (`CairnAdapter`,
+  `CairnCollection`, the `CairnField` discriminated union: text/date/textarea/boolean/tags) plus
+  two pure helpers `findCollection` and `frontmatterFromForm` (decodes a posted form per field
+  type — boolean→`==='on'`, tags→`getAll`, else `get`). New: `src/lib/cairn.config.ts` —
+  ecnordic's adapter instance (siteName, sender, backend repo, preview plugin set from
+  `render.ts`, and the posts/pages collections with their `fields` + `validate` wrappers).
+- **Rewired (generic now, was per-type branches).**
+  `config.ts` lost `CAIRN_REPO`/`CAIRN_COLLECTIONS`/`CairnCollectionType` (moved into the
+  adapter). `save/+server.ts` is fully adapter-driven: `findCollection` → `frontmatterFromForm`
+  → `collection.validate` → commit, no `if (type==='posts')`. `edit/[type]/[id]/+page.server.ts`
+  resolves the collection from the adapter and returns its `fields` to the form. `+page.server.ts`
+  (list) iterates `cairn.collections`. `email.ts` `sendMagicLink` gained a `from` param (dropped
+  the hard-coded `noreply@ecnordic.ski`); `auth/request` passes `cairn.sender`/`cairn.siteName`.
+- **Generic frontmatter form (DaisyUI preserved).** The edit `+page.svelte` now renders
+  `data.fields` through one `{#each}` with a branch per field type, reusing the exact DaisyUI
+  markup the hand-written posts/pages forms had — byte-identical output, just data-driven.
+  Branding (`siteName`) threads through the **admin `+layout.server.ts`** load so the login/list
+  pages stay free of the adapter import (keeps the plugin graph out of those client bundles);
+  the edit page already bundles the adapter for `cairn.preview`, so it reads `data.siteName` too.
+- **Verified.** `npm run check` clean (0/0) after `svelte-kit sync` regenerated `$types`;
+  67/67 vitest (new `adapter.test.ts`: `findCollection` hit/miss + `frontmatterFromForm` across
+  posts all-fields / draft-off+no-tags / pages-title-only — guards that the generic decode
+  reproduces the retired per-type code). Cloudflare `npm run build` succeeds (editor bundle
+  rebuilt, Carta still client-only). code-simplifier run: one consistency fix (edit-page title
+  `cairn.siteName`→`data.siteName`), rest sound.
+- **Note.** No live `wrangler dev` re-run this pass — it's a pure refactor with identical wiring,
+  the unit tests pin the decode equivalence, and Pass C already verified the live save→commit
+  chain. The adapter shape is what Pass E's 907-life adapter will implement against.
+
 ### Risk #1 follow-up — Cloudflare email (design RESOLVED, provisioning BLOCKED)
 
 Email **Sending** and Email **Routing** are two distinct products under Cloudflare Email Service:

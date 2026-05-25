@@ -120,15 +120,21 @@ previews through the site-supplied `renderPreview`.** cairn-core never assumes d
   model, reuses the GitHub App `commitFile` path with base64 binary, served as static assets)
   **vs** Cloudflare R2 / Images (scales, adds infra + a binding). Decide before building. The
   adapter contract will likely grow a media config (folder/URL-base, or an R2 binding ref).
-- **Future exploration (research pass, not a build) — Theme management.** Survey prior art
-  (Sveltia, WordPress, Decap, Keystatic, Ghost) for what "managing themes" can mean and what,
-  if anything, fits Cairn. **Guardrail: Cairn stays lean and uncomplicated** — WordPress is the
-  cautionary tale. **Clarify scope first:** *public-site appearance* (WordPress-style switching/
-  customizing the live site — large, and in tension with Cairn's **design-agnostic** model where
-  the theme *is* code in each site repo via the adapter + site CSS) **vs** *admin appearance*
-  (small; already mostly settled by the neutral self-contained admin-theme decision). Output is a
-  **recommendation**, not an implementation; **"not worth it / out of scope" is a valid verdict.**
-  Bias hard toward the minimal slice that preserves the git-based, zero-bloat ethos.
+- **Exploration (research pass, not a build) — CMS landscape & forward-compatibility review.**
+  The real goal: survey mature CMSes (Sveltia, Decap, Keystatic, WordPress, Ghost, Statamic) to
+  see *a bit into the future* and make sure **we don't design ourselves into a box** — i.e. that
+  Cairn's extensibility seams (above all the **adapter contract**, plus the storage and auth/role
+  models) stay general enough to absorb likely future features *later*, without a rewrite. **Not**
+  a commitment to build any of them. Scan list (which capabilities exist, and does our current
+  architecture leave the door open?): media/uploads, editorial workflow / review-before-publish,
+  scheduled publish, content relations / references across collections, i18n / localization,
+  revision history & rollback (we get some free from git), richer roles/permissions, multiple
+  backends. *Theme management* is just one item here and may well be dropped — **Cairn stays lean;
+  WordPress is the cautionary tale.** Output is an architectural memo: "keep these doors open" notes
+  + any cheap seam generalizations to make now; **"out of scope" is a valid verdict per item.**
+  **Timing leverage:** most valuable **before the adapter API calcifies** for external/published
+  consumption — the contract is extracted in Pass E and validated on a 2nd site in Pass F, so this
+  review ideally informs/closely follows F, before the package version is pinned for outside use.
 
 ## Key new files (in ecnordic during A–D; migrate to package in F)
 

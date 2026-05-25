@@ -186,16 +186,20 @@ Media/image upload UI; role tiers / PR-review workflow (`draft` is the gate); ed
   tests). Live under `wrangler dev`: anon `/admin`→login; cross-origin POST→403; non-allowlisted
   rejected; bad/expired token rejected; synthesized valid session renders authenticated `/admin`.
   AUTH_KV seeded `editor:geoff-login@907.life`→"Geoff Wright" (local + remote).
-- **Committed & pushed.** ecnordic `756c54a` (Pass A code). The skill-rename / `site-pass` split
-  + 907 STATUS reconciliation shipped separately. **cairn-cms now has a remote** (private,
-  `github.com/glw907/cairn-cms`) — created for backup; the dependency-pinning wiring is still
-  a Pass F task. `.dev.vars` holds dev `MAGIC_LINK_SECRET`/`SESSION_SECRET` (gitignored).
-- **Prod `/admin` intentionally dormant** until Email Sending is sorted; it degrades gracefully
-  (login bounce / `?error=config`) without prod secrets — rest of the site is unaffected.
-- **To close out Pass A (all need the user):** (1) enable Email Sending for ecnordic.ski +
-  confirm Workers Paid; (2) `wrangler secret put MAGIC_LINK_SECRET` and `SESSION_SECRET` in prod;
-  (3) live round-trip test (real magic link → authenticated `/admin`) — the one unverified
-  criterion. GitHub-App secrets remain unused until Pass C.
+- **DONE — verified end-to-end (2026-05-25).** Account upgraded to **Workers Paid**; **Email
+  Sending** onboarded for ecnordic.ski via dashboard (cf-bounce MX/SPF/DKIM + `_dmarc`, all
+  resolve). Live magic link delivered → clicked → authenticated `/admin` ("Signed in as Geoff
+  Wright") in Firefox. The full chain (Email Sending → single-use KV token → session → guard)
+  works in reality.
+- **Origin gotcha + fix.** `wrangler dev`'s `custom_domain` route makes `url.origin` resolve to
+  the prod host, so dev magic links pointed at production (404 on first click). Fix: `PUBLIC_ORIGIN`
+  override (ecnordic `a4b87a3`) — set in dev `.dev.vars`, unset in prod so prod uses
+  `https://ecnordic.ski`. Commits: ecnordic `756c54a` (skeleton) + `a4b87a3` (origin fix).
+  **cairn-cms has a private remote** (`github.com/glw907/cairn-cms`); dependency-pinning is Pass F.
+- **Prod `/admin` left intentionally dormant.** Only step remaining to make it live (optional,
+  not a Pass A blocker): `wrangler secret put MAGIC_LINK_SECRET` and `SESSION_SECRET` in prod
+  (prod AUTH_KV allowlist already seeded; deploy already includes the routes). GitHub-App secrets
+  unused until Pass C.
 
 ### Risk #1 follow-up — Cloudflare email (design RESOLVED, provisioning BLOCKED)
 

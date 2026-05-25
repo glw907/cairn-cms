@@ -138,7 +138,8 @@ remove `static/admin/*` · `BACKLOG.md`/`docs/STATUS.md`/`docs/architecture.md`/
    length octets). *Verified:* `installationToken()` minted a real `ghs_` install token from
    GitHub and read `package.json` with it (throwaway live test, since removed); the commit body
    shape (author = editor, committer omitted → bot, base64 content, sha-on-update) is unit-tested.
-   Only the real in-browser save→commit awaits a Firefox click (writes to prod `main`).
+   A real save→commit to `origin/main` then confirmed author = editor / committer = `cairn-cms[bot]`
+   live (Pass C log).
 3. ~~**Carta v4.11 plugin-injection API** (MED)~~ — **RETIRED (Pass B).** Inject site plugins
    as sync transformers via `extensions[].transformers` (`{execution:'sync', type, transform}`)
    at the remark/rehype phases; `rehypeOptions.allowDangerousHtml` + `sanitizer:false` mirror
@@ -266,11 +267,20 @@ Media/image upload UI; role tiers / PR-review workflow (`draft` is the gate); ed
 - **CSRF/origin.** `/admin/save` relies on SvelteKit's built-in same-origin POST check (same
   posture as the contact remote fn); cross-origin form posts → 403. Bad frontmatter is caught
   from the site validators and bounced to `?error=` rather than 500ing.
-- **One manual confirmation left (writes to prod `main`).** The live edit→save→commit→deploy in
-  Firefox under `wrangler dev` — it makes a real commit, so it's held for explicit go-ahead, the
-  same deferral as Pass A's final click. Needs the GitHub App secrets in `.dev.vars`
-  (`GITHUB_APP_ID`, `GITHUB_APP_INSTALLATION_ID`, `GITHUB_APP_PRIVATE_KEY_B64`). Prod `/admin`
-  stays dormant (prod Workers lack the auth + App secrets).
+- **DONE — verified end-to-end against real `main` (2026-05-25).** With the App secrets in
+  `.dev.vars`, a minted session POSTed `/admin/save` for `pages/volunteers` under `wrangler dev`;
+  the full chain ran live (session → frontmatter validate → serialize → real App-JWT install
+  token → commit). Resulting commit on `origin/main` (`7948da0 "Update pages: volunteers"`):
+  **author = Geoff Wright `<geoff-login@907.life>`, committer = `cairn-cms[bot]`** — exactly the
+  attribution the spec requires. Diff was clean: the directive-heavy body (`:::passage`,
+  `:::grid`) round-tripped **byte-for-byte**; the only change was gray-matter unquoting the title
+  (`"Volunteers"` → `Volunteers`). Prod `/admin` stays dormant (prod Workers still lack the auth
+  + App secrets).
+- **Follow-up (diff noise, not a blocker).** gray-matter's `stringify` reserializes frontmatter
+  on every save (unquotes scalars; would also reflow post `tags` arrays to block style, restyle
+  dates). Content/directives are never touched. If minimal diffs matter, a Pass D/F task can give
+  the adapter a faithful frontmatter serializer (or js-yaml flow options). Logged here, not yet
+  ticketed.
 
 ### Risk #1 follow-up — Cloudflare email (design RESOLVED, provisioning BLOCKED)
 

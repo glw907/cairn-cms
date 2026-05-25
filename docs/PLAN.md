@@ -30,6 +30,7 @@ Answer: a **custom in-app admin** = the core of cairn-cms.
 | Magic-link delivery | **Cloudflare Email Service** (`env.EMAIL.send`), *not* the Email Routing `send_email` binding (recipient-restricted). Fallback: Resend |
 | Editor component | **Carta** `carta-md` v4.11.2 (Svelte 5, unified/remark-native), edits **raw** markdown |
 | Preview | Each site supplies its own `renderPreview(md)` → directive-safe per design |
+| Admin theme | **Neutral, fully self-contained** — one clean theme identical on every site, scoped to `/admin` (`data-theme` + font reset on the layout root), decoupled from host-site tokens/fonts. Shared admin components own their styles (→ clean Pass F extraction); only `siteName` varies via adapter `branding`. The admin is a tool, not a marketing surface |
 | Commit mechanism | **GitHub App** (short-lived install tokens; committer = `cairn-cms[bot]`, author = editor) |
 | Publish flow | Commit to **`main`** → existing CI auto-deploys. `draft` frontmatter = soft gate |
 | Topology | **Embedded per-site library** — admin at each site's `/admin`, in that site's worker |

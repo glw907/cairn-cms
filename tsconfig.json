@@ -16,5 +16,5 @@
     "declarationMap": true,
     "outDir": "./dist"
   },
-  "include": ["src/lib/**/*.ts", "src/lib/**/*.svelte"]
+  "include": ["src/lib/**/*.ts", "src/lib/**/*.svelte", "src/tests/**/*.ts"]
 }

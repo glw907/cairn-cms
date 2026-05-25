@@ -7,7 +7,7 @@
 // App (cairn-cms[bot]). The same token also lifts reads to the authenticated rate limit
 // and unlocks private repos (e.g. 907-life).
 
-import { bytesToB64url } from './auth';
+import { bytesToB64url } from './utils';
 
 export interface RepoRef {
   owner: string;

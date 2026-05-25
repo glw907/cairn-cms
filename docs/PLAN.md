@@ -117,6 +117,22 @@ previews through the site-supplied `renderPreview`.** cairn-core never assumes d
 
 ### Planned passes beyond F (added 2026-05-25)
 
+- **Pass F2 — Extract the shared admin shell into the package** (added 2026-05-25, during F).
+  Pass F deliberately onboarded 907.life by **duplication** rather than extracting the shell
+  mid-pass (the size/risk re-scope: extracting + refactoring the *live* ecnordic admin in the
+  same pass as a greenfield onboarding was ~2 passes of work and coupled the two riskiest
+  things). With both sites now working, extract once against two concrete consumers. **Target
+  is well-defined:** the admin route files are byte-identical across ecnordic and 907 **except**
+  907's free-form-tags handling in `save/+server.ts` + the edit `+page.svelte` tags input (the
+  one real contract gap — see Findings). Likely shape: SvelteKit routes must physically live in
+  each site's `src/routes/` (filesystem routing), so extract (a) the route **server logic** as
+  exported functions and (b) the **Svelte components** (login/list/editor) into the package
+  behind new subpath exports (`cairn-cms/sveltekit`, `cairn-cms/components`), each needing the
+  source↔dist `publishConfig` swap; new peer deps `@sveltejs/kit` (server helpers throw
+  `redirect`/`error` — watch the `instanceof` identity across the peer boundary) and `carta-md`
+  (editor component). Fold free-form tags into the contract properly (e.g. a `freetags` field
+  type + a `frontmatterFromForm` case) so the shared editor form covers both sites. Repoint
+  **both** sites; gate on both test suites + both `/admin` smokes. No behavior change.
 - **Pass G — Manage admins (editor management UI).** Owner-gated CRUD over the per-site
   `AUTH_KV` allowlist: list/add/remove editors, set role (`owner`/`editor`). Add a `role` to
   the KV value (migrate existing flat entries → `editor`, seed the first `owner`); extend the
@@ -208,9 +224,11 @@ remove `static/admin/*` · `BACKLOG.md`/`docs/STATUS.md`/`docs/architecture.md`/
    constant-time compare, `httpOnly/Secure/SameSite=Lax`, `/admin` excluded from prerender +
    Pagefind index + sitemap/robots.
 5. **Workspace/CI linking** (LOW) — sites resolve local cairn in dev, pinned version in CI.
-   *Dev half verified (Pass E):* the symlinked package's **source** resolves under `svelte-check`,
-   the Cloudflare `vite build`, and `wrangler dev` with zero consumer config (`publishConfig`-swap
-   exports). The CI pinned-version half is a Pass F concern.
+   *Dev half verified on BOTH sites (Pass E ecnordic, Pass F 907):* the symlinked package's
+   **source** resolves under `svelte-check`, the Cloudflare `vite build`, and `wrangler dev` with
+   zero consumer config (`publishConfig`-swap exports). The CI pinned-version half is **still
+   open** (no published version yet; both sites use the local symlink) — carry to Pass F2 / a
+   publish pass.
 
 ## Verification (end-to-end, per site)
 
@@ -234,18 +252,15 @@ no longer excluded — just unscheduled.
 > Session-by-session execution state and post-mortems. The workspace `CLAUDE.md` stays lean
 > (durable orientation only); running progress lives here, in the git-backed plan.
 
-> **⏭ NEXT SESSION (start here) — Pass F: onboard 907.life.** Pass E (extract cairn-core into
-> the `cairn-cms` package) is **DONE** (2026-05-25 — see the Pass E entry below). Pass F is the
-> **907.life onboarding** (the reordered old Pass E) **+ old-Pass-F cleanup**. Write 907-life's
-> adapter against the real package (filename-based ids — **no slug codec**; plain `remark-html`
-> preview; its frontmatter + a new validator), its `admin/**` routes, KV/EMAIL bindings, the
-> guard, and private-repo read-token threading (`github.ts` already takes an optional token).
-> **Decide in F** whether to extract the shared admin Svelte shell into the package — the package
-> shape (`svelte-package`, `files` ships `src/lib`) already supports dropping in uncompiled
-> `.svelte` components. Then the cleanup: remove `static/admin/`, close backlog #4, update
-> STATUS/architecture/ROADMAP. Two carry-over cleanups noted in the Pass E entry: `bytesToB64url`
-> leaks into the public `export *` (move to an unexported `utils.ts`), and the package
-> `tsconfig.json` `include` omits `src/tests` (tests type-checked only by vitest/esbuild today).
+> **⏭ NEXT SESSION (start here) — Pass F2: extract the shared admin shell.** Pass F (onboard
+> 907.life as consumer #2 + cleanup) is **DONE** (2026-05-25 — see the Pass F entry below).
+> During F the **scope decision was made to SPLIT**: F onboarded 907 by **duplication** (zero
+> risk to the live ecnordic admin, validated the adapter on site #2); the shared-shell
+> **extraction was deferred to its own pass, Pass F2**, to be done against *two* working
+> consumers (real duplication, regression-gated by both test suites) rather than guessed. See
+> the new **Pass F2** entry under "Planned passes" for the full scope (the admin routes are now
+> byte-identical across both sites except the free-form-tags handling, so the extraction target
+> is well-defined). Pass G (manage admins) follows F2.
 
 ### Pass 0 — bootstrap (2026-05-24)
 
@@ -457,6 +472,76 @@ no longer excluded — just unscheduled.
   bodies are *verbatim* moves of already-simplified Pass A–D code (running it would risk breaking
   the byte-identity the extraction guarantees), and the only genuinely new artifacts are config
   scaffolding (`package.json`, barrel, `svelte.config.js`, `vitest.config.ts`, `tsconfig.json`).
+
+### Pass F — onboard 907.life (consumer #2) + cleanup (2026-05-25)
+
+- **Goal met: the adapter abstraction is validated on a second design.** 907.life now has the
+  cairn admin at `/admin`, driven by its own `src/lib/cairn.config.ts` against the real
+  `cairn-cms` package — a different design (ET Book / plain markdown, no directives), filename
+  ids with a day (`YYYY-MM-DD-slug`, no slug codec), free-form tags, `silk`/`dim` DaisyUI
+  themes — with **no cairn-core change** required for the design difference. The core consumed
+  only the adapter, exactly as designed in Pass D.
+- **Scope decision (mid-pass): SPLIT into F + F2.** The initial call was "extract the shared
+  admin shell now (DRY)", but on assessment that bundled a risky refactor of the *live* ecnordic
+  admin with a greenfield onboarding + a speculative package-surface redesign (~2 passes). Re-scoped:
+  **F = onboard 907 by duplication + cleanup** (isolated, zero ecnordic risk, directly validates
+  the adapter on site #2); **F2 = extract the shared shell** against both now-working sites (added
+  to Planned passes). This matches the plan's own "build on ecnordic, extract after it runs on
+  both" philosophy — extract against real duplication, not a guess.
+- **Built (907-life).** New: `src/lib/cairn.config.ts` (posts-only adapter; empty preview
+  plugins — Carta's built-in remarkParse→gfm→remark-rehype→stringify mirrors the live
+  remark+gfm+remark-html), `src/lib/content-schema.ts` (`validatePostFrontmatter` — title/date/
+  description/draft + **free-form tags**, its own `isoFromValue` Date-coercion), the full
+  `src/routes/admin/**` (layout, list, login, `auth/{request,callback,logout}`, `edit/[type]/[id]`,
+  `save`). Changed: `wrangler.toml` (+`EMAIL` remote send_email, +`AUTH_KV`
+  `9dff7ea324db4d5db8ca0e8e54078e68` — 907's **own** namespace, per-site allowlist seeded
+  `editor:geoff-login@907.life`→"Geoff Wright"), `app.d.ts` (+cairn bindings/secrets,
+  `Locals.editor`), `hooks.server.ts` (+`/admin/**` guard, kept the theme transform),
+  `package.json` (+`carta-md@4.11.2`; `cairn-cms` resolves via the workspace symlink, same as
+  ecnordic). Removed dead Sveltia `static/admin/` (config never wired).
+- **Free-form tags (the one real contract gap).** ecnordic's `tags` field is a controlled-vocab
+  checkbox set; 907's tags are free-form. The shared `CairnField`/`frontmatterFromForm` don't
+  model that, so — since F duplicates rather than shares — 907 keeps tags **out** of the adapter
+  `fields` and handles them in its own routes: a comma-separated text input in the edit page +
+  a `parseTags` (split/trim/dedupe) in `save` that folds the array in before `validate`. **F2
+  should fold this into the contract** (e.g. a `freetags` field type) so the shared form covers
+  both. Logged in the Pass F2 scope.
+- **Finding: 907.life is PUBLIC, not private — the plan's premise was wrong.** First wired
+  token-threaded reads ("private repo"); a live check (App-JWT install token minted, listed 8
+  files, `readRaw` 5421 bytes) confirmed token reads work, but the **anonymous** read of the
+  same repo *also* succeeded → `gh repo view` confirms both ecnordic and 907 are PUBLIC.
+  Realigned 907 to **match ecnordic exactly**: anonymous reads, install token minted only on
+  the commit path. Deleted the bespoke `cairn-token.ts` helper; the list/edit loads + `save` are
+  now byte-identical to ecnordic's (live-verified Pass A–C code) **except** the free-form-tags
+  lines — which is precisely what makes F2's extraction target clean. (Authenticated reads for
+  the 5000/hr limit remain a *possible* shared optimization for F2, not a per-site divergence.)
+- **Verified.** Package: 33/33 vitest, clean `svelte-package`, `bytesToB64url` no longer in the
+  public `dist/index.d.ts` (carry-over cleanup #1). ecnordic unaffected by the package change:
+  `svelte-check` 0/0 (469 files), 34/34 vitest. 907: `svelte-check` 0/0 (370 files), Cloudflare
+  `npm run build` succeeds with Carta's `MarkdownEditor` bundled (client-only mount). Live under
+  `wrangler dev`: anon `/admin`→`303 /admin/login`, `/admin/login`→`200`, public `/`→`200`,
+  unauth `/admin/save`→`303` (guard redirects before the handler — CSRF 403 sits behind the
+  guard for authenticated cross-origin posts, same as ecnordic). Worker booted clean (bindings
+  parse). **One manual confirmation left** (same posture as Pass A/B's final browser step): a
+  real magic-link login + save→commit on 907 once prod secrets are set — the chain is
+  byte-identical to ecnordic's verified Pass A–C path apart from `parseTags` (pure) + the
+  validator (unit-simple).
+- **Carry-over cleanups (both done).** (1) `bytesToB64url` moved from `auth.ts` into an
+  unexported `src/lib/utils.ts` (imported by `auth.ts` + `github.ts`); no longer leaks through
+  the `export *` barrel. (2) package `tsconfig.json` `include` widened to cover `src/tests`.
+- **Docs.** 907 `CLAUDE.md`/`architecture.md`/`STATUS.md`/`ROADMAP.md` updated (cairn admin
+  replaces Sveltia; the stale "multi-repo engine / Better Auth" ROADMAP entries reconciled).
+  ecnordic backlog **#4** (Sveltia) closed → Done (resolved by removal, superseded by cairn).
+- **code-simplifier.** Run over the genuinely-new 907 code (verbatim route copies left alone).
+  It merged a duplicate `@sveltejs/kit` import and converted an arrow-const helper to a
+  `function`; it also *removed* two `as string` casts in the validator that TS actually needs
+  (the `never`-fail narrowing doesn't hold here — ecnordic keeps them) → caught by `svelte-check`
+  and reverted.
+- **Risk #5 (workspace/CI linking) — dev half re-confirmed on a 2nd site.** 907 resolves
+  `cairn-cms`→source via the same workspace symlink + `publishConfig`-swap exports as ecnordic
+  (check/build/wrangler-dev all clean, zero consumer config). The **CI pinned-version half is
+  still open** (no published version yet; both sites rely on the local symlink) — carry to F2 or
+  a publish pass.
 
 ### Risk #1 follow-up — Cloudflare email (design RESOLVED, provisioning BLOCKED)
 

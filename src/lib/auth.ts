@@ -5,6 +5,7 @@
 // for magic links rides on a KV nonce; signature + expiry are self-contained in the token.
 
 import type { KVNamespace } from '@cloudflare/workers-types';
+import { bytesToB64url } from './utils';
 
 export interface Editor {
   email: string;
@@ -20,11 +21,6 @@ export const SESSION_MAX_AGE = SESSION_TTL_SECONDS;
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
-
-export function bytesToB64url(bytes: Uint8Array): string {
-  const binary = Array.from(bytes, (b) => String.fromCharCode(b)).join('');
-  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
 
 function b64urlToBytes(value: string): Uint8Array {
   const normalized = value.replace(/-/g, '+').replace(/_/g, '/');

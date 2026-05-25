@@ -131,9 +131,14 @@ remove `static/admin/*` · `BACKLOG.md`/`docs/STATUS.md`/`docs/architecture.md`/
 1. **Cloudflare Email Service GA + setup** (HIGH) — confirm it's enabled on the account,
    domain authenticated (DKIM/SPF), arbitrary-recipient send works. *Verify:* send a test
    magic link to a non-verified Gmail in `wrangler dev`. *Fallback:* Resend.
-2. **GitHub App auth on Workers** (HIGH) — RS256 JWT signing via Web Crypto +
-   `@octokit/auth-app` under `nodejs_compat`. *Verify:* mint an install token + make one test
-   commit from `wrangler dev`. *Fallback:* fine-grained PAT on a service account (user OK'd).
+2. ~~**GitHub App auth on Workers** (HIGH)~~ — **RETIRED (Pass C).** RS256 JWT signed with
+   **Web Crypto** (no `@octokit/auth-app`, no `nodejs_compat` needed — only Web Crypto + `fetch`
+   + `atob`/`btoa`). The stored key is **PKCS#1** (`BEGIN RSA PRIVATE KEY`), which `importKey`
+   rejects, so the Worker wraps it to PKCS#8 in-process (`pkcs1ToPkcs8`, fixed RSA algId + DER
+   length octets). *Verified:* `installationToken()` minted a real `ghs_` install token from
+   GitHub and read `package.json` with it (throwaway live test, since removed); the commit body
+   shape (author = editor, committer omitted → bot, base64 content, sha-on-update) is unit-tested.
+   Only the real in-browser save→commit awaits a Firefox click (writes to prod `main`).
 3. ~~**Carta v4.11 plugin-injection API** (MED)~~ — **RETIRED (Pass B).** Inject site plugins
    as sync transformers via `extensions[].transformers` (`{execution:'sync', type, transform}`)
    at the remark/rehype phases; `rehypeOptions.allowDangerousHtml` + `sanitizer:false` mirror
@@ -238,6 +243,34 @@ Media/image upload UI; role tiers / PR-review workflow (`draft` is the gate); ed
   in the GitHub App installation token for the commit path, private repos (907-life), and the
   authenticated 5000/hr limit — no refactor. Risk #2's in-Worker caveat thus stays open until
   Pass C exercises the App JWT under `nodejs_compat`.
+
+### Pass C — edit + commit in ecnordic-ski (2026-05-25)
+
+- **Built.** New: `src/lib/cairn/content.ts` (`serializeMarkdown` — gray-matter stringify, the
+  inverse of the loader's parse), `src/routes/admin/save/+server.ts` (POST commit endpoint).
+  Extended `src/lib/cairn/github.ts` with the **write path** — `appJwt` (RS256 via Web Crypto,
+  incl. PKCS#1→PKCS#8 wrap), `installationToken`, `fileSha`, `commitFile` (contents-API PUT,
+  author = editor / committer omitted → `cairn-cms[bot]`, sha-on-update vs create). Changed:
+  `src/lib/cairn/auth.ts` (export `bytesToB64url` for the JWT encoder),
+  `admin/edit/[type]/[id]/+page.server.ts` (load returns full `frontmatter` + `saved`/`error`
+  flags), `+page.svelte` (render-only preview → real editor: per-type frontmatter form +
+  Carta `MarkdownEditor` mounted client-only, hidden `body` input carries the value to the form).
+  No new deps (zero-octokit ethos held; `gray-matter` already present).
+- **Verified.** `svelte-check` clean (0 errors / 0 warnings); 62/62 vitest (new: 4 github-commit
+  — JWT verifies against a PKCS#1 fixture via Web Crypto, token exchange, commit body shape for
+  update + create; 2 content round-trip). Cloudflare `npm run build` succeeds with Carta's
+  `MarkdownEditor` bundled (client-only mount keeps Shiki off the Worker). **Real GitHub check:**
+  the hand-rolled signer minted a live `ghs_` installation token and authenticated a read — risk
+  #2 retired (see register). The contents-API author≠committer attribution is structurally
+  guaranteed + unit-tested.
+- **CSRF/origin.** `/admin/save` relies on SvelteKit's built-in same-origin POST check (same
+  posture as the contact remote fn); cross-origin form posts → 403. Bad frontmatter is caught
+  from the site validators and bounced to `?error=` rather than 500ing.
+- **One manual confirmation left (writes to prod `main`).** The live edit→save→commit→deploy in
+  Firefox under `wrangler dev` — it makes a real commit, so it's held for explicit go-ahead, the
+  same deferral as Pass A's final click. Needs the GitHub App secrets in `.dev.vars`
+  (`GITHUB_APP_ID`, `GITHUB_APP_INSTALLATION_ID`, `GITHUB_APP_PRIVATE_KEY_B64`). Prod `/admin`
+  stays dormant (prod Workers lack the auth + App secrets).
 
 ### Risk #1 follow-up — Cloudflare email (design RESOLVED, provisioning BLOCKED)
 

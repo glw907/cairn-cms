@@ -134,9 +134,12 @@ remove `static/admin/*` · `BACKLOG.md`/`docs/STATUS.md`/`docs/architecture.md`/
 2. **GitHub App auth on Workers** (HIGH) — RS256 JWT signing via Web Crypto +
    `@octokit/auth-app` under `nodejs_compat`. *Verify:* mint an install token + make one test
    commit from `wrangler dev`. *Fallback:* fine-grained PAT on a service account (user OK'd).
-3. **Carta v4.11 plugin-injection API** (MED) — exact extension/transformer shape to add the
-   site's remark/rehype plugins; SSR (disable Shiki server-side); sanitizer
-   (isomorphic-dompurify). *Verify:* round-trip an `about.md` directive page → diff = clean.
+3. ~~**Carta v4.11 plugin-injection API** (MED)~~ — **RETIRED (Pass B).** Inject site plugins
+   as sync transformers via `extensions[].transformers` (`{execution:'sync', type, transform}`)
+   at the remark/rehype phases; `rehypeOptions.allowDangerousHtml` + `sanitizer:false` mirror
+   `render.ts`. SSR handled by mounting the preview client-only (`{#if browser}`), so Shiki
+   never runs on the Worker — no isomorphic-dompurify needed. Wiring shares `render.ts`'s
+   plugin arrays + is unit-tested; only the in-browser visual render awaits a Firefox click.
 4. **Magic-link security** (MED) — single-use (KV nonce delete on redeem), 10-min TTL,
    constant-time compare, `httpOnly/Secure/SameSite=Lax`, `/admin` excluded from prerender +
    Pagefind index + sitemap/robots.
@@ -200,6 +203,41 @@ Media/image upload UI; role tiers / PR-review workflow (`draft` is the gate); ed
   not a Pass A blocker): `wrangler secret put MAGIC_LINK_SECRET` and `SESSION_SECRET` in prod
   (prod AUTH_KV allowlist already seeded; deploy already includes the routes). GitHub-App secrets
   unused until Pass C.
+
+### Pass B — read/list + Carta preview in ecnordic-ski (2026-05-25)
+
+- **Built.** New: `src/lib/cairn/github.ts` (contents-API read client — `listMarkdown`,
+  `readRaw`, token-optional), `src/lib/cairn/carta.ts` (pure preview-options/transformer
+  wiring, deliberately *no* `carta-md` import so the node test env can load it),
+  `src/routes/admin/+page.server.ts` (lists collections from the repo),
+  `src/routes/admin/edit/[type]/[id]/{+page.server.ts,+page.svelte}` (loads raw md, renders
+  the Carta preview client-side), `scripts/mint-session.mjs` (dev smoke helper — signs a
+  session cookie so the guard can be exercised without the email loop). Changed:
+  `src/lib/markdown/render.ts` (now exports `remarkEcPlugins`/`rehypeEcPlugins`, the shared
+  plugin set), `src/lib/config.ts` (+`CAIRN_REPO`, `CAIRN_COLLECTIONS`),
+  `src/routes/admin/+page.svelte` (renders the list). Added dep: `carta-md@4.11.2`.
+- **Verified.** `svelte-check` clean; 56/56 vitest (new: 9 github-client + 3 preview-wiring
+  tests). Cloudflare build succeeds with Carta bundled (no SSR/Shiki breakage — preview is
+  mounted client-only behind a `browser` guard). Live `GET` against the **public** repo's
+  contents API confirmed the shapes `github.ts` relies on (dir listing, `Accept:
+  application/vnd.github.raw` body, 404→null). Under `wrangler dev` with a minted session:
+  anon `/admin`→303 login; authed `/admin`→200 listing Posts+Pages **from the live repo**;
+  `/admin/edit/pages/training`→200 (title, path, SSR placeholder); missing file & unknown
+  collection→404. The in-Worker GitHub read path therefore works end-to-end.
+- **Carta wiring (risk #3 retired).** Carta v4.11's processor is fixed as `remarkParse → gfm
+  → [remark transformers] → remark-rehype(rehypeOptions) → [rehype transformers] →
+  stringify`. We inject ecnordic's exact plugin set as **sync** transformers at the two
+  phases (`previewTransformers`), set `rehypeOptions.allowDangerousHtml` + `sanitizer:false`
+  to match `render.ts`'s trusted-content posture (sanitizing would strip EC primitives). The
+  shared `render.ts` arrays guarantee parity; the wiring (phase order, sync flag, each plugin
+  registered) is unit-tested. **One manual confirmation left:** the client-side *visual*
+  render of a directive page in Firefox (Carta executes JS in-browser; curl only sees the SSR
+  placeholder) — structurally guaranteed, same posture as Pass A's final browser-click step.
+- **Read auth deferred to Pass C (by design).** Reads are anonymous today because the
+  ecnordic repo is **public**; `github.ts` already accepts an optional token, so Pass C drops
+  in the GitHub App installation token for the commit path, private repos (907-life), and the
+  authenticated 5000/hr limit — no refactor. Risk #2's in-Worker caveat thus stays open until
+  Pass C exercises the App JWT under `nodejs_compat`.
 
 ### Risk #1 follow-up — Cloudflare email (design RESOLVED, provisioning BLOCKED)
 

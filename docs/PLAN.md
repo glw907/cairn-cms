@@ -26,6 +26,7 @@ Answer: a **custom in-app admin** = the core of cairn-cms.
 ### Locked decisions
 | Area | Decision |
 |---|---|
+| Target stack (scope) | **Opinionated, not universal.** cairn-cms may assume a specific stack — **Cloudflare, SvelteKit, DaisyUI, Tailwind, GitHub** — and is *not* trying to be a CMS for all hosts/designs. Don't over-generalize the adapter contract or seams to abstract these away; a hard dependency on them is an acceptable answer, and "out of scope" is a valid verdict per candidate feature. Keeps the core lean (WordPress-bloat is the cautionary tale) |
 | Editor identity | **Magic-link email** — no passwords, no GitHub for editors |
 | Magic-link delivery | **Cloudflare Email Service** (`env.EMAIL.send`), *not* the Email Routing `send_email` binding (recipient-restricted). Fallback: Resend |
 | Editor component | **Carta** `carta-md` v4.11.2 (Svelte 5, unified/remark-native), edits **raw** markdown |
@@ -126,6 +127,17 @@ previews through the site-supplied `renderPreview`.** cairn-core never assumes d
   model, reuses the GitHub App `commitFile` path with base64 binary, served as static assets)
   **vs** Cloudflare R2 / Images (scales, adds infra + a binding). Decide before building. The
   adapter contract will likely grow a media config (folder/URL-base, or an R2 binding ref).
+- **Future — Themes (Hugo-style, NOT WordPress-style).** Themes *are* a wanted capability, but
+  the model is **Hugo's**, not WordPress's: when a user stands up a **new** cairn site they
+  **choose from a collection of default themes** as a scaffold, then **edit it** in their own
+  repo from there (or **build a new theme** if they prefer). It is **site-setup / scaffold-time
+  selection + in-repo source editing**, *not* a runtime theme-management UI inside `/admin` and
+  *not* a marketplace. This is consistent with the opinionated target stack (themes are
+  SvelteKit + DaisyUI/Tailwind) and the "admin is a tool, not a marketing surface" decision — the
+  *public site* design is themed; the admin chrome stays neutral/self-contained. A theme is
+  essentially the SvelteKit/Tailwind/DaisyUI layer + the site's `cairn.config.ts` adapter
+  (collections, `renderPreview`, frontmatter). Unscheduled; the open work is defining what a
+  "cairn theme" packages and how the scaffold picks one (e.g. a `create-cairn-site` template set).
 - **Exploration (research pass, not a build) — CMS landscape & forward-compatibility review.**
   The real goal: survey mature CMSes (Sveltia, Decap, Keystatic, WordPress, Ghost, Statamic) to
   see *a bit into the future* and make sure **we don't design ourselves into a box** — i.e. that
@@ -135,8 +147,10 @@ previews through the site-supplied `renderPreview`.** cairn-core never assumes d
   architecture leave the door open?): media/uploads, editorial workflow / review-before-publish,
   scheduled publish, content relations / references across collections, i18n / localization,
   revision history & rollback (we get some free from git), richer roles/permissions, multiple
-  backends. *Theme management* is just one item here and may well be dropped — **Cairn stays lean;
-  WordPress is the cautionary tale.** Output is an architectural memo: "keep these doors open" notes
+  backends. *Theming* is **not** dropped but is **scoped Hugo-style** (scaffold-time theme choice +
+  in-repo editing, per the "Themes" item above), explicitly **not** WordPress-style runtime theme
+  management — **Cairn stays lean; WordPress is the cautionary tale.** Output is an architectural
+  memo: "keep these doors open" notes
   + any cheap seam generalizations to make now; **"out of scope" is a valid verdict per item.**
   **Timing leverage:** most valuable **before the adapter API calcifies** for external/published
   consumption — the contract is extracted in Pass E and validated on a 2nd site in Pass F, so this

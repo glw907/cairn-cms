@@ -170,6 +170,19 @@ Media/image upload UI; role tiers / PR-review workflow (`draft` is the gate); ed
 > Session-by-session execution state and post-mortems. The workspace `CLAUDE.md` stays lean
 > (durable orientation only); running progress lives here, in the git-backed plan.
 
+> **⏭ NEXT SESSION (start here) — Passes E/F were reordered (2026-05-25).** **Pass E is now
+> EXTRACT cairn-core into the `cairn-cms` package** (pulled ahead of 907.life onboarding to
+> avoid throwaway duplication); **Pass F is now the 907.life onboarding** + old-Pass-F cleanup.
+> The "Phased passes" section above still shows the OLD wording — it gets rewritten in the new
+> Pass E's Task 3. To execute Pass E, **read and follow `docs/plans/2026-05-25-extract-cairn-core.md`
+> in full** (a complete, research-backed, task-by-task plan). Key decisions already locked there:
+> the package uses the **`publishConfig`-swap** shape (checked-in `exports`→source for zero-config
+> workspace dev, `publishConfig.exports`→`dist` for publish via `svelte-package` at `prepublishOnly`);
+> the admin routes/components stay in ecnordic for now; **no slug codec** (the admin is filename-based).
+> A `development`-export-condition approach was researched and rejected (TS always matches
+> `types`/`default`, so it can't drive `svelte-check`). Recommended execution:
+> `superpowers:subagent-driven-development`, fresh subagent per task, review at the Task 1 gate.
+
 ### Pass 0 — bootstrap (2026-05-24)
 
 - **Workspace install:** DONE — `npm install` at root clean (472 pkgs; 9 npm-audit advisories,

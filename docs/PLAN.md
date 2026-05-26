@@ -678,9 +678,13 @@ no longer excluded — just unscheduled.
   succeed** (`gh run` conclusion `success`); the build compiles the package's `dist` (incl. the
   `.svelte` admin components → `components.*.css`). Package 35/35 tests, both sites `svelte-check`
   0/0 and local builds clean throughout.
-- **Follow-ups.** Revoke the bootstrap granular token (exposed in the working session). cairn-cms
-  GitHub repo stays private for now (the npm package is public; provenance is skipped for a private
-  source repo — making the repo public later would enable provenance). Pass G is next.
+- **Follow-ups.** Revoke the bootstrap granular token (exposed in the working session) — **local
+  `~/.npmrc` copy removed + shredded 2026-05-25 (post-Pass G)**; the **server-side revoke at
+  npmjs.com → Granular Access Tokens is still pending** (CLI/API can't manage granular tokens —
+  website-only). Safe to revoke: releases now use Trusted Publishing (OIDC), no stored token needed
+  (proven by the 0.2.0 release). cairn-cms GitHub repo stays private for now (the npm package is
+  public; provenance is skipped for a private source repo — making the repo public later would
+  enable provenance).
 
 ### Pass G — manage admins (owner-gated editor management UI) (2026-05-25)
 

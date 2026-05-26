@@ -224,9 +224,11 @@ remove `static/admin/*` · `BACKLOG.md`/`docs/STATUS.md`/`docs/architecture.md`/
 
 ## Risks / unknowns to verify (ranked)
 
-1. **Cloudflare Email Service GA + setup** (HIGH) — confirm it's enabled on the account,
-   domain authenticated (DKIM/SPF), arbitrary-recipient send works. *Verify:* send a test
-   magic link to a non-verified Gmail in `wrangler dev`. *Fallback:* Resend.
+1. ~~**Cloudflare Email Service GA + setup** (HIGH)~~ — **RETIRED (both go-lives, 2026-05-25/26).**
+   Workers Paid on the account; Email Sending onboarded for **both** domains (ecnordic.ski + 907.life)
+   with the `cf-bounce` MX/SPF/DKIM record set in DNS. Live-verified: a real `POST /admin/auth/request`
+   in prod returned `?sent=1` (dispatch succeeded) on each site, and ecnordic's link was clicked through
+   to an authenticated session. Resend was never needed as a fallback.
 2. ~~**GitHub App auth on Workers** (HIGH)~~ — **RETIRED (Pass C).** RS256 JWT signed with
    **Web Crypto** (no `@octokit/auth-app`, no `nodejs_compat` needed — only Web Crypto + `fetch`
    + `atob`/`btoa`). The stored key is **PKCS#1** (`BEGIN RSA PRIVATE KEY`), which `importKey`
@@ -282,18 +284,17 @@ no longer excluded — just unscheduled.
 > Session-by-session execution state and post-mortems. The workspace `CLAUDE.md` stays lean
 > (durable orientation only); running progress lives here, in the git-backed plan.
 
-> **⏭ NEXT SESSION (start here) — make prod `/admin` LIVE on 907.life (ecnordic is DONE).**
-> **ecnordic.ski `/admin` is now LIVE** (go-live 2026-05-25 — see the entry below): all five secrets set
-> on the `ecnordic` worker, guard + login verified live, a real magic link sent to the owner. The
-> remaining site is **907.life**, which needs: (1) **Email Sending dashboard onboarding for the 907.life
-> domain** (risk #1 — Workers Paid already covers the account, but each domain is onboarded separately;
-> ecnordic's is done, 907's is not), then (2) the same five secrets on the `907-life` worker — the 3
-> shared `GITHUB_APP_*` (add `907-life` to the `sync.sh` routing table → `sync.sh --worker 907-life`),
-> plus freshly-generated per-site `MAGIC_LINK_SECRET` + `SESSION_SECRET` via `wrangler secret put`
-> (worker-only, must differ from ecnordic's — session isolation). 907's AUTH_KV owner is already seeded
-> (Pass G). After 907 go-live, the only remaining work is the **Future** roadmap items (media/uploads,
-> Hugo-style themes) — still unscheduled. Also pending: the **server-side npm token revoke** at npmjs.com
-> (low urgency — releases use OIDC Trusted Publishing, no stored token; see Pass P follow-ups).
+> **⏭ NEXT SESSION (start here) — BOTH sites are LIVE; only Future roadmap items remain.**
+> **Both ecnordic.ski AND 907.life `/admin` are now LIVE in prod** (ecnordic go-live 2026-05-25, 907
+> go-live 2026-05-26 — see the entries below). The core initiative (passes 0/A–H + Pass P publish + both
+> go-lives) is **complete**: magic-link auth, GitHub-App committing, the shared admin shell, owner-gated
+> editor management, both sites consuming the published `@glw907/cairn-cms@0.3.0` with green CI. The only
+> remaining work is the **Future** roadmap items — **media/uploads** (storage decision: commit-to-repo
+> vs R2/Images) and **Hugo-style scaffold-time themes** — both still **unscheduled** (pick one to scope
+> when ready). Also still pending: the **server-side npm token revoke** at npmjs.com → Granular Access
+> Tokens (low urgency — releases use OIDC Trusted Publishing, no stored token; website-only, see Pass P
+> follow-ups). **Risk #1 (Cloudflare Email Sending) is fully RETIRED** — onboarded + live-verified on
+> both domains.
 >
 > **Release 0.3.0 is DONE** (2026-05-25 — see the entry below): bumped `0.2.0`→`0.3.0`, published via the
 > Trusted-Publishing OIDC workflow (GitHub Release `v0.3.0` → `publish.yml`), repointed **both** sites to
@@ -827,6 +828,41 @@ no longer excluded — just unscheduled.
 - **Pre-existing drift noted (not mine, not fixed):** `sync.sh --verify` flags `CLOUDFLARE_API_TOKEN
   MISSING` on the `907-life` worker — a stale routing entry (a deploy credential, not a runtime secret).
   Untouched; out of scope for this go-live.
+
+### Go-live — 907.life prod `/admin` (2026-05-26)
+
+- **Goal met: 907.life's `/admin` is live in prod — the second and final site go-live.** With this,
+  **both** consumer sites have a working prod admin; the core initiative is complete (only Future
+  roadmap items remain).
+- **Email Sending blocker was already cleared (corrected a stale plan note).** The NEXT pointer said
+  907's Email Sending dashboard onboarding wasn't done. A DNS check proved otherwise: 907.life **already
+  carries the Cloudflare Email Sending records** — `cf-bounce` MX (`route{1,2,3}.mx.cloudflare.net`),
+  `cf-bounce` SPF TXT, and the `cf-bounce._domainkey` DKIM TXT — the same marker set as ecnordic's
+  working domain (the `fm*._domainkey` CNAMEs are Fastmail's, unrelated). Onboarded sometime after the
+  pointer was written (zone created 2026-05-25). So no dashboard step was needed this pass.
+- **Five secrets set on the `907-life` worker.** `wrangler secret put`: the 3 shared `GITHUB_APP_*`
+  (from `~/.local/secrets`, values verified — App `3847496`, install `135372268`, PKCS#1 b64 key) +
+  **freshly generated** `MAGIC_LINK_SECRET` + `SESSION_SECRET` (`openssl rand -hex 32`, **distinct from
+  ecnordic's** — the locked no-cross-site-SSO / per-site-signing decision). Pre-existing `CONTACT_EMAIL`,
+  `RESEND_API_KEY` (contact form, not cairn), `TURNSTILE_SECRET_KEY` left as-is. Worker name is `907-life`
+  (matches the dir, unlike ecnordic's `ecnordic`).
+- **Managed-secrets wiring.** Added the 3 `GITHUB_APP_*` to `WORKER_SECRETS["907-life"]` in
+  `~/.dotfiles/scripts/secrets/sync.sh`; updated `registry.md` (907-life worker column → ✓, audit
+  section, the per-site HMAC "extra" note). `sync.sh --verify`: the 3 App secrets ✓ on `907-life`, the
+  HMAC pair flagged "extra" as expected. **Pre-existing drift unchanged:** `CLOUDFLARE_API_TOKEN MISSING`
+  on `907-life` — a stale routing entry (deploy credential, not a worker runtime secret), the same drift
+  the ecnordic go-live noted; left untouched (out of scope).
+- **Verified live (prod).** `GET /admin`→**303** `→ /admin/login`; `GET /admin/login`→**200**; `GET /`→**200**;
+  `POST /admin/auth/request` (email=owner, same-origin `Origin: https://907.life`)→**303** `→
+  /admin/login?sent=1` (the success path — an error would be `?error=…`). So the full prod chain ran:
+  validate → AUTH_KV owner lookup (seeded Pass G) → sign magic-link token → **Email Sending dispatch** to
+  the owner. Byte-identical to ecnordic's verified path.
+- **One user-side confirmation left** (same posture as ecnordic's final step): the owner clicks the
+  delivered magic link and the authenticated `/admin` loads — confirming the session round-trip in prod.
+  The dispatch (`?sent=1`) is verified; the click is Geoff's to make.
+- **Ritual.** No application code changed (worker secrets + machine-local `sync.sh`/`registry.md` only) —
+  code-simplifier / svelte-check / tests don't apply. Dotfiles changes commit locally per the
+  no-push-without-asking rule.
 
 ### Release 0.3.0 — ship Pass G + H to both sites (publish/version bump, 2026-05-25)
 

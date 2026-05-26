@@ -34,8 +34,19 @@ export interface TagsField extends FieldBase {
   /** Controlled vocabulary rendered as checkboxes. */
   options: readonly string[];
 }
+export interface FreeTagsField extends FieldBase {
+  type: 'freetags';
+  /** Free-form tags, edited as one comma-separated text input (no controlled vocabulary). */
+  placeholder?: string;
+}
 
-export type CairnField = TextField | DateField | TextareaField | BooleanField | TagsField;
+export type CairnField =
+  | TextField
+  | DateField
+  | TextareaField
+  | BooleanField
+  | TagsField
+  | FreeTagsField;
 
 export interface CairnCollection {
   /** Route `[type]` segment and list key, e.g. `posts`. */
@@ -79,6 +90,17 @@ export function frontmatterFromForm(
         break;
       case 'tags':
         data[field.name] = form.getAll(field.name).map(String);
+        break;
+      case 'freetags':
+        // One comma-separated input → trimmed, de-duplicated, non-empty tags.
+        data[field.name] = [
+          ...new Set(
+            String(form.get(field.name) ?? '')
+              .split(',')
+              .map((tag) => tag.trim())
+              .filter(Boolean),
+          ),
+        ];
         break;
       default:
         data[field.name] = form.get(field.name);

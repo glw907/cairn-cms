@@ -1,0 +1,6 @@
+// cairn-cms admin UI shell. Consumers import from 'cairn-cms/components'; each site's
+// admin route `.svelte` files are one-line shims around these.
+export { default as AdminLayout } from './AdminLayout.svelte';
+export { default as AdminList } from './AdminList.svelte';
+export { default as LoginPage } from './LoginPage.svelte';
+export { default as EditPage } from './EditPage.svelte';

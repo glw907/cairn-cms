@@ -72,6 +72,38 @@ describe('frontmatterFromForm', () => {
     expect(data.tags).toEqual([]);
   });
 
+  it('splits, trims, and de-duplicates a free-form tags field', () => {
+    const collection = {
+      type: 'notes',
+      label: 'Notes',
+      dir: 'src/content/notes',
+      fields: [
+        { type: 'text', name: 'title', label: 'Title', required: true } as const,
+        { type: 'freetags', name: 'tags', label: 'Tags' } as const,
+      ],
+      validate: (data: Record<string, unknown>) => data,
+    };
+    const form = new FormData();
+    form.set('title', 'Free tags');
+    form.set('tags', ' alpha , beta,alpha , , gamma ');
+
+    expect(frontmatterFromForm(collection, form)).toEqual({
+      title: 'Free tags',
+      tags: ['alpha', 'beta', 'gamma'],
+    });
+  });
+
+  it('treats an empty free-form tags input as an empty list', () => {
+    const collection = {
+      type: 'notes',
+      label: 'Notes',
+      dir: 'src/content/notes',
+      fields: [{ type: 'freetags', name: 'tags', label: 'Tags' } as const],
+      validate: (data: Record<string, unknown>) => data,
+    };
+    expect(frontmatterFromForm(collection, new FormData())).toEqual({ tags: [] });
+  });
+
   it('reads only the declared field for a page', () => {
     const form = new FormData();
     form.set('title', 'About');

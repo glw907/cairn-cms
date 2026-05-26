@@ -224,11 +224,19 @@ remove `static/admin/*` · `BACKLOG.md`/`docs/STATUS.md`/`docs/architecture.md`/
    constant-time compare, `httpOnly/Secure/SameSite=Lax`, `/admin` excluded from prerender +
    Pagefind index + sitemap/robots.
 5. **Workspace/CI linking** (LOW) — sites resolve local cairn in dev, pinned version in CI.
-   *Dev half verified on BOTH sites (Pass E ecnordic, Pass F 907):* the symlinked package's
-   **source** resolves under `svelte-check`, the Cloudflare `vite build`, and `wrangler dev` with
-   zero consumer config (`publishConfig`-swap exports). The CI pinned-version half is **still
-   open** (no published version yet; both sites use the local symlink) — carry to Pass F2 / a
+   *Dev half verified on BOTH sites across all three subpath exports (`.`, `/sveltekit`,
+   `/components`) — Pass E ecnordic, Pass F 907, Pass F2 both:* the symlinked package's **source**
+   resolves under `svelte-check`, the Cloudflare `vite build`, and `wrangler dev` with zero
+   consumer config (`publishConfig`-swap exports). *Pass F2 corollary:* because the package imports
+   `@sveltejs/kit`, a **single** root kit is forced, which forces both sites onto **one vite major**
+   (907 was aligned up to ecnordic's `vite@8` toolchain). The CI pinned-version half is **still
+   open** (no published version yet; both sites use the local symlink) — carry to Pass G / a
    publish pass.
+6. ~~**kit `redirect`/`error` `instanceof` across the package→site peer boundary** (MED, Pass F2)~~
+   — **RETIRED (Pass F2).** The extracted `cairn-cms/sveltekit` functions throw `@sveltejs/kit`
+   `redirect`/`error`; these must share class identity with the host runtime. A single workspace
+   `@sveltejs/kit` (npm-deduped to root) guarantees it — live-verified: package-thrown redirect→303
+   and error→400 in both sites' workers under `wrangler dev`. (See Pass F2 log.)
 
 ## Verification (end-to-end, per site)
 
@@ -252,15 +260,15 @@ no longer excluded — just unscheduled.
 > Session-by-session execution state and post-mortems. The workspace `CLAUDE.md` stays lean
 > (durable orientation only); running progress lives here, in the git-backed plan.
 
-> **⏭ NEXT SESSION (start here) — Pass F2: extract the shared admin shell.** Pass F (onboard
-> 907.life as consumer #2 + cleanup) is **DONE** (2026-05-25 — see the Pass F entry below).
-> During F the **scope decision was made to SPLIT**: F onboarded 907 by **duplication** (zero
-> risk to the live ecnordic admin, validated the adapter on site #2); the shared-shell
-> **extraction was deferred to its own pass, Pass F2**, to be done against *two* working
-> consumers (real duplication, regression-gated by both test suites) rather than guessed. See
-> the new **Pass F2** entry under "Planned passes" for the full scope (the admin routes are now
-> byte-identical across both sites except the free-form-tags handling, so the extraction target
-> is well-defined). Pass G (manage admins) follows F2.
+> **⏭ NEXT SESSION (start here) — Pass G: manage admins (editor management UI).** Pass F2
+> (extract the shared admin shell into the package) is **DONE** (2026-05-25 — see the Pass F2
+> entry below). The admin route files are now thin shims around `cairn-cms/sveltekit` (server
+> logic) + `cairn-cms/components` (the Svelte shell), **byte-identical across both sites** save
+> for each site's `cairn.config.ts`; free-form tags are folded into the contract as a `freetags`
+> field type. Pass G adds owner-gated CRUD over the per-site `AUTH_KV` allowlist (list/add/remove
+> editors, set `owner`/`editor` role) — see the "Editor management" locked-decision row and the
+> Pass G entry under "Planned passes". The CI pinned-version half of risk #5 is still open (both
+> sites use the local symlink; no published cairn version yet) — fold into Pass G or a publish pass.
 
 ### Pass 0 — bootstrap (2026-05-24)
 
@@ -542,6 +550,65 @@ no longer excluded — just unscheduled.
   (check/build/wrangler-dev all clean, zero consumer config). The **CI pinned-version half is
   still open** (no published version yet; both sites rely on the local symlink) — carry to F2 or
   a publish pass.
+
+### Pass F2 — extract the shared admin shell into the package (2026-05-25)
+
+- **Goal met: the admin shell is now in `cairn-cms`, consumed by both sites as thin shims.**
+  The admin route files in `ecnordic-ski/` and `907-life/` are now **byte-identical** (verified
+  by `diff -rq`) except each site's `src/lib/cairn.config.ts`. All real logic moved into the
+  package; no behavior change (gated by both test suites + a live `wrangler dev` smoke on both).
+- **Two new package subpath exports** (each with the source↔dist `publishConfig` swap, same
+  shape as the `.` entry from Pass E):
+  - **`cairn-cms/sveltekit`** (`src/lib/sveltekit/index.ts`) — the route **server logic** as
+    plain functions taking the SvelteKit event (typed *structurally*, so the package never
+    depends on the site-generated `App.*` ambient types) + the site `CairnAdapter`:
+    `adminLayoutLoad`, `adminListLoad`, `loginLoad`, `editLoad`, `authRequest`, `authCallback`,
+    `logout`, `saveCommit`, plus an `AdminEnv` binding interface and the load return types.
+  - **`cairn-cms/components`** (`src/lib/components/index.ts`) — the Svelte shell: `AdminLayout`,
+    `AdminList`, `LoginPage`, `EditPage`. SvelteKit filesystem routing forces the route *files*
+    to live per-site, so each is a one-line shim (`<AdminList {data} />`, etc.). `EditPage` takes
+    the adapter's `preview` plugins as a prop.
+- **New peer deps:** `@sveltejs/kit` (the server module throws `redirect`/`error`) and `carta-md`
+  (the `EditPage` editor). Both also devDeps so `svelte-package` can type-emit.
+- **The free-form-tags contract gap is closed.** Added a **`freetags`** `CairnField` type +
+  a `frontmatterFromForm` case (comma-split → trim → de-dup — exactly 907's old route-local
+  `parseTags`). 907's adapter now declares `{ type: 'freetags', name: 'tags' }`; its bespoke
+  edit/save tag handling is gone, so its routes collapsed to the shared shims. ecnordic's
+  controlled-vocabulary `tags` checkboxes are unchanged. (+2 adapter unit tests; 35/35 package.)
+- **`$app/environment` avoided in the packaged editor.** The per-site edit route gated the Carta
+  `MarkdownEditor` (SSR-unsafe — pulls Shiki) behind `$app/environment`'s `browser`. That module
+  has no types outside a SvelteKit app, so `EditPage` uses an `onMount`-set `mounted` flag instead
+  (fires only client-side) — same SSR-safe outcome, no kit-module coupling in the component.
+- **The `instanceof`-across-the-peer-boundary risk is RETIRED.** The plan flagged that
+  `redirect`/`error` thrown inside the package must share class identity with the host's
+  `@sveltejs/kit` runtime or they'd 500 instead of redirecting. Live-verified under `wrangler dev`:
+  a same-origin `POST /admin/auth/request` with a bad email → **303** `Location:
+  /admin/login?error=invalid` (ecnordic) / `?error=config` (907); a bogus-collection `POST
+  /admin/save` → **400** (not 500). Both prove the thrown kit objects are recognized. This holds
+  because npm dedupes a **single** `@sveltejs/kit` to the workspace root that the package and both
+  sites all resolve.
+- **Forced toolchain alignment (decision, with the user).** Making the package import
+  `@sveltejs/kit` forces a single root kit, and kit peer-resolves one `vite` — but the two sites
+  were on **different vite majors** (ecnordic `vite@8`/`plugin-svelte@7`/`adapter-cloudflare@7`,
+  907 `vite@6`/`@5`/`@5`). A single shared kit can't serve two vite majors (it leaked `vite@8`
+  into 907's `vite@6` type-world → `907/vite.config.ts` failed `svelte-check`). Resolved by
+  **aligning 907 up to ecnordic's toolchain** (the user chose this over decoupling the package
+  from kit). 907 build then hit a `vite@8`/rolldown stricter-resolution error on its Pagefind
+  dynamic import (`import('/pagefind/...' + '.js')`) — fixed to ecnordic's `/* @vite-ignore */`
+  pattern. After a clean reinstall: one `vite@8` + one `kit@2.61.1` workspace-wide.
+- **Verified.** Package: 35/35 vitest, clean `svelte-package` (components + sveltekit module emit
+  `.js`/`.d.ts` to `dist/`; `bytesToB64url` still absent from the public barrel). ecnordic:
+  `svelte-check` 0/0 (469 files), Cloudflare build OK, 34/34 vitest. 907: `svelte-check` 0/0
+  (381 files), Cloudflare build OK on the upgraded toolchain. Live `wrangler dev` smoke on **both**:
+  anon `/admin`→303 login, `/admin/login`→200, `/`→200, package-thrown redirect/error fire
+  correctly in-worker (above), and on ecnordic (with a minted session + `.dev.vars`) authed
+  `/admin`→200 listing, `edit/pages/training`→200, `edit/posts/<missing>`→404.
+- **code-simplifier.** Run over the new package code — one change: the `EditPage` `fm*` helpers
+  converted from arrow-consts to `function` declarations (no behavior change). Route shims left
+  alone (trivial one-liners); component markup/DaisyUI classes untouched (host-styled).
+- **Risk #5 (workspace/CI linking).** Dev half holds through the new subpath exports on both
+  sites. **CI pinned-version half still open** — no published cairn version; both sites symlink
+  the source. Carry to Pass G / a publish pass.
 
 ### Risk #1 follow-up — Cloudflare email (design RESOLVED, provisioning BLOCKED)
 

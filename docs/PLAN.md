@@ -282,28 +282,28 @@ no longer excluded — just unscheduled.
 > Session-by-session execution state and post-mortems. The workspace `CLAUDE.md` stays lean
 > (durable orientation only); running progress lives here, in the git-backed plan.
 
-> **⏭ NEXT SESSION (start here) — publish/version-bump pass (ship Pass G + Pass H to both sites).**
-> Two passes of package code (Pass G manage-admins, Pass H admin-UI shell) have landed in
-> `@glw907/cairn-cms` source but **not yet been published** — both sites still pin `^0.2.0`, so
-> their CI builds the *old* package. The shippable next step is a **version bump + publish** (bump to
-> `0.3.0`, release via the wired Trusted-Publishing OIDC workflow), then repoint both sites to `^0.3.0`,
-> regenerate + commit each standalone lockfile, and confirm both CI deploys stay green (the Pass P
-> playbook). After that, **prod `/admin` can be made live** per site by setting `MAGIC_LINK_SECRET`
-> + `SESSION_SECRET` (unchanged Pass A dormancy posture). Remaining roadmap items beyond that are the
-> **Future** entries (media/uploads, Hugo-style themes) — still unscheduled. Also pending: the
-> server-side npm token revoke (low urgency, see Pass P follow-ups).
+> **⏭ NEXT SESSION (start here) — make prod `/admin` LIVE (per-site go-live).** The package and both
+> sites are now fully shipped through Pass H: **`@glw907/cairn-cms@0.3.0` is published** (Pass G manage-admins
+> + Pass H admin shell), **both sites pin `^0.3.0` with CI deploys GREEN** (see the Release 0.3.0 entry
+> below). The remaining gate to a usable CMS is per-site **go-live**: set `MAGIC_LINK_SECRET` +
+> `SESSION_SECRET` via `wrangler secret put` on each prod Worker (AUTH_KV allowlists already seeded;
+> GitHub-App + EMAIL secrets already present from Pass A/C). ecnordic's Email Sending is provisioned
+> (Pass A); **907's Email Sending still needs dashboard onboarding** (risk #1 — Workers Paid covers the
+> account, but each domain is onboarded separately). After go-live, the only remaining work is the
+> **Future** roadmap items (media/uploads, Hugo-style themes) — still unscheduled. Also pending: the
+> **server-side npm token revoke** at npmjs.com (low urgency — releases use OIDC Trusted Publishing, no
+> stored token; see Pass P follow-ups).
+>
+> **Release 0.3.0 is DONE** (2026-05-25 — see the entry below): bumped `0.2.0`→`0.3.0`, published via the
+> Trusted-Publishing OIDC workflow (GitHub Release `v0.3.0` → `publish.yml`), repointed **both** sites to
+> `^0.3.0` with regenerated standalone lockfiles, both CI deploys **green**, both live sites 200.
 >
 > **Pass H is DONE** (2026-05-25 — see the Pass H entry below): the responsive DaisyUI `drawer`+`navbar`
 > admin shell with a data-driven, role-gated nav. Built in the shared `cairn-cms/components`, consumed
-> by both sites as unchanged byte-identical shims; verified (39/39 package tests, both sites
-> `svelte-check` 0/0 + Cloudflare build, live `wrangler dev` smoke). Committed locally, not pushed.
+> by both sites as unchanged byte-identical shims; **shipped to both sites in `@glw907/cairn-cms@0.3.0`**.
 >
-> **Pass G is DONE** (2026-05-25 — see the Pass G entry below) and fully shipped: `@glw907/cairn-cms@0.2.0`
-> published via Trusted Publishing, **both** sites pinned `^0.2.0` with **CI deploys green**, Geoff seeded
-> as `owner` in all four AUTH_KV namespaces. Prod `/admin` stays dormant on both sites until each gets
-> `MAGIC_LINK_SECRET`/`SESSION_SECRET` (unchanged Pass A posture; the manage-admins surface needs only
-> the already-present AUTH_KV). Bootstrap npm token: local `~/.npmrc` copy removed + shredded;
-> **server-side revoke at npmjs.com still pending** (user said it expires shortly — low urgency).
+> **Pass G is DONE** (2026-05-25 — see the Pass G entry below): owner-gated editor management, Geoff seeded
+> as `owner` in all four AUTH_KV namespaces; **shipped to both sites** (`@0.2.0` then carried in `@0.3.0`).
 
 ### Pass 0 — bootstrap (2026-05-24)
 
@@ -792,6 +792,40 @@ no longer excluded — just unscheduled.
 - **Not published / prod-dormant (carry-over).** This is package source only; both sites pin `^0.2.0`,
   so the shell reaches their CI on the next publish + version bump (now the NEXT-SESSION pointer).
   Commits land locally per the no-push-without-asking rule.
+
+### Release 0.3.0 — ship Pass G + H to both sites (publish/version bump, 2026-05-25)
+
+- **Goal met: both sites now consume the published Pass G + Pass H package; CI deploys GREEN.**
+  The admin shell (Pass H) and manage-admins surface (Pass G) had landed in source but the sites
+  still pinned `^0.2.0` (Pass G's release; Pass H was unpublished). This pass closed that gap.
+- **Published `@glw907/cairn-cms@0.3.0`** via the wired **Trusted-Publishing OIDC** workflow — bumped
+  `package.json` `0.2.0`→`0.3.0` (single-line edit; reverted `npm version`'s array reformatting to keep
+  the diff clean), committed (`360aae9`), pushed `main`, then created **GitHub Release `v0.3.0`** which
+  triggered `publish.yml` (`release: published`). Run `26433291387` green; `npm view` confirms `0.3.0`
+  is `latest`. No stored npm token (OIDC mints a short-lived credential) — the Pass P Trusted-Publishing
+  setup proven again.
+- **Both sites repointed to `^0.3.0`** with **regenerated standalone lockfiles** (the Pass P method):
+  edited each `package.json` pin, regenerated each `package-lock.json` in an **isolated temp dir** (no
+  workspace, so `@glw907/cairn-cms@0.3.0` resolves from the registry as a tarball, not a `file:` link).
+  Diffs are surgical — only the cairn-cms entry (version / `resolved` tarball URL / `integrity`) + the
+  pin; the integrity hash is **identical across both sites** (same published tarball). `npm ci --dry-run`
+  in isolation clean for both (mimics CI).
+- **Local stale-install gotcha (caught + fixed; CI was never affected).** 907's local
+  `node_modules/@glw907/cairn-cms` was a **materialized real copy of 0.2.0** (left from when it pinned
+  `^0.2.0`), shadowing the workspace symlink — so 907 `svelte-check` failed with `'data' does not exist
+  on AdminLayout props` (the pre-Pass-H component). ecnordic was unaffected (it resolves the workspace-root
+  symlink → source). Fix: `rm -rf` the nested copy + reinstall → npm relinks to source. **Purely a local
+  dev-env artifact**: CI does a fresh `npm ci` against the committed lockfile (correctly pointing at
+  `0.3.0.tgz`), so the published path was always correct. Lesson for future bumps: after changing a
+  workspace pin, drop any nested materialized copy so the symlink wins.
+- **Verified.** Package 39/39 vitest + clean `svelte-package` before the bump. Both sites `svelte-check`
+  **0/0** (ecnordic 474, 907 386), `npm ci --dry-run` clean. After push: **both CI deploys green**
+  (ecnordic run `26433422099`, 907 `26433425327` — both conclusion `success`); live smoke
+  `https://ecnordic.ski`→**200**, `https://907.life`→**200**. Risk #5's CI half stays retired (now on a
+  published `0.3.0`, not `0.1.0`).
+- **Ritual.** No code-simplifier / test re-run needed beyond the gates above — only version strings +
+  lockfiles changed, no source code. Commits: cairn-cms `360aae9` + Release `v0.3.0`; ecnordic `0094036`;
+  907 `e3a1eca`. All pushed (publish pass — pushing is the deliverable, user-authorized).
 
 ### Exploration — forward-compat review (research pass, 2026-05-25)
 

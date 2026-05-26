@@ -47,6 +47,29 @@ interface PlatformEvent {
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
+/**
+ * Mint a GitHub App installation token for *reads* when the App is configured, else undefined
+ * (reads then fall back to anonymous). Authenticated reads get the 5000/hr limit; anonymous
+ * reads share GitHub's 60/hr-per-IP budget across Cloudflare's egress IPs, so they 403 in prod.
+ * A mint failure degrades gracefully to anonymous rather than 500ing — unlike the commit path,
+ * where a missing App is fatal, a read can still succeed unauthenticated.
+ */
+async function readToken(env: AdminEnv | undefined): Promise<string | undefined> {
+  if (!env?.GITHUB_APP_ID || !env.GITHUB_APP_INSTALLATION_ID || !env.GITHUB_APP_PRIVATE_KEY_B64) {
+    return undefined;
+  }
+  try {
+    return await installationToken({
+      appId: env.GITHUB_APP_ID,
+      installationId: env.GITHUB_APP_INSTALLATION_ID,
+      privateKeyB64: env.GITHUB_APP_PRIVATE_KEY_B64,
+    });
+  } catch (err) {
+    console.error('read token mint failed; falling back to anonymous read:', err);
+    return undefined;
+  }
+}
+
 // ── /admin layout ──────────────────────────────────────────────────────────
 
 export interface AdminLayoutData {
@@ -79,11 +102,15 @@ export interface AdminCollectionList {
 }
 
 /** List every collection's markdown files. A failed listing degrades to an inline error. */
-export async function adminListLoad(adapter: CairnAdapter): Promise<{ collections: AdminCollectionList[] }> {
+export async function adminListLoad(
+  event: PlatformEvent,
+  adapter: CairnAdapter,
+): Promise<{ collections: AdminCollectionList[] }> {
+  const token = await readToken(event.platform?.env);
   const collections = await Promise.all(
     adapter.collections.map(async ({ type, label, dir }): Promise<AdminCollectionList> => {
       try {
-        return { type, label, files: await listMarkdown(adapter.backend, dir) };
+        return { type, label, files: await listMarkdown(adapter.backend, dir, token) };
       } catch (err) {
         // A failed listing (rate limit, network) shouldn't 500 the whole admin.
         return { type, label, files: [], error: err instanceof Error ? err.message : 'Failed to load' };
@@ -123,15 +150,15 @@ export interface EditData {
 }
 
 export async function editLoad(
-  event: { params: { type: string; id: string }; url: URL },
+  event: PlatformEvent & { params: { type: string; id: string }; url: URL },
   adapter: CairnAdapter,
 ): Promise<EditData> {
   const collection = findCollection(adapter, event.params.type);
   if (!collection) throw error(404, 'Unknown collection');
 
-  // Anonymous read — repos are public; the GitHub App token is commit-only (see saveCommit).
+  const token = await readToken(event.platform?.env);
   const path = `${collection.dir}/${event.params.id}.md`;
-  const raw = await readRaw(adapter.backend, path);
+  const raw = await readRaw(adapter.backend, path, token);
   if (raw === null) throw error(404, 'Content not found');
 
   // Split frontmatter from body server-side; the editor form binds to the frontmatter and

@@ -821,8 +821,9 @@ no longer excluded — just unscheduled.
   form); `POST /admin/auth/request` (email=owner, same-origin)→**303** `→ /admin/login?sent=1` (success
   path — an error would be `?error=…`), so the full prod chain ran: validate → AUTH_KV owner lookup →
   sign magic-link token → Email Sending dispatch. `sync.sh --verify` shows the 3 App secrets ✓ on
-  `ecnordic` (HMAC pair as expected "extra"). **Final human step:** click the delivered magic link to
-  confirm the session round-trip end-to-end (same posture as Pass A's browser-click confirmation).
+  `ecnordic` (HMAC pair as expected "extra"). **Confirmed end-to-end (2026-05-25):** the user received
+  the magic link, clicked it, and the authenticated `/admin` loaded — the session round-trip works in
+  prod. ecnordic go-live is fully verified; no manual steps remain.
 - **Pre-existing drift noted (not mine, not fixed):** `sync.sh --verify` flags `CLOUDFLARE_API_TOKEN
   MISSING` on the `907-life` worker — a stale routing entry (a deploy credential, not a runtime secret).
   Untouched; out of scope for this go-live.

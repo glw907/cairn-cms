@@ -25,11 +25,18 @@ export async function sendMagicLink(
   from: string,
 ): Promise<void> {
   const expiry = "This link expires in 10 minutes and works only once. If you didn't request it, ignore this email.";
-  await sender.send({
-    to,
-    from,
-    subject: `Your ${siteName} sign-in link`,
-    text: `Sign in to ${siteName}:\n\n${link}\n\n${expiry}`,
-    html: `<p>Sign in to ${siteName}:</p><p><a href="${link}">Sign in</a></p><p style="color:#666;font-size:0.9em">${expiry}</p>`,
-  });
+  try {
+    await sender.send({
+      to,
+      from,
+      subject: `Your ${siteName} sign-in link`,
+      text: `Sign in to ${siteName}:\n\n${link}\n\n${expiry}`,
+      html: `<p>Sign in to ${siteName}:</p><p><a href="${link}">Confirm sign-in</a></p><p style="color:#666;font-size:0.9em">${expiry}</p>`,
+    });
+  } catch (err) {
+    // H6: Email Sending is beta + the sole auth channel. Surface + audit; a Resend fallback
+    // can slot in behind this same signature if Sending proves unreliable.
+    console.error(`magic-link email send failed for ${to}:`, err);
+    throw err;
+  }
 }

@@ -282,17 +282,18 @@ no longer excluded — just unscheduled.
 > Session-by-session execution state and post-mortems. The workspace `CLAUDE.md` stays lean
 > (durable orientation only); running progress lives here, in the git-backed plan.
 
-> **⏭ NEXT SESSION (start here) — make prod `/admin` LIVE (per-site go-live).** The package and both
-> sites are now fully shipped through Pass H: **`@glw907/cairn-cms@0.3.0` is published** (Pass G manage-admins
-> + Pass H admin shell), **both sites pin `^0.3.0` with CI deploys GREEN** (see the Release 0.3.0 entry
-> below). The remaining gate to a usable CMS is per-site **go-live**: set `MAGIC_LINK_SECRET` +
-> `SESSION_SECRET` via `wrangler secret put` on each prod Worker (AUTH_KV allowlists already seeded;
-> GitHub-App + EMAIL secrets already present from Pass A/C). ecnordic's Email Sending is provisioned
-> (Pass A); **907's Email Sending still needs dashboard onboarding** (risk #1 — Workers Paid covers the
-> account, but each domain is onboarded separately). After go-live, the only remaining work is the
-> **Future** roadmap items (media/uploads, Hugo-style themes) — still unscheduled. Also pending: the
-> **server-side npm token revoke** at npmjs.com (low urgency — releases use OIDC Trusted Publishing, no
-> stored token; see Pass P follow-ups).
+> **⏭ NEXT SESSION (start here) — make prod `/admin` LIVE on 907.life (ecnordic is DONE).**
+> **ecnordic.ski `/admin` is now LIVE** (go-live 2026-05-25 — see the entry below): all five secrets set
+> on the `ecnordic` worker, guard + login verified live, a real magic link sent to the owner. The
+> remaining site is **907.life**, which needs: (1) **Email Sending dashboard onboarding for the 907.life
+> domain** (risk #1 — Workers Paid already covers the account, but each domain is onboarded separately;
+> ecnordic's is done, 907's is not), then (2) the same five secrets on the `907-life` worker — the 3
+> shared `GITHUB_APP_*` (add `907-life` to the `sync.sh` routing table → `sync.sh --worker 907-life`),
+> plus freshly-generated per-site `MAGIC_LINK_SECRET` + `SESSION_SECRET` via `wrangler secret put`
+> (worker-only, must differ from ecnordic's — session isolation). 907's AUTH_KV owner is already seeded
+> (Pass G). After 907 go-live, the only remaining work is the **Future** roadmap items (media/uploads,
+> Hugo-style themes) — still unscheduled. Also pending: the **server-side npm token revoke** at npmjs.com
+> (low urgency — releases use OIDC Trusted Publishing, no stored token; see Pass P follow-ups).
 >
 > **Release 0.3.0 is DONE** (2026-05-25 — see the entry below): bumped `0.2.0`→`0.3.0`, published via the
 > Trusted-Publishing OIDC workflow (GitHub Release `v0.3.0` → `publish.yml`), repointed **both** sites to
@@ -792,6 +793,39 @@ no longer excluded — just unscheduled.
 - **Not published / prod-dormant (carry-over).** This is package source only; both sites pin `^0.2.0`,
   so the shell reaches their CI on the next publish + version bump (now the NEXT-SESSION pointer).
   Commits land locally per the no-push-without-asking rule.
+
+### Go-live — ecnordic.ski prod `/admin` (2026-05-25)
+
+- **Goal met: ecnordic's `/admin` is live in prod.** The dormancy posture (since Pass A) is lifted for
+  ecnordic — login + edit + save→commit all have their required secrets on the running worker.
+- **Reality check corrected a stale plan note.** The NEXT pointer claimed "GitHub-App + EMAIL secrets
+  already present from Pass A/C," but `wrangler secret list` on the `ecnordic` worker showed only
+  `CONTACT_EMAIL` + `TURNSTILE_SECRET_KEY` — the App secrets had only ever lived in `.dev.vars`. So a
+  *usable* admin (not just login) needed **five** secrets, not two.
+- **Worker name gotcha.** The deployed worker is named **`ecnordic`** (not `ecnordic-ski`, the repo/dir
+  name) — `wrangler.toml` `name = "ecnordic"`. `wrangler secret list --name ecnordic-ski` silently
+  returns nothing; bare `secret list` from the repo dir uses the toml name. Caught when `sync.sh --verify`
+  aborted under `pipefail` (empty grep). Routing/registry use `ecnordic`.
+- **Secrets set (5).** `wrangler secret put` on `ecnordic`: the 3 shared `GITHUB_APP_*` (from
+  `~/.local/secrets`, values verified — App `3847496`, install `135372268`, PKCS#1 PEM) + **freshly
+  generated** `MAGIC_LINK_SECRET` + `SESSION_SECRET` (`openssl rand -hex 32`). The two HMAC secrets are
+  **per-site & worker-only** (NOT shared via the registry — the locked "no cross-site SSO" decision means
+  each site signs with its own keys; rotatable by re-putting). Secrets apply to the running worker live —
+  no redeploy (routes already deployed since Pass A).
+- **Managed-secrets wiring.** Added `WORKER_SECRETS["ecnordic"]="GITHUB_APP_ID GITHUB_APP_INSTALLATION_ID
+  GITHUB_APP_PRIVATE_KEY_B64"` to `~/.dotfiles/scripts/secrets/sync.sh` + documented in `registry.md`
+  (ecnordic worker column; the 2 HMAC secrets noted as worker-only, like CONTACT/TURNSTILE). Pushed now
+  via direct `wrangler put` from env (equal values), so no 1Password decrypt was needed; future
+  `sync.sh --worker ecnordic` re-pushes the App secrets reproducibly. Dotfiles commit `6430bf8` (local).
+- **Verified live (prod).** `GET /admin`→**303** `→ /admin/login`; `GET /admin/login`→**200** ("Sign in"
+  form); `POST /admin/auth/request` (email=owner, same-origin)→**303** `→ /admin/login?sent=1` (success
+  path — an error would be `?error=…`), so the full prod chain ran: validate → AUTH_KV owner lookup →
+  sign magic-link token → Email Sending dispatch. `sync.sh --verify` shows the 3 App secrets ✓ on
+  `ecnordic` (HMAC pair as expected "extra"). **Final human step:** click the delivered magic link to
+  confirm the session round-trip end-to-end (same posture as Pass A's browser-click confirmation).
+- **Pre-existing drift noted (not mine, not fixed):** `sync.sh --verify` flags `CLOUDFLARE_API_TOKEN
+  MISSING` on the `907-life` worker — a stale routing entry (a deploy credential, not a runtime secret).
+  Untouched; out of scope for this go-live.
 
 ### Release 0.3.0 — ship Pass G + H to both sites (publish/version bump, 2026-05-25)
 

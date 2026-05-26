@@ -1,41 +1,22 @@
-// cairn-core: the SvelteKit route server logic, extracted so each site's `admin/**` route
-// files are thin shims (`export const load = (event) => editLoad(event, cairn)`).
+// cairn-core: the SvelteKit content-route server logic, extracted so each site's `admin/**`
+// route files are thin shims (`export const load = (event) => editLoad(event, cairn)`).
 //
 // SvelteKit's filesystem routing requires the route *files* to live in each site's
 // `src/routes/`, but their bodies are identical across sites — only the adapter differs.
 // These functions take the SvelteKit event (typed structurally, to avoid depending on the
 // site-generated `App.*` ambient types) plus the site `CairnAdapter`, and throw
-// `redirect`/`error` from `@sveltejs/kit`. That `@sveltejs/kit` is a peer dependency so the
-// thrown objects share class identity with the host's runtime (else the redirect 500s).
-import { redirect, error, type Cookies } from '@sveltejs/kit';
-import type { KVNamespace } from '@cloudflare/workers-types';
+// `redirect`/`error` from `@sveltejs/kit` (a peer dependency, so the thrown objects share
+// class identity with the host's runtime — else the redirect 500s). Auth/session/manage-editors
+// logic lives under `@glw907/cairn-cms/auth`; this module is content-only (list/edit/save).
+import { redirect, error } from '@sveltejs/kit';
 import matter from 'gray-matter';
-import {
-  createMagicLink,
-  redeemMagicToken,
-  createSession,
-  lookupEditor,
-  listEditors,
-  setEditor,
-  removeEditor,
-  SESSION_COOKIE,
-  SESSION_MAX_AGE,
-  type Editor,
-  type Role,
-} from '../auth';
-import { sendMagicLink, type EmailSender } from '../email';
+import type { CairnUser } from '../auth/guard';
 import { listMarkdown, readRaw, commitFile, installationToken, type RepoFile } from '../github';
 import { serializeMarkdown } from '../content';
 import { findCollection, frontmatterFromForm, type CairnAdapter, type CairnField } from '../adapter';
 
-/** The `platform.env` bindings the admin routes read. All optional — the handlers guard. */
+/** The `platform.env` bindings the content routes read. All optional — the handlers guard. */
 export interface AdminEnv {
-  AUTH_KV?: KVNamespace;
-  MAGIC_LINK_SECRET?: string;
-  SESSION_SECRET?: string;
-  EMAIL?: EmailSender;
-  /** Overrides `url.origin` for the magic-link base (set in dev, unset in prod). */
-  PUBLIC_ORIGIN?: string;
   GITHUB_APP_ID?: string;
   GITHUB_APP_INSTALLATION_ID?: string;
   GITHUB_APP_PRIVATE_KEY_B64?: string;
@@ -44,8 +25,6 @@ export interface AdminEnv {
 interface PlatformEvent {
   platform?: { env?: AdminEnv };
 }
-
-const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 /**
  * Mint a GitHub App installation token for *reads* when the App is configured, else undefined
@@ -73,7 +52,7 @@ async function readToken(env: AdminEnv | undefined): Promise<string | undefined>
 // ── /admin layout ──────────────────────────────────────────────────────────
 
 export interface AdminLayoutData {
-  editor: Editor | null;
+  user: CairnUser | null;
   siteName: string;
   pathname: string;
 }
@@ -86,10 +65,10 @@ export interface AdminLayoutData {
  * package); reading `event.url` here also opts the layout load into rerunning on navigation.
  */
 export function adminLayoutLoad(
-  event: { locals: { editor: Editor | null }; url: URL },
+  event: { locals: { user: CairnUser | null }; url: URL },
   adapter: CairnAdapter,
 ): AdminLayoutData {
-  return { editor: event.locals.editor, siteName: adapter.siteName, pathname: event.url.pathname };
+  return { user: event.locals.user, siteName: adapter.siteName, pathname: event.url.pathname };
 }
 
 // ── /admin (content list) ────────────────────────────────────────────────────
@@ -118,20 +97,6 @@ export async function adminListLoad(
     }),
   );
   return { collections };
-}
-
-// ── /admin/login ──────────────────────────────────────────────────────────────
-
-export interface LoginData {
-  sent: boolean;
-  error: string | null;
-}
-
-export function loginLoad(event: { url: URL }): LoginData {
-  return {
-    sent: event.url.searchParams.get('sent') === '1',
-    error: event.url.searchParams.get('error'),
-  };
 }
 
 // ── /admin/edit/[type]/[id] ─────────────────────────────────────────────────
@@ -179,92 +144,14 @@ export async function editLoad(
   };
 }
 
-// ── /admin/auth/request (POST) ──────────────────────────────────────────────
-
-export async function authRequest(
-  event: PlatformEvent & { request: Request; url: URL },
-  adapter: CairnAdapter,
-): Promise<never> {
-  const env = event.platform?.env;
-  if (!env?.AUTH_KV || !env.MAGIC_LINK_SECRET || !env.EMAIL) {
-    throw redirect(303, '/admin/login?error=config');
-  }
-
-  const form = await event.request.formData();
-  const email = String(form.get('email') ?? '').trim().toLowerCase();
-  if (!EMAIL_RE.test(email)) {
-    throw redirect(303, '/admin/login?error=invalid');
-  }
-
-  const editor = await lookupEditor(email, env.AUTH_KV);
-  if (!editor) {
-    throw redirect(303, '/admin/login?error=denied');
-  }
-
-  const token = await createMagicLink(email, env.MAGIC_LINK_SECRET, env.AUTH_KV);
-  // PUBLIC_ORIGIN overrides url.origin for local dev (where wrangler's custom-domain
-  // route makes url.origin the production host); unset in prod → url.origin is correct.
-  const origin = env.PUBLIC_ORIGIN || event.url.origin;
-  const link = `${origin}/admin/auth/callback?token=${encodeURIComponent(token)}`;
-  try {
-    await sendMagicLink(env.EMAIL, email, link, adapter.siteName, adapter.sender);
-  } catch (err) {
-    console.error('magic-link send failed:', err);
-    throw redirect(303, '/admin/login?error=config');
-  }
-
-  throw redirect(303, '/admin/login?sent=1');
-}
-
-// ── /admin/auth/callback (GET) ──────────────────────────────────────────────
-
-export async function authCallback(
-  event: PlatformEvent & { url: URL; cookies: Cookies },
-): Promise<never> {
-  const env = event.platform?.env;
-  if (!env?.AUTH_KV || !env.MAGIC_LINK_SECRET || !env.SESSION_SECRET) {
-    throw redirect(303, '/admin/login?error=config');
-  }
-
-  const token = event.url.searchParams.get('token') ?? '';
-  const email = await redeemMagicToken(token, env.MAGIC_LINK_SECRET, env.AUTH_KV);
-  if (!email) {
-    throw redirect(303, '/admin/login?error=expired');
-  }
-
-  // Re-check the allowlist at redemption — membership may have changed since issue.
-  const editor = await lookupEditor(email, env.AUTH_KV);
-  if (!editor) {
-    throw redirect(303, '/admin/login?error=denied');
-  }
-
-  const session = await createSession(editor, env.SESSION_SECRET);
-  event.cookies.set(SESSION_COOKIE, session, {
-    path: '/',
-    httpOnly: true,
-    secure: event.url.protocol === 'https:',
-    sameSite: 'lax',
-    maxAge: SESSION_MAX_AGE,
-  });
-
-  throw redirect(303, '/admin');
-}
-
-// ── /admin/auth/logout (POST) ───────────────────────────────────────────────
-
-export function logout(event: { cookies: Cookies }): never {
-  event.cookies.delete(SESSION_COOKIE, { path: '/' });
-  throw redirect(303, '/admin/login');
-}
-
 // ── /admin/save (POST) ──────────────────────────────────────────────────────
 
 export async function saveCommit(
-  event: PlatformEvent & { request: Request; locals: { editor: Editor | null } },
+  event: PlatformEvent & { request: Request; locals: { user: CairnUser | null } },
   adapter: CairnAdapter,
 ): Promise<never> {
-  const editor = event.locals.editor;
-  if (!editor) throw error(401, 'Not signed in');
+  const user = event.locals.user;
+  if (!user) throw error(401, 'Not signed in');
 
   const env = event.platform?.env;
   if (!env?.GITHUB_APP_ID || !env.GITHUB_APP_INSTALLATION_ID || !env.GITHUB_APP_PRIVATE_KEY_B64) {
@@ -299,105 +186,9 @@ export async function saveCommit(
     adapter.backend,
     `${collection.dir}/${id}.md`,
     markdown,
-    { message: `Update ${collection.label.toLowerCase()}: ${id}`, author: { name: editor.name, email: editor.email } },
+    { message: `Update ${collection.label.toLowerCase()}: ${id}`, author: { name: user.name, email: user.email } },
     token,
   );
 
   throw redirect(303, `/admin/edit/${type}/${id}?saved=1`);
-}
-
-// ── /admin/admins (owner-gated editor management) ────────────────────────────
-
-/**
- * The privilege-escalation gate for the manage-admins surface: only `owner`s may load it or
- * run its actions. Returns the acting owner (so callers can guard self-targeted mutations).
- */
-function requireOwner(event: { locals: { editor: Editor | null } }): Editor {
-  const editor = event.locals.editor;
-  if (!editor) throw error(401, 'Not signed in');
-  if (editor.role !== 'owner') throw error(403, 'Owner access required');
-  return editor;
-}
-
-/** Resolve AUTH_KV or fail loudly — the management surface is useless without it. */
-function ownerKv(event: PlatformEvent): KVNamespace {
-  const kv = event.platform?.env?.AUTH_KV;
-  if (!kv) throw error(500, 'Editor allowlist is not configured');
-  return kv;
-}
-
-export interface AdminsData {
-  admins: Editor[];
-  /** Acting owner's email, so the UI can disable self-targeted remove/demote. */
-  self: string;
-  saved: boolean;
-  error: string | null;
-}
-
-/** List the allowlist for the manage-admins page. Owner-only. */
-export async function adminsLoad(
-  event: PlatformEvent & { locals: { editor: Editor | null }; url: URL },
-): Promise<AdminsData> {
-  const owner = requireOwner(event);
-  const admins = await listEditors(ownerKv(event));
-  return {
-    admins,
-    self: owner.email,
-    saved: event.url.searchParams.get('saved') === '1',
-    error: event.url.searchParams.get('error'),
-  };
-}
-
-type AdminsActionEvent = PlatformEvent & {
-  request: Request;
-  locals: { editor: Editor | null };
-};
-
-function parseRole(value: unknown): Role {
-  return value === 'owner' ? 'owner' : 'editor';
-}
-
-/** Add (or update) an allowlist entry. Owner-only. */
-export async function addAdmin(event: AdminsActionEvent): Promise<never> {
-  requireOwner(event);
-  const kv = ownerKv(event);
-  const form = await event.request.formData();
-  const email = String(form.get('email') ?? '').trim().toLowerCase();
-  const name = String(form.get('name') ?? '').trim();
-  if (!EMAIL_RE.test(email) || !name) {
-    throw redirect(303, `/admin/admins?error=${encodeURIComponent('Enter a valid email and name')}`);
-  }
-  await setEditor(email, name, parseRole(form.get('role')), kv);
-  throw redirect(303, '/admin/admins?saved=1');
-}
-
-/** Remove an allowlist entry. Owner-only; owners can't remove themselves (anti-lockout). */
-export async function removeAdmin(event: AdminsActionEvent): Promise<never> {
-  const owner = requireOwner(event);
-  const kv = ownerKv(event);
-  const form = await event.request.formData();
-  const email = String(form.get('email') ?? '').trim().toLowerCase();
-  if (email === owner.email) {
-    throw redirect(303, `/admin/admins?error=${encodeURIComponent("You can't remove yourself")}`);
-  }
-  await removeEditor(email, kv);
-  throw redirect(303, '/admin/admins?saved=1');
-}
-
-/** Change an editor's role. Owner-only; owners can't demote themselves (anti-lockout). */
-export async function setAdminRole(event: AdminsActionEvent): Promise<never> {
-  const owner = requireOwner(event);
-  const kv = ownerKv(event);
-  const form = await event.request.formData();
-  const email = String(form.get('email') ?? '').trim().toLowerCase();
-  const role = parseRole(form.get('role'));
-  if (email === owner.email && role !== 'owner') {
-    throw redirect(303, `/admin/admins?error=${encodeURIComponent("You can't demote yourself")}`);
-  }
-  const existing = await lookupEditor(email, kv);
-  if (!existing) {
-    throw redirect(303, `/admin/admins?error=${encodeURIComponent('No such editor')}`);
-  }
-  await setEditor(email, existing.name, role, kv);
-  throw redirect(303, '/admin/admins?saved=1');
 }

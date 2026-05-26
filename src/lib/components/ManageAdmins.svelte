@@ -3,7 +3,7 @@
   // ones. Reuses the same neutral DaisyUI chrome as the rest of the admin (panels, alerts,
   // table, buttons). Data comes from `adminsLoad` merged with `adminLayoutLoad` (siteName);
   // mutations post to the page's named form actions (`?/add`, `?/remove`, `?/setRole`).
-  import type { AdminsData } from '../sveltekit';
+  import type { AdminsData } from '../auth';
 
   interface Props {
     data: AdminsData & { siteName: string };

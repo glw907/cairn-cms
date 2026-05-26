@@ -7,7 +7,8 @@ import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { buildAuth } from '../lib/auth/config';
-import { confirmSignIn } from '../lib/auth/guard';
+import { confirmSignIn, type CairnUser } from '../lib/auth/guard';
+import { adminsLoad, addAdmin, removeAdmin, setAdminRole, requireOwner } from '../lib/auth/admins';
 import * as schema from '../lib/auth/schema';
 
 type Role = 'owner' | 'editor';
@@ -51,7 +52,19 @@ function harness() {
       ),
     );
 
-  return { auth, sent, seed, signIn, verify, db };
+  // Sign a seeded user in fully and return their session as a `Cookie` header value — so admin
+  // API calls (which authorize via the session in headers) run as that real user.
+  async function cookieFor(email: string): Promise<string> {
+    await signIn(email);
+    const token = sent.at(-1)!.token;
+    const res = await verify(token);
+    return res.headers
+      .getSetCookie()
+      .map((c) => c.split(';')[0])
+      .join('; ');
+  }
+
+  return { auth, sent, seed, signIn, verify, cookieFor, db };
 }
 
 describe('better-auth allowlist (disableSignUp ⇒ user table is the allowlist)', () => {
@@ -113,5 +126,62 @@ describe('confirmSignIn (POST-confirm proxy — C2)', () => {
       status: 303,
       location: '/admin/login?error=expired',
     });
+  });
+});
+
+describe('manage-editors (owner-gated, on auth.api — AUTH-2)', () => {
+  const owner: CairnUser = { id: '', email: 'o@x.com', name: 'O', role: 'owner' };
+
+  function ev(auth: ReturnType<typeof harness>['auth'], cookie: string, user: CairnUser | null, form?: Record<string, string>, query = '') {
+    const fd = new FormData();
+    for (const [k, v] of Object.entries(form ?? {})) fd.set(k, v);
+    return {
+      locals: { auth, user },
+      request: new Request('http://localhost/admin/admins', { method: 'POST', headers: { cookie }, body: form ? fd : undefined }),
+      url: new URL(`http://localhost/admin/admins${query}`),
+    };
+  }
+
+  it('requireOwner: null → 401, editor → 403, owner passes', () => {
+    expect(() => requireOwner(null)).toThrow();
+    expect(() => requireOwner({ id: '1', email: 'e@x.com', name: 'E', role: 'editor' })).toThrow();
+    expect(requireOwner(owner).role).toBe('owner');
+  });
+
+  it('owner can add, list, re-role (revokes sessions), and remove an editor', async () => {
+    const h = harness();
+    h.seed('o@x.com', 'O', 'owner');
+    const cookie = await h.cookieFor('o@x.com');
+
+    await expect(addAdmin(ev(h.auth, cookie, owner, { email: 'new@x.com', name: 'New', role: 'editor' })))
+      .rejects.toMatchObject({ status: 303, location: '/admin/admins?saved=1' });
+
+    let list = await adminsLoad(ev(h.auth, cookie, owner, undefined, '?saved=1'));
+    expect(list.admins.map((a) => a.email).sort()).toEqual(['new@x.com', 'o@x.com']);
+    expect(list.admins.find((a) => a.email === 'new@x.com')!.role).toBe('editor');
+
+    await expect(setAdminRole(ev(h.auth, cookie, owner, { email: 'new@x.com', role: 'owner' })))
+      .rejects.toMatchObject({ status: 303, location: '/admin/admins?saved=1' });
+    list = await adminsLoad(ev(h.auth, cookie, owner));
+    expect(list.admins.find((a) => a.email === 'new@x.com')!.role).toBe('owner');
+
+    await expect(removeAdmin(ev(h.auth, cookie, owner, { email: 'new@x.com' })))
+      .rejects.toMatchObject({ status: 303, location: '/admin/admins?saved=1' });
+    list = await adminsLoad(ev(h.auth, cookie, owner));
+    expect(list.admins.map((a) => a.email)).toEqual(['o@x.com']);
+  });
+
+  it('anti-lockout: an owner cannot remove or demote themselves', async () => {
+    const h = harness();
+    h.seed('o@x.com', 'O', 'owner');
+    const cookie = await h.cookieFor('o@x.com');
+
+    await expect(removeAdmin(ev(h.auth, cookie, owner, { email: 'o@x.com' })))
+      .rejects.toMatchObject({ location: expect.stringContaining('error=') });
+    await expect(setAdminRole(ev(h.auth, cookie, owner, { email: 'o@x.com', role: 'editor' })))
+      .rejects.toMatchObject({ location: expect.stringContaining('error=') });
+
+    const list = await adminsLoad(ev(h.auth, cookie, owner));
+    expect(list.admins.find((a) => a.email === 'o@x.com')!.role).toBe('owner');
   });
 });

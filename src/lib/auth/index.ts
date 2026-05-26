@@ -3,5 +3,4 @@
 // (it lives component-local in LoginPage to keep better-auth's deep client types out of dist).
 export { createAuth, type Auth, type AuthEnv, type AuthBranding } from './config';
 export { loadSession, requireSession, confirmSignIn, signOut, type CairnUser } from './guard';
-// Manage-editors server fns land in Phase 4:
-// export { adminsLoad, addAdmin, removeAdmin, setAdminRole, requireOwner, type AdminsData } from './admins';
+export { adminsLoad, addAdmin, removeAdmin, setAdminRole, requireOwner, type AdminsData } from './admins';

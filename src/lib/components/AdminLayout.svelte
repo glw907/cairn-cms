@@ -7,13 +7,13 @@
   // (the login page lives under this layout) it falls back to a minimal centered shell.
   // Each site's `admin/+layout.svelte` is a one-line shim that forwards `data` + `children`.
   import type { Snippet } from 'svelte';
-  import type { Editor } from '../auth';
+  import type { CairnUser } from '../auth';
 
   let {
     data,
     children,
   }: {
-    data: { siteName: string; editor: Editor | null; pathname: string };
+    data: { siteName: string; user: CairnUser | null; pathname: string };
     children: Snippet;
   } = $props();
 
@@ -41,7 +41,7 @@
       active: data.pathname.startsWith('/admin/admins'),
     },
   ]);
-  const visibleNav = $derived(nav.filter((item) => !item.owner || data.editor?.role === 'owner'));
+  const visibleNav = $derived(nav.filter((item) => !item.owner || data.user?.role === 'owner'));
 
   // Close the slide-over after a nav tap on mobile (no-op on desktop where it's pinned open).
   function closeDrawer(): void {
@@ -68,7 +68,7 @@
   <meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 
-{#if data.editor}
+{#if data.user}
   <div class="drawer min-h-screen bg-base-200 lg:drawer-open" data-pagefind-ignore>
     <input id="admin-drawer" type="checkbox" class="drawer-toggle" />
 
@@ -111,8 +111,8 @@
         </ul>
 
         <div class="border-t border-base-300 p-4">
-          <p class="text-sm font-medium">{data.editor.name}</p>
-          <p class="text-xs opacity-60">{data.editor.email}</p>
+          <p class="text-sm font-medium">{data.user.name}</p>
+          <p class="text-xs opacity-60">{data.user.email}</p>
           <form method="POST" action="/admin/auth/logout" class="mt-3">
             <button type="submit" class="btn btn-ghost btn-sm btn-block justify-start">Sign out</button>
           </form>

@@ -13,9 +13,22 @@ sites with completely different markdown pipelines — e.g. [ecnordic.ski](https
 
 ## Status
 
-**Skeleton.** Per `docs/PLAN.md`, the core is being built *inside ecnordic.ski first*
-(the richer proving ground) with the cairn-core ↔ site-adapter seams designed in from day
-one, then **extracted into this package** (Pass F) once it runs on both sites.
+**Early (`0.1.x`) — works, API not yet frozen.** The core was built *inside ecnordic.ski first*
+(the richer proving ground) with the cairn-core ↔ site-adapter seams designed in from day one,
+then extracted into this package and validated on a second design (907.life). The auth, GitHub
+commit path, Carta preview, the adapter contract, and the shared admin shell (`/sveltekit`
+server logic + `/components` Svelte UI) all run on both sites. The adapter API may still change
+before `1.0` (pending a forward-compatibility review) — pin a caret range and expect 0.x churn.
+
+## Install
+
+```sh
+npm install cairn-cms
+```
+
+Peers: `svelte@^5`, `@sveltejs/kit@^2`, and `carta-md@^4.11` (the editor component). Each site
+implements a `CairnAdapter` (see `docs/PLAN.md`) and mounts thin `/admin` route shims around
+`cairn-cms/sveltekit` (server logic) and `cairn-cms/components` (the admin UI).
 
 ## How it's developed
 

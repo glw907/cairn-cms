@@ -133,6 +133,28 @@ previews through the site-supplied `renderPreview`.** cairn-core never assumes d
   (editor component). Fold free-form tags into the contract properly (e.g. a `freetags` field
   type + a `frontmatterFromForm` case) so the shared editor form covers both sites. Repoint
   **both** sites; gate on both test suites + both `/admin` smokes. No behavior change.
+- **Pass P — Publish / pin cairn-cms (CI deploys, NOW URGENT — added 2026-05-25 during F2).**
+  Risk #5's CI half is **confirmed breaking both sites' deploys**: standalone GitHub Actions runs
+  `npm ci` and can't resolve `cairn-cms` (only the local workspace symlink provides it) **and** the
+  committed lockfiles are stale (ecnordic missing `carta-md`+shiki since Pass B; 907 stale since the
+  F2 toolchain bump). Local builds pass via the symlink; CI cannot install. The `publishConfig`
+  exports→`dist` swap (Pass E) is designed for **`npm publish`**, so a git-dependency install won't
+  get the built `dist` and Vite won't transpile source `.ts`/`.svelte` from a non-symlinked
+  `node_modules`. **Decision needed: distribution mechanism** — (a) **GitHub Packages** (private
+  registry; requires scoping the name to `@glw907/cairn-cms`, `.npmrc` + a CI auth token, `npm
+  publish` applies the swap) vs (b) **git+`prepare`-built dependency** (add a `prepare` build +
+  point checked-in exports at `dist`, losing the source-instant-dev elegance) vs (c) other. Then
+  add the dep to each site, repoint imports if renamed, regenerate + commit each standalone
+  lockfile, and confirm both CI deploys go green. Sequence **before Pass G** (Pass G ships to prod;
+  prod must deploy first).
+- **Reference (admin-shell UI inspiration — added 2026-05-25).** Per the user: **storage stays
+  git-committed markdown** (no D1/database pivot — Capriole's D1 model and Lucia's session lib are
+  *not* adopted, and cairn's hand-rolled magic-link/KV auth stays). But two projects have admin
+  **UI** worth mining as a starting point/visual reference when polishing the neutral admin shell
+  (the F2-extracted `cairn-cms/components`): **Capriole CMS** (`joshnuss/capriole`) — SvelteKit
+  Form-Actions dashboard, daisyUI-friendly layout; and **Lucia** (`pilcrowOnPaper/lucia`) — admin
+  login/guard ergonomics. UI/layout reuse only; storage + auth seams unchanged. Feed into the
+  Exploration review and any future admin-UI-polish work.
 - **Pass G — Manage admins (editor management UI).** Owner-gated CRUD over the per-site
   `AUTH_KV` allowlist: list/add/remove editors, set role (`owner`/`editor`). Add a `role` to
   the KV value (migrate existing flat entries → `editor`, seed the first `owner`); extend the

@@ -282,19 +282,32 @@ no longer excluded — just unscheduled.
 > Session-by-session execution state and post-mortems. The workspace `CLAUDE.md` stays lean
 > (durable orientation only); running progress lives here, in the git-backed plan.
 
-> **⏭ NEXT SESSION (start here) — admin-UI polish / Exploration review (Pass G is DONE).** Pass G
-> (manage admins) is **DONE** (2026-05-25 — see the Pass G entry below): owner-gated CRUD over the
-> per-site `AUTH_KV` allowlist ships in `@glw907/cairn-cms` (auth role layer + `cairn-cms/sveltekit`
-> `adminsLoad`/`addAdmin`/`removeAdmin`/`setAdminRole` behind a `requireOwner` gate +
-> `cairn-cms/components` `ManageAdmins`), wired into both sites as byte-identical `/admin/admins`
-> route shims, live-verified under `wrangler dev`. Geoff seeded as `owner` in all four KV namespaces
-> (both sites, local + remote). **Open candidates next:** the **Exploration** research pass
-> (forward-compat review of the adapter/storage/role seams before the package API calcifies), the
-> **admin-UI polish** (mine Capriole/Lucia layouts for the neutral shell — see the Reference item),
-> or **Manage media** (storage decision pending). **Note:** Pass G shipped to the package but the
-> two sites' `/admin/admins` shims are **not yet pushed** (this session left commits local per the
-> no-push-without-asking rule; Pass G added no new deps, so no lockfile churn) — and Pass G's prod `/admin` still needs the
-> per-site `MAGIC_LINK_SECRET`/`SESSION_SECRET` to be live (same dormant-prod posture as Pass A).
+> **⏭ NEXT SESSION (start here) — the EXPLORATION review (forward-compat research pass; chosen
+> 2026-05-25).** This is a **research pass, not a build** — output is an architectural memo, no code
+> behavior changes. **Goal:** confirm cairn's extensibility seams (above all the **adapter contract**
+> in `src/lib/adapter.ts`, plus the **storage** model = GitHub contents API in `src/lib/github.ts`,
+> and the **auth/role** model in `src/lib/auth.ts`) stay general enough to absorb likely future
+> features *later* without a rewrite — **not** a commitment to build any. Timing is ideal: the
+> contract is extracted (Pass E), validated on a 2nd site (Pass F), and `@glw907/cairn-cms@0.2.0` is
+> published but **not yet pinned for outside consumers**, so this lands *before the API calcifies*.
+>
+> **Scan list (per item: is the door open? cheap seam to add now? or "out of scope"?):** media/uploads ·
+> editorial workflow / review-before-publish · scheduled publish · content relations across collections ·
+> i18n / localization · revision history & rollback (some free from git) · richer roles/permissions ·
+> multiple backends. **Theming is NOT dropped but scoped Hugo-style** (scaffold-time theme choice +
+> in-repo editing — see the "Themes" planned-passes item), explicitly **not** WordPress runtime theme
+> management. **Survey peers:** Sveltia, Decap, Keystatic, Tina (git-based); WordPress, Ghost, Statamic
+> (Statamic = the file-based peer worth the most attention). **"Out of scope" is a valid verdict per item.**
+> **Output:** a memo (suggest `cairn-cms/docs/FORWARD-COMPAT.md`) — "keep these doors open" notes +
+> any cheap seam generalizations to make now. Parallel web-research agents fit well (the survey
+> fans out cleanly by CMS / by capability). See the full **Exploration** item under "Planned passes".
+>
+> **Pass G is DONE** (2026-05-25 — see the Pass G entry below) and fully shipped: `@glw907/cairn-cms@0.2.0`
+> published via Trusted Publishing, **both** sites pinned `^0.2.0` with **CI deploys green**, Geoff seeded
+> as `owner` in all four AUTH_KV namespaces. Prod `/admin` stays dormant on both sites until each gets
+> `MAGIC_LINK_SECRET`/`SESSION_SECRET` (unchanged Pass A posture; the manage-admins surface needs only
+> the already-present AUTH_KV). Bootstrap npm token: local `~/.npmrc` copy removed + shredded;
+> **server-side revoke at npmjs.com still pending** (user said it expires shortly — low urgency).
 
 ### Pass 0 — bootstrap (2026-05-24)
 

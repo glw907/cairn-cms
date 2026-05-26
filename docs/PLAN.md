@@ -160,6 +160,28 @@ previews through the site-supplied `renderPreview`.** cairn-core never assumes d
   the KV value (migrate existing flat entries → `editor`, seed the first `owner`); extend the
   guard so the manage-admins surface requires `owner`. Reuses the neutral admin chrome. See the
   "Editor management" locked-decision row. Per-site (no cross-site SSO — unchanged).
+- **Pass I — neutral, self-contained admin theme (added 2026-05-26; found during 907 go-live).**
+  **Bug:** the admin chrome is **not** theme-isolated — `AdminLayout` (extracted to the package in
+  F2) uses DaisyUI semantic classes (`bg-base-100`, `text-base-content`, `btn`, …) but sets **no
+  `data-theme` and no font reset** on its root, so `/admin` inherits the **host site's** DaisyUI
+  theme + fonts (907 → `silk`/`dim` + ET Book/Spectral via the `hooks.server.ts` cookie transform;
+  ecnordic → its custom `ecn` theme). Affects **both** sites. Violates the locked decision: *"Admin
+  theme: neutral, fully self-contained — one clean theme identical on every site, scoped to `/admin`
+  (`data-theme` + font reset on the layout root), decoupled from host-site tokens/fonts. Shared
+  admin components own their styles."* The Pass H drawer+navbar *structure* was borrowed from
+  `scosman/CMSaasStarter`; this pass borrows the **theming approach** too — CMSaasStarter pins a
+  single custom DaisyUI theme (`saasstartertheme`, light) with `themes:false` and applies it
+  globally. **DaisyUI constraint to design around:** a `data-theme="X"` on the admin root only works
+  if theme X's CSS is *compiled*, which the host site's Tailwind/DaisyUI build controls — the package
+  can't force a theme to exist. So either (a) **per-site config:** each site adds a shared neutral
+  admin theme to its `@plugin "daisyui" { themes: … }` and the layout sets `data-theme` to it (small
+  per-site CSS edit, not "fully self-contained"), or (b) **fully self-contained (preferred, matches
+  the decision):** the package's admin component owns a scoped `<style>` that overrides the DaisyUI
+  CSS custom properties (`--color-base-100/200/300`, `--color-base-content`, `--color-primary`, …)
+  **and** `font-family` on the admin root, re-skinning the whole subtree neutrally regardless of host
+  config. **Open design decisions for the pass:** light-only vs light+dark (probably light-only,
+  per CMSaasStarter + "identical on every site"); accent color; neutral font stack (system-ui sans).
+  Ships as a cairn-cms minor release + both-site bump (like 0.3.1). Brainstorm the aesthetic first.
 - **Future — Manage media (image/upload UI).** Was out-of-scope; now a roadmap item, still
   unscheduled. **Open decision: storage** — commit media into the site repo (fits the git-CMS
   model, reuses the GitHub App `commitFile` path with base64 binary, served as static assets)
@@ -290,9 +312,13 @@ no longer excluded — just unscheduled.
 > go-lives) is **complete**: magic-link auth, GitHub-App committing, the shared admin shell, owner-gated
 > editor management, both sites consuming the published `@glw907/cairn-cms@0.3.1` with green CI (0.3.1 =
 > the authenticated-reads hotfix below). The only
-> remaining work is the **Future** roadmap items — **media/uploads** (storage decision: commit-to-repo
-> vs R2/Images) and **Hugo-style scaffold-time themes** — both still **unscheduled** (pick one to scope
-> when ready). Also still pending: the **server-side npm token revoke** at npmjs.com → Granular Access
+> remaining functional work is **Pass I — neutral, self-contained admin theme** (added 2026-05-26,
+> found during the 907 go-live: the admin chrome inherits the host site's DaisyUI theme + fonts instead
+> of its own neutral one — violates the locked admin-theme decision; affects both sites; see the Pass I
+> entry under "Planned passes beyond F" for the full diagnosis + the two implementation approaches +
+> open aesthetic decisions — brainstorm first). Beyond that, the **Future** roadmap items —
+> **media/uploads** (storage decision: commit-to-repo vs R2/Images) and **Hugo-style scaffold-time
+> themes** — remain **unscheduled** (pick one to scope when ready). Also still pending: the **server-side npm token revoke** at npmjs.com → Granular Access
 > Tokens (low urgency — releases use OIDC Trusted Publishing, no stored token; website-only, see Pass P
 > follow-ups). **Risk #1 (Cloudflare Email Sending) is fully RETIRED** — onboarded + live-verified on
 > both domains.

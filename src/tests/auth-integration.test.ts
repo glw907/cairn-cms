@@ -7,6 +7,7 @@ import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { buildAuth } from '../lib/auth/config';
+import { confirmSignIn } from '../lib/auth/guard';
 import * as schema from '../lib/auth/schema';
 
 type Role = 'owner' | 'editor';
@@ -82,5 +83,35 @@ describe('magic-link verify (single-use by construction — C1)', () => {
 
     const replay = await verify(token);
     expect(replay.headers.getSetCookie().some((c) => /better-auth/.test(c))).toBe(false);
+  });
+});
+
+describe('confirmSignIn (POST-confirm proxy — C2)', () => {
+  function confirmEvent(auth: ReturnType<typeof harness>['auth'], token: string) {
+    const form = new FormData();
+    form.set('token', token);
+    return {
+      request: new Request('http://localhost/admin/auth/confirm', { method: 'POST', body: form }),
+      locals: { auth },
+      url: new URL('http://localhost/admin/auth/confirm'),
+    };
+  }
+
+  it('consumes a token via POST → 303 to /admin with session cookies; replay redirects to login', async () => {
+    const { auth, sent, seed, signIn } = harness();
+    seed('ed@x.com', 'Ed', 'editor');
+    await signIn('ed@x.com');
+    const token = sent[0].token;
+
+    const res = await confirmSignIn(confirmEvent(auth, token));
+    expect(res.status).toBe(303);
+    expect(res.headers.get('location')).toBe('/admin');
+    expect(res.headers.getSetCookie().some((c) => /better-auth/.test(c))).toBe(true);
+
+    // Replaying the now-consumed token throws a SvelteKit redirect back to login.
+    await expect(confirmSignIn(confirmEvent(auth, token))).rejects.toMatchObject({
+      status: 303,
+      location: '/admin/login?error=expired',
+    });
   });
 });

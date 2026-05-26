@@ -3,5 +3,6 @@
 export { default as AdminLayout } from './AdminLayout.svelte';
 export { default as AdminList } from './AdminList.svelte';
 export { default as LoginPage } from './LoginPage.svelte';
+export { default as ConfirmPage } from './ConfirmPage.svelte';
 export { default as EditPage } from './EditPage.svelte';
 export { default as ManageAdmins } from './ManageAdmins.svelte';

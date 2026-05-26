@@ -23,15 +23,18 @@ const editor = ac.newRole({});
 export interface AuthEnv {
   AUTH_DB?: D1Database;
   AUTH_SECRET?: string;
+  /** Canonical origin; `BETTER_AUTH_URL` is accepted as a legacy alias. */
+  PUBLIC_ORIGIN?: string;
+  /** Legacy alias for `PUBLIC_ORIGIN`; `PUBLIC_ORIGIN` takes precedence when both are set. */
   BETTER_AUTH_URL?: string;
   EMAIL?: EmailSender;
-  PUBLIC_ORIGIN?: string;
 }
 
 /** Branding the magic-link email needs; threaded from the site adapter via hooks. */
 export interface AuthBranding {
   siteName: string;
-  sender: string; // from-address
+  /** The `From:` address used when sending magic-link emails. */
+  sender: string;
 }
 
 /** The drizzle adapter result `betterAuth` consumes — the same provider/schema everywhere. */

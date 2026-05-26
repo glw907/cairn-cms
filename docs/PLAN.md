@@ -288,7 +288,8 @@ no longer excluded — just unscheduled.
 > **Both ecnordic.ski AND 907.life `/admin` are now LIVE in prod** (ecnordic go-live 2026-05-25, 907
 > go-live 2026-05-26 — see the entries below). The core initiative (passes 0/A–H + Pass P publish + both
 > go-lives) is **complete**: magic-link auth, GitHub-App committing, the shared admin shell, owner-gated
-> editor management, both sites consuming the published `@glw907/cairn-cms@0.3.0` with green CI. The only
+> editor management, both sites consuming the published `@glw907/cairn-cms@0.3.1` with green CI (0.3.1 =
+> the authenticated-reads hotfix below). The only
 > remaining work is the **Future** roadmap items — **media/uploads** (storage decision: commit-to-repo
 > vs R2/Images) and **Hugo-style scaffold-time themes** — both still **unscheduled** (pick one to scope
 > when ready). Also still pending: the **server-side npm token revoke** at npmjs.com → Granular Access
@@ -863,6 +864,44 @@ no longer excluded — just unscheduled.
 - **Ritual.** No application code changed (worker secrets + machine-local `sync.sh`/`registry.md` only) —
   code-simplifier / svelte-check / tests don't apply. Dotfiles changes commit locally per the
   no-push-without-asking rule.
+
+### Hotfix 0.3.1 — authenticate admin reads (prod 403 found at 907 go-live, 2026-05-26)
+
+- **Bug, found during the 907 go-live click-through.** Login worked, but the authenticated `/admin`
+  content list rendered `Couldn't load posts: GitHub list src/content/posts failed: 403`. Root cause:
+  the admin **read** path (`adminListLoad` → `listMarkdown`, `editLoad` → `readRaw`) was **anonymous**
+  (a deliberate Pass B/F choice — "repos are public"). Anonymous GitHub contents-API calls share the
+  **60/hr-per-IP** unauthenticated budget, and a Cloudflare Worker egresses from **shared** Cloudflare
+  IPs — so that budget is perpetually exhausted in prod → 403. (Local `wrangler dev` egresses from the
+  dev box's own IP, so it never reproduced — which is why every prior pass's read smokes passed.) This
+  is exactly the authenticated-reads upgrade the plan anticipated (Pass B/F notes, risk #5 corollary),
+  now forced by a real prod failure rather than the 5000/hr nicety.
+- **Fix (package).** New internal `readToken(env)` in `cairn-cms/sveltekit`: mints the GitHub App
+  installation token (via the existing `installationToken`) **for reads** when the App is configured,
+  catching mint failures → `undefined` (degrades to anonymous rather than 500ing — a read can still
+  succeed unauthenticated, unlike the commit path where a missing App is fatal). Threaded into
+  `adminListLoad` (signature widened to `(event, adapter)`) and `editLoad` (event type widened to carry
+  `platform`). `listMarkdown`/`readRaw` already accepted an optional trailing `token` (Pass B), so the
+  fetch layer was unchanged — only the wiring. `readToken` stays unexported (not in the public barrel).
+- **Site shims (both, byte-identical).** `admin/+page.server.ts` went from `() => adminListLoad(cairn)`
+  to `(event) => adminListLoad(event, cairn)`; the edit shim already forwarded `event`. The new
+  signature ships **only** in 0.3.1, so the shim change + the version bump had to land together.
+- **Verified.** Package 39/39 vitest (the existing "sends a bearer token when supplied" read test already
+  pins the fetch-layer behavior), clean `svelte-package`, `readToken` absent from the public `dist`.
+  Both sites `svelte-check` 0/0 + Cloudflare build OK. **Live `wrangler dev` (ecnordic, minted session):**
+  authed `/admin` → 200 listing all posts+pages (the read path now mints + uses the token in-worker with
+  no error in the log). code-simplifier: two comment-only refinements (fixed a self-contradictory JSDoc
+  sentence, dropped a redundant call-site comment); no behavior change.
+- **Published + shipped.** `@glw907/cairn-cms@0.3.1` published via the Trusted-Publishing OIDC workflow
+  (push `main` `1470177` → GitHub Release `v0.3.1` → `publish.yml` run `26459797974` green; `npm view`
+  → `0.3.1` is `latest`). Both sites repointed `^0.3.0`→`^0.3.1` with regenerated standalone lockfiles
+  (isolated-temp-dir method, registry tarball not the symlink; isolated `npm ci --dry-run` clean for
+  both). Pushed (ecnordic `c73f6b2`, 907 `c15b7c2`); **both CI deploys green** (`26459893207`,
+  `26459901992`); `https://907.life` + `https://ecnordic.ski` both 200. The authenticated read now runs
+  in prod from the App identity (5000/hr) instead of the shared anonymous budget.
+- **One user-side confirmation left:** the owner refreshes prod `/admin` and sees the post list (no 403).
+  The same code path is verified in-worker locally; only the prod-IP rate-limit condition couldn't be
+  reproduced off Cloudflare.
 
 ### Release 0.3.0 — ship Pass G + H to both sites (publish/version bump, 2026-05-25)
 

@@ -23,12 +23,12 @@ before `1.0` (pending a forward-compatibility review) — pin a caret range and 
 ## Install
 
 ```sh
-npm install cairn-cms
+npm install @glw907/cairn-cms
 ```
 
 Peers: `svelte@^5`, `@sveltejs/kit@^2`, and `carta-md@^4.11` (the editor component). Each site
 implements a `CairnAdapter` (see `docs/PLAN.md`) and mounts thin `/admin` route shims around
-`cairn-cms/sveltekit` (server logic) and `cairn-cms/components` (the admin UI).
+`@glw907/cairn-cms/sveltekit` (server logic) and `@glw907/cairn-cms/components` (the admin UI).
 
 ## How it's developed
 

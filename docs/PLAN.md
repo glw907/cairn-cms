@@ -27,7 +27,9 @@ Answer: a **custom in-app admin** = the core of cairn-cms.
 | Area | Decision |
 |---|---|
 | Target stack (scope) | **Opinionated, not universal.** cairn-cms may assume a specific stack — **Cloudflare, SvelteKit, DaisyUI, Tailwind, GitHub** — and is *not* trying to be a CMS for all hosts/designs. Don't over-generalize the adapter contract or seams to abstract these away; a hard dependency on them is an acceptable answer, and "out of scope" is a valid verdict per candidate feature. Keeps the core lean (WordPress-bloat is the cautionary tale) |
+| Platform usage | **Cloudflare-first.** Any Cloudflare primitive that makes architectural sense is fair game — **D1, KV, R2, Queues, Durable Objects, Cron Triggers, Images, Email**. The single fixed point: **content (pages/posts) stays markdown committed to git** — no content→DB pivot. Everything else is a free engineering choice, governed by "keep the core lean," **not** by Cloudflare-avoidance. This **narrows** the earlier "no D1/database pivot" note (Reference/Exploration) to its real intent — no *content* pivot; D1/etc. are sanctioned for non-content concerns (collection-def store, content index/cache, ephemeral state, scheduled-publish via Cron, media via R2/Images). Per-feature platform choices are made in that feature's pass. (Established 2026-05-26.) |
 | Editor identity | **Magic-link email** — no passwords, no GitHub for editors |
+| Auth implementation | **`better-auth` (D1 adapter + magic-link plugin)** — decided in the Architecture-Refinement pass (2026-05-26), **replacing** the shipped hand-rolled magic-link/signed-cookie/KV stack. Rationale: the project is early, so the better long-term result outweighs preserving working prod auth; better-auth is mainstream (~25k★, ~600k+ weekly npm), native on Workers+D1, and is what Pages CMS uses. Fixes C1 (single-use on strongly-consistent D1) by construction, retires the hand-rolled JWT/token lifecycle + timing-safe compare (H3), and enables DB-backed session revocation (M3). The GitHub-App commit signer **stays bespoke**. Migrated in a dedicated pass before the extraction. (Established 2026-05-26.) |
 | Magic-link delivery | **Cloudflare Email Service** (`env.EMAIL.send`), *not* the Email Routing `send_email` binding (recipient-restricted). Fallback: Resend |
 | Editor component | **Carta** `carta-md` v4.11.2 (Svelte 5, unified/remark-native), edits **raw** markdown. **No WordPress-style semi-WYSIWYG / rich-text editing** — authors write markdown (with a live preview), not a contenteditable surface. A rich-text widget would corrupt directive-heavy markdown (`:::card{}` etc.); that's a core reason the off-the-shelf CMSes were ruled out |
 | Preview | Each site supplies its own `renderPreview(md)` → directive-safe per design |
@@ -182,6 +184,82 @@ previews through the site-supplied `renderPreview`.** cairn-core never assumes d
   config. **Open design decisions for the pass:** light-only vs light+dark (probably light-only,
   per CMSaasStarter + "identical on every site"); accent color; neutral font stack (system-ui sans).
   Ships as a cairn-cms minor release + both-site bump (like 0.3.1). Brainstorm the aesthetic first.
+  **Pass I aesthetic is now decided (2026-05-26 brainstorm): "Warm Stone"** — warm-gray neutrals,
+  violet accent, light-only, system-ui font; approach (b) fully-self-contained (full DaisyUI v5
+  token set + `font-family` on the admin root). Folded into the broader admin redesign below.
+
+### Admin redesign + theme architecture (brainstormed 2026-05-26) — design docs + plans
+
+A long 2026-05-26 brainstorm (visual companion) expanded "Pass I theme" into a full admin
+redesign **and** surfaced the theme architecture. Canonical artifacts (all git-backed):
+- **Design spec:** `docs/superpowers/specs/2026-05-26-admin-ui-design.md` — requirements **R1–R12 + R10a**:
+  R1 auth, R2 roles, **R3 collections-first nav (Sveltia-style)**, **R4 differentiated page-vs-story editing**,
+  R5 editor mgmt, **R6 neutral self-contained "Warm Stone" theme (= Pass I)**, R7 future media (reserve IA),
+  **R8 collection CRUD (own design round; committed-config vs D1 storage; defs are data so runtime-creatable)**,
+  **R9 reuse site icons/images/videos in the editor (pickers; git is the archive)**, **R10 component palette**,
+  **R10a component registry (single declaration; renderer + palette derive from it; components are CODE — not
+  user-creatable)**, **R11 standard formatting toolbar (Carta; don't assume markdown-literacy)**, **R12 toggle the preview**,
+  **R13 canonical extension model (`CairnExtension`) — a site is NOT just a theme instance; one code-defined,
+  build-time-composed way to add functionality separate from core (nav/routes/collections/components/fields/hooks);
+  site-local or shared package; a THIRD reuse axis beside engine+theme; own design round**.
+- **Theme architecture:** `docs/creating-a-cairn-theme.md` — the engine/theme model, **decided model (a) scaffold-copy**
+  ("Hugo-like for a Cloudflare context": engine = live `@glw907/cairn-cms` dependency that propagates; theme =
+  copied scaffold the site owns + diverges), and the **settled engine/theme line** (machinery → core; registry data +
+  builders + icons + CSS → theme).
+- **Platform stance:** **Cloudflare-first** locked-decision row added above (use any CF primitive that fits; only
+  content stays markdown-in-git). Narrows the old "no D1/database pivot" note to "no *content* pivot."
+
+**Architecture documented + red-teamed (2026-05-26):** `docs/ARCHITECTURE.md` (consolidated, with §10
+load-bearing assumptions) + `docs/ARCHITECTURE-CRITIQUE.md` (severity-ranked, research-backed; 17 risks added
+to the register below). Headline: the thesis survives, but 4 must-fix CHANGE items (KV→DO/D1 nonce, POST-confirm
+for scanner prefetch, 409 fail-safe, timing-safe compare) + design refinements (engine-fat/theme-thin, drop
+"Hugo-like", extension-contract governance, Trees-API+sharding, non-dev safety net). **Premise re-validated
+(2026):** the magic-link + git-commit + embedded-SvelteKit/CF niche is still **unfilled** (closest, Pages CMS,
+needs Postgres+Node — can't embed on Workers) → **build justified**. **Two adopt-don't-build calls surfaced:**
+(P2) replace the hand-rolled auth with **`better-auth` (D1 + magic-link)** — fixes the KV-nonce critical too;
+(P3) **stay on Carta** but wrap it behind a thin `MarkdownEditor` interface (rich-doc editors mangle directives;
+CM6 is the fallback). Both for the Refinement pass to decide.
+
+> **North star (Geoff, 2026-05-26):** prioritize the **highest-quality, most-maintainable long-term code** —
+> **anything currently written may be pulled out** if a cleaner long-term design warrants it. Preserving shipped
+> code is *not* a reason to avoid a better architecture while the project is small. (This is what tipped the
+> better-auth decision; apply it to every pass below.)
+
+Resulting **planned passes (sequenced)** — superseding the standalone "Pass I theme":
+- **Pass 0 — Architecture Refinement (DONE 2026-05-26; build nothing).** Read the four canonical docs, resolved
+  every CHANGE/open decision in the critique, produced **ARCHITECTURE v2** (`docs/ARCHITECTURE.md` §11 decision
+  ledger), and re-sequenced this roadmap. **Headline: adopt `better-auth` (D1 + magic-link)** — replacing the
+  shipped bespoke auth (new "Auth implementation" locked-decision row; Refinement progress-log entry). Other
+  resolutions: stay on Carta behind a thin `MarkdownEditor` interface (P3); engine-fat/theme-thin as a hard rule
+  + drop "Hugo-like" (H1/H2); Git Trees API listing (H4); governed `CairnExtension` contract (H5); 409 fail-safe
+  (C3); POST-confirm (C2); CI/bundle guards (C4/M5); non-dev safety net (M1).
+- **Pass AUTH — Migrate to better-auth + auth hardening (DO THIS FIRST; ships to prod).** Replace the hand-rolled
+  magic-link/session/role stack with **better-auth (D1 adapter + magic-link plugin)** on each site: D1 binding +
+  better-auth schema/migrations per site; Cloudflare Email Sending wired into better-auth's send hook (Resend
+  fallback, H6); re-implement two-tier `owner`/`editor` + `requireOwner` + anti-lockout on better-auth; **migrate
+  the 4 seeded AUTH_KV owner allowlists → the D1 user table**; build the **POST-confirm flow** (C2 — confirm page
+  that POSTs, `Referrer-Policy: no-referrer`, origin-is-config audit H3); rewire the `hooks.server.ts` guard +
+  `mint-session.mjs`. Fixes C1 by construction, retires the JWT lifecycle, enables DB-session revocation (M3). The
+  GitHub-App commit signer stays bespoke. Ships as a cairn-cms **major** + both-site repoint + per-site D1 wiring.
+  May split (AUTH-1 magic-link/session/D1 + POST-confirm; AUTH-2 roles + allowlist migration + manage-admins rewire).
+- **Pass ROBUST — Commit/runtime robustness (small).** **409 fail-safe** in `commitFile` (C3); `/admin/healthz`
+  signing a dummy JWT + `jose`/`importPKCS8` + rotation doc (M2); CI/bundle guards — Carta-client-only test +
+  `wrangler deploy --dry-run` + lazy-init audit + pin wrangler v4/`nodejs_compat`/recent compat date (C4/M5). Can
+  ride with AUTH or the extraction.
+- **Pass — Theme-Architecture Extraction** (plan written: `docs/superpowers/plans/2026-05-26-theme-architecture-extraction.md`).
+  Move the generic render engine + registry machinery into cairn-core; ecnordic becomes a theme on the engine; 907
+  trivial; **byte-identical output** (characterization snapshots gate it); no prod break. Realizes R10a's engine half.
+  **Refinement constraints to honor:** enforce engine-fat/theme-thin (H1) + single-kit peerDep (M4) + Shiki-off-server
+  (C4); add the thin `MarkdownEditor` interface (P3) while the editor is in-package; switch listing to the Git Trees
+  API + document the 1 MB body cap (H4); add the theme/engine version stamp + Renovate to the scaffold (H1).
+  **Do this after AUTH** (the admin UI builds on the registry + adapter shape; auth is foundational + security-critical).
+- **Then — New Admin UI passes** (detailed plans to be written after extraction lands): **Pass I/theme** (Warm Stone, R6),
+  **Pass J** (collections-first nav + per-collection list, R3), **Pass K** (differentiated editing R4 + component palette R10
+  + icon/asset pickers R9 + preview toggle R12; may split), and a **collection-CRUD** round (R8, needs its storage decision).
+  Each ships as a cairn-cms minor + both-site repoint (Pass P pattern).
+- **Then — Canonical extension model** (R13, own design round; naturally follows the extraction, which establishes the
+  registry/adapter aggregation core needs to also aggregate extensions). `defineExtension({...})`; site-local or shared
+  package; likely paired with a `create-cairn-site` / `cairn add` scaffolder for the SvelteKit route-shim mounting.
 - **Future — Manage media (image/upload UI).** Was out-of-scope; now a roadmap item, still
   unscheduled. **Open decision: storage** — commit media into the site repo (fits the git-CMS
   model, reuses the GitHub App `commitFile` path with base64 binary, served as static assets)
@@ -282,7 +360,65 @@ remove `static/admin/*` · `BACKLOG.md`/`docs/STATUS.md`/`docs/architecture.md`/
    — **RETIRED (Pass F2).** The extracted `cairn-cms/sveltekit` functions throw `@sveltejs/kit`
    `redirect`/`error`; these must share class identity with the host runtime. A single workspace
    `@sveltejs/kit` (npm-deduped to root) guarantees it — live-verified: package-thrown redirect→303
-   and error→400 in both sites' workers under `wrangler dev`. (See Pass F2 log.)
+   and error→400 in both sites' workers under `wrangler dev`. (See Pass F2 log.) **Keep `@sveltejs/kit`
+   a peerDependency (never a dependency) + assert one resolved version in CI** (critique M4).
+
+### Risks added by the architecture critique (2026-05-26) — see `docs/ARCHITECTURE-CRITIQUE.md`
+
+7. **KV eventual consistency breaks single-use magic-link nonce** (CRITICAL — security). **RESOLVED (decision, Refinement
+   pass 2026-05-26): adopting `better-auth` (D1 adapter + magic-link plugin)** moves single-use onto strongly-consistent
+   D1 → fixed by construction. Realized in **Pass AUTH**. Original analysis: Deleting the KV
+   nonce does NOT atomically prevent replay: deletes propagate ~60s across PoPs, RYOW is best-effort. A
+   forwarded/scanned/raced link can be redeemed twice from different PoPs. **Fix before broad rollout:**
+   nonce in a **Durable Object** (atomic verify-and-delete) or **D1** (`DELETE … WHERE token=? AND
+   expires_at>? RETURNING *`). Invalidates assumption #6. (Auth + edge agents both flagged.) **Best option:
+   adopt `better-auth` (D1 adapter + magic-link plugin)** — runs natively on Workers+D1, fixes this on strong
+   consistency, AND retires the hand-rolled token lifecycle (also covers risk #10). Independently recommended
+   by the build-vs-adopt scan (Pages CMS uses better-auth for exactly this). Evaluate in the Refinement pass.
+8. **Email-scanner prefetch consumes magic links** (CRITICAL — auth DoS). **SCHEDULED (Refinement: CHANGE → POST-confirm;
+   Pass AUTH).** better-auth GET-redeems by default, so this still applies after adoption — the confirm-page-that-POSTs
+   is built in Pass AUTH. Corporate gateways GET every URL
+   in mail → the link is redeemed before the user clicks → "invalid/expired." **Fix:** POST-confirm flow
+   (link → page → "Confirm sign-in" button that POSTs; nonce consumed on POST; scanners don't POST). Also
+   closes GET/CSRF consumption. (Better Auth #6985, Supabase #1214.)
+9. **Concurrent edit → HTTP 409 lost update** (HIGH). **SCHEDULED (Refinement: CHANGE → fail safe; Pass ROBUST).**
+   `commitFile`'s read-SHA-then-PUT 409s if anything
+   (another editor OR the site's own CI) commits in between; today it fails raw. **Fix:** catch 409 →
+   re-fetch → "file changed since you opened it; reload" — fail SAFE (full merge out of scope). Partially
+   invalidates assumption #4.
+10. **No timing-safe compare on Workers** (HIGH, trivial). **MOSTLY RESOLVED (Refinement): adopting better-auth retires
+    the hand-rolled token/HMAC compare (the lib owns the lifecycle); cairn keeps only `Referrer-Policy: no-referrer` +
+    the origin-is-config audit (Pass AUTH).** Original: No `timingSafeEqual`; `===` on token/HMAC leaks a
+    timing oracle. **Fix:** Double-HMAC compare (~10 lines). Plus `Referrer-Policy: no-referrer` on verify +
+    audit that the magic-link origin is config (`PUBLIC_ORIGIN`), never request-derived.
+11. **Contents-API hard caps** (HIGH). Directory listing truncates **silently at 1,000 entries** (no
+    pagination) and content >**1 MB** returns null. **Fix:** list via the **Git Trees API**; shard
+    collections (year/month). Affects assumptions #2/#3.
+12. **Carta/Shiki bundle vs Workers size wall** (CRITICAL-if-regressed; currently MITIGATED). Shiki can blow
+    a bundle past the 3 MB Free / 10 MB Paid limit. Carta is already client-only — **keep it that way**:
+    enforce in tests + watch bundle size in CI (`wrangler deploy --dry-run`).
+13. **Scaffold-copy can't propagate fixes + "Hugo-like" is wrong** (HIGH, design). Copied theme files get no
+    `npm update` (Shopify Dawn: ~90% outdated; CRA deprecated over this). **Mitigation:** keep ALL
+    security/fix-prone + UI logic in the live ENGINE (cairn already does); theme = presentation/registry/CSS
+    + thin route shims only; add a theme/engine **version stamp** + Renovate in the scaffold. Drop the
+    "Hugo-like" framing (compile-time Vite ≠ Hugo's runtime FS overlay; SvelteKit #8896). Closest good
+    analogue: Astro Starlight (live integration + narrow override surface).
+14. **`CairnExtension` contract calcification / peer-dep / no package routes** (HIGH, for R13). Bake in:
+    narrow + versioned contract; extensions peer-dep ONLY `cairn-cms` (never kit/vite); expose data +
+    components, not internals; build-time validation; admin routes via generated shims (not package-provided
+    — SvelteKit #8896); governance doc before the first external extension. Affects assumption #9.
+15. **Commit-as-publish: no deploy feedback / no pre-commit validation / no non-dev recovery** (MED). A bad
+    save breaks the live build with zero editor recovery. **Fix:** server-side frontmatter validation BEFORE
+    commit; a deploy-status signal; a revert-last-change affordance. Conditions assumption #1.
+16. **Cloudflare Email Sending is beta** (MED) and is the sole auth channel. Wrap with explicit errors +
+    audit log; keep **Resend** as a coded fallback; track GA. (Extends the original risk #1.)
+17. **Misc edge guards** (MED): PKCS#1→PKCS#8 brittle/untested → `jose` + `/admin/healthz` + document
+    rotation; lazy-init heavy objects (1s startup CPU limit); pin wrangler v4 + `nodejs_compat`. **Editor
+    decision (research-backed):** the rich-doc "alternatives" (TipTap/ProseMirror/Milkdown/Lexical) are NOT
+    options — they use a document model and mangle `:::` directives on round-trip. Carta is a thin wrapper over
+    **CodeMirror 6** (the safe fallback). **Stay on Carta now; add a thin `MarkdownEditor` interface immediately**
+    so a later swap to bare CM6 is one file; reassess at extraction if Carta lacks the CM-instance hooks the R10
+    palette needs. cairn's own single-author bus factor remains an accepted strategic risk.
 
 ## Verification (end-to-end, per site)
 
@@ -306,22 +442,29 @@ no longer excluded — just unscheduled.
 > Session-by-session execution state and post-mortems. The workspace `CLAUDE.md` stays lean
 > (durable orientation only); running progress lives here, in the git-backed plan.
 
-> **⏭ NEXT SESSION (start here) — BOTH sites are LIVE; only Future roadmap items remain.**
-> **Both ecnordic.ski AND 907.life `/admin` are now LIVE in prod** (ecnordic go-live 2026-05-25, 907
-> go-live 2026-05-26 — see the entries below). The core initiative (passes 0/A–H + Pass P publish + both
-> go-lives) is **complete**: magic-link auth, GitHub-App committing, the shared admin shell, owner-gated
-> editor management, both sites consuming the published `@glw907/cairn-cms@0.3.1` with green CI (0.3.1 =
-> the authenticated-reads hotfix below). The only
-> remaining functional work is **Pass I — neutral, self-contained admin theme** (added 2026-05-26,
-> found during the 907 go-live: the admin chrome inherits the host site's DaisyUI theme + fonts instead
-> of its own neutral one — violates the locked admin-theme decision; affects both sites; see the Pass I
-> entry under "Planned passes beyond F" for the full diagnosis + the two implementation approaches +
-> open aesthetic decisions — brainstorm first). Beyond that, the **Future** roadmap items —
-> **media/uploads** (storage decision: commit-to-repo vs R2/Images) and **Hugo-style scaffold-time
-> themes** — remain **unscheduled** (pick one to scope when ready). Also still pending: the **server-side npm token revoke** at npmjs.com → Granular Access
-> Tokens (low urgency — releases use OIDC Trusted Publishing, no stored token; website-only, see Pass P
-> follow-ups). **Risk #1 (Cloudflare Email Sending) is fully RETIRED** — onboarded + live-verified on
-> both domains.
+> **⏭ NEXT SESSION (start here) — Architecture Refinement DONE; ARCHITECTURE v2 settled; build queue re-sequenced.**
+> **Both ecnordic.ski AND 907.life `/admin` are LIVE in prod** (go-lives 2026-05-25/26); the core initiative
+> (passes 0/A–H + Pass P + both go-lives) is complete. The **Architecture-Refinement pass (2026-05-26)** then read
+> the four canonical docs, red-teamed every critique item, and produced **ARCHITECTURE v2** (`docs/ARCHITECTURE.md`,
+> §11 decision ledger). **North star (Geoff): highest-quality, most-maintainable long-term code — anything written
+> may be pulled out for a cleaner long-term design while the project is small.**
+>
+> **Headline decision: adopt `better-auth` (D1 + magic-link), replacing the shipped bespoke auth.** New "Auth
+> implementation" locked-decision row. Other resolutions (see ARCHITECTURE.md §11): stay on Carta behind a thin
+> `MarkdownEditor` interface (P3); engine-fat/theme-thin hard rule + drop "Hugo-like" (H1/H2); Git Trees API listing
+> (H4); governed `CairnExtension` (H5); 409 fail-safe (C3); POST-confirm (C2); CI/bundle guards (C4/M5); non-dev
+> safety net (M1).
+>
+> **START HERE: Pass AUTH — migrate to better-auth + auth hardening** (see the re-sequenced "planned passes" list
+> under "Admin redesign + theme architecture"). It is foundational + security-critical (fixes the CRITICAL C1/C2),
+> ships to prod, and must precede the extraction + admin-UI passes. Write its detailed plan first (D1 schema, role
+> re-implementation, AUTH_KV→D1 allowlist migration, POST-confirm, both-site repoint, per-site D1 wiring). **Then**
+> Pass ROBUST (C3/M2/guards) → Theme-Architecture Extraction → New Admin UI (I/theme R6 → J collections-nav R3 →
+> K editing R4 + palette R10 + pickers R9 + preview-toggle R12) → collection-CRUD R8 → extension model R13.
+>
+> **Also still pending (unchanged):** server-side npm token revoke at npmjs.com → Granular Access Tokens (low
+> urgency — OIDC Trusted Publishing, no stored token; website-only). **Risk #1 (Cloudflare Email Sending) fully
+> RETIRED.** Future roadmap: media/uploads (R7, default R2) + the broader scaffold (`create-cairn-site`).
 >
 > **Release 0.3.0 is DONE** (2026-05-25 — see the entry below): bumped `0.2.0`→`0.3.0`, published via the
 > Trusted-Publishing OIDC workflow (GitHub Release `v0.3.0` → `publish.yml`), repointed **both** sites to
@@ -333,6 +476,37 @@ no longer excluded — just unscheduled.
 >
 > **Pass G is DONE** (2026-05-25 — see the Pass G entry below): owner-gated editor management, Geoff seeded
 > as `owner` in all four AUTH_KV namespaces; **shipped to both sites** (`@0.2.0` then carried in `@0.3.0`).
+
+### Architecture Refinement — settle ARCHITECTURE v2 + re-sequence (2026-05-26)
+
+- **Goal met: a settled, internally-consistent ARCHITECTURE v2 + a re-sequenced build roadmap; built nothing.**
+  Read the four canonical docs in full (not the brainstorm transcript), worked every CHANGE/GUARD/DEFER/open
+  decision in `ARCHITECTURE-CRITIQUE.md`, and wrote the resolutions into **`docs/ARCHITECTURE.md` (v2)** — now
+  carrying a **§11 decision ledger** (every critique item → verdict → where it lands).
+- **Headline decision — adopt `better-auth` (D1 adapter + magic-link plugin), replacing the shipped bespoke auth.**
+  The critique flagged this twice (P2). Confirmed with Geoff: *"We're early yet, so we can rip anything out to
+  achieve a better long-term result."* better-auth is mainstream (~25k★, ~600k+ weekly npm — checked live; bus-factor
+  worry evaporates), native on Workers+D1, and is what Pages CMS uses for this exact pattern. It fixes the CRITICAL
+  **C1** (single-use on strongly-consistent D1) by construction, retires the hand-rolled JWT/token lifecycle + the
+  missing timing-safe compare (**H3**), and enables DB-backed session revocation (**M3**). New "Auth implementation"
+  locked-decision row. The GitHub-App commit signer stays bespoke (better-auth replaces only the *editor* auth).
+- **Other resolutions (full reasoning in ARCHITECTURE.md §11):** stay on Carta behind a thin `MarkdownEditor`
+  interface — Carta→CM6 one-file escape hatch (P3/M6); **engine-fat/theme-thin as a hard rule + drop "Hugo-like"**
+  (H1/H2 — updated `creating-a-cairn-theme.md`; closest live analogue is Astro Starlight, not Hugo's runtime overlay);
+  **Git Trees API** listing + document the 1 MB body cap, shard at a trigger (H4); **409 fail-safe** in `commitFile`
+  (C3); **POST-confirm** flow — better-auth GET-redeems, so scanner-prefetch still applies (C2); governed
+  `CairnExtension` contract (H5, baked into the R13 round); non-dev safety net — pre-commit validate + deploy-status +
+  revert (M1); GUARD items — CI bundle/startup guards + Carta-client-only (C4/M5), `/admin/healthz` + `jose` for the
+  App key (M2), Email-send error-wrap + Resend fallback (H6), keep kit a peerDep (M4).
+- **Re-sequenced roadmap (was: extraction first).** **Pass AUTH** (better-auth migration + POST-confirm + roles +
+  AUTH_KV→D1 allowlist migration + per-site D1 wiring) is now **first** — foundational, security-critical (the two
+  CRITICALs), ships to prod. Then **Pass ROBUST** (C3/M2/guards) → **Theme-Architecture Extraction** (with the H1/M4/
+  C4/H4/P3 constraints folded in) → **New Admin UI** (I/theme → J/nav → K/editing+palette+pickers+preview) →
+  **collection-CRUD R8** → **extension model R13**. See the updated "planned passes (sequenced)" list above.
+- **Ritual.** Docs-only pass → no code-simplifier / svelte-check / tests (nothing built). Edits: `ARCHITECTURE.md`
+  (full v2 rewrite), `PLAN.md` (this entry, new locked-decision row, re-sequenced passes, risk #7/#8/#9/#10
+  annotations, NEXT pointer), `creating-a-cairn-theme.md` (drop "Hugo-like", engine-fat/theme-thin hard rule).
+  Not committed (no-push-without-asking; edits land locally). **Next: write the Pass AUTH detailed plan.**
 
 ### Pass 0 — bootstrap (2026-05-24)
 

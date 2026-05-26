@@ -147,14 +147,14 @@ previews through the site-supplied `renderPreview`.** cairn-core never assumes d
   add the dep to each site, repoint imports if renamed, regenerate + commit each standalone
   lockfile, and confirm both CI deploys go green. Sequence **before Pass G** (Pass G ships to prod;
   prod must deploy first).
-- **Reference (admin-shell UI inspiration — added 2026-05-25).** Per the user: **storage stays
-  git-committed markdown** (no D1/database pivot — Capriole's D1 model and Lucia's session lib are
-  *not* adopted, and cairn's hand-rolled magic-link/KV auth stays). But two projects have admin
-  **UI** worth mining as a starting point/visual reference when polishing the neutral admin shell
-  (the F2-extracted `cairn-cms/components`): **Capriole CMS** (`joshnuss/capriole`) — SvelteKit
-  Form-Actions dashboard, daisyUI-friendly layout; and **Lucia** (`pilcrowOnPaper/lucia`) — admin
-  login/guard ergonomics. UI/layout reuse only; storage + auth seams unchanged. Feed into the
-  Exploration review and any future admin-UI-polish work.
+- **Reference (admin-shell UI inspiration — added 2026-05-25; CORRECTED during Exploration).**
+  Storage stays git-committed markdown (no D1/database pivot; cairn's hand-rolled magic-link/KV auth
+  stays). **The earlier `joshnuss/capriole` reference was a phantom — that repo does not exist**
+  (verified during the Exploration pass: `gh api` 404, no matching repo). **Lucia**
+  (`pilcrowOnPaper/lucia`) is an auth *library* with no UI — nothing to mine for layout. **Use
+  instead: [`scosman/CMSaasStarter`](https://github.com/scosman/CMSaasStarter)** — Svelte 5 runes,
+  MIT, pure DaisyUI `drawer`+`navbar` admin shell scoped to an `(admin)` route group (mirrors cairn's
+  `/admin`). UI/layout reuse only; storage + auth seams unchanged. See `docs/FORWARD-COMPAT.md`.
 - **Pass G — Manage admins (editor management UI).** Owner-gated CRUD over the per-site
   `AUTH_KV` allowlist: list/add/remove editors, set role (`owner`/`editor`). Add a `role` to
   the KV value (migrate existing flat entries → `editor`, seed the first `owner`); extend the
@@ -282,25 +282,15 @@ no longer excluded — just unscheduled.
 > Session-by-session execution state and post-mortems. The workspace `CLAUDE.md` stays lean
 > (durable orientation only); running progress lives here, in the git-backed plan.
 
-> **⏭ NEXT SESSION (start here) — the EXPLORATION review (forward-compat research pass; chosen
-> 2026-05-25).** This is a **research pass, not a build** — output is an architectural memo, no code
-> behavior changes. **Goal:** confirm cairn's extensibility seams (above all the **adapter contract**
-> in `src/lib/adapter.ts`, plus the **storage** model = GitHub contents API in `src/lib/github.ts`,
-> and the **auth/role** model in `src/lib/auth.ts`) stay general enough to absorb likely future
-> features *later* without a rewrite — **not** a commitment to build any. Timing is ideal: the
-> contract is extracted (Pass E), validated on a 2nd site (Pass F), and `@glw907/cairn-cms@0.2.0` is
-> published but **not yet pinned for outside consumers**, so this lands *before the API calcifies*.
->
-> **Scan list (per item: is the door open? cheap seam to add now? or "out of scope"?):** media/uploads ·
-> editorial workflow / review-before-publish · scheduled publish · content relations across collections ·
-> i18n / localization · revision history & rollback (some free from git) · richer roles/permissions ·
-> multiple backends. **Theming is NOT dropped but scoped Hugo-style** (scaffold-time theme choice +
-> in-repo editing — see the "Themes" planned-passes item), explicitly **not** WordPress runtime theme
-> management. **Survey peers:** Sveltia, Decap, Keystatic, Tina (git-based); WordPress, Ghost, Statamic
-> (Statamic = the file-based peer worth the most attention). **"Out of scope" is a valid verdict per item.**
-> **Output:** a memo (suggest `cairn-cms/docs/FORWARD-COMPAT.md`) — "keep these doors open" notes +
-> any cheap seam generalizations to make now. Parallel web-research agents fit well (the survey
-> fans out cleanly by CMS / by capability). See the full **Exploration** item under "Planned passes".
+> **⏭ NEXT SESSION (start here) — admin-UI-polish pass (responsive, extensible shell).** The
+> Exploration review is **DONE** (see entry below; memo at `docs/FORWARD-COMPAT.md`). Its UI half
+> picked the next concrete build: replace the spartan single-column `AdminLayout.svelte` with a DaisyUI
+> **`drawer` + `navbar`** shell — fully responsive by construction (`drawer lg:drawer-open`) and
+> extensible via a **data-driven, role-gated nav** so a new surface is one nav entry + one route shim +
+> one `cairn-cms/{sveltekit,components}` pair. **Base:** [`scosman/CMSaasStarter`](https://github.com/scosman/CMSaasStarter)
+> (`(admin)/(menu)/+layout.svelte` — Svelte 5 runes, MIT, pure DaisyUI). User requirements captured:
+> *easy to add functionality* + *fully responsive*. This is a build pass (touches the shared
+> `cairn-cms/components` shell → both sites); confirm scope before starting.
 >
 > **Pass G is DONE** (2026-05-25 — see the Pass G entry below) and fully shipped: `@glw907/cairn-cms@0.2.0`
 > published via Trusted Publishing, **both** sites pinned `^0.2.0` with **CI deploys green**, Geoff seeded
@@ -751,6 +741,32 @@ no longer excluded — just unscheduled.
   are set (unchanged Pass A posture); the manage-admins surface needs only the already-present
   AUTH_KV. Risk #5's CI half was **retired in Pass P** (published `@glw907/cairn-cms@0.1.0`); Pass G's
   new package code will reach the sites' CI on the next publish + version bump.
+
+### Exploration — forward-compat review (research pass, 2026-05-25)
+
+- **Output:** `docs/FORWARD-COMPAT.md` — the architectural memo. Research only; **no code behavior
+  changes** this pass. Surveyed git-based peers (Sveltia, Decap, Keystatic, Tina) and file-based/
+  traditional peers (Statamic — closest cousin — WordPress, Ghost) via parallel web-research agents,
+  mapped each capability against cairn's three real seams (`adapter.ts`, `github.ts`, `auth.ts`).
+- **Headline: no breaking change is required now; the contract is safe to pin for outside consumers.**
+  Per-capability verdicts — media (open, additive; storage-target decision is the gate, not the
+  contract), editorial workflow (open via `draft` frontmatter; branch-mode is a lift), scheduled
+  publish (open, lives outside the contract — Cloudflare Cron Trigger + `publishAt` field), relations
+  (unidirectional open; bidirectional needs a multi-file tree-API commit cairn lacks), i18n (open for
+  file-per-locale; field inheritance is a UI lift), revision/rollback (**free from git**, additive,
+  the cheapest high-value future win), roles (**cairn is ahead of the field** — the #1 industry
+  retrofit-risk "role in the session" was already closed in Pass G; per-collection scoping is the
+  known additive next step), backends (out of scope — opinionated GitHub-forward stack, locked), themes
+  (already correct — Statamic Starter Kits = the Hugo model cairn already implements).
+- **Two structural limits noted (not bugs):** `commitFile` is single-file (multi-file atomic writes
+  need the git-data tree API); filename-based ids/no-codec is *cleaner* than planned and absorbs i18n
+  locale suffixes for free. "Keep doors open" list + the known-shape extensions are in the memo.
+- **UI half (per the user's steer — "easy to add functionality" + "fully responsive").** Picked the
+  next build: a DaisyUI `drawer`+`navbar` shell with a data-driven, role-gated nav, base
+  `scosman/CMSaasStarter`. Corrected the phantom `joshnuss/capriole` reference (see Reference note
+  above). Promoted to the NEXT-SESSION pointer as an admin-UI-polish build pass.
+- **Ritual:** docs-only pass — no code-simplifier / svelte-check / test run needed (nothing built).
+  Not committed (no-push-without-asking; the new doc + PLAN edits land locally).
 
 ### Risk #1 follow-up — Cloudflare email (design RESOLVED, provisioning BLOCKED)
 

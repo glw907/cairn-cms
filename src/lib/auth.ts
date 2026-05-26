@@ -7,9 +7,13 @@
 import type { KVNamespace } from '@cloudflare/workers-types';
 import { bytesToB64url } from './utils';
 
+/** Two-tier, per-site role. `owner`s manage the editor allowlist; `editor`s only edit content. */
+export type Role = 'owner' | 'editor';
+
 export interface Editor {
   email: string;
   name: string;
+  role: Role;
 }
 
 export const SESSION_COOKIE = 'cairn_session';
@@ -118,13 +122,64 @@ export async function createSession(editor: Editor, secret: string): Promise<str
 export async function verifySession(token: string, secret: string): Promise<Editor | null> {
   const payload = await verifyToken<SessionPayload>(token, secret);
   if (!payload || Date.now() > payload.exp) return null;
-  return { email: payload.email, name: payload.name };
+  // Sessions signed before roles existed carry no `role` — treat them as plain editors.
+  return { email: payload.email, name: payload.name, role: payload.role ?? 'editor' };
 }
 
-/** Look up an editor in the KV allowlist (`editor:<email>` → display name). */
+const KEY_PREFIX = 'editor:';
+
+/**
+ * Decode a stored allowlist value into name + role. Current entries are JSON
+ * (`{"name","role"}`); legacy entries are a bare display-name string, read as `editor`
+ * so the allowlist migrates lazily — re-saving an entry upgrades it to the JSON shape.
+ */
+function parseEditorValue(raw: string): { name: string; role: Role } {
+  try {
+    const parsed = JSON.parse(raw) as { name?: unknown; role?: unknown };
+    if (parsed && typeof parsed.name === 'string') {
+      return { name: parsed.name, role: parsed.role === 'owner' ? 'owner' : 'editor' };
+    }
+  } catch {
+    // Not JSON — legacy bare display-name; treat as editor.
+  }
+  return { name: raw, role: 'editor' };
+}
+
+function serializeEditorValue(name: string, role: Role): string {
+  return JSON.stringify({ name, role });
+}
+
+/** Look up an editor in the KV allowlist (`editor:<email>` → `{name, role}`). */
 export async function lookupEditor(email: string, kv: KVNamespace): Promise<Editor | null> {
   const normalized = email.trim().toLowerCase();
-  const name = await kv.get(`editor:${normalized}`);
-  if (name === null) return null;
-  return { email: normalized, name };
+  const raw = await kv.get(`${KEY_PREFIX}${normalized}`);
+  if (raw === null) return null;
+  return { email: normalized, ...parseEditorValue(raw) };
+}
+
+/** Every allowlisted editor, sorted by email — the manage-admins list. */
+export async function listEditors(kv: KVNamespace): Promise<Editor[]> {
+  const { keys } = await kv.list({ prefix: KEY_PREFIX });
+  const editors = await Promise.all(
+    keys.map(async ({ name: key }): Promise<Editor> => {
+      const raw = (await kv.get(key)) ?? '';
+      return { email: key.slice(KEY_PREFIX.length), ...parseEditorValue(raw) };
+    }),
+  );
+  return editors.sort((a, b) => a.email.localeCompare(b.email));
+}
+
+/** Add or update an allowlist entry (JSON value). Email is normalized. */
+export async function setEditor(
+  email: string,
+  name: string,
+  role: Role,
+  kv: KVNamespace,
+): Promise<void> {
+  await kv.put(`${KEY_PREFIX}${email.trim().toLowerCase()}`, serializeEditorValue(name, role));
+}
+
+/** Remove an allowlist entry. */
+export async function removeEditor(email: string, kv: KVNamespace): Promise<void> {
+  await kv.delete(`${KEY_PREFIX}${email.trim().toLowerCase()}`);
 }

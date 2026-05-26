@@ -282,15 +282,19 @@ no longer excluded — just unscheduled.
 > Session-by-session execution state and post-mortems. The workspace `CLAUDE.md` stays lean
 > (durable orientation only); running progress lives here, in the git-backed plan.
 
-> **⏭ NEXT SESSION (start here) — Pass G: manage admins (editor management UI).** Pass F2
-> (extract the shared admin shell into the package) is **DONE** (2026-05-25 — see the Pass F2
-> entry below). The admin route files are now thin shims around `cairn-cms/sveltekit` (server
-> logic) + `cairn-cms/components` (the Svelte shell), **byte-identical across both sites** save
-> for each site's `cairn.config.ts`; free-form tags are folded into the contract as a `freetags`
-> field type. Pass G adds owner-gated CRUD over the per-site `AUTH_KV` allowlist (list/add/remove
-> editors, set `owner`/`editor` role) — see the "Editor management" locked-decision row and the
-> Pass G entry under "Planned passes". The CI pinned-version half of risk #5 is still open (both
-> sites use the local symlink; no published cairn version yet) — fold into Pass G or a publish pass.
+> **⏭ NEXT SESSION (start here) — admin-UI polish / Exploration review (Pass G is DONE).** Pass G
+> (manage admins) is **DONE** (2026-05-25 — see the Pass G entry below): owner-gated CRUD over the
+> per-site `AUTH_KV` allowlist ships in `@glw907/cairn-cms` (auth role layer + `cairn-cms/sveltekit`
+> `adminsLoad`/`addAdmin`/`removeAdmin`/`setAdminRole` behind a `requireOwner` gate +
+> `cairn-cms/components` `ManageAdmins`), wired into both sites as byte-identical `/admin/admins`
+> route shims, live-verified under `wrangler dev`. Geoff seeded as `owner` in all four KV namespaces
+> (both sites, local + remote). **Open candidates next:** the **Exploration** research pass
+> (forward-compat review of the adapter/storage/role seams before the package API calcifies), the
+> **admin-UI polish** (mine Capriole/Lucia layouts for the neutral shell — see the Reference item),
+> or **Manage media** (storage decision pending). **Note:** Pass G shipped to the package but the
+> two sites' `/admin/admins` shims are **not yet pushed** (this session left commits local per the
+> no-push-without-asking rule; Pass G added no new deps, so no lockfile churn) — and Pass G's prod `/admin` still needs the
+> per-site `MAGIC_LINK_SECRET`/`SESSION_SECRET` to be live (same dormant-prod posture as Pass A).
 
 ### Pass 0 — bootstrap (2026-05-24)
 
@@ -677,6 +681,59 @@ no longer excluded — just unscheduled.
 - **Follow-ups.** Revoke the bootstrap granular token (exposed in the working session). cairn-cms
   GitHub repo stays private for now (the npm package is public; provenance is skipped for a private
   source repo — making the repo public later would enable provenance). Pass G is next.
+
+### Pass G — manage admins (owner-gated editor management UI) (2026-05-25)
+
+- **Goal met: owners can manage the per-site editor allowlist from `/admin`; editors can't.**
+  The two-tier `owner`/`editor` model (locked-decision row) is now real end-to-end — role lives
+  in the KV value, threads through the session, gates a new manage-admins surface, and drives an
+  owner-only nav link. No cross-site SSO (each site's allowlist is independent, unchanged).
+- **Role model + lazy migration (`auth.ts`).** Added `Role = 'owner' | 'editor'` and `role` on
+  `Editor`. The KV allowlist value, previously a **bare display-name string**, is now JSON
+  (`{"name","role"}`). `parseEditorValue` reads **both** shapes — a legacy bare string decodes as
+  `{name, role:'editor'}` — so existing entries migrate **lazily** (re-saving upgrades them to
+  JSON); no bulk migration script needed. `verifySession` defaults `role` to `editor` for sessions
+  signed before roles existed. New KV helpers: `listEditors` (prefix-list + decode, sorted by
+  email), `setEditor` (JSON put, email normalized), `removeEditor`.
+- **The gate (`cairn-cms/sveltekit`).** New owner-gated section: `requireOwner(event)` throws
+  `error(401)` if signed out, `error(403)` if not an owner, else returns the acting owner;
+  `adminsLoad` lists the allowlist; `addAdmin`/`removeAdmin`/`setAdminRole` are the mutations
+  (used as SvelteKit **form actions** `?/add`/`?/remove`/`?/setRole`). **Anti-lockout:** an owner
+  can't remove or demote **themselves** (guards the last owner out). The gate is the package
+  function itself — `hooks.server.ts` stays unchanged/byte-identical across sites (it only enforces
+  *a* session; role enforcement is centralized in the shared management functions, the actual
+  privilege-escalation surface).
+- **UI (`cairn-cms/components`).** New `ManageAdmins.svelte` — editor table (name/email/role badge),
+  per-row role-flip + remove (disabled for yourself), an add form (email/name/role select). Reuses
+  the existing neutral DaisyUI chrome (panels, `alert`, `table`, `btn` styles) — grounded in the
+  existing `AdminList`/`EditPage`/`LoginPage` markup per the user's "leverage existing patterns"
+  steer (the Capriole/Lucia layout mining stays for the later admin-UI-polish pass). `AdminList`
+  grew an owner-only **"Editors"** nav link (`{#if data.editor?.role === 'owner'}`).
+- **Wiring.** `/admin/admins/{+page.server.ts (load + actions),+page.svelte (<ManageAdmins>)}` added
+  to **both** sites as thin shims; `diff -rq` confirms the two sites' whole `admin/` route trees
+  stay **byte-identical** (the F2 invariant holds — only `cairn.config.ts` differs). The dev
+  `scripts/mint-session.mjs` gained an optional `owner` arg (role in the minted session) to smoke
+  the gate without the email loop.
+- **Verified.** Package **39/39 vitest** (+4 auth: legacy-vs-JSON decode, list, set round-trip,
+  remove), clean `svelte-package`. Both sites `svelte-check` **0/0** (ecnordic 474, 907 386) +
+  Cloudflare `npm run build` OK. **Live `wrangler dev` (ecnordic):** anon `/admin/admins`→**303**
+  login; **editor** session→**403**; **owner** session→**200** (lists editors, add form, role
+  badges, owner-only "Editors" link present for owner / absent for editor). Owner mutations exercised
+  end-to-end against local KV: **add** new editor → appears; **setRole** → owner badge; **remove** →
+  gone; **self-remove** → bounced with error; **non-owner POST** to an action → **403**. Form actions
+  with a browser `Accept: text/html` return **303 → `/admin/admins?saved=1`** (curl's default `*/*`
+  gets the 200 JSON action result — the redirect is browser-correct).
+- **Seeded.** Geoff (`geoff-login@907.life`) set to `owner` in **all four** AUTH_KV namespaces —
+  ecnordic + 907, **local and remote** — migrating each site's legacy bare-name entry to the JSON
+  `owner` value. First owner exists everywhere; further editors are added through the UI.
+- **code-simplifier.** Run over the new package code: string-concat redirects → template literals
+  (file consistency), `parseEditorValue` catch comment reworded, `ManageAdmins` props → named
+  `interface Props` + dropped a redundant `<option selected>`. No behavior change; re-verified green.
+- **Not pushed / prod-dormant (carry-over).** Commits land locally per the no-push-without-asking
+  rule. Prod `/admin` for both sites stays dormant until per-site `MAGIC_LINK_SECRET`/`SESSION_SECRET`
+  are set (unchanged Pass A posture); the manage-admins surface needs only the already-present
+  AUTH_KV. Risk #5's CI half was **retired in Pass P** (published `@glw907/cairn-cms@0.1.0`); Pass G's
+  new package code will reach the sites' CI on the next publish + version bump.
 
 ### Risk #1 follow-up — Cloudflare email (design RESOLVED, provisioning BLOCKED)
 

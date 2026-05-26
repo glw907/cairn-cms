@@ -6,6 +6,9 @@ import {
   createSession,
   verifySession,
   lookupEditor,
+  listEditors,
+  setEditor,
+  removeEditor,
 } from '../lib/auth';
 
 // Minimal in-memory KV double (TTL is irrelevant to these assertions).
@@ -19,6 +22,11 @@ function fakeKV(seed: Record<string, string> = {}): KVNamespace {
     delete: async (key: string) => {
       store.delete(key);
     },
+    list: async ({ prefix = '' }: { prefix?: string } = {}) => ({
+      keys: [...store.keys()].filter((k) => k.startsWith(prefix)).map((name) => ({ name })),
+      list_complete: true,
+      cacheStatus: null,
+    }),
   } as unknown as KVNamespace;
 }
 
@@ -61,14 +69,14 @@ describe('magic link', () => {
 });
 
 describe('session', () => {
-  it('round-trips an editor', async () => {
-    const editor = { email: 'editor@example.com', name: 'Ed Itor' };
+  it('round-trips an editor with its role', async () => {
+    const editor = { email: 'editor@example.com', name: 'Ed Itor', role: 'owner' as const };
     const token = await createSession(editor, SESSION_SECRET);
     expect(await verifySession(token, SESSION_SECRET)).toEqual(editor);
   });
 
   it('rejects a session signed with a different secret', async () => {
-    const token = await createSession({ email: 'a@b.c', name: 'A' }, SESSION_SECRET);
+    const token = await createSession({ email: 'a@b.c', name: 'A', role: 'editor' }, SESSION_SECRET);
     expect(await verifySession(token, 'other')).toBeNull();
   });
 
@@ -79,15 +87,54 @@ describe('session', () => {
 });
 
 describe('lookupEditor', () => {
-  it('returns the editor when allowlisted (case-insensitive)', async () => {
-    const kv = fakeKV({ 'editor:ed@example.com': 'Ed Itor' });
+  it('reads a JSON entry with its role (case-insensitive)', async () => {
+    const kv = fakeKV({ 'editor:ed@example.com': JSON.stringify({ name: 'Ed Itor', role: 'owner' }) });
     expect(await lookupEditor('Ed@Example.com', kv)).toEqual({
       email: 'ed@example.com',
       name: 'Ed Itor',
+      role: 'owner',
+    });
+  });
+
+  it('reads a legacy bare-name entry as an editor (lazy migration)', async () => {
+    const kv = fakeKV({ 'editor:legacy@example.com': 'Old Name' });
+    expect(await lookupEditor('legacy@example.com', kv)).toEqual({
+      email: 'legacy@example.com',
+      name: 'Old Name',
+      role: 'editor',
     });
   });
 
   it('returns null when not allowlisted', async () => {
     expect(await lookupEditor('nobody@example.com', fakeKV())).toBeNull();
+  });
+});
+
+describe('editor allowlist CRUD', () => {
+  it('lists every editor sorted by email, decoding both shapes', async () => {
+    const kv = fakeKV({
+      'editor:zoe@example.com': JSON.stringify({ name: 'Zoe', role: 'owner' }),
+      'editor:amy@example.com': 'Amy', // legacy bare name → editor
+    });
+    expect(await listEditors(kv)).toEqual([
+      { email: 'amy@example.com', name: 'Amy', role: 'editor' },
+      { email: 'zoe@example.com', name: 'Zoe', role: 'owner' },
+    ]);
+  });
+
+  it('setEditor writes a normalized JSON entry that lookupEditor round-trips', async () => {
+    const kv = fakeKV();
+    await setEditor('  New@Example.com ', 'New Person', 'owner', kv);
+    expect(await lookupEditor('new@example.com', kv)).toEqual({
+      email: 'new@example.com',
+      name: 'New Person',
+      role: 'owner',
+    });
+  });
+
+  it('removeEditor drops the entry', async () => {
+    const kv = fakeKV({ 'editor:gone@example.com': JSON.stringify({ name: 'Gone', role: 'editor' }) });
+    await removeEditor('Gone@example.com', kv);
+    expect(await lookupEditor('gone@example.com', kv)).toBeNull();
   });
 });

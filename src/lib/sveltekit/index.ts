@@ -15,9 +15,13 @@ import {
   redeemMagicToken,
   createSession,
   lookupEditor,
+  listEditors,
+  setEditor,
+  removeEditor,
   SESSION_COOKIE,
   SESSION_MAX_AGE,
   type Editor,
+  type Role,
 } from '../auth';
 import { sendMagicLink, type EmailSender } from '../email';
 import { listMarkdown, readRaw, commitFile, installationToken, type RepoFile } from '../github';
@@ -269,4 +273,100 @@ export async function saveCommit(
   );
 
   throw redirect(303, `/admin/edit/${type}/${id}?saved=1`);
+}
+
+// ── /admin/admins (owner-gated editor management) ────────────────────────────
+
+/**
+ * The privilege-escalation gate for the manage-admins surface: only `owner`s may load it or
+ * run its actions. Returns the acting owner (so callers can guard self-targeted mutations).
+ */
+function requireOwner(event: { locals: { editor: Editor | null } }): Editor {
+  const editor = event.locals.editor;
+  if (!editor) throw error(401, 'Not signed in');
+  if (editor.role !== 'owner') throw error(403, 'Owner access required');
+  return editor;
+}
+
+/** Resolve AUTH_KV or fail loudly — the management surface is useless without it. */
+function ownerKv(event: PlatformEvent): KVNamespace {
+  const kv = event.platform?.env?.AUTH_KV;
+  if (!kv) throw error(500, 'Editor allowlist is not configured');
+  return kv;
+}
+
+export interface AdminsData {
+  admins: Editor[];
+  /** Acting owner's email, so the UI can disable self-targeted remove/demote. */
+  self: string;
+  saved: boolean;
+  error: string | null;
+}
+
+/** List the allowlist for the manage-admins page. Owner-only. */
+export async function adminsLoad(
+  event: PlatformEvent & { locals: { editor: Editor | null }; url: URL },
+): Promise<AdminsData> {
+  const owner = requireOwner(event);
+  const admins = await listEditors(ownerKv(event));
+  return {
+    admins,
+    self: owner.email,
+    saved: event.url.searchParams.get('saved') === '1',
+    error: event.url.searchParams.get('error'),
+  };
+}
+
+type AdminsActionEvent = PlatformEvent & {
+  request: Request;
+  locals: { editor: Editor | null };
+};
+
+function parseRole(value: unknown): Role {
+  return value === 'owner' ? 'owner' : 'editor';
+}
+
+/** Add (or update) an allowlist entry. Owner-only. */
+export async function addAdmin(event: AdminsActionEvent): Promise<never> {
+  requireOwner(event);
+  const kv = ownerKv(event);
+  const form = await event.request.formData();
+  const email = String(form.get('email') ?? '').trim().toLowerCase();
+  const name = String(form.get('name') ?? '').trim();
+  if (!EMAIL_RE.test(email) || !name) {
+    throw redirect(303, `/admin/admins?error=${encodeURIComponent('Enter a valid email and name')}`);
+  }
+  await setEditor(email, name, parseRole(form.get('role')), kv);
+  throw redirect(303, '/admin/admins?saved=1');
+}
+
+/** Remove an allowlist entry. Owner-only; owners can't remove themselves (anti-lockout). */
+export async function removeAdmin(event: AdminsActionEvent): Promise<never> {
+  const owner = requireOwner(event);
+  const kv = ownerKv(event);
+  const form = await event.request.formData();
+  const email = String(form.get('email') ?? '').trim().toLowerCase();
+  if (email === owner.email) {
+    throw redirect(303, `/admin/admins?error=${encodeURIComponent("You can't remove yourself")}`);
+  }
+  await removeEditor(email, kv);
+  throw redirect(303, '/admin/admins?saved=1');
+}
+
+/** Change an editor's role. Owner-only; owners can't demote themselves (anti-lockout). */
+export async function setAdminRole(event: AdminsActionEvent): Promise<never> {
+  const owner = requireOwner(event);
+  const kv = ownerKv(event);
+  const form = await event.request.formData();
+  const email = String(form.get('email') ?? '').trim().toLowerCase();
+  const role = parseRole(form.get('role'));
+  if (email === owner.email && role !== 'owner') {
+    throw redirect(303, `/admin/admins?error=${encodeURIComponent("You can't demote yourself")}`);
+  }
+  const existing = await lookupEditor(email, kv);
+  if (!existing) {
+    throw redirect(303, `/admin/admins?error=${encodeURIComponent('No such editor')}`);
+  }
+  await setEditor(email, existing.name, role, kv);
+  throw redirect(303, '/admin/admins?saved=1');
 }

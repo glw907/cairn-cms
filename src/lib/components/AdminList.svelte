@@ -12,9 +12,14 @@
 
 <div class="flex items-center justify-between">
   <h1 class="text-2xl font-bold">{data.siteName} CMS</h1>
-  <form method="POST" action="/admin/auth/logout">
-    <button type="submit" class="btn btn-ghost btn-sm">Sign out</button>
-  </form>
+  <div class="flex items-center gap-2">
+    {#if data.editor?.role === 'owner'}
+      <a href="/admin/admins" class="btn btn-ghost btn-sm">Editors</a>
+    {/if}
+    <form method="POST" action="/admin/auth/logout">
+      <button type="submit" class="btn btn-ghost btn-sm">Sign out</button>
+    </form>
+  </div>
 </div>
 
 <p class="mt-2 text-sm opacity-70">

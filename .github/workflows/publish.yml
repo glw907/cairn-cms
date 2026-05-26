@@ -1,0 +1,34 @@
+name: Publish to npm
+
+# Token-free publishing via npm Trusted Publishing (OIDC). No NPM_TOKEN secret:
+# npm mints a short-lived credential from the GitHub OIDC token, and (for public
+# repos) attaches build provenance automatically. Configure the trusted publisher
+# once at npmjs.com → @glw907/cairn-cms → Settings → Trusted Publisher
+# (repo: glw907/cairn-cms, workflow: publish.yml).
+#
+# Release flow: bump "version" in package.json, then either publish a GitHub
+# Release or run this workflow manually. `prepublishOnly` (svelte-package) builds
+# dist as part of `npm publish`.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # required for OIDC trusted publishing
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      # Trusted publishing requires npm >= 11.5.1 (newer than the bundled version).
+      - run: npm install -g npm@latest
+      - run: npm install --no-audit --no-fund
+      - run: npm publish --access public

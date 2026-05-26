@@ -639,6 +639,45 @@ no longer excluded — just unscheduled.
   `cairn-cms`, add it to each site's deps, and regenerate + commit each site's standalone lockfile.
   Out of F2's scope (code extraction), flagged as the recommended immediate next task.
 
+### Pass P — publish/pin cairn-cms; CI deploys green (2026-05-25)
+
+- **Goal met: both sites' CI deploys are GREEN**, consuming a published package — risk #5's CI
+  half is **RETIRED**.
+- **Published `@glw907/cairn-cms@0.1.0`** to the **public npm registry** (user's call: the
+  best path for others to adopt cairn — `npm install`, no tokens, semver). MIT-licensed,
+  `private` dropped, README refreshed.
+- **Scoped name forced.** npm rejected the unscoped `cairn-cms` (too similar to an unrelated
+  existing package `cairncms` — a Vue/SQL CMS). Renamed to **`@glw907/cairn-cms`**; all consumer
+  imports repointed (`@glw907/cairn-cms{,/sveltekit,/components}`). The workspace symlink relinks
+  under the scope, so local source-dev is unchanged.
+- **Publish auth saga (resolved).** npm killed classic tokens (Nov/Dec 2025); the user has no
+  TOTP (passkey/1Password only); a granular token EOTP'd (account-level "require 2FA for writes"
+  overrides token bypass — npm/cli #8869); Trusted Publishing **can't do a first publish** of a
+  new name. So the one bootstrap publish was done **interactively in the user's terminal**
+  (passkey 2FA), then **Trusted Publishing** was set up for every release after.
+- **Trusted Publishing (OIDC) wired** for future releases — `.github/workflows/publish.yml` in
+  cairn-cms (`id-token: write`, npm ≥11.5.1, `npm publish` via OIDC, provenance auto). One-time
+  npmjs.com trusted-publisher config required (repo `glw907/cairn-cms`, workflow `publish.yml`).
+  No stored npm token thereafter.
+- **Standalone lockfiles regenerated.** Each site's committed `package-lock.json` was stale
+  (ecnordic missing `carta-md`+shiki since Pass B; 907 from the F2 bump) and lacked cairn-cms.
+  Regenerated in an **isolated temp dir** (no workspace, so `@glw907/cairn-cms@0.1.0` resolves
+  from the registry as a tarball, not a `file:` link), verified by a clean `npm ci` dry-run.
+- **Second CI blocker, found + fixed (adapter-cloudflare 7 / wrangler 4.94).** Once install
+  passed, prerender failed in CI: `getPlatformProxy`'s `remoteBindings` **defaults to `true`**, so
+  the build tried to start a Cloudflare **remote proxy** for the `remote = true` EMAIL binding
+  (which exists only so `wrangler dev` sends real mail) — no Cloudflare auth in CI → "Failed to
+  start the remote proxy session." Fixed in both sites' `svelte.config.js`:
+  `adapter({ platformProxy: { remoteBindings: false } })` — build-time only; `wrangler dev` still
+  honors `remote = true`. (Local builds had masked this — the dev box has `CLOUDFLARE_API_TOKEN`.)
+- **Verified.** Published package consumed end-to-end: both sites' CI **install + build + deploy
+  succeed** (`gh run` conclusion `success`); the build compiles the package's `dist` (incl. the
+  `.svelte` admin components → `components.*.css`). Package 35/35 tests, both sites `svelte-check`
+  0/0 and local builds clean throughout.
+- **Follow-ups.** Revoke the bootstrap granular token (exposed in the working session). cairn-cms
+  GitHub repo stays private for now (the npm package is public; provenance is skipped for a private
+  source repo — making the repo public later would enable provenance). Pass G is next.
+
 ### Risk #1 follow-up — Cloudflare email (design RESOLVED, provisioning BLOCKED)
 
 Email **Sending** and Email **Routing** are two distinct products under Cloudflare Email Service:

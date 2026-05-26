@@ -606,9 +606,16 @@ no longer excluded — just unscheduled.
 - **code-simplifier.** Run over the new package code — one change: the `EditPage` `fm*` helpers
   converted from arrow-consts to `function` declarations (no behavior change). Route shims left
   alone (trivial one-liners); component markup/DaisyUI classes untouched (host-styled).
-- **Risk #5 (workspace/CI linking).** Dev half holds through the new subpath exports on both
-  sites. **CI pinned-version half still open** — no published cairn version; both sites symlink
-  the source. Carry to Pass G / a publish pass.
+- **Risk #5 (workspace/CI linking) — CI half now CONFIRMED BROKEN (pre-existing, not caused by
+  F2).** Investigating the post-push deploys exposed that **both sites' GitHub Actions deploys are
+  red, and have been since the package work** — `npm ci` runs against a **stale committed
+  `package-lock.json`** (ecnordic's is missing `carta-md`+shiki, unrefreshed since Pass B; 907's is
+  stale from this pass's dep bump) **and** neither site declares `cairn-cms` as a resolvable
+  dependency (it only resolves via the local workspace symlink, absent in a standalone CI clone).
+  Local `vite build` succeeds (workspace symlink); **CI cannot install**. This is the deferred
+  risk-#5 CI half, now urgent — the fix is a real **publish/pin pass**: publish or git-pin
+  `cairn-cms`, add it to each site's deps, and regenerate + commit each site's standalone lockfile.
+  Out of F2's scope (code extraction), flagged as the recommended immediate next task.
 
 ### Risk #1 follow-up — Cloudflare email (design RESOLVED, provisioning BLOCKED)
 

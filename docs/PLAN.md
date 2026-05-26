@@ -365,9 +365,10 @@ remove `static/admin/*` · `BACKLOG.md`/`docs/STATUS.md`/`docs/architecture.md`/
 
 ### Risks added by the architecture critique (2026-05-26) — see `docs/ARCHITECTURE-CRITIQUE.md`
 
-7. **KV eventual consistency breaks single-use magic-link nonce** (CRITICAL — security). **RESOLVED (decision, Refinement
-   pass 2026-05-26): adopting `better-auth` (D1 adapter + magic-link plugin)** moves single-use onto strongly-consistent
-   D1 → fixed by construction. Realized in **Pass AUTH**. Original analysis: Deleting the KV
+7. **KV eventual consistency breaks single-use magic-link nonce** (CRITICAL — security). **BUILT (Pass AUTH, 2026-05-26):
+   better-auth magic-link tokens are consumed atomically on first verify (GHSA-hc7v-rggr-4hvx) on strongly-consistent D1
+   — single-use by construction; verified by an integration test. RETIRED at prod cutover (Phase 6).** Was: **RESOLVED
+   (decision, Refinement pass): adopting `better-auth` (D1 adapter + magic-link plugin)** moves single-use onto D1. Original analysis: Deleting the KV
    nonce does NOT atomically prevent replay: deletes propagate ~60s across PoPs, RYOW is best-effort. A
    forwarded/scanned/raced link can be redeemed twice from different PoPs. **Fix before broad rollout:**
    nonce in a **Durable Object** (atomic verify-and-delete) or **D1** (`DELETE … WHERE token=? AND
@@ -375,9 +376,10 @@ remove `static/admin/*` · `BACKLOG.md`/`docs/STATUS.md`/`docs/architecture.md`/
    adopt `better-auth` (D1 adapter + magic-link plugin)** — runs natively on Workers+D1, fixes this on strong
    consistency, AND retires the hand-rolled token lifecycle (also covers risk #10). Independently recommended
    by the build-vs-adopt scan (Pages CMS uses better-auth for exactly this). Evaluate in the Refinement pass.
-8. **Email-scanner prefetch consumes magic links** (CRITICAL — auth DoS). **SCHEDULED (Refinement: CHANGE → POST-confirm;
-   Pass AUTH).** better-auth GET-redeems by default, so this still applies after adoption — the confirm-page-that-POSTs
-   is built in Pass AUTH. Corporate gateways GET every URL
+8. **Email-scanner prefetch consumes magic links** (CRITICAL — auth DoS). **BUILT (Pass AUTH, 2026-05-26): the magic-link
+   email points at a cairn confirm page (GET renders, consumes nothing); only the "Confirm sign-in" POST verifies the
+   token (`confirmSignIn` proxy) — scanners GET but don't submit forms. Integration-tested. RETIRED at prod cutover.**
+   Was: **SCHEDULED (Refinement: CHANGE → POST-confirm; Pass AUTH).** better-auth GET-redeems by default. Corporate gateways GET every URL
    in mail → the link is redeemed before the user clicks → "invalid/expired." **Fix:** POST-confirm flow
    (link → page → "Confirm sign-in" button that POSTs; nonce consumed on POST; scanners don't POST). Also
    closes GET/CSRF consumption. (Better Auth #6985, Supabase #1214.)
@@ -386,9 +388,10 @@ remove `static/admin/*` · `BACKLOG.md`/`docs/STATUS.md`/`docs/architecture.md`/
    (another editor OR the site's own CI) commits in between; today it fails raw. **Fix:** catch 409 →
    re-fetch → "file changed since you opened it; reload" — fail SAFE (full merge out of scope). Partially
    invalidates assumption #4.
-10. **No timing-safe compare on Workers** (HIGH, trivial). **MOSTLY RESOLVED (Refinement): adopting better-auth retires
-    the hand-rolled token/HMAC compare (the lib owns the lifecycle); cairn keeps only `Referrer-Policy: no-referrer` +
-    the origin-is-config audit (Pass AUTH).** Original: No `timingSafeEqual`; `===` on token/HMAC leaks a
+10. **No timing-safe compare on Workers** (HIGH, trivial). **BUILT (Pass AUTH, 2026-05-26): the hand-rolled token/HMAC
+    compare is gone — better-auth owns the token lifecycle; the origin is config-derived (`PUBLIC_ORIGIN`/
+    `BETTER_AUTH_URL`), never request-derived (H3). RETIRED at prod cutover.** Was: **MOSTLY RESOLVED (Refinement):
+    adopting better-auth retires the hand-rolled compare; cairn keeps only the origin-is-config audit.** Original: No `timingSafeEqual`; `===` on token/HMAC leaks a
     timing oracle. **Fix:** Double-HMAC compare (~10 lines). Plus `Referrer-Policy: no-referrer` on verify +
     audit that the magic-link origin is config (`PUBLIC_ORIGIN`), never request-derived.
 11. **Contents-API hard caps** (HIGH). Directory listing truncates **silently at 1,000 entries** (no
@@ -455,12 +458,22 @@ no longer excluded — just unscheduled.
 > (H4); governed `CairnExtension` (H5); 409 fail-safe (C3); POST-confirm (C2); CI/bundle guards (C4/M5); non-dev
 > safety net (M1).
 >
-> **START HERE: Pass AUTH — migrate to better-auth + auth hardening** (see the re-sequenced "planned passes" list
-> under "Admin redesign + theme architecture"). It is foundational + security-critical (fixes the CRITICAL C1/C2),
-> ships to prod, and must precede the extraction + admin-UI passes. Write its detailed plan first (D1 schema, role
-> re-implementation, AUTH_KV→D1 allowlist migration, POST-confirm, both-site repoint, per-site D1 wiring). **Then**
-> Pass ROBUST (C3/M2/guards) → Theme-Architecture Extraction → New Admin UI (I/theme R6 → J collections-nav R3 →
-> K editing R4 + palette R10 + pickers R9 + preview-toggle R12) → collection-CRUD R8 → extension model R13.
+> **START HERE: Pass AUTH — Phase 6 PROD CUTOVER (user-gated), then publish 1.0.0.** Pass AUTH's code is
+> **DONE + locally verified** (Phases 0–5 — see the Pass AUTH log entry below): better-auth (D1 + magic-link +
+> POST-confirm + owner/editor roles) replaces the hand-rolled stack in the package and **both sites are cut over
+> and pass `wrangler dev` smokes against local D1**. Remaining = **Phase 6**, which needs the user (browser clicks +
+> prod secrets) and is intentionally NOT done autonomously: (1) `wrangler d1 migrations apply cairn-{ecnordic,907}-auth
+> --remote`; (2) run `scripts/migrate-allowlist.mjs <kv-id> <d1> --remote` per site (or rely on it to seed the owner
+> from the Pass-G KV JSON); (3) `wrangler secret put AUTH_SECRET` per worker (`ecnordic`/`907-life`); (4) bump
+> cairn-cms → **1.0.0**, publish via OIDC, repoint both sites to `^1.0.0` + add `better-auth`+`drizzle-orm` deps,
+> regen lockfiles (Pass P method), CI green; (5) Firefox prod smoke on both (request link → confirm page → Confirm
+> sign-in → authed /admin; reuse link fails; manage-editors as owner); (6) decommission `MAGIC_LINK_SECRET`/
+> `SESSION_SECRET` + AUTH_KV after stable. **Then** Pass ROBUST (C3/M2/guards) → Theme-Architecture Extraction →
+> New Admin UI (I/theme R6 → J collections-nav R3 → K editing R4 + palette R10 + pickers R9 + preview-toggle R12) →
+> collection-CRUD R8 → extension model R13.
+>
+> **D1 databases provisioned (Pass AUTH Phase 0):** `cairn-ecnordic-auth` `83178db3-0aae-4c1d-b6ad-1626193ebefd`,
+> `cairn-907-auth` `93aa929d-0228-4f8b-8d1e-5e7e0d755617` (account glw907). IDs also in the workspace `CLAUDE.md`.
 >
 > **Also still pending (unchanged):** server-side npm token revoke at npmjs.com → Granular Access Tokens (low
 > urgency — OIDC Trusted Publishing, no stored token; website-only). **Risk #1 (Cloudflare Email Sending) fully
@@ -507,6 +520,66 @@ no longer excluded — just unscheduled.
   (full v2 rewrite), `PLAN.md` (this entry, new locked-decision row, re-sequenced passes, risk #7/#8/#9/#10
   annotations, NEXT pointer), `creating-a-cairn-theme.md` (drop "Hugo-like", engine-fat/theme-thin hard rule).
   Not committed (no-push-without-asking; edits land locally). **Next: write the Pass AUTH detailed plan.**
+
+### Pass AUTH — migrate to better-auth (D1 + magic-link + POST-confirm + roles) — Phases 0–5 DONE, Phase 6 (prod) pending (2026-05-26)
+
+- **Goal (code half) met: the hand-rolled magic-link/signed-cookie/KV auth is GONE from the package and both
+  sites; better-auth (`@better-auth` 1.6.11 + drizzle-orm 0.45.2 on Cloudflare D1) is live locally on both,
+  behind a scanner-safe POST-confirm flow, with two-tier owner/editor roles and DB-backed session revocation.**
+  Phases 0–5 (package + both sites + local D1 + dev smokes) are done & committed (NOT pushed); **Phase 6 is the
+  prod cutover** — remote D1 apply, `AUTH_SECRET` secrets, 1.0.0 publish/repoint, Firefox prod smokes, old-secret
+  decommission — left for the user (browser clicks + prod secrets). See the NEXT pointer.
+- **Verified against the REAL installed better-auth (not the plan's assumptions) — several plan corrections:**
+  (1) `drizzleAdapter` **requires** the generated `schema` passed in (plan omitted it → would throw "Schema not
+  found"); camelCase JS keys map to the snake_case DB columns automatically. (2) `disableSignUp:true` does **not**
+  stop better-auth *emailing* unknown addresses — it still fires `sendMagicLink` (anti-enumeration) and only blocks
+  user creation at verify; so the **allowlist send-gate** lives inside our `sendMagicLink` callback
+  (`ctx.context.internalAdapter.findUserByEmail` → skip send if no user) — engine-level, inherited by both prod and
+  tests. (3) `adminRoles:['owner']` must name a role defined via the **access-control system** (default admin role
+  is `admin`), so owner/editor are built with `createAccessControl(defaultStatements)` (owner = all statements,
+  editor = none). (4) The plan's `databaseHooks.user.create.before` allowlist guard was **circular** (would block the
+  owner-gated `createUser`) — dropped; `disableSignUp` + no email/password + owner-gated createUser already make the
+  `user` table the allowlist. (5) Magic-link tokens are **consumed atomically on first verify** (GHSA-hc7v-rggr-4hvx)
+  — C1 is fixed by construction. (6) Seed/migration SQL uses **snake_case cols + ms timestamps** (plan example was
+  camelCase + seconds).
+- **Package (cairn-cms) — new `@glw907/cairn-cms/auth` subpath** (source↔dist swap): `auth/config.ts`
+  (`buildAuth`/`createAuth` factory — shared plugin set so tests run the exact config over in-mem SQLite),
+  `auth/guard.ts` (`loadSession`/`requireSession`/`confirmSignIn` POST-verify proxy forwarding all Set-Cookie →
+  303 /admin /C2/ + `signOut`), `auth/admins.ts` (owner-gated `adminsLoad`/`addAdmin`/`removeAdmin`/`setAdminRole`
+  on `auth.api` listUsers/createUser/removeUser/setRole + `revokeUserSessions` /M3/ + anti-lockout), `auth/schema.ts`
+  (generated), `auth/index.ts` barrel. `sveltekit/index.ts` is now **content-only** (list/edit/save; `editor`→`user`/
+  `CairnUser`; `AdminEnv` trimmed to `GITHUB_APP_*`). Components: `ConfirmPage.svelte` (JS-free POST-confirm),
+  `LoginPage.svelte` (better-auth client, neutral copy), `AdminLayout`/`ManageAdmins` read `user`/`AdminsData` from
+  `/auth`. Deleted `src/lib/auth.ts` + its test. The browser client is component-local in LoginPage (keeps
+  better-auth's deep client types out of the emitted `.d.ts` — `svelte-package` else fails to emit). Tooling:
+  `auth.cli.ts` + `drizzle.config.ts` + `auth:schema`/`auth:sql` scripts; `migrations/0000_*.sql` committed (sites
+  copy it). `scripts/migrate-allowlist.mjs` (KV→D1, idempotent). better-auth + drizzle-orm are **peerDeps** (engine
+  dedupe, like @sveltejs/kit), not deps.
+- **Tests: 7 integration tests over real better-auth + in-mem better-sqlite3** (allowlist send-gate: no email to
+  strangers; positive send; single-use verify /C1/; confirmSignIn POST→303+cookie & replay→login /C2/; requireOwner
+  401/403; full owner add→list→re-role(+revoke)→remove cycle; anti-lockout self-remove/demote). Package **32 tests**
+  green (replaced the old hand-rolled auth suite), clean `svelte-package` (emits `dist/auth`).
+- **Both sites cut over + locally verified.** Per site: `wrangler.toml` +`AUTH_DB` (D1) + `migrations_dir` + `[vars]
+  BETTER_AUTH_URL` (AUTH_KV kept for rollback grace); `app.d.ts` `Locals.auth`/`user` + `AUTH_DB`/`AUTH_SECRET`/
+  `BETTER_AUTH_URL`; `hooks.server.ts` per-request `createAuth`+`loadSession`+guard (theme transform preserved);
+  `api/auth/[...all]` catch-all; `admin/auth/confirm` shims; `admin/auth/logout`→`signOut`; `admin/admins` shim →
+  `/auth`; **removed** `admin/auth/{request,callback}` + `login/+page.server.ts` (siteName now merges from the layout
+  load); committed `drizzle/migrations`. `diff -rq` confirms the two sites' `admin/`+`api/` trees stay **byte-identical**
+  (F2 invariant; only `cairn.config.ts` differs). Both `svelte-check` **0/0**, Cloudflare `npm run build` OK (better-auth
+  bundles fine — under the size wall). **Live `wrangler dev` (each site, local D1, owner seeded):** `/admin`→303 login,
+  `/admin/login`→200 (proves `createAuth`+`loadSession`+D1 in-worker), `/`→200, `/admin/auth/confirm`→200, catch-all
+  `get-session`→200, **non-allowlisted sign-in→200 with NO email sent** (allowlist gate), old `/admin/auth/request`→404.
+  (Full email→click→session round-trip can't be reproduced locally — tokens are stored hashed, so it's the user's
+  Firefox step, same posture as every prior go-live; the crypto/flow is covered by the integration tests.)
+- **Risks (code-resolved by construction; flip to RETIRED at prod cutover):** **C1** (single-use) — atomic on D1 by
+  construction; **C2** (scanner prefetch) — POST-confirm built + tested; **H3** (timing-safe / token lifecycle) — lib
+  owns it, origin is config-derived (`PUBLIC_ORIGIN`/`BETTER_AUTH_URL`, never request-derived); **M3** (session
+  revocation) — `revokeUserSessions` on re-role/remove. Risks **#7/#8/#10** move to resolved-pending-prod.
+- **code-simplifier** run over the new package auth code: doc-comment-only polish on `config.ts` (no logic); rest clean.
+- **Not pushed; prod dormant.** All commits land locally (no-push-without-asking). Old `MAGIC_LINK_SECRET`/
+  `SESSION_SECRET`/AUTH_KV stay in place until Phase 6 prod-smoke passes (no login outage; the previous deploy is one
+  revert away). Site `package.json` still pins cairn-cms `^0.3.1` — local dev resolves better-auth/drizzle from the
+  hoisted workspace root; Phase 6 adds them as site deps + bumps to `^1.0.0`.
 
 ### Pass 0 — bootstrap (2026-05-24)
 

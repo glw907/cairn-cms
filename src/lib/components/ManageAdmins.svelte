@@ -15,12 +15,9 @@
   <title>Editors · {data.siteName} CMS</title>
 </svelte:head>
 
-<div class="flex items-center justify-between gap-4">
-  <div>
-    <a href="/admin" class="text-sm opacity-70 hover:underline">← Back</a>
-    <h1 class="mt-1 text-2xl font-bold">Editors</h1>
-    <p class="text-sm opacity-60">Who can sign in to {data.siteName} CMS.</p>
-  </div>
+<div>
+  <h1 class="text-2xl font-bold">Editors</h1>
+  <p class="text-sm opacity-60">Who can sign in to {data.siteName} CMS.</p>
 </div>
 
 {#if data.saved}
@@ -70,15 +67,15 @@
   <label class="flex flex-col gap-1">
     <span class="text-sm font-medium">Email</span>
     <input type="email" name="email" required autocomplete="off" placeholder="you@example.com"
-      class="input input-bordered w-full" />
+      class="input w-full" />
   </label>
   <label class="flex flex-col gap-1">
     <span class="text-sm font-medium">Name</span>
-    <input type="text" name="name" required placeholder="Display name" class="input input-bordered w-full" />
+    <input type="text" name="name" required placeholder="Display name" class="input w-full" />
   </label>
   <label class="flex flex-col gap-1">
     <span class="text-sm font-medium">Role</span>
-    <select name="role" class="select select-bordered">
+    <select name="role" class="select">
       <option value="editor">editor</option>
       <option value="owner">owner</option>
     </select>

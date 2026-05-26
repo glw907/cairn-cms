@@ -39,7 +39,7 @@
         required
         autocomplete="email"
         placeholder="you@example.com"
-        class="input input-bordered w-full"
+        class="input w-full"
       />
       <button type="submit" class="btn btn-primary">Email me a sign-in link</button>
     </form>

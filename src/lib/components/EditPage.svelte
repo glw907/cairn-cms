@@ -73,14 +73,14 @@
             name={field.name}
             required={field.required}
             value={fmString(field.name)}
-            class="input input-bordered w-full"
+            class="input w-full"
           />
         </label>
       {:else if field.type === 'textarea'}
         <label class="flex flex-col gap-1">
           <span class="text-sm font-medium">{field.label}</span>
           <textarea name={field.name} required={field.required} rows={field.rows ?? 4}
-            class="textarea textarea-bordered w-full">{fmString(field.name)}</textarea>
+            class="textarea w-full">{fmString(field.name)}</textarea>
         </label>
       {:else if field.type === 'tags'}
         <div class="flex flex-col gap-1">
@@ -99,7 +99,7 @@
         <label class="flex flex-col gap-1">
           <span class="text-sm font-medium">{field.label}</span>
           <input type="text" name={field.name} value={fmFreeTags(field.name)}
-            placeholder={field.placeholder ?? 'comma, separated'} class="input input-bordered w-full" />
+            placeholder={field.placeholder ?? 'comma, separated'} class="input w-full" />
         </label>
       {:else if field.type === 'boolean'}
         <label class="flex items-center gap-2 text-sm font-medium">
@@ -115,7 +115,7 @@
     {#if mounted}
       <MarkdownEditor {carta} bind:value={body} mode="tabs" />
     {:else}
-      <textarea bind:value={body} rows="20" class="textarea textarea-bordered w-full font-mono"></textarea>
+      <textarea bind:value={body} rows="20" class="textarea w-full font-mono"></textarea>
     {/if}
   </div>
 

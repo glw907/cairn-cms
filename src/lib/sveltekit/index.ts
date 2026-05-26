@@ -52,17 +52,21 @@ const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 export interface AdminLayoutData {
   editor: Editor | null;
   siteName: string;
+  pathname: string;
 }
 
 /**
  * Branding + session for every admin page. `siteName` flows from the adapter without pulling
  * its plugin graph into client bundles — the import stays server-side in the layout load.
+ * `pathname` lets the shared shell highlight the active nav item without a `$app/*` import
+ * (those kit virtual modules have no types outside a kit app, so they can't live in the
+ * package); reading `event.url` here also opts the layout load into rerunning on navigation.
  */
 export function adminLayoutLoad(
-  event: { locals: { editor: Editor | null } },
+  event: { locals: { editor: Editor | null }; url: URL },
   adapter: CairnAdapter,
 ): AdminLayoutData {
-  return { editor: event.locals.editor, siteName: adapter.siteName };
+  return { editor: event.locals.editor, siteName: adapter.siteName, pathname: event.url.pathname };
 }
 
 // ── /admin (content list) ────────────────────────────────────────────────────

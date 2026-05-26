@@ -282,15 +282,21 @@ no longer excluded — just unscheduled.
 > Session-by-session execution state and post-mortems. The workspace `CLAUDE.md` stays lean
 > (durable orientation only); running progress lives here, in the git-backed plan.
 
-> **⏭ NEXT SESSION (start here) — admin-UI-polish pass (responsive, extensible shell).** The
-> Exploration review is **DONE** (see entry below; memo at `docs/FORWARD-COMPAT.md`). Its UI half
-> picked the next concrete build: replace the spartan single-column `AdminLayout.svelte` with a DaisyUI
-> **`drawer` + `navbar`** shell — fully responsive by construction (`drawer lg:drawer-open`) and
-> extensible via a **data-driven, role-gated nav** so a new surface is one nav entry + one route shim +
-> one `cairn-cms/{sveltekit,components}` pair. **Base:** [`scosman/CMSaasStarter`](https://github.com/scosman/CMSaasStarter)
-> (`(admin)/(menu)/+layout.svelte` — Svelte 5 runes, MIT, pure DaisyUI). User requirements captured:
-> *easy to add functionality* + *fully responsive*. This is a build pass (touches the shared
-> `cairn-cms/components` shell → both sites); confirm scope before starting.
+> **⏭ NEXT SESSION (start here) — publish/version-bump pass (ship Pass G + Pass H to both sites).**
+> Two passes of package code (Pass G manage-admins, Pass H admin-UI shell) have landed in
+> `@glw907/cairn-cms` source but **not yet been published** — both sites still pin `^0.2.0`, so
+> their CI builds the *old* package. The shippable next step is a **version bump + publish** (bump to
+> `0.3.0`, release via the wired Trusted-Publishing OIDC workflow), then repoint both sites to `^0.3.0`,
+> regenerate + commit each standalone lockfile, and confirm both CI deploys stay green (the Pass P
+> playbook). After that, **prod `/admin` can be made live** per site by setting `MAGIC_LINK_SECRET`
+> + `SESSION_SECRET` (unchanged Pass A dormancy posture). Remaining roadmap items beyond that are the
+> **Future** entries (media/uploads, Hugo-style themes) — still unscheduled. Also pending: the
+> server-side npm token revoke (low urgency, see Pass P follow-ups).
+>
+> **Pass H is DONE** (2026-05-25 — see the Pass H entry below): the responsive DaisyUI `drawer`+`navbar`
+> admin shell with a data-driven, role-gated nav. Built in the shared `cairn-cms/components`, consumed
+> by both sites as unchanged byte-identical shims; verified (39/39 package tests, both sites
+> `svelte-check` 0/0 + Cloudflare build, live `wrangler dev` smoke). Committed locally, not pushed.
 >
 > **Pass G is DONE** (2026-05-25 — see the Pass G entry below) and fully shipped: `@glw907/cairn-cms@0.2.0`
 > published via Trusted Publishing, **both** sites pinned `^0.2.0` with **CI deploys green**, Geoff seeded
@@ -741,6 +747,51 @@ no longer excluded — just unscheduled.
   are set (unchanged Pass A posture); the manage-admins surface needs only the already-present
   AUTH_KV. Risk #5's CI half was **retired in Pass P** (published `@glw907/cairn-cms@0.1.0`); Pass G's
   new package code will reach the sites' CI on the next publish + version bump.
+
+### Pass H — responsive admin-UI shell (drawer+navbar, data-driven nav) (2026-05-25)
+
+- **Goal met: the admin is now a responsive, extensible shell.** `AdminLayout` went from a
+  spartan single-column container to a DaisyUI **`drawer lg:drawer-open`** shell — sidebar pinned
+  on desktop, slide-over + hamburger `navbar` on mobile — patterned on `scosman/CMSaasStarter`'s
+  `(admin)/(menu)` layout (the user chose to mirror it closely). Built once in the shared
+  `cairn-cms/components`; both sites consume it unchanged. No behavior change to auth/list/edit/save.
+- **Data-driven, role-gated nav (the extensibility point).** The shell renders a `nav` array
+  (`{ href, label, icon (snippet), active, owner? }`); `visibleNav` filters owner-only entries by
+  `data.editor.role`. Today: **Content** (always; active on `/admin` + `/admin/edit/*`) and
+  **Editors** (owner-only; active on `/admin/admins`). Adding a surface is now **one nav entry**
+  (+ its route shim + component) — the "easy to add functionality" requirement, structural.
+- **Chrome consolidated into the shell (the user's "shell owns all chrome" choice).** The site
+  title, signed-in identity (name/email), Sign Out form, and the owner-only Editors link all moved
+  **out of `AdminList`/`ManageAdmins`** into `AdminLayout` (navbar + sidebar footer). `AdminList`
+  now renders just a "Content" heading + the collection list; `ManageAdmins` dropped its redundant
+  "← Back" link (the nav owns navigation). The `EditPage` keeps its own contextual back-link (a leaf
+  affordance, not global chrome).
+- **Active-nav highlighting without a `$app/*` import.** The component needs the current path but
+  the F2 invariant forbids `$app/*` in the package (those kit virtual modules have no types outside a
+  kit app → break `svelte-package` type emit). Solution: `adminLayoutLoad` now returns
+  `pathname` (reads `event.url.pathname`), threaded through `AdminLayoutData`. Reading `event.url`
+  also opts the layout server load into rerunning on navigation, so the active class stays correct.
+- **Signed-out fallback.** The login page lives under the same `/admin` layout but has no session,
+  so when `data.editor` is null the shell renders a **minimal centered surface** (no drawer/nav) —
+  the old `AdminLayout` shape. Live-verified: `/admin/login` carries no `drawer` markup.
+- **Shim change (both sites, byte-identical).** `admin/+layout.svelte` went from
+  `<AdminLayout>{@render children()}</AdminLayout>` to forwarding `data`:
+  `let { data, children } = $props(); <AdminLayout {data}>…`. `diff -rq` confirms the two sites'
+  whole `admin/` route trees stay byte-identical (only `cairn.config.ts` differs — the F2 invariant).
+- **Verified.** Package **39/39 vitest**, clean `svelte-package`. Both sites `svelte-check` **0/0**
+  (ecnordic 474, 907 386) + Cloudflare `npm run build` OK. **Live `wrangler dev` (ecnordic, minted
+  sessions):** anon `/admin`→**303** login; **editor**→**200** with Content nav + Sign out but **no**
+  Editors link; **owner**→**200** with the Editors link, site chrome, and identity present; the drawer
+  shell (`drawer … lg:drawer-open`) renders; `/admin/login`→**200** with **no** drawer (minimal shell);
+  `/admin/admins`→Editors nav `class="active"`; `/admin/edit/pages/training`→Content nav `class="active"`.
+- **code-simplifier + v5 cleanup.** Simplifier verdict: the new shell/nav/`pathname` code is already
+  clean (no changes). It flagged a pre-existing DaisyUI **v4** class (`input-bordered`) in
+  `ManageAdmins`; for package coherence I swept all four admin components (`Login`, `Edit`, `Manage`)
+  of `input-bordered`/`textarea-bordered`/`select-bordered` → bare `input`/`textarea`/`select` (v5
+  carries the border by default; both sites are DaisyUI v5, so visually identical). Re-verified green.
+- **Not published / prod-dormant (carry-over).** This is package source only; both sites pin `^0.2.0`,
+  so the shell reaches their CI on the next publish + version bump (now the NEXT-SESSION pointer).
+  Commits land locally per the no-push-without-asking rule.
 
 ### Exploration — forward-compat review (research pass, 2026-05-25)
 

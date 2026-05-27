@@ -42,13 +42,13 @@
 </script>
 
 <svelte:head>
-  <title>Edit {data.title} · {data.siteName} CMS</title>
+  <title>{data.isNew ? `New ${data.label} entry` : `Edit ${data.title}`} · {data.siteName} CMS</title>
 </svelte:head>
 
 <div class="flex items-center justify-between gap-4">
   <div>
-    <a href="/admin" class="text-sm opacity-70 hover:underline">← Back</a>
-    <h1 class="mt-1 text-2xl font-bold">{data.title}</h1>
+    <a href="/admin/{data.type}" class="text-sm opacity-70 hover:underline">← Back to {data.label}</a>
+    <h1 class="mt-1 text-2xl font-bold">{data.isNew ? `New ${data.label} entry` : data.title}</h1>
     <p class="text-sm opacity-60">{data.label} · {data.path}</p>
   </div>
 </div>
@@ -62,6 +62,7 @@
 <form method="POST" action="/admin/save" class="mt-6 flex flex-col gap-5">
   <input type="hidden" name="type" value={data.type} />
   <input type="hidden" name="id" value={data.id} />
+  {#if data.isNew}<input type="hidden" name="new" value="1" />{/if}
 
   <fieldset class="grid gap-4 rounded-box border border-base-300 bg-base-100 p-6">
     {#each data.fields as field (field.name)}
@@ -120,6 +121,6 @@
   </div>
 
   <div class="flex justify-end">
-    <button type="submit" class="btn btn-primary">Save &amp; commit</button>
+    <button type="submit" class="btn btn-primary">{data.isNew ? 'Create & commit' : 'Save & commit'}</button>
   </div>
 </form>

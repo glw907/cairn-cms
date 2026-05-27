@@ -1,11 +1,7 @@
 <script lang="ts">
-  // Neutral admin chrome, shared across sites so the tool looks identical everywhere (only the
-  // adapter's siteName varies). When signed in it's a responsive DaisyUI drawer+navbar shell
-  // (`drawer lg:drawer-open`, sidebar pinned on desktop, slide-over + hamburger on mobile),
-  // patterned on scosman/CMSaasStarter's `(admin)/(menu)` layout. The nav is data-driven and
-  // role-gated, so a new surface is one entry in `nav` (plus its route + component). Signed out
-  // (the login page lives under this layout) it falls back to a minimal centered shell.
-  // Each site's `admin/+layout.svelte` is a one-line shim that forwards `data` + `children`.
+  // Neutral admin chrome shared across sites. Signed in: DaisyUI drawer+navbar shell (sidebar
+  // pinned on desktop, slide-over on mobile). Signed out: minimal centered shell. The
+  // `cairn-admin` class on both roots scopes the "Warm Stone" theme; see the style block.
   import type { Snippet } from 'svelte';
   import type { CairnUser } from '../auth';
 
@@ -43,7 +39,7 @@
   ]);
   const visibleNav = $derived(nav.filter((item) => !item.owner || data.user?.role === 'owner'));
 
-  // Close the slide-over after a nav tap on mobile (no-op on desktop where it's pinned open).
+  // Close the slide-over after a nav tap on mobile.
   function closeDrawer(): void {
     const toggle = document.getElementById('admin-drawer');
     if (toggle instanceof HTMLInputElement) toggle.checked = false;
@@ -69,7 +65,7 @@
 </svelte:head>
 
 {#if data.user}
-  <div class="drawer min-h-screen bg-base-200 lg:drawer-open" data-pagefind-ignore>
+  <div class="cairn-admin drawer min-h-screen bg-base-200 lg:drawer-open" data-pagefind-ignore>
     <input id="admin-drawer" type="checkbox" class="drawer-toggle" />
 
     <div class="drawer-content">
@@ -122,9 +118,50 @@
   </div>
 {:else}
   <!-- Signed out (login page): no nav, just a centered surface. -->
-  <div class="min-h-screen bg-base-200" data-pagefind-ignore>
+  <div class="cairn-admin min-h-screen bg-base-200" data-pagefind-ignore>
     <div class="mx-auto max-w-3xl px-4 py-8">
       {@render children()}
     </div>
   </div>
 {/if}
+
+<style>
+  /* Warm Stone: a neutral, fully self-contained admin theme (R6), light-only. Overriding the
+     DaisyUI v5 tokens + font on this root re-skins the whole admin subtree by inheritance, so
+     the tool looks identical on every host regardless of the site's own theme. Values are OKLCH
+     (no hex/rgb, per the design-system rule). Warm-gray neutrals (hue ~75), violet accent. */
+  .cairn-admin {
+    color-scheme: light;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
+    --color-base-100: oklch(98.5% 0.004 75);
+    --color-base-200: oklch(96% 0.005 75);
+    --color-base-300: oklch(92% 0.008 75);
+    --color-base-content: oklch(28% 0.012 75);
+
+    --color-primary: oklch(52% 0.20 293);
+    --color-primary-content: oklch(98% 0.012 293);
+    --color-secondary: oklch(45% 0.02 75);
+    --color-secondary-content: oklch(98% 0.004 75);
+    --color-accent: oklch(58% 0.16 300);
+    --color-accent-content: oklch(98% 0.012 300);
+    --color-neutral: oklch(32% 0.012 75);
+    --color-neutral-content: oklch(96% 0.004 75);
+
+    --color-info: oklch(60% 0.12 240);
+    --color-info-content: oklch(98% 0.01 240);
+    --color-success: oklch(58% 0.12 150);
+    --color-success-content: oklch(98% 0.01 150);
+    --color-warning: oklch(75% 0.15 70);
+    --color-warning-content: oklch(25% 0.02 70);
+    --color-error: oklch(58% 0.20 25);
+    --color-error-content: oklch(98% 0.01 25);
+
+    --radius-selector: 0.5rem;
+    --radius-field: 0.5rem;
+    --radius-box: 0.75rem;
+    --size-selector: 0.25rem;
+    --size-field: 0.25rem;
+    --border: 1px;
+  }
+</style>

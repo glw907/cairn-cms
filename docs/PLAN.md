@@ -259,8 +259,8 @@ Resulting **planned passes (sequenced)**, superseding the standalone "Pass I the
   to later passes** (were listed here, out of this extraction's scope): the thin `MarkdownEditor` interface (P3), Git
   Trees API listing + 1 MB cap (H4), engine version stamp + Renovate (H1). None gate the render extraction; carry to
   the editor/scaffolder passes. Single-kit peerDep (M4) + Shiki-off-server (C4) already held (unchanged).
-- **Then: New Admin UI passes** (detailed plans to be written after extraction lands): **Pass I/theme** (Warm Stone, R6),
-  **Pass J** (collections-first nav + per-collection list, R3), **Pass K** (differentiated editing R4 + component palette R10
+- **Then: New Admin UI passes** (detailed plans to be written after extraction lands): **Pass I/theme** (Warm Stone, R6;
+  **code DONE 2026-05-27, not released**), **Pass J** (collections-first nav + per-collection list, R3), **Pass K** (differentiated editing R4 + component palette R10
   + icon/asset pickers R9 + preview toggle R12; may split), and a **collection-CRUD** round (R8, needs its storage decision).
   Each ships as a cairn-cms minor + both-site repoint (Pass P pattern).
 - **Then: Canonical extension model** (R13, own design round; naturally follows the extraction, which establishes the
@@ -512,9 +512,17 @@ no longer excluded, just unscheduled.
 > (H4); governed `CairnExtension` (H5); 409 fail-safe (C3); POST-confirm (C2); CI/bundle guards (C4/M5); non-dev
 > safety net (M1).
 >
-> **START HERE: 0.5.0 shipped (render + Pass ROBUST), both CI deploys green. Next is the New Admin UI passes.**
-> One user-gated item remains from Pass AUTH: the Firefox prod smoke on each site, then the legacy-auth decommission
-> (worker secrets + AUTH_KV; see the two-user-steps note below). The release bundle is otherwise done.
+> **START HERE: Pass I (Warm Stone admin theme, R6) code is DONE + verified locally (2026-05-27); not yet released.**
+> Next New Admin UI pass is **Pass J** (collections-first nav + per-collection entries list, R3), then **Pass K**
+> (differentiated page-vs-story editing, R4). Write the Pass J detailed plan first (the design spec
+> `docs/superpowers/specs/2026-05-26-admin-ui-design.md` §R3 is the source). Pass I + J (+K) likely ship together as
+> one cairn-cms minor (Pass P pattern: publish via OIDC, both sites repoint + lockfile regen, both CI deploys green);
+> Pass I alone is not worth a release.
+>
+> Two user-gated items still stand, neither blocking Pass J: (1) the Firefox prod smoke on each site from Pass AUTH,
+> then the legacy-auth decommission (worker secrets + AUTH_KV; see the two-user-steps note below); (2) the Firefox
+> visual confirmation of the Warm Stone theme on both `/admin`s once the admin-UI minor ships. The 0.5.0 release
+> bundle is otherwise done.
 >
 > **(Historical) Pass AUTH SHIPPED to prod as 0.4.0.**
 > better-auth (D1 + magic-link + POST-confirm + owner/editor roles) **replaced the hand-rolled stack and is LIVE in prod
@@ -568,6 +576,39 @@ no longer excluded, just unscheduled.
 >
 > **Pass G is DONE** (2026-05-25; see the Pass G entry below): owner-gated editor management, Geoff seeded
 > as `owner` in all four AUTH_KV namespaces; **shipped to both sites** (`@0.2.0` then carried in `@0.3.0`).
+
+### Pass I: neutral self-contained admin theme ("Warm Stone", R6). Code DONE, not released (2026-05-27)
+
+- **Goal met: the admin chrome is now theme-isolated.** `AdminLayout` re-skins `/admin` neutrally
+  regardless of the host site's DaisyUI theme and fonts, retiring the R6 bug (ecnordic rendered the
+  admin in its `ecn` crimson theme + Alegreya Sans; 907 in `silk`/`dim` + Spectral serif). Light-only,
+  "Warm Stone" (warm-gray neutrals at hue ~75, violet accent, system-ui font). Plan:
+  `docs/superpowers/plans/2026-05-27-pass-i-warm-stone-theme.md`. Committed locally; not pushed.
+- **Approach: fully self-contained (decision (b)) via CSS custom-property inheritance, NOT a compiled
+  `data-theme`.** A `cairn-admin` class on both of `AdminLayout`'s root divs (signed-in drawer shell +
+  signed-out login shell) plus a scoped `<style>` that sets the full DaisyUI v5 token set, `font-family`,
+  geometry tokens (`--radius-*`/`--size-*`/`--border`), and `color-scheme: light` on `.cairn-admin`.
+  DaisyUI reads `var(--color-*)` at point of use and custom properties inherit, so the whole subtree
+  (including the child components rendered through `{@render children()}`) re-skins from the nearest
+  ancestor that sets the tokens, which is now `.cairn-admin`, overriding the host's `:root`/`[data-theme]`
+  for the admin subtree. Inheritance does the work, not specificity, so Svelte scoping is a non-issue
+  (only the setting selector needs the scope hash; inherited values flow to unscoped descendants). The
+  package never imports DaisyUI and cannot force a host to compile a theme, which is exactly why the
+  override-the-vars approach is the right one. **One file, no contract change, no per-site edit.**
+- **Gotcha found + fixed:** a literal `<style>`/`<script>` token inside a `<script>`-block JS comment
+  breaks Svelte's parser (`element_unclosed: "<script>" was left open`); `svelte-package` failed until
+  the comment was reworded to avoid the raw tag tokens. Worth remembering for future comments.
+- **Verified.** Package 48/48 vitest, `svelte-package` emits `dist/components/AdminLayout.svelte` with the
+  theme block. Both sites `svelte-check` **0/0** and Cloudflare `npm run build` OK against the workspace
+  symlink. Structural proof the override ships into a consumer: ecnordic's built CSS carries
+  `.cairn-admin.svelte-<hash>{ … color-scheme:light; --color-primary:oklch(52% .2 293); … }` (Lightning CSS
+  rewrote the OKLCH literals), and both root divs carry the class. The visual confirmation in Firefox (the
+  admin looks identical + warm-gray/violet on both sites) is the standing user browser step, as in prior passes.
+- **code-simplifier** run over the file: trimmed two over-long comments (the top-of-file block and the
+  `closeDrawer` note); no logic touched, OKLCH token set left intact per the design-system rule.
+- **Risk register:** none flipped (R6 was a locked-decision violation, not a numbered risk); retires the
+  Pass I item from the New Admin UI queue. **Release:** ships as a cairn-cms minor (Pass P pattern), folded
+  with the next admin-UI release; not published this pass.
 
 ### Release 0.5.0: ship render extraction + Pass ROBUST; both sites green (2026-05-27)
 

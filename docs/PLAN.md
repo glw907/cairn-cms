@@ -458,22 +458,28 @@ no longer excluded — just unscheduled.
 > (H4); governed `CairnExtension` (H5); 409 fail-safe (C3); POST-confirm (C2); CI/bundle guards (C4/M5); non-dev
 > safety net (M1).
 >
-> **START HERE: Pass AUTH — Phase 6 PROD CUTOVER (user-gated), then publish 1.0.0.** Pass AUTH's code is
-> **DONE + locally verified** (Phases 0–5 — see the Pass AUTH log entry below): better-auth (D1 + magic-link +
-> POST-confirm + owner/editor roles) replaces the hand-rolled stack in the package and **both sites are cut over
-> and pass `wrangler dev` smokes against local D1**. Remaining = **Phase 6**, which needs the user (browser clicks +
-> prod secrets) and is intentionally NOT done autonomously: (1) `wrangler d1 migrations apply cairn-{ecnordic,907}-auth
-> --remote`; (2) run `scripts/migrate-allowlist.mjs <kv-id> <d1> --remote` per site (or rely on it to seed the owner
-> from the Pass-G KV JSON); (3) `wrangler secret put AUTH_SECRET` per worker (`ecnordic`/`907-life`); (4) bump
-> cairn-cms → **1.0.0**, publish via OIDC, repoint both sites to `^1.0.0` + add `better-auth`+`drizzle-orm` deps,
-> regen lockfiles (Pass P method), CI green; (5) Firefox prod smoke on both (request link → confirm page → Confirm
-> sign-in → authed /admin; reuse link fails; manage-editors as owner); (6) decommission `MAGIC_LINK_SECRET`/
-> `SESSION_SECRET` + AUTH_KV after stable. **Then** Pass ROBUST (C3/M2/guards) → Theme-Architecture Extraction →
-> New Admin UI (I/theme R6 → J collections-nav R3 → K editing R4 + palette R10 + pickers R9 + preview-toggle R12) →
-> collection-CRUD R8 → extension model R13.
+> **START HERE: Pass AUTH is SHIPPED to prod — two user steps remain (browser smoke + decommission), then Pass ROBUST.**
+> better-auth (D1 + magic-link + POST-confirm + owner/editor roles) **replaced the hand-rolled stack and is LIVE in prod
+> on both sites** as `@glw907/cairn-cms@0.4.0` (published via OIDC; not 1.0 — unproven end-to-end). All six phases ran:
+> remote D1 migrated + owner (`geoff-login@907.life`) seeded as `owner` in both DBs, `AUTH_SECRET` set on both workers,
+> 0.4.0 published, both sites repointed `^0.4.0` + `better-auth`/`drizzle-orm` deps + regen lockfiles, **both CI deploys
+> green**, prod wiring smoked: `/admin`→303 login, `/admin/login`→200, `/api/auth/get-session`→200 `null` (proves
+> `createAuth`+`loadSession` against the live remote D1 + AUTH_SECRET), old `/admin/auth/request`→404, both sites 200.
 >
-> **D1 databases provisioned (Pass AUTH Phase 0):** `cairn-ecnordic-auth` `83178db3-0aae-4c1d-b6ad-1626193ebefd`,
-> `cairn-907-auth` `93aa929d-0228-4f8b-8d1e-5e7e0d755617` (account glw907). IDs also in the workspace `CLAUDE.md`.
+> **TWO USER STEPS REMAIN (browser + cleanup):** (1) **Firefox prod smoke on each site** — request a link as the owner →
+> email arrives → opens the **confirm page** (no auto-login) → "Confirm sign-in" → authed `/admin`; reuse the link → fails
+> (single-use); load **Editors** as owner, add a test editor → it appears (and gets a link) → remove it. (2) **After the
+> smoke confirms stable, decommission the legacy auth:** `wrangler secret delete MAGIC_LINK_SECRET`/`SESSION_SECRET` on
+> `ecnordic` + `907-life`; delete the `editor:*` AUTH_KV keys (or the namespaces) after a grace period; drop the AUTH_KV
+> `[[kv_namespaces]]` block from each `wrangler.toml`. The previous deploy (old auth) is one `git revert` away if the
+> smoke fails. (Optional bookkeeping: add `AUTH_SECRET` as a per-site worker-only secret in `~/.dotfiles/.../sync.sh` +
+> `registry.md`, like the old HMAC pair; mark MAGIC_LINK/SESSION for removal.)
+>
+> **Then** Pass ROBUST (C3/M2/guards) → Theme-Architecture Extraction → New Admin UI (I/theme R6 → J collections-nav R3 →
+> K editing R4 + palette R10 + pickers R9 + preview-toggle R12) → collection-CRUD R8 → extension model R13.
+>
+> **D1 databases (Pass AUTH):** `cairn-ecnordic-auth` `83178db3-0aae-4c1d-b6ad-1626193ebefd`, `cairn-907-auth`
+> `93aa929d-0228-4f8b-8d1e-5e7e0d755617` (account glw907). IDs also in the workspace `CLAUDE.md`.
 >
 > **Also still pending (unchanged):** server-side npm token revoke at npmjs.com → Granular Access Tokens (low
 > urgency — OIDC Trusted Publishing, no stored token; website-only). **Risk #1 (Cloudflare Email Sending) fully
@@ -576,10 +582,17 @@ no longer excluded — just unscheduled.
   owns it, origin is config-derived (`PUBLIC_ORIGIN`/`BETTER_AUTH_URL`, never request-derived); **M3** (session
   revocation) — `revokeUserSessions` on re-role/remove. Risks **#7/#8/#10** move to resolved-pending-prod.
 - **code-simplifier** run over the new package auth code: doc-comment-only polish on `config.ts` (no logic); rest clean.
-- **Not pushed; prod dormant.** All commits land locally (no-push-without-asking). Old `MAGIC_LINK_SECRET`/
-  `SESSION_SECRET`/AUTH_KV stay in place until Phase 6 prod-smoke passes (no login outage; the previous deploy is one
-  revert away). Site `package.json` still pins cairn-cms `^0.3.1` — local dev resolves better-auth/drizzle from the
-  hoisted workspace root; Phase 6 adds them as site deps + bumps to `^1.0.0`.
+- **Phase 6 — SHIPPED to prod (user-authorized "everything up to the push", 2026-05-26).** Remote D1 migrated on both;
+  the Pass-G KV allowlist migrated into D1 via `migrate-allowlist.mjs --remote` — **the remote KV entries were legacy
+  bare strings** (decoded as `editor`, not the JSON owner Pass G claimed), so a direct `UPDATE … role='owner'` fixed
+  Geoff to `owner` in both remote DBs; `AUTH_SECRET` (distinct per site) set on both workers. Published
+  **`@glw907/cairn-cms@0.4.0`** (NOT 1.0 — unproven end-to-end; user's call) via the OIDC Trusted-Publishing workflow
+  (`v0.4.0` release → `publish.yml` green → `npm latest`=0.4.0). Both sites repointed `^0.3.1`→`^0.4.0` + added
+  `better-auth`/`drizzle-orm` deps, lockfiles regenerated (Pass P isolated-temp-dir → registry tarball), `npm ci`
+  dry-run clean, symlink relinked to source for local dev. **Both CI deploys green**; prod wiring smoked (see NEXT
+  pointer): `/api/auth/get-session`→200 `null` confirms `createAuth`+`loadSession` run against the live remote D1 +
+  AUTH_SECRET. **Two user steps remain** (Firefox magic-link click-through + post-smoke decommission of
+  MAGIC_LINK_SECRET/SESSION_SECRET/AUTH_KV) — see NEXT pointer. Old secrets/KV left in place for rollback grace.
 
 ### Pass 0 — bootstrap (2026-05-24)
 

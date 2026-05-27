@@ -249,13 +249,16 @@ Resulting **planned passes (sequenced)** — superseding the standalone "Pass I 
   signing a dummy JWT + `jose`/`importPKCS8` + rotation doc (M2); CI/bundle guards — Carta-client-only test +
   `wrangler deploy --dry-run` + lazy-init audit + pin wrangler v4/`nodejs_compat`/recent compat date (C4/M5). Can
   ride with AUTH or the extraction.
-- **Pass — Theme-Architecture Extraction** (plan written: `docs/superpowers/plans/2026-05-26-theme-architecture-extraction.md`).
-  Move the generic render engine + registry machinery into cairn-core; ecnordic's site code consumes the engine; 907
-  trivial; **byte-identical output** (characterization snapshots gate it); no prod break. Realizes R10a's engine half.
-  **Refinement constraints to honor:** enforce engine-fat/theme-thin (H1) + single-kit peerDep (M4) + Shiki-off-server
-  (C4); add the thin `MarkdownEditor` interface (P3) while the editor is in-package; switch listing to the Git Trees
-  API + document the 1 MB body cap (H4); add the theme/engine version stamp + Renovate to the scaffold (H1).
-  **Do this after AUTH** (the admin UI builds on the registry + adapter shape; auth is foundational + security-critical).
+- **Pass — Render-Engine Extraction (code DONE 2026-05-26; not yet released — see progress log).** (plan:
+  `docs/superpowers/plans/2026-05-26-theme-architecture-extraction.md`.) Moved the generic render engine + registry
+  machinery into `@glw907/cairn-cms` (`render/*`); ecnordic's site code consumes the engine; 907 trivial (keeps its
+  own `remark-html` renderer — different output contract). **Byte-identical output** proven by characterization
+  snapshots (ecnordic 6/6, 907 8/8). Realized R10a's engine half + the `adapter.registry` field. Enforced
+  engine-fat/site-thin (H1). **Also settled the vocabulary: "theme" retired** for the site-design concept → engine /
+  Cairn site / site template (see the vocabulary note under "admin redesign", `creating-a-cairn-site.md`). **Deferred
+  to later passes** (were listed here, out of this extraction's scope): the thin `MarkdownEditor` interface (P3), Git
+  Trees API listing + 1 MB cap (H4), engine version stamp + Renovate (H1) — none gate the render extraction; carry to
+  the editor/scaffolder passes. Single-kit peerDep (M4) + Shiki-off-server (C4) already held (unchanged).
 - **Then — New Admin UI passes** (detailed plans to be written after extraction lands): **Pass I/theme** (Warm Stone, R6),
   **Pass J** (collections-first nav + per-collection list, R3), **Pass K** (differentiated editing R4 + component palette R10
   + icon/asset pickers R9 + preview toggle R12; may split), and a **collection-CRUD** round (R8, needs its storage decision).
@@ -492,7 +495,14 @@ no longer excluded — just unscheduled.
 > mounts + is guarded (anon→303). **The package half ships on the next cairn-cms release** (≥0.5.0) — fold it into the
 > same release/repoint as the pending AUTH decommission rather than publishing twice. Not pushed (awaiting user).
 >
-> **Then** Theme-Architecture Extraction → New Admin UI (I/theme R6 → J collections-nav R3 →
+> **Render-Engine Extraction is BUILT (code half, 2026-05-26 — see entry below), NOT yet released.** The render
+> engine moved into `@glw907/cairn-cms` (`render/*`: `createRenderer`/`defineRegistry`/`glyph`/directive-stamp/
+> dispatcher); ecnordic renders through it **byte-identically** (characterization 6/6), 907 keeps `remark-html` (8/8),
+> `adapter.registry` added (R10a engine half). Also **settled the vocabulary: "theme" retired** → engine / Cairn site /
+> site template (docs + code comments + memory updated). Ships on the **same next release** (≥0.5.0) as Pass ROBUST +
+> the pending AUTH decommission — three things, one publish/repoint. Not pushed (awaiting user).
+>
+> **Then** New Admin UI (I/theme R6 → J collections-nav R3 →
 > K editing R4 + palette R10 + pickers R9 + preview-toggle R12) → collection-CRUD R8 → extension model R13.
 >
 > **D1 databases (Pass AUTH):** `cairn-ecnordic-auth` `83178db3-0aae-4c1d-b6ad-1626193ebefd`, `cairn-907-auth`
@@ -512,6 +522,61 @@ no longer excluded — just unscheduled.
 >
 > **Pass G is DONE** (2026-05-25 — see the Pass G entry below): owner-gated editor management, Geoff seeded
 > as `owner` in all four AUTH_KV namespaces; **shipped to both sites** (`@0.2.0` then carried in `@0.3.0`).
+
+### Render-Engine Extraction — engine owns the render machinery; sites own the registry (2026-05-26)
+
+- **Goal met (code half): the directive/markdown render engine now lives in `@glw907/cairn-cms`, and ecnordic renders
+  through it with BYTE-IDENTICAL output.** Realizes the engine half of R10a (one registry feeds the renderer; the
+  editor palette will read the same registry later) and the H1 engine-fat/site-thin line. Not yet released — rides the
+  next publish (≥0.5.0) with Pass ROBUST + the pending AUTH decommission. Committed locally; not pushed.
+- **Engine (new `render/*` modules + flat barrel export):** `registry.ts` (`ComponentDef`/`ComponentRegistry`/
+  `defineRegistry`), `glyph.ts` (`glyph(name, iconSet)` — icon-set parameterized), `remark-directives.ts`
+  (`remarkDirectiveStamp(registry)` — generic; `PRIMITIVES`→`registry.names`, alert default icon→`registry.defaultIcon`;
+  literal-restore of accidental `:name` prose verbatim), `rehype-dispatch.ts` (`rehypeDispatch(registry, rise?)` + the
+  shared structural helpers `isElement`/`strProp`/`iconSpan`/`splitHead`/`cardShell`/`markFirstList` + child recursion),
+  `pipeline.ts` (`createRenderer(registry, { rise })` — the exact `unified` chain, returns `renderMarkdown` + the
+  remark/rehype plugin arrays for Carta). Added the render stack (unified/remark/rehype/hastscript/unist-util-visit) as
+  **runtime deps**; `@types/hast`/`@types/mdast`/`mdast-util-directive` are deps too (hast `Element` + mdast `Root`
+  appear in the public `ComponentDef`/plugin API). **12 new render tests.** Package 48 tests green; `svelte-package`
+  emits `dist/render/*`.
+- **Plan correction (signature):** the plan's `createRenderer(registry)` omitted the rise stagger. `riseStyle` is the
+  site's design-language motion formula (the `--rise` var + `0.16 + i*0.04` step), so the engine takes it as an
+  **optional `rise` option** (ecnordic passes `riseStyle`; 907/others pass none) rather than baking it in — keeps the
+  engine presentation-agnostic per engine-fat/site-thin. Likewise `iconSpan`/`splitHead` take a site **`makeIcon`**
+  callback (closing over the site's icon set) so the engine never imports an icon map.
+- **ecnordic (site code):** new `src/lib/markdown/components.ts` — the 7-component registry (card/grid/alert/cta/split/
+  panel/passage), each `build` fn reproducing the old `rehype-ec-primitives.ts` exactly via the engine helpers +
+  `glyph(name, ICON_PATHS)` + the `ec-*` class names + `insertTemplate`s (palette-ready). `render.ts` rewired to
+  `createRenderer(ecnordicRegistry, { rise: riseStyle })`, still exporting `renderMarkdown`/`remarkEcPlugins`/
+  `rehypeEcPlugins` for back-compat + the Carta preview. `markdown/icons.ts` keeps `ICON_PATHS` (glyph moved to the
+  engine). **Deleted** `remark-ec-directives.ts` + `rehype-ec-primitives.ts`. `adapter.registry = ecnordicRegistry`.
+- **907 (site code):** keeps its own `remark + remark-gfm + remark-html` renderer in `posts.ts` — its output contract
+  (remark-html, no rehype) differs from the engine's rehype-stringify path, so adopting `createRenderer` would change
+  output. Added `adapter.registry = defineRegistry({ components: [] })` (no directive components). Carta preview
+  unchanged (empty plugins → Carta's built-in pipeline).
+- **`adapter.ts`:** new optional `registry?: ComponentRegistry` on `CairnAdapter` (R10a single-declaration; rendering
+  parity already flows through `preview`).
+- **File-location decision (with Geoff):** the site presentation layer is cross-cutting (registry, icon data, CSS, fonts,
+  images) and SvelteKit dictates conventional/mandatory homes (`static/`, `app.css`, `lib/components`), so there is **no
+  single "theme"/"site" code-folder** — and forcing one fights the framework. The render registry + icon data are
+  *rendering code* → they live with the pipeline in `src/lib/markdown/`. The "site / site template" vocabulary is
+  repo-level (concept + docs), not a directory.
+- **Vocabulary settled (with Geoff): "theme" RETIRED for the site-design concept.** It implied an installable/swappable
+  package this model never had. Use **engine** (`@glw907/cairn-cms`), **a Cairn site** (a consumer repo), **a site
+  template** (a `create-cairn-site` scaffold). Locked into the living docs (`creating-a-cairn-theme.md` →
+  **`creating-a-cairn-site.md`**, rewritten; `PLAN.md`; `ARCHITECTURE.md` — engine-fat/**site-thin**, engine/**site**
+  line, **site template** layer), the memory note + index, and all engine/site **code comments**. Kept: "admin theme"
+  (the DaisyUI `/admin` visual styling — unrelated). The two dated `docs/superpowers/` artifacts (admin-UI spec + this
+  extraction plan) keep their internal "theme" prose as a historical snapshot (filename refs fixed); Geoff's call.
+- **Verified.** Package 48 tests + `svelte-package` (dist/render emitted). **ecnordic** `svelte-check` 0/0, characterization
+  **6/6 byte-identical** (zero snapshot diff), Cloudflare build OK. **907** `svelte-check` 0/0, characterization **8/8
+  byte-identical**, build OK. code-simplifier run over the new engine + site code: two comment-only fixes
+  (`cairn-core`→`cairn-cms`), rest already clean (faithful moves of already-simplified code).
+- **Commits (local, not pushed):** cairn-cms — five `feat(render)` commits + the PluggableList type fix + the vocabulary
+  docs commit + (pending) the adapter.registry + progress-log commit. ecnordic — characterization baseline + the
+  byte-identical engine-consumption commit. 907 — characterization baseline + (pending) the empty-registry adapter commit.
+- **Held for the user (Task 14, unchanged release posture):** the npm publish (≥0.5.0) + both-site repoint + lockfile
+  regen + CI-green confirm, folded with Pass ROBUST + the AUTH decommission into one release. Not pushed.
 
 ### Architecture Refinement — settle ARCHITECTURE v2 + re-sequence (2026-05-26)
 

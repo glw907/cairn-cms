@@ -1,4 +1,4 @@
-// cairn-core render engine: a directive-driven markdown → HTML pipeline whose
+// cairn-cms render engine: a directive-driven markdown → HTML pipeline whose
 // component vocabulary is supplied by a site's component registry. The site owns the
 // component builders, class names, icon set, and CSS; the engine owns the machinery.
 export * from './registry';

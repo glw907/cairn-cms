@@ -8,6 +8,7 @@
 // the editor form across the server→client boundary.
 import type { PreviewPlugins } from './carta';
 import type { RepoRef } from './github';
+import type { ComponentRegistry } from './render';
 
 interface FieldBase {
   /** Frontmatter key and form input name. */
@@ -70,6 +71,14 @@ export interface CairnAdapter {
   /** Site plugin set for the Carta preview (parity with the live render). */
   preview: PreviewPlugins;
   collections: CairnCollection[];
+  /**
+   * The site's component registry — the single declaration of its directive
+   * components (R10a). Rendering parity already flows through `preview`; this
+   * exposes the same registry so the editor's insert-component palette can read
+   * `registry.defs`. Optional: a site with no rich components (e.g. 907.life) may
+   * omit it or supply an empty registry.
+   */
+  registry?: ComponentRegistry;
 }
 
 /** Look up a collection by its route segment, or undefined if the segment is unknown. */

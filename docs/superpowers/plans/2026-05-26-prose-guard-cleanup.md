@@ -8,7 +8,7 @@
 
 **Tech Stack:** `prose-guard` (`~/.local/bin/prose-guard`), git, the go-conventions skill (for any Go comments).
 
-**Prerequisite:** Pass 1 complete (`2026-05-26-prose-guard-infrastructure.md`) — tool built, stowed, hooks wired global + cairn workspace, ecnordic's guard retired, Claude-infra prose cleaned. **Run this in a fresh session** (the hook takes effect at session start).
+**Prerequisite:** Pass 1 complete (`2026-05-26-prose-guard-infrastructure.md`) — both prongs built (the `prose-guard` tool with lexical/structural/stats layers + JSON deny hook; the `writing-voice` output style), wired global + cairn workspace, ecnordic's guard retired, Claude-infra prose cleaned. **Run this in a fresh session** so the hook and the output style are both live (they take effect at session start). The live output style means your fix-edits already lean toward clean prose; the hook blocks any fix that reintroduces a lexical or structural tell.
 
 **Spec:** `cairn-cms/docs/superpowers/specs/2026-05-26-prose-guard-design.md`
 
@@ -23,8 +23,10 @@ The guard reports; you edit with judgment. For each reported tell:
 - **banned opener** → delete the connector and start with the subject.
 - **banned phrase / word** → reword in a plain voice. In `docs` tier, judgment words (`robust`, `comprehensive`, …) are already allowed; only `general`-tier (marketing content) gets the full word-list.
 - **code comments** → after removing the tell, the comment must still follow its **stack's conventions**: invoke the **go-conventions** skill for `.go` files (identifier-led doc comments, the human-voice catalogue); match the surrounding file's idiom for `.ts`/`.svelte`. The guard removes tells; the stack convention governs form. Satisfy both.
+- **structural tells** (negative antithesis, "not just X but Y", setup-colon payoff, "serves as a", participial wind-up, bold-header bullets) → rewrite the sentence, not the word. State the point plainly; drop the frame.
+- **advisory signals** (`low burstiness`, `anaphora` — sweep-only, never blocking) → these flag a flat passage, not a single bad line. Reread the passage and vary sentence length and openings. Treat them as a prompt to reread, not a checklist item to zero out.
 
-Never weaken meaning to dodge the guard. If a flagged line is a true false positive (rare — e.g. a proper noun), leave it and note it; do not contort the prose.
+A clean guard run is necessary but not the bar. A passage can pass every regex and still read as machine-written. After fixing the flagged lines, reread each section once for cadence: does the rhythm vary, or is it a wall of same-length clauses? That human read is the real standard; the tool only catches the cheap tells. Never weaken meaning to dodge the guard. If a flagged line is a true false positive (rare — e.g. a proper noun), leave it and note it; do not contort the prose.
 
 ---
 

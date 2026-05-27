@@ -3,9 +3,9 @@
 // This is the single seam that lets one admin surface serve different designs. A site
 // supplies a `CairnAdapter` (see `src/lib/cairn.config.ts`) describing its backend repo,
 // its editable collections (folder + form fields + frontmatter validator), and its preview
-// plugin set. cairn-core never hard-codes a collection, tag, or directive — it reads them
+// plugin set. cairn-core never hard-codes a collection, tag, or directive; it reads them
 // from the adapter. Field descriptors are plain data so a load function can hand them to
-// the editor form across the server→client boundary.
+// the editor form across the server-to-client boundary.
 import type { PreviewPlugins } from './carta';
 import type { RepoRef } from './github';
 import type { ComponentRegistry } from './render';
@@ -64,7 +64,7 @@ export interface CairnCollection {
 export interface CairnAdapter {
   /** Branding + magic-link email copy. */
   siteName: string;
-  /** From: address for magic-link email — a domain-authenticated sender. */
+  /** From: address for magic-link email (must be a domain-authenticated sender). */
   sender: string;
   /** The repository the admin reads content from and commits to. */
   backend: RepoRef;
@@ -72,7 +72,7 @@ export interface CairnAdapter {
   preview: PreviewPlugins;
   collections: CairnCollection[];
   /**
-   * The site's component registry — the single declaration of its directive
+   * The site's component registry: the single declaration of its directive
    * components (R10a). Rendering parity already flows through `preview`; this
    * exposes the same registry so the editor's insert-component palette can read
    * `registry.defs`. Optional: a site with no rich components (e.g. 907.life) may

@@ -2,7 +2,7 @@ import type { Element } from 'hast';
 
 /** A site component: how it inserts (editor) and how it renders (rehype). */
 export interface ComponentDef {
-	/** Directive name, e.g. 'card' — matches `:::card`. */
+	/** Directive name, e.g. 'card' (matches `:::card`). */
 	name: string;
 	/** Palette label. */
 	label: string;

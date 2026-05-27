@@ -1,5 +1,5 @@
 // cairn-core: the better-auth instance. Auth is engine code (engine-fat rule), so the whole
-// config — Drizzle/D1 adapter, magic-link (POST-confirm-shaped send), admin roles — lives here.
+// config lives here: Drizzle/D1 adapter, magic-link (POST-confirm-shaped send), admin roles.
 // Instantiated PER REQUEST in hooks.server.ts (the D1 binding is request-scoped); the factory
 // is cheap (no I/O at construction).
 import { betterAuth } from 'better-auth';
@@ -14,7 +14,7 @@ import * as schema from './schema';
 
 // Two-tier roles on the admin plugin's access-control system: `owner` holds every admin
 // statement (manage editors, revoke sessions); `editor` holds none (content-only). `adminRoles`
-// must name a role defined here, so owner — not the plugin's built-in `admin` — is the gate.
+// must name a role defined here, so owner (not the plugin's built-in `admin`) is the gate.
 const ac = createAccessControl(defaultStatements);
 const owner = ac.newRole(defaultStatements);
 const editor = ac.newRole({});
@@ -37,17 +37,17 @@ export interface AuthBranding {
   sender: string;
 }
 
-/** The drizzle adapter result `betterAuth` consumes — the same provider/schema everywhere. */
+/** The drizzle adapter result `betterAuth` consumes (same provider/schema everywhere). */
 type DrizzleDb = Parameters<typeof drizzleAdapter>[0];
 
 /**
  * The shared better-auth config. Kept separate from `createAuth` so the test harness can run
  * the EXACT plugin set (allowlist semantics, expiry, POST-confirm send) over an in-memory
- * SQLite instead of D1. `disableSignUp:true` makes the `user` table the editor allowlist —
+ * SQLite instead of D1. `disableSignUp:true` makes the `user` table the editor allowlist:
  * magic-link never auto-creates, so the only way in is the owner-gated admin `createUser`
  * (see auth/admins.ts). `adminRoles:['owner']` lets owners (not the default `admin` role)
  * drive the admin API. Tokens are stored hashed and consumed atomically on first verify
- * (better-auth GHSA-hc7v-rggr-4hvx) — single-use by construction (C1).
+ * (better-auth GHSA-hc7v-rggr-4hvx), single-use by construction (C1).
  */
 export function buildAuth(opts: {
   database: DrizzleDb;
@@ -70,7 +70,7 @@ export function buildAuth(opts: {
         sendMagicLink: async ({ email, token }, ctx) => {
           // Allowlist gate: better-auth always fires this callback (even for unknown emails, to
           // avoid enumeration) and only blocks user creation at verify. So gate the actual send
-          // here — never email a non-editor. The login UI shows neutral copy either way, so this
+          // here. Never email a non-editor. The login UI shows neutral copy either way, so this
           // leaks nothing; it just stops strangers receiving a dead link.
           const existing = await ctx?.context.internalAdapter.findUserByEmail(email);
           if (!existing?.user) return;

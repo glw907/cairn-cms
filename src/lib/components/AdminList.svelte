@@ -1,7 +1,7 @@
 <script lang="ts">
   // The /admin content list: every collection's files, linking into the editor. Data comes
   // from `adminListLoad` (collections) merged with `adminLayoutLoad` (siteName). The shell
-  // (AdminLayout) owns the chrome — site title, signed-in identity, nav, sign out — so this
+  // (AdminLayout) owns the chrome (site title, signed-in identity, nav, sign out), so this
   // page renders only the content body.
   import type { AdminCollectionList } from '../sveltekit';
 

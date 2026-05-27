@@ -2,8 +2,8 @@
 //
 // Reads (Pass B) list a collection directory and fetch a file's raw markdown; the token
 // is optional because ecnordic's repo is public. Writes (Pass C) mint a short-lived
-// GitHub App installation token — App JWT (RS256) signed with Web Crypto, no octokit
-// dependency — and commit through the contents API with author = editor, committer = the
+// GitHub App installation token (App JWT, RS256 signed with Web Crypto, no octokit
+// dependency) and commit through the contents API with author = editor, committer = the
 // App (cairn-cms[bot]). The same token also lifts reads to the authenticated rate limit
 // and unlocks private repos (e.g. 907-life).
 
@@ -90,7 +90,7 @@ function derLength(n: number): number[] {
 // AlgorithmIdentifier for rsaEncryption (OID 1.2.840.113549.1.1.1) with NULL parameters.
 const RSA_ALG_ID = [0x30, 0x0d, 0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x01, 0x05, 0x00];
 
-/** Wrap a PKCS#1 RSAPrivateKey (DER) as PKCS#8 — the only RSA form Web Crypto importKey takes. */
+/** Wrap a PKCS#1 RSAPrivateKey (DER) as PKCS#8 (the only RSA form Web Crypto importKey takes). */
 function pkcs1ToPkcs8(pkcs1: Uint8Array): Uint8Array {
   const octet = [0x04, ...derLength(pkcs1.length), ...pkcs1];
   const body = [0x02, 0x01, 0x00, ...RSA_ALG_ID, ...octet];
@@ -124,7 +124,7 @@ export async function appJwt(appId: string, privateKeyPem: string): Promise<stri
 export interface AppCredentials {
   appId: string;
   installationId: string;
-  /** The stored GITHUB_APP_PRIVATE_KEY_B64 — base64 of the PEM, single line. */
+  /** The stored GITHUB_APP_PRIVATE_KEY_B64: base64 of the PEM, single line. */
   privateKeyB64: string;
 }
 
@@ -139,7 +139,7 @@ export async function installationToken(creds: AppCredentials): Promise<string> 
   return ((await res.json()) as { token: string }).token;
 }
 
-/** Standard (padded) base64 of UTF-8 text — the encoding the contents API expects. */
+/** Standard (padded) base64 of UTF-8 text, as the contents API expects. */
 function toBase64(text: string): string {
   return btoa(Array.from(encoder.encode(text), (b) => String.fromCharCode(b)).join(''));
 }
@@ -158,10 +158,10 @@ export interface CommitAuthor {
 }
 
 /**
- * A concurrent edit lost the SHA race (C3): the file changed between the read and the PUT —
- * another editor, or the site's own CI. Thrown so callers can fail *safe* (re-fetch + ask the
- * editor to reapply) instead of surfacing a raw 409. Defined and caught inside the package, so
- * `instanceof` is reliable (no peer-boundary identity split, unlike kit's `redirect`/`error`).
+ * A concurrent edit lost the SHA race (C3): the file changed between the read and the PUT,
+ * from another editor or the site's own CI. Thrown so callers can fail safe (re-fetch and ask
+ * the editor to reapply) instead of surfacing a raw 409. Defined and caught inside the package
+ * so `instanceof` is reliable (no peer-boundary identity split, unlike kit's `redirect`/`error`).
  */
 export class CommitConflictError extends Error {
   constructor(public readonly path: string) {
@@ -197,7 +197,7 @@ export async function commitFile(
     }),
   });
   // 409 = the blob sha we read is no longer current. Fail safe: the caller re-fetches and the
-  // editor reapplies. (Full three-way merge stays out of scope — see ARCHITECTURE §5.)
+  // editor reapplies. (Full three-way merge stays out of scope; see ARCHITECTURE §5.)
   if (res.status === 409) throw new CommitConflictError(path);
   if (!res.ok) throw new Error(`GitHub commit ${path} failed: ${res.status} ${await res.text()}`);
   return ((await res.json()) as { commit: { sha: string } }).commit.sha;

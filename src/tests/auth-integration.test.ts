@@ -1,5 +1,5 @@
 // Runs the REAL cairn plugin set (buildAuth) over an in-memory better-sqlite3 with the
-// generated D1 migrations applied — so allowlist semantics, single-use verify, roles, and
+// generated D1 migrations applied, so allowlist semantics, single-use verify, roles, and
 // anti-lockout are exercised against actual better-auth behavior, not mocks.
 import { describe, it, expect } from 'vitest';
 import { readFileSync, globSync } from 'node:fs';
@@ -52,7 +52,7 @@ function harness() {
       ),
     );
 
-  // Sign a seeded user in fully and return their session as a `Cookie` header value — so admin
+  // Sign a seeded user in fully and return their session as a `Cookie` header value, so admin
   // API calls (which authorize via the session in headers) run as that real user.
   async function cookieFor(email: string): Promise<string> {
     await signIn(email);
@@ -84,7 +84,7 @@ describe('better-auth allowlist (disableSignUp ⇒ user table is the allowlist)'
   });
 });
 
-describe('magic-link verify (single-use by construction — C1)', () => {
+describe('magic-link verify (single-use by construction, C1)', () => {
   it('verifies a captured token once and yields a session; replay yields none', async () => {
     const { sent, seed, signIn, verify } = harness();
     seed('ed@x.com', 'Ed', 'editor');
@@ -99,7 +99,7 @@ describe('magic-link verify (single-use by construction — C1)', () => {
   });
 });
 
-describe('confirmSignIn (POST-confirm proxy — C2)', () => {
+describe('confirmSignIn (POST-confirm proxy, C2)', () => {
   function confirmEvent(auth: ReturnType<typeof harness>['auth'], token: string) {
     const form = new FormData();
     form.set('token', token);
@@ -129,7 +129,7 @@ describe('confirmSignIn (POST-confirm proxy — C2)', () => {
   });
 });
 
-describe('manage-editors (owner-gated, on auth.api — AUTH-2)', () => {
+describe('manage-editors (owner-gated, on auth.api, AUTH-2)', () => {
   const owner: CairnUser = { id: '', email: 'o@x.com', name: 'O', role: 'owner' };
 
   function ev(auth: ReturnType<typeof harness>['auth'], cookie: string, user: CairnUser | null, form?: Record<string, string>, query = '') {

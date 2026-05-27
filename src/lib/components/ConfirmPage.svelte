@@ -1,6 +1,6 @@
 <script lang="ts">
-  // The scanner-safe confirm surface (C2). A GET renders this static page — nothing is consumed.
-  // The token rides in a hidden field; only the explicit form POST (the route's default action →
+  // The scanner-safe confirm surface (C2). A GET renders this static page and consumes nothing.
+  // The token rides in a hidden field; only the explicit form POST (the route's default action,
   // confirmSignIn) verifies it. Mail scanners GET URLs but don't submit forms, so prefetch can't
   // burn the link. JS-free by design.
   interface Props {

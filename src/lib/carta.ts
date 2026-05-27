@@ -1,6 +1,6 @@
 // cairn-core: pure Carta options/transformer wiring for render-only preview.
 //
-// Plugins are passed in, not imported — that seam is what the Pass D adapter formalises.
+// Plugins are passed in rather than imported; that seam is what the Pass D adapter formalises.
 // No `carta-md` import: its index re-exports Svelte components that the node test env
 // can't load. The Svelte component calls `new Carta(previewCartaOptions(...))` directly.
 import type { Pluggable, Processor } from 'unified';
@@ -37,7 +37,7 @@ export function previewTransformers({ remarkPlugins, rehypePlugins }: PreviewPlu
   return [...phase(remarkPlugins, 'remark'), ...phase(rehypePlugins, 'rehype')];
 }
 
-/** Minimal Options subset we populate — avoids importing carta-md (Svelte re-exports). */
+/** Minimal Options subset we populate (avoids importing carta-md, which re-exports Svelte components). */
 interface PreviewCartaOptions {
   sanitizer: false;
   rehypeOptions: { allowDangerousHtml: boolean };

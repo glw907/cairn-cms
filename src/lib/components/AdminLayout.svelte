@@ -1,7 +1,7 @@
 <script lang="ts">
   // Neutral admin chrome, shared across sites so the tool looks identical everywhere (only the
   // adapter's siteName varies). When signed in it's a responsive DaisyUI drawer+navbar shell
-  // (`drawer lg:drawer-open` — sidebar pinned on desktop, slide-over + hamburger on mobile),
+  // (`drawer lg:drawer-open`, sidebar pinned on desktop, slide-over + hamburger on mobile),
   // patterned on scosman/CMSaasStarter's `(admin)/(menu)` layout. The nav is data-driven and
   // role-gated, so a new surface is one entry in `nav` (plus its route + component). Signed out
   // (the login page lives under this layout) it falls back to a minimal centered shell.
@@ -22,7 +22,7 @@
     label: string;
     icon: Snippet;
     active: boolean;
-    /** Owner-only surface — hidden from regular editors. */
+    /** Owner-only surface; hidden from regular editors. */
     owner?: boolean;
   }
 
@@ -73,7 +73,7 @@
     <input id="admin-drawer" type="checkbox" class="drawer-toggle" />
 
     <div class="drawer-content">
-      <!-- Mobile top bar — the desktop sidebar replaces this at lg. -->
+      <!-- Mobile top bar; the desktop sidebar replaces this at lg. -->
       <div class="navbar bg-base-100 lg:hidden">
         <div class="flex-1">
           <span class="px-2 text-xl font-bold">{data.siteName} CMS</span>

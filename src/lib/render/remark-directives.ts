@@ -18,8 +18,8 @@ function serializeAttributes(attributes?: Record<string, string | null | undefin
 }
 
 // The vocabulary is container-only (`:::name`). A text directive (`:name`) or
-// leaf directive (`::name`) is therefore always an accidental colon in prose —
-// "4:00", "9:30", "ratio 16:9" — that micromark tokenized as a directive.
+// leaf directive (`::name`) is therefore always an accidental colon in prose
+// ("4:00", "9:30", "ratio 16:9") that micromark tokenized as a directive.
 // Restore it to its literal source text so prose renders verbatim.
 function restoreLiteral(node: TextDirective | LeafDirective): PhrasingContent[] {
 	const marker = node.type === 'leafDirective' ? '::' : ':';
@@ -33,7 +33,7 @@ function restoreLiteral(node: TextDirective | LeafDirective): PhrasingContent[] 
 }
 
 // Stamp each registered container directive with data-* markers carrying its
-// component name, icon, and role. No structure is built here — the rehype
+// component name, icon, and role. No structure is built here; the rehype
 // dispatcher rewrites the marked elements once their children are hast.
 // Text and leaf directives are restored to literal text (accidental prose colons).
 export function remarkDirectiveStamp(registry: ComponentRegistry) {

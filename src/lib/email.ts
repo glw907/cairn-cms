@@ -1,9 +1,9 @@
 // cairn-core: pluggable magic-link email sender.
 //
-// Default adapter is Cloudflare Email Service → Email Sending (transactional, arbitrary
-// recipients) — distinct from Email Routing's recipient-restricted `EmailMessage` flow.
-// It is reached through the same `send_email` binding (configured without a
-// destination_address) but a different call shape: `binding.send({ to, from, ... })`.
+// The default adapter targets Cloudflare Email Service (Email Sending, transactional,
+// arbitrary recipients), distinct from Email Routing's recipient-restricted `EmailMessage`
+// flow. Both share the same `send_email` binding (configured without a destination_address)
+// but use a different call shape: `binding.send({ to, from, ... })`.
 // Resend can slot in behind the same `sendMagicLink` signature if needed.
 
 /** Cloudflare Email Sending binding surface (the object-form `send`, not the MIME form). */

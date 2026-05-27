@@ -13,21 +13,21 @@
 
   // Body is editable state; the Carta editor's preview runs the exact site plugin set, so it
   // matches the live page. A hidden input carries the current value into the form.
-  // svelte-ignore state_referenced_locally — seeding from the initial load is intended.
+  // svelte-ignore state_referenced_locally (seeding from the initial load is intended)
   let body = $state(data.body);
 
-  // svelte-ignore state_referenced_locally — the preview plugin set is fixed for the load.
+  // svelte-ignore state_referenced_locally (the preview plugin set is fixed for the load)
   const carta = new Carta(previewCartaOptions(preview));
 
   // Carta's MarkdownEditor must not render on the worker (it pulls Shiki). onMount fires only
-  // in the browser, so SSR renders the plain textarea and the client swaps in the editor —
-  // the kit-free equivalent of the per-site route's `$app/environment` `browser` guard.
+  // in the browser, so SSR renders the plain textarea and the client swaps in the editor.
+  // This is the kit-free equivalent of the per-site route's `$app/environment` `browser` guard.
   let mounted = $state(false);
   onMount(() => {
     mounted = true;
   });
 
-  // svelte-ignore state_referenced_locally — form defaults from the initial load.
+  // svelte-ignore state_referenced_locally (form defaults from the initial load)
   const fm = data.frontmatter as Record<string, unknown>;
 
   function fmString(key: string): string {

@@ -1,10 +1,10 @@
 // cairn-core: server-side auth helpers the site route shims delegate to. Each takes the
-// SvelteKit event (typed structurally, so the package never depends on a site's generated
-// `App.*` ambient types) plus the per-request `Auth` from `locals`.
+// SvelteKit event, typed structurally so the package never depends on a site's generated
+// `App.*` ambient types, plus the per-request `Auth` from `locals`.
 import { redirect } from '@sveltejs/kit';
 import type { Auth } from './config';
 
-/** The session shape the whole admin reads — layout, guards, content fns, manage-editors. */
+/** The session shape the whole admin reads: layout, guards, content fns, manage-editors. */
 export interface CairnUser {
   id: string;
   email: string;

@@ -80,8 +80,8 @@ function transformNode(node: Element, registry: ComponentRegistry, rise?: string
 }
 
 /** Rehype transformer: dispatch each stamped element through its registry `build`
- *  fn. Top-level primitives get a document-order rise stagger (when `rise` is
- *  supplied — a site's per-index motion formula); nested ones don't. Non-primitive
+ *  fn. Top-level primitives get a document-order rise stagger when `rise` is
+ *  supplied (a site's per-index motion formula); nested ones don't. Non-primitive
  *  content (lede, intro paragraphs, the page-toc nav) passes through untouched. */
 export function rehypeDispatch(registry: ComponentRegistry, rise?: (idx: number) => string) {
 	return (tree: Root) => {

@@ -2,11 +2,11 @@
 // route files are thin shims (`export const load = (event) => editLoad(event, cairn)`).
 //
 // SvelteKit's filesystem routing requires the route *files* to live in each site's
-// `src/routes/`, but their bodies are identical across sites — only the adapter differs.
+// `src/routes/`, but their bodies are identical across sites. Only the adapter differs.
 // These functions take the SvelteKit event (typed structurally, to avoid depending on the
 // site-generated `App.*` ambient types) plus the site `CairnAdapter`, and throw
 // `redirect`/`error` from `@sveltejs/kit` (a peer dependency, so the thrown objects share
-// class identity with the host's runtime — else the redirect 500s). Auth/session/manage-editors
+// class identity with the host's runtime; otherwise the redirect 500s). Auth/session/manage-editors
 // logic lives under `@glw907/cairn-cms/auth`; this module is content-only (list/edit/save).
 import { redirect, error } from '@sveltejs/kit';
 import matter from 'gray-matter';
@@ -23,7 +23,7 @@ import {
 import { serializeMarkdown } from '../content';
 import { findCollection, frontmatterFromForm, type CairnAdapter, type CairnField } from '../adapter';
 
-/** The `platform.env` bindings the content routes read. All optional — the handlers guard. */
+/** The `platform.env` bindings the content routes read. All optional; the handlers guard. */
 export interface AdminEnv {
   GITHUB_APP_ID?: string;
   GITHUB_APP_INSTALLATION_ID?: string;
@@ -38,7 +38,7 @@ interface PlatformEvent {
  * Mint a GitHub App installation token for *reads* when the App is configured, else undefined
  * (reads then fall back to anonymous). Authenticated reads get the 5000/hr limit; anonymous
  * reads share GitHub's 60/hr-per-IP budget across Cloudflare's egress IPs, so they 403 in prod.
- * A mint failure degrades gracefully to anonymous rather than 500ing — unlike the commit path,
+ * A mint failure degrades gracefully to anonymous rather than 500ing. Unlike the commit path,
  * where a missing App is fatal, a read can still succeed unauthenticated.
  */
 async function readToken(env: AdminEnv | undefined): Promise<string | undefined> {
@@ -67,7 +67,7 @@ export interface AdminLayoutData {
 
 /**
  * Branding + session for every admin page. `siteName` flows from the adapter without pulling
- * its plugin graph into client bundles — the import stays server-side in the layout load.
+ * its plugin graph into client bundles; the import stays server-side in the layout load.
  * `pathname` lets the shared shell highlight the active nav item without a `$app/*` import
  * (those kit virtual modules have no types outside a kit app, so they can't live in the
  * package); reading `event.url` here also opts the layout load into rerunning on navigation.
@@ -199,10 +199,10 @@ export async function saveCommit(
       token,
     );
   } catch (err) {
-    // Concurrent-edit 409 (C3): fail safe — bounce back with a reload prompt; the editor reloads
-    // the current version and reapplies. Any other error is genuinely unexpected, so rethrow.
+    // Concurrent-edit 409 (C3): fail safe. Bounce back with a reload prompt; the editor reloads
+    // the current version and reapplies. Any other error is unexpected, so rethrow.
     if (err instanceof CommitConflictError) {
-      const message = 'This file changed since you opened it — reload and reapply your edits.';
+      const message = 'This file changed since you opened it. Reload and reapply your edits.';
       throw redirect(303, `/admin/edit/${type}/${id}?error=${encodeURIComponent(message)}`);
     }
     throw err;

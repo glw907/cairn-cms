@@ -1,7 +1,7 @@
 # GitHub App private-key rotation (cairn-cms)
 
 The commit path signs a GitHub App JWT in-Worker with Web Crypto (no octokit). The signer is
-bespoke and stays that way — better-auth replaced only the *editor* auth, not the App machine
+bespoke and stays that way. Better-auth replaced only the *editor* auth, not the App machine
 identity. This note documents rotation and the one brittle step (M2 in the architecture critique).
 
 ## What's stored
@@ -16,7 +16,7 @@ workspace `CLAUDE.md` for the IDs.
 GitHub issues App keys in **PKCS#1** (`-----BEGIN RSA PRIVATE KEY-----`). Web Crypto's
 `importKey('pkcs8', …)` only accepts **PKCS#8**, so `github.ts` wraps the PKCS#1 DER in a PKCS#8
 envelope in-process (`pkcs1ToPkcs8`: a fixed RSA `AlgorithmIdentifier` + DER length octets). A
-malformed key, a PKCS#8-format key, or a botched base64 round-trip breaks signing — and the
+malformed key, a PKCS#8-format key, or a botched base64 round-trip breaks signing. The
 failure only shows up when an editor saves.
 
 **Guards already in place:** a unit test signs + verifies a JWT from a PKCS#1 fixture
@@ -39,11 +39,11 @@ rotation or deploy to confirm the key still loads and signs before relying on sa
    → expect `{"ok":true,…}`. Then delete the old key in the GitHub App settings.
 
 If `/admin/healthz` returns `ok:false`, the `detail` field names the failure (bad base64, import
-rejected, etc.) without leaking the key — fix the secret and re-push before revoking the old key.
+rejected, etc.) without leaking the key. Fix the secret and re-push before revoking the old key.
 
 ## Why not `jose`/`importPKCS8`?
 
-`jose` is the mainstream pick, but `importPKCS8` still needs a PKCS#8 PEM — GitHub's PKCS#1 key
+`jose` is the mainstream pick, but `importPKCS8` still needs a PKCS#8 PEM. GitHub's PKCS#1 key
 would *still* require the same `pkcs1ToPkcs8` conversion, so `jose` removes the JWT-assembly code
 but not the brittle DER step. The detection guards above (fixture test + `/admin/healthz`) cover
 the actual failure mode, so the lean zero-dependency signer is retained. Revisit if a future need

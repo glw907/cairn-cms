@@ -13,12 +13,20 @@ sites with completely different markdown pipelines — e.g. [ecnordic.ski](https
 
 ## Status
 
-**Early (`0.1.x`) — works, API not yet frozen.** The core was built *inside ecnordic.ski first*
-(the richer proving ground) with the cairn-core ↔ site-adapter seams designed in from day one,
-then extracted into this package and validated on a second design (907.life). The auth, GitHub
-commit path, Carta preview, the adapter contract, and the shared admin shell (`/sveltekit`
-server logic + `/components` Svelte UI) all run on both sites. The adapter API may still change
-before `1.0` (pending a forward-compatibility review) — pin a caret range and expect 0.x churn.
+**`0.4.x` — auth on [better-auth](https://better-auth.com); API not yet frozen.** The core was
+built *inside ecnordic.ski first* (the richer proving ground) with the cairn-core ↔ site-adapter
+seams designed in from day one, then extracted into this package and validated on a second design
+(907.life). Editor auth runs on **better-auth (Cloudflare D1 + magic-link)** behind a scanner-safe
+**POST-confirm** flow, with two-tier `owner`/`editor` roles; the GitHub-App commit signer stays
+bespoke. The GitHub commit path, Carta preview, the adapter contract, and the shared admin shell
+(`/sveltekit` server logic + `/components` Svelte UI + `/auth`) all run on both sites. Pin a caret
+range and expect 0.x churn.
+
+> **Breaking in `0.4.0`** (from `0.3.x`): editor auth moved off the hand-rolled magic-link/KV/
+> signed-cookie stack onto better-auth. Each site now needs a **D1 binding** (`AUTH_DB`) +
+> committed migrations, an `AUTH_SECRET`, a `/api/auth/[...all]` catch-all + `/admin/auth/confirm`
+> shims, and the new `better-auth` + `drizzle-orm` peer deps. Magic links are now POST-confirm
+> (a confirm page, not a GET link).
 
 ## Install
 

@@ -5,3 +5,4 @@ export * from './github';
 export * from './carta';
 export * from './content';
 export * from './adapter';
+export * from './render';

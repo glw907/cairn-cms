@@ -86,7 +86,20 @@
     "svelte": "^5.0.0"
   },
   "dependencies": {
-    "gray-matter": "^4"
+    "@types/hast": "^3.0.4",
+    "@types/mdast": "^4.0.4",
+    "gray-matter": "^4",
+    "hastscript": "^9.0.1",
+    "mdast-util-directive": "^3.1.0",
+    "rehype-raw": "^7.0.0",
+    "rehype-slug": "^6.0.0",
+    "rehype-stringify": "^10.0.1",
+    "remark-directive": "^4.0.0",
+    "remark-gfm": "^4",
+    "remark-parse": "^11.0.0",
+    "remark-rehype": "^11.1.2",
+    "unified": "^11.0.5",
+    "unist-util-visit": "^5.1.0"
   },
   "devDependencies": {
     "@better-auth/cli": "^1.4.21",
@@ -103,7 +116,6 @@
     "svelte": "^5",
     "svelte-check": "^4",
     "typescript": "^6.0.3",
-    "unified": "^11.0.5",
     "vitest": "^4.1.6"
   }
 }

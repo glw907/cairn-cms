@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { adminLayoutLoad, collectionListLoad, createEntry, editLoad } from '../lib/sveltekit';
+import { adminLayoutLoad, collectionListLoad, createEntry, editLoad, saveCommit } from '../lib/sveltekit';
 import { isHttpError, isRedirect } from '@sveltejs/kit';
 import type { CairnAdapter } from '../lib/adapter';
 
@@ -203,5 +203,59 @@ describe('editLoad', () => {
     expect(data.isNew).toBe(false);
     expect(data.title).toBe('Real');
     expect(data.body).toBe('hi');
+  });
+});
+
+// An adapter whose validate always throws, so saveCommit takes the validation-error redirect
+// before any GitHub call. Dummy GitHub App env satisfies the earlier config gate.
+const throwingAdapter: CairnAdapter = {
+  ...adapter,
+  collections: [
+    {
+      type: 'posts',
+      label: 'Posts',
+      dir: 'src/content/posts',
+      fields: [],
+      validate: () => {
+        throw new Error('bad frontmatter');
+      },
+    },
+  ],
+};
+
+function saveEvent(extra: Record<string, string>) {
+  const form = new FormData();
+  form.set('type', 'posts');
+  form.set('id', '2026-05-fresh');
+  form.set('body', 'hello');
+  for (const [k, v] of Object.entries(extra)) form.set(k, v);
+  return {
+    locals: { user: { id: 'u1', name: 'Ed', email: 'ed@test', role: 'editor' as const } },
+    platform: { env: { GITHUB_APP_ID: '1', GITHUB_APP_INSTALLATION_ID: '2', GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
+    request: new Request('https://x/admin/save', { method: 'POST', body: form }),
+  };
+}
+
+describe('saveCommit create-flag preservation', () => {
+  it('keeps ?new=1 on a validation-error redirect for a new entry', async () => {
+    try {
+      await saveCommit(saveEvent({ new: '1' }), throwingAdapter);
+      expect.unreachable('should have thrown');
+    } catch (err) {
+      expect(isRedirect(err)).toBe(true);
+      const loc = (err as { location: string }).location;
+      expect(loc).toContain('/admin/edit/posts/2026-05-fresh?error=');
+      expect(loc).toContain('&new=1');
+    }
+  });
+
+  it('omits the new flag for an existing-entry validation error', async () => {
+    try {
+      await saveCommit(saveEvent({}), throwingAdapter);
+      expect.unreachable('should have thrown');
+    } catch (err) {
+      expect(isRedirect(err)).toBe(true);
+      expect((err as { location: string }).location).not.toContain('new=1');
+    }
   });
 });

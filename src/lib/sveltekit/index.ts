@@ -281,6 +281,7 @@ export async function saveCommit(
   const type = String(form.get('type') ?? '');
   const id = String(form.get('id') ?? '');
   const body = String(form.get('body') ?? '');
+  const newSuffix = form.get('new') === '1' ? '&new=1' : '';
   const collection = findCollection(adapter, type);
   if (!collection || !id) throw error(400, 'Bad request');
 
@@ -291,7 +292,7 @@ export async function saveCommit(
     frontmatter = collection.validate(frontmatterFromForm(collection, form), `${id}.md`);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Invalid frontmatter';
-    throw redirect(303, `/admin/edit/${type}/${id}?error=${encodeURIComponent(message)}`);
+    throw redirect(303, `/admin/edit/${type}/${id}?error=${encodeURIComponent(message)}${newSuffix}`);
   }
 
   const markdown = serializeMarkdown(frontmatter, body);
@@ -314,7 +315,7 @@ export async function saveCommit(
     // the current version and reapplies. Any other error is unexpected, so rethrow.
     if (err instanceof CommitConflictError) {
       const message = 'This file changed since you opened it. Reload and reapply your edits.';
-      throw redirect(303, `/admin/edit/${type}/${id}?error=${encodeURIComponent(message)}`);
+      throw redirect(303, `/admin/edit/${type}/${id}?error=${encodeURIComponent(message)}${newSuffix}`);
     }
     throw err;
   }

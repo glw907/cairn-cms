@@ -224,6 +224,8 @@ export interface EditData {
   title: string;
   saved: boolean;
   error: string | null;
+  /** True when editing a not-yet-committed new entry (reached via `?new=1`). */
+  isNew: boolean;
 }
 
 export async function editLoad(
@@ -236,11 +238,15 @@ export async function editLoad(
   const token = await readToken(event.platform?.env);
   const path = `${collection.dir}/${event.params.id}.md`;
   const raw = await readRaw(adapter.backend, path, token);
-  if (raw === null) throw error(404, 'Content not found');
+  const isNew = event.url.searchParams.get('new') === '1';
 
-  // Split frontmatter from body server-side; the editor form binds to the frontmatter and
-  // the Carta editor binds to the body, and /admin/save reassembles them on commit.
-  const { data: frontmatter, content: body } = matter(raw);
+  // A missing file is a 404 normally, but in create mode (`?new=1`) it's a blank new document.
+  if (raw === null && !isNew) throw error(404, 'Content not found');
+
+  // Split frontmatter from body server-side; the editor form binds to the frontmatter and the
+  // Carta editor to the body, and /admin/save reassembles them on commit. A new document starts
+  // empty so the author fills the fields from scratch.
+  const { data: frontmatter, content: body } = raw === null ? { data: {} as Record<string, unknown>, content: '' } : matter(raw);
 
   return {
     type: event.params.type,
@@ -253,6 +259,7 @@ export async function editLoad(
     title: typeof frontmatter.title === 'string' ? frontmatter.title : event.params.id,
     saved: event.url.searchParams.get('saved') === '1',
     error: event.url.searchParams.get('error'),
+    isNew,
   };
 }
 

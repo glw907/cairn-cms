@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { adminLayoutLoad, collectionListLoad, createEntry } from '../lib/sveltekit';
+import { adminLayoutLoad, collectionListLoad, createEntry, editLoad } from '../lib/sveltekit';
 import { isHttpError, isRedirect } from '@sveltejs/kit';
 import type { CairnAdapter } from '../lib/adapter';
 
@@ -165,5 +165,43 @@ describe('createEntry', () => {
       expect(isRedirect(err)).toBe(true);
       expect((err as { location: string }).location).toBe('/admin/edit/posts/2026-05-fresh?new=1');
     }
+  });
+});
+
+const editEvent = (id: string, query = '') => ({
+  params: { type: 'posts', id },
+  url: new URL(`https://x/admin/edit/posts/${id}${query}`),
+  platform: { env: {} },
+});
+
+describe('editLoad', () => {
+  it('serves a blank new document when the file is missing and ?new=1', async () => {
+    mockFetch([{ match: 'src/content/posts/2026-05-fresh.md', body: 'not found', status: 404 }]);
+    const data = await editLoad(editEvent('2026-05-fresh', '?new=1'), adapter);
+    expect(data.isNew).toBe(true);
+    expect(data.id).toBe('2026-05-fresh');
+    expect(data.body).toBe('');
+    expect(data.frontmatter).toEqual({});
+    expect(data.title).toBe('2026-05-fresh');
+    expect(data.fields).toEqual(adapter.collections[0].fields);
+  });
+
+  it('404s for a missing file without ?new=1', async () => {
+    mockFetch([{ match: 'src/content/posts/ghost.md', body: 'not found', status: 404 }]);
+    try {
+      await editLoad(editEvent('ghost'), adapter);
+      expect.unreachable('should have thrown');
+    } catch (err) {
+      expect(isHttpError(err)).toBe(true);
+      expect((err as { status: number }).status).toBe(404);
+    }
+  });
+
+  it('loads an existing file as a non-new document', async () => {
+    mockFetch([{ match: 'src/content/posts/real.md', body: '---\ntitle: Real\n---\nhi' }]);
+    const data = await editLoad(editEvent('real'), adapter);
+    expect(data.isNew).toBe(false);
+    expect(data.title).toBe('Real');
+    expect(data.body).toBe('hi');
   });
 });

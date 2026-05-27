@@ -9,7 +9,12 @@
     data,
     children,
   }: {
-    data: { siteName: string; user: CairnUser | null; pathname: string };
+    data: {
+      siteName: string;
+      user: CairnUser | null;
+      pathname: string;
+      collections: { type: string; label: string }[];
+    };
     children: Snippet;
   } = $props();
 
@@ -23,12 +28,14 @@
   }
 
   const nav = $derived<NavItem[]>([
-    {
-      href: '/admin',
-      label: 'Content',
+    ...data.collections.map((collection) => ({
+      href: `/admin/${collection.type}`,
+      label: collection.label,
       icon: contentIcon,
-      active: data.pathname === '/admin' || data.pathname.startsWith('/admin/edit'),
-    },
+      active:
+        data.pathname === `/admin/${collection.type}` ||
+        data.pathname.startsWith(`/admin/edit/${collection.type}/`),
+    })),
     {
       href: '/admin/admins',
       label: 'Editors',

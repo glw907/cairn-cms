@@ -1,5 +1,12 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { appJwt, installationToken, commitFile, type RepoRef } from '../lib/github';
+import {
+  appJwt,
+  installationToken,
+  commitFile,
+  signingSelfTest,
+  CommitConflictError,
+  type RepoRef,
+} from '../lib/github';
 
 const REPO: RepoRef = { owner: 'glw907', repo: 'ecnordic-ski', branch: 'main' };
 
@@ -108,5 +115,28 @@ describe('commitFile', () => {
     await commitFile(REPO, 'src/content/pages/new.md', 'x', { message: 'm', author: { name: 'n', email: 'e' } }, 'tok');
     const sent = JSON.parse((fetchMock.mock.calls[1][1] as RequestInit).body as string);
     expect('sha' in sent).toBe(false);
+  });
+
+  it('throws CommitConflictError on a stale-sha 409 (C3 fail-safe)', async () => {
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(JSON.stringify({ sha: 'oldsha' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response('{"message":"is at abc but expected def"}', { status: 409 }));
+
+    const path = 'src/content/posts/2026-05-x.md';
+    await expect(
+      commitFile(REPO, path, '# hi', { message: 'm', author: { name: 'n', email: 'e' } }, 'tok'),
+    ).rejects.toBeInstanceOf(CommitConflictError);
+  });
+});
+
+describe('signingSelfTest', () => {
+  it('reports ok for a valid key (exercises the PKCS#1→PKCS#8 path)', async () => {
+    expect(await signingSelfTest('3847496', btoa(PKCS1_PEM))).toEqual({ ok: true });
+  });
+
+  it('reports a failure detail for a bad key, without throwing', async () => {
+    const result = await signingSelfTest('3847496', btoa('not a pem'));
+    expect(result.ok).toBe(false);
+    expect(result.detail).toBeTruthy();
   });
 });

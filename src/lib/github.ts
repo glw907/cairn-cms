@@ -158,10 +158,23 @@ export interface CommitAuthor {
 }
 
 /**
+ * A concurrent edit lost the SHA race (C3): the file changed between the read and the PUT —
+ * another editor, or the site's own CI. Thrown so callers can fail *safe* (re-fetch + ask the
+ * editor to reapply) instead of surfacing a raw 409. Defined and caught inside the package, so
+ * `instanceof` is reliable (no peer-boundary identity split, unlike kit's `redirect`/`error`).
+ */
+export class CommitConflictError extends Error {
+  constructor(public readonly path: string) {
+    super(`Commit conflict on ${path}: it changed since it was opened`);
+    this.name = 'CommitConflictError';
+  }
+}
+
+/**
  * Commit `content` to `path` on the configured branch via the contents API. Author is the
  * editor; committer is omitted so GitHub attributes it to the App (cairn-cms[bot]). Updates
  * the file in place when it exists (passing its sha), creates it otherwise. Returns the
- * commit sha.
+ * commit sha. A stale-sha 409 (someone committed in between) becomes a `CommitConflictError`.
  */
 export async function commitFile(
   repo: RepoRef,
@@ -183,6 +196,25 @@ export async function commitFile(
       ...(sha ? { sha } : {}),
     }),
   });
+  // 409 = the blob sha we read is no longer current. Fail safe: the caller re-fetches and the
+  // editor reapplies. (Full three-way merge stays out of scope — see ARCHITECTURE §5.)
+  if (res.status === 409) throw new CommitConflictError(path);
   if (!res.ok) throw new Error(`GitHub commit ${path} failed: ${res.status} ${await res.text()}`);
   return ((await res.json()) as { commit: { sha: string } }).commit.sha;
+}
+
+/**
+ * Deploy-time self-test for the GitHub App signer (M2): sign a dummy JWT with the configured
+ * private key. Exercises the brittle PKCS#1→PKCS#8 conversion + Web Crypto import/sign without
+ * any network call or secret in the result, so `/admin/healthz` catches a bad/rotated key
+ * before an editor's save fails. Returns `{ ok: false, detail }` rather than throwing.
+ */
+export async function signingSelfTest(appId: string, privateKeyB64: string): Promise<{ ok: boolean; detail?: string }> {
+  try {
+    const jwt = await appJwt(appId, atob(privateKeyB64));
+    if (jwt.split('.').length !== 3) return { ok: false, detail: 'malformed JWT' };
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, detail: err instanceof Error ? err.message : 'sign failed' };
+  }
 }

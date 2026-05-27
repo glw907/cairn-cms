@@ -383,11 +383,11 @@ remove `static/admin/*` · `BACKLOG.md`/`docs/STATUS.md`/`docs/architecture.md`/
    in mail → the link is redeemed before the user clicks → "invalid/expired." **Fix:** POST-confirm flow
    (link → page → "Confirm sign-in" button that POSTs; nonce consumed on POST; scanners don't POST). Also
    closes GET/CSRF consumption. (Better Auth #6985, Supabase #1214.)
-9. **Concurrent edit → HTTP 409 lost update** (HIGH). **SCHEDULED (Refinement: CHANGE → fail safe; Pass ROBUST).**
-   `commitFile`'s read-SHA-then-PUT 409s if anything
-   (another editor OR the site's own CI) commits in between; today it fails raw. **Fix:** catch 409 →
-   re-fetch → "file changed since you opened it; reload" — fail SAFE (full merge out of scope). Partially
-   invalidates assumption #4.
+9. **Concurrent edit → HTTP 409 lost update** (HIGH). **BUILT (Pass ROBUST, 2026-05-26): `commitFile` catches the
+   stale-sha 409 → throws `CommitConflictError`; `saveCommit` bounces the editor back with "this file changed since you
+   opened it — reload and reapply." Fails SAFE; full merge stays out of scope. Unit-tested. RETIRED when the release
+   ships.** Was: SCHEDULED (Refinement: CHANGE → fail safe; Pass ROBUST). `commitFile`'s read-SHA-then-PUT 409s if
+   anything (another editor OR the site's own CI) commits in between. Partially invalidates assumption #4.
 10. **No timing-safe compare on Workers** (HIGH, trivial). **BUILT (Pass AUTH, 2026-05-26): the hand-rolled token/HMAC
     compare is gone — better-auth owns the token lifecycle; the origin is config-derived (`PUBLIC_ORIGIN`/
     `BETTER_AUTH_URL`), never request-derived (H3). RETIRED at prod cutover.** Was: **MOSTLY RESOLVED (Refinement):
@@ -397,9 +397,10 @@ remove `static/admin/*` · `BACKLOG.md`/`docs/STATUS.md`/`docs/architecture.md`/
 11. **Contents-API hard caps** (HIGH). Directory listing truncates **silently at 1,000 entries** (no
     pagination) and content >**1 MB** returns null. **Fix:** list via the **Git Trees API**; shard
     collections (year/month). Affects assumptions #2/#3.
-12. **Carta/Shiki bundle vs Workers size wall** (CRITICAL-if-regressed; currently MITIGATED). Shiki can blow
-    a bundle past the 3 MB Free / 10 MB Paid limit. Carta is already client-only — **keep it that way**:
-    enforce in tests + watch bundle size in CI (`wrangler deploy --dry-run`).
+12. **Carta/Shiki bundle vs Workers size wall** (CRITICAL-if-regressed). **GUARDED (Pass ROBUST, 2026-05-26):**
+    a `carta-boundary.test.ts` asserts no server-side `.ts` module imports `carta-md` (client-only by construction),
+    and both sites' CI gained a `wrangler deploy --dry-run` bundle guard. Measured headroom: ~2.3 MB gzip both sites,
+    well under the 10 MB Paid wall. Shiki stays off the Worker.
 13. **Scaffold-copy can't propagate fixes + "Hugo-like" is wrong** (HIGH, design). Copied theme files get no
     `npm update` (Shopify Dawn: ~90% outdated; CRA deprecated over this). **Mitigation:** keep ALL
     security/fix-prone + UI logic in the live ENGINE (cairn already does); theme = presentation/registry/CSS
@@ -415,8 +416,13 @@ remove `static/admin/*` · `BACKLOG.md`/`docs/STATUS.md`/`docs/architecture.md`/
     commit; a deploy-status signal; a revert-last-change affordance. Conditions assumption #1.
 16. **Cloudflare Email Sending is beta** (MED) and is the sole auth channel. Wrap with explicit errors +
     audit log; keep **Resend** as a coded fallback; track GA. (Extends the original risk #1.)
-17. **Misc edge guards** (MED): PKCS#1→PKCS#8 brittle/untested → `jose` + `/admin/healthz` + document
-    rotation; lazy-init heavy objects (1s startup CPU limit); pin wrangler v4 + `nodejs_compat`. **Editor
+17. **Misc edge guards** (MED). **GUARDED (Pass ROBUST, 2026-05-26):** PKCS#1→PKCS#8 — `/admin/healthz` signs a dummy
+    JWT via `signingSelfTest` (the fixture test already covered the conversion) + `docs/github-app-key-rotation.md`
+    (jose evaluated, deferred — it doesn't remove the PKCS#1 conversion); lazy-init audited (only `new TextEncoder()`
+    at module scope; `createAuth` per-request, Carta client-only); wrangler pinned `^4.93.1` on both sites +
+    `compatibility_date` bumped to `2025-05-05` (`nodejs_compat` already set). Original items: PKCS#1→PKCS#8
+    brittle/untested → `jose` + `/admin/healthz` + document rotation; lazy-init heavy objects (1s startup CPU limit);
+    pin wrangler v4 + `nodejs_compat`. **Editor
     decision (research-backed):** the rich-doc "alternatives" (TipTap/ProseMirror/Milkdown/Lexical) are NOT
     options — they use a document model and mangle `:::` directives on round-trip. Carta is a thin wrapper over
     **CodeMirror 6** (the safe fallback). **Stay on Carta now; add a thin `MarkdownEditor` interface immediately**
@@ -475,7 +481,14 @@ no longer excluded — just unscheduled.
 > smoke fails. (Optional bookkeeping: add `AUTH_SECRET` as a per-site worker-only secret in `~/.dotfiles/.../sync.sh` +
 > `registry.md`, like the old HMAC pair; mark MAGIC_LINK/SESSION for removal.)
 >
-> **Then** Pass ROBUST (C3/M2/guards) → Theme-Architecture Extraction → New Admin UI (I/theme R6 → J collections-nav R3 →
+> **Pass ROBUST is BUILT (code half, 2026-05-26 — see entry below), NOT yet released.** C3 (409 fail-safe), M2
+> (`/admin/healthz` + signing self-test + rotation doc), C4 (carta-server-boundary test), M5 (wrangler v4 pin on
+> both sites + compat-date bump + CI `wrangler deploy --dry-run` guard + lazy-init audit). Verified locally: package
+> 36 tests green, both sites `svelte-check` 0/0, both build + dry-run under the size wall (~2.3 MB gzip), healthz route
+> mounts + is guarded (anon→303). **The package half ships on the next cairn-cms release** (≥0.5.0) — fold it into the
+> same release/repoint as the pending AUTH decommission rather than publishing twice. Not pushed (awaiting user).
+>
+> **Then** Theme-Architecture Extraction → New Admin UI (I/theme R6 → J collections-nav R3 →
 > K editing R4 + palette R10 + pickers R9 + preview-toggle R12) → collection-CRUD R8 → extension model R13.
 >
 > **D1 databases (Pass AUTH):** `cairn-ecnordic-auth` `83178db3-0aae-4c1d-b6ad-1626193ebefd`, `cairn-907-auth`
@@ -593,6 +606,48 @@ no longer excluded — just unscheduled.
   pointer): `/api/auth/get-session`→200 `null` confirms `createAuth`+`loadSession` run against the live remote D1 +
   AUTH_SECRET. **Two user steps remain** (Firefox magic-link click-through + post-smoke decommission of
   MAGIC_LINK_SECRET/SESSION_SECRET/AUTH_KV) — see NEXT pointer. Old secrets/KV left in place for rollback grace.
+
+### Pass ROBUST — commit/runtime robustness (code half DONE; not released) (2026-05-26)
+
+- **Goal met (code half): the four robustness items are built + verified locally across the package and both sites.**
+  Ships to prod on the next cairn-cms release (≥0.5.0), folded into the same publish/repoint as the pending AUTH
+  decommission (one release, not two). Committed locally; not pushed (no-push-without-asking).
+- **C3 — concurrent-edit 409 fail-safe.** `commitFile` (`src/lib/github.ts`) now catches a stale-sha `409` from the
+  contents-API PUT and throws a typed **`CommitConflictError`** (defined + caught inside the package, so `instanceof`
+  is reliable — no peer-boundary identity split). `saveCommit` (`sveltekit/index.ts`) translates it to a 303 back to
+  the editor with `?error=This file changed since you opened it — reload and reapply your edits.` Fails **safe**; full
+  three-way merge stays out of scope. Unit-tested (read-sha→409→`CommitConflictError`).
+- **M2 — GitHub-App signer guard.** New `signingSelfTest(appId, privateKeyB64)` in `github.ts` signs a dummy JWT
+  (exercising the brittle PKCS#1→PKCS#8 conversion + Web Crypto import/sign) and returns `{ok, detail}` without
+  throwing or leaking the key. New `healthLoad` (`sveltekit/index.ts`) + a byte-identical **`/admin/healthz`**
+  `+server.ts` JSON shim on both sites (behind the `/admin` guard) surface it. New `docs/github-app-key-rotation.md`
+  documents rotation incl. the conversion step. **`jose`/`importPKCS8` evaluated and deferred** — it removes the
+  JWT-assembly code but NOT the PKCS#1→PKCS#8 conversion (GitHub issues PKCS#1), and the fixture test + healthz cover
+  the real failure mode, so the lean zero-dep signer is retained (documented in the rotation doc). Unit-tested
+  (self-test ok for a valid key; non-throwing failure detail for a bad key).
+- **C4 — Carta/Shiki server boundary.** New `src/tests/carta-boundary.test.ts` scans every `.ts` module under
+  `src/lib` and asserts none imports `carta-md` (it may be imported only from `.svelte` components, which mount the
+  editor client-side). Keeps Shiki out of the Worker route/auth logic by construction.
+- **M5 — Workers edge guards (both sites).** Pinned `wrangler` to `^4.93.1` as a devDep in **907-life** (ecnordic
+  already had it; patched 907's standalone lockfile — wrangler was already resolved at 4.94.0, dev). Bumped
+  `compatibility_date` `2025-01-25`→`2025-05-05` on both (`nodejs_compat` already set). Added a **`wrangler deploy
+  --dry-run`** "Bundle guard" step to both `deploy.yml` (after Build, before Deploy) to fail a deploy on a size/startup
+  regression. **Lazy-init audit:** the only module-level instantiation in the package is `new TextEncoder()` (trivial);
+  `createAuth` is per-request, Carta is client-only — no heavy top-level init to defer.
+- **Verified.** Package **36 tests** green (+4: 409-conflict, two signing self-test, carta-boundary). Both sites
+  `svelte-check` **0/0** (after `svelte-kit sync` generated the new healthz `$types`). Both `npm run build` + `wrangler
+  deploy --dry-run` succeed — ecnordic **2380 KiB gzip**, 907 **2294 KiB gzip**, both well under the 10 MB Paid wall
+  (and even the 3 MB Free wall). Live `wrangler dev` smoke (ecnordic): `/admin/healthz` anon → **303** `/admin/login`
+  (route mounts + is guarded), `/` → 200. The authed-JSON healthz response needs a real session — folded into the same
+  Firefox smoke as the pending AUTH cutover step.
+- **code-simplifier** run over the changed package code: one refinement (ternary→if/else in `healthLoad`); rest clean.
+- **Risks moved:** **C3 (#9)** → BUILT (fail-safe + test). **M2 (#17, key half)** → guarded (healthz self-test +
+  rotation doc; fixture test already existed). **C4 (#12)** → guarded (boundary test + CI dry-run). **M5 (#17, edge
+  half)** → guarded (wrangler pin + compat bump + dry-run + audit). All flip to RETIRED when the release ships them.
+- **Files.** Package: `src/lib/github.ts`, `src/lib/sveltekit/index.ts`, `src/tests/github-commit.test.ts`,
+  `src/tests/carta-boundary.test.ts` (new), `docs/github-app-key-rotation.md` (new), `docs/PLAN.md` (this).
+  Both sites: `src/routes/admin/healthz/+server.ts` (new), `wrangler.toml`, `.github/workflows/deploy.yml`;
+  907 also `package.json` + `package-lock.json`.
 
 ### Pass 0 — bootstrap (2026-05-24)
 

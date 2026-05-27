@@ -11,7 +11,15 @@
 import { redirect, error } from '@sveltejs/kit';
 import matter from 'gray-matter';
 import type { CairnUser } from '../auth/guard';
-import { listMarkdown, readRaw, commitFile, installationToken, type RepoFile } from '../github';
+import {
+  listMarkdown,
+  readRaw,
+  commitFile,
+  installationToken,
+  signingSelfTest,
+  CommitConflictError,
+  type RepoFile,
+} from '../github';
 import { serializeMarkdown } from '../content';
 import { findCollection, frontmatterFromForm, type CairnAdapter, type CairnField } from '../adapter';
 
@@ -182,13 +190,46 @@ export async function saveCommit(
     privateKeyB64: env.GITHUB_APP_PRIVATE_KEY_B64,
   });
 
-  await commitFile(
-    adapter.backend,
-    `${collection.dir}/${id}.md`,
-    markdown,
-    { message: `Update ${collection.label.toLowerCase()}: ${id}`, author: { name: user.name, email: user.email } },
-    token,
-  );
+  try {
+    await commitFile(
+      adapter.backend,
+      `${collection.dir}/${id}.md`,
+      markdown,
+      { message: `Update ${collection.label.toLowerCase()}: ${id}`, author: { name: user.name, email: user.email } },
+      token,
+    );
+  } catch (err) {
+    // Concurrent-edit 409 (C3): fail safe — bounce back with a reload prompt; the editor reloads
+    // the current version and reapplies. Any other error is genuinely unexpected, so rethrow.
+    if (err instanceof CommitConflictError) {
+      const message = 'This file changed since you opened it — reload and reapply your edits.';
+      throw redirect(303, `/admin/edit/${type}/${id}?error=${encodeURIComponent(message)}`);
+    }
+    throw err;
+  }
 
   throw redirect(303, `/admin/edit/${type}/${id}?saved=1`);
+}
+
+// ── /admin/healthz (GET) ──────────────────────────────────────────────────────
+
+export interface HealthData {
+  ok: boolean;
+  checks: { githubAppSigning: { ok: boolean; detail?: string } };
+}
+
+/**
+ * Deploy-time health check (M2): signs a dummy App JWT to prove the GitHub App key loads and
+ * the PKCS#1→PKCS#8 conversion still works, before an editor hits it on save. Behind the
+ * `/admin` guard (signed-in editors only); returns ok/fail with no secret in the body.
+ */
+export async function healthLoad(event: PlatformEvent): Promise<HealthData> {
+  const env = event.platform?.env;
+  let githubAppSigning: { ok: boolean; detail?: string };
+  if (env?.GITHUB_APP_ID && env.GITHUB_APP_PRIVATE_KEY_B64) {
+    githubAppSigning = await signingSelfTest(env.GITHUB_APP_ID, env.GITHUB_APP_PRIVATE_KEY_B64);
+  } else {
+    githubAppSigning = { ok: false, detail: 'GitHub App not configured' };
+  }
+  return { ok: githubAppSigning.ok, checks: { githubAppSigning } };
 }

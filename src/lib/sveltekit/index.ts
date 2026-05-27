@@ -59,24 +59,37 @@ async function readToken(env: AdminEnv | undefined): Promise<string | undefined>
 
 // ── /admin layout ──────────────────────────────────────────────────────────
 
+/** A collection reduced to what the sidebar nav needs (no plugin graph crosses to the client). */
+export interface NavCollection {
+  type: string;
+  label: string;
+}
+
 export interface AdminLayoutData {
   user: CairnUser | null;
   siteName: string;
   pathname: string;
+  collections: NavCollection[];
 }
 
 /**
- * Branding + session for every admin page. `siteName` flows from the adapter without pulling
- * its plugin graph into client bundles; the import stays server-side in the layout load.
- * `pathname` lets the shared shell highlight the active nav item without a `$app/*` import
- * (those kit virtual modules have no types outside a kit app, so they can't live in the
- * package); reading `event.url` here also opts the layout load into rerunning on navigation.
+ * Branding, session, and collection nav for every admin page. `siteName` and the collection
+ * list flow from the adapter without pulling its plugin graph into client bundles (the import
+ * stays server-side in the layout load; only `{type,label}` crosses). `pathname` lets the
+ * shared shell highlight the active nav item without a `$app/*` import (those kit virtual
+ * modules have no types outside a kit app); reading `event.url` also opts the layout load into
+ * rerunning on navigation, keeping the active class correct.
  */
 export function adminLayoutLoad(
   event: { locals: { user: CairnUser | null }; url: URL },
   adapter: CairnAdapter,
 ): AdminLayoutData {
-  return { user: event.locals.user, siteName: adapter.siteName, pathname: event.url.pathname };
+  return {
+    user: event.locals.user,
+    siteName: adapter.siteName,
+    pathname: event.url.pathname,
+    collections: adapter.collections.map(({ type, label }) => ({ type, label })),
+  };
 }
 
 // ── /admin (content list) ────────────────────────────────────────────────────

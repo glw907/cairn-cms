@@ -455,7 +455,7 @@ Expected: **PASS with zero snapshot diffs.** If any diff, fix the Task-8 `build`
 
 ### Task 15: Documentation
 
-- [ ] In `cairn-cms/docs/creating-a-cairn-theme.md`, flip the **Components & component registry** section from `[Planned]` → `[Shipped]` for the engine half (registry mechanics + builders-in-theme); note the palette UI remains R10 (admin-UI plan).
+- [ ] In `cairn-cms/docs/creating-a-cairn-site.md`, flip the **Components & component registry** section from `[Planned]` → `[Shipped]` for the engine half (registry mechanics + builders-in-theme); note the palette UI remains R10 (admin-UI plan).
 - [ ] Append a **Notes / progress log** entry in `docs/PLAN.md` (built, verified with evidence, the engine/theme line as implemented, byte-identical proof).
 - [ ] Run the workstation `code-simplifier` over the new cairn-cms `render/*` + ecnordic `theme/*` before the final commit (per the repo's git conventions).
 
@@ -463,6 +463,6 @@ Expected: **PASS with zero snapshot diffs.** If any diff, fix the Task-8 `build`
 
 ## Self-Review
 
-- **Spec coverage:** Engine/theme line (creating-a-cairn-theme.md) → Phases 1–2; R10a registry → Tasks 3,8,12; "no production break" → Phase-0 characterization gating every move + Task 14 CI; both sites → Phases 2–3. The **palette UI / R10** and R1–R9/R11–R12 are explicitly the *separate* admin-UI plan (next), not this one.
+- **Spec coverage:** Engine/theme line (creating-a-cairn-site.md) → Phases 1–2; R10a registry → Tasks 3,8,12; "no production break" → Phase-0 characterization gating every move + Task 14 CI; both sites → Phases 2–3. The **palette UI / R10** and R1–R9/R11–R12 are explicitly the *separate* admin-UI plan (next), not this one.
 - **Placeholder note:** Tasks 6 and 8 intentionally pin exact helper signatures via their tests + the characterization snapshot rather than pre-committing final code, because the precise generic signatures are discovered against the behavior contract — the test is the spec (TDD). All other steps carry concrete code/commands.
 - **Type consistency:** `defineRegistry`/`ComponentRegistry`/`ComponentDef`/`createRenderer`/`glyph`/`splitHead`/`cardShell`/`markFirstList`/`remarkDirectiveStamp`/`rehypeDispatch` are used consistently across Tasks 3–9.

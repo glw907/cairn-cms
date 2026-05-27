@@ -20,12 +20,12 @@ export function iconSpan(glyphEl: Element, role?: string): Element {
 	return h('span', { className }, [glyphEl]);
 }
 
-/** A theme's icon factory: turn a stamped icon name + role into a hast element. */
+/** A site's icon factory: turn a stamped icon name + role into a hast element. */
 export type MakeIcon = (name: string, role?: string) => Element;
 
 // Pull the section's <h2> out, retag it .card-title, and build the .ec-head row
 // (optional icon + heading). Returns the head plus the remaining body children.
-// `makeIcon` (theme-supplied) turns the stamped data-icon into an element; omit it
+// `makeIcon` (site-supplied) turns the stamped data-icon into an element; omit it
 // for a head with no icon.
 export function splitHead(node: Element, makeIcon?: MakeIcon): { head: Element; rest: ElementContent[] } {
 	const children = node.children as ElementContent[];
@@ -81,7 +81,7 @@ function transformNode(node: Element, registry: ComponentRegistry, rise?: string
 
 /** Rehype transformer: dispatch each stamped element through its registry `build`
  *  fn. Top-level primitives get a document-order rise stagger (when `rise` is
- *  supplied — a theme's per-index motion formula); nested ones don't. Non-primitive
+ *  supplied — a site's per-index motion formula); nested ones don't. Non-primitive
  *  content (lede, intro paragraphs, the page-toc nav) passes through untouched. */
 export function rehypeDispatch(registry: ComponentRegistry, rise?: (idx: number) => string) {
 	return (tree: Root) => {

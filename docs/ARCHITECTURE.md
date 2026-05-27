@@ -25,20 +25,20 @@ needs PostgreSQL + a Node server — fails the embed-on-Workers criterion). **Bu
 
 | Layer | What it is | Reuse / distribution |
 |---|---|---|
-| **Engine** — `@glw907/cairn-cms` | Shared CMS machinery: auth (→ better-auth on D1, see §4), `/admin` guard, GitHub-App commit, admin shell + components, the render-engine + registry machinery, the sveltekit server-logic functions | **Live, semver npm dependency.** Updates propagate on bump. **Engine-fat / theme-thin is a hard rule** (H1). |
-| **Theme** | A starting point: public SvelteKit/Tailwind/DaisyUI design + a component registry + a default `cairn.config.ts` adapter + sample content | **Scaffold-copy (starter model).** Copied into a new repo; the site owns + diverges; theme updates do **not** propagate. *(Planned: `create-cairn-site`.)* **Not "Hugo-like"** (H2 — Hugo overlays at runtime; SvelteKit/Vite resolve at compile time; closest live analogue is Astro Starlight). |
+| **Engine** — `@glw907/cairn-cms` | Shared CMS machinery: auth (→ better-auth on D1, see §4), `/admin` guard, GitHub-App commit, admin shell + components, the render-engine + registry machinery, the sveltekit server-logic functions | **Live, semver npm dependency.** Updates propagate on bump. **Engine-fat / site-thin is a hard rule** (H1). |
+| **Site template** | A starting point: public SvelteKit/Tailwind/DaisyUI design + a component registry + a default `cairn.config.ts` adapter + sample content | **Scaffold-copy (starter model).** Copied into a new repo; the site owns + diverges; template updates do **not** propagate. *(Planned: `create-cairn-site`.)* **Not a WP/Hugo "theme"** (H2 — Hugo overlays at runtime; SvelteKit/Vite resolve at compile time; closest live analogue is Astro Starlight; "theme" retired for the site-design concept). |
 | **Extension** — `CairnExtension` | Optional, composable feature module: nav entries, admin routes, collections, components, field types, save/commit hooks, declared bindings | **Code-defined, build-time-composed.** Site-local **or** shared npm package. **Governed contract** (H5). *(Planned — R13, own design round.)* |
-| **Site** | A full SvelteKit/Cloudflare app that **owns its code** | Composes engine + a theme + extensions + its own bespoke logic. |
+| **Cairn site** | A full SvelteKit/Cloudflare app that **owns its code** | Composes engine + extensions + its own bespoke logic; scaffolded from a site template. |
 
-**Engine-fat / theme-thin (settled, H1).** *All* security-critical and fix-prone logic lives in the live
+**Engine-fat / site-thin (settled, H1).** *All* security-critical and fix-prone logic lives in the live
 engine (auth, commit, admin shell/components, server logic, the render-engine + registry mechanics) so a
-fix is a semver bump that propagates. The copied theme is **presentation only**: registry *data* + builders +
-icons + CSS + thin route shims. This is the only robust answer to "scaffold-copy can't propagate fixes." A
-**theme/engine version stamp** + Renovate config ship in the scaffold so drift is visible (H1 mitigation).
+fix is a semver bump that propagates. The copied site code is **presentation only**: registry *data* + builders +
+icons + CSS + thin route shims. This is the only robust answer to "scaffold-copy can't propagate fixes." An
+**engine version stamp** + Renovate config ship in the scaffold so drift is visible (H1 mitigation).
 
-**Engine vs theme line (settled):** machinery → engine (pipeline factory, directive-stamp plugin,
+**Engine vs site line (settled):** machinery → engine (pipeline factory, directive-stamp plugin,
 rehype dispatcher + shared structural helpers, registry *type*, glyph helper); **data + builders +
-icons + CSS → theme** (the registry *entries*). See `creating-a-cairn-theme.md`.
+icons + CSS → site code** (the registry *entries*). See `creating-a-cairn-site.md`.
 
 ## 3. Data & storage model
 
@@ -78,7 +78,7 @@ icons + CSS → theme** (the registry *entries*). See `creating-a-cairn-theme.md
 ## 6. Rendering pipeline & component registry  *(engine half: planned — extraction)*
 
 - A unified pipeline: `remarkParse → gfm → remark-directive → [directive-stamp] → remark-rehype(allowDangerousHtml) → rehype-raw → [dispatch] → rehype-slug → stringify`.
-- **Directive components** (`:::card`, `:::grid`, `:::cta`, …): the engine provides the generic stamp plugin + rehype **dispatcher** + shared structural helpers; the **theme** supplies a **component registry** — one declaration per component `{ name, label, description, insertTemplate, build, defaultIconByRole }`. Parser names, render dispatch, and the editor **component palette** all derive from the registry (no drift — R10a).
+- **Directive components** (`:::card`, `:::grid`, `:::cta`, …): the engine provides the generic stamp plugin + rehype **dispatcher** + shared structural helpers; the **site** supplies a **component registry** — one declaration per component `{ name, label, description, insertTemplate, build, defaultIconByRole }`. Parser names, render dispatch, and the editor **component palette** all derive from the registry (no drift — R10a).
 - **Preview parity:** the Carta editor preview renders through the **same** plugins (the adapter's `renderPreview`), so the author sees the live-site design. The preview is **site-styled**, not admin-themed.
 - **Bundle guard (C4/M5):** Carta/Shiki stay **client-only** (already true) — enforce the boundary in tests, keep Shiki off the server, lazy-init heavy objects, and run `wrangler deploy --dry-run` in CI to catch size/startup regressions (Workers 3 MB Free / 10 MB Paid; 1 s startup CPU).
 
@@ -115,7 +115,7 @@ The §10 assumptions from v1, with the Refinement disposition (full reasoning in
 5. **Hand-rolled auth adequate** — *Superseded:* **adopting better-auth** (the project is early; better long-term result). The bespoke editor-auth retires.
 6. **KV consistency OK for single-use** — *INVALID → fixed by construction:* single-use moves to **D1** (strong consistency) via better-auth (C1).
 7. **Role-in-signed-cookie acceptable** — *Improved:* better-auth uses **DB-backed sessions** → instant revocation now possible (M3). Secret hygiene still applies.
-8. **Scaffold-copy right** — *Yes, iff* engine-fat/theme-thin (H1) + **drop "Hugo-like"** (H2). Both adopted as hard rules; version stamp + Renovate in the scaffold.
+8. **Scaffold-copy right** — *Yes, iff* engine-fat/site-thin (H1) + **drop "Hugo-like"** (H2). Both adopted as hard rules; version stamp + Renovate in the scaffold.
 9. **Lean core, extensions absorb growth** — *Yes, iff governed:* narrow versioned `CairnExtension`, peer-dep only `cairn-cms`, data+components not internals, build-time validation, generated route shims, governance doc before the first external extension (H5).
 10. **Components are code** — *Sound* (render + CSS are code; only collection *definitions* may be runtime-created).
 11. **Opinionated lock-in is a feature** — *Sound* (intentional; not challenged).
@@ -131,7 +131,7 @@ The §10 assumptions from v1, with the Refinement disposition (full reasoning in
 | **C4** Carta/Shiki bundle wall | CRITICAL-if-regressed | **GUARD** | Client-only enforced in tests + CI dry-run |
 | **P2** adopt better-auth | — | **ADOPT** | Replaces bespoke magic-link/session/roles (§4) |
 | **P3/M6** editor engine | MED | **`MarkdownEditor` interface now; CM6 is the leaning long-term target** | Add the thin interface during extraction. The "stay on Carta" leg was rewrite-cost avoidance, which the north star discounts — so at R10 the burden flips to *justifying keeping Carta* (a ~753★ single-maintainer wrapper) over owning bedrock **CodeMirror 6** (ecosystem-standard, what Carta wraps; the palette wants CM-instance hooks → Carta risks being a leaky layer). Decide at R10 when the palette's editor-instance needs are known; default expectation = migrate to bare CM6 + custom toolbar. |
-| **H1** scaffold-copy can't propagate | HIGH | **CHANGE the line → engine-fat/theme-thin** | Hard rule (§2) + version stamp + Renovate |
+| **H1** scaffold-copy can't propagate | HIGH | **CHANGE the line → engine-fat/site-thin** | Hard rule (§2) + version stamp + Renovate |
 | **H2** "Hugo-like" wrong | HIGH | **CHANGE terminology** | Drop "Hugo-like"; "starter/scaffold", Astro-Starlight analogue |
 | **H3** timing-safe / token-in-URL / origin | HIGH | **CHANGE → mostly subsumed by better-auth** | Lib owns compare/lifecycle; we add `Referrer-Policy` + origin audit |
 | **H4** contents-API caps | HIGH | **CHANGE → Git Trees API** | Listing swap + 1 MB doc; shard at trigger |
@@ -147,7 +147,7 @@ The §10 assumptions from v1, with the Refinement disposition (full reasoning in
 ## 12. Cross-references
 - Locked decisions, risk register, per-pass log, **re-sequenced roadmap**: `docs/PLAN.md`.
 - Red-team this doc was built against: `docs/ARCHITECTURE-CRITIQUE.md`.
-- Layered model, engine/theme line, extension contract, authoring guide: `docs/creating-a-cairn-theme.md`.
+- Layered model, engine/site line, extension contract, authoring guide: `docs/creating-a-cairn-site.md`.
 - Admin requirements R1–R13: `docs/superpowers/specs/2026-05-26-admin-ui-design.md`.
 - Forward-compat memo (capability door-opening): `docs/FORWARD-COMPAT.md`.
 - Theme-architecture extraction plan: `docs/superpowers/plans/2026-05-26-theme-architecture-extraction.md`.

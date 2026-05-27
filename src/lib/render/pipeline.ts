@@ -11,7 +11,7 @@ import { rehypeDispatch } from './rehype-dispatch';
 import type { ComponentRegistry } from './registry';
 
 export interface RendererOptions {
-	/** A theme's per-index motion formula for the top-level rise stagger
+	/** A site's per-index motion formula for the top-level rise stagger
 	 *  (e.g. ecnordic's `(i) => '--rise:' + …`). Omit for no stagger. */
 	rise?: (idx: number) => string;
 }

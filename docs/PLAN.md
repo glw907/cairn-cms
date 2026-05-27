@@ -202,10 +202,13 @@ redesign **and** surfaced the theme architecture. Canonical artifacts (all git-b
   **R13 canonical extension model (`CairnExtension`) — a site is NOT just a theme instance; one code-defined,
   build-time-composed way to add functionality separate from core (nav/routes/collections/components/fields/hooks);
   site-local or shared package; a THIRD reuse axis beside engine+theme; own design round**.
-- **Theme architecture:** `docs/creating-a-cairn-theme.md` — the engine/theme model, **decided model (a) scaffold-copy**
-  ("Hugo-like for a Cloudflare context": engine = live `@glw907/cairn-cms` dependency that propagates; theme =
-  copied scaffold the site owns + diverges), and the **settled engine/theme line** (machinery → core; registry data +
-  builders + icons + CSS → theme).
+- **Site architecture:** `docs/creating-a-cairn-site.md` — the engine/site model, **decided model (a) scaffold-copy**
+  (engine = live `@glw907/cairn-cms` dependency that propagates; a **site template** = copied scaffold the site owns +
+  diverges), and the **settled engine/site line** (machinery → core; registry data + builders + icons + CSS → site code).
+  **Vocabulary settled 2026-05-26: "theme" is retired** for the site-design concept (it carried WP/Hugo swap/install
+  baggage that never matched the model). Use **engine** (the package), **a Cairn site** (a consumer repo — ecnordic /
+  907 are Cairn sites), **a site template** (a scaffold you `create-cairn-site` from). "Admin theme" (Warm Stone, R6)
+  is unrelated — it's the DaisyUI visual theme of the `/admin` chrome.
 - **Platform stance:** **Cloudflare-first** locked-decision row added above (use any CF primitive that fits; only
   content stays markdown-in-git). Narrows the old "no D1/database pivot" note to "no *content* pivot."
 
@@ -247,7 +250,7 @@ Resulting **planned passes (sequenced)** — superseding the standalone "Pass I 
   `wrangler deploy --dry-run` + lazy-init audit + pin wrangler v4/`nodejs_compat`/recent compat date (C4/M5). Can
   ride with AUTH or the extraction.
 - **Pass — Theme-Architecture Extraction** (plan written: `docs/superpowers/plans/2026-05-26-theme-architecture-extraction.md`).
-  Move the generic render engine + registry machinery into cairn-core; ecnordic becomes a theme on the engine; 907
+  Move the generic render engine + registry machinery into cairn-core; ecnordic's site code consumes the engine; 907
   trivial; **byte-identical output** (characterization snapshots gate it); no prod break. Realizes R10a's engine half.
   **Refinement constraints to honor:** enforce engine-fat/theme-thin (H1) + single-kit peerDep (M4) + Shiki-off-server
   (C4); add the thin `MarkdownEditor` interface (P3) while the editor is in-package; switch listing to the Git Trees
@@ -265,21 +268,22 @@ Resulting **planned passes (sequenced)** — superseding the standalone "Pass I 
   model, reuses the GitHub App `commitFile` path with base64 binary, served as static assets)
   **vs** Cloudflare R2 / Images (scales, adds infra + a binding). Decide before building. The
   adapter contract will likely grow a media config (folder/URL-base, or an R2 binding ref).
-- **Future — Themes (Hugo-style, NOT WordPress-style).** Themes *are* a wanted capability, but
-  the model is **Hugo's**, not WordPress's: when a user stands up a **new** cairn site they
-  **choose from a collection of default themes** as a scaffold, then **edit it** in their own
-  repo from there (or **build a new theme** if they prefer). It is **site-setup / scaffold-time
-  selection + in-repo source editing**, *not* a runtime theme-management UI inside `/admin` and
-  *not* a marketplace. This is consistent with the opinionated target stack (themes are
-  SvelteKit + DaisyUI/Tailwind) and the "admin is a tool, not a marketing surface" decision — the
-  *public site* design is themed; the admin chrome stays neutral/self-contained. A theme is
-  essentially the SvelteKit/Tailwind/DaisyUI layer + the site's `cairn.config.ts` adapter
-  (collections, `renderPreview`, frontmatter). Unscheduled; the open work is defining what a
-  "cairn theme" packages and how the scaffold picks one (e.g. a `create-cairn-site` template set).
-  **Implication for now:** themeability means UI components should stay **consistent and
-  themeable** — a strong reason to build on **DaisyUI components where possible** (semantic,
-  theme-driven classes that re-skin via DaisyUI themes) rather than ad-hoc bespoke markup a theme
-  can't restyle. Applies to site components; the admin chrome stays neutral by its own rule.
+- **Future — Site templates (scaffold-copy starters, NOT WordPress-style themes).** Reusable
+  starting points *are* a wanted capability, but the model is **scaffold-copy**, not runtime themes:
+  when a user stands up a **new** Cairn site they **choose from a collection of site templates** as a
+  scaffold, then **edit it** in their own repo from there (or **build a new template** if they prefer).
+  It is **site-setup / scaffold-time selection + in-repo source editing**, *not* a runtime
+  template-management UI inside `/admin` and *not* a marketplace. This is consistent with the
+  opinionated target stack (templates are SvelteKit + DaisyUI/Tailwind) and the "admin is a tool, not a
+  marketing surface" decision — the *public site* design is the site's own; the admin chrome stays
+  neutral/self-contained. A site template is essentially the SvelteKit/Tailwind/DaisyUI layer + a
+  default `cairn.config.ts` adapter (collections, `renderPreview`, frontmatter) + the component
+  registry. Unscheduled; the open work is defining what a site template packages and how the scaffold
+  picks one (e.g. a `create-cairn-site` template set). ("theme" retired here — see the vocabulary note
+  above.) **Implication for now:** reusability means UI components should stay **consistent and
+  restyleable** — a strong reason to build on **DaisyUI components where possible** (semantic classes
+  that re-skin via DaisyUI themes) rather than ad-hoc bespoke markup a template can't restyle. Applies
+  to site components; the admin chrome stays neutral by its own rule.
 - **Exploration (research pass, not a build) — CMS landscape & forward-compatibility review.**
   The real goal: survey mature CMSes (Sveltia, Decap, Keystatic, WordPress, Ghost, Statamic) to
   see *a bit into the future* and make sure **we don't design ourselves into a box** — i.e. that
@@ -289,9 +293,9 @@ Resulting **planned passes (sequenced)** — superseding the standalone "Pass I 
   architecture leave the door open?): media/uploads, editorial workflow / review-before-publish,
   scheduled publish, content relations / references across collections, i18n / localization,
   revision history & rollback (we get some free from git), richer roles/permissions, multiple
-  backends. *Theming* is **not** dropped but is **scoped Hugo-style** (scaffold-time theme choice +
-  in-repo editing, per the "Themes" item above), explicitly **not** WordPress-style runtime theme
-  management — **Cairn stays lean; WordPress is the cautionary tale.** Output is an architectural
+  backends. *Reusable design* is **not** dropped but is **scoped to scaffold-copy** (scaffold-time
+  site-template choice + in-repo editing, per the "Site templates" item above), explicitly **not**
+  WordPress-style runtime theme management — **Cairn stays lean; WordPress is the cautionary tale.** Output is an architectural
   memo: "keep these doors open" notes
   + any cheap seam generalizations to make now; **"out of scope" is a valid verdict per item.**
   **Timing leverage:** most valuable **before the adapter API calcifies** for external/published
@@ -524,7 +528,7 @@ no longer excluded — just unscheduled.
   locked-decision row. The GitHub-App commit signer stays bespoke (better-auth replaces only the *editor* auth).
 - **Other resolutions (full reasoning in ARCHITECTURE.md §11):** stay on Carta behind a thin `MarkdownEditor`
   interface — Carta→CM6 one-file escape hatch (P3/M6); **engine-fat/theme-thin as a hard rule + drop "Hugo-like"**
-  (H1/H2 — updated `creating-a-cairn-theme.md`; closest live analogue is Astro Starlight, not Hugo's runtime overlay);
+  (H1/H2 — updated `creating-a-cairn-site.md`; closest live analogue is Astro Starlight, not Hugo's runtime overlay);
   **Git Trees API** listing + document the 1 MB body cap, shard at a trigger (H4); **409 fail-safe** in `commitFile`
   (C3); **POST-confirm** flow — better-auth GET-redeems, so scanner-prefetch still applies (C2); governed
   `CairnExtension` contract (H5, baked into the R13 round); non-dev safety net — pre-commit validate + deploy-status +
@@ -537,7 +541,7 @@ no longer excluded — just unscheduled.
   **collection-CRUD R8** → **extension model R13**. See the updated "planned passes (sequenced)" list above.
 - **Ritual.** Docs-only pass → no code-simplifier / svelte-check / tests (nothing built). Edits: `ARCHITECTURE.md`
   (full v2 rewrite), `PLAN.md` (this entry, new locked-decision row, re-sequenced passes, risk #7/#8/#9/#10
-  annotations, NEXT pointer), `creating-a-cairn-theme.md` (drop "Hugo-like", engine-fat/theme-thin hard rule).
+  annotations, NEXT pointer), `creating-a-cairn-site.md` (drop "Hugo-like", engine-fat/theme-thin hard rule).
   Not committed (no-push-without-asking; edits land locally). **Next: write the Pass AUTH detailed plan.**
 
 ### Pass AUTH — migrate to better-auth (D1 + magic-link + POST-confirm + roles) — Phases 0–5 DONE, Phase 6 (prod) pending (2026-05-26)

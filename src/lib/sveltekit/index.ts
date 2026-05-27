@@ -92,32 +92,84 @@ export function adminLayoutLoad(
   };
 }
 
-// ── /admin (content list) ────────────────────────────────────────────────────
+// ── /admin/[collection] (entries list) ─────────────────────────────────────
 
-export interface AdminCollectionList {
-  type: string;
-  label: string;
-  files: RepoFile[];
-  error?: string;
+/** One entry row: id (filename stem), display title, optional date, draft flag. */
+export interface CollectionEntry {
+  id: string;
+  path: string;
+  title: string;
+  date: string | null;
+  draft: boolean;
 }
 
-/** List every collection's markdown files. A failed listing degrades to an inline error. */
-export async function adminListLoad(
-  event: PlatformEvent,
+export interface CollectionListData {
+  type: string;
+  label: string;
+  entries: CollectionEntry[];
+  /** Set when the directory listing itself failed (rate limit, network). */
+  error?: string;
+  /** A create-flow error bounced back via `?error=` (an invalid or taken slug). */
+  formError: string | null;
+}
+
+/** Coerce a frontmatter `date` (gray-matter may parse YAML dates to `Date`) to `YYYY-MM-DD`. */
+function entryDate(value: unknown): string | null {
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  if (typeof value === 'string') return value;
+  return null;
+}
+
+/**
+ * List one collection's entries, reading each file's frontmatter for the display title, date,
+ * and draft badge. Reads run in parallel; a single failed read degrades that row to the slug
+ * (rather than failing the page), and a failed directory listing returns an inline `error`.
+ * Collections are small here; the 1,000-entry / Git-Trees sharding concern is risk #11, deferred.
+ */
+export async function collectionListLoad(
+  event: PlatformEvent & { params: { collection: string }; url: URL },
   adapter: CairnAdapter,
-): Promise<{ collections: AdminCollectionList[] }> {
+): Promise<CollectionListData> {
+  const collection = findCollection(adapter, event.params.collection);
+  if (!collection) throw error(404, 'Unknown collection');
+
+  const formError = event.url.searchParams.get('error');
   const token = await readToken(event.platform?.env);
-  const collections = await Promise.all(
-    adapter.collections.map(async ({ type, label, dir }): Promise<AdminCollectionList> => {
+
+  let files: RepoFile[];
+  try {
+    files = await listMarkdown(adapter.backend, collection.dir, token);
+  } catch (err) {
+    return {
+      type: collection.type,
+      label: collection.label,
+      entries: [],
+      error: err instanceof Error ? err.message : 'Failed to load',
+      formError,
+    };
+  }
+
+  const entries = await Promise.all(
+    files.map(async (file): Promise<CollectionEntry> => {
+      const fallback: CollectionEntry = { id: file.id, path: file.path, title: file.id, date: null, draft: false };
       try {
-        return { type, label, files: await listMarkdown(adapter.backend, dir, token) };
-      } catch (err) {
-        // A failed listing (rate limit, network) shouldn't 500 the whole admin.
-        return { type, label, files: [], error: err instanceof Error ? err.message : 'Failed to load' };
+        const raw = await readRaw(adapter.backend, file.path, token);
+        if (raw === null) return fallback;
+        const { data } = matter(raw);
+        return {
+          id: file.id,
+          path: file.path,
+          title: typeof data.title === 'string' ? data.title : file.id,
+          date: entryDate(data.date),
+          draft: data.draft === true,
+        };
+      } catch {
+        return fallback;
       }
     }),
   );
-  return { collections };
+
+  return { type: collection.type, label: collection.label, entries, formError };
 }
 
 // ── /admin/edit/[type]/[id] ─────────────────────────────────────────────────

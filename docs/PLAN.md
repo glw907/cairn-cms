@@ -512,7 +512,11 @@ no longer excluded, just unscheduled.
 > (H4); governed `CairnExtension` (H5); 409 fail-safe (C3); POST-confirm (C2); CI/bundle guards (C4/M5); non-dev
 > safety net (M1).
 >
-> **START HERE: Pass AUTH is SHIPPED to prod. Two user steps remain (browser smoke + decommission), then Pass ROBUST.**
+> **START HERE: 0.5.0 shipped (render + Pass ROBUST), both CI deploys green. Next is the New Admin UI passes.**
+> One user-gated item remains from Pass AUTH: the Firefox prod smoke on each site, then the legacy-auth decommission
+> (worker secrets + AUTH_KV; see the two-user-steps note below). The release bundle is otherwise done.
+>
+> **(Historical) Pass AUTH SHIPPED to prod as 0.4.0.**
 > better-auth (D1 + magic-link + POST-confirm + owner/editor roles) **replaced the hand-rolled stack and is LIVE in prod
 > on both sites** as `@glw907/cairn-cms@0.4.0` (published via OIDC; not 1.0, unproven end-to-end). All six phases ran:
 > remote D1 migrated + owner (`geoff-login@907.life`) seeded as `owner` in both DBs, `AUTH_SECRET` set on both workers,
@@ -529,24 +533,20 @@ no longer excluded, just unscheduled.
 > smoke fails. (Optional bookkeeping: add `AUTH_SECRET` as a per-site worker-only secret in `~/.dotfiles/.../sync.sh` +
 > `registry.md`, like the old HMAC pair; mark MAGIC_LINK/SESSION for removal.)
 >
-> **Pass ROBUST is BUILT (code half, 2026-05-26; see entry below), NOT yet released.** C3 (409 fail-safe), M2
-> (`/admin/healthz` + signing self-test + rotation doc), C4 (carta-server-boundary test), M5 (wrangler v4 pin on
-> both sites + compat-date bump + CI `wrangler deploy --dry-run` guard + lazy-init audit). Verified locally: package
-> 36 tests green, both sites `svelte-check` 0/0, both build + dry-run under the size wall (~2.3 MB gzip), healthz route
-> mounts + is guarded (anon→303). **The package half ships on the next cairn-cms release** (≥0.5.0). Fold it into the
-> same release/repoint as the pending AUTH decommission rather than publishing twice. Not pushed (awaiting user).
+> **Pass ROBUST: RELEASED in 0.5.0 (2026-05-27).** C3 (409 fail-safe), M2 (`/admin/healthz` + signing self-test +
+> rotation doc), C4 (carta-server-boundary test), M5 (wrangler v4 pin on both sites + compat-date bump + CI `wrangler
+> deploy --dry-run` guard + lazy-init audit). Shipped in `@glw907/cairn-cms@0.5.0`; both sites consume it and their CI
+> deploys are green. Risks #9/#12/#17 flip to RETIRED.
 >
-> **Render-Engine Extraction is BUILT (code half, 2026-05-26; see entry below), NOT yet released.** The render
-> engine moved into `@glw907/cairn-cms` (`render/*`: `createRenderer`/`defineRegistry`/`glyph`/directive-stamp/
-> dispatcher); ecnordic renders through it **byte-identically** (characterization 6/6), 907 keeps `remark-html` (8/8),
-> `adapter.registry` added (R10a engine half). Also **settled the vocabulary: "theme" retired** → engine / Cairn site /
-> site template (docs + code comments + memory updated). Ships on the **same next release** (≥0.5.0) as Pass ROBUST +
-> the pending AUTH decommission. Three things, one publish/repoint. Not pushed (awaiting user).
+> **Render-Engine Extraction: RELEASED in 0.5.0 (2026-05-27).** The render engine moved into `@glw907/cairn-cms`
+> (`render/*`: `createRenderer`/`defineRegistry`/`glyph`/directive-stamp/dispatcher); ecnordic renders through it
+> **byte-identically** (characterization 6/6), 907 keeps `remark-html` (8/8), `adapter.registry` added (R10a engine
+> half). The vocabulary is settled: "theme" retired in favor of engine / Cairn site / site template. Shipped in 0.5.0;
+> both sites repointed and building green against the published exports.
 >
-> **Release sequencing (Geoff, 2026-05-26): hold the ≥0.5.0 release until AFTER the writing-cleanup pass** (the
-> AI-tell guard for docs + code comments; see the planned-pass note). Clean the prose, then publish the bundle
-> (extraction + Pass ROBUST + AUTH decommission) in one go. **CLEARED 2026-05-27:** writing-cleanup Pass 2 is
-> done (see its entry above), so the ≥0.5.0 bundle is unblocked.
+> **Release sequencing (Geoff, 2026-05-26): hold the ≥0.5.0 release until AFTER the writing-cleanup pass.** DONE
+> 2026-05-27. The prose pass cleared the gate, then 0.5.0 shipped (render extraction + Pass ROBUST). The AUTH
+> decommission stays separate; it is a user-side prod-secret cleanup, gated on the Firefox smoke, not a package change.
 >
 > **Then** New Admin UI (I/theme R6 → J collections-nav R3 →
 > K editing R4 + palette R10 + pickers R9 + preview-toggle R12) → collection-CRUD R8 → extension model R13.
@@ -568,6 +568,30 @@ no longer excluded, just unscheduled.
 >
 > **Pass G is DONE** (2026-05-25; see the Pass G entry below): owner-gated editor management, Geoff seeded
 > as `owner` in all four AUTH_KV namespaces; **shipped to both sites** (`@0.2.0` then carried in `@0.3.0`).
+
+### Release 0.5.0: ship render extraction + Pass ROBUST; both sites green (2026-05-27)
+
+- **Goal met: `@glw907/cairn-cms@0.5.0` is published and both sites consume it with green CI deploys.** This is the
+  held ≥0.5.0 bundle (Render-Engine Extraction + Pass ROBUST), shipped right after writing-cleanup Pass 2 cleared the
+  gate. Risks #9 (C3 409 fail-safe), #12 (C4 carta boundary), and #17 (M2/M5 signer + edge guards) flip to RETIRED.
+- **Trigger (a push mistake, then the planned fix).** Pushing the writing-cleanup commits with `git push origin main`
+  also pushed the render-extraction and Pass ROBUST commits that had sat unpushed beneath them. Both sites' CI then
+  failed at Build: the pushed `components.ts` imports render exports (`defineRegistry`/`glyph`/`createRenderer` and the
+  dispatcher helpers) that existed only in the local workspace source, not in the published `0.4.0`. Prod was unharmed
+  (the Deploy step is gated behind Build, so it was skipped; the live sites kept serving the prior deploy). The fix was
+  to roll forward and ship 0.5.0, which the user authorized.
+- **Published via OIDC.** Bumped `0.4.0`→`0.5.0` (single-line, committed `970962a`), pushed, created GitHub Release
+  `v0.5.0` → `publish.yml` ran the token-free Trusted-Publishing flow green; `npm view` confirms `0.5.0` is latest.
+  Verified the built `dist/render/*` carries every name the sites import before cutting the release.
+- **Both sites repointed `^0.4.0`→`^0.5.0`** with standalone lockfiles regenerated by the isolated-temp-dir method
+  (registry tarball, not the workspace symlink; identical integrity hash across both sites). `npm ci --dry-run` clean
+  in isolation for both. Committed + pushed (ecnordic `dcccb2b`, 907 `3001175`).
+- **Verified.** Both CI deploys green (build + deploy success). Prod smoke: `https://ecnordic.ski` and
+  `https://907.life` both `/`→200 and `/admin`→303 (guard intact). The render exports now resolve from the published
+  package in the Cloudflare build.
+- **Still separate (user-gated):** the legacy-auth decommission (delete `MAGIC_LINK_SECRET`/`SESSION_SECRET` + the
+  `editor:*` AUTH_KV keys, drop the AUTH_KV `wrangler.toml` block) waits on the Firefox prod smoke. It is a prod-secret
+  cleanup, not a package change, so it did not gate 0.5.0.
 
 ### Render-Engine Extraction: engine owns the render machinery; sites own the registry (2026-05-26)
 

@@ -502,6 +502,10 @@ no longer excluded — just unscheduled.
 > site template (docs + code comments + memory updated). Ships on the **same next release** (≥0.5.0) as Pass ROBUST +
 > the pending AUTH decommission — three things, one publish/repoint. Not pushed (awaiting user).
 >
+> **Release sequencing (Geoff, 2026-05-26): hold the ≥0.5.0 release until AFTER the writing-cleanup pass** (the
+> AI-tell guard for docs + code comments — see the planned-pass note). Clean the prose, then publish the bundle
+> (extraction + Pass ROBUST + AUTH decommission) in one go.
+>
 > **Then** New Admin UI (I/theme R6 → J collections-nav R3 →
 > K editing R4 + palette R10 + pickers R9 + preview-toggle R12) → collection-CRUD R8 → extension model R13.
 >

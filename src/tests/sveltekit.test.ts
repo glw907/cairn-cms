@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { adminLayoutLoad, collectionListLoad } from '../lib/sveltekit';
-import { isHttpError } from '@sveltejs/kit';
+import { adminLayoutLoad, collectionListLoad, createEntry } from '../lib/sveltekit';
+import { isHttpError, isRedirect } from '@sveltejs/kit';
 import type { CairnAdapter } from '../lib/adapter';
 
 // A fixture adapter with two folder collections, mirroring ecnordic's shape.
@@ -118,5 +118,52 @@ describe('collectionListLoad', () => {
     const event = { params: { collection: 'posts' }, url: new URL('https://x/admin/posts?error=nope'), platform: { env: {} } };
     const data = await collectionListLoad(event, adapter);
     expect(data.formError).toBe('nope');
+  });
+});
+
+function createEvent(collection: string, id: string) {
+  const form = new FormData();
+  form.set('id', id);
+  return {
+    params: { collection },
+    locals: { user: { id: 'u1', name: 'Ed', email: 'ed@test', role: 'editor' as const } },
+    platform: { env: {} },
+    request: new Request('https://x/admin/posts?/create', { method: 'POST', body: form }),
+  };
+}
+
+describe('createEntry', () => {
+  it('rejects an invalid slug with a redirect back to the list', async () => {
+    try {
+      await createEntry(createEvent('posts', 'Not A Slug!'), adapter);
+      expect.unreachable('should have thrown');
+    } catch (err) {
+      expect(isRedirect(err)).toBe(true);
+      const loc = (err as { location: string }).location;
+      expect(loc).toMatch(/^\/admin\/posts\?error=/);
+    }
+  });
+
+  it('rejects a slug that already exists', async () => {
+    mockFetch([{ match: 'src/content/posts/taken.md', body: '---\ntitle: Taken\n---\n' }]);
+    try {
+      await createEntry(createEvent('posts', 'taken'), adapter);
+      expect.unreachable('should have thrown');
+    } catch (err) {
+      expect(isRedirect(err)).toBe(true);
+      expect(decodeURIComponent((err as { location: string }).location)).toContain('already exists');
+    }
+  });
+
+  it('redirects a valid new slug into the editor in create mode', async () => {
+    // readRaw to 404 means the slug is free.
+    mockFetch([{ match: 'src/content/posts/2026-05-fresh.md', body: 'not found', status: 404 }]);
+    try {
+      await createEntry(createEvent('posts', '2026-05-fresh'), adapter);
+      expect.unreachable('should have thrown');
+    } catch (err) {
+      expect(isRedirect(err)).toBe(true);
+      expect((err as { location: string }).location).toBe('/admin/edit/posts/2026-05-fresh?new=1');
+    }
   });
 });

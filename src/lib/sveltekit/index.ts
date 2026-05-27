@@ -172,6 +172,45 @@ export async function collectionListLoad(
   return { type: collection.type, label: collection.label, entries, formError };
 }
 
+// ── /admin/[collection]?/create (POST) ─────────────────────────────────────
+
+/** A safe filename stem: starts and ends with a lowercase alphanumeric, hyphens allowed within. */
+const SLUG_RE = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/;
+
+/**
+ * The "New entry" form action. Validates the requested slug, rejects one that already exists,
+ * then redirects into the editor in create mode (`?new=1`, where `editLoad` serves a blank
+ * document and `saveCommit`'s create path commits a new file). cairn is filename-based, so the
+ * slug is the filename stem the author types; a title-driven auto-slug is a later (Pass K) concern.
+ */
+export async function createEntry(
+  event: PlatformEvent & {
+    params: { collection: string };
+    locals: { user: CairnUser | null };
+    request: Request;
+  },
+  adapter: CairnAdapter,
+): Promise<never> {
+  if (!event.locals.user) throw error(401, 'Not signed in');
+  const collection = findCollection(adapter, event.params.collection);
+  if (!collection) throw error(404, 'Unknown collection');
+
+  const form = await event.request.formData();
+  const id = String(form.get('id') ?? '').trim();
+  const back = (message: string) =>
+    redirect(303, `/admin/${collection.type}?error=${encodeURIComponent(message)}`);
+
+  if (!SLUG_RE.test(id)) {
+    throw back('Enter a slug using lowercase letters, numbers, and hyphens (for example 2026-05-my-entry).');
+  }
+
+  const token = await readToken(event.platform?.env);
+  const existing = await readRaw(adapter.backend, `${collection.dir}/${id}.md`, token);
+  if (existing !== null) throw back(`An entry named "${id}" already exists.`);
+
+  throw redirect(303, `/admin/edit/${collection.type}/${id}?new=1`);
+}
+
 // ── /admin/edit/[type]/[id] ─────────────────────────────────────────────────
 
 export interface EditData {

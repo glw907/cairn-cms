@@ -1,4 +1,4 @@
-import { unified } from 'unified';
+import { unified, type PluggableList } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkGfm from 'remark-gfm';
 import remarkDirective from 'remark-directive';
@@ -20,8 +20,8 @@ export interface RendererOptions {
  *  stamped markers → registry-built hast. Returns `renderMarkdown` plus the remark/
  *  rehype plugin arrays (so the Carta editor preview can reuse the exact same set). */
 export function createRenderer(registry: ComponentRegistry, options: RendererOptions = {}) {
-	const remarkPlugins = [remarkDirective, [remarkDirectiveStamp, registry] as const];
-	const rehypePlugins = [rehypeRaw, [rehypeDispatch, registry, options.rise] as const, rehypeSlug];
+	const remarkPlugins: PluggableList = [remarkDirective, [remarkDirectiveStamp, registry]];
+	const rehypePlugins: PluggableList = [rehypeRaw, [rehypeDispatch, registry, options.rise], rehypeSlug];
 	const processor = unified()
 		.use(remarkParse)
 		.use(remarkGfm)

@@ -116,7 +116,10 @@ A small set of patterns chosen for precision in technical prose. Run in every ti
 - **Participial wind-up opener** — sentence opens with a hollow gerund bridge from a curated
   list (`Building on`, `Recognizing`, `Leveraging`, `Drawing on`, `Having established`,
   `Taking … into account`).
-- **Bold-header bullet** (AI markdown default): `(?m)^\s*[-*]\s+\*\*[^*]+\*\*\s*[:—-]`
+- **Bold-header bullet** (AI markdown default) — a `**Bold**:` bullet whose value continues as a
+  sentence (opens with a pronoun or article): `(?im)^\s*[-*]\s+\*\*[^*]+\*\*\s*[:—-]\s+(it|this|that|these|those|they|we|you|our|your|its|a|an|the)\b`.
+  Narrowed during Pass 1 so terse key-value definition-list bullets (`- **OS**: Linux Mint`) pass;
+  only the fake-heading listicle form fires.
 
 These are "flag for review," tuned to rarely fire on clean human prose. Each is unit-tested with
 a positive and a legitimate-negative case.

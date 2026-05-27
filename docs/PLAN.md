@@ -458,6 +458,20 @@ no longer excluded — just unscheduled.
 > Session-by-session execution state and post-mortems. The workspace `CLAUDE.md` stays lean
 > (durable orientation only); running progress lives here, in the git-backed plan.
 
+> **Writing-cleanup Pass 1: prose-guard infrastructure (2026-05-27).** Both prongs are built. The
+> `prose-guard` tool (lexical, structural, and statistics layers, plus a JSON-deny PreToolUse hook)
+> lives at `~/.local/bin/prose-guard` with source in `~/.dotfiles` and 50 passing tests. The always-on
+> `writing-voice` output style is prong 2. Both are wired in the global `~/.claude/settings.json`, and
+> the cairn workspace `.claude/settings.json` adds the hook there too (that file sits in the non-git
+> meta-workspace). ecnordic's `content-style-guard.py` is retired, and a thin CLAUDE.md pointer
+> replaces it. The guard was tuned with the user during the pass: any em dash is a tell in the docs and
+> comments tiers (the general tier keeps the appendage nuance), the bold-header rule was narrowed to
+> skip key-value definition lists, a filler-word check was added, and the anaphora advisory now ignores
+> bullet lists. All Claude-infrastructure prose was cleaned (global and repo CLAUDE.md, authored skills,
+> memory). The writing-cleanup gate is **half** cleared: infra prose is done, and the repo cleanup
+> (cairn-cms docs, `render/*`, Pass ROBUST comments, and the full ecnordic/907 sweep) is Pass 2. The
+> >=0.5.0 release stays held until Pass 2.
+
 > **⏭ NEXT SESSION (start here) — Architecture Refinement DONE; ARCHITECTURE v2 settled; build queue re-sequenced.**
 > **Both ecnordic.ski AND 907.life `/admin` are LIVE in prod** (go-lives 2026-05-25/26); the core initiative
 > (passes 0/A–H + Pass P + both go-lives) is complete. The **Architecture-Refinement pass (2026-05-26)** then read

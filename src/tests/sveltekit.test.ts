@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { adminLayoutLoad, collectionListLoad, createEntry, editLoad, saveCommit } from '../lib/sveltekit';
+import { adminLayoutLoad, collectionListLoad, createEntry, editLoad, saveCommit, adminIndexRedirect } from '../lib/sveltekit';
 import { isHttpError, isRedirect } from '@sveltejs/kit';
 import type { CairnAdapter } from '../lib/adapter';
 
@@ -256,6 +256,28 @@ describe('saveCommit create-flag preservation', () => {
     } catch (err) {
       expect(isRedirect(err)).toBe(true);
       expect((err as { location: string }).location).not.toContain('new=1');
+    }
+  });
+});
+
+describe('adminIndexRedirect', () => {
+  it('redirects to the first collection', () => {
+    try {
+      adminIndexRedirect(adapter);
+      expect.unreachable('should have thrown');
+    } catch (err) {
+      expect(isRedirect(err)).toBe(true);
+      expect((err as { location: string }).location).toBe('/admin/posts');
+    }
+  });
+
+  it('404s when no collections are configured', () => {
+    try {
+      adminIndexRedirect({ ...adapter, collections: [] });
+      expect.unreachable('should have thrown');
+    } catch (err) {
+      expect(isHttpError(err)).toBe(true);
+      expect((err as { status: number }).status).toBe(404);
     }
   });
 });

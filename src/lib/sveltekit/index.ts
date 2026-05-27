@@ -92,6 +92,16 @@ export function adminLayoutLoad(
   };
 }
 
+/**
+ * The `/admin` index has no content of its own now that each collection is its own page; send
+ * the editor straight to the first collection's entries list (a Sveltia-style landing).
+ */
+export function adminIndexRedirect(adapter: CairnAdapter): never {
+  const first = adapter.collections[0];
+  if (!first) throw error(404, 'No collections configured');
+  throw redirect(307, `/admin/${first.type}`);
+}
+
 // ── /admin/[collection] (entries list) ─────────────────────────────────────
 
 /** One entry row: id (filename stem), display title, optional date, draft flag. */

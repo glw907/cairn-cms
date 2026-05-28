@@ -2,6 +2,10 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import { adminLayoutLoad, collectionListLoad, createEntry, editLoad, saveCommit, adminIndexRedirect } from '../lib/sveltekit';
 import { isHttpError, isRedirect } from '@sveltejs/kit';
 import type { CairnAdapter } from '../lib/adapter';
+import type { CairnUser } from '../lib/auth/guard';
+
+const owner: CairnUser = { id: '1', email: 'o@x', name: 'O', role: 'owner' };
+const editor: CairnUser = { id: '2', email: 'e@x', name: 'E', role: 'editor' };
 
 // A fixture adapter with two folder collections, mirroring ecnordic's shape.
 const adapter: CairnAdapter = {
@@ -33,6 +37,7 @@ function mockFetch(routes: { match: string; body: string; status?: number }[]) {
 const listEvent = (collection: string) => ({
   params: { collection },
   url: new URL(`https://x/admin/${collection}`),
+  locals: { user: null as CairnUser | null },
   platform: { env: {} },
 });
 
@@ -115,7 +120,7 @@ describe('collectionListLoad', () => {
 
   it('surfaces a create-flow error from the query string', async () => {
     mockFetch([{ match: '/contents/src/content/posts?', body: JSON.stringify([]) }]);
-    const event = { params: { collection: 'posts' }, url: new URL('https://x/admin/posts?error=nope'), platform: { env: {} } };
+    const event = { params: { collection: 'posts' }, url: new URL('https://x/admin/posts?error=nope'), locals: { user: null as CairnUser | null }, platform: { env: {} } };
     const data = await collectionListLoad(event, adapter);
     expect(data.formError).toBe('nope');
   });
@@ -127,7 +132,7 @@ function createEvent(collection: string, id: string, date?: string) {
   if (date) form.set('date', date);
   return {
     params: { collection },
-    locals: { user: { id: 'u1', name: 'Ed', email: 'ed@test', role: 'editor' as const } },
+    locals: { user: { id: 'u1', name: 'Ed', email: 'ed@test', role: 'owner' as const } },
     platform: { env: {} },
     request: new Request('https://x/admin/posts?/create', { method: 'POST', body: form }),
     url: new URL(`https://x/admin/${collection}`),
@@ -340,5 +345,60 @@ describe('adminIndexRedirect', () => {
       expect(isHttpError(err)).toBe(true);
       expect((err as { status: number }).status).toBe(404);
     }
+  });
+});
+
+describe('createEntry capability gating', () => {
+  it('blocks an editor from creating a page (403)', async () => {
+    const event = {
+      params: { collection: 'pages' },
+      locals: { user: editor },
+      request: new Request('http://x/admin/pages?', { method: 'POST', body: new FormData() }),
+      platform: { env: {} },
+    };
+    try {
+      await createEntry(event as never, adapter);
+      expect.unreachable();
+    } catch (e) {
+      expect(isHttpError(e) && e.status).toBe(403);
+    }
+  });
+
+  it('lets an editor create a story (redirects to the editor)', async () => {
+    const form = new FormData();
+    form.set('id', 'my-post');
+    mockFetch([{ match: '/contents/src/content/posts/my-post.md', body: 'not found', status: 404 }]);
+    const event = {
+      params: { collection: 'posts' },
+      locals: { user: editor },
+      request: new Request('http://x/admin/posts?', { method: 'POST', body: form }),
+      platform: { env: {} },
+    };
+    try {
+      await createEntry(event as never, adapter);
+      expect.unreachable();
+    } catch (e) {
+      expect(isRedirect(e)).toBe(true);
+    }
+  });
+});
+
+describe('collectionListLoad canCreate', () => {
+  it('is false for an editor on a page collection', async () => {
+    mockFetch([{ match: '/contents/src/content/pages', body: JSON.stringify([]) }]);
+    const data = await collectionListLoad(
+      { params: { collection: 'pages' }, url: new URL('http://x/admin/pages'), locals: { user: editor }, platform: { env: {} } } as never,
+      adapter,
+    );
+    expect(data.canCreate).toBe(false);
+  });
+
+  it('is true for an editor on a story collection', async () => {
+    mockFetch([{ match: '/contents/src/content/posts', body: JSON.stringify([]) }]);
+    const data = await collectionListLoad(
+      { params: { collection: 'posts' }, url: new URL('http://x/admin/posts'), locals: { user: editor }, platform: { env: {} } } as never,
+      adapter,
+    );
+    expect(data.canCreate).toBe(true);
   });
 });

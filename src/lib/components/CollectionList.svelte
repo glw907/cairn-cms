@@ -24,49 +24,51 @@
 
 <div class="flex items-center justify-between gap-4">
   <h1 class="text-2xl font-bold">{data.label}</h1>
-  <details class="dropdown dropdown-end">
-    <summary class="btn btn-primary btn-sm">New entry</summary>
-    <form
-      method="POST"
-      action="?/create"
-      class="dropdown-content z-10 mt-2 flex w-80 flex-col gap-2 rounded-box border border-base-300 bg-base-100 p-4 shadow"
-    >
-      <label class="flex flex-col gap-1">
-        <span class="text-sm font-medium">Title</span>
-        <input
-          type="text"
-          value={title}
-          oninput={(e) => onTitleInput(e.currentTarget.value)}
-          placeholder="A human title"
-          class="input w-full"
-        />
-      </label>
-
-      {#if data.kind === 'story'}
+  {#if data.canCreate}
+    <details class="dropdown dropdown-end">
+      <summary class="btn btn-primary btn-sm">New entry</summary>
+      <form
+        method="POST"
+        action="?/create"
+        class="dropdown-content z-10 mt-2 flex w-80 flex-col gap-2 rounded-box border border-base-300 bg-base-100 p-4 shadow"
+      >
         <label class="flex flex-col gap-1">
-          <span class="text-sm font-medium">Date</span>
-          <input type="date" name="date" class="input w-full" />
+          <span class="text-sm font-medium">Title</span>
+          <input
+            type="text"
+            value={title}
+            oninput={(e) => onTitleInput(e.currentTarget.value)}
+            placeholder="A human title"
+            class="input w-full"
+          />
         </label>
-      {/if}
 
-      <label class="flex flex-col gap-1">
-        <span class="text-sm font-medium">Slug</span>
-        <input
-          type="text"
-          name="id"
-          required
-          bind:value={slug}
-          oninput={() => (slugEdited = true)}
-          placeholder={slugPlaceholder}
-          pattern="[a-z0-9]([a-z0-9-]*[a-z0-9])?"
-          class="input w-full"
-        />
-        <span class="text-xs opacity-60">Lowercase letters, numbers, and hyphens. Becomes the filename.</span>
-      </label>
+        {#if data.kind === 'story'}
+          <label class="flex flex-col gap-1">
+            <span class="text-sm font-medium">Date</span>
+            <input type="date" name="date" class="input w-full" />
+          </label>
+        {/if}
 
-      <button type="submit" class="btn btn-primary btn-sm">Create &amp; edit</button>
-    </form>
-  </details>
+        <label class="flex flex-col gap-1">
+          <span class="text-sm font-medium">Slug</span>
+          <input
+            type="text"
+            name="id"
+            required
+            bind:value={slug}
+            oninput={() => (slugEdited = true)}
+            placeholder={slugPlaceholder}
+            pattern="[a-z0-9]([a-z0-9-]*[a-z0-9])?"
+            class="input w-full"
+          />
+          <span class="text-xs opacity-60">Lowercase letters, numbers, and hyphens. Becomes the filename.</span>
+        </label>
+
+        <button type="submit" class="btn btn-primary btn-sm">Create &amp; edit</button>
+      </form>
+    </details>
+  {/if}
 </div>
 
 {#if data.formError}

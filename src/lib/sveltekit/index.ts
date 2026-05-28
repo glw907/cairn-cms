@@ -11,6 +11,7 @@
 import { redirect, error } from '@sveltejs/kit';
 import matter from 'gray-matter';
 import type { CairnUser } from '../auth/guard';
+import { can, requireCapability } from '../auth/capabilities';
 import {
   listMarkdown,
   readRaw,
@@ -122,6 +123,8 @@ export interface CollectionListData {
   error?: string;
   /** A create-flow error bounced back via `?error=` (an invalid or taken slug). */
   formError: string | null;
+  /** Whether the viewer may create an entry in this collection (page-create is owner-only). */
+  canCreate: boolean;
 }
 
 /** Coerce a frontmatter `date` (gray-matter may parse YAML dates to `Date`) to `YYYY-MM-DD`. */
@@ -138,12 +141,14 @@ function entryDate(value: unknown): string | null {
  * Collections are small here; the 1,000-entry / Git-Trees sharding concern is risk #11, deferred.
  */
 export async function collectionListLoad(
-  event: PlatformEvent & { params: { collection: string }; url: URL },
+  event: PlatformEvent & { params: { collection: string }; url: URL; locals: { user: CairnUser | null } },
   adapter: CairnAdapter,
 ): Promise<CollectionListData> {
   const collection = findCollection(adapter, event.params.collection);
   if (!collection) throw error(404, 'Unknown collection');
 
+  const kind = collection.kind ?? 'story';
+  const canCreate = can(event.locals.user, kind === 'page' ? 'page:create' : 'story:create');
   const formError = event.url.searchParams.get('error');
   const token = await readToken(event.platform?.env);
 
@@ -154,10 +159,11 @@ export async function collectionListLoad(
     return {
       type: collection.type,
       label: collection.label,
-      kind: collection.kind ?? 'story',
+      kind,
       entries: [],
       error: err instanceof Error ? err.message : 'Failed to load',
       formError,
+      canCreate,
     };
   }
 
@@ -190,9 +196,10 @@ export async function collectionListLoad(
   return {
     type: collection.type,
     label: collection.label,
-    kind: collection.kind ?? 'story',
+    kind,
     entries,
     formError,
+    canCreate,
   };
 }
 
@@ -215,9 +222,10 @@ export async function createEntry(
   },
   adapter: CairnAdapter,
 ): Promise<never> {
-  if (!event.locals.user) throw error(401, 'Not signed in');
   const collection = findCollection(adapter, event.params.collection);
   if (!collection) throw error(404, 'Unknown collection');
+  const kind = collection.kind ?? 'story';
+  requireCapability(event.locals.user, kind === 'page' ? 'page:create' : 'story:create');
 
   const form = await event.request.formData();
   const id = String(form.get('id') ?? '').trim();
@@ -231,8 +239,6 @@ export async function createEntry(
   const token = await readToken(event.platform?.env);
   const existing = await readRaw(adapter.backend, `${collection.dir}/${id}.md`, token);
   if (existing !== null) throw back(`An entry named "${id}" already exists.`);
-
-  const kind = collection.kind ?? 'story';
   const date = String(form.get('date') ?? '').trim();
   const dateSuffix = kind === 'story' && date ? `&date=${encodeURIComponent(date)}` : '';
 

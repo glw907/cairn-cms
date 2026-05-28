@@ -7,3 +7,4 @@ export { default as ConfirmPage } from './ConfirmPage.svelte';
 export { default as EditPage } from './EditPage.svelte';
 export { default as ManageAdmins } from './ManageAdmins.svelte';
 export { default as ComponentPalette } from './ComponentPalette.svelte';
+export { default as NavTree } from './NavTree.svelte';

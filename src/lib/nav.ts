@@ -3,6 +3,7 @@
 // renders the tree with its own header markup.
 
 import type { D1Database } from '@cloudflare/workers-types';
+import { parse as parseYaml } from 'yaml';
 
 /** One navigation node. `url` omitted/empty is a label-only grouping header; `children` omitted is a leaf. */
 export interface NavNode {
@@ -92,4 +93,57 @@ export async function loadNav(env: NavEnv, name: string): Promise<NavNode[]> {
     console.error(`cairn nav: failed to read menu "${name}":`, err);
     return [];
   }
+}
+
+/**
+ * The site-config file shape (`src/lib/site.config.yaml`), the canonical home for a site's
+ * author-editable config. Permissive: unknown keys are ignored, so the file can grow without an
+ * engine change. Read at build time by the public site; nav is edited via the admin in Pass L2.
+ */
+export interface SiteConfig {
+  siteName: string;
+  description?: string;
+  author?: string;
+  url?: string;
+  locale?: string;
+  /** Named navigation menus, each a NavNode[] (normalized by extractMenu). */
+  menus?: Record<string, unknown>;
+  email?: { sender?: string; senderName?: string };
+  footer?: { copyrightName?: string };
+  settings?: {
+    feedMaxItems?: number;
+    homepageFeaturedCount?: number;
+    postTags?: string[];
+    [key: string]: unknown;
+  };
+}
+
+export class SiteConfigError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'SiteConfigError';
+  }
+}
+
+/** Parse the YAML site-config text into a typed object. Throws SiteConfigError on a malformed root. */
+export function parseSiteConfig(raw: string): SiteConfig {
+  const parsed = parseYaml(raw) as unknown;
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    throw new SiteConfigError('Site config must be a YAML mapping');
+  }
+  const config = parsed as SiteConfig;
+  if (typeof config.siteName !== 'string' || !config.siteName.trim()) {
+    throw new SiteConfigError('Site config needs a siteName');
+  }
+  return config;
+}
+
+/**
+ * Pull one named menu's nodes from a parsed config and validate them, returning [] when the menu is
+ * absent. The public read path's normalization step (build-time, in the site's nav rendering).
+ */
+export function extractMenu(config: SiteConfig, name: string, maxDepth: number): NavNode[] {
+  const menu = config.menus?.[name];
+  if (menu === undefined) return [];
+  return validateNavTree(menu, maxDepth);
 }

@@ -2,6 +2,8 @@
 // and read at runtime by the public layout via `loadNav`. The engine returns data only; each site
 // renders the tree with its own header markup.
 
+import type { D1Database } from '@cloudflare/workers-types';
+
 /** One navigation node. `url` omitted/empty is a label-only grouping header; `children` omitted is a leaf. */
 export interface NavNode {
   label: string;
@@ -47,4 +49,47 @@ export function validateNavTree(value: unknown, maxDepth: number): NavNode[] {
   }
 
   return walk(value, 1);
+}
+
+/** Worker binding the nav store reads (a structural subset of `Platform.env`). */
+export interface NavEnv {
+  AUTH_DB?: D1Database;
+}
+
+/** Generous depth cap for trusting an already-validated stored tree on the public read path. */
+const READ_DEPTH_CAP = 10;
+
+/** Read the raw tree for a menu, or null when the row is absent. */
+export async function readNavTree(db: D1Database, name: string): Promise<NavNode[] | null> {
+  const row = await db
+    .prepare('SELECT tree_json FROM nav_menu WHERE name = ?')
+    .bind(name)
+    .first<{ tree_json: string }>();
+  if (!row) return null;
+  return validateNavTree(JSON.parse(row.tree_json), READ_DEPTH_CAP);
+}
+
+/** Upsert a menu's tree. The caller validates against the menu's own maxDepth first. */
+export async function writeNavTree(db: D1Database, name: string, tree: NavNode[]): Promise<void> {
+  await db
+    .prepare(
+      'INSERT INTO nav_menu (name, tree_json, updated_at) VALUES (?, ?, ?) ' +
+        'ON CONFLICT(name) DO UPDATE SET tree_json = excluded.tree_json, updated_at = excluded.updated_at',
+    )
+    .bind(name, JSON.stringify(tree), Date.now())
+    .run();
+}
+
+/**
+ * Public read for the site layout. Returns [] (never throws) when the binding or row is missing or
+ * the stored JSON is unreadable, so a nav problem degrades to an empty header rather than a 500.
+ */
+export async function loadNav(env: NavEnv, name: string): Promise<NavNode[]> {
+  if (!env.AUTH_DB) return [];
+  try {
+    return (await readNavTree(env.AUTH_DB, name)) ?? [];
+  } catch (err) {
+    console.error(`cairn nav: failed to read menu "${name}":`, err);
+    return [];
+  }
 }

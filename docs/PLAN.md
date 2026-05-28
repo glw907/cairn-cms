@@ -458,6 +458,52 @@ no longer excluded, just unscheduled.
 > Session-by-session execution state and post-mortems. The workspace `CLAUDE.md` stays lean
 > (durable orientation only); running progress lives here, in the git-backed plan.
 
+> **⏭ Pass L PIVOTED to a git-committed YAML site-config (2026-05-27). RE-PLAN IN PROGRESS; resume here.**
+> Mid-execution, the D1/edge-SSR nav approach was rejected for a **git-committed YAML site-config file read at BUILD
+> time**. Driver (Geoff): the sites must keep compiling (stay prerendered). Nav is just another build input, so store it
+> in git and edit it through cairn's existing **GitHub-App commit→deploy pipeline** (the same commit-as-publish flow
+> content uses), not in D1 at runtime. Why: flipping the public sites to edge SSR (to read nav from D1 per request)
+> conflicts with prerendering and **breaks Pagefind search** (it indexes prerendered HTML), and would force edge-cache
+> infra + a search re-architecture to claw back what prerendering already gives. The YAML model keeps prerendering +
+> Pagefind intact, needs no edge-SSR/edge-cache/D1 table, and versions config in git. End-user experience is identical,
+> so the call is about the more maintainable long-term architecture. The file becomes the **canonical home for all site
+> config** (`siteName`, `nav`, future settings), Hugo-style, and **must be documented in `creating-a-cairn-site.md`**.
+> **Auth stays on D1.** This REVISES the locked rows "D1 for all admin storage" + edge-SSR consumption (and the memory
+> note) for the static structure/config category; rewrite those rows when the spec lands.
+>
+> **Format decided (Geoff):** a YAML site-config file, e.g. `src/lib/site.config.yaml` (location still open: repo root
+> vs `src/lib`). Shape: a top-level object with `siteName` + `nav:` (a `NavNode[]` list).
+>
+> **Engine work already committed on cairn-cms `main` (local, NOT pushed). Salvage map:**
+> - **KEEP (storage-agnostic, all green, 114 vitest):** T1 capability matrix (`src/lib/auth/capabilities.ts` + barrel,
+>   commit `b7e63d3`), T2 `src/lib/nav.ts` `NavNode`+`validateNavTree` (`7f0bfed`), T5 page-create gating + `canCreate`
+>   (`c5e2448`), T7 AdminLayout nav entry + `adminLayoutLoad` navMenus/canManageNav (`38f85d3`), T8
+>   `src/lib/components/NavTree.svelte` (`9ca869f`).
+> - **REWORK T3** (`2f4b596`). Drop the D1 store in `nav.ts` (`readNavTree`/`writeNavTree`/`loadNav`) and add a YAML
+>   parse/extract/validate read helper instead.
+> - **REWORK T4** (`9353959`). Change the adapter `navMenus[]` array to a `navMenu` config object carrying the
+>   config-file path, the YAML key, and maxDepth.
+> - **REWORK T6** (`6206201`). Rework `navLoad`/`navSave` in `sveltekit/index.ts` to READ the config file via the
+>   contents-API `readRaw` and COMMIT it via the GitHub-App `commitFile` (preserving other YAML keys), reusing the
+>   content read/commit path; keep the capability gating, validation, return shapes, and the page-picker. The engine
+>   needs a YAML lib (gray-matter is present; add `yaml`/js-yaml for standalone parse and serialize).
+> - **DROP T9** `migrations/0001_nav_menu.sql` (`ec452bc`). No D1 table needed.
+> - The dropped/reworked commits are local-only, so rework them in place (no push happened).
+> - **Sites:** ecnordic's Task-10 commit (prerender flip + D1 wiring) was `git reset --hard` back to `5f038ce` (clean,
+>   builds). 907 untouched. Harmless leftover: a local-dev D1 `nav_menu` table + seed row in ecnordic's `.wrangler`
+>   sqlite, unused under the YAML model.
+>
+> **Open brainstorm questions to settle in the revised spec:** (1) config file location (repo root vs `src/lib`);
+> (2) YAML shape for future multiple menus (flat `nav:` list now vs a `menus:` map); (3) public read mechanism (a Vite
+> `?raw` import in the site + engine parse helper, vs a layout `load`); (4) YAML serializer choice + whether to
+> preserve non-`nav` keys on rewrite (Geoff accepted comment loss on tool rewrite).
+>
+> **Resume:** finish the brainstorm, write the revised spec to
+> `docs/superpowers/specs/2026-05-27-pass-l-yaml-site-config-design.md`, run writing-plans, then resume subagent-driven
+> execution. The original D1 plan + spec (`docs/superpowers/{plans,specs}/2026-05-27-pass-l-nav-tree*.md`) are
+> SUPERSEDED for storage/consumption, but their capability-layer, `NavTree`, and validation portions still describe the
+> kept work. See memory `[[cairn-yaml-site-config-architecture]]`.
+
 > **Writing-cleanup Pass 1: prose-guard infrastructure (2026-05-27).** Both prongs are built. The
 > `prose-guard` tool (lexical, structural, and statistics layers, plus a JSON-deny PreToolUse hook)
 > lives at `~/.local/bin/prose-guard` with source in `~/.dotfiles` and 50 passing tests. The always-on

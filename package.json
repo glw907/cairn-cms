@@ -3,6 +3,10 @@
   "version": "0.5.0",
   "description": "Embedded, magic-link, GitHub-committing CMS for SvelteKit/Cloudflare sites.",
   "type": "module",
+  "sideEffects": [
+    "**/*.svelte",
+    "**/*.css"
+  ],
   "license": "MIT",
   "author": "Geoff Wright",
   "repository": {
@@ -99,7 +103,8 @@
     "remark-parse": "^11.0.0",
     "remark-rehype": "^11.1.2",
     "unified": "^11.0.5",
-    "unist-util-visit": "^5.1.0"
+    "unist-util-visit": "^5.1.0",
+    "yaml": "^2"
   },
   "devDependencies": {
     "@better-auth/cli": "^1.4.21",

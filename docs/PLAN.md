@@ -271,6 +271,33 @@ Resulting **planned passes (sequenced)**, superseding the standalone "Pass I the
   model, reuses the GitHub App `commitFile` path with base64 binary, served as static assets)
   vs Cloudflare R2 / Images (scales, adds infra + a binding). Decide before building. The
   adapter contract will likely grow a media config (folder/URL-base, or an R2 binding ref).
+- **Planned (after Pass L): Reusable content fragments (transclusion).** Added 2026-05-28 from a
+  reusable-content brainstorm (research-backed; web survey of Markdoc/Hugo/WordPress/Ghost/Statamic/
+  Sanity/MDX/Notion). **The decided direction:** keep *components* (code/structure) and *reusable
+  content* (data) separate, the line every mature tool draws. cairn already has the "card you fill
+  in each time" case via the directive registry (`:::card{...}...:::`, per-instance snapshot); the
+  **gap** is edit-once-updates-everywhere reusable markdown. **Shape:** fragments are markdown files
+  in git, modeled as a **collection** so they reuse the existing `/admin` list/create/Carta-edit +
+  commit machinery (much like Posts/Pages), but with a distinct **`kind: 'fragment'`** (extends the
+  Pass K `page`/`story` kinds): non-routable, no URL/feed/sitemap, referenced by name via the
+  directive, not rendered standalone. **Opt-in, not auto-injected** (consistent with collections/
+  registry/navMenu all being adapter-declared); the engine ships a one-line **`fragments()` preset**
+  the site composes into `collections` (mirrors `defineRegistry`), so it is easy without being magic.
+  Fragments live at `src/content/_fragments` (non-routable dir), pulled in by a new
+  **`:::include{...}`** directive added to the render engine, **resolved at build time** (so a
+  fragment edit propagates on the next deploy, matching commit-as-publish; build-time is the right
+  call for a deploy-on-commit CMS). **A reusable "card with content" is just a fragment file that
+  contains a `:::card` directive**, included anywhere; no new "reusable component" type. Both reuse
+  semantics come free with no toggle: directive-components are always per-instance snapshots,
+  `:::include` is always synced. The **welcome blurb** (left a `config.ts` constant in Pass L)
+  becomes a fragment once this lands. **Guards to design in:** hard-error on circular includes;
+  build-time broken-reference validation (renames break path refs); includes carry **no** inner
+  content and **no** parameters (keep fragments static markdown, or it becomes a template language);
+  fragments are non-page files (no front-matter bleed). **Meatiest open question for its own design
+  round:** the Carta `/admin` preview renders in-browser and can't synchronously read a fragment
+  file, so previewing an `:::include` needs a resolution strategy (preload fragments vs a
+  server-rendered preview). Its own brainstorm → spec → plan; sequenced right after Pass L (Geoff,
+  2026-05-28).
 - **Future: Site templates (scaffold-copy starters, NOT WordPress-style themes).** Reusable
   starting points *are* a wanted capability, but the model is **scaffold-copy**, not runtime themes:
   when a user stands up a **new** Cairn site they **choose from a collection of site templates** as a

@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import Database from 'better-sqlite3';
-import { validateNavTree, NavValidationError, type NavNode, readNavTree, writeNavTree, loadNav } from '../lib/nav';
+import { validateNavTree, NavValidationError, setMenu, parseSiteConfig, extractMenu, SiteConfigError, type NavNode } from '../lib/nav';
 
 describe('validateNavTree', () => {
   it('accepts a flat list', () => {
@@ -37,56 +36,40 @@ describe('validateNavTree', () => {
   });
 });
 
-// A minimal D1Database-shaped shim over better-sqlite3 so the async D1 store contract can be
-// exercised in-process (the same "real SQLite" approach the auth integration test uses).
-function d1(sqlite: import('better-sqlite3').Database) {
-  return {
-    prepare(sql: string) {
-      const stmt = sqlite.prepare(sql);
-      let args: unknown[] = [];
-      const api = {
-        bind(...a: unknown[]) { args = a; return api; },
-        async first<T>() { return (stmt.get(...args) as T) ?? null; },
-        async run() { stmt.run(...args); return { success: true }; },
-      };
-      return api;
-    },
-  } as unknown as import('@cloudflare/workers-types').D1Database;
-}
+const FILE = [
+  'siteName: Test Site',
+  'description: keep me',
+  'menus:',
+  '  primary:',
+  '    - { label: Old, url: /old }',
+  '  footer:',
+  '    - { label: Privacy, url: /privacy }',
+  'settings:',
+  '  feedMaxItems: 20',
+  '',
+].join('\n');
 
-function freshDb() {
-  const sqlite = new Database(':memory:');
-  sqlite.exec('CREATE TABLE nav_menu (name TEXT PRIMARY KEY, tree_json TEXT NOT NULL, updated_at INTEGER NOT NULL)');
-  return d1(sqlite);
-}
-
-describe('nav D1 store', () => {
-  it('writes then reads a tree back', async () => {
-    const db = freshDb();
-    const tree = [{ label: 'Home', url: '/' }];
-    await writeNavTree(db, 'primary', tree);
-    expect(await readNavTree(db, 'primary')).toEqual(tree);
+describe('setMenu', () => {
+  it('replaces only the target menu and round-trips through parse', () => {
+    const tree: NavNode[] = [{ label: 'About', children: [{ label: 'Team', url: '/about/team' }] }];
+    const next = parseSiteConfig(setMenu(FILE, 'primary', tree));
+    expect(extractMenu(next, 'primary', 2)).toEqual(tree);
   });
 
-  it('upserts (a second write replaces the first)', async () => {
-    const db = freshDb();
-    await writeNavTree(db, 'primary', [{ label: 'A', url: '/a' }]);
-    await writeNavTree(db, 'primary', [{ label: 'B', url: '/b' }]);
-    expect(await readNavTree(db, 'primary')).toEqual([{ label: 'B', url: '/b' }]);
+  it('preserves siteName, other menus, and settings', () => {
+    const next = parseSiteConfig(setMenu(FILE, 'primary', [{ label: 'Home', url: '/' }]));
+    expect(next.siteName).toBe('Test Site');
+    expect(next.description).toBe('keep me');
+    expect(next.settings?.feedMaxItems).toBe(20);
+    expect(extractMenu(next, 'footer', 2)).toEqual([{ label: 'Privacy', url: '/privacy' }]);
   });
 
-  it('readNavTree returns null for an absent menu', async () => {
-    expect(await readNavTree(freshDb(), 'missing')).toBeNull();
+  it('creates the menu when the file has none yet', () => {
+    const next = parseSiteConfig(setMenu('siteName: Bare\n', 'primary', [{ label: 'Home', url: '/' }]));
+    expect(extractMenu(next, 'primary', 2)).toEqual([{ label: 'Home', url: '/' }]);
   });
 
-  it('loadNav returns [] when the binding is absent', async () => {
-    expect(await loadNav({}, 'primary')).toEqual([]);
-  });
-
-  it('loadNav returns [] for an absent menu and a parsed tree when present', async () => {
-    const db = freshDb();
-    expect(await loadNav({ AUTH_DB: db }, 'primary')).toEqual([]);
-    await writeNavTree(db, 'primary', [{ label: 'Home', url: '/' }]);
-    expect(await loadNav({ AUTH_DB: db }, 'primary')).toEqual([{ label: 'Home', url: '/' }]);
+  it('rejects a file without a siteName', () => {
+    expect(() => setMenu('description: no name\n', 'primary', [])).toThrow(SiteConfigError);
   });
 });

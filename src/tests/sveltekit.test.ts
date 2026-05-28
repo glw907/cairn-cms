@@ -1,5 +1,4 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import Database from 'better-sqlite3';
 import { adminLayoutLoad, collectionListLoad, createEntry, editLoad, saveCommit, adminIndexRedirect, navLoad, navSave } from '../lib/sveltekit';
 import { isHttpError, isRedirect } from '@sveltejs/kit';
 import type { CairnAdapter } from '../lib/adapter';
@@ -408,50 +407,54 @@ describe('collectionListLoad canCreate', () => {
 
 const navAdapter: CairnAdapter = {
   ...adapter,
-  navMenus: [{ name: 'primary', label: 'Main menu', maxDepth: 2 }],
+  navMenu: { configPath: 'src/lib/site.config.yaml', menuName: 'primary', label: 'Main menu', maxDepth: 2 },
 };
 
-function navDb() {
-  const sqlite = new Database(':memory:');
-  sqlite.exec('CREATE TABLE nav_menu (name TEXT PRIMARY KEY, tree_json TEXT NOT NULL, updated_at INTEGER NOT NULL)');
-  return {
-    prepare(sql: string) {
-      const stmt = sqlite.prepare(sql);
-      let args: unknown[] = [];
-      const api = {
-        bind(...a: unknown[]) { args = a; return api; },
-        async first<T>() { return (stmt.get(...args) as T) ?? null; },
-        async run() { stmt.run(...args); return { success: true }; },
-      };
-      return api;
-    },
-  } as never;
-}
+// Dummy GitHub App env: enough to pass navSave's config gate (the commit itself needs a real key,
+// so the happy-path commit is covered by the live admin smoke, as with saveCommit).
+const appEnv = { GITHUB_APP_ID: '1', GITHUB_APP_INSTALLATION_ID: '2', GITHUB_APP_PRIVATE_KEY_B64: 'x' };
+
+const CONFIG_YAML = 'siteName: Test Site\nmenus:\n  primary:\n    - { label: Home, url: / }\n';
 
 describe('navLoad', () => {
   it('denies an editor (403)', async () => {
     try {
-      await navLoad({ locals: { user: editor }, url: new URL('http://x/admin/nav'), platform: { env: { AUTH_DB: navDb() } } } as never, navAdapter);
+      await navLoad({ locals: { user: editor }, url: new URL('http://x/admin/nav'), platform: { env: {} } } as never, navAdapter);
       expect.unreachable();
     } catch (e) {
       expect(isHttpError(e) && e.status).toBe(403);
     }
   });
 
-  it('returns the menu config + empty tree for an owner', async () => {
-    mockFetch([{ match: '/contents/src/content/pages', body: JSON.stringify([]) }]);
+  it('reads the menu from the YAML config for an owner', async () => {
+    mockFetch([
+      { match: '/contents/src/lib/site.config.yaml', body: CONFIG_YAML },
+      { match: '/contents/src/content/pages', body: JSON.stringify([]) },
+    ]);
     const data = await navLoad(
-      { locals: { user: owner }, url: new URL('http://x/admin/nav'), platform: { env: { AUTH_DB: navDb() } } } as never,
+      { locals: { user: owner }, url: new URL('http://x/admin/nav'), platform: { env: {} } } as never,
       navAdapter,
     );
     expect(data.menu).toEqual({ name: 'primary', label: 'Main menu', maxDepth: 2 });
-    expect(data.tree).toEqual([]);
+    expect(data.tree).toEqual([{ label: 'Home', url: '/' }]);
     expect(Array.isArray(data.pages)).toBe(true);
   });
 
-  it('404s when the site declares no navMenus', async () => {
+  it('degrades to an empty tree when the config file is missing', async () => {
+    mockFetch([
+      { match: '/contents/src/lib/site.config.yaml', body: 'not found', status: 404 },
+      { match: '/contents/src/content/pages', body: JSON.stringify([]) },
+    ]);
+    const data = await navLoad(
+      { locals: { user: owner }, url: new URL('http://x/admin/nav'), platform: { env: {} } } as never,
+      navAdapter,
+    );
+    expect(data.tree).toEqual([]);
+  });
+
+  it('404s when the site declares no navMenu', async () => {
     try {
-      await navLoad({ locals: { user: owner }, url: new URL('http://x/admin/nav'), platform: { env: { AUTH_DB: navDb() } } } as never, adapter);
+      await navLoad({ locals: { user: owner }, url: new URL('http://x/admin/nav'), platform: { env: {} } } as never, adapter);
       expect.unreachable();
     } catch (e) {
       expect(isHttpError(e) && e.status).toBe(404);
@@ -478,23 +481,11 @@ describe('adminLayoutLoad nav surface', () => {
 });
 
 describe('navSave', () => {
-  it('validates, writes, and redirects to ?saved=1 for an owner', async () => {
-    const db = navDb();
-    const form = new FormData();
-    form.set('tree', JSON.stringify([{ label: 'Home', url: '/' }]));
-    try {
-      await navSave({ locals: { user: owner }, request: new Request('http://x/admin/nav', { method: 'POST', body: form }), platform: { env: { AUTH_DB: db } } } as never, navAdapter);
-      expect.unreachable();
-    } catch (e) {
-      expect(isRedirect(e) && e.location).toBe('/admin/nav?saved=1');
-    }
-  });
-
-  it('redirects to ?error= on an invalid tree', async () => {
+  it('redirects to ?error= on an invalid tree (before any commit)', async () => {
     const form = new FormData();
     form.set('tree', JSON.stringify([{ label: '' }]));
     try {
-      await navSave({ locals: { user: owner }, request: new Request('http://x/admin/nav', { method: 'POST', body: form }), platform: { env: { AUTH_DB: navDb() } } } as never, navAdapter);
+      await navSave({ locals: { user: owner }, request: new Request('http://x/admin/nav', { method: 'POST', body: form }), platform: { env: appEnv } } as never, navAdapter);
       expect.unreachable();
     } catch (e) {
       expect(isRedirect(e) && String(e.location).startsWith('/admin/nav?error=')).toBe(true);
@@ -505,10 +496,32 @@ describe('navSave', () => {
     const form = new FormData();
     form.set('tree', JSON.stringify([]));
     try {
-      await navSave({ locals: { user: editor }, request: new Request('http://x/admin/nav', { method: 'POST', body: form }), platform: { env: { AUTH_DB: navDb() } } } as never, navAdapter);
+      await navSave({ locals: { user: editor }, request: new Request('http://x/admin/nav', { method: 'POST', body: form }), platform: { env: appEnv } } as never, navAdapter);
       expect.unreachable();
     } catch (e) {
       expect(isHttpError(e) && e.status).toBe(403);
+    }
+  });
+
+  it('500s for an owner when the GitHub App is unconfigured', async () => {
+    const form = new FormData();
+    form.set('tree', JSON.stringify([{ label: 'Home', url: '/' }]));
+    try {
+      await navSave({ locals: { user: owner }, request: new Request('http://x/admin/nav', { method: 'POST', body: form }), platform: { env: {} } } as never, navAdapter);
+      expect.unreachable();
+    } catch (e) {
+      expect(isHttpError(e) && e.status).toBe(500);
+    }
+  });
+
+  it('404s when the site declares no navMenu', async () => {
+    const form = new FormData();
+    form.set('tree', JSON.stringify([]));
+    try {
+      await navSave({ locals: { user: owner }, request: new Request('http://x/admin/nav', { method: 'POST', body: form }), platform: { env: appEnv } } as never, adapter);
+      expect.unreachable();
+    } catch (e) {
+      expect(isHttpError(e) && e.status).toBe(404);
     }
   });
 });

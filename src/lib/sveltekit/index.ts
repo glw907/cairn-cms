@@ -23,14 +23,13 @@ import {
 } from '../github';
 import { serializeMarkdown } from '../content';
 import { findCollection, frontmatterFromForm, type CairnAdapter, type CairnField } from '../adapter';
-import { readNavTree, writeNavTree, validateNavTree, type NavNode } from '../nav';
+import { validateNavTree, extractMenu, parseSiteConfig, setMenu, type NavNode } from '../nav';
 
 /** The `platform.env` bindings the content routes read. All optional; the handlers guard. */
 export interface AdminEnv {
   GITHUB_APP_ID?: string;
   GITHUB_APP_INSTALLATION_ID?: string;
   GITHUB_APP_PRIVATE_KEY_B64?: string;
-  AUTH_DB?: import('@cloudflare/workers-types').D1Database;
 }
 
 interface PlatformEvent {
@@ -96,7 +95,7 @@ export function adminLayoutLoad(
     siteName: adapter.siteName,
     pathname: event.url.pathname,
     collections: adapter.collections.map(({ type, label }) => ({ type, label })),
-    navMenus: (adapter.navMenus ?? []).map(({ name, label }) => ({ name, label })),
+    navMenus: adapter.navMenu ? [{ name: adapter.navMenu.menuName, label: adapter.navMenu.label }] : [],
     canManageNav: can(event.locals.user, 'nav:manage'),
   };
 }
@@ -411,19 +410,22 @@ export async function navLoad(
   adapter: CairnAdapter,
 ): Promise<NavLoadData> {
   requireCapability(event.locals.user, 'nav:manage');
-  const config = adapter.navMenus?.[0];
+  const config = adapter.navMenu;
   if (!config) throw error(404, 'No navigation menu configured');
-  const menu = { name: config.name, label: config.label, maxDepth: config.maxDepth ?? 2 };
+  const maxDepth = config.maxDepth ?? 2;
+  const menu = { name: config.menuName, label: config.label, maxDepth };
 
-  const db = event.platform?.env?.AUTH_DB;
+  // Read the menu from the committed YAML. A missing/unparsable file degrades to an empty tree so
+  // the editor still loads (a first edit then creates the menu); only the read itself is best-effort.
+  const token = await readToken(event.platform?.env);
   let tree: NavNode[] = [];
-  if (db) {
-    try {
-      tree = (await readNavTree(db, menu.name)) ?? [];
-    } catch {
-      tree = [];
-    }
+  try {
+    const raw = await readRaw(adapter.backend, config.configPath, token);
+    if (raw !== null) tree = extractMenu(parseSiteConfig(raw), config.menuName, maxDepth);
+  } catch (err) {
+    console.error(`cairn nav: failed to read "${config.configPath}":`, err);
   }
+
   return {
     menu,
     tree,
@@ -437,13 +439,15 @@ export async function navSave(
   event: PlatformEvent & { locals: { user: CairnUser | null }; request: Request },
   adapter: CairnAdapter,
 ): Promise<never> {
-  requireCapability(event.locals.user, 'nav:manage');
-  const config = adapter.navMenus?.[0];
+  const user = requireCapability(event.locals.user, 'nav:manage');
+  const config = adapter.navMenu;
   if (!config) throw error(404, 'No navigation menu configured');
   const maxDepth = config.maxDepth ?? 2;
 
-  const db = event.platform?.env?.AUTH_DB;
-  if (!db) throw error(500, 'AUTH_DB (D1) binding is required');
+  const env = event.platform?.env;
+  if (!env?.GITHUB_APP_ID || !env.GITHUB_APP_INSTALLATION_ID || !env.GITHUB_APP_PRIVATE_KEY_B64) {
+    throw error(500, 'GitHub App is not configured');
+  }
 
   const form = await event.request.formData();
   let tree: NavNode[];
@@ -453,7 +457,34 @@ export async function navSave(
     const message = err instanceof Error ? err.message : 'Invalid navigation';
     throw redirect(303, `/admin/nav?error=${encodeURIComponent(message)}`);
   }
-  await writeNavTree(db, config.name, tree);
+
+  const token = await installationToken({
+    appId: env.GITHUB_APP_ID,
+    installationId: env.GITHUB_APP_INSTALLATION_ID,
+    privateKeyB64: env.GITHUB_APP_PRIVATE_KEY_B64,
+  });
+
+  // Read-modify-commit: replace only this menu in the current file, preserving the rest.
+  const raw = await readRaw(adapter.backend, config.configPath, token);
+  if (raw === null) throw error(404, `Site config not found at ${config.configPath}`);
+
+  try {
+    await commitFile(
+      adapter.backend,
+      config.configPath,
+      setMenu(raw, config.menuName, tree),
+      { message: `Update ${config.label.toLowerCase()}`, author: { name: user.name, email: user.email } },
+      token,
+    );
+  } catch (err) {
+    // Concurrent-edit 409 (C3): fail safe, same as the content save path.
+    if (err instanceof CommitConflictError) {
+      const message = 'The site config changed since you opened it. Reload and reapply your edits.';
+      throw redirect(303, `/admin/nav?error=${encodeURIComponent(message)}`);
+    }
+    throw err;
+  }
+
   throw redirect(303, '/admin/nav?saved=1');
 }
 

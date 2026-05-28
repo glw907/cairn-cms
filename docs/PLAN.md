@@ -266,6 +266,13 @@ Resulting **planned passes (sequenced)**, superseding the standalone "Pass I the
 - **Then: Canonical extension model** (R13, own design round; naturally follows the extraction, which establishes the
   registry/adapter aggregation core needs to also aggregate extensions). `defineExtension({...})`; site-local or shared
   package; likely paired with a `create-cairn-site` / `cairn add` scaffolder for the SvelteKit route-shim mounting.
+- **Future: Admin a11y polish (NavTree DnD + pickers; logged Pass L2, 2026-05-28).** NavTree's drag-reorder uses
+  native HTML5 drag, which is not keyboard-accessible, and the page-picker is a bare `<datalist>`. Revisit with
+  keyboard-accessible drag-reorder and a real combobox. **Decided escape hatch: Bits UI** (the strongest Svelte-5
+  headless primitive set in 2026; it ships logic + a11y only and styles via DaisyUI classes, so it composes with the
+  admin theme). **Do not adopt a styled component library** (Flowbite/shadcn-svelte/Skeleton/DaisyUI Svelte wrappers):
+  they bring a visual layer that fights the neutral self-contained admin theme and add a dependency to the published
+  package. Unscheduled; the current admin surfaces are simple enough that the dependency cost is not yet justified.
 - **Future: Manage media (image/upload UI).** Was out-of-scope; now a roadmap item, still
   unscheduled. **Open decision: storage.** Options: commit media into the site repo (fits the git-CMS
   model, reuses the GitHub App `commitFile` path with base64 binary, served as static assets)
@@ -485,9 +492,54 @@ no longer excluded, just unscheduled.
 > Session-by-session execution state and post-mortems. The workspace `CLAUDE.md` stays lean
 > (durable orientation only); running progress lives here, in the git-backed plan.
 
+> **✅ Pass L2 DONE (2026-05-28): nav editing UI, the write side of the YAML site-config design. Built from the
+> committed plan (`docs/superpowers/plans/2026-05-28-pass-l2-nav-editing-ui.md`); committed locally on `main` in all
+> three repos, not pushed. This completes the YAML site-config design (read side was Pass L). NEXT: reusable-content
+> fragments (the planned post-L feature, see the roadmap above) is the next design round; START THERE.**
+> **Engine:** dropped the D1 nav store from `src/lib/nav.ts` (`readNavTree`/`writeNavTree`/`loadNav`/`NavEnv`/the
+> `D1Database` import) and added `setMenu(raw, name, tree)`, which parses the YAML into a `yaml` `Document`, replaces
+> only `menus.<name>`, and re-serializes, preserving every other top-level key (`siteName`, other menus, `settings`).
+> YAML comments are not preserved on rewrite (the accepted trade); data keys are. The adapter `NavMenuConfig` changed
+> from `{name,label,maxDepth}` to `{configPath, menuName, label, maxDepth?}`, and `navMenus?: NavMenuConfig[]` became a
+> single `navMenu?: NavMenuConfig`. `navLoad` now reads the config file via the contents-API `readRaw` + `extractMenu`,
+> degrading to an empty tree when the file is missing or unparsable so the editor still loads; `navSave` validates the
+> submitted tree, mints an install token, reads the current file, applies `setMenu`, and commits via `commitFile`
+> (author = editor, committer = bot), carrying the existing 409 `CommitConflictError` fail-safe (C3). `adminLayoutLoad`
+> maps the single `navMenu` to the kept `navMenus: {name,label}[]` AdminLayoutData shape, so `AdminLayout.svelte` and
+> its specs are unchanged. Deleted `migrations/0001_nav_menu.sql`. code-simplifier then tightened the `setMenu` guard
+> and folded `navSave`'s null-user check into `requireCapability`'s return.
+> **Sites:** each adapter gained `navMenu: { configPath: 'src/lib/site.config.yaml', menuName: 'primary', label:
+> 'Navigation', maxDepth: 2 }`, plus byte-identical `src/routes/admin/nav/+page.{server.ts,svelte}` shims
+> (`load = navLoad`, `actions.save = navSave`; the `.svelte` is a one-line `NavTree` shim). The `NavTree.svelte`
+> editor + the AdminLayout "Navigation" entry were already built (kept from the D1-era Pass L work).
+> **Verified:** engine 122/122 vitest (removed the 5 D1-store specs + the navSave D1 happy-path; added `setMenu`
+> round-trip/preservation/create/reject specs and the YAML navLoad read + degrade-on-missing + navSave 500/404 gate
+> specs); `npm run package` clean (`setMenu` emitted to `dist/nav.d.ts`, `readNavTree` gone). Both sites `svelte-check`
+> 0/0 (after `svelte-kit sync` generated the new route's `$types`) and `npm run build` succeed.
+> **Live admin smoke (read side, both sites, mint-session per `docs/admin-smoke-test.md`):** anon `/admin/nav` → 303
+> to `/admin/login`; owner `/admin/nav` → 200 with `NavTree` rendered (the "Save navigation" button + the
+> `cairn-admin` shell class). On ecnordic (full secrets, public repo) the editor rendered the live menu's URL values
+> read from the real repo YAML via `navLoad`+`extractMenu`. On 907 (no GitHub-App creds in local `.dev.vars`, private
+> repo) the tree correctly degraded to empty, exercising the graceful-degrade path live. Sessions cleaned, workers
+> stopped.
+> **The commit-to-`main` write round-trip stays the user's Firefox step**, per the smoke doc's standing posture: a
+> real `navSave` POST commits to the live repo and triggers a prod deploy on both sites, so it is not auto-run. Its
+> components are independently unit-tested (`commitFile` author/committer/sha shape in `github-commit.test.ts`,
+> `setMenu` in `nav.test.ts`, navSave gating in `sveltekit.test.ts`). To finish the round-trip: log in via Firefox,
+> open `/admin/nav`, reorder/edit, Save, and confirm the `site.config.yaml` commit on `main` (author = editor,
+> committer = `cairn-cms[bot]`). Note: the first save reserializes the menu from flow style to block style (value-
+> preserving; the read side parses both).
+> **Backlog (logged this pass, see the future-items note above):** NavTree's drag-reorder uses native HTML5 drag (not
+> keyboard-accessible) and the page-picker is a bare `<datalist>`. Revisit keyboard-accessible DnD + a real combobox,
+> with **Bits UI** as the sanctioned headless option (it composes with DaisyUI; no styled component library, which
+> would fight the self-contained admin theme). Not built here; the surfaces are simple enough that the dependency cost
+> is not yet justified.
+> **Release:** unreleased local commits, like Pass L. Both fold into the next cairn-cms minor with both sites
+> repointed (the Pass P pattern). No D1 migration ships; the menu lives in each site's `site.config.yaml`.
+
 > **✅ Pass L DONE (2026-05-28): canonical YAML site-config, read side + full migration. Built subagent-driven
 > from the committed 11-task plan (`docs/superpowers/plans/2026-05-28-pass-l-yaml-site-config.md`); committed
-> locally on `main` in all three repos, not pushed. Pass L2 (nav editing UI) is the next item; START HERE for it.**
+> locally on `main` in all three repos, not pushed. (Pass L2, the nav editing UI, is now also done; see the entry above.)**
 > **Engine:** added the `yaml` dep plus a `sideEffects` field for tree-shaking (`1c3cc6b`), and appended a
 > `SiteConfig` type with `parseSiteConfig`/`extractMenu`/`SiteConfigError` to `src/lib/nav.ts`, beside the kept
 > `NavNode`/`validateNavTree` (`83eea69`, additive; the D1 nav store stays for L2). `parseSiteConfig` reads the

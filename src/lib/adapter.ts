@@ -68,10 +68,12 @@ export interface CairnCollection {
   validate(data: Record<string, unknown>, source: string): object;
 }
 
-/** A managed navigation menu. `maxDepth` defaults to 2 (a parent plus one level of children). */
+/** A managed navigation menu, read from and committed to the site's YAML config file. */
 export interface NavMenuConfig {
-  /** Storage key + nav_menu row name, e.g. 'primary'. */
-  name: string;
+  /** Repo-relative path to the site-config YAML, e.g. 'src/lib/site.config.yaml'. */
+  configPath: string;
+  /** Key within the file's `menus` map, e.g. 'primary'. */
+  menuName: string;
   /** Sidebar/admin label for the menu. */
   label: string;
   /** Max nesting depth allowed in the editor (1 = flat). Defaults to 2. */
@@ -97,11 +99,11 @@ export interface CairnAdapter {
    */
   registry?: ComponentRegistry;
   /**
-   * Navigation menus this site manages from `/admin/nav` (R3/Pass L). Stored in D1 and read at
-   * runtime by the site layout via `loadNav`. Omit (or supply an empty array) to hide the nav
-   * surface, the same opt-in shape as `registry`.
+   * The navigation menu this site manages from `/admin/nav` (R3/Pass L2). The menu lives in the
+   * site's git-committed YAML config (read at build time by the layout, committed back by the
+   * editor). Omit to hide the nav surface, the same opt-in shape as `registry`.
    */
-  navMenus?: NavMenuConfig[];
+  navMenu?: NavMenuConfig;
 }
 
 /** Look up a collection by its route segment, or undefined if the segment is unknown. */

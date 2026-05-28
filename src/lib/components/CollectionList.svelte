@@ -1,10 +1,25 @@
 <script lang="ts">
-  // One collection's entries: a table (title, date, draft badge) linking into the editor, plus
-  // a collapsible "New entry" form that POSTs a slug to the `?/create` action. The shell
-  // (AdminLayout) owns the chrome and the per-collection nav; this renders only the body.
+  // One collection's entries: a table (title, date, draft badge) linking into the editor, plus a
+  // collapsible "New entry" form. The author types a title; the slug stem derives from it (R4) and
+  // stays editable. A story collection also collects a date, which createEntry forwards so the new
+  // entry opens with its date set. Placeholders differ by kind. The shell (AdminLayout) owns the
+  // chrome and nav; this renders only the body.
   import type { CollectionListData } from '../sveltekit';
+  import { slugify } from '../slug';
 
   let { data }: { data: CollectionListData } = $props();
+
+  let title = $state('');
+  let slug = $state('');
+  let slugEdited = $state(false);
+
+  // Keep the slug in sync with the title until the author edits the slug directly.
+  function onTitleInput(value: string) {
+    title = value;
+    if (!slugEdited) slug = slugify(value);
+  }
+
+  const slugPlaceholder = $derived(data.kind === 'page' ? 'about-us' : '2026-05-my-entry');
 </script>
 
 <div class="flex items-center justify-between gap-4">
@@ -17,17 +32,38 @@
       class="dropdown-content z-10 mt-2 flex w-80 flex-col gap-2 rounded-box border border-base-300 bg-base-100 p-4 shadow"
     >
       <label class="flex flex-col gap-1">
+        <span class="text-sm font-medium">Title</span>
+        <input
+          type="text"
+          value={title}
+          oninput={(e) => onTitleInput(e.currentTarget.value)}
+          placeholder="A human title"
+          class="input w-full"
+        />
+      </label>
+
+      {#if data.kind === 'story'}
+        <label class="flex flex-col gap-1">
+          <span class="text-sm font-medium">Date</span>
+          <input type="date" name="date" class="input w-full" />
+        </label>
+      {/if}
+
+      <label class="flex flex-col gap-1">
         <span class="text-sm font-medium">Slug</span>
         <input
           type="text"
           name="id"
           required
-          placeholder="2026-05-my-entry"
+          bind:value={slug}
+          oninput={() => (slugEdited = true)}
+          placeholder={slugPlaceholder}
           pattern="[a-z0-9]([a-z0-9-]*[a-z0-9])?"
           class="input w-full"
         />
         <span class="text-xs opacity-60">Lowercase letters, numbers, and hyphens. Becomes the filename.</span>
       </label>
+
       <button type="submit" class="btn btn-primary btn-sm">Create &amp; edit</button>
     </form>
   </details>

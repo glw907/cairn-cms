@@ -4,3 +4,4 @@
 export { createAuth, type Auth, type AuthEnv, type AuthBranding } from './config';
 export { loadSession, requireSession, confirmSignIn, signOut, type CairnUser } from './guard';
 export { adminsLoad, addAdmin, removeAdmin, setAdminRole, requireOwner, type AdminsData } from './admins';
+export { can, requireCapability, type Capability } from './capabilities';

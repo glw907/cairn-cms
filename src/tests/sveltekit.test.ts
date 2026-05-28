@@ -121,14 +121,16 @@ describe('collectionListLoad', () => {
   });
 });
 
-function createEvent(collection: string, id: string) {
+function createEvent(collection: string, id: string, date?: string) {
   const form = new FormData();
   form.set('id', id);
+  if (date) form.set('date', date);
   return {
     params: { collection },
     locals: { user: { id: 'u1', name: 'Ed', email: 'ed@test', role: 'editor' as const } },
     platform: { env: {} },
     request: new Request('https://x/admin/posts?/create', { method: 'POST', body: form }),
+    url: new URL(`https://x/admin/${collection}`),
   };
 }
 
@@ -168,6 +170,30 @@ describe('createEntry', () => {
   });
 });
 
+describe('createEntry story date', () => {
+  it('forwards a story date into the editor redirect', async () => {
+    mockFetch([{ match: '/contents/src/content/posts/2026-05-fresh.md', body: '', status: 404 }]);
+    try {
+      await createEntry(createEvent('posts', '2026-05-fresh', '2026-05-20'), adapter);
+      expect.unreachable('should redirect');
+    } catch (err) {
+      expect(isRedirect(err)).toBe(true);
+      expect((err as { location: string }).location).toBe('/admin/edit/posts/2026-05-fresh?new=1&date=2026-05-20');
+    }
+  });
+
+  it('omits the date for a page kind even if posted', async () => {
+    mockFetch([{ match: '/contents/src/content/pages/about.md', body: '', status: 404 }]);
+    try {
+      await createEntry(createEvent('pages', 'about', '2026-05-20'), adapter);
+      expect.unreachable('should redirect');
+    } catch (err) {
+      expect(isRedirect(err)).toBe(true);
+      expect((err as { location: string }).location).toBe('/admin/edit/pages/about?new=1');
+    }
+  });
+});
+
 const editEvent = (id: string, query = '', type = 'posts') => ({
   params: { type, id },
   url: new URL(`https://x/admin/edit/${type}/${id}${query}`),
@@ -203,6 +229,21 @@ describe('editLoad', () => {
     expect(data.isNew).toBe(false);
     expect(data.title).toBe('Real');
     expect(data.body).toBe('hi');
+  });
+});
+
+describe('editLoad date seeding', () => {
+  it('seeds frontmatter.date for a new dated story', async () => {
+    mockFetch([{ match: '/contents/src/content/posts/2026-05-fresh.md', body: '', status: 404 }]);
+    const data = await editLoad(editEvent('2026-05-fresh', '?new=1&date=2026-05-20', 'posts'), adapter);
+    expect(data.isNew).toBe(true);
+    expect(data.frontmatter.date).toBe('2026-05-20');
+  });
+
+  it('does not seed a date when none is passed', async () => {
+    mockFetch([{ match: '/contents/src/content/posts/2026-05-bare.md', body: '', status: 404 }]);
+    const data = await editLoad(editEvent('2026-05-bare', '?new=1', 'posts'), adapter);
+    expect(data.frontmatter.date).toBeUndefined();
   });
 });
 

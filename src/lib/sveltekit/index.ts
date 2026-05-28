@@ -226,7 +226,11 @@ export async function createEntry(
   const existing = await readRaw(adapter.backend, `${collection.dir}/${id}.md`, token);
   if (existing !== null) throw back(`An entry named "${id}" already exists.`);
 
-  throw redirect(303, `/admin/edit/${collection.type}/${id}?new=1`);
+  const kind = collection.kind ?? 'story';
+  const date = String(form.get('date') ?? '').trim();
+  const dateSuffix = kind === 'story' && date ? `&date=${encodeURIComponent(date)}` : '';
+
+  throw redirect(303, `/admin/edit/${collection.type}/${id}?new=1${dateSuffix}`);
 }
 
 // ── /admin/edit/[type]/[id] ─────────────────────────────────────────────────
@@ -267,6 +271,11 @@ export async function editLoad(
   // empty so the author fills the fields from scratch.
   const { data: frontmatter, content: body } =
     raw === null ? { data: {} as Record<string, unknown>, content: '' } : matter(raw);
+
+  const seedDate = event.url.searchParams.get('date');
+  if (isNew && seedDate && frontmatter.date === undefined) {
+    frontmatter.date = seedDate;
+  }
 
   return {
     type: event.params.type,

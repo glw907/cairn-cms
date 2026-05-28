@@ -1,6 +1,7 @@
 # Cairn Rebuild: Functional Spec and Test Plan
 
-**Status:** Draft for review, 2026-05-28.
+**Status:** Draft for review, 2026-05-28 (amended same day: scaffolding and templates promoted to
+in-scope; DaisyUI-component-first rule; packaging and commenting quality gates).
 **Supersedes:** the layered direction-changes in `docs/PLAN.md`, `docs/ARCHITECTURE.md`, and the
 2026-05-26/-28 spec drafts, for the purpose of a clean rebuild. The locked decisions below are
 canonical where they conflict with older documents.
@@ -17,6 +18,10 @@ The goal is a cleaner implementation on a stronger foundation. The rebuild keeps
 where it is decided, modernizes the whole dependency stack to May 2026, and gets the internal seams
 right so the deferred features attach without a rewrite. A test suite written first turns that
 behavior into an acceptance contract, which is what lets the implementation be replaced freely.
+
+A second goal carries equal weight. Standing up a new Cairn site must be as easy as possible: a site
+author picks one of several templates and is editing content within minutes. The architecture is
+shaped around scaffolding and a clean template contract from the start, not as an afterthought.
 
 ## 2. What cairn is
 
@@ -54,13 +59,17 @@ Each item is a testable behavior:
 - **Nav editing.** The YAML site-config menu editor.
 - **Distribution.** The `@glw907/cairn-cms` package with its three subpath exports, the source-to-dist
   publish swap, peer dependencies, the bundle and startup guards, `/admin/healthz`.
+- **Scaffolding and templates.** A `create-cairn-site` scaffolder, the template contract, and two
+  reference templates borrowed from the two existing site designs with placeholder content. Standing up
+  a new site from a template is a critical goal, so this is first-class, not deferred.
 
 ### Deferred behind seams
 
 Named in the spec and reserved by the seams, not built in the rebuild: Fragments and the `:::include`
 directive; the `CairnExtension` (R13) contract; media and uploads (R7); the asset and icon pickers
 (R9); the component palette UI (R10); the deploy-status signal and revert-last-change affordance (the
-unbuilt half of M1); scheduled publish; revision and rollback.
+unbuilt half of M1); scheduled publish; revision and rollback. The templates beyond the first two, and
+the experimental `sv add cairn` community add-on, are fast-follow rather than rebuild scope.
 
 ## 4. Locked stack and versions (May 2026)
 
@@ -94,6 +103,15 @@ Decisions the 2026 research validated:
 - **Configuration conventions:** `wrangler.jsonc` over `wrangler.toml`; `compatibility_date` set near the
   build date with `nodejs_compat` (which auto-enables v2 behavior at dates from 2026-03-17); `$app/state`
   over `$app/stores`; `$state` plus context for shared state, never module-level stores on the server.
+- **DaisyUI components are the default for every admin surface.** DaisyUI v5 covers the admin: Fieldset,
+  Label, and Validator for forms, plus Table, List, Modal, Alert, Menu, Tabs, Toast, Pagination, and
+  Breadcrumbs. Bits UI is the documented exception, spot-used for a searchable combobox and a command
+  palette; a date picker, if needed, uses Cally with DaisyUI v5's calendar styling. No styled component
+  library (shadcn-svelte, Skeleton, Flowbite) enters the package, since each brings a competing visual
+  layer and weight that fight the neutral theme.
+- **First-class packaging is a gate.** `publint` and `@arethetypeswrong/cli` run in CI against the
+  published shape, validating the exports map and type resolution across all three subpaths for both the
+  source-dev and `dist`-publish halves of the swap.
 
 ## 5. Architecture
 
@@ -102,7 +120,7 @@ Decisions the 2026 research validated:
 | Layer | Identity | Distribution |
 |---|---|---|
 | Engine | `@glw907/cairn-cms` | Live semver npm dependency. Fixes propagate on bump. |
-| Site template | Scaffold | Copied into a new repo, owned and diverged. Not a runtime theme. |
+| Site template | Scaffold (a set, in scope) | `create-cairn-site` copies one into a new repo, which the owner then diverges. Not a runtime theme. |
 | Extension | `CairnExtension` | Code-defined, composed at build time. Deferred, seam reserved. |
 | Cairn site | SvelteKit app | Composes the engine plus bespoke design. ecnordic and 907 are Cairn sites. |
 
@@ -129,6 +147,27 @@ SvelteKit's filesystem routing forces route files to live in each site's `src/ro
 files are thin shims: each imports a `load` or action function from `@glw907/cairn-cms/sveltekit` and a
 component from `@glw907/cairn-cms/components`. Each shim is byte-identical across sites except for the
 adapter import.
+
+### Scaffolding and the template contract
+
+Standing up a site is the critical ease-of-use goal, so the engine carries the machinery and a template
+carries only design. The `sv` CLI cannot do this on its own: `sv create` has no custom-template support,
+and third-party `sv add` add-ons are still experimental. cairn ships its own `create-cairn-site`
+scaffolder instead.
+
+Running `npm create @glw907/cairn-site` prompts for a template, copies it into a new directory, and runs
+the one-time provisioning that is the real friction. That provisioning creates the D1 database, applies
+migrations, writes `.dev.vars` and the `wrangler secret` checklist, sets `PUBLIC_ORIGIN`, and seeds the
+first owner editor.
+
+A **template contract** keeps the set uniform. Every template carries the same machinery and differs only
+in design: the `cairn.config.ts` adapter, the DaisyUI theme and fonts, the component registry, and
+`renderPreview`. The admin route shims, the binding and secret names, and the provisioning hooks are
+identical across templates and generated, never hand-written. Engine-fat/site-thin is what keeps a
+template thin enough to copy and diverge. The first two templates borrow the ecnordic design (DaisyUI plus
+directives) and the 907 design (typographic essays) with placeholder content, and the contract makes the
+third through fifth cheap to add. A `sv add cairn` add-on for layering cairn onto an existing SvelteKit app
+is a fast-follow, held until that add-on API leaves experimental.
 
 ## 6. The load-bearing seams
 
@@ -442,6 +481,16 @@ satisfy.
 20. `wrangler deploy --dry-run` stays under the bundle and startup limits on both sites.
 21. `/admin/healthz` signs a dummy JWT successfully.
 
+**Scaffolding**
+
+22. `npm create @glw907/cairn-site` lists the available templates and scaffolds the chosen one into a new
+    directory.
+23. A freshly scaffolded site passes `svelte-check` and `vite build` with no edits beyond the provisioning
+    values.
+24. The scaffolded admin route shims match the template contract exactly; only the adapter and design layer
+    differ between templates.
+25. `publint` and `@arethetypeswrong/cli` pass on the published package across all three subpaths.
+
 ## 11. Rebuild approach
 
 The rebuild follows topology A: fresh internals, the two live sites as real consumers.
@@ -453,21 +502,28 @@ The rebuild follows topology A: fresh internals, the two live sites as real cons
 5. Migrate each site's adapter to the `content: {}` contract. Gate on both sites' `svelte-check`, both builds,
    and the manual smoke.
 6. Repoint and cut over only when everything is green.
+7. Build the `create-cairn-site` scaffolder and the first two templates against the finished adapter and
+   template contracts, then verify a scaffolded site builds and reaches `/admin`.
 
-Steps 1 through the suite design are this brainstorm's output. The implementation, steps 2 through 6, is the
-next request and gets its own plan.
+Steps 1 through the suite design are this brainstorm's output. The implementation, steps 2 through 7, is the
+next request and gets its own plans. Each subsystem is one plan, built and tested before the next is written.
 
-## 12. Code quality and commenting
+## 12. Code quality: commenting and packaging
 
-The rebuild targets first-class, idiomatic SvelteKit and DaisyUI code on current dependencies. Comments follow
-the stack's conventions and the project's writing voice (plain, varied, no AI-writing tells), and `prose-guard`
-gates documentation prose.
+The rebuild targets first-class, idiomatic SvelteKit and DaisyUI code with top-notch comments and packaging,
+on current dependencies. Comments follow the stack's conventions and the project's writing voice (plain,
+varied, no AI-writing tells), and `prose-guard` gates documentation prose.
 
 - Svelte components carry a top-of-file `<!-- @component -->` doc comment describing purpose and usage, and
   JSDoc on each member of the `Props` interface so editor hover shows per-prop docs.
 - TypeScript modules use TSDoc on exported functions and types, documenting parameters, return values, thrown
   errors, and non-obvious invariants.
+- The adapter contract and the template contract are documented exhaustively, since they are the public API a
+  site author reads when building or customizing a template.
 - Comments explain why, not what. They earn their place; routine code stays uncommented.
+- Packaging is first-class and gated. `svelte-package` builds `dist`, and `publint` plus
+  `@arethetypeswrong/cli` verify the exports map and type resolution for both halves of the `publishConfig`
+  swap across all three subpaths.
 
 ## 13. Risks carried into the rebuild
 

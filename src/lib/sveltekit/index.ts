@@ -161,7 +161,13 @@ export async function collectionListLoad(
 
   const entries = await Promise.all(
     files.map(async (file): Promise<CollectionEntry> => {
-      const fallback: CollectionEntry = { id: file.id, path: file.path, title: file.id, date: null, draft: false };
+      const fallback: CollectionEntry = {
+        id: file.id,
+        path: file.path,
+        title: file.id,
+        date: null,
+        draft: false,
+      };
       try {
         const raw = await readRaw(adapter.backend, file.path, token);
         if (raw === null) return fallback;
@@ -256,7 +262,8 @@ export async function editLoad(
   // Split frontmatter from body server-side; the editor form binds to the frontmatter and the
   // Carta editor to the body, and /admin/save reassembles them on commit. A new document starts
   // empty so the author fills the fields from scratch.
-  const { data: frontmatter, content: body } = raw === null ? { data: {} as Record<string, unknown>, content: '' } : matter(raw);
+  const { data: frontmatter, content: body } =
+    raw === null ? { data: {} as Record<string, unknown>, content: '' } : matter(raw);
 
   return {
     type: event.params.type,

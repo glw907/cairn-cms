@@ -15,7 +15,6 @@
   <div class="dropdown">
     <button type="button" tabindex="0" class="btn btn-sm btn-ghost">Insert ▾</button>
     <ul
-      tabindex="0"
       class="dropdown-content menu z-10 mt-1 w-72 rounded-box border border-base-300 bg-base-100 p-2 shadow"
     >
       {#each defs as def (def.name)}

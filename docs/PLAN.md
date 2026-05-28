@@ -512,12 +512,13 @@ no longer excluded, just unscheduled.
 > (H4); governed `CairnExtension` (H5); 409 fail-safe (C3); POST-confirm (C2); CI/bundle guards (C4/M5); non-dev
 > safety net (M1).
 >
-> **START HERE: Pass I (Warm Stone admin theme, R6) code is DONE + verified locally (2026-05-27); not yet released.**
-> Next New Admin UI pass is **Pass J** (collections-first nav + per-collection entries list, R3), then **Pass K**
-> (differentiated page-vs-story editing, R4). Write the Pass J detailed plan first (the design spec
-> `docs/superpowers/specs/2026-05-26-admin-ui-design.md` §R3 is the source). Pass I + J (+K) likely ship together as
-> one cairn-cms minor (Pass P pattern: publish via OIDC, both sites repoint + lockfile regen, both CI deploys green);
-> Pass I alone is not worth a release.
+> **START HERE: Pass I (Warm Stone theme, R6) and Pass J (collections-first nav + entries list, R3) are both DONE +
+> verified locally (2026-05-27); not yet released.** The next New Admin UI pass is **Pass K** (differentiated
+> page-vs-story editing, R4 + later the component palette R10, asset/icon pickers R9, preview toggle R12; may split).
+> Write the Pass K detailed plan first (design spec `docs/superpowers/specs/2026-05-26-admin-ui-design.md` §R4). Pass
+> I + J (+K) ship together as one cairn-cms minor (Pass P pattern: publish via OIDC, both sites repoint + lockfile
+> regen, both CI deploys green); none alone is worth a release. **Pass J added the per-site `scripts/mint-session.mjs`
+> (better-auth cookie minter) + `docs/admin-smoke-test.md`; the cairn-pass ritual now has a step-3 live admin smoke.**
 >
 > Two user-gated items still stand, neither blocking Pass J: (1) the Firefox prod smoke on each site from Pass AUTH,
 > then the legacy-auth decommission (worker secrets + AUTH_KV; see the two-user-steps note below); (2) the Firefox
@@ -576,6 +577,58 @@ no longer excluded, just unscheduled.
 >
 > **Pass G is DONE** (2026-05-25; see the Pass G entry below): owner-gated editor management, Geoff seeded
 > as `owner` in all four AUTH_KV namespaces; **shipped to both sites** (`@0.2.0` then carried in `@0.3.0`).
+
+### Pass J: collections-first nav + per-collection entries list (R3). Code DONE, not released (2026-05-27)
+
+- **Goal met: the admin's single lumped "Content" page is replaced by a Sveltia-style collections IA.** Each
+  `adapter.collections` entry is now its own sidebar nav item that opens a per-collection entries list at
+  `/admin/[collection]` (title, date, draft badge), with a working "New entry" create flow; `/admin` redirects to the
+  first collection. Plan: `docs/superpowers/plans/2026-05-27-pass-j-collections-nav.md`. Built subagent-driven
+  (implementer + spec + code-quality review per task). Committed locally; not pushed.
+- **Package (`@glw907/cairn-cms`).** `sveltekit/index.ts`: `adminLayoutLoad` now returns `collections: NavCollection[]`
+  (`{type,label}` only, so the adapter plugin graph never crosses to the client); new `adminIndexRedirect(adapter)`
+  (307 to the first collection, 404 if none); new `collectionListLoad(event, adapter)` (replaces the lumped
+  `adminListLoad`; reads each entry's frontmatter in parallel for title/date/draft, degrades a failed per-file read to
+  the slug, returns an inline error on a failed directory listing); new `createEntry(event, adapter)` (validates the
+  slug against `/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/`, rejects an existing file, redirects to the editor with `?new=1`);
+  `editLoad` gained `isNew` + a create-mode branch (a missing file with `?new=1` is a blank document, not a 404);
+  `saveCommit` preserves `&new=1` across its validation and 409 error redirects. Components: new `CollectionList.svelte`
+  (entries table + New entry form), `AdminLayout` nav now maps over `data.collections` (one generic document icon each)
+  plus the owner-only Editors entry, `EditPage` got a create-mode header/title/button + a `/admin/<type>` back-link;
+  `AdminList` retired (deleted). **16 new tests in the first `sveltekit.test.ts`; package 64/64 vitest; `svelte-package`
+  clean (`CollectionList` emitted, `AdminList` gone).**
+- **Sites (both, byte-identical shims; F2 invariant held).** New `admin/[collection]/+page.{server.ts,svelte}` (load to
+  `collectionListLoad`, action `create` to `createEntry`, render `<CollectionList>`); `admin/+page.{server.ts,svelte}`
+  rewritten to `adminIndexRedirect` + a redirect stub. `diff -rq` of the two sites' `admin/` trees is empty. Both
+  `svelte-check` **0/0**, both Cloudflare `npm run build` OK.
+- **Sveltia-alignment scope cuts (deliberate, lean-core), all future-additive:** no `summary` template engine (a fixed
+  lean row instead), no file/singleton collections (folder collections only; a future `kind:'file'` seam), no
+  title-to-slug derivation (the author types the slug stem; a Pass K concern), no per-collection icons, sorting UI,
+  view filters, or thumbnails. None are R3 requirements.
+- **Live admin smoke (NEW standard process; user-requested).** Verified end-to-end on **both** sites under
+  `wrangler dev` with a forged better-auth owner session (see below): anon `/admin` returned 303 to login; authed
+  `/admin` returned **307** to `/admin/posts`; the sidebar showed one entry per collection (**ecnordic Posts + Pages,
+  907 Posts only**, so the nav grows with the adapter); `/admin/posts` returned 200 listing entries that link into the
+  editor, under the neutral `cairn-admin` shell; the owner saw the Editors link, and the entries carried a New-entry
+  button; an existing edit returned 200 ("Back to Posts", "Save & commit"); create mode `?new=1` returned 200 ("New
+  Posts entry", "Create & commit", hidden `new=1` input); `/admin/login` returned 200. No junk was committed to `main`
+  (`createEntry` only validates and redirects).
+- **Smoke tooling + docs (so this is not re-derived each pass).** The old `scripts/mint-session.mjs` (hand-rolled
+  `cairn_session` HMAC) had been **dead since the better-auth migration**; both sites now ship a better-auth minter
+  that forges the signed `better-auth.session_token` cookie (`encodeURIComponent(token + "." +
+  base64(HMAC-SHA256(AUTH_SECRET, token)))`, better-call's `signCookieValue` format) and inserts a local-D1 session
+  row, so `/admin` smokes without the email loop. New **`docs/admin-smoke-test.md`** documents the procedure, and the
+  **`cairn-pass` skill ritual gained a step-3 live admin smoke**. The final Firefox magic-link click stays a user step
+  (the email verification token is stored hashed, so it is not locally replayable).
+- **code-simplifier** run over the changed package code: two cosmetic formatting refinements in `sveltekit/index.ts`
+  (multi-line the `collectionListLoad` fallback object, wrap the `editLoad` ternary); no behavior change. The
+  code-quality reviews also caught two real fixes applied this pass: a `TS2339` in `editLoad` (the `{}` ternary branch
+  needed `as Record<string, unknown>`) and a slug `pattern` that allowed a trailing hyphen (tightened in both the
+  client input and the server `SLUG_RE`).
+- **Risk register:** none flipped (R3 was a design requirement, not a numbered risk). Retires the Pass J item from the
+  New Admin UI queue. **Release:** folds into the same cairn-cms minor as Pass I (and Pass K), the Pass P
+  publish/repoint pattern; not published this pass. Standing user step: the Firefox visual confirmation on both
+  `/admin`s when the admin-UI minor ships.
 
 ### Pass I: neutral self-contained admin theme ("Warm Stone", R6). Code DONE, not released (2026-05-27)
 

@@ -1,5 +1,6 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { adminLayoutLoad, collectionListLoad, createEntry, editLoad, saveCommit, adminIndexRedirect } from '../lib/sveltekit';
+import Database from 'better-sqlite3';
+import { adminLayoutLoad, collectionListLoad, createEntry, editLoad, saveCommit, adminIndexRedirect, navLoad, navSave } from '../lib/sveltekit';
 import { isHttpError, isRedirect } from '@sveltejs/kit';
 import type { CairnAdapter } from '../lib/adapter';
 import type { CairnUser } from '../lib/auth/guard';
@@ -400,5 +401,96 @@ describe('collectionListLoad canCreate', () => {
       adapter,
     );
     expect(data.canCreate).toBe(true);
+  });
+});
+
+// ── navLoad / navSave ───────────────────────────────────────────────────────
+
+const navAdapter: CairnAdapter = {
+  ...adapter,
+  navMenus: [{ name: 'primary', label: 'Main menu', maxDepth: 2 }],
+};
+
+function navDb() {
+  const sqlite = new Database(':memory:');
+  sqlite.exec('CREATE TABLE nav_menu (name TEXT PRIMARY KEY, tree_json TEXT NOT NULL, updated_at INTEGER NOT NULL)');
+  return {
+    prepare(sql: string) {
+      const stmt = sqlite.prepare(sql);
+      let args: unknown[] = [];
+      const api = {
+        bind(...a: unknown[]) { args = a; return api; },
+        async first<T>() { return (stmt.get(...args) as T) ?? null; },
+        async run() { stmt.run(...args); return { success: true }; },
+      };
+      return api;
+    },
+  } as never;
+}
+
+describe('navLoad', () => {
+  it('denies an editor (403)', async () => {
+    try {
+      await navLoad({ locals: { user: editor }, url: new URL('http://x/admin/nav'), platform: { env: { AUTH_DB: navDb() } } } as never, navAdapter);
+      expect.unreachable();
+    } catch (e) {
+      expect(isHttpError(e) && e.status).toBe(403);
+    }
+  });
+
+  it('returns the menu config + empty tree for an owner', async () => {
+    mockFetch([{ match: '/contents/src/content/pages', body: JSON.stringify([]) }]);
+    const data = await navLoad(
+      { locals: { user: owner }, url: new URL('http://x/admin/nav'), platform: { env: { AUTH_DB: navDb() } } } as never,
+      navAdapter,
+    );
+    expect(data.menu).toEqual({ name: 'primary', label: 'Main menu', maxDepth: 2 });
+    expect(data.tree).toEqual([]);
+    expect(Array.isArray(data.pages)).toBe(true);
+  });
+
+  it('404s when the site declares no navMenus', async () => {
+    try {
+      await navLoad({ locals: { user: owner }, url: new URL('http://x/admin/nav'), platform: { env: { AUTH_DB: navDb() } } } as never, adapter);
+      expect.unreachable();
+    } catch (e) {
+      expect(isHttpError(e) && e.status).toBe(404);
+    }
+  });
+});
+
+describe('navSave', () => {
+  it('validates, writes, and redirects to ?saved=1 for an owner', async () => {
+    const db = navDb();
+    const form = new FormData();
+    form.set('tree', JSON.stringify([{ label: 'Home', url: '/' }]));
+    try {
+      await navSave({ locals: { user: owner }, request: new Request('http://x/admin/nav', { method: 'POST', body: form }), platform: { env: { AUTH_DB: db } } } as never, navAdapter);
+      expect.unreachable();
+    } catch (e) {
+      expect(isRedirect(e) && e.location).toBe('/admin/nav?saved=1');
+    }
+  });
+
+  it('redirects to ?error= on an invalid tree', async () => {
+    const form = new FormData();
+    form.set('tree', JSON.stringify([{ label: '' }]));
+    try {
+      await navSave({ locals: { user: owner }, request: new Request('http://x/admin/nav', { method: 'POST', body: form }), platform: { env: { AUTH_DB: navDb() } } } as never, navAdapter);
+      expect.unreachable();
+    } catch (e) {
+      expect(isRedirect(e) && String(e.location).startsWith('/admin/nav?error=')).toBe(true);
+    }
+  });
+
+  it('denies an editor (403)', async () => {
+    const form = new FormData();
+    form.set('tree', JSON.stringify([]));
+    try {
+      await navSave({ locals: { user: editor }, request: new Request('http://x/admin/nav', { method: 'POST', body: form }), platform: { env: { AUTH_DB: navDb() } } } as never, navAdapter);
+      expect.unreachable();
+    } catch (e) {
+      expect(isHttpError(e) && e.status).toBe(403);
+    }
   });
 });

@@ -23,12 +23,14 @@ import {
 } from '../github';
 import { serializeMarkdown } from '../content';
 import { findCollection, frontmatterFromForm, type CairnAdapter, type CairnField } from '../adapter';
+import { readNavTree, writeNavTree, validateNavTree, type NavNode } from '../nav';
 
 /** The `platform.env` bindings the content routes read. All optional; the handlers guard. */
 export interface AdminEnv {
   GITHUB_APP_ID?: string;
   GITHUB_APP_INSTALLATION_ID?: string;
   GITHUB_APP_PRIVATE_KEY_B64?: string;
+  AUTH_DB?: import('@cloudflare/workers-types').D1Database;
 }
 
 interface PlatformEvent {
@@ -363,6 +365,90 @@ export async function saveCommit(
   }
 
   throw redirect(303, `/admin/edit/${type}/${id}?saved=1`);
+}
+
+// ── /admin/nav (navigation tree) ───────────────────────────────────────────
+
+/** A page the picker can insert: its display label and the URL the nav item points at. */
+export interface NavPageOption {
+  label: string;
+  url: string;
+}
+
+export interface NavLoadData {
+  menu: { name: string; label: string; maxDepth: number };
+  tree: NavNode[];
+  pages: NavPageOption[];
+  saved: boolean;
+  error: string | null;
+}
+
+/** List page-collection entries for the picker (one directory listing per page collection). */
+async function navPageOptions(adapter: CairnAdapter, env: AdminEnv | undefined): Promise<NavPageOption[]> {
+  const token = await readToken(env);
+  const pageCollections = adapter.collections.filter((c) => (c.kind ?? 'story') === 'page');
+  const lists = await Promise.all(
+    pageCollections.map(async (c) => {
+      try {
+        const files = await listMarkdown(adapter.backend, c.dir, token);
+        return files.map((f): NavPageOption => ({ label: f.id, url: `/${f.id}` }));
+      } catch {
+        return [];
+      }
+    }),
+  );
+  return lists.flat();
+}
+
+export async function navLoad(
+  event: PlatformEvent & { locals: { user: CairnUser | null }; url: URL },
+  adapter: CairnAdapter,
+): Promise<NavLoadData> {
+  requireCapability(event.locals.user, 'nav:manage');
+  const config = adapter.navMenus?.[0];
+  if (!config) throw error(404, 'No navigation menu configured');
+  const menu = { name: config.name, label: config.label, maxDepth: config.maxDepth ?? 2 };
+
+  const db = event.platform?.env?.AUTH_DB;
+  let tree: NavNode[] = [];
+  if (db) {
+    try {
+      tree = (await readNavTree(db, menu.name)) ?? [];
+    } catch {
+      tree = [];
+    }
+  }
+  return {
+    menu,
+    tree,
+    pages: await navPageOptions(adapter, event.platform?.env),
+    saved: event.url.searchParams.get('saved') === '1',
+    error: event.url.searchParams.get('error'),
+  };
+}
+
+export async function navSave(
+  event: PlatformEvent & { locals: { user: CairnUser | null }; request: Request },
+  adapter: CairnAdapter,
+): Promise<never> {
+  requireCapability(event.locals.user, 'nav:manage');
+  const config = adapter.navMenus?.[0];
+  if (!config) throw error(404, 'No navigation menu configured');
+  const maxDepth = config.maxDepth ?? 2;
+
+  const db = event.platform?.env?.AUTH_DB;
+  if (!db) throw error(500, 'AUTH_DB (D1) binding is required');
+
+  const form = await event.request.formData();
+  let tree: NavNode[];
+  try {
+    tree = validateNavTree(JSON.parse(String(form.get('tree') ?? '[]')), maxDepth);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Invalid navigation';
+    throw redirect(303, `/admin/nav?error=${encodeURIComponent(message)}`);
+  }
+  await writeNavTree(db, config.name, tree);
+  throw redirect(303, '/admin/nav?saved=1');
 }
 
 // ── /admin/healthz (GET) ──────────────────────────────────────────────────────

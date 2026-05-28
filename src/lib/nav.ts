@@ -96,9 +96,8 @@ export async function loadNav(env: NavEnv, name: string): Promise<NavNode[]> {
 }
 
 /**
- * The site-config file shape (`src/lib/site.config.yaml`), the canonical home for a site's
- * author-editable config. Permissive: unknown keys are ignored, so the file can grow without an
- * engine change. Read at build time by the public site; nav is edited via the admin in Pass L2.
+ * Shape of the YAML site-config file. Unknown keys are ignored so the file can grow without
+ * an engine change. Read at build time by the public site.
  */
 export interface SiteConfig {
   siteName: string;
@@ -131,17 +130,14 @@ export function parseSiteConfig(raw: string): SiteConfig {
   if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
     throw new SiteConfigError('Site config must be a YAML mapping');
   }
-  const config = parsed as SiteConfig;
-  if (typeof config.siteName !== 'string' || !config.siteName.trim()) {
+  const { siteName } = parsed as SiteConfig;
+  if (typeof siteName !== 'string' || !siteName.trim()) {
     throw new SiteConfigError('Site config needs a siteName');
   }
-  return config;
+  return parsed as SiteConfig;
 }
 
-/**
- * Pull one named menu's nodes from a parsed config and validate them, returning [] when the menu is
- * absent. The public read path's normalization step (build-time, in the site's nav rendering).
- */
+/** Extract one named menu from a parsed config and validate it. Returns [] when the menu is absent. */
 export function extractMenu(config: SiteConfig, name: string, maxDepth: number): NavNode[] {
   const menu = config.menus?.[name];
   if (menu === undefined) return [];

@@ -11,7 +11,7 @@ const adapter: CairnAdapter = {
   preview: { remarkPlugins: [], rehypePlugins: [] },
   collections: [
     { type: 'posts', label: 'Posts', dir: 'src/content/posts', fields: [], validate: (d) => d },
-    { type: 'pages', label: 'Pages', dir: 'src/content/pages', fields: [], validate: (d) => d },
+    { type: 'pages', label: 'Pages', dir: 'src/content/pages', kind: 'page' as const, fields: [], validate: (d) => d },
   ],
 };
 
@@ -168,9 +168,9 @@ describe('createEntry', () => {
   });
 });
 
-const editEvent = (id: string, query = '') => ({
-  params: { type: 'posts', id },
-  url: new URL(`https://x/admin/edit/posts/${id}${query}`),
+const editEvent = (id: string, query = '', type = 'posts') => ({
+  params: { type, id },
+  url: new URL(`https://x/admin/edit/${type}/${id}${query}`),
   platform: { env: {} },
 });
 
@@ -257,6 +257,26 @@ describe('saveCommit create-flag preservation', () => {
       expect(isRedirect(err)).toBe(true);
       expect((err as { location: string }).location).not.toContain('new=1');
     }
+  });
+});
+
+describe('collection kind', () => {
+  it('collectionListLoad defaults an unmarked collection to story', async () => {
+    mockFetch([{ match: '/contents/src/content/posts?', body: '[]' }]);
+    const data = await collectionListLoad(listEvent('posts'), adapter);
+    expect(data.kind).toBe('story');
+  });
+
+  it('collectionListLoad reports an explicit page kind', async () => {
+    mockFetch([{ match: '/contents/src/content/pages?', body: '[]' }]);
+    const data = await collectionListLoad(listEvent('pages'), adapter);
+    expect(data.kind).toBe('page');
+  });
+
+  it('editLoad returns the collection kind', async () => {
+    mockFetch([{ match: '/contents/src/content/pages/about.md', body: '# About', status: 200 }]);
+    const data = await editLoad(editEvent('about', '', 'pages'), adapter);
+    expect(data.kind).toBe('page');
   });
 });
 

@@ -116,6 +116,7 @@ export interface CollectionEntry {
 export interface CollectionListData {
   type: string;
   label: string;
+  kind: 'page' | 'story';
   entries: CollectionEntry[];
   /** Set when the directory listing itself failed (rate limit, network). */
   error?: string;
@@ -153,6 +154,7 @@ export async function collectionListLoad(
     return {
       type: collection.type,
       label: collection.label,
+      kind: collection.kind ?? 'story',
       entries: [],
       error: err instanceof Error ? err.message : 'Failed to load',
       formError,
@@ -185,7 +187,7 @@ export async function collectionListLoad(
     }),
   );
 
-  return { type: collection.type, label: collection.label, entries, formError };
+  return { type: collection.type, label: collection.label, kind: collection.kind ?? 'story', entries, formError };
 }
 
 // ── /admin/[collection]?/create (POST) ─────────────────────────────────────
@@ -233,6 +235,7 @@ export interface EditData {
   type: string;
   id: string;
   label: string;
+  kind: 'page' | 'story';
   fields: CairnField[];
   path: string;
   body: string;
@@ -269,6 +272,7 @@ export async function editLoad(
     type: event.params.type,
     id: event.params.id,
     label: collection.label,
+    kind: collection.kind ?? 'story',
     fields: collection.fields,
     path,
     body,

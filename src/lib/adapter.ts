@@ -53,6 +53,13 @@ export interface CairnCollection {
   /** Route `[type]` segment and list key, e.g. `posts`. */
   type: string;
   label: string;
+  /**
+   * Editing shape. `story` (the default when absent) is a dated feed entry; `page` is a
+   * navigation-placed entry with a path-like slug and no date emphasis. Drives the create
+   * form and the editor header. Never gates editing capability: the palette and toolbar are
+   * available to both. (Pass K, R4.)
+   */
+  kind?: 'page' | 'story';
   /** Repo-relative folder holding the collection's markdown files. */
   dir: string;
   /** Editor form fields, rendered in order. */

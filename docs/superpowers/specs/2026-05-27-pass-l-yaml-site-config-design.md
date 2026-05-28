@@ -40,7 +40,8 @@ hand. The full inventory (per site, with file paths and values) lives in the con
 produced this spec; the summary:
 
 - **Identity** lives in each `src/lib/config.ts` as `SITE_URL`, `SITE_TITLE`, `SITE_DESCRIPTION`,
-  `SITE_AUTHOR`, `SITE_LOCALE` (plus ecnordic's homepage `WELCOME_BLURB`).
+  `SITE_AUTHOR`, `SITE_LOCALE`. ecnordic also has a homepage `WELCOME_BLURB`, but that is prose
+  content, not config, so it is out of scope here.
 - **Navigation** is hard-coded: ecnordic's `Nav.svelte` holds a six-item `navLinks` array; 907's has
   three literal `<a>` tags. Neither has submenus.
 - **Email sender** (`noreply@…`) is declared three times per site (`cairn.config.ts` for magic-link,
@@ -119,9 +120,6 @@ email:
 footer:
   copyrightName: East Community Nordic
 
-homepage:
-  welcomeBlurb: "<verbatim from WELCOME_BLURB>"
-
 settings:
   feedMaxItems: 20
   homepageFeaturedCount: 1
@@ -129,9 +127,14 @@ settings:
 ```
 
 907's file is the same shape with its own identity values, three nav items (Archives, About,
-Contact-as-anchor at `/about#contact`), no `homepage.welcomeBlurb`, and no `settings.postTags` (it
-uses free-form tags). All values are copied verbatim from each site's current `config.ts` and
-`cairn.config.ts`, including punctuation, so the migration changes nothing user-visible.
+Contact-as-anchor at `/about#contact`), and no `settings.postTags` (it uses free-form tags). All
+values are copied verbatim from each site's current `config.ts` and `cairn.config.ts`, including
+punctuation, so the migration changes nothing user-visible.
+
+The file holds config, not content. ecnordic's homepage `WELCOME_BLURB` is prose (it wants markdown
+rendering and the Carta editing surface), so it is **not** migrated here; it stays its current
+`config.ts` constant, and turning it into a markdown content fragment is a separate content-modeling
+task (see scope cuts).
 
 Design notes on the shape:
 
@@ -167,7 +170,8 @@ per menu via the adapter.
 
 | Category | Home | Why |
 |---|---|---|
-| Identity, menus, email sender, footer text, homepage blurb, settings | `site.config.yaml` | Author-editable data, build-safe, read at build time |
+| Identity, menus, email sender, footer text, settings | `site.config.yaml` | Author-editable data, build-safe, read at build time |
+| Prose content (e.g. ecnordic's homepage `WELCOME_BLURB`) | markdown content (future) | Content, not config; wants markdown rendering and the Carta editor, so it stays a constant until modeled as a content fragment |
 | `backend` (owner/repo/branch), `collections`/fields/`validate`, `preview` plugins, `registry` | `cairn.config.ts` | Code and deployment topology, not data |
 | Theme names (`ecn`/`silk`, light/dark) | `app.html` (unchanged) | Run in a pre-hydration inline script and are coupled to compiled DaisyUI CSS, so they are not safely author-editable |
 | Turnstile site key | env / dev wiring (unchanged) | Cloudflare-account wiring, not author config (907 already reads it from env) |
@@ -291,6 +295,10 @@ L is independently shippable: the file is canonical and read everywhere even bef
 - **Editors for non-nav config.** Identity, email, footer, and settings are read from the file but
   have no admin editor yet; each gets one in a later pass as the surface is built. Only nav is
   editable in `/admin` after L2.
+- **Homepage welcome blurb as content.** ecnordic's `WELCOME_BLURB` stays a `config.ts` constant.
+  Modeling it as a markdown content fragment (a content file the homepage renders through ecnordic's
+  pipeline, editable via Carta) is a separate content-modeling task, likely ecnordic site-pass
+  scope, not this config migration.
 - **Live page references.** Nav items store a URL string, not a rename-safe reference; a broken-link
   check is a cheaper future safety net.
 - **Comment-preserving rewrites.** `setMenu` preserves data keys, not YAML comments; the `yaml`

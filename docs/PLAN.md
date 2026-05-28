@@ -485,8 +485,20 @@ no longer excluded, just unscheduled.
 > Session-by-session execution state and post-mortems. The workspace `CLAUDE.md` stays lean
 > (durable orientation only); running progress lives here, in the git-backed plan.
 
-> **⏭ Pass L PIVOTED to a git-committed YAML site-config (2026-05-27). RE-PLAN IN PROGRESS; resume here.**
-> Mid-execution, the D1/edge-SSR nav approach was rejected for a **git-committed YAML site-config file read at BUILD
+> **⏭ Pass L re-planned to a git-committed YAML site-config. RE-PLAN DONE (2026-05-28); EXECUTE next. START HERE.**
+> The brainstorm finished and the design split along its two verification surfaces (memory
+> `cairn-pass-size-by-efficacy`): **Pass L** = canonical site-config read side + full config migration (gate:
+> characterization byte-identical, no `/admin` change); **Pass L2** = nav editing UI (gate: editor round-trips a commit).
+> Brainstorm widened the file to the canonical home for ALL author-editable config (Geoff): identity, `menus`, `email`,
+> `footer`, `settings`; the welcome blurb stays a `config.ts` constant (it is content, not config). Research on YAML
+> shape + reusable content informed the design; **reusable-content fragments** are the planned post-L feature (recorded
+> in the roadmap above). **Spec:** `docs/superpowers/specs/2026-05-27-pass-l-yaml-site-config-design.md` (committed).
+> **Plan to execute:** `docs/superpowers/plans/2026-05-28-pass-l-yaml-site-config.md` (committed, 11 tasks). **Resume
+> by executing that plan** (subagent-driven or executing-plans). All planning work is committed locally on `main`, not
+> pushed. The salvage map below still describes the kept/reworked/dropped engine commits; Pass L keeps the D1 store
+> intact (additive only) and Pass L2 does the teardown.
+>
+> _(Historical pivot rationale, 2026-05-27:)_ Mid-execution, the D1/edge-SSR nav approach was rejected for a **git-committed YAML site-config file read at BUILD
 > time**. Driver (Geoff): the sites must keep compiling (stay prerendered). Nav is just another build input, so store it
 > in git and edit it through cairn's existing **GitHub-App commit→deploy pipeline** (the same commit-as-publish flow
 > content uses), not in D1 at runtime. Why: flipping the public sites to edge SSR (to read nav from D1 per request)

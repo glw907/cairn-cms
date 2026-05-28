@@ -521,9 +521,8 @@ no longer excluded, just unscheduled.
 > ship together as one cairn-cms minor (Pass P pattern: publish via OIDC, both sites repoint + lockfile regen, both
 > CI deploys green); none alone is worth a release. **Pass J added the per-site `scripts/mint-session.mjs`
 > (better-auth cookie minter) + `docs/admin-smoke-test.md`; the cairn-pass ritual now has a step-3 live admin smoke.**
-> **Pass K finding to carry:** the editor date input + story subtitle do not surface a YAML `date` (gray-matter
-> parses it to a JS `Date` that the string-only `fmString` skips); fix with a `Date`-aware coercion in a small
-> content-form pass or Pass K2.
+> **Pass K date-coercion bug FIXED** (the editor date input + story subtitle now surface a YAML `date` via the new
+> `frontmatter.ts` `dateInputValue` helper; live-verified on ecnordic).
 >
 > Two user-gated items still stand, neither blocking Pass J: (1) the Firefox prod smoke on each site from Pass AUTH,
 > then the legacy-auth decommission (worker secrets + AUTH_KV; see the two-user-steps note below); (2) the Firefox
@@ -635,14 +634,17 @@ no longer excluded, just unscheduled.
   ecnordic components and is absent on 907** (empty registry). The Carta toolbar and the in-browser palette-insert
   + toggle-persistence are client-side JS, so they stay the standing Firefox user step (curl sees the SSR textarea
   fallback). No junk committed to `main`.
-- **Finding (pre-existing, logged for a follow-up): the story header and the date form input do not surface a
-  YAML date.** gray-matter parses `date: 2026-05-14` into a JS `Date`, and the string-only `fmString` helper skips
-  non-strings, so the date `<input>` renders empty for an existing dated post and the new story subtitle falls back
-  to the path. The empty date input is **pre-existing** (the form used `fmString` before Pass K); Pass K's new
-  subtitle inherits the same gap. Not a regression and not a Pass K blocker, but it means editing a dated post can
-  blank the date on save unless the validator re-coerces it. **Follow-up:** a `Date`-aware coercion (a `fmDate`
-  helper, or normalize frontmatter dates to ISO strings at load) would fix both the input and the subtitle. Carry
-  to Pass K2 or a small content-form fix.
+- **Date-coercion bug found in the smoke, then FIXED this session.** gray-matter parses `date: 2026-05-14` into a
+  JS `Date`, and the string-only `fmString` helper skipped non-strings, so the date `<input>` rendered empty for an
+  existing dated post (risking a blanked date on save) and the new story subtitle fell back to the path. The empty
+  date input was pre-existing (the form used `fmString` before Pass K); Pass K's subtitle inherited it. **Fix:** a
+  new internal `src/lib/frontmatter.ts` `dateInputValue(value)` coerces a `Date` or ISO-ish string to `YYYY-MM-DD`
+  (UTC slice, so no local-timezone shift) and returns `''` for missing, invalid, or non-date values; `EditPage`
+  uses it for the date field and the subtitle. 6 unit tests (`frontmatter.test.ts`); package now **83/83**. Kept out
+  of the public barrel, mirroring `utils.ts`. **Live-verified on a fresh ecnordic build:** the date input renders
+  `value="2026-05-14"` and the subtitle reads `Posts · 2026-05-14`. (Smoke gotcha worth remembering: ecnordic's
+  `wrangler dev` serves the pre-built `.svelte-kit/cloudflare/_worker.js`, so a package source change needs
+  `npm run build` before the worker reflects it; a stale build was the source of an initial false negative here.)
 - **code-simplifier** run over the changed package code: one formatting refinement (multi-lined the
   `collectionListLoad` happy-path return to match `editLoad`'s style); the rest already clean.
 - **Risk register:** none flipped (R4/R10/R11/R12 are design requirements, not numbered risks); risk #17's

@@ -90,7 +90,7 @@ icons + CSS → site code** (the registry *entries*). See `creating-a-cairn-site
 driving the data-driven edit form. **Filename-based ids** (no slug codec needed). **Planned additions:**
 `components[]` registry (R10a), asset roots + icon set (R9), `extensions[]` (R13), per-collection edit "shape" (R4).
 The editor component depends on a thin **`MarkdownEditor` interface** (`getValue/setValue/onInput`), not Carta's
-API directly (P3/M6). Staying on Carta now, with a one-file escape hatch to bare CodeMirror 6 if the R10 palette needs it.
+API directly (P3/M6). Staying on Carta now, with a one-file escape hatch to a bare editor if a future engine swap is wanted. Carta is textarea-based (an `InputEnhancer` over an `HTMLTextAreaElement`), not a CodeMirror 6 wrapper; corrected in Pass K, which verified its hooks are sufficient.
 
 ## 8. The admin app  *(built; redesign planned)*
 
@@ -130,7 +130,7 @@ The §10 assumptions from v1, with the Refinement disposition (full reasoning in
 | **C3** concurrent-edit 409 | CRITICAL | **CHANGE → fail safe** | Catch 409 → reload prompt; robustness pass / commit path |
 | **C4** Carta/Shiki bundle wall | CRITICAL-if-regressed | **GUARD** | Client-only enforced in tests + CI dry-run |
 | **P2** adopt better-auth | n/a | **ADOPT** | Replaces bespoke magic-link/session/roles (§4) |
-| **P3/M6** editor engine | MED | **`MarkdownEditor` interface now; CM6 is the leaning long-term target** | Add the thin interface during extraction. The "stay on Carta" leg was rewrite-cost avoidance, which the north star discounts. At R10 the burden flips to *justifying keeping Carta* (a ~753★ single-maintainer wrapper) over owning bedrock **CodeMirror 6** (ecosystem-standard, what Carta wraps; the palette wants CM-instance hooks, so Carta risks being a leaky layer). Decide at R10 when the palette's editor-instance needs are known; default expectation = migrate to bare CM6 + custom toolbar. |
+| **P3/M6** editor engine | MED | **`MarkdownEditor` interface added (Pass K); stay on Carta** | The thin cursor seam (`getSelection`/`insertAt`) ships in `editor.ts`, so an engine swap stays one file. Pass K verified Carta's public `input` hooks are sufficient for the R10 palette, so the interface was added without a migration. Factual correction: Carta is textarea-based (an `InputEnhancer` over an `HTMLTextAreaElement`), not a CodeMirror 6 wrapper, so the fallback is a bare editor, not CM6. The single-maintainer bus-factor stays an accepted risk. |
 | **H1** scaffold-copy can't propagate | HIGH | **CHANGE the line → engine-fat/site-thin** | Hard rule (§2) + version stamp + Renovate |
 | **H2** "Hugo-like" wrong | HIGH | **CHANGE terminology** | Drop "Hugo-like"; "starter/scaffold", Astro-Starlight analogue |
 | **H3** timing-safe / token-in-URL / origin | HIGH | **CHANGE → mostly subsumed by better-auth** | Lib owns compare/lifecycle; we add `Referrer-Policy` + origin audit |

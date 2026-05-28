@@ -430,10 +430,11 @@ remove `static/admin/*` · `BACKLOG.md`/`docs/STATUS.md`/`docs/architecture.md`/
     brittle/untested → `jose` + `/admin/healthz` + document rotation; lazy-init heavy objects (1s startup CPU limit);
     pin wrangler v4 + `nodejs_compat`. **Editor
     decision (research-backed):** the rich-doc "alternatives" (TipTap/ProseMirror/Milkdown/Lexical) are NOT
-    options; they use a document model and mangle `:::` directives on round-trip. Carta is a thin wrapper over
-    **CodeMirror 6** (the safe fallback). **Stay on Carta now; add a thin `MarkdownEditor` interface immediately**
-    so a later swap to bare CM6 is one file; reassess at extraction if Carta lacks the CM-instance hooks the R10
-    palette needs. cairn's own single-author bus factor remains an accepted strategic risk.
+    options; they use a document model and mangle `:::` directives on round-trip. Carta is textarea-based (an
+    `InputEnhancer` over an `HTMLTextAreaElement`), **not** a CodeMirror 6 wrapper (corrected in Pass K); the
+    fallback is a bare editor. **Stay on Carta now; add a thin `MarkdownEditor` interface** so a later engine swap
+    is one file. Pass K confirmed Carta's `input.getSelection`/`insertAt` hooks suffice for the R10 palette, so the
+    seam was added without a migration. cairn's own single-author bus factor remains an accepted strategic risk.
 
 ## Verification (end-to-end, per site)
 
@@ -512,13 +513,17 @@ no longer excluded, just unscheduled.
 > (H4); governed `CairnExtension` (H5); 409 fail-safe (C3); POST-confirm (C2); CI/bundle guards (C4/M5); non-dev
 > safety net (M1).
 >
-> **START HERE: Pass I (Warm Stone theme, R6) and Pass J (collections-first nav + entries list, R3) are both DONE +
-> verified locally (2026-05-27); not yet released.** The next New Admin UI pass is **Pass K** (differentiated
-> page-vs-story editing, R4 + later the component palette R10, asset/icon pickers R9, preview toggle R12; may split).
-> Write the Pass K detailed plan first (design spec `docs/superpowers/specs/2026-05-26-admin-ui-design.md` §R4). Pass
-> I + J (+K) ship together as one cairn-cms minor (Pass P pattern: publish via OIDC, both sites repoint + lockfile
-> regen, both CI deploys green); none alone is worth a release. **Pass J added the per-site `scripts/mint-session.mjs`
+> **START HERE: Pass I (Warm Stone theme, R6), Pass J (collections-first nav + entries list, R3), and Pass K
+> (differentiated editing + palette + toolbar + preview toggle, R4/R10/R11/R12) are all DONE + verified locally
+> (2026-05-27); not yet released.** The next New Admin UI items are **Pass K2** (R9 icon/asset pickers; new adapter
+> contract for asset roots + a GitHub asset-listing read path; reuses Pass K's cursor-insert pattern) and **Pass L**
+> (navigation-tree management; its own storage design round). Write the next detailed plan first. Pass I + J + K
+> ship together as one cairn-cms minor (Pass P pattern: publish via OIDC, both sites repoint + lockfile regen, both
+> CI deploys green); none alone is worth a release. **Pass J added the per-site `scripts/mint-session.mjs`
 > (better-auth cookie minter) + `docs/admin-smoke-test.md`; the cairn-pass ritual now has a step-3 live admin smoke.**
+> **Pass K finding to carry:** the editor date input + story subtitle do not surface a YAML `date` (gray-matter
+> parses it to a JS `Date` that the string-only `fmString` skips); fix with a `Date`-aware coercion in a small
+> content-form pass or Pass K2.
 >
 > Two user-gated items still stand, neither blocking Pass J: (1) the Firefox prod smoke on each site from Pass AUTH,
 > then the legacy-auth decommission (worker secrets + AUTH_KV; see the two-user-steps note below); (2) the Firefox
@@ -577,6 +582,76 @@ no longer excluded, just unscheduled.
 >
 > **Pass G is DONE** (2026-05-25; see the Pass G entry below): owner-gated editor management, Geoff seeded
 > as `owner` in all four AUTH_KV namespaces; **shipped to both sites** (`@0.2.0` then carried in `@0.3.0`).
+
+### Pass K: differentiated editing + component palette + formatting toolbar + preview toggle (R4/R10/R11/R12). Code DONE, not released (2026-05-27)
+
+- **Goal met: the editor is now a differentiated, capable surface.** A collection `kind` (`page` vs `story`)
+  drives the create flow and the header; a registry-driven insert-component palette (R10) sits above the editor;
+  Carta's built-in formatting toolbar is kept (R11); and a persisted preview toggle (R12) switches the live
+  preview on and off. Built subagent-driven from the pre-written plan
+  (`docs/superpowers/plans/2026-05-27-pass-k-editing.md`, spec
+  `docs/superpowers/specs/2026-05-27-pass-k-editing-design.md`). Committed locally on `main`; not pushed.
+- **Adapter contract (one field).** `CairnCollection` gains `kind?: 'page' | 'story'` (absent defaults to
+  `story`, so existing sites keep working). `kind` drives only slug/identity treatment and header emphasis; it
+  never gates capability (the palette and toolbar are available to both kinds, per R4's tendency-not-rule point).
+  `adapter.registry` already existed from the render extraction, so no other contract change.
+- **Package (`@glw907/cairn-cms`).** `sveltekit/index.ts`: `kind` threaded into `CollectionListData` and
+  `EditData` and through `collectionListLoad`/`editLoad` (both default `?? 'story'`); `createEntry` forwards a
+  story's date as a `&date=` redirect suffix (suppressed for pages); `editLoad` seeds `frontmatter.date` for a
+  new dated story so the editor opens with the date set. New `src/lib/slug.ts` (`slugify`, exported from the
+  barrel; strips apostrophes so "Geoff's" yields `geoffs`). New `src/lib/editor.ts`: the `MarkdownEditor` cursor
+  seam (decision P3) plus `cartaEditor(getCarta)`, a lazy getter so it reads `carta.input` only at call time
+  (the editor populates `input` after mount). New `components/ComponentPalette.svelte` (DaisyUI dropdown over
+  `registry.defs`, renders nothing when the registry is empty or absent). `EditPage.svelte` reworked to a
+  content-forward two-column grid (editor wide and first, frontmatter side column), a cairn control row hosting
+  the palette and the preview toggle (`split`/`tabs`, persisted in `localStorage` under `cairn-admin:preview`),
+  a kind-aware subtitle, and Carta's toolbar kept. `CollectionList.svelte` gained the kind-aware create form
+  (title-derived editable slug, a story-only date input, kind-specific placeholders). **New tests:** `slug.test.ts`,
+  `editor.test.ts`, plus `kind`/date-forwarding/date-seeding cases in `sveltekit.test.ts`. **Package 77/77 vitest;
+  `svelte-package` clean.**
+- **Editor-engine finding (P3/M6 reassessment, the finding risk #17 named this pass for).** Carta's public
+  `carta.input` hooks (`getSelection`, `insertAt`) are **sufficient** for the R10 palette, so the thin
+  `MarkdownEditor` interface was added without any migration. **Correction recorded:** Carta is **textarea-based**
+  (an `InputEnhancer` over an `HTMLTextAreaElement`), **not** a CodeMirror 6 wrapper, so the long-term escape
+  hatch is a bare editor, not CM6. Fixed in PLAN.md risk #17 and ARCHITECTURE.md (§7 + §11 P3/M6 row).
+- **Carta-boundary corollary (clean catch during Task 4).** The Pass ROBUST C4 guard (`carta-boundary.test.ts`)
+  text-scans every `src/lib/**.ts` for `carta-md` and fails if any matches, so the plan's `import type { Carta }
+  from 'carta-md'` in `editor.ts` would have tripped it. The wrapper instead uses a local structural type for the
+  slice of Carta it touches (`input.getSelection`/`insertAt`). This keeps the server boundary green and is the
+  cleaner seam anyway (a future engine swap needs no type-import change). `EditPage.svelte` imports `carta-md`
+  freely, since the boundary test scans only `.ts`, not `.svelte`.
+- **Sites (both, byte-identical shims; F2 invariant held).** ecnordic's `pages` collection marked `kind: 'page'`
+  (posts stays the default story); both sites' edit `+page.svelte` pass `registry={cairn.registry}` (ecnordic's
+  seven-component registry; 907's explicit empty `defineRegistry({ components: [] })`, so its palette renders
+  nothing). `diff -rq` of the two `admin/` trees is empty. Both `svelte-check` **0/0**, both Cloudflare
+  `npm run build` OK. A non-interactive `tabindex` on the palette `<ul>` was dropped to clear the one a11y warning
+  both sites surfaced.
+- **Live admin smoke (cairn-pass step 3, both sites under `wrangler dev` with a forged better-auth owner session).**
+  Anon `/admin`→303 login on both; authed `/admin`→307 to the first collection; lists 200. **Differentiated create
+  forms verified:** ecnordic Posts (story) shows Title + Date + Slug (placeholder `2026-05-my-entry`); ecnordic
+  Pages (page) shows Title + Slug, **no Date** (placeholder `about-us`); 907 Posts (story) shows the Date input.
+  **Editor verified:** content-forward grid present, `cairn-admin` shell present, the page subtitle leads with the
+  path (`Page · src/content/pages/volunteers.md`), the preview toggle renders, and the **palette shows all seven
+  ecnordic components and is absent on 907** (empty registry). The Carta toolbar and the in-browser palette-insert
+  + toggle-persistence are client-side JS, so they stay the standing Firefox user step (curl sees the SSR textarea
+  fallback). No junk committed to `main`.
+- **Finding (pre-existing, logged for a follow-up): the story header and the date form input do not surface a
+  YAML date.** gray-matter parses `date: 2026-05-14` into a JS `Date`, and the string-only `fmString` helper skips
+  non-strings, so the date `<input>` renders empty for an existing dated post and the new story subtitle falls back
+  to the path. The empty date input is **pre-existing** (the form used `fmString` before Pass K); Pass K's new
+  subtitle inherits the same gap. Not a regression and not a Pass K blocker, but it means editing a dated post can
+  blank the date on save unless the validator re-coerces it. **Follow-up:** a `Date`-aware coercion (a `fmDate`
+  helper, or normalize frontmatter dates to ISO strings at load) would fix both the input and the subtitle. Carry
+  to Pass K2 or a small content-form fix.
+- **code-simplifier** run over the changed package code: one formatting refinement (multi-lined the
+  `collectionListLoad` happy-path return to match `editLoad`'s style); the rest already clean.
+- **Risk register:** none flipped (R4/R10/R11/R12 are design requirements, not numbered risks); risk #17's
+  editor-decision note corrected (Carta is textarea-based, not CM6; hooks sufficient). Retires the Pass K item
+  from the New Admin UI queue. **Next New-Admin-UI items: Pass K2** (R9 icon/asset pickers; new adapter contract
+  for asset roots + a GitHub asset-listing read path; reuses this pass's cursor-insert pattern) **and Pass L**
+  (navigation-tree management; its own storage design round). **Release:** folds into the same cairn-cms minor as
+  Pass I and Pass J (the Pass P publish/repoint pattern); not published this pass. Standing user step: the Firefox
+  visual confirmation on both `/admin`s when the admin-UI minor ships.
 
 ### Pass J: collections-first nav + per-collection entries list (R3). Code DONE, not released (2026-05-27)
 

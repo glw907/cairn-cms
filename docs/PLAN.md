@@ -485,7 +485,39 @@ no longer excluded, just unscheduled.
 > Session-by-session execution state and post-mortems. The workspace `CLAUDE.md` stays lean
 > (durable orientation only); running progress lives here, in the git-backed plan.
 
-> **⏭ Pass L re-planned to a git-committed YAML site-config. RE-PLAN DONE (2026-05-28); EXECUTE next. START HERE.**
+> **✅ Pass L DONE (2026-05-28): canonical YAML site-config, read side + full migration. Built subagent-driven
+> from the committed 11-task plan (`docs/superpowers/plans/2026-05-28-pass-l-yaml-site-config.md`); committed
+> locally on `main` in all three repos, not pushed. Pass L2 (nav editing UI) is the next item; START HERE for it.**
+> **Engine:** added the `yaml` dep plus a `sideEffects` field for tree-shaking (`1c3cc6b`), and appended a
+> `SiteConfig` type with `parseSiteConfig`/`extractMenu`/`SiteConfigError` to `src/lib/nav.ts`, beside the kept
+> `NavNode`/`validateNavTree` (`83eea69`, additive; the D1 nav store stays for L2). `parseSiteConfig` reads the
+> build-time YAML and rejects a non-mapping root or a missing `siteName`; `extractMenu` pulls one named menu and
+> runs it through the existing `validateNavTree`, returning `[]` when absent. code-simplifier then tightened the
+> two helpers and their comments (`8dd18b5`). **Sites:** each gained `src/lib/site.config.yaml` (identity, a
+> `menus.primary` list, `email`, `settings`; ecnordic also `footer.copyrightName` + `postTags`), and `config.ts`
+> now parses it once via a Vite `?raw` import and re-exports the same `SITE_*`/`POST_TAGS`/`PRIMARY_NAV` constants
+> (`WELCOME_BLURB` stays a constant, since it is content). The adapter `siteName`/`sender`, the header `Nav.svelte`,
+> ecnordic's footer credit, and both contact senders read from `siteConfig`, dropping the duplicated literals
+> (ecnordic `45e98b7`+`e0a86d6`; 907 `8abf3ff`+`43949eb`). Values were copied verbatim, including ecnordic's
+> em-dash description.
+> **Verified:** engine 121/121 vitest and `npm run package` clean (`parseSiteConfig` emitted to `dist/nav.d.ts`);
+> both sites `svelte-check` 0/0 and `npm run build` succeed. Characterization held: both `feed.xml` byte-identical
+> and both homepages unchanged (ecnordic `index.html` byte-identical apart from per-build asset hashes and the
+> hydration nonce; 907 whitespace-normalized equivalent with all three nav anchors identical before and after).
+> **Method note:** `feed.xml` is a dynamic `+server.ts` endpoint, not prerendered into the Cloudflare build, so the
+> baseline and post-migration captures were rendered through `vite dev` and diffed (same endpoint code, same config,
+> same posts), rather than diffing a built file as the plan first assumed.
+> **Accepted residual:** `config.ts` now pulls the `yaml` parser and a tree-shaken slice of the engine into the
+> client bundle (`config.ts` is imported by client components for the head title); the `sideEffects` field keeps
+> that slice minimal and the bundle stays well under the size guard.
+> **Left for Pass L2 (teardown + editing UI):** drop the D1 nav store in `nav.ts` (`readNavTree`/`writeNavTree`/
+> `loadNav`) and `migrations/0001_nav_menu.sql`; change the adapter `navMenus[]` to a `navMenu` config object
+> (config-file path, YAML key, maxDepth); rework `navLoad`/`navSave` in `sveltekit/index.ts` to READ the YAML via
+> the contents-API `readRaw` and COMMIT it via the GitHub-App `commitFile` (preserving other YAML keys); the
+> `admin/nav` route; the `NavTree.svelte` editor. See the salvage map below and memory
+> `[[cairn-yaml-site-config-architecture]]`.
+
+> **⏭ Pass L re-planned to a git-committed YAML site-config. RE-PLAN DONE (2026-05-28); Pass L executed and DONE (see entry above).**
 > The brainstorm finished and the design split along its two verification surfaces (memory
 > `cairn-pass-size-by-efficacy`): **Pass L** = canonical site-config read side + full config migration (gate:
 > characterization byte-identical, no `/admin` change); **Pass L2** = nav editing UI (gate: editor round-trips a commit).

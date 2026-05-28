@@ -13,6 +13,7 @@
   import type { ComponentRegistry } from '../render';
   import type { EditData } from '../sveltekit';
   import { cartaEditor } from '../editor';
+  import { dateInputValue } from '../frontmatter';
   import ComponentPalette from './ComponentPalette.svelte';
 
   let {
@@ -63,7 +64,9 @@
 
   // Kind-aware header: a story leads with its date; a page leads with its slug/path.
   const subtitle = $derived(
-    data.kind === 'page' ? `Page · ${data.path}` : `${data.label} · ${fmString('date') || data.path}`,
+    data.kind === 'page'
+      ? `Page · ${data.path}`
+      : `${data.label} · ${dateInputValue(fm['date']) || data.path}`,
   );
 </script>
 
@@ -118,7 +121,7 @@
             type={field.type === 'date' ? 'date' : 'text'}
             name={field.name}
             required={field.required}
-            value={fmString(field.name)}
+            value={field.type === 'date' ? dateInputValue(fm[field.name]) : fmString(field.name)}
             class="input w-full"
           />
         </label>

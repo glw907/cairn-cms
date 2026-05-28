@@ -14,6 +14,8 @@
       user: CairnUser | null;
       pathname: string;
       collections: { type: string; label: string }[];
+      navMenus: { name: string; label: string }[];
+      canManageNav: boolean;
     };
     children: Snippet;
   } = $props();
@@ -36,6 +38,9 @@
         data.pathname === `/admin/${collection.type}` ||
         data.pathname.startsWith(`/admin/edit/${collection.type}/`),
     })),
+    ...(data.canManageNav && data.navMenus.length
+      ? [{ href: '/admin/nav', label: 'Navigation', icon: navIcon, active: data.pathname.startsWith('/admin/nav') }]
+      : []),
     {
       href: '/admin/admins',
       label: 'Editors',
@@ -64,6 +69,13 @@
   <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
       d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a4 4 0 10-3.5-2.1" />
+  </svg>
+{/snippet}
+
+{#snippet navIcon()}
+  <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+      d="M4 6h16M4 12h16M4 18h16" />
   </svg>
 {/snippet}
 

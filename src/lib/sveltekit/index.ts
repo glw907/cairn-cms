@@ -73,6 +73,10 @@ export interface AdminLayoutData {
   siteName: string;
   pathname: string;
   collections: NavCollection[];
+  /** Managed menus (name+label only) so the shell can show a Navigation entry. */
+  navMenus: { name: string; label: string }[];
+  /** Whether the viewer may manage navigation (gates the Navigation nav entry). */
+  canManageNav: boolean;
 }
 
 /**
@@ -92,6 +96,8 @@ export function adminLayoutLoad(
     siteName: adapter.siteName,
     pathname: event.url.pathname,
     collections: adapter.collections.map(({ type, label }) => ({ type, label })),
+    navMenus: (adapter.navMenus ?? []).map(({ name, label }) => ({ name, label })),
+    canManageNav: can(event.locals.user, 'nav:manage'),
   };
 }
 

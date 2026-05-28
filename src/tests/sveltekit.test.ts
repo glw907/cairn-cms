@@ -459,6 +459,24 @@ describe('navLoad', () => {
   });
 });
 
+describe('adminLayoutLoad nav surface', () => {
+  it('exposes navMenus + canManageNav=true for an owner', () => {
+    const data = adminLayoutLoad({ locals: { user: owner }, url: new URL('http://x/admin/posts') } as never, navAdapter);
+    expect(data.navMenus).toEqual([{ name: 'primary', label: 'Main menu' }]);
+    expect(data.canManageNav).toBe(true);
+  });
+
+  it('canManageNav=false for an editor', () => {
+    const data = adminLayoutLoad({ locals: { user: editor }, url: new URL('http://x/admin/posts') } as never, navAdapter);
+    expect(data.canManageNav).toBe(false);
+  });
+
+  it('navMenus is [] when the adapter declares none', () => {
+    const data = adminLayoutLoad({ locals: { user: owner }, url: new URL('http://x/admin/posts') } as never, adapter);
+    expect(data.navMenus).toEqual([]);
+  });
+});
+
 describe('navSave', () => {
   it('validates, writes, and redirects to ?saved=1 for an owner', async () => {
     const db = navDb();

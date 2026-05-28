@@ -187,7 +187,13 @@ export async function collectionListLoad(
     }),
   );
 
-  return { type: collection.type, label: collection.label, kind: collection.kind ?? 'story', entries, formError };
+  return {
+    type: collection.type,
+    label: collection.label,
+    kind: collection.kind ?? 'story',
+    entries,
+    formError,
+  };
 }
 
 // ── /admin/[collection]?/create (POST) ─────────────────────────────────────

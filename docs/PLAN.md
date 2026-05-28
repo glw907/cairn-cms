@@ -534,8 +534,14 @@ no longer excluded, just unscheduled.
 > with **Bits UI** as the sanctioned headless option (it composes with DaisyUI; no styled component library, which
 > would fight the self-contained admin theme). Not built here; the surfaces are simple enough that the dependency cost
 > is not yet justified.
-> **Release:** unreleased local commits, like Pass L. Both fold into the next cairn-cms minor with both sites
-> repointed (the Pass P pattern). No D1 migration ships; the menu lives in each site's `site.config.yaml`.
+> **Release:** SHIPPED in `@glw907/cairn-cms@0.5.1` (2026-05-28, OIDC publish via the `v0.5.1` GitHub release).
+> Both sites repointed `^0.5.1` + regenerated lockfiles (0.5.1 adds the `yaml` runtime dep) and **both CI deploys are
+> green**. This release bundles Pass L + L2 together. Note: the sites' L+L2 site commits were pushed first (CI broke,
+> since 0.5.0 lacked the nav exports), then 0.5.1 published and the sites repointed restored green; publish the package
+> before pushing site code next time. No D1 migration ships; the menu lives in each site's `site.config.yaml`.
+> **Versioning policy (Geoff, 2026-05-28): stay in the `0.5.x` series during active development.** Use patch bumps
+> (0.5.1, 0.5.2, ...) for features and breaking changes alike while we are still adding and potentially breaking
+> things; hold `0.6`/`1.0` until the API stabilizes.
 
 > **✅ Pass L DONE (2026-05-28): canonical YAML site-config, read side + full migration. Built subagent-driven
 > from the committed 11-task plan (`docs/superpowers/plans/2026-05-28-pass-l-yaml-site-config.md`); committed

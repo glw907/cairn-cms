@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import EditPage from '../../lib/components/EditPage.svelte';
 import type { FrontmatterField } from '../../lib/content/types.js';
@@ -42,6 +42,11 @@ function pageProps() {
 }
 
 describe('EditPage', () => {
+  beforeEach(() => {
+    // Clear the preview preference so each test starts with the pane closed.
+    localStorage.removeItem('cairn-admin:preview');
+  });
+
   it('renders the rich frontmatter fields for a post', async () => {
     const screen = render(EditPage, postProps());
     await expect.element(screen.getByLabelText(/title/i)).toHaveValue('Hello');
@@ -64,5 +69,27 @@ describe('EditPage', () => {
   it('shows a saved confirmation', async () => {
     const screen = render(EditPage, postProps({ saved: true }));
     await expect.element(screen.getByText(/saved/i)).toBeInTheDocument();
+  });
+
+  it('renders sanitized preview HTML when the preview is shown', async () => {
+    const props = { ...postProps({ body: 'Hello world' }), renderPreview: (md: string) => `<p>${md}</p>` };
+    const screen = render(EditPage, props);
+    await screen.getByRole('button', { name: /show preview/i }).click();
+    await expect
+      .poll(() => screen.container.querySelector('section[aria-label="Preview"]')?.innerHTML ?? '')
+      .toContain('Hello world');
+  });
+
+  it('strips a dangerous payload from the rendered preview', async () => {
+    const props = {
+      ...postProps({ body: 'x' }),
+      renderPreview: () => '<p>safe</p><img src=x onerror="alert(1)">',
+    };
+    const screen = render(EditPage, props);
+    await screen.getByRole('button', { name: /show preview/i }).click();
+    await expect
+      .poll(() => screen.container.querySelector('section[aria-label="Preview"]')?.innerHTML ?? '')
+      .toContain('safe');
+    expect(screen.container.querySelector('section[aria-label="Preview"]')!.innerHTML).not.toContain('onerror');
   });
 });

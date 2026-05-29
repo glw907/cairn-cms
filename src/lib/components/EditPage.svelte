@@ -11,6 +11,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
   import type { ComponentRegistry } from '../render/registry.js';
   import type { EditData } from '../sveltekit/content-routes.js';
   import type { TextareaField, TagsField, FreeTagsField } from '../content/types.js';
+  import { sanitizePreviewHtml } from '../render/sanitize.js';
 
   interface Props {
     /** The edit load's data, plus the site name for the heading. */
@@ -19,9 +20,11 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
     registry?: ComponentRegistry;
     /** Carta preview plugins from the adapter, for the design-accurate preview. */
     preview?: unknown[];
+    /** The site's design-accurate render pipeline; the preview pane sanitizes its output. */
+    renderPreview?: (md: string) => string | Promise<string>;
   }
 
-  let { data, registry, preview = [] }: Props = $props();
+  let { data, registry, preview = [], renderPreview }: Props = $props();
 
   // `body` is local editor state seeded once from the prop; it diverges as the user types.
   // untrack() captures the initial value without subscribing to future prop changes.
@@ -41,6 +44,18 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
     showPreview = !showPreview;
     localStorage.setItem(PREVIEW_KEY, showPreview ? '1' : '0');
   }
+
+  // Render the design-accurate preview as the body changes, debounced, and sanitize before the DOM.
+  // The sanitize is the one barrier between editor-authored markdown and the page (Carta is unsanitized).
+  $effect(() => {
+    if (!showPreview || !renderPreview) return;
+    const md = body;
+    const handle = setTimeout(async () => {
+      const html = await renderPreview(md);
+      previewHtml = await sanitizePreviewHtml(html);
+    }, 150);
+    return () => clearTimeout(handle);
+  });
 
   // Coerce a frontmatter value to a string for text/date/textarea inputs.
   function str(v: unknown): string {

@@ -6,12 +6,14 @@
     "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview",
-    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@glw907/cairn-cms": "file:../.."
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@sveltejs/adapter-node": "^5",
     "@sveltejs/kit": "^2",
     "@sveltejs/vite-plugin-svelte": "^7",

@@ -1,0 +1,19 @@
+name: e2e
+
+on:
+  push:
+    branches: [main, rebuild]
+  pull_request:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm install --prefix examples/showcase
+      - run: npx --prefix examples/showcase playwright install --with-deps chromium
+      - run: npm --prefix examples/showcase run test:e2e

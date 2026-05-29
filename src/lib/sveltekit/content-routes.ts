@@ -4,11 +4,12 @@
 // email `send` injection in auth-routes. A shim stays one line: `export const load = routes.editLoad`.
 import { redirect, error } from '@sveltejs/kit';
 import { findConcept } from '../content/concepts.js';
-import { parseMarkdown, dateInputValue } from '../content/frontmatter.js';
+import { frontmatterFromForm, parseMarkdown, dateInputValue, serializeMarkdown } from '../content/frontmatter.js';
 import { isValidId, slugify, filenameFromId } from '../content/ids.js';
 import { appCredentials, type GithubKeyEnv } from '../github/credentials.js';
-import { listMarkdown, readRaw } from '../github/repo.js';
+import { listMarkdown, readRaw, commitFile } from '../github/repo.js';
 import { installationToken } from '../github/signing.js';
+import { CommitConflictError } from '../github/types.js';
 import type { CairnRuntime, ConceptDescriptor, FrontmatterField } from '../content/types.js';
 import type { Editor, Role } from '../auth/types.js';
 
@@ -207,5 +208,51 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     };
   }
 
-  return { layoutLoad, indexRedirect, listLoad, createAction, editLoad, mintToken };
+  /** Match a commit conflict by class and by name (bundling can alias the class identity). */
+  function isConflict(err: unknown): boolean {
+    return err instanceof CommitConflictError || (err as { name?: string } | null)?.name === 'CommitConflictError';
+  }
+
+  /** Save an edit: validate, then commit with the session editor as author. Fails safe on 409. */
+  async function saveAction(event: ContentEvent): Promise<never> {
+    const editor = sessionOf(event);
+    const concept = conceptOf(runtime, event.params);
+    const id = event.params.id ?? '';
+    // Confine the commit path to the concept dir, built from a validated id (the App token can
+    // write anywhere in the repo). Reject before touching GitHub.
+    if (!isValidId(id)) throw error(400, 'Invalid entry id');
+    const path = `${concept.dir}/${filenameFromId(id)}`;
+
+    const form = await event.request.formData();
+    const body = String(form.get('body') ?? '');
+    const isNew = form.get('new') === '1';
+    const suffix = isNew ? '&new=1' : '';
+
+    const result = concept.validate(frontmatterFromForm(concept.fields, form), body);
+    if (!result.ok) {
+      const message = Object.values(result.errors)[0] ?? 'Invalid frontmatter';
+      throw redirect(303, `/admin/${concept.id}/${id}?error=${encodeURIComponent(message)}${suffix}`);
+    }
+
+    const markdown = serializeMarkdown(result.data, body);
+    const token = await mintToken(event.platform?.env ?? {});
+    try {
+      await commitFile(
+        runtime.backend,
+        path,
+        markdown,
+        { message: `Update ${concept.label.toLowerCase()}: ${id}`, author: { name: editor.displayName, email: editor.email } },
+        token,
+      );
+    } catch (err) {
+      if (isConflict(err)) {
+        const message = 'This file changed since you opened it. Reload and reapply your edits.';
+        throw redirect(303, `/admin/${concept.id}/${id}?error=${encodeURIComponent(message)}${suffix}`);
+      }
+      throw err;
+    }
+    throw redirect(303, `/admin/${concept.id}/${id}?saved=1`);
+  }
+
+  return { layoutLoad, indexRedirect, listLoad, createAction, editLoad, saveAction, mintToken };
 }

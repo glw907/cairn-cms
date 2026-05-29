@@ -96,12 +96,17 @@ The render pipeline supports this already: `createRenderer` returns `renderMarkd
 remark and rehype plugin arrays, and both sites' pipelines are plain JavaScript that runs in the
 browser.
 
-### The E2E harness app
+### The example-consumer app
 
-Plan 07's Playwright golden path needs a running app, and no live site is repointed, so the engine
-repo grows its own minimal SvelteKit app under `src/routes`, dev-only and never published.
+Plan 07's Playwright golden path needs a running app, and no live site is repointed. The engine repo
+is a NodeNext library with a custom multi-project vitest config and no SvelteKit plugin, so adding an
+app under its own `src/routes` would fight that build. Instead a permanent sibling app lives at
+`examples/showcase/` with its own standard SvelteKit config, consuming the engine through a `file:`
+dependency. It is never published and keeps the library build pristine, and as a true external
+consumer it proves the public exports more faithfully than a self-reference would. The showcase is
+also the canonical thin-shim reference that Plan 08 cutover and Plan 10 templates match.
 
-That harness composes the engine exactly as a real site would:
+That showcase composes the engine exactly as a real site would:
 
 - A tiny fake adapter (`cairn.config`) with one post-like concept and a trivial `renderPreview`.
 - The real thin `/admin/**` route shims, so the harness also serves as living proof that the public
@@ -211,8 +216,8 @@ ever reaches the DOM.
 `svelte-package` to build `dist`, publint and attw gate the result, and `npm publish --access public
 --tag rc` mints a short-lived OIDC credential and publishes the candidate under the `rc` dist-tag.
 
-**E2E.** Playwright starts the harness, seeds a session, drives the golden path, and asserts the
-recorded commit's author and committer.
+**E2E.** Playwright starts the showcase app, the dev hooks inject a session, the golden path runs,
+and the test asserts the recorded commit's author and committer.
 
 ## Testing strategy
 
@@ -237,8 +242,9 @@ The bar is the standing one: `npm run check` zero errors and zero warnings, and 
    sanitize.
 3. **Publish a prerelease under the `rc` dist-tag from the `rebuild` branch.** `latest` stays on the
    live `0.5.1`; the sites stay on `^0.5.x` until Plan 08.
-4. **Harness lives in the engine repo's own dev app under `src/routes`**, excluded from the package
-   by the `files` array, and it carries a non-cairn feature so coexistence is tested.
+4. **The example consumer is a permanent sibling app at `examples/showcase/`** with its own
+   SvelteKit config, consuming the engine through `file:..`, never published. It carries a non-cairn
+   feature so coexistence is tested, and it is the canonical thin-shim reference for later plans.
 5. **Both extension modes are first-class.** Mode 1 is proven and tested now. Mode 2's contract is
    designed and type-declared now and built in Plan 09; declaring the types does not commit the API,
    since adding the machinery later is an additive minor bump.

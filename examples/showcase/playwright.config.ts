@@ -7,6 +7,7 @@ export default defineConfig({
     port: 4173,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
+    env: { SHOWCASE_FAKE_BACKEND: '1' },
   },
   use: { baseURL: 'http://localhost:4173' },
 });

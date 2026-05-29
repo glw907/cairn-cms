@@ -1,15 +1,19 @@
-// Dev-only backend for the showcase. It injects a signed-in editor for /admin (the real auth flow
-// is covered by the engine's integration tests) and installs the GitHub double. This file lives in
-// the showcase, never in the engine, so the published package carries none of it.
+// Showcase fixture backend. Activates only when SHOWCASE_FAKE_BACKEND=1 is set in the environment.
+// This flag must never be set in production: without it the hook is a no-op, no auth bypass
+// is installed, and the GitHub double is never activated. The Playwright config sets the flag
+// so the E2E server process gets the fixture backend without any manual steps.
 import type { Handle } from '@sveltejs/kit';
 import { installFakeGitHub } from '$lib/fake-github.js';
 
-installFakeGitHub();
+const FAKE = process.env.SHOWCASE_FAKE_BACKEND === '1';
+
+if (FAKE) {
+  installFakeGitHub();
+}
 
 export const handle: Handle = async ({ event, resolve }) => {
-  if (event.url.pathname === '/admin' || event.url.pathname.startsWith('/admin/')) {
+  if (FAKE && (event.url.pathname === '/admin' || event.url.pathname.startsWith('/admin/'))) {
     // Editor shape: { email, displayName, role } - see src/lib/auth/types.ts.
-    // The draft used `name`; the real field is `displayName`.
     event.locals.editor = {
       email: 'editor@showcase.test',
       displayName: 'Demo Editor',

@@ -82,7 +82,6 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
     <button
       type="button"
       class="btn btn-sm btn-ghost"
-      aria-pressed={showPreview}
       aria-expanded={showPreview}
       aria-controls="cairn-preview"
       onclick={togglePreview}

@@ -16,18 +16,42 @@ function tsFiles(dir: string): string[] {
   return out;
 }
 
+// Matches static `import ... from 'carta-md'` and bare `import 'carta-md'` but not dynamic
+// `import('carta-md')`, which is the safe client-only usage allowed in sanitize.ts and components.
+const STATIC_CARTA = /(?:^|\s)import\s[^(][\s\S]*?from\s+['"]carta-md['"]|(?:^|\s)import\s+['"]carta-md['"]/m;
+
+// Matches static `import ... from 'dompurify'` and bare `import 'dompurify'` but not the dynamic
+// `await import('dompurify')` inside sanitize.ts, which is the allowed client-side-only path.
+const STATIC_DOMPURIFY = /(?:^|\s)import\s[^(][\s\S]*?from\s+['"]dompurify['"]|(?:^|\s)import\s+['"]dompurify['"]/m;
+
 describe('Carta stays off the server', () => {
   it('no server-reachable module imports carta-md', () => {
     const offenders: string[] = [];
     for (const dir of SERVER_DIRS) {
       for (const file of tsFiles(dir)) {
-        if (/from\s+['"]carta-md['"]/.test(readFileSync(file, 'utf8'))) offenders.push(file);
+        if (STATIC_CARTA.test(readFileSync(file, 'utf8'))) offenders.push(file);
       }
     }
     expect(offenders).toEqual([]);
   });
 
   it('the engine entry does not import carta-md', () => {
-    expect(/from\s+['"]carta-md['"]/.test(readFileSync('src/lib/index.ts', 'utf8'))).toBe(false);
+    expect(STATIC_CARTA.test(readFileSync('src/lib/index.ts', 'utf8'))).toBe(false);
+  });
+});
+
+describe('DOMPurify stays off the server', () => {
+  it('no server-reachable module statically imports dompurify', () => {
+    const offenders: string[] = [];
+    for (const dir of SERVER_DIRS) {
+      for (const file of tsFiles(dir)) {
+        if (STATIC_DOMPURIFY.test(readFileSync(file, 'utf8'))) offenders.push(file);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it('the engine entry does not statically import dompurify', () => {
+    expect(STATIC_DOMPURIFY.test(readFileSync('src/lib/index.ts', 'utf8'))).toBe(false);
   });
 });

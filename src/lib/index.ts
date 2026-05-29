@@ -1,5 +1,5 @@
-// Engine entry. Auth landed in Plan 01; the content model and adapter land in Plan 02;
-// github, render, and nav follow.
+// Engine entry. Auth landed in Plan 01, the content model and adapter in Plan 02, and the
+// GitHub read-and-commit backend in Plan 03; render and nav follow.
 export { requireOrigin } from './env.js';
 export type { Role, Editor, AuthEnv } from './auth/types.js';
 export type { AuthBranding, MagicLinkMessage, SendMagicLink } from './email.js';
@@ -38,3 +38,19 @@ export { validateFields } from './content/validate.js';
 export { isValidId, idFromFilename, filenameFromId, slugify } from './content/ids.js';
 export { defineRegistry } from './render/registry.js';
 export type { ComponentDef, ComponentRegistry } from './render/registry.js';
+
+// GitHub read-and-commit backend (Plan 03).
+export type { RepoRef, RepoFile, CommitAuthor, AppCredentials } from './github/types.js';
+export { CommitConflictError } from './github/types.js';
+export { appJwt, installationToken, signingSelfTest } from './github/signing.js';
+export {
+  treeUrl,
+  markdownFilesIn,
+  listMarkdown,
+  contentsUrl,
+  readRaw,
+  fileSha,
+  commitFile,
+} from './github/repo.js';
+export { appCredentials } from './github/credentials.js';
+export type { GithubKeyEnv } from './github/credentials.js';

@@ -1565,3 +1565,65 @@ Expected: "clean: self-owned auth only".
 - **Seam discipline.** Events are typed structurally (`RequestContext`), so the engine never imports a site's `App.*`. The email send crosses an injected boundary. Neither couples the engine to a site or to a deployed Worker.
 - **No forward references.** Every symbol used in a later task is defined in an earlier one: `crypto.ts` (Task 2) before the store (Task 3), the store before the routes (Tasks 5 through 8), the structural types (Task 5) before the guard (Task 7). `requireOrigin` comes from Plan 00's `env.ts`.
 - **Deferred by design.** The Svelte components for the login, confirm, and manage-editors pages arrive in Plan 05; this plan builds and tests the server `load`/action functions they will call. The contract test asserting a single resolved `@sveltejs/kit` across the package boundary (spec 5) lands with the distribution guards in Plan 07.
+
+---
+
+## Execution record (2026-05-28)
+
+Plan 01 executed end to end in one session against the test suite. Final gate: `svelte-check`
+0 errors (the one "no svelte input files" warning stays until Plan 05), `npm test` 45 passing
+(unit plus integration on real miniflare D1), `npm run package` builds, and the leak grep reports
+self-owned auth only. All ten tasks landed as their own commits on branch `rebuild`. Every auth
+acceptance scenario (spec section 10) maps to a passing test.
+
+**Two deviations from the verbatim plan, both deliberate.**
+
+1. The cookie `Secure` flag is derived from the request protocol (`event.url.protocol === 'https:'`)
+   rather than hardcoded `true`. The spec writes the cookie as `Secure`. Deriving it keeps the cookie
+   Secure on every real HTTPS deploy and still lets it stick on local `http://`, so Plan 05's live
+   admin smoke under `wrangler dev` does not break in a way that looks like an auth bug. The
+   production posture is unchanged.
+2. Two `auth-editors` assertions use `toHaveProperty('status', 400)` rather than `result.status`. The
+   verbatim form did not type-check against the `ActionFailure | { ok: true }` union. This form reads
+   the failure status without fighting the union.
+
+**Review gate.** Ran the code-simplifier plus three opus review subagents in parallel
+(`web-auth-security-reviewer`, `cloudflare-workers-reviewer`, `svelte-reviewer`). Findings folded in
+this plan:
+
+- Atomic last-owner anti-lockout. The old count-then-write (`countOwners`, then delete or update)
+  let two concurrent owner removals both pass the check and strand zero owners. It now uses two
+  guarded single-statement store ops, `removeOwnerIfNotLast` and `demoteOwnerIfNotLast`, that fold
+  the owner count into the `DELETE`/`UPDATE` and report whether the row changed. `countOwners` is gone.
+- `requireDb(env)` gives a missing `AUTH_DB` binding a named error, matching `requireOrigin`. The
+  route handlers dropped their `env.AUTH_DB!` assertions.
+- `siteName` is HTML-escaped in the magic-link body, since a site's config is untrusted input.
+- `setHeaders` is required in `RequestContext`, so a site cannot silently drop the confirm page's
+  `Referrer-Policy: no-referrer`.
+
+**By design, not a defect.** The reviewers suggested rotating sessions on a role change. That
+conflicts with the plan's stated live-role-read divergence. The guard resolves the role from the
+editor row on every request, so a demotion takes effect on the next request with no session
+bookkeeping.
+
+**Deferred security follow-ups,** each tracked for the named plan:
+
+- Rate limiting and request-endpoint timing. The request endpoint returns an identical body for an
+  allow-listed and an unknown email. An allow-listed email still does more work (hash, D1 write, email
+  send), which is a measurable timing oracle. The proper fix pairs a rate limiter with moving the send
+  off the response path via `waitUntil` and a dummy hash on the miss path. It needs platform plumbing
+  the structural `RequestContext` does not expose. Handle with the admin surface in Plan 05, or the
+  distribution and site work in Plan 07.
+- Security headers on `/admin` (CSP, `X-Content-Type-Options`, frame denial, HSTS). Plan 05.
+- CSRF documentation. Consuming sites must not disable SvelteKit's `csrf.checkOrigin`, and
+  `PUBLIC_ORIGIN` must match the deploy origin. Document this with the site wiring in Plan 05 or 07.
+- D1 read-after-write under read replication. Confirm writes a session row, and the redirect's guard
+  reads it on a separate request. With read replication on, that read could land on a stale replica
+  and bounce a just-signed-in user. It is latent today because no replicas are configured. Use the D1
+  Sessions API (`first-primary` or a bookmark) on the auth read path before enabling read replication.
+- Token-in-URL note for the Plan 05 confirm page. The page must put the token only in a POST form
+  field and render no third-party resources, so an email scanner that submits simple forms cannot
+  consume the token.
+
+**Carryover gotcha.** `D1PreparedStatement.run()` exposes `.meta.changes`, which the new guarded ops
+rely on to tell an applied write from a refused one. This holds on both miniflare D1 and real D1.

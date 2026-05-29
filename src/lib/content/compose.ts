@@ -16,6 +16,8 @@ export function composeRuntime(
 ): CairnRuntime {
   const content: Record<string, ConceptConfig | undefined> = { ...adapter.content };
   for (const extension of extensions) {
+    // An extension adds concepts; a key that collides with the adapter is last-write-wins.
+    // Reserved seam, unused today, so the collision policy is deliberately left simple.
     if (extension.content) Object.assign(content, extension.content);
   }
   return {

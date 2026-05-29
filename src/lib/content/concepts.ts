@@ -10,7 +10,7 @@ import type { ConceptConfig, ConceptDescriptor, RoutingRule } from './types.js';
  * pages are plain navigable structure. Not in adapter config. A future Fragments adds one
  * entry here and one key under `content`.
  */
-export const CONCEPT_ROUTING: Record<string, RoutingRule> = {
+export const CONCEPT_ROUTING: Readonly<Record<string, RoutingRule>> = {
   posts: { routable: true, dated: true, inFeeds: true },
   pages: { routable: true, dated: false, inFeeds: false },
 };
@@ -31,7 +31,7 @@ function defaultLabel(id: string): string {
  */
 export function normalizeConcepts(
   content: Record<string, ConceptConfig | undefined>,
-  routing: Record<string, RoutingRule> = CONCEPT_ROUTING,
+  routing: Readonly<Record<string, RoutingRule>> = CONCEPT_ROUTING,
 ): ConceptDescriptor[] {
   const descriptors: ConceptDescriptor[] = [];
   for (const [id, config] of Object.entries(content)) {

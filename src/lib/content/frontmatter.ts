@@ -31,7 +31,9 @@ export function frontmatterFromForm(
         ];
         break;
       default:
-        data[field.name] = form.get(field.name);
+        // FormData.get returns null for an absent field; normalize to an empty string so
+        // a caller reading a text value never gets null.
+        data[field.name] = form.get(field.name) ?? '';
     }
   }
   return data;

@@ -50,6 +50,17 @@ describe('validateFields', () => {
     expect(validateFields(pageFields, { title: '' }).ok).toBe(false);
   });
 
+  it('accepts a JS Date for a required date field and normalizes it to YYYY-MM-DD', () => {
+    // gray-matter parses an unquoted YAML date into a Date; a valid one is not "empty".
+    const result = validateFields(postFields, {
+      title: 'T',
+      date: new Date('2026-01-05T00:00:00.000Z'),
+      description: 'x',
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data.date).toBe('2026-01-05');
+  });
+
   it('treats a missing required tags vocabulary as an error', () => {
     const fields: FrontmatterField[] = [
       { type: 'tags', name: 'tags', label: 'Tags', options: ['a'], required: true },

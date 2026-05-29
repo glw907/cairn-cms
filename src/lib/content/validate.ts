@@ -3,12 +3,17 @@
 // validator stays thin (engine-fat rule). Saving runs the concept's validator on the
 // server before any commit; invalid input bounces to the form (spec §7.4).
 import type { FrontmatterField, ValidationResult } from './types.js';
+import { dateInputValue } from './frontmatter.js';
 
 /**
  * Validate raw frontmatter against a field list. Required text and date fields must be
  * non-empty; required tag fields must be non-empty lists. Booleans coerce to `true`/`false`
  * and tag fields to string arrays. Returns the normalized data, or field-keyed errors when
  * any required field is empty.
+ *
+ * Frontmatter may arrive from the edit form (all string values) or from `parseMarkdown`,
+ * where gray-matter turns an unquoted YAML date into a JS `Date`. The `date` case coerces a
+ * `Date` to `YYYY-MM-DD` so a valid parsed date is not mistaken for an empty one.
  */
 export function validateFields(
   fields: FrontmatterField[],
@@ -27,6 +32,12 @@ export function validateFields(
         const list = Array.isArray(value) ? value.map(String) : [];
         if (field.required && list.length === 0) errors[field.name] = `${field.label} is required`;
         data[field.name] = list;
+        break;
+      }
+      case 'date': {
+        const text = value instanceof Date ? dateInputValue(value) : typeof value === 'string' ? value.trim() : '';
+        if (field.required && text === '') errors[field.name] = `${field.label} is required`;
+        data[field.name] = text;
         break;
       }
       default: {

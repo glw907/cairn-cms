@@ -52,6 +52,10 @@ describe('frontmatterFromForm', () => {
     expect(frontmatterFromForm(fields, new FormData())).toEqual({ tags: [] });
   });
 
+  it('normalizes an absent text field to an empty string, not null', () => {
+    expect(frontmatterFromForm(pageFields, new FormData())).toEqual({ title: '' });
+  });
+
   it('reads only the declared field for a page', () => {
     const form = new FormData();
     form.set('title', 'About');

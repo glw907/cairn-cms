@@ -12,7 +12,8 @@ import {
   insertEditor,
   deleteEditor,
   setEditorRole,
-  countOwners,
+  removeOwnerIfNotLast,
+  demoteOwnerIfNotLast,
 } from '../../lib/auth/store.js';
 
 const db = env.AUTH_DB;
@@ -33,11 +34,10 @@ describe('editors', () => {
     expect(await findEditor(db, 'nope@x.dev')).toBeNull();
   });
 
-  it('lists editors sorted by email and counts owners', async () => {
+  it('lists editors sorted by email', async () => {
     await seedEditor('b@x.dev', 'B', 'editor');
     await seedEditor('a@x.dev', 'A', 'owner');
     expect((await listEditors(db)).map((e) => e.email)).toEqual(['a@x.dev', 'b@x.dev']);
-    expect(await countOwners(db)).toBe(1);
   });
 
   it('inserts, sets role, and removes', async () => {
@@ -47,6 +47,27 @@ describe('editors', () => {
     expect((await findEditor(db, 'new@x.dev'))?.role).toBe('owner');
     await deleteEditor(db, 'new@x.dev');
     expect(await findEditor(db, 'new@x.dev')).toBeNull();
+  });
+});
+
+describe('last-owner guards (atomic)', () => {
+  it('refuses to remove or demote the last owner and writes nothing', async () => {
+    await seedEditor('own@x.dev', 'Own', 'owner');
+    expect(await removeOwnerIfNotLast(db, 'own@x.dev')).toBe(false);
+    expect(await findEditor(db, 'own@x.dev')).not.toBeNull();
+    expect(await demoteOwnerIfNotLast(db, 'own@x.dev')).toBe(false);
+    expect((await findEditor(db, 'own@x.dev'))?.role).toBe('owner');
+  });
+
+  it('removes or demotes an owner when another owner remains', async () => {
+    await seedEditor('a@x.dev', 'A', 'owner');
+    await seedEditor('b@x.dev', 'B', 'owner');
+    expect(await demoteOwnerIfNotLast(db, 'a@x.dev')).toBe(true);
+    expect((await findEditor(db, 'a@x.dev'))?.role).toBe('editor');
+
+    await seedEditor('c@x.dev', 'C', 'owner'); // b and c are owners now
+    expect(await removeOwnerIfNotLast(db, 'b@x.dev')).toBe(true);
+    expect(await findEditor(db, 'b@x.dev')).toBeNull();
   });
 });
 

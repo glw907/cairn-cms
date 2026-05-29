@@ -14,6 +14,16 @@ describe('buildMagicLinkMessage', () => {
     expect(msg.html).toContain('https://ecnordic.ski/admin/auth/confirm?token=abc');
     expect(msg.text).toContain('https://ecnordic.ski/admin/auth/confirm?token=abc');
   });
+
+  it('escapes HTML-significant characters in the site name', () => {
+    const msg = buildMagicLinkMessage({
+      to: 'ed@x.dev',
+      branding: { siteName: 'A & B <script>', from: 'noreply@x.dev' },
+      link: 'https://x.dev/admin/auth/confirm?token=abc',
+    });
+    expect(msg.html).toContain('A &amp; B &lt;script&gt;');
+    expect(msg.html).not.toContain('<script>');
+  });
 });
 
 describe('cloudflareSend', () => {

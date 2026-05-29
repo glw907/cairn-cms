@@ -2,7 +2,7 @@
 // The factory takes per-site branding and an injected send, so tests run the real handlers
 // against a sink. The confirm-load, confirm, and logout handlers arrive in Task 6.
 import { redirect } from '@sveltejs/kit';
-import { requireOrigin } from '../env.js';
+import { requireOrigin, requireDb } from '../env.js';
 import {
   generateToken,
   generateSessionId,
@@ -31,14 +31,15 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
   async function requestAction(event: RequestContext): Promise<{ sent: true }> {
     const env = event.platform?.env ?? {};
     const origin = requireOrigin(env);
+    const db = requireDb(env);
     const form = await event.request.formData();
     const email = String(form.get('email') ?? '').trim().toLowerCase();
 
-    const editor = email ? await findEditor(env.AUTH_DB!, email) : null;
+    const editor = email ? await findEditor(db, email) : null;
     if (editor) {
       const token = generateToken();
       const now = Date.now();
-      await issueToken(env.AUTH_DB!, email, await hashToken(token), now + TOKEN_TTL_MS, now);
+      await issueToken(db, email, await hashToken(token), now + TOKEN_TTL_MS, now);
       const link = `${origin}/admin/auth/confirm?token=${encodeURIComponent(token)}`;
       await send(env, buildMagicLinkMessage({ to: email, branding: config.branding, link }));
     }
@@ -50,7 +51,7 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
    * verifies. Sets Referrer-Policy: no-referrer so the token does not leak to a referrer.
    */
   async function confirmLoad(event: RequestContext): Promise<{ token: string }> {
-    event.setHeaders?.({ 'Referrer-Policy': 'no-referrer' });
+    event.setHeaders({ 'Referrer-Policy': 'no-referrer' });
     return { token: event.url.searchParams.get('token') ?? '' };
   }
 
@@ -60,21 +61,22 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
    * /admin. An invalid, replayed, or expired token redirects to the login page.
    */
   async function confirmAction(event: RequestContext): Promise<never> {
-    const env = event.platform?.env ?? {};
+    const db = requireDb(event.platform?.env ?? {});
     const form = await event.request.formData();
     const token = String(form.get('token') ?? '');
     if (!token) throw redirect(303, '/admin/login?error=expired');
 
     const now = Date.now();
-    const email = await consumeToken(env.AUTH_DB!, await hashToken(token), now);
+    const email = await consumeToken(db, await hashToken(token), now);
     if (!email) throw redirect(303, '/admin/login?error=expired');
 
     const id = generateSessionId();
-    await createSession(env.AUTH_DB!, id, email, now + SESSION_TTL_MS, now);
+    await createSession(db, id, email, now + SESSION_TTL_MS, now);
     event.cookies.set(COOKIE_NAME, id, {
       path: '/',
       httpOnly: true,
-      secure: true,
+      // Secure on HTTPS (every real deploy); off on local http dev so the cookie sticks.
+      secure: event.url.protocol === 'https:',
       sameSite: 'lax',
       maxAge: Math.floor(SESSION_TTL_MS / 1000),
     });
@@ -83,9 +85,9 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
 
   /** POST /admin/auth/logout. Deletes the session row and clears the cookie. */
   async function logoutAction(event: RequestContext): Promise<never> {
-    const env = event.platform?.env ?? {};
+    const db = requireDb(event.platform?.env ?? {});
     const id = event.cookies.get(COOKIE_NAME);
-    if (id) await deleteSession(env.AUTH_DB!, id);
+    if (id) await deleteSession(db, id);
     event.cookies.delete(COOKIE_NAME, { path: '/' });
     throw redirect(303, '/admin/login');
   }

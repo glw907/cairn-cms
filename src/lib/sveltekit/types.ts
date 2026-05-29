@@ -22,7 +22,9 @@ export interface RequestContext {
   cookies: CookieJar;
   locals: { editor?: Editor | null };
   platform?: { env?: AuthEnv };
-  setHeaders?(headers: Record<string, string>): void;
+  // Required so a site cannot silently drop the confirm page's Referrer-Policy header
+  // (spec 7.1). A real SvelteKit RequestEvent always supplies it.
+  setHeaders(headers: Record<string, string>): void;
 }
 
 export interface HandleInput {

@@ -113,13 +113,46 @@ export async function deleteEditor(db: D1Database, email: string): Promise<void>
   ]);
 }
 
+/**
+ * Remove an owner only if another owner remains. The count is part of the DELETE, so two
+ * concurrent removals cannot both pass a separate check and strand the allowlist at zero
+ * owners. Returns false (and writes nothing) when this is the last owner. On success the
+ * editor's sessions and pending token go too.
+ */
+export async function removeOwnerIfNotLast(db: D1Database, email: string): Promise<boolean> {
+  const res = await db
+    .prepare(
+      `DELETE FROM editor
+       WHERE email = ? AND role = 'owner'
+         AND (SELECT COUNT(*) FROM editor WHERE role = 'owner') > 1`,
+    )
+    .bind(email)
+    .run();
+  if (res.meta.changes !== 1) return false;
+  await db.batch([
+    db.prepare('DELETE FROM session WHERE email = ?').bind(email),
+    db.prepare('DELETE FROM magic_token WHERE email = ?').bind(email),
+  ]);
+  return true;
+}
+
 /** Change an editor's role. The guard reads the new role on the next request. */
 export async function setEditorRole(db: D1Database, email: string, role: Role): Promise<void> {
   await db.prepare('UPDATE editor SET role = ? WHERE email = ?').bind(role, email).run();
 }
 
-/** How many owners exist, for the last-owner anti-lockout rule. */
-export async function countOwners(db: D1Database): Promise<number> {
-  const row = await db.prepare("SELECT COUNT(*) AS n FROM editor WHERE role = 'owner'").first<{ n: number }>();
-  return row?.n ?? 0;
+/**
+ * Demote an owner to editor only if another owner remains, in one atomic statement (see
+ * `removeOwnerIfNotLast`). Returns false (and writes nothing) when this is the last owner.
+ */
+export async function demoteOwnerIfNotLast(db: D1Database, email: string): Promise<boolean> {
+  const res = await db
+    .prepare(
+      `UPDATE editor SET role = 'editor'
+       WHERE email = ? AND role = 'owner'
+         AND (SELECT COUNT(*) FROM editor WHERE role = 'owner') > 1`,
+    )
+    .bind(email)
+    .run();
+  return res.meta.changes === 1;
 }

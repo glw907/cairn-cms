@@ -1,0 +1,125 @@
+// D1 access for auth, through prepared statements only. No ORM. Each function takes the
+// `AUTH_DB` binding plus primitives, so it is testable against a real local D1 and free of
+// SvelteKit. Callers pass `now`/`expiresAt` in epoch milliseconds.
+import type { D1Database } from '@cloudflare/workers-types';
+import type { Editor, Role } from './types.js';
+
+type EditorCols = { email: string; display_name: string; role: Role };
+
+function toEditor(row: EditorCols): Editor {
+  return { email: row.email, displayName: row.display_name, role: row.role };
+}
+
+/** Look an email up in the allowlist. */
+export async function findEditor(db: D1Database, email: string): Promise<Editor | null> {
+  const row = await db
+    .prepare('SELECT email, display_name, role FROM editor WHERE email = ?')
+    .bind(email)
+    .first<EditorCols>();
+  return row ? toEditor(row) : null;
+}
+
+/** Replace any prior token for this email with a fresh one, atomically. */
+export async function issueToken(
+  db: D1Database,
+  email: string,
+  tokenHash: string,
+  expiresAt: number,
+  now: number,
+): Promise<void> {
+  await db.batch([
+    db.prepare('DELETE FROM magic_token WHERE email = ?').bind(email),
+    db
+      .prepare('INSERT INTO magic_token (token_hash, email, expires_at, created_at) VALUES (?, ?, ?, ?)')
+      .bind(tokenHash, email, expiresAt, now),
+  ]);
+}
+
+/**
+ * Consume a token in one atomic statement. A returned email means the token was present and
+ * unexpired and is now gone, so the link is single-use by construction on strongly-consistent D1.
+ */
+export async function consumeToken(db: D1Database, tokenHash: string, now: number): Promise<string | null> {
+  const row = await db
+    .prepare('DELETE FROM magic_token WHERE token_hash = ? AND expires_at > ? RETURNING email')
+    .bind(tokenHash, now)
+    .first<{ email: string }>();
+  return row?.email ?? null;
+}
+
+/** Create a session row. */
+export async function createSession(
+  db: D1Database,
+  id: string,
+  email: string,
+  expiresAt: number,
+  now: number,
+): Promise<void> {
+  await db
+    .prepare('INSERT INTO session (id, email, expires_at, created_at) VALUES (?, ?, ?, ?)')
+    .bind(id, email, expiresAt, now)
+    .run();
+}
+
+/**
+ * Resolve a session to its editor, joining `editor` so the role is read live. An expired
+ * session or a removed editor resolves to null, which revokes access on the next request.
+ */
+export async function resolveSession(db: D1Database, id: string, now: number): Promise<Editor | null> {
+  const row = await db
+    .prepare(
+      `SELECT e.email AS email, e.display_name AS display_name, e.role AS role
+       FROM session s JOIN editor e ON e.email = s.email
+       WHERE s.id = ? AND s.expires_at > ?`,
+    )
+    .bind(id, now)
+    .first<EditorCols>();
+  return row ? toEditor(row) : null;
+}
+
+/** Delete a session (logout). */
+export async function deleteSession(db: D1Database, id: string): Promise<void> {
+  await db.prepare('DELETE FROM session WHERE id = ?').bind(id).run();
+}
+
+/** The full allowlist, sorted by email. */
+export async function listEditors(db: D1Database): Promise<Editor[]> {
+  const { results } = await db
+    .prepare('SELECT email, display_name, role FROM editor ORDER BY email')
+    .all<EditorCols>();
+  return results.map(toEditor);
+}
+
+/** Add an editor to the allowlist. */
+export async function insertEditor(
+  db: D1Database,
+  email: string,
+  displayName: string,
+  role: Role,
+  now: number,
+): Promise<void> {
+  await db
+    .prepare('INSERT INTO editor (email, display_name, role, created_at) VALUES (?, ?, ?, ?)')
+    .bind(email, displayName, role, now)
+    .run();
+}
+
+/** Remove an editor and cut their live access (sessions and any pending token go too). */
+export async function deleteEditor(db: D1Database, email: string): Promise<void> {
+  await db.batch([
+    db.prepare('DELETE FROM session WHERE email = ?').bind(email),
+    db.prepare('DELETE FROM magic_token WHERE email = ?').bind(email),
+    db.prepare('DELETE FROM editor WHERE email = ?').bind(email),
+  ]);
+}
+
+/** Change an editor's role. The guard reads the new role on the next request. */
+export async function setEditorRole(db: D1Database, email: string, role: Role): Promise<void> {
+  await db.prepare('UPDATE editor SET role = ? WHERE email = ?').bind(role, email).run();
+}
+
+/** How many owners exist, for the last-owner anti-lockout rule. */
+export async function countOwners(db: D1Database): Promise<number> {
+  const row = await db.prepare("SELECT COUNT(*) AS n FROM editor WHERE role = 'owner'").first<{ n: number }>();
+  return row?.n ?? 0;
+}

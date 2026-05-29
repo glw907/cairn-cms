@@ -30,7 +30,7 @@ const registry = defineRegistry({
       insertTemplate: '',
       build: (node, rise) => {
         const children = node.children as Element['children'];
-        markFirstList(children as never);
+        markFirstList(children);
         const { head, rest } = splitHead(node, makeIcon);
         return cardShell(['grid'], rise, [head, h('div', { className: ['section-body'] }, rest)]);
       },

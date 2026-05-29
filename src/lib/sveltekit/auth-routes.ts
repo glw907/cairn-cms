@@ -65,11 +65,11 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
     const token = String(form.get('token') ?? '');
     if (!token) throw redirect(303, '/admin/login?error=expired');
 
-    const email = await consumeToken(env.AUTH_DB!, await hashToken(token), Date.now());
+    const now = Date.now();
+    const email = await consumeToken(env.AUTH_DB!, await hashToken(token), now);
     if (!email) throw redirect(303, '/admin/login?error=expired');
 
     const id = generateSessionId();
-    const now = Date.now();
     await createSession(env.AUTH_DB!, id, email, now + SESSION_TTL_MS, now);
     event.cookies.set(COOKIE_NAME, id, {
       path: '/',

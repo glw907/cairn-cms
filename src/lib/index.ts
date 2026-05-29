@@ -36,8 +36,24 @@ export {
 } from './content/frontmatter.js';
 export { validateFields } from './content/validate.js';
 export { isValidId, idFromFilename, filenameFromId, slugify } from './content/ids.js';
+// Render engine (Plan 04): generic directive pipeline; sites own the component registry.
 export { defineRegistry } from './render/registry.js';
 export type { ComponentDef, ComponentRegistry } from './render/registry.js';
+export { glyph } from './render/glyph.js';
+export type { IconSet } from './render/glyph.js';
+export { remarkDirectiveStamp } from './render/remark-directives.js';
+export {
+  rehypeDispatch,
+  isElement,
+  strProp,
+  iconSpan,
+  splitHead,
+  cardShell,
+  markFirstList,
+} from './render/rehype-dispatch.js';
+export type { MakeIcon } from './render/rehype-dispatch.js';
+export { createRenderer } from './render/pipeline.js';
+export type { RendererOptions } from './render/pipeline.js';
 
 // GitHub read-and-commit backend (Plan 03).
 export type { RepoRef, RepoFile, CommitAuthor, AppCredentials } from './github/types.js';

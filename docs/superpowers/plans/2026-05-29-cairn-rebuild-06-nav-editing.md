@@ -1208,4 +1208,66 @@ git commit -m "feat(nav): wire the nav entry, barrels, and export boundary"
 
 ## Execution post-mortem
 
-_(Filled in at pass-end per the cairn-pass consolidation ritual: what was built, what was verified with evidence, decisions locked, and any blockers. Update the `cairn-rebuild-initiative` memory to match.)_
+_(2026-05-29. Executed task-by-task with `cairn-implementer` subagents, then the cairn-pass
+consolidation ritual.)_
+
+**What was built.** All six tasks landed, in eight feature commits plus one review-fix commit.
+The library spike confirmed `@rodrigodagostino/svelte-sortable-list` v2.1.17 mounts under Svelte 5.
+It ships a stylesheet at `./*.css` (imported in the component) and forwards `aria-label` from
+`SortableList.Item` to its `role="option"` element. The pure `src/lib/nav/site-config.ts` parses
+and validates the YAML, then rewrites one named menu through a `parseDocument` round-trip that
+preserves every other top-level key (comments are not preserved, an accepted trade). The
+`createNavRoutes` factory in `src/lib/sveltekit/nav-routes.ts` mirrors `createContentRoutes`:
+`navLoad` degrades to an empty tree on a missing or unparsable config so the editor still opens,
+and `navSave` validates first, then read-modify-commits with the session editor as author and the
+409 fail-safe. `NavTree.svelte` edits a flat working model of rows with explicit depth, reorders by
+keyboard through the sortable list, and posts the rebuilt nested tree as JSON. The nav entry,
+barrels, package-entry exports, and an export-boundary test wire it into the admin shell.
+
+**What was verified (evidence).** Final gate: `npm test` exit 0, 221 tests across the unit,
+integration, and component projects (up from 180 at Plan 05); `npm run check` 0 errors, 0 warnings.
+Each task gated the same way before its commit. The four review subagents (svelte, daisyui-a11y,
+web-auth-security, cloudflare-workers) ran on Opus against the diff.
+
+**Decisions locked and corrections made.**
+- Two test-double oversights in the plan's verbatim test code were caught at the gate, not by a
+  green test. Task 4's nav-save test returned YAML for every GET, which collided with
+  `commitFile`'s internal `fileSha` JSON read. The first implementer worked around it by weakening
+  the Plan 03 `fileSha` to swallow JSON parse errors. That was reverted, because the backend is not
+  degraded to suit a test. The real fix matches the Plan 05 content-save precedent: the test double
+  branches on the `Accept` header (`raw` returns the config text, otherwise a `{ sha }` JSON), and
+  `repo.ts` stays untouched.
+- `untrack` on the `$state(flatten(...))` initializer stays. The svelte-reviewer called it inert.
+  The implementer verified that removing it makes svelte-check emit `state_referenced_locally`
+  (a prop captured once in a non-reactive position), so it silences that compiler warning and is
+  load-bearing for the 0-warning gate. The misleading comment was rewritten to say why.
+- The factory keeps only `{ navLoad, navSave }` public. `sessionOf`, `isConflict`, and `mintToken`
+  are reachable by closure, so exposing them through the return (as the plan drafted) was
+  unnecessary. Trimmed to match `createContentRoutes`.
+
+**Review fixes folded in (commit `172a2c7`).**
+- High (stored XSS): `validateNavTree` had no URL scheme check, so an editor could commit a
+  `javascript:` URL that renders into the public nav `<a href>`. Added a scheme allowlist
+  (`/`, `#`, `http(s)://`, `mailto:`, `tel:`), rejecting everything else.
+- Medium: per-field length caps (label up to 500, url up to 2048) against a memory-amplified write.
+  The `navSave` 404 no longer echoes `configPath`.
+- a11y: named the reorder listbox (`aria-label="Navigation items"`) and gave each row an
+  `aria-label` carrying its label and nesting level, since depth was visual-only before.
+
+**Deferred (carried to Plan 07 cutover or a hardening pass).**
+- Live admin smoke skipped, with reason. `NavTree` and the routes are component- and unit-tested,
+  but nothing mounts `/admin/nav` in a running consumer Worker until cutover wires each site's
+  `configPath` and route shim (Plan 07). The live smoke runs then, alongside the Plan 05
+  preview-sanitize and the Playwright golden path.
+- Theme contrast (daisyui-a11y B1/B2). The `alert-success`/`alert-error` body text and the
+  `text-error` remove button sit near the 4.5:1 line by the reviewer's L³ approximation. These are
+  the shared `cairn-admin` theme tokens (and the consumer themes echo them), so retuning belongs in
+  a measured, theme-wide contrast audit rather than a piecemeal nav edit.
+- Redundant tree fetch (cloudflare M1). `pageOptions` calls `listMarkdown` per page-like concept,
+  and each call fetches the full recursive repo tree. With a single non-dated routable concept (the
+  common case) there is no duplication; a multi-page-concept site would double-fetch. The real fix
+  exposes a shared tree fetch from `repo.ts`.
+- Other carried items: `prefers-reduced-motion` gating of the library's drag animation; `btn-xs`
+  target size at the WCAG 2.5.8 floor; `use:enhance`-safe banner structure; the `__Host-` session
+  cookie prefix; the yaml browser-vs-node bundle-resolution divergence between tests (with
+  `nodejs_compat`) and the production Vite build; install-token KV caching.

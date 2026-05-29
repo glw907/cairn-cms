@@ -70,3 +70,15 @@ export {
 } from './github/repo.js';
 export { appCredentials } from './github/credentials.js';
 export type { GithubKeyEnv } from './github/credentials.js';
+
+// Nav tree and site-config helpers (Plan 06).
+export {
+  parseSiteConfig,
+  extractMenu,
+  setMenu,
+  validateNavTree,
+  MAX_NAV_NODES,
+  NavValidationError,
+  SiteConfigError,
+} from './nav/site-config.js';
+export type { NavNode, SiteConfig } from './nav/site-config.js';

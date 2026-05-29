@@ -13,5 +13,7 @@ export type {
   ContentEvent,
   ContentRoutesDeps,
 } from './content-routes.js';
+export { createNavRoutes } from './nav-routes.js';
+export type { NavLoadData, NavPageOption, NavRoutesDeps } from './nav-routes.js';
 export { healthLoad, type HealthData } from './health.js';
 export type { RequestContext, CookieJar, HandleInput } from './types.js';

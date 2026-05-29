@@ -38,12 +38,20 @@ describe('layoutLoad', () => {
     ]);
     expect(data.pathname).toBe('/admin/posts');
     expect(data.canManageEditors).toBe(true);
+    expect(data.navLabel).toBeNull();
   });
 
   it('denies the manage-editors capability to an editor', () => {
     const routes = createContentRoutes(runtime());
     const data = routes.layoutLoad(event('/admin/pages', 'editor') as never);
     expect(data.canManageEditors).toBe(false);
+  });
+
+  it('exposes the nav label when a navMenu is configured', () => {
+    const rt = runtime();
+    rt.navMenu = { configPath: 'x.yaml', menuName: 'primary', label: 'Primary nav', maxDepth: 2 };
+    const data = createContentRoutes(rt).layoutLoad(event('/admin/nav', 'editor') as never);
+    expect(data.navLabel).toBe('Primary nav');
   });
 });
 

@@ -26,6 +26,8 @@ export interface LayoutData {
   concepts: NavConcept[];
   pathname: string;
   canManageEditors: boolean;
+  /** The nav menu's label when the site configures one; gates the Navigation nav entry. Null otherwise. */
+  navLabel: string | null;
 }
 
 /** One row in a concept's list view. */
@@ -105,6 +107,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       concepts: runtime.concepts.map((c) => ({ id: c.id, label: c.label })),
       pathname: event.url.pathname,
       canManageEditors: editor.role === 'owner',
+      navLabel: runtime.navMenu?.label ?? null,
     };
   }
 

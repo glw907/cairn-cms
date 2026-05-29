@@ -27,6 +27,7 @@ admin looks identical on every host regardless of the site's own theme.
 
   const navItems: NavItem[] = $derived([
     ...data.concepts.map((c) => ({ href: `/admin/${c.id}`, label: c.label })),
+    ...(data.navLabel ? [{ href: '/admin/nav', label: data.navLabel }] : []),
     { href: '/admin/editors', label: 'Editors', owner: true },
   ]);
 

@@ -167,5 +167,45 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     throw redirect(303, `/admin/${concept.id}/${raw}?new=1`);
   }
 
-  return { layoutLoad, indexRedirect, listLoad, createAction, mintToken };
+  /** Coerce parsed frontmatter to the form-ready values the editor inputs expect. */
+  function formValues(fields: FrontmatterField[], frontmatter: Record<string, unknown>): Record<string, unknown> {
+    const out: Record<string, unknown> = {};
+    for (const field of fields) {
+      const value = frontmatter[field.name];
+      if (field.type === 'date') out[field.name] = dateInputValue(value);
+      else if (field.type === 'boolean') out[field.name] = value === true;
+      else if (field.type === 'tags' || field.type === 'freetags') out[field.name] = Array.isArray(value) ? value.map(String) : [];
+      else out[field.name] = typeof value === 'string' ? value : value == null ? '' : String(value);
+    }
+    return out;
+  }
+
+  /** Open a file for editing. A `?new=1` miss yields a blank document; any other miss is a 404. */
+  async function editLoad(event: ContentEvent): Promise<EditData> {
+    sessionOf(event);
+    const concept = conceptOf(runtime, event.params);
+    const id = event.params.id ?? '';
+    if (!isValidId(id)) throw error(400, 'Invalid entry id');
+    const isNew = event.url.searchParams.get('new') === '1';
+    const token = await mintToken(event.platform?.env ?? {});
+    const raw = await readRaw(runtime.backend, `${concept.dir}/${filenameFromId(id)}`, token);
+    if (raw === null && !isNew) throw error(404, 'Entry not found');
+
+    const parsed = raw === null ? { frontmatter: {}, body: '' } : parseMarkdown(raw);
+    const title = typeof parsed.frontmatter.title === 'string' && parsed.frontmatter.title.trim() ? parsed.frontmatter.title : id;
+    return {
+      conceptId: concept.id,
+      id,
+      label: concept.label,
+      fields: concept.fields,
+      frontmatter: formValues(concept.fields, parsed.frontmatter),
+      body: parsed.body,
+      title,
+      isNew,
+      saved: event.url.searchParams.get('saved') === '1',
+      error: event.url.searchParams.get('error'),
+    };
+  }
+
+  return { layoutLoad, indexRedirect, listLoad, createAction, editLoad, mintToken };
 }

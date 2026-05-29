@@ -1282,74 +1282,78 @@ Record the published version and the dist-tags as the evidence for this task. Do
 
 ## Execution post-mortem
 
-All eleven tasks landed on `rebuild`, plus a review-gate fixup. Final state: `npm run check`
-0 errors / 0 warnings across 700 files, `npm test` 56 files / 237 tests exit 0, `npm run
-check:package` exit 0, and the showcase Playwright suite 3 passed.
+Eleven tasks landed on `rebuild`, plus two review-gate fixups. Final gate: `npm run check` 0 errors
+and 0 warnings, `npm test` 236 tests exit 0, `npm run check:package` exit 0, and the showcase
+Playwright suite 3 passed.
 
 ### What was built
 
-- Packaging gates: `peer-deps.test.ts`, the `check:package` script (publint + attw), and CI
-  wiring (`60f4b29`).
-- The client-only DOMPurify preview sanitizer (`5d102b9`) and its wiring into `EditPage`
-  through an injected `renderPreview` (`61d142c`).
-- The engine-isolation guard for extension Mode 1 (`9e024b4`) and the `CairnExtension`
-  admin-panel and field-type contract for Mode 2 (`47e2c2d`).
-- The permanent example consumer at `examples/showcase/`: the SvelteKit skeleton (`a53cbb4`),
-  the adapter and a non-cairn `/calendar` feature (`f0b2e9c`), the thin `/admin` shims plus a
-  dev session injector and an in-memory GitHub double (`3d9f1a2`), the Playwright golden-path
-  and coexistence E2E (`b4c0e21`), and the healthz endpoint plus the key-rotation runbook
-  (`c8a3f57`).
-- Release prep: version `0.6.0-rc.0` and the publish workflow under `--tag rc` (`e3d1b8a`).
-- Review-gate fixups on shipped engine code: a latest-wins guard and try/catch on the preview
-  effect, `aria-expanded`/`aria-controls` on the preview toggle, and a `rel="noopener
-  noreferrer"` hook in the sanitizer (`a1f7c33`).
+- Packaging gates: `peer-deps.test.ts`, a `check:package` script (publint + attw), and CI wiring
+  (`60f4b29`).
+- A client-only DOMPurify preview sanitizer (`5d102b9`), wired into `EditPage` through an injected
+  `renderPreview` (`61d142c`).
+- An engine-isolation guard for extension Mode 1 (`9e024b4`), plus the `CairnExtension` admin-panel
+  and field-type contract for Mode 2 (`47e2c2d`).
+- A permanent example consumer at `examples/showcase/`: the SvelteKit skeleton (`a53cbb4`), an
+  adapter and a non-cairn `/calendar` feature (`1aab375`), thin `/admin` shims with a dev session
+  injector and an in-memory GitHub double (`8e5a223`), a Playwright golden-path and coexistence E2E
+  (`8cb431d`), and a healthz endpoint plus a key-rotation runbook (`9ad2ef2`).
+- Release prep: version `0.6.0-rc.0` and the publish workflow under `--tag rc` (`25c64e3`).
+- Review fixups on shipped code. Round one added a latest-wins guard and a try/catch to the preview
+  effect, `aria-expanded`/`aria-controls` on the toggle, and a `rel="noopener noreferrer"` hook in
+  the sanitizer (`937d069`). Round two dropped the now-redundant `aria-pressed`, gated the showcase
+  dev backend behind a `SHOWCASE_FAKE_BACKEND` env flag so the example cannot ship a live auth
+  bypass, guarded the dompurify server boundary in `carta-boundary.test.ts`, and added
+  `check:package` to the publish job (`0f7cfca`).
 
 ### Decision changed from the plan
 
-The plan's locked "source-exports for dev plus a `publishConfig.exports` swap to `dist` on
-publish" does not work: an empirical `npm pack` test on npm 11.15 showed the packed manifest
-kept the source `.ts` exports and left `publishConfig` in place, so the swap never applies.
-The fix points `exports` directly at `dist/` and adds `"prepare": "svelte-package"` so a
-git/file consumer (the showcase) builds `dist` on install. svelte-package's `dist` still ships
-the `.svelte` components as source behind the `svelte` condition, so a Vite consumer compiles
-them and Task 6's source-consumption model holds. This honors the original intent (ship dist on
-publish) with a mechanism that functions. The attw `--ignore-rules no-resolution
-cjs-resolves-to-esm internal-resolution-error` are each inherent to an ESM-only Svelte
-component library, not masked defects (Workers reviewer confirmed).
+The plan locked "source exports for dev plus a `publishConfig.exports` swap to `dist` on publish."
+That does not work: an `npm pack` test on npm 11.15 showed the packed manifest kept the source `.ts`
+exports and left `publishConfig` in place, so the swap never applies. Instead, `exports` now point at
+`dist/` directly, and a `"prepare": "svelte-package"` script builds `dist` for a git or file consumer
+like the showcase. Because svelte-package ships the `.svelte` components as source behind the `svelte`
+condition, a Vite consumer still compiles them, so Task 6's source-consumption model holds. This keeps
+the original intent (ship dist on publish) on a mechanism that functions. Each attw ignore rule
+(`no-resolution`, `cjs-resolves-to-esm`, `internal-resolution-error`) is inherent to an ESM-only
+Svelte component library, not a masked defect.
 
-### Real engine names the showcase shims wired (useful for Plan 08)
+### Real engine names the showcase shims wired (for Plan 08)
 
-`createContentRoutes(runtime, deps)` where `deps` carries a token-minting hook; the returned
-members for the layout load, index load, list load, create action, edit load, and save action;
-the admin shell, concept-list, and edit-page components from `/components`; the `Editor` shape
-(`email`, `name`, `role`); `composeRuntime(adapter)` accepts a single argument; `healthLoad
-(runtime, event)` returns `{ ok, checks }` and does not throw on a missing key (dev healthz
-returns `ok: false`); the save action redirects with `?saved=1`; the Carta editable surface is
-`.carta-input textarea`.
+`createContentRoutes(runtime, deps)` takes `deps` of `{ mintToken?: (env) => Promise<string> }` and
+returns `layoutLoad`, `indexRedirect`, `listLoad`, `createAction`, `editLoad`, and `saveAction`.
+Components `AdminShell`, `ConceptList`, and `EditPage` come from `/components`. An `Editor` is
+`{ email, displayName, role }`. `composeRuntime(adapter)` accepts a single argument.
+`healthLoad(event, runtime)` puts the event first, returns `{ ok, checks }`, and does not throw on a
+missing key (dev healthz returns `ok: false`). A save redirects with `?saved=1`. Although the edit
+route dir is `edit/[type]/[id]`, the engine reads `params.concept`, so the shim aliases `params.type`
+to `params.concept`. For the E2E, the Carta editable surface is the SSR
+`textarea[aria-label="Markdown source"]`, which mirrors into a hidden `input[name="body"]` carried on
+submit.
 
 ### Review gate
 
-Four reviewers ran read-only: security PASS_WITH_NITS, svelte PASS_WITH_NITS, workers PASS,
-a11y PASS_WITH_NITS. No Critical or Important findings. The three shipped-code nits were folded
-in (`a1f7c33`). A scope note stands for Plan 08: the preview sanitize floor protects the
-editor's own browser; each site's published render path is rendered by the site's own server
-pipeline and must sanitize or be trusted by construction.
+Four reviewers ran read-only: security, svelte, and a11y returned PASS_WITH_NITS, workers PASS. None
+raised a Critical or Important finding. Both fixup rounds folded the nits in (`937d069`, `0f7cfca`).
+A scope note carries to Plan 08: the preview sanitize floor protects the editor's own browser, while
+each site's published render path runs through that site's own server pipeline and must sanitize or be
+trusted by construction.
 
 ### Process incident
 
-An API overload during the Task 1 dispatch led to several blind retries; when the overload
-cleared, seven implementer agents ran Task 1 concurrently. Git serialized them into three
-linear commits with no merge corruption, and they were collapsed into one clean commit
-(`60f4b29`) via a soft reset (the branch was unpushed). Lesson: never blind-retry an agent
-dispatch on overload; one at a time, verify the commit before the next.
+An API overload during the Task 1 dispatch led to several blind retries. When the overload cleared,
+seven implementer agents ran Task 1 at once. Git serialized them into three linear commits with no
+merge corruption, and a soft reset collapsed them into one clean commit (`60f4b29`) since the branch
+was unpushed. Lesson: do not blind-retry an agent dispatch on overload; run one at a time and verify
+each commit before the next.
 
 ### Carried follow-ups
 
-- The owner-run RC publish is still pending: confirm the npm Trusted-Publisher entry for the
-  `rebuild` branch, trigger `publish.yml` via `workflow_dispatch`, and confirm `npm view
-  @glw907/cairn-cms dist-tags` shows `rc: 0.6.0-rc.0` with `latest` still on `0.5.1`.
-- Plan 08 (cutover): repoint both site adapters and all `/admin` shims to the new API using the
-  real names above, add each site's `wrangler deploy --dry-run` guard and live signing check,
-  and merge `rebuild` to `main`.
-- The `rebuild` branch is 46+ commits ahead of `origin/rebuild` and unpushed; push at the
-  user's request.
+- The owner-run RC publish is still pending: confirm the npm Trusted-Publisher entry for the `rebuild`
+  branch, trigger `publish.yml` via `workflow_dispatch`, and confirm `npm view @glw907/cairn-cms
+  dist-tags` shows `rc: 0.6.0-rc.0` with `latest` still on `0.5.1`.
+- Plan 08 (cutover) repoints both site adapters and all `/admin` shims to the new API using the names
+  above, wires each site's `configPath` and nav shim, adds a `wrangler deploy --dry-run` guard and a
+  live signing check per site, and merges `rebuild` to `main`.
+- The `rebuild` branch sits 50+ commits ahead of `origin/rebuild` and is unpushed; push at the user's
+  request.

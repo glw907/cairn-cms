@@ -54,14 +54,14 @@ describe('last-owner anti-lockout (scenario 8)', () => {
   it('refuses to remove the last owner and writes nothing', async () => {
     await seedEditor('own@x.dev', 'Own', 'owner');
     const result = await routes.removeEditorAction(asOwner({ email: 'own@x.dev' }));
-    expect(result.status).toBe(400);
+    expect(result).toHaveProperty('status', 400);
     expect(await countRows('editor')).toBe(1);
   });
 
   it('refuses to demote the last owner', async () => {
     await seedEditor('own@x.dev', 'Own', 'owner');
     const result = await routes.setRoleAction(asOwner({ email: 'own@x.dev', role: 'editor' }));
-    expect(result.status).toBe(400);
+    expect(result).toHaveProperty('status', 400);
     expect((await findEditor(db, 'own@x.dev'))?.role).toBe('owner');
   });
 

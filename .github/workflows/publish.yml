@@ -31,4 +31,5 @@ jobs:
       # Trusted publishing requires npm >= 11.5.1 (newer than the bundled version).
       - run: npm install -g npm@latest
       - run: npm install --no-audit --no-fund
-      - run: npm publish --access public
+      # The rc tag keeps latest on the live 0.5.x; the stable release at cutover (Plan 08) drops --tag rc.
+      - run: npm publish --access public --tag rc

@@ -54,7 +54,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
     <p class="text-xs opacity-60">{data.label}: {data.id}</p>
   </div>
   <div class="flex items-center gap-2">
-    <ComponentPalette {registry} insert={(t) => insert(t)} />
+    <ComponentPalette {registry} {insert} />
     <button type="button" class="btn btn-sm btn-ghost" aria-pressed={showPreview} onclick={togglePreview}>
       {showPreview ? 'Hide preview' : 'Show preview'}
     </button>
@@ -106,6 +106,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
           </label>
         {:else if field.type === 'tags'}
           {@const f = field as TagsField}
+          {@const selected = (data.frontmatter[f.name] ?? []) as string[]}
           <fieldset class="form-control">
             <span class="label-text mb-1">{f.label}</span>
             <div class="flex flex-wrap gap-2">
@@ -116,7 +117,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
                     type="checkbox"
                     name={f.name}
                     value={option}
-                    checked={Array.isArray(data.frontmatter[f.name]) && (data.frontmatter[f.name] as string[]).includes(option)}
+                    checked={selected.includes(option)}
                   />
                   <span class="label-text">{option}</span>
                 </label>
@@ -125,6 +126,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
           </fieldset>
         {:else if field.type === 'freetags'}
           {@const f = field as FreeTagsField}
+          {@const tagValue = ((data.frontmatter[f.name] ?? []) as string[]).join(', ')}
           <label class="form-control">
             <span class="label-text mb-1">{f.label}</span>
             <input
@@ -132,7 +134,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
               name={f.name}
               aria-label={f.label}
               placeholder={f.placeholder}
-              value={Array.isArray(data.frontmatter[f.name]) ? (data.frontmatter[f.name] as string[]).join(', ') : ''}
+              value={tagValue}
             />
           </label>
         {:else}

@@ -28,7 +28,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:unit": "vitest run --project unit",
-    "test:integration": "vitest run --project integration"
+    "test:integration": "vitest run --project integration",
+    "test:component": "vitest run --project component"
   },
   "exports": {
     ".": {
@@ -100,12 +101,16 @@
     "@sveltejs/kit": "^2.61",
     "@sveltejs/package": "^2",
     "@sveltejs/vite-plugin-svelte": "^7.1",
+    "@vitest/browser": "^4.1.7",
+    "@vitest/browser-playwright": "^4.1.7",
     "carta-md": "^4.11",
+    "playwright": "^1.60.0",
     "svelte": "^5.55",
     "svelte-check": "^4",
     "typescript": "^6.0.3",
     "vite": "^8.0",
     "vitest": "^4.1",
+    "vitest-browser-svelte": "^2.1.1",
     "wrangler": "^4"
   }
 }

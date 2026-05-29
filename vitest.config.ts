@@ -1,5 +1,7 @@
 import { defineConfig } from 'vitest/config';
 import { cloudflareTest, readD1Migrations } from '@cloudflare/vitest-pool-workers';
+import { svelte } from '@sveltejs/vite-plugin-svelte';
+import { playwright } from '@vitest/browser-playwright';
 import path from 'node:path';
 
 // Read committed SQL migrations from Node context (workerd cannot read the FS).
@@ -7,7 +9,6 @@ import path from 'node:path';
 // entry; there is no `/config` subpath.
 const migrations = await readD1Migrations(path.resolve('migrations'));
 
-// The `component` (browser) project is added in Plan 05.
 export default defineConfig({
   test: {
     projects: [
@@ -29,6 +30,19 @@ export default defineConfig({
           name: 'integration',
           include: ['src/tests/integration/**/*.test.ts'],
           setupFiles: ['./src/tests/integration/apply-migrations.ts'],
+        },
+      },
+      {
+        plugins: [svelte()],
+        test: {
+          name: 'component',
+          include: ['src/tests/component/**/*.test.ts'],
+          browser: {
+            enabled: true,
+            provider: playwright(),
+            headless: true,
+            instances: [{ browser: 'chromium' }],
+          },
         },
       },
     ],

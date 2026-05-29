@@ -152,10 +152,10 @@ Stand up the `vitest-browser-svelte` project so later tasks can test Svelte comp
 
 Run:
 ```bash
-npm install -D vitest-browser-svelte @vitest/browser playwright
+npm install -D vitest-browser-svelte @vitest/browser @vitest/browser-playwright playwright
 npx playwright install chromium
 ```
-Expected: the three packages land in `devDependencies`; Chromium downloads.
+Expected: the four packages land in `devDependencies`; Chromium downloads. `@vitest/browser-playwright` carries the provider factory: vitest 4.1 dropped the old `provider: 'playwright'` string in favor of a factory import (see Step 2).
 
 - [ ] **Step 2: Add the `component` project to `vitest.config.ts`**
 
@@ -165,6 +165,7 @@ Add the svelte plugin import at the top and a third project entry. The full file
 import { defineConfig } from 'vitest/config';
 import { cloudflareTest, readD1Migrations } from '@cloudflare/vitest-pool-workers';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
+import { playwright } from '@vitest/browser-playwright';
 import path from 'node:path';
 
 // Read committed SQL migrations from Node context (workerd cannot read the FS).
@@ -200,7 +201,7 @@ export default defineConfig({
           include: ['src/tests/component/**/*.test.ts'],
           browser: {
             enabled: true,
-            provider: 'playwright',
+            provider: playwright(),
             headless: true,
             instances: [{ browser: 'chromium' }],
           },

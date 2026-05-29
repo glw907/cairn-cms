@@ -23,7 +23,8 @@
   ],
   "scripts": {
     "package": "svelte-package",
-    "prepublishOnly": "svelte-package",
+    "check:package": "npm run package && publint --strict && attw --pack . --ignore-rules no-resolution cjs-resolves-to-esm internal-resolution-error",
+    "prepare": "svelte-package",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -33,41 +34,21 @@
   },
   "exports": {
     ".": {
-      "types": "./src/lib/index.ts",
-      "svelte": "./src/lib/index.ts",
-      "default": "./src/lib/index.ts"
+      "types": "./dist/index.d.ts",
+      "svelte": "./dist/index.js",
+      "default": "./dist/index.js"
     },
     "./sveltekit": {
-      "types": "./src/lib/sveltekit/index.ts",
-      "svelte": "./src/lib/sveltekit/index.ts",
-      "default": "./src/lib/sveltekit/index.ts"
+      "types": "./dist/sveltekit/index.d.ts",
+      "svelte": "./dist/sveltekit/index.js",
+      "default": "./dist/sveltekit/index.js"
     },
     "./components": {
-      "types": "./src/lib/components/index.ts",
-      "svelte": "./src/lib/components/index.ts",
-      "default": "./src/lib/components/index.ts"
+      "types": "./dist/components/index.d.ts",
+      "svelte": "./dist/components/index.js",
+      "default": "./dist/components/index.js"
     },
     "./package.json": "./package.json"
-  },
-  "publishConfig": {
-    "exports": {
-      ".": {
-        "types": "./dist/index.d.ts",
-        "svelte": "./dist/index.js",
-        "default": "./dist/index.js"
-      },
-      "./sveltekit": {
-        "types": "./dist/sveltekit/index.d.ts",
-        "svelte": "./dist/sveltekit/index.js",
-        "default": "./dist/sveltekit/index.js"
-      },
-      "./components": {
-        "types": "./dist/components/index.d.ts",
-        "svelte": "./dist/components/index.js",
-        "default": "./dist/components/index.js"
-      },
-      "./package.json": "./package.json"
-    }
   },
   "files": [
     "dist",
@@ -97,6 +78,7 @@
     "yaml": "^2"
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.3",
     "@cloudflare/vitest-pool-workers": "^0.16",
     "@cloudflare/workers-types": "^4.20260501.0",
     "@sveltejs/kit": "^2.61",
@@ -106,6 +88,7 @@
     "@vitest/browser-playwright": "^4.1.7",
     "carta-md": "^4.11",
     "playwright": "^1.60.0",
+    "publint": "^0.3.21",
     "svelte": "^5.55",
     "svelte-check": "^4",
     "typescript": "^6.0.3",

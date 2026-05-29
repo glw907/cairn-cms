@@ -25,6 +25,8 @@ export type {
   ConceptDescriptor,
   CairnExtension,
   CairnRuntime,
+  AdminPanel,
+  FieldTypeDef,
 } from './content/types.js';
 export { CONCEPT_ROUTING, normalizeConcepts, findConcept } from './content/concepts.js';
 export { composeRuntime } from './content/compose.js';

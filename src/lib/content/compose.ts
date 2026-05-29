@@ -3,7 +3,7 @@
 // the same way and contributes the same kinds of things: nav entries, route logic,
 // concepts, components, field types, and save hooks. Shaped now so the extension contract
 // is additive later.
-import type { CairnAdapter, CairnExtension, CairnRuntime, ConceptConfig } from './types.js';
+import type { AdminPanel, CairnAdapter, CairnExtension, CairnRuntime, ConceptConfig, FieldTypeDef } from './types.js';
 import { normalizeConcepts } from './concepts.js';
 
 /**
@@ -15,10 +15,14 @@ export function composeRuntime(
   extensions: CairnExtension[] = [],
 ): CairnRuntime {
   const content: Record<string, ConceptConfig | undefined> = { ...adapter.content };
+  const adminPanels: AdminPanel[] = [];
+  const fieldTypes: FieldTypeDef[] = [];
   for (const extension of extensions) {
     // An extension adds concepts; a key that collides with the adapter is last-write-wins.
     // Reserved seam, unused today, so the collision policy is deliberately left simple.
     if (extension.content) Object.assign(content, extension.content);
+    if (extension.adminPanels) adminPanels.push(...extension.adminPanels);
+    if (extension.fieldTypes) fieldTypes.push(...extension.fieldTypes);
   }
   return {
     siteName: adapter.siteName,
@@ -29,5 +33,7 @@ export function composeRuntime(
     registry: adapter.registry,
     navMenu: adapter.navMenu,
     assets: adapter.assets,
+    adminPanels,
+    fieldTypes,
   };
 }

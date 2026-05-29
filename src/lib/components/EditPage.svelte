@@ -47,12 +47,21 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
 
   // Render the design-accurate preview as the body changes, debounced, and sanitize before the DOM.
   // The sanitize is the one barrier between editor-authored markdown and the page (Carta is unsanitized).
+  // previewRun is a plain counter (not reactive state) used as a latest-wins guard: if a slow earlier
+  // async renderPreview call resolves after a newer one has started, the stale result is discarded.
+  let previewRun = 0;
   $effect(() => {
     if (!showPreview || !renderPreview) return;
     const md = body;
+    const run = ++previewRun;
     const handle = setTimeout(async () => {
-      const html = await renderPreview(md);
-      previewHtml = await sanitizePreviewHtml(html);
+      try {
+        const html = await renderPreview(md);
+        const safe = await sanitizePreviewHtml(html);
+        if (run === previewRun) previewHtml = safe;
+      } catch {
+        if (run === previewRun) previewHtml = '';
+      }
     }, 150);
     return () => clearTimeout(handle);
   });
@@ -70,7 +79,14 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
   </div>
   <div class="flex items-center gap-2">
     <ComponentPalette {registry} {insert} />
-    <button type="button" class="btn btn-sm btn-ghost" aria-pressed={showPreview} onclick={togglePreview}>
+    <button
+      type="button"
+      class="btn btn-sm btn-ghost"
+      aria-pressed={showPreview}
+      aria-expanded={showPreview}
+      aria-controls="cairn-preview"
+      onclick={togglePreview}
+    >
       {showPreview ? 'Hide preview' : 'Show preview'}
     </button>
   </div>
@@ -92,6 +108,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
     </div>
     {#if showPreview}
       <section
+        id="cairn-preview"
         aria-label="Preview"
         class="rounded-box border border-base-300 bg-base-100 prose mt-4 max-w-none p-4"
       >

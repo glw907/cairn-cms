@@ -92,4 +92,13 @@ describe('EditPage', () => {
       .toContain('safe');
     expect(screen.container.querySelector('section[aria-label="Preview"]')!.innerHTML).not.toContain('onerror');
   });
+
+  it('preview toggle button exposes aria-expanded reflecting preview state', async () => {
+    const screen = render(EditPage, postProps());
+    const btn = screen.getByRole('button', { name: /show preview/i });
+    await expect.element(btn).toHaveAttribute('aria-expanded', 'false');
+    await btn.click();
+    const btnAfter = screen.getByRole('button', { name: /hide preview/i });
+    await expect.element(btnAfter).toHaveAttribute('aria-expanded', 'true');
+  });
 });

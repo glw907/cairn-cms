@@ -19,4 +19,10 @@ describe('sanitizePreviewHtml', () => {
     expect(out).not.toContain('javascript:');
     expect(out).toContain('click');
   });
+
+  it('adds rel="noopener noreferrer" to target="_blank" anchors', async () => {
+    const out = await sanitizePreviewHtml('<a href="https://x.test" target="_blank">x</a>');
+    expect(out).toContain('rel="noopener noreferrer"');
+    expect(out).toContain('x');
+  });
 });

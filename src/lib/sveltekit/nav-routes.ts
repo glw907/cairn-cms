@@ -4,9 +4,9 @@
 import { redirect, error } from '@sveltejs/kit';
 import { appCredentials, type GithubKeyEnv } from '../github/credentials.js';
 import { installationToken } from '../github/signing.js';
-import { listMarkdown, readRaw } from '../github/repo.js';
+import { listMarkdown, readRaw, commitFile } from '../github/repo.js';
 import { CommitConflictError } from '../github/types.js';
-import { parseSiteConfig, extractMenu, type NavNode } from '../nav/site-config.js';
+import { parseSiteConfig, extractMenu, validateNavTree, setMenu, type NavNode } from '../nav/site-config.js';
 import type { CairnRuntime } from '../content/types.js';
 import type { ContentEvent } from './content-routes.js';
 import type { Editor } from '../auth/types.js';
@@ -96,6 +96,44 @@ export function createNavRoutes(runtime: CairnRuntime, deps: NavRoutesDeps = {})
     };
   }
 
-  // mintToken, sessionOf, and isConflict are returned so Task 4's navSave can reach them.
-  return { navLoad, mintToken, sessionOf, isConflict };
+  /** Save the nav tree: validate, then read-modify-commit the one menu with the session editor as author. */
+  async function navSave(event: ContentEvent): Promise<never> {
+    const editor = sessionOf(event);
+    const config = runtime.navMenu;
+    if (!config) throw error(404, 'No navigation menu configured');
+    const maxDepth = config.maxDepth ?? 2;
+
+    const form = await event.request.formData();
+    let tree: NavNode[];
+    try {
+      tree = validateNavTree(JSON.parse(String(form.get('tree') ?? '[]')), maxDepth);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Invalid navigation';
+      throw redirect(303, `/admin/nav?error=${encodeURIComponent(message)}`);
+    }
+
+    const token = await mintToken(event.platform?.env ?? {});
+    const raw = await readRaw(runtime.backend, config.configPath, token);
+    if (raw === null) throw error(404, `Site config not found at ${config.configPath}`);
+
+    try {
+      await commitFile(
+        runtime.backend,
+        config.configPath,
+        setMenu(raw, config.menuName, tree),
+        { message: `Update ${config.label.toLowerCase()}`, author: { name: editor.displayName, email: editor.email } },
+        token,
+      );
+    } catch (err) {
+      if (isConflict(err)) {
+        const message = 'The site config changed since you opened it. Reload and reapply your edits.';
+        throw redirect(303, `/admin/nav?error=${encodeURIComponent(message)}`);
+      }
+      throw err;
+    }
+
+    throw redirect(303, '/admin/nav?saved=1');
+  }
+
+  return { navLoad, navSave, mintToken, sessionOf, isConflict };
 }

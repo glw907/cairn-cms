@@ -1,0 +1,23 @@
+{
+  "name": "cairn-showcase",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
+  },
+  "dependencies": {
+    "@glw907/cairn-cms": "file:../.."
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-node": "^5",
+    "@sveltejs/kit": "^2",
+    "@sveltejs/vite-plugin-svelte": "^7",
+    "svelte": "^5",
+    "svelte-check": "^4",
+    "typescript": "^6",
+    "vite": "^8"
+  }
+}

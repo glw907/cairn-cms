@@ -1,0 +1,115 @@
+// The admin content routes: the load and action functions a site's /admin/** shims call.
+// A factory closes over the composed runtime and the GitHub token mint, so the read and
+// commit paths are unit-testable against a fetch double with an injected token, mirroring the
+// email `send` injection in auth-routes. A shim stays one line: `export const load = routes.editLoad`.
+import { redirect, error } from '@sveltejs/kit';
+import { findConcept } from '../content/concepts.js';
+import { appCredentials, type GithubKeyEnv } from '../github/credentials.js';
+import { installationToken } from '../github/signing.js';
+import type { CairnRuntime, ConceptDescriptor, FrontmatterField } from '../content/types.js';
+import type { Editor, Role } from '../auth/types.js';
+
+/** A sidebar concept entry: just enough to render the nav without shipping validators to the client. */
+export interface NavConcept {
+  id: string;
+  label: string;
+}
+
+/** The admin layout's data: site identity, the signed-in user, the nav, and the active path. */
+export interface LayoutData {
+  siteName: string;
+  user: { displayName: string; role: Role };
+  concepts: NavConcept[];
+  pathname: string;
+  canManageEditors: boolean;
+}
+
+/** One row in a concept's list view. */
+export interface EntrySummary {
+  id: string;
+  title: string;
+  date: string | null;
+  draft: boolean;
+}
+
+/** The concept list view's data. */
+export interface ListData {
+  conceptId: string;
+  label: string;
+  /** Posts carry a date in the new-entry form; pages do not (concept routing, spec §7.2). */
+  dated: boolean;
+  entries: EntrySummary[];
+  /** A listing failure degrades to an inline message rather than a thrown 500. */
+  error: string | null;
+  /** A create-form bounce error read from `?error`. */
+  formError: string | null;
+}
+
+/** The editor's data. `frontmatter` holds form-ready values (dates already `YYYY-MM-DD`). */
+export interface EditData {
+  conceptId: string;
+  id: string;
+  label: string;
+  fields: FrontmatterField[];
+  frontmatter: Record<string, unknown>;
+  body: string;
+  title: string;
+  isNew: boolean;
+  saved: boolean;
+  error: string | null;
+}
+
+/** The structural event the content routes read; a real SvelteKit RequestEvent satisfies it. */
+export interface ContentEvent {
+  url: URL;
+  params: Record<string, string>;
+  request: Request;
+  locals: { editor?: Editor | null };
+  platform?: { env?: GithubKeyEnv };
+}
+
+/** Injectable dependencies; tests stub the token mint to avoid signing a real key. */
+export interface ContentRoutesDeps {
+  /** Mint a GitHub App installation token from the Worker env. Defaults to the real signer. */
+  mintToken?: (env: GithubKeyEnv) => Promise<string>;
+}
+
+/** The signed-in editor the guard resolved, or a login redirect. Kept local to decouple event shapes. */
+function sessionOf(event: ContentEvent): Editor {
+  const editor = event.locals.editor;
+  if (!editor) throw redirect(303, '/admin/login');
+  return editor;
+}
+
+/** Look up the concept named by the `[concept]` route param, or a 404. */
+function conceptOf(runtime: CairnRuntime, params: Record<string, string>): ConceptDescriptor {
+  const concept = findConcept(runtime.concepts, params.concept ?? '');
+  if (!concept) throw error(404, `Unknown content type: ${params.concept ?? ''}`);
+  return concept;
+}
+
+export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDeps = {}) {
+  const mintToken =
+    deps.mintToken ?? ((env: GithubKeyEnv) => installationToken(appCredentials(runtime.backend, env)));
+
+  /** Layout load for every admin page: the nav, the user, and the active path. */
+  function layoutLoad(event: ContentEvent): LayoutData {
+    const editor = sessionOf(event);
+    return {
+      siteName: runtime.siteName,
+      user: { displayName: editor.displayName, role: editor.role },
+      concepts: runtime.concepts.map((c) => ({ id: c.id, label: c.label })),
+      pathname: event.url.pathname,
+      canManageEditors: editor.role === 'owner',
+    };
+  }
+
+  /** Redirect /admin to the first concept's list (spec §7.6: land on the first concept). */
+  function indexRedirect(): never {
+    const first = runtime.concepts[0];
+    if (!first) throw error(404, 'No content types configured');
+    throw redirect(307, `/admin/${first.id}`);
+  }
+
+  return { layoutLoad, indexRedirect, mintToken };
+}

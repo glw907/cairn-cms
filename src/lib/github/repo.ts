@@ -81,5 +81,47 @@ export async function readRaw(repo: RepoRef, path: string, token?: string): Prom
   return res.text();
 }
 
-export { ghHeaders, API, CommitConflictError };
-export type { CommitAuthor };
+/** Standard (padded) base64 of UTF-8 text, the form the contents API expects. */
+function toBase64(text: string): string {
+  return btoa(Array.from(new TextEncoder().encode(text), (b) => String.fromCharCode(b)).join(''));
+}
+
+/** The current blob sha for a path, or null if the file does not yet exist. */
+export async function fileSha(repo: RepoRef, path: string, token: string): Promise<string | null> {
+  const res = await fetch(contentsUrl(repo, path), { headers: ghHeaders('application/vnd.github+json', token) });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`GitHub stat ${path} failed: ${res.status}`);
+  return ((await res.json()) as { sha: string }).sha;
+}
+
+/**
+ * Commit `content` to `path` on the configured branch through the contents API. The author is
+ * the editor; the committer is omitted, so GitHub attributes it to the App (`cairn-cms[bot]`).
+ * Updates the file in place when it exists (passing its sha), creates it otherwise. Returns the
+ * commit sha. A stale-sha 409 (someone committed in between) becomes a `CommitConflictError`,
+ * so the save fails safe: re-fetch and ask the editor to reapply, never a merge.
+ */
+export async function commitFile(
+  repo: RepoRef,
+  path: string,
+  content: string,
+  opts: { message: string; author: CommitAuthor },
+  token: string,
+): Promise<string> {
+  const sha = await fileSha(repo, path, token);
+  const url = `${API}/repos/${repo.owner}/${repo.repo}/contents/${path.replace(/^\/+|\/+$/g, '')}`;
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: { ...ghHeaders('application/vnd.github+json', token), 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      message: opts.message,
+      content: toBase64(content),
+      branch: repo.branch,
+      author: opts.author,
+      ...(sha ? { sha } : {}),
+    }),
+  });
+  if (res.status === 409) throw new CommitConflictError(path);
+  if (!res.ok) throw new Error(`GitHub commit ${path} failed: ${res.status} ${await res.text()}`);
+  return ((await res.json()) as { commit: { sha: string } }).commit.sha;
+}

@@ -114,7 +114,7 @@ export function createNavRoutes(runtime: CairnRuntime, deps: NavRoutesDeps = {})
 
     const token = await mintToken(event.platform?.env ?? {});
     const raw = await readRaw(runtime.backend, config.configPath, token);
-    if (raw === null) throw error(404, `Site config not found at ${config.configPath}`);
+    if (raw === null) throw error(404, 'Site config not found');
 
     try {
       await commitFile(

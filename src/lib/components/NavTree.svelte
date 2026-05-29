@@ -39,6 +39,10 @@ validates on save.
     return out;
   }
 
+  // untrack here is not for runtime behavior -- $state runs its initializer once regardless.
+  // It suppresses the Svelte compiler warning that `data` (a prop) is referenced outside a
+  // reactive context. The component is always remounted on save/error (both redirect), so
+  // a one-time snapshot of the initial tree is correct.
   let rows = $state<Row[]>(untrack(() => flatten(data.tree, 0, [])));
   // depth is 0-based internally; maxDepth in the config is 1-based (1 = flat, 2 = one nesting level)
   const maxDepthIndex = $derived(data.menu.maxDepth - 1);
@@ -101,9 +105,9 @@ validates on save.
   </div>
 
   <div class="sortable-list-area" style="min-height:2.5rem">
-    <SortableList.Root ondragend={handleDragEnd}>
+    <SortableList.Root ondragend={handleDragEnd} aria-label="Navigation items">
       {#each rows as row, index (row.id)}
-        <SortableList.Item id={row.id} {index}>
+        <SortableList.Item id={row.id} {index} aria-label={`${row.label || 'Untitled'}, level ${row.depth + 1}`}>
           <div class="flex items-center gap-2 p-2" style={`margin-left:${row.depth * 1.5}rem`}>
             <input class="input input-sm flex-1" placeholder="Label" aria-label="Label" bind:value={row.label} />
             <input

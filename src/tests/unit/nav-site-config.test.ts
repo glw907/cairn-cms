@@ -39,6 +39,42 @@ describe('validateNavTree', () => {
   it('drops an empty children array rather than keeping the key', () => {
     expect(validateNavTree([{ label: 'A', children: [] }], 2)).toEqual([{ label: 'A' }]);
   });
+
+  it('rejects a javascript: url', () => {
+    expect(() => validateNavTree([{ label: 'X', url: 'javascript:alert(1)' }], 1)).toThrow(/URL must start with/i);
+  });
+
+  it('rejects a data: url', () => {
+    expect(() => validateNavTree([{ label: 'X', url: 'data:text/html,<h1>hi</h1>' }], 1)).toThrow(/URL must start with/i);
+  });
+
+  it('accepts /path as a safe url', () => {
+    expect(validateNavTree([{ label: 'X', url: '/path' }], 1)).toEqual([{ label: 'X', url: '/path' }]);
+  });
+
+  it('accepts #anchor as a safe url', () => {
+    expect(validateNavTree([{ label: 'X', url: '#anchor' }], 1)).toEqual([{ label: 'X', url: '#anchor' }]);
+  });
+
+  it('accepts https://example.com as a safe url', () => {
+    expect(validateNavTree([{ label: 'X', url: 'https://example.com' }], 1)).toEqual([{ label: 'X', url: 'https://example.com' }]);
+  });
+
+  it('accepts mailto:a@b.com as a safe url', () => {
+    expect(validateNavTree([{ label: 'X', url: 'mailto:a@b.com' }], 1)).toEqual([{ label: 'X', url: 'mailto:a@b.com' }]);
+  });
+
+  it('accepts tel:+1234 as a safe url', () => {
+    expect(validateNavTree([{ label: 'X', url: 'tel:+1234' }], 1)).toEqual([{ label: 'X', url: 'tel:+1234' }]);
+  });
+
+  it('rejects a label over 500 characters', () => {
+    expect(() => validateNavTree([{ label: 'A'.repeat(501) }], 1)).toThrow(/label/i);
+  });
+
+  it('rejects a url over 2048 characters', () => {
+    expect(() => validateNavTree([{ label: 'X', url: '/' + 'a'.repeat(2048) }], 1)).toThrow(/url/i);
+  });
 });
 
 describe('parseSiteConfig', () => {

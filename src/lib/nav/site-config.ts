@@ -14,6 +14,15 @@ export interface NavNode {
 /** Total node cap across the whole tree, a guard against a runaway payload. */
 export const MAX_NAV_NODES = 200;
 
+/** Maximum character length for a node label. */
+export const MAX_LABEL_LENGTH = 500;
+
+/** Maximum character length for a node URL. */
+export const MAX_URL_LENGTH = 2048;
+
+/** Allowlist for safe URL schemes: site-relative, in-page anchors, http(s), mailto, and tel. */
+const SAFE_URL = /^(\/|#|https?:\/\/|mailto:|tel:)/i;
+
 export class NavValidationError extends Error {
   constructor(message: string) {
     super(message);
@@ -37,9 +46,15 @@ export function validateNavTree(value: unknown, maxDepth: number): NavNode[] {
       const item = raw as Record<string, unknown>;
       const label = typeof item.label === 'string' ? item.label.trim() : '';
       if (!label) throw new NavValidationError('Each item needs a label');
+      if (label.length > MAX_LABEL_LENGTH) throw new NavValidationError('Label is too long (max 500 characters)');
       if (++count > MAX_NAV_NODES) throw new NavValidationError('Too many navigation items');
       const node: NavNode = { label };
-      if (typeof item.url === 'string' && item.url.trim()) node.url = item.url.trim();
+      if (typeof item.url === 'string' && item.url.trim()) {
+        const url = item.url.trim();
+        if (url.length > MAX_URL_LENGTH) throw new NavValidationError('URL is too long (max 2048 characters)');
+        if (!SAFE_URL.test(url)) throw new NavValidationError('URL must start with /, #, http(s)://, mailto:, or tel:');
+        node.url = url;
+      }
       if (item.children !== undefined) {
         const children = walk(item.children, depth + 1);
         if (children.length) node.children = children;

@@ -63,6 +63,7 @@
     "@rodrigodagostino/svelte-sortable-list": "^2.1.17",
     "@types/hast": "^3.0.4",
     "@types/mdast": "^4.0.4",
+    "dompurify": "^3.4.7",
     "gray-matter": "^4",
     "hastscript": "^9.0.1",
     "mdast-util-directive": "^3.1.0",

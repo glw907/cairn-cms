@@ -135,5 +135,5 @@ export function createNavRoutes(runtime: CairnRuntime, deps: NavRoutesDeps = {})
     throw redirect(303, '/admin/nav?saved=1');
   }
 
-  return { navLoad, navSave, mintToken, sessionOf, isConflict };
+  return { navLoad, navSave };
 }

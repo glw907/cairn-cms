@@ -16,7 +16,7 @@ export function composeRuntime(
 ): CairnRuntime {
   const content: Record<string, ConceptConfig | undefined> = { ...adapter.content };
   for (const extension of extensions) {
-    Object.assign(content, extension.content);
+    if (extension.content) Object.assign(content, extension.content);
   }
   return {
     siteName: adapter.siteName,

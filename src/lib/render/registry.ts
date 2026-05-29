@@ -32,11 +32,11 @@ export interface ComponentRegistry {
  * Build a registry from a site's component definitions. The single source the render
  * pipeline (directive stamp plus rehype dispatch) and the editor palette both read.
  */
-export function defineRegistry(input: { components: ComponentDef[] }): ComponentRegistry {
-  const byName = new Map(input.components.map((c) => [c.name, c]));
+export function defineRegistry({ components }: { components: ComponentDef[] }): ComponentRegistry {
+  const byName = new Map(components.map((c) => [c.name, c]));
   return {
-    defs: input.components,
-    names: input.components.map((c) => c.name),
+    defs: components,
+    names: components.map((c) => c.name),
     get: (name) => byName.get(name),
     defaultIcon: (name, role) => (role ? byName.get(name)?.defaultIconByRole?.[role] : undefined),
   };

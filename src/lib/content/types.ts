@@ -1,0 +1,197 @@
+// cairn-cms: the adapter contract a site implements, and the engine-internal descriptors
+// the contract normalizes into.
+//
+// The adapter is the single seam the engine consumes (spec §8). A site supplies a
+// `CairnAdapter` at `src/lib/cairn.config.ts` declaring its backend repo, the content
+// concepts it enables, its magic-link sender, and a design-accurate `renderPreview`. The
+// engine never hard-codes a concept, directory, or field; it reads them here. Field
+// descriptors are plain data so a `load` function can hand them across the server-to-client
+// boundary to the editor form.
+import type { ComponentRegistry } from '../render/registry.js';
+
+/** Common to every frontmatter field: the frontmatter key, the form label, and whether it is required. */
+interface FieldBase {
+  /** Frontmatter key and form input name. */
+  name: string;
+  /** Form label. */
+  label: string;
+  /** A required field fails validation when empty (spec §7.4). */
+  required?: boolean;
+}
+
+/** A single-line text input. */
+export interface TextField extends FieldBase {
+  type: 'text';
+}
+/** A multi-line text input. */
+export interface TextareaField extends FieldBase {
+  type: 'textarea';
+  /** Visible rows; the editor picks a default when omitted. */
+  rows?: number;
+}
+/** A `YYYY-MM-DD` date input. */
+export interface DateField extends FieldBase {
+  type: 'date';
+}
+/** A checkbox; absent means false. */
+export interface BooleanField extends FieldBase {
+  type: 'boolean';
+}
+/** A closed-vocabulary tag set, rendered as checkboxes (ecnordic). */
+export interface TagsField extends FieldBase {
+  type: 'tags';
+  /** The controlled vocabulary. */
+  options: readonly string[];
+}
+/** Free-form tags, edited as one comma-separated input (907). */
+export interface FreeTagsField extends FieldBase {
+  type: 'freetags';
+  placeholder?: string;
+}
+
+/**
+ * The discriminated union the per-concept frontmatter form is generated from. Adding a
+ * field type is one variant here plus one decode arm in `frontmatterFromForm` and one in
+ * `validateFields`.
+ */
+export type FrontmatterField =
+  | TextField
+  | TextareaField
+  | DateField
+  | BooleanField
+  | TagsField
+  | FreeTagsField;
+
+/**
+ * A validator's verdict. On success it carries the normalized frontmatter to commit; on
+ * failure it carries field-keyed error messages (the empty key is a form-level error).
+ * Invalid input bounces to the form and never reaches git (spec §7.4).
+ */
+export type ValidationResult =
+  | { ok: true; data: Record<string, unknown> }
+  | { ok: false; errors: Record<string, string> };
+
+/**
+ * Per-site configuration for one content concept (spec §8). Concept-fixed behavior such as
+ * routability is not here; it lives in the engine's routing table (`CONCEPT_ROUTING`).
+ */
+export interface ConceptConfig {
+  /** Repo-relative content directory, e.g. "src/content/posts". */
+  dir: string;
+  /** Sidebar label; defaults from the concept id when omitted. */
+  label?: string;
+  /** Drives the per-concept frontmatter form, in order. */
+  fields: FrontmatterField[];
+  /** Validate submitted frontmatter before any commit. */
+  validate(frontmatter: Record<string, unknown>, body: string): ValidationResult;
+}
+
+/** The GitHub App backend a site reads from and commits to (spec §8). Plain data the GitHub engine (Plan 03) consumes. */
+export interface BackendConfig {
+  owner: string;
+  repo: string;
+  /** Commit target, e.g. "main". */
+  branch: string;
+  appId: string;
+  installationId: string;
+}
+
+/** Magic-link sender identity for Cloudflare Email Sending. */
+export interface SenderConfig {
+  from: string;
+  replyTo?: string;
+}
+
+/** A git-committed YAML menu this site's nav editor manages (Plan 06). */
+export interface NavMenuConfig {
+  /** Repo-relative path to the site-config YAML, e.g. "src/lib/site.config.yaml". */
+  configPath: string;
+  /** Key within the file's menus map, e.g. "primary". */
+  menuName: string;
+  /** Sidebar label for the menu. */
+  label: string;
+  /** Max nesting depth allowed in the editor; defaults to 2. */
+  maxDepth?: number;
+}
+
+/** Reserved asset slot (seam 4). Typed and unused in the rebuild; R7/R9 read it later with no contract change. */
+export interface AssetConfig {
+  /** Repo-relative asset roots, e.g. ["static/images"]. */
+  roots: string[];
+  /** Public URL base, e.g. "/images". */
+  publicBase: string;
+}
+
+/** The single seam the engine consumes. A site implements this at `src/lib/cairn.config.ts`. */
+export interface CairnAdapter {
+  siteName: string;
+  /**
+   * Which content concepts this site enables. A future `fragments?` key attaches here with
+   * no reshape of the contract (seam 1). A site never has two of the same concept.
+   */
+  content: {
+    posts?: ConceptConfig;
+    pages?: ConceptConfig;
+  };
+  backend: BackendConfig;
+  sender: SenderConfig;
+  /** Design-accurate preview: the same render pipeline the site ships. */
+  renderPreview(md: string): string | Promise<string>;
+  /** Directive component registry; the renderer and the future palette derive from it (seam 3). */
+  registry?: ComponentRegistry;
+  navMenu?: NavMenuConfig;
+  assets?: AssetConfig;
+}
+
+/**
+ * Concept-fixed routing for a normalized concept (spec §7.2). Posts are dated feed entries;
+ * pages are plain navigable structure. Not in adapter config.
+ */
+export interface RoutingRule {
+  /** Routable as a standalone URL. A future Fragments concept is embedded, not routable. */
+  routable: boolean;
+  /** Carries a date (posts). */
+  dated: boolean;
+  /** Appears in feeds and the sitemap (posts). */
+  inFeeds: boolean;
+}
+
+/**
+ * The engine-internal, uniform view of one concept after normalization (seam 1). The admin
+ * nav, the list views, and the editor all read this, never the raw config.
+ */
+export interface ConceptDescriptor {
+  /** Concept id, the key under `content`, e.g. "posts". */
+  id: string;
+  label: string;
+  dir: string;
+  routing: RoutingRule;
+  fields: FrontmatterField[];
+  validate(frontmatter: Record<string, unknown>, body: string): ValidationResult;
+}
+
+/**
+ * A future build-time extension (seam 2). It folds in the same way the adapter does and
+ * contributes the same kinds of things. Reserved and unused in the rebuild; the shape is
+ * fixed now so the extension contract is additive later.
+ */
+export interface CairnExtension {
+  /** Additional concepts, merged after the adapter's. */
+  content?: Record<string, ConceptConfig>;
+  // Future: nav entries, route logic, components, field types, save hooks.
+}
+
+/**
+ * The composed runtime the engine serves from (seam 2 output). The single aggregation point
+ * (`composeRuntime`) folds the adapter and any extensions into this shape.
+ */
+export interface CairnRuntime {
+  siteName: string;
+  concepts: ConceptDescriptor[];
+  backend: BackendConfig;
+  sender: SenderConfig;
+  renderPreview(md: string): string | Promise<string>;
+  registry?: ComponentRegistry;
+  navMenu?: NavMenuConfig;
+  assets?: AssetConfig;
+}

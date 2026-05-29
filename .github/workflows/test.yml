@@ -1,0 +1,21 @@
+name: test
+
+on:
+  push:
+    branches: [main, rebuild]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          # Pin Node 22 LTS: vitest-pool-workers has a known console bug on Node 24.
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - run: npm run package

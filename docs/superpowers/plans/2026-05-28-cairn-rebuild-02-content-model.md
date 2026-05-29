@@ -244,7 +244,7 @@ describe('adapter contract types', () => {
   });
 
   it('narrows each field type to its widget', () => {
-    expect(postFields.map(widgetFor)).toEqual(['input', 'input', 'input', 'checkbox', 'checkboxes:2']);
+    expect(postFields.map(widgetFor)).toEqual(['input', 'input', 'input', 'checkboxes:2', 'checkbox']);
   });
 
   it('discriminates a ValidationResult', () => {
@@ -1326,4 +1326,44 @@ Expected: 0 errors; all unit and integration projects pass.
 - **Divergences are deliberate.** `validate` returns a `ValidationResult` rather than throwing, the field union keeps the legacy per-type detail the form needs, and `validateFields` is added as the engine baseline. All three are stated in the divergences section.
 - **Seam discipline.** Every module is pure and I/O-free; nothing imports a Worker binding, D1, or a site's `App.*`. The adapter references only the registry type, not the render pipeline.
 - **No forward references.** `render/registry.ts` (Task 1) defines `ComponentRegistry` before `content/types.ts` (Task 2) imports it; the types precede the modules that use them (Tasks 3 through 7); `normalizeConcepts` (Task 6) precedes `composeRuntime` (Task 7). The shared fixture lands in Task 2 with trivial validators, so Tasks 4 through 7 reuse it without depending on Task 5.
-- **Deferred by design.** The Svelte forms, list views, and editor that consume this model arrive in Plan 05. The component palette that derives from the registry is deferred behind seam 3. The `CairnExtension` is reserved and unused; only its shape is fixed.
+- **Deferred by design.** The Svelte forms, list views, and editor that consume this model arrive in Plan 05. A component palette derives from the registry behind seam 3, also deferred. `CairnExtension` is reserved and unused; only its shape is fixed.
+
+---
+
+## Execution record (2026-05-28)
+
+Plan 02 executed end to end in one session against the test suite. Final gate: `svelte-check`
+0 errors (the one "no svelte input files" warning stays until Plan 05), `npm test` 85 passing
+(83 from the verbatim plan plus 2 regression tests from the review gate), and `npm run package`
+builds `dist/` with the content and render-registry modules. All nine tasks landed as their own
+commits on branch `rebuild`. A leak check confirms a concept-keyed content model with no `kind`
+discriminator or collections array.
+
+**One deviation from the verbatim plan.** Task 2's `widgetFor` expectation had `tags` and `boolean`
+swapped relative to the fixture's field order (title, date, description, tags, draft). That fixture
+order is canonical, since it mirrors ecnordic, so the test now expects
+`['input', 'input', 'input', 'checkboxes:2', 'checkbox']`. Plan text above is corrected to match.
+
+**Review gate.** Ran the code-simplifier plus one focused correctness review (opus, read-only). None
+of the four specialized review subagents applied: this plan touched no Svelte, no Workers or D1, no
+auth, and no DaisyUI surface. Findings folded in:
+
+- Code-simplifier destructured `defineRegistry`'s parameter and made `composeRuntime`'s extension
+  merge guard explicit.
+- `validateFields` now coerces a JS `Date` in the `date` case. gray-matter parses an unquoted YAML
+  date into a `Date`, so a site revalidating `parseMarkdown` output (not just the string-valued edit
+  form) would have seen a valid date reported as empty. A regression test covers it.
+- `frontmatterFromForm` normalizes an absent text field to `''` rather than `FormData.get`'s `null`,
+  so a caller reading a text value never gets `null`. A regression test covers it.
+- `CONCEPT_ROUTING` is now `Readonly`, so a site cannot corrupt the engine's routing table.
+- Extension-versus-adapter key collisions resolve last-write-wins in `composeRuntime`, marked
+  deliberate in a comment since the extension seam is reserved and unused.
+- `idFromFilename` documents that the caller passes a basename, not a path.
+
+**Deferred by design, not a defect.** A reviewer noted that duplicate field names in a concept's
+`fields` array are last-write-wins with no runtime guard. That is an adapter authoring error, not an
+engine bug, and a uniqueness guard is held as YAGNI until a real trigger.
+
+**Carryover for Plan 03.** Listing a directory through the Git Trees API must strip any path prefix
+before calling `idFromFilename`, since the function expects a basename. `BackendConfig` (owner, repo,
+branch, appId, installationId) is the contract the GitHub backend reads.

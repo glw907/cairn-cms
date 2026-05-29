@@ -4,7 +4,10 @@
 // email `send` injection in auth-routes. A shim stays one line: `export const load = routes.editLoad`.
 import { redirect, error } from '@sveltejs/kit';
 import { findConcept } from '../content/concepts.js';
+import { parseMarkdown, dateInputValue } from '../content/frontmatter.js';
+import { isValidId, slugify, filenameFromId } from '../content/ids.js';
 import { appCredentials, type GithubKeyEnv } from '../github/credentials.js';
+import { listMarkdown, readRaw } from '../github/repo.js';
 import { installationToken } from '../github/signing.js';
 import type { CairnRuntime, ConceptDescriptor, FrontmatterField } from '../content/types.js';
 import type { Editor, Role } from '../auth/types.js';
@@ -111,5 +114,58 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     throw redirect(307, `/admin/${first.id}`);
   }
 
-  return { layoutLoad, indexRedirect, mintToken };
+  /** Read a file's frontmatter for its list row, degrading to the id on any read failure. */
+  async function summarize(file: { id: string; path: string }, token: string): Promise<EntrySummary> {
+    try {
+      const raw = await readRaw(runtime.backend, file.path, token);
+      if (raw === null) return { id: file.id, title: file.id, date: null, draft: false };
+      const { frontmatter } = parseMarkdown(raw);
+      const title = typeof frontmatter.title === 'string' && frontmatter.title.trim() ? frontmatter.title : file.id;
+      const date = dateInputValue(frontmatter.date) || null;
+      return { id: file.id, title, date, draft: frontmatter.draft === true };
+    } catch {
+      return { id: file.id, title: file.id, date: null, draft: false };
+    }
+  }
+
+  /** List a concept's entries. A listing failure degrades to an inline error, not a thrown 500. */
+  async function listLoad(event: ContentEvent): Promise<ListData> {
+    sessionOf(event);
+    const concept = conceptOf(runtime, event.params);
+    const formError = event.url.searchParams.get('error');
+    const base = { conceptId: concept.id, label: concept.label, dated: concept.routing.dated, formError };
+    let token: string;
+    try {
+      token = await mintToken(event.platform?.env ?? {});
+    } catch {
+      return { ...base, entries: [], error: 'Could not authenticate with GitHub.' };
+    }
+    try {
+      const files = await listMarkdown(runtime.backend, concept.dir, token);
+      const entries = await Promise.all(files.map((f) => summarize(f, token)));
+      return { ...base, entries, error: null };
+    } catch {
+      return { ...base, entries: [], error: 'Could not load this content type from GitHub.' };
+    }
+  }
+
+  /** Create a new entry: validate the slug, refuse to clobber, and redirect to the editor. */
+  async function createAction(event: ContentEvent): Promise<never> {
+    sessionOf(event);
+    const concept = conceptOf(runtime, event.params);
+    const form = await event.request.formData();
+    const raw = String(form.get('slug') ?? '').trim() || slugify(String(form.get('title') ?? ''));
+    const bounce = (msg: string): never => {
+      throw redirect(303, `/admin/${concept.id}?error=${encodeURIComponent(msg)}`);
+    };
+    if (!isValidId(raw)) bounce('Enter a valid slug: lowercase letters, numbers, and hyphens.');
+
+    const token = await mintToken(event.platform?.env ?? {});
+    const existing = await readRaw(runtime.backend, `${concept.dir}/${filenameFromId(raw)}`, token);
+    if (existing !== null) bounce('An entry with that slug already exists.');
+
+    throw redirect(303, `/admin/${concept.id}/${raw}?new=1`);
+  }
+
+  return { layoutLoad, indexRedirect, listLoad, createAction, mintToken };
 }

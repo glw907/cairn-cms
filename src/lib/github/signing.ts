@@ -83,14 +83,15 @@ export async function installationToken(creds: AppCredentials): Promise<string> 
  * Deploy-time self-test for the App signer: sign a dummy JWT with the configured key. It
  * exercises the brittle PKCS#1-to-PKCS#8 conversion and the Web Crypto import and sign with
  * no network call and no secret in the result, so `/admin/healthz` (Plan 05) catches a bad
- * or rotated key before an editor's save fails. Returns `{ ok: false, detail }`, never throws.
+ * or rotated key before an editor's save fails. The `detail` is a fixed classifier, never the
+ * raw crypto error, so the surfaced health result cannot echo key bytes. Never throws.
  */
 export async function signingSelfTest(appId: string, privateKeyB64: string): Promise<{ ok: boolean; detail?: string }> {
   try {
     const jwt = await appJwt(appId, atob(privateKeyB64));
     if (jwt.split('.').length !== 3) return { ok: false, detail: 'malformed JWT' };
     return { ok: true };
-  } catch (err) {
-    return { ok: false, detail: err instanceof Error ? err.message : 'sign failed' };
+  } catch {
+    return { ok: false, detail: 'key import or sign failed' };
   }
 }

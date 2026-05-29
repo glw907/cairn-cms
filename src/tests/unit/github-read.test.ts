@@ -70,6 +70,12 @@ describe('listMarkdown', () => {
     expect(fetchMock.mock.calls[0][0]).toBe(treeUrl(REPO));
   });
 
+  it('throws on a truncated tree rather than returning a partial list', async () => {
+    const tree = { truncated: true, tree: [{ path: 'src/content/posts/a.md', type: 'blob' }] };
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(tree), { status: 200 }));
+    await expect(listMarkdown(REPO, 'src/content/posts')).rejects.toThrow(/truncated/);
+  });
+
   it('throws on a non-OK tree response', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('rate limited', { status: 403 }));
     await expect(listMarkdown(REPO, 'd')).rejects.toThrow(/403/);

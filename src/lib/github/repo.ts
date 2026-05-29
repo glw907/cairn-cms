@@ -55,11 +55,17 @@ export function markdownFilesIn(dir: string, tree: TreeEntry[]): RepoFile[] {
     .sort((a, b) => b.id.localeCompare(a.id));
 }
 
-/** List the markdown files in a concept directory through the Git Trees API. */
+/**
+ * List the markdown files in a concept directory through the Git Trees API. A truncated tree
+ * (GitHub caps the recursive listing near 100,000 entries) throws rather than returning a
+ * silent partial list; a concept directory sits far below that, and sharding is deferred
+ * until one approaches it (spec §7.3).
+ */
 export async function listMarkdown(repo: RepoRef, dir: string, token?: string): Promise<RepoFile[]> {
   const res = await fetch(treeUrl(repo), { headers: ghHeaders('application/vnd.github+json', token) });
   if (!res.ok) throw new Error(`GitHub tree ${repo.branch} failed: ${res.status}`);
-  const body = (await res.json()) as { tree: TreeEntry[] };
+  const body = (await res.json()) as { tree: TreeEntry[]; truncated: boolean };
+  if (body.truncated) throw new Error(`GitHub tree ${repo.branch} is truncated; ${dir} exceeds the listing cap`);
   return markdownFilesIn(dir, body.tree);
 }
 
@@ -100,6 +106,11 @@ export async function fileSha(repo: RepoRef, path: string, token: string): Promi
  * Updates the file in place when it exists (passing its sha), creates it otherwise. Returns the
  * commit sha. A stale-sha 409 (someone committed in between) becomes a `CommitConflictError`,
  * so the save fails safe: re-fetch and ask the editor to reapply, never a merge.
+ *
+ * Caller preconditions this layer cannot enforce, and the save action (Plan 05) must:
+ * `path` is confined to the concept's configured directory (the App token can write anywhere
+ * in the repo, so an unvalidated path could overwrite CI config or source), and `author` is
+ * derived from the verified server-side session, never from request input.
  */
 export async function commitFile(
   repo: RepoRef,

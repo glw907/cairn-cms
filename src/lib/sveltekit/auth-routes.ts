@@ -46,13 +46,24 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
     return { sent: true };
   }
 
+  /** GET /admin/login. Public. Carries the site name and an optional `?error` for the form. */
+  function loginLoad(event: RequestContext): { siteName: string; error: string | null } {
+    return { siteName: config.branding.siteName, error: event.url.searchParams.get('error') };
+  }
+
   /**
    * GET /admin/auth/confirm. Renders the confirm page and consumes nothing; only the POST
    * verifies. Sets Referrer-Policy: no-referrer so the token does not leak to a referrer.
    */
-  async function confirmLoad(event: RequestContext): Promise<{ token: string }> {
+  function confirmLoad(
+    event: RequestContext,
+  ): { token: string; siteName: string; error: string | null } {
     event.setHeaders({ 'Referrer-Policy': 'no-referrer' });
-    return { token: event.url.searchParams.get('token') ?? '' };
+    return {
+      token: event.url.searchParams.get('token') ?? '',
+      siteName: config.branding.siteName,
+      error: event.url.searchParams.get('error'),
+    };
   }
 
   /**
@@ -92,5 +103,5 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
     throw redirect(303, '/admin/login');
   }
 
-  return { requestAction, confirmLoad, confirmAction, logoutAction };
+  return { loginLoad, requestAction, confirmLoad, confirmAction, logoutAction };
 }

@@ -25,7 +25,8 @@ describe('confirm GET (scenario 5: consumes nothing)', () => {
   it('returns the token and leaves it in the store', async () => {
     const token = await liveToken('ed@x.dev');
     const data = await routes.confirmLoad(makeEvent({ url: `https://test.dev/admin/auth/confirm?token=${token}` }));
-    expect(data).toEqual({ token });
+    // confirmLoad now also returns siteName and error; toMatchObject checks only token and store state.
+    expect(data).toMatchObject({ token });
     expect(await countRows('magic_token')).toBe(1);
   });
 });

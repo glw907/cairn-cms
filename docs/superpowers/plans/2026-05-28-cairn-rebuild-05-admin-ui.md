@@ -2599,4 +2599,72 @@ git commit -m "feat(admin): wire the components and sveltekit barrels"
 
 ## Execution post-mortem
 
-_(Filled in at pass-end per the cairn-pass consolidation ritual: what was built, what was verified with evidence, decisions locked, and any blockers. Update the `cairn-rebuild-initiative` memory to match.)_
+All 16 tasks landed. Tasks 1 through 9 (the component test project, the auth page loads, the
+content-routes factory, `/admin/healthz`, the Carta server-boundary guard, the Warm Stone theme,
+and `AdminLayout`) landed in an earlier session. Tasks 10 through 16 (LoginPage, ConfirmPage,
+ConceptList, the MarkdownEditor seam, ComponentPalette, EditPage, ManageEditors, and the barrel
+exports) landed this session, executed task-by-task with a fresh implementer per task and a review
+after each.
+
+**Verified.** The full suite is green: 178 tests across the node `unit`, workerd `integration`,
+and real-Chromium `component` projects, `npm test` exit 0, and `npm run check` at 0 errors / 0
+warnings. Component tests run in a real browser via `vitest-browser-svelte`, so Svelte 5
+reactivity is exercised for real rather than under jsdom.
+
+**Review gate.** Three reviewers ran in parallel on Opus: `svelte-reviewer`,
+`daisyui-a11y-reviewer`, and `web-auth-security-reviewer`. Their in-scope findings were folded in
+before close (commits `038c4f2`, `d3d39f5`): the DaisyUI v5 class conversion, the accessible
+ComponentPalette dropdown, the contrast tokens, the fieldset legends, the nav label, the table
+header scope, and the noindex meta on the public auth pages.
+
+**Where the plan's draft code was wrong (corrected during execution):**
+- Task 12 (MarkdownEditor): carta-md's `Carta` class is not reachable as a named export through the
+  package entry under NodeNext, so the draft's named import failed `svelte-check` even though the
+  browser test passed. Fixed with a local structural type plus a cast on the dynamic
+  `import('carta-md')`, mirroring the legacy editor seam. Confirmed the real carta-md@4.11.2 API:
+  `sanitizer` is a required option, and `input.getSelection().start` / `input.insertAt` /
+  `input.update()` exist, so the cursor-insert uses them with an append fallback (commit `1b31c16`).
+- Task 14 (EditPage): the draft tripped Svelte 5 and strict typing. Fixed with `untrack()` for the
+  prop-seeded `body`, guarded `field as <Variant>` casts inside the discriminated-union branches
+  (template narrowing does not reduce them), a `satisfies FrontmatterField[]` on the test data, and
+  a `str()` coercion for the `unknown` frontmatter values.
+- DaisyUI v5: the draft form markup used `form-control`, `label-text`, and the `-bordered` input
+  modifiers, all removed in DaisyUI v5 (confirmed against the v5 upgrade guide). Converted every
+  form to v5 (default-bordered inputs, fieldset/legend for groups, Tailwind utilities for the
+  vertical field layout, solid muted-text tokens). See [[daisyui-v5-removed-form-classes]].
+
+**Process lesson.** A passing browser test is not the gate. Task 12 passed its component test but
+failed `svelte-check`, and the full `npm test` exited 1 on a carta-md teardown rejection while
+every assertion passed. The fix was to run `svelte-check` plus the full suite (and check the exit
+code) on every task, not just the task's targeted test. The carta teardown rejection (carta writes
+`innerHTML` to a detached node after unmount, only under the combined component run) is suppressed
+by signature in `src/tests/component/setup.ts` (commit `9e24ea3`); the proper fix is a disposal
+seam on MarkdownEditor or a carta-md release that cancels the render.
+
+**Locked decision (carry to Plan 07).** When the live preview is wired (the plan defers
+`previewHtml` to cutover), the `{@html previewHtml}` output MUST be sanitized (DOMPurify or the
+site render pipeline's `rehype-sanitize`) before it reaches the DOM. Carta runs with
+`sanitizer: false`, so an unsanitized preview of editor-authored markdown is a stored-XSS
+escalation vector for any co-editor who opens the same entry. This is the
+`web-auth-security-reviewer`'s one High finding, valid only once the preview is wired.
+
+**Carried follow-ups:**
+- Live preview render wiring plus the mandatory sanitize above: Plan 07 (cutover), where a host app
+  exists. The Playwright golden-path E2E (acceptance scenario 14) is deferred to the same point.
+- Mobile drawer (below `lg:`) has no focus trap, Escape-to-close, or focus return. The admin is
+  desktop-primary (`lg:drawer-open`), so this is an a11y follow-up, not a blocker.
+- The Plan 01 carried security items still stand: rate-limit plus `waitUntil` on
+  `/admin/auth/request`, `/admin` security headers (`X-Content-Type-Options`, frame-ancestors), the
+  `__Host-` cookie prefix, and the inherent token-in-URL exposure (already mitigated by short TTL,
+  single-use, and `Referrer-Policy: no-referrer`).
+- carta-md teardown rejection: replace the test-setup suppression with a disposal seam or a fixed
+  carta-md.
+
+**Blockers.** None. The live admin smoke (cairn-pass step 4) is not runnable in the library repo:
+there is no host SvelteKit app to serve `/admin`, and plan decision 5 defers the browser
+end-to-end to Plan 07 cutover. Recorded as deferred, consistent with Plans 01 through 04.
+
+**Infra note.** Subagent model assignment was corrected this pass: the workstation env forces
+`CLAUDE_CODE_SUBAGENT_MODEL=sonnet`, which a plain `general-purpose` implementer inherits, while the
+review agents pin `model: opus` in their definitions and run on Opus regardless. The cairn
+workspace CLAUDE.md was updated to state this. See [[subagent-model-assignment]].

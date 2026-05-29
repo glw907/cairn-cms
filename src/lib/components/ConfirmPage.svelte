@@ -14,6 +14,10 @@ in a hidden field and consumes nothing; only the explicit POST verifies (spec §
   let { data }: Props = $props();
 </script>
 
+<svelte:head>
+  <meta name="robots" content="noindex, nofollow" />
+</svelte:head>
+
 <div data-theme="cairn-admin" class="bg-base-200 text-base-content flex min-h-screen items-center justify-center p-4">
   <div class="rounded-box border border-base-300 bg-base-100 w-full max-w-sm p-6 text-center shadow">
     <h1 class="mb-4 text-lg font-semibold">Sign in to {data.siteName}</h1>

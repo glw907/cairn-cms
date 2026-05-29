@@ -17,6 +17,10 @@ the allowlist, so the page never leaks membership (spec §7.1).
   let { data, form }: Props = $props();
 </script>
 
+<svelte:head>
+  <meta name="robots" content="noindex, nofollow" />
+</svelte:head>
+
 <div data-theme="cairn-admin" class="bg-base-200 text-base-content flex min-h-screen items-center justify-center p-4">
   <div class="rounded-box border border-base-300 bg-base-100 w-full max-w-sm p-6 shadow">
     <h1 class="mb-1 text-lg font-semibold">Sign in to {data.siteName}</h1>

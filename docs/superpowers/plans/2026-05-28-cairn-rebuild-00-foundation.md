@@ -644,3 +644,63 @@ Expected: "removed from manifest", "drizzle.config.ts removed", "auth.cli.ts rem
 - **Reversal coverage:** the better-auth and Drizzle removal (spec 4 and 7.1) is enacted in Tasks 3 and 6 and verified in Task 8 Step 3.
 - **No forward references:** `requireOrigin` (Task 5) is the only engine symbol introduced and is self-contained. The stub `index.ts` files export nothing yet.
 - **Known-fast-moving surface:** the pool-workers config API has a reconnaissance step (Task 6 Step 1) because its export names and `cloudflare:test` versus `cloudflare:workers` import split moved across 2026 releases. Its code blocks reflect the 0.16 documented API, and the step says to substitute the installed names.
+
+---
+
+## Execution record (2026-05-28)
+
+Plan 00 executed end to end in one session. All eight tasks done; exit criteria
+all pass. Final state on branch `rebuild`: `npm ci` clean, `svelte-check` 0
+errors, `npm test` 5/5 green (3 unit, 2 integration), `npm run package` builds
+12 files into `dist/`. Legacy preserved under `legacy/src` and excluded from the
+check; better-auth and Drizzle gone from the manifest and the config files
+deleted. Worktree lives at `~/Projects/cairn/cairn-cms-rebuild`, branched from
+local `main` HEAD (which is three commits ahead of `origin/main` and carries the
+spec and this plan); the workspace symlink still points at the live checkout.
+
+Resolved versions matched the locked floor: pool-workers 0.16.10, vite 8.0.14,
+vitest 4.1.7, svelte 5.55.10, kit 2.61.1, typescript 6.0.3, wrangler 4.95.0.
+
+**Deviations from the drafted plan, all from Task 6's reconnaissance step doing
+its job:**
+
+- **pool-workers import path.** In 0.16.10 both `cloudflareTest` and
+  `readD1Migrations` export from the package entry; there is no `/config`
+  subpath. So the plan's `import { readD1Migrations } from
+  '@cloudflare/vitest-pool-workers/config'` collapsed to a single import from
+  the entry. Both the `cloudflareTest({ wrangler, miniflare })` call shape and
+  the `cloudflare:test` `env`/`applyD1Migrations` imports were correct as
+  drafted.
+- **Added `src/tests/cloudflare-test.d.ts`.** Not in the plan. Integration
+  tests sit under `src/tests`, which `tsconfig` includes, so `svelte-check`
+  type-checks them. Without ambient types, `cloudflare:test` would not resolve
+  and `env.AUTH_DB`/`env.TEST_MIGRATIONS` would error. This shim references
+  `@cloudflare/workers-types` and the `cloudflare:test` module decl, and
+  augments `Cloudflare.Env` (this pool-workers version types `env` as
+  `Cloudflare.Env`, not a `ProvidedEnv` interface).
+- **tsconfig `rootDir`.** Set `"rootDir": "src"` to silence a TypeScript 6
+  output-layout advisory that would otherwise print on every `check`. That
+  `src/lib/**/*.svelte` include glob stays; `svelte-check` warns once that no
+  svelte files match, which is intrinsic to the skeleton stage and clears when
+  Plan 05 adds the first component.
+- **CI action versions.** Used `actions/checkout@v5` and `setup-node@v5` to
+  match the repo's existing `publish.yml` rather than the plan's `@v4`. Node 22
+  pin kept.
+- **`.dev.vars` gitignored.** Folded in from the cloudflare-workers-reviewer
+  gate: `.env*` globs miss Wrangler's local secret file, which Plans 01+ will
+  populate with the GitHub App key and session secret.
+
+**Notes for later plans:**
+
+- Integration tests passed on the local Node 24 despite CI pinning Node 22; the
+  flagged pool-workers console bug did not surface in 0.16.10. Node 22 is not
+  installed locally (nvm has 20 and 24). A `.nvmrc` to align local dev with CI
+  is a reasonable future nicety (cloudflare reviewer suggestion, deferred).
+- `requireOrigin` is intentionally not re-exported yet; Plan 01 wires it into
+  the auth surface.
+
+Review gate: code-simplifier found nothing to change; cloudflare-workers-reviewer
+returned no blockers (one warning, since fixed, plus minor deferred suggestions).
+Plan 01 (self-owned magic-link auth on D1) builds on this harness: it writes
+`migrations/0000_auth.sql`, the `src/lib/auth/` modules, and the magic-link
+integration tests.

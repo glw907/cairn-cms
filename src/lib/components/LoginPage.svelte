@@ -20,7 +20,7 @@ the allowlist, so the page never leaks membership (spec §7.1).
 <div data-theme="cairn-admin" class="bg-base-200 text-base-content flex min-h-screen items-center justify-center p-4">
   <div class="rounded-box border border-base-300 bg-base-100 w-full max-w-sm p-6 shadow">
     <h1 class="mb-1 text-lg font-semibold">Sign in to {data.siteName}</h1>
-    <p class="mb-4 text-sm opacity-70">Enter your email and we'll send a sign-in link.</p>
+    <p class="mb-4 text-sm text-[var(--color-muted)]">Enter your email and we'll send a sign-in link.</p>
 
     {#if form?.sent}
       <div role="status" class="alert alert-success text-sm">
@@ -31,15 +31,15 @@ the allowlist, so the page never leaks membership (spec §7.1).
         <div role="alert" class="alert alert-error mb-3 text-sm">That link expired. Request a new one.</div>
       {/if}
       <form method="POST" class="flex flex-col gap-3">
-        <label class="form-control">
-          <span class="label-text mb-1">Email</span>
+        <label class="flex flex-col gap-1">
+          <span class="text-sm font-medium">Email</span>
           <input
             type="email"
             name="email"
             required
             autocomplete="email"
             aria-label="Email"
-            class="input input-bordered w-full"
+            class="input w-full"
             placeholder="you@example.com"
           />
         </label>

@@ -43,7 +43,7 @@ plus a new-entry form. The slug auto-derives from the title until the author edi
         <li>
           <a href={`/admin/${data.conceptId}/${entry.id}`} class="flex items-center justify-between">
             <span>{entry.title}</span>
-            <span class="flex items-center gap-2 text-xs opacity-70">
+            <span class="flex items-center gap-2 text-xs text-[var(--color-muted)]">
               {#if entry.date}<span>{entry.date}</span>{/if}
               {#if entry.draft}<span class="badge badge-warning badge-sm">Draft</span>{/if}
             </span>
@@ -56,14 +56,14 @@ plus a new-entry form. The slug auto-derives from the title until the author edi
 
 <form method="POST" action="?/create" class="rounded-box border border-base-300 bg-base-100 flex flex-col gap-3 p-4">
   <h2 class="text-sm font-semibold">New entry</h2>
-  <label class="form-control">
-    <span class="label-text mb-1">Title</span>
-    <input class="input input-bordered" name="title" aria-label="Title" bind:value={title} required />
+  <label class="flex flex-col gap-1">
+    <span class="text-sm font-medium">Title</span>
+    <input class="input" name="title" aria-label="Title" bind:value={title} required />
   </label>
-  <label class="form-control">
-    <span class="label-text mb-1">Slug</span>
+  <label class="flex flex-col gap-1">
+    <span class="text-sm font-medium">Slug</span>
     <input
-      class="input input-bordered"
+      class="input"
       name="slug"
       aria-label="Slug"
       placeholder={slugPlaceholder}
@@ -72,9 +72,9 @@ plus a new-entry form. The slug auto-derives from the title until the author edi
     />
   </label>
   {#if data.dated}
-    <label class="form-control">
-      <span class="label-text mb-1">Date</span>
-      <input class="input input-bordered" type="date" name="date" aria-label="Date" />
+    <label class="flex flex-col gap-1">
+      <span class="text-sm font-medium">Date</span>
+      <input class="input" type="date" name="date" aria-label="Date" />
     </label>
   {/if}
   <button type="submit" class="btn btn-primary self-start">Create</button>

@@ -50,7 +50,7 @@ admin looks identical on every host regardless of the site's own theme.
         </label>
       </div>
       <div class="flex-1 px-2 font-semibold">{data.siteName}</div>
-      <div class="flex-none px-2 text-sm opacity-70">{data.user.displayName}</div>
+      <div class="flex-none px-2 text-sm text-[var(--color-muted)]">{data.user.displayName}</div>
     </div>
 
     <main class="flex-1 p-4 lg:p-8">
@@ -60,8 +60,8 @@ admin looks identical on every host regardless of the site's own theme.
 
   <div class="drawer-side">
     <label for="cairn-drawer" aria-label="Close menu" class="drawer-overlay"></label>
-    <nav class="bg-base-100 min-h-full w-64 border-r border-base-300 p-4">
-      <div class="menu-title mb-2 px-2 text-xs uppercase tracking-wide opacity-60">Content</div>
+    <nav class="bg-base-100 min-h-full w-64 border-r border-base-300 p-4" aria-label="Site content">
+      <div class="menu-title mb-2 px-2 text-xs uppercase tracking-wide text-[var(--color-muted)]">Content</div>
       <ul class="menu menu-lg w-full">
         {#each visibleNav as item (item.href)}
           <li>

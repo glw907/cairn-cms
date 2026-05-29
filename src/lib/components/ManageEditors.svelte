@@ -29,7 +29,7 @@ named `?/setRole`, `?/remove`, and `?/add` actions.
 <div class="overflow-x-auto rounded-box border border-base-300 bg-base-100 mb-6">
   <table class="table">
     <thead>
-      <tr><th>Name</th><th>Email</th><th>Role</th><th></th></tr>
+      <tr><th scope="col">Name</th><th scope="col">Email</th><th scope="col">Role</th><th scope="col"><span class="sr-only">Actions</span></th></tr>
     </thead>
     <tbody>
       {#each data.editors as editor (editor.email)}
@@ -62,17 +62,17 @@ named `?/setRole`, `?/remove`, and `?/add` actions.
 </div>
 
 <form method="POST" action="?/add" class="rounded-box border border-base-300 bg-base-100 grid gap-3 p-4 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
-  <label class="form-control">
-    <span class="label-text mb-1">Name</span>
-    <input class="input input-bordered" name="name" aria-label="Name" required />
+  <label class="flex flex-col gap-1">
+    <span class="text-sm font-medium">Name</span>
+    <input class="input" name="name" aria-label="Name" required />
   </label>
-  <label class="form-control">
-    <span class="label-text mb-1">Email</span>
-    <input class="input input-bordered" type="email" name="email" aria-label="Email" autocomplete="off" required />
+  <label class="flex flex-col gap-1">
+    <span class="text-sm font-medium">Email</span>
+    <input class="input" type="email" name="email" aria-label="Email" autocomplete="off" required />
   </label>
-  <label class="form-control">
-    <span class="label-text mb-1">Role</span>
-    <select class="select select-bordered" name="role" aria-label="Role">
+  <label class="flex flex-col gap-1">
+    <span class="text-sm font-medium">Role</span>
+    <select class="select" name="role" aria-label="Role">
       <option value="editor">editor</option>
       <option value="owner">owner</option>
     </select>

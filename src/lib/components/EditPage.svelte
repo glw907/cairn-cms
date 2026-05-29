@@ -28,7 +28,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
   let body = $state(untrack(() => data.body));
   let showPreview = $state(false);
   let previewHtml = $state('');
-  let insert = $state<(text: string) => void>(() => {});
+  let insert = $state.raw<(text: string) => void>(() => {});
 
   const PREVIEW_KEY = 'cairn-admin:preview';
 
@@ -51,7 +51,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
 <header class="mb-4 flex items-center justify-between gap-2">
   <div>
     <h1 class="text-xl font-semibold">{data.title}</h1>
-    <p class="text-xs opacity-60">{data.label}: {data.id}</p>
+    <p class="text-xs text-[var(--color-muted)]">{data.label}: {data.id}</p>
   </div>
   <div class="flex items-center gap-2">
     <ComponentPalette {registry} {insert} />
@@ -87,28 +87,29 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
 
   <aside class="lg:order-2 mt-4 lg:mt-0">
     <fieldset class="rounded-box border border-base-300 bg-base-100 flex flex-col gap-3 p-4">
+      <legend class="sr-only">Frontmatter</legend>
       {#each data.fields as field (field.name)}
         {#if field.type === 'textarea'}
           {@const f = field as TextareaField}
-          <label class="form-control">
-            <span class="label-text mb-1">{f.label}</span>
-            <textarea class="textarea textarea-bordered" name={f.name} aria-label={f.label} rows={f.rows ?? 3}>{str(data.frontmatter[f.name])}</textarea>
+          <label class="flex flex-col gap-1">
+            <span class="text-sm font-medium">{f.label}</span>
+            <textarea class="textarea" name={f.name} aria-label={f.label} rows={f.rows ?? 3}>{str(data.frontmatter[f.name])}</textarea>
           </label>
         {:else if field.type === 'date'}
-          <label class="form-control">
-            <span class="label-text mb-1">{field.label}</span>
-            <input class="input input-bordered" type="date" name={field.name} aria-label={field.label} value={str(data.frontmatter[field.name])} />
+          <label class="flex flex-col gap-1">
+            <span class="text-sm font-medium">{field.label}</span>
+            <input class="input" type="date" name={field.name} aria-label={field.label} value={str(data.frontmatter[field.name])} />
           </label>
         {:else if field.type === 'boolean'}
           <label class="label cursor-pointer justify-start gap-2">
             <input class="checkbox checkbox-sm" type="checkbox" name={field.name} aria-label={field.label} checked={data.frontmatter[field.name] === true} />
-            <span class="label-text">{field.label}</span>
+            <span class="text-sm">{field.label}</span>
           </label>
         {:else if field.type === 'tags'}
           {@const f = field as TagsField}
           {@const selected = (data.frontmatter[f.name] ?? []) as string[]}
-          <fieldset class="form-control">
-            <span class="label-text mb-1">{f.label}</span>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">{f.label}</legend>
             <div class="flex flex-wrap gap-2">
               {#each f.options as option (option)}
                 <label class="label cursor-pointer justify-start gap-2">
@@ -119,7 +120,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
                     value={option}
                     checked={selected.includes(option)}
                   />
-                  <span class="label-text">{option}</span>
+                  <span class="text-sm">{option}</span>
                 </label>
               {/each}
             </div>
@@ -127,10 +128,10 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
         {:else if field.type === 'freetags'}
           {@const f = field as FreeTagsField}
           {@const tagValue = ((data.frontmatter[f.name] ?? []) as string[]).join(', ')}
-          <label class="form-control">
-            <span class="label-text mb-1">{f.label}</span>
+          <label class="flex flex-col gap-1">
+            <span class="text-sm font-medium">{f.label}</span>
             <input
-              class="input input-bordered"
+              class="input"
               name={f.name}
               aria-label={f.label}
               placeholder={f.placeholder}
@@ -138,9 +139,9 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
             />
           </label>
         {:else}
-          <label class="form-control">
-            <span class="label-text mb-1">{field.label}</span>
-            <input class="input input-bordered" name={field.name} aria-label={field.label} value={str(data.frontmatter[field.name])} required={field.required} />
+          <label class="flex flex-col gap-1">
+            <span class="text-sm font-medium">{field.label}</span>
+            <input class="input" name={field.name} aria-label={field.label} value={str(data.frontmatter[field.name])} required={field.required} />
           </label>
         {/if}
       {/each}

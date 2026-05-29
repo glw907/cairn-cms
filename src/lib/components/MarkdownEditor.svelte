@@ -77,5 +77,5 @@ Swapping Carta for a bare CodeMirror editor stays a one-file change.
   {@const EditorComponent = Editor}
   <EditorComponent carta={carta as never} bind:value theme="default" mode="tabs" />
 {:else}
-  <textarea class="textarea textarea-bordered min-h-64 w-full font-mono text-sm" bind:value aria-label="Markdown source"></textarea>
+  <textarea class="textarea min-h-64 w-full font-mono text-sm" bind:value aria-label="Markdown source"></textarea>
 {/if}

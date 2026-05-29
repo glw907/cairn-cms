@@ -27,6 +27,10 @@
   --color-error: oklch(58% 0.2 25);
   --color-error-content: oklch(98% 0.012 25);
 
+  /* Accessible muted text tones: >= 4.5:1 contrast on base-100/base-200. */
+  --color-muted: oklch(48% 0.01 75);
+  --color-subtle: oklch(42% 0.01 75);
+
   --radius-selector: 0.5rem;
   --radius-field: 0.5rem;
   --radius-box: 0.75rem;

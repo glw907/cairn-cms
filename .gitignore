@@ -8,3 +8,7 @@ dist/
 .dev.vars
 .dev.vars.*
 .superpowers/
+
+# vitest browser-mode artifacts
+.vitest-attachments/
+**/__screenshots__/

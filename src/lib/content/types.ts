@@ -84,6 +84,13 @@ export interface ConceptConfig {
   fields: FrontmatterField[];
   /** Validate submitted frontmatter before any commit. */
   validate(frontmatter: Record<string, unknown>, body: string): ValidationResult;
+  /**
+   * Public URL pattern for this concept, a `/`-prefixed string of literal segments and the
+   * tokens `:slug`, `:year`, `:month`, `:day`. `normalizeConcepts` fills a per-concept
+   * default when omitted (`/:slug` for Pages, `/<conceptId>/:slug` otherwise). The pattern
+   * must agree with the site's filesystem route directory.
+   */
+  permalink?: string;
 }
 
 /** The GitHub App backend a site reads from and commits to (spec §8). Plain data the GitHub engine (Plan 03) consumes. */
@@ -166,6 +173,8 @@ export interface ConceptDescriptor {
   label: string;
   dir: string;
   routing: RoutingRule;
+  /** The resolved permalink pattern, defaulted by `normalizeConcepts`. */
+  permalink: string;
   fields: FrontmatterField[];
   validate(frontmatter: Record<string, unknown>, body: string): ValidationResult;
 }

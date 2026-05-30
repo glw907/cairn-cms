@@ -205,15 +205,15 @@ export const load = nav.navLoad;
 export const actions = { save: nav.navSave };
 ```
 
-**`src/routes/admin/nav/+page.svelte`**:
+**`src/routes/admin/nav/+page.svelte`** (NavTree takes `data` only; it manages its own form state, unlike `LoginPage` / `ManageEditors`):
 ```svelte
 <script lang="ts">
   import { NavTree } from '@glw907/cairn-cms/components';
 
-  let { data, form } = $props();
+  let { data } = $props();
 </script>
 
-<NavTree {data} {form} />
+<NavTree {data} />
 ```
 
 **`src/routes/admin/login/+page.server.ts`**:
@@ -784,6 +784,16 @@ Mint a session by inserting a `session` row directly through the Cloudflare MCP 
 Append the live-smoke evidence to this plan's progress log before starting Phase 2.
 
 ---
+
+## Phase 1 canary lessons (apply to Phase 2)
+
+The 907-life canary surfaced reconciliations the survey did not predict. Expect the same on ecnordic and handle them:
+
+- **No test runner is wired in the site repos.** 907-life had an orphan characterization test, no `vitest` dep, and no `test` script. Wire vitest (add the dep, a `"test": "vitest run"` script, a `vitest.config.ts` with a `$lib` alias) before the TDD tasks. ecnordic already ships a vitest setup; confirm it runs and reuse it.
+- **Preserve existing custom hook logic with `sequence()`.** The bare `createAuthGuard()` shim drops anything the site's old `hooks.server.ts` did beyond auth. 907-life injected the saved theme into the SSR'd `<html data-theme>`; the fix was `export const handle = sequence(theme, createAuthGuard())`. Read ecnordic's current `hooks.server.ts` first and keep every non-auth behavior (Turnstile, redirects, headers) the same way.
+- **The 0.6 engine types ripple into pre-existing files.** `SiteConfig` now surfaces `settings` / `email` through an index signature typed `unknown`, which breaks any site file that read them loosely (907-life's `config.ts` and an unrelated page load). `EmailSender` is no longer a root export; type the `EMAIL` binding as `NonNullable<AuthEnv['EMAIL']>`. The 0/0 gate forces these fixes even though they sit outside the admin tree.
+- **`NavTree` takes `{ data }` only** (it owns its form state). `LoginPage` and `ManageEditors` take `{ data, form }`. `ManageEditors` declares an unused `data.siteName` in its Props; the untyped shim compiles without it and the component never reads it, so leave it.
+- **Dead deps linger.** `better-auth`, `drizzle-orm`, `remark-html`, and `carta-md` fall out of use. Removing them is a later cleanup, not a cutover task.
 
 ## Phase 2: ecnordic-ski
 

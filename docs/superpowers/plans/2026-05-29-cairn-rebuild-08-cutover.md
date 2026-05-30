@@ -103,15 +103,51 @@ import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
 export const handle = createAuthGuard();
 ```
 
-**`src/routes/admin/+layout.server.ts`**:
+**Directory structure (important).** The authed pages sit in a URL-transparent `(app)` group so the session-gated layout load never runs for the public login and auth pages. The `(app)` parentheses do not appear in URLs, so `/admin`, `/admin/<concept>`, `/admin/editors`, and `/admin/nav` are unchanged.
+
+```
+src/routes/
+  healthz/+server.ts                      <- root, OUTSIDE the /admin guard
+  admin/
+    +layout.server.ts                     <- bare: export const prerender = false (no load)
+    +layout.svelte                        <- bare passthrough (no shell)
+    login/+page.{server.ts,svelte}        <- public, no authed shell
+    auth/confirm/+page.{server.ts,svelte} <- public
+    auth/logout/+server.ts                <- public (guard allows /admin/auth/*)
+    (app)/
+      +layout.server.ts                   <- load = content.layoutLoad (requireSession)
+      +layout.svelte                      <- AdminLayout shell
+      +page.server.ts                     <- content.indexRedirect  (URL: /admin)
+      [concept]/+page.{server.ts,svelte}
+      edit/[concept]/[id]/+page.{server.ts,svelte}
+      editors/+page.{server.ts,svelte}
+      nav/+page.{server.ts,svelte}
+```
+
+**`src/routes/admin/+layout.server.ts`** (bare prerender guard; the load lives in `(app)`):
+```typescript
+// /admin must never be prerendered (dynamic auth and content). The authed shell load lives in
+// the (app) group, so login and auth do not run the session-requiring layout load and cannot loop.
+export const prerender = false;
+```
+
+**`src/routes/admin/+layout.svelte`** (bare passthrough; the shell wraps only `(app)`):
+```svelte
+<script lang="ts">
+  let { children } = $props();
+</script>
+
+{@render children()}
+```
+
+**`src/routes/admin/(app)/+layout.server.ts`**:
 ```typescript
 import { content } from '$lib/cairn.server.js';
 
-export const prerender = false;
 export const load = content.layoutLoad;
 ```
 
-**`src/routes/admin/+layout.svelte`**:
+**`src/routes/admin/(app)/+layout.svelte`** (the admin shell, wrapping only authed pages):
 ```svelte
 <script lang="ts">
   import type { Snippet } from 'svelte';
@@ -126,7 +162,7 @@ export const load = content.layoutLoad;
 </AdminLayout>
 ```
 
-**`src/routes/admin/+page.server.ts`**:
+**`src/routes/admin/(app)/+page.server.ts`** (the `[concept]`, `edit/[concept]/[id]`, `editors`, and `nav` route files below also live under `(app)/`):
 ```typescript
 import { content } from '$lib/cairn.server.js';
 
@@ -262,7 +298,7 @@ import { auth } from '$lib/cairn.server.js';
 export const POST: RequestHandler = (event) => auth.logoutAction(event);
 ```
 
-**`src/routes/admin/healthz/+server.ts`**:
+**`src/routes/healthz/+server.ts`** (site root, OUTSIDE `/admin` so the guard does not gate it):
 ```typescript
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
@@ -794,6 +830,10 @@ The 907-life canary surfaced reconciliations the survey did not predict. Expect 
 - **The 0.6 engine types ripple into pre-existing files.** `SiteConfig` now surfaces `settings` / `email` through an index signature typed `unknown`, which breaks any site file that read them loosely (907-life's `config.ts` and an unrelated page load). `EmailSender` is no longer a root export; type the `EMAIL` binding as `NonNullable<AuthEnv['EMAIL']>`. The 0/0 gate forces these fixes even though they sit outside the admin tree.
 - **`NavTree` takes `{ data }` only** (it owns its form state). `LoginPage` and `ManageEditors` take `{ data, form }`. `ManageEditors` declares an unused `data.siteName` in its Props; the untyped shim compiles without it and the component never reads it, so leave it.
 - **Dead deps linger.** `better-auth`, `drizzle-orm`, `remark-html`, and `carta-md` fall out of use. Removing them is a later cleanup, not a cutover task.
+- **Login loops unless the authed shell sits in its own group.** The engine's `layoutLoad` calls `requireSession` and redirects a sessionless visitor to `/admin/login`. With login under that same layout the redirect is infinite. The showcase never hit this (its fake auth gave every request a session). Fix: put the authed pages and the `AdminLayout` shell in a URL-transparent `(app)` group, and keep `login` and `auth` as siblings under a bare `admin/+layout` that only sets `prerender = false`. See the corrected Shared shim reference structure.
+- **Health check lives at `/healthz`, not `/admin/healthz`.** The guard gates the whole `/admin` tree, so an unauthenticated deploy-time health check cannot live there. Put the route at the site root, `src/routes/healthz/+server.ts`. (The Plan 07 showcase put it under `/admin`, which only worked because its E2E ran authenticated.)
+- **Build before every deploy.** `wrangler deploy` uploads the prebuilt `.svelte-kit/cloudflare` output; it does not build. After any code or route-structure change, run `npm run build` first, then `npx wrangler deploy`. A stale build silently ships the old route tree (it masked the login loop with a prerendered login page).
+- **The live `AUTH_DB` already has a `session` table** (better-auth's, with different columns), colliding with the cairn schema's `session`. Before applying the migration, `ALTER TABLE session RENAME TO ba_session` to free the name and keep the old rows for rollback. `editor` and `magic_token` are new and do not collide.
 
 ## Phase 2: ecnordic-ski
 
@@ -1219,7 +1259,7 @@ Operational, against `cairn-ecnordic-auth` through the Cloudflare MCP.
 
 - [ ] **Step 1: Read the current allowlist** from `cairn-ecnordic-auth` (inspect `sqlite_master`, then read the editor rows). Record as evidence.
 
-- [ ] **Step 2: Apply `migrations/0000_auth.sql`** (the three tables and indexes) via `d1_database_query`.
+- [ ] **Step 2: Free the colliding name, then apply the migration.** Better-auth's `session` table collides with the cairn schema. First `ALTER TABLE session RENAME TO ba_session` (preserves the rows for rollback), then apply `migrations/0000_auth.sql` (the three tables and indexes) via `d1_database_query`.
 
 - [ ] **Step 3: Seed `editor`** from Step 1's rows, geoff as `owner`, epoch-ms `created_at`.
 
@@ -1229,14 +1269,14 @@ Operational, against `cairn-ecnordic-auth` through the Cloudflare MCP.
 
 - [ ] **Step 1: Build guard**
 
-Run: `npx wrangler deploy --dry-run`
-Expected: clean build, no unresolved bindings. Fix any before deploying.
+Run: `npm run build && npx wrangler deploy --dry-run`
+Expected: clean build, no unresolved bindings. Fix any before deploying. (`wrangler deploy` does not build; always `npm run build` first or it ships a stale route tree.)
 
 ## Task 2.14: Deploy and live smoke
 
-- [ ] **Step 1: Deploy**
+- [ ] **Step 1: Build and deploy**
 
-Run: `npx wrangler deploy`
+Run: `npm run build && npx wrangler deploy`
 
 - [ ] **Step 2: Healthz**
 

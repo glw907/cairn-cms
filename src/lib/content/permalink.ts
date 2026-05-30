@@ -1,0 +1,40 @@
+// cairn-cms: the one permalink resolver (public-delivery design, decision 3). Feeds, the
+// sitemap, canonical links, list links, and the prerender entries() all call this, so an
+// entry has exactly one canonical URL. The date is read straight from the YYYY-MM-DD string,
+// so a permalink never shifts across a timezone.
+import type { ConceptDescriptor } from './types.js';
+
+const pad = (n: number): string => String(n).padStart(2, '0');
+
+function dateParts(date?: string): { year: string; month: string; day: string } | null {
+  const match = date?.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return match ? { year: match[1], month: match[2], day: match[3] } : null;
+}
+
+/**
+ * Resolve an entry's canonical path from its concept's permalink pattern. Throws when the
+ * pattern uses a date token and the entry has no valid date, or when a token is unknown, so
+ * a misconfiguration fails at build rather than emitting a broken path.
+ */
+export function permalink(
+  descriptor: ConceptDescriptor,
+  entry: { id: string; date?: string },
+): string {
+  return descriptor.permalink.replace(/:(\w+)/g, (_match, token: string) => {
+    if (token === 'slug') return entry.id;
+    if (token === 'year' || token === 'month' || token === 'day') {
+      const parts = dateParts(entry.date);
+      if (!parts) {
+        throw new Error(
+          `permalink: concept "${descriptor.id}" pattern uses :${token}, but entry "${entry.id}" has no valid date`,
+        );
+      }
+      return token === 'year'
+        ? parts.year
+        : token === 'month'
+          ? pad(Number(parts.month))
+          : pad(Number(parts.day));
+    }
+    throw new Error(`permalink: unknown token :${token} in pattern "${descriptor.permalink}"`);
+  });
+}

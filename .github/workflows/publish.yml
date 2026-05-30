@@ -33,5 +33,6 @@ jobs:
       - run: npm install --no-audit --no-fund
       # Validate the published package shape before releasing.
       - run: npm run check:package
-      # The rc tag keeps latest on the live 0.5.x; the stable release at cutover (Plan 08) drops --tag rc.
-      - run: npm publish --access public --tag rc
+      # Stable release: publish to the default `latest` tag. (Pre-releases used `--tag rc`
+      # to keep `latest` on the live 0.5.x while the rebuild stabilized.)
+      - run: npm publish --access public

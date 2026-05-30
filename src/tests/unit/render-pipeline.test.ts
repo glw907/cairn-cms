@@ -14,7 +14,7 @@ describe('createRenderer', () => {
     expect(Array.isArray(r.rehypePlugins)).toBe(true);
   });
 
-  it('renders a registered component and applies the rise stagger', async () => {
+  it('renders a registered component and stamps the data-rise ordinal', async () => {
     const reg = defineRegistry({
       components: [
         {
@@ -22,17 +22,17 @@ describe('createRenderer', () => {
           label: '',
           description: '',
           insertTemplate: '',
-          build: (node, rise) => {
+          build: (node) => {
             node.tagName = 'section';
-            node.properties = { className: ['box'], ...(rise ? { style: rise } : {}) };
+            node.properties = { className: ['box'] };
             return node;
           },
         },
       ],
     });
-    const { renderMarkdown } = createRenderer(reg, { rise: (i) => `--rise:${i}` });
+    const { renderMarkdown } = createRenderer(reg, { stagger: true });
     const html = await renderMarkdown(':::box\ncontent\n:::');
     expect(html).toContain('class="box"');
-    expect(html).toContain('--rise:0');
+    expect(html).toContain('data-rise="0"');
   });
 });

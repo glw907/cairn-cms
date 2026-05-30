@@ -2,6 +2,6 @@
 
 exports[`render pipeline characterization > produces byte-identical HTML for a representative directive document 1`] = `
 "<p>Intro paragraph with an accidental colon at 9:30 today.</p>
-<section class="card" style="--rise:0"><div class="card-body"><div class="ec-head"><span class="ec-icon ec-icon-secondary"><svg class="ec-glyph" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M16 16 240 16 240 240 16 240Z"></path></svg></span><h2 class="card-title" id="card-heading">Card heading</h2></div><div class="section-body"><p>Card body text.</p></div></div></section>
-<section class="grid" style="--rise:1"><div class="card-body"><div class="ec-head"><h2 class="card-title" id="grid-heading">Grid heading</h2></div><div class="section-body"><ul class="ec-grid"><li>one</li><li>two</li></ul></div></div></section>"
+<section class="card" data-rise="0"><div class="card-body"><div class="ec-head"><span class="ec-icon ec-icon-secondary"><svg class="ec-glyph" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M16 16 240 16 240 240 16 240Z"></path></svg></span><h2 class="card-title" id="card-heading">Card heading</h2></div><div class="section-body"><p>Card body text.</p></div></div></section>
+<section class="grid" data-rise="1"><div class="card-body"><div class="ec-head"><h2 class="card-title" id="grid-heading">Grid heading</h2></div><div class="section-body"><ul class="ec-grid"><li>one</li><li>two</li></ul></div></div></section>"
 `;

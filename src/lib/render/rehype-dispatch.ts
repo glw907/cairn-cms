@@ -1,4 +1,4 @@
-import type { Root, Element, ElementContent, Properties } from 'hast';
+import type { Root, Element, ElementContent } from 'hast';
 import { h } from 'hastscript';
 import type { ComponentRegistry } from './registry.js';
 
@@ -41,12 +41,9 @@ export function splitHead(node: Element, makeIcon?: MakeIcon): { head: Element; 
   return { head: h('div', { className: ['ec-head'] }, headKids), rest };
 }
 
-/** Section wrapper: `<section class=…><div class="card-body">…</div></section>`,
- *  with an optional inline rise style. */
-export function cardShell(classes: string[], rise: string | undefined, body: ElementContent[]): Element {
-  const properties: Properties = { className: classes };
-  if (rise) properties.style = rise;
-  return h('section', properties, [h('div', { className: ['card-body'] }, body)]);
+/** Section wrapper: `<section class=…><div class="card-body">…</div></section>`. */
+export function cardShell(classes: string[], body: ElementContent[]): Element {
+  return h('section', { className: classes }, [h('div', { className: ['card-body'] }, body)]);
 }
 
 /** Tag the first <ul> among children with `ec-grid` and strip its whitespace-only
@@ -63,7 +60,8 @@ export function markFirstList(children: ElementContent[]): Element | undefined {
 }
 
 // Recurse into a node's children, transforming any nested primitive sections
-// (a grid inside a card, panels inside a split) WITHOUT a rise stagger.
+// (a grid inside a card, panels inside a split). Nested primitives never carry the
+// entrance stagger; only top-level ones do (stamped in the transformer below).
 function transformChildren(children: ElementContent[], registry: ComponentRegistry): ElementContent[] {
   return children.map((c) => {
     if (isElement(c) && c.properties?.dataPrimitive) return transformNode(c, registry);
@@ -72,23 +70,27 @@ function transformChildren(children: ElementContent[], registry: ComponentRegist
   });
 }
 
-function transformNode(node: Element, registry: ComponentRegistry, rise?: string): Element {
+function transformNode(node: Element, registry: ComponentRegistry): Element {
   node.children = transformChildren(node.children as ElementContent[], registry);
   const name = strProp(node, 'dataPrimitive');
   const def = name ? registry.get(name) : undefined;
-  return def ? def.build(node, rise) : node;
+  return def ? def.build(node) : node;
 }
 
 /** Rehype transformer: dispatch each stamped element through its registry `build`
- *  fn. Top-level primitives get a document-order rise stagger when `rise` is
- *  supplied (a site's per-index motion formula); nested ones don't. Non-primitive
+ *  fn. When `stagger` is on, each top-level primitive gets a `data-rise` attribute
+ *  carrying its document-order index (0, 1, 2, …); the site's CSS maps that ordinal
+ *  to an entrance delay. The index is inert, so a consumer's sanitize floor can keep
+ *  `data-rise` while dropping `style`. Nested primitives never get it. Non-primitive
  *  content (lede, intro paragraphs, the page-toc nav) passes through untouched. */
-export function rehypeDispatch(registry: ComponentRegistry, rise?: (idx: number) => string) {
+export function rehypeDispatch(registry: ComponentRegistry, stagger?: boolean) {
   return (tree: Root) => {
     let idx = 0;
     tree.children = (tree.children as ElementContent[]).map((child) => {
       if (isElement(child) && child.properties?.dataPrimitive) {
-        return transformNode(child, registry, rise ? rise(idx++) : undefined);
+        const el = transformNode(child, registry);
+        if (stagger) el.properties = { ...el.properties, dataRise: String(idx++) };
+        return el;
       }
       if (isElement(child)) child.children = transformChildren(child.children as ElementContent[], registry);
       return child;

@@ -15,8 +15,10 @@ export interface ComponentDef {
   description: string;
   /** Markdown scaffold inserted at the cursor by the editor palette. */
   insertTemplate: string;
-  /** Build the final hast element from the stamped directive element. */
-  build: (node: Element, rise?: string) => Element;
+  /** Build the final hast element from the stamped directive element. The engine
+   *  stamps the entrance-stagger ordinal (`data-rise`) on the top-level result, so a
+   *  build fn stays free of any motion concern. */
+  build: (node: Element) => Element;
   /** Optional role-to-default-icon, e.g. `{ caution: 'warning' }`. */
   defaultIconByRole?: Record<string, string>;
 }

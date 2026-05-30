@@ -11,9 +11,10 @@ import { rehypeDispatch } from './rehype-dispatch.js';
 import type { ComponentRegistry } from './registry.js';
 
 export interface RendererOptions {
-  /** A site's per-index motion formula for the top-level rise stagger
-   *  (e.g. ecnordic's `(i) => '--rise:' + …`). Omit for no stagger. */
-  rise?: (idx: number) => string;
+  /** Stamp a `data-rise` ordinal (0, 1, 2, …) on each top-level component so a site's
+   *  CSS can drive an entrance-cascade delay off it. Omit for no stagger. The ordinal
+   *  is inert, so a consumer's sanitize floor can keep `data-rise` and drop `style`. */
+  stagger?: boolean;
 }
 
 /** Compose a site's render pipeline from its component registry: directive syntax to
@@ -21,7 +22,7 @@ export interface RendererOptions {
  *  rehype plugin arrays (so the Carta editor preview can reuse the exact same set). */
 export function createRenderer(registry: ComponentRegistry, options: RendererOptions = {}) {
   const remarkPlugins: PluggableList = [remarkDirective, [remarkDirectiveStamp, registry]];
-  const rehypePlugins: PluggableList = [rehypeRaw, [rehypeDispatch, registry, options.rise], rehypeSlug];
+  const rehypePlugins: PluggableList = [rehypeRaw, [rehypeDispatch, registry, options.stagger], rehypeSlug];
   const processor = unified()
     .use(remarkParse)
     .use(remarkGfm)

@@ -11,9 +11,9 @@ const reg = defineRegistry({
       label: '',
       description: '',
       insertTemplate: '',
-      build: (node, rise) => {
+      build: (node) => {
         const { head, rest } = splitHead(node);
-        return cardShell(['card'], rise, [head, h('div', { className: ['section-body'] }, rest)]);
+        return cardShell(['card'], [head, h('div', { className: ['section-body'] }, rest)]);
       },
     },
   ],
@@ -36,14 +36,31 @@ describe('rehypeDispatch', () => {
     expect(cardBody.children[0].properties.className).toContain('ec-head');
   });
 
-  it('applies a rise stagger to top-level primitives only', () => {
+  it('stamps a data-rise ordinal on top-level primitives in document order', () => {
+    const tree: Root = {
+      type: 'root',
+      children: [
+        h('div', { dataPrimitive: 'card' }, [h('h2', ['First'])]),
+        h('p', ['interleaved non-primitive']),
+        h('div', { dataPrimitive: 'card' }, [h('h2', ['Second'])]),
+      ],
+    } as Root;
+    rehypeDispatch(reg, true)(tree);
+    const first = tree.children[0] as never as { properties: { dataRise?: string } };
+    const second = tree.children[2] as never as { properties: { dataRise?: string } };
+    // The index counts primitives only, so the interleaved <p> does not bump it.
+    expect(first.properties.dataRise).toBe('0');
+    expect(second.properties.dataRise).toBe('1');
+  });
+
+  it('omits data-rise when no stagger is requested', () => {
     const tree: Root = {
       type: 'root',
       children: [h('div', { dataPrimitive: 'card' }, [h('h2', ['T'])])],
     } as Root;
-    rehypeDispatch(reg, (i) => `--rise:${i}`)(tree);
-    const section = tree.children[0] as never as { properties: { style?: string } };
-    expect(section.properties.style).toBe('--rise:0');
+    rehypeDispatch(reg)(tree);
+    const section = tree.children[0] as never as { properties: { dataRise?: string } };
+    expect(section.properties.dataRise).toBeUndefined();
   });
 
   it('markFirstList tags the first <ul> with ec-grid', () => {

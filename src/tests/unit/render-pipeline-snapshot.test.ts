@@ -18,9 +18,9 @@ const registry = defineRegistry({
       label: 'Card',
       description: '',
       insertTemplate: '',
-      build: (node, rise) => {
+      build: (node) => {
         const { head, rest } = splitHead(node, makeIcon);
-        return cardShell(['card'], rise, [head, h('div', { className: ['section-body'] }, rest)]);
+        return cardShell(['card'], [head, h('div', { className: ['section-body'] }, rest)]);
       },
     },
     {
@@ -28,11 +28,11 @@ const registry = defineRegistry({
       label: 'Grid',
       description: '',
       insertTemplate: '',
-      build: (node, rise) => {
+      build: (node) => {
         const children = node.children as Element['children'];
         markFirstList(children);
         const { head, rest } = splitHead(node, makeIcon);
-        return cardShell(['grid'], rise, [head, h('div', { className: ['section-body'] }, rest)]);
+        return cardShell(['grid'], [head, h('div', { className: ['section-body'] }, rest)]);
       },
     },
   ],
@@ -58,13 +58,13 @@ const DOC = [
 
 describe('render pipeline characterization', () => {
   it('produces byte-identical HTML for a representative directive document', async () => {
-    const { renderMarkdown } = createRenderer(registry, { rise: (i) => `--rise:${i}` });
+    const { renderMarkdown } = createRenderer(registry, { stagger: true });
     const html = await renderMarkdown(DOC);
     expect(html).toMatchSnapshot();
   });
 
   it('is stable across renders (no per-run nondeterminism)', async () => {
-    const { renderMarkdown } = createRenderer(registry, { rise: (i) => `--rise:${i}` });
+    const { renderMarkdown } = createRenderer(registry, { stagger: true });
     const a = await renderMarkdown(DOC);
     const b = await renderMarkdown(DOC);
     expect(a).toBe(b);

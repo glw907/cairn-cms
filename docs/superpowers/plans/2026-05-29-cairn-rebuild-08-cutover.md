@@ -118,11 +118,13 @@ src/routes/
       +layout.server.ts                   <- load = content.layoutLoad (requireSession)
       +layout.svelte                      <- AdminLayout shell
       +page.server.ts                     <- content.indexRedirect  (URL: /admin)
-      [concept]/+page.{server.ts,svelte}
-      edit/[concept]/[id]/+page.{server.ts,svelte}
+      [concept]/+page.{server.ts,svelte}        <- list   (URL: /admin/<concept>)
+      [concept]/[id]/+page.{server.ts,svelte}   <- editor (URL: /admin/<concept>/<id>)
       editors/+page.{server.ts,svelte}
       nav/+page.{server.ts,svelte}
 ```
+
+The editor is nested at `[concept]/[id]`, NOT a separate `edit/` segment. `ConceptList` links entries to `/admin/<concept>/<id>` and every content-route redirect (save `?saved=1`, new `?new=1`, errors) targets the same path, so the editor must live there. The showcase's `/admin/edit/[type]/[id]` did not match those links (its E2E navigated by direct URL and missed the break). The engine reads `params.concept` and `params.id`, both supplied natively by `[concept]/[id]`, so no alias is needed.
 
 **`src/routes/admin/+layout.server.ts`** (bare prerender guard; the load lives in `(app)`):
 ```typescript
@@ -189,7 +191,7 @@ export const actions = { create: content.createAction };
 <ConceptList {data} />
 ```
 
-**`src/routes/admin/edit/[concept]/[id]/+page.server.ts`**:
+**`src/routes/admin/(app)/[concept]/[id]/+page.server.ts`** (the editor, nested under the concept):
 ```typescript
 import { content } from '$lib/cairn.server.js';
 
@@ -197,7 +199,7 @@ export const load = content.editLoad;
 export const actions = { save: content.saveAction };
 ```
 
-**`src/routes/admin/edit/[concept]/[id]/+page.svelte`**:
+**`src/routes/admin/(app)/[concept]/[id]/+page.svelte`**:
 ```svelte
 <script lang="ts">
   import { EditPage } from '@glw907/cairn-cms/components';
@@ -304,6 +306,10 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
 import { healthLoad } from '@glw907/cairn-cms/sveltekit';
 import { runtime } from '$lib/cairn.server.js';
+
+// A site that defaults to prerender=true must force this dynamic, or the endpoint gets
+// prerendered to a build-time ok:false (no env at build) and can 404 at runtime.
+export const prerender = false;
 
 export const GET: RequestHandler = async (event) => {
   try {
@@ -834,6 +840,8 @@ The 907-life canary surfaced reconciliations the survey did not predict. Expect 
 - **Health check lives at `/healthz`, not `/admin/healthz`.** The guard gates the whole `/admin` tree, so an unauthenticated deploy-time health check cannot live there. Put the route at the site root, `src/routes/healthz/+server.ts`. (The Plan 07 showcase put it under `/admin`, which only worked because its E2E ran authenticated.)
 - **Build before every deploy.** `wrangler deploy` uploads the prebuilt `.svelte-kit/cloudflare` output; it does not build. After any code or route-structure change, run `npm run build` first, then `npx wrangler deploy`. A stale build silently ships the old route tree (it masked the login loop with a prerendered login page).
 - **The live `AUTH_DB` already has a `session` table** (better-auth's, with different columns), colliding with the cairn schema's `session`. Before applying the migration, `ALTER TABLE session RENAME TO ba_session` to free the name and keep the old rows for rollback. `editor` and `magic_token` are new and do not collide.
+- **The editor lives at `/admin/[concept]/[id]`, not `/admin/edit/...`.** `ConceptList` links and the save/new/error redirects all target `/admin/<concept>/<id>`. Nest the editor under the concept (see the structure block). The showcase's `edit/` segment is wrong.
+- **Force `prerender = false` on the `/healthz` endpoint.** A site that defaults to `prerender = true` (907-life does) will prerender the health check to a build-time `ok:false` and it can 404 at runtime. The `/admin` subtree gets `prerender = false` from `admin/+layout.server.ts`, but the root `/healthz` needs its own.
 
 ## Phase 2: ecnordic-ski
 

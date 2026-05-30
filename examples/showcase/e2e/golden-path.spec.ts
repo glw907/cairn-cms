@@ -1,44 +1,40 @@
 import { test, expect } from '@playwright/test';
 
 // The seeded post is 2026-06-hello in src/content/posts/.
-// The edit page lives at /admin/edit/[type]/[id] (the showcase's route structure).
 // hooks.server.ts injects: { email: 'editor@showcase.test', displayName: 'Demo Editor', role: 'owner' }
-// After save, content-routes.ts redirects to /admin/${concept.id}/${id}?saved=1.
+// ConceptList links each entry to /admin/[concept]/[id]; the editor lives there (the canonical
+// path), and saveAction redirects to /admin/${concept.id}/${id}?saved=1. This test navigates by
+// clicking the list entry (not a hard-coded edit URL) so a wrong editor-route path would fail here.
 // The fake-github.ts double records the last commit and serves it from /test/last-commit.
 
-test('an editor edits a post, saves, and the commit carries the right author', async ({ page, request }) => {
-  await page.goto('/admin/edit/posts/2026-06-hello');
+test('an editor opens a post from the list, edits, saves, and the commit carries the right author', async ({ page, request }) => {
+  // Land on the admin: indexRedirect sends /admin -> /admin/posts (the first concept's list).
+  await page.goto('/admin');
+  await expect(page).toHaveURL(/\/admin\/posts$/);
+
+  // Open the entry from the list. The link target is the canonical editor path.
+  await page.locator('a[href="/admin/posts/2026-06-hello"]').click();
+  await expect(page).toHaveURL(/\/admin\/posts\/2026-06-hello$/);
 
   // The preview toggle button starts with text "Show preview".
   const previewBtn = page.getByRole('button', { name: 'Show preview' });
   await expect(previewBtn).toBeVisible();
   await previewBtn.click();
-  // The preview section renders once renderPreview fires (debounced 150 ms).
   const previewSection = page.locator('section[aria-label="Preview"]');
   await expect(previewSection).toBeVisible({ timeout: 2000 });
 
   // The body editor: Carta mounts client-side and replaces the SSR textarea with its own
-  // textarea (class carta-font-code). Wait for it; fall back to the SSR aria-label textarea
-  // if Carta has not mounted yet.
+  // textarea (class carta-font-code). Prefer it; fall back to the SSR aria-label textarea.
   const cartaTextarea = page.locator('textarea.carta-font-code');
   const ssrTextarea = page.locator('textarea[aria-label="Markdown source"]');
-
-  // Prefer the Carta textarea; it is present once Carta mounts in the browser.
   const editorTextarea = (await cartaTextarea.isVisible()) ? cartaTextarea : ssrTextarea;
-
-  // Clear and fill the editing surface with new content.
   await editorTextarea.fill('An edited body line.');
 
-  // After filling the Carta textarea, the hidden input[name="body"] is updated via the
-  // carta -> bind:value -> hidden input reactive chain. Ensure the hidden field reflects
-  // the new value before submitting, so the server receives the correct body.
+  // The hidden input[name="body"] tracks the editor via the carta -> bind:value chain.
   const hiddenBody = page.locator('input[name="body"]');
   await expect(hiddenBody).toHaveValue('An edited body line.', { timeout: 2000 });
 
-  // Submit the form.
   await page.getByRole('button', { name: 'Save' }).click();
-
-  // The save action redirects to /admin/posts/2026-06-hello?saved=1.
   await expect(page).toHaveURL(/saved=1/, { timeout: 10_000 });
 
   // Verify the commit the fake-github double recorded.

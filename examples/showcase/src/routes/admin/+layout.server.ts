@@ -1,11 +1,4 @@
-// Admin layout shim: delegates to the engine's layoutLoad for site identity, user, and nav.
-// The deps inject a dummy token mint so no real GitHub App key is needed in dev.
-import { cairn } from '$lib/cairn.config.js';
-import { composeRuntime } from '@glw907/cairn-cms';
-import { createContentRoutes } from '@glw907/cairn-cms/sveltekit';
-
-const routes = createContentRoutes(composeRuntime(cairn), {
-  mintToken: async () => 'dev-token',
-});
-
-export const load = routes.layoutLoad;
+// /admin must never be prerendered. The authed shell load lives in the (app) group, so the
+// public login and auth pages a real site adds here do not run the session-requiring layout
+// load and cannot loop back to /admin/login. The showcase fakes auth in hooks.server.ts.
+export const prerender = false;

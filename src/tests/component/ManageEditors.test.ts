@@ -9,7 +9,6 @@ function data() {
       { email: 'ed@t', displayName: 'Ed Two', role: 'editor' as const },
     ],
     self: 'owner@t',
-    siteName: 'Test Site',
   };
 }
 

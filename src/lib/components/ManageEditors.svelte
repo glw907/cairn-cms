@@ -9,8 +9,8 @@ named `?/setRole`, `?/remove`, and `?/add` actions.
   import type { Editor } from '../auth/types.js';
 
   interface Props {
-    /** The editors load's data, plus the site name. */
-    data: { editors: Editor[]; self: string; siteName: string };
+    /** The editors load's data: the allowlist and the acting owner's email. */
+    data: { editors: Editor[]; self: string };
     /** The last action's result (an error message when it failed). */
     form: { error?: string; ok?: boolean } | null;
   }

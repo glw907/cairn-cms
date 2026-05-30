@@ -1,6 +1,6 @@
 {
   "name": "@glw907/cairn-cms",
-  "version": "0.5.1",
+  "version": "0.6.0-rc.0",
   "description": "Embedded, magic-link, GitHub-committing CMS for SvelteKit/Cloudflare sites.",
   "type": "module",
   "sideEffects": [
@@ -23,60 +23,32 @@
   ],
   "scripts": {
     "package": "svelte-package",
-    "package:watch": "svelte-package --watch",
-    "prepublishOnly": "svelte-package",
+    "check:package": "npm run package && publint --strict && attw --pack . --ignore-rules no-resolution cjs-resolves-to-esm internal-resolution-error",
+    "prepare": "svelte-package",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "auth:schema": "better-auth generate --config auth.cli.ts --output src/lib/auth/schema.ts -y",
-    "auth:sql": "drizzle-kit generate"
+    "test:unit": "vitest run --project unit",
+    "test:integration": "vitest run --project integration",
+    "test:component": "vitest run --project component"
   },
   "exports": {
     ".": {
-      "types": "./src/lib/index.ts",
-      "svelte": "./src/lib/index.ts",
-      "default": "./src/lib/index.ts"
+      "types": "./dist/index.d.ts",
+      "svelte": "./dist/index.js",
+      "default": "./dist/index.js"
     },
     "./sveltekit": {
-      "types": "./src/lib/sveltekit/index.ts",
-      "svelte": "./src/lib/sveltekit/index.ts",
-      "default": "./src/lib/sveltekit/index.ts"
+      "types": "./dist/sveltekit/index.d.ts",
+      "svelte": "./dist/sveltekit/index.js",
+      "default": "./dist/sveltekit/index.js"
     },
     "./components": {
-      "types": "./src/lib/components/index.ts",
-      "svelte": "./src/lib/components/index.ts",
-      "default": "./src/lib/components/index.ts"
-    },
-    "./auth": {
-      "types": "./src/lib/auth/index.ts",
-      "svelte": "./src/lib/auth/index.ts",
-      "default": "./src/lib/auth/index.ts"
+      "types": "./dist/components/index.d.ts",
+      "svelte": "./dist/components/index.js",
+      "default": "./dist/components/index.js"
     },
     "./package.json": "./package.json"
-  },
-  "publishConfig": {
-    "exports": {
-      ".": {
-        "types": "./dist/index.d.ts",
-        "svelte": "./dist/index.js",
-        "default": "./dist/index.js"
-      },
-      "./sveltekit": {
-        "types": "./dist/sveltekit/index.d.ts",
-        "svelte": "./dist/sveltekit/index.js",
-        "default": "./dist/sveltekit/index.js"
-      },
-      "./components": {
-        "types": "./dist/components/index.d.ts",
-        "svelte": "./dist/components/index.js",
-        "default": "./dist/components/index.js"
-      },
-      "./auth": {
-        "types": "./dist/auth/index.d.ts",
-        "svelte": "./dist/auth/index.js",
-        "default": "./dist/auth/index.js"
-      },
-      "./package.json": "./package.json"
-    }
   },
   "files": [
     "dist",
@@ -84,14 +56,14 @@
   ],
   "peerDependencies": {
     "@sveltejs/kit": "^2",
-    "better-auth": "^1.6",
     "carta-md": "^4.11",
-    "drizzle-orm": ">=0.40 <1",
     "svelte": "^5.0.0"
   },
   "dependencies": {
+    "@rodrigodagostino/svelte-sortable-list": "^2.1.17",
     "@types/hast": "^3.0.4",
     "@types/mdast": "^4.0.4",
+    "dompurify": "^3.4.7",
     "gray-matter": "^4",
     "hastscript": "^9.0.1",
     "mdast-util-directive": "^3.1.0",
@@ -107,20 +79,23 @@
     "yaml": "^2"
   },
   "devDependencies": {
-    "@better-auth/cli": "^1.4.21",
-    "@cloudflare/workers-types": "^4.20260405.1",
-    "@sveltejs/kit": "^2",
+    "@arethetypeswrong/cli": "^0.18.3",
+    "@cloudflare/vitest-pool-workers": "^0.16",
+    "@cloudflare/workers-types": "^4.20260501.0",
+    "@sveltejs/kit": "^2.61",
     "@sveltejs/package": "^2",
-    "@sveltejs/vite-plugin-svelte": "^7",
-    "@types/better-sqlite3": "^7.6.13",
-    "better-auth": "^1.6.11",
-    "better-sqlite3": "^12.10.0",
+    "@sveltejs/vite-plugin-svelte": "^7.1",
+    "@vitest/browser": "^4.1.7",
+    "@vitest/browser-playwright": "^4.1.7",
     "carta-md": "^4.11",
-    "drizzle-kit": "^0.31.10",
-    "drizzle-orm": "^0.45.2",
-    "svelte": "^5",
+    "playwright": "^1.60.0",
+    "publint": "^0.3.21",
+    "svelte": "^5.55",
     "svelte-check": "^4",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.6"
+    "vite": "^8.0",
+    "vitest": "^4.1",
+    "vitest-browser-svelte": "^2.1.1",
+    "wrangler": "^4"
   }
 }

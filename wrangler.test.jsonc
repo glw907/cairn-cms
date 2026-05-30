@@ -1,0 +1,15 @@
+{
+  // Test-only Worker config consumed by @cloudflare/vitest-pool-workers.
+  // This package is a library and is never deployed; this file exists solely
+  // to give the integration tests a real miniflare D1 binding.
+  "name": "cairn-cms-test",
+  "compatibility_date": "2026-05-28",
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [
+    {
+      "binding": "AUTH_DB",
+      "database_name": "cairn-test",
+      "database_id": "00000000-0000-0000-0000-000000000000"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+import { describe, it, expect } from 'vitest';
+import type { D1Database } from '@cloudflare/workers-types';
+import { requireOrigin, requireDb } from '../../lib/env.js';
+
+describe('requireOrigin', () => {
+  it('returns the configured origin', () => {
+    expect(requireOrigin({ PUBLIC_ORIGIN: 'https://ecnordic.ski' })).toBe('https://ecnordic.ski');
+  });
+
+  it('throws when the origin is unset', () => {
+    expect(() => requireOrigin({})).toThrow(/PUBLIC_ORIGIN/);
+  });
+
+  it('throws when the origin is empty', () => {
+    expect(() => requireOrigin({ PUBLIC_ORIGIN: '' })).toThrow(/PUBLIC_ORIGIN/);
+  });
+});
+
+describe('requireDb', () => {
+  it('returns the configured binding', () => {
+    const db = {} as D1Database;
+    expect(requireDb({ AUTH_DB: db })).toBe(db);
+  });
+
+  it('throws when the binding is missing', () => {
+    expect(() => requireDb({})).toThrow(/AUTH_DB/);
+  });
+});

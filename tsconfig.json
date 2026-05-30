@@ -14,6 +14,7 @@
     "strict": true,
     "declaration": true,
     "declarationMap": true,
+    "rootDir": "src",
     "outDir": "./dist"
   },
   "include": ["src/lib/**/*.ts", "src/lib/**/*.svelte", "src/tests/**/*.ts"]

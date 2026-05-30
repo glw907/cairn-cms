@@ -1,31 +1,34 @@
+<!--
+@component
+The scanner-safe confirm page. A GET renders this static "Confirm sign-in" button with the token
+in a hidden field and consumes nothing; only the explicit POST verifies (spec §7.1). JS-free.
+-->
 <script lang="ts">
-  // The scanner-safe confirm surface (C2). A GET renders this static page and consumes nothing.
-  // The token rides in a hidden field; only the explicit form POST (the route's default action,
-  // confirmSignIn) verifies it. Mail scanners GET URLs but don't submit forms, so prefetch can't
-  // burn the link. JS-free by design.
+  import './cairn-admin.css';
+
   interface Props {
+    /** The confirm load's data: the token to submit, the site name, and an optional error. */
     data: { token: string; siteName: string; error: string | null };
   }
+
   let { data }: Props = $props();
 </script>
 
 <svelte:head>
-  <title>Confirm sign-in · {data.siteName} CMS</title>
+  <meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 
-<div class="mx-auto mt-16 max-w-md rounded-box border border-base-300 bg-base-100 p-8">
-  <h1 class="text-2xl font-bold">Confirm sign-in</h1>
-  <p class="mt-1 text-sm opacity-70">to {data.siteName} CMS</p>
-
-  {#if data.error || !data.token}
-    <div class="alert alert-error mt-6">
-      <span>This sign-in link is invalid or expired. Request a new one.</span>
-    </div>
-    <a href="/admin/login" class="btn btn-primary mt-6">Back to sign-in</a>
-  {:else}
-    <form method="POST" class="mt-6 flex flex-col gap-3">
-      <input type="hidden" name="token" value={data.token} />
-      <button type="submit" class="btn btn-primary">Confirm sign-in</button>
-    </form>
-  {/if}
+<div data-theme="cairn-admin" class="bg-base-200 text-base-content flex min-h-screen items-center justify-center p-4">
+  <div class="rounded-box border border-base-300 bg-base-100 w-full max-w-sm p-6 text-center shadow">
+    <h1 class="mb-4 text-lg font-semibold">Sign in to {data.siteName}</h1>
+    {#if data.error || !data.token}
+      <div role="alert" class="alert alert-error text-sm">This sign-in link is invalid or expired.</div>
+      <a href="/admin/login" class="btn btn-ghost btn-sm mt-4">Request a new link</a>
+    {:else}
+      <form method="POST">
+        <input type="hidden" name="token" value={data.token} />
+        <button type="submit" class="btn btn-primary btn-block">Confirm sign-in</button>
+      </form>
+    {/if}
+  </div>
 </div>

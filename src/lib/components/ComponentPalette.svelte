@@ -1,31 +1,47 @@
+<!--
+@component
+The insert-component palette: a dropdown listing the site's registered directive components
+(seam 3). Picking one inserts its template at the cursor through the editor's insert callback.
+Renders nothing when the site configures no registry.
+-->
 <script lang="ts">
-  // The insert-component palette (R10). Reads the site's component registry (R10a) and inserts a
-  // scaffolded directive snippet at the cursor via the `insert` callback. DaisyUI dropdown so it
-  // matches the Warm Stone admin theme. Shown only when the site supplies a non-empty registry; a
-  // plain-markdown site (e.g. 907.life) passes no registry and this renders nothing.
-  import type { ComponentRegistry } from '../render';
+  import type { ComponentRegistry } from '../render/registry.js';
 
-  let { registry, insert }: { registry?: ComponentRegistry; insert: (template: string) => void } =
-    $props();
+  interface Props {
+    /** The site's component registry; the palette derives its catalog from it. */
+    registry?: ComponentRegistry;
+    /** Insert a template at the editor's cursor. */
+    insert: (template: string) => void;
+  }
+
+  let { registry, insert }: Props = $props();
 
   const defs = $derived(registry?.defs ?? []);
+  let open = $state(false);
 </script>
 
 {#if defs.length > 0}
-  <div class="dropdown">
-    <button type="button" tabindex="0" class="btn btn-sm btn-ghost">Insert ▾</button>
-    <ul
-      class="dropdown-content menu z-10 mt-1 w-72 rounded-box border border-base-300 bg-base-100 p-2 shadow"
-    >
+  <div
+    class="dropdown"
+    class:dropdown-open={open}
+    role="presentation"
+    onkeydown={(e) => { if (e.key === 'Escape') open = false; }}
+  >
+    <button
+      type="button"
+      class="btn btn-sm btn-ghost"
+      aria-haspopup="listbox"
+      aria-expanded={open}
+      onclick={() => (open = !open)}
+    >Insert</button>
+    <ul class="dropdown-content menu rounded-box border border-base-300 bg-base-100 z-10 w-56 shadow" role="listbox">
       {#each defs as def (def.name)}
-        <li>
-          <button
-            type="button"
-            class="flex flex-col items-start gap-0.5"
-            onclick={() => insert(def.insertTemplate)}
-          >
-            <span class="font-medium">{def.label}</span>
-            <span class="text-xs opacity-60">{def.description}</span>
+        <li role="option" aria-selected={false}>
+          <button type="button" onclick={() => { insert(def.insertTemplate); open = false; }}>
+            <span class="flex flex-col items-start">
+              <span class="font-medium">{def.label}</span>
+              <span class="text-xs text-[var(--color-muted)]">{def.description}</span>
+            </span>
           </button>
         </li>
       {/each}

@@ -1,0 +1,5 @@
+siteName: Cairn Showcase
+menus:
+  primary:
+    - label: Home
+      url: /

@@ -17,5 +17,6 @@
     "rootDir": "src",
     "outDir": "./dist"
   },
-  "include": ["src/lib/**/*.ts", "src/lib/**/*.svelte", "src/tests/**/*.ts"]
+  "include": ["src/lib/**/*.ts", "src/lib/**/*.svelte", "src/tests/**/*.ts"],
+  "exclude": ["examples", "dist", "node_modules"]
 }

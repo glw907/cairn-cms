@@ -115,10 +115,10 @@ Drawn between **machinery** (engine) and **data + builders + CSS** (site code):
 
 | cairn-core (engine, generic, propagates) | Cairn site (design code, copied from a template) |
 |---|---|
-| unified pipeline **factory** `createRenderer` (parse/gfm/directive/rehype/raw/slug/stringify) | composes it: `createRenderer(registry, { rise })` |
+| unified pipeline **factory** `createRenderer` (parse/gfm/directive/rehype/raw/slug/stringify) | composes it: `createRenderer(registry, { stagger: true })` |
 | remark **directive-stamp** plugin, parameterized by component names + role→default-icon (was the hardcoded `PRIMITIVES` + `ALERT_DEFAULT_ICON`) | the **registry entries** (which components exist) |
 | **literal-restore** of accidental `:name` prose, fully generic | (n/a) |
-| rehype **dispatcher** + shared helpers (`splitHead`, `cardShell`, `markFirstList`, `iconSpan`, rise stagger, child recursion) | the per-component **builder fns + class names** (`buildCard`…, `ec-card`/`ec-grid`/…), the rise-stagger motion formula |
+| rehype **dispatcher** + shared helpers (`splitHead`, `cardShell`, `markFirstList`, `iconSpan`, `data-rise` stagger ordinal, child recursion) | the per-component **builder fns + class names** (`buildCard`…, `ec-card`/`ec-grid`/…), the CSS that maps `data-rise` to an entrance delay |
 | `glyph(name, set)` helper; **registry type** consumed by *both* renderer and editor palette | the **icon set** (`icons.ts`), the **CSS**, registry **data** + insert templates |
 
 A render-engine bug → a `cairn-cms` bump (propagates); the site's code stays pure design. **907.life is
@@ -168,7 +168,9 @@ Implement `CairnAdapter` (from `@glw907/cairn-cms`):
 
 `src/routes/admin/**` are thin shims that import server logic from `@glw907/cairn-cms/sveltekit`
 and components from `@glw907/cairn-cms/components`, passing your adapter. They are byte-identical
-across sites except `cairn.config.ts`. (See an existing site for the exact set.)
+across sites except `cairn.config.ts`. The exact tree, including the load-bearing `(app)` group,
+the root `/healthz`, and the nested editor route, is documented in
+[`docs/admin-route-structure.md`](admin-route-structure.md).
 
 ## 4. Admin theme  **[Planned: Pass I]**
 

@@ -1344,4 +1344,26 @@ git push origin main
 - **Spec coverage:** Phase 0 covers the RC publish prerequisite. The pin and the workspace-symlink shadowing land in Tasks .1. The adapter, validators, and sanitize floor land in Tasks .2 to .4. The full route rewrite and the canonical renames span Tasks .5 to .9. wrangler and env cleanup is Tasks .10. The D1 auth migration and the editor seed are Tasks .12. Dry-run, deploy, healthz, and the live smoke including `/admin/nav` are Tasks .13 and .14. Phase 3 carries the `--no-ff` merge. Every design section maps to a task.
 - **Operational vs test-first:** Tasks .2 to .4 are test-first. Tasks .1, .5 to .11, .12 to .14, and Phase 3 are operational or mechanical (route wiring proven by the engine's own unit tests plus the live smoke), and say so.
 - **First real auth wiring:** the sites are the first consumers to wire `createAuthRoutes` / `createEditorRoutes` / `createNavRoutes`. The live smoke (Tasks 1.14 / 2.14) is the end-to-end proof the showcase could not give.
-</content>
+
+---
+
+## Post-mortem (2026-05-30)
+
+Plan 08 landed. Both sites run `@glw907/cairn-cms@0.6.0-rc.0` in production, deploying from `main` through their own CI. The RC was published first (`gh workflow run publish.yml --ref rebuild`, npm Trusted Publishing). Both cutover branches merged to their `main` (`--no-ff`); the engine merged `rebuild` to `cairn-cms` `main` (`--no-ff`).
+
+**Verified live (both sites), the full magic-link path end to end:** login email issued, the link read from the inbox, confirm sets the session cookie, the authed admin lists and edits from GitHub, a real save commits as `cairn-cms[bot]` authored by the editor, logout clears the session. `/healthz` returns `ok:true` (the production GitHub App signer). CSRF rejects an origin-less POST. Public pages render through the sanitize floor unchanged (ecnordic keeps every directive and its CTA download link).
+
+**The canary earned its keep.** 907-life went first and surfaced eight gaps the showcase had masked, because the showcase faked auth and navigated by direct URL. All were fixed in 907, folded into this plan's canary-lessons block and the shared shim structure, and ecnordic then applied the corrected pattern on the first try:
+
+1. Login looped under the session-gated layout. Fix: authed pages in an `(app)` group; login and auth as bare siblings.
+2. `/healthz` was gated by the `/admin` guard. Fix: root `/healthz`.
+3. `/healthz` prerendered to a build-time `ok:false`. Fix: explicit `prerender = false`.
+4. The editor route 404'd; the canonical path is `/admin/[concept]/[id]`, not `/admin/edit/...`.
+5. `wrangler deploy` shipped stale builds. Fix: `npm run build` first.
+6. The live `AUTH_DB` `session` table collided with the cairn schema. Fix: rename to `ba_session`.
+7. The 0.6 type surface rippled into pre-existing site files; site repos had no vitest wired; custom hooks needed `sequence()`.
+8. **The deploy-model trap.** Both sites deploy from `main` on push. While a cutover branch was unmerged, any commit to `main` (including an editor save) triggered CI to redeploy the old code against the already-migrated D1, breaking admin. The branch-deploy model is incompatible with CI-from-main; the merge is required, not optional. A second trap rode along: the npm workspace root left each site's `package-lock.json` stale, so CI `npm ci` failed until each lock was regenerated standalone against the registry.
+
+**Engine follow-ups (before stable `0.6.0`).** The showcase encodes the wrong consumption pattern in three ways (no `(app)` group, `/admin/healthz`, `/admin/edit/[type]/[id]`); its fake auth and direct-URL E2E hid all three. Fix the showcase before the Plan 10 scaffolder templates copy it. Also trim the unused `siteName` from `ManageEditors`. The ecnordic sanitize floor allows `style` globally to keep the engine's inline `--rise`; ideally the engine emits rise via a class so the floor can drop `style`. None of these block the sites, which apply the corrected pattern directly.
+
+**Carried, not done this pass:** dropping the dormant better-auth tables and `AUTH_KV`; promoting the RC to stable `0.6.0`; the per-site `code-simplifier` pass (the implementers ran in a context without the subagent tool).

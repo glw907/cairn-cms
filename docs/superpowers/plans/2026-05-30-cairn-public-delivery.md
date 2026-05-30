@@ -12,6 +12,16 @@ This plan implements `docs/superpowers/specs/2026-05-30-cairn-public-delivery-de
 
 ---
 
+## Execution notes
+
+Run this with subagent-driven-development, one `cairn-implementer` per task, in a fresh worktree off `main` rather than the `feat/rise-data-attr` worktree. Create it with `git worktree add ../cairn-public-delivery -b feat/public-delivery main`, so the checkout starts at the committed spec and plan.
+
+Each task is one module plus its test, which is the right size for a fresh subagent, so the Sonnet default fits most of them. Task 9 is the exception. It is a mechanical rename spread across the contract types, the runtime, a Svelte component, eight unit tests, a component test, and the showcase, so dispatch it with `model: opus` and confirm that `grep -rn renderPreview src examples` is empty and the full suite is green before moving on. It stays one task because a partial rename leaves the build red, so it cannot be split across commits.
+
+Order matters from Task 4 onward, because every later task reads the content index, and Task 10 needs the renamed `render` from Task 9.
+
+---
+
 ## File structure
 
 New engine files:

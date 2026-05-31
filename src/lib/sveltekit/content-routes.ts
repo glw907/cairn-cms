@@ -168,7 +168,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     let id = slug;
     if (concept.routing.dated) {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) bounce('Pick a date for this entry.');
-      if (/^\d{4}-\d{2}-\d{2}-|^\d{4}-\d{2}-|^\d{4}-/.test(slug)) {
+      if (/^\d{4}-/.test(slug)) {
         bounce('Leave the date out of the slug; set it in the date field.');
       }
       id = composeDatedId(date, slug, concept.datePrefix);

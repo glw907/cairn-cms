@@ -54,8 +54,7 @@ const DATE_PREFIX_RE: Record<DatePrefix, RegExp> = {
  */
 export function slugFromId(id: string, datePrefix: DatePrefix | null): string {
   if (!datePrefix) return id;
-  const re = DATE_PREFIX_RE[datePrefix];
-  return re.test(id) ? id.replace(re, '') : id;
+  return id.replace(DATE_PREFIX_RE[datePrefix], '');
 }
 
 /**
@@ -66,7 +65,18 @@ export function slugFromId(id: string, datePrefix: DatePrefix | null): string {
 export function composeDatedId(date: string, slug: string, datePrefix: DatePrefix): string {
   const m = date.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (!m) throw new Error(`composeDatedId: malformed date "${date}"`);
-  const prefix =
-    datePrefix === 'year' ? m[1] : datePrefix === 'month' ? `${m[1]}-${m[2]}` : `${m[1]}-${m[2]}-${m[3]}`;
+  const [, year, month, day] = m;
+  let prefix: string;
+  switch (datePrefix) {
+    case 'year':
+      prefix = year;
+      break;
+    case 'month':
+      prefix = `${year}-${month}`;
+      break;
+    case 'day':
+      prefix = `${year}-${month}-${day}`;
+      break;
+  }
   return `${prefix}-${slug}`;
 }

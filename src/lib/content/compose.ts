@@ -3,7 +3,7 @@
 // the same way and contributes the same kinds of things: nav entries, route logic,
 // concepts, components, field types, and save hooks. Shaped now so the extension contract
 // is additive later.
-import type { AdminPanel, CairnAdapter, CairnExtension, CairnRuntime, ConceptConfig, FieldTypeDef } from './types.js';
+import type { AdminPanel, CairnAdapter, CairnExtension, CairnRuntime, ConceptConfig, ConceptUrlPolicy, FieldTypeDef } from './types.js';
 import { normalizeConcepts } from './concepts.js';
 
 /**
@@ -13,6 +13,7 @@ import { normalizeConcepts } from './concepts.js';
 export function composeRuntime(
   adapter: CairnAdapter,
   extensions: CairnExtension[] = [],
+  urlPolicy: Record<string, ConceptUrlPolicy | undefined> = {},
 ): CairnRuntime {
   const content: Record<string, ConceptConfig | undefined> = { ...adapter.content };
   const adminPanels: AdminPanel[] = [];
@@ -26,7 +27,7 @@ export function composeRuntime(
   }
   return {
     siteName: adapter.siteName,
-    concepts: normalizeConcepts(content),
+    concepts: normalizeConcepts(content, urlPolicy),
     backend: adapter.backend,
     sender: adapter.sender,
     render: adapter.render,

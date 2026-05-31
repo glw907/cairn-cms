@@ -34,3 +34,18 @@ describe('composeRuntime', () => {
     expect(composeRuntime(withAssets).assets).toEqual({ roots: ['static/images'], publicBase: '/images' });
   });
 });
+
+describe('composeRuntime URL policy', () => {
+  it('applies the URL policy to the concept descriptors', () => {
+    const runtime = composeRuntime(testAdapter, [], { posts: { permalink: '/:year/:slug', datePrefix: 'year' } });
+    const posts = runtime.concepts.find((c) => c.id === 'posts')!;
+    expect(posts.permalink).toBe('/:year/:slug');
+    expect(posts.datePrefix).toBe('year');
+  });
+
+  it('defaults when no policy is passed', () => {
+    const posts = composeRuntime(testAdapter).concepts.find((c) => c.id === 'posts')!;
+    expect(posts.permalink).toBe('/posts/:slug');
+    expect(posts.datePrefix).toBe('day');
+  });
+});

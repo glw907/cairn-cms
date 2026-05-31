@@ -84,3 +84,25 @@ export {
   SiteConfigError,
 } from './nav/site-config.js';
 export type { NavNode, SiteConfig } from './nav/site-config.js';
+
+// Public content delivery (public-delivery design): the query index, syndication, and
+// discovery surface that sites read. Pure builders plus the one permalink resolver; the
+// SvelteKit loaders live under the /sveltekit subpath.
+export { permalink } from './content/permalink.js';
+export { createContentIndex, fromGlob } from './delivery/content-index.js';
+export type {
+  RawFile,
+  ContentSummary,
+  ContentEntry,
+  ContentIndex,
+} from './delivery/content-index.js';
+export { deriveExcerpt, wordCount } from './delivery/excerpt.js';
+export { buildRssFeed, buildJsonFeed } from './delivery/feeds.js';
+export type { FeedChannel, FeedItem } from './delivery/feeds.js';
+export { buildSitemap } from './delivery/sitemap.js';
+export type { SitemapUrl } from './delivery/sitemap.js';
+export { buildRobots } from './delivery/robots.js';
+export { buildSeoMeta } from './delivery/seo.js';
+export type { SeoInput, SeoMeta } from './delivery/seo.js';
+export { paginate } from './delivery/paginate.js';
+export type { Page } from './delivery/paginate.js';

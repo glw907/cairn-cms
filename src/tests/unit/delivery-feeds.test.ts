@@ -48,3 +48,15 @@ describe('buildJsonFeed', () => {
     });
   });
 });
+
+describe('buildRssFeed CDATA safety', () => {
+  it('splits a ]]> sequence in the content so it cannot close the CDATA early', () => {
+    const xml = buildRssFeed(channel, [
+      { title: 'T', url: 'https://example.com/posts/t', date: '2026-05-09', summary: 's', contentHtml: 'before ]]> after' },
+    ]);
+    const enc = xml.slice(xml.indexOf('<content:encoded>'), xml.indexOf('</content:encoded>'));
+    // the only ]]> inside the section is the CDATA-splitter form, never a bare early close
+    expect(enc).toContain(']]]]><![CDATA[>');
+    expect(enc).not.toContain('before ]]> after');
+  });
+});

@@ -32,6 +32,11 @@ function escapeXml(value: string): string {
     .replace(/"/g, '&quot;');
 }
 
+/** Make a string safe inside a CDATA section by splitting any `]]>` across two sections. */
+function cdataSafe(value: string): string {
+  return value.replace(/]]>/g, ']]]]><![CDATA[>');
+}
+
 /** Format a YYYY-MM-DD (or ISO) string as an RFC-822 date in UTC, as RSS wants. */
 function rfc822(date: string): string {
   return new Date(`${date.slice(0, 10)}T00:00:00.000Z`).toUTCString();
@@ -54,7 +59,8 @@ export function buildRssFeed(channel: FeedChannel, items: FeedItem[]): string {
         `      <guid isPermaLink="true">${escapeXml(item.url)}</guid>`,
         `      <pubDate>${rfc822(item.date)}</pubDate>`,
         `      <description>${escapeXml(item.summary)}</description>`,
-        `      <content:encoded><![CDATA[${content}]]></content:encoded>`,
+        // CDATA cannot contain `]]>`, so split that one sequence rather than escape the body.
+        `      <content:encoded><![CDATA[${cdataSafe(content)}]]></content:encoded>`,
         '    </item>',
       ].join('\n');
     })

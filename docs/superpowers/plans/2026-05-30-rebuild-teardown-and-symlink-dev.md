@@ -284,3 +284,24 @@ Expected: the push lands. No site repo deploys from this, since cairn-cms is the
 **Type consistency.** The adapter property rename is `renderPreview` to `render` everywhere it appears (Task 3 Step 2, the runbook in Task 4 Step 1). The cairn-cms range is `^0.7.0` consistently.
 
 **Known wrinkle to watch at execution.** If Task 2 Step 2 shows the root install does modify a committed member lock, the plan still holds: apply the relock dance and treat root install as lock-unsafe in the runbook. Confirm the real behavior at execution rather than assume it.
+
+---
+
+## Post-mortem (2026-05-30)
+
+**What was built.** The merged `cairn-cms-rebuild` worktree and its `feat/rise-data-attr` branch are removed, leaving the single `main` checkout. A new runbook, `docs/runbooks/symlink-dev.md`, documents the zero-publish symlink workflow with the launch-directory table, and the workspace `CLAUDE.md` points at it. STATUS records the post-teardown topology and the verified symlink mechanics.
+
+**What was verified, with evidence.**
+
+- Teardown: `git merge-base --is-ancestor feat/rise-data-attr main` returned merged; the worktree was removed and the branch deleted; `git worktree list` shows only `~/Projects/cairn/cairn-cms [main]`.
+- Lock CI-safety (Task 2): a root `npm install` (added 87, removed 665, changed 7) left neither site's committed `package-lock.json` drifted, and standalone `npm ci` returned OK for both ecnordic-ski and 907-life.
+- Symlink proof (Task 3): the end-to-end link was confirmed against 907-life. With local cairn-cms at `0.7.1`, the site on `^0.7.0`, a cleared root lock, and no site `node_modules`, `realpathSync` resolved `@glw907/cairn-cms` to `~/Projects/cairn/cairn-cms/` and a live local edit showed up through the site's resolution (probe count 1). Everything was reverted; all three repos are clean and local cairn-cms is back to `0.7.0`.
+
+**Decisions locked / corrections to the plan.** The plan's Task 3 assumed bumping the site to `^0.7.0` plus a root install would link the local member. Two extra conditions proved necessary and are now in the runbook:
+
+1. Local cairn-cms must run a proper version *ahead* of the published one. An exact `0.7.0` equal to the registry `0.7.0` makes npm prefer the tarball, and a prerelease (`0.7.1-dev`) does not satisfy `^0.7.0`. A plain `0.7.1` works.
+2. Delete the root `package-lock.json` after the bump. An unchanged lock makes `npm install` print `up to date` and skip relinking. That lock is untracked (the workspace root is not a git repo), so regenerating it is free. A real `node_modules/@glw907/cairn-cms` inside a site also shadows the workspace link and must be removed first.
+
+**Blockers.** None. The symlink workflow is proven and documented; it engages per-site at first migration to `^0.7.0`.
+
+**Follow-ups.** Each site's migration pass is where the symlink actually engages and where the production deploy happens. The `[[workspace-symlink-and-next-pass]]` memory still describes the symlink as merely "off"; refresh it to point at the runbook and the two corrected conditions.

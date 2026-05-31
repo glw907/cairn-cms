@@ -6,7 +6,7 @@ orientation is the workspace `CLAUDE.md`. Locked architecture decisions and the 
 the functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`).
 Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`.
 
-## Where the work is (2026-05-30)
+## Where the work is (2026-05-30, post-teardown)
 
 - Rebuild plans 00 through 08 landed. The public content delivery layer landed too. It merged to
   `main` (merge `6080496`) and published as `0.7.0`, now the `latest` tag on npm. The delivery
@@ -19,48 +19,50 @@ Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`
 
 ## Worktree topology
 
-- `~/Projects/cairn/cairn-cms` is the `main` checkout, canonical. STATUS.md is canonical here.
-- `~/Projects/cairn/cairn-public-delivery` (`feat/public-delivery`) is merged and pruned.
-- `~/Projects/cairn/cairn-cms-rebuild` (`feat/rise-data-attr`) is merged. It is still the anchor
-  cwd of the landing session, so its teardown is deferred to the next pass (run that pass from the
-  workspace root, not from this worktree).
+- `~/Projects/cairn/cairn-cms` is the `main` checkout, canonical, and the only worktree. STATUS.md
+  is canonical here.
+- The two merged feature worktrees are gone. `cairn-public-delivery` (`feat/public-delivery`) was
+  pruned at the 0.7.0 landing; `cairn-cms-rebuild` (`feat/rise-data-attr`) was removed and its branch
+  deleted in the teardown pass (2026-05-30).
 - Structural decision (settled): keep the `~/Projects/cairn` meta-workspace through the site
   co-evolution phase. The sites are about to migrate onto the `0.7.0` delivery surface, which is the
   strongest case for zero-publish symlink dev. Dissolving the workspace to standalone top-level
   repos is deferred until cairn-cms stabilizes after the scaffolder (Plan 10).
-- Symlink dev is currently off and cannot be flipped on by config alone. npm links a member only
-  when its version satisfies the consumer's range. Local cairn-cms is `0.7.0`; both sites pin
-  `0.6.0`, so npm fetches the published tarball instead of linking. The symlink engages per-site at
-  first migration, when a site moves to `^0.7.0` (which also forces the `renderPreview`-to-`render`
-  adapter rename and a deploy). See [[workspace-symlink-and-next-pass]].
+- Symlink dev is documented and proven, currently off. The runbook is
+  `docs/runbooks/symlink-dev.md`. npm links a member only when its version satisfies the consumer's
+  range, so the link engages per-site at first migration, when a site moves to `^0.7.0` (which also
+  forces the `renderPreview`-to-`render` adapter rename and a deploy). The teardown pass proved the
+  end-to-end link against 907-life and found two conditions the original plan missed, both now in the
+  runbook: the local cairn-cms version must run a proper patch *ahead* of the published one (an exact
+  `0.7.0 == registry 0.7.0` makes npm prefer the tarball; a prerelease like `0.7.1-dev` fails to
+  satisfy `^0.7.0`), and the root `package-lock.json` must be deleted after the bump so npm
+  re-resolves instead of honoring the stale registry pin. A member-local `node_modules` copy also
+  shadows the link and must be removed. A root-level `npm install` was verified not to drift either
+  site's committed lock, and standalone `npm ci` stayed green for both. See
+  [[workspace-symlink-and-next-pass]].
 
 ## Open decisions and next steps
 
-Do these in order. Steps 2 and 3 do not block each other.
+Do these in order. Steps 1 and 2 do not block each other.
 
-1. Run the teardown + symlink-dev pass. Start the session in `~/Projects/cairn` (the workspace
-   root), not in `cairn-cms-rebuild`, because the pass deletes that worktree. The plan is
-   `docs/superpowers/plans/2026-05-30-rebuild-teardown-and-symlink-dev.md`. It tears down the
-   merged worktree, proves and documents the symlink workflow, and adds `docs/runbooks/symlink-dev.md`
-   with the launch-directory guidance. No site deploys. First, settle the loose ends below so they
-   do not ride along on this pass's commits.
-2. Migrate each site onto `0.7.0` and the delivery surface, one per-site `site-pass`, started from
+1. Migrate each site onto `0.7.0` and the delivery surface, one per-site `site-pass`, started from
    that site's own directory. Each bumps to `^0.7.0`, applies the `renderPreview`-to-`render`
    rename, adopts the feeds, sitemap, SEO, and permalink surface, and drops its hand-rolled
    `posts.ts`/`feed.ts`. Keep a dated permalink pattern to preserve existing URLs. This is where the
-   symlink engages and where the production deploys happen.
-3. Next engine design is the site-settings sibling spec, then Plan 09 (CairnExtension dispatch),
+   symlink engages (follow `docs/runbooks/symlink-dev.md`: bump local cairn-cms ahead of the
+   registry, clear the root lock, remove the site `node_modules`) and where the production deploys
+   happen.
+2. Next engine design is the site-settings sibling spec, then Plan 09 (CairnExtension dispatch),
    then Plan 10 (scaffolder). Run from `~/Projects/cairn/cairn-cms`.
 
 Launch directory: start Claude inside the repo a pass targets (cairn-cms or a site), so that repo's
 own `.claude/` hooks and per-project memory stay active. The workspace `CLAUDE.md` still loads as a
-parent. Reserve `~/Projects/cairn` for cross-repo or workspace-config chores like step 1.
+parent. Reserve `~/Projects/cairn` for cross-repo or workspace-config chores. The launch-directory
+table also lives in `docs/runbooks/symlink-dev.md`.
 
-Loose ends in `main`'s working tree, carried from an earlier session and untouched by the landing
-pass: `docs/PLAN.md` is modified and `docs/superpowers/specs/2026-05-28-content-concepts-design.md`
-is untracked. The spec is the locked Posts-and-Pages content model the rebuild already shipped, so
-it reads as a historical design record now. Decide whether to commit it as history or discard it,
-and do that before step 1's own commits.
+The teardown pass settled the carried loose ends: the content-concepts design doc is committed as
+history (`5c10058`), and the stale in-progress breadcrumb in `docs/PLAN.md` was discarded (its
+outcome is in the functional spec).
 
 ## Carried follow-ups (latent, not bugs under current conventions)
 

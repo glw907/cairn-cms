@@ -63,7 +63,7 @@ export function slugFromId(id: string, datePrefix: DatePrefix | null): string {
  * malformed date so a bad create fails before touching git.
  */
 export function composeDatedId(date: string, slug: string, datePrefix: DatePrefix): string {
-  const m = date.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  const m = date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!m) throw new Error(`composeDatedId: malformed date "${date}"`);
   const [, year, month, day] = m;
   let prefix: string;

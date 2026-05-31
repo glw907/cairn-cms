@@ -41,7 +41,8 @@ describe('ConceptList', () => {
     const screen = render(ConceptList, { data: data({ entries: [] }) });
     const date = screen.getByLabelText('Date');
     await expect.element(date).toBeVisible();
-    expect((date.element() as HTMLInputElement).value).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    // The default lands after mount, so poll the value rather than reading it synchronously.
+    await expect.poll(() => (date.element() as HTMLInputElement).value).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 
   it('omits the date input for a non-dated concept', () => {

@@ -163,20 +163,20 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     const bounce = (msg: string): never => {
       throw redirect(303, `/admin/${concept.id}?error=${encodeURIComponent(msg)}`);
     };
-    if (!isValidId(slug)) bounce('Enter a valid slug: lowercase letters, numbers, and hyphens.');
+    if (!isValidId(slug)) return bounce('Enter a valid slug: lowercase letters, numbers, and hyphens.');
 
     let id = slug;
     if (concept.routing.dated) {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) bounce('Pick a date for this entry.');
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return bounce('Pick a date for this entry.');
       if (/^\d{4}-/.test(slug)) {
-        bounce('Leave the date out of the slug; set it in the date field.');
+        return bounce('Leave the date out of the slug; set it in the date field.');
       }
       id = composeDatedId(date, slug, concept.datePrefix);
     }
 
     const token = await mintToken(event.platform?.env ?? {});
     const existing = await readRaw(runtime.backend, `${concept.dir}/${filenameFromId(id)}`, token);
-    if (existing !== null) bounce('An entry with that slug already exists.');
+    if (existing !== null) return bounce('An entry with that slug already exists.');
 
     throw redirect(303, `/admin/${concept.id}/${id}?new=1`);
   }

@@ -17,7 +17,11 @@ plus a new-entry form. The slug auto-derives from the title until the author edi
   let title = $state('');
   let slug = $state('');
   let slugEdited = $state(false);
-  const today = new Date().toISOString().slice(0, 10);
+  // Default the date client-side so the SSR pass and hydration agree across UTC midnight.
+  let dateDefault = $state('');
+  $effect(() => {
+    dateDefault = new Date().toISOString().slice(0, 10);
+  });
 
   const derivedSlug = $derived(slugEdited ? slug : slugify(title));
   const slugPlaceholder = $derived(data.dated ? 'my-entry' : 'about-us');
@@ -59,14 +63,13 @@ plus a new-entry form. The slug auto-derives from the title until the author edi
   <h2 class="text-sm font-semibold">New entry</h2>
   <label class="flex flex-col gap-1">
     <span class="text-sm font-medium">Title</span>
-    <input class="input" name="title" aria-label="Title" bind:value={title} required />
+    <input class="input" name="title" bind:value={title} required />
   </label>
   <label class="flex flex-col gap-1">
     <span class="text-sm font-medium">Slug</span>
     <input
       class="input"
       name="slug"
-      aria-label="Slug"
       placeholder={slugPlaceholder}
       value={derivedSlug}
       oninput={(e) => { slugEdited = true; slug = e.currentTarget.value; }}
@@ -75,7 +78,7 @@ plus a new-entry form. The slug auto-derives from the title until the author edi
   {#if data.dated}
     <label class="flex flex-col gap-1">
       <span class="text-sm font-medium">Date</span>
-      <input class="input" type="date" name="date" aria-label="Date" value={today} />
+      <input class="input" type="date" name="date" value={dateDefault} />
     </label>
   {/if}
   <button type="submit" class="btn btn-primary self-start">Create</button>

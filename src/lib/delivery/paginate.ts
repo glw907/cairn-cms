@@ -15,13 +15,15 @@ export interface Page<T> {
 /** Slice `items` into the 1-based `page` of size `perPage`, clamping the page into bounds. */
 export function paginate<T>(items: T[], page: number, perPage: number): Page<T> {
   const total = items.length;
-  const totalPages = Math.max(1, Math.ceil(total / perPage));
+  // A non-positive page size would make totalPages Infinity, so clamp it to one.
+  const size = Math.max(1, Math.floor(perPage) || 1);
+  const totalPages = Math.max(1, Math.ceil(total / size));
   const current = Math.min(Math.max(1, Math.floor(page) || 1), totalPages);
-  const start = (current - 1) * perPage;
+  const start = (current - 1) * size;
   return {
-    items: items.slice(start, start + perPage),
+    items: items.slice(start, start + size),
     page: current,
-    perPage,
+    perPage: size,
     total,
     totalPages,
     hasPrev: current > 1,

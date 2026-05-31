@@ -18,4 +18,10 @@ describe('paginate', () => {
   it('handles an empty list', () => {
     expect(paginate([], 1, 2)).toMatchObject({ items: [], total: 0, totalPages: 1, hasPrev: false, hasNext: false });
   });
+  it('clamps a non-positive perPage to one', () => {
+    const page = paginate([1, 2, 3], 1, 0);
+    expect(page.perPage).toBe(1);
+    expect(page.totalPages).toBe(3);
+    expect(Number.isFinite(page.totalPages)).toBe(true);
+  });
 });

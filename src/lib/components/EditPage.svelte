@@ -18,13 +18,11 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
     data: EditData & { siteName: string };
     /** The site's component registry, for the insert palette. */
     registry?: ComponentRegistry;
-    /** Carta preview plugins from the adapter, for the design-accurate preview. */
-    preview?: unknown[];
     /** The site's design-accurate render pipeline; the preview pane sanitizes its output. */
     render?: (md: string, opts?: { stagger?: boolean }) => string | Promise<string>;
   }
 
-  let { data, registry, preview = [], render }: Props = $props();
+  let { data, registry, render }: Props = $props();
 
   // `body` is local editor state seeded once from the prop; it diverges as the user types.
   // untrack() captures the initial value without subscribing to future prop changes.
@@ -103,7 +101,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
 
   <div class="lg:order-1">
     <div class="rounded-box border border-base-300 bg-base-100 overflow-hidden">
-      <MarkdownEditor bind:value={body} name="body" plugins={preview} registerInsert={(fn) => (insert = fn)} />
+      <MarkdownEditor bind:value={body} name="body" registerInsert={(fn) => (insert = fn)} />
     </div>
     {#if showPreview}
       <section

@@ -1,5 +1,5 @@
 // The showcase's adapter: the single seam the engine consumes. It declares one post-like concept,
-// a trivial design-accurate renderPreview, and a backend the dev GitHub double answers for.
+// a trivial design-accurate render, and a backend the dev GitHub double answers for.
 import type { CairnAdapter } from '@glw907/cairn-cms';
 
 export const cairn: CairnAdapter = {
@@ -22,7 +22,7 @@ export const cairn: CairnAdapter = {
   backend: { owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' },
   sender: { from: 'cms@showcase.test' },
   // Design-accurate enough for the preview: wrap each non-empty line in a paragraph.
-  renderPreview: (md) =>
+  render: (md) =>
     md
       .split('\n')
       .filter((line) => line.trim())

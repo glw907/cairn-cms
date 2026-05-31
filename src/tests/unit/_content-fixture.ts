@@ -33,5 +33,5 @@ export const testAdapter: CairnAdapter = {
   },
   backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
   sender: { from: 'noreply@test.example' },
-  renderPreview: (md) => md,
+  render: (md) => md,
 };

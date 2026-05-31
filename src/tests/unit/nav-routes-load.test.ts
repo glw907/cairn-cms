@@ -12,7 +12,7 @@ function runtime(navMenu: CairnRuntime['navMenu']): CairnRuntime {
     ],
     backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
     sender: { from: 'cms@test' },
-    renderPreview: (md) => md,
+    render: (md) => md,
     navMenu,
   };
 }

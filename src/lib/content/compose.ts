@@ -29,7 +29,7 @@ export function composeRuntime(
     concepts: normalizeConcepts(content),
     backend: adapter.backend,
     sender: adapter.sender,
-    renderPreview: adapter.renderPreview,
+    render: adapter.render,
     registry: adapter.registry,
     navMenu: adapter.navMenu,
     assets: adapter.assets,

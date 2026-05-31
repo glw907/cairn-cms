@@ -9,7 +9,7 @@ describe('composeRuntime', () => {
     expect(runtime.siteName).toBe('Test');
     expect(runtime.concepts.map((c) => c.id)).toEqual(['posts', 'pages']);
     expect(runtime.backend).toEqual(testAdapter.backend);
-    expect(runtime.renderPreview('x')).toBe('x');
+    expect(runtime.render('x')).toBe('x');
   });
 
   // Seam 2 contract: an extension folds in additively, the same way the adapter does.

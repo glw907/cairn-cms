@@ -8,7 +8,7 @@ function runtime(): CairnRuntime {
     concepts: [],
     backend: { owner: 'o', repo: 'r', branch: 'main', appId: '123', installationId: '2' },
     sender: { from: 'cms@test' },
-    renderPreview: (md) => md,
+    render: (md) => md,
   };
 }
 

@@ -23,9 +23,11 @@ export function applyMarkdownFormat(doc: string, from: number, to: number, kind:
 
   if (kind === 'link') {
     const text = doc.slice(from, to);
-    const inserted = `[${text}](url)`;
-    const urlStart = from + 1 + text.length + 2; // past "[text]("
-    return { doc: doc.slice(0, from) + inserted + doc.slice(to), from: urlStart, to: urlStart + 3 };
+    const placeholder = 'url';
+    const lead = `[${text}](`; // everything before the url placeholder
+    const inserted = `${lead}${placeholder})`;
+    const urlStart = from + lead.length;
+    return { doc: doc.slice(0, from) + inserted + doc.slice(to), from: urlStart, to: urlStart + placeholder.length };
   }
 
   const prefix = LINE_PREFIX[kind];

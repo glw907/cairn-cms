@@ -36,20 +36,22 @@ preview lives in EditPage through the adapter's render. Swapping the editor stay
     const commandsMod = await import('@codemirror/commands');
     const languageMod = await import('@codemirror/language');
 
+    if (!host) return;
+
     const { EditorView, keymap } = viewMod;
     const theme = EditorView.theme(
       {
         '&': { backgroundColor: 'var(--color-base-100)', color: 'var(--color-base-content)', fontSize: '0.875rem' },
         '.cm-content': { fontFamily: 'ui-monospace, monospace', padding: '0.75rem', lineHeight: '1.7' },
         '.cm-cursor': { borderLeftColor: 'var(--color-primary)' },
-        '&.cm-focused': { outline: 'none' },
+        '&.cm-focused': { outline: '2px solid var(--color-primary)', outlineOffset: '-2px' },
         '.cm-line': { padding: '0' },
       },
       { dark: false },
     );
 
     view = new EditorView({
-      parent: host!,
+      parent: host,
       state: stateMod.EditorState.create({
         doc: value,
         extensions: [
@@ -71,6 +73,16 @@ preview lives in EditPage through the adapter's render. Swapping the editor stay
   });
 
   onDestroy(() => view?.destroy());
+
+  // Reconcile an externally reassigned `value` into the mounted editor. A no-op until `view` exists,
+  // and the doc-equality guard ignores the updateListener's own writes so the two never feed back.
+  $effect(() => {
+    const incoming = value;
+    if (!view) return;
+    const current = view.state.doc.toString();
+    if (incoming === current) return;
+    view.dispatch({ changes: { from: 0, to: current.length, insert: incoming } });
+  });
 
   function insertAtCursor(text: string) {
     if (!view) {
@@ -97,7 +109,7 @@ preview lives in EditPage through the adapter's render. Swapping the editor stay
   }
 </script>
 
-<input type="hidden" {name} value={value} />
+<input type="hidden" {name} {value} />
 
 <div class="border-base-300 overflow-hidden rounded-box border">
   <EditorToolbar format={applyFormat} />

@@ -32,4 +32,14 @@ describe('MarkdownEditor', () => {
       .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
       .toContain('INSERTED');
   });
+
+  it('reflects an external value reassignment into the mounted editor', async () => {
+    const screen = render(MarkdownEditor, { value: 'first', name: 'body' });
+    await expect.poll(() => screen.container.querySelector('.cm-editor')?.textContent ?? '').toContain('first');
+    await screen.rerender({ value: 'second', name: 'body' });
+    await expect.poll(() => screen.container.querySelector('.cm-editor')?.textContent ?? '').toContain('second');
+    await expect
+      .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
+      .toContain('second');
+  });
 });

@@ -14,10 +14,10 @@ cairn owns it now so the edit surface stays swappable.
 
   let { format }: Props = $props();
 
-  const buttons: { kind: FormatKind; label: string; glyph: string }[] = [
-    { kind: 'bold', label: 'Bold', glyph: 'B' },
-    { kind: 'italic', label: 'Italic', glyph: 'I' },
-    { kind: 'heading', label: 'Heading', glyph: 'H' },
+  const buttons: { kind: FormatKind; label: string; glyph: string; class?: string }[] = [
+    { kind: 'bold', label: 'Bold', glyph: 'B', class: 'font-bold' },
+    { kind: 'italic', label: 'Italic', glyph: 'I', class: 'italic' },
+    { kind: 'heading', label: 'Heading', glyph: 'H', class: 'font-bold' },
     { kind: 'link', label: 'Link', glyph: '🔗' },
     { kind: 'ul', label: 'Bulleted list', glyph: '•' },
     { kind: 'quote', label: 'Quote', glyph: '“' },
@@ -29,7 +29,7 @@ cairn owns it now so the edit surface stays swappable.
   {#each buttons as button (button.kind)}
     <button
       type="button"
-      class="btn btn-ghost btn-xs"
+      class={['btn btn-ghost btn-sm', button.class]}
       aria-label={button.label}
       title={button.label}
       onclick={() => format(button.kind)}

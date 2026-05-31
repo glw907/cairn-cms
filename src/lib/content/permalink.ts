@@ -4,7 +4,9 @@
 // so a permalink never shifts across a timezone.
 import type { ConceptDescriptor } from './types.js';
 
-const pad = (n: number): string => String(n).padStart(2, '0');
+function pad(n: number): string {
+  return String(n).padStart(2, '0');
+}
 
 function dateParts(date?: string): { year: string; month: string; day: string } | null {
   const match = date?.match(/^(\d{4})-(\d{2})-(\d{2})/);
@@ -29,11 +31,9 @@ export function permalink(
           `permalink: concept "${descriptor.id}" pattern uses :${token}, but entry "${entry.id}" has no valid date`,
         );
       }
-      return token === 'year'
-        ? parts.year
-        : token === 'month'
-          ? pad(Number(parts.month))
-          : pad(Number(parts.day));
+      if (token === 'year') return parts.year;
+      if (token === 'month') return pad(Number(parts.month));
+      return pad(Number(parts.day));
     }
     throw new Error(`permalink: unknown token :${token} in pattern "${descriptor.permalink}"`);
   });

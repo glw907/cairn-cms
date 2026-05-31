@@ -1604,3 +1604,26 @@ git status --porcelain
 - **Type consistency.** `ContentSummary`, `ContentEntry`, `ContentIndex`, `RawFile`, `FeedChannel`, `FeedItem`, `SitemapUrl`, `SeoInput`, `SeoMeta`, and `Page` are defined once (Tasks 4 through 8) and reused by name in Tasks 10 through 12. `adjacent` returns `newer` and `older` everywhere. The public-routes `ListData` is exported as `PublicListData` to avoid colliding with the content-routes `ListData`.
 - **Prerender and bundle safety.** The index is built in a site module the public routes import, kept out of the runtime adapter, so the Worker bundle guard is unaffected. The plan does not add the index to `composeRuntime` for that reason.
 - **Sequencing.** Pure modules (Tasks 1 through 8) land before the rename (Task 9) and the loaders that depend on `render` (Task 10). This plan's number relative to the extension and scaffolder work is a roadmap decision, per the spec.
+
+---
+
+## Execution post-mortem (2026-05-30)
+
+Executed on branch `feat/public-delivery` off `main` (`1d68e9e`), via subagent-driven-development with one `cairn-implementer` per task. All 13 tasks landed. The branch holds 15 commits, the 12 task commits plus one code-simplifier refinement and two review-gate fixes.
+
+**Verified green.** `npm run check` reports 0 errors and 0 warnings. `npm test` exits 0 with 285 tests across the unit, integration, and component projects (up from 239 at the start of the pass). `npm run check:package` passes publint --strict and attw across the three subpaths. `grep -rn renderPreview src examples` is empty.
+
+**Task notes.**
+- Task 1 made `ConceptDescriptor.permalink` required, which forced the field into five pre-existing inline descriptor fixtures at their default values. That was necessary to hold the 0/0 check gate.
+- Task 3 corrected the plan's draft strip rule. Inline code is unwrapped rather than dropped, so the word stays in the excerpt, matching the locked test.
+- Task 9 (the `renderPreview` to `render` rename) ran on Opus and touched all 16 files in one atomic commit. The grep is empty and the component project still mounts `EditPage` cleanly.
+
+**Review gate.** code-simplifier refined the permalink date-token branch into an if-chain. svelte-reviewer cleared the `EditPage` rename and the public-routes loaders with no findings. A correctness pass found one Critical output-encoding bug. The RSS `content:encoded` CDATA could be broken out of by a `]]>` in the rendered body, which corrupts the feed and allows markup injection from an authored post. It is fixed with a `cdataSafe` split (`777cf24`), alongside a guard clamping `paginate` perPage to at least one (`94073b3`).
+
+**Carried follow-ups (latent under current cairn conventions, not bugs in use):**
+- The feed date formatters (`iso`/`rfc822`) throw on a malformed date string. The content index normalizes dates to `YYYY-MM-DD` upstream, so this is unreachable through the index. Guard the formatters, or document the `FeedItem.date` contract, if a caller ever bypasses the index.
+- A dated concept sorts a dateless entry to the end in glob order. Posts carry dates, so this is edge-only.
+- `deriveExcerpt` and `wordCount` assume whitespace-delimited words, so a CJK or no-space script counts as one word. Fine for the two English-prose consumers.
+- The permalink date parse accepts a shape-valid but impossible date like `2026-99-99`. The same lax regex governs `asDate`, so the two stay consistent. Add real calendar validation if the build-time guarantee should cover impossible dates.
+
+**Not done in this pass (separate efforts).** The branch is unmerged and unpushed, and the engine version was not bumped or published. The two live sites still hand-roll their public read layer and have not adopted this surface; that migration is a site-pass per site and needs the engine published first. The site-settings sibling spec is the next engine design per this design's deferral list.

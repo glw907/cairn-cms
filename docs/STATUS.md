@@ -6,13 +6,24 @@ orientation is the workspace `CLAUDE.md`. Locked architecture decisions and the 
 the functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`).
 Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`.
 
-## Where the work is (2026-05-30, post-teardown)
+## Where the work is (2026-05-31, post-dated-slug)
 
-- Rebuild plans 00 through 08 landed. The public content delivery layer landed too. It merged to
-  `main` (merge `6080496`) and published as `0.7.0`, now the `latest` tag on npm. The delivery
-  layer is additive over the 0.6.0 admin and auth surfaces, so it shipped as a minor. Green at the
-  merge: `npm run check` 0/0, 285 tests exit 0, `npm run check:package` passing. The publish ran
-  through the OIDC trusted-publishing workflow off the `v0.7.0` GitHub Release.
+- The dated-slug identity pass landed on `main` (commits `dd2a265..77d9bf2`), bumping the local
+  version to `0.8.0` (not yet published). It gives dated concepts a split id/slug identity (id is the
+  filename stem, slug is the date-stripped id), adds a per-concept `datePrefix` granularity knob,
+  moves per-concept URL policy (`permalink`, `datePrefix`) into the admin-editable YAML site-config
+  under an SSG model, and unifies public delivery behind a site-level `byPermalink` resolver one
+  catch-all `[...path]` route serves. Green at close: `npm run check` 0/0 over `src/`, 315 tests exit
+  0, `npm run check:package` clean. Three review subagents returned no blockers; four small findings
+  were folded in. Design: `docs/superpowers/specs/2026-05-31-cairn-dated-slug-design.md`; plan and
+  post-mortem: `docs/superpowers/plans/2026-05-31-cairn-dated-slug.md`. The pass ran directly on
+  `main` (user-authorized), not a worktree. Not yet published to npm and not yet smoke-tested against
+  a live Worker.
+- Rebuild plans 00 through 08 landed earlier. The public content delivery layer landed too. It merged
+  to `main` (merge `6080496`) and published as `0.7.0`, the `latest` tag on npm. The delivery layer is
+  additive over the 0.6.0 admin and auth surfaces, so it shipped as a minor. Green at that merge:
+  `npm run check` 0/0, 285 tests exit 0, `npm run check:package` passing. The publish ran through the
+  OIDC trusted-publishing workflow off the `v0.7.0` GitHub Release.
 - Both consumer sites (907-life, ecnordic-ski) still run `0.6.0`. They cut over to it, merged to
   their mains, deploy via CI, and passed a full live magic-link smoke. The dormant better-auth
   tables and AUTH_KV are deleted. Neither site has migrated onto the delivery surface yet.
@@ -43,17 +54,25 @@ Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`
 
 ## Open decisions and next steps
 
-Do these in order. Steps 1 and 2 do not block each other.
+Do these in order.
 
-1. Migrate each site onto `0.7.0` and the delivery surface, one per-site `site-pass`, started from
-   that site's own directory. Each bumps to `^0.7.0`, applies the `renderPreview`-to-`render`
-   rename, adopts the feeds, sitemap, SEO, and permalink surface, and drops its hand-rolled
-   `posts.ts`/`feed.ts`. Keep a dated permalink pattern to preserve existing URLs. This is where the
-   symlink engages (follow `docs/runbooks/symlink-dev.md`: bump local cairn-cms ahead of the
-   registry, clear the root lock, remove the site `node_modules`) and where the production deploys
-   happen.
-2. Next engine design is the site-settings sibling spec, then Plan 09 (CairnExtension dispatch),
-   then Plan 10 (scaffolder). Run from `~/Projects/cairn/cairn-cms`.
+0. Publish `0.8.0` to npm before any site consumes the new exports. Push `main`, cut a `v0.8.0`
+   GitHub Release, and let the OIDC trusted-publishing workflow run (same path as `0.7.0`). The
+   migration in step 1 imports `createSiteIndex`, `urlPolicyFrom`, `parseSiteConfig`, and the
+   dated-slug types, so the registry must carry `0.8.0` first or site CI `npm ci` breaks.
+1. Migrate each site onto `^0.8.0` and the delivery surface, one per-site `site-pass`, from that
+   site's own directory. Each applies the `renderPreview`-to-`render` rename, adopts feeds, sitemap,
+   SEO, and the catch-all `[...path]` public route, sets its per-concept URL policy in the YAML
+   (`907`: `datePrefix: day`, `/:year/:month/:day/:slug`; `ecnordic`: `datePrefix: month`,
+   `/:year/:month/:slug`), and drops its hand-rolled `posts.ts`/`feed.ts`. Existing filenames and
+   URLs are preserved with zero redirects. This is where the symlink engages
+   (`docs/runbooks/symlink-dev.md`) and where the production deploys happen. The live `/admin` smoke
+   for the dated create flow is best run here, against the real Worker.
+2. Next cairn engine passes, each its own brainstorm-then-plan: a content-lifecycle pass (atomic
+   Git Data API move primitive, delete, rename, internal-link rewriting; external redirects stay the
+   site's job) and a settings-editor pass (the admin web UI to edit the YAML URL policy and other
+   settings). Then the still-pending CairnExtension dispatch and the `create-cairn-site` scaffolder.
+   Both deferred passes are scoped in the dated-slug design doc's future-work section.
 
 Launch directory: start Claude inside the repo a pass targets (cairn-cms or a site), so that repo's
 own `.claude/` hooks and per-project memory stay active. The workspace `CLAUDE.md` still loads as a
@@ -66,6 +85,10 @@ outcome is in the functional spec).
 
 ## Carried follow-ups (latent, not bugs under current conventions)
 
+- Dated slug: the admin create date-in-slug guard rejects any slug opening with `^\d{4}-` on a dated
+  concept, broader than the `datePrefix` strip (a `day` concept strips only a full `YYYY-MM-DD-`). A
+  post deliberately slugged `2026-recap` is refused with the "leave the date out" hint. Acceptable
+  since the date is captured separately; revisit if a real title trips it.
 - Public delivery: the feed date formatters throw on a malformed date (the index normalizes
   upstream); a dateless entry sorts last in a dated concept; `deriveExcerpt`/`wordCount` assume
   whitespace-delimited words; the permalink date parse accepts a shape-valid but impossible date.

@@ -1161,3 +1161,20 @@ git commit -m "Export the site index and the dated-slug type surface"
 - [ ] **Placeholder scan.** No `TODO`/`TBD` in steps. Every code step shows final code; no "fix it later" scaffolding.
 - [ ] **Type consistency.** `slugFromId(id, DatePrefix | null)`, `composeDatedId(date, slug, DatePrefix)`, `permalink(descriptor, { id, slug, date })`, `createSiteIndex(ConceptIndex[])`, `createPublicRoutes({ site, render, origin })`, `ConceptDescriptor.datePrefix`. These names match across Tasks 1-12.
 - [ ] **Out of scope confirmed absent.** No rename/delete, no redirect handling, no settings web editor, no per-token route folders.
+
+---
+
+## Post-mortem (2026-05-31)
+
+**Status:** landed on `main`, green. Shipped as `0.8.0`.
+
+**What was built.** The twelve plan tasks landed in nine implementation commits (`dd2a265..92e191d`), plus a simplification (`0f307ae`) and a review-fix commit (`77d9bf2`). Tasks 2, 3, 6, and 7 were dispatched as one coupled commit (`7a8a161`), because removing `permalink` from `ConceptConfig` and adding a required `datePrefix` to `ConceptDescriptor` is a single TypeScript compile unit that cannot clear a green gate in smaller pieces. The id/slug split, the `datePrefix` granularity knob, URL policy in the YAML site-config, the site-level `byPermalink` resolver with cross-concept collision detection, the catch-all-ready public routes, and the dated create flow all match the design.
+
+**Verified.** `npm run check` 0 errors / 0 warnings over `src/`; `npm test` exit 0 at 315 tests across unit, integration, and component; `npm run check:package` green (publint `--strict` clean, attw green across all four entry points and every resolution mode). Three review subagents (svelte, cloudflare-workers, daisyui-a11y) returned no blockers: the composed git path is provably confined to `[a-z0-9-]` by `isValidId` plus the anchored date regex, the `{ path }` rest-route prerender shape and trailing-slash normalization are correct, and the index's heavy work stays in the prerender graph. Four small review findings were folded in (`77d9bf2`): the `composeDatedId` regex is end-anchored, the create guards use explicit `return bounce(...)`, the redundant input `aria-label`s are gone, and the create-date default is set client-side so SSR and hydration agree.
+
+**Decisions locked** (canonical in the design doc `docs/superpowers/specs/2026-05-31-cairn-dated-slug-design.md`): `datePrefix` is an explicit per-concept knob, not derived from the permalink; URL policy lives in the admin-editable YAML under the SSG model; public delivery is unified at the `CairnRuntime` seam behind one catch-all route; rename and delete are deferred to a content-lifecycle pass that owns internal-link rewriting but not external redirects; the settings web editor is a separate later pass.
+
+**Follow-ups (latent, not bugs under current use):**
+- The create date-in-slug guard rejects any slug opening with `^\d{4}-` on a dated concept, which is broader than the `datePrefix` strip (a `day` concept strips only a full `YYYY-MM-DD-`). A post deliberately titled to slug as `2026-recap` is refused with the "leave the date out" hint. Acceptable, since the date is captured separately; revisit if a real title trips it.
+- Site-layer migration notes from the review, for the 907 site-pass: the catch-all `[...path]` must sit at the route root (the loader reads `event.url.pathname`); a site setting `trailingSlash: 'always'` should reconcile the canonical permalink strings, which are stored without a trailing slash.
+- Live `/admin` smoke against a real Worker was not run this pass; the create flow is covered by unit tests, and the smoke is best run where the real admin is exercised (the 907 migration).

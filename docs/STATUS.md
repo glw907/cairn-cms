@@ -22,23 +22,45 @@ Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`
 - `~/Projects/cairn/cairn-cms` is the `main` checkout, canonical. STATUS.md is canonical here.
 - `~/Projects/cairn/cairn-public-delivery` (`feat/public-delivery`) is merged and pruned.
 - `~/Projects/cairn/cairn-cms-rebuild` (`feat/rise-data-attr`) is merged. It is still the anchor
-  cwd of the landing session, so its teardown is deferred to the workspace-relocation pass.
-- Open structural decision: the rebuild is done, so the `~/Projects/cairn` meta-workspace (the
-  root `package.json` that symlinks cairn-cms into the sites for zero-publish dev) has outlived its
-  purpose now that `0.7.0` publishes. A focused pass should relocate cairn-cms to a standalone
-  `~/Projects/cairn-cms`, point the sites at published `@glw907/cairn-cms` for local dev, and
-  update the path references across the skills, memories, and these docs. Treat it as its own pass,
-  not a mv, because it rewires both sites' dependency resolution.
+  cwd of the landing session, so its teardown is deferred to the next pass (run that pass from the
+  workspace root, not from this worktree).
+- Structural decision (settled): keep the `~/Projects/cairn` meta-workspace through the site
+  co-evolution phase. The sites are about to migrate onto the `0.7.0` delivery surface, which is the
+  strongest case for zero-publish symlink dev. Dissolving the workspace to standalone top-level
+  repos is deferred until cairn-cms stabilizes after the scaffolder (Plan 10).
+- Symlink dev is currently off and cannot be flipped on by config alone. npm links a member only
+  when its version satisfies the consumer's range. Local cairn-cms is `0.7.0`; both sites pin
+  `0.6.0`, so npm fetches the published tarball instead of linking. The symlink engages per-site at
+  first migration, when a site moves to `^0.7.0` (which also forces the `renderPreview`-to-`render`
+  adapter rename and a deploy). See [[workspace-symlink-and-next-pass]].
 
 ## Open decisions and next steps
 
-1. Relocate cairn-cms to a standalone `~/Projects/cairn-cms` and dissolve the meta-workspace (see
-   the structural decision above). Tear down the merged worktrees as part of it.
-2. Migrate each site off its hand-rolled `posts.ts`/`feed.ts` onto the new delivery surface, one
-   per-site `site-pass`. Keep a dated permalink pattern to preserve existing URLs. Unblocked now
-   that `0.7.0` is published.
+Do these in order. Steps 2 and 3 do not block each other.
+
+1. Run the teardown + symlink-dev pass. Start the session in `~/Projects/cairn` (the workspace
+   root), not in `cairn-cms-rebuild`, because the pass deletes that worktree. The plan is
+   `docs/superpowers/plans/2026-05-30-rebuild-teardown-and-symlink-dev.md`. It tears down the
+   merged worktree, proves and documents the symlink workflow, and adds `docs/runbooks/symlink-dev.md`
+   with the launch-directory guidance. No site deploys. First, settle the loose ends below so they
+   do not ride along on this pass's commits.
+2. Migrate each site onto `0.7.0` and the delivery surface, one per-site `site-pass`, started from
+   that site's own directory. Each bumps to `^0.7.0`, applies the `renderPreview`-to-`render`
+   rename, adopts the feeds, sitemap, SEO, and permalink surface, and drops its hand-rolled
+   `posts.ts`/`feed.ts`. Keep a dated permalink pattern to preserve existing URLs. This is where the
+   symlink engages and where the production deploys happen.
 3. Next engine design is the site-settings sibling spec, then Plan 09 (CairnExtension dispatch),
-   then Plan 10 (scaffolder).
+   then Plan 10 (scaffolder). Run from `~/Projects/cairn/cairn-cms`.
+
+Launch directory: start Claude inside the repo a pass targets (cairn-cms or a site), so that repo's
+own `.claude/` hooks and per-project memory stay active. The workspace `CLAUDE.md` still loads as a
+parent. Reserve `~/Projects/cairn` for cross-repo or workspace-config chores like step 1.
+
+Loose ends in `main`'s working tree, carried from an earlier session and untouched by the landing
+pass: `docs/PLAN.md` is modified and `docs/superpowers/specs/2026-05-28-content-concepts-design.md`
+is untracked. The spec is the locked Posts-and-Pages content model the rebuild already shipped, so
+it reads as a historical design record now. Decide whether to commit it as history or discard it,
+and do that before step 1's own commits.
 
 ## Carried follow-ups (latent, not bugs under current conventions)
 

@@ -291,11 +291,11 @@ Apply these edits to `package.json`:
 - In `dependencies`, add:
   ```json
   "codemirror": "^6.0.2",
-  "@codemirror/state": "^6.5.2",
-  "@codemirror/view": "^6.38.1",
-  "@codemirror/commands": "^6.8.1",
-  "@codemirror/language": "^6.11.0",
-  "@codemirror/lang-markdown": "^6.3.2"
+  "@codemirror/state": "^6.6.0",
+  "@codemirror/view": "^6.43.0",
+  "@codemirror/commands": "^6.10.3",
+  "@codemirror/language": "^6.12.3",
+  "@codemirror/lang-markdown": "^6.5.0"
   ```
 - In `peerDependencies`, remove the `"carta-md": "^4.11"` line.
 - In `devDependencies`, remove the `"carta-md": "^4.11"` line.

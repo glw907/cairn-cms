@@ -11,6 +11,7 @@ function runtime(): CairnRuntime {
         id: 'posts', label: 'Posts', dir: 'src/content/posts',
         routing: { routable: true, dated: true, inFeeds: true },
         permalink: '/posts/:slug',
+        datePrefix: 'day',
         fields: [
           { type: 'text', name: 'title', label: 'Title', required: true },
           { type: 'date', name: 'date', label: 'Date' },

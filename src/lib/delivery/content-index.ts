@@ -3,7 +3,7 @@
 // returns cheap plain-data summaries plus an on-demand detail lookup. It is concept-generic:
 // every operation reads the descriptor and its routing rule, never a hardcoded concept id.
 import { parseMarkdown } from '../content/frontmatter.js';
-import { idFromFilename } from '../content/ids.js';
+import { idFromFilename, slugFromId } from '../content/ids.js';
 import { permalink } from '../content/permalink.js';
 import { deriveExcerpt, wordCount } from './excerpt.js';
 import type { ConceptDescriptor } from '../content/types.js';
@@ -17,6 +17,7 @@ export interface RawFile {
 /** The cheap, plain-data view of one entry, for lists, feeds, and the sitemap. */
 export interface ContentSummary {
   id: string;
+  slug: string;
   permalink: string;
   title: string;
   date?: string;
@@ -70,11 +71,13 @@ function asTags(value: unknown): string[] {
 export function createContentIndex(files: RawFile[], descriptor: ConceptDescriptor): ContentIndex {
   const entries: ContentEntry[] = files.map((file) => {
     const id = idFromFilename(basename(file.path));
+    const slug = slugFromId(id, descriptor.routing.dated ? descriptor.datePrefix : null);
     const { frontmatter, body } = parseMarkdown(file.raw);
     const date = asDate(frontmatter.date);
     return {
       id,
-      permalink: permalink(descriptor, { id, date }),
+      slug,
+      permalink: permalink(descriptor, { id, slug, date }),
       title: asString(frontmatter.title) ?? id,
       date,
       updated: asDate(frontmatter.updated),

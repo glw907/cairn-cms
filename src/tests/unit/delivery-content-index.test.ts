@@ -46,6 +46,22 @@ describe('createContentIndex', () => {
   });
 });
 
+describe('content index slug', () => {
+  it('derives a date-stripped slug and a non-doubled permalink for a dated concept', () => {
+    const [posts] = normalizeConcepts(
+      { posts: { dir: 'd', fields: [], validate: () => ({ ok: true as const, data: {} }) } },
+      { posts: { permalink: '/:year/:month/:day/:slug', datePrefix: 'day' } },
+    );
+    const index = createContentIndex(
+      [{ path: '/d/2026-05-31-snowball.md', raw: '---\ntitle: S\ndate: 2026-05-31\n---\n\nBody.' }],
+      posts,
+    );
+    const entry = index.all()[0];
+    expect(entry.slug).toBe('snowball');
+    expect(entry.permalink).toBe('/2026/05/31/snowball');
+  });
+});
+
 describe('fromGlob', () => {
   it('maps a Vite eager raw glob record to RawFile[]', () => {
     expect(fromGlob({ '/a/x.md': 'raw-x' })).toEqual([{ path: '/a/x.md', raw: 'raw-x' }]);

@@ -8,6 +8,7 @@
 // descriptors are plain data so a `load` function can hand them across the server-to-client
 // boundary to the editor form.
 import type { ComponentRegistry } from '../render/registry.js';
+import type { DatePrefix } from './ids.js';
 
 /** Common to every frontmatter field: the frontmatter key, the form label, and whether it is required. */
 interface FieldBase {
@@ -84,13 +85,17 @@ export interface ConceptConfig {
   fields: FrontmatterField[];
   /** Validate submitted frontmatter before any commit. */
   validate(frontmatter: Record<string, unknown>, body: string): ValidationResult;
-  /**
-   * Public URL pattern for this concept, a `/`-prefixed string of literal segments and the
-   * tokens `:slug`, `:year`, `:month`, `:day`. `normalizeConcepts` fills a per-concept
-   * default when omitted (`/:slug` for Pages, `/<conceptId>/:slug` otherwise). The pattern
-   * must agree with the site's filesystem route directory.
-   */
+}
+
+/**
+ * A concept's URL policy, set per concept in the YAML site-config (not the adapter). `permalink` is
+ * a `/`-prefixed pattern of literal segments and the tokens `:slug`, `:year`, `:month`, `:day`.
+ * `datePrefix` is the filename date-prefix granularity for a dated concept. Both default in
+ * `normalizeConcepts` when omitted.
+ */
+export interface ConceptUrlPolicy {
   permalink?: string;
+  datePrefix?: DatePrefix;
 }
 
 /** The GitHub App backend a site reads from and commits to (spec §8). Plain data the GitHub engine (Plan 03) consumes. */
@@ -175,6 +180,8 @@ export interface ConceptDescriptor {
   routing: RoutingRule;
   /** The resolved permalink pattern, defaulted by `normalizeConcepts`. */
   permalink: string;
+  /** Filename date-prefix granularity for a dated concept; resolved by `normalizeConcepts`. */
+  datePrefix: DatePrefix;
   fields: FrontmatterField[];
   validate(frontmatter: Record<string, unknown>, body: string): ValidationResult;
 }

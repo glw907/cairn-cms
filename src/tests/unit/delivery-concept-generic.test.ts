@@ -12,9 +12,9 @@ const [news] = normalizeConcepts(
       dir: 'src/content/news',
       fields: [],
       validate: () => ({ ok: true, data: {} }),
-      permalink: '/news/:year/:month/:slug',
     },
   },
+  { news: { permalink: '/news/:year/:month/:slug' } },
   { news: { routable: true, dated: true, inFeeds: true } },
 );
 

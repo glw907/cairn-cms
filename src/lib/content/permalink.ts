@@ -20,10 +20,10 @@ function dateParts(date?: string): { year: string; month: string; day: string } 
  */
 export function permalink(
   descriptor: ConceptDescriptor,
-  entry: { id: string; date?: string },
+  entry: { id: string; slug: string; date?: string },
 ): string {
   return descriptor.permalink.replace(/:(\w+)/g, (_match, token: string) => {
-    if (token === 'slug') return entry.id;
+    if (token === 'slug') return entry.slug;
     if (token === 'year' || token === 'month' || token === 'day') {
       const parts = dateParts(entry.date);
       if (!parts) {

@@ -3,7 +3,7 @@
 // (id, label, directory, concept-fixed routing, fields, validator) the admin reads. A
 // future Fragments concept attaches by adding one key under `content` and one routing
 // entry, with no reshape here.
-import type { ConceptConfig, ConceptDescriptor, RoutingRule } from './types.js';
+import type { ConceptConfig, ConceptDescriptor, ConceptUrlPolicy, RoutingRule } from './types.js';
 
 /**
  * Concept-fixed routing, keyed by concept id (spec §7.2). Posts are dated feed entries;
@@ -29,24 +29,28 @@ function defaultPermalink(id: string): string {
 }
 
 /**
- * Normalize an adapter's declared concepts into uniform descriptors (seam 1). Each declared
- * key under `content` becomes one descriptor; an undeclared (`undefined`) concept is
- * skipped. `routing` is injectable so a contract test can prove a new concept attaches
- * additively; production passes the default `CONCEPT_ROUTING`.
+ * Normalize an adapter's declared concepts into uniform descriptors (seam 1). URL policy
+ * (`permalink`, `datePrefix`) comes from the YAML site-config, passed here as `urlPolicy` keyed by
+ * concept id; each value defaults when the YAML omits it (`/:slug` for Pages, `/<id>/:slug`
+ * otherwise; `datePrefix` defaults to `day`). `routing` is injectable so a contract test can prove
+ * a new concept attaches additively; production passes the default `CONCEPT_ROUTING`.
  */
 export function normalizeConcepts(
   content: Record<string, ConceptConfig | undefined>,
+  urlPolicy: Record<string, ConceptUrlPolicy | undefined> = {},
   routing: Readonly<Record<string, RoutingRule>> = CONCEPT_ROUTING,
 ): ConceptDescriptor[] {
   const descriptors: ConceptDescriptor[] = [];
   for (const [id, config] of Object.entries(content)) {
     if (!config) continue;
+    const policy = urlPolicy[id] ?? {};
     descriptors.push({
       id,
       label: config.label ?? defaultLabel(id),
       dir: config.dir,
       routing: routing[id] ?? DEFAULT_ROUTING,
-      permalink: config.permalink ?? defaultPermalink(id),
+      permalink: policy.permalink ?? defaultPermalink(id),
+      datePrefix: policy.datePrefix ?? 'day',
       fields: config.fields,
       validate: config.validate,
     });

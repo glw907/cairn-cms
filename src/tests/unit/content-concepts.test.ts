@@ -46,7 +46,7 @@ describe('normalizeConcepts', () => {
       ...CONCEPT_ROUTING,
       fragments: { routable: false, dated: false, inFeeds: false },
     };
-    const descriptors = normalizeConcepts({ ...testAdapter.content, fragments }, routing);
+    const descriptors = normalizeConcepts({ ...testAdapter.content, fragments }, {}, routing);
 
     expect(descriptors.map((c) => c.id)).toEqual(['posts', 'pages', 'fragments']);
     expect(descriptors.find((c) => c.id === 'fragments')?.routing.routable).toBe(false);
@@ -55,21 +55,25 @@ describe('normalizeConcepts', () => {
   });
 });
 
-describe('permalink defaults', () => {
-  it('defaults pages to the root slug and other concepts to a prefixed slug', () => {
-    const concepts = normalizeConcepts({
-      posts: { dir: 'd', fields: [], validate: () => ({ ok: true, data: {} }) },
-      pages: { dir: 'd', fields: [], validate: () => ({ ok: true, data: {} }) },
-    });
-    expect(concepts.find((c) => c.id === 'posts')!.permalink).toBe('/posts/:slug');
-    expect(concepts.find((c) => c.id === 'pages')!.permalink).toBe('/:slug');
-  });
+const cfg = { dir: 'd', fields: [], validate: () => ({ ok: true as const, data: {} }) };
 
-  it('uses an explicit permalink when the config provides one', () => {
-    const [concept] = normalizeConcepts({
-      posts: { dir: 'd', fields: [], validate: () => ({ ok: true, data: {} }), permalink: '/:year/:month/:slug' },
-    });
-    expect(concept.permalink).toBe('/:year/:month/:slug');
+describe('normalizeConcepts URL policy', () => {
+  it('defaults permalink and datePrefix when no policy is given', () => {
+    const [posts] = normalizeConcepts({ posts: cfg });
+    expect(posts.permalink).toBe('/posts/:slug');
+    expect(posts.datePrefix).toBe('day');
+  });
+  it('defaults pages to a root permalink', () => {
+    const [pages] = normalizeConcepts({ pages: cfg });
+    expect(pages.permalink).toBe('/:slug');
+  });
+  it('takes permalink and datePrefix from the URL policy', () => {
+    const [posts] = normalizeConcepts(
+      { posts: cfg },
+      { posts: { permalink: '/:year/:month/:slug', datePrefix: 'month' } },
+    );
+    expect(posts.permalink).toBe('/:year/:month/:slug');
+    expect(posts.datePrefix).toBe('month');
   });
 });
 

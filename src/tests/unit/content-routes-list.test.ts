@@ -7,7 +7,7 @@ function runtime(): CairnRuntime {
   return {
     siteName: 'T',
     concepts: [
-      { id: 'posts', label: 'Posts', dir: 'src/content/posts', routing: { routable: true, dated: true, inFeeds: true }, permalink: '/posts/:slug', fields: [], validate: ok },
+      { id: 'posts', label: 'Posts', dir: 'src/content/posts', routing: { routable: true, dated: true, inFeeds: true }, permalink: '/posts/:slug', datePrefix: 'day', fields: [], validate: ok },
     ],
     backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
     sender: { from: 'cms@test' },

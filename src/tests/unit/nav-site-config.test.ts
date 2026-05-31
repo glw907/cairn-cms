@@ -6,6 +6,7 @@ import {
   SiteConfigError,
   extractMenu,
   setMenu,
+  urlPolicyFrom,
 } from '../../lib/nav/site-config.js';
 
 describe('validateNavTree', () => {
@@ -119,5 +120,16 @@ describe('setMenu', () => {
 
   it('throws when the root has no siteName', () => {
     expect(() => setMenu('description: x\n', 'primary', [])).toThrow(SiteConfigError);
+  });
+});
+
+describe('urlPolicyFrom', () => {
+  it('reads a per-concept content section', () => {
+    const cfg = parseSiteConfig('siteName: T\ncontent:\n  posts:\n    permalink: /:year/:month/:slug\n    datePrefix: month\n');
+    expect(urlPolicyFrom(cfg)).toEqual({ posts: { permalink: '/:year/:month/:slug', datePrefix: 'month' } });
+  });
+
+  it('returns an empty policy when content is absent', () => {
+    expect(urlPolicyFrom(parseSiteConfig('siteName: T\n'))).toEqual({});
   });
 });

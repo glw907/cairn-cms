@@ -70,11 +70,21 @@ Authors reach the picker two ways, and both insert the same token.
   is the fast path for a fluent author. It is a CodeMirror completion source passed through
   the `plugins` prop the `MarkdownEditor` seam already exposes.
 
-The candidate list is the site's posts and pages from the content index, searched by title.
-The set is finite and known at editor load, so the picker filters in the browser with no
-network round-trip. Picking a target inserts the token through the `registerInsert` callback
-already wired on `MarkdownEditor`. With text already selected, the toolbar button wraps the
-selection as the display text instead of inserting a fresh title.
+Both entry points open the same surface, an inline dropdown anchored under the toolbar button
+or sitting at the cursor for the `[[` path. The dropdown stays in place and never covers the
+prose, so a quick mid-sentence link costs no context. A command-palette modal was weighed and
+set aside, because the author is mid-sentence and the lighter surface fits that better.
+
+The list groups by concept. A **Pages** section comes first, then a **Posts** section, each
+under a small heading. One search box narrows both groups live, and a group with no matches
+hides its heading. Posts show their date, since recurring titles are common and the date tells
+two apart. A later concept such as Fragments joins as a third group with no other change.
+
+The candidate list comes from the content index and is finite and known at editor load, so the
+picker filters in the browser with no network round-trip. Picking a target inserts the token
+through the `registerInsert` callback already wired on `MarkdownEditor`. With text already
+selected, the toolbar button wraps the selection as the display text instead of inserting a
+fresh title.
 
 CodeMirror's autocomplete carries a keyboard contract already, covering open, arrow
 navigation, select, and dismiss. The `[[` path inherits it, which serves the accessibility

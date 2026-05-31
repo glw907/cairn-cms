@@ -36,3 +36,37 @@ export function slugify(title: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
 }
+
+/** Filename date-prefix granularity for a dated concept: the leading `YYYY[-MM[-DD]]-` on the stem. */
+export type DatePrefix = 'year' | 'month' | 'day';
+
+/** The leading date-prefix shape for each granularity. */
+const DATE_PREFIX_RE: Record<DatePrefix, RegExp> = {
+  year: /^\d{4}-/,
+  month: /^\d{4}-\d{2}-/,
+  day: /^\d{4}-\d{2}-\d{2}-/,
+};
+
+/**
+ * The URL slug for an id. A dated concept passes its `datePrefix` and the leading date prefix is
+ * stripped when present; a non-dated concept passes `null` and the id is returned verbatim. Only
+ * the leading prefix is removed, so a year-like tail (a post titled "2024 Recap") stays in the slug.
+ */
+export function slugFromId(id: string, datePrefix: DatePrefix | null): string {
+  if (!datePrefix) return id;
+  const re = DATE_PREFIX_RE[datePrefix];
+  return re.test(id) ? id.replace(re, '') : id;
+}
+
+/**
+ * Compose a dated entry's id from a `YYYY-MM-DD` date, a date-free slug, and the concept's
+ * granularity: the date truncated to the granularity, a hyphen, then the slug. Throws on a
+ * malformed date so a bad create fails before touching git.
+ */
+export function composeDatedId(date: string, slug: string, datePrefix: DatePrefix): string {
+  const m = date.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) throw new Error(`composeDatedId: malformed date "${date}"`);
+  const prefix =
+    datePrefix === 'year' ? m[1] : datePrefix === 'month' ? `${m[1]}-${m[2]}` : `${m[1]}-${m[2]}-${m[3]}`;
+  return `${prefix}-${slug}`;
+}

@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { isValidId, idFromFilename, filenameFromId, slugify } from '../../lib/content/ids.js';
+import {
+  isValidId,
+  idFromFilename,
+  filenameFromId,
+  slugify,
+  slugFromId,
+  composeDatedId,
+} from '../../lib/content/ids.js';
 
 describe('id and filename', () => {
   it('strips the .md suffix to get an id', () => {
@@ -34,5 +41,41 @@ describe('slugify', () => {
   });
   it('collapses non-alphanumeric runs and trims edges', () => {
     expect(slugify('  Hello, World!  ')).toBe('hello-world');
+  });
+});
+
+describe('slugFromId', () => {
+  it('strips a full-date prefix for a day concept', () => {
+    expect(slugFromId('2026-05-31-snowball-race-report', 'day')).toBe('snowball-race-report');
+  });
+  it('strips a year-month prefix for a month concept', () => {
+    expect(slugFromId('2026-05-welcome', 'month')).toBe('welcome');
+  });
+  it('strips a year prefix for a year concept', () => {
+    expect(slugFromId('2026-recap', 'year')).toBe('recap');
+  });
+  it('leaves an id with no prefix unchanged', () => {
+    expect(slugFromId('about-us', 'day')).toBe('about-us');
+  });
+  it('returns the id verbatim when the concept is not dated (null)', () => {
+    expect(slugFromId('2026-05-31-x', null)).toBe('2026-05-31-x');
+  });
+  it('strips only the leading prefix, keeping a year-like tail in the slug', () => {
+    expect(slugFromId('2026-05-31-2024-recap', 'day')).toBe('2024-recap');
+  });
+});
+
+describe('composeDatedId', () => {
+  it('prepends a full date for a day concept', () => {
+    expect(composeDatedId('2026-06-15', 'summer', 'day')).toBe('2026-06-15-summer');
+  });
+  it('prepends a year-month for a month concept', () => {
+    expect(composeDatedId('2026-06-15', 'summer-camp', 'month')).toBe('2026-06-summer-camp');
+  });
+  it('prepends a year for a year concept', () => {
+    expect(composeDatedId('2026-06-15', 'recap', 'year')).toBe('2026-recap');
+  });
+  it('throws on a malformed date', () => {
+    expect(() => composeDatedId('nope', 'x', 'day')).toThrow();
   });
 });

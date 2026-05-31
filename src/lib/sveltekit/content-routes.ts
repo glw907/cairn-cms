@@ -5,7 +5,7 @@
 import { redirect, error } from '@sveltejs/kit';
 import { findConcept } from '../content/concepts.js';
 import { frontmatterFromForm, parseMarkdown, dateInputValue, serializeMarkdown } from '../content/frontmatter.js';
-import { isValidId, slugify, filenameFromId } from '../content/ids.js';
+import { isValidId, slugify, filenameFromId, composeDatedId } from '../content/ids.js';
 import { appCredentials, type GithubKeyEnv } from '../github/credentials.js';
 import { listMarkdown, readRaw, commitFile } from '../github/repo.js';
 import { installationToken } from '../github/signing.js';
@@ -153,22 +153,32 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     }
   }
 
-  /** Create a new entry: validate the slug, refuse to clobber, and redirect to the editor. */
+  /** Create a new entry: validate the slug, compose a dated id when the concept is dated, refuse to clobber. */
   async function createAction(event: ContentEvent): Promise<never> {
     sessionOf(event);
     const concept = conceptOf(runtime, event.params);
     const form = await event.request.formData();
-    const raw = String(form.get('slug') ?? '').trim() || slugify(String(form.get('title') ?? ''));
+    const slug = String(form.get('slug') ?? '').trim() || slugify(String(form.get('title') ?? ''));
+    const date = String(form.get('date') ?? '').trim();
     const bounce = (msg: string): never => {
       throw redirect(303, `/admin/${concept.id}?error=${encodeURIComponent(msg)}`);
     };
-    if (!isValidId(raw)) bounce('Enter a valid slug: lowercase letters, numbers, and hyphens.');
+    if (!isValidId(slug)) bounce('Enter a valid slug: lowercase letters, numbers, and hyphens.');
+
+    let id = slug;
+    if (concept.routing.dated) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) bounce('Pick a date for this entry.');
+      if (/^\d{4}-\d{2}-\d{2}-|^\d{4}-\d{2}-|^\d{4}-/.test(slug)) {
+        bounce('Leave the date out of the slug; set it in the date field.');
+      }
+      id = composeDatedId(date, slug, concept.datePrefix);
+    }
 
     const token = await mintToken(event.platform?.env ?? {});
-    const existing = await readRaw(runtime.backend, `${concept.dir}/${filenameFromId(raw)}`, token);
+    const existing = await readRaw(runtime.backend, `${concept.dir}/${filenameFromId(id)}`, token);
     if (existing !== null) bounce('An entry with that slug already exists.');
 
-    throw redirect(303, `/admin/${concept.id}/${raw}?new=1`);
+    throw redirect(303, `/admin/${concept.id}/${id}?new=1`);
   }
 
   /** Coerce parsed frontmatter to the form-ready values the editor inputs expect. */

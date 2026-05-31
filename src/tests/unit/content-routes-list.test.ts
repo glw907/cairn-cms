@@ -85,11 +85,11 @@ describe('createAction', () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
     const routes = createContentRoutes(runtime(), deps);
     try {
-      await routes.createAction(createEvent({ title: 'Hello World', slug: '2026-05-hello-world', date: '2026-05-01' }) as never);
+      await routes.createAction(createEvent({ title: 'Hello World', slug: 'hello-world', date: '2026-05-01' }) as never);
       throw new Error('should have redirected');
     } catch (e) {
       expect((e as { status: number }).status).toBe(303);
-      expect((e as { location: string }).location).toBe('/admin/posts/2026-05-hello-world?new=1');
+      expect((e as { location: string }).location).toBe('/admin/posts/2026-05-01-hello-world?new=1');
     }
   });
 
@@ -108,10 +108,98 @@ describe('createAction', () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('exists', { status: 200 })));
     const routes = createContentRoutes(runtime(), deps);
     try {
-      await routes.createAction(createEvent({ title: 'X', slug: '2026-05-existing' }) as never);
+      await routes.createAction(createEvent({ title: 'X', slug: 'existing', date: '2026-05-01' }) as never);
       throw new Error('should have redirected');
     } catch (e) {
       expect((e as { location: string }).location).toMatch(/error=.*already%20exists/i);
+    }
+  });
+
+  /** A runtime whose posts concept truncates the date prefix to the month. */
+  function monthRuntime(): CairnRuntime {
+    const r = runtime();
+    r.concepts[0] = { ...r.concepts[0], datePrefix: 'month' };
+    return r;
+  }
+
+  /** A runtime that adds a non-dated `pages` concept alongside posts. */
+  function pagesRuntime(): CairnRuntime {
+    const r = runtime();
+    r.concepts.push({
+      id: 'pages',
+      label: 'Pages',
+      dir: 'src/content/pages',
+      routing: { routable: true, dated: false, inFeeds: false },
+      permalink: '/:slug',
+      datePrefix: 'day',
+      fields: [],
+      validate: () => ({ ok: true as const, data: {} }),
+    });
+    return r;
+  }
+
+  function pagesEvent(form: Record<string, string>) {
+    const body = new URLSearchParams(form);
+    return {
+      url: new URL('https://t.example/admin/pages'),
+      params: { concept: 'pages' },
+      request: new Request('https://t.example/admin/pages', { method: 'POST', body }),
+      locals: { editor: { email: 'e@t', displayName: 'E', role: 'editor' as const } },
+      platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
+    };
+  }
+
+  it('composes a day-granular dated id from the date and slug', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
+    const routes = createContentRoutes(runtime(), deps);
+    try {
+      await routes.createAction(createEvent({ title: 'Snowball', slug: 'snowball', date: '2026-06-15' }) as never);
+      throw new Error('should have redirected');
+    } catch (e) {
+      expect((e as { status: number }).status).toBe(303);
+      expect((e as { location: string }).location).toBe('/admin/posts/2026-06-15-snowball?new=1');
+    }
+  });
+
+  it('truncates the dated id to the concept granularity (month)', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
+    const routes = createContentRoutes(monthRuntime(), deps);
+    try {
+      await routes.createAction(createEvent({ slug: 'welcome', date: '2026-05-20' }) as never);
+      throw new Error('should have redirected');
+    } catch (e) {
+      expect((e as { location: string }).location).toBe('/admin/posts/2026-05-welcome?new=1');
+    }
+  });
+
+  it('bounces when a dated concept gets no date', async () => {
+    const routes = createContentRoutes(runtime(), deps);
+    try {
+      await routes.createAction(createEvent({ slug: 'welcome' }) as never);
+      throw new Error('should have redirected');
+    } catch (e) {
+      expect((e as { location: string }).location).toMatch(/error=/);
+    }
+  });
+
+  it('bounces when a dated slug carries its own date-like prefix', async () => {
+    const routes = createContentRoutes(runtime(), deps);
+    try {
+      await routes.createAction(createEvent({ slug: '2026-05-31-x', date: '2026-06-15' }) as never);
+      throw new Error('should have redirected');
+    } catch (e) {
+      expect((e as { location: string }).location).toMatch(/error=/);
+    }
+  });
+
+  it('uses the slug verbatim as the id for a non-dated concept', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
+    const routes = createContentRoutes(pagesRuntime(), deps);
+    try {
+      await routes.createAction(pagesEvent({ slug: 'about' }) as never);
+      throw new Error('should have redirected');
+    } catch (e) {
+      expect((e as { location: string }).location).toBe('/admin/pages/about?new=1');
     }
   });
 });

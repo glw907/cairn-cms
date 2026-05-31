@@ -36,4 +36,24 @@ describe('ConceptList', () => {
     const screen = render(ConceptList, { data: data({ error: 'Could not load this content type from GitHub.', entries: [] }) });
     await expect.element(screen.getByText(/could not load/i)).toBeInTheDocument();
   });
+
+  it('shows a date input defaulted to today for a dated concept', async () => {
+    const screen = render(ConceptList, { data: data({ entries: [] }) });
+    const date = screen.getByLabelText('Date');
+    await expect.element(date).toBeVisible();
+    expect((date.element() as HTMLInputElement).value).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it('omits the date input for a non-dated concept', () => {
+    const screen = render(ConceptList, {
+      data: data({ conceptId: 'pages', label: 'Pages', dated: false, entries: [] }),
+    });
+    expect(screen.container.querySelector('input[name="date"]')).toBeNull();
+  });
+
+  it('uses a date-free slug placeholder for a dated concept', async () => {
+    const screen = render(ConceptList, { data: data({ entries: [] }) });
+    const slug = screen.getByLabelText('Slug');
+    await expect.element(slug).toHaveAttribute('placeholder', 'my-entry');
+  });
 });

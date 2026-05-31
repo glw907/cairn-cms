@@ -17,9 +17,10 @@ plus a new-entry form. The slug auto-derives from the title until the author edi
   let title = $state('');
   let slug = $state('');
   let slugEdited = $state(false);
+  const today = new Date().toISOString().slice(0, 10);
 
   const derivedSlug = $derived(slugEdited ? slug : slugify(title));
-  const slugPlaceholder = $derived(data.dated ? '2026-05-my-entry' : 'about-us');
+  const slugPlaceholder = $derived(data.dated ? 'my-entry' : 'about-us');
 </script>
 
 <header class="mb-4 flex items-center justify-between">
@@ -74,7 +75,7 @@ plus a new-entry form. The slug auto-derives from the title until the author edi
   {#if data.dated}
     <label class="flex flex-col gap-1">
       <span class="text-sm font-medium">Date</span>
-      <input class="input" type="date" name="date" aria-label="Date" />
+      <input class="input" type="date" name="date" aria-label="Date" value={today} />
     </label>
   {/if}
   <button type="submit" class="btn btn-primary self-start">Create</button>

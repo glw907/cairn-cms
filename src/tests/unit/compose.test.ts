@@ -8,7 +8,7 @@ function adapter(): CairnAdapter {
     content: { pages: { dir: 'src/content/pages', fields: [], validate: () => ({ ok: true, data: {} }) } },
     backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
     sender: { from: 'cms@test' },
-    renderPreview: (md) => md,
+    render: (md) => md,
   };
 }
 

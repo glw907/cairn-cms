@@ -72,7 +72,7 @@ describe('EditPage', () => {
   });
 
   it('renders sanitized preview HTML when the preview is shown', async () => {
-    const props = { ...postProps({ body: 'Hello world' }), renderPreview: (md: string) => `<p>${md}</p>` };
+    const props = { ...postProps({ body: 'Hello world' }), render: (md: string) => `<p>${md}</p>` };
     const screen = render(EditPage, props);
     await screen.getByRole('button', { name: /show preview/i }).click();
     await expect
@@ -83,7 +83,7 @@ describe('EditPage', () => {
   it('strips a dangerous payload from the rendered preview', async () => {
     const props = {
       ...postProps({ body: 'x' }),
-      renderPreview: () => '<p>safe</p><img src=x onerror="alert(1)">',
+      render: () => '<p>safe</p><img src=x onerror="alert(1)">',
     };
     const screen = render(EditPage, props);
     await screen.getByRole('button', { name: /show preview/i }).click();

@@ -55,6 +55,24 @@ describe('normalizeConcepts', () => {
   });
 });
 
+describe('permalink defaults', () => {
+  it('defaults pages to the root slug and other concepts to a prefixed slug', () => {
+    const concepts = normalizeConcepts({
+      posts: { dir: 'd', fields: [], validate: () => ({ ok: true, data: {} }) },
+      pages: { dir: 'd', fields: [], validate: () => ({ ok: true, data: {} }) },
+    });
+    expect(concepts.find((c) => c.id === 'posts')!.permalink).toBe('/posts/:slug');
+    expect(concepts.find((c) => c.id === 'pages')!.permalink).toBe('/:slug');
+  });
+
+  it('uses an explicit permalink when the config provides one', () => {
+    const [concept] = normalizeConcepts({
+      posts: { dir: 'd', fields: [], validate: () => ({ ok: true, data: {} }), permalink: '/:year/:month/:slug' },
+    });
+    expect(concept.permalink).toBe('/:year/:month/:slug');
+  });
+});
+
 describe('findConcept', () => {
   it('finds a normalized concept by id, undefined when absent', () => {
     const descriptors = normalizeConcepts(testAdapter.content);

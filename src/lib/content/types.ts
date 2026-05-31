@@ -3,7 +3,7 @@
 //
 // The adapter is the single seam the engine consumes (spec §8). A site supplies a
 // `CairnAdapter` at `src/lib/cairn.config.ts` declaring its backend repo, the content
-// concepts it enables, its magic-link sender, and a design-accurate `renderPreview`. The
+// concepts it enables, its magic-link sender, and a design-accurate `render`. The
 // engine never hard-codes a concept, directory, or field; it reads them here. Field
 // descriptors are plain data so a `load` function can hand them across the server-to-client
 // boundary to the editor form.
@@ -84,6 +84,13 @@ export interface ConceptConfig {
   fields: FrontmatterField[];
   /** Validate submitted frontmatter before any commit. */
   validate(frontmatter: Record<string, unknown>, body: string): ValidationResult;
+  /**
+   * Public URL pattern for this concept, a `/`-prefixed string of literal segments and the
+   * tokens `:slug`, `:year`, `:month`, `:day`. `normalizeConcepts` fills a per-concept
+   * default when omitted (`/:slug` for Pages, `/<conceptId>/:slug` otherwise). The pattern
+   * must agree with the site's filesystem route directory.
+   */
+  permalink?: string;
 }
 
 /** The GitHub App backend a site reads from and commits to (spec §8). Plain data the GitHub engine (Plan 03) consumes. */
@@ -135,8 +142,8 @@ export interface CairnAdapter {
   };
   backend: BackendConfig;
   sender: SenderConfig;
-  /** Design-accurate preview: the same render pipeline the site ships. */
-  renderPreview(md: string): string | Promise<string>;
+  /** The site's one renderer: the editor preview and every public page call it (design decision 4). */
+  render(md: string, opts?: { stagger?: boolean }): string | Promise<string>;
   /** Directive component registry; the renderer and the future palette derive from it (seam 3). */
   registry?: ComponentRegistry;
   navMenu?: NavMenuConfig;
@@ -166,6 +173,8 @@ export interface ConceptDescriptor {
   label: string;
   dir: string;
   routing: RoutingRule;
+  /** The resolved permalink pattern, defaulted by `normalizeConcepts`. */
+  permalink: string;
   fields: FrontmatterField[];
   validate(frontmatter: Record<string, unknown>, body: string): ValidationResult;
 }
@@ -224,7 +233,8 @@ export interface CairnRuntime {
   concepts: ConceptDescriptor[];
   backend: BackendConfig;
   sender: SenderConfig;
-  renderPreview(md: string): string | Promise<string>;
+  /** The site's one renderer: the editor preview and every public page call it (design decision 4). */
+  render(md: string, opts?: { stagger?: boolean }): string | Promise<string>;
   registry?: ComponentRegistry;
   navMenu?: NavMenuConfig;
   assets?: AssetConfig;

@@ -10,13 +10,14 @@ function runtime(validate: (fm: Record<string, unknown>, body: string) => Valida
       {
         id: 'posts', label: 'Posts', dir: 'src/content/posts',
         routing: { routable: true, dated: true, inFeeds: true },
+        permalink: '/posts/:slug',
         fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
         validate,
       },
     ],
     backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
     sender: { from: 'cms@test' },
-    renderPreview: (md) => md,
+    render: (md) => md,
   };
 }
 

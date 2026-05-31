@@ -23,6 +23,11 @@ function defaultLabel(id: string): string {
   return id.charAt(0).toUpperCase() + id.slice(1);
 }
 
+/** The default permalink pattern: Pages live at the root, other concepts under their id. */
+function defaultPermalink(id: string): string {
+  return id === 'pages' ? '/:slug' : `/${id}/:slug`;
+}
+
 /**
  * Normalize an adapter's declared concepts into uniform descriptors (seam 1). Each declared
  * key under `content` becomes one descriptor; an undeclared (`undefined`) concept is
@@ -41,6 +46,7 @@ export function normalizeConcepts(
       label: config.label ?? defaultLabel(id),
       dir: config.dir,
       routing: routing[id] ?? DEFAULT_ROUTING,
+      permalink: config.permalink ?? defaultPermalink(id),
       fields: config.fields,
       validate: config.validate,
     });

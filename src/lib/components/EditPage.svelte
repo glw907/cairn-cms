@@ -21,10 +21,10 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
     /** Carta preview plugins from the adapter, for the design-accurate preview. */
     preview?: unknown[];
     /** The site's design-accurate render pipeline; the preview pane sanitizes its output. */
-    renderPreview?: (md: string) => string | Promise<string>;
+    render?: (md: string, opts?: { stagger?: boolean }) => string | Promise<string>;
   }
 
-  let { data, registry, preview = [], renderPreview }: Props = $props();
+  let { data, registry, preview = [], render }: Props = $props();
 
   // `body` is local editor state seeded once from the prop; it diverges as the user types.
   // untrack() captures the initial value without subscribing to future prop changes.
@@ -48,15 +48,15 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
   // Render the design-accurate preview as the body changes, debounced, and sanitize before the DOM.
   // The sanitize is the one barrier between editor-authored markdown and the page (Carta is unsanitized).
   // previewRun is a plain counter (not reactive state) used as a latest-wins guard: if a slow earlier
-  // async renderPreview call resolves after a newer one has started, the stale result is discarded.
+  // async render call resolves after a newer one has started, the stale result is discarded.
   let previewRun = 0;
   $effect(() => {
-    if (!showPreview || !renderPreview) return;
+    if (!showPreview || !render) return;
     const md = body;
     const run = ++previewRun;
     const handle = setTimeout(async () => {
       try {
-        const html = await renderPreview(md);
+        const html = await render(md);
         const safe = await sanitizePreviewHtml(html);
         if (run === previewRun) previewHtml = safe;
       } catch {

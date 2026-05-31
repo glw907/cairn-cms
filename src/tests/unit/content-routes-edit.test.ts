@@ -10,6 +10,7 @@ function runtime(): CairnRuntime {
       {
         id: 'posts', label: 'Posts', dir: 'src/content/posts',
         routing: { routable: true, dated: true, inFeeds: true },
+        permalink: '/posts/:slug',
         fields: [
           { type: 'text', name: 'title', label: 'Title', required: true },
           { type: 'date', name: 'date', label: 'Date' },
@@ -19,7 +20,7 @@ function runtime(): CairnRuntime {
     ],
     backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
     sender: { from: 'cms@test' },
-    renderPreview: (md) => md,
+    render: (md) => md,
   };
 }
 

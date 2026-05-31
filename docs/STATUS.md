@@ -8,28 +8,36 @@ Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`
 
 ## Where the work is (2026-05-30)
 
-- Rebuild plans 00 through 08 landed. Stable `0.6.0` is the published `latest`. Both consumer
-  sites (907-life, ecnordic-ski) cut over to `0.6.0`, merged to their mains, deploy via CI, and
-  passed a full live magic-link smoke. The dormant better-auth tables and AUTH_KV are deleted.
-- The public content delivery layer is executed on branch `feat/public-delivery` (off `main`
-  `1d68e9e`), 16 commits `38ecea2`..`3df67cd`, green (`npm run check` 0/0, 285 tests exit 0,
-  `npm run check:package` passing). It is unmerged and unpublished. Detail is in the plan
-  post-mortem and the `cairn-public-delivery` memory.
+- Rebuild plans 00 through 08 landed. The public content delivery layer landed too. It merged to
+  `main` (merge `6080496`) and published as `0.7.0`, now the `latest` tag on npm. The delivery
+  layer is additive over the 0.6.0 admin and auth surfaces, so it shipped as a minor. Green at the
+  merge: `npm run check` 0/0, 285 tests exit 0, `npm run check:package` passing. The publish ran
+  through the OIDC trusted-publishing workflow off the `v0.7.0` GitHub Release.
+- Both consumer sites (907-life, ecnordic-ski) still run `0.6.0`. They cut over to it, merged to
+  their mains, deploy via CI, and passed a full live magic-link smoke. The dormant better-auth
+  tables and AUTH_KV are deleted. Neither site has migrated onto the delivery surface yet.
 
 ## Worktree topology
 
 - `~/Projects/cairn/cairn-cms` is the `main` checkout, canonical. STATUS.md is canonical here.
-- `~/Projects/cairn/cairn-public-delivery` is `feat/public-delivery`, the active pass.
-- `~/Projects/cairn/cairn-cms-rebuild` is `feat/rise-data-attr`, stale and already merged, prunable.
+- `~/Projects/cairn/cairn-public-delivery` (`feat/public-delivery`) is merged and pruned.
+- `~/Projects/cairn/cairn-cms-rebuild` (`feat/rise-data-attr`) is merged. It is still the anchor
+  cwd of the landing session, so its teardown is deferred to the workspace-relocation pass.
+- Open structural decision: the rebuild is done, so the `~/Projects/cairn` meta-workspace (the
+  root `package.json` that symlinks cairn-cms into the sites for zero-publish dev) has outlived its
+  purpose now that `0.7.0` publishes. A focused pass should relocate cairn-cms to a standalone
+  `~/Projects/cairn-cms`, point the sites at published `@glw907/cairn-cms` for local dev, and
+  update the path references across the skills, memories, and these docs. Treat it as its own pass,
+  not a mv, because it rewires both sites' dependency resolution.
 
 ## Open decisions and next steps
 
-1. Merge `feat/public-delivery` into `main`.
-2. Bump and publish the engine (the delivery layer is additive, so a minor bump).
-3. Migrate each site off its hand-rolled `posts.ts`/`feed.ts` onto the new delivery surface, one
-   per-site `site-pass`. Keep a dated permalink pattern to preserve existing URLs. Needs the
-   publish first.
-4. Next engine design is the site-settings sibling spec, then Plan 09 (CairnExtension dispatch),
+1. Relocate cairn-cms to a standalone `~/Projects/cairn-cms` and dissolve the meta-workspace (see
+   the structural decision above). Tear down the merged worktrees as part of it.
+2. Migrate each site off its hand-rolled `posts.ts`/`feed.ts` onto the new delivery surface, one
+   per-site `site-pass`. Keep a dated permalink pattern to preserve existing URLs. Unblocked now
+   that `0.7.0` is published.
+3. Next engine design is the site-settings sibling spec, then Plan 09 (CairnExtension dispatch),
    then Plan 10 (scaffolder).
 
 ## Carried follow-ups (latent, not bugs under current conventions)

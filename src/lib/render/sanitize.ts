@@ -1,5 +1,5 @@
-// The live preview's sanitize floor. Carta runs with `sanitizer: false` behind the MarkdownEditor
-// seam, so the admin preview pane is the one barrier between editor-authored markdown and the DOM.
+// The live preview's sanitize floor. The MarkdownEditor edits raw markdown and never sanitizes,
+// so the admin preview pane is the one barrier between editor-authored markdown and the DOM.
 // DOMPurify needs a DOM, and the preview renders only in the browser after mount, so DOMPurify
 // loads through a dynamic import: the module never evaluates a DOM library on the Worker, and a
 // server import of this file pulls in nothing.

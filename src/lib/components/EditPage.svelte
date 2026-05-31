@@ -1,6 +1,6 @@
 <!--
 @component
-The differentiated editor: the per-concept frontmatter form (from `data.fields`) beside the Carta
+The differentiated editor: the per-concept frontmatter form (from `data.fields`) beside the
 markdown editor and a live, design-accurate preview. The whole surface is one form posting to the
 `?/save` action; the preview toggle persists per user in localStorage (spec §7.6).
 -->
@@ -44,7 +44,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
   }
 
   // Render the design-accurate preview as the body changes, debounced, and sanitize before the DOM.
-  // The sanitize is the one barrier between editor-authored markdown and the page (Carta is unsanitized).
+  // The sanitize is the one barrier between editor-authored markdown and the page (the editor is unsanitized).
   // previewRun is a plain counter (not reactive state) used as a latest-wins guard: if a slow earlier
   // async render call resolves after a newer one has started, the stale result is discarded.
   let previewRun = 0;

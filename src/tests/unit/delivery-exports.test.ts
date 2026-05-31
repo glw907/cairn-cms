@@ -8,6 +8,7 @@ describe('delivery exports', () => {
       'permalink',
       'createContentIndex',
       'fromGlob',
+      'createSiteIndex',
       'deriveExcerpt',
       'wordCount',
       'buildRssFeed',
@@ -19,6 +20,11 @@ describe('delivery exports', () => {
     ]) {
       expect(typeof (root as Record<string, unknown>)[name]).toBe('function');
     }
+  });
+
+  it('re-exports the URL-policy helpers from the root entry', () => {
+    expect(typeof (root as Record<string, unknown>).urlPolicyFrom).toBe('function');
+    expect(typeof (root as Record<string, unknown>).parseSiteConfig).toBe('function');
   });
 
   it('re-exports the public route factory from the sveltekit entry', () => {

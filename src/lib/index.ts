@@ -23,6 +23,7 @@ export type {
   AssetConfig,
   RoutingRule,
   ConceptDescriptor,
+  ConceptUrlPolicy,
   CairnExtension,
   CairnRuntime,
   AdminPanel,
@@ -37,7 +38,15 @@ export {
   parseMarkdown,
 } from './content/frontmatter.js';
 export { validateFields } from './content/validate.js';
-export { isValidId, idFromFilename, filenameFromId, slugify } from './content/ids.js';
+export {
+  isValidId,
+  idFromFilename,
+  filenameFromId,
+  slugify,
+  slugFromId,
+  composeDatedId,
+} from './content/ids.js';
+export type { DatePrefix } from './content/ids.js';
 // Render engine (Plan 04): generic directive pipeline; sites own the component registry.
 export { defineRegistry } from './render/registry.js';
 export type { ComponentDef, ComponentRegistry } from './render/registry.js';
@@ -76,6 +85,7 @@ export type { GithubKeyEnv } from './github/credentials.js';
 // Nav tree and site-config helpers (Plan 06).
 export {
   parseSiteConfig,
+  urlPolicyFrom,
   extractMenu,
   setMenu,
   validateNavTree,
@@ -96,6 +106,8 @@ export type {
   ContentEntry,
   ContentIndex,
 } from './delivery/content-index.js';
+export { createSiteIndex } from './delivery/site-index.js';
+export type { SiteIndex, ConceptIndex } from './delivery/site-index.js';
 export { deriveExcerpt, wordCount } from './delivery/excerpt.js';
 export { buildRssFeed, buildJsonFeed } from './delivery/feeds.js';
 export type { FeedChannel, FeedItem } from './delivery/feeds.js';

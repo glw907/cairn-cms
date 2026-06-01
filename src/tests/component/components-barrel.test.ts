@@ -3,7 +3,7 @@ import * as components from '../../lib/components/index.js';
 
 describe('components barrel', () => {
   it('exports every admin component', () => {
-    for (const name of ['AdminLayout', 'LoginPage', 'ConfirmPage', 'ConceptList', 'EditPage', 'ManageEditors', 'MarkdownEditor', 'ComponentPalette']) {
+    for (const name of ['AdminLayout', 'LoginPage', 'ConfirmPage', 'ConceptList', 'EditPage', 'ManageEditors', 'MarkdownEditor', 'ComponentInsertDialog', 'ComponentForm', 'IconPicker']) {
       expect(components).toHaveProperty(name);
     }
   });

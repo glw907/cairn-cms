@@ -7,5 +7,7 @@ export { default as ConceptList } from './ConceptList.svelte';
 export { default as EditPage } from './EditPage.svelte';
 export { default as ManageEditors } from './ManageEditors.svelte';
 export { default as MarkdownEditor } from './MarkdownEditor.svelte';
-export { default as ComponentPalette } from './ComponentPalette.svelte';
+export { default as ComponentInsertDialog } from './ComponentInsertDialog.svelte';
+export { default as ComponentForm } from './ComponentForm.svelte';
+export { default as IconPicker } from './IconPicker.svelte';
 export { default as NavTree } from './NavTree.svelte';

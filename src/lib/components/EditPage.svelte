@@ -7,8 +7,9 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
 <script lang="ts">
   import { untrack } from 'svelte';
   import MarkdownEditor from './MarkdownEditor.svelte';
-  import ComponentPalette from './ComponentPalette.svelte';
+  import ComponentInsertDialog from './ComponentInsertDialog.svelte';
   import type { ComponentRegistry } from '../render/registry.js';
+  import type { IconSet } from '../render/glyph.js';
   import type { EditData } from '../sveltekit/content-routes.js';
   import type { TextareaField, TagsField, FreeTagsField } from '../content/types.js';
   import { sanitizePreviewHtml } from '../render/sanitize.js';
@@ -20,9 +21,11 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
     registry?: ComponentRegistry;
     /** The site's design-accurate render pipeline; the preview pane sanitizes its output. */
     render?: (md: string, opts?: { stagger?: boolean }) => string | Promise<string>;
+    /** The site's icon set, for the guided form's icon fields. */
+    icons?: IconSet;
   }
 
-  let { data, registry, render }: Props = $props();
+  let { data, registry, render, icons }: Props = $props();
 
   // `body` is local editor state seeded once from the prop; it diverges as the user types.
   // untrack() captures the initial value without subscribing to future prop changes.
@@ -76,7 +79,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
     <p class="text-xs text-[var(--color-muted)]">{data.label}: {data.id}</p>
   </div>
   <div class="flex items-center gap-2">
-    <ComponentPalette {registry} {insert} />
+    <ComponentInsertDialog {registry} {insert} {icons} />
     <button
       type="button"
       class="btn btn-sm btn-ghost"

@@ -48,8 +48,21 @@ export {
 } from './content/ids.js';
 export type { DatePrefix } from './content/ids.js';
 // Render engine (Plan 04): generic directive pipeline; sites own the component registry.
-export { defineRegistry } from './render/registry.js';
-export type { ComponentDef, ComponentRegistry } from './render/registry.js';
+export { defineRegistry, emptyValues } from './render/registry.js';
+export type {
+  ComponentDef,
+  ComponentRegistry,
+  FieldType,
+  AttributeField,
+  SlotKind,
+  SlotDef,
+  ComponentValues,
+} from './render/registry.js';
+export { serializeComponent, parseComponent } from './render/component-grammar.js';
+export { validateComponent } from './render/component-validate.js';
+export type { ComponentValidation } from './render/component-validate.js';
+export { generateComponentReference } from './render/component-reference.js';
+export type { ReferenceOptions } from './render/component-reference.js';
 export { glyph } from './render/glyph.js';
 export type { IconSet } from './render/glyph.js';
 export { remarkDirectiveStamp } from './render/remark-directives.js';

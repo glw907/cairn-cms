@@ -8,6 +8,7 @@ markdown. Back returns to the picker. This is not a nested HTML form; Insert cal
 <script lang="ts">
   import { untrack } from 'svelte';
   import { emptyValues, type ComponentDef } from '../render/registry.js';
+  import { buildComponentInsert } from '../render/component-insert.js';
   import type { IconSet } from '../render/glyph.js';
   import IconPicker from './IconPicker.svelte';
 
@@ -49,6 +50,21 @@ markdown. Back returns to the picker. This is not a nested HTML form; Insert cal
     const v = values.slots[name];
     return typeof v === 'string' ? v : '';
   }
+
+  // Field-keyed validation errors from the last submit, keyed by attribute key or slot name.
+  let errors = $state<Record<string, string>>({});
+
+  // Serialize and validate through the pure helper. On success clear errors and emit the markdown;
+  // on failure keep the field-keyed errors so each field can show its message and insert nothing.
+  async function submit() {
+    const result = await buildComponentInsert(def, values);
+    if (result.ok) {
+      errors = {};
+      onInsert(result.markdown);
+    } else {
+      errors = result.errors;
+    }
+  }
 </script>
 
 <div class="flex flex-col gap-3">
@@ -69,6 +85,7 @@ markdown. Back returns to the picker. This is not a nested HTML form; Insert cal
         />
         <span class="text-sm">{field.label}</span>
       </label>
+      {#if errors[field.key]}<span class="text-error text-xs">{errors[field.key]}</span>{/if}
     {:else if field.type === 'select'}
       <label class="flex flex-col gap-1">
         <span class="text-sm font-medium">{field.label}</span>
@@ -82,6 +99,7 @@ markdown. Back returns to the picker. This is not a nested HTML form; Insert cal
           {#each field.options ?? [] as opt (opt)}<option value={opt}>{opt}</option>{/each}
         </select>
       </label>
+      {#if errors[field.key]}<span class="text-error text-xs">{errors[field.key]}</span>{/if}
     {:else if field.type === 'icon' && icons}
       <div class="flex flex-col gap-1">
         <span class="text-sm font-medium">{field.label}</span>
@@ -92,6 +110,7 @@ markdown. Back returns to the picker. This is not a nested HTML form; Insert cal
           onChange={(name) => (values.attributes[field.key] = name)}
         />
       </div>
+      {#if errors[field.key]}<span class="text-error text-xs">{errors[field.key]}</span>{/if}
     {:else}
       <label class="flex flex-col gap-1">
         <span class="text-sm font-medium">{field.label}</span>
@@ -102,6 +121,7 @@ markdown. Back returns to the picker. This is not a nested HTML form; Insert cal
           oninput={(e) => (values.attributes[field.key] = e.currentTarget.value)}
         />
       </label>
+      {#if errors[field.key]}<span class="text-error text-xs">{errors[field.key]}</span>{/if}
     {/if}
   {/each}
 
@@ -117,6 +137,7 @@ markdown. Back returns to the picker. This is not a nested HTML form; Insert cal
           oninput={(e) => (values.slots[slot.name] = e.currentTarget.value)}
         ></textarea>
       </label>
+      {#if errors[slot.name]}<span class="text-error text-xs">{errors[slot.name]}</span>{/if}
     {:else}
       <label class="flex flex-col gap-1">
         <span class="text-sm font-medium">{slot.label}</span>
@@ -127,6 +148,7 @@ markdown. Back returns to the picker. This is not a nested HTML form; Insert cal
           oninput={(e) => (values.slots[slot.name] = e.currentTarget.value)}
         />
       </label>
+      {#if errors[slot.name]}<span class="text-error text-xs">{errors[slot.name]}</span>{/if}
     {/if}
   {/each}
 
@@ -141,8 +163,9 @@ markdown. Back returns to the picker. This is not a nested HTML form; Insert cal
         </div>
       {/each}
       <button type="button" class="btn btn-sm self-start" onclick={() => items.push('')}>Add item</button>
+      {#if errors[slot.name]}<span class="text-error text-xs">{errors[slot.name]}</span>{/if}
     </fieldset>
   {/each}
 
-  <button type="button" class="btn btn-primary btn-sm mt-2" onclick={() => onInsert('')}>Insert</button>
+  <button type="button" class="btn btn-primary btn-sm mt-2" onclick={submit}>Insert</button>
 </div>

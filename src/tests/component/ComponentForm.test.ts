@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import ComponentForm from '../../lib/components/ComponentForm.svelte';
 import type { ComponentDef } from '../../lib/render/registry.js';
@@ -54,5 +54,25 @@ describe('ComponentForm repeatable slot', () => {
     expect(screen.container.querySelectorAll('input[aria-label="Points item"]').length).toBe(2);
     await screen.getByRole('button', { name: /remove item 1/i }).click();
     expect(screen.container.querySelectorAll('input[aria-label="Points item"]').length).toBe(1);
+  });
+});
+
+describe('ComponentForm submit', () => {
+  it('inserts serialized markdown when valid', async () => {
+    const onInsert = vi.fn();
+    const screen = render(ComponentForm, { def: callout, onInsert, onBack: () => {} } as never);
+    await screen.getByRole('combobox', { name: /tone/i }).selectOptions('note');
+    await screen.getByRole('textbox', { name: /title/i }).fill('Heads up');
+    await screen.getByRole('button', { name: /^insert$/i }).click();
+    expect(onInsert).toHaveBeenCalledWith(':::callout[Heads up]{tone="note"}\n:::');
+  });
+
+  it('shows inline errors and does not insert when required fields are empty', async () => {
+    const onInsert = vi.fn();
+    const screen = render(ComponentForm, { def: callout, onInsert, onBack: () => {} } as never);
+    await screen.getByRole('button', { name: /^insert$/i }).click();
+    expect(onInsert).not.toHaveBeenCalled();
+    await expect.element(screen.getByText(/tone is required/i)).toBeInTheDocument();
+    await expect.element(screen.getByText(/title is required/i)).toBeInTheDocument();
   });
 });

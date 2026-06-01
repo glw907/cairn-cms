@@ -6,29 +6,42 @@ orientation is the workspace `CLAUDE.md`. Locked architecture decisions and the 
 the functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`).
 Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`.
 
-## Where the work is (2026-06-01, delivery-surface DX planned)
+## Where the work is (2026-06-01, delivery-surface DX executed, unpublished)
 
-The delivery-surface developer-experience pass is specced and planned, ready to execute. It came out
-of ecnordic's Pass 1b, the first site to consume the public delivery, which revealed that the engine
-already ships the delivery path (`createSiteIndex`, `createPublicRoutes`) but it is undiscoverable,
-coupled to the auth and github `/sveltekit` barrel, and partially complete. A competitive review
-against Astro, Next, Velite, Keystatic, TinaCMS, and Decap/Sveltia confirmed the direction and found
-cairn already ahead on owning delivery and on draft handling.
+The delivery-surface developer-experience pass executed and landed on `main`, commits `d606676..27deb16`
+(thirteen: ten plan tasks plus three review-gate fixes), local only and not yet published. The delivery
+layer is now the blessed, backend-free public path a SvelteKit site wires in a few lines. It adds the
+fourth package entry `@glw907/cairn-cms/delivery` (imports no auth, github, or email, enforced by a
+boundary test), build-time validation safe-by-default in `createSiteIndex` (`{ validate: false }` opt-out),
+a ready `seo: SeoMeta` from the catch-all `entryLoad`, the `responses.ts` feed/sitemap/robots `Response`
+helpers, `json-ld.ts` with breakout-safe escaping, the `<CairnHead>` head component (`title={false}` to let
+a site own its `<title>`), the `siteDescriptors(adapter, config)` one-liner, `buildSeoMeta` `robots` and
+`article:*` tags, and generic-over-frontmatter content reads (`createContentIndex<F>`) for a later
+typed-reads pass. The showcase wires every surface (`content.ts`, the `[...path]` route, feed.xml,
+feed.json, sitemap.xml, robots.txt) and the production build prerenders them as the end-to-end gate.
+
+Final gate on `main`: `npm run check` 739 files 0/0, `npm test` 88 files / 398 tests exit 0,
+`check:package` green (attw all-green for `/delivery`), showcase build prerenders all feeds and the
+catch-all. A simplifier pass, a `svelte-reviewer`, a `daisyui-a11y-reviewer` (both Opus), and a
+two-angle `/code-review` ran at the gate; three findings were folded in (the U+2028/U+2029 JSON-LD
+escape gap, the missing showcase `feed.json` route the head advertised, a repeated concept lookup).
+Plan and full post-mortem with the carried open decisions: `docs/superpowers/plans/2026-06-01-cairn-delivery-dx.md`.
 
 - Spec: `docs/superpowers/specs/2026-06-01-cairn-delivery-dx-design.md`.
-- Plan: `docs/superpowers/plans/2026-06-01-cairn-delivery-dx.md` (ten test-first tasks).
 
-**Immediate next action: execute the delivery-surface DX plan `subagent-driven`
-(`superpowers:subagent-driven-development`, one implementer per task), from the cairn-cms directory.**
-The plan is fully written, so skip brainstorming and start at Task 1. It adds a backend-free
-`/delivery` package entry, build-time validation safe-by-default in `createSiteIndex`, the SEO head in
-the catch-all loader, feed/sitemap/robots response helpers, a `<CairnHead>` component,
-`siteDescriptors`, and a showcase public example, and leaves the content reads generic-ready for a
-later typed-content-model pass. Recorded follow-ons (out of scope): typed reads, OpenGraph image
-generation, redirects, i18n. After this lands and publishes, ecnordic Pass 1c and the 907 migration
-adopt the blessed path.
+**Immediate next action: publish the delivery surface as a release, then sequence the site migrations
+and the component Plan 3 with the user.** This pass is unpublished. Per the cairn release process,
+publish a version bump (this is additive over `0.10.0`, so a minor `0.11.0`) through the OIDC
+trusted-publishing workflow off a `v0.11.0` GitHub Release, after pushing `main`. The sites consume
+`/delivery` only after publish. Then the two queued, design-bearing passes (each its own
+brainstorm-then-plan) sequence against each other: the per-site migrations onto the delivery surface
+(ecnordic Pass 1c, then 907), and component Plan 3 (per-site component migration). Surface the
+post-mortem's open decisions to the user before the migrations, especially the build-validation date
+gotcha: a site's hand-rolled `validate` must route an unquoted YAML `date` through `validateFields` or
+coerce it, since the build path sees a JS `Date`, not a string.
 
-The component Plan 3 below (per-site component migration) stays queued; sequence the two with the user.
+Carried out-of-scope follow-ons: typed reads, OpenGraph image generation, redirects, i18n, and the two
+delivery-validation refinements in the post-mortem (skip-drafts-at-build and apply-normalized-`data`-on-read).
 
 ## Where the work is (2026-05-31, post-component-form)
 
@@ -171,16 +184,22 @@ Do these in order.
    (done). The interactive browser smoke remains a fast-follow: live keyboard behavior in the showcase admin
    editor (typing, the focus ring, toolbar formatting, the palette insert, the preview toggle). Pushing
    cairn-cms `main` does not deploy a site (only the site repos deploy on push).
-0a. Publishing is done. The registry carries `0.7.0`, `0.8.0`, and `0.9.0` (`latest`). The site migration in
-   step 1 pins `^0.8.0` (which for 0.x semver is `>=0.8.0 <0.9.0`, so it does NOT pick up the breaking
-   `0.9.0`); the editor `0.9.0` is a separate later migration. `0.9.0` is breaking on the package surface
-   (the `MarkdownEditor` `preview` prop is gone and carta-md left the peer set), so a consuming site that
-   passed `preview` must drop it at that bump.
-1. Migrate each site onto `^0.8.0` and the delivery surface, one per-site `site-pass`, from that
-   site's own directory. Each applies the `renderPreview`-to-`render` rename, adopts feeds, sitemap,
-   SEO, and the catch-all `[...path]` public route, sets its per-concept URL policy in the YAML
-   (`907`: `datePrefix: day`, `/:year/:month/:day/:slug`; `ecnordic`: `datePrefix: month`,
-   `/:year/:month/:slug`), and drops its hand-rolled `posts.ts`/`feed.ts`. Existing filenames and
+0a. Publishing: the registry carries `0.7.0`, `0.8.0`, and `0.9.0` (`latest`). The delivery-surface DX
+   pass on `main` is unpublished; publish it as `0.11.0` (additive minor over `0.10.0`) before any site
+   migration, so a site can import `@glw907/cairn-cms/delivery`. `0.9.0` is breaking on the package
+   surface (the `MarkdownEditor` `preview` prop is gone and carta-md left the peer set), so a consuming
+   site that passed `preview` must drop it at that bump.
+1. Migrate each site onto the published delivery surface (`^0.11.0` once published), one per-site
+   `site-pass`, from that site's own directory. Each imports from `@glw907/cairn-cms/delivery`, applies
+   the `renderPreview`-to-`render` rename, builds the content layer with `siteDescriptors` +
+   `createSiteIndex` (which now validates frontmatter at build), adopts the `responses.ts` feed/sitemap/
+   robots helpers and the `<CairnHead>` SEO head, wires the catch-all `[...path]` route, sets its
+   per-concept URL policy in the YAML (`907`: `datePrefix: day`, `/:year/:month/:day/:slug`; `ecnordic`:
+   `datePrefix: month`, `/:year/:month/:slug`), and drops its hand-rolled `posts.ts`/`feed.ts`.
+   `examples/showcase` is the complete working reference. **Gotcha to honor (from the delivery DX review):
+   the build-time validation feeds `parseMarkdown` frontmatter to the site's `validate`, where an unquoted
+   YAML `date:` is a JS `Date`, not a string. A hand-rolled `validate` that string-checks `date` must route
+   it through `validateFields` or coerce it, or the build rejects valid dated posts.** Existing filenames and
    URLs are preserved with zero redirects. This is where the symlink engages
    (`docs/runbooks/symlink-dev.md`) and where the production deploys happen. The live `/admin` smoke
    for the dated create flow is best run here, against the real Worker.
@@ -204,6 +223,16 @@ outcome is in the functional spec).
 
 ## Carried follow-ups (latent, not bugs under current conventions)
 
+- Delivery DX (open design decisions from the review, not bugs): build validation runs over drafts too
+  (`includeDrafts: true`), so a draft saved with an unfilled required field would fail the build; the admin
+  save path validates before commit, so this is a backstop for direct-git edits. `createSiteIndex`
+  validation checks `result.ok` and discards the validator's normalized `result.data`, so a `validate` that
+  trims or defaults a field passes the build yet the read serves raw frontmatter (the delivery path treats
+  `validate` as a gate, not a transform; fold normalization in with the typed-reads pass). Minor: `entryLoad`
+  attaches feed autodiscovery links to undated Pages too, and the showcase `feed.xml` would render an
+  `Invalid Date` pubDate for an undated item (unreachable while posts are always dated). The build-validation
+  date-shape gotcha (unquoted YAML `date` arrives as a JS `Date`) is recorded in the site-migration step
+  above, since that is where a hand-rolled validator would meet it.
 - Component registry (Plan 1, RESOLVED by Plan 2): the old palette rendered a no-op item for a def
   lacking `insertTemplate`. The Plan 2 dialog replaces the palette with a dual path (schema def opens
   the form, template-only inserts directly, a def with neither is omitted), so the no-op is gone.

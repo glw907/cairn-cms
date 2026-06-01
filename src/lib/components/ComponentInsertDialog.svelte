@@ -1,0 +1,90 @@
+<!--
+@component
+The Insert control and its modal. The picker lists each actionable component with its description and
+intended use. A component with a schema opens the guided ComponentForm; a template-only component
+inserts directly; a component with neither is not listed. Built on a native <dialog> for focus
+trapping and Escape, following the dropdown's a11y conventions used elsewhere in the admin.
+-->
+<script lang="ts">
+  import type { ComponentRegistry, ComponentDef } from '../render/registry.js';
+  import type { IconSet } from '../render/glyph.js';
+  import ComponentForm from './ComponentForm.svelte';
+
+  interface Props {
+    /** The site's component registry. */
+    registry?: ComponentRegistry;
+    /** Insert markdown at the editor cursor. */
+    insert: (text: string) => void;
+    /** The site's icon set, for icon fields. */
+    icons?: IconSet;
+  }
+
+  let { registry, insert, icons }: Props = $props();
+
+  let dialog = $state<HTMLDialogElement | null>(null);
+  let picked = $state<ComponentDef | null>(null);
+
+  function hasSchema(def: ComponentDef): boolean {
+    return (def.attributes?.length ?? 0) > 0 || (def.slots?.length ?? 0) > 0;
+  }
+  function actionable(def: ComponentDef): boolean {
+    return hasSchema(def) || Boolean(def.insertTemplate);
+  }
+
+  const defs = $derived((registry?.defs ?? []).filter(actionable));
+
+  function open() {
+    picked = null;
+    dialog?.showModal();
+  }
+  function close() {
+    picked = null;
+    dialog?.close();
+  }
+  function choose(def: ComponentDef) {
+    if (hasSchema(def)) {
+      picked = def;
+    } else {
+      insert(def.insertTemplate ?? '');
+      close();
+    }
+  }
+  function onInsert(markdown: string) {
+    insert(markdown);
+    close();
+  }
+</script>
+
+{#if defs.length > 0}
+  <button type="button" class="btn btn-sm btn-ghost" aria-haspopup="dialog" aria-label="Insert component" onclick={open}>Insert</button>
+
+  <dialog class="modal" bind:this={dialog} onclose={() => (picked = null)}>
+    <div class="modal-box">
+      <div class="mb-3 flex items-center justify-between">
+        <h2 class="text-base font-semibold">Insert component</h2>
+        <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={close}>✕</button>
+      </div>
+
+      {#if picked}
+        <ComponentForm def={picked} {icons} {onInsert} onBack={() => (picked = null)} />
+      {:else}
+        <ul class="menu w-full" role="listbox" aria-label="Components">
+          {#each defs as def (def.name)}
+            <li role="option" aria-selected={false}>
+              <button type="button" onclick={() => choose(def)}>
+                <span class="flex flex-col items-start">
+                  <span class="font-medium">{def.label}</span>
+                  {#if def.description}<span class="text-xs text-[var(--color-muted)]">{def.description}</span>{/if}
+                  {#if def.use}<span class="text-xs text-[var(--color-muted)]">{def.use}</span>{/if}
+                </span>
+              </button>
+            </li>
+          {/each}
+        </ul>
+      {/if}
+    </div>
+    <form method="dialog" class="modal-backdrop">
+      <button aria-label="Close">close</button>
+    </form>
+  </dialog>
+{/if}

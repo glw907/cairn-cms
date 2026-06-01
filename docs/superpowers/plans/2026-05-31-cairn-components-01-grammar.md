@@ -855,3 +855,82 @@ Expected: still present and unchanged. This plan adds the schema alongside the e
 - **Deferred from the spec, by intent:** repeatable slots serialize single-field list items in this plan. Multi-field repeatable items (a grid item with its own sub-fields) are a follow-on, noted at the top. `build()` still reads the old heading convention until Plan 3 refactors each site to read slots.
 - **Type consistency:** `ComponentValues` (Task 1) is the input to `serializeComponent` and the output of `parseComponent` (Tasks 2 to 4) and the basis of `validateComponent` (Task 5) and the reference examples (Task 6). `FieldType`, `AttributeField`, `SlotDef`, and `SlotKind` are defined once in Task 1 and consumed unchanged everywhere after.
 - **Parser caveat:** Task 4 flags that `remark-directive` may carry the `[label]` differently across versions; the round-trip tests are the contract, and the implementer reads the real parsed tree rather than weakening a test.
+
+---
+
+## Post-mortem (executed 2026-05-31, subagent-driven on `main`)
+
+**Status:** complete and green on `main` (not pushed). Ran directly on `main` per STATUS's
+pre-baked authorization (additive engine-only, and a cairn-cms `main` push deploys no site).
+One `cairn-implementer` per task, verified each commit before dispatching the next.
+
+### What was built
+
+Tasks 1 through 7 landed verbatim against the plan: the `ComponentDef` schema extension
+(`FieldType`, `AttributeField`, `SlotKind`, `SlotDef`, optional `use`/`attributes`/`slots`,
+`ComponentValues`, `emptyValues`), the three grammar machines (`serializeComponent`,
+`parseComponent`, `validateComponent`) over the locked directive grammar,
+`generateComponentReference`, and the public exports. All pure node `unit` code, no Svelte
+and no admin UI. `build()`, `createRenderer`, the render dispatch, and `insertTemplate`
+usage were left untouched.
+
+### Decisions and corrections locked in during execution
+
+- **`insertTemplate` became optional.** Task 1's tests declare `ComponentDef` values without
+  `insertTemplate`, so the member moved from required to optional. This is backward compatible
+  (existing registries that supply it still compile) and matches the design direction, where the
+  schema supersedes the static scaffold. The one consumer, `ComponentPalette.svelte`, gained a
+  one-line guard so a templateless def inserts nothing rather than `undefined`.
+- **`remark-stringify` was an undeclared dependency.** `parseComponent` imports it, but it was
+  resolving only as a hoisted transitive dependency of the npm workspace root. Added it to
+  `dependencies` (`^11.0.0`) and relocked the committed standalone `package-lock.json` (the
+  documented temp-move-root dance), so a standalone `npm ci` resolves it. `check:package` green.
+- **The draft's escaping premise was wrong, caught against the real toolchain.** The plan
+  prescribed backslash escaping for attribute quotes. The installed `mdast-util-directive` does
+  not honor `\"` at all (it treats a literal `"` as the value terminator and decodes HTML
+  entities). The Task 9 fold-in switched to entity encoding (`&` then `"`), which actually
+  round-trips. The original Task 2 "escapes a double quote" assertion documented output that
+  never round-tripped; it was corrected to the entity form and proven with new round-trip tests.
+
+### Review gate and the Task 9 fold-in
+
+A `svelte-reviewer` pass and a general correctness review ran in parallel. The svelte pass
+confirmed the palette guard is correct; its one substantive finding (a templateless def renders
+as a no-op listbox option) is unreachable today because every shipped registry supplies
+`insertTemplate`, so it is carried to Plan 2, where schema-only defs first appear and the
+filter-versus-guided-form choice belongs.
+
+The correctness review found real robustness gaps in the new grammar, folded in test-first as
+Task 9 (a sixth implementer dispatch on Opus):
+- Attribute values now entity-encode `&` and `"` so a quote no longer breaks the parse.
+- Title labels escape `[` and `]` so a bracket in a title no longer loses the whole component.
+- `validateComponent` reads unknown-attribute keys from the parsed directive node, not a regex
+  over the source. This fixed a false rejection of a valid value containing `=` (a URL) and a
+  missed unknown attribute after a value containing `}`.
+- The repeatable-slot cast is guarded with `Array.isArray`.
+- `remark-stringify` is pinned to `bullet: '-'` so a markdown body list does not drift to `*`.
+
+A `code-simplifier` pass over the Tasks 1 to 7 code reused `slotByName`/`nestedSlots` inside
+`parseComponent` and documented the deliberate `emptyComponentValues` twin.
+
+### Verified
+
+- `npm run check`: scan 0 errors, 0 warnings over `src/` (717 files). The non-zero process exit
+  is the documented showcase `adapter-node` config import, not a `src/` problem.
+- `npm test`: 74 files, 360 tests, exit 0. A single `MarkdownEditor` component test flaked once
+  on a cold-browser start under full-suite load and passed on the immediate re-run and in
+  isolation; unrelated to this pass.
+- `npm run check:package`: green. `grep insertTemplate src/lib`: present, render path untouched.
+
+### Carried follow-ups
+
+- **Palette (Plan 2):** decide whether a schema-only def (no `insertTemplate`) is filtered out of
+  the insert palette or routed into the guided form. The current click guard makes it a safe
+  no-op in the interim.
+- **Grammar (latent, low likelihood for the planned sites):** an attribute value containing a
+  literal newline is still not supported (single-line form fields make this unreachable in
+  practice). `validateComponent` parses the markdown twice (once in `parseComponent`, once in
+  `parseRawAttributeKeys`); fine since validation is not hot.
+- **Deferred by design:** multi-field repeatable items (a grid item with its own sub-fields).
+  `build()` keeps reading the old heading convention until Plan 3 refactors each site to read
+  slots.

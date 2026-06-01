@@ -6,7 +6,31 @@ orientation is the workspace `CLAUDE.md`. Locked architecture decisions and the 
 the functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`).
 Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`.
 
-## Where the work is (2026-06-01, post-editor-swap-publish)
+## Where the work is (2026-05-31, post-component-grammar)
+
+- Component registry Plan 1 of 3 (engine grammar and schema) executed and landed on `main`
+  (commits `dbc1b69..174e02c`, not pushed, not published). It extends `ComponentDef` with a
+  typed schema (`attributes` + named `slots`, plus `use`), adds the three grammar machines
+  (`serializeComponent`, `parseComponent`, `validateComponent`) over one canonical
+  `remark-directive` grammar, and `generateComponentReference` for the llms-full author/AI
+  reference. Pure node `unit` code; `build()`, the render dispatch, and `insertTemplate` are
+  untouched (`insertTemplate` only moved to optional). Green at close: `npm run check` scan 0/0
+  over `src/`, `npm test` 360 tests exit 0, `check:package` green. Three corrections locked in
+  during execution: `insertTemplate` became optional with a one-line palette guard;
+  `remark-stringify` was an undeclared dependency (added and the committed lock relocked);
+  and the plan's backslash-escaping premise was wrong (the directive grammar decodes HTML
+  entities, so attribute quotes entity-encode instead). A svelte review plus a correctness
+  review ran at the gate; the correctness findings were folded in test-first as a Task 9
+  hardening pass (entity-encode quotes, escape title brackets, quote-aware unknown-attribute
+  detection, repeatable-slot array guard, pinned `bullet: '-'`). Plan and full post-mortem:
+  `docs/superpowers/plans/2026-05-31-cairn-components-01-grammar.md`. **Immediate next action:
+  Plan 2 (the admin guided-insert form) is the next component-registry pass. It is a UI design
+  with open product decisions, so brainstorm the form UX with the user first
+  (`superpowers:brainstorming`), then write Plan 2 with `superpowers:writing-plans`. Plan 2 must
+  also decide whether a schema-only def, one with no `insertTemplate`, is filtered out of the
+  insert palette or routed into the guided form (carried from this pass's svelte review).**
+
+## Earlier state (2026-06-01, post-editor-swap-publish)
 
 - The editor foundation swap (Carta to CodeMirror 6) MERGED to `main`, pushed to origin, and PUBLISHED
   as `0.9.0` (now `latest` on npm via the OIDC release `v0.9.0`). It replaces Carta with a
@@ -23,19 +47,16 @@ Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`
   worktree and branch were removed after the merge. Carried follow-up: the interactive browser smoke (live
   typing, the focus ring, toolbar formatting) is the one unverified surface; the automated gate and the prod
   build cover the rest.
-- The site UI component registry is designed and Plan 1 of 3 is written, neither executed. Each site will
-  declare its UI components once (typed attributes, named slots, description, intended-use, render). One
-  canonical directive grammar drives a guided insert form for non-technical editors, save+build validation,
-  and a generated `llms-full`-shaped reference file an author points claude.ai at. Research grounded three
-  choices: explicit named slots over an implicit heading, a parse-ready grammar for later round-trip editing,
-  and schema validation. Insert-only in v1. Design:
-  `docs/superpowers/specs/2026-05-31-cairn-site-components-design.md`; Plan 1 (engine grammar and schema, no
-  UI): `docs/superpowers/plans/2026-05-31-cairn-components-01-grammar.md`. Plans 2 (admin guided form) and 3
-  (per-site migration, ecnordic then 907) are written just-in-time after each lands. Builds on the editor
-  swap's `registerInsert` seam, now published, so either plan can proceed. **Immediate next action: execute
-  Plan 1 (engine grammar and schema) via `cairn-pass` + `subagent-driven-development`, dispatching the
-  `cairn-implementer` per task. It is engine-only and test-first; run it on a fresh worktree off `main`
-  (cairn-pass default) or on `main` directly.**
+- The site UI component registry is designed; Plan 1 of 3 (engine grammar and schema) is now executed
+  and landed (see the top entry). Each site will declare its UI components once (typed attributes, named
+  slots, description, intended-use, render). One canonical directive grammar drives a guided insert form
+  for non-technical editors, save+build validation, and a generated `llms-full`-shaped reference file an
+  author points claude.ai at. Research grounded three choices: explicit named slots over an implicit
+  heading, a parse-ready grammar for later round-trip editing, and schema validation. Insert-only in v1.
+  Design: `docs/superpowers/specs/2026-05-31-cairn-site-components-design.md`; Plan 1 (engine grammar and
+  schema, no UI): `docs/superpowers/plans/2026-05-31-cairn-components-01-grammar.md`. Plans 2 (admin guided
+  form) and 3 (per-site migration, ecnordic then 907) are written just-in-time after each lands. Builds on
+  the editor swap's `registerInsert` seam, now published.
 - The dated-slug identity pass landed on `main` (commits `dd2a265..77d9bf2`), bumping the local
   version to `0.8.0` (published to npm). It gives dated concepts a split id/slug identity (id is the
   filename stem, slug is the date-stripped id), adds a per-concept `datePrefix` granularity knob,
@@ -121,6 +142,14 @@ outcome is in the functional spec).
 
 ## Carried follow-ups (latent, not bugs under current conventions)
 
+- Component registry (Plan 1): the insert palette now renders a no-op item for any def lacking
+  `insertTemplate` (none exist yet, since every shipped registry supplies one). Plan 2 must decide:
+  filter such schema-only defs out of the palette, or route their click into the guided form. The
+  current click guard makes it a safe no-op meanwhile.
+- Component grammar (latent, low likelihood for the planned sites): an attribute value with a literal
+  newline is unsupported (single-line form fields make it unreachable); `validateComponent` parses the
+  markdown twice (fine, validation is not hot). Multi-field repeatable items stay deferred by design, and
+  `build()` reads the old heading convention until Plan 3 refactors each site to read slots.
 - Dated slug: the admin create date-in-slug guard rejects any slug opening with `^\d{4}-` on a dated
   concept, broader than the `datePrefix` strip (a `day` concept strips only a full `YYYY-MM-DD-`). A
   post deliberately slugged `2026-recap` is refused with the "leave the date out" hint. Acceptable

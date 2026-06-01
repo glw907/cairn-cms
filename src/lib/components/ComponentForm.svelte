@@ -131,6 +131,7 @@ markdown. Back returns to the picker. This is not a nested HTML form; Insert cal
         <span class="text-sm font-medium">{field.label}</span>
         <IconPicker
           {icons}
+          label={field.label}
           value={asString(field.key)}
           required={field.required ?? false}
           onChange={(name) => (values.attributes[field.key] = name)}

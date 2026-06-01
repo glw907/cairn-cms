@@ -7,6 +7,7 @@ keys move the selection, the standard radiogroup keyboard model. The glyph rende
 IconSet path data, matching the renderer's 256-unit viewBox.
 -->
 <script lang="ts">
+  import { tick } from 'svelte';
   import type { IconSet } from '../render/glyph.js';
 
   interface Props {
@@ -18,9 +19,14 @@ IconSet path data, matching the renderer's 256-unit viewBox.
     required: boolean;
     /** Called with the new glyph name (or '' for none). */
     onChange: (name: string) => void;
+    /** The group's accessible name, threaded from the field label. Defaults to Icon. */
+    label?: string;
   }
 
-  let { icons, value, required, onChange }: Props = $props();
+  let { icons, value, required, onChange, label = 'Icon' }: Props = $props();
+
+  // The radiogroup container, used to move focus with the selection per the ARIA radiogroup pattern.
+  let group: HTMLDivElement;
 
   const names = $derived(Object.keys(icons));
   // The selectable keys in DOM order: the optional None choice ('') first, then each glyph name.
@@ -30,10 +36,19 @@ IconSet path data, matching the renderer's 256-unit viewBox.
   const tabStop = $derived(choices.includes(value) ? value : choices[0]);
 
   function move(delta: number): void {
-    const current = choices.indexOf(value);
-    const from = current === -1 ? 0 : current;
+    // Navigate relative to the focused element (the current tab stop), not the bound value. In a
+    // required group with no value, tabStop is the first radio while value is '', so a value-based
+    // origin would skip the first step.
+    const from = Math.max(0, choices.indexOf(tabStop));
     const next = (from + delta + choices.length) % choices.length;
     onChange(choices[next]);
+    // The roving tabindex updates reactively, so wait for the DOM then move focus onto the new tab
+    // stop. The keydown handler runs only when focus is already inside the group, so this never
+    // steals focus on mount.
+    void tick().then(() => {
+      const target = group?.querySelector<HTMLElement>('[tabindex="0"]');
+      target?.focus();
+    });
   }
 
   function onKeydown(e: KeyboardEvent): void {
@@ -47,7 +62,7 @@ IconSet path data, matching the renderer's 256-unit viewBox.
   }
 </script>
 
-<div class="flex flex-wrap gap-2" role="radiogroup" aria-label="Icon">
+<div class="flex flex-wrap gap-2" role="radiogroup" aria-label={label} bind:this={group}>
   {#if !required}
     <button
       type="button"

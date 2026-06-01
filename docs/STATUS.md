@@ -24,11 +24,17 @@ Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`
   hardening pass (entity-encode quotes, escape title brackets, quote-aware unknown-attribute
   detection, repeatable-slot array guard, pinned `bullet: '-'`). Plan and full post-mortem:
   `docs/superpowers/plans/2026-05-31-cairn-components-01-grammar.md`. **Immediate next action:
-  Plan 2 (the admin guided-insert form) is the next component-registry pass. It is a UI design
-  with open product decisions, so brainstorm the form UX with the user first
-  (`superpowers:brainstorming`), then write Plan 2 with `superpowers:writing-plans`. Plan 2 must
-  also decide whether a schema-only def, one with no `insertTemplate`, is filtered out of the
-  insert palette or routed into the guided form (carried from this pass's svelte review).**
+  execute Plan 2 (the admin guided-insert form),
+  `docs/superpowers/plans/2026-05-31-cairn-components-02-form.md`, via `cairn-pass` +
+  `subagent-driven-development`, dispatching the `cairn-implementer` per task (Sonnet default fits
+  these well-specified tasks). Ten tasks, test-first, building on Plan 1's `serializeComponent`/
+  `validateComponent`/`emptyValues` and the editor's `registerInsert` seam. It is engine + admin-UI,
+  no site migration; run it on `main` directly (additive, no site deploys on a cairn-cms push) or a
+  worktree off `main`. Design: `docs/superpowers/specs/2026-05-31-cairn-components-02-form-design.md`.
+  The brainstorm settled a modal dialog that folds in the palette, a visual icon picker fed by a site
+  `IconSet` threaded through the adapter (with a None choice when the icon field is optional), reuse
+  of `validateComponent` as the form validator, a schema-vs-template dual path (which also resolves
+  the Plan 1 no-op-def finding), and body validation deferred.**
 
 ## Earlier state (2026-06-01, post-editor-swap-publish)
 
@@ -142,10 +148,11 @@ outcome is in the functional spec).
 
 ## Carried follow-ups (latent, not bugs under current conventions)
 
-- Component registry (Plan 1): the insert palette now renders a no-op item for any def lacking
-  `insertTemplate` (none exist yet, since every shipped registry supplies one). Plan 2 must decide:
-  filter such schema-only defs out of the palette, or route their click into the guided form. The
-  current click guard makes it a safe no-op meanwhile.
+- Component registry (Plan 1): the insert palette renders a no-op item for any def lacking
+  `insertTemplate` (none exist yet, since every shipped registry supplies one). Plan 2 resolves this
+  with a dual path: a schema-bearing def opens the guided form, a template-only def inserts directly,
+  and a def with neither is filtered out. The current click guard makes it a safe no-op until Plan 2
+  lands.
 - Component grammar (latent, low likelihood for the planned sites): an attribute value with a literal
   newline is unsupported (single-line form fields make it unreachable); `validateComponent` parses the
   markdown twice (fine, validation is not hot). Multi-field repeatable items stay deferred by design, and

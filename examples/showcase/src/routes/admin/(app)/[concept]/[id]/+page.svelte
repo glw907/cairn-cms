@@ -17,4 +17,4 @@ and params.id by the server shim so the engine resolves the right concept).
   let { data }: Props = $props();
 </script>
 
-<EditPage data={{ ...data, siteName: cairn.siteName }} render={cairn.render} />
+<EditPage data={{ ...data, siteName: cairn.siteName }} render={cairn.render} registry={cairn.registry} icons={cairn.icons} />

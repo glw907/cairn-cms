@@ -1,6 +1,31 @@
 // The showcase's adapter: the single seam the engine consumes. It declares one post-like concept,
 // a trivial design-accurate render, and a backend the dev GitHub double answers for.
-import type { CairnAdapter } from '@glw907/cairn-cms';
+import { defineRegistry } from '@glw907/cairn-cms';
+import type { CairnAdapter, ComponentDef, IconSet } from '@glw907/cairn-cms';
+
+const icons: IconSet = {
+  snowflake: 'M128 24v208M44 76l168 104M212 76L44 180',
+  leaf: 'M48 208c0-88 72-160 160-160 0 88-72 160-160 160Z',
+};
+
+const callout: ComponentDef = {
+  name: 'callout',
+  label: 'Callout',
+  description: 'A highlighted note with an optional icon.',
+  use: 'Draw the reader to one important idea.',
+  build: (node) => node,
+  attributes: [
+    { key: 'tone', label: 'Tone', type: 'select', required: true, options: ['note', 'warning'] },
+    { key: 'icon', label: 'Icon', type: 'icon' },
+  ],
+  slots: [
+    { name: 'title', label: 'Title', kind: 'inline', required: true },
+    { name: 'body', label: 'Body', kind: 'markdown' },
+    { name: 'points', label: 'Points', kind: 'repeatable', itemFields: [{ key: 'text', label: 'Item', type: 'text' }] },
+  ],
+};
+
+const registry = defineRegistry({ components: [callout] });
 
 export const cairn: CairnAdapter = {
   siteName: 'Cairn Showcase',
@@ -29,4 +54,6 @@ export const cairn: CairnAdapter = {
       .map((line) => `<p>${line}</p>`)
       .join(''),
   navMenu: { configPath: 'src/lib/site.config.yaml', menuName: 'primary', label: 'Navigation', maxDepth: 2 },
+  registry,
+  icons,
 };

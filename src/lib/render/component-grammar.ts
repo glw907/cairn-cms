@@ -1,3 +1,8 @@
+import { unified } from 'unified';
+import remarkParse from 'remark-parse';
+import remarkDirective from 'remark-directive';
+import remarkStringify from 'remark-stringify';
+import type { Root, RootContent } from 'mdast';
 import type { ComponentDef, ComponentValues, SlotDef } from './registry.js';
 
 const COLON = ':';
@@ -48,4 +53,93 @@ export function serializeComponent(def: ComponentDef, values: ComponentValues): 
 
   lines.push(fence);
   return lines.join('\n');
+}
+
+// A minimal structural view of a mdast containerDirective node (mdast-util-directive shape).
+interface DirectiveNode {
+  type: 'containerDirective' | 'leafDirective' | 'textDirective';
+  name: string;
+  attributes?: Record<string, string | null> | null;
+  children: RootContent[];
+}
+
+function isContainer(node: RootContent): node is RootContent & DirectiveNode {
+  return (node as DirectiveNode).type === 'containerDirective';
+}
+
+const toMd = unified().use(remarkStringify);
+
+/** Render mdast children back to trimmed markdown text. */
+function childrenToText(children: RootContent[]): string {
+  const root: Root = { type: 'root', children };
+  return String(toMd.stringify(root)).trim();
+}
+
+/** Parse a serialized component directive back into guided-form values, the inverse of
+ *  {@link serializeComponent}. The grammar is reversible, so the editor can round-trip a
+ *  saved directive through the form. */
+export async function parseComponent(markdown: string, def: ComponentDef): Promise<ComponentValues> {
+  const tree = unified().use(remarkParse).use(remarkDirective).parse(markdown) as Root;
+  const root = tree.children.find(
+    (c): c is RootContent & DirectiveNode => isContainer(c) && (c as DirectiveNode).name === def.name,
+  );
+  const values = emptyComponentValues(def);
+  if (!root) return values;
+
+  for (const field of def.attributes ?? []) {
+    const raw = root.attributes?.[field.key];
+    if (field.type === 'boolean') values.attributes[field.key] = raw === 'true';
+    else if (typeof raw === 'string') values.attributes[field.key] = raw;
+  }
+
+  const titleSlot = (def.slots ?? []).find((s) => s.name === 'title');
+  const bodySlot = (def.slots ?? []).find((s) => s.name === 'body');
+  const nested = (def.slots ?? []).filter((s) => s.name !== 'title' && s.name !== 'body');
+  const nestedNames = new Set(nested.map((s) => s.name));
+
+  const directChildren = root.children.filter(
+    (c) => !(isContainer(c) && nestedNames.has((c as DirectiveNode).name)) && !isDirectiveLabel(c),
+  );
+  const nestedChildren = root.children.filter(
+    (c): c is RootContent & DirectiveNode => isContainer(c) && nestedNames.has((c as DirectiveNode).name),
+  );
+
+  if (titleSlot) values.slots.title = readLabel(root) ?? '';
+  if (bodySlot) values.slots.body = childrenToText(directChildren);
+
+  for (const slot of nested) {
+    const node = nestedChildren.find((c) => c.name === slot.name);
+    if (!node) continue;
+    if (slot.kind === 'repeatable') values.slots[slot.name] = readListItems(node.children);
+    else values.slots[slot.name] = childrenToText(node.children);
+  }
+
+  return values;
+}
+
+function emptyComponentValues(def: ComponentDef): ComponentValues {
+  const attributes: Record<string, string | boolean> = {};
+  for (const f of def.attributes ?? []) attributes[f.key] = f.type === 'boolean' ? false : '';
+  const slots: Record<string, string | string[]> = {};
+  for (const s of def.slots ?? []) slots[s.name] = s.kind === 'repeatable' ? [] : '';
+  return { attributes, slots };
+}
+
+// mdast-util-directive carries the `[label]` as a paragraph whose `data.directiveLabel` is set.
+function isDirectiveLabel(node: RootContent): boolean {
+  return Boolean((node as { data?: { directiveLabel?: boolean } }).data?.directiveLabel);
+}
+
+function readLabel(root: DirectiveNode): string | undefined {
+  for (const child of root.children) {
+    const p = child as { type: string; data?: { directiveLabel?: boolean }; children?: { value?: string }[] };
+    if (p.type === 'paragraph' && p.data?.directiveLabel) return (p.children ?? []).map((c) => c.value ?? '').join('');
+  }
+  return undefined;
+}
+
+function readListItems(children: RootContent[]): string[] {
+  const list = children.find((c) => (c as { type: string }).type === 'list') as { children?: RootContent[] } | undefined;
+  if (!list?.children) return [];
+  return list.children.map((li) => childrenToText((li as { children?: RootContent[] }).children ?? []));
 }

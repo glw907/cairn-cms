@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { serializeComponent } from '../../lib/render/component-grammar.js';
+import { serializeComponent, parseComponent } from '../../lib/render/component-grammar.js';
 import type { ComponentDef } from '../../lib/render/registry.js';
 
 const base = { build: (n: unknown) => n, description: 'd', use: 'u' };
@@ -68,4 +68,18 @@ describe('serializeComponent nested slots', () => {
     const md = serializeComponent(passage, { attributes: {}, slots: { body: 'Main.', aside: 'Note.' } });
     expect(md).toBe('::::passage\nMain.\n\n:::aside\nNote.\n:::\n::::');
   });
+});
+
+describe('parseComponent round-trips serializeComponent', () => {
+  const cases: { def: ComponentDef; values: Parameters<typeof serializeComponent>[1] }[] = [
+    { def: card, values: { attributes: { icon: 'snowflake' }, slots: { title: 'Lessons', body: 'All season.' } } },
+    { def: card, values: { attributes: { icon: '' }, slots: { title: '', body: 'Body only.' } } },
+    { def: cta, values: { attributes: { icon: 'snowflake' }, slots: { title: 'Book', body: 'Soon.', actions: ['One', 'Two'] } } },
+  ];
+  for (const [i, c] of cases.entries()) {
+    it(`recovers values for case ${i}`, async () => {
+      const md = serializeComponent(c.def, c.values);
+      await expect(parseComponent(md, c.def)).resolves.toEqual(c.values);
+    });
+  }
 });

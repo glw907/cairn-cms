@@ -18,7 +18,7 @@ const site = createSiteIndex([
   { descriptor: pages, index: createContentIndex([{ path: '/g/about.md', raw: '---\ntitle: About\n---\n\nAbout body.' }], pages) },
 ]);
 
-const routes = createPublicRoutes({ site, render: (md) => `<r>${md.trim()}</r>`, origin: 'https://example.com' });
+const routes = createPublicRoutes({ site, render: (md) => `<r>${md.trim()}</r>`, origin: 'https://example.com', siteName: 'Test', description: 'Test description.' });
 
 describe('createPublicRoutes', () => {
   it('entryLoad resolves a dated Posts URL by pathname', async () => {

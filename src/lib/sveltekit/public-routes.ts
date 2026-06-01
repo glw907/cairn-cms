@@ -6,12 +6,20 @@
 import { error } from '@sveltejs/kit';
 import type { ContentSummary, ContentEntry } from '../delivery/content-index.js';
 import type { SiteIndex } from '../delivery/site-index.js';
+import { buildSeoMeta } from '../delivery/seo.js';
+import type { SeoMeta } from '../delivery/seo.js';
 
 /** Injected dependencies for the public loaders. */
 export interface PublicRoutesDeps {
   site: SiteIndex;
   render: (md: string, opts?: { stagger?: boolean }) => string | Promise<string>;
   origin: string;
+  /** Site name for og:site_name and the SEO head. */
+  siteName: string;
+  /** Default description used when an entry has none. */
+  description: string;
+  /** Absolute feed URLs for the head's autodiscovery links. */
+  feeds?: { rss?: string; json?: string };
 }
 
 /** The archive and tag list data: summaries the template renders. */
@@ -34,13 +42,14 @@ export interface EntryData {
   entry: ContentEntry;
   html: string;
   canonicalUrl: string;
+  seo: SeoMeta;
   newer?: ContentSummary;
   older?: ContentSummary;
 }
 
 /** Build the public loaders for a site's unified index. */
 export function createPublicRoutes(deps: PublicRoutesDeps) {
-  const { site, render, origin } = deps;
+  const { site, render, origin, siteName, description, feeds } = deps;
 
   /** Resolve one concept's index by id, or a 404 (the route names an unconfigured concept). */
   function indexOf(conceptId: string) {
@@ -54,7 +63,19 @@ export function createPublicRoutes(deps: PublicRoutesDeps) {
     const entry = site.byPermalink(event.url.pathname);
     if (!entry) throw error(404, `Not found: ${event.url.pathname}`);
     const { newer, older } = site.adjacent(entry);
-    return { entry, html: await render(entry.body, { stagger: true }), canonicalUrl: origin + entry.permalink, newer, older };
+    const canonicalUrl = origin + entry.permalink;
+    // A dated entry is an article; an undated one (a page) is a website.
+    const seo = buildSeoMeta({
+      title: entry.title,
+      description: (entry.frontmatter.description as string) || entry.excerpt || description,
+      canonicalUrl,
+      siteName,
+      type: entry.date ? 'article' : 'website',
+      ...(entry.date ? { published: entry.date } : {}),
+      ...(entry.updated ? { modified: entry.updated } : {}),
+      feeds,
+    });
+    return { entry, html: await render(entry.body, { stagger: true }), canonicalUrl, seo, newer, older };
   }
 
   /** The chronological archive for one concept: every non-draft summary, newest-first. */

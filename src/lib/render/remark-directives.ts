@@ -3,6 +3,25 @@ import type { ContainerDirective, LeafDirective, TextDirective } from 'mdast-uti
 import { visit } from 'unist-util-visit';
 import type { ComponentRegistry } from './registry.js';
 
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+// mdast-util-directive carries the `[label]` as a paragraph whose `data.directiveLabel` is set.
+function isDirectiveLabel(node: unknown): boolean {
+  return Boolean((node as { data?: { directiveLabel?: boolean } }).data?.directiveLabel);
+}
+
+// Stamp data-slot on a child so the rehype dispatch partitioner can route it. For a nested
+// container directive we also set hName so it renders as a <div> wrapper rather than being
+// dropped as an unknown directive.
+function markSlot(node: unknown, name: string): void {
+  const n = node as { type?: string; data?: { hName?: string; hProperties?: Record<string, string> } };
+  const data = n.data ?? (n.data = {});
+  if (n.type === 'containerDirective') data.hName = 'div';
+  data.hProperties = { ...(data.hProperties ?? {}), dataSlot: name };
+}
+
 // Reconstruct a directive's authored attribute block (`{#id .class key="value"}`).
 // Accidental prose directives carry none, so this is almost always empty.
 function serializeAttributes(attributes?: Record<string, string | null | undefined> | null): string {
@@ -41,6 +60,7 @@ export function remarkDirectiveStamp(registry: ComponentRegistry) {
   return (tree: Root) => {
     visit(tree, 'containerDirective', (node: ContainerDirective) => {
       if (!known.has(node.name)) return;
+      const def = registry.get(node.name);
       const attrs = node.attributes ?? {};
       const role = attrs.role || undefined;
       let icon = attrs.icon || undefined;
@@ -49,10 +69,32 @@ export function remarkDirectiveStamp(registry: ComponentRegistry) {
       const properties: Record<string, string> = { dataPrimitive: node.name };
       if (icon) properties.dataIcon = icon;
       if (role) properties.dataRole = role;
+      // Carry every declared attribute to hast so the dispatch partitioner can build the
+      // component context. data-attr-<key> survives to the element; build() consumes it and
+      // returns a fresh element, so the marker never reaches the published DOM.
+      for (const field of def?.attributes ?? []) {
+        const raw = attrs[field.key];
+        if (raw != null) properties[`dataAttr${capitalize(field.key)}`] = raw;
+      }
 
       const data = node.data ?? (node.data = {});
       data.hName = 'div';
       data.hProperties = properties;
+
+      // Mark the title label paragraph and the nested slot directives so they survive to hast
+      // and the partitioner can find them. A slot named in the component schema (other than the
+      // default body) is a nested container directive; the title is the directive [label].
+      const slotNames = new Set((def?.slots ?? []).map((s) => s.name));
+      for (const child of node.children) {
+        if (isDirectiveLabel(child) && slotNames.has('title')) {
+          markSlot(child, 'title');
+        } else if (
+          (child as { type?: string }).type === 'containerDirective' &&
+          slotNames.has((child as { name: string }).name)
+        ) {
+          markSlot(child, (child as { name: string }).name);
+        }
+      }
     });
 
     visit(tree, ['textDirective', 'leafDirective'], (node, index, parent) => {

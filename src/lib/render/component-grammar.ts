@@ -35,6 +35,17 @@ export function serializeComponent(def: ComponentDef, values: ComponentValues): 
   const body = slotByName(def, 'body') ? (values.slots.body as string) ?? '' : '';
   if (body) lines.push(body);
 
+  for (const slot of nestedSlots(def)) {
+    const raw = values.slots[slot.name];
+    const content =
+      slot.kind === 'repeatable'
+        ? ((raw as string[] | undefined) ?? []).filter((i) => i !== '').map((i) => `- ${i}`).join('\n')
+        : ((raw as string | undefined) ?? '');
+    if (!content) continue;
+    if (lines.length > 1) lines.push(''); // blank line before this block
+    lines.push(`${COLON.repeat(3)}${slot.name}`, content, COLON.repeat(3));
+  }
+
   lines.push(fence);
   return lines.join('\n');
 }

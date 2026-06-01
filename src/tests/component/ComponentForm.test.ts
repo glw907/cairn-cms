@@ -74,5 +74,8 @@ describe('ComponentForm submit', () => {
     expect(onInsert).not.toHaveBeenCalled();
     await expect.element(screen.getByText(/tone is required/i)).toBeInTheDocument();
     await expect.element(screen.getByText(/title is required/i)).toBeInTheDocument();
+    await expect
+      .element(screen.getByRole('combobox', { name: /tone/i }))
+      .toHaveAttribute('aria-invalid', 'true');
   });
 });

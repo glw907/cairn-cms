@@ -58,19 +58,21 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
 {#if defs.length > 0}
   <button type="button" class="btn btn-sm btn-ghost" aria-haspopup="dialog" aria-label="Insert component" onclick={open}>Insert</button>
 
-  <dialog class="modal" bind:this={dialog} onclose={() => (picked = null)}>
+  <dialog class="modal" aria-labelledby="cairn-insert-dialog-title" bind:this={dialog} onclose={() => (picked = null)}>
     <div class="modal-box">
       <div class="mb-3 flex items-center justify-between">
-        <h2 class="text-base font-semibold">Insert component</h2>
+        <h2 id="cairn-insert-dialog-title" class="text-base font-semibold">Insert component</h2>
         <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={close}>✕</button>
       </div>
 
       {#if picked}
-        <ComponentForm def={picked} {icons} {onInsert} onBack={() => (picked = null)} />
+        {#key picked}
+          <ComponentForm def={picked} {icons} {onInsert} onBack={() => (picked = null)} />
+        {/key}
       {:else}
-        <ul class="menu w-full" role="listbox" aria-label="Components">
+        <ul class="menu w-full">
           {#each defs as def (def.name)}
-            <li role="option" aria-selected={false}>
+            <li>
               <button type="button" onclick={() => choose(def)}>
                 <span class="flex flex-col items-start">
                   <span class="font-medium">{def.label}</span>
@@ -84,7 +86,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
       {/if}
     </div>
     <form method="dialog" class="modal-backdrop">
-      <button aria-label="Close">close</button>
+      <button tabindex="-1" aria-label="Close">close</button>
     </form>
   </dialog>
 {/if}

@@ -80,18 +80,21 @@ markdown. Back returns to the picker. This is not a nested HTML form; Insert cal
           class="checkbox checkbox-sm"
           type="checkbox"
           aria-label={field.label}
+          aria-invalid={Boolean(errors[field.key])}
+          aria-describedby={errors[field.key] ? `err-${field.key}` : undefined}
           checked={asBool(field.key)}
           onchange={(e) => (values.attributes[field.key] = e.currentTarget.checked)}
         />
         <span class="text-sm">{field.label}</span>
       </label>
-      {#if errors[field.key]}<span class="text-error text-xs">{errors[field.key]}</span>{/if}
     {:else if field.type === 'select'}
       <label class="flex flex-col gap-1">
         <span class="text-sm font-medium">{field.label}</span>
         <select
           class="select"
           aria-label={field.label}
+          aria-invalid={Boolean(errors[field.key])}
+          aria-describedby={errors[field.key] ? `err-${field.key}` : undefined}
           value={asString(field.key)}
           onchange={(e) => (values.attributes[field.key] = e.currentTarget.value)}
         >
@@ -99,7 +102,6 @@ markdown. Back returns to the picker. This is not a nested HTML form; Insert cal
           {#each field.options ?? [] as opt (opt)}<option value={opt}>{opt}</option>{/each}
         </select>
       </label>
-      {#if errors[field.key]}<span class="text-error text-xs">{errors[field.key]}</span>{/if}
     {:else if field.type === 'icon' && icons}
       <div class="flex flex-col gap-1">
         <span class="text-sm font-medium">{field.label}</span>
@@ -110,19 +112,20 @@ markdown. Back returns to the picker. This is not a nested HTML form; Insert cal
           onChange={(name) => (values.attributes[field.key] = name)}
         />
       </div>
-      {#if errors[field.key]}<span class="text-error text-xs">{errors[field.key]}</span>{/if}
     {:else}
       <label class="flex flex-col gap-1">
         <span class="text-sm font-medium">{field.label}</span>
         <input
           class="input"
           aria-label={field.label}
+          aria-invalid={Boolean(errors[field.key])}
+          aria-describedby={errors[field.key] ? `err-${field.key}` : undefined}
           value={asString(field.key)}
           oninput={(e) => (values.attributes[field.key] = e.currentTarget.value)}
         />
       </label>
-      {#if errors[field.key]}<span class="text-error text-xs">{errors[field.key]}</span>{/if}
     {/if}
+    {#if errors[field.key]}<span id={`err-${field.key}`} role="alert" class="text-error text-xs">{errors[field.key]}</span>{/if}
   {/each}
 
   {#each flatSlots as slot (slot.name)}
@@ -132,38 +135,42 @@ markdown. Back returns to the picker. This is not a nested HTML form; Insert cal
         <textarea
           class="textarea"
           aria-label={slot.label}
+          aria-invalid={Boolean(errors[slot.name])}
+          aria-describedby={errors[slot.name] ? `err-${slot.name}` : undefined}
           rows={3}
           value={slotString(slot.name)}
           oninput={(e) => (values.slots[slot.name] = e.currentTarget.value)}
         ></textarea>
       </label>
-      {#if errors[slot.name]}<span class="text-error text-xs">{errors[slot.name]}</span>{/if}
     {:else}
       <label class="flex flex-col gap-1">
         <span class="text-sm font-medium">{slot.label}</span>
         <input
           class="input"
           aria-label={slot.label}
+          aria-invalid={Boolean(errors[slot.name])}
+          aria-describedby={errors[slot.name] ? `err-${slot.name}` : undefined}
           value={slotString(slot.name)}
           oninput={(e) => (values.slots[slot.name] = e.currentTarget.value)}
         />
       </label>
-      {#if errors[slot.name]}<span class="text-error text-xs">{errors[slot.name]}</span>{/if}
     {/if}
+    {#if errors[slot.name]}<span id={`err-${slot.name}`} role="alert" class="text-error text-xs">{errors[slot.name]}</span>{/if}
   {/each}
 
   {#each repeatableSlots as slot (slot.name)}
     {@const items = slotItems(slot.name)}
     <fieldset class="rounded-box border border-base-300 flex flex-col gap-2 p-2">
       <legend class="text-sm font-medium">{slot.label}</legend>
+      <!-- Index key is deliberate: items are bare strings with no stable id, so the value bindings and splice/push are index-based by design. -->
       {#each items as _, i (i)}
         <div class="flex items-center gap-2">
           <input class="input input-sm flex-1" aria-label={`${slot.label} item`} bind:value={items[i]} />
-          <button type="button" class="btn btn-ghost btn-xs" aria-label={`Remove item ${i + 1}`} onclick={() => items.splice(i, 1)}>✕</button>
+          <button type="button" class="btn btn-ghost btn-sm" aria-label={`Remove item ${i + 1}`} onclick={() => items.splice(i, 1)}>✕</button>
         </div>
       {/each}
       <button type="button" class="btn btn-sm self-start" onclick={() => items.push('')}>Add item</button>
-      {#if errors[slot.name]}<span class="text-error text-xs">{errors[slot.name]}</span>{/if}
+      {#if errors[slot.name]}<span id={`err-${slot.name}`} role="alert" class="text-error text-xs">{errors[slot.name]}</span>{/if}
     </fieldset>
   {/each}
 

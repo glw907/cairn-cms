@@ -37,7 +37,7 @@ Renders nothing when the site configures no registry.
     <ul class="dropdown-content menu rounded-box border border-base-300 bg-base-100 z-10 w-56 shadow" role="listbox">
       {#each defs as def (def.name)}
         <li role="option" aria-selected={false}>
-          <button type="button" onclick={() => { insert(def.insertTemplate); open = false; }}>
+          <button type="button" onclick={() => { if (def.insertTemplate) insert(def.insertTemplate); open = false; }}>
             <span class="flex flex-col items-start">
               <span class="font-medium">{def.label}</span>
               <span class="text-xs text-[var(--color-muted)]">{def.description}</span>

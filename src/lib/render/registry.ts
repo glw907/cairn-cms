@@ -5,6 +5,39 @@
 // `ComponentRegistry` from here.
 import type { Element } from 'hast';
 
+/** The input types a component attribute or repeatable item field can take. */
+export type FieldType = 'text' | 'select' | 'icon' | 'boolean';
+
+/** One `{key="value"}` attribute on a component directive, or one field of a repeatable item. */
+export interface AttributeField {
+  /** The attribute name as it appears in the directive, e.g. `icon`. */
+  key: string;
+  /** The form label. */
+  label: string;
+  type: FieldType;
+  required?: boolean;
+  /** Initial value; a string for text/select/icon, a boolean for boolean. */
+  default?: string | boolean;
+  /** Allowed values for `type: 'select'`. */
+  options?: string[];
+  /** Helper text shown under the field. */
+  help?: string;
+}
+
+export type SlotKind = 'markdown' | 'inline' | 'repeatable';
+
+/** One named content region of a component. The slots named `title` and `body` are special: `title`
+ *  serializes to the directive `[label]` and `body` to the unmarked content (see the canonical grammar). */
+export interface SlotDef {
+  name: string;
+  label: string;
+  kind: SlotKind;
+  required?: boolean;
+  help?: string;
+  /** For `kind: 'repeatable'`: the fields composing each list item (v1 uses the first field). */
+  itemFields?: AttributeField[];
+}
+
 /** A site component: how it inserts (editor) and how it renders (rehype). */
 export interface ComponentDef {
   /** Directive name, e.g. 'card' (matches `:::card`). */
@@ -14,13 +47,19 @@ export interface ComponentDef {
   /** Palette description. */
   description: string;
   /** Markdown scaffold inserted at the cursor by the editor palette. */
-  insertTemplate: string;
+  insertTemplate?: string;
   /** Build the final hast element from the stamped directive element. The engine
    *  stamps the entrance-stagger ordinal (`data-rise`) on the top-level result, so a
    *  build fn stays free of any motion concern. */
   build: (node: Element) => Element;
   /** Optional role-to-default-icon, e.g. `{ caution: 'warning' }`. */
   defaultIconByRole?: Record<string, string>;
+  /** One line on when to reach for this component; feeds the picker and the reference file. */
+  use?: string;
+  /** The `{key="value"}` attributes this component accepts. */
+  attributes?: AttributeField[];
+  /** The named content regions this component accepts. */
+  slots?: SlotDef[];
 }
 
 export interface ComponentRegistry {
@@ -42,4 +81,25 @@ export function defineRegistry({ components }: { components: ComponentDef[] }): 
     get: (name) => byName.get(name),
     defaultIcon: (name, role) => (role ? byName.get(name)?.defaultIconByRole?.[role] : undefined),
   };
+}
+
+/** Guided-form values for one component: attribute values keyed by attribute key, slot values keyed
+ *  by slot name (a string, or a string list for a repeatable slot). */
+export interface ComponentValues {
+  attributes: Record<string, string | boolean>;
+  slots: Record<string, string | string[]>;
+}
+
+/** Seed an empty {@link ComponentValues} from a component's schema: attribute defaults (or '' / false)
+ *  and empty slot values ([] for repeatable, '' otherwise). */
+export function emptyValues(def: ComponentDef): ComponentValues {
+  const attributes: Record<string, string | boolean> = {};
+  for (const field of def.attributes ?? []) {
+    attributes[field.key] = field.default ?? (field.type === 'boolean' ? false : '');
+  }
+  const slots: Record<string, string | string[]> = {};
+  for (const slot of def.slots ?? []) {
+    slots[slot.name] = slot.kind === 'repeatable' ? [] : '';
+  }
+  return { attributes, slots };
 }

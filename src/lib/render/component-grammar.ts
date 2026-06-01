@@ -84,14 +84,19 @@ function childrenToText(children: RootContent[]): string {
   return String(toMd.stringify(root)).trim();
 }
 
-/** Parse a serialized component directive back into guided-form values, the inverse of
- *  {@link serializeComponent}. The grammar is reversible, so the editor can round-trip a
- *  saved directive through the form. */
-export async function parseComponent(markdown: string, def: ComponentDef): Promise<ComponentValues> {
+// Parse the markdown and find the component's opening container directive. The single seam both
+// parseComponent and parseRawAttributeKeys (and the combined validator helper) build on, so one
+// parse derives both the form values and the raw attribute keys.
+function findComponentRoot(markdown: string, def: ComponentDef): (RootContent & DirectiveNode) | undefined {
   const tree = unified().use(remarkParse).use(remarkDirective).parse(markdown) as Root;
-  const root = tree.children.find(
+  return tree.children.find(
     (c): c is RootContent & DirectiveNode => isContainer(c) && (c as DirectiveNode).name === def.name,
   );
+}
+
+// Build guided-form values from an already-found component root. Returns the empty base when the
+// root is absent.
+function valuesFromRoot(root: (RootContent & DirectiveNode) | undefined, def: ComponentDef): ComponentValues {
   const values = emptyComponentValues(def);
   if (!root) return values;
 
@@ -126,14 +131,33 @@ export async function parseComponent(markdown: string, def: ComponentDef): Promi
   return values;
 }
 
+// The raw attribute keys on an already-found component root.
+function rawKeysFromRoot(root: (RootContent & DirectiveNode) | undefined): string[] {
+  return Object.keys(root?.attributes ?? {});
+}
+
+/** Parse a serialized component directive back into guided-form values, the inverse of
+ *  {@link serializeComponent}. The grammar is reversible, so the editor can round-trip a
+ *  saved directive through the form. */
+export async function parseComponent(markdown: string, def: ComponentDef): Promise<ComponentValues> {
+  return valuesFromRoot(findComponentRoot(markdown, def), def);
+}
+
 /** The raw attribute keys present on the component's opening directive, read from the parsed tree
  *  (quote-aware, unlike a regex over the source). Used by validation to flag unknown keys. */
 export function parseRawAttributeKeys(markdown: string, def: ComponentDef): string[] {
-  const tree = unified().use(remarkParse).use(remarkDirective).parse(markdown) as Root;
-  const root = tree.children.find(
-    (c): c is RootContent & DirectiveNode => isContainer(c) && (c as DirectiveNode).name === def.name,
-  );
-  return Object.keys(root?.attributes ?? {});
+  return rawKeysFromRoot(findComponentRoot(markdown, def));
+}
+
+/** Parse the component once and derive both the guided-form values and the raw attribute keys.
+ *  Validation needs both, so this seam spares it the double parse that calling
+ *  {@link parseComponent} and {@link parseRawAttributeKeys} separately would cost. */
+export async function parseComponentWithRawKeys(
+  markdown: string,
+  def: ComponentDef,
+): Promise<{ values: ComponentValues; rawKeys: string[] }> {
+  const root = findComponentRoot(markdown, def);
+  return { values: valuesFromRoot(root, def), rawKeys: rawKeysFromRoot(root) };
 }
 
 // A bare parse base: empty strings, false, and empty lists, with no attribute defaults applied. The

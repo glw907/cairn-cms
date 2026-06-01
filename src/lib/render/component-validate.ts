@@ -1,11 +1,11 @@
-import { parseComponent, parseRawAttributeKeys } from './component-grammar.js';
+import { parseComponentWithRawKeys } from './component-grammar.js';
 import type { ComponentDef } from './registry.js';
 
 /** A validation verdict: ok, or field-keyed error messages. */
 export type ComponentValidation = { ok: true } | { ok: false; errors: Record<string, string> };
 
 export async function validateComponent(markdown: string, def: ComponentDef): Promise<ComponentValidation> {
-  const values = await parseComponent(markdown, def);
+  const { values, rawKeys } = await parseComponentWithRawKeys(markdown, def);
   const errors: Record<string, string> = {};
   const declared = new Set((def.attributes ?? []).map((f) => f.key));
 
@@ -21,7 +21,7 @@ export async function validateComponent(markdown: string, def: ComponentDef): Pr
     }
   }
 
-  for (const key of parseRawAttributeKeys(markdown, def)) {
+  for (const key of rawKeys) {
     if (!declared.has(key)) errors[key] = `Unknown attribute "${key}".`;
   }
 

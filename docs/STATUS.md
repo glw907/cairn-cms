@@ -29,16 +29,21 @@ Plan and full post-mortem with the carried open decisions: `docs/superpowers/pla
 
 - Spec: `docs/superpowers/specs/2026-06-01-cairn-delivery-dx-design.md`.
 
-**Immediate next action: publish the delivery surface as a release, then sequence the site migrations
-and the component Plan 3 with the user.** This pass is unpublished. Per the cairn release process,
-publish a version bump (this is additive over `0.10.0`, so a minor `0.11.0`) through the OIDC
-trusted-publishing workflow off a `v0.11.0` GitHub Release, after pushing `main`. The sites consume
-`/delivery` only after publish. Then the two queued, design-bearing passes (each its own
-brainstorm-then-plan) sequence against each other: the per-site migrations onto the delivery surface
-(ecnordic Pass 1c, then 907), and component Plan 3 (per-site component migration). Surface the
-post-mortem's open decisions to the user before the migrations, especially the build-validation date
-gotcha: a site's hand-rolled `validate` must route an unquoted YAML `date` through `validateFields` or
-coerce it, since the build path sees a JS `Date`, not a string.
+**Published as `0.11.0` (`latest` on npm, OIDC release `v0.11.0`, 2026-06-01); `main` pushed (commits
+`d522dfd..41b7a42`).** The delivery surface is now consumable as `@glw907/cairn-cms/delivery`.
+
+**Immediate next action: brainstorm then write component Plan 3 (per-site component migration), the
+last of the three-plan component initiative.** This is the user-chosen next step after the publish. It
+is design-bearing, so run `superpowers:brainstorming` on the open decisions FIRST, then
+`superpowers:writing-plans`; do not auto-write it. Each site declares its UI components once (typed
+attributes, named slots, description, use, render), and `build()` reads named slots instead of the old
+heading convention (ecnordic, then 907). Parent design:
+`docs/superpowers/specs/2026-05-31-cairn-site-components-design.md`. Before Plan 3 ships, the live
+interactive `/admin` smoke for the guided-insert flow is the one unverified Plan 2 surface. After Plan 3,
+the still-queued per-site delivery migrations (ecnordic Pass 1c onto the published `/delivery`, then 907)
+remain; surface the post-mortem's open decisions before them, especially the build-validation date gotcha:
+a site's hand-rolled `validate` must route an unquoted YAML `date` through `validateFields` or coerce it,
+since the build path sees a JS `Date`, not a string.
 
 Carried out-of-scope follow-ons: typed reads, OpenGraph image generation, redirects, i18n, and the two
 delivery-validation refinements in the post-mortem (skip-drafts-at-build and apply-normalized-`data`-on-read).

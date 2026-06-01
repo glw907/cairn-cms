@@ -6,7 +6,37 @@ orientation is the workspace `CLAUDE.md`. Locked architecture decisions and the 
 the functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`).
 Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`.
 
-## Where the work is (2026-05-31, post-component-grammar)
+## Where the work is (2026-05-31, post-component-form)
+
+- Component registry Plan 2 of 3 (admin guided-insert form) executed and landed on `main`
+  (commits `a3b38a3..008fc33`, not pushed, not published). It builds the guided-insert flow on
+  Plan 1's grammar: `buildComponentInsert(def, values)` (the one pure serialize-then-validate step,
+  exported from the main entry), `ComponentForm.svelte` (schema-driven fields, a repeatable
+  add-and-remove list, inline validation errors), `ComponentInsertDialog.svelte` (the Insert trigger
+  and a native `<dialog>` picker with the schema-vs-template dual path), and `IconPicker.svelte` over
+  a site `IconSet` that now threads from the adapter through `composeRuntime` to `EditPage` to the
+  form. `ComponentPalette` is removed; the dialog's dual path closes the Plan 1 no-op-def finding.
+  The render `build()` path is untouched (that is Plan 3). Green at close: `npm run check` scan 0/0
+  over 725 files, `npm test` 375 tests exit 0, `check:package` green, showcase builds. Execution
+  deviations locked in: the unions are narrowed with typed accessors (no `any`) and `slotItems`
+  returns the live `$state` proxy; `ComponentForm` is `{#key picked}`-wrapped so its `untrack` seed
+  cannot go stale; the Insert trigger gets `aria-label="Insert component"` to avoid colliding with the
+  form's submit. A review gate (simplifier plus svelte and daisyui-a11y reviewers, both Opus) ran;
+  its findings were folded in test-first as the `008fc33` hardening commit (dropped the
+  listbox/option roles for a plain button list, named the dialog, `role="alert"` plus `aria-invalid`/
+  `aria-describedby` on the validation errors, the `{#key}` guard, the 24px remove-button floor).
+  Plan and full post-mortem: `docs/superpowers/plans/2026-05-31-cairn-components-02-form.md`.
+  **Immediate next action: brainstorm then write Plan 3 (per-site migration: each site declares its
+  UI components and `build()` reads named slots instead of the old heading convention, ecnordic then
+  907). It is the last of the three-plan component initiative. This is a design-bearing pass, so run
+  `superpowers:brainstorming` with the user on the open decisions before `superpowers:writing-plans`;
+  do not auto-write it. Parent design: `docs/superpowers/specs/2026-05-31-cairn-site-components-design.md`.
+  Before Plan 3 ships, the live interactive `/admin` smoke for the guided-insert flow is the one
+  unverified Plan 2 surface (see the carried follow-up).** A fast-follow worth pairing with the next
+  publish is releasing the unpublished `main` work (the component grammar and form, still ahead of the
+  published `0.9.0`).
+
+## Earlier state (2026-05-31, post-component-grammar)
 
 - Component registry Plan 1 of 3 (engine grammar and schema) executed and landed on `main`
   (commits `dbc1b69..174e02c`, not pushed, not published). It extends `ComponentDef` with a
@@ -148,11 +178,17 @@ outcome is in the functional spec).
 
 ## Carried follow-ups (latent, not bugs under current conventions)
 
-- Component registry (Plan 1): the insert palette renders a no-op item for any def lacking
-  `insertTemplate` (none exist yet, since every shipped registry supplies one). Plan 2 resolves this
-  with a dual path: a schema-bearing def opens the guided form, a template-only def inserts directly,
-  and a def with neither is filtered out. The current click guard makes it a safe no-op until Plan 2
-  lands.
+- Component registry (Plan 1, RESOLVED by Plan 2): the old palette rendered a no-op item for a def
+  lacking `insertTemplate`. The Plan 2 dialog replaces the palette with a dual path (schema def opens
+  the form, template-only inserts directly, a def with neither is omitted), so the no-op is gone.
+- Component form (Plan 2): the live interactive `/admin` smoke against a real Worker (open the
+  dialog, fill the form, insert into the editor) is unverified; the browser-layer component tests and
+  the untouched auth/save flow make it a fast-follow, not a blocker. Repeatable items are bare strings
+  keyed by index, so a mid-list removal reuses DOM nodes by position (values stay correct, focus
+  identity does not follow an item); a stable per-item id is the fix once multi-field repeatable items
+  arrive. Minor a11y polish left: the flat fields carry a redundant `aria-label` alongside their
+  visible `<label>`, the per-item input label is generic rather than indexed, and `IconPicker` is an
+  `aria-pressed` toggle group that could move to radiogroup semantics.
 - Component grammar (latent, low likelihood for the planned sites): an attribute value with a literal
   newline is unsupported (single-line form fields make it unreachable); `validateComponent` parses the
   markdown twice (fine, validation is not hot). Multi-field repeatable items stay deferred by design, and

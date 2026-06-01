@@ -38,6 +38,31 @@ markdown. Back returns to the picker. This is not a nested HTML form; Insert cal
     return Array.isArray(v) ? v : [];
   }
 
+  // Stable per-item ids run parallel to each repeatable slot's value array, so the {#each} keys by
+  // identity instead of index. A mid-list removal then drops the right DOM node and the focused
+  // item follows the data. Ids come from a monotonic module-local counter, never Math.random or
+  // Date.now. The value arrays in values.slots stay the canonical string lists serializeComponent
+  // reads, so the emitted markdown is unchanged. emptyValues seeds every repeatable slot to [], so
+  // the id lists start empty and stay in lockstep with the values through addItem/removeItem.
+  let nextId = 0;
+  const itemIds = $state<Record<string, number[]>>(
+    untrack(() => Object.fromEntries((def.slots ?? []).filter((s) => s.kind === 'repeatable').map((s) => [s.name, []]))),
+  );
+
+  function slotIds(name: string): number[] {
+    return itemIds[name] ?? (itemIds[name] = []);
+  }
+
+  function addItem(name: string): void {
+    slotItems(name).push('');
+    slotIds(name).push(nextId++);
+  }
+
+  function removeItem(name: string, index: number): void {
+    slotItems(name).splice(index, 1);
+    slotIds(name).splice(index, 1);
+  }
+
   // Typed accessors over the unions so explicit value targets stay sound.
   function asString(key: string): string {
     const v = values.attributes[key];
@@ -160,16 +185,17 @@ markdown. Back returns to the picker. This is not a nested HTML form; Insert cal
 
   {#each repeatableSlots as slot (slot.name)}
     {@const items = slotItems(slot.name)}
+    {@const ids = slotIds(slot.name)}
     <fieldset class="rounded-box border border-base-300 flex flex-col gap-2 p-2">
       <legend class="text-sm font-medium">{slot.label}</legend>
-      <!-- Index key is deliberate: items are bare strings with no stable id, so the value bindings and splice/push are index-based by design. -->
-      {#each items as _, i (i)}
+      <!-- Keyed by the parallel stable id so a mid-list removal drops the right node and focus follows the data; the value still binds to the canonical items[i] string the serializer reads. -->
+      {#each ids as id, i (id)}
         <div class="flex items-center gap-2">
           <input class="input input-sm flex-1" aria-label={`${slot.label} item`} bind:value={items[i]} />
-          <button type="button" class="btn btn-ghost btn-sm" aria-label={`Remove item ${i + 1}`} onclick={() => items.splice(i, 1)}>✕</button>
+          <button type="button" class="btn btn-ghost btn-sm" aria-label={`Remove item ${i + 1}`} onclick={() => removeItem(slot.name, i)}>✕</button>
         </div>
       {/each}
-      <button type="button" class="btn btn-sm self-start" onclick={() => items.push('')}>Add item</button>
+      <button type="button" class="btn btn-sm self-start" onclick={() => addItem(slot.name)}>Add item</button>
       {#if errors[slot.name]}<span id={`err-${slot.name}`} role="alert" class="text-error text-xs">{errors[slot.name]}</span>{/if}
     </fieldset>
   {/each}

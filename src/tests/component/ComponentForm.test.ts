@@ -55,6 +55,29 @@ describe('ComponentForm repeatable slot', () => {
     await screen.getByRole('button', { name: /remove item 1/i }).click();
     expect(screen.container.querySelectorAll('input[aria-label="Points item"]').length).toBe(1);
   });
+
+  it('keeps repeatable item values in order after a mid-list removal', async () => {
+    const screen = render(ComponentForm, { def: grid, onInsert: () => {}, onBack: () => {} } as never);
+    const add = screen.getByRole('button', { name: /add item/i });
+    await add.click();
+    await add.click();
+    await add.click();
+    const inputs = () => screen.container.querySelectorAll<HTMLInputElement>('input[aria-label="Points item"]');
+    await screen.getByRole('textbox', { name: /points item/i }).first().fill('a');
+    await screen.getByRole('textbox', { name: /points item/i }).nth(1).fill('b');
+    await screen.getByRole('textbox', { name: /points item/i }).nth(2).fill('c');
+    // Capture the third item's DOM node before removal. With a stable per-item key the "c" node
+    // survives the splice unchanged; an index key reuses node positions, so the node that held
+    // "c" is destroyed and the value identity does not follow the data.
+    const cNodeBefore = inputs()[2];
+    await screen.getByRole('button', { name: /remove item 2/i }).click();
+    const remaining = inputs();
+    expect(remaining.length).toBe(2);
+    expect(remaining[0].value).toBe('a');
+    expect(remaining[1].value).toBe('c');
+    // The surviving "c" input is the same DOM node it was before, proving identity followed data.
+    expect(remaining[1]).toBe(cNodeBefore);
+  });
 });
 
 describe('ComponentForm submit', () => {

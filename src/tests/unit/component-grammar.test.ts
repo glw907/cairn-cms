@@ -27,9 +27,64 @@ describe('serializeComponent flat', () => {
     expect(md).toBe(':::card\nBody only.\n:::');
   });
 
-  it('escapes a double quote in an attribute value', () => {
+  it('entity-encodes a double quote in an attribute value', () => {
     const md = serializeComponent(card, { attributes: { icon: 'a"b' }, slots: { title: '', body: 'x' } });
-    expect(md).toBe(':::card{icon="a\\"b"}\nx\n:::');
+    expect(md).toBe(':::card{icon="a&quot;b"}\nx\n:::');
+  });
+});
+
+describe('serializeComponent escaping', () => {
+  it('round-trips an attribute value containing a backslash', async () => {
+    const values = { attributes: { icon: 'a\\b' }, slots: { title: '', body: 'x' } };
+    const md = serializeComponent(card, values);
+    await expect(parseComponent(md, card)).resolves.toEqual(values);
+  });
+
+  it('round-trips an attribute value containing a backslash then a quote', async () => {
+    const values = { attributes: { icon: 'a\\"b' }, slots: { title: '', body: 'x' } };
+    const md = serializeComponent(card, values);
+    await expect(parseComponent(md, card)).resolves.toEqual(values);
+  });
+
+  it('round-trips an attribute value containing a double quote', async () => {
+    const values = { attributes: { icon: 'a"b' }, slots: { title: '', body: 'x' } };
+    const md = serializeComponent(card, values);
+    await expect(parseComponent(md, card)).resolves.toEqual(values);
+  });
+
+  it('round-trips an attribute value containing a literal entity-looking string', async () => {
+    const values = { attributes: { icon: 'a&quot;b' }, slots: { title: '', body: 'x' } };
+    const md = serializeComponent(card, values);
+    await expect(parseComponent(md, card)).resolves.toEqual(values);
+  });
+
+  it('round-trips a title containing brackets', async () => {
+    const values = { attributes: { icon: '' }, slots: { title: 'a [b] c', body: 'x' } };
+    const md = serializeComponent(card, values);
+    await expect(parseComponent(md, card)).resolves.toEqual(values);
+  });
+
+  it('round-trips a title containing an unbalanced bracket without losing the body', async () => {
+    const values = { attributes: { icon: '' }, slots: { title: 'a [ b', body: 'x' } };
+    const md = serializeComponent(card, values);
+    await expect(parseComponent(md, card)).resolves.toEqual(values);
+  });
+
+  it('round-trips a markdown body that uses dash bullets without drifting to asterisks', async () => {
+    const values = { attributes: { icon: '' }, slots: { title: '', body: '- one\n- two' } };
+    const md = serializeComponent(card, values);
+    const back = await parseComponent(md, card);
+    expect(back.slots.body).toContain('- one');
+    expect(back.slots.body).toContain('- two');
+    expect(back.slots.body).not.toContain('* ');
+  });
+
+  it('does not throw when a repeatable slot receives a string instead of an array', () => {
+    const md = serializeComponent(cta, {
+      attributes: { icon: '' },
+      slots: { title: 'T', body: 'B', actions: '' },
+    });
+    expect(md).not.toContain(':::actions');
   });
 });
 

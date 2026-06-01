@@ -14,7 +14,12 @@ function attrBlock(def: ComponentDef, values: ComponentValues): string {
     if (field.type === 'boolean') {
       if (v === true) parts.push(`${field.key}="true"`);
     } else if (typeof v === 'string' && v !== '') {
-      parts.push(`${field.key}="${v.replace(/"/g, '\\"')}"`);
+      // The directive attribute grammar (mdast-util-directive) treats a literal `"` as the value
+      // terminator and decodes HTML entities, so a backslash escape does not survive a round-trip.
+      // Encode `&` first (so existing entities are not double-decoded) then `"`; the parser decodes
+      // both back. A backslash is literal in this grammar and needs no escaping.
+      const escaped = v.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+      parts.push(`${field.key}="${escaped}"`);
     }
   }
   return parts.length ? `{${parts.join(' ')}}` : '';
@@ -32,7 +37,9 @@ export function serializeComponent(def: ComponentDef, values: ComponentValues): 
   const fence = COLON.repeat(nestedSlots(def).length > 0 ? 4 : 3);
 
   const title = slotByName(def, 'title') ? (values.slots.title as string) ?? '' : '';
-  const label = title ? `[${title}]` : '';
+  // Escape brackets in the label so a `[` or `]` in the title does not break the directive label
+  // grammar; remark un-escapes them back to literal text on parse, so readLabel recovers them.
+  const label = title ? `[${title.replace(/\[/g, '\\[').replace(/\]/g, '\\]')}]` : '';
 
   const open = `${fence}${def.name}${label}${attrBlock(def, values)}`;
 
@@ -44,7 +51,7 @@ export function serializeComponent(def: ComponentDef, values: ComponentValues): 
     const raw = values.slots[slot.name];
     const content =
       slot.kind === 'repeatable'
-        ? ((raw as string[] | undefined) ?? []).filter((i) => i !== '').map((i) => `- ${i}`).join('\n')
+        ? (Array.isArray(raw) ? raw : []).filter((i) => i !== '').map((i) => `- ${i}`).join('\n')
         : ((raw as string | undefined) ?? '');
     if (!content) continue;
     if (lines.length > 1) lines.push(''); // blank line before this block
@@ -67,7 +74,9 @@ function isContainer(node: RootContent): node is RootContent & DirectiveNode {
   return (node as DirectiveNode).type === 'containerDirective';
 }
 
-const toMd = unified().use(remarkStringify);
+// Pin the bullet to `-` so a markdown body or slot that uses dash bullets round-trips unchanged
+// rather than drifting to remark-stringify's default `*`, which would silently mutate author content.
+const toMd = unified().use(remarkStringify, { bullet: '-' });
 
 /** Render mdast children back to trimmed markdown text. */
 function childrenToText(children: RootContent[]): string {
@@ -115,6 +124,16 @@ export async function parseComponent(markdown: string, def: ComponentDef): Promi
   }
 
   return values;
+}
+
+/** The raw attribute keys present on the component's opening directive, read from the parsed tree
+ *  (quote-aware, unlike a regex over the source). Used by validation to flag unknown keys. */
+export function parseRawAttributeKeys(markdown: string, def: ComponentDef): string[] {
+  const tree = unified().use(remarkParse).use(remarkDirective).parse(markdown) as Root;
+  const root = tree.children.find(
+    (c): c is RootContent & DirectiveNode => isContainer(c) && (c as DirectiveNode).name === def.name,
+  );
+  return Object.keys(root?.attributes ?? {});
 }
 
 // A bare parse base: empty strings, false, and empty lists, with no attribute defaults applied. The

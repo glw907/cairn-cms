@@ -38,3 +38,22 @@ describe('validateComponent', () => {
     if (!r.ok) expect(r.errors.body).toMatch(/required/i);
   });
 });
+
+const link: ComponentDef = {
+  ...base, name: 'link', label: 'Link',
+  attributes: [{ key: 'href', label: 'Href', type: 'text', required: true }],
+  slots: [{ name: 'body', label: 'Body', kind: 'markdown', required: true }],
+} as ComponentDef;
+
+describe('validateComponent attribute-key detection', () => {
+  it('accepts a text attribute value containing an equals sign', async () => {
+    const r = await validateComponent(':::link{href="https://x.test/?a=b"}\nGo.\n:::', link);
+    expect(r).toEqual({ ok: true });
+  });
+
+  it('rejects an unknown attribute that follows a value containing a closing brace', async () => {
+    const r = await validateComponent(':::link{href="a}b" bogus="1"}\nGo.\n:::', link);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors.bogus).toMatch(/unknown/i);
+  });
+});

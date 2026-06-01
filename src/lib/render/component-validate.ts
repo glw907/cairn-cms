@@ -1,4 +1,4 @@
-import { parseComponent } from './component-grammar.js';
+import { parseComponent, parseRawAttributeKeys } from './component-grammar.js';
 import type { ComponentDef } from './registry.js';
 
 /** A validation verdict: ok, or field-keyed error messages. */
@@ -21,7 +21,7 @@ export async function validateComponent(markdown: string, def: ComponentDef): Pr
     }
   }
 
-  for (const key of rawAttributeKeys(markdown)) {
+  for (const key of parseRawAttributeKeys(markdown, def)) {
     if (!declared.has(key)) errors[key] = `Unknown attribute "${key}".`;
   }
 
@@ -33,12 +33,4 @@ export async function validateComponent(markdown: string, def: ComponentDef): Pr
   }
 
   return Object.keys(errors).length ? { ok: false, errors } : { ok: true };
-}
-
-/** Pull attribute keys straight from the opening fence's `{...}` so unknown keys are caught even
- *  though the schema-driven parse drops them. */
-function rawAttributeKeys(markdown: string): string[] {
-  const m = markdown.match(/^:+[a-zA-Z0-9_-]+(?:\[[^\]]*\])?\{([^}]*)\}/m);
-  if (!m) return [];
-  return [...m[1].matchAll(/([a-zA-Z0-9_-]+)=/g)].map((x) => x[1]);
 }

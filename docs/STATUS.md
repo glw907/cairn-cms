@@ -6,6 +6,30 @@ orientation is the workspace `CLAUDE.md`. Locked architecture decisions and the 
 the functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`).
 Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`.
 
+## Where the work is (2026-06-01, delivery-surface DX planned)
+
+The delivery-surface developer-experience pass is specced and planned, ready to execute. It came out
+of ecnordic's Pass 1b, the first site to consume the public delivery, which revealed that the engine
+already ships the delivery path (`createSiteIndex`, `createPublicRoutes`) but it is undiscoverable,
+coupled to the auth and github `/sveltekit` barrel, and partially complete. A competitive review
+against Astro, Next, Velite, Keystatic, TinaCMS, and Decap/Sveltia confirmed the direction and found
+cairn already ahead on owning delivery and on draft handling.
+
+- Spec: `docs/superpowers/specs/2026-06-01-cairn-delivery-dx-design.md`.
+- Plan: `docs/superpowers/plans/2026-06-01-cairn-delivery-dx.md` (ten test-first tasks).
+
+**Immediate next action: execute the delivery-surface DX plan `subagent-driven`
+(`superpowers:subagent-driven-development`, one implementer per task), from the cairn-cms directory.**
+The plan is fully written, so skip brainstorming and start at Task 1. It adds a backend-free
+`/delivery` package entry, build-time validation safe-by-default in `createSiteIndex`, the SEO head in
+the catch-all loader, feed/sitemap/robots response helpers, a `<CairnHead>` component,
+`siteDescriptors`, and a showcase public example, and leaves the content reads generic-ready for a
+later typed-content-model pass. Recorded follow-ons (out of scope): typed reads, OpenGraph image
+generation, redirects, i18n. After this lands and publishes, ecnordic Pass 1c and the 907 migration
+adopt the blessed path.
+
+The component Plan 3 below (per-site component migration) stays queued; sequence the two with the user.
+
 ## Where the work is (2026-05-31, post-component-form)
 
 - Component registry Plan 2 of 3 (admin guided-insert form) executed, landed on `main`, pushed, and
@@ -29,9 +53,9 @@ Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`
   listbox/option roles for a plain button list, named the dialog, `role="alert"` plus `aria-invalid`/
   `aria-describedby` on the validation errors, the `{#key}` guard, the 24px remove-button floor).
   Plan and full post-mortem: `docs/superpowers/plans/2026-05-31-cairn-components-02-form.md`.
-  **Immediate next action: brainstorm then write Plan 3 (per-site migration: each site declares its
-  UI components and `build()` reads named slots instead of the old heading convention, ecnordic then
-  907). It is the last of the three-plan component initiative. This is a design-bearing pass, so run
+  **Queued (sequence against the delivery-surface DX pass above): brainstorm then write Plan 3
+  (per-site migration: each site declares its UI components and `build()` reads named slots instead of
+  the old heading convention, ecnordic then 907). It is the last of the three-plan component initiative. This is a design-bearing pass, so run
   `superpowers:brainstorming` with the user on the open decisions before `superpowers:writing-plans`;
   do not auto-write it. Parent design: `docs/superpowers/specs/2026-05-31-cairn-site-components-design.md`.
   Before Plan 3 ships, the live interactive `/admin` smoke for the guided-insert flow is the one

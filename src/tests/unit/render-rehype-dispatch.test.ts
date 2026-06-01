@@ -1,8 +1,20 @@
 import { describe, it, expect } from 'vitest';
 import { h } from 'hastscript';
-import type { Root } from 'hast';
-import { rehypeDispatch, splitHead, cardShell, markFirstList } from '../../lib/render/rehype-dispatch.js';
+import type { Root, Element, ElementContent } from 'hast';
+import { rehypeDispatch, cardShell, markFirstList, isElement } from '../../lib/render/rehype-dispatch.js';
 import { defineRegistry } from '../../lib/render/registry.js';
+
+// Local fixture helper: pull the <h2> out as a .card-title and wrap it in an
+// .ec-head row. The engine no longer ships a heading-sniffing splitHead, so the
+// fixture builds its own head from the stamped section.
+function fixtureHead(node: Element): { head: Element; rest: ElementContent[] } {
+  const children = node.children as ElementContent[];
+  const i = children.findIndex((c) => isElement(c) && c.tagName === 'h2');
+  const h2 = children[i] as Element;
+  h2.properties = { ...h2.properties, className: ['card-title'] };
+  const rest = children.filter((_, j) => j !== i);
+  return { head: h('div', { className: ['ec-head'] }, [h2]), rest };
+}
 
 const reg = defineRegistry({
   components: [
@@ -12,7 +24,7 @@ const reg = defineRegistry({
       description: '',
       insertTemplate: '',
       build: (ctx) => {
-        const { head, rest } = splitHead(ctx.node);
+        const { head, rest } = fixtureHead(ctx.node);
         return cardShell(['card'], [head, h('div', { className: ['section-body'] }, rest)]);
       },
     },

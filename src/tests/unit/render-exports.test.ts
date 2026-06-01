@@ -3,7 +3,6 @@ import {
   createRenderer,
   defineRegistry,
   glyph,
-  splitHead,
   cardShell,
   markFirstList,
   iconSpan,
@@ -12,6 +11,7 @@ import {
   remarkDirectiveStamp,
   rehypeDispatch,
 } from '../../lib/index.js';
+import * as engine from '../../lib/index.js';
 
 describe('engine entry render surface', () => {
   it('re-exports the render machinery the consumer sites import', () => {
@@ -19,7 +19,6 @@ describe('engine entry render surface', () => {
       createRenderer,
       defineRegistry,
       glyph,
-      splitHead,
       cardShell,
       markFirstList,
       iconSpan,
@@ -30,6 +29,10 @@ describe('engine entry render surface', () => {
     ]) {
       expect(typeof fn).toBe('function');
     }
+  });
+
+  it('no longer exports the retired splitHead heading-sniffing helper', () => {
+    expect('splitHead' in engine).toBe(false);
   });
 
   it('the re-exported createRenderer composes a working pipeline', async () => {

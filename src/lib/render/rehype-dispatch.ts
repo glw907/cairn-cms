@@ -23,24 +23,6 @@ export function iconSpan(glyphEl: Element, role?: string): Element {
 /** A site's icon factory: turn a stamped icon name + role into a hast element. */
 export type MakeIcon = (name: string, role?: string) => Element;
 
-// Pull the section's <h2> out, retag it .card-title, and build the .ec-head row
-// (optional icon + heading). Returns the head plus the remaining body children.
-// `makeIcon` (site-supplied) turns the stamped data-icon into an element; omit it
-// for a head with no icon.
-export function splitHead(node: Element, makeIcon?: MakeIcon): { head: Element; rest: ElementContent[] } {
-  const children = node.children as ElementContent[];
-  const i = children.findIndex((c) => isElement(c) && c.tagName === 'h2');
-  const h2 = children[i] as Element;
-  h2.properties = { ...h2.properties, className: ['card-title'] };
-  const rest = children.filter((_, j) => j !== i);
-  const icon = strProp(node, 'dataIcon');
-  const role = strProp(node, 'dataRole');
-  const headKids: ElementContent[] = [];
-  if (makeIcon && icon) headKids.push(makeIcon(icon, role));
-  headKids.push(h2);
-  return { head: h('div', { className: ['ec-head'] }, headKids), rest };
-}
-
 /** Section wrapper: `<section class=…><div class="card-body">…</div></section>`. */
 export function cardShell(classes: string[], body: ElementContent[]): Element {
   return h('section', { className: classes }, [h('div', { className: ['card-body'] }, body)]);

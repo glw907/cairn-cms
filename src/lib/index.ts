@@ -72,7 +72,6 @@ export {
   isElement,
   strProp,
   iconSpan,
-  splitHead,
   cardShell,
   markFirstList,
 } from './render/rehype-dispatch.js';

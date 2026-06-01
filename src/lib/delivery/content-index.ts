@@ -28,16 +28,18 @@ export interface ContentSummary {
   draft: boolean;
 }
 
-/** The detail view: a summary plus the frontmatter and the body to render. */
-export interface ContentEntry extends ContentSummary {
-  frontmatter: Record<string, unknown>;
+/** The detail view: a summary plus the frontmatter and the body to render. The frontmatter
+ *  type defaults to `Record<string, unknown>`; the typed-reads pass infers it from the concept
+ *  fields. Generic now so that change does not break this signature. */
+export interface ContentEntry<F = Record<string, unknown>> extends ContentSummary {
+  frontmatter: F;
   body: string;
 }
 
 /** The per-concept query surface. */
-export interface ContentIndex {
+export interface ContentIndex<F = Record<string, unknown>> {
   all(opts?: { includeDrafts?: boolean }): ContentSummary[];
-  byId(id: string): ContentEntry | undefined;
+  byId(id: string): ContentEntry<F> | undefined;
   byTag(tag: string, opts?: { includeDrafts?: boolean }): ContentSummary[];
   allTags(): { tag: string; count: number }[];
   adjacent(id: string): { newer?: ContentSummary; older?: ContentSummary };
@@ -68,8 +70,11 @@ function asTags(value: unknown): string[] {
 }
 
 /** Build a concept's index from its raw files and normalized descriptor. */
-export function createContentIndex(files: RawFile[], descriptor: ConceptDescriptor): ContentIndex {
-  const entries: ContentEntry[] = files.map((file) => {
+export function createContentIndex<F = Record<string, unknown>>(
+  files: RawFile[],
+  descriptor: ConceptDescriptor,
+): ContentIndex<F> {
+  const entries: ContentEntry<F>[] = files.map((file) => {
     const id = idFromFilename(basename(file.path));
     const slug = slugFromId(id, descriptor.routing.dated ? descriptor.datePrefix : null);
     const { frontmatter, body } = parseMarkdown(file.raw);
@@ -85,7 +90,7 @@ export function createContentIndex(files: RawFile[], descriptor: ConceptDescript
       excerpt: deriveExcerpt(body, { description: asString(frontmatter.description) }),
       wordCount: wordCount(body),
       draft: frontmatter.draft === true,
-      frontmatter,
+      frontmatter: frontmatter as F,
       body,
     };
   });
@@ -95,11 +100,11 @@ export function createContentIndex(files: RawFile[], descriptor: ConceptDescript
     descriptor.routing.dated ? (b.date ?? '').localeCompare(a.date ?? '') : a.title.localeCompare(b.title),
   );
 
-  const summarize = (entry: ContentEntry): ContentSummary => {
+  const summarize = (entry: ContentEntry<F>): ContentSummary => {
     const { frontmatter: _frontmatter, body: _body, ...summary } = entry;
     return summary;
   };
-  const visible = (list: ContentEntry[], includeDrafts?: boolean): ContentEntry[] =>
+  const visible = (list: ContentEntry<F>[], includeDrafts?: boolean): ContentEntry<F>[] =>
     includeDrafts ? list : list.filter((entry) => !entry.draft);
 
   return {

@@ -6,14 +6,14 @@ import { cairn } from '$lib/cairn.config';
 export const prerender = true;
 
 export const GET: RequestHandler = async () => {
-  const posts = site.concept('posts')?.all() ?? [];
+  const posts = site.concept('posts');
   const items: FeedItem[] = await Promise.all(
-    posts.map(async (p) => ({
+    (posts?.all() ?? []).map(async (p) => ({
       title: p.title,
       url: ORIGIN + p.permalink,
       date: p.date ?? '',
       summary: p.excerpt,
-      contentHtml: await cairn.render(site.concept('posts')!.byId(p.id)!.body),
+      contentHtml: await cairn.render(posts!.byId(p.id)!.body),
       tags: p.tags,
     })),
   );

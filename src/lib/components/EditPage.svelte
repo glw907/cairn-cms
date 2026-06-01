@@ -1,6 +1,6 @@
 <!--
 @component
-The differentiated editor: the per-concept frontmatter form (from `data.fields`) beside the Carta
+The differentiated editor: the per-concept frontmatter form (from `data.fields`) beside the
 markdown editor and a live, design-accurate preview. The whole surface is one form posting to the
 `?/save` action; the preview toggle persists per user in localStorage (spec §7.6).
 -->
@@ -18,13 +18,11 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
     data: EditData & { siteName: string };
     /** The site's component registry, for the insert palette. */
     registry?: ComponentRegistry;
-    /** Carta preview plugins from the adapter, for the design-accurate preview. */
-    preview?: unknown[];
     /** The site's design-accurate render pipeline; the preview pane sanitizes its output. */
     render?: (md: string, opts?: { stagger?: boolean }) => string | Promise<string>;
   }
 
-  let { data, registry, preview = [], render }: Props = $props();
+  let { data, registry, render }: Props = $props();
 
   // `body` is local editor state seeded once from the prop; it diverges as the user types.
   // untrack() captures the initial value without subscribing to future prop changes.
@@ -46,7 +44,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
   }
 
   // Render the design-accurate preview as the body changes, debounced, and sanitize before the DOM.
-  // The sanitize is the one barrier between editor-authored markdown and the page (Carta is unsanitized).
+  // The sanitize is the one barrier between editor-authored markdown and the page (the editor is unsanitized).
   // previewRun is a plain counter (not reactive state) used as a latest-wins guard: if a slow earlier
   // async render call resolves after a newer one has started, the stale result is discarded.
   let previewRun = 0;
@@ -103,7 +101,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
 
   <div class="lg:order-1">
     <div class="rounded-box border border-base-300 bg-base-100 overflow-hidden">
-      <MarkdownEditor bind:value={body} name="body" plugins={preview} registerInsert={(fn) => (insert = fn)} />
+      <MarkdownEditor bind:value={body} name="body" registerInsert={(fn) => (insert = fn)} />
     </div>
     {#if showPreview}
       <section

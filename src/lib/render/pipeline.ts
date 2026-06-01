@@ -19,7 +19,7 @@ export interface RendererOptions {
 
 /** Compose a site's render pipeline from its component registry: directive syntax to
  *  stamped markers to registry-built hast. Returns `renderMarkdown` plus the remark/
- *  rehype plugin arrays (so the Carta editor preview can reuse the exact same set). */
+ *  rehype plugin arrays (so the admin editor preview can reuse the exact same set). */
 export function createRenderer(registry: ComponentRegistry, options: RendererOptions = {}) {
   const remarkPlugins: PluggableList = [remarkDirective, [remarkDirectiveStamp, registry]];
   const rehypePlugins: PluggableList = [rehypeRaw, [rehypeDispatch, registry, options.stagger], rehypeSlug];

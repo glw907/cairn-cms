@@ -1,81 +1,120 @@
 <!--
 @component
-The `MarkdownEditor` seam (spec §6, seam 5): a thin wrapper over Carta exposing a bindable value
-and a cursor-insert callback. Carta and Shiki are client-only, so the editor mounts after the
-component does; until then the hidden field still carries the value so the form submits correctly.
-Swapping Carta for a bare CodeMirror editor stays a one-file change.
+The `MarkdownEditor` seam (spec §6, seam 5): a thin wrapper over CodeMirror 6 exposing a bindable
+value and a cursor-insert callback. CodeMirror is client-only, so it mounts after the component does
+through a dynamic import; until then a plain textarea carries the value so the form still submits, and
+the hidden field mirrors the value throughout. The edit surface owns its toolbar; the design-accurate
+preview lives in EditPage through the adapter's render. Swapping the editor stays a one-file change.
 -->
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
+  import EditorToolbar from './EditorToolbar.svelte';
+  import { applyMarkdownFormat, type FormatKind } from './markdown-format.js';
 
   interface Props {
     /** The markdown source; bindable so the parent reads edits back. */
     value: string;
     /** The hidden field name the value is mirrored to for form submit. */
     name: string;
-    /** Carta extensions from the adapter, for the design-accurate preview. */
-    plugins?: unknown[];
     /** Receives a `(text) => void` that inserts at the cursor; the palette calls it. */
     registerInsert?: (insert: (text: string) => void) => void;
   }
 
-  let { value = $bindable(), name, plugins = [], registerInsert }: Props = $props();
+  let { value = $bindable(), name, registerInsert }: Props = $props();
 
-  // Local structural type for the Carta editing surface this seam uses. carta-md re-exports its
-  // Svelte components from the package entry, so its `Carta` class is not reachable as a named
-  // export under NodeNext; a structural type stays compatible without naming it (the shape
-  // legacy/src/lib/editor.ts relied on, verified against carta-md@4.11).
-  interface CartaInput {
-    getSelection(): { start: number };
-    insertAt(position: number, text: string): void;
-    update(): boolean;
-  }
-  interface CartaLike {
-    input?: CartaInput;
-  }
-
+  let host = $state<HTMLDivElement | null>(null);
   let mounted = $state(false);
-  // Carta and the MarkdownEditor component load only in the browser, after mount, so the server
-  // bundle never pulls in Carta or Shiki (guarded by the carta-boundary test). The component keeps
-  // its real type, so `value` stays bindable; the Carta constructor is reached through a cast
-  // because the package entry does not surface the class by name.
-  let Editor = $state<(typeof import('carta-md'))['MarkdownEditor'] | null>(null);
-  let carta = $state<CartaLike | null>(null);
+  // The CodeMirror view, untyped at the runtime boundary because @codemirror/* loads only in the
+  // browser. The type-only `import(...)` annotation is erased; the value import is dynamic in onMount,
+  // so the server bundle never pulls CodeMirror (guarded by the editor-boundary test).
+  let view: import('@codemirror/view').EditorView | null = null;
 
   onMount(async () => {
-    const mod = await import('carta-md');
-    const CartaCtor = (
-      mod as unknown as { Carta: new (options: { extensions?: unknown[]; sanitizer: false }) => CartaLike }
-    ).Carta;
-    const instance = new CartaCtor({
-      extensions: plugins,
-      // Sanitization is the site adapter's concern; the seam passes raw markdown through.
-      sanitizer: false,
+    const viewMod = await import('@codemirror/view');
+    const stateMod = await import('@codemirror/state');
+    const markdownMod = await import('@codemirror/lang-markdown');
+    const commandsMod = await import('@codemirror/commands');
+    const languageMod = await import('@codemirror/language');
+
+    if (!host) return;
+
+    const { EditorView, keymap } = viewMod;
+    const theme = EditorView.theme(
+      {
+        '&': { backgroundColor: 'var(--color-base-100)', color: 'var(--color-base-content)', fontSize: '0.875rem' },
+        '.cm-content': { fontFamily: 'ui-monospace, monospace', padding: '0.75rem', lineHeight: '1.7' },
+        '.cm-cursor': { borderLeftColor: 'var(--color-primary)' },
+        '&.cm-focused': { outline: '2px solid var(--color-primary)', outlineOffset: '-2px' },
+        '.cm-line': { padding: '0' },
+      },
+      { dark: false },
+    );
+
+    view = new EditorView({
+      parent: host,
+      state: stateMod.EditorState.create({
+        doc: value,
+        extensions: [
+          commandsMod.history(),
+          keymap.of([...commandsMod.defaultKeymap, ...commandsMod.historyKeymap]),
+          markdownMod.markdown(),
+          EditorView.lineWrapping,
+          languageMod.syntaxHighlighting(languageMod.defaultHighlightStyle, { fallback: true }),
+          theme,
+          EditorView.updateListener.of((update) => {
+            if (update.docChanged) value = update.state.doc.toString();
+          }),
+        ],
+      }),
     });
-    carta = instance;
-    Editor = mod.MarkdownEditor;
-    // Insert at the current cursor through carta.input once the editor is mounted; fall back to
-    // appending while input is not yet populated (the pre-mount textarea phase).
-    registerInsert?.((text: string) => {
-      const inp = instance.input;
-      if (inp) {
-        const pos = inp.getSelection().start;
-        const prefix = pos > 0 ? '\n\n' : '';
-        inp.insertAt(pos, `${prefix}${text}`);
-        inp.update();
-      } else {
-        value = value ? `${value}\n\n${text}` : text;
-      }
-    });
+
+    registerInsert?.(insertAtCursor);
     mounted = true;
   });
+
+  onDestroy(() => view?.destroy());
+
+  // Reconcile an externally reassigned `value` into the mounted editor. A no-op until `view` exists,
+  // and the doc-equality guard ignores the updateListener's own writes so the two never feed back.
+  $effect(() => {
+    const incoming = value;
+    if (!view) return;
+    const current = view.state.doc.toString();
+    if (incoming === current) return;
+    view.dispatch({ changes: { from: 0, to: current.length, insert: incoming } });
+  });
+
+  function insertAtCursor(text: string) {
+    if (!view) {
+      value = value ? `${value}\n\n${text}` : text;
+      return;
+    }
+    const pos = view.state.selection.main.head;
+    const prefix = pos > 0 ? '\n\n' : '';
+    const insert = `${prefix}${text}`;
+    view.dispatch({ changes: { from: pos, insert }, selection: { anchor: pos + insert.length } });
+    view.focus();
+  }
+
+  function applyFormat(kind: FormatKind) {
+    if (!view) return;
+    const { from, to } = view.state.selection.main;
+    const doc = view.state.doc.toString();
+    const next = applyMarkdownFormat(doc, from, to, kind);
+    view.dispatch({
+      changes: { from: 0, to: doc.length, insert: next.doc },
+      selection: { anchor: next.from, head: next.to },
+    });
+    view.focus();
+  }
 </script>
 
-<input type="hidden" {name} value={value} />
+<input type="hidden" {name} {value} />
 
-{#if mounted && Editor && carta}
-  {@const EditorComponent = Editor}
-  <EditorComponent carta={carta as never} bind:value theme="default" mode="tabs" />
-{:else}
-  <textarea class="textarea min-h-64 w-full font-mono text-sm" bind:value aria-label="Markdown source"></textarea>
-{/if}
+<div class="border-base-300 overflow-hidden rounded-box border">
+  <EditorToolbar format={applyFormat} />
+  <div bind:this={host}></div>
+  {#if !mounted}
+    <textarea class="textarea min-h-64 w-full font-mono text-sm" bind:value aria-label="Markdown source"></textarea>
+  {/if}
+</div>

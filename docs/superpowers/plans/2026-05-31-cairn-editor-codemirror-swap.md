@@ -697,3 +697,59 @@ Expected: `clean`, with no source references remaining.
 - **Spec coverage:** the swap keeps the seam (`value`/`name`/`registerInsert`) so `ComponentPalette` and the save form are untouched; the toolbar reproduces the spec §7.6 button set (bold, italic, heading, link, list, quote, code); the preview stays the adapter `render` path. The internal-link picker is explicitly out of scope and lands in its own later pass on this surface.
 - **Carta removal is complete:** dependencies (Task 3), the component internals (Task 5), the boundary test (Task 2), the teardown swallow (Task 7), and a final grep (Task 8) each remove or verify a piece.
 - **Type consistency:** `FormatKind` and `applyMarkdownFormat`'s `{ doc, from, to }` shape are defined in Task 1 and consumed unchanged by `EditorToolbar` (Task 4) and `MarkdownEditor` (Task 5).
+
+---
+
+## Post-mortem (2026-05-31)
+
+Executed subagent-driven on a feature worktree (`feat/editor-codemirror-swap`, off `main` at
+`c804487`), one `cairn-implementer` per task. All eight tasks landed as specified, plus a stale-comment
+sweep and a review-gate fix commit. Ten commits total.
+
+**What was built.** Carta is gone. The edit surface is now CodeMirror 6, loaded through a dynamic
+import in `onMount` so it code-splits to the client. The seam (`value`/`name`/`registerInsert`) is
+unchanged, so `ComponentPalette` and the save form needed no rewiring. cairn now owns the formatting
+toolbar (`EditorToolbar.svelte`) and the selection-transform logic (`markdown-format.ts`, pure and
+node-testable). The dead Carta `preview` adapter prop left `EditPage`, the carta-md teardown swallow
+left the component test setup, and the boundary test was retargeted from carta-md to the codemirror
+packages. Version bumped to `0.9.0` (breaking: the `preview` prop and the peer set both changed).
+
+**Verification (evidence).**
+- `npm run check`: `704 FILES 0 ERRORS 0 WARNINGS`.
+- `npm test`: 69 files, 331 passed, exit 0. New coverage: the markdown-format table (8), the editor
+  boundary guard (5), the codemirror mount/value-mirror/insert-seam plus external-value reconcile (4),
+  and the toolbar render/dispatch (2).
+- Real-bundler smoke: `examples/showcase` production build succeeded (exit 0) and emitted the admin
+  edit-page chunk. CodeMirror landed in client chunks; the server bundle carries no `@codemirror/view`
+  reference, so the off-the-server discipline holds in a real adapter-node build, not only in the unit
+  guard.
+- Carta sweep: the only remaining `carta` strings in `src/` are the boundary/peer-deps guard tests
+  that assert its absence, and one historical note in the toolbar comment.
+
+**Review gate.** `svelte-reviewer` and `daisyui-a11y-reviewer` (Opus) ran in parallel over the working
+tree, plus a `code-simplifier` pass. Folded in before the final commit:
+- The `$bindable` seam only flowed editor to parent after mount; an external `value` reassignment never
+  reached the mounted view. Added a feedback-guarded `$effect` (skips when `incoming === current`, which
+  is what the editor's own `updateListener` writes produce) and a test that drives the change through
+  `vitest-browser-svelte`'s `rerender`. Dormant in-tree today (`EditPage` seeds once via `untrack`), but
+  the internal-link picker pass builds on this seam, so the contract now holds.
+- a11y: the CodeMirror theme suppressed the focus outline with no replacement (WCAG 2.4.7). Restored a
+  `2px` inset ring (`outlineOffset: -2px`, since the wrapper is `overflow-hidden`). Toolbar buttons went
+  `btn-xs` to `btn-sm` for the 24px target floor (2.5.8), and the B/I/H glyphs are now styled to their
+  format.
+- Robustness: guard the `host` ref after the async imports so an early unmount is a clean no-op.
+- Simplifier: link-format offsets derived from named string parts; attribute shorthand on the hidden mirror.
+
+**Carried follow-ups.**
+- Interactive browser smoke is the one human step left: type in the live editor, watch the focus ring,
+  format a real selection with the toolbar, insert from the component palette, and toggle the preview.
+  The component tests and the production build cover the seam and the bundling; live keyboard behavior is
+  not asserted headlessly.
+- The toolbar declares `role="toolbar"` but leaves all seven buttons in the tab order. APG suggests a
+  roving-tabindex with arrow-key navigation and a single tab stop. Keyboard-operable as-is (no 2.1.1
+  failure), so this is an enhancement for a later a11y polish, not a defect.
+
+**Next.** The internal-link picker pass (post-to-post linking via a `cairn:<concept>/<id>` token resolved
+at build) is the next editor pass, and it builds directly on this CodeMirror surface and the
+`registerInsert` seam. `0.9.0` is unpublished; publish before any site consumes the new editor surface,
+and note the `0.8.0` publish (the dated-slug surface) is still pending ahead of it.

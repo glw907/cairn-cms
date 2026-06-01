@@ -8,7 +8,7 @@ describe('createRenderer', () => {
     expect(await renderMarkdown('# Hi\n\nText')).toContain('<h1');
   });
 
-  it('exposes the remark/rehype plugin arrays for Carta wiring', () => {
+  it('exposes the remark/rehype plugin arrays for editor-preview wiring', () => {
     const r = createRenderer(defineRegistry({ components: [] }));
     expect(Array.isArray(r.remarkPlugins)).toBe(true);
     expect(Array.isArray(r.rehypePlugins)).toBe(true);

@@ -6,8 +6,21 @@ orientation is the workspace `CLAUDE.md`. Locked architecture decisions and the 
 the functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`).
 Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`.
 
-## Where the work is (2026-05-31, post-dated-slug)
+## Where the work is (2026-05-31, post-editor-swap)
 
+- The editor foundation swap (Carta to CodeMirror 6) is implemented on the `feat/editor-codemirror-swap`
+  worktree (branched off `main` at `c804487`), ten commits, NOT yet merged to `main`. It replaces Carta
+  with a client-only CodeMirror 6 edit surface behind the unchanged `MarkdownEditor` seam
+  (`value`/`name`/`registerInsert`), gives cairn its own formatting toolbar (`EditorToolbar.svelte`) and a
+  pure node-testable `markdown-format.ts`, drops the dead Carta `preview` adapter prop from `EditPage`, and
+  bumps to `0.9.0` (breaking: the `preview` prop and the peer set both changed). Green at close: `npm run
+  check` 0/0 over 704 files, `npm test` 331 passed exit 0. The showcase production build succeeds and
+  code-splits CodeMirror to client chunks with no `@codemirror/view` in the server bundle. Two review
+  subagents (svelte, daisyui-a11y) plus a simplifier pass ran; their findings were folded in (the
+  `$bindable` seam now reconciles an external value change into the mounted view, a focus ring was restored,
+  toolbar targets reach the 24px floor). The one open item is the interactive browser smoke (live typing,
+  focus ring, toolbar formatting). Plan and post-mortem:
+  `docs/superpowers/plans/2026-05-31-cairn-editor-codemirror-swap.md`. Not merged, not published.
 - The dated-slug identity pass landed on `main` (commits `dd2a265..77d9bf2`), bumping the local
   version to `0.8.0` (not yet published). It gives dated concepts a split id/slug identity (id is the
   filename stem, slug is the date-stripped id), adds a per-concept `datePrefix` granularity knob,
@@ -56,10 +69,16 @@ Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`
 
 Do these in order.
 
-0. Publish `0.8.0` to npm before any site consumes the new exports. Push `main`, cut a `v0.8.0`
-   GitHub Release, and let the OIDC trusted-publishing workflow run (same path as `0.7.0`). The
-   migration in step 1 imports `createSiteIndex`, `urlPolicyFrom`, `parseSiteConfig`, and the
-   dated-slug types, so the registry must carry `0.8.0` first or site CI `npm ci` breaks.
+0. Merge the editor-swap worktree (`feat/editor-codemirror-swap`) to `main` and run the interactive
+   browser smoke. The automated gate and the production build are green; the one unverified surface is
+   live keyboard behavior in the showcase admin editor (typing, the focus ring, toolbar formatting, the
+   palette insert, the preview toggle). Either smoke before merging or treat it as a fast-follow.
+0a. Publish `0.8.0` to npm before any site consumes the new exports, then `0.9.0` after the editor swap
+   merges. Push `main`, cut the GitHub Release per version, and let the OIDC trusted-publishing workflow
+   run (same path as `0.7.0`). The migration in step 1 imports `createSiteIndex`, `urlPolicyFrom`,
+   `parseSiteConfig`, and the dated-slug types, so the registry must carry `0.8.0` first or site CI `npm
+   ci` breaks. `0.9.0` is breaking on the package surface (the `MarkdownEditor` `preview` prop is gone and
+   carta-md left the peer set), so a consuming site that passed `preview` must drop it at the bump.
 1. Migrate each site onto `^0.8.0` and the delivery surface, one per-site `site-pass`, from that
    site's own directory. Each applies the `renderPreview`-to-`render` rename, adopts feeds, sitemap,
    SEO, and the catch-all `[...path]` public route, sets its per-concept URL policy in the YAML
@@ -68,7 +87,10 @@ Do these in order.
    URLs are preserved with zero redirects. This is where the symlink engages
    (`docs/runbooks/symlink-dev.md`) and where the production deploys happen. The live `/admin` smoke
    for the dated create flow is best run here, against the real Worker.
-2. Next cairn engine passes, each its own brainstorm-then-plan: a content-lifecycle pass (atomic
+2. The internal-link picker is the next editor pass (post-to-post linking via a `cairn:<concept>/<id>`
+   token resolved at build). It builds directly on the new CodeMirror surface and the `registerInsert`
+   seam, which is why the seam's two-way `value` flow was made correct in this pass.
+3. Next cairn engine passes, each its own brainstorm-then-plan: a content-lifecycle pass (atomic
    Git Data API move primitive, delete, rename, internal-link rewriting; external redirects stay the
    site's job) and a settings-editor pass (the admin web UI to edit the YAML URL policy and other
    settings). Then the still-pending CairnExtension dispatch and the `create-cairn-site` scaffolder.

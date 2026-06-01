@@ -24,7 +24,6 @@ function postProps(over = {}) {
       ...over,
     },
     registry: undefined,
-    preview: [],
   };
 }
 

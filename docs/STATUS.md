@@ -8,8 +8,11 @@ Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`
 
 ## Where the work is (2026-05-31, post-component-form)
 
-- Component registry Plan 2 of 3 (admin guided-insert form) executed and landed on `main`
-  (commits `a3b38a3..008fc33`, not pushed, not published). It builds the guided-insert flow on
+- Component registry Plan 2 of 3 (admin guided-insert form) executed, landed on `main`, pushed, and
+  published as `0.10.0` (`latest` on npm via the OIDC release `v0.10.0`; commits `a3b38a3..008fc33`
+  plus the docs and release-bump commits). `0.10.0` is additive over `0.9.0`: it bundles both
+  component plans (Plan 1 grammar and Plan 2 form), and `ComponentPalette` was born and removed inside
+  the unpublished window so no published export was dropped. It builds the guided-insert flow on
   Plan 1's grammar: `buildComponentInsert(def, values)` (the one pure serialize-then-validate step,
   exported from the main entry), `ComponentForm.svelte` (schema-driven fields, a repeatable
   add-and-remove list, inline validation errors), `ComponentInsertDialog.svelte` (the Insert trigger
@@ -32,9 +35,8 @@ Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`
   `superpowers:brainstorming` with the user on the open decisions before `superpowers:writing-plans`;
   do not auto-write it. Parent design: `docs/superpowers/specs/2026-05-31-cairn-site-components-design.md`.
   Before Plan 3 ships, the live interactive `/admin` smoke for the guided-insert flow is the one
-  unverified Plan 2 surface (see the carried follow-up).** A fast-follow worth pairing with the next
-  publish is releasing the unpublished `main` work (the component grammar and form, still ahead of the
-  published `0.9.0`).
+  unverified Plan 2 surface (see the carried follow-up).** Plan 3 is where the sites pin `^0.10.0` and
+  the symlink dev link can engage.
 
 ## Earlier state (2026-05-31, post-component-grammar)
 

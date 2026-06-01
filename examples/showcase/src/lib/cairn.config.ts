@@ -2,6 +2,8 @@
 // a trivial design-accurate render, and a backend the dev GitHub double answers for.
 import { defineRegistry } from '@glw907/cairn-cms';
 import type { CairnAdapter, ComponentDef, IconSet } from '@glw907/cairn-cms';
+import { h } from 'hastscript';
+import type { ElementContent } from 'hast';
 
 const icons: IconSet = {
   snowflake: 'M128 24v208M44 76l168 104M212 76L44 180',
@@ -13,7 +15,12 @@ const callout: ComponentDef = {
   label: 'Callout',
   description: 'A highlighted note with an optional icon.',
   use: 'Draw the reader to one important idea.',
-  build: (node) => node,
+  build: (ctx) =>
+    h('aside', { className: ['callout', `callout-${String(ctx.attributes.tone ?? 'note')}`] }, [
+      h('p', { className: ['callout-title'] }, ctx.slot('title')),
+      h('div', { className: ['callout-body'] }, ctx.slot('body')),
+      h('ul', { className: ['callout-points'] }, ctx.items('points').map((item: ElementContent[]) => h('li', item))),
+    ]),
   attributes: [
     { key: 'tone', label: 'Tone', type: 'select', required: true, options: ['note', 'warning'] },
     { key: 'icon', label: 'Icon', type: 'icon' },

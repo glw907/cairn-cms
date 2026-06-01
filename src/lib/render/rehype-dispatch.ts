@@ -1,6 +1,6 @@
 import type { Root, Element, ElementContent } from 'hast';
 import { h } from 'hastscript';
-import type { ComponentRegistry } from './registry.js';
+import type { ComponentContext, ComponentDef, ComponentRegistry } from './registry.js';
 
 export function isElement(node: ElementContent | undefined): node is Element {
   return !!node && node.type === 'element';
@@ -70,11 +70,74 @@ function transformChildren(children: ElementContent[], registry: ComponentRegist
   });
 }
 
+// Read a stamped attribute back into its typed value. Booleans arrive as the strings
+// 'true'/'false'; everything else is the literal string the author wrote.
+function readAttributes(node: Element, def: ComponentDef): Record<string, string | boolean> {
+  const out: Record<string, string | boolean> = {};
+  for (const field of def.attributes ?? []) {
+    const value = strProp(node, `dataAttr${field.key.charAt(0).toUpperCase()}${field.key.slice(1)}`);
+    if (value == null) continue;
+    out[field.key] = field.type === 'boolean' ? value === 'true' : value;
+  }
+  return out;
+}
+
+// The title label paragraph carries data-slot="title"; build() wants its inline children, not
+// the marked paragraph. Return the paragraph's children.
+function stripSlotMarker(child: ElementContent): ElementContent[] {
+  return isElement(child) ? (child.children as ElementContent[]) : [child];
+}
+
+// Split a component's stamped children into named slots and the default body. A child marked
+// data-slot="title"/<name> routes to that slot; an unmarked child is body. A repeatable slot
+// wraps a <ul>, so its items are that list's <li> children, one child-list per item.
+function partitionSlots(node: Element): {
+  slot(name: string): ElementContent[];
+  items(name: string): ElementContent[][];
+} {
+  const named = new Map<string, ElementContent[]>();
+  const body: ElementContent[] = [];
+  for (const child of node.children as ElementContent[]) {
+    const slotName = isElement(child) ? strProp(child, 'dataSlot') : undefined;
+    if (slotName === 'title') named.set('title', stripSlotMarker(child));
+    else if (slotName) named.set(slotName, [child]);
+    else body.push(child);
+  }
+  return {
+    slot(name: string): ElementContent[] {
+      if (name === 'body') return body;
+      const wrap = named.get(name);
+      if (!wrap) return [];
+      // For title we stored the label's own children; for a markdown/inline named slot the
+      // wrapper <div> holds the rendered children.
+      return name === 'title' ? wrap : wrap[0] && isElement(wrap[0]) ? (wrap[0].children as ElementContent[]) : wrap;
+    },
+    items(name: string): ElementContent[][] {
+      const wrap = named.get(name);
+      const div = wrap?.[0];
+      if (!div || !isElement(div)) return [];
+      const ul = (div.children as ElementContent[]).find((c) => isElement(c) && c.tagName === 'ul');
+      if (!ul || !isElement(ul)) return [];
+      return (ul.children as ElementContent[])
+        .filter((li) => isElement(li) && li.tagName === 'li')
+        .map((li) => (li as Element).children as ElementContent[]);
+    },
+  };
+}
+
 function transformNode(node: Element, registry: ComponentRegistry): Element {
   node.children = transformChildren(node.children as ElementContent[], registry);
   const name = strProp(node, 'dataPrimitive');
   const def = name ? registry.get(name) : undefined;
-  return def ? def.build(node) : node;
+  if (!def) return node;
+  const parts = partitionSlots(node);
+  const ctx: ComponentContext = {
+    attributes: readAttributes(node, def),
+    slot: parts.slot,
+    items: parts.items,
+    node,
+  };
+  return def.build(ctx);
 }
 
 /** Rehype transformer: dispatch each stamped element through its registry `build`

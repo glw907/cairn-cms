@@ -3,7 +3,7 @@
 // (Plan 04) and the future component palette both derive from this single source, so the
 // parser, the render dispatch, and the editor never drift apart. The adapter references
 // `ComponentRegistry` from here.
-import type { Element } from 'hast';
+import type { Element, ElementContent } from 'hast';
 
 /** The input types a component attribute or repeatable item field can take. */
 export type FieldType = 'text' | 'select' | 'icon' | 'boolean';
@@ -38,6 +38,21 @@ export interface SlotDef {
   itemFields?: AttributeField[];
 }
 
+/** The structured input a component's `build` receives. The engine stamps the component's
+ *  attributes and partitions its slots from the rendered hast, so `build` arranges hast and
+ *  never walks the tree. `slot(name)` returns a slot's rendered children (title, body, or any
+ *  named slot); `items(name)` returns a repeatable slot's items, one child list per item. */
+export interface ComponentContext {
+  /** Declared attribute values, keyed by attribute key. Booleans are real booleans. */
+  attributes: Record<string, string | boolean>;
+  /** A named slot's rendered children. Returns `[]` for an absent or empty slot. */
+  slot(name: string): ElementContent[];
+  /** A repeatable slot's items, each item its own list of rendered children. `[]` when absent. */
+  items(name: string): ElementContent[][];
+  /** The stamped component element, for an escape hatch. Most builds never need it. */
+  node: Element;
+}
+
 /** A site component: how it inserts (editor) and how it renders (rehype). */
 export interface ComponentDef {
   /** Directive name, e.g. 'card' (matches `:::card`). */
@@ -48,10 +63,10 @@ export interface ComponentDef {
   description: string;
   /** Markdown scaffold inserted at the cursor by the editor palette. */
   insertTemplate?: string;
-  /** Build the final hast element from the stamped directive element. The engine
-   *  stamps the entrance-stagger ordinal (`data-rise`) on the top-level result, so a
-   *  build fn stays free of any motion concern. */
-  build: (node: Element) => Element;
+  /** Build the final hast element from the component context (attributes plus partitioned
+   *  slots). The engine stamps the entrance-stagger ordinal (`data-rise`) on the top-level
+   *  result, so a build fn stays free of any motion concern. */
+  build: (ctx: ComponentContext) => Element;
   /** Optional role-to-default-icon, e.g. `{ caution: 'warning' }`. */
   defaultIconByRole?: Record<string, string>;
   /** One line on when to reach for this component; feeds the picker and the reference file. */

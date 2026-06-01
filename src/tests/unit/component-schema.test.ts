@@ -6,7 +6,7 @@ const cta: ComponentDef = {
   label: 'Call to action',
   description: 'A highlighted action block.',
   use: 'Use to push the reader toward one next step.',
-  build: (node) => node,
+  build: (ctx) => ctx.node,
   attributes: [
     { key: 'icon', label: 'Icon', type: 'icon' },
     { key: 'featured', label: 'Featured', type: 'boolean', default: false },
@@ -27,7 +27,7 @@ describe('emptyValues', () => {
   });
 
   it('returns empty maps for a component with no attributes or slots', () => {
-    const bare: ComponentDef = { name: 'rule', label: 'Rule', description: 'A divider.', use: 'Separate sections.', build: (n) => n };
+    const bare: ComponentDef = { name: 'rule', label: 'Rule', description: 'A divider.', use: 'Separate sections.', build: (ctx) => ctx.node };
     expect(emptyValues(bare)).toEqual({ attributes: {}, slots: {} });
   });
 });

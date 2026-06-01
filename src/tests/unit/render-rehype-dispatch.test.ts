@@ -11,8 +11,8 @@ const reg = defineRegistry({
       label: '',
       description: '',
       insertTemplate: '',
-      build: (node) => {
-        const { head, rest } = splitHead(node);
+      build: (ctx) => {
+        const { head, rest } = splitHead(ctx.node);
         return cardShell(['card'], [head, h('div', { className: ['section-body'] }, rest)]);
       },
     },

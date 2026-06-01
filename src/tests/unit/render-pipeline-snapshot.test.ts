@@ -18,8 +18,8 @@ const registry = defineRegistry({
       label: 'Card',
       description: '',
       insertTemplate: '',
-      build: (node) => {
-        const { head, rest } = splitHead(node, makeIcon);
+      build: (ctx) => {
+        const { head, rest } = splitHead(ctx.node, makeIcon);
         return cardShell(['card'], [head, h('div', { className: ['section-body'] }, rest)]);
       },
     },
@@ -28,10 +28,10 @@ const registry = defineRegistry({
       label: 'Grid',
       description: '',
       insertTemplate: '',
-      build: (node) => {
-        const children = node.children as Element['children'];
+      build: (ctx) => {
+        const children = ctx.node.children as Element['children'];
         markFirstList(children);
-        const { head, rest } = splitHead(node, makeIcon);
+        const { head, rest } = splitHead(ctx.node, makeIcon);
         return cardShell(['grid'], [head, h('div', { className: ['section-body'] }, rest)]);
       },
     },

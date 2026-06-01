@@ -9,13 +9,13 @@ import { defineRegistry } from '../../lib/render/registry.js';
 
 const reg = defineRegistry({
   components: [
-    { name: 'card', label: '', description: '', insertTemplate: '', build: (n) => n },
+    { name: 'card', label: '', description: '', insertTemplate: '', build: (ctx) => ctx.node },
     {
       name: 'alert',
       label: '',
       description: '',
       insertTemplate: '',
-      build: (n) => n,
+      build: (ctx) => ctx.node,
       defaultIconByRole: { caution: 'warning' },
     },
   ],

@@ -22,7 +22,8 @@ describe('createRenderer', () => {
           label: '',
           description: '',
           insertTemplate: '',
-          build: (node) => {
+          build: (ctx) => {
+            const node = ctx.node;
             node.tagName = 'section';
             node.properties = { className: ['box'] };
             return node;

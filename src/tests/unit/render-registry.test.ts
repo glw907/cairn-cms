@@ -6,7 +6,7 @@ const card: ComponentDef = {
   label: 'Card',
   description: 'A bordered card',
   insertTemplate: ':::card\n\n:::',
-  build: (node) => node,
+  build: (ctx) => ctx.node,
   defaultIconByRole: { caution: 'warning' },
 };
 

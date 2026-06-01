@@ -29,6 +29,13 @@ markdown. Back returns to the picker. This is not a nested HTML form; Insert cal
   const attributes = $derived(def.attributes ?? []);
   // Non-repeatable slots render here; the repeatable list is handled separately.
   const flatSlots = $derived((def.slots ?? []).filter((s) => s.kind !== 'repeatable'));
+  const repeatableSlots = $derived((def.slots ?? []).filter((s) => s.kind === 'repeatable'));
+
+  // The live $state proxy array for a repeatable slot, so push/splice stay reactive.
+  function slotItems(name: string): string[] {
+    const v = values.slots[name];
+    return Array.isArray(v) ? v : [];
+  }
 
   // Typed accessors over the unions so explicit value targets stay sound.
   function asString(key: string): string {
@@ -121,6 +128,20 @@ markdown. Back returns to the picker. This is not a nested HTML form; Insert cal
         />
       </label>
     {/if}
+  {/each}
+
+  {#each repeatableSlots as slot (slot.name)}
+    {@const items = slotItems(slot.name)}
+    <fieldset class="rounded-box border border-base-300 flex flex-col gap-2 p-2">
+      <legend class="text-sm font-medium">{slot.label}</legend>
+      {#each items as _, i (i)}
+        <div class="flex items-center gap-2">
+          <input class="input input-sm flex-1" aria-label={`${slot.label} item`} bind:value={items[i]} />
+          <button type="button" class="btn btn-ghost btn-xs" aria-label={`Remove item ${i + 1}`} onclick={() => items.splice(i, 1)}>✕</button>
+        </div>
+      {/each}
+      <button type="button" class="btn btn-sm self-start" onclick={() => items.push('')}>Add item</button>
+    </fieldset>
   {/each}
 
   <button type="button" class="btn btn-primary btn-sm mt-2" onclick={() => onInsert('')}>Insert</button>

@@ -37,3 +37,22 @@ describe('ComponentForm fields', () => {
     expect(onBack).toHaveBeenCalled();
   });
 });
+
+const grid: ComponentDef = {
+  ...base, name: 'grid', label: 'Grid',
+  slots: [
+    { name: 'title', label: 'Title', kind: 'inline' },
+    { name: 'points', label: 'Points', kind: 'repeatable', itemFields: [{ key: 'text', label: 'Item', type: 'text' }] },
+  ],
+} as ComponentDef;
+
+describe('ComponentForm repeatable slot', () => {
+  it('adds and removes items in a repeatable slot', async () => {
+    const screen = render(ComponentForm, { def: grid, onInsert: () => {}, onBack: () => {} } as never);
+    await screen.getByRole('button', { name: /add item/i }).click();
+    await screen.getByRole('button', { name: /add item/i }).click();
+    expect(screen.container.querySelectorAll('input[aria-label="Points item"]').length).toBe(2);
+    await screen.getByRole('button', { name: /remove item 1/i }).click();
+    expect(screen.container.querySelectorAll('input[aria-label="Points item"]').length).toBe(1);
+  });
+});

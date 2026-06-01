@@ -13,6 +13,10 @@ export interface SeoInput {
   modified?: string;
   feeds?: { rss?: string; json?: string };
   image?: string;
+  /** A robots meta directive, e.g. "noindex, nofollow". Omitted from the head when absent. */
+  robots?: string;
+  /** Author name, emitted as article:author for the article type. */
+  author?: string;
 }
 
 /** Plain-data head: a title, meta tags, link tags, and one JSON-LD object. */
@@ -38,6 +42,15 @@ export function buildSeoMeta(input: SeoInput): SeoMeta {
   if (input.image) {
     meta.push({ property: 'og:image', content: input.image });
     meta.push({ name: 'twitter:image', content: input.image });
+  }
+
+  if (input.robots) {
+    meta.push({ name: 'robots', content: input.robots });
+  }
+  if (type === 'article') {
+    if (input.published) meta.push({ property: 'article:published_time', content: input.published });
+    if (input.modified) meta.push({ property: 'article:modified_time', content: input.modified });
+    if (input.author) meta.push({ property: 'article:author', content: input.author });
   }
 
   const links: SeoMeta['links'] = [{ rel: 'canonical', href: input.canonicalUrl }];

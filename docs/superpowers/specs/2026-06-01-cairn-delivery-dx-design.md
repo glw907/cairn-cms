@@ -98,6 +98,12 @@ site name, the site description, and the feed URLs (the origin and per-entry per
 in scope). The catch-all route stops hand-calling `buildSeoMeta`; it reads `data.seo` and renders it
 through `<CairnHead>`.
 
+`buildSeoMeta` already emits a solid head: OpenGraph, the Twitter card, the canonical link, and the
+RSS and JSON feed autodiscovery links. This pass adds the two small things a Next-grade head has and
+it lacks: an optional `robots` directive (index/follow) and, for the `article` type, the
+`article:published_time` and author tags from the date the loader already has. These are additive and
+change nothing for a site that passes no robots input.
+
 ### Endpoint helpers
 
 Add thin response helpers in `src/lib/delivery/` that turn the existing builders into a ready
@@ -131,6 +137,30 @@ Add `siteDescriptors(adapter, siteConfig)` wrapping
 as tribal knowledge in a plan comment becomes one obvious call, and the YAML URL policy stays the
 single source of truth for every derived URL.
 
+### Generic-ready for typed reads
+
+The competitive review found one capability every comparable tool ships and cairn lacks: typed
+frontmatter reads. Astro's `getCollection` types `entry.data`, Velite generates `.d.ts`, Keystatic's
+`createReader` and TinaCMS's client return typed entries. Cairn's `ContentEntry.frontmatter` is
+`Record<string, unknown>`, so a site casts `entry.frontmatter.description as string` (ecnordic does
+exactly this). That is the daily friction in reading content.
+
+The long-term architecture is the one Zod and Velite get right: one declaration drives everything.
+The concept's `fields` array already drives the admin form and the baseline `validateFields`. It
+should also be the source of the static read type, inferred at the type level with no codegen. A
+small field-builder (`field.text`, `field.date`, `field.tags`) preserves literal `name` and `type`
+so an `InferFrontmatter<typeof concept.fields>` conditional type can map the field tuple to an object
+type, the delivery index becomes generic (`ContentEntry<F>`, a per-concept typed `ContentIndex<F>`,
+`index.concept('posts')` reads typed), and the cross-concept `byPermalink` stays base-typed because
+the catch-all branches on `concept` at runtime anyway.
+
+That work touches the adapter contract, the field definitions, the admin form, and validation, not
+just delivery, so it is its own follow-on pass (a typed content model pass), not part of this one.
+The requirement this pass carries is to design the new delivery signatures generic-ready:
+`createContentIndex`, `ContentEntry`, `ContentIndex`, and `createSiteIndex` take a frontmatter type
+parameter that defaults to `Record<string, unknown>` today, so the typed layer drops in later without
+a signature break.
+
 ## Data flow
 
 A request for a post or page falls through to the site's `[...path]` route. Its `+page.server.ts`
@@ -148,7 +178,10 @@ reads one `SiteIndex`, built once from `siteDescriptors` and the globbed markdow
   the file and field named); each endpoint helper (correct content type, a document that parses);
   `siteDescriptors` (the descriptors match a direct `normalizeConcepts` call); `<CairnHead>` and
   `jsonLdScript` escaping (a title containing `</script>` stays contained, and the escaped output
-  parses back to the same object).
+  parses back to the same object); the `buildSeoMeta` additions (a `robots` input emits the directive,
+  an `article` entry emits `article:published_time`).
+- Types: the generic frontmatter parameter defaults to `Record<string, unknown>`, so existing call
+  sites compile unchanged. A type-level fixture asserts the default and a supplied type both hold.
 - Boundary: a test asserts the `/delivery` module graph reaches no github, auth, or email module.
 - End to end: the showcase gains real public content (a few posts and pages) and wires `[...path]`
   via `createPublicRoutes` and `<CairnHead>`, plus the three endpoint routes. The showcase build
@@ -166,6 +199,10 @@ Refresh `docs/creating-a-cairn-site.md` rather than add a standalone delivery do
 - Refresh the stale parts: drop the old `[Shipped]`/`[Planned: Pass I/J/K]`/`[R9]` status tags,
   correct the adapter-contract and route-shim sections to the current API, and add the dated-slug URL
   model the guide never covered.
+- Structure the delivery section as one copy-paste recipe per surface (catch-all route, feed, sitemap,
+  robots, head), the onboarding pattern every competitor leads with, with the showcase as the
+  cloneable reference each recipe points to. The `create-cairn-site` scaffolder becomes the eventual
+  one-command path to the same wiring.
 - Scope guard: bring the guide current for what a developer needs to wire a site. The component
   reference file and the eventual llms-full doc cover exhaustive per-subsystem reference; the showcase
   stays the executable companion to the prose.
@@ -179,13 +216,54 @@ Refresh `docs/creating-a-cairn-site.md` rather than add a standalone delivery do
   `createContentIndex`.
 - The engine ships the head (`<CairnHead>`) and the data, not the visual body of content pages.
 - Composable pieces, no single `createDelivery` god-facade.
+- The new delivery signatures are generic-ready for typed reads, which land in a separate follow-on
+  pass. Typed reads infer the frontmatter type from the concept's `fields`, the single source of
+  truth, rather than a parallel hand-written interface.
+
+## Competitive context
+
+The review against the closest comparisons confirmed the spec rather than redirecting it, and found
+cairn already ahead on the axes that matter most:
+
+- **Owning delivery is the differentiator.** None of the direct git-CMS competitors (Keystatic,
+  TinaCMS, Decap/Sveltia) own delivery; they ship an editor and at most a content reader, and hand
+  feeds, sitemap, SEO, and routing to the host framework. Cairn's delivery surface has no equivalent
+  among them.
+- **Draft handling already beats Astro.** Astro's draft filter is a convention applied per
+  `getCollection` call, so a draft leaks into any surface where the predicate is forgotten. Cairn's
+  `createSiteIndex` builds its resolver and prerender set from the already-filtered `all()`, so drafts
+  are absent from listings, `byPermalink`, `entries()`, and the sitemap through one funnel.
+- **JSON-LD escaping and SEO breadth** in `<CairnHead>` and `buildSeoMeta` match or exceed the
+  out-of-box story of Astro and Next.
+
+The one substantive gap was typed reads (addressed above as a generic-ready design plus a follow-on
+pass). The largest feature gap was social-share image generation, recorded below.
 
 ## Out of scope and follow-ons
+
+Follow-on passes:
 
 - ecnordic "Pass 1c: adopt the blessed delivery path" deletes its hand-rolled `content.ts` resolver
   and feed routes in favor of `/delivery`.
 - 907-life wires the blessed path directly in its migration, with `datePrefix: day`.
+- A typed content model pass: infer frontmatter types from `fields` via a field-builder, and make the
+  delivery reads generic over the inferred type (this pass leaves the signatures generic-ready).
+- Social-share (OpenGraph) image generation. Next's per-post `ImageResponse`/Satori is the marquee
+  modern content-site feature and the largest capability cairn lacks; auto social cards are real value
+  for a non-technical-author CMS, and a Satori plus resvg build is feasible on a Cloudflare Worker.
+  It is a sizable feature rather than delivery plumbing, so it is its own pass.
 - The `create-cairn-site` scaffolder (Plan 10) templates the blessed path.
 - A full llms-full developer reference, beyond the refreshed integration guide.
 
-These are recorded as the immediate next steps in `docs/STATUS.md` once this pass publishes.
+Conscious non-goals (chosen, not forgotten):
+
+- Redirects on a slug rename belong to the content-lifecycle pass. On Cloudflare these are better
+  served by `_redirects` or Worker routing than by a framework redirect table.
+- i18n, hreflang alternates, and multi-locale delivery. Cairn is single-locale.
+- Sitemap index splitting, `changefreq`, and `priority`. The site profile is small, and Google
+  ignores the latter two.
+- Atom feed. RSS 2.0 and JSON Feed 1.1 cover the need.
+- Local-mode content editing without a commit. That is editing DX, separate from delivery; symlink-dev
+  already covers the library inner loop.
+
+The follow-on passes are recorded as the next steps in `docs/STATUS.md` once this pass publishes.

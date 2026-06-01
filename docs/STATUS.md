@@ -53,14 +53,19 @@ three passes:
 3. **Auth hardening.** `__Host-` cookie prefix, `/admin` security headers, rate-limit + `waitUntil` on the
    request endpoint, install-token KV caching.
 
-**Immediate next action: write the Pass 1 plan** (`superpowers:writing-plans`) from the design doc above,
-once the user has reviewed the spec. Then execute it `subagent-driven` (one `cairn-implementer` per task)
-on `main` (or a worktree off `main`). After Pass 1 lands and publishes, the ecnordic component migration
-becomes a site-pass that refactors ecnordic's `build()` to the `build(ctx)` shape. 907-life has no
-directive components (plain remark-html, still on `0.6.0`), so it is out of the component initiative; its
-only pending work is the version catch-up. Carried for the later delivery migration: the build-validation
-date gotcha (an unquoted YAML `date` arrives as a JS `Date`, so a site's hand-rolled `validate` must route
-it through `validateFields` or coerce).
+**Immediate next action: execute the Pass 1 plan
+`docs/superpowers/plans/2026-06-01-cairn-components-03-slot-render.md`, `subagent-driven`
+(`superpowers:subagent-driven-development`, one `cairn-implementer` per task), from the cairn-cms
+directory on `main`.** The plan is fully written (ten tasks) and the spec is approved, so skip
+brainstorming and start at Task 1. Tasks 1 and 2 are coupled (the remark stamp writes the markers the
+rehype partitioner reads, and the `build(ctx)` signature lands in Task 2), so implement them back to back
+and run the first full gate after Task 2. It bumps to `0.12.0` (Task 9) for the breaking `build` change;
+publishing stays a separate release step after the pass. After Pass 1 lands and publishes, the ecnordic
+component migration becomes a site-pass that refactors ecnordic's `build()` to `build(ctx)`. 907-life has
+no directive components (plain remark-html, still on `0.6.0`), so it is out of the component initiative;
+its only pending work is the version catch-up. Carried for the later delivery migration: the
+build-validation date gotcha (an unquoted YAML `date` arrives as a JS `Date`, so a site's hand-rolled
+`validate` must route it through `validateFields` or coerce).
 
 Carried out-of-scope follow-ons: typed reads, OpenGraph image generation, redirects, i18n, and the two
 delivery-validation refinements in the post-mortem (skip-drafts-at-build and apply-normalized-`data`-on-read).

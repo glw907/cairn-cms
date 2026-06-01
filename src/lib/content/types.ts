@@ -8,6 +8,7 @@
 // descriptors are plain data so a `load` function can hand them across the server-to-client
 // boundary to the editor form.
 import type { ComponentRegistry } from '../render/registry.js';
+import type { IconSet } from '../render/glyph.js';
 import type { DatePrefix } from './ids.js';
 
 /** Common to every frontmatter field: the frontmatter key, the form label, and whether it is required. */
@@ -151,6 +152,8 @@ export interface CairnAdapter {
   render(md: string, opts?: { stagger?: boolean }): string | Promise<string>;
   /** Directive component registry; the renderer and the future palette derive from it (seam 3). */
   registry?: ComponentRegistry;
+  /** The site's glyph name to SVG path-data map, for the admin icon picker and the renderer. */
+  icons?: IconSet;
   navMenu?: NavMenuConfig;
   assets?: AssetConfig;
 }
@@ -243,6 +246,8 @@ export interface CairnRuntime {
   /** The site's one renderer: the editor preview and every public page call it (design decision 4). */
   render(md: string, opts?: { stagger?: boolean }): string | Promise<string>;
   registry?: ComponentRegistry;
+  /** The site's glyph name to SVG path-data map, for the admin icon picker and the renderer. */
+  icons?: IconSet;
   navMenu?: NavMenuConfig;
   assets?: AssetConfig;
   /** Admin panels contributed by extensions (Mode 2). Empty until Plan 09 wires the dispatch route. */

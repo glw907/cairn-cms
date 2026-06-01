@@ -32,6 +32,7 @@ export function composeRuntime(
     sender: adapter.sender,
     render: adapter.render,
     registry: adapter.registry,
+    icons: adapter.icons,
     navMenu: adapter.navMenu,
     assets: adapter.assets,
     adminPanels,

@@ -43,6 +43,16 @@ export const cairn: CairnAdapter = {
         return { ok: true, data: { ...frontmatter, title } };
       },
     },
+    pages: {
+      dir: 'src/content/pages',
+      label: 'Pages',
+      fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
+      validate(frontmatter, _body) {
+        const title = typeof frontmatter.title === 'string' ? frontmatter.title.trim() : '';
+        if (!title) return { ok: false, errors: { title: 'Title is required' } };
+        return { ok: true, data: { ...frontmatter, title } };
+      },
+    },
   },
   backend: { owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' },
   sender: { from: 'cms@showcase.test' },

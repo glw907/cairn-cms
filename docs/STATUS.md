@@ -6,21 +6,34 @@ orientation is the workspace `CLAUDE.md`. Locked architecture decisions and the 
 the functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`).
 Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`.
 
-## Where the work is (2026-05-31, post-editor-swap)
+## Where the work is (2026-05-31, post-editor-swap-merge)
 
-- The editor foundation swap (Carta to CodeMirror 6) is implemented on the `feat/editor-codemirror-swap`
-  worktree (branched off `main` at `c804487`), ten commits, NOT yet merged to `main`. It replaces Carta
-  with a client-only CodeMirror 6 edit surface behind the unchanged `MarkdownEditor` seam
-  (`value`/`name`/`registerInsert`), gives cairn its own formatting toolbar (`EditorToolbar.svelte`) and a
-  pure node-testable `markdown-format.ts`, drops the dead Carta `preview` adapter prop from `EditPage`, and
-  bumps to `0.9.0` (breaking: the `preview` prop and the peer set both changed). Green at close: `npm run
-  check` 0/0 over 704 files, `npm test` 331 passed exit 0. The showcase production build succeeds and
-  code-splits CodeMirror to client chunks with no `@codemirror/view` in the server bundle. Two review
-  subagents (svelte, daisyui-a11y) plus a simplifier pass ran; their findings were folded in (the
-  `$bindable` seam now reconciles an external value change into the mounted view, a focus ring was restored,
-  toolbar targets reach the 24px floor). The one open item is the interactive browser smoke (live typing,
-  focus ring, toolbar formatting). Plan and post-mortem:
-  `docs/superpowers/plans/2026-05-31-cairn-editor-codemirror-swap.md`. Not merged, not published.
+- The editor foundation swap (Carta to CodeMirror 6) MERGED to `main` (merge `5ea1baa`, eleven commits,
+  `--no-ff`), bumping the local version to `0.9.0` (not yet published). It replaces Carta with a
+  client-only CodeMirror 6 edit surface behind the unchanged `MarkdownEditor` seam
+  (`value`/`name`/`registerInsert`), gives cairn its own house-icon `EditorToolbar.svelte` and a pure
+  node-testable `markdown-format.ts`, drops the dead Carta `preview` adapter prop from `EditPage`, and is
+  breaking (the `preview` prop and the carta-md peer both left). Green on `main` after the merge: `npm run
+  check` 0/0 over 707 files, `npm test` 331 passed exit 0. The showcase production build code-splits
+  CodeMirror to client chunks with no `@codemirror/view` in the server bundle. Two review subagents
+  (svelte, daisyui-a11y) plus a simplifier pass were folded in (the `$bindable` seam reconciles an external
+  value change into the mounted view, a focus ring was restored, toolbar targets reach the 24px floor, and
+  the toolbar uses the admin's stroke SVG icon set). Plan and post-mortem:
+  `docs/superpowers/plans/2026-05-31-cairn-editor-codemirror-swap.md`. The `feat/editor-codemirror-swap`
+  worktree and branch were removed after the merge. Carried follow-up: the interactive browser smoke (live
+  typing, the focus ring, toolbar formatting) is the one unverified surface; the automated gate and the prod
+  build cover the rest.
+- The site UI component registry is designed and Plan 1 of 3 is written, neither executed. Each site will
+  declare its UI components once (typed attributes, named slots, description, intended-use, render). One
+  canonical directive grammar drives a guided insert form for non-technical editors, save+build validation,
+  and a generated `llms-full`-shaped reference file an author points claude.ai at. Research grounded three
+  choices: explicit named slots over an implicit heading, a parse-ready grammar for later round-trip editing,
+  and schema validation. Insert-only in v1. Design:
+  `docs/superpowers/specs/2026-05-31-cairn-site-components-design.md`; Plan 1 (engine grammar and schema, no
+  UI): `docs/superpowers/plans/2026-05-31-cairn-components-01-grammar.md`. Plans 2 (admin guided form) and 3
+  (per-site migration, ecnordic then 907) are written just-in-time after each lands. Builds on the editor
+  swap's `registerInsert` seam, so the engine grammar plan can start now and the admin plan follows the
+  swap's publish.
 - The dated-slug identity pass landed on `main` (commits `dd2a265..77d9bf2`), bumping the local
   version to `0.8.0` (not yet published). It gives dated concepts a split id/slug identity (id is the
   filename stem, slug is the date-stripped id), adds a per-concept `datePrefix` granularity knob,
@@ -69,12 +82,11 @@ Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`
 
 Do these in order.
 
-0. Merge the editor-swap worktree (`feat/editor-codemirror-swap`) to `main` and run the interactive
-   browser smoke. The automated gate and the production build are green; the one unverified surface is
-   live keyboard behavior in the showcase admin editor (typing, the focus ring, toolbar formatting, the
-   palette insert, the preview toggle). Either smoke before merging or treat it as a fast-follow.
-0a. Publish `0.8.0` to npm before any site consumes the new exports, then `0.9.0` after the editor swap
-   merges. Push `main`, cut the GitHub Release per version, and let the OIDC trusted-publishing workflow
+0. Editor swap is merged to `main` (done). The interactive browser smoke remains a fast-follow: live
+   keyboard behavior in the showcase admin editor (typing, the focus ring, toolbar formatting, the palette
+   insert, the preview toggle). `main` is unpushed, so no deploy has fired.
+0a. Publish `0.8.0` to npm before any site consumes the new exports, then `0.9.0` (the editor swap is now
+   merged). Push `main`, cut the GitHub Release per version, and let the OIDC trusted-publishing workflow
    run (same path as `0.7.0`). The migration in step 1 imports `createSiteIndex`, `urlPolicyFrom`,
    `parseSiteConfig`, and the dated-slug types, so the registry must carry `0.8.0` first or site CI `npm
    ci` breaks. `0.9.0` is breaking on the package surface (the `MarkdownEditor` `preview` prop is gone and

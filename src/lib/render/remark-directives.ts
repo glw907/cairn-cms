@@ -1,11 +1,7 @@
 import type { Paragraph, PhrasingContent, Root, Text } from 'mdast';
 import type { ContainerDirective, LeafDirective, TextDirective } from 'mdast-util-directive';
 import { visit } from 'unist-util-visit';
-import type { ComponentRegistry } from './registry.js';
-
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
+import { dataAttrProp, type ComponentRegistry } from './registry.js';
 
 // mdast-util-directive carries the `[label]` as a paragraph whose `data.directiveLabel` is set.
 function isDirectiveLabel(node: unknown): boolean {
@@ -74,7 +70,7 @@ export function remarkDirectiveStamp(registry: ComponentRegistry) {
       // returns a fresh element, so the marker never reaches the published DOM.
       for (const field of def?.attributes ?? []) {
         const raw = attrs[field.key];
-        if (raw != null) properties[`dataAttr${capitalize(field.key)}`] = raw;
+        if (raw != null) properties[dataAttrProp(field.key)] = raw;
       }
 
       const data = node.data ?? (node.data = {});

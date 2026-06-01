@@ -49,8 +49,9 @@ markdown. Back returns to the picker. This is not a nested HTML form; Insert cal
     untrack(() => Object.fromEntries((def.slots ?? []).filter((s) => s.kind === 'repeatable').map((s) => [s.name, []]))),
   );
 
+  // emptyValues and the itemIds seed both cover every repeatable slot, so this read always hits.
   function slotIds(name: string): number[] {
-    return itemIds[name] ?? (itemIds[name] = []);
+    return itemIds[name] ?? [];
   }
 
   function addItem(name: string): void {

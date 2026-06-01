@@ -84,6 +84,13 @@ export interface ComponentRegistry {
   defaultIcon(name: string, role?: string): string | undefined;
 }
 
+/** The hast property name carrying one declared attribute from stamp to dispatch, e.g. `tone`
+ *  becomes `dataAttrTone`. The directive stamp writes it and the rehype dispatch reads it, so both
+ *  sides derive the name from this one helper rather than spelling the capitalize twice. */
+export function dataAttrProp(key: string): string {
+  return `dataAttr${key.charAt(0).toUpperCase()}${key.slice(1)}`;
+}
+
 /**
  * Build a registry from a site's component definitions. The single source the render
  * pipeline (directive stamp plus rehype dispatch) and the editor palette both read.

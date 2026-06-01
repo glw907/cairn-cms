@@ -1,6 +1,6 @@
 import type { Root, Element, ElementContent } from 'hast';
 import { h } from 'hastscript';
-import type { ComponentContext, ComponentDef, ComponentRegistry } from './registry.js';
+import { dataAttrProp, type ComponentContext, type ComponentDef, type ComponentRegistry } from './registry.js';
 
 export function isElement(node: ElementContent | undefined): node is Element {
   return !!node && node.type === 'element';
@@ -57,7 +57,7 @@ function transformChildren(children: ElementContent[], registry: ComponentRegist
 function readAttributes(node: Element, def: ComponentDef): Record<string, string | boolean> {
   const out: Record<string, string | boolean> = {};
   for (const field of def.attributes ?? []) {
-    const value = strProp(node, `dataAttr${field.key.charAt(0).toUpperCase()}${field.key.slice(1)}`);
+    const value = strProp(node, dataAttrProp(field.key));
     if (value == null) continue;
     out[field.key] = field.type === 'boolean' ? value === 'true' : value;
   }
@@ -90,9 +90,11 @@ function partitionSlots(node: Element): {
       if (name === 'body') return body;
       const wrap = named.get(name);
       if (!wrap) return [];
-      // For title we stored the label's own children; for a markdown/inline named slot the
-      // wrapper <div> holds the rendered children.
-      return name === 'title' ? wrap : wrap[0] && isElement(wrap[0]) ? (wrap[0].children as ElementContent[]) : wrap;
+      // For title we stored the label's own children, so return them as-is. For a markdown or
+      // inline named slot the wrapper <div> holds the rendered children; unwrap it.
+      if (name === 'title') return wrap;
+      const div = wrap[0];
+      return isElement(div) ? (div.children as ElementContent[]) : wrap;
     },
     items(name: string): ElementContent[][] {
       const wrap = named.get(name);

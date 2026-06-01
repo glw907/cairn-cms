@@ -92,9 +92,9 @@ export async function parseComponent(markdown: string, def: ComponentDef): Promi
     else if (typeof raw === 'string') values.attributes[field.key] = raw;
   }
 
-  const titleSlot = (def.slots ?? []).find((s) => s.name === 'title');
-  const bodySlot = (def.slots ?? []).find((s) => s.name === 'body');
-  const nested = (def.slots ?? []).filter((s) => s.name !== 'title' && s.name !== 'body');
+  const titleSlot = slotByName(def, 'title');
+  const bodySlot = slotByName(def, 'body');
+  const nested = nestedSlots(def);
   const nestedNames = new Set(nested.map((s) => s.name));
 
   const directChildren = root.children.filter(
@@ -117,6 +117,9 @@ export async function parseComponent(markdown: string, def: ComponentDef): Promi
   return values;
 }
 
+// A bare parse base: empty strings, false, and empty lists, with no attribute defaults applied. The
+// `emptyValues` helper in registry.ts seeds form defaults instead, so it is deliberately not reused
+// here; the parse must overwrite only the fields actually present in the markdown.
 function emptyComponentValues(def: ComponentDef): ComponentValues {
   const attributes: Record<string, string | boolean> = {};
   for (const f of def.attributes ?? []) attributes[f.key] = f.type === 'boolean' ? false : '';

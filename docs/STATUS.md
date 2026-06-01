@@ -32,18 +32,35 @@ Plan and full post-mortem with the carried open decisions: `docs/superpowers/pla
 **Published as `0.11.0` (`latest` on npm, OIDC release `v0.11.0`, 2026-06-01); `main` pushed (commits
 `d522dfd..41b7a42`).** The delivery surface is now consumable as `@glw907/cairn-cms/delivery`.
 
-**Immediate next action: brainstorm then write component Plan 3 (per-site component migration), the
-last of the three-plan component initiative.** This is the user-chosen next step after the publish. It
-is design-bearing, so run `superpowers:brainstorming` on the open decisions FIRST, then
-`superpowers:writing-plans`; do not auto-write it. Each site declares its UI components once (typed
-attributes, named slots, description, use, render), and `build()` reads named slots instead of the old
-heading convention (ecnordic, then 907). Parent design:
-`docs/superpowers/specs/2026-05-31-cairn-site-components-design.md`. Before Plan 3 ships, the live
-interactive `/admin` smoke for the guided-insert flow is the one unverified Plan 2 surface. After Plan 3,
-the still-queued per-site delivery migrations (ecnordic Pass 1c onto the published `/delivery`, then 907)
-remain; surface the post-mortem's open decisions before them, especially the build-validation date gotcha:
-a site's hand-rolled `validate` must route an unquoted YAML `date` through `validateFields` or coerce it,
-since the build path sees a JS `Date`, not a string.
+**Decision (2026-06-01): clear the engine backlog before any site migration, as three
+surface-focused passes; hold the roadmap initiatives out.** Brainstormed and scoped with the user.
+The sites (ecnordic component migration + delivery Pass 1c, 907 catch-up) wait until these land. The
+three passes:
+1. **Component completion** (next, design written). The component slot render path end to end plus the
+   render/grammar hardening, the Plan 2 form fixes, and the live `/admin` smoke. Design:
+   `docs/superpowers/specs/2026-06-01-cairn-engine-backlog-and-slot-render-design.md`. The render half
+   of the component initiative was never built: `remarkDirectiveStamp` only stamps registered component
+   directives, so nested `:::title`/`:::actions` slots are dropped on the way to hast and the Plan 2 form
+   can insert markup that renders to nothing. Pass 1 stamps slots at remark, partitions them at dispatch,
+   and changes `ComponentDef.build` from `build(node)` to `build(ctx)` (`{ attributes, slots, node }`,
+   rendered hast per slot) so a site `build()` arranges hast and never walks the tree. Breaking on
+   `ComponentDef.build`, so it bumps the version. Folded hardening: `splitHead` heading-sniffing retires
+   (its crash with it), the `glyph` unknown-icon guard, the `validateComponent` double-parse, the form
+   repeatable-id + a11y fixes.
+2. **Delivery/SEO hardening.** Skip-drafts-at-build, per-entry `image`/`robots`/`author` in the SEO head,
+   the feed/excerpt/permalink edge cases, and typed reads (infer `F` from concept fields, apply the
+   validator's normalized `data` on read).
+3. **Auth hardening.** `__Host-` cookie prefix, `/admin` security headers, rate-limit + `waitUntil` on the
+   request endpoint, install-token KV caching.
+
+**Immediate next action: write the Pass 1 plan** (`superpowers:writing-plans`) from the design doc above,
+once the user has reviewed the spec. Then execute it `subagent-driven` (one `cairn-implementer` per task)
+on `main` (or a worktree off `main`). After Pass 1 lands and publishes, the ecnordic component migration
+becomes a site-pass that refactors ecnordic's `build()` to the `build(ctx)` shape. 907-life has no
+directive components (plain remark-html, still on `0.6.0`), so it is out of the component initiative; its
+only pending work is the version catch-up. Carried for the later delivery migration: the build-validation
+date gotcha (an unquoted YAML `date` arrives as a JS `Date`, so a site's hand-rolled `validate` must route
+it through `validateFields` or coerce).
 
 Carried out-of-scope follow-ons: typed reads, OpenGraph image generation, redirects, i18n, and the two
 delivery-validation refinements in the post-mortem (skip-drafts-at-build and apply-normalized-`data`-on-read).

@@ -61,6 +61,7 @@ export type {
 export { serializeComponent, parseComponent } from './render/component-grammar.js';
 export { validateComponent } from './render/component-validate.js';
 export type { ComponentValidation } from './render/component-validate.js';
+export { buildComponentInsert, type ComponentInsert } from './render/component-insert.js';
 export { generateComponentReference } from './render/component-reference.js';
 export type { ReferenceOptions } from './render/component-reference.js';
 export { glyph } from './render/glyph.js';

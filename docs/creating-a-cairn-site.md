@@ -200,16 +200,77 @@ custom-property + font override). Author does nothing; do **not** style `/admin`
 ## 6. Components & the component registry
 
 If your site has rich directive components (`:::card`, `:::grid`, …):
-- A component is **code**: a registry entry with a `build` fn (directive element → hast) + preview CSS.
+- A component is **code**: a registry entry with a `build(ctx)` fn (component context to hast) + preview CSS.
 - Declare each component **once** in the site's **component registry** (`src/lib/markdown/components.ts`):
-  `{ name, label, description, insertTemplate, build, defaultIconByRole? }`. The parser's recognized set,
-  the render dispatch, and the admin **insert-component palette** all derive from the registry (no drift).
+  `{ name, label, description, insertTemplate, build, attributes?, slots?, defaultIconByRole? }`. The parser's
+  recognized set, the render dispatch, and the admin **insert-component palette** all derive from the
+  registry (no drift).
 - The engine owns the machinery (`defineRegistry`, `createRenderer`, the directive-stamp plugin, the
-  rehype dispatcher + shared `splitHead`/`cardShell`/`markFirstList`/`iconSpan` helpers, `glyph`); the
+  rehype dispatcher + shared `cardShell`/`markFirstList`/`iconSpan` helpers, `glyph`); the
   site supplies the registry data + builders + class names + icon set + CSS. cairn-core stays
   directive-agnostic.
 - **Creating a component is a developer task** (registry entry + `build` + CSS). There is no
   UI to create components. Adding one to the registry makes it appear in the editor palette.
+
+### The `build(ctx)` contract
+
+The engine stamps a component's attributes and partitions its slots from the rendered hast, then calls
+`build(ctx)`. A `build` fn arranges hast and never walks the tree. The context carries four members:
+
+- `ctx.attributes` is the declared attribute values, keyed by attribute key. A `boolean` attribute is a
+  real boolean. Every other attribute is the string the author wrote.
+- `ctx.slot(name)` returns a named slot's rendered children as a hast `ElementContent[]`. Use it for the
+  `title`, the `body`, and any single-value named slot. An absent or empty slot returns `[]`.
+- `ctx.items(name)` returns a repeatable slot's items, one rendered child list per item, as
+  `ElementContent[][]`. An absent slot returns `[]`. Map over it to build one element per item.
+- `ctx.node` is the stamped component element, an escape hatch for the rare build that needs the raw tree.
+  Most builds never touch it.
+
+The intermediate `data-slot` and `data-attr-*` markers are consumed here. `build` returns a fresh element,
+so they never reach the published HTML.
+
+A worked example, the showcase `callout`. It declares a required `tone` select, an `icon`, a required
+inline `title`, a markdown `body`, and a repeatable `points` slot, then reads them in `build`:
+
+```ts
+import { h } from 'hastscript';
+import type { ElementContent } from 'hast';
+import type { ComponentDef } from '@glw907/cairn-cms';
+
+const callout: ComponentDef = {
+  name: 'callout',
+  label: 'Callout',
+  description: 'A highlighted note with an optional icon.',
+  attributes: [
+    { key: 'tone', label: 'Tone', type: 'select', required: true, options: ['note', 'warning'] },
+    { key: 'icon', label: 'Icon', type: 'icon' },
+  ],
+  slots: [
+    { name: 'title', label: 'Title', kind: 'inline', required: true },
+    { name: 'body', label: 'Body', kind: 'markdown' },
+    { name: 'points', label: 'Points', kind: 'repeatable', itemFields: [{ key: 'text', label: 'Item', type: 'text' }] },
+  ],
+  build: (ctx) =>
+    h('aside', { className: ['callout', `callout-${String(ctx.attributes.tone ?? 'note')}`] }, [
+      h('p', { className: ['callout-title'] }, ctx.slot('title')),
+      h('div', { className: ['callout-body'] }, ctx.slot('body')),
+      h('ul', { className: ['callout-points'] }, ctx.items('points').map((item: ElementContent[]) => h('li', item))),
+    ]),
+};
+```
+
+An author writes that component with a four-colon outer fence, because the `points` slot nests inside it:
+
+````md
+::::callout[Heads up]{tone="warning" icon="snowflake"}
+Read this before you go any further.
+
+:::points
+- First thing to remember
+- Second thing to remember
+:::
+::::
+````
 
 ## 7. Icons & assets in the editor
 

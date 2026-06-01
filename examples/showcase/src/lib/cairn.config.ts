@@ -1,6 +1,6 @@
 // The showcase's adapter: the single seam the engine consumes. It declares one post-like concept,
-// a trivial design-accurate render, and a backend the dev GitHub double answers for.
-import { defineRegistry } from '@glw907/cairn-cms';
+// a render that runs the engine pipeline, and a backend the dev GitHub double answers for.
+import { createRenderer, defineRegistry } from '@glw907/cairn-cms';
 import type { CairnAdapter, ComponentDef, IconSet } from '@glw907/cairn-cms';
 import { h } from 'hastscript';
 import type { ElementContent } from 'hast';
@@ -34,6 +34,9 @@ const callout: ComponentDef = {
 
 const registry = defineRegistry({ components: [callout] });
 
+// The real render path: parse markdown through the engine so registered components render.
+const { renderMarkdown } = createRenderer(registry);
+
 export const cairn: CairnAdapter = {
   siteName: 'Cairn Showcase',
   content: {
@@ -63,13 +66,8 @@ export const cairn: CairnAdapter = {
   },
   backend: { owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' },
   sender: { from: 'cms@showcase.test' },
-  // Design-accurate enough for the preview: wrap each non-empty line in a paragraph.
-  render: (md) =>
-    md
-      .split('\n')
-      .filter((line) => line.trim())
-      .map((line) => `<p>${line}</p>`)
-      .join(''),
+  // Render through the engine so registered components (the callout) produce their markup.
+  render: (md) => renderMarkdown(md),
   navMenu: { configPath: 'src/lib/site.config.yaml', menuName: 'primary', label: 'Navigation', maxDepth: 2 },
   registry,
   icons,

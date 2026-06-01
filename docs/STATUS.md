@@ -6,10 +6,10 @@ orientation is the workspace `CLAUDE.md`. Locked architecture decisions and the 
 the functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`).
 Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`.
 
-## Where the work is (2026-05-31, post-editor-swap-merge)
+## Where the work is (2026-06-01, post-editor-swap-publish)
 
-- The editor foundation swap (Carta to CodeMirror 6) MERGED to `main` (merge `5ea1baa`, eleven commits,
-  `--no-ff`), bumping the local version to `0.9.0` (not yet published). It replaces Carta with a
+- The editor foundation swap (Carta to CodeMirror 6) MERGED to `main`, pushed to origin, and PUBLISHED
+  as `0.9.0` (now `latest` on npm via the OIDC release `v0.9.0`). It replaces Carta with a
   client-only CodeMirror 6 edit surface behind the unchanged `MarkdownEditor` seam
   (`value`/`name`/`registerInsert`), gives cairn its own house-icon `EditorToolbar.svelte` and a pure
   node-testable `markdown-format.ts`, drops the dead Carta `preview` adapter prop from `EditPage`, and is
@@ -32,10 +32,12 @@ Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`
   `docs/superpowers/specs/2026-05-31-cairn-site-components-design.md`; Plan 1 (engine grammar and schema, no
   UI): `docs/superpowers/plans/2026-05-31-cairn-components-01-grammar.md`. Plans 2 (admin guided form) and 3
   (per-site migration, ecnordic then 907) are written just-in-time after each lands. Builds on the editor
-  swap's `registerInsert` seam, so the engine grammar plan can start now and the admin plan follows the
-  swap's publish.
+  swap's `registerInsert` seam, now published, so either plan can proceed. **Immediate next action: execute
+  Plan 1 (engine grammar and schema) via `cairn-pass` + `subagent-driven-development`, dispatching the
+  `cairn-implementer` per task. It is engine-only and test-first; run it on a fresh worktree off `main`
+  (cairn-pass default) or on `main` directly.**
 - The dated-slug identity pass landed on `main` (commits `dd2a265..77d9bf2`), bumping the local
-  version to `0.8.0` (not yet published). It gives dated concepts a split id/slug identity (id is the
+  version to `0.8.0` (published to npm). It gives dated concepts a split id/slug identity (id is the
   filename stem, slug is the date-stripped id), adds a per-concept `datePrefix` granularity knob,
   moves per-concept URL policy (`permalink`, `datePrefix`) into the admin-editable YAML site-config
   under an SSG model, and unifies public delivery behind a site-level `byPermalink` resolver one
@@ -82,15 +84,15 @@ Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`
 
 Do these in order.
 
-0. Editor swap is merged to `main` (done). The interactive browser smoke remains a fast-follow: live
-   keyboard behavior in the showcase admin editor (typing, the focus ring, toolbar formatting, the palette
-   insert, the preview toggle). `main` is unpushed, so no deploy has fired.
-0a. Publish `0.8.0` to npm before any site consumes the new exports, then `0.9.0` (the editor swap is now
-   merged). Push `main`, cut the GitHub Release per version, and let the OIDC trusted-publishing workflow
-   run (same path as `0.7.0`). The migration in step 1 imports `createSiteIndex`, `urlPolicyFrom`,
-   `parseSiteConfig`, and the dated-slug types, so the registry must carry `0.8.0` first or site CI `npm
-   ci` breaks. `0.9.0` is breaking on the package surface (the `MarkdownEditor` `preview` prop is gone and
-   carta-md left the peer set), so a consuming site that passed `preview` must drop it at the bump.
+0. Editor swap is merged, pushed, and published as `0.9.0` (`latest` on npm), `0.8.0` published earlier
+   (done). The interactive browser smoke remains a fast-follow: live keyboard behavior in the showcase admin
+   editor (typing, the focus ring, toolbar formatting, the palette insert, the preview toggle). Pushing
+   cairn-cms `main` does not deploy a site (only the site repos deploy on push).
+0a. Publishing is done. The registry carries `0.7.0`, `0.8.0`, and `0.9.0` (`latest`). The site migration in
+   step 1 pins `^0.8.0` (which for 0.x semver is `>=0.8.0 <0.9.0`, so it does NOT pick up the breaking
+   `0.9.0`); the editor `0.9.0` is a separate later migration. `0.9.0` is breaking on the package surface
+   (the `MarkdownEditor` `preview` prop is gone and carta-md left the peer set), so a consuming site that
+   passed `preview` must drop it at that bump.
 1. Migrate each site onto `^0.8.0` and the delivery surface, one per-site `site-pass`, from that
    site's own directory. Each applies the `renderPreview`-to-`render` rename, adopts feeds, sitemap,
    SEO, and the catch-all `[...path]` public route, sets its per-concept URL policy in the YAML

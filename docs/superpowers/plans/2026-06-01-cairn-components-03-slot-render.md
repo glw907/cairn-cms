@@ -787,3 +787,40 @@ Record the smoke result (pass/fail, with what was observed) as the pass evidence
 - **Type consistency.** `ComponentContext` is `{ attributes: Record<string,string|boolean>; slot(name): ElementContent[]; items(name): ElementContent[][]; node: Element }`. `ComponentDef.build` is `(ctx: ComponentContext) => Element`. The dispatch's `readAttributes` reads `dataAttr<Key>` written by the stamp's `dataAttr${capitalize(key)}`; the casing must match (both capitalize the first letter only). The stamp writes `dataSlot` and the partitioner reads `strProp(child, 'dataSlot')`.
 - **Breaking change.** Every `ComponentDef` in the engine, the showcase, and the tests moves from `build: (node) => ...` to `build: (ctx) => ...`. Task 2 Step 7 sweeps the engine test defs; Task 2 Step 5 migrates the showcase. ecnordic is a separate repo and migrates in its own later site-pass.
 - **Marker hygiene.** `data-attr-*` and `data-slot` are intermediate markers consumed by `build()`, which returns a fresh element, so they must not appear in the published HTML. Task 2's render-agreement test asserts neither marker leaks.
+
+---
+
+## Post-mortem (executed 2026-06-01)
+
+Executed subagent-driven on `main`, one `cairn-implementer` per task, each clearing the full gate before its commit. Eleven commits landed: `2bca500..d0c3e0a` (nine task commits, one simplifier pass, one review-gate hardening commit). The tree is clean and the tip gate is green.
+
+### What was built
+
+The named-slot render path now works end to end. `remarkDirectiveStamp` stamps a registered component's declared attributes (`data-attr-<key>`), marks its `[label]` paragraph as the title slot, and stamps each nested slot directive so they survive to hast (Task 1, `2bca500`). The rehype dispatch partitions those stamped children into named slots and hands `build` a `ComponentContext` (`attributes`, `slot(name)`, `items(name)`, `node`), replacing the old `build(node)` signature (Task 2, `a115580`). The showcase `callout` proves the path, and the production build prerenders it.
+
+The folded hardening all landed: the `glyph` unknown-icon guard (Task 3, `d060474`), the `validateComponent` single-parse seam (Task 4, `101be71`), the `splitHead` retirement (Task 5, `a15be5f`), the repeatable-form stable identity (Task 6, `053bf99`), and the form a11y polish (Task 7, `20a2481`). The showcase content and `build(ctx)` docs landed in Task 8 (`7bf1264`), and the version bumped to `0.12.0` in Task 9 (`978783d`).
+
+### Verified with evidence
+
+- Final gate at the tip: `npm run check` reports 742 files, 0 errors, 0 warnings. `npm test` reports 91 test files, 410 tests, exit 0.
+- Render-agreement: the Task 2 unit test renders a serialized `callout` to `<aside class="callout callout-warning">` with the title, body, and two `<li>` points, and asserts no `data-slot` or `data-attr` marker leaks.
+- Showcase production build (Task 8): `npm --prefix examples/showcase run build` succeeds, and the prerendered `pages/posts/callout.html` carries the correct `<aside class="callout callout-warning">` markup with title, body, and points. This is the strongest automated proof the slot path renders in a real build.
+- `npm run check:package` is all-green for `0.12.0` (attw green across every export entry).
+
+### Decisions locked in during execution
+
+- **`glyph` symptom corrected.** The plan described the carried bug as `glyph` serializing `d="undefined"`. That string never reproduces in this toolchain, because `hastscript` drops an `undefined` property and `hast-util-to-html` renders a dead empty `<path>` instead. The real defect was the dead empty `<path>` for an unknown icon. The test was retargeted at that observable behavior (an unknown icon yields zero path children), watched fail, then fixed by returning the bare `<svg>` shell with no path child.
+- **Repeatable identity via a parallel id list.** The repeatable form items keep `values.slots[name]` as a raw `string[]`, with a parallel per-slot `itemIds` array supplying the `{#each}` key. This leaves `serializeComponent`, `emptyValues`, and the `bind:value` path untouched, so the emitted value shape is identical. The identity test asserts DOM-node identity after a mid-list removal, since the plan's value-read assertion alone does not catch the index-key bug (`bind:value` re-drives the inputs after a splice).
+- **Showcase `render` was a placeholder.** Task 8 found the showcase `render` was a line-wrapper that never ran the engine, so the prerendered grep was impossible without wiring `render` to `createRenderer(registry).renderMarkdown`. That wiring is on the showcase config, not the engine surface, so it does not widen the breaking change. Prior showcase prerender gates were therefore not exercising the engine renderer, a gap this pass closed.
+- **Simplifier extracted `dataAttrProp`.** The stamp-write and dispatch-read sides built the `data-attr-<Key>` marker name twice with the same capitalize logic. The simplifier moved the derivation into one exported `dataAttrProp(key)` in `registry.ts`, so the casing contract is a single source of truth.
+
+### Review gate
+
+A simplifier pass plus two read-only reviewers ran at the gate: `svelte-reviewer` and `daisyui-a11y-reviewer`, both Opus. The `cloudflare-workers-reviewer` and `web-auth-security-reviewer` did not apply, since the pass touched no Worker, D1, auth, session, or cookie code. Both reviewers converged on one Important finding: the `IconPicker` roving-tabindex pattern was half-implemented, updating `aria-checked` and `tabindex` on arrow keys without moving DOM focus to the newly selected radio. That cluster was folded in test-first (`d0c3e0a`): focus now follows selection (`tick()` then focus the live `[tabindex="0"]` node), the arrow origin derives from the tab stop rather than the bound value (fixing an off-by-one from an unselected required group), and the group label threads from the field rather than a hardcoded `"Icon"`.
+
+### Carried follow-ups
+
+- **Live `/admin` guided-insert smoke (Task 10) is unrun.** It needs a human clicking through the insert dialog in a browser against a real Worker, which the automated layer cannot drive. The render path is proven by the showcase production build, and the form-to-editor flow by the browser component tests, so this is a fast-follow rather than a blocker. It is best run during the ecnordic component migration, against that site's real Worker.
+- **Showcase callout is a minimal reference.** The `tone` and `icon` attributes reach `build(ctx)` but render no visible styling (the showcase ships no `.callout` CSS, and the icon attribute is not rendered into the markup). This is fine for a reference example that proves the slot path. A richer showcase callout that renders the icon and tone styling is optional polish.
+- **Showcase render ignores a per-call `stagger` option.** The adapter contract is `render(md, opts?)`, but the showcase wires one `createRenderer` with stagger off and ignores `opts`. Harmless for the showcase, a latent trap for a site that copies the config and expects `render(md, { stagger: true })`. The cleaner fix is a per-call `stagger` argument on `renderMarkdown`, deferred as out of scope.
+- **`partitionSlots` body slot relies on the stamp marking every schema slot.** `slot('body')` returns every unmarked top-level child, so a future slot kind the stamp loop misses would leak into body. Not a defect under the current kinds.

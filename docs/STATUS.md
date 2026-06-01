@@ -6,6 +6,43 @@ orientation is the workspace `CLAUDE.md`. Locked architecture decisions and the 
 the functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`).
 Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`.
 
+## Where the work is (2026-06-01, component-completion Pass 1 / slot render executed, unpublished)
+
+Component-completion Pass 1 (the slot render path) executed and landed on `main`, commits `2bca500..d0c3e0a`
+(eleven: nine plan-task commits, one simplifier pass, one review-gate hardening commit), local only and not
+yet published. It builds the component named-slot render path end to end. `remarkDirectiveStamp` now stamps a
+registered component's declared attributes, marks its `[label]` title paragraph, and stamps each nested slot
+directive so they survive to hast. The rehype dispatch partitions those into named slots and hands `build` a
+`ComponentContext` (`attributes`, `slot(name)`, `items(name)`, `node`), replacing the old `build(node)`
+signature. That is the breaking change, so the version bumped to `0.12.0`. The showcase `callout` proves the
+path, and the production build prerenders it to `<aside class="callout callout-warning">` with title, body, and
+points. The folded hardening all landed: the `glyph` unknown-icon guard, the `validateComponent` single-parse
+seam, the `splitHead` retirement, the repeatable-form stable identity, and the form a11y polish.
+
+Final gate at the tip: `npm run check` 742 files 0/0, `npm test` 91 files / 410 tests exit 0, `check:package`
+all-green for `0.12.0`. A simplifier pass (which extracted a shared `dataAttrProp` so the stamp/read casing
+contract is one source of truth), plus `svelte-reviewer` and `daisyui-a11y-reviewer` (both Opus), ran at the
+gate. The `cloudflare-workers-reviewer` and `web-auth-security-reviewer` did not apply, since the pass touched
+no Worker, D1, auth, session, or cookie code. Both reviewers converged on one Important finding, the `IconPicker`
+roving-tabindex pattern not moving DOM focus on arrow keys; it was folded in test-first (focus follows selection
+via `tick()` then the live tab stop, the arrow origin derives from the tab stop, and the group label threads from
+the field). Plan and full post-mortem: `docs/superpowers/plans/2026-06-01-cairn-components-03-slot-render.md`.
+
+- Design: `docs/superpowers/specs/2026-06-01-cairn-engine-backlog-and-slot-render-design.md`.
+
+**Carried fast-follow: the live `/admin` guided-insert smoke (Task 10) is unrun.** It needs a human clicking
+through the insert dialog in a browser against a real Worker. The render path is proven by the showcase
+production build and the form-to-editor flow by the browser component tests, so it is a fast-follow, best run
+during the ecnordic component migration against that site's real Worker.
+
+**Immediate next action: draft Pass 2 (delivery/SEO hardening), the second of the three engine-backlog passes.**
+It is design-bearing, so run `superpowers:brainstorming` with the user on the open decisions first, then
+`superpowers:writing-plans`; do not auto-write it. Scope (from the three-pass decision below): skip-drafts-at-build,
+per-entry `image`/`robots`/`author` in the SEO head, the feed/excerpt/permalink edge cases, and typed reads
+(infer `F` from concept fields, apply the validator's normalized `data` on read). Publishing `0.12.0` stays a
+separate release step; it is not urgent, since no site consumes the component surface until the engine backlog
+clears and the migrations begin. Pass 3 (auth hardening) follows Pass 2, then the site migrations.
+
 ## Where the work is (2026-06-01, delivery-surface DX executed, unpublished)
 
 The delivery-surface developer-experience pass executed and landed on `main`, commits `d606676..27deb16`
@@ -53,14 +90,10 @@ three passes:
 3. **Auth hardening.** `__Host-` cookie prefix, `/admin` security headers, rate-limit + `waitUntil` on the
    request endpoint, install-token KV caching.
 
-**Immediate next action: execute the Pass 1 plan
-`docs/superpowers/plans/2026-06-01-cairn-components-03-slot-render.md`, `subagent-driven`
-(`superpowers:subagent-driven-development`, one `cairn-implementer` per task), from the cairn-cms
-directory on `main`.** The plan is fully written (ten tasks) and the spec is approved, so skip
-brainstorming and start at Task 1. Tasks 1 and 2 are coupled (the remark stamp writes the markers the
-rehype partitioner reads, and the `build(ctx)` signature lands in Task 2), so implement them back to back
-and run the first full gate after Task 2. It bumps to `0.12.0` (Task 9) for the breaking `build` change;
-publishing stays a separate release step after the pass. After Pass 1 lands and publishes, the ecnordic
+**Pass 1 status: DONE (executed 2026-06-01).** See the top entry for the landing detail; the authoritative
+next action now lives there. The summary below remains as the pass's scope record. It bumped to `0.12.0`
+(Task 9) for the breaking `build` change; publishing stays a separate release step after the pass. After Pass 1
+lands and publishes, the ecnordic
 component migration becomes a site-pass that refactors ecnordic's `build()` to `build(ctx)`. 907-life has
 no directive components (plain remark-html, still on `0.6.0`), so it is out of the component initiative;
 its only pending work is the version catch-up. Carried for the later delivery migration: the

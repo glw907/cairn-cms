@@ -104,7 +104,6 @@ markdown. Back returns to the picker. This is not a nested HTML form; Insert cal
         <input
           class="checkbox checkbox-sm"
           type="checkbox"
-          aria-label={field.label}
           aria-invalid={Boolean(errors[field.key])}
           aria-describedby={errors[field.key] ? `err-${field.key}` : undefined}
           checked={asBool(field.key)}
@@ -117,7 +116,6 @@ markdown. Back returns to the picker. This is not a nested HTML form; Insert cal
         <span class="text-sm font-medium">{field.label}</span>
         <select
           class="select"
-          aria-label={field.label}
           aria-invalid={Boolean(errors[field.key])}
           aria-describedby={errors[field.key] ? `err-${field.key}` : undefined}
           value={asString(field.key)}
@@ -142,7 +140,6 @@ markdown. Back returns to the picker. This is not a nested HTML form; Insert cal
         <span class="text-sm font-medium">{field.label}</span>
         <input
           class="input"
-          aria-label={field.label}
           aria-invalid={Boolean(errors[field.key])}
           aria-describedby={errors[field.key] ? `err-${field.key}` : undefined}
           value={asString(field.key)}
@@ -159,7 +156,6 @@ markdown. Back returns to the picker. This is not a nested HTML form; Insert cal
         <span class="text-sm font-medium">{slot.label}</span>
         <textarea
           class="textarea"
-          aria-label={slot.label}
           aria-invalid={Boolean(errors[slot.name])}
           aria-describedby={errors[slot.name] ? `err-${slot.name}` : undefined}
           rows={3}
@@ -172,7 +168,6 @@ markdown. Back returns to the picker. This is not a nested HTML form; Insert cal
         <span class="text-sm font-medium">{slot.label}</span>
         <input
           class="input"
-          aria-label={slot.label}
           aria-invalid={Boolean(errors[slot.name])}
           aria-describedby={errors[slot.name] ? `err-${slot.name}` : undefined}
           value={slotString(slot.name)}
@@ -191,7 +186,7 @@ markdown. Back returns to the picker. This is not a nested HTML form; Insert cal
       <!-- Keyed by the parallel stable id so a mid-list removal drops the right node and focus follows the data; the value still binds to the canonical items[i] string the serializer reads. -->
       {#each ids as id, i (id)}
         <div class="flex items-center gap-2">
-          <input class="input input-sm flex-1" aria-label={`${slot.label} item`} bind:value={items[i]} />
+          <input class="input input-sm flex-1" aria-label={`${slot.label} ${i + 1}`} bind:value={items[i]} />
           <button type="button" class="btn btn-ghost btn-sm" aria-label={`Remove item ${i + 1}`} onclick={() => removeItem(slot.name, i)}>✕</button>
         </div>
       {/each}

@@ -1,9 +1,8 @@
 # Creating a Cairn site
 
-> **Status: living draft (started 2026-05-26 during the admin-UI brainstorm).** Sections are
-> marked **[Shipped]** (works today) or **[Planned: Pass X]** (designed, not built; see
-> `docs/PLAN.md` and `docs/superpowers/specs/2026-05-26-admin-ui-design.md`). Each pass's
-> close-out fills in its section. Don't treat Planned sections as available.
+> **Status: living draft (started 2026-05-26 during the admin-UI brainstorm).** The adapter, the
+> admin, the render engine, and the public delivery surface ship in 0.10. A few sections still flag
+> open design rounds inline. See `docs/PLAN.md` and the specs under `docs/superpowers/specs/`.
 
 > **Vocabulary (settled 2026-05-26).** The word **"theme" is retired** for the site-design concept
 > because it carried WordPress/Hugo "installable/swappable package" baggage that never matched this model.
@@ -146,25 +145,40 @@ A site author supplies:
 **Not authored by the site:** the **admin chrome** is neutral and fully self-contained (one
 look on every site; only `siteName` varies). Don't style `/admin`. *(See Pass I.)*
 
-## 1. The adapter contract: `src/lib/cairn.config.ts`  **[Shipped]**
+## 1. The adapter contract: `src/lib/cairn.config.ts`
 
 Implement `CairnAdapter` (from `@glw907/cairn-cms`):
-- `siteName`, `sender` (from address), `backend` `{ owner, repo, branch, appId, installationId }`.
-- `collections[]`: each `{ name, label, folder, fields[], validate() }`. `fields[]` is a
-  discriminated union (`text | date | textarea | boolean | tags | freetags`). The admin form +
-  `frontmatterFromForm` are data-driven from `fields`.
-- `renderPreview(md)`: your directive-safe render (ecnordic: the `render.ts` plugin set;
-  907.life: plain remark + remark-html). cairn-core never assumes directives.
+- `siteName`, `sender` `{ from, replyTo? }`, `backend` `{ owner, repo, branch, appId, installationId }`.
+- `content`: the content concepts this site enables, keyed `posts?` and `pages?`. Each concept is a
+  `ConceptConfig`: `{ dir, label?, fields[], validate() }`. `fields[]` is a discriminated union
+  (`text | textarea | date | boolean | tags | freetags`). The admin form and `frontmatterFromForm`
+  are data-driven from `fields`. A site never has two of the same concept.
+- `render(md, opts?)`: the site's one renderer. The editor preview and every public page call it.
+  ecnordic uses its directive plugin set; 907.life uses plain remark plus remark-html. The engine
+  never assumes directives.
+- `registry?` and `icons?`: the directive component registry and the glyph set, shared by the
+  renderer and the admin palette and icon picker.
+- `navMenu?`: the git-committed YAML menu the nav editor manages.
 - Filename-based ids (no slug codec needed; day-bearing and dayless filenames both flow through).
 
-## 2. Cloudflare bindings & secrets  **[Shipped]**
+A concept's URL policy lives in the YAML site-config, not the adapter. `normalizeConcepts` resolves
+each concept's `permalink` pattern and `datePrefix` from that policy.
 
-`wrangler.toml`: the **AUTH_DB** (D1) better-auth store + the **EMAIL** `[[send_email]]` binding
+### URLs and the dated-slug model
+
+The YAML URL policy drives each concept's permalink. Posts carry a date prefix on the filename, so a
+post id is the full stem and its slug is the date-stripped tail. `siteDescriptors(cairn, parseSiteConfig(yaml))`
+is the single call that derives the concept descriptors. The public index and the admin both read those
+same descriptors, so the URL a page prerenders to and the URL the admin shows never drift.
+
+## 2. Cloudflare bindings & secrets
+
+`wrangler.toml`: the **AUTH_DB** (D1) magic-link store + the **EMAIL** `[[send_email]]` binding
 (`remote = true`). Secrets (`wrangler secret put`): `GITHUB_APP_ID`, `GITHUB_APP_INSTALLATION_ID`,
 `GITHUB_APP_PRIVATE_KEY_B64`, `AUTH_SECRET` (per-site, worker-only). `app.d.ts` declares them +
 `App.Locals.auth`/`user`. `hooks.server.ts` creates the per-request auth + adds the `/admin/**` guard.
 
-## 3. Admin route shims  **[Shipped]**
+## 3. Admin route shims
 
 `src/routes/admin/**` are thin shims that import server logic from `@glw907/cairn-cms/sveltekit`
 and components from `@glw907/cairn-cms/components`, passing your adapter. They are byte-identical
@@ -172,19 +186,18 @@ across sites except `cairn.config.ts`. The exact tree, including the load-bearin
 the root `/healthz`, and the nested editor route, is documented in
 [`docs/admin-route-structure.md`](admin-route-structure.md).
 
-## 4. Admin theme  **[Planned: Pass I]**
+## 4. Admin theme
 
 Neutral, self-contained "Warm Stone" DaisyUI theme applied by the package on the admin root (CSS
 custom-property + font override). Author does nothing; do **not** style `/admin`. (This is the only
 "theme" cairn has: the visual styling of the admin chrome, not a site-design concept.)
 
-## 5. Collections in the admin  **[Partly shipped; nav + per-collection views Planned: Pass J]**
+## 5. Concepts in the admin
 
-- *Shipped:* collections are listed and editable; the edit form is data-driven from `fields`.
-- *Planned (Pass J):* each collection a first-class sidebar entry + per-collection entries list
-  (`/admin/[collection]`). *Planned (Pass K, R4):* page-vs-story differentiated edit experience.
+- Each concept is a first-class sidebar entry with a per-concept entries list (`/admin/[concept]`).
+- The edit form is data-driven from `fields`.
 
-## 6. Components & the component registry  **[Engine shipped (extraction); palette UI Planned: Pass K, R10 + R10a]**
+## 6. Components & the component registry
 
 If your site has rich directive components (`:::card`, `:::grid`, …):
 - A component is **code**: a registry entry with a `build` fn (directive element → hast) + preview CSS.
@@ -198,23 +211,199 @@ If your site has rich directive components (`:::card`, `:::grid`, …):
 - **Creating a component is a developer task** (registry entry + `build` + CSS). There is no
   UI to create components. Adding one to the registry makes it appear in the editor palette.
 
-## 7. Icons & assets in the editor  **[Planned: R9]**
+## 7. Icons & assets in the editor
 
 - **Icon set:** your `icons.ts` (closed vocabulary of SVG path data). The editor offers a picker over
   it for `icon=` attributes.
 - **Images/videos:** browsable from your asset root(s) (e.g. `static/**`) via the GitHub
   contents API. Git is the archive; the adapter declares the asset roots + public URL base.
 
-## 8. Editor management & roles  **[Shipped]**
+## 8. Editor management & roles
 
 Two-tier `owner`/`editor` in the D1 user table; owners get the manage-editors surface. Per-site (no
 cross-site SSO). Seed the first `owner` in the site's `AUTH_DB`.
 
-## 9. Collection CRUD (creating collections from the UI)  **[Planned: Pass, R8]**
+## 9. Concept CRUD (creating concepts from the UI)  *(open design)*
 
-Whether collection *definitions* can be created at runtime, and where they're stored (committed
-config file vs D1), is an open decision with its own design round. Unlike components, a collection
+Whether concept *definitions* can be created at runtime, and where they would be stored (committed
+config file vs D1), is an open decision with its own design round. Unlike components, a concept
 definition is **data** (no render code), so runtime creation is feasible.
+
+## Public delivery
+
+The engine ships the public read side as data helpers under `@glw907/cairn-cms/delivery`. A site
+owns the routes and the markup. Each recipe below is one surface, copied straight from the working
+showcase. `examples/showcase` carries all of them as a running site.
+
+### The content layer
+
+One module globs the markdown, derives the descriptors, validates each concept into an index, and
+unions them into the site index every public route reads. This import is backend-free, so it pulls in
+no GitHub or auth code. `createContentIndex` runs each concept's `validate`, so a bad frontmatter
+field fails the build.
+
+`src/lib/content.ts`:
+
+```ts
+// The showcase's one delivery content layer: it globs the markdown, derives the descriptors
+// with siteDescriptors, builds a validated per-concept index, and unions them into the site
+// index every public route reads.
+import {
+  createContentIndex,
+  createSiteIndex,
+  fromGlob,
+  siteDescriptors,
+  type SiteIndex,
+} from '@glw907/cairn-cms/delivery';
+import { parseSiteConfig } from '@glw907/cairn-cms';
+import { cairn } from './cairn.config.js';
+import siteYaml from './site.config.yaml?raw';
+
+const descriptors = siteDescriptors(cairn, parseSiteConfig(siteYaml));
+const byId = Object.fromEntries(descriptors.map((d) => [d.id, d]));
+
+const postsRaw = import.meta.glob('/src/content/posts/*.md', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>;
+const pagesRaw = import.meta.glob('/src/content/pages/*.md', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>;
+
+export const site: SiteIndex = createSiteIndex([
+  { descriptor: byId.posts, index: createContentIndex(fromGlob(postsRaw), byId.posts) },
+  { descriptor: byId.pages, index: createContentIndex(fromGlob(pagesRaw), byId.pages) },
+]);
+
+export const ORIGIN = 'https://showcase.test';
+export const SITE_DESCRIPTION = 'The cairn showcase site.';
+```
+
+### The catch-all route
+
+`createPublicRoutes` turns the site index into prerender entries and a `load` that resolves one URL
+to its rendered entry and SEO data. The `+page.svelte` renders the engine's `CairnHead` for the SEO
+tags and owns the rest of the body.
+
+`src/routes/[...path]/+page.server.ts`:
+
+```ts
+import type { PageServerLoad, EntryGenerator } from './$types';
+import { createPublicRoutes } from '@glw907/cairn-cms/delivery';
+import { site, ORIGIN, SITE_DESCRIPTION } from '$lib/content';
+import { cairn } from '$lib/cairn.config';
+
+export const prerender = true;
+
+const routes = createPublicRoutes({
+  site,
+  render: cairn.render,
+  origin: ORIGIN,
+  siteName: cairn.siteName,
+  description: SITE_DESCRIPTION,
+  feeds: { rss: ORIGIN + '/feed.xml', json: ORIGIN + '/feed.json' },
+});
+
+export const entries: EntryGenerator = () => routes.entries();
+
+export const load: PageServerLoad = ({ url }) => routes.entryLoad({ url });
+```
+
+`src/routes/[...path]/+page.svelte`:
+
+```svelte
+<script lang="ts">
+  import type { PageData } from './$types';
+  import { CairnHead } from '@glw907/cairn-cms/delivery';
+
+  let { data }: { data: PageData } = $props();
+</script>
+
+<CairnHead seo={data.seo} />
+
+<article>
+  <h1>{data.entry.title}</h1>
+  {@html data.html}
+</article>
+```
+
+### The feeds
+
+`rssResponse` builds the RSS document from a feed header and a `FeedItem[]`. A JSON feed counterpart
+calls `jsonFeedResponse` with the same item shape.
+
+`src/routes/feed.xml/+server.ts`:
+
+```ts
+import type { RequestHandler } from './$types';
+import { rssResponse, type FeedItem } from '@glw907/cairn-cms/delivery';
+import { site, ORIGIN, SITE_DESCRIPTION } from '$lib/content';
+import { cairn } from '$lib/cairn.config';
+
+export const prerender = true;
+
+export const GET: RequestHandler = async () => {
+  const posts = site.concept('posts')?.all() ?? [];
+  const items: FeedItem[] = await Promise.all(
+    posts.map(async (p) => ({
+      title: p.title,
+      url: ORIGIN + p.permalink,
+      date: p.date ?? '',
+      summary: p.excerpt,
+      contentHtml: await cairn.render(site.concept('posts')!.byId(p.id)!.body),
+      tags: p.tags,
+    })),
+  );
+  return rssResponse(
+    { title: cairn.siteName, description: SITE_DESCRIPTION, siteUrl: ORIGIN, feedUrl: ORIGIN + '/feed.xml' },
+    items,
+  );
+};
+```
+
+### The sitemap and robots
+
+`sitemapResponse` takes a `SitemapUrl[]` built over `site.all()`. `robotsResponse` writes the robots
+file with the sitemap pointer and any disallow rules.
+
+`src/routes/sitemap.xml/+server.ts`:
+
+```ts
+import type { RequestHandler } from './$types';
+import { sitemapResponse, type SitemapUrl } from '@glw907/cairn-cms/delivery';
+import { site, ORIGIN } from '$lib/content';
+
+export const prerender = true;
+
+export const GET: RequestHandler = () => {
+  const urls: SitemapUrl[] = [
+    { loc: ORIGIN + '/' },
+    ...site.all().map((s) => (s.date ? { loc: ORIGIN + s.permalink, lastmod: s.date } : { loc: ORIGIN + s.permalink })),
+  ];
+  return sitemapResponse(urls);
+};
+```
+
+`src/routes/robots.txt/+server.ts`:
+
+```ts
+import type { RequestHandler } from './$types';
+import { robotsResponse } from '@glw907/cairn-cms/delivery';
+import { ORIGIN } from '$lib/content';
+
+export const prerender = true;
+
+export const GET: RequestHandler = () => {
+  return robotsResponse({ sitemapUrl: ORIGIN + '/sitemap.xml', disallow: ['/admin'] });
+};
+```
+
+### The working reference
+
+`examples/showcase` is the complete working reference for every recipe above.
 
 ---
 

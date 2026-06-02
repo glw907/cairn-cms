@@ -85,3 +85,26 @@ describe('entryLoad SEO', () => {
     expect(data.seo.meta).toContainEqual({ name: 'robots', content: 'noindex' });
   });
 });
+
+describe('entryLoad feed autodiscovery', () => {
+  it('attaches feed alternate links to a dated entry', async () => {
+    const data = await routes.entryLoad({ url: new URL('https://x.test/2026/05/14/welcome') });
+    expect(data.seo.links).toContainEqual({
+      rel: 'alternate',
+      type: 'application/rss+xml',
+      href: 'https://x.test/feed.xml',
+      title: 'X Site',
+    });
+    expect(data.seo.links).toContainEqual({
+      rel: 'alternate',
+      type: 'application/feed+json',
+      href: 'https://x.test/feed.json',
+      title: 'X Site',
+    });
+  });
+
+  it('attaches no feed alternate links to an undated page', async () => {
+    const data = await routes.entryLoad({ url: new URL('https://x.test/secret') });
+    expect(data.seo.links.some((link) => link.rel === 'alternate')).toBe(false);
+  });
+});

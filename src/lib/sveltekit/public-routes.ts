@@ -83,7 +83,7 @@ export function createPublicRoutes(deps: PublicRoutesDeps) {
       ...(image ? { image } : {}),
       ...(fields.robots ? { robots: fields.robots } : {}),
       ...(fields.author ? { author: fields.author } : {}),
-      feeds,
+      ...(entry.date ? { feeds } : {}),
     });
     return { entry, html: await render(entry.body, { stagger: true }), canonicalUrl, seo, newer, older };
   }

@@ -96,6 +96,24 @@ describe('EditPage', () => {
     expect(screen.container.querySelector('section[aria-label="Preview"]')!.innerHTML).not.toContain('onerror');
   });
 
+  it('resolves cairn links in the preview, marking a missing target broken', async () => {
+    const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+    const props = {
+      ...postProps({
+        body: '[about](cairn:pages/about) and [gone](cairn:pages/gone)',
+        linkTargets: [{ concept: 'pages', id: 'about', permalink: '/about', title: 'About', draft: false }],
+      }),
+      render: (md: string, opts?: { resolve?: (ref: { concept: string; id: string }) => string | undefined }) =>
+        renderMarkdown(md, opts),
+    };
+    const screen = render(EditPage, props);
+    await screen.getByRole('button', { name: /show preview/i }).click();
+    await expect
+      .poll(() => screen.container.querySelector('section[aria-label="Preview"]')?.innerHTML ?? '')
+      .toContain('href="/about"');
+    expect(screen.container.querySelector('section[aria-label="Preview"]')!.innerHTML).toContain('cairn-broken-link');
+  });
+
   it('preview toggle button exposes aria-expanded reflecting preview state', async () => {
     const screen = render(EditPage, postProps());
     const btn = screen.getByRole('button', { name: /show preview/i });

@@ -12,6 +12,8 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
   import type { IconSet } from '../render/glyph.js';
   import type { EditData } from '../sveltekit/content-routes.js';
   import type { TextareaField, TagsField, FreeTagsField } from '../content/types.js';
+  import type { LinkResolve } from '../content/links.js';
+  import { manifestLinkResolver } from '../content/manifest.js';
 
   interface Props {
     /** The edit load's data, plus the site name for the heading. */
@@ -19,7 +21,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
     /** The site's component registry, for the insert palette. */
     registry?: ComponentRegistry;
     /** The site's design-accurate render pipeline; the preview pane renders its output, which the floored pipeline already sanitized. */
-    render?: (md: string, opts?: { stagger?: boolean }) => string | Promise<string>;
+    render?: (md: string, opts?: { stagger?: boolean; resolve?: LinkResolve }) => string | Promise<string>;
     /** The site's icon set, for the guided form's icon fields. */
     icons?: IconSet;
   }
@@ -32,6 +34,10 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
   let showPreview = $state(false);
   let previewHtml = $state('');
   let insert = $state.raw<(text: string) => void>(() => {});
+
+  // The manifest-backed resolver turns a cairn: link into its live permalink in the preview, and
+  // returns undefined for a missing target so the render step marks it cairn-broken-link.
+  const resolveLink = $derived(manifestLinkResolver(data.linkTargets));
 
   const PREVIEW_KEY = 'cairn-admin:preview';
 
@@ -56,7 +62,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
     const run = ++previewRun;
     const handle = setTimeout(async () => {
       try {
-        const html = await render(md);
+        const html = await render(md, { resolve: resolveLink });
         if (run === previewRun) previewHtml = html;
       } catch {
         if (run === previewRun) previewHtml = '';

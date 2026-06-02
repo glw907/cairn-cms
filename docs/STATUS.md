@@ -6,6 +6,56 @@ orientation is the workspace `CLAUDE.md`. Locked architecture decisions and the 
 the functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`).
 Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`.
 
+## Where the work is (2026-06-02, auth-hardening pass executed, unpublished 0.16.0)
+
+The auth-hardening pass executed subagent-driven on `main`, one `cairn-implementer` per task (Sonnet for the seven
+mechanical tasks, Opus for Task 7's prose-and-memory rewrite), commits `ad19f0e..443ab01`. That is the eight
+plan-task commits, one simplifier refinement (`9f9d5f5`), and one review-gate fold-in (`443ab01`). Local only, not
+pushed, not published. Six units landed: the `__Host-` session cookie name derived from the request protocol
+(`__Host-cairn_session` with `Secure` on https, plain `cairn_session` on local http, derived identically at set,
+read, and clear); six baseline security headers on every admin response through `resolve()` (`nosniff`,
+`X-Frame-Options: DENY`, a matching `Content-Security-Policy: frame-ancestors 'none'`, `Referrer-Policy: no-referrer`,
+HSTS, a conservative `Permissions-Policy`), with non-admin responses untouched; a per-isolate `Map` memo of the GitHub
+installation token (55-minute TTL under the one-hour lifetime, keyed by `installationId`, injected mint and clock);
+a per-email magic-link cooldown (60 seconds, response unchanged so non-enumeration holds) plus a `platform.ctx.waitUntil`
+background send with an inline fallback; lazy expired-row sweeps folded into `issueToken` and `createSession`; and an
+https `requireOrigin` guard that allows http only for an exact `localhost` or `127.0.0.1` hostname. The smoke doc was
+rewritten for the self-owned D1 model. The additive surface bumps the minor to `0.16.0`.
+
+Final gate at the tip (`443ab01`): `npm run check` 753 files 0/0, `npm test` 98 files / 477 tests exit 0,
+`check:package` all-green with no export-condition change. A simplifier pass made one cosmetic doc-comment fix
+(`9f9d5f5`). Both applicable Opus reviewers ran: `web-auth-security-reviewer` (no Critical, no in-scope Important;
+CSRF verification item PASS) and `cloudflare-workers-reviewer` (no Critical or Important; confirmed `db.batch`
+atomicity, the per-isolate memo, the TTL margin, the `waitUntil` keep-alive). Two minor findings in this pass's own new
+code folded in as `443ab01`: prefer the supported `platform.ctx` over the deprecated `platform.context` alias, and
+match the localhost origin hostname exactly so `localhost.evil.com` cannot skip the https requirement. Plan and full
+post-mortem: `docs/superpowers/plans/2026-06-02-cairn-auth-hardening.md`.
+
+- Spec: `docs/superpowers/specs/2026-06-02-cairn-auth-hardening-design.md` (approved).
+
+**Render-safety verification item: FAIL, escalated to its own pass (the plan's intended handling, not a blocker for
+this pass).** The auth reviewer confirmed the reference delivery render path in `src/lib/render/pipeline.ts` composes
+`remarkRehype({ allowDangerousHtml: true })` with `rehypeRaw` and no `rehype-sanitize`, and the showcase delivers its
+output through `{@html}`, so author markdown carrying a `<script>`, an `onerror`, or a `javascript:` URI reaches the
+published page verbatim. The deferred-CSP decision rested on render safety being the real XSS control, and that control
+is absent on the reference path. Cairn's trusted-editor model lowers the likelihood (an owner-curated allowlist
+committing through the GitHub App with history), so this is a malicious-or-compromised-editor and paste-mistake
+exposure, not anonymous input. See the `cairn-render-sanitize-gap` memory.
+
+**Live admin smoke:** the showcase runs on `@sveltejs/adapter-node`, not a Worker with a `wrangler` config, so there is
+no `wrangler dev` admin Worker to smoke here. Real-Worker coverage for every changed behavior is the `integration` test
+project (workerd against a real miniflare D1), green across `auth-guard`, `auth-confirm`, `auth-request`, and
+`auth-cleanup`. The deployed-https browser smoke (a real browser round-tripping the `__Host-` cookie, an editor clicking
+a real magic link) stays a human fast-follow, consistent with this project's precedent.
+
+**Immediate next action: brainstorm then plan the render-safety pass, design-bearing.** The escalated render-safety FAIL
+is the top security item and must land before either site adopts the delivery surface. Run `superpowers:brainstorming`
+with the user on the open design forks (a `rehype-sanitize` floor in the delivered pipeline with a schema that permits
+the component registry's directive markup and `data-*` attributes, versus a reconsidered admin/delivery CSP, and whether
+the floor is library-default or site-overridable), then `superpowers:writing-plans`. Do not auto-write it. After it
+lands, publish (batch `0.16.0` with the sanitize bump), then the site migrations follow (per-site `site-pass`, ecnordic
+then 907), which pin the published range. The migration gotcha below (pass every declared concept's glob) still applies.
+
 ## Where the work is (2026-06-02, delivery-robustness pass executed, unpublished 0.15.0)
 
 The delivery-robustness pass executed subagent-driven on `main`, one `cairn-implementer` per task (Sonnet),
@@ -543,8 +593,12 @@ outcome is in the functional spec).
   accepts a shape-valid but impossible date (the other deferred item).
 - Render hardening: `splitHead` dereferences a missing `<h2>`; `glyph` serializes `d="undefined"`
   for an unknown icon. Both inherited from legacy, unreachable under the sites' content.
-- Auth hardening: install-token KV caching, rate-limit plus `waitUntil` on the request endpoint,
-  `/admin` security headers, the `__Host-` session cookie prefix.
+- Auth hardening: RESOLVED by the 2026-06-02 pass (the `__Host-` cookie prefix, `/admin` security headers, the
+  install-token in-isolate memo, the magic-link cooldown plus `waitUntil`, the lazy expired-row sweep, the https
+  `requireOrigin` guard). Two latent items remain. The guard's own 303 login-redirect skips the security headers,
+  since `throw redirect(...)` unwinds before the post-resolve header step (low impact: a bare redirect with a
+  `Location` and `Set-Cookie`, and the `/admin/login` page itself does get the headers). The render-safety FAIL is the
+  escalated security item, now the immediate next pass (see the top entry and `cairn-render-sanitize-gap`).
 
 ## Durable operational traps
 

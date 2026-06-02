@@ -134,5 +134,7 @@ export type { SitemapUrl } from './delivery/sitemap.js';
 export { buildRobots } from './delivery/robots.js';
 export { buildSeoMeta } from './delivery/seo.js';
 export type { SeoInput, SeoMeta } from './delivery/seo.js';
+export { readSeoFields, resolveImageUrl } from './delivery/seo-fields.js';
+export type { SeoFields } from './delivery/seo-fields.js';
 export { paginate } from './delivery/paginate.js';
 export type { Page } from './delivery/paginate.js';

@@ -18,6 +18,8 @@ export type { SitemapUrl } from './sitemap.js';
 export { buildRobots } from './robots.js';
 export { buildSeoMeta } from './seo.js';
 export type { SeoInput, SeoMeta } from './seo.js';
+export { readSeoFields, resolveImageUrl } from './seo-fields.js';
+export type { SeoFields } from './seo-fields.js';
 export { paginate } from './paginate.js';
 export type { Page } from './paginate.js';
 export { rssResponse, jsonFeedResponse, sitemapResponse, robotsResponse } from './responses.js';

@@ -30,3 +30,12 @@ describe('composeRuntime extension carry-through', () => {
     expect(runtime.fieldTypes).toEqual([]);
   });
 });
+
+describe('composeRuntime manifestPath', () => {
+  it('defaults the manifest path', () => {
+    expect(composeRuntime(adapter()).manifestPath).toBe('src/content/.cairn/index.json');
+  });
+  it('honors an adapter override', () => {
+    expect(composeRuntime({ ...adapter(), manifestPath: 'content/.cairn/idx.json' }).manifestPath).toBe('content/.cairn/idx.json');
+  });
+});

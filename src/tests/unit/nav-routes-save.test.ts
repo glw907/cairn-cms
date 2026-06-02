@@ -10,6 +10,7 @@ function runtime(): CairnRuntime {
     backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
     sender: { from: 'cms@test' },
     render: (md) => md,
+    manifestPath: 'src/content/.cairn/index.json',
     navMenu: { configPath: 'src/lib/site.config.yaml', menuName: 'primary', label: 'Primary nav', maxDepth: 2 },
   };
 }

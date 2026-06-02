@@ -19,6 +19,7 @@ function runtime(validate: (fm: Record<string, unknown>, body: string) => Valida
     backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
     sender: { from: 'cms@test' },
     render: (md) => md,
+    manifestPath: 'src/content/.cairn/index.json',
   };
 }
 

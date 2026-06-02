@@ -11,6 +11,7 @@ import type { ComponentRegistry } from '../render/registry.js';
 import type { IconSet } from '../render/glyph.js';
 import type { DatePrefix } from './ids.js';
 import type { ConceptSchema } from './schema.js';
+import type { LinkResolve } from './links.js';
 
 /** Common to every frontmatter field: the frontmatter key, the form label, and whether it is required. */
 interface FieldBase {
@@ -171,8 +172,13 @@ export interface CairnAdapter {
   };
   backend: BackendConfig;
   sender: SenderConfig;
-  /** The site's one renderer: the editor preview and every public page call it (design decision 4). */
-  render(md: string, opts?: { stagger?: boolean }): string | Promise<string>;
+  /** The site's one renderer: the editor preview and every public page call it (design decision 4).
+   *  `resolve` rewrites cairn: links to live permalinks; the build passes a site-index resolver, the
+   *  preview a manifest one. */
+  render(md: string, opts?: { stagger?: boolean; resolve?: LinkResolve }): string | Promise<string>;
+  /** Repo-relative path to the committed content manifest. Defaults to src/content/.cairn/index.json
+   *  in composeRuntime. It sits outside any concept directory, so content enumeration never globs it. */
+  manifestPath?: string;
   /** Directive component registry; the renderer and the future palette derive from it (seam 3). */
   registry?: ComponentRegistry;
   /** The site's glyph name to SVG path-data map, for the admin icon picker and the renderer. */
@@ -267,7 +273,8 @@ export interface CairnRuntime {
   backend: BackendConfig;
   sender: SenderConfig;
   /** The site's one renderer: the editor preview and every public page call it (design decision 4). */
-  render(md: string, opts?: { stagger?: boolean }): string | Promise<string>;
+  render(md: string, opts?: { stagger?: boolean; resolve?: LinkResolve }): string | Promise<string>;
+  manifestPath: string;
   registry?: ComponentRegistry;
   /** The site's glyph name to SVG path-data map, for the admin icon picker and the renderer. */
   icons?: IconSet;

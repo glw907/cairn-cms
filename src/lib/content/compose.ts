@@ -31,6 +31,7 @@ export function composeRuntime(
     backend: adapter.backend,
     sender: adapter.sender,
     render: adapter.render,
+    manifestPath: adapter.manifestPath ?? 'src/content/.cairn/index.json',
     registry: adapter.registry,
     icons: adapter.icons,
     navMenu: adapter.navMenu,

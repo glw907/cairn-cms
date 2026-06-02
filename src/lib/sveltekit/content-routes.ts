@@ -7,9 +7,9 @@ import { findConcept } from '../content/concepts.js';
 import { frontmatterFromForm, parseMarkdown, dateInputValue, serializeMarkdown } from '../content/frontmatter.js';
 import { isValidId, slugify, filenameFromId, composeDatedId } from '../content/ids.js';
 import { appCredentials, type GithubKeyEnv } from '../github/credentials.js';
-import { listMarkdown, readRaw, commitFile } from '../github/repo.js';
+import { listMarkdown, readRaw, commitFiles } from '../github/repo.js';
 import { cachedInstallationToken } from '../github/signing.js';
-import { parseManifest, type LinkTarget } from '../content/manifest.js';
+import { emptyManifest, manifestEntryFromFile, parseManifest, serializeManifest, upsertEntry, type LinkTarget } from '../content/manifest.js';
 import { CommitConflictError } from '../github/types.js';
 import type { CairnRuntime, ConceptDescriptor, FrontmatterField } from '../content/types.js';
 import type { Editor, Role } from '../auth/types.js';
@@ -267,11 +267,23 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
 
     const markdown = serializeMarkdown(result.data, body);
     const token = await mintToken(event.platform?.env ?? {});
+
+    // Read the committed manifest, upsert this entry's row, and commit content and manifest in one
+    // commit. A missing manifest starts empty (first save on a fresh repo). The build regenerates
+    // and verifies the manifest, so this incremental patch is the cheap request-time path. On a
+    // 422 retry commitFiles re-sends this manifest blob last-writer-wins; the build reconciles.
+    const manifestRaw = await readRaw(runtime.backend, runtime.manifestPath, token);
+    const manifest = manifestRaw === null ? emptyManifest() : parseManifest(manifestRaw);
+    const row = manifestEntryFromFile(concept, { path, raw: markdown });
+    const nextManifest = serializeManifest(upsertEntry(manifest, row));
+
     try {
-      await commitFile(
+      await commitFiles(
         runtime.backend,
-        path,
-        markdown,
+        [
+          { path, content: markdown },
+          { path: runtime.manifestPath, content: nextManifest },
+        ],
         { message: `Update ${concept.label.toLowerCase()}: ${id}`, author: { name: editor.displayName, email: editor.email } },
         token,
       );

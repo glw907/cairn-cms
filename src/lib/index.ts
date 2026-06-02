@@ -124,6 +124,8 @@ export type {
 } from './delivery/content-index.js';
 export { createSiteIndex } from './delivery/site-index.js';
 export type { SiteIndex, ConceptIndex } from './delivery/site-index.js';
+export { createSiteIndexes } from './delivery/site-indexes.js';
+export type { SiteIndexes, SiteGlobs } from './delivery/site-indexes.js';
 export { deriveExcerpt, wordCount } from './delivery/excerpt.js';
 export { buildRssFeed, buildJsonFeed } from './delivery/feeds.js';
 export type { FeedChannel, FeedItem } from './delivery/feeds.js';

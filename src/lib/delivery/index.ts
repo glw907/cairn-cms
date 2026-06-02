@@ -7,6 +7,8 @@ export { createContentIndex, fromGlob } from './content-index.js';
 export type { RawFile, ContentSummary, ContentEntry, ContentIndex, ContentProblem } from './content-index.js';
 export { createSiteIndex } from './site-index.js';
 export type { SiteIndex, ConceptIndex } from './site-index.js';
+export { createSiteIndexes } from './site-indexes.js';
+export type { SiteIndexes, SiteGlobs } from './site-indexes.js';
 export { siteDescriptors } from './site-descriptors.js';
 export { deriveExcerpt, wordCount } from './excerpt.js';
 export { buildRssFeed, buildJsonFeed } from './feeds.js';

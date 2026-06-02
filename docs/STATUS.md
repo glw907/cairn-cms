@@ -44,15 +44,28 @@ their content for every read key before declaring the schema.
 
 - Spec: `docs/superpowers/specs/2026-06-01-cairn-schema-source-of-truth-design.md`.
 
-**Immediate next action: brainstorm then write Plan 3 (the per-entry SEO head consumer),
-`docs/superpowers/plans/2026-06-01-cairn-schema-03-seo.md` (to be written), via `cairn-pass`.** Plan 3 is the
-last of the three-plan schema initiative and is design-bearing, so run `superpowers:brainstorming` with the
-user on the open decisions before `superpowers:writing-plans`; do not auto-write it. The spec's SEO-consumer
-direction and the now-typed `createSiteIndexes` per-concept `frontmatter` reads are the foundation it builds on.
-The residual delivery items (the feed/excerpt/permalink guards, the failure-path `frontmatter` typing, the
-reserved-`site`-key guard, the silent-empty-glob warning) stay a small separate follow-up pass, after the
-schema initiative and before the site migrations. Publishing `0.13.0` stays a separate release step, not urgent
-until the backlog clears.
+**Immediate next action: execute Plan 3 (the per-entry SEO head consumer),
+`docs/superpowers/plans/2026-06-01-cairn-schema-03-seo.md`, `subagent-driven`
+(`superpowers:subagent-driven-development`, one `cairn-implementer` per task), from the cairn-cms directory on
+`main`.** The plan is fully written (four test-first tasks) and the design is settled, so skip brainstorming and
+start at Task 1. The Sonnet default fits all four; none is type-machinery-heavy. Plan 3 adds `seo-fields.ts`
+(`readSeoFields` + `resolveImageUrl`), wires `entryLoad` to read `image`/`robots`/`author` from the normalized
+frontmatter with a relative-image resolve and one site-wide `defaultImage` fallback, declares the SEO fields in
+the showcase, and bumps to `0.14.0`. It is additive (the new dep is optional, the new exports add to the
+existing entries), so it runs on `main` directly. The showcase production prerender is the end-to-end gate (an
+entry's own absolute `og:image`, the default on an entry without one, `robots`, `article:author`). Design
+reference: `docs/superpowers/specs/2026-06-01-cairn-schema-03-seo-design.md`.
+
+Design settled (2026-06-01 brainstorm): the site-level default is the OG image only (`deps.defaultImage`), per
+the absence-is-meaningful test and the convention across comparable tools; `robots` and `author` stay strictly
+per-entry, with a `defaultAuthor` knob as a cheap symmetric addition later only if a real site asks. The
+cross-concept catch-all reads the SEO fields by name off the normalized `.frontmatter` through a small typed
+reader; the typed payoff is the full schema-to-head loop, not a statically typed catch-all.
+
+After Plan 3 lands, the schema initiative is complete. The residual delivery items (the feed/excerpt/permalink
+guards, the failure-path `frontmatter` typing, the reserved-`site`-key guard, the silent-empty-glob warning) stay
+a small separate follow-up pass, after the schema initiative and before the site migrations. Publishing the
+`0.13.0`/`0.14.0` window stays a separate release step, not urgent until the backlog clears.
 
 ## Where the work is (2026-06-01, schema Plan 1 / the schema primitive executed, unpublished)
 

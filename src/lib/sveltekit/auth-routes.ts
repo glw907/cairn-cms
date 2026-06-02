@@ -9,9 +9,10 @@ import {
   hashToken,
   TOKEN_TTL_MS,
   SESSION_TTL_MS,
+  SEND_COOLDOWN_MS,
   sessionCookieName,
 } from '../auth/crypto.js';
-import { findEditor, issueToken, consumeToken, createSession, deleteSession } from '../auth/store.js';
+import { findEditor, issueToken, consumeToken, createSession, deleteSession, recentlyIssued } from '../auth/store.js';
 import { buildMagicLinkMessage, cloudflareSend, type AuthBranding, type SendMagicLink } from '../email.js';
 import type { RequestContext } from './types.js';
 
@@ -37,11 +38,25 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
 
     const editor = email ? await findEditor(db, email) : null;
     if (editor) {
-      const token = generateToken();
       const now = Date.now();
-      await issueToken(db, email, await hashToken(token), now + TOKEN_TTL_MS, now);
-      const link = `${origin}/admin/auth/confirm?token=${encodeURIComponent(token)}`;
-      await send(env, buildMagicLinkMessage({ to: email, branding: config.branding, link }));
+      // Per-email cooldown: skip the reissue and send when a token for this email was issued within
+      // the window, so the endpoint cannot flood an editor's inbox. The response is unchanged, so
+      // the non-leak property holds.
+      if (!(await recentlyIssued(db, email, now - SEND_COOLDOWN_MS))) {
+        const token = generateToken();
+        await issueToken(db, email, await hashToken(token), now + TOKEN_TTL_MS, now);
+        const link = `${origin}/admin/auth/confirm?token=${encodeURIComponent(token)}`;
+        // The token row is the security-critical write the email depends on, so it is awaited. The
+        // send is a post-response side effect, handed to waitUntil so a slow email provider does not
+        // hold the response. An absent waitUntil (local dev, tests) falls back to await. A send
+        // failure is logged so observability survives a backgrounded send.
+        const sending = send(env, buildMagicLinkMessage({ to: email, branding: config.branding, link })).catch(
+          (err) => console.error('cairn: magic-link send failed', err),
+        );
+        const ctx = event.platform?.context;
+        if (ctx?.waitUntil) ctx.waitUntil(sending);
+        else await sending;
+      }
     }
     return { sent: true };
   }

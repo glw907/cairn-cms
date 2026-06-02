@@ -20,6 +20,9 @@ export const TOKEN_TTL_MS = 10 * 60 * 1000;
 /** Sessions live 30 days. */
 export const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
+/** A magic link is sent at most once per email per minute, to throttle inbox flooding. */
+export const SEND_COOLDOWN_MS = 60 * 1000;
+
 function randomBase64Url(byteLength = 32): string {
   const bytes = new Uint8Array(byteLength);
   crypto.getRandomValues(bytes);

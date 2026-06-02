@@ -35,6 +35,15 @@ export async function issueToken(
   ]);
 }
 
+/** True when a magic-link token for this email was issued at or after `since`, for the send cooldown. */
+export async function recentlyIssued(db: D1Database, email: string, since: number): Promise<boolean> {
+  const row = await db
+    .prepare('SELECT 1 AS one FROM magic_token WHERE email = ? AND created_at >= ? LIMIT 1')
+    .bind(email, since)
+    .first<{ one: number }>();
+  return row != null;
+}
+
 /**
  * Consume a token in one atomic statement. A returned email means the token was present and
  * unexpired and is now gone, so the link is single-use by construction on strongly-consistent D1.

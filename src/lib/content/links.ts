@@ -30,6 +30,12 @@ export function parseCairnToken(href: string): CairnRef | null {
   return { concept, id };
 }
 
+/** Write the `cairn:<concept>/<id>` token for a ref. The inverse of parseCairnToken, so the editor
+ *  link picker and the autocomplete write exactly the form the resolver reads back. */
+export function formatCairnToken(ref: CairnRef): string {
+  return `cairn:${ref.concept}/${ref.id}`;
+}
+
 /** The cairn links a markdown body points at, in first-occurrence order, deduped by concept/id.
  *  Parses the body as mdast, so a token inside a code span or fence is never matched. */
 export function extractCairnLinks(body: string): CairnRef[] {

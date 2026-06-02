@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseCairnToken, extractCairnLinks } from '../../lib/content/links.js';
+import { parseCairnToken, extractCairnLinks, formatCairnToken } from '../../lib/content/links.js';
 
 describe('parseCairnToken', () => {
   it('parses a concept and a dated id', () => {
@@ -41,5 +41,18 @@ describe('extractCairnLinks', () => {
   });
   it('returns an empty array for a body with no links', () => {
     expect(extractCairnLinks('Just prose.')).toEqual([]);
+  });
+});
+
+describe('formatCairnToken', () => {
+  it('writes the cairn: token for a ref', () => {
+    expect(formatCairnToken({ concept: 'posts', id: '2026-01-04-waxing-guide' })).toBe(
+      'cairn:posts/2026-01-04-waxing-guide',
+    );
+    expect(formatCairnToken({ concept: 'pages', id: 'about' })).toBe('cairn:pages/about');
+  });
+  it('round-trips with parseCairnToken', () => {
+    const ref = { concept: 'posts', id: 'hello' };
+    expect(parseCairnToken(formatCairnToken(ref))).toEqual(ref);
   });
 });

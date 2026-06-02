@@ -118,7 +118,7 @@ describe('defineFields: Standard Schema conformance', () => {
   it('maps a success to a value result', () => {
     const r = posts['~standard'].validate({ frontmatter: { title: 'Hi', tags: ['gear'] }, body: '' });
     expect('issues' in r).toBe(false);
-    if (!('issues' in r)) expect(r.value).toEqual({ title: 'Hi', tags: ['gear'], draft: false });
+    if (!('issues' in r)) expect(r.value).toEqual({ title: 'Hi', tags: ['gear'] });
   });
 
   it('maps a failure to issues with a field path', () => {

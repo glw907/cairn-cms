@@ -36,13 +36,30 @@ describe('validateFields', () => {
     }
   });
 
-  it('coerces an absent boolean to false and absent tags to an empty list', () => {
+  it('omits an absent optional boolean and absent optional tags from normalized data', () => {
     const result = validateFields(postFields, { title: 'T', date: '2026-01-05', description: 'x' });
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.data.draft).toBe(false);
-      expect(result.data.tags).toEqual([]);
+      expect('draft' in result.data).toBe(false);
+      expect('tags' in result.data).toBe(false);
+      expect(result.data).toEqual({ title: 'T', date: '2026-01-05', description: 'x' });
     }
+  });
+
+  it('keeps a present optional value and omits an empty optional string', () => {
+    const fields: FrontmatterField[] = [
+      { type: 'text', name: 'title', label: 'Title', required: true },
+      { type: 'text', name: 'subtitle', label: 'Subtitle' },
+      { type: 'boolean', name: 'draft', label: 'Draft' },
+    ];
+    expect(validateFields(fields, { title: 'T', subtitle: 'Sub', draft: true })).toEqual({
+      ok: true,
+      data: { title: 'T', subtitle: 'Sub', draft: true },
+    });
+    expect(validateFields(fields, { title: 'T', subtitle: '   ', draft: false })).toEqual({
+      ok: true,
+      data: { title: 'T' },
+    });
   });
 
   it('requires only a title for a page', () => {

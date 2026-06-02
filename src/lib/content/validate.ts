@@ -7,9 +7,11 @@ import { dateInputValue } from './frontmatter.js';
 
 /**
  * Validate raw frontmatter against a field list. Required text and date fields must be
- * non-empty; required tag fields must be non-empty lists. Booleans coerce to `true`/`false`
- * and tag fields to string arrays. Returns the normalized data, or field-keyed errors when
- * any required field is empty.
+ * non-empty; required tag fields must be non-empty lists. A present boolean coerces to `true`
+ * and an unchecked one is omitted; a present tag field coerces to a string array and an empty
+ * one is omitted; an empty optional text or date field is omitted, so the normalized data
+ * carries only meaningful values and committed frontmatter stays minimal. Returns the
+ * normalized data, or field-keyed errors when any required field is empty.
  *
  * Frontmatter may arrive from the edit form (all string values) or from `parseMarkdown`,
  * where gray-matter turns an unquoted YAML date into a JS `Date`. The `date` case coerces a
@@ -25,25 +27,26 @@ export function validateFields(
     const value = frontmatter[field.name];
     switch (field.type) {
       case 'boolean':
-        data[field.name] = value === true;
+        // Absent or unchecked means false; omit it so a published file carries no draft: false noise.
+        if (value === true) data[field.name] = true;
         break;
       case 'tags':
       case 'freetags': {
         const list = Array.isArray(value) ? value.map(String) : [];
         if (field.required && list.length === 0) errors[field.name] = `${field.label} is required`;
-        data[field.name] = list;
+        if (list.length > 0) data[field.name] = list;
         break;
       }
       case 'date': {
         const text = value instanceof Date ? dateInputValue(value) : typeof value === 'string' ? value.trim() : '';
         if (field.required && text === '') errors[field.name] = `${field.label} is required`;
-        data[field.name] = text;
+        if (text !== '') data[field.name] = text;
         break;
       }
       default: {
         const text = typeof value === 'string' ? value.trim() : '';
         if (field.required && text === '') errors[field.name] = `${field.label} is required`;
-        data[field.name] = text;
+        if (text !== '') data[field.name] = text;
       }
     }
   }

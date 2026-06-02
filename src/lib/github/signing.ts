@@ -79,6 +79,38 @@ export async function installationToken(creds: AppCredentials): Promise<string> 
   return ((await res.json()) as { token: string }).token;
 }
 
+interface CachedToken {
+  token: string;
+  expiresAt: number;
+}
+
+/**
+ * Build an installation-token cache. A module-global instance memoizes the minted token per
+ * installation for most of its one-hour life, so a warm Worker isolate reuses it across requests
+ * instead of re-signing and re-calling GitHub on every list and commit. A cold isolate re-mints,
+ * which is always safe. This mirrors the default of @octokit/auth-app, which caches installation
+ * tokens in memory and returns them until expiry. The TTL stays under GitHub's documented one-hour
+ * lifetime, so a fixed margin avoids parsing the API expiry. `mint` and `now` are injected so the
+ * cache is testable with no network call and no real clock.
+ */
+export function createInstallationTokenCache(
+  mint: (creds: AppCredentials) => Promise<string> = installationToken,
+  now: () => number = () => Date.now(),
+  ttlMs = 55 * 60 * 1000,
+): (creds: AppCredentials) => Promise<string> {
+  const cache = new Map<string, CachedToken>();
+  return async function get(creds: AppCredentials): Promise<string> {
+    const hit = cache.get(creds.installationId);
+    if (hit && hit.expiresAt > now()) return hit.token;
+    const token = await mint(creds);
+    cache.set(creds.installationId, { token, expiresAt: now() + ttlMs });
+    return token;
+  };
+}
+
+/** The shared installation-token cache, one instance per Worker isolate. */
+export const cachedInstallationToken = createInstallationTokenCache();
+
 /**
  * Deploy-time self-test for the App signer: sign a dummy JWT with the configured key. It
  * exercises the brittle PKCS#1-to-PKCS#8 conversion and the Web Crypto import and sign with

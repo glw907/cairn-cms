@@ -8,7 +8,7 @@ import { frontmatterFromForm, parseMarkdown, dateInputValue, serializeMarkdown }
 import { isValidId, slugify, filenameFromId, composeDatedId } from '../content/ids.js';
 import { appCredentials, type GithubKeyEnv } from '../github/credentials.js';
 import { listMarkdown, readRaw, commitFile } from '../github/repo.js';
-import { installationToken } from '../github/signing.js';
+import { cachedInstallationToken } from '../github/signing.js';
 import { CommitConflictError } from '../github/types.js';
 import type { CairnRuntime, ConceptDescriptor, FrontmatterField } from '../content/types.js';
 import type { Editor, Role } from '../auth/types.js';
@@ -96,7 +96,7 @@ function conceptOf(runtime: CairnRuntime, params: Record<string, string>): Conce
 
 export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDeps = {}) {
   const mintToken =
-    deps.mintToken ?? ((env: GithubKeyEnv) => installationToken(appCredentials(runtime.backend, env)));
+    deps.mintToken ?? ((env: GithubKeyEnv) => cachedInstallationToken(appCredentials(runtime.backend, env)));
 
   /** Layout load for every admin page: the nav, the user, and the active path. */
   function layoutLoad(event: ContentEvent): LayoutData {

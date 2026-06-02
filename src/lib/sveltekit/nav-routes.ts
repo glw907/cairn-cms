@@ -3,7 +3,7 @@
 // and commit paths are unit-testable against a fetch double with an injected token.
 import { redirect, error } from '@sveltejs/kit';
 import { appCredentials, type GithubKeyEnv } from '../github/credentials.js';
-import { installationToken } from '../github/signing.js';
+import { cachedInstallationToken } from '../github/signing.js';
 import { listMarkdown, readRaw, commitFile } from '../github/repo.js';
 import { CommitConflictError } from '../github/types.js';
 import { parseSiteConfig, extractMenu, validateNavTree, setMenu, type NavNode } from '../nav/site-config.js';
@@ -45,7 +45,7 @@ function isConflict(err: unknown): boolean {
 
 export function createNavRoutes(runtime: CairnRuntime, deps: NavRoutesDeps = {}) {
   const mintToken =
-    deps.mintToken ?? ((env: GithubKeyEnv) => installationToken(appCredentials(runtime.backend, env)));
+    deps.mintToken ?? ((env: GithubKeyEnv) => cachedInstallationToken(appCredentials(runtime.backend, env)));
 
   /** List page-like concepts (routable, not dated) for the URL picker. Best-effort per concept. */
   async function pageOptions(token: string): Promise<NavPageOption[]> {

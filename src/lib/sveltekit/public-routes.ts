@@ -8,6 +8,7 @@ import type { ContentSummary, ContentEntry } from '../delivery/content-index.js'
 import type { SiteIndex } from '../delivery/site-index.js';
 import { buildSeoMeta } from '../delivery/seo.js';
 import type { SeoMeta } from '../delivery/seo.js';
+import { readSeoFields, resolveImageUrl } from '../delivery/seo-fields.js';
 
 /** Injected dependencies for the public loaders. */
 export interface PublicRoutesDeps {
@@ -20,6 +21,9 @@ export interface PublicRoutesDeps {
   description: string;
   /** Absolute feed URLs for the head's autodiscovery links. */
   feeds?: { rss?: string; json?: string };
+  /** A site-wide default OG image, used when an entry declares none. Resolved to absolute like the
+   *  canonical URL, so a relative path such as "/og/default.png" works. */
+  defaultImage?: string;
 }
 
 /** The archive and tag list data: summaries the template renders. */
@@ -49,7 +53,7 @@ export interface EntryData {
 
 /** Build the public loaders for a site's unified index. */
 export function createPublicRoutes(deps: PublicRoutesDeps) {
-  const { site, render, origin, siteName, description, feeds } = deps;
+  const { site, render, origin, siteName, description, feeds, defaultImage } = deps;
 
   /** Resolve one concept's index by id, or a 404 (the route names an unconfigured concept). */
   function indexOf(conceptId: string) {
@@ -64,15 +68,21 @@ export function createPublicRoutes(deps: PublicRoutesDeps) {
     if (!entry) throw error(404, `Not found: ${event.url.pathname}`);
     const { newer, older } = site.adjacent(entry);
     const canonicalUrl = origin + entry.permalink;
+    const fields = readSeoFields(entry.frontmatter);
+    const rawImage = fields.image ?? defaultImage;
+    const image = rawImage ? resolveImageUrl(rawImage, origin) : undefined;
     // A dated entry is an article; an undated one (a page) is a website.
     const seo = buildSeoMeta({
       title: entry.title,
-      description: (entry.frontmatter.description as string) || entry.excerpt || description,
+      description: fields.description || entry.excerpt || description,
       canonicalUrl,
       siteName,
       type: entry.date ? 'article' : 'website',
       ...(entry.date ? { published: entry.date } : {}),
       ...(entry.updated ? { modified: entry.updated } : {}),
+      ...(image ? { image } : {}),
+      ...(fields.robots ? { robots: fields.robots } : {}),
+      ...(fields.author ? { author: fields.author } : {}),
       feeds,
     });
     return { entry, html: await render(entry.body, { stagger: true }), canonicalUrl, seo, newer, older };

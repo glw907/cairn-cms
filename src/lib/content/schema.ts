@@ -2,7 +2,7 @@
 // declaration yields a plain-data field projection for the editor form, a generated validator,
 // and an inferred frontmatter type. Plan 1 builds the additive primitive; the adapter-contract
 // cutover and the typed reads are Plan 2.
-import type { FrontmatterField, TextField, TextareaField, DateField, ValidationResult } from './types.js';
+import type { FrontmatterField, ValidationResult } from './types.js';
 import { validateFields } from './validate.js';
 
 /** The validate input the cairn adapter takes: the raw frontmatter and the body. */
@@ -46,8 +46,8 @@ export type InferFields<F extends readonly FrontmatterField[]> = Prettify<
   }
 >;
 
-/** A concept's schema: the plain-data field projection plus the generated validator. The
- *  `~standard` Standard Schema property lands in Task 4. */
+/** A concept's schema: the plain-data field projection, the generated validator, and the
+ *  Standard Schema conformance property. */
 export interface ConceptSchema<F extends readonly FrontmatterField[] = readonly FrontmatterField[]> {
   /** The declared fields as plain serializable data, for the editor form. */
   readonly fields: FrontmatterField[];
@@ -66,15 +66,13 @@ export type Infer<S> = S extends ConceptSchema<infer F> ? InferFields<F> : never
 function applyRules(field: FrontmatterField, value: unknown, errors: Record<string, string>): void {
   if (typeof value !== 'string' || value === '') return;
   if (field.type === 'text' || field.type === 'textarea') {
-    const f = field as TextField | TextareaField;
-    if (f.min != null && value.length < f.min) errors[field.name] = `${field.label} must be at least ${f.min} characters`;
-    else if (f.max != null && value.length > f.max) errors[field.name] = `${field.label} must be at most ${f.max} characters`;
-    else if (f.length != null && value.length !== f.length) errors[field.name] = `${field.label} must be exactly ${f.length} characters`;
-    else if (f.pattern != null && !new RegExp(f.pattern).test(value)) errors[field.name] = `${field.label} is not in the expected format`;
+    if (field.min != null && value.length < field.min) errors[field.name] = `${field.label} must be at least ${field.min} characters`;
+    else if (field.max != null && value.length > field.max) errors[field.name] = `${field.label} must be at most ${field.max} characters`;
+    else if (field.length != null && value.length !== field.length) errors[field.name] = `${field.label} must be exactly ${field.length} characters`;
+    else if (field.pattern != null && !new RegExp(field.pattern).test(value)) errors[field.name] = `${field.label} is not in the expected format`;
   } else if (field.type === 'date') {
-    const f = field as DateField;
-    if (f.min != null && value < f.min) errors[field.name] = `${field.label} must be on or after ${f.min}`;
-    else if (f.max != null && value > f.max) errors[field.name] = `${field.label} must be on or before ${f.max}`;
+    if (field.min != null && value < field.min) errors[field.name] = `${field.label} must be on or after ${field.min}`;
+    else if (field.max != null && value > field.max) errors[field.name] = `${field.label} must be on or before ${field.max}`;
   }
 }
 

@@ -8,10 +8,13 @@ import rehypeSlug from 'rehype-slug';
 import rehypeStringify from 'rehype-stringify';
 import rehypeSanitize from 'rehype-sanitize';
 import type { Schema } from 'hast-util-sanitize';
+import { VFile } from 'vfile';
 import { buildSanitizeSchema, rehypeAnchorRel } from './sanitize-schema.js';
 import { remarkDirectiveStamp } from './remark-directives.js';
+import { remarkResolveCairnLinks, CAIRN_RESOLVE } from './resolve-links.js';
 import { rehypeDispatch } from './rehype-dispatch.js';
 import type { ComponentRegistry } from './registry.js';
+import type { LinkResolve } from '../content/links.js';
 
 export interface RendererOptions {
   /** Stamp a `data-rise` ordinal (0, 1, 2, …) on each top-level component so a site's
@@ -33,7 +36,7 @@ export interface RendererOptions {
  *  stamped markers to registry-built hast. Returns `renderMarkdown` plus the remark/
  *  rehype plugin arrays (so the admin editor preview can reuse the exact same set). */
 export function createRenderer(registry: ComponentRegistry, options: RendererOptions = {}) {
-  const remarkPlugins: PluggableList = [remarkDirective, [remarkDirectiveStamp, registry]];
+  const remarkPlugins: PluggableList = [remarkDirective, [remarkDirectiveStamp, registry], remarkResolveCairnLinks];
   // The sanitize floor runs after rehype-raw (so author raw HTML is parsed, then cleaned) and
   // before the dispatch (so the site's trusted build() output and its inline SVG icons are never
   // sanitized). The anchor-rel hardening runs last so it also covers component-built anchors.
@@ -57,6 +60,9 @@ export function createRenderer(registry: ComponentRegistry, options: RendererOpt
   return {
     remarkPlugins,
     rehypePlugins,
-    renderMarkdown: async (content: string): Promise<string> => String(await processor.process(content)),
+    renderMarkdown: async (content: string, opts: { resolve?: LinkResolve } = {}): Promise<string> => {
+      const file = new VFile({ value: content, data: { [CAIRN_RESOLVE]: opts.resolve } });
+      return String(await processor.process(file));
+    },
   };
 }

@@ -29,6 +29,11 @@ export function buildSanitizeSchema(
   const anchorAttrs = (attributes.a ?? []).filter(
     (entry) => !(Array.isArray(entry) && entry[0] === 'className'),
   );
+  // Admit the inert `cairn:` href scheme on top of the default protocol allowlist. The render
+  // resolver rewrites a `cairn:` link to a live permalink before delivery; an unresolved one
+  // survives the floor in its inert token form (a visible unresolved-link signal), never as an
+  // executable vector. The dangerous-protocol strip (javascript:, data:) is preserved.
+  const protocols = defaultSchema.protocols ?? {};
   const schema: Schema = {
     ...defaultSchema,
     tagNames: [...(defaultSchema.tagNames ?? []), 'nav', 'details', 'summary'],
@@ -36,6 +41,10 @@ export function buildSanitizeSchema(
       ...attributes,
       '*': [...(attributes['*'] ?? []), 'className', ...markers],
       a: [...anchorAttrs, 'className', 'target', 'rel'],
+    },
+    protocols: {
+      ...protocols,
+      href: [...(protocols.href ?? []), 'cairn'],
     },
   };
   return extend ? extend(schema) : schema;

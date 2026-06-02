@@ -6,6 +6,52 @@ orientation is the workspace `CLAUDE.md`. Locked architecture decisions and the 
 the functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`).
 Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`.
 
+## Where the work is (2026-06-02, render-safety pass executed, unpublished 0.17.0)
+
+The render-safety pass executed subagent-driven on `main`, one `cairn-implementer` per task (Sonnet), commits
+`ae69a50..d86788a`. That is the five plan-task commits, one review-gate doc fold-in (`8aee8a7`), and the
+post-mortem (`d86788a`). Local only, not pushed, not published. It closes the escalated render-safety gap: the
+engine render pipeline now sanitizes author content by default. `createRenderer` inserts `rehype-sanitize` after
+`rehype-raw` and before the component dispatch, so author markdown (raw HTML, link URLs, slot bodies) is cleaned
+while the site's trusted `build()` output and its inline SVG icons run after the floor untouched. The new
+`src/lib/render/sanitize-schema.ts` builds the schema from `hast-util-sanitize`'s `defaultSchema` plus the
+directive markers (so the dispatch still reads its stamps), the benign tags real content uses (`nav`, `details`,
+`summary`), and free-form `className`/`target`/`rel` on anchors; `rehypeAnchorRel` forces `rel="noopener
+noreferrer"` on every `target="_blank"` anchor. Two `RendererOptions` members carry the posture: `sanitizeSchema`
+extends the allowlist from the safe base (extend-only, cannot weaken the core strip), and `unsafeDisableSanitize`
+is the developer-only off switch. The admin preview collapsed onto the one floor, dropping the redundant DOMPurify
+pass and the `dompurify` dependency, so the preview mirrors the published page. The additive surface bumps the
+minor to `0.17.0`.
+
+Final gate at the tip (`d86788a`): `npm run check` 753 files 0/0, `npm test` 98 files / 482 tests exit 0,
+`check:package` all-green with no export-condition change. The new `render-sanitize.test.ts` (ten cases) proves
+the strip and the preserve behavior, and the showcase production build (exit 0) prerenders the `callout` to
+`<aside class="callout callout-warning">` through the floor with no `onerror`/`<script>` in the output, the proof
+the before-dispatch placement preserves the directive markers. A `code-simplifier` pass found nothing to change.
+`svelte-reviewer` (Opus) returned clean on the `EditPage` change (the `$effect` debounce and `previewRun`
+latest-wins guard correct, no new race, `{@html}` safe under the single-floor model). A high-effort `/code-review`
+with a security angle surfaced one Important finding, folded in as `8aee8a7`: the floor runs before the dispatch,
+so a component `build()` that routes a directive **attribute value** (raw author input) into an `href`, `src`,
+`style`, or event-handler position re-opens the `javascript:` vector. The build code is trusted, its inputs are
+not. Not a regression (delivery had no sanitization before this pass), and the planned sites route attribute
+values into class positions, so the fix is a documented `build()` contract caveat in the render-safety section,
+not engine code. A possible URL-coercing build helper is a carried follow-up. Plan and full post-mortem:
+`docs/superpowers/plans/2026-06-02-cairn-render-sanitize.md`.
+
+- Spec: `docs/superpowers/specs/2026-06-02-cairn-render-sanitize-design.md` (approved).
+
+**Live admin smoke:** no `/admin` server surface changed, so it does not apply. The editor preview is covered by
+the browser component tests, and the showcase prerender covers the delivery path.
+
+**Immediate next action: publish, batching the `0.16.0` and `0.17.0` window into one release** (the auth-hardening
+and render-safety landings, both held local). Use the OIDC trusted-publishing workflow off a `v0.17.0` GitHub
+Release, push `main` first. **Then the site migrations follow** (per-site `site-pass`, ecnordic then 907, from each
+site's own repo), pinning `^0.17.0`. The migration gotchas still apply: every declared concept must pass its
+`import.meta.glob` to `createSiteIndexes` (an empty `{}` for an intentionally empty concept), and every frontmatter
+key a site reads must be declared in its concept schema. A migrating site that needs a benign tag the default
+sanitize allowlist omits extends it through `createRenderer(registry, { sanitizeSchema })`. The render-safety gap
+is closed, so the delivery surface is now safe for a site to adopt.
+
 ## Where the work is (2026-06-02, auth-hardening pass executed, unpublished 0.16.0)
 
 The auth-hardening pass executed subagent-driven on `main`, one `cairn-implementer` per task (Sonnet for the seven
@@ -58,23 +104,9 @@ content uses; the posture is extend-only with a developer-only `unsafeDisableSan
 onto the one floor, dropping the redundant DOMPurify pass and the `dompurify` dependency; and CSP stays a documented
 site-level recommendation, not engine code.
 
-**Immediate next action: execute the render-safety plan,
-`docs/superpowers/plans/2026-06-02-cairn-render-sanitize.md`, `subagent-driven`
-(`superpowers:subagent-driven-development`, one `cairn-implementer` per task, Sonnet default), from the cairn-cms
-directory on `main`. Start at Task 1.** The plan is fully written (five test-first tasks) and the design is settled (spec
-`docs/superpowers/specs/2026-06-02-cairn-render-sanitize-design.md`, approved), so skip brainstorming. It runs on `main`
-directly (additive or internal, no site deploys on a cairn-cms push) and bumps `0.17.0`. The five tasks: add
-`rehype-sanitize` and `hast-util-sanitize` (standalone relock), insert the sanitize floor into `createRenderer` with the
-registry-derived schema plus the `sanitizeSchema`/`unsafeDisableSanitize` options, collapse the preview onto the floor
-and drop the DOMPurify pass and dependency (second relock), document the render-safety contract and the CSP
-recommendation, then bump `0.17.0`. The pass changes the render pipeline (an XSS control) and one Svelte component, so
-the pass-end review gate runs `svelte-reviewer` (Opus) and a high-effort `/code-review` with a security angle; the other
-three reviewers and the live admin smoke do not apply. Two relocks use the standalone dance, so the workspace root lock
-never drifts.
-
-After render-safety lands, publish (batch the `0.16.0` and `0.17.0` window into one release), then the site migrations
-follow (per-site `site-pass`, ecnordic then 907), which pin the published range. The migration gotcha below (pass every
-declared concept's glob) still applies.
+**The render-safety pass is DONE (executed 2026-06-02).** See the top entry for the landing detail and the
+authoritative next action (publish the `0.16.0`/`0.17.0` window, then the site migrations). The summary below
+remains as the pass's design record.
 
 ## Where the work is (2026-06-02, delivery-robustness pass executed, unpublished 0.15.0)
 

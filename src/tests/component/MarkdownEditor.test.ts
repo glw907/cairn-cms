@@ -76,12 +76,15 @@ describe('MarkdownEditor', () => {
     content.focus();
     // userEvent.keyboard treats [ as a key-descriptor opener, so a literal [ is escaped as [[.
     await userEvent.keyboard('[[[[Ab');
-    // the autocomplete tooltip appears with the matching title
+    // the autocomplete tooltip appears with the matching option
     await expect
-      .poll(() => screen.container.querySelector('.cm-tooltip-autocomplete')?.textContent ?? '')
+      .poll(() => screen.container.querySelector('.cm-tooltip-autocomplete [role="option"]')?.textContent ?? '')
       .toContain('About Us');
-    // accept the first option
-    await userEvent.keyboard('{Enter}');
+    // Accept by clicking the option. CodeMirror applies a completion on the option's mousedown, which
+    // a click drives deterministically. An Enter keystroke instead races CodeMirror's accept handler
+    // under parallel load and can fall through to a newline; clicking proves the same seam without it.
+    const option = screen.container.querySelector<HTMLElement>('.cm-tooltip-autocomplete [role="option"]')!;
+    await userEvent.click(option);
     await expect
       .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
       .toContain('[About Us](cairn:pages/about)');

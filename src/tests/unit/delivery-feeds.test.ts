@@ -60,3 +60,26 @@ describe('buildRssFeed CDATA safety', () => {
     expect(enc).not.toContain('before ]]> after');
   });
 });
+
+describe('feed date guard', () => {
+  const undated: FeedItem = { title: 'No date', url: 'https://example.com/posts/x', summary: 's' };
+
+  it('omits the RSS pubDate for an item with no date and does not throw', () => {
+    const xml = buildRssFeed(channel, [undated]);
+    expect(xml).not.toContain('<pubDate>');
+    expect(xml).toContain('<link>https://example.com/posts/x</link>');
+  });
+
+  it('omits the JSON date_published for an item with no date and does not throw', () => {
+    const feed = JSON.parse(buildJsonFeed(channel, [undated]));
+    expect(feed.items[0].date_published).toBeUndefined();
+    expect(feed.items[0].url).toBe('https://example.com/posts/x');
+  });
+
+  it('omits the date for a malformed date string rather than throwing', () => {
+    const bad: FeedItem = { title: 'Bad', url: 'https://example.com/posts/y', date: 'not-a-date', summary: 's' };
+    expect(() => buildJsonFeed(channel, [bad])).not.toThrow();
+    expect(JSON.parse(buildJsonFeed(channel, [bad])).items[0].date_published).toBeUndefined();
+    expect(buildRssFeed(channel, [bad])).not.toContain('<pubDate>');
+  });
+});

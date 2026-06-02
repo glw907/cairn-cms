@@ -17,7 +17,7 @@ export interface FeedChannel {
 export interface FeedItem {
   title: string;
   url: string;
-  date: string;
+  date?: string;
   updated?: string;
   summary: string;
   contentHtml?: string;
@@ -37,14 +37,20 @@ function cdataSafe(value: string): string {
   return value.replace(/]]>/g, ']]]]><![CDATA[>');
 }
 
-/** Format a YYYY-MM-DD (or ISO) string as an RFC-822 date in UTC, as RSS wants. */
-function rfc822(date: string): string {
-  return new Date(`${date.slice(0, 10)}T00:00:00.000Z`).toUTCString();
+/** Format a YYYY-MM-DD (or ISO) string as an RFC-822 date in UTC, as RSS wants. Returns undefined
+ *  for an absent or unparseable date, so the item omits its pubDate rather than emit Invalid Date. */
+function rfc822(date?: string): string | undefined {
+  if (!date) return undefined;
+  const at = new Date(`${date.slice(0, 10)}T00:00:00.000Z`);
+  return Number.isNaN(at.getTime()) ? undefined : at.toUTCString();
 }
 
-/** Format a YYYY-MM-DD (or ISO) string as an ISO-8601 instant in UTC. */
-function iso(date: string): string {
-  return new Date(`${date.slice(0, 10)}T00:00:00.000Z`).toISOString();
+/** Format a YYYY-MM-DD (or ISO) string as an ISO-8601 instant in UTC. Returns undefined for an
+ *  absent or unparseable date, so the item omits its date_published rather than throw at build. */
+function iso(date?: string): string | undefined {
+  if (!date) return undefined;
+  const at = new Date(`${date.slice(0, 10)}T00:00:00.000Z`);
+  return Number.isNaN(at.getTime()) ? undefined : at.toISOString();
 }
 
 /** Build an RSS 2.0 document. */
@@ -52,17 +58,20 @@ export function buildRssFeed(channel: FeedChannel, items: FeedItem[]): string {
   const entries = items
     .map((item) => {
       const content = item.contentHtml ?? item.summary;
+      const pubDate = rfc822(item.date);
       return [
         '    <item>',
         `      <title>${escapeXml(item.title)}</title>`,
         `      <link>${escapeXml(item.url)}</link>`,
         `      <guid isPermaLink="true">${escapeXml(item.url)}</guid>`,
-        `      <pubDate>${rfc822(item.date)}</pubDate>`,
+        pubDate ? `      <pubDate>${pubDate}</pubDate>` : '',
         `      <description>${escapeXml(item.summary)}</description>`,
         // CDATA cannot contain `]]>`, so split that one sequence rather than escape the body.
         `      <content:encoded><![CDATA[${cdataSafe(content)}]]></content:encoded>`,
         '    </item>',
-      ].join('\n');
+      ]
+        .filter((line) => line !== '')
+        .join('\n');
     })
     .join('\n');
 
@@ -95,16 +104,20 @@ export function buildJsonFeed(channel: FeedChannel, items: FeedItem[]): string {
       feed_url: channel.feedUrl,
       ...(channel.language ? { language: channel.language } : {}),
       ...(channel.author ? { authors: [channel.author] } : {}),
-      items: items.map((item) => ({
-        id: item.url,
-        url: item.url,
-        title: item.title,
-        summary: item.summary,
-        date_published: iso(item.date),
-        ...(item.updated ? { date_modified: iso(item.updated) } : {}),
-        ...(item.contentHtml ? { content_html: item.contentHtml } : { content_text: item.summary }),
-        ...(item.tags && item.tags.length ? { tags: item.tags } : {}),
-      })),
+      items: items.map((item) => {
+        const datePublished = iso(item.date);
+        const dateModified = iso(item.updated);
+        return {
+          id: item.url,
+          url: item.url,
+          title: item.title,
+          summary: item.summary,
+          ...(datePublished ? { date_published: datePublished } : {}),
+          ...(dateModified ? { date_modified: dateModified } : {}),
+          ...(item.contentHtml ? { content_html: item.contentHtml } : { content_text: item.summary }),
+          ...(item.tags && item.tags.length ? { tags: item.tags } : {}),
+        };
+      }),
     },
     null,
     2,

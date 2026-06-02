@@ -9,6 +9,7 @@ import { isValidId, slugify, filenameFromId, composeDatedId } from '../content/i
 import { appCredentials, type GithubKeyEnv } from '../github/credentials.js';
 import { listMarkdown, readRaw, commitFile } from '../github/repo.js';
 import { cachedInstallationToken } from '../github/signing.js';
+import { parseManifest, type LinkTarget } from '../content/manifest.js';
 import { CommitConflictError } from '../github/types.js';
 import type { CairnRuntime, ConceptDescriptor, FrontmatterField } from '../content/types.js';
 import type { Editor, Role } from '../auth/types.js';
@@ -63,6 +64,8 @@ export interface EditData {
   isNew: boolean;
   saved: boolean;
   error: string | null;
+  /** The site's link targets, for the preview resolver and the link picker; from the committed manifest. */
+  linkTargets: LinkTarget[];
 }
 
 /** The structural event the content routes read; a real SvelteKit RequestEvent satisfies it. */
@@ -207,6 +210,20 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
 
     const parsed = raw === null ? { frontmatter: {}, body: '' } : parseMarkdown(raw);
     const title = typeof parsed.frontmatter.title === 'string' && parsed.frontmatter.title.trim() ? parsed.frontmatter.title : id;
+
+    let linkTargets: LinkTarget[] = [];
+    const manifestRaw = await readRaw(runtime.backend, runtime.manifestPath, token);
+    if (manifestRaw !== null) {
+      linkTargets = parseManifest(manifestRaw).entries.map((e) => ({
+        concept: e.concept,
+        id: e.id,
+        permalink: e.permalink,
+        title: e.title,
+        date: e.date,
+        draft: e.draft,
+      }));
+    }
+
     return {
       conceptId: concept.id,
       id,
@@ -218,6 +235,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       isNew,
       saved: event.url.searchParams.get('saved') === '1',
       error: event.url.searchParams.get('error'),
+      linkTargets,
     };
   }
 

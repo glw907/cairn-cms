@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
+import { serializeManifest } from '../../lib/content/manifest.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 
 function runtime(): CairnRuntime {
@@ -42,7 +43,11 @@ afterEach(() => vi.restoreAllMocks());
 
 describe('editLoad', () => {
   it('loads an existing file with parsed, form-ready frontmatter and body', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => new Response('---\ntitle: Hello\ndate: 2026-05-01\n---\nThe body.', { status: 200 })));
+    // The entry read returns the markdown; the trailing manifest read 404s (empty list).
+    vi.stubGlobal('fetch', vi
+      .fn()
+      .mockResolvedValueOnce(new Response('---\ntitle: Hello\ndate: 2026-05-01\n---\nThe body.', { status: 200 }))
+      .mockResolvedValueOnce(new Response('Not Found', { status: 404 })));
     const routes = createContentRoutes(runtime(), deps);
     const data = await routes.editLoad(editEvent('2026-05-hello') as never);
     expect(data).toMatchObject({
@@ -73,8 +78,38 @@ describe('editLoad', () => {
     await expect(routes.editLoad(editEvent('Bad Id!') as never)).rejects.toMatchObject({ status: 400 });
   });
 
+  it('ships the manifest link targets, and an empty list when the manifest is missing', async () => {
+    const manifest = serializeManifest({
+      version: 1,
+      entries: [{ id: 'about', concept: 'pages', title: 'About', permalink: '/about', draft: false, links: [] }],
+    });
+    // editLoad reads the entry first, then the manifest, so the stub returns the entry on the
+    // first fetch and the manifest on the second.
+    const caseA = vi
+      .fn()
+      .mockResolvedValueOnce(new Response('---\ntitle: Hello\n---\nThe body.', { status: 200 }))
+      .mockResolvedValueOnce(new Response(manifest, { status: 200 }));
+    vi.stubGlobal('fetch', caseA);
+    const routes = createContentRoutes(runtime(), deps);
+    const withManifest = await routes.editLoad(editEvent('2026-05-hello') as never);
+    expect(withManifest.linkTargets).toContainEqual({
+      concept: 'pages', id: 'about', permalink: '/about', title: 'About', date: undefined, draft: false,
+    });
+
+    const caseB = vi
+      .fn()
+      .mockResolvedValueOnce(new Response('---\ntitle: Hello\n---\nThe body.', { status: 200 }))
+      .mockResolvedValueOnce(new Response('Not Found', { status: 404 }));
+    vi.stubGlobal('fetch', caseB);
+    const withoutManifest = await routes.editLoad(editEvent('2026-05-hello') as never);
+    expect(withoutManifest.linkTargets).toEqual([]);
+  });
+
   it('reads saved and error flags from the query', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => new Response('---\ntitle: Hi\n---\nx', { status: 200 })));
+    vi.stubGlobal('fetch', vi
+      .fn()
+      .mockResolvedValueOnce(new Response('---\ntitle: Hi\n---\nx', { status: 200 }))
+      .mockResolvedValueOnce(new Response('Not Found', { status: 404 })));
     const routes = createContentRoutes(runtime(), deps);
     const data = await routes.editLoad(editEvent('hi', '?saved=1&error=Nope') as never);
     expect(data.saved).toBe(true);

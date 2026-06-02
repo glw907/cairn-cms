@@ -22,6 +22,7 @@ function postProps(over = {}) {
       isNew: false,
       saved: false,
       error: null,
+      linkTargets: [],
       siteName: 'Test Site',
       ...over,
     },

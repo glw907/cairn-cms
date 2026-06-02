@@ -43,19 +43,34 @@ empty index now throws at build. This is the loud-failure the guard exists for, 
 keep `0.15.0` local and unpushed for now (engine work needs no publish; a publish can batch with the
 auth-hardening landing later), and to sequence auth-hardening ahead of the site migrations.
 
-**Immediate next action: brainstorm then write the auth-hardening plan, from the cairn-cms directory on
-`main`, in a fresh session.** This is a design-bearing pass on a subsystem this session did not touch, so run
-`superpowers:brainstorming` with the user to settle the open decisions before `superpowers:writing-plans`; do
-not auto-write it. The scope is the four enumerated auth-hardening items: the `__Host-` session cookie prefix,
-`/admin` security headers, a rate limit plus `waitUntil` on the magic-link request endpoint, and install-token
-KV caching. It touches Worker, auth, session, and cookie code, so the pass-end review gate adds
-`web-auth-security-reviewer` and `cloudflare-workers-reviewer` (both Opus), and a plan touching `/admin` needs
-the live admin smoke (mint a D1 session row directly). The functional spec
-(`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`) holds the locked auth design.
+The auth-hardening pass was brainstormed and planned on 2026-06-02. The brainstorm settled the design forks,
+each grounded rather than defaulted. Install-token caching is an in-isolate memo, mirroring the
+`@octokit/auth-app` default, with no new binding and no pluggable seam, since cross-isolate stores (KV, D1)
+solve a sharing problem cairn's tiny write volume does not have. CSP is deferred: a correct admin CSP would
+thread a SvelteKit nonce into CodeMirror's runtime styles and spans the library/site boundary, and the threat
+it mitigates on `/admin` is weak, so the pass ships the five zero-cost enforcing headers and records the
+render-path sanitization invariant as the real XSS control. The magic-link rate limit is a per-email cooldown
+on the existing `magic_token` row, zero-migration, since the endpoint only sends to allowlisted editors. The
+pass grew one unit during brainstorming, a lazy expired-row sweep, the single auth-adjacent backlog item.
+
+**Immediate next action: execute the auth-hardening plan,
+`docs/superpowers/plans/2026-06-02-cairn-auth-hardening.md`, `subagent-driven`
+(`superpowers:subagent-driven-development`, one `cairn-implementer` per task, Sonnet default), from the
+cairn-cms directory on `main`. Start at Task 1.** The plan is fully written (eight test-first tasks) and the
+design is settled (spec `docs/superpowers/specs/2026-06-02-cairn-auth-hardening-design.md`, approved), so skip
+brainstorming. It runs on `main` directly (additive or internal, no site deploys on a cairn-cms push) and bumps
+`0.16.0`. The eight tasks: the `__Host-` cookie prefix (protocol-derived name), the five `/admin` security
+headers in the guard, the in-isolate install-token memo, the magic-link per-email cooldown plus `waitUntil`
+send, the lazy expired-row sweep, the https `PUBLIC_ORIGIN` guard, the admin smoke-doc rewrite, and the version
+bump. The pass touches auth, session, cookie, and Worker code, so the pass-end review gate adds
+`web-auth-security-reviewer` and `cloudflare-workers-reviewer` (both Opus), and the live admin smoke runs
+against the rewritten doc (mint a D1 session row, send `Cookie: __Host-cairn_session=<id>`). Two verification
+items run at the gate rather than as tasks: the SvelteKit CSRF origin check stays on, and the showcase
+reference `render(md)` is confirmed not to emit raw author HTML.
 
 After auth-hardening lands, the site migrations follow (per-site `site-pass`, ecnordic then 907, from each
-site's own repo), which need `0.15.0` (or whatever version auth-hardening lands at) published first so a site
-can pin the range. The migration gotcha above (pass every declared concept's glob) applies there.
+site's own repo), which need `0.16.0` published first so a site can pin the range. The migration gotcha above
+(pass every declared concept's glob) applies there.
 
 ## Where the work is (2026-06-02, schema Plan 3 / the SEO head consumer executed, PUBLISHED 0.14.0)
 

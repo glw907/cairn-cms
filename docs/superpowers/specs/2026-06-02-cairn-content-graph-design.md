@@ -56,6 +56,29 @@ admin preview, the picker, and the guards read the committed manifest, which is 
 content-graph data available inside the Worker. One token format serves both, with one read
 path at build and one read path at request time, each correct where it runs.
 
+### Why a committed manifest rather than D1
+
+Cairn already runs a per-site D1 (the magic-link auth store), so storing the link graph there
+was weighed and set aside. The decisive reason is the build and runtime split. The sites are
+statically generated, so internal links resolve to live URLs at prerender and the build fails
+closed on a missing target, baking the correct URL into the static HTML. That build runs in CI,
+and a D1 binding is a runtime Worker resource the build process cannot reach. So D1 cannot serve
+the resolver or the build-fail backstop, which are the correctness core, and a file-derived
+graph would still be needed at build. D1 would serve only the request-time picker and guards, as
+a second graph with no reconciliation point, since the build never sees D1 to catch drift from a
+raw-git edit. A committed manifest is one artifact the build regenerates and verifies, serving
+both contexts from a single source.
+
+The split also follows the line the project already drew. The 2026-05-27 decision moved static
+site structure and config out of D1 into a git-committed file read at build, so sites keep
+compiling without a database, and scoped D1 to runtime admin state. Magic-link auth belongs in
+D1 because it is runtime-only, ephemeral, and meaningless in git. The link graph is
+content-derived structure, the same category as nav and the site config, so it stays in git. The
+manifest also keeps the graph version-controlled, diffable in a pull request, and recoverable by
+a revert, which a Cloudflare-account database would not be. D1 stays attractive only for
+request-time queries at a corpus size cairn's sites are far below, where the answer would be a
+derived cache, never a second source of truth.
+
 ## The manifest is the content and link graph
 
 The manifest is a single JSON file for the whole corpus, committed at a settable path that

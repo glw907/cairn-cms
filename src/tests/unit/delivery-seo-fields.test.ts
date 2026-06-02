@@ -15,6 +15,13 @@ describe('readSeoFields', () => {
     });
     expect(readSeoFields({})).toEqual({});
   });
+
+  it('trims a surrounding-whitespace value so a head tag carries no stray whitespace', () => {
+    expect(readSeoFields({ robots: '  noindex  ', description: ' D ' })).toEqual({
+      robots: 'noindex',
+      description: 'D',
+    });
+  });
 });
 
 describe('resolveImageUrl', () => {

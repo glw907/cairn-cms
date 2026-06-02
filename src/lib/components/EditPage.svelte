@@ -12,14 +12,13 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
   import type { IconSet } from '../render/glyph.js';
   import type { EditData } from '../sveltekit/content-routes.js';
   import type { TextareaField, TagsField, FreeTagsField } from '../content/types.js';
-  import { sanitizePreviewHtml } from '../render/sanitize.js';
 
   interface Props {
     /** The edit load's data, plus the site name for the heading. */
     data: EditData & { siteName: string };
     /** The site's component registry, for the insert palette. */
     registry?: ComponentRegistry;
-    /** The site's design-accurate render pipeline; the preview pane sanitizes its output. */
+    /** The site's design-accurate render pipeline; the preview pane renders its output, which the floored pipeline already sanitized. */
     render?: (md: string, opts?: { stagger?: boolean }) => string | Promise<string>;
     /** The site's icon set, for the guided form's icon fields. */
     icons?: IconSet;
@@ -46,8 +45,8 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
     localStorage.setItem(PREVIEW_KEY, showPreview ? '1' : '0');
   }
 
-  // Render the design-accurate preview as the body changes, debounced, and sanitize before the DOM.
-  // The sanitize is the one barrier between editor-authored markdown and the page (the editor is unsanitized).
+  // Render the design-accurate preview as the body changes, debounced. The site's render is the
+  // floored engine pipeline, so its output is already sanitized; the preview mirrors the page.
   // previewRun is a plain counter (not reactive state) used as a latest-wins guard: if a slow earlier
   // async render call resolves after a newer one has started, the stale result is discarded.
   let previewRun = 0;
@@ -58,8 +57,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
     const handle = setTimeout(async () => {
       try {
         const html = await render(md);
-        const safe = await sanitizePreviewHtml(html);
-        if (run === previewRun) previewHtml = safe;
+        if (run === previewRun) previewHtml = html;
       } catch {
         if (run === previewRun) previewHtml = '';
       }

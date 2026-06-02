@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import EditPage from '../../lib/components/EditPage.svelte';
 import type { FrontmatterField } from '../../lib/content/types.js';
+import { createRenderer } from '../../lib/render/pipeline.js';
+import { defineRegistry } from '../../lib/render/registry.js';
 
 function postProps(over = {}) {
   return {
@@ -70,7 +72,7 @@ describe('EditPage', () => {
     await expect.element(screen.getByText(/saved/i)).toBeInTheDocument();
   });
 
-  it('renders sanitized preview HTML when the preview is shown', async () => {
+  it('renders preview HTML when the preview is shown', async () => {
     const props = { ...postProps({ body: 'Hello world' }), render: (md: string) => `<p>${md}</p>` };
     const screen = render(EditPage, props);
     await screen.getByRole('button', { name: /show preview/i }).click();
@@ -79,16 +81,17 @@ describe('EditPage', () => {
       .toContain('Hello world');
   });
 
-  it('strips a dangerous payload from the rendered preview', async () => {
+  it('the floored render pipeline strips a dangerous payload in the preview', async () => {
+    const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
     const props = {
-      ...postProps({ body: 'x' }),
-      render: () => '<p>safe</p><img src=x onerror="alert(1)">',
+      ...postProps({ body: 'safe text\n\n<img src=x onerror="alert(1)">' }),
+      render: (md: string) => renderMarkdown(md),
     };
     const screen = render(EditPage, props);
     await screen.getByRole('button', { name: /show preview/i }).click();
     await expect
       .poll(() => screen.container.querySelector('section[aria-label="Preview"]')?.innerHTML ?? '')
-      .toContain('safe');
+      .toContain('safe text');
     expect(screen.container.querySelector('section[aria-label="Preview"]')!.innerHTML).not.toContain('onerror');
   });
 

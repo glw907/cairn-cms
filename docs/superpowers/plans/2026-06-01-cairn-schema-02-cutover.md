@@ -948,3 +948,46 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - **The one verification point.** The `defineAdapter` constraint assignability (a concrete `ConceptSchema<F>` against the `ConceptSchema` default) is verified against the toolchain at Task 3, with an explicit constraint-relaxation contingency that does not lose inference (the captured `A` keeps the narrow literal). The Task 4 `expectTypeOf` assertions are the proof inference survived, per the cairn-pass lesson to verify a locked build assumption at the first task that touches it.
 - **Ordering and green builds.** Task 1 (emission) and Task 2 (read path) land before the flip and are each green against the old contract. Task 3 flips atomically. Task 4 adds the typed helper over the flipped contract. Task 5 cleans up and bumps. Each task ends with the full gate (`npm run check` 0/0, `npm test` exit 0), and Task 4 adds the showcase production build as the end-to-end proof.
 ```
+
+---
+
+## Post-mortem (executed 2026-06-01)
+
+**Status: DONE.** All five tasks landed on `main` test-first, plus one review-gate hardening commit. Commits `a49c928..526b5b0` (six), local only, not yet pushed or published. The version is `0.13.0`. This is the breaking adapter-contract cutover, so it rolls together with the unpublished `0.12.0` slot-render bump.
+
+### What was built
+
+- **Task 1 (`a49c928`):** `validateFields` now omits empty optional values from a successful result. An unchecked boolean, an empty tag list, and an empty optional text or date field are dropped, so committed frontmatter stays minimal and the inferred optional-key type reads back accurate. Required-empty fields still error, so on success every empty value belongs to an optional field.
+- **Task 2 (`8f3c7ff`):** `createContentIndex` validates each entry once at build. The cheap `ContentSummary` stays raw-derived and robust; the typed `frontmatter` detail field carries `result.data` on success and the raw frontmatter on failure. A failure is recorded as a `ContentProblem` verdict exposed via `problems()`, not thrown. `createSiteIndex` reads those verdicts, skips drafts, and throws one combined report, so validation runs once and a half-finished draft no longer fails the build.
+- **Task 3 (`2d228a7`, atomic):** `ConceptConfig` dropped `fields`/`validate` for one generic `schema: S` member. `defineAdapter<const A>` preserves each concept's concrete schema type. `normalizeConcepts` unpacks `config.schema.fields`/`config.schema.validate` onto the unchanged `ConceptDescriptor`, so the admin form, the save path, and `siteDescriptors` needed no change. The showcase and every test fixture migrated to `schema: defineFields([...])` in the one commit.
+- **Task 4 (`9b12151`):** `createSiteIndexes` maps over a `defineAdapter`-typed adapter for one typed index per concept, with `frontmatter` typed as the concept's inferred schema, plus a `site` resolver for the catch-all route. It is the typed convenience over `createContentIndex`/`createSiteIndex`, both kept. The showcase content layer migrated to it.
+- **Task 5 (`611c5ac`):** `validateFields` is no longer re-exported from the package entry (it stays its own module's export for `schema.ts` and the unit test). Version bumped to `0.13.0`.
+
+### What was verified
+
+- Final gate at the tip: `npm run check` 749 files 0/0, `npm test` 95 files / 440 tests exit 0, `check:package` all-green across all five entries (no export-condition change), and the showcase production build prerenders the catch-all routes, feeds, sitemap, and robots without error.
+- **The type proof held with no constraint relaxation.** Task 3's `defineAdapter` constraint accepted the migrated showcase adapter as written, and Task 4's `expectTypeOf<{ title: string; date?: string }>` on `indexes.posts.byId(...).frontmatter` is compile-checked by the 0/0 check, so the concrete schema type survived `defineAdapter` into typed reads. The plan's contingency was not triggered.
+
+### Execution deviations (all sound)
+
+- **Task 3 migrated six more fixtures than the plan listed.** Atomicity required migrating every old-shape `ConceptConfig` literal that flows through `normalizeConcepts`, and the plan's file list omitted `content-compose.test.ts`, `delivery-concept-generic.test.ts`, `public-routes.test.ts`, `delivery-site-index.test.ts`, `public-routes-seo.test.ts`, `delivery-site-descriptors.test.ts`, and `compose.test.ts`. The tree would not compile until all migrated, so they landed in the same commit. The `ConceptDescriptor` literals (the `content-routes-*` and `nav-routes-load` tests) stayed untouched, since `ConceptDescriptor` is unchanged by this plan.
+- **Task 4 corrected two type-level drafts in the plan.** `ConceptIndex` is exported from `site-index.js`, not `content-index.js` as the draft imported. The `SiteIndexes` mapped type `[K in ...]: ContentIndex<Infer<NonNullable<A['content'][K]>['schema']>>` failed `svelte-check` because a generic mapped type sees only the constraint upper bound, which does not expose `schema`; the form that both type-checks and preserves the concrete inference extracts the schema parameter with a conditional, `NonNullable<A['content'][K]> extends ConceptConfig<infer S> ? Infer<S> : Record<string, unknown>`. The runtime is exactly the plan's code.
+
+### Review gate
+
+A simplifier pass (no changes; the code was already clean) and a high-effort seven-angle `/code-review` ran. None of the four specialized reviewers applied, since the pass touched no Svelte, Worker, D1, auth, session, cookie, or DaisyUI code. The review surfaced one confirmed observable regression, folded in test-free as the `526b5b0` hardening commit, plus several latent follow-ups.
+
+- **Confirmed and fixed:** the migrated showcase `posts` schema declared only `title`/`date`, but the post files carry a `description` the SEO head reads at `public-routes.ts:70`, so validate-once dropped it and the prerendered `<meta name="description">` silently fell back to the derived excerpt. Declaring a `description` field restored the authored value (verified in the prerendered `posts/hello.html` and the two other posts) and makes the schema a faithful source of truth for the content the showcase carries. The same commit re-exports `ContentProblem` from the package root, so a consumer importing `ContentIndex` from the main entry has a name for its `problems()` element type.
+- **Refuted:** the claimed single-concept `keyof A['content']` type trap. A `@ts-expect-error` probe through the project's own `svelte-check` confirmed a posts-only adapter does not expose `indexes.pages`, so the mapped key set narrows correctly. The non-required-boolean omit concern is also refuted: `InferFields` types every non-required field as optional, so an omitted `false` reads back as `boolean | undefined`, which is sound.
+
+### Carried follow-ups (latent, out of scope, none reachable under the sites' current shape)
+
+- **Failure-path `frontmatter` typing.** On a validation failure, `createContentIndex` stores the raw frontmatter cast `as F`, so a typed reader of an invalid entry could see un-normalized data under a type that promises it is valid. The build gate fails any non-draft invalid entry before it ships, and an invalid draft is reachable only through an explicit `includeDrafts` read, so this is a backstop edge, not a live path.
+- **A required boolean is omitted while typed present.** The boolean validator arm never errors, so a `required: true` boolean left unchecked passes validation with its key omitted, while `InferFields` types it as a required `boolean`. No concept declares a required boolean (a required checkbox is the rare consent pattern), so it is unreachable today; the fix, when wanted, is to error a required boolean that is not `true`.
+- **The reserved `site` key is comment-guarded only.** A concept literally named `site` would have its index clobbered by the `{ ...byConcept, site }` resolver merge. The fixed `{ posts?, pages? }` content model makes the name impossible today; a one-line construction guard is the cheap insurance when the additive-concept seam opens.
+- **A missing or misspelled glob key yields a silent empty index.** `createSiteIndexes` falls back to `{}` for a concept with no matching glob key, so a typo produces an empty-but-valid index with no diagnostic. `SiteGlobs` keys are intentionally optional (a site need not glob every concept), so a warning rather than a throw is the right future refinement.
+- **The summary and detail can drift.** The summary derives `date`/`tags` from raw frontmatter while the detail carries the validator's normalized values, so a validator that re-normalizes those fields would diverge between the two faces. The coercion is identical today (`asTags`/`asDate` match the baseline), so this is latent.
+
+### The lesson for the site migrations
+
+Every frontmatter key a site reads must be declared in its concept schema. The cutover makes the schema the single source of truth, so validate-once serves only declared fields on `.frontmatter`. A migrating site that reads an undeclared key (the showcase's `description` was the first instance) gets `undefined` and a silent degrade, not an error. The ecnordic and 907 migrations each audit their content for every read key before declaring the schema.

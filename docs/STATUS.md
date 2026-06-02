@@ -6,6 +6,54 @@ orientation is the workspace `CLAUDE.md`. Locked architecture decisions and the 
 the functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`).
 Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`.
 
+## Where the work is (2026-06-01, schema Plan 2 / the contract cutover executed, unpublished)
+
+Schema-source-of-truth Plan 2 (the adapter-contract cutover) executed and landed on `main`, commits
+`a49c928..526b5b0` (six: five plan-task commits plus one review-gate hardening commit), local only and
+not yet pushed or published. It is breaking on the adapter contract, so the version bumped to `0.13.0`,
+rolling together with the unpublished `0.12.0` slot-render bump. One `defineFields` declaration is now the
+single source of truth end to end: `ConceptConfig` dropped `fields`/`validate` for one generic `schema: S`
+member, `defineAdapter<const A>` preserves each concept's concrete schema type, and `normalizeConcepts`
+unpacks the schema onto the unchanged `ConceptDescriptor`, so the admin form, the save path, and
+`siteDescriptors` needed no change. `validateFields` now omits empty optional values from a successful
+result, so committed frontmatter stays minimal and the inferred optional-key type reads back accurate.
+`createContentIndex` validates each entry once at build, keeps the cheap summary raw-derived, stores the
+normalized `result.data` on the typed `frontmatter` detail field, and records a `ContentProblem` verdict via
+`problems()` instead of throwing. `createSiteIndex` reads those verdicts, skips drafts, and throws one
+combined report, so a half-finished draft no longer fails the build. The new `createSiteIndexes(adapter,
+config, globs)` maps over a `defineAdapter`-typed adapter for one typed index per concept (`frontmatter`
+typed as the concept's inferred schema) plus a `site` resolver; the showcase content layer migrated to it.
+`validateFields` is no longer re-exported from the package entry.
+
+Final gate at the tip: `npm run check` 749 files 0/0, `npm test` 95 files / 440 tests exit 0, `check:package`
+all-green across all five entries (no export-condition change), and the showcase production build prerenders
+the catch-all, feeds, sitemap, and robots. The `defineAdapter` type proof held with no constraint relaxation,
+and Task 4's `expectTypeOf` (compile-checked by the 0/0 check) confirms the concrete schema type survives into
+typed reads. A simplifier pass (no changes) and a high-effort seven-angle `/code-review` ran at the gate; none
+of the four specialized reviewers applied (no Svelte, Worker, D1, auth, session, cookie, or DaisyUI code). The
+review found one confirmed regression, folded in as `526b5b0`: the migrated showcase `posts` schema declared
+only `title`/`date`, but the post files carry a `description` the SEO head reads, so validate-once dropped it
+and the prerendered meta description silently fell back to the excerpt. Declaring the field restored it
+(verified in the prerendered HTML). Plan and full post-mortem (with the carried follow-ups and the type-proof
+detail): `docs/superpowers/plans/2026-06-01-cairn-schema-02-cutover.md`.
+
+**The lesson for the site migrations: every frontmatter key a site reads must be declared in its concept
+schema.** Validate-once serves only declared fields on `.frontmatter`, so a migrating site reading an
+undeclared key gets `undefined` and a silent degrade, not an error. The ecnordic and 907 migrations each audit
+their content for every read key before declaring the schema.
+
+- Spec: `docs/superpowers/specs/2026-06-01-cairn-schema-source-of-truth-design.md`.
+
+**Immediate next action: brainstorm then write Plan 3 (the per-entry SEO head consumer),
+`docs/superpowers/plans/2026-06-01-cairn-schema-03-seo.md` (to be written), via `cairn-pass`.** Plan 3 is the
+last of the three-plan schema initiative and is design-bearing, so run `superpowers:brainstorming` with the
+user on the open decisions before `superpowers:writing-plans`; do not auto-write it. The spec's SEO-consumer
+direction and the now-typed `createSiteIndexes` per-concept `frontmatter` reads are the foundation it builds on.
+The residual delivery items (the feed/excerpt/permalink guards, the failure-path `frontmatter` typing, the
+reserved-`site`-key guard, the silent-empty-glob warning) stay a small separate follow-up pass, after the
+schema initiative and before the site migrations. Publishing `0.13.0` stays a separate release step, not urgent
+until the backlog clears.
+
 ## Where the work is (2026-06-01, schema Plan 1 / the schema primitive executed, unpublished)
 
 Schema-source-of-truth Plan 1 (the additive `defineFields` primitive) executed and landed on `main`,
@@ -33,16 +81,9 @@ to the empty form, so it returns issues rather than dereferencing null. Plan and
 
 - Spec: `docs/superpowers/specs/2026-06-01-cairn-schema-source-of-truth-design.md`.
 
-**Immediate next action: execute Plan 2 (the contract cutover),
-`docs/superpowers/plans/2026-06-01-cairn-schema-02-cutover.md`, `subagent-driven`
-(`superpowers:subagent-driven-development`, one `cairn-implementer` per task), from the cairn-cms directory on
-`main`.** The plan is fully written (five test-first tasks) and the design is settled, so skip brainstorming
-and start at Task 1. Tasks 3 and 4 are type-machinery-heavy; pass `model: opus` to the `cairn-implementer` for
-those two. Plan 2 moves `ConceptConfig` to a single generic `schema` member, adds `defineAdapter` and
-`createSiteIndexes`, changes the validator to omit empty optional values, switches the delivery reads to
-validate-once normalized reads with skip-drafts, and bumps to `0.13.0`. The breaking change runs on `main`
-directly (a cairn-cms push deploys no site). It is high-blast-radius, so Task 3 is the one atomic cutover
-commit; honor the dispatch discipline (one implementer per task, verify each commit before the next).
+**Plan 2 is DONE (executed 2026-06-01).** See the top entry for the landing detail and the authoritative next
+action (brainstorm then write Plan 3, the SEO head consumer). The brainstorm record below remains as the
+initiative's design history.
 
 Brainstorm settled (2026-06-01): keep `Infer`'s optional-key shape, and change the absorbed validator to omit
 empty optional values (empty string, `false`, empty array), so committed frontmatter stays minimal and the

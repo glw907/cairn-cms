@@ -137,18 +137,19 @@ export async function commitFile(
   return ((await res.json()) as { commit: { sha: string } }).commit.sha;
 }
 
-/** A path change for an atomic commit: write `content`, or (added in a later task) delete it. */
+/** A path change for an atomic commit: write `content`, or delete the path when `content` is null. */
 export interface FileChange {
   path: string;
-  content: string;
+  content: string | null;
 }
 
-/** A Git Trees API change entry: a blob written from raw content. */
+/** A Git Trees API change entry: a blob written from raw content, or a `sha: null` delete. */
 interface TreeChange {
   path: string;
   mode: '100644';
   type: 'blob';
-  content: string;
+  content?: string;
+  sha?: null;
 }
 
 /** A Git Data API URL under the repo's `git/` namespace. */
@@ -174,9 +175,13 @@ async function commitTreeSha(repo: RepoRef, commitSha: string, token: string): P
   return ((await res.json()) as { tree: { sha: string } }).tree.sha;
 }
 
-/** Map file changes to Git Trees API entries. */
+/** Map file changes to Git Trees API entries, encoding a null content as a delete. */
 function treeChanges(changes: FileChange[]): TreeChange[] {
-  return changes.map((c) => ({ path: c.path, mode: '100644', type: 'blob', content: c.content }));
+  return changes.map((c) =>
+    c.content === null
+      ? { path: c.path, mode: '100644', type: 'blob', sha: null }
+      : { path: c.path, mode: '100644', type: 'blob', content: c.content },
+  );
 }
 
 /**

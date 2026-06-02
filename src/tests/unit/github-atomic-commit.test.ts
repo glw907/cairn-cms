@@ -66,6 +66,32 @@ describe('commitFiles', () => {
     expect(refBody.force).toBe(false);
   });
 
+  it('encodes a delete as a null-sha tree entry and supports a mixed write and delete', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(json({ object: { sha: 'head1' } }))
+      .mockResolvedValueOnce(json({ tree: { sha: 'basetree' } }))
+      .mockResolvedValueOnce(json({ sha: 'newtree' }))
+      .mockResolvedValueOnce(json({ sha: 'commit1' }))
+      .mockResolvedValueOnce(json({ ref: 'refs/heads/main' }));
+
+    await commitFiles(
+      REPO,
+      [
+        { path: 'src/content/posts/old.md', content: null },
+        { path: 'src/content/.cairn/index.json', content: '[]' },
+      ],
+      { message: 'Delete posts: old', author: { name: 'n', email: 'e' } },
+      'tok',
+    );
+
+    const treeBody = JSON.parse((fetchMock.mock.calls[2][1] as RequestInit).body as string);
+    expect(treeBody.tree).toEqual([
+      { path: 'src/content/posts/old.md', mode: '100644', type: 'blob', sha: null },
+      { path: 'src/content/.cairn/index.json', mode: '100644', type: 'blob', content: '[]' },
+    ]);
+  });
+
   it('throws with the status when tree creation fails', async () => {
     vi.spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(json({ object: { sha: 'head1' } }))

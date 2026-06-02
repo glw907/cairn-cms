@@ -472,3 +472,24 @@ export const GET: RequestHandler = () => {
 cairn is **Cloudflare-first** (`docs/PLAN.md` "Platform usage"): use any Cloudflare primitive
 that fits (D1, KV, R2, Queues, DO, Cron, Images, Email). The one fixed point: **content stays
 markdown committed to git.**
+
+### Render safety and CSP
+
+The engine sanitizes author content in the render pipeline by default. `createRenderer` runs
+`rehype-sanitize` after `rehype-raw` and before the component dispatch. Author markdown cannot
+inject script, inline event handlers, or `javascript:` and `data:` URLs into the page. This floor
+is the primary XSS control.
+
+A site extends the allowlist through `createRenderer(registry, { sanitizeSchema })` when its content
+needs a benign tag the default omits. The callback receives cairn's default schema and returns an
+extended one. A site adds to the allowlist this way and cannot weaken the core strip. The
+`unsafeDisableSanitize` option turns the floor off, and it is only for a site whose content is fully
+developer-controlled.
+
+A component's `build(ctx)` output is trusted and is never sanitized. It is the site's own code and it
+runs after the floor. Author content placed inside a component's slots is still sanitized.
+
+Set a public-page Content-Security-Policy as defense-in-depth, in the site's response headers or in
+`svelte.config.js` under `kit.csp`. A starting policy is `script-src 'self'; object-src 'none';
+base-uri 'self'`. The CSP is the site's to set, because it spans the library and the site, and the
+sanitize floor is the control that does not depend on it.

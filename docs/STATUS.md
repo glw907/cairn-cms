@@ -33,16 +33,22 @@ to the empty form, so it returns issues rather than dereferencing null. Plan and
 
 - Spec: `docs/superpowers/specs/2026-06-01-cairn-schema-source-of-truth-design.md`.
 
-**Immediate next action: brainstorm then write Plan 2 (the contract cutover), then execute it
-`subagent-driven` (one `cairn-implementer` per task) from the cairn-cms directory on `main`.** Plan 2 moves
-`ConceptConfig` to a single `schema` member, adds `defineAdapter` and `createSiteIndexes`, switches the
-delivery reads to validate-once normalized reads with skip-drafts, and is the breaking change that bumps the
-version. It is design-bearing, so run `superpowers:brainstorming` on the open decisions before
-`superpowers:writing-plans`; the spec's decomposition section locks most of it. The load-bearing carried
-follow-up to settle in Plan 2: `InferFields` types a non-required boolean or tags field as an optional key,
-while `validateFields` always writes those keys, so Plan 2's typed reads decide whether `Infer` describes the
-form input shape or the validator's normalized output and reconciles the optionality. The other follow-ups
-(date lexicographic compare, the `const`-param literal-capture degradation modes) are in the plan post-mortem.
+**Immediate next action: execute Plan 2 (the contract cutover),
+`docs/superpowers/plans/2026-06-01-cairn-schema-02-cutover.md`, `subagent-driven`
+(`superpowers:subagent-driven-development`, one `cairn-implementer` per task), from the cairn-cms directory on
+`main`.** The plan is fully written (five test-first tasks) and the design is settled, so skip brainstorming
+and start at Task 1. Tasks 3 and 4 are type-machinery-heavy; pass `model: opus` to the `cairn-implementer` for
+those two. Plan 2 moves `ConceptConfig` to a single generic `schema` member, adds `defineAdapter` and
+`createSiteIndexes`, changes the validator to omit empty optional values, switches the delivery reads to
+validate-once normalized reads with skip-drafts, and bumps to `0.13.0`. The breaking change runs on `main`
+directly (a cairn-cms push deploys no site). It is high-blast-radius, so Task 3 is the one atomic cutover
+commit; honor the dispatch discipline (one implementer per task, verify each commit before the next).
+
+Brainstorm settled (2026-06-01): keep `Infer`'s optional-key shape, and change the absorbed validator to omit
+empty optional values (empty string, `false`, empty array), so committed frontmatter stays minimal and the
+optional-key type reads back accurate. The SEO consumer stays a separate Plan 3. Drafts are skipped at the
+build gate. The emission decision is recorded in the spec's "The schema primitive" section. Plan 3 (the
+per-entry SEO head consumer) is written just-in-time after Plan 2 lands.
 
 ## Where the work is (2026-06-01, component-completion Pass 1 / slot render executed, unpublished)
 

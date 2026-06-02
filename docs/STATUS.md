@@ -6,11 +6,13 @@ orientation is the workspace `CLAUDE.md`. Locked architecture decisions and the 
 the functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`).
 Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`.
 
-## Where the work is (2026-06-01, schema Plan 3 / the SEO head consumer executed, unpublished)
+## Where the work is (2026-06-02, schema Plan 3 / the SEO head consumer executed, PUBLISHED 0.14.0)
 
 Schema-source-of-truth Plan 3 (the per-entry SEO head consumer) executed subagent-driven on `main`,
 one `cairn-implementer` per task (Sonnet), commits `60e2d0c..bfeca52` (four plan-task commits plus one
-review-gate hardening commit), local only and not yet pushed or published. **The schema-source-of-truth
+review-gate hardening commit). **Pushed to origin and PUBLISHED as `0.14.0` (`latest` on npm via the OIDC
+release `v0.14.0`, 2026-06-02), covering the whole unpublished `0.12.0`/`0.13.0`/`0.14.0` window in one
+release.** **The schema-source-of-truth
 initiative is now complete:** one `defineFields` declaration drives the editor form, the validator, the
 inferred frontmatter type, and now the SEO head end to end. The additive surface bumped the version to
 `0.14.0`, rolling on the unpublished window over `0.13.0`.
@@ -50,10 +52,10 @@ delivery-robustness follow-up pass (the feed/excerpt/permalink guards, the failu
 typing, the reserved-`site`-key guard, the silent-empty-glob warning), small and self-contained; (b) the
 auth-hardening pass (`__Host-` cookie prefix, `/admin` security headers, rate-limit + `waitUntil` on the
 request endpoint, install-token KV caching), the last of the three engine-backlog passes; (c) the site
-migrations onto the delivery surface, which first need the `0.13.0`/`0.14.0` window published. Per the
-established sequencing, the residual delivery follow-up lands before the site migrations. Each is
-design-bearing, so brainstorm with the user before writing the plan rather than auto-drafting. Publishing
-the `0.13.0`/`0.14.0` window is a separate release step, due before any site migration.
+migrations onto the delivery surface, now unblocked on the registry side. Per the established sequencing,
+the residual delivery follow-up lands before the site migrations. Each is design-bearing, so brainstorm
+with the user before writing the plan rather than auto-drafting. The `0.13.0`/`0.14.0` window is published
+as `0.14.0` (`latest`), so a migrating site can pin `^0.14.0`.
 
 ## Where the work is (2026-06-01, schema Plan 2 / the contract cutover executed, unpublished)
 
@@ -394,12 +396,13 @@ Do these in order.
    (done). The interactive browser smoke remains a fast-follow: live keyboard behavior in the showcase admin
    editor (typing, the focus ring, toolbar formatting, the palette insert, the preview toggle). Pushing
    cairn-cms `main` does not deploy a site (only the site repos deploy on push).
-0a. Publishing: the registry carries `0.7.0`, `0.8.0`, and `0.9.0` (`latest`). The delivery-surface DX
-   pass on `main` is unpublished; publish it as `0.11.0` (additive minor over `0.10.0`) before any site
-   migration, so a site can import `@glw907/cairn-cms/delivery`. `0.9.0` is breaking on the package
-   surface (the `MarkdownEditor` `preview` prop is gone and carta-md left the peer set), so a consuming
-   site that passed `preview` must drop it at that bump.
-1. Migrate each site onto the published delivery surface (`^0.11.0` once published), one per-site
+0a. Publishing: the registry carries up to `0.14.0` (`latest`, published 2026-06-02), which rolled the
+   `0.12.0` (slot render), `0.13.0` (schema contract cutover), and `0.14.0` (per-entry SEO head) window
+   into one release. A migrating site can import `@glw907/cairn-cms/delivery` and pin `^0.14.0`. Breaking
+   notes a consuming site must honor at the bump: the `MarkdownEditor` `preview` prop is gone (since
+   `0.9.0`), `ComponentDef.build` is now `build(ctx)` (since `0.12.0`), and the adapter contract takes one
+   `schema` member via `defineFields`/`defineAdapter` (since `0.13.0`).
+1. Migrate each site onto the published delivery surface (`^0.14.0`), one per-site
    `site-pass`, from that site's own directory. Each imports from `@glw907/cairn-cms/delivery`, applies
    the `renderPreview`-to-`render` rename, builds the content layer with `siteDescriptors` +
    `createSiteIndex` (which now validates frontmatter at build), adopts the `responses.ts` feed/sitemap/

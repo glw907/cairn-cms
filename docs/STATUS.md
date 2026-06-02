@@ -48,13 +48,33 @@ project (workerd against a real miniflare D1), green across `auth-guard`, `auth-
 `auth-cleanup`. The deployed-https browser smoke (a real browser round-tripping the `__Host-` cookie, an editor clicking
 a real magic link) stays a human fast-follow, consistent with this project's precedent.
 
-**Immediate next action: brainstorm then plan the render-safety pass, design-bearing.** The escalated render-safety FAIL
-is the top security item and must land before either site adopts the delivery surface. Run `superpowers:brainstorming`
-with the user on the open design forks (a `rehype-sanitize` floor in the delivered pipeline with a schema that permits
-the component registry's directive markup and `data-*` attributes, versus a reconsidered admin/delivery CSP, and whether
-the floor is library-default or site-overridable), then `superpowers:writing-plans`. Do not auto-write it. After it
-lands, publish (batch `0.16.0` with the sanitize bump), then the site migrations follow (per-site `site-pass`, ecnordic
-then 907), which pin the published range. The migration gotcha below (pass every declared concept's glob) still applies.
+The render-safety pass was brainstormed and planned on 2026-06-02. The brainstorm settled the design forks, grounded in
+a competitive survey (WordPress, GitHub, Hugo, Decap, Astro, and others): cairn belongs to the authors-but-filtered
+camp, where the dominant override posture is an extend-only allowlist. Locked: the floor is `rehype-sanitize` inside
+`createRenderer`, on by default, placed after `rehype-raw` and before the component dispatch so it cleans the untrusted
+author content while the site's trusted `build()` output and its inline SVG icons are never sanitized; the schema is
+`hast-util-sanitize`'s `defaultSchema` extended with the registry-derived directive markers and the benign tags real
+content uses; the posture is extend-only with a developer-only `unsafeDisableSanitize` hatch; the admin preview collapses
+onto the one floor, dropping the redundant DOMPurify pass and the `dompurify` dependency; and CSP stays a documented
+site-level recommendation, not engine code.
+
+**Immediate next action: execute the render-safety plan,
+`docs/superpowers/plans/2026-06-02-cairn-render-sanitize.md`, `subagent-driven`
+(`superpowers:subagent-driven-development`, one `cairn-implementer` per task, Sonnet default), from the cairn-cms
+directory on `main`. Start at Task 1.** The plan is fully written (five test-first tasks) and the design is settled (spec
+`docs/superpowers/specs/2026-06-02-cairn-render-sanitize-design.md`, approved), so skip brainstorming. It runs on `main`
+directly (additive or internal, no site deploys on a cairn-cms push) and bumps `0.17.0`. The five tasks: add
+`rehype-sanitize` and `hast-util-sanitize` (standalone relock), insert the sanitize floor into `createRenderer` with the
+registry-derived schema plus the `sanitizeSchema`/`unsafeDisableSanitize` options, collapse the preview onto the floor
+and drop the DOMPurify pass and dependency (second relock), document the render-safety contract and the CSP
+recommendation, then bump `0.17.0`. The pass changes the render pipeline (an XSS control) and one Svelte component, so
+the pass-end review gate runs `svelte-reviewer` (Opus) and a high-effort `/code-review` with a security angle; the other
+three reviewers and the live admin smoke do not apply. Two relocks use the standalone dance, so the workspace root lock
+never drifts.
+
+After render-safety lands, publish (batch the `0.16.0` and `0.17.0` window into one release), then the site migrations
+follow (per-site `site-pass`, ecnordic then 907), which pin the published range. The migration gotcha below (pass every
+declared concept's glob) still applies.
 
 ## Where the work is (2026-06-02, delivery-robustness pass executed, unpublished 0.15.0)
 

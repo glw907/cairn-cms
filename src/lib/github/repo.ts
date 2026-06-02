@@ -195,6 +195,9 @@ const COMMIT_RETRIES = 3;
  * Caller preconditions this layer cannot enforce (the save and lifecycle paths must): every
  * `path` is confined to the site's content directories (the App token can write anywhere in the
  * repo), and `author` is derived from the verified server-side session, never request input.
+ *
+ * An empty change set is rejected, since it would otherwise push an empty commit that triggers a
+ * site redeploy for no content change.
  */
 export async function commitFiles(
   repo: RepoRef,
@@ -202,6 +205,7 @@ export async function commitFiles(
   opts: { message: string; author: CommitAuthor },
   token: string,
 ): Promise<string> {
+  if (changes.length === 0) throw new Error('commitFiles: no changes to commit');
   const tree = treeChanges(changes);
   for (let attempt = 0; attempt <= COMMIT_RETRIES; attempt++) {
     const parent = await headCommitSha(repo, token);

@@ -66,6 +66,14 @@ describe('commitFiles', () => {
     expect(refBody.force).toBe(false);
   });
 
+  it('rejects an empty change set without touching the network', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch');
+    await expect(
+      commitFiles(REPO, [], { message: 'm', author: { name: 'n', email: 'e' } }, 'tok'),
+    ).rejects.toThrow(/no changes/);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('encodes a delete as a null-sha tree entry and supports a mixed write and delete', async () => {
     const fetchMock = vi
       .spyOn(globalThis, 'fetch')

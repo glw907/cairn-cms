@@ -108,3 +108,45 @@ describe('createContentIndex validate-once reads', () => {
     ]);
   });
 });
+
+describe('createContentIndex excludes invalid entries from the typed read', () => {
+  const [posts] = normalizeConcepts({
+    posts: { dir: 'd', schema: defineFields([{ type: 'text', name: 'title', label: 'Title', required: true }]) },
+  });
+
+  it('keeps an invalid non-draft entry out of every read but records it', () => {
+    const index = createContentIndex(
+      fromGlob({
+        '/d/2026-01-01-good.md': '---\ntitle: Good\n---\nBody.',
+        '/d/2026-01-02-bad.md': '---\ndescription: no title\n---\nBody.',
+      }),
+      posts,
+    );
+    expect(index.all().map((e) => e.id)).toEqual(['2026-01-01-good']);
+    expect(index.byId('2026-01-02-bad')).toBeUndefined();
+    expect(index.problems()).toEqual([
+      { id: '2026-01-02-bad', draft: false, errors: { title: 'Title is required' } },
+    ]);
+  });
+
+  it('keeps an invalid draft out of byId and includeDrafts reads but records it', () => {
+    const index = createContentIndex(
+      fromGlob({ '/d/2026-01-03-draft.md': '---\ndraft: true\ndescription: no title\n---\nBody.' }),
+      posts,
+    );
+    expect(index.all({ includeDrafts: true })).toEqual([]);
+    expect(index.byId('2026-01-03-draft')).toBeUndefined();
+    expect(index.problems()).toEqual([
+      { id: '2026-01-03-draft', draft: true, errors: { title: 'Title is required' } },
+    ]);
+  });
+
+  it('keeps a valid draft readable', () => {
+    const index = createContentIndex(
+      fromGlob({ '/d/2026-01-04-wip.md': '---\ntitle: WIP\ndraft: true\n---\nBody.' }),
+      posts,
+    );
+    expect(index.byId('2026-01-04-wip')?.title).toBe('WIP');
+    expect(index.all({ includeDrafts: true }).map((e) => e.id)).toEqual(['2026-01-04-wip']);
+  });
+});

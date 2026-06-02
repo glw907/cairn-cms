@@ -84,18 +84,21 @@ export function createContentIndex<F = Record<string, unknown>>(
   descriptor: ConceptDescriptor,
 ): ContentIndex<F> {
   const problems: ContentProblem[] = [];
-  const entries: ContentEntry<F>[] = files.map((file) => {
+  const entries: ContentEntry<F>[] = [];
+  for (const file of files) {
     const id = idFromFilename(basename(file.path));
     const slug = slugFromId(id, descriptor.routing.dated ? descriptor.datePrefix : null);
     const { frontmatter: raw, body } = parseMarkdown(file.raw);
     const date = asDate(raw.date);
     const draft = raw.draft === true;
-    // Validate once at build. The cheap summary stays raw-derived and robust; the typed detail
-    // frontmatter carries the normalized data on success, the raw frontmatter on failure. A
-    // failure is recorded, not thrown, so the query surface does not explode on construction.
+    // Validate once at build. A failure is recorded for the site gate and excluded from the typed
+    // read, so every readable entry's frontmatter is the validator's normalized output, never raw.
     const result = descriptor.validate(raw, body);
-    if (!result.ok) problems.push({ id, draft, errors: result.errors });
-    return {
+    if (!result.ok) {
+      problems.push({ id, draft, errors: result.errors });
+      continue;
+    }
+    entries.push({
       id,
       slug,
       permalink: permalink(descriptor, { id, slug, date }),
@@ -106,10 +109,10 @@ export function createContentIndex<F = Record<string, unknown>>(
       excerpt: deriveExcerpt(body, { description: asString(raw.description) }),
       wordCount: wordCount(body),
       draft,
-      frontmatter: (result.ok ? result.data : raw) as F,
+      frontmatter: result.data as F,
       body,
-    };
-  });
+    });
+  }
 
   // Dated concepts sort newest-first; undated concepts (Pages) sort by title.
   const sorted = [...entries].sort((a, b) =>

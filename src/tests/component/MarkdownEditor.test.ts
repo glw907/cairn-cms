@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
+import { userEvent } from 'vitest/browser';
 import MarkdownEditor from '../../lib/components/MarkdownEditor.svelte';
+import { cairnLinkCompletionSource } from '../../lib/components/link-completion.js';
+import type { LinkTarget } from '../../lib/content/manifest.js';
 
 describe('MarkdownEditor', () => {
   it('mirrors the bindable value into a hidden field named for the form', async () => {
@@ -57,5 +60,30 @@ describe('MarkdownEditor', () => {
     await expect
       .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
       .toContain('second');
+  });
+
+  it('offers and applies a cairn link through the [[ autocomplete', async () => {
+    const targets: LinkTarget[] = [
+      { concept: 'pages', id: 'about', permalink: '/about', title: 'About Us', draft: false },
+    ];
+    const screen = render(MarkdownEditor, {
+      value: '',
+      name: 'body',
+      completionSources: [cairnLinkCompletionSource(targets)],
+    });
+    await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+    const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
+    content.focus();
+    // userEvent.keyboard treats [ as a key-descriptor opener, so a literal [ is escaped as [[.
+    await userEvent.keyboard('[[[[Ab');
+    // the autocomplete tooltip appears with the matching title
+    await expect
+      .poll(() => screen.container.querySelector('.cm-tooltip-autocomplete')?.textContent ?? '')
+      .toContain('About Us');
+    // accept the first option
+    await userEvent.keyboard('{Enter}');
+    await expect
+      .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
+      .toContain('[About Us](cairn:pages/about)');
   });
 });

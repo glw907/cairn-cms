@@ -20,9 +20,12 @@ preview lives in EditPage through the adapter's render. Swapping the editor stay
     registerInsert?: (insert: (text: string) => void) => void;
     /** Receives a `(href, title) => void` that inserts an inline link; the link picker calls it. */
     registerInsertLink?: (insert: (href: string, title: string) => void) => void;
+    /** Generic CodeMirror completion sources wired into the editor; the link autocomplete is one. The
+     *  type is referenced inline so no static `@codemirror/*` import sits in this client-only file. */
+    completionSources?: import('@codemirror/autocomplete').CompletionSource[];
   }
 
-  let { value = $bindable(), name, registerInsert, registerInsertLink }: Props = $props();
+  let { value = $bindable(), name, registerInsert, registerInsertLink, completionSources = [] }: Props = $props();
 
   let host = $state<HTMLDivElement | null>(null);
   let mounted = $state(false);
@@ -37,6 +40,7 @@ preview lives in EditPage through the adapter's render. Swapping the editor stay
     const markdownMod = await import('@codemirror/lang-markdown');
     const commandsMod = await import('@codemirror/commands');
     const languageMod = await import('@codemirror/language');
+    const autocompleteMod = await import('@codemirror/autocomplete');
 
     if (!host) return;
 
@@ -58,8 +62,13 @@ preview lives in EditPage through the adapter's render. Swapping the editor stay
         doc: value,
         extensions: [
           commandsMod.history(),
-          keymap.of([...commandsMod.defaultKeymap, ...commandsMod.historyKeymap]),
+          keymap.of([...autocompleteMod.completionKeymap, ...commandsMod.defaultKeymap, ...commandsMod.historyKeymap]),
           markdownMod.markdown(),
+          ...(completionSources.length
+            ? // interactionDelay 0: the popup opens only on an explicit `[[` trigger, so the default
+              // accidental-accept guard adds no value and would swallow an immediate Enter into a newline.
+              [autocompleteMod.autocompletion({ override: completionSources, interactionDelay: 0 })]
+            : []),
           EditorView.lineWrapping,
           languageMod.syntaxHighlighting(languageMod.defaultHighlightStyle, { fallback: true }),
           theme,

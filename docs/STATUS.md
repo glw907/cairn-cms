@@ -39,11 +39,23 @@ concept has no glob key. The ecnordic and 907 migrations must pass every declare
 (an empty `{}` for an intentionally empty concept). A conditionally-omitted glob that used to default to an
 empty index now throws at build. This is the loud-failure the guard exists for, a migration step to honor.
 
-**Immediate next action: a fork for the user (see "Open decisions" below).** The engine backlog is now down to
-the auth-hardening pass, independent and schedulable anytime, and the site migrations, which need `0.15.0`
-published first (a site pins `^0.15.0`). Publishing `0.15.0` is a separate release step (OIDC release `v0.15.0`),
-rolling the unpublished window over `0.14.0`. The order between auth-hardening and the migrations, and whether
-to publish `0.15.0` now, are the user's calls.
+**Decision (2026-06-02): hold the `0.15.0` publish, and do the auth-hardening pass next.** The user chose to
+keep `0.15.0` local and unpushed for now (engine work needs no publish; a publish can batch with the
+auth-hardening landing later), and to sequence auth-hardening ahead of the site migrations.
+
+**Immediate next action: brainstorm then write the auth-hardening plan, from the cairn-cms directory on
+`main`, in a fresh session.** This is a design-bearing pass on a subsystem this session did not touch, so run
+`superpowers:brainstorming` with the user to settle the open decisions before `superpowers:writing-plans`; do
+not auto-write it. The scope is the four enumerated auth-hardening items: the `__Host-` session cookie prefix,
+`/admin` security headers, a rate limit plus `waitUntil` on the magic-link request endpoint, and install-token
+KV caching. It touches Worker, auth, session, and cookie code, so the pass-end review gate adds
+`web-auth-security-reviewer` and `cloudflare-workers-reviewer` (both Opus), and a plan touching `/admin` needs
+the live admin smoke (mint a D1 session row directly). The functional spec
+(`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`) holds the locked auth design.
+
+After auth-hardening lands, the site migrations follow (per-site `site-pass`, ecnordic then 907, from each
+site's own repo), which need `0.15.0` (or whatever version auth-hardening lands at) published first so a site
+can pin the range. The migration gotcha above (pass every declared concept's glob) applies there.
 
 ## Where the work is (2026-06-02, schema Plan 3 / the SEO head consumer executed, PUBLISHED 0.14.0)
 

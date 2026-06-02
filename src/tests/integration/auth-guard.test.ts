@@ -58,3 +58,26 @@ describe('guard (scenario 6)', () => {
     expect(res).toBe(OK);
   });
 });
+
+describe('admin security headers (Unit 2)', () => {
+  it('attaches the baseline headers to a gated admin response', async () => {
+    const cookies = await seedSession('own@x.dev');
+    const res = await handle({ event: event('/admin', cookies), resolve: async () => new Response('ok') });
+    expect(res.headers.get('X-Content-Type-Options')).toBe('nosniff');
+    expect(res.headers.get('X-Frame-Options')).toBe('DENY');
+    expect(res.headers.get('Content-Security-Policy')).toBe("frame-ancestors 'none'");
+    expect(res.headers.get('Referrer-Policy')).toBe('no-referrer');
+    expect(res.headers.get('Strict-Transport-Security')).toBe('max-age=63072000; includeSubDomains');
+    expect(res.headers.get('Permissions-Policy')).toBe('camera=(), microphone=(), geolocation=()');
+  });
+
+  it('attaches the headers to a public admin page too', async () => {
+    const res = await handle({ event: event('/admin/login'), resolve: async () => new Response('ok') });
+    expect(res.headers.get('X-Frame-Options')).toBe('DENY');
+  });
+
+  it('leaves a non-admin response untouched', async () => {
+    const res = await handle({ event: event('/about'), resolve: async () => new Response('ok') });
+    expect(res.headers.get('X-Frame-Options')).toBeNull();
+  });
+});

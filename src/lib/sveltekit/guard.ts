@@ -16,19 +16,32 @@ function isAdminPath(pathname: string): boolean {
   return pathname === '/admin' || pathname.startsWith('/admin/');
 }
 
-/** The SvelteKit `Handle` that guards `/admin/**`. */
+/** Attach the baseline security headers to an admin response. No full CSP; see the auth-hardening
+ *  design. frame-ancestors is the modern clickjacking control and the one CSP directive included. */
+function applySecurityHeaders(headers: Headers): void {
+  headers.set('X-Content-Type-Options', 'nosniff');
+  headers.set('X-Frame-Options', 'DENY');
+  headers.set('Content-Security-Policy', "frame-ancestors 'none'");
+  headers.set('Referrer-Policy', 'no-referrer');
+  headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains');
+  headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+}
+
+/** The SvelteKit `Handle` that guards `/admin/**` and hardens admin responses. */
 export function createAuthGuard() {
   return async function handle({ event, resolve }: HandleInput): Promise<Response> {
     const { pathname } = event.url;
-    if (!isAdminPath(pathname) || isPublicAdminPath(pathname)) {
-      return resolve(event);
+    if (!isAdminPath(pathname)) return resolve(event);
+    if (!isPublicAdminPath(pathname)) {
+      const env = event.platform?.env ?? {};
+      const id = event.cookies.get(sessionCookieName(event.url.protocol === 'https:'));
+      const editor = id && env.AUTH_DB ? await resolveSession(env.AUTH_DB, id, Date.now()) : null;
+      if (!editor) throw redirect(303, '/admin/login');
+      event.locals.editor = editor;
     }
-    const env = event.platform?.env ?? {};
-    const id = event.cookies.get(sessionCookieName(event.url.protocol === 'https:'));
-    const editor = id && env.AUTH_DB ? await resolveSession(env.AUTH_DB, id, Date.now()) : null;
-    if (!editor) throw redirect(303, '/admin/login');
-    event.locals.editor = editor;
-    return resolve(event);
+    const response = await resolve(event);
+    applySecurityHeaders(response.headers);
+    return response;
   };
 }
 

@@ -6,6 +6,62 @@ orientation is the workspace `CLAUDE.md`. Locked architecture decisions and the 
 the functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`).
 Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`.
 
+## Where the work is (2026-06-02, content-graph Plan 3 / the editor link picker executed)
+
+Content-graph Plan 3 (the editor link picker) executed subagent-driven on `main`, one `cairn-implementer` per
+task (Sonnet), commits `9614b0a..d6aad7e` (the ten plan tasks), plus a simplifier commit `0c43fb0` and a
+test-hardening commit `6485e37`, then the post-mortem `ac31a32`. **Local only, not pushed, not published.** It bumps
+the minor to `0.19.0` (additive). The pass delivers the editor link picker end to end: an author inserts a `cairn:`
+internal link two ways, a "Link to page" dialog and a `[[` autocomplete, both reading the `linkTargets` Plan 2 ships
+to the editor and both writing `[Display](cairn:<concept>/<id>)`.
+
+New code: `formatCairnToken(ref)` in `src/lib/content/links.ts` (the inverse of `parseCairnToken`).
+`insertInlineLink(doc, from, to, href, title)` in `src/lib/components/markdown-format.ts` (a pure inline transform,
+selection-wrap or title-insert, no block padding). `src/lib/components/link-completion.ts` holds the pure
+`matchCairnTrigger` (the `[[query` matcher) and `linkCompletions` (title substring filter, grouped by concept,
+drafts marked, the full link as the apply text), plus `cairnLinkCompletionSource(targets)`, a thin CodeMirror
+`CompletionSource` adapter. `MarkdownEditor` gained two seams, `registerInsertLink` (an inline, selection-aware
+insert) and a generic `completionSources` prop wired through `autocompletion({ override, interactionDelay: 0 })`.
+`src/lib/components/LinkPicker.svelte` is the "Link to page" dialog, mirroring `ComponentInsertDialog`'s
+native-`<dialog>` a11y. `EditPage` registers the completion source and the inline insert and renders the picker
+beside the component dialog. `formatCairnToken` and `LinkPicker` are exported from the package.
+
+Final gate at the tip (`6485e37`): `npm run check` 771 files 0/0, `npm test` 105 files / 537 tests exit 0 (green
+across three consecutive full-suite runs after the flake fix), `check:package` all-green across all five entries with
+no export-condition change. The simplifier made one cosmetic fix (`0c43fb0`) and reasoned against extracting the
+concept-section logic shared across two layers. `svelte-reviewer` (Opus) and `daisyui-a11y-reviewer` (Opus) both
+returned ship-it, no Critical or Important: the runes seams are correct, and the dialog plus the autocomplete popup
+match or extend the `ComponentInsertDialog` a11y baseline (native `<dialog>` focus trap and Escape, the searchbox
+label, the draft conveyed as text, CodeMirror's built-in combobox ARIA). A high-effort seven-angle `/code-review`
+surfaced no Critical or Important; its two convergent findings are the carried bracket-escaping and pre-mount items
+below. `cloudflare-workers-reviewer` and `web-auth-security-reviewer` did not apply.
+
+**Flake fixed at the gate.** The Task 6 autocomplete end-to-end test accepted the completion with Enter, which under
+full parallel browser load races CodeMirror's accept handler and falls through to a newline (green in isolation, red
+under load, about half the time). The fix (`6485e37`) accepts by clicking the option, which drives CodeMirror's
+mousedown-apply deterministically and proves the same seam without the keystroke race; the Enter contract is
+CodeMirror's own built-in. Three consecutive full-suite runs are green after the change.
+
+**Live admin smoke: carried fast-follow.** The showcase runs `adapter-node`, so there is no `wrangler dev` admin
+Worker to smoke. The browser component tests cover the dialog and the autocomplete; the interactive smoke (open the
+dialog, pick a target, type `[[` and accept, confirm the inserted link in a real browser) is best run during the
+ecnordic migration.
+
+**Carried follow-ups for Plan 4 (recorded in the Plan 3 post-mortem):** unescaped brackets in an author title flowing
+into the link display text (CommonMark tolerates balanced brackets, so only an unbalanced `[`/`]` breaks it, and it
+self-corrects in the preview; the fix escapes title-derived text but not a live selection, so it wants its own
+test-first task); `insertLink` no-ops before the editor mounts (matches `applyFormat`, only the block-insert path has
+a raw-value fallback); `matchCairnTrigger` has no syntax-tree awareness, so `[[` triggers inside a code block; and the
+section-order tiebreak uses the raw concept id, cosmetic past the two built-in concepts.
+
+**Immediate next action: publish the unpublished window as `0.19.0`, then brainstorm and write content-graph Plan 4
+(the lifecycle guards), then execute it.** The registry's `latest` is `0.18.0` (the content-graph manifest pass).
+`main` carries the unpublished `0.19.0` (this picker pass) on top of it, and the `0.15.0`-through-`0.17.0` work was
+already rolled into the published `0.17.0`/`0.18.0` releases. Push `main` and cut the `v0.19.0` OIDC release so a site
+can pin `^0.19.0`. Plan 4 is content delete/rename with inbound-link rewriting on the atomic `commitFiles` primitive,
+where several content-graph follow-ups land (a link to a draft or invalid target, the resolver-vs-index divergence)
+along with the four picker follow-ups above. The whole content-graph initiative still precedes the site migrations.
+
 ## Where the work is (2026-06-02, content-graph Plan 2 / the committed manifest and link resolution executed)
 
 Content-graph Plan 2 (the committed manifest plus the `cairn:` link resolver) executed subagent-driven on

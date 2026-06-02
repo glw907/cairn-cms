@@ -136,3 +136,89 @@ export async function commitFile(
   if (!res.ok) throw new Error(`GitHub commit ${path} failed: ${res.status} ${await res.text()}`);
   return ((await res.json()) as { commit: { sha: string } }).commit.sha;
 }
+
+/** A path change for an atomic commit: write `content`, or (added in a later task) delete it. */
+export interface FileChange {
+  path: string;
+  content: string;
+}
+
+/** A Git Trees API change entry: a blob written from raw content. */
+interface TreeChange {
+  path: string;
+  mode: '100644';
+  type: 'blob';
+  content: string;
+}
+
+/** A Git Data API URL under the repo's `git/` namespace. */
+function gitUrl(repo: RepoRef, suffix: string): string {
+  return `${API}/repos/${repo.owner}/${repo.repo}/git/${suffix}`;
+}
+
+/** The branch head commit sha, through the Git Data API single-ref read. */
+async function headCommitSha(repo: RepoRef, token: string): Promise<string> {
+  const res = await fetch(gitUrl(repo, `ref/heads/${encodeURIComponent(repo.branch)}`), {
+    headers: ghHeaders('application/vnd.github+json', token),
+  });
+  if (!res.ok) throw new Error(`GitHub ref ${repo.branch} failed: ${res.status}`);
+  return ((await res.json()) as { object: { sha: string } }).object.sha;
+}
+
+/** The base tree sha of a commit. */
+async function commitTreeSha(repo: RepoRef, commitSha: string, token: string): Promise<string> {
+  const res = await fetch(gitUrl(repo, `commits/${commitSha}`), {
+    headers: ghHeaders('application/vnd.github+json', token),
+  });
+  if (!res.ok) throw new Error(`GitHub commit ${commitSha} failed: ${res.status}`);
+  return ((await res.json()) as { tree: { sha: string } }).tree.sha;
+}
+
+/** Map file changes to Git Trees API entries. */
+function treeChanges(changes: FileChange[]): TreeChange[] {
+  return changes.map((c) => ({ path: c.path, mode: '100644', type: 'blob', content: c.content }));
+}
+
+/**
+ * Commit several path changes in one commit over the Git Data API. The author is the editor; the
+ * committer is omitted, so GitHub attributes the commit to the App. Returns the new commit sha.
+ * Builds the new tree on the current head's tree, so paths not named here are preserved.
+ *
+ * Caller preconditions this layer cannot enforce (the save and lifecycle paths must): every
+ * `path` is confined to the site's content directories (the App token can write anywhere in the
+ * repo), and `author` is derived from the verified server-side session, never request input.
+ */
+export async function commitFiles(
+  repo: RepoRef,
+  changes: FileChange[],
+  opts: { message: string; author: CommitAuthor },
+  token: string,
+): Promise<string> {
+  const tree = treeChanges(changes);
+  const parent = await headCommitSha(repo, token);
+  const baseTree = await commitTreeSha(repo, parent, token);
+
+  const treeRes = await fetch(gitUrl(repo, 'trees'), {
+    method: 'POST',
+    headers: { ...ghHeaders('application/vnd.github+json', token), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ base_tree: baseTree, tree }),
+  });
+  if (!treeRes.ok) throw new Error(`GitHub tree create failed: ${treeRes.status} ${await treeRes.text()}`);
+  const newTree = ((await treeRes.json()) as { sha: string }).sha;
+
+  const commitRes = await fetch(gitUrl(repo, 'commits'), {
+    method: 'POST',
+    headers: { ...ghHeaders('application/vnd.github+json', token), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: opts.message, tree: newTree, parents: [parent], author: opts.author }),
+  });
+  if (!commitRes.ok) throw new Error(`GitHub commit create failed: ${commitRes.status} ${await commitRes.text()}`);
+  const newCommit = ((await commitRes.json()) as { sha: string }).sha;
+
+  const refRes = await fetch(gitUrl(repo, `refs/heads/${encodeURIComponent(repo.branch)}`), {
+    method: 'PATCH',
+    headers: { ...ghHeaders('application/vnd.github+json', token), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sha: newCommit, force: false }),
+  });
+  if (!refRes.ok) throw new Error(`GitHub ref update failed: ${refRes.status} ${await refRes.text()}`);
+  return newCommit;
+}

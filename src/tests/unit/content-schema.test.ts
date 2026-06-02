@@ -34,3 +34,48 @@ describe('defineFields: baseline validation', () => {
     if (!result.ok) expect(result.errors.title).toMatch(/required/i);
   });
 });
+
+const ruled = defineFields([
+  { name: 'title', type: 'text', label: 'Title', required: true, max: 5 },
+  { name: 'slug', type: 'text', label: 'Slug', pattern: '^[a-z0-9-]+$' },
+  { name: 'code', type: 'text', label: 'Code', length: 3 },
+  { name: 'bio', type: 'textarea', label: 'Bio', min: 10 },
+  { name: 'date', type: 'date', label: 'Date', min: '2026-01-01' },
+]);
+
+describe('defineFields: declarative per-field rules', () => {
+  it('rejects a value over max length', () => {
+    const r = ruled.validate({ title: 'too long' }, '');
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors.title).toMatch(/at most 5/);
+  });
+
+  it('rejects a value that fails the pattern', () => {
+    const r = ruled.validate({ title: 'ok', slug: 'Not A Slug' }, '');
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors.slug).toBeTruthy();
+  });
+
+  it('rejects a value of the wrong exact length', () => {
+    const r = ruled.validate({ title: 'ok', code: 'ab' }, '');
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors.code).toMatch(/exactly 3/);
+  });
+
+  it('rejects a value under min length', () => {
+    const r = ruled.validate({ title: 'ok', bio: 'short' }, '');
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors.bio).toMatch(/at least 10/);
+  });
+
+  it('rejects a date before the min bound', () => {
+    const r = ruled.validate({ title: 'ok', date: '2025-12-31' }, '');
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors.date).toMatch(/on or after/);
+  });
+
+  it('passes when every rule is satisfied and skips an absent optional field', () => {
+    const r = ruled.validate({ title: 'ok', slug: 'a-slug', code: 'abc', bio: 'long enough', date: '2026-02-01' }, '');
+    expect(r.ok).toBe(true);
+  });
+});

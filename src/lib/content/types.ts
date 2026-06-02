@@ -24,16 +24,37 @@ interface FieldBase {
 /** A single-line text input. */
 export interface TextField extends FieldBase {
   type: 'text';
+  /** Minimum character length of a non-empty value. */
+  min?: number;
+  /** Maximum character length. */
+  max?: number;
+  /** Exact required character length. */
+  length?: number;
+  /** A regular-expression source string the value must match. Stored as a string so the field
+   *  list stays plain serializable data; the validator compiles it. */
+  pattern?: string;
 }
 /** A multi-line text input. */
 export interface TextareaField extends FieldBase {
   type: 'textarea';
   /** Visible rows; the editor picks a default when omitted. */
   rows?: number;
+  /** Minimum character length of a non-empty value. */
+  min?: number;
+  /** Maximum character length. */
+  max?: number;
+  /** Exact required character length. */
+  length?: number;
+  /** A regular-expression source string the value must match. */
+  pattern?: string;
 }
 /** A `YYYY-MM-DD` date input. */
 export interface DateField extends FieldBase {
   type: 'date';
+  /** Earliest allowed date, as `YYYY-MM-DD`. */
+  min?: string;
+  /** Latest allowed date, as `YYYY-MM-DD`. */
+  max?: string;
 }
 /** A checkbox; absent means false. */
 export interface BooleanField extends FieldBase {

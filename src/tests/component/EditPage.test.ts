@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import EditPage from '../../lib/components/EditPage.svelte';
 import type { FrontmatterField } from '../../lib/content/types.js';
+import type { LinkTarget } from '../../lib/content/manifest.js';
 import { createRenderer } from '../../lib/render/pipeline.js';
 import { defineRegistry } from '../../lib/render/registry.js';
 
@@ -22,7 +23,7 @@ function postProps(over = {}) {
       isNew: false,
       saved: false,
       error: null,
-      linkTargets: [],
+      linkTargets: [] as LinkTarget[],
       siteName: 'Test Site',
       ...over,
     },
@@ -112,6 +113,19 @@ describe('EditPage', () => {
       .poll(() => screen.container.querySelector('section[aria-label="Preview"]')?.innerHTML ?? '')
       .toContain('href="/about"');
     expect(screen.container.querySelector('section[aria-label="Preview"]')!.innerHTML).toContain('cairn-broken-link');
+  });
+
+  it('inserts a cairn link from the Link to page picker', async () => {
+    const props = postProps();
+    props.data.linkTargets = [
+      { concept: 'pages', id: 'about', permalink: '/about', title: 'About Us', draft: false },
+    ];
+    const screen = render(EditPage, props);
+    await screen.getByRole('button', { name: /link to page/i }).click();
+    await screen.getByRole('button', { name: /About Us/ }).click();
+    await expect
+      .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
+      .toContain('[About Us](cairn:pages/about)');
   });
 
   it('preview toggle button exposes aria-expanded reflecting preview state', async () => {

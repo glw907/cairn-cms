@@ -8,6 +8,8 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
   import { untrack } from 'svelte';
   import MarkdownEditor from './MarkdownEditor.svelte';
   import ComponentInsertDialog from './ComponentInsertDialog.svelte';
+  import LinkPicker from './LinkPicker.svelte';
+  import { cairnLinkCompletionSource } from './link-completion.js';
   import type { ComponentRegistry } from '../render/registry.js';
   import type { IconSet } from '../render/glyph.js';
   import type { EditData } from '../sveltekit/content-routes.js';
@@ -34,10 +36,14 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
   let showPreview = $state(false);
   let previewHtml = $state('');
   let insert = $state.raw<(text: string) => void>(() => {});
+  let insertLink = $state.raw<(href: string, title: string) => void>(() => {});
 
   // The manifest-backed resolver turns a cairn: link into its live permalink in the preview, and
   // returns undefined for a missing target so the render step marks it cairn-broken-link.
   const resolveLink = $derived(manifestLinkResolver(data.linkTargets));
+
+  // The [[ autocomplete source over the same link targets, handed to the editor's generic seam.
+  const completionSources = $derived([cairnLinkCompletionSource(data.linkTargets)]);
 
   const PREVIEW_KEY = 'cairn-admin:preview';
 
@@ -85,6 +91,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
   </div>
   <div class="flex items-center gap-2">
     <ComponentInsertDialog {registry} {insert} {icons} />
+    <LinkPicker linkTargets={data.linkTargets} insert={insertLink} />
     <button
       type="button"
       class="btn btn-sm btn-ghost"
@@ -109,7 +116,13 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
 
   <div class="lg:order-1">
     <div class="rounded-box border border-base-300 bg-base-100 overflow-hidden">
-      <MarkdownEditor bind:value={body} name="body" registerInsert={(fn) => (insert = fn)} />
+      <MarkdownEditor
+        bind:value={body}
+        name="body"
+        registerInsert={(fn) => (insert = fn)}
+        registerInsertLink={(fn) => (insertLink = fn)}
+        {completionSources}
+      />
     </div>
     {#if showPreview}
       <section

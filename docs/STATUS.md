@@ -60,17 +60,29 @@ to pair a day-prefixed filename with `datePrefix: 'day'`.
 miniflare D1. The browser smoke (an editor saving an entry, confirming the commit carries both files) is best run
 during the ecnordic migration against that site's real Worker.
 
-**Immediate next action: brainstorm then write content-graph Plan 3 (the editor link picker), design-bearing, then
-execute it `subagent-driven` from the cairn-cms directory on `main`.** Plan 3 builds the toolbar insert dialog and
-the `[[` autocomplete that writes the `cairn:` token, reading the `linkTargets` Plan 2 already ships to the editor.
-It is design-bearing (the picker UX, the `[[` trigger, the draft/concept filtering), so run `superpowers:brainstorming`
-with the user on the open decisions before `superpowers:writing-plans`; do not auto-write it. Parent design: the
-content-graph design spec above. After the picker, Plan 4 is the lifecycle guards (delete/rename with inbound-link
-rewriting), which is where several Plan 2 carried follow-ups land (a link to a draft or invalid target, the
-resolver-vs-index divergence). The carried follow-ups, in the Plan 2 post-mortem, also include a render-without-resolver
-contract caveat for the site migrations (resolve cairn links wherever a body renders to HTML), a `parseManifest`
-per-entry/version guard, and an `editLoad` two-read parallelize. The whole content-graph initiative still precedes the
-site migrations.
+**Content-graph Plan 3 is WRITTEN (brainstormed and authored 2026-06-02): the editor link picker,**
+`docs/superpowers/plans/2026-06-02-cairn-content-graph-03-picker.md` (design spec
+`docs/superpowers/specs/2026-06-02-cairn-content-graph-03-picker-design.md`, approved). It builds the "Link to page"
+dialog and the `[[` autocomplete, both writing the `cairn:` token through two new `MarkdownEditor` seams (a generic
+`completionSources` prop wired through `@codemirror/autocomplete`, and a `registerInsertLink` inline insert), reading
+the `linkTargets` Plan 2 ships. Brainstorm decisions locked: drafts shown flagged, the completion seam is generic, and
+substring (not fuzzy) search. Ten test-first tasks, additive, bumps `0.19.0`.
+
+**Immediate next action: execute content-graph Plan 3,
+`docs/superpowers/plans/2026-06-02-cairn-content-graph-03-picker.md`, `subagent-driven`
+(`superpowers:subagent-driven-development`, one `cairn-implementer` per task, Sonnet default), from the cairn-cms
+directory on `main`. Start at Task 1.** The design is settled (skip brainstorming). It runs on `main` directly
+(additive, no site deploys). Task 1 adds the `@codemirror/autocomplete` dependency (this plan does change a
+dependency, unlike Plan 2). The pass-end review gate is the simplifier plus `svelte-reviewer` (the completion-source
+`$derived` and the picker reactivity) and `daisyui-a11y-reviewer` (the dialog, the search box, the keyboard and focus
+path, the autocomplete popup), both Opus, plus a high-effort `/code-review`; the live `/admin` interactive smoke is a
+carried fast-follow for the ecnordic migration (the showcase runs `adapter-node`).
+
+After the picker, Plan 4 is the lifecycle guards (delete/rename with inbound-link rewriting), which is where several
+Plan 2 carried follow-ups land (a link to a draft or invalid target, the resolver-vs-index divergence). The other
+carried follow-ups, in the Plan 2 post-mortem, include a render-without-resolver contract caveat for the site
+migrations (resolve cairn links wherever a body renders to HTML), a `parseManifest` per-entry/version guard, and an
+`editLoad` two-read parallelize. The whole content-graph initiative still precedes the site migrations.
 
 ## Where the work is (2026-06-02, content-graph Plan 1 / the atomic commit primitive executed)
 

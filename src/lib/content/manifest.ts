@@ -6,7 +6,7 @@
 import { idFromFilename, slugFromId } from './ids.js';
 import { parseMarkdown } from './frontmatter.js';
 import { permalink } from './permalink.js';
-import { extractCairnLinks, type CairnRef } from './links.js';
+import { extractCairnLinks, type CairnRef, type LinkResolve } from './links.js';
 import type { ConceptDescriptor } from './types.js';
 
 /** One entry's projection: its identity, routing, draft flag, and outbound cairn: edges. */
@@ -104,4 +104,35 @@ export function parseManifest(raw: string): Manifest {
     throw new Error('content manifest: malformed file, expected { version, entries: [] }');
   }
   return { version: 1, entries: (data as Manifest).entries };
+}
+
+/** Throw if the committed manifest drifts from what the corpus says. Both sides are compared in the
+ *  canonical serialized form, so semantic equality never spuriously fails. The build calls this so a
+ *  raw-git content edit, which leaves the committed manifest stale, fails the build loudly. */
+export function verifyManifest(built: Manifest, committedRaw: string): void {
+  if (committedRaw !== serializeManifest(built)) {
+    throw new Error(
+      'content manifest is stale: the committed file does not match the corpus. Regenerate it (npm run cairn:manifest) and commit the result.',
+    );
+  }
+}
+
+/** Replace the entry with the same concept and id, or add it. Order does not matter, since
+ *  serializeManifest sorts. This is the save path's incremental patch. */
+export function upsertEntry(manifest: Manifest, entry: ManifestEntry): Manifest {
+  const entries = manifest.entries.filter((e) => !(e.concept === entry.concept && e.id === entry.id));
+  entries.push(entry);
+  return { version: 1, entries };
+}
+
+/** Drop the entry with the given concept and id, if present. The delete path's patch. */
+export function removeEntry(manifest: Manifest, concept: string, id: string): Manifest {
+  return { version: 1, entries: manifest.entries.filter((e) => !(e.concept === concept && e.id === id)) };
+}
+
+/** A resolver backed by manifest targets, for the admin preview. A miss returns undefined, so the
+ *  render step marks the link broken rather than throwing. The build resolver throws instead. */
+export function manifestLinkResolver(targets: { concept: string; id: string; permalink: string }[]): LinkResolve {
+  const byKey = new Map(targets.map((t) => [`${t.concept}/${t.id}`, t.permalink]));
+  return (ref) => byKey.get(`${ref.concept}/${ref.id}`);
 }

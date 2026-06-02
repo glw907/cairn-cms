@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { manifestEntryFromFile, serializeManifest, parseManifest, emptyManifest } from '../../lib/content/manifest.js';
+import { manifestEntryFromFile, serializeManifest, parseManifest, emptyManifest, verifyManifest, upsertEntry, removeEntry, manifestLinkResolver } from '../../lib/content/manifest.js';
+import type { ManifestEntry } from '../../lib/content/manifest.js';
 import type { ConceptDescriptor } from '../../lib/content/types.js';
 
 const posts: ConceptDescriptor = {
@@ -63,5 +64,48 @@ describe('serializeManifest / parseManifest', () => {
   });
   it('emptyManifest round-trips', () => {
     expect(parseManifest(serializeManifest(emptyManifest()))).toEqual({ version: 1, entries: [] });
+  });
+});
+
+const entryA: ManifestEntry = { id: 'a', concept: 'pages', title: 'A', permalink: '/a', draft: false, links: [] };
+const entryB: ManifestEntry = { id: 'b', concept: 'posts', title: 'B', date: '2026-01-02', permalink: '/b', draft: false, links: [] };
+
+describe('verifyManifest', () => {
+  it('passes when the committed file matches the built manifest', () => {
+    const built = { version: 1 as const, entries: [entryA, entryB] };
+    expect(() => verifyManifest(built, serializeManifest(built))).not.toThrow();
+  });
+  it('throws an actionable error on drift', () => {
+    const built = { version: 1 as const, entries: [entryA, entryB] };
+    const stale = serializeManifest({ version: 1, entries: [entryA] });
+    expect(() => verifyManifest(built, stale)).toThrow(/stale|regenerate/i);
+  });
+});
+
+describe('upsertEntry / removeEntry', () => {
+  it('replaces an entry with the same concept and id', () => {
+    const start = { version: 1 as const, entries: [entryA, entryB] };
+    const updated = upsertEntry(start, { ...entryB, title: 'B2' });
+    expect(updated.entries.filter((e) => e.concept === 'posts' && e.id === 'b')).toHaveLength(1);
+    expect(updated.entries.find((e) => e.id === 'b')?.title).toBe('B2');
+  });
+  it('adds a new entry', () => {
+    const updated = upsertEntry({ version: 1, entries: [entryA] }, entryB);
+    expect(updated.entries).toHaveLength(2);
+  });
+  it('removes by concept and id', () => {
+    const updated = removeEntry({ version: 1, entries: [entryA, entryB] }, 'posts', 'b');
+    expect(updated.entries.map((e) => e.id)).toEqual(['a']);
+  });
+});
+
+describe('manifestLinkResolver', () => {
+  it('resolves a known target and returns undefined for a miss', () => {
+    const resolve = manifestLinkResolver([
+      { concept: 'pages', id: 'a', permalink: '/a' },
+      { concept: 'posts', id: 'b', permalink: '/b' },
+    ]);
+    expect(resolve({ concept: 'pages', id: 'a' })).toBe('/a');
+    expect(resolve({ concept: 'posts', id: 'missing' })).toBeUndefined();
   });
 });

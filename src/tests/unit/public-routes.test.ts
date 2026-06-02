@@ -3,12 +3,13 @@ import { createPublicRoutes } from '../../lib/sveltekit/public-routes.js';
 import { createSiteIndex } from '../../lib/delivery/site-index.js';
 import { createContentIndex } from '../../lib/delivery/content-index.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
+import { defineFields } from '../../lib/content/schema.js';
 
 const [posts] = normalizeConcepts(
-  { posts: { dir: 'p', fields: [], validate: () => ({ ok: true as const, data: {} }) } },
+  { posts: { dir: 'p', schema: defineFields([]) } },
   { posts: { permalink: '/:year/:month/:day/:slug', datePrefix: 'day' } },
 );
-const [pages] = normalizeConcepts({ pages: { dir: 'g', fields: [], validate: () => ({ ok: true as const, data: {} }) } });
+const [pages] = normalizeConcepts({ pages: { dir: 'g', schema: defineFields([]) } });
 
 const site = createSiteIndex([
   { descriptor: posts, index: createContentIndex([

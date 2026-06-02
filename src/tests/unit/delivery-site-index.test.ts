@@ -2,12 +2,13 @@ import { describe, it, expect } from 'vitest';
 import { createSiteIndex } from '../../lib/delivery/site-index.js';
 import { createContentIndex } from '../../lib/delivery/content-index.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
+import { defineFields } from '../../lib/content/schema.js';
 
 const [posts] = normalizeConcepts(
-  { posts: { dir: 'p', fields: [], validate: () => ({ ok: true as const, data: {} }) } },
+  { posts: { dir: 'p', schema: defineFields([]) } },
   { posts: { permalink: '/:year/:month/:day/:slug', datePrefix: 'day' } },
 );
-const [pages] = normalizeConcepts({ pages: { dir: 'g', fields: [], validate: () => ({ ok: true as const, data: {} }) } });
+const [pages] = normalizeConcepts({ pages: { dir: 'g', schema: defineFields([]) } });
 
 function site() {
   return createSiteIndex([
@@ -47,11 +48,11 @@ describe('createSiteIndex', () => {
 
   it('throws on a permalink collision across concepts, naming both ids', () => {
     const [p2] = normalizeConcepts(
-      { pages: { dir: 'g', fields: [], validate: () => ({ ok: true as const, data: {} }) } },
+      { pages: { dir: 'g', schema: defineFields([]) } },
       { pages: { permalink: '/dup' } },
     );
     const [q2] = normalizeConcepts(
-      { posts: { dir: 'p', fields: [], validate: () => ({ ok: true as const, data: {} }) } },
+      { posts: { dir: 'p', schema: defineFields([]) } },
       { posts: { permalink: '/dup' } },
     );
     expect(() =>

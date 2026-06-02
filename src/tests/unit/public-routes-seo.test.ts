@@ -3,9 +3,10 @@ import { createPublicRoutes } from '../../lib/sveltekit/public-routes.js';
 import { createContentIndex, fromGlob } from '../../lib/delivery/content-index.js';
 import { createSiteIndex } from '../../lib/delivery/site-index.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
+import { defineFields } from '../../lib/content/schema.js';
 
 const descriptor = normalizeConcepts({
-  posts: { dir: 'src/content/posts', fields: [], validate: (fm: Record<string, unknown>) => ({ ok: true as const, data: fm }) },
+  posts: { dir: 'src/content/posts', schema: defineFields([]) },
 })[0];
 
 const index = createContentIndex(

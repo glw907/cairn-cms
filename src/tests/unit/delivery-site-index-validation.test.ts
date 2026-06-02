@@ -2,15 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { createContentIndex, fromGlob } from '../../lib/delivery/content-index.js';
 import { createSiteIndex } from '../../lib/delivery/site-index.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
+import { defineFields } from '../../lib/content/schema.js';
 
 const descriptor = normalizeConcepts({
   posts: {
     dir: 'src/content/posts',
-    fields: [],
-    validate: (fm) => {
-      const title = typeof fm.title === 'string' && fm.title.trim() ? fm.title : '';
-      return title ? { ok: true, data: fm } : { ok: false, errors: { title: 'Title is required' } };
-    },
+    schema: defineFields([{ type: 'text', name: 'title', label: 'Title', required: true }]),
   },
 })[0];
 

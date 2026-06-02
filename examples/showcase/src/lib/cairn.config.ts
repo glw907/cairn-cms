@@ -1,7 +1,7 @@
 // The showcase's adapter: the single seam the engine consumes. It declares one post-like concept,
 // a render that runs the engine pipeline, and a backend the dev GitHub double answers for.
-import { createRenderer, defineRegistry } from '@glw907/cairn-cms';
-import type { CairnAdapter, ComponentDef, IconSet } from '@glw907/cairn-cms';
+import { createRenderer, defineRegistry, defineFields, defineAdapter } from '@glw907/cairn-cms';
+import type { ComponentDef, IconSet } from '@glw907/cairn-cms';
 import { h } from 'hastscript';
 import type { ElementContent } from 'hast';
 
@@ -37,31 +37,21 @@ const registry = defineRegistry({ components: [callout] });
 // The real render path: parse markdown through the engine so registered components render.
 const { renderMarkdown } = createRenderer(registry);
 
-export const cairn: CairnAdapter = {
+export const cairn = defineAdapter({
   siteName: 'Cairn Showcase',
   content: {
     posts: {
       dir: 'src/content/posts',
       label: 'Posts',
-      fields: [
+      schema: defineFields([
         { type: 'text', name: 'title', label: 'Title', required: true },
         { type: 'date', name: 'date', label: 'Date' },
-      ],
-      validate(frontmatter, _body) {
-        const title = typeof frontmatter.title === 'string' ? frontmatter.title.trim() : '';
-        if (!title) return { ok: false, errors: { title: 'Title is required' } };
-        return { ok: true, data: { ...frontmatter, title } };
-      },
+      ]),
     },
     pages: {
       dir: 'src/content/pages',
       label: 'Pages',
-      fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
-      validate(frontmatter, _body) {
-        const title = typeof frontmatter.title === 'string' ? frontmatter.title.trim() : '';
-        if (!title) return { ok: false, errors: { title: 'Title is required' } };
-        return { ok: true, data: { ...frontmatter, title } };
-      },
+      schema: defineFields([{ type: 'text', name: 'title', label: 'Title', required: true }]),
     },
   },
   backend: { owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' },
@@ -71,4 +61,4 @@ export const cairn: CairnAdapter = {
   navMenu: { configPath: 'src/lib/site.config.yaml', menuName: 'primary', label: 'Navigation', maxDepth: 2 },
   registry,
   icons,
-};
+});

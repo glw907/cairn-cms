@@ -10,6 +10,7 @@
 import type { ComponentRegistry } from '../render/registry.js';
 import type { IconSet } from '../render/glyph.js';
 import type { DatePrefix } from './ids.js';
+import type { ConceptSchema } from './schema.js';
 
 /** Common to every frontmatter field: the frontmatter key, the form label, and whether it is required. */
 interface FieldBase {
@@ -95,18 +96,19 @@ export type ValidationResult =
   | { ok: false; errors: Record<string, string> };
 
 /**
- * Per-site configuration for one content concept (spec §8). Concept-fixed behavior such as
- * routability is not here; it lives in the engine's routing table (`CONCEPT_ROUTING`).
+ * Per-site configuration for one content concept (spec §8). One `schema`, built with
+ * `defineFields`, is the single source of truth for the editor form, the validator, and the
+ * inferred frontmatter type. Generic over the schema so a concept's concrete type survives for
+ * typed reads. Concept-fixed behavior such as routability is not here; it lives in the engine's
+ * routing table (`CONCEPT_ROUTING`).
  */
-export interface ConceptConfig {
+export interface ConceptConfig<S extends ConceptSchema = ConceptSchema> {
   /** Repo-relative content directory, e.g. "src/content/posts". */
   dir: string;
   /** Sidebar label; defaults from the concept id when omitted. */
   label?: string;
-  /** Drives the per-concept frontmatter form, in order. */
-  fields: FrontmatterField[];
-  /** Validate submitted frontmatter before any commit. */
-  validate(frontmatter: Record<string, unknown>, body: string): ValidationResult;
+  /** The concept's schema: the form projection, the generated validator, and the inferred type. */
+  schema: S;
 }
 
 /**

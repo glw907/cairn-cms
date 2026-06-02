@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { CONCEPT_ROUTING, normalizeConcepts, findConcept } from '../../lib/content/concepts.js';
 import type { ConceptConfig, RoutingRule } from '../../lib/content/types.js';
+import { defineFields } from '../../lib/content/schema.js';
 import { testAdapter } from './_content-fixture.js';
 
 describe('normalizeConcepts', () => {
@@ -39,8 +40,7 @@ describe('normalizeConcepts', () => {
   it('attaches a Fragments concept additively without reshaping the contract', () => {
     const fragments: ConceptConfig = {
       dir: 'src/content/fragments',
-      fields: [{ type: 'text', name: 'title', label: 'Title' }],
-      validate: (frontmatter) => ({ ok: true, data: frontmatter }),
+      schema: defineFields([{ type: 'text', name: 'title', label: 'Title' }]),
     };
     const routing: Record<string, RoutingRule> = {
       ...CONCEPT_ROUTING,
@@ -55,7 +55,7 @@ describe('normalizeConcepts', () => {
   });
 });
 
-const cfg = { dir: 'd', fields: [], validate: () => ({ ok: true as const, data: {} }) };
+const cfg = { dir: 'd', schema: defineFields([]) };
 
 describe('normalizeConcepts URL policy', () => {
   it('defaults permalink and datePrefix when no policy is given', () => {

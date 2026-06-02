@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
+import { defineFields } from '../../lib/content/schema.js';
 import { createContentIndex } from '../../lib/delivery/content-index.js';
 import { buildRssFeed, type FeedItem } from '../../lib/delivery/feeds.js';
 import { buildSitemap } from '../../lib/delivery/sitemap.js';
@@ -10,8 +11,7 @@ const [news] = normalizeConcepts(
   {
     news: {
       dir: 'src/content/news',
-      fields: [],
-      validate: () => ({ ok: true, data: {} }),
+      schema: defineFields([]),
     },
   },
   { news: { permalink: '/news/:year/:month/:slug' } },

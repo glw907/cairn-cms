@@ -51,8 +51,8 @@ export function normalizeConcepts(
       routing: routing[id] ?? DEFAULT_ROUTING,
       permalink: policy.permalink ?? defaultPermalink(id),
       datePrefix: policy.datePrefix ?? 'day',
-      fields: config.fields,
-      validate: config.validate,
+      fields: config.schema.fields,
+      validate: config.schema.validate,
     });
   }
   return descriptors;

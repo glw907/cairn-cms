@@ -39,6 +39,7 @@ export {
 } from './content/frontmatter.js';
 export { validateFields } from './content/validate.js';
 export { defineFields } from './content/schema.js';
+export { defineAdapter } from './content/adapter.js';
 export type { ConceptSchema, Infer, InferFields, DefineFieldsOptions, StandardInput, StandardSchemaV1 } from './content/schema.js';
 export {
   isValidId,

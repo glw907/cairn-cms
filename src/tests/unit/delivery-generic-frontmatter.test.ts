@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createContentIndex, fromGlob } from '../../lib/delivery/content-index.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
+import { defineFields } from '../../lib/content/schema.js';
 
 interface PostFm {
   title: string;
@@ -10,8 +11,10 @@ interface PostFm {
 const descriptor = normalizeConcepts({
   posts: {
     dir: 'src/content/posts',
-    fields: [],
-    validate: (fm) => ({ ok: true, data: fm }),
+    schema: defineFields([
+      { type: 'text', name: 'title', label: 'Title' },
+      { type: 'textarea', name: 'description', label: 'Description' },
+    ]),
   },
 })[0];
 

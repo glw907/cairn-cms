@@ -1,10 +1,19 @@
 import { describe, it, expect } from 'vitest';
 import { createContentIndex, fromGlob } from '../../lib/delivery/content-index.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
+import { defineFields } from '../../lib/content/schema.js';
 import type { RawFile } from '../../lib/delivery/content-index.js';
 
 const [posts] = normalizeConcepts({
-  posts: { dir: 'd', fields: [], validate: () => ({ ok: true, data: {} }) },
+  posts: {
+    dir: 'd',
+    schema: defineFields([
+      { type: 'text', name: 'title', label: 'Title' },
+      { type: 'date', name: 'date', label: 'Date' },
+      { type: 'tags', name: 'tags', label: 'Tags', options: ['a'] },
+      { type: 'boolean', name: 'draft', label: 'Draft' },
+    ]),
+  },
 });
 
 function post(id: string, date: string, extra = ''): RawFile {
@@ -49,7 +58,15 @@ describe('createContentIndex', () => {
 describe('content index slug', () => {
   it('derives a date-stripped slug and a non-doubled permalink for a dated concept', () => {
     const [posts] = normalizeConcepts(
-      { posts: { dir: 'd', fields: [], validate: () => ({ ok: true as const, data: {} }) } },
+      {
+        posts: {
+          dir: 'd',
+          schema: defineFields([
+            { type: 'text', name: 'title', label: 'Title' },
+            { type: 'date', name: 'date', label: 'Date' },
+          ]),
+        },
+      },
       { posts: { permalink: '/:year/:month/:day/:slug', datePrefix: 'day' } },
     );
     const index = createContentIndex(
@@ -70,14 +87,7 @@ describe('fromGlob', () => {
 
 describe('createContentIndex validate-once reads', () => {
   const [trimmed] = normalizeConcepts({
-    posts: {
-      dir: 'd',
-      fields: [],
-      validate: (fm) => {
-        const title = typeof fm.title === 'string' ? fm.title.trim() : '';
-        return title ? { ok: true, data: { ...fm, title } } : { ok: false, errors: { title: 'Title is required' } };
-      },
-    },
+    posts: { dir: 'd', schema: defineFields([{ type: 'text', name: 'title', label: 'Title', required: true }]) },
   });
 
   it('stores the normalized data on the detail frontmatter', () => {

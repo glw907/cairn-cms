@@ -2,6 +2,7 @@
 // minimal Pages form. Shared across the content-model unit tests so the field shapes
 // match what the editor and the validator rely on.
 import type { CairnAdapter, FrontmatterField } from '../../lib/content/types.js';
+import { defineFields } from '../../lib/content/schema.js';
 
 export const postFields: FrontmatterField[] = [
   { type: 'text', name: 'title', label: 'Title', required: true },
@@ -21,14 +22,12 @@ export const testAdapter: CairnAdapter = {
     // posts omits `label` to exercise the default; pages overrides it.
     posts: {
       dir: 'src/content/posts',
-      fields: postFields,
-      validate: (frontmatter) => ({ ok: true, data: frontmatter }),
+      schema: defineFields(postFields),
     },
     pages: {
       label: 'Site Pages',
       dir: 'src/content/pages',
-      fields: pageFields,
-      validate: (frontmatter) => ({ ok: true, data: frontmatter }),
+      schema: defineFields(pageFields),
     },
   },
   backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },

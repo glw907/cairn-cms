@@ -1,11 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { composeRuntime } from '../../lib/content/compose.js';
 import type { CairnAdapter, CairnExtension } from '../../lib/content/types.js';
+import { defineFields } from '../../lib/content/schema.js';
 
 function adapter(): CairnAdapter {
   return {
     siteName: 'T',
-    content: { pages: { dir: 'src/content/pages', fields: [], validate: () => ({ ok: true, data: {} }) } },
+    content: { pages: { dir: 'src/content/pages', schema: defineFields([]) } },
     backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
     sender: { from: 'cms@test' },
     render: (md) => md,

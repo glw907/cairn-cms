@@ -28,11 +28,20 @@ describe('createSiteIndex validation', () => {
     expect(() => createSiteIndex([ci])).toThrowError(/title: Title is required/);
   });
 
-  it('validates drafts too', () => {
+  it('skips drafts at the build gate', () => {
     const ci = conceptIndex({
       '/src/content/posts/2026-03-10-draft.md': '---\ndraft: true\n---\nBody.',
     });
-    expect(() => createSiteIndex([ci])).toThrowError(/2026-03-10-draft/);
+    expect(() => createSiteIndex([ci])).not.toThrow();
+  });
+
+  it('still fails the gate for an invalid non-draft beside an invalid draft', () => {
+    const ci = conceptIndex({
+      '/src/content/posts/2026-03-10-draft.md': '---\ndraft: true\n---\nBody.',
+      '/src/content/posts/2026-04-01-live.md': '---\ndescription: no title\n---\nBody.',
+    });
+    expect(() => createSiteIndex([ci])).toThrowError(/2026-04-01-live/);
+    expect(() => createSiteIndex([ci])).not.toThrowError(/2026-03-10-draft/);
   });
 
   it('does not throw when every entry is valid', () => {

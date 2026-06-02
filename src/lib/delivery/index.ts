@@ -4,7 +4,7 @@
 // helpers, the catch-all route loaders, and the head component. It imports nothing from auth,
 // github, or email, so importing it does not pull the server backend into a public bundle.
 export { createContentIndex, fromGlob } from './content-index.js';
-export type { RawFile, ContentSummary, ContentEntry, ContentIndex } from './content-index.js';
+export type { RawFile, ContentSummary, ContentEntry, ContentIndex, ContentProblem } from './content-index.js';
 export { createSiteIndex } from './site-index.js';
 export type { SiteIndex, ConceptIndex } from './site-index.js';
 export { siteDescriptors } from './site-descriptors.js';

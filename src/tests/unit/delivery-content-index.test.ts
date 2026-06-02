@@ -67,3 +67,34 @@ describe('fromGlob', () => {
     expect(fromGlob({ '/a/x.md': 'raw-x' })).toEqual([{ path: '/a/x.md', raw: 'raw-x' }]);
   });
 });
+
+describe('createContentIndex validate-once reads', () => {
+  const [trimmed] = normalizeConcepts({
+    posts: {
+      dir: 'd',
+      fields: [],
+      validate: (fm) => {
+        const title = typeof fm.title === 'string' ? fm.title.trim() : '';
+        return title ? { ok: true, data: { ...fm, title } } : { ok: false, errors: { title: 'Title is required' } };
+      },
+    },
+  });
+
+  it('stores the normalized data on the detail frontmatter', () => {
+    const index = createContentIndex(
+      fromGlob({ '/d/2026-01-01-a.md': '---\ntitle: "  Padded  "\n---\nBody.' }),
+      trimmed,
+    );
+    expect(index.byId('2026-01-01-a')?.frontmatter.title).toBe('Padded');
+  });
+
+  it('records a verdict instead of throwing on an invalid entry', () => {
+    const index = createContentIndex(
+      fromGlob({ '/d/2026-01-02-b.md': '---\ndescription: no title\n---\nBody.' }),
+      trimmed,
+    );
+    expect(index.problems()).toEqual([
+      { id: '2026-01-02-b', draft: false, errors: { title: 'Title is required' } },
+    ]);
+  });
+});

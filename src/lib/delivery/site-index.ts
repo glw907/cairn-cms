@@ -30,33 +30,32 @@ function normalizePath(path: string): string {
   return path.length > 1 ? path.replace(/\/+$/, '') : path;
 }
 
-/** Validate every entry (drafts included) against its concept, aggregating failures. */
-function validateAll(concepts: ConceptIndex[]): void {
+/** Collect non-draft validation failures across concepts from each index's recorded verdicts. */
+function siteProblems(concepts: ConceptIndex[]): string[] {
   const problems: string[] = [];
   for (const { descriptor, index } of concepts) {
-    for (const summary of index.all({ includeDrafts: true })) {
-      const entry = index.byId(summary.id);
-      if (!entry) continue;
-      const result = descriptor.validate(entry.frontmatter, entry.body);
-      if (!result.ok) {
-        for (const [field, message] of Object.entries(result.errors)) {
-          problems.push(`${descriptor.dir}/${summary.id}: ${field}: ${message}`);
-        }
+    for (const problem of index.problems()) {
+      if (problem.draft) continue; // a half-finished draft never ships, so it does not fail the build
+      for (const [field, message] of Object.entries(problem.errors)) {
+        problems.push(`${descriptor.dir}/${problem.id}: ${field}: ${message}`);
       }
     }
   }
-  if (problems.length > 0) {
-    throw new Error(`site index: ${problems.length} invalid frontmatter field(s):\n  ${problems.join('\n  ')}`);
-  }
+  return problems;
 }
 
 /**
  * Union per-concept indexes into a site-level resolver. Throws on a duplicate permalink and,
- * unless `validate` is `false`, on any entry whose frontmatter fails its concept's validator,
- * so malformed content fails the build instead of shipping.
+ * unless `validate` is `false`, on any non-draft entry whose frontmatter fails its concept's
+ * validator, so malformed content fails the build instead of shipping.
  */
 export function createSiteIndex(concepts: ConceptIndex[], opts: { validate?: boolean } = {}): SiteIndex {
-  if (opts.validate !== false) validateAll(concepts);
+  if (opts.validate !== false) {
+    const problems = siteProblems(concepts);
+    if (problems.length > 0) {
+      throw new Error(`site index: ${problems.length} invalid frontmatter field(s):\n  ${problems.join('\n  ')}`);
+    }
+  }
   const byPath = new Map<string, { index: ContentIndex; id: string }>();
   const byId = new Map<string, ContentIndex>();
   for (const { descriptor, index } of concepts) {

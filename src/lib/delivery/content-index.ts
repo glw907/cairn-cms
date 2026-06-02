@@ -36,6 +36,13 @@ export interface ContentEntry<F = Record<string, unknown>> extends ContentSummar
   body: string;
 }
 
+/** One entry's validation failure, recorded at build for the site aggregator's gate. */
+export interface ContentProblem {
+  id: string;
+  draft: boolean;
+  errors: Record<string, string>;
+}
+
 /** The per-concept query surface. */
 export interface ContentIndex<F = Record<string, unknown>> {
   all(opts?: { includeDrafts?: boolean }): ContentSummary[];
@@ -43,6 +50,8 @@ export interface ContentIndex<F = Record<string, unknown>> {
   byTag(tag: string, opts?: { includeDrafts?: boolean }): ContentSummary[];
   allTags(): { tag: string; count: number }[];
   adjacent(id: string): { newer?: ContentSummary; older?: ContentSummary };
+  /** Per-entry validation failures recorded at build, for the site-level build gate. */
+  problems(): ContentProblem[];
 }
 
 /** Map a Vite eager `?raw` glob record (`{ path: raw }`) to `RawFile[]`. */
@@ -74,23 +83,30 @@ export function createContentIndex<F = Record<string, unknown>>(
   files: RawFile[],
   descriptor: ConceptDescriptor,
 ): ContentIndex<F> {
+  const problems: ContentProblem[] = [];
   const entries: ContentEntry<F>[] = files.map((file) => {
     const id = idFromFilename(basename(file.path));
     const slug = slugFromId(id, descriptor.routing.dated ? descriptor.datePrefix : null);
-    const { frontmatter, body } = parseMarkdown(file.raw);
-    const date = asDate(frontmatter.date);
+    const { frontmatter: raw, body } = parseMarkdown(file.raw);
+    const date = asDate(raw.date);
+    const draft = raw.draft === true;
+    // Validate once at build. The cheap summary stays raw-derived and robust; the typed detail
+    // frontmatter carries the normalized data on success, the raw frontmatter on failure. A
+    // failure is recorded, not thrown, so the query surface does not explode on construction.
+    const result = descriptor.validate(raw, body);
+    if (!result.ok) problems.push({ id, draft, errors: result.errors });
     return {
       id,
       slug,
       permalink: permalink(descriptor, { id, slug, date }),
-      title: asString(frontmatter.title) ?? id,
+      title: asString(raw.title) ?? id,
       date,
-      updated: asDate(frontmatter.updated),
-      tags: asTags(frontmatter.tags),
-      excerpt: deriveExcerpt(body, { description: asString(frontmatter.description) }),
+      updated: asDate(raw.updated),
+      tags: asTags(raw.tags),
+      excerpt: deriveExcerpt(body, { description: asString(raw.description) }),
       wordCount: wordCount(body),
-      draft: frontmatter.draft === true,
-      frontmatter: frontmatter as F,
+      draft,
+      frontmatter: (result.ok ? result.data : raw) as F,
       body,
     };
   });
@@ -131,5 +147,6 @@ export function createContentIndex<F = Record<string, unknown>>(
         older: i < list.length - 1 ? summarize(list[i + 1]) : undefined,
       };
     },
+    problems: () => problems,
   };
 }

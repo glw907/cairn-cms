@@ -110,7 +110,11 @@ site writing `as const`. It returns one `ConceptSchema` object with three faces:
   distinct from read-derivation: computed values such as `excerpt`, `wordCount`, `slug`, and
   `permalink` stay in the content index, so the schema never becomes a second home for derived data.
   An optional `refine(data, body)` hook carries cross-field and body-dependent rules, and its errors
-  merge with the per-field errors.
+  merge with the per-field errors. On an optional field left empty, the validator omits the key from
+  `data` rather than writing an empty string, a `false`, or an empty array (settled in the Plan 2
+  brainstorm). A published file then carries no `draft: false` or `description: ''` noise, the
+  committed frontmatter stays minimal and diff-friendly, and an omitted key reads back as absent, which
+  is what keeps the inferred optional-key type accurate rather than pessimistic.
 - **The inferred type**: `Infer<typeof posts>` walks the field tuple and maps each field to a TS
   type, respecting `required`. text, textarea, and date map to `string`; boolean to `boolean`;
   `tags` to an array of the option union (`('trip-report' | 'gear' | 'news')[]`); freetags to

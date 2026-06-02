@@ -39,10 +39,22 @@ export function createSiteIndexes<const A extends CairnAdapter>(
   opts: { validate?: boolean } = {},
 ): SiteIndexes<A> {
   const descriptors = siteDescriptors(adapter, config);
+  const globRecord = globs as Record<string, Record<string, string> | undefined>;
   const byConcept: Record<string, ContentIndex> = {};
   const conceptIndexes: ConceptIndex[] = [];
   for (const descriptor of descriptors) {
-    const record = (globs as Record<string, Record<string, string> | undefined>)[descriptor.id] ?? {};
+    if (descriptor.id === 'site') {
+      throw new Error(
+        'createSiteIndexes: a concept cannot be named "site", which is the reserved cross-concept resolver key',
+      );
+    }
+    if (!Object.prototype.hasOwnProperty.call(globRecord, descriptor.id)) {
+      const passed = Object.keys(globRecord);
+      throw new Error(
+        `createSiteIndexes: no glob passed for concept "${descriptor.id}"; pass its import.meta.glob (an empty {} for an intentionally empty concept). Globs passed: ${passed.length ? passed.join(', ') : '(none)'}`,
+      );
+    }
+    const record = globRecord[descriptor.id] ?? {};
     const index = createContentIndex(fromGlob(record), descriptor);
     byConcept[descriptor.id] = index;
     conceptIndexes.push({ descriptor, index });

@@ -1,8 +1,10 @@
 import { describe, it, expect, expectTypeOf } from 'vitest';
 import { createSiteIndexes } from '../../lib/delivery/site-indexes.js';
+import type { SiteGlobs } from '../../lib/delivery/site-indexes.js';
 import { defineAdapter } from '../../lib/content/adapter.js';
 import { defineFields } from '../../lib/content/schema.js';
 import { parseSiteConfig } from '../../lib/nav/site-config.js';
+import type { CairnAdapter } from '../../lib/content/types.js';
 
 const adapter = defineAdapter({
   siteName: 'Test',
@@ -45,5 +47,45 @@ describe('createSiteIndexes', () => {
   it('types each concept frontmatter from its schema', () => {
     const entry = indexes.posts.byId('2026-01-05-hello');
     if (entry) expectTypeOf(entry.frontmatter).toEqualTypeOf<{ title: string; date?: string }>();
+  });
+});
+
+describe('createSiteIndexes build-time guards', () => {
+  it('throws naming the concept when its glob key is absent', () => {
+    expect(() =>
+      createSiteIndexes(adapter, config, {
+        posts: { '/src/content/posts/2026-01-05-hello.md': '---\ntitle: Hello\ndate: 2026-01-05\n---\nBody.' },
+      }),
+    ).toThrowError(/pages/);
+  });
+
+  it('allows a present-but-empty glob record as an empty concept', () => {
+    const indexes = createSiteIndexes(adapter, config, {
+      posts: { '/src/content/posts/2026-01-05-hello.md': '---\ntitle: Hello\ndate: 2026-01-05\n---\nBody.' },
+      pages: {},
+    });
+    expect(indexes.pages.all()).toEqual([]);
+    expect(indexes.posts.all().map((p) => p.id)).toEqual(['2026-01-05-hello']);
+  });
+
+  it('throws when a concept is named site, the reserved resolver key', () => {
+    // The static CairnAdapter.content fixes its keys to posts?/pages?, so a "site" concept is
+    // only reachable through the open record normalizeConcepts accepts (a future extension's
+    // content). The cast feeds the runtime guard exactly that otherwise-untypable input.
+    const siteAdapter = defineAdapter({
+      siteName: 'Test',
+      content: {
+        site: {
+          dir: 'src/content/site',
+          schema: defineFields([{ name: 'title', type: 'text', label: 'Title', required: true }]),
+        },
+      } as CairnAdapter['content'],
+      backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
+      sender: { from: 'noreply@test.example' },
+      render: (md) => md,
+    });
+    expect(() =>
+      createSiteIndexes(siteAdapter, config, { site: {} } as SiteGlobs<typeof siteAdapter>),
+    ).toThrowError(/reserved/);
   });
 });

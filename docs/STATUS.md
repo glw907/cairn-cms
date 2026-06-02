@@ -6,6 +6,44 @@ orientation is the workspace `CLAUDE.md`. Locked architecture decisions and the 
 the functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`).
 Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`.
 
+## Where the work is (2026-06-01, schema Plan 1 / the schema primitive executed, unpublished)
+
+Schema-source-of-truth Plan 1 (the additive `defineFields` primitive) executed and landed on `main`,
+commits `80d2b84..c5ab533` (seven: five plan-task commits, one simplifier pass, one review-gate
+hardening commit), local only and not yet pushed. It is additive and zero-blast, so it bumps no version;
+the breaking `ConceptConfig` cutover is Plan 2. The new `src/lib/content/schema.ts` turns one `const`
+field tuple into three faces from a single declaration: a plain `fields` array for the editor form, a
+generated `validate` that delegates to the existing `validateFields` baseline and then layers the
+declarative per-field rules (`min`/`max`/`length`/`pattern` on text and textarea, `min`/`max` on date)
+and an optional validation-only `refine(data, body)` cross-field hook, and an inferred frontmatter type
+via `InferFields`/`Infer`. A `~standard` Standard Schema v1 property gives ecosystem interop as a thin
+adapter over `validate`, with a local types-only copy of the interface and no runtime dependency. The
+primitive is re-exported from the package main entry; no consumer wires it yet (that is Plan 2).
+
+Final gate at the tip: `npm run check` 745 files 0/0, `npm test` 93 files / 430 tests exit 0,
+`check:package` all-green for the existing main entry (no new export condition). A simplifier pass (which
+dropped the redundant field-variant casts in `applyRules`, since the discriminated union narrows on the
+type guard) and a high-effort `/code-review` ran at the gate. None of the four specialized reviewers
+applied, since the pass touched no Svelte, Worker, D1, auth, session, cookie, or DaisyUI code. Two
+correctness findings were folded in test-first as the hardening commit: a malformed `pattern` now compiles
+once in `defineFields` and fails fast there with a config error naming the field, instead of throwing an
+uncaught `SyntaxError` from inside `validate()`; and `~standard.validate` coerces a null frontmatter or body
+to the empty form, so it returns issues rather than dereferencing null. Plan and full post-mortem:
+`docs/superpowers/plans/2026-06-01-cairn-schema-01-primitive.md`.
+
+- Spec: `docs/superpowers/specs/2026-06-01-cairn-schema-source-of-truth-design.md`.
+
+**Immediate next action: brainstorm then write Plan 2 (the contract cutover), then execute it
+`subagent-driven` (one `cairn-implementer` per task) from the cairn-cms directory on `main`.** Plan 2 moves
+`ConceptConfig` to a single `schema` member, adds `defineAdapter` and `createSiteIndexes`, switches the
+delivery reads to validate-once normalized reads with skip-drafts, and is the breaking change that bumps the
+version. It is design-bearing, so run `superpowers:brainstorming` on the open decisions before
+`superpowers:writing-plans`; the spec's decomposition section locks most of it. The load-bearing carried
+follow-up to settle in Plan 2: `InferFields` types a non-required boolean or tags field as an optional key,
+while `validateFields` always writes those keys, so Plan 2's typed reads decide whether `Infer` describes the
+form input shape or the validator's normalized output and reconciles the optionality. The other follow-ups
+(date lexicographic compare, the `const`-param literal-capture degradation modes) are in the plan post-mortem.
+
 ## Where the work is (2026-06-01, component-completion Pass 1 / slot render executed, unpublished)
 
 Component-completion Pass 1 (the slot render path) executed and landed on `main`, commits `2bca500..d0c3e0a`
@@ -50,14 +88,9 @@ three plans: Plan 1 the additive primitive, Plan 2 the contract cutover (`Concep
 head consumer. The residual delivery items (feed/excerpt/permalink guards) become a small follow-up; Pass 3
 (auth hardening) and the site migrations follow.
 
-**Immediate next action: execute Plan 1, the schema primitive,
-`docs/superpowers/plans/2026-06-01-cairn-schema-01-primitive.md`, `subagent-driven`
-(`superpowers:subagent-driven-development`, one `cairn-implementer` per task), from the cairn-cms directory on
-`main`.** The plan is fully written (five additive tasks, test-first) and the spec is approved, so skip
-brainstorming and start at Task 1. It is additive and zero-blast-radius (a new `src/lib/content/schema.ts`, optional
-rule properties on three field types, package exports), so it runs on `main` directly and does not bump the version
-(the breaking `ConceptConfig` change is Plan 2). After Plan 1 lands, draft Plan 2 (the contract cutover) just-in-time
-per the spec's decomposition. Publishing `0.12.0` stays a separate release step, not urgent until the backlog clears.
+**Schema Plan 1 is DONE (executed 2026-06-01).** See the top entry for the landing detail and the
+authoritative next action (brainstorm then write Plan 2, the contract cutover). Publishing `0.12.0` stays a
+separate release step, not urgent until the backlog clears.
 
 ## Where the work is (2026-06-01, delivery-surface DX executed, unpublished)
 

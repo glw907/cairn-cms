@@ -562,3 +562,32 @@ The pass changes the render pipeline (an XSS control) and one Svelte component. 
 - **Dependency hygiene.** Both dependency changes use the standalone relock dance, so the workspace root lock never drifts. The committed artifacts are `package.json` and the rebuilt `package-lock.json`.
 - **Versioning.** Additive apart from the internal DOMPurify removal. No export-condition change. Bumps a minor to `0.17.0`, unpublished until the next release rolls the `0.16.0`/`0.17.0` window into one publish.
 ```
+
+---
+
+## Post-mortem (executed 2026-06-02)
+
+The pass executed subagent-driven on `main`, one `cairn-implementer` per task (Sonnet), commits `ae69a50..8aee8a7`. That is the five plan-task commits plus one review-gate doc fold-in. Local only, not pushed, not published. The version bumped to `0.17.0`.
+
+### What was built
+
+The engine render pipeline now sanitizes author content by default. `createRenderer` inserts `rehype-sanitize` after `rehype-raw` and before the component dispatch, so it cleans the untrusted author markdown (raw HTML, link URLs, slot bodies) while the site's trusted `build()` output and its inline SVG icons run after the floor and are never sanitized. A new `src/lib/render/sanitize-schema.ts` holds `buildSanitizeSchema(registry, extend?)`, which starts from `hast-util-sanitize`'s `defaultSchema` and adds the directive markers (`dataPrimitive`, `dataSlot`, `dataIcon`, `dataRole`, `dataRise`, and the registry-derived `dataAttr<Key>` markers) so the dispatch still reads its stamps, plus the benign tags real content uses (`nav`, `details`, `summary`) and free-form `className`/`target`/`rel` on anchors. `rehypeAnchorRel` runs last and forces `rel="noopener noreferrer"` on every `target="_blank"` anchor, covering component-built anchors too. Two `RendererOptions` members wire the posture: `sanitizeSchema` extends the allowlist from the safe base (extend-only, a site cannot weaken the core strip), and `unsafeDisableSanitize` is the developer-only off switch. The admin preview in `EditPage.svelte` collapsed onto the one floor: the redundant DOMPurify pass and the `dompurify` dependency are gone, and the preview now renders the floored pipeline output directly, so it mirrors the published page. `docs/creating-a-cairn-site.md` documents the contract.
+
+### Execution deviations locked in
+
+- **Task 2, the `a`-scope className filter.** The plan's verbatim schema builder appended a bare `'className'` to the `a` attribute scope, which did not work: `defaultSchema.attributes.a` carries a restrictive `['className', 'data-footnote-backref']` tuple that a per-tag entry honors over a bare `*` entry, so an author's `class="toc-link"` collapsed to `class=""`. The implementer added a filter that drops the existing className tuple from the `a` scope before appending free-form `className`, with an explaining comment. The dangerous strip is unaffected (the script, event-handler, `javascript:`, and `data:` tests all still pass). Verified at the review gate as a faithful realization of the plan's intent.
+
+### Verification (evidence)
+
+- Final gate at the tip (`8aee8a7`): `npm run check` 753 files 0 errors 0 warnings; `npm test` exits 0 at 482 tests; `npm run check:package` all-green with no export-condition change.
+- The new `render-sanitize.test.ts` (ten cases) proves the floor strips a `<script>`, an inline event handler, a `javascript:` link, and a `data:` link, keeps ordinary formatting and the benign author tags, forces the anchor rel, preserves the directive markers so a registered component still renders, honors a `sanitizeSchema` extension while keeping the core strip, and lets `unsafeDisableSanitize` through.
+- Verification item satisfied: the showcase production build (exit 0) prerenders the `callout` to `<aside class="callout callout-warning">` through the floor, and no `onerror`/`<script>` vectors appear in the prerendered output, the proof the before-dispatch placement preserves the directive markers and the full component render.
+
+### Review gate
+
+A `code-simplifier` pass found nothing to change (the code is already clean and the security-critical factoring is correct). `svelte-reviewer` (Opus) returned a clean verdict on the `EditPage` change: the `$effect` debounce and the `previewRun` latest-wins guard are correct, dropping the second await introduces no race, and `{@html previewHtml}` is safe given the single-floor model. A high-effort seven-angle `/code-review` with a security angle surfaced one Important finding, folded in as `8aee8a7`: the floor runs before the dispatch, so a component `build()` that routes a directive **attribute value** (raw author input) into an `href`, `src`, `style`, or event-handler position re-opens the `javascript:` vector the floor otherwise closes. The build *code* is trusted, but its *inputs* are not. This is not a regression (delivery had no sanitization at all before this pass) and the planned sites route attribute values into class positions, so the fix is a documented `build()` contract caveat in the render-safety section rather than engine code. The other findings were a Minor (the preview renders a custom non-floored `render` prop directly, by design on the trusted admin surface), a Minor (`defaultSchema`'s `clobberPrefix` rewrites a hand-rolled author `id`, a security feature, heading anchors unaffected since `rehypeSlug` runs after the floor), and a Nit (`className` on the `*` scope, not a script vector). The three non-folded findings are recorded as carried follow-ups. The `cloudflare-workers-reviewer`, `web-auth-security-reviewer`, and `daisyui-a11y-reviewer` did not apply, and no `/admin` server surface changed, so the live admin smoke did not apply.
+
+### Carried follow-ups
+
+- **A URL-coercing helper for component builds (latent, low likelihood for the planned sites).** A future component-lifecycle or render pass could give `build()` a coercion helper for attribute values headed into URL or handler positions, or add a narrow post-dispatch protocol check, so the contract is enforced rather than only documented. The planned sites use attribute values in class positions, so this is not urgent.
+- The preview's single-floor model assumes the adapter's `render` is the floored `createRenderer` pipeline. A site that wires a custom non-floored `render` (or one built with `unsafeDisableSanitize`) reintroduces preview XSS into the trusted admin surface. Documented and acceptable; named here so a later editor pass keeps the assumption in view.

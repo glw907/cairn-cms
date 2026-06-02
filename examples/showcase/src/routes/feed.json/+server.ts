@@ -11,7 +11,7 @@ export const GET: RequestHandler = async () => {
     (posts?.all() ?? []).map(async (p) => ({
       title: p.title,
       url: ORIGIN + p.permalink,
-      date: p.date ?? '',
+      date: p.date,
       summary: p.excerpt,
       contentHtml: await cairn.render(posts!.byId(p.id)!.body),
       tags: p.tags,

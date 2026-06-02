@@ -35,13 +35,29 @@ through the insert dialog in a browser against a real Worker. The render path is
 production build and the form-to-editor flow by the browser component tests, so it is a fast-follow, best run
 during the ecnordic component migration against that site's real Worker.
 
-**Immediate next action: draft Pass 2 (delivery/SEO hardening), the second of the three engine-backlog passes.**
-It is design-bearing, so run `superpowers:brainstorming` with the user on the open decisions first, then
-`superpowers:writing-plans`; do not auto-write it. Scope (from the three-pass decision below): skip-drafts-at-build,
-per-entry `image`/`robots`/`author` in the SEO head, the feed/excerpt/permalink edge cases, and typed reads
-(infer `F` from concept fields, apply the validator's normalized `data` on read). Publishing `0.12.0` stays a
-separate release step; it is not urgent, since no site consumes the component surface until the engine backlog
-clears and the migrations begin. Pass 3 (auth hardening) follows Pass 2, then the site migrations.
+**Pass 2 was reframed (2026-06-01).** Brainstorming the typed-reads item escalated it into a foundational
+**schema-source-of-truth** initiative, run before the site migrations while the adapter contract is still
+pre-scaffolder and pre-adoption. One per-concept declaration (`defineFields`) becomes the single source of
+truth, yielding a plain-data field projection for the editor form, a generated validator, and an inferred
+frontmatter type. The design was pressure-tested against nine comparable systems (Keystatic, Tina, Astro,
+Velite, Contentlayer, Nuxt Content, Sanity, Payload, Decap), which confirmed the single-declaration unification
+and the no-codegen runtime inference, and drove four revisions: a corrected anti-Zod rationale, declarative
+per-field rules (`min`/`max`/`length`/`pattern`), Standard Schema (`~standard`) conformance, and the
+load-bearing invariants. Decision locked: **own the primitive** (not Zod/Valibot), conform to Standard Schema
+for interop. Spec: `docs/superpowers/specs/2026-06-01-cairn-schema-source-of-truth-design.md`. The initiative is
+three plans: Plan 1 the additive primitive, Plan 2 the contract cutover (`ConceptConfig` to a `schema` member,
+`defineAdapter`, `createSiteIndexes`, validate-once normalized reads, skip-drafts), Plan 3 the per-entry SEO
+head consumer. The residual delivery items (feed/excerpt/permalink guards) become a small follow-up; Pass 3
+(auth hardening) and the site migrations follow.
+
+**Immediate next action: execute Plan 1, the schema primitive,
+`docs/superpowers/plans/2026-06-01-cairn-schema-01-primitive.md`, `subagent-driven`
+(`superpowers:subagent-driven-development`, one `cairn-implementer` per task), from the cairn-cms directory on
+`main`.** The plan is fully written (five additive tasks, test-first) and the spec is approved, so skip
+brainstorming and start at Task 1. It is additive and zero-blast-radius (a new `src/lib/content/schema.ts`, optional
+rule properties on three field types, package exports), so it runs on `main` directly and does not bump the version
+(the breaking `ConceptConfig` change is Plan 2). After Plan 1 lands, draft Plan 2 (the contract cutover) just-in-time
+per the spec's decomposition. Publishing `0.12.0` stays a separate release step, not urgent until the backlog clears.
 
 ## Where the work is (2026-06-01, delivery-surface DX executed, unpublished)
 

@@ -271,7 +271,9 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     // Read the committed manifest, upsert this entry's row, and commit content and manifest in one
     // commit. A missing manifest starts empty (first save on a fresh repo). The build regenerates
     // and verifies the manifest, so this incremental patch is the cheap request-time path. On a
-    // 422 retry commitFiles re-sends this manifest blob last-writer-wins; the build reconciles.
+    // 422 retry commitFiles re-sends this manifest blob last-writer-wins. A concurrent save can then
+    // leave the committed manifest stale, which the next build rejects via verifyManifest; regenerate
+    // it with npm run cairn:manifest to recover.
     const manifestRaw = await readRaw(runtime.backend, runtime.manifestPath, token);
     const manifest = manifestRaw === null ? emptyManifest() : parseManifest(manifestRaw);
     const row = manifestEntryFromFile(concept, { path, raw: markdown });

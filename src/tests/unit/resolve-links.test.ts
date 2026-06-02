@@ -16,6 +16,7 @@ describe('cairn link resolution', () => {
     const resolve: LinkResolve = () => undefined;
     const html = await renderMarkdown('See [gone](cairn:pages/gone).', { resolve });
     expect(html).toContain('cairn-broken-link');
+    expect(html).toContain('title="Broken internal link"');
     expect(html).toContain('gone');
   });
   it('leaves a non-cairn link untouched', async () => {

@@ -59,10 +59,11 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
   $effect(() => {
     if (!showPreview || !render) return;
     const md = body;
+    const resolve = resolveLink; // tracked read in the effect body
     const run = ++previewRun;
     const handle = setTimeout(async () => {
       try {
-        const html = await render(md, { resolve: resolveLink });
+        const html = await render(md, { resolve });
         if (run === previewRun) previewHtml = html;
       } catch {
         if (run === previewRun) previewHtml = '';

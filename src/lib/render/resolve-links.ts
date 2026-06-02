@@ -36,6 +36,7 @@ export function remarkResolveCairnLinks() {
       const props = (node.data.hProperties = node.data.hProperties ?? {});
       const existing = Array.isArray(props.className) ? (props.className as string[]) : [];
       props.className = [...existing, 'cairn-broken-link'];
+      props.title = 'Broken internal link';
     });
   };
 }

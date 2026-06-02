@@ -28,7 +28,8 @@ export async function issueToken(
   now: number,
 ): Promise<void> {
   await db.batch([
-    db.prepare('DELETE FROM magic_token WHERE email = ?').bind(email),
+    // Replace this email's prior token, and sweep any expired token while here (no cron needed).
+    db.prepare('DELETE FROM magic_token WHERE email = ? OR expires_at <= ?').bind(email, now),
     db
       .prepare('INSERT INTO magic_token (token_hash, email, expires_at, created_at) VALUES (?, ?, ?, ?)')
       .bind(tokenHash, email, expiresAt, now),
@@ -64,10 +65,13 @@ export async function createSession(
   expiresAt: number,
   now: number,
 ): Promise<void> {
-  await db
-    .prepare('INSERT INTO session (id, email, expires_at, created_at) VALUES (?, ?, ?, ?)')
-    .bind(id, email, expiresAt, now)
-    .run();
+  await db.batch([
+    // Sweep expired sessions on login, so abandoned rows do not accumulate (no cron needed).
+    db.prepare('DELETE FROM session WHERE expires_at <= ?').bind(now),
+    db
+      .prepare('INSERT INTO session (id, email, expires_at, created_at) VALUES (?, ?, ?, ?)')
+      .bind(id, email, expiresAt, now),
+  ]);
 }
 
 /**

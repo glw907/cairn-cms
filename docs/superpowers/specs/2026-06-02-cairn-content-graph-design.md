@@ -95,6 +95,33 @@ This form stays valid markdown. Any renderer parses it as a link, and a tool tha
 know cairn shows an inert link rather than a wrong URL, so the file degrades safely outside
 the pipeline.
 
+### Why a stable-id token rather than wikilinks
+
+The `[[wikilink]]` syntax was weighed and set aside as the stored form. It is not a portable
+standard. Obsidian, `remark-wiki-link`, and the various forks disagree on the alias divider and
+the resolution rules, and a plain CommonMark renderer shows `[[ ]]` as literal text rather than
+a link. A wikilink is keyed by name or path, so it rots on a rename unless the tool rewrites
+every inbound reference, which is an application feature rather than anything the markdown
+carries. A stable id keyed to the permanent filename stem inverts that calculus. A slug or date
+change costs zero rewrites, and the resolved `cairn:` token degrades to an inert but valid
+CommonMark link outside the pipeline.
+
+The wikilink typing gesture is still worth keeping, so the `[[` trigger in Plan 4 opens the
+picker and inserts the resolved id token. No `[[name]]` form is ever written to the file, so the
+author gets the familiar ergonomic without the name-based rot.
+
+A 2026 survey of the field grounds the choice. Sanity is the reference-integrity gold standard,
+keying references to an immutable id that survives URL changes and blocking deletion of a
+referenced document, though it enforces this in a database rather than git. Contentful validates
+both request-time pieces this initiative adds, an inbound-link API that mirrors the manifest and
+a delete-impact dialog that mirrors the delete guard. Hugo and Docusaurus both fail the build on
+a broken internal link by default, so the build backstop is proven practice. The two tools
+closest to cairn's git-markdown model do not solve this. Sveltia shipped entry-file rename but
+deferred the inbound-reference rewrite, so a rename there still breaks links, and Astro 5 removed
+the build-time validation its v4 had, so a missing reference now returns nothing at runtime. No
+single existing tool occupies cairn's combination of a stable-id token, a build-fail backstop, an
+inbound rewrite on rename, and an editor picker over markdown in git.
+
 ## The five plans
 
 The initiative runs as a numbered plan series, foundation first, so nothing is built twice.
@@ -215,6 +242,13 @@ once the edge list exists, so it pairs with the link-health view.
 **External-link checking.** A scheduled Cron-triggered fetch that verifies outbound links to
 other sites still resolve and reports into the link-health view. Outbound links are a separate
 problem, since cairn does not own the targets and cannot resolve them at build.
+
+**A redirect map on rename.** The `cairn:` token protects internal links, which resolve to the
+live URL on every build. An external bookmark or a search-engine link to a renamed entry's old
+URL still breaks, since cairn does not own those inbound links. The initiative leaves that
+redirect to the site owner, who is told when a rename happens. A later pass could have a rename
+emit a redirect entry, the WordPress old-slug pattern, into a site-read redirect map, so an
+external link survives a rename too.
 
 ## Testing notes
 

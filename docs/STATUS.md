@@ -6,6 +6,55 @@ orientation is the workspace `CLAUDE.md`. Locked architecture decisions and the 
 the functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`).
 Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`.
 
+## Where the work is (2026-06-01, schema Plan 3 / the SEO head consumer executed, unpublished)
+
+Schema-source-of-truth Plan 3 (the per-entry SEO head consumer) executed subagent-driven on `main`,
+one `cairn-implementer` per task (Sonnet), commits `60e2d0c..bfeca52` (four plan-task commits plus one
+review-gate hardening commit), local only and not yet pushed or published. **The schema-source-of-truth
+initiative is now complete:** one `defineFields` declaration drives the editor form, the validator, the
+inferred frontmatter type, and now the SEO head end to end. The additive surface bumped the version to
+`0.14.0`, rolling on the unpublished window over `0.13.0`.
+
+A new pure `src/lib/delivery/seo-fields.ts` holds `readSeoFields` (reads the four known head fields,
+`description`/`image`/`robots`/`author`, off an entry's normalized frontmatter, keeping a present string
+trimmed and omitting an absent, empty, or non-string value) and `resolveImageUrl` (turns an
+author-supplied path absolute against the origin, returning `undefined` for a malformed string rather
+than throwing at build), both re-exported from the delivery and root entries. `entryLoad` reads the SEO
+fields once, applies the description fallback (`fields.description || entry.excerpt || description`) and
+the default-image fallback (`fields.image ?? defaultImage`), resolves the chosen image absolute, and
+spreads `image`/`robots`/`author` into the unchanged `buildSeoMeta`. `PublicRoutesDeps` gained an
+optional `defaultImage`, the one site-wide OG image. The showcase declares the SEO fields, sets values on
+the hello post and the about page, and passes a `defaultImage`.
+
+Final gate at the tip (`bfeca52`): `npm run check` 751 files 0/0, `npm test` 96 files / 450 tests exit 0,
+`check:package` all-green across the existing entries with no export-condition change. The end-to-end gate
+is the showcase production prerender: the hello post carries its own `og:image`
+`https://showcase.test/og/hello.png` and `article:author` `Showcase Author`, the second post (no declared
+image) carries the default `og:image` `https://showcase.test/og/default.png`, and the about page carries
+`robots` `noindex`. A code-simplifier pass found nothing to change. A `svelte-reviewer` (Opus) confirmed
+the load is prerender-safe with correct fallback precedence and non-throwing error handling, no Critical or
+Important findings; the other three reviewers did not apply (no Worker, D1, auth, session, cookie, or
+DaisyUI code). Three reviewer findings folded in as `bfeca52`: `readSeoFields` now stores the trimmed
+value (a stray `robots: "  noindex  "` had reached the head with surrounding whitespace), and two
+docstrings now state the scope (`author` renders only for a dated entry's `article:author`, and the
+bare-path image anchoring holds for the sites' bare-domain origin). No `/admin` surface changed, so the
+live admin smoke does not apply. Plan and full post-mortem:
+`docs/superpowers/plans/2026-06-01-cairn-schema-03-seo.md`.
+
+- Spec: `docs/superpowers/specs/2026-06-01-cairn-schema-source-of-truth-design.md` (initiative), design
+  reference `docs/superpowers/specs/2026-06-01-cairn-schema-03-seo-design.md` (this plan).
+
+**Immediate next action: a sequencing decision, not a written plan.** The schema initiative is done, so the
+next pass direction is a fork for the user to call. The candidates, all on `main`: (a) the residual
+delivery-robustness follow-up pass (the feed/excerpt/permalink guards, the failure-path `frontmatter`
+typing, the reserved-`site`-key guard, the silent-empty-glob warning), small and self-contained; (b) the
+auth-hardening pass (`__Host-` cookie prefix, `/admin` security headers, rate-limit + `waitUntil` on the
+request endpoint, install-token KV caching), the last of the three engine-backlog passes; (c) the site
+migrations onto the delivery surface, which first need the `0.13.0`/`0.14.0` window published. Per the
+established sequencing, the residual delivery follow-up lands before the site migrations. Each is
+design-bearing, so brainstorm with the user before writing the plan rather than auto-drafting. Publishing
+the `0.13.0`/`0.14.0` window is a separate release step, due before any site migration.
+
 ## Where the work is (2026-06-01, schema Plan 2 / the contract cutover executed, unpublished)
 
 Schema-source-of-truth Plan 2 (the adapter-contract cutover) executed and landed on `main`, commits
@@ -44,17 +93,9 @@ their content for every read key before declaring the schema.
 
 - Spec: `docs/superpowers/specs/2026-06-01-cairn-schema-source-of-truth-design.md`.
 
-**Immediate next action: execute Plan 3 (the per-entry SEO head consumer),
-`docs/superpowers/plans/2026-06-01-cairn-schema-03-seo.md`, `subagent-driven`
-(`superpowers:subagent-driven-development`, one `cairn-implementer` per task), from the cairn-cms directory on
-`main`.** The plan is fully written (four test-first tasks) and the design is settled, so skip brainstorming and
-start at Task 1. The Sonnet default fits all four; none is type-machinery-heavy. Plan 3 adds `seo-fields.ts`
-(`readSeoFields` + `resolveImageUrl`), wires `entryLoad` to read `image`/`robots`/`author` from the normalized
-frontmatter with a relative-image resolve and one site-wide `defaultImage` fallback, declares the SEO fields in
-the showcase, and bumps to `0.14.0`. It is additive (the new dep is optional, the new exports add to the
-existing entries), so it runs on `main` directly. The showcase production prerender is the end-to-end gate (an
-entry's own absolute `og:image`, the default on an entry without one, `robots`, `article:author`). Design
-reference: `docs/superpowers/specs/2026-06-01-cairn-schema-03-seo-design.md`.
+**Plan 3 is DONE (executed 2026-06-01).** See the top entry for the landing detail and the authoritative
+next action (a sequencing fork: the residual delivery follow-up, auth hardening, or the site migrations,
+each design-bearing). The design record below remains as the initiative's history.
 
 Design settled (2026-06-01 brainstorm): the site-level default is the OG image only (`deps.defaultImage`), per
 the absence-is-meaningful test and the convention across comparable tools; `robots` and `author` stay strictly

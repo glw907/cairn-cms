@@ -544,3 +544,66 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - **Ordering and green builds.** Task 1 is additive and self-contained. Task 2 depends on Task 1's exports and is green on its own. Task 3 changes only the showcase and stays green against the engine. Task 4 is the prerender proof plus the version bump. Each task ends with the full gate (`npm run check` 0/0, `npm test` exit 0), and Task 4 adds the showcase production build as the end-to-end proof.
 - **Out of scope, as the spec says.** A site-default author or robots, OG-image generation, external redirects, and the feed and excerpt robustness guards are all deferred. None is touched here.
 ```
+
+---
+
+## Post-mortem (executed 2026-06-01)
+
+Plan 3 executed subagent-driven on `main`, one `cairn-implementer` per task (Sonnet),
+commits `60e2d0c..bfeca52` (four plan-task commits plus one review-gate hardening commit),
+local only and not yet pushed or published. The schema-source-of-truth initiative is now
+complete: one `defineFields` declaration drives the editor form, the validator, the inferred
+type, and now the SEO head end to end.
+
+**What was built.** A new pure `src/lib/delivery/seo-fields.ts` holds `readSeoFields`, which
+reads the four known head fields (`description`, `image`, `robots`, `author`) off an entry's
+normalized frontmatter, keeping a present string trimmed and omitting an absent, empty, or
+non-string value, and `resolveImageUrl`, which turns an author-supplied path absolute against
+the origin and returns `undefined` for a malformed string rather than throwing at build. Both
+are re-exported from the delivery and root entries. `entryLoad` now reads the SEO fields once,
+applies the description fallback (`fields.description || entry.excerpt || description`) and the
+default-image fallback (`fields.image ?? defaultImage`), resolves the chosen image absolute,
+and spreads `image`/`robots`/`author` into the unchanged `buildSeoMeta`. `PublicRoutesDeps`
+gained an optional `defaultImage`, the one site-wide OG image. Showcase wiring declares `image`
+and `author` on posts and `robots` on pages, sets values on the hello post and the about page,
+and passes a `defaultImage`. Version bumped to `0.14.0`, an additive minor rolling on the
+unpublished window over `0.13.0`.
+
+**What was verified.** End-to-end proof is the showcase production prerender, confirmed in
+the prerendered HTML: the hello post carries its own `og:image`
+`https://showcase.test/og/hello.png` and `article:author` `Showcase Author`, the second post
+(which declares no image) carries the default `og:image`
+`https://showcase.test/og/default.png`, and the about page carries `robots` `noindex`. Final
+gate at the tip (`bfeca52`): `npm run check` 751 files 0/0, `npm test` 96 files / 450 tests
+exit 0, `check:package` all-green across the existing entries with no export-condition change.
+
+**Review gate.** A code-simplifier pass found nothing to change (the explicit `SeoFields`
+interface matches `seo.ts` idiom, and the spread-merge mirrors the existing `published`/
+`modified` pattern). A `svelte-reviewer` (Opus) confirmed the load is prerender-safe with
+correct fallback precedence and non-throwing error handling, no Critical or Important findings.
+The other three specialized reviewers did not apply (no Worker, D1, auth, session, cookie, or
+DaisyUI code). Three reviewer findings folded in as `bfeca52`: `readSeoFields` now stores the
+trimmed value (it had gated on the trimmed value but stored the raw one, so a stray
+`robots: "  noindex  "` reached the head with surrounding whitespace), and two docstrings now
+state the scope (`author` renders only for a dated entry's `article:author`, and the bare-path
+anchoring holds for the sites' bare-domain origin). No `/admin` surface changed, so the live
+admin smoke does not apply.
+
+**Decisions locked.** The site-level default is the OG image only (`deps.defaultImage`), with
+`robots` and `author` strictly per-entry. The cross-concept catch-all reads the SEO fields by
+name off the normalized `.frontmatter` through the small typed reader; the typed payoff is the
+full schema-to-head loop, not a statically typed catch-all. The site-migration rule stands:
+every frontmatter key a site reads must be declared in its concept schema, or validate-once
+drops it and the read serves `undefined`.
+
+**Deviation.** Task 2's draft test fixture omitted a URL policy, so the dated assertion paths
+(`/2026/05/14/welcome`) would have 404'd under the default `/posts/:slug` permalink. The
+implementer added `{ posts: { permalink: '/:year/:month/:day/:slug' } }` as the second
+`normalizeConcepts` argument, matching the test's own `og:type: article` and
+`article:published_time` assertions. Test-fixture correction only; no production logic moved.
+
+**Carried follow-ups.** The residual delivery items stay a small separate pass after the schema
+initiative and before the site migrations: the feed/excerpt/permalink robustness guards, the
+failure-path `frontmatter` typing, the reserved-`site`-key guard, and the silent-empty-glob
+warning. Publishing the `0.13.0`/`0.14.0` window is a separate release step, not urgent until
+the backlog clears.

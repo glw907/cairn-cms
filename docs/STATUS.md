@@ -6,10 +6,13 @@ orientation is the workspace `CLAUDE.md`. Locked architecture decisions and the 
 the functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`).
 Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`.
 
-## Where the work is (2026-06-02, render-safety pass executed, unpublished 0.17.0)
+## Where the work is (2026-06-02, render-safety pass executed, PUBLISHED 0.17.0)
 
 The render-safety pass executed subagent-driven on `main`, one `cairn-implementer` per task (Sonnet), commits
-`ae69a50..d86788a`. That is the five plan-task commits, one review-gate doc fold-in (`8aee8a7`), and the
+`ae69a50..d86788a`. **`main` is pushed (`dbbef00..5074476`) and the window is PUBLISHED as `0.17.0`, now `latest`
+on npm** (OIDC trusted-publishing workflow off the `v0.17.0` GitHub Release, build provenance attached). The single
+publish rolled the unpublished `0.15.0` (delivery robustness), `0.16.0` (auth hardening), and `0.17.0`
+(render safety) window into one release over the registry's prior `0.14.0`. That is the five plan-task commits, one review-gate doc fold-in (`8aee8a7`), and the
 post-mortem (`d86788a`). Local only, not pushed, not published. It closes the escalated render-safety gap: the
 engine render pipeline now sanitizes author content by default. `createRenderer` inserts `rehype-sanitize` after
 `rehype-raw` and before the component dispatch, so author markdown (raw HTML, link URLs, slot bodies) is cleaned
@@ -43,14 +46,19 @@ not engine code. A possible URL-coercing build helper is a carried follow-up. Pl
 **Live admin smoke:** no `/admin` server surface changed, so it does not apply. The editor preview is covered by
 the browser component tests, and the showcase prerender covers the delivery path.
 
-**Immediate next action: publish, batching the `0.16.0` and `0.17.0` window into one release** (the auth-hardening
-and render-safety landings, both held local). Use the OIDC trusted-publishing workflow off a `v0.17.0` GitHub
-Release, push `main` first. **Then the site migrations follow** (per-site `site-pass`, ecnordic then 907, from each
-site's own repo), pinning `^0.17.0`. The migration gotchas still apply: every declared concept must pass its
-`import.meta.glob` to `createSiteIndexes` (an empty `{}` for an intentionally empty concept), and every frontmatter
-key a site reads must be declared in its concept schema. A migrating site that needs a benign tag the default
-sanitize allowlist omits extends it through `createRenderer(registry, { sanitizeSchema })`. The render-safety gap
-is closed, so the delivery surface is now safe for a site to adopt.
+**Immediate next action: the site migrations** (per-site `site-pass`, ecnordic then 907, from each site's own
+repo), pinning `^0.17.0`. Publishing is DONE (`0.17.0` is `latest`), so a site can pin the range now. Each site
+imports from `@glw907/cairn-cms/delivery`, applies the `renderPreview`-to-`render` rename, builds its content layer
+with `siteDescriptors` + `createSiteIndexes`, adopts the `responses.ts` feed/sitemap/robots helpers and the
+`<CairnHead>` head, wires the catch-all `[...path]` route, and sets its per-concept URL policy in the YAML. The
+migration gotchas apply: every declared concept must pass its `import.meta.glob` to `createSiteIndexes` (an empty
+`{}` for an intentionally empty concept), every frontmatter key a site reads must be declared in its concept
+schema, and a hand-rolled `validate` must coerce an unquoted YAML `date` (a JS `Date`). A site that needs a benign
+tag the default sanitize allowlist omits extends it through `createRenderer(registry, { sanitizeSchema })`. The
+render-safety gap is closed, so the delivery surface is now safe for a site to adopt. Breaking notes a consuming
+site honors at the bump: the `MarkdownEditor` `preview` prop is gone (since `0.9.0`), `ComponentDef.build` is
+`build(ctx)` (since `0.12.0`), and the adapter takes one `schema` member via `defineFields`/`defineAdapter` (since
+`0.13.0`).
 
 ## Where the work is (2026-06-02, auth-hardening pass executed, unpublished 0.16.0)
 
@@ -572,13 +580,13 @@ Do these in order.
    (done). The interactive browser smoke remains a fast-follow: live keyboard behavior in the showcase admin
    editor (typing, the focus ring, toolbar formatting, the palette insert, the preview toggle). Pushing
    cairn-cms `main` does not deploy a site (only the site repos deploy on push).
-0a. Publishing: the registry carries up to `0.14.0` (`latest`, published 2026-06-02), which rolled the
-   `0.12.0` (slot render), `0.13.0` (schema contract cutover), and `0.14.0` (per-entry SEO head) window
-   into one release. A migrating site can import `@glw907/cairn-cms/delivery` and pin `^0.14.0`. Breaking
-   notes a consuming site must honor at the bump: the `MarkdownEditor` `preview` prop is gone (since
-   `0.9.0`), `ComponentDef.build` is now `build(ctx)` (since `0.12.0`), and the adapter contract takes one
-   `schema` member via `defineFields`/`defineAdapter` (since `0.13.0`).
-1. Migrate each site onto the published delivery surface (`^0.14.0`), one per-site
+0a. Publishing: the registry carries `0.17.0` (`latest`, published 2026-06-02), which rolled the `0.15.0`
+   (delivery robustness), `0.16.0` (auth hardening), and `0.17.0` (render safety) window into one release
+   over the prior `0.14.0`. A migrating site can import `@glw907/cairn-cms/delivery` and pin `^0.17.0`.
+   Breaking notes a consuming site must honor at the bump: the `MarkdownEditor` `preview` prop is gone
+   (since `0.9.0`), `ComponentDef.build` is now `build(ctx)` (since `0.12.0`), and the adapter contract
+   takes one `schema` member via `defineFields`/`defineAdapter` (since `0.13.0`).
+1. Migrate each site onto the published delivery surface (`^0.17.0`), one per-site
    `site-pass`, from that site's own directory. Each imports from `@glw907/cairn-cms/delivery`, applies
    the `renderPreview`-to-`render` rename, builds the content layer with `siteDescriptors` +
    `createSiteIndex` (which now validates frontmatter at build), adopts the `responses.ts` feed/sitemap/

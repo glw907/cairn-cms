@@ -37,20 +37,22 @@ function cdataSafe(value: string): string {
   return value.replace(/]]>/g, ']]]]><![CDATA[>');
 }
 
-/** Format a YYYY-MM-DD (or ISO) string as an RFC-822 date in UTC, as RSS wants. Returns undefined
- *  for an absent or unparseable date, so the item omits its pubDate rather than emit Invalid Date. */
-function rfc822(date?: string): string | undefined {
+/** Parse a YYYY-MM-DD (or ISO) string as a UTC instant. Returns undefined for an absent or
+ *  unparseable date, so a feed omits the date field rather than emit Invalid Date or throw. */
+function parseFeedDate(date?: string): Date | undefined {
   if (!date) return undefined;
   const at = new Date(`${date.slice(0, 10)}T00:00:00.000Z`);
-  return Number.isNaN(at.getTime()) ? undefined : at.toUTCString();
+  return Number.isNaN(at.getTime()) ? undefined : at;
 }
 
-/** Format a YYYY-MM-DD (or ISO) string as an ISO-8601 instant in UTC. Returns undefined for an
- *  absent or unparseable date, so the item omits its date_published rather than throw at build. */
+/** Format a date as an RFC-822 string in UTC, as RSS wants, or undefined when it cannot parse. */
+function rfc822(date?: string): string | undefined {
+  return parseFeedDate(date)?.toUTCString();
+}
+
+/** Format a date as an ISO-8601 instant in UTC, or undefined when it cannot parse. */
 function iso(date?: string): string | undefined {
-  if (!date) return undefined;
-  const at = new Date(`${date.slice(0, 10)}T00:00:00.000Z`);
-  return Number.isNaN(at.getTime()) ? undefined : at.toISOString();
+  return parseFeedDate(date)?.toISOString();
 }
 
 /** Build an RSS 2.0 document. */

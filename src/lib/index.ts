@@ -120,6 +120,7 @@ export type {
   ContentSummary,
   ContentEntry,
   ContentIndex,
+  ContentProblem,
 } from './delivery/content-index.js';
 export { createSiteIndex } from './delivery/site-index.js';
 export type { SiteIndex, ConceptIndex } from './delivery/site-index.js';

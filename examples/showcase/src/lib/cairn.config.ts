@@ -46,6 +46,9 @@ export const cairn = defineAdapter({
       schema: defineFields([
         { type: 'text', name: 'title', label: 'Title', required: true },
         { type: 'date', name: 'date', label: 'Date' },
+        // The post files carry a description the SEO head reads; declare it so it survives the
+        // validate-once read. Every frontmatter key a site reads must be in its schema.
+        { type: 'textarea', name: 'description', label: 'Description' },
       ]),
     },
     pages: {

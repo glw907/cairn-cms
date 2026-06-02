@@ -14,6 +14,14 @@ describe('requireOrigin', () => {
   it('throws when the origin is empty', () => {
     expect(() => requireOrigin({ PUBLIC_ORIGIN: '' })).toThrow(/PUBLIC_ORIGIN/);
   });
+
+  it('allows http on localhost for dev', () => {
+    expect(requireOrigin({ PUBLIC_ORIGIN: 'http://localhost:5173' })).toBe('http://localhost:5173');
+  });
+
+  it('throws on a non-https origin that is not local', () => {
+    expect(() => requireOrigin({ PUBLIC_ORIGIN: 'http://ecnordic.ski' })).toThrow(/https/);
+  });
 });
 
 describe('requireDb', () => {

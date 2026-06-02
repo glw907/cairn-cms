@@ -13,6 +13,12 @@ export function requireOrigin(env: { PUBLIC_ORIGIN?: string }): string {
   if (!origin) {
     throw new Error('PUBLIC_ORIGIN is not configured');
   }
+  // The magic-link origin must be https in production so the link and the __Host- cookie are
+  // origin-bound. http is allowed only for local dev on localhost.
+  const isLocal = origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1');
+  if (!origin.startsWith('https://') && !isLocal) {
+    throw new Error(`PUBLIC_ORIGIN must be https in production, got ${origin}`);
+  }
   return origin;
 }
 

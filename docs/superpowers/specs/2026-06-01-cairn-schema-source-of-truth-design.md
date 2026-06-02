@@ -5,6 +5,13 @@
 > migrations. Supersedes the typed-reads framing in
 > `2026-06-01-cairn-engine-backlog-and-slot-render-design.md`; the residual delivery items
 > from that Pass 2 become a small follow-up.
+>
+> Pressure-tested 2026-06-01 against comparable systems (Keystatic, TinaCMS, Astro Content
+> Collections, Velite, Contentlayer, Nuxt Content, Sanity, Payload, Decap). The review confirmed
+> the core unification and the no-codegen inference choice, and drove four revisions folded in
+> below: the anti-Zod rationale is corrected, declarative per-field validation rules are added,
+> the validator conforms to the Standard Schema interface, and the load-bearing invariants are
+> written down.
 
 ## Why this exists
 
@@ -47,13 +54,23 @@ field projection for the editor form, a validator that produces normalized data 
 errors, and a static type inferred from the declaration. The three cannot drift, because they
 come from one place.
 
-This is the schema-library pattern (Zod, Valibot) adapted to one constraint those libraries do
-not meet. cairn's field descriptors are plain serializable data on purpose, because they cross
-the server-to-client boundary to drive the editor form. A schema-library object does not
-serialize across that boundary, and it carries no UI metadata (which field is a closed-vocabulary
-`tags` versus a `freetags`, which is a `textarea`), so adopting one would force a separate UI
-declaration and lose the single-source win. cairn owns a small primitive shaped to its own field
-union instead.
+This is the schema-library pattern (Zod, Valibot) adapted to cairn's editor constraint. The field
+descriptors are plain serializable data on purpose, because they cross the server-to-client
+boundary to drive the editor form. A validation library can reach a form. Nuxt Content drives a
+live editor from a Zod schema by serializing it to JSON Schema and attaching UI metadata through
+an `.editor()` extension, and Valibot schemas are plain introspectable objects with first-class
+metadata. cairn still owns its primitive, for three reasons that survive that fact:
+
+- JSON Schema is a lossy wire format. It cannot express cairn's richer editor field types, such as
+  the component-slot picker and the `cairn:<concept>/<id>` internal-link token, without escaping
+  into vendor extensions.
+- A metadata side-channel stapled onto a validator splits the declaration into two layers. cairn's
+  one field descriptor carrying type, label, options, and rules is single-homed and reads cleaner.
+- Owning a small primitive avoids tracking a validator's major-version inference churn, which fits
+  the lean-core stance.
+
+Conforming to the Standard Schema interface (see below) recovers the ecosystem interop without
+taking on the dependency.
 
 ## The schema primitive
 
@@ -62,26 +79,38 @@ and its validation rules in the same object:
 
 ```ts
 const posts = defineFields([
-  { name: 'title',       type: 'text',     label: 'Title',       required: true },
+  { name: 'title',       type: 'text',     label: 'Title',       required: true, max: 120 },
   { name: 'date',        type: 'date',     label: 'Date',        required: true },
-  { name: 'description', type: 'textarea', label: 'Description'                  },
+  { name: 'description', type: 'textarea', label: 'Description',  max: 280 },
+  { name: 'slug',        type: 'text',     label: 'Slug',        pattern: '^[a-z0-9-]+$' },
   { name: 'tags',        type: 'tags',     label: 'Tags',        options: ['trip-report', 'gear', 'news'] },
-  { name: 'image',       type: 'text',     label: 'Social image'                 },
-  { name: 'draft',       type: 'boolean',  label: 'Draft'                        },
+  { name: 'image',       type: 'text',     label: 'Social image' },
+  { name: 'draft',       type: 'boolean',  label: 'Draft' },
 ])
 ```
+
+The per-field rules beyond `required` are declarative and plain data, so they cross the boundary
+and serve both inline form hints and server validation: `min` and `max` (string length or numeric
+and date bounds), `length` (an exact-or-bounded length), and `pattern` (a regex). `pattern` is
+stored as its string source rather than a `RegExp`, so the projection stays plain JSON and the
+validator compiles it. Async validation is out of scope, since cairn validates at commit time
+under low concurrency, and an async rule would not serialize.
 
 `defineFields` uses a `const` type parameter, so it captures the literal field types without the
 site writing `as const`. It returns one `ConceptSchema` object with three faces:
 
 - **`.fields`**: plain `FrontmatterField[]`, with any functions stripped. This matches today's
   shape exactly, so the editor form code that crosses the server-to-client boundary is unchanged.
-- **`.validate(frontmatter, body)`**: generated from the field rules. It checks required, coerces
-  per type (a `date` to a `YYYY-MM-DD` string, `tags` to members of the closed vocabulary, a
-  `boolean` to a real boolean, a `freetags` input split from its comma form), returns field-keyed
-  errors for the form, and on success returns the normalized `data`. An optional
-  `refine(data, body)` hook carries cross-field and body-dependent rules, and its errors merge
-  with the per-field errors.
+- **`.validate(frontmatter, body)`**: generated from the field rules. It checks required and the
+  declarative per-field rules (`min`, `max`, `length`, `pattern`), coerces per type (a `date` to a
+  `YYYY-MM-DD` string, `tags` to members of the closed vocabulary, a `boolean` to a real boolean, a
+  `freetags` input split from its comma form), returns field-keyed errors for the form, and on
+  success returns the normalized `data`. The coercion is a normalize-on-write step: it canonicalizes
+  what an author typed (a loosely-formatted date, untrimmed tags) before the commit. That is
+  distinct from read-derivation: computed values such as `excerpt`, `wordCount`, `slug`, and
+  `permalink` stay in the content index, so the schema never becomes a second home for derived data.
+  An optional `refine(data, body)` hook carries cross-field and body-dependent rules, and its errors
+  merge with the per-field errors.
 - **The inferred type**: `Infer<typeof posts>` walks the field tuple and maps each field to a TS
   type, respecting `required`. text, textarea, and date map to `string`; boolean to `boolean`;
   `tags` to an array of the option union (`('trip-report' | 'gear' | 'news')[]`); freetags to
@@ -103,6 +132,23 @@ everything computed. Neither site has a cross-field default or a computed author
 
 If a real transform need appears later, the clean addition is a separate `derive` step rather
 than overloading `refine`. That is additive and non-breaking, so deferring it now closes no door.
+
+### Standard Schema conformance
+
+The `ConceptSchema` exposes a `~standard` property implementing the Standard Schema interface
+(`version: 1`, `vendor: 'cairn'`), the spec the Zod, Valibot, and ArkType authors share. This is a
+thin adapter over the native validator with no runtime dependency, roughly twenty lines. The native
+`.validate(frontmatter, body)` and its field-keyed `{ ok, data | errors }` result stay the primary
+API, because the editor form wants errors keyed by field rather than the Standard Schema flat
+`issues` array with a `path`. The `~standard.validate` wrapper takes a single `{ frontmatter, body }`
+argument (Standard Schema is single-argument), maps a success to `{ value: data }`, and maps a
+failure to `{ issues: [{ message, path: [field] }] }`.
+
+The payoff is interop without coupling. cairn's validator becomes a drop-in anywhere the ecosystem
+accepts a Standard Schema (form libraries, routers, future tooling), and the same interface is the
+clean future seam for a site that wants to supply its own Zod or Valibot validator for a field's
+custom logic, with cairn still owning the UI projection. cairn takes no validation-library
+dependency to get either.
 
 ## The adapter contract changes
 
@@ -200,6 +246,31 @@ from the typed frontmatter and resolves a relative image to absolute via the ori
 tag when its field is absent. A site declares `image`, `robots`, and `author` as optional schema
 fields, so the editor form surfaces them and the reads are typed.
 
+## Load-bearing invariants
+
+These properties are why the no-codegen choice is safe, so they are part of the contract, not
+incidental. The competitive review showed that the systems which codegen do so to escape one of
+these constraints, and the systems that infer at runtime (Keystatic) hold them.
+
+- **Frontmatter is flat scalar fields only.** text, textarea, date, boolean, tags, freetags, and
+  the additive `reference` kind below. Structured and nested content is the component-slot system's
+  domain, not frontmatter. A flat record keeps the YAML header diff-friendly and human-editable,
+  keeps the editor form simple for a non-technical author, and keeps the type a clean record.
+- **Runtime inference is contingent on that flatness.** `Infer` is a single-level, non-recursive
+  mapped type over the field tuple. Sanity and Payload codegen partly because deep nesting and query
+  strings defeat runtime inference; cairn has neither, so inference stays legible and fast. A future
+  feature that adds nesting or unions to frontmatter must reconsider codegen rather than silently
+  degrade the inference, so it is a deliberate trigger, not a default.
+- **The inference is guarded.** The build pins `moduleResolution` to `nodenext` or `bundler` to
+  avoid the duplicate-declaration slowdown, and a type-level smoke test (`expectTypeOf` over a known
+  schema plus one deliberate mismatch) gates CI, so an inference regression fails the build instead
+  of surfacing as an inscrutable editor error.
+- **The field-kind union stays open for additive growth.** A `reference`/`relation` kind (cairn's
+  `cairn:<concept>/<id>` internal-link token is a typed pointer by another name) can slot in later
+  without reshaping existing fields or the wire format. The kind is reserved as a design
+  consideration here, not specified now, since its shape follows the internal-link feature when that
+  is built.
+
 ## Scope
 
 In scope: the schema primitive, the contract cutover, full-auto typed reads, validate-once
@@ -222,12 +293,15 @@ work: `Infer<typeof schema>` maps each field type correctly with required versus
 type; optional concepts resolve; and an adapter declared through `defineAdapter` keeps its concrete
 schema types.
 
-**Runtime unit tests** cover the `.fields` projection (plain serializable data, `refine` stripped);
-the generated `.validate` (required, per-type coercion, vocabulary rejection, the freetags split,
-field-keyed errors, normalized `data`); the `refine` error merge; the `normalizeConcepts` unpack; a
-normalized read through `byId`; drafts skipping the build gate; the aggregator throwing one combined
-report on invalid non-drafts; the `validate: false` opt-out; and the SEO head reading image, robots,
-and author with relative-image resolution.
+**Runtime unit tests** cover the `.fields` projection (plain serializable data, `refine` stripped,
+`pattern` as a string source); the generated `.validate` (required, the `min`/`max`/`length`/
+`pattern` rules, per-type coercion, vocabulary rejection, the freetags split, field-keyed errors,
+normalized `data`); the normalize-on-write coercion (a loosely-formatted date canonicalized, tags
+trimmed); the `refine` error merge; the `~standard` adapter mapping a success to `{ value }` and a
+failure to `{ issues: [{ message, path }] }`; the `normalizeConcepts` unpack; a normalized read
+through `byId`; drafts skipping the build gate; the aggregator throwing one combined report on
+invalid non-drafts; the `validate: false` opt-out; and the SEO head reading image, robots, and
+author with relative-image resolution.
 
 **The showcase build is the end-to-end gate**, as in the slot-render pass. The showcase migrates to
 `defineFields` and `defineAdapter`, and the production prerender proves the whole path, including a
@@ -240,9 +314,10 @@ the just-in-time practice, only the spec is written now; Plan 1 follows after th
 and plans 2 and 3 are written after each prior one lands.
 
 1. **The schema primitive.** `defineFields`, `ConceptSchema`, the generated validator (absorbing
-   `validateFields`), `refine`, and `Infer`. Fully additive, zero blast radius, no contract or site
-   change. It de-risks the type machinery in isolation and lands first, because nothing else can
-   build on it until it is proven.
+   `validateFields`) with the declarative per-field rules (`min`, `max`, `length`, `pattern`) and
+   the `refine` hook, `Infer`, and the `~standard` Standard Schema property. Fully additive, zero
+   blast radius, no contract or site change. It de-risks the type machinery in isolation and lands
+   first, because nothing else can build on it until it is proven.
 2. **The contract cutover plus the read path.** `ConceptConfig` becomes `{ schema }` and generic,
    `defineAdapter`, the `normalizeConcepts` unpack, the `createSiteIndexes` full-auto helper,
    validate-once normalized reads, and skip-drafts. The showcase migrates in the same plan, because

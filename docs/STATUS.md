@@ -6,6 +6,50 @@ orientation is the workspace `CLAUDE.md`. Locked architecture decisions and the 
 the functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`).
 Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`.
 
+## Where the work is (2026-06-02, content-graph initiative planned, Plan 1 written)
+
+The content-graph initiative is the active engine work, sequenced **before** the site migrations (decided this
+session, migration is unhurried so the slot ahead of it is the accepted trade). It gives cairn a committed,
+build-verified manifest projection of the corpus that request-time admin code reads without an N+1 GitHub crawl,
+and it powers rot-proof internal links between posts and pages, a link-aware editor picker, and safe
+delete/rename with inbound-link rewriting. It absorbs and supersedes the retired internal-links design and the
+dated-slug deferred lifecycle items.
+
+The spec is written and approved: `docs/superpowers/specs/2026-06-02-cairn-content-graph-design.md`. The spine is
+"files are truth, the manifest is a build-verified projection, every content mutation commits content and manifest
+atomically." Two rationales are recorded in it so they are not re-litigated: why a stable-id `cairn:<concept>/<id>`
+token rather than the Obsidian `[[wikilink]]` format (grounded in a verified 2026 competitive survey: not a
+portable standard, name-based rot, literal-text degradation; the `[[` trigger is kept only as an insert gesture
+that writes the id token), and why the link graph is a git-committed manifest rather than D1 (the resolver and
+build-fail backstop run at build, where a runtime D1 binding is unreachable). The git-versus-D1 placement rule is
+now its own canonical reference, `docs/data-architecture.md` (the build-versus-runtime test plus the three worked
+precedents: config/nav to git, the manifest to git, the editor allowlist staying in D1).
+
+The initiative is five foundation-first plans, each written just-in-time after the prior lands: (1) the atomic
+multi-file commit primitive, (2) the committed manifest, (3) the token + build-time resolver + build backstop +
+preview broken-link flag, (4) the picker (toolbar dialog + `[[` autocomplete), (5) content delete/rename + the
+save and delete integrity guards. **Plan 1 is written and committed:**
+`docs/superpowers/plans/2026-06-02-cairn-content-graph-01-atomic-commit.md` (three test-first tasks adding
+`commitFiles` to `src/lib/github/repo.ts`: the write-only Git Data API sequence, delete encoding, and the
+non-fast-forward retry with a `CommitConflictError` backstop). It is the highest-stakes code in the initiative
+(it writes to `main` and triggers site deploys), so it lands and is verified in isolation before anything builds
+on it. Plan 1 is internal and additive (no package export, no version bump). One spec correction baked into the
+plan: the GitHub layer is unit-tested by stubbing `fetch` (the `github-commit.test.ts` pattern), not in the
+integration project, which has no GitHub double.
+
+**Immediate next action: execute the content-graph Plan 1,
+`docs/superpowers/plans/2026-06-02-cairn-content-graph-01-atomic-commit.md`, `subagent-driven`
+(`superpowers:subagent-driven-development`, one `cairn-implementer` per task, Sonnet default), from the cairn-cms
+directory on `main`. Start at Task 1.** The design is settled (skip brainstorming). It runs on `main` directly
+(internal, no site deploys on a cairn-cms push). The pass-end review gate is `cloudflare-workers-reviewer` (Opus)
+plus a high-effort `/code-review` on the Git Data API sequence and the non-fast-forward retry; the other three
+reviewers and the live admin smoke do not apply (no Svelte, auth, session, cookie, or DaisyUI code, and no route
+calls `commitFiles` yet). After Plan 1 lands, draft Plan 2 (the committed manifest) just-in-time.
+
+The site migrations (ecnordic then 907, `^0.17.0`) follow the whole initiative, so each site wires its complete
+content layer (delivery, resolver, manifest) in one site-pass and the scaffolder template captures the full
+picture. The migration gotchas in the entries below still apply.
+
 ## Where the work is (2026-06-02, render-safety pass executed, PUBLISHED 0.17.0)
 
 The render-safety pass executed subagent-driven on `main`, one `cairn-implementer` per task (Sonnet), commits
@@ -46,7 +90,10 @@ not engine code. A possible URL-coercing build helper is a carried follow-up. Pl
 **Live admin smoke:** no `/admin` server surface changed, so it does not apply. The editor preview is covered by
 the browser component tests, and the showcase prerender covers the delivery path.
 
-**Immediate next action: the site migrations** (per-site `site-pass`, ecnordic then 907, from each site's own
+**Superseded next action (see the top entry):** the site migrations now follow the content-graph initiative, which
+was sequenced ahead of them this session. The migration detail below stays accurate for when that time comes.
+
+The site migrations (per-site `site-pass`, ecnordic then 907, from each site's own
 repo), pinning `^0.17.0`. Publishing is DONE (`0.17.0` is `latest`), so a site can pin the range now. Each site
 imports from `@glw907/cairn-cms/delivery`, applies the `renderPreview`-to-`render` rename, builds its content layer
 with `siteDescriptors` + `createSiteIndexes`, adopts the `responses.ts` feed/sitemap/robots helpers and the

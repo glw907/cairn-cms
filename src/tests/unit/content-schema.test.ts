@@ -79,3 +79,32 @@ describe('defineFields: declarative per-field rules', () => {
     expect(r.ok).toBe(true);
   });
 });
+
+const withRefine = defineFields(
+  [
+    { name: 'title', type: 'text', label: 'Title', required: true },
+    { name: 'date', type: 'date', label: 'Date', required: true },
+    { name: 'updated', type: 'date', label: 'Updated' },
+  ],
+  {
+    refine: (data) => {
+      // data is the normalized frontmatter, typed.
+      expectTypeOf(data.title).toEqualTypeOf<string>();
+      if (data.updated && data.updated < data.date) return { updated: 'Updated cannot precede the date' };
+      return undefined;
+    },
+  },
+);
+
+describe('defineFields: refine', () => {
+  it('returns a refine error when the cross-field rule fails', () => {
+    const r = withRefine.validate({ title: 'x', date: '2026-02-01', updated: '2026-01-01' }, '');
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors.updated).toMatch(/cannot precede/);
+  });
+
+  it('passes when refine returns nothing', () => {
+    const r = withRefine.validate({ title: 'x', date: '2026-02-01', updated: '2026-02-02' }, '');
+    expect(r.ok).toBe(true);
+  });
+});

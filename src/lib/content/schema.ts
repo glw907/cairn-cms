@@ -56,15 +56,27 @@ function applyRules(field: FrontmatterField, value: unknown, errors: Record<stri
   }
 }
 
+/** Options for `defineFields`. `refine` runs after the per-field rules pass, for cross-field and
+ *  body-dependent checks. It is validation-only: it returns field-keyed errors to merge, or
+ *  nothing, and never transforms the data. */
+export interface DefineFieldsOptions<F extends readonly FrontmatterField[]> {
+  refine?: (data: InferFields<F>, body: string) => Record<string, string> | undefined;
+}
+
 /** Declare a concept's fields once. Returns the schema's faces derived from that one declaration. */
-export function defineFields<const F extends readonly FrontmatterField[]>(fields: F): ConceptSchema<F> {
+export function defineFields<const F extends readonly FrontmatterField[]>(
+  fields: F,
+  options: DefineFieldsOptions<F> = {},
+): ConceptSchema<F> {
   const list = [...fields] as FrontmatterField[];
-  const validate = (frontmatter: Record<string, unknown>, _body: string): ValidationResult => {
+  const validate = (frontmatter: Record<string, unknown>, body: string): ValidationResult => {
     const base = validateFields(list, frontmatter);
     if (!base.ok) return base;
     const errors: Record<string, string> = {};
     for (const field of list) applyRules(field, base.data[field.name], errors);
-    return Object.keys(errors).length > 0 ? { ok: false, errors } : base;
+    if (Object.keys(errors).length > 0) return { ok: false, errors };
+    const refined = options.refine?.(base.data as InferFields<F>, body);
+    return refined && Object.keys(refined).length > 0 ? { ok: false, errors: refined } : base;
   };
   return { fields: list, validate };
 }

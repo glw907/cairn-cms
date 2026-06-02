@@ -37,3 +37,16 @@ export function applyMarkdownFormat(doc: string, from: number, to: number, kind:
   const added = prefixed.length - region.length;
   return { doc: doc.slice(0, lineStart) + prefixed + doc.slice(to), from: from + prefix.length, to: to + added };
 }
+
+/**
+ * Insert an inline markdown link at the selection. With a non-empty selection the selected text
+ * becomes the display text; with an empty selection the title is the display text. The cursor
+ * collapses just after the inserted link. Unlike the block insert, this adds no surrounding
+ * blank lines, since a link is inline. Pure, so the editor dispatches the result.
+ */
+export function insertInlineLink(doc: string, from: number, to: number, href: string, title: string): FormatResult {
+  const text = from < to ? doc.slice(from, to) : title;
+  const inserted = `[${text}](${href})`;
+  const end = from + inserted.length;
+  return { doc: doc.slice(0, from) + inserted + doc.slice(to), from: end, to: end };
+}

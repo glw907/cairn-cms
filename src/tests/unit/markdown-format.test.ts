@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { applyMarkdownFormat, type FormatKind } from '../../lib/components/markdown-format.js';
+import { applyMarkdownFormat, insertInlineLink, type FormatKind } from '../../lib/components/markdown-format.js';
 
 describe('applyMarkdownFormat', () => {
   const wrap: { kind: FormatKind; doc: string; out: string; from: number; to: number }[] = [
@@ -30,5 +30,26 @@ describe('applyMarkdownFormat', () => {
 
   it('prefixes every line of a multi-line selection', () => {
     expect(applyMarkdownFormat('a\nb', 0, 3, 'heading')).toEqual({ doc: '# a\n# b', from: 2, to: 7 });
+  });
+});
+
+describe('insertInlineLink', () => {
+  it('wraps a selection as the display text', () => {
+    const doc = 'see the guide here';
+    const from = 8; // 'guide'
+    const to = 13;
+    const res = insertInlineLink(doc, from, to, 'cairn:posts/guide', 'Guide');
+    expect(res.doc).toBe('see the [guide](cairn:posts/guide) here');
+    // the cursor collapses just after the inserted link
+    expect(res.from).toBe(res.to);
+    expect(res.doc.slice(0, res.from)).toBe('see the [guide](cairn:posts/guide)');
+  });
+  it('inserts the title as the display text when there is no selection', () => {
+    const doc = 'see  here';
+    const at = 4; // between the two spaces
+    const res = insertInlineLink(doc, at, at, 'cairn:pages/about', 'About');
+    expect(res.doc).toBe('see [About](cairn:pages/about) here');
+    expect(res.from).toBe(res.to);
+    expect(res.doc.slice(0, res.from)).toBe('see [About](cairn:pages/about)');
   });
 });

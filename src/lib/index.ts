@@ -49,6 +49,22 @@ export {
   composeDatedId,
 } from './content/ids.js';
 export type { DatePrefix } from './content/ids.js';
+// Internal-link token and the committed content manifest (content-graph design). The corpus
+// builder and the request-time resolver ship from the delivery entry; this surface is the
+// grammar, the manifest operations, and their types a migrating site adopts.
+export { parseCairnToken, extractCairnLinks } from './content/links.js';
+export type { CairnRef, LinkResolve } from './content/links.js';
+export {
+  serializeManifest,
+  parseManifest,
+  emptyManifest,
+  verifyManifest,
+  upsertEntry,
+  removeEntry,
+  manifestEntryFromFile,
+  manifestLinkResolver,
+} from './content/manifest.js';
+export type { Manifest, ManifestEntry, LinkTarget } from './content/manifest.js';
 // Render engine (Plan 04): generic directive pipeline; sites own the component registry.
 export { defineRegistry, emptyValues } from './render/registry.js';
 export type {

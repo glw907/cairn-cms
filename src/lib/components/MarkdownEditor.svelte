@@ -9,7 +9,7 @@ preview lives in EditPage through the adapter's render. Swapping the editor stay
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import EditorToolbar from './EditorToolbar.svelte';
-  import { applyMarkdownFormat, type FormatKind } from './markdown-format.js';
+  import { applyMarkdownFormat, insertInlineLink, type FormatKind } from './markdown-format.js';
 
   interface Props {
     /** The markdown source; bindable so the parent reads edits back. */
@@ -18,9 +18,11 @@ preview lives in EditPage through the adapter's render. Swapping the editor stay
     name: string;
     /** Receives a `(text) => void` that inserts at the cursor; the palette calls it. */
     registerInsert?: (insert: (text: string) => void) => void;
+    /** Receives a `(href, title) => void` that inserts an inline link; the link picker calls it. */
+    registerInsertLink?: (insert: (href: string, title: string) => void) => void;
   }
 
-  let { value = $bindable(), name, registerInsert }: Props = $props();
+  let { value = $bindable(), name, registerInsert, registerInsertLink }: Props = $props();
 
   let host = $state<HTMLDivElement | null>(null);
   let mounted = $state(false);
@@ -69,6 +71,7 @@ preview lives in EditPage through the adapter's render. Swapping the editor stay
     });
 
     registerInsert?.(insertAtCursor);
+    registerInsertLink?.(insertLink);
     mounted = true;
   });
 
@@ -93,6 +96,18 @@ preview lives in EditPage through the adapter's render. Swapping the editor stay
     const prefix = pos > 0 ? '\n\n' : '';
     const insert = `${prefix}${text}`;
     view.dispatch({ changes: { from: pos, insert }, selection: { anchor: pos + insert.length } });
+    view.focus();
+  }
+
+  function insertLink(href: string, title: string) {
+    if (!view) return;
+    const { from, to } = view.state.selection.main;
+    const doc = view.state.doc.toString();
+    const next = insertInlineLink(doc, from, to, href, title);
+    view.dispatch({
+      changes: { from: 0, to: doc.length, insert: next.doc },
+      selection: { anchor: next.from, head: next.to },
+    });
     view.focus();
   }
 

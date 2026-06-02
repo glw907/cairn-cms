@@ -33,6 +33,22 @@ describe('MarkdownEditor', () => {
       .toContain('INSERTED');
   });
 
+  it('inserts an inline link through registerInsertLink', async () => {
+    let insertLink: ((href: string, title: string) => void) | undefined;
+    const screen = render(MarkdownEditor, {
+      value: 'start',
+      name: 'body',
+      registerInsertLink: (fn: (href: string, title: string) => void) => {
+        insertLink = fn;
+      },
+    });
+    await expect.poll(() => typeof insertLink).toBe('function');
+    insertLink!('cairn:pages/about', 'About');
+    await expect
+      .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
+      .toContain('[About](cairn:pages/about)');
+  });
+
   it('reflects an external value reassignment into the mounted editor', async () => {
     const screen = render(MarkdownEditor, { value: 'first', name: 'body' });
     await expect.poll(() => screen.container.querySelector('.cm-editor')?.textContent ?? '').toContain('first');

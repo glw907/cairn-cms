@@ -3,7 +3,7 @@
 // stays free of a site's App.* ambient types.
 import { redirect, error } from '@sveltejs/kit';
 import { resolveSession } from '../auth/store.js';
-import { COOKIE_NAME } from '../auth/crypto.js';
+import { sessionCookieName } from '../auth/crypto.js';
 import type { Editor } from '../auth/types.js';
 import type { HandleInput, RequestContext } from './types.js';
 
@@ -24,7 +24,7 @@ export function createAuthGuard() {
       return resolve(event);
     }
     const env = event.platform?.env ?? {};
-    const id = event.cookies.get(COOKIE_NAME);
+    const id = event.cookies.get(sessionCookieName(event.url.protocol === 'https:'));
     const editor = id && env.AUTH_DB ? await resolveSession(env.AUTH_DB, id, Date.now()) : null;
     if (!editor) throw redirect(303, '/admin/login');
     event.locals.editor = editor;

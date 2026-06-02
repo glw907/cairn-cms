@@ -2,8 +2,17 @@
 // code runs unchanged in workerd. The store keeps only the hash of a token, never the
 // token itself (spec 7.1).
 
-/** The session cookie name. */
-export const COOKIE_NAME = 'cairn_session';
+/** The base session cookie name, prefixed with __Host- when the cookie is Secure. */
+const COOKIE_BASE = 'cairn_session';
+
+/**
+ * The session cookie name. On https the cookie is Secure and takes the __Host- prefix, which
+ * binds it to the origin (the browser enforces Secure, Path=/, and no Domain). On local http
+ * dev the prefix is dropped, since __Host- requires Secure and the dev cookie cannot set it.
+ */
+export function sessionCookieName(secure: boolean): string {
+  return secure ? `__Host-${COOKIE_BASE}` : COOKIE_BASE;
+}
 
 /** Magic-link tokens live 10 minutes. */
 export const TOKEN_TTL_MS = 10 * 60 * 1000;

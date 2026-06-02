@@ -1,6 +1,6 @@
 import { isRedirect, isHttpError } from '@sveltejs/kit';
 import { env } from 'cloudflare:test';
-import type { CookieJar } from '../../lib/sveltekit/types.js';
+import type { CookieJar, CookieSetOptions } from '../../lib/sveltekit/types.js';
 import type { Editor, Role } from '../../lib/auth/types.js';
 
 /** Insert an editor row directly. The editor table is the allowlist, so a row is "may sign in". */
@@ -25,6 +25,23 @@ export function makeCookies(initial: Record<string, string> = {}): CookieJar & {
     jar,
     get: (name) => jar.get(name),
     set: (name, value) => void jar.set(name, value),
+    delete: (name) => void jar.delete(name),
+  };
+}
+
+/** Like makeCookies, but records every set call's name and options, for cookie-attribute asserts. */
+export function makeRecordingCookies(
+  initial: Record<string, string> = {},
+): CookieJar & { sets: { name: string; value: string; opts: CookieSetOptions }[] } {
+  const jar = new Map(Object.entries(initial));
+  const sets: { name: string; value: string; opts: CookieSetOptions }[] = [];
+  return {
+    sets,
+    get: (name) => jar.get(name),
+    set: (name, value, opts) => {
+      jar.set(name, value);
+      sets.push({ name, value, opts });
+    },
     delete: (name) => void jar.delete(name),
   };
 }

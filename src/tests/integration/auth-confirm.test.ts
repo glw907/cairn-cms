@@ -1,8 +1,8 @@
 import { env } from 'cloudflare:test';
 import { describe, it, expect, beforeEach } from 'vitest';
-import { seedEditor, makeEvent, makeCookies, countRows, expectRedirect } from './_auth-harness.js';
+import { seedEditor, makeEvent, makeCookies, makeRecordingCookies, countRows, expectRedirect } from './_auth-harness.js';
 import { createAuthRoutes } from '../../lib/sveltekit/auth-routes.js';
-import { generateToken, hashToken, COOKIE_NAME } from '../../lib/auth/crypto.js';
+import { generateToken, hashToken, sessionCookieName } from '../../lib/auth/crypto.js';
 import { issueToken } from '../../lib/auth/store.js';
 
 const db = env.AUTH_DB;
@@ -39,7 +39,7 @@ describe('confirm POST (scenarios 1, 3, 4)', () => {
       routes.confirmAction(makeEvent({ url: 'https://test.dev/admin/auth/confirm', form: { token }, cookies })),
     );
     expect(redirect).toEqual({ status: 303, location: '/admin' });
-    expect(cookies.get(COOKIE_NAME)).toBeTruthy();
+    expect(cookies.get(sessionCookieName(true))).toBeTruthy();
     expect(await countRows('session')).toBe(1);
     expect(await countRows('magic_token')).toBe(0);
   });
@@ -64,5 +64,28 @@ describe('confirm POST (scenarios 1, 3, 4)', () => {
     );
     expect(redirect.location).toBe('/admin/login?error=expired');
     expect(await countRows('session')).toBe(0);
+  });
+});
+
+describe('session cookie prefix and attributes (Unit 1)', () => {
+  it('sets a __Host- prefixed Secure cookie on https', async () => {
+    const token = await liveToken('ed@x.dev');
+    const cookies = makeRecordingCookies();
+    await expectRedirect(() =>
+      routes.confirmAction(makeEvent({ url: 'https://test.dev/admin/auth/confirm', form: { token }, cookies })),
+    );
+    expect(cookies.sets).toHaveLength(1);
+    expect(cookies.sets[0].name).toBe('__Host-cairn_session');
+    expect(cookies.sets[0].opts).toMatchObject({ path: '/', httpOnly: true, secure: true, sameSite: 'lax' });
+  });
+
+  it('sets a plain unprefixed cookie on local http', async () => {
+    const token = await liveToken('ed2@x.dev');
+    const cookies = makeRecordingCookies();
+    await expectRedirect(() =>
+      routes.confirmAction(makeEvent({ url: 'http://localhost/admin/auth/confirm', form: { token }, cookies })),
+    );
+    expect(cookies.sets[0].name).toBe('cairn_session');
+    expect(cookies.sets[0].opts.secure).toBe(false);
   });
 });

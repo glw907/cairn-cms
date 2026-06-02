@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { seedEditor, makeCookies, expectRedirect } from './_auth-harness.js';
 import { createAuthGuard } from '../../lib/sveltekit/guard.js';
 import { createSession } from '../../lib/auth/store.js';
-import { COOKIE_NAME } from '../../lib/auth/crypto.js';
+import { sessionCookieName } from '../../lib/auth/crypto.js';
 import type { RequestContext } from '../../lib/sveltekit/types.js';
 
 const db = env.AUTH_DB;
@@ -29,7 +29,7 @@ function event(pathname: string, cookies = makeCookies()): RequestContext {
 async function seedSession(email: string): Promise<ReturnType<typeof makeCookies>> {
   await seedEditor(email, 'Ed', 'owner');
   await createSession(db, 'sid-ok', email, Date.now() + 10_000, Date.now());
-  return makeCookies({ [COOKIE_NAME]: 'sid-ok' });
+  return makeCookies({ [sessionCookieName(true)]: 'sid-ok' });
 }
 
 describe('guard (scenario 6)', () => {

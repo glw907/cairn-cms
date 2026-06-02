@@ -9,7 +9,7 @@ import {
   hashToken,
   TOKEN_TTL_MS,
   SESSION_TTL_MS,
-  COOKIE_NAME,
+  sessionCookieName,
 } from '../auth/crypto.js';
 import { findEditor, issueToken, consumeToken, createSession, deleteSession } from '../auth/store.js';
 import { buildMagicLinkMessage, cloudflareSend, type AuthBranding, type SendMagicLink } from '../email.js';
@@ -83,11 +83,12 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
 
     const id = generateSessionId();
     await createSession(db, id, email, now + SESSION_TTL_MS, now);
-    event.cookies.set(COOKIE_NAME, id, {
+    const secure = event.url.protocol === 'https:';
+    event.cookies.set(sessionCookieName(secure), id, {
       path: '/',
       httpOnly: true,
-      // Secure on HTTPS (every real deploy); off on local http dev so the cookie sticks.
-      secure: event.url.protocol === 'https:',
+      // __Host- needs Secure unconditionally on https; local http dev drops the prefix and Secure.
+      secure,
       sameSite: 'lax',
       maxAge: Math.floor(SESSION_TTL_MS / 1000),
     });
@@ -97,9 +98,10 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
   /** POST /admin/auth/logout. Deletes the session row and clears the cookie. */
   async function logoutAction(event: RequestContext): Promise<never> {
     const db = requireDb(event.platform?.env ?? {});
-    const id = event.cookies.get(COOKIE_NAME);
+    const name = sessionCookieName(event.url.protocol === 'https:');
+    const id = event.cookies.get(name);
     if (id) await deleteSession(db, id);
-    event.cookies.delete(COOKIE_NAME, { path: '/' });
+    event.cookies.delete(name, { path: '/' });
     throw redirect(303, '/admin/login');
   }
 

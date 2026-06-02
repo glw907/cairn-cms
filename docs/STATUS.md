@@ -11,7 +11,9 @@ Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`
 Content-graph Plan 2 (the committed manifest plus the `cairn:` link resolver) executed subagent-driven on
 `main`, one `cairn-implementer` per task (Sonnet for the mechanical tasks, Opus for the atomic-save Task 10 and
 the showcase end-to-end Task 11), commits `cdabeef..c50fc47` (fifteen: thirteen plan tasks plus two review-gate
-commits). Local only, not pushed, not published. It bumps the minor to `0.18.0` (additive surface). The pass
+commits). **`main` is pushed and the window is PUBLISHED as `0.18.0`, now `latest` on npm** (OIDC trusted-publishing
+workflow off the `v0.18.0` GitHub Release, build provenance attached), rolling the content-graph manifest work over the
+registry's prior `0.17.0`. It bumps the minor to `0.18.0` (additive surface). The pass
 delivers internal links end to end: an author writes `[guide](cairn:posts/<id>)`, it renders as the live
 permalink on the public page, a dangling target fails the build, and the editor preview marks a broken target.
 

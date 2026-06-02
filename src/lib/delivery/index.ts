@@ -25,6 +25,7 @@ export type { Page } from './paginate.js';
 export { rssResponse, jsonFeedResponse, sitemapResponse, robotsResponse } from './responses.js';
 export { jsonLdScript } from './json-ld.js';
 export { permalink } from '../content/permalink.js';
+export { buildSiteManifest, buildLinkResolver } from './manifest.js';
 export { createPublicRoutes } from '../sveltekit/public-routes.js';
 export type {
   PublicRoutesDeps,

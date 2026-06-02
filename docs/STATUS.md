@@ -35,14 +35,27 @@ leak; its one folded finding is the empty-set guard. The `svelte-reviewer`, `web
 and no route calls `commitFiles` yet). Plan and full post-mortem (with the locked decisions and the latent
 follow-ups): `docs/superpowers/plans/2026-06-02-cairn-content-graph-01-atomic-commit.md`.
 
-**Immediate next action: brainstorm then write content-graph Plan 2, the committed manifest.** Plan 1 is the last
-fully pre-written plan in the initiative; the remaining four are written just-in-time. Plan 2 is design-bearing, so
-run `superpowers:brainstorming` with the user on what the spec leaves open (the manifest's on-disk shape and path,
-what the build-time projection records per entry, how `commitFiles` writes the manifest alongside content, and the
-build-fail backstop), then `superpowers:writing-plans`. The spine is settled in the design spec
-(`docs/superpowers/specs/2026-06-02-cairn-content-graph-design.md`): files are truth, the manifest is a
-build-verified projection in git (not D1), and every content mutation commits content and manifest atomically
-through the new `commitFiles`. Do not auto-write the plan; settle the open decisions with the user first.
+**Content-graph Plan 2 is WRITTEN (brainstormed and authored 2026-06-02), merging the design's old Plan 2 and Plan
+3 into one pass:** `docs/superpowers/plans/2026-06-02-cairn-content-graph-02-manifest-and-resolution.md`. The
+manifest (build-verified projection, committed) and the `cairn:` link resolver land together, since they share the
+token parser and a manifest-only pass would ship infrastructure nothing reads yet; together they resolve internal
+links end to end (build resolves against the site index and fails closed on a dangling token, the preview marks a
+broken target). Thirteen test-first tasks. Brainstorm decisions locked into the plan: the outbound edge list is
+populated now (the shared `extractCairnLinks`), drafts are included and flagged, the build reads the site index
+while the preview reads the manifest shipped to the client (one render with an injected resolver), drift fails the
+build with a `npm run cairn:manifest` regenerate command, and the `commitFiles` 422 retry re-sends the manifest
+blob last-writer-wins (accepted: the build reconciles). The picker is now Plan 3, the lifecycle guards Plan 4 (the
+design spec's plan list is annotated with the resequence). The pass is additive and bumps `0.18.0`.
+
+**Immediate next action: execute content-graph Plan 2,
+`docs/superpowers/plans/2026-06-02-cairn-content-graph-02-manifest-and-resolution.md`, `subagent-driven`
+(`superpowers:subagent-driven-development`, one `cairn-implementer` per task, Sonnet default), from the cairn-cms
+directory on `main`. Start at Task 1.** The design is settled (skip brainstorming). It runs on `main` directly
+(additive, no site deploys on a cairn-cms push). The pass-end review gate is the simplifier plus
+`cloudflare-workers-reviewer` (the atomic save commit), `svelte-reviewer` (the `EditPage` preview resolver), and a
+high-effort `/code-review` on the resolver miss/throw policy and the canonical serialize/verify; the live `/admin`
+smoke is a carried fast-follow for the ecnordic migration (the showcase runs `adapter-node`, not a Worker). After
+Plan 2 lands, draft Plan 3 (the picker) just-in-time.
 
 **Latent follow-ups carried from Plan 1** (unreachable under current conventions, recorded in the post-mortem): the
 file-wide `encodeURIComponent(repo.branch)` in a ref path position would break a slashed branch name (cairn commits

@@ -5,6 +5,26 @@
 import type { FrontmatterField, TextField, TextareaField, DateField, ValidationResult } from './types.js';
 import { validateFields } from './validate.js';
 
+/** The validate input the cairn adapter takes: the raw frontmatter and the body. */
+export interface StandardInput {
+  frontmatter: Record<string, unknown>;
+  body: string;
+}
+
+/** A minimal local copy of the Standard Schema v1 interface (https://standardschema.dev), so the
+ *  schema is a drop-in where the ecosystem accepts a validator, with no runtime dependency. */
+export interface StandardSchemaV1<Input = unknown, Output = Input> {
+  readonly '~standard': {
+    readonly version: 1;
+    readonly vendor: string;
+    readonly validate: (value: unknown) => StandardResult<Output>;
+    readonly types?: { readonly input: Input; readonly output: Output };
+  };
+}
+type StandardResult<Output> =
+  | { readonly value: Output; readonly issues?: undefined }
+  | { readonly issues: ReadonlyArray<{ readonly message: string; readonly path?: ReadonlyArray<PropertyKey> }> };
+
 /** Map one field descriptor to the TS type of its normalized value. text, textarea, and date
  *  normalize to a string; a closed-vocabulary `tags` field to the option-union array. */
 type FieldValue<K extends FrontmatterField> = K extends { type: 'boolean' }
@@ -33,6 +53,8 @@ export interface ConceptSchema<F extends readonly FrontmatterField[] = readonly 
   readonly fields: FrontmatterField[];
   /** Validate raw frontmatter, returning field-keyed errors or the normalized data. */
   validate(frontmatter: Record<string, unknown>, body: string): ValidationResult;
+  /** Standard Schema v1 conformance, for ecosystem interop. A thin adapter over `validate`. */
+  readonly '~standard': StandardSchemaV1<StandardInput, InferFields<F>>['~standard'];
 }
 
 /** Extract the inferred frontmatter type from a `ConceptSchema`. */
@@ -78,5 +100,16 @@ export function defineFields<const F extends readonly FrontmatterField[]>(
     const refined = options.refine?.(base.data as InferFields<F>, body);
     return refined && Object.keys(refined).length > 0 ? { ok: false, errors: refined } : base;
   };
-  return { fields: list, validate };
+  const standard: StandardSchemaV1<StandardInput, InferFields<F>>['~standard'] = {
+    version: 1,
+    vendor: 'cairn',
+    validate: (value) => {
+      const { frontmatter = {}, body = '' } = (value ?? {}) as Partial<StandardInput>;
+      const result = validate(frontmatter, body);
+      return result.ok
+        ? { value: result.data as InferFields<F> }
+        : { issues: Object.entries(result.errors).map(([field, message]) => ({ message, path: [field] })) };
+    },
+  };
+  return { fields: list, validate, '~standard': standard };
 }

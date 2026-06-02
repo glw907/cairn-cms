@@ -108,3 +108,25 @@ describe('defineFields: refine', () => {
     expect(r.ok).toBe(true);
   });
 });
+
+describe('defineFields: Standard Schema conformance', () => {
+  it('declares the standard vendor and version', () => {
+    expect(posts['~standard'].version).toBe(1);
+    expect(posts['~standard'].vendor).toBe('cairn');
+  });
+
+  it('maps a success to a value result', () => {
+    const r = posts['~standard'].validate({ frontmatter: { title: 'Hi', tags: ['gear'] }, body: '' });
+    expect('issues' in r).toBe(false);
+    if (!('issues' in r)) expect(r.value).toEqual({ title: 'Hi', tags: ['gear'], draft: false });
+  });
+
+  it('maps a failure to issues with a field path', () => {
+    const r = posts['~standard'].validate({ frontmatter: { title: '' }, body: '' });
+    expect('issues' in r).toBe(true);
+    if (r.issues) {
+      expect(r.issues[0].message).toMatch(/required/i);
+      expect(r.issues[0].path).toEqual(['title']);
+    }
+  });
+});

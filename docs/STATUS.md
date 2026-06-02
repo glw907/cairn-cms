@@ -6,6 +6,45 @@ orientation is the workspace `CLAUDE.md`. Locked architecture decisions and the 
 the functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`).
 Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`.
 
+## Where the work is (2026-06-02, delivery-robustness pass executed, unpublished 0.15.0)
+
+The delivery-robustness pass executed subagent-driven on `main`, one `cairn-implementer` per task (Sonnet),
+commits `aefabc6..40eb4d1` (the five plan-task commits, one simplifier refinement, one review fold-in). Local
+only, not pushed, not published. It hardens the delivery surface against the misconfigurations and edge inputs
+a migrating site can trip: `createContentIndex` excludes a validation-failed entry from the typed read (records
+it in `problems()`, serves only `result.data`, the `raw as F` cast gone); `createSiteIndexes` throws at build
+on an absent glob key for a declared concept and on a concept named `site`; `FeedItem.date` is optional and
+the feed builders omit the date rather than emit `Invalid Date` (RSS) or throw a `RangeError` (JSON); and
+`entryLoad` passes `feeds` to the head builder only for a dated entry, so an undated Page stops advertising the
+post feed. The additive surface bumps the minor to `0.15.0`.
+
+Final gate at the tip (`40eb4d1`): `npm run check` 751 files 0/0, `npm test` 96 files / 461 tests exit 0,
+`check:package` all-green across the existing entries with no export-condition change. The end-to-end gate is
+the showcase production prerender: the dated `hello` post carries both feed `rel="alternate"` links, the
+`about` page carries none, and the feeds still render dated items (3 `<pubDate>`, 3 `date_published`). A
+`code-simplifier` pass extracted a shared `parseFeedDate` (`022a0e1`). A `svelte-reviewer` (Opus) confirmed the
+`entryLoad` spread is prerender-safe and the invalid-entry exclusion cannot serve raw frontmatter or break the
+catch-all, no Critical or Important findings; the other three reviewers did not apply. A high-effort
+`/code-review` (four angles) surfaced no confirmed bug: its two most-cited findings (the `validate:false`
+exclusion and the `entry.date` feed gate) are both the plan's locked design, and `problems()` still records
+every dropped entry. One review finding folded in as `40eb4d1`: the showcase feed routes now pass `p.date`
+directly instead of the stale `?? ''` empty-string fallback, so the reference teaches the optional-date
+contract a migrating site copies. No `/admin` surface changed, so the live admin smoke does not apply. Plan and
+full post-mortem: `docs/superpowers/plans/2026-06-01-cairn-delivery-robustness.md`.
+
+- Spec: `docs/superpowers/specs/2026-06-01-cairn-delivery-robustness-design.md` (approved).
+
+**Migration gotcha to honor (Task 2's intended behavior):** `createSiteIndexes` now hard-fails when a declared
+concept has no glob key. The ecnordic and 907 migrations must pass every declared concept's `import.meta.glob`
+(an empty `{}` for an intentionally empty concept). A conditionally-omitted glob that used to default to an
+empty index now throws at build. This is the loud-failure the guard exists for, a migration step to honor.
+
+**Immediate next action: a fork for the user (see "Open decisions" below).** The engine backlog is now down to
+the auth-hardening pass, independent and schedulable anytime, and the site migrations, which need `0.15.0`
+published first (a site pins `^0.15.0`). Publishing `0.15.0` is a separate release step (OIDC release `v0.15.0`),
+rolling the unpublished window over `0.14.0`. The order between auth-hardening and the migrations, and whether
+to publish `0.15.0` now, are the user's calls.
+
 ## Where the work is (2026-06-02, schema Plan 3 / the SEO head consumer executed, PUBLISHED 0.14.0)
 
 Schema-source-of-truth Plan 3 (the per-entry SEO head consumer) executed subagent-driven on `main`,
@@ -444,16 +483,14 @@ outcome is in the functional spec).
 
 ## Carried follow-ups (latent, not bugs under current conventions)
 
-- Delivery DX (open design decisions from the review, not bugs): build validation runs over drafts too
-  (`includeDrafts: true`), so a draft saved with an unfilled required field would fail the build; the admin
-  save path validates before commit, so this is a backstop for direct-git edits. `createSiteIndex`
-  validation checks `result.ok` and discards the validator's normalized `result.data`, so a `validate` that
-  trims or defaults a field passes the build yet the read serves raw frontmatter (the delivery path treats
-  `validate` as a gate, not a transform; fold normalization in with the typed-reads pass). Minor: `entryLoad`
-  attaches feed autodiscovery links to undated Pages too, and the showcase `feed.xml` would render an
-  `Invalid Date` pubDate for an undated item (unreachable while posts are always dated). The build-validation
-  date-shape gotcha (unquoted YAML `date` arrives as a JS `Date`) is recorded in the site-migration step
-  above, since that is where a hand-rolled validator would meet it.
+- Delivery DX (mostly RESOLVED across schema Plan 2 and the delivery-robustness pass): the schema Plan 2
+  cutover added skip-drafts at the `createSiteIndex` gate and validate-once storing `result.data` on the typed
+  read, so the build-over-drafts and serve-raw-frontmatter items are closed. The delivery-robustness pass closed
+  the rest: a validation-failed entry is excluded from the typed read (Task 1), `entryLoad` no longer attaches
+  feed autodiscovery to undated Pages (Task 4), and the feed builders omit an absent or `Invalid Date` pubDate
+  rather than emit it (Task 3). The remaining note is the build-validation date-shape gotcha (an unquoted YAML
+  `date` arrives as a JS `Date`), recorded in the site-migration step above, since that is where a hand-rolled
+  validator would meet it.
 - Component registry (Plan 1, RESOLVED by Plan 2): the old palette rendered a no-op item for a def
   lacking `insertTemplate`. The Plan 2 dialog replaces the palette with a dual path (schema def opens
   the form, template-only inserts directly, a def with neither is omitted), so the no-op is gone.
@@ -473,9 +510,10 @@ outcome is in the functional spec).
   concept, broader than the `datePrefix` strip (a `day` concept strips only a full `YYYY-MM-DD-`). A
   post deliberately slugged `2026-recap` is refused with the "leave the date out" hint. Acceptable
   since the date is captured separately; revisit if a real title trips it.
-- Public delivery: the feed date formatters throw on a malformed date (the index normalizes
-  upstream); a dateless entry sorts last in a dated concept; `deriveExcerpt`/`wordCount` assume
-  whitespace-delimited words; the permalink date parse accepts a shape-valid but impossible date.
+- Public delivery: the feed date throw is RESOLVED (the robustness pass made `rfc822`/`iso` total, omitting an
+  absent or unparseable date). Still latent: a dateless entry sorts last in a dated concept; `deriveExcerpt`/
+  `wordCount` assume whitespace-delimited words (the deferred excerpt-CJK item); the permalink date parse
+  accepts a shape-valid but impossible date (the other deferred item).
 - Render hardening: `splitHead` dereferences a missing `<h2>`; `glyph` serializes `d="undefined"`
   for an unknown icon. Both inherited from legacy, unreachable under the sites' content.
 - Auth hardening: install-token KV caching, rate-limit plus `waitUntil` on the request endpoint,

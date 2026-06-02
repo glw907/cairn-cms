@@ -538,3 +538,64 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - **Type consistency.** `FeedItem.date` is `string | undefined` after Task 3, and `rfc822`/`iso` are `(date?: string) => string | undefined`; the builders guard on the formatter result before emitting. `createSiteIndexes` keeps its signature; the guards throw inside the existing loop. `createContentIndex` keeps its signature; the for-loop replaces the `.map` and the failure branch no longer produces a readable entry.
 - **Ordering and green builds.** Task 1 is self-contained in `content-index.ts`. Task 2 is self-contained in `site-indexes.ts`. Task 3 is self-contained in `feeds.ts`. Task 4 is self-contained in `public-routes.ts`. Task 5 is the prerender proof plus the version bump. Each task ends with the full gate (`npm run check` 0/0, `npm test` exit 0), and Task 5 adds the showcase production build as the end-to-end proof.
 - **Versioning.** Additive to the package surface (an optional widening on `FeedItem.date`, two new build-time throws, a purer typed read, a scoped feed-link emission). No export-condition change. Bumps a minor to `0.15.0`, unpublished until the next release step.
+
+---
+
+## Post-mortem (executed 2026-06-02)
+
+Executed subagent-driven on `main`, one `cairn-implementer` per task (Sonnet), then the consolidation
+ritual. Commits `aefabc6..40eb4d1` (the five plan-task commits, one simplifier refinement, one review
+fold-in). Local only, not pushed, not published.
+
+### What was built
+
+The five units landed as specified, each in its own commit:
+- `aefabc6` Task 1: `createContentIndex` records a validation failure to `problems()` and excludes it from
+  the read accessors, so every readable `ContentEntry<F>` carries `result.data` and the `raw as F` cast is
+  gone. The matched live code needed no deviation from the plan snippet.
+- `2e73fe6` Task 2: `createSiteIndexes` throws on an absent glob key for a declared concept (a present-empty
+  `{}` stays allowed) and on a concept named `site`. The reserved-`site` test needed two narrow, commented
+  casts, since `CairnAdapter.content` fixes its keys to `posts?`/`pages?` while the runtime guard targets the
+  open `normalizeConcepts` path a future `CairnExtension.content` could reach. The guard is real; only the
+  test fixture deviated, for type-honesty.
+- `a446a55` Task 3: `FeedItem.date` is optional, and `rfc822`/`iso` return `undefined` for an absent or
+  unparseable date, so RSS omits `<pubDate>` and JSON Feed omits `date_published`/`date_modified` rather than
+  emit `Invalid Date` or throw. The change also fixed a latent crash: the old `date_modified` path threw on a
+  present-but-malformed `updated`.
+- `418bc3c` Task 4: `entryLoad` passes `feeds` to `buildSeoMeta` only for a dated entry, so an undated Page
+  stops advertising the post feed.
+- `9079437` Task 5: bump to `0.15.0`.
+
+### What was verified
+
+Final gate at the tip (`40eb4d1`): `npm run check` 751 files 0/0, `npm test` 96 files / 461 tests exit 0,
+`check:package` all-green across the existing entries with no export-condition change. The end-to-end gate is
+the showcase production prerender: the dated `hello` post carries both feed `rel="alternate"` links, the
+`about` page carries none (`grep -c 'rel="alternate"'` returns 0), and the feeds still render dated items
+(`feed.xml` 3 `<pubDate>`, `feed.json` 3 `date_published`).
+
+### Review gate
+
+A `code-simplifier` pass extracted a shared `parseFeedDate(date?)` so `rfc822`/`iso` reduce to one
+optional-chained call each (`022a0e1`, behavior identical). A `svelte-reviewer` (Opus) confirmed the
+`entryLoad` conditional spread is prerender-safe and that excluding invalid entries cannot serve raw
+frontmatter or break the catch-all (`byPermalink` resolves only from `all()`); no Critical or Important
+findings, one Minor spec note confirming the date-omission is RSS/JSON-Feed conformant. The other three
+reviewers did not apply (no Worker, D1, auth, session, cookie, or DaisyUI code). A high-effort `/code-review`
+(four finder angles) surfaced no confirmed bug: its two most-cited findings, the `validate:false` exclusion
+and the `entry.date` feed gate, are both the plan's locked design (Task 1's commit body states the
+`validate:false` exclusion verbatim, and `problems()` still records every dropped entry regardless of the
+flag, so it is not silent). One finding folded in as `40eb4d1`: the showcase feed routes still passed
+`date: p.date ?? ''`, stale dead defensiveness under the optional-date contract, so they now pass `p.date`
+directly to teach the reference pattern a migrating site copies. No `/admin` surface changed, so the live
+admin smoke does not apply.
+
+### Carried forward
+
+- **Migration gotcha (Task 2's intended behavior).** `createSiteIndexes` now hard-fails when a declared
+  concept has no glob key. A migrating site (ecnordic, 907) must pass every declared concept's `import.meta.glob`,
+  an empty `{}` for an intentionally empty concept. A conditionally-omitted glob that used to default to an
+  empty index now throws at build. This is the loud-failure the guard exists for; it is a migration step to
+  honor, not a regression.
+- The two spec-deferred items stay on the backlog, near-unreachable for the English sites: the permalink
+  impossible-date parse and the excerpt CJK word counting.

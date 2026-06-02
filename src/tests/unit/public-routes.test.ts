@@ -4,6 +4,8 @@ import { createSiteIndex } from '../../lib/delivery/site-index.js';
 import { createContentIndex } from '../../lib/delivery/content-index.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
 import { defineFields } from '../../lib/content/schema.js';
+import { createRenderer } from '../../lib/render/pipeline.js';
+import { defineRegistry } from '../../lib/render/registry.js';
 
 const [posts] = normalizeConcepts(
   { posts: { dir: 'p', schema: defineFields([]) } },
@@ -46,5 +48,23 @@ describe('createPublicRoutes', () => {
     expect(routes.archiveLoad('posts').entries.map((e) => e.id)).toEqual(['2026-02-01-a', '2026-01-01-b']);
     expect(routes.tagLoad('posts', { params: { tag: 'x' } }).entries.map((e) => e.id)).toEqual(['2026-02-01-a']);
     expect(routes.tagIndexLoad('posts').tags).toEqual([{ tag: 'x', count: 1 }, { tag: 'y', count: 1 }]);
+  });
+
+  it('entryLoad resolves cairn links and fails the build on a dangling token', async () => {
+    const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+    function linkRoutes(body: string) {
+      const linkSite = createSiteIndex([
+        { descriptor: pages, index: createContentIndex([
+          { path: '/g/home.md', raw: `---\ntitle: Home\n---\n\n${body}` },
+          { path: '/g/about.md', raw: '---\ntitle: About\n---\n\nAbout body.' },
+        ], pages) },
+      ]);
+      return createPublicRoutes({ site: linkSite, render: (md, opts) => renderMarkdown(md, opts), origin: 'https://example.com', siteName: 'Test', description: 'Test description.' });
+    }
+
+    const ok = await linkRoutes('[about](cairn:pages/about)').entryLoad({ url: new URL('https://example.com/home') });
+    expect(ok.html).toContain('href="/about"');
+
+    await expect(linkRoutes('[gone](cairn:pages/missing)').entryLoad({ url: new URL('https://example.com/home') })).rejects.toThrow(/cairn:pages\/missing|not found/);
   });
 });

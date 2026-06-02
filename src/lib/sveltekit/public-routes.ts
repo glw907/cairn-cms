@@ -9,11 +9,13 @@ import type { SiteIndex } from '../delivery/site-index.js';
 import { buildSeoMeta } from '../delivery/seo.js';
 import type { SeoMeta } from '../delivery/seo.js';
 import { readSeoFields, resolveImageUrl } from '../delivery/seo-fields.js';
+import { buildLinkResolver } from '../delivery/manifest.js';
+import type { LinkResolve } from '../content/links.js';
 
 /** Injected dependencies for the public loaders. */
 export interface PublicRoutesDeps {
   site: SiteIndex;
-  render: (md: string, opts?: { stagger?: boolean }) => string | Promise<string>;
+  render: (md: string, opts?: { stagger?: boolean; resolve?: LinkResolve }) => string | Promise<string>;
   origin: string;
   /** Site name for og:site_name and the SEO head. */
   siteName: string;
@@ -85,7 +87,7 @@ export function createPublicRoutes(deps: PublicRoutesDeps) {
       ...(fields.author ? { author: fields.author } : {}),
       ...(entry.date ? { feeds } : {}),
     });
-    return { entry, html: await render(entry.body, { stagger: true }), canonicalUrl, seo, newer, older };
+    return { entry, html: await render(entry.body, { stagger: true, resolve: buildLinkResolver(site) }), canonicalUrl, seo, newer, older };
   }
 
   /** The chronological archive for one concept: every non-draft summary, newest-first. */

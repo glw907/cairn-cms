@@ -115,6 +115,9 @@ Decisions the 2026 research validated:
 
 ## 5. Architecture
 
+For where each kind of state lives (the git-versus-D1 placement rule and its worked precedents),
+see `docs/data-architecture.md`, the canonical home for that decision.
+
 ### Layers
 
 | Layer | Identity | Distribution |

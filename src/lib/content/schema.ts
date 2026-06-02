@@ -63,13 +63,16 @@ export type Infer<S> = S extends ConceptSchema<infer F> ? InferFields<F> : never
 // Enforce the declarative per-field rules on an already-coerced value. Rules run only on a
 // present, non-empty string value, so an absent optional field is never flagged. The first
 // failing rule per field wins, so the author sees one clear message at a time.
-function applyRules(field: FrontmatterField, value: unknown, errors: Record<string, string>): void {
+function applyRules(field: FrontmatterField, value: unknown, errors: Record<string, string>, patterns: Map<string, RegExp>): void {
   if (typeof value !== 'string' || value === '') return;
   if (field.type === 'text' || field.type === 'textarea') {
     if (field.min != null && value.length < field.min) errors[field.name] = `${field.label} must be at least ${field.min} characters`;
     else if (field.max != null && value.length > field.max) errors[field.name] = `${field.label} must be at most ${field.max} characters`;
     else if (field.length != null && value.length !== field.length) errors[field.name] = `${field.label} must be exactly ${field.length} characters`;
-    else if (field.pattern != null && !new RegExp(field.pattern).test(value)) errors[field.name] = `${field.label} is not in the expected format`;
+    else if (field.pattern != null) {
+      const re = patterns.get(field.name);
+      if (re && !re.test(value)) errors[field.name] = `${field.label} is not in the expected format`;
+    }
   } else if (field.type === 'date') {
     if (field.min != null && value < field.min) errors[field.name] = `${field.label} must be on or after ${field.min}`;
     else if (field.max != null && value > field.max) errors[field.name] = `${field.label} must be on or before ${field.max}`;
@@ -83,17 +86,34 @@ export interface DefineFieldsOptions<F extends readonly FrontmatterField[]> {
   refine?: (data: InferFields<F>, body: string) => Record<string, string> | undefined;
 }
 
+// Compile each declared text/textarea pattern once, so a malformed pattern fails loudly at
+// declaration (a site config error) instead of throwing from inside validate() on every save.
+function compilePatterns(fields: FrontmatterField[]): Map<string, RegExp> {
+  const compiled = new Map<string, RegExp>();
+  for (const field of fields) {
+    if ((field.type === 'text' || field.type === 'textarea') && field.pattern != null) {
+      try {
+        compiled.set(field.name, new RegExp(field.pattern));
+      } catch (cause) {
+        throw new Error(`cairn: field "${field.name}" has an invalid pattern: ${field.pattern}`, { cause });
+      }
+    }
+  }
+  return compiled;
+}
+
 /** Declare a concept's fields once. Returns the schema's faces derived from that one declaration. */
 export function defineFields<const F extends readonly FrontmatterField[]>(
   fields: F,
   options: DefineFieldsOptions<F> = {},
 ): ConceptSchema<F> {
   const list = [...fields] as FrontmatterField[];
+  const patterns = compilePatterns(list);
   const validate = (frontmatter: Record<string, unknown>, body: string): ValidationResult => {
     const base = validateFields(list, frontmatter);
     if (!base.ok) return base;
     const errors: Record<string, string> = {};
-    for (const field of list) applyRules(field, base.data[field.name], errors);
+    for (const field of list) applyRules(field, base.data[field.name], errors, patterns);
     if (Object.keys(errors).length > 0) return { ok: false, errors };
     const refined = options.refine?.(base.data as InferFields<F>, body);
     return refined && Object.keys(refined).length > 0 ? { ok: false, errors: refined } : base;
@@ -103,7 +123,7 @@ export function defineFields<const F extends readonly FrontmatterField[]>(
     vendor: 'cairn',
     validate: (value) => {
       const { frontmatter = {}, body = '' } = (value ?? {}) as Partial<StandardInput>;
-      const result = validate(frontmatter, body);
+      const result = validate(frontmatter ?? {}, body ?? '');
       return result.ok
         ? { value: result.data as InferFields<F> }
         : { issues: Object.entries(result.errors).map(([field, message]) => ({ message, path: [field] })) };

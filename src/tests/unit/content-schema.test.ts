@@ -130,3 +130,20 @@ describe('defineFields: Standard Schema conformance', () => {
     }
   });
 });
+
+describe('defineFields: hardening', () => {
+  it('throws a clear config error when a text pattern is invalid', () => {
+    expect(() => defineFields([{ name: 'slug', type: 'text', label: 'Slug', pattern: '[' }])).toThrow(/slug.*pattern/i);
+  });
+
+  it('still enforces a valid pattern after precompilation', () => {
+    const s = defineFields([{ name: 'slug', type: 'text', label: 'Slug', pattern: '^[a-z-]+$' }]);
+    expect(s.validate({ slug: 'Bad Slug' }, '').ok).toBe(false);
+    expect(s.validate({ slug: 'good-slug' }, '').ok).toBe(true);
+  });
+
+  it('returns issues rather than throwing when ~standard receives a null frontmatter', () => {
+    const r = posts['~standard'].validate({ frontmatter: null, body: '' });
+    expect('issues' in r).toBe(true);
+  });
+});

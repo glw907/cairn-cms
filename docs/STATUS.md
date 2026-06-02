@@ -6,6 +6,72 @@ orientation is the workspace `CLAUDE.md`. Locked architecture decisions and the 
 the functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`).
 Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`.
 
+## Where the work is (2026-06-02, content-graph Plan 2 / the committed manifest and link resolution executed)
+
+Content-graph Plan 2 (the committed manifest plus the `cairn:` link resolver) executed subagent-driven on
+`main`, one `cairn-implementer` per task (Sonnet for the mechanical tasks, Opus for the atomic-save Task 10 and
+the showcase end-to-end Task 11), commits `cdabeef..c50fc47` (fifteen: thirteen plan tasks plus two review-gate
+commits). Local only, not pushed, not published. It bumps the minor to `0.18.0` (additive surface). The pass
+delivers internal links end to end: an author writes `[guide](cairn:posts/<id>)`, it renders as the live
+permalink on the public page, a dangling target fails the build, and the editor preview marks a broken target.
+
+New pure modules carry the work. `src/lib/content/links.ts` owns the `cairn:<concept>/<id>` token grammar
+(`parseCairnToken`, `extractCairnLinks`, the latter parsing the body as mdast so a token in a code span is never
+matched). `src/lib/content/manifest.ts` holds the manifest types, `manifestEntryFromFile` (one row per file,
+identity plus outbound cairn edges, drafts flagged), the canonical serialize/parse (sorted, fixed key order,
+trailing newline so the committed file diffs cleanly), `verifyManifest` (the build backstop, a canonical-form
+comparison that throws on drift), the `upsertEntry`/`removeEntry` patch helpers, and `manifestLinkResolver` (the
+preview lookup, undefined on a miss). `src/lib/delivery/manifest.ts` adds `buildSiteManifest` (the whole-corpus
+projection mirroring `createSiteIndexes`) and `buildLinkResolver` (site-index-backed, throws on a miss).
+`src/lib/render/resolve-links.ts` is the `remarkResolveCairnLinks` mdast step, before remark-rehype, so a rewritten
+href passes the sanitize floor like any anchor; the per-call resolver rides on a VFile so the processor is still
+built once. `entryLoad` resolves cairn links at build against the site index (the throw-on-miss backstop).
+`saveAction` moved off `commitFile` onto the Plan 1 `commitFiles`: it reads the manifest, upserts the saved row,
+and commits content and manifest in one commit. `editLoad` ships the manifest `linkTargets` to the client, and
+`EditPage` builds a manifest resolver from them to resolve and mark links in the preview. The sanitize floor now
+admits the inert `cairn:` href scheme (extend-only, the `javascript:`/`data:` strip preserved). The showcase wires
+the whole path: a regenerate script (`npm run cairn:manifest`), a build-time `verifyManifest`, a real
+`cairn:pages/about` link in the hello post, and both feeds resolving links to absolute URLs.
+
+Final gate at the tip (`c50fc47`): `npm run check` 762 files 0/0, `npm test` 103 files / 519 tests exit 0,
+`check:package` all-green across all five entries with no export-condition change. The end-to-end gate is the
+showcase production build: the prerendered hello post renders `<a href="/about">about page</a>` with no
+unresolved token, the feeds render `href="https://showcase.test/about"`, and the committed manifest matched the
+corpus. The backstop was proven: pointing the link at `cairn:pages/does-not-exist` and rebuilding failed with
+`cairn link target not found` (exit 1); reverting went green. The simplifier found nothing. Three Opus reviewers
+ran (`cloudflare-workers-reviewer` ship-it on the atomic save, `svelte-reviewer` clean on the preview resolver,
+`daisyui-a11y-reviewer` on the broken-link cue); three findings folded in as `81ec429` (the corrected stale-manifest
+comment, the tracked `resolveLink` effect read, the `title="Broken internal link"` text cue). A high-effort
+`/code-review` surfaced one real regression folded in as `c50fc47`: the floor now admits `cairn:`, so the showcase
+feeds shipped dead `cairn:` links until threaded a resolver. Plan and full post-mortem (with the carried
+follow-ups): `docs/superpowers/plans/2026-06-02-cairn-content-graph-02-manifest-and-resolution.md`.
+
+- Design: `docs/superpowers/specs/2026-06-02-cairn-content-graph-design.md` (approved). This plan implemented its
+  Plan 2 (the committed manifest) and Plan 3 (the token, resolver, build backstop, preview cue) together.
+
+**One key correction locked in: the manifest slug rule matches `content-index.ts` exactly**
+(`slugFromId(id, descriptor.routing.dated ? descriptor.datePrefix : null)`), so the manifest permalink equals the
+content-index permalink by construction and the preview resolver and the build resolver never disagree. An early
+hardcoded `'day'` granularity (to pass a malformed fixture) was reverted; the Task 2 and Task 4 fixtures were fixed
+to pair a day-prefixed filename with `datePrefix: 'day'`.
+
+**Live admin smoke: carried fast-follow.** The showcase runs `adapter-node`, not a Worker, so there is no
+`wrangler dev` admin Worker to smoke. The `integration` project exercises the save path in workerd against a real
+miniflare D1. The browser smoke (an editor saving an entry, confirming the commit carries both files) is best run
+during the ecnordic migration against that site's real Worker.
+
+**Immediate next action: brainstorm then write content-graph Plan 3 (the editor link picker), design-bearing, then
+execute it `subagent-driven` from the cairn-cms directory on `main`.** Plan 3 builds the toolbar insert dialog and
+the `[[` autocomplete that writes the `cairn:` token, reading the `linkTargets` Plan 2 already ships to the editor.
+It is design-bearing (the picker UX, the `[[` trigger, the draft/concept filtering), so run `superpowers:brainstorming`
+with the user on the open decisions before `superpowers:writing-plans`; do not auto-write it. Parent design: the
+content-graph design spec above. After the picker, Plan 4 is the lifecycle guards (delete/rename with inbound-link
+rewriting), which is where several Plan 2 carried follow-ups land (a link to a draft or invalid target, the
+resolver-vs-index divergence). The carried follow-ups, in the Plan 2 post-mortem, also include a render-without-resolver
+contract caveat for the site migrations (resolve cairn links wherever a body renders to HTML), a `parseManifest`
+per-entry/version guard, and an `editLoad` two-read parallelize. The whole content-graph initiative still precedes the
+site migrations.
+
 ## Where the work is (2026-06-02, content-graph Plan 1 / the atomic commit primitive executed)
 
 Content-graph Plan 1 (the atomic multi-file commit primitive) executed subagent-driven on `main`, one
@@ -47,15 +113,10 @@ build with a `npm run cairn:manifest` regenerate command, and the `commitFiles` 
 blob last-writer-wins (accepted: the build reconciles). The picker is now Plan 3, the lifecycle guards Plan 4 (the
 design spec's plan list is annotated with the resequence). The pass is additive and bumps `0.18.0`.
 
-**Immediate next action: execute content-graph Plan 2,
-`docs/superpowers/plans/2026-06-02-cairn-content-graph-02-manifest-and-resolution.md`, `subagent-driven`
-(`superpowers:subagent-driven-development`, one `cairn-implementer` per task, Sonnet default), from the cairn-cms
-directory on `main`. Start at Task 1.** The design is settled (skip brainstorming). It runs on `main` directly
-(additive, no site deploys on a cairn-cms push). The pass-end review gate is the simplifier plus
-`cloudflare-workers-reviewer` (the atomic save commit), `svelte-reviewer` (the `EditPage` preview resolver), and a
-high-effort `/code-review` on the resolver miss/throw policy and the canonical serialize/verify; the live `/admin`
-smoke is a carried fast-follow for the ecnordic migration (the showcase runs `adapter-node`, not a Worker). After
-Plan 2 lands, draft Plan 3 (the picker) just-in-time.
+**Plan 2 is DONE (executed 2026-06-02).** See the top entry for the landing detail and the authoritative next
+action (brainstorm then write Plan 3, the picker). The description below remains as the pass's design record: it ran
+`subagent-driven` on `main` (additive, no site deploys), and its review gate was the simplifier plus
+`cloudflare-workers-reviewer`, `svelte-reviewer`, `daisyui-a11y-reviewer`, and a high-effort `/code-review`.
 
 **Latent follow-ups carried from Plan 1** (unreachable under current conventions, recorded in the post-mortem): the
 file-wide `encodeURIComponent(repo.branch)` in a ref path position would break a slashed branch name (cairn commits

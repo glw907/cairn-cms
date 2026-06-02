@@ -487,7 +487,11 @@ extended one. A site adds to the allowlist this way and cannot weaken the core s
 developer-controlled.
 
 A component's `build(ctx)` output is trusted and is never sanitized. It is the site's own code and it
-runs after the floor. Author content placed inside a component's slots is still sanitized.
+runs after the floor. The attribute values reaching `ctx.attributes` are author input rather than site
+code. A `build` must not place an attribute value into an `href`, `src`, `style`, or event-handler
+position without coercing it first, because the floor has already run and will not clean what `build`
+emits. Putting an attribute value into element text or a class name stays safe. Author content placed
+inside a component's slots is still sanitized.
 
 Set a public-page Content-Security-Policy as defense-in-depth, in the site's response headers or in
 `svelte.config.js` under `kit.csp`. A starting policy is `script-src 'self'; object-src 'none';

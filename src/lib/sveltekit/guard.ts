@@ -16,8 +16,10 @@ function isAdminPath(pathname: string): boolean {
   return pathname === '/admin' || pathname.startsWith('/admin/');
 }
 
-/** Attach the baseline security headers to an admin response. No full CSP; see the auth-hardening
- *  design. frame-ancestors is the modern clickjacking control and the one CSP directive included. */
+/**
+ * Attach the baseline security headers to an admin response. No full CSP; see the auth-hardening
+ * design. frame-ancestors is the modern clickjacking control and the one CSP directive included.
+ */
 function applySecurityHeaders(headers: Headers): void {
   headers.set('X-Content-Type-Options', 'nosniff');
   headers.set('X-Frame-Options', 'DENY');

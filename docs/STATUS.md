@@ -46,16 +46,24 @@ live admin smoke does not apply. Plan and full post-mortem:
 - Spec: `docs/superpowers/specs/2026-06-01-cairn-schema-source-of-truth-design.md` (initiative), design
   reference `docs/superpowers/specs/2026-06-01-cairn-schema-03-seo-design.md` (this plan).
 
-**Immediate next action: a sequencing decision, not a written plan.** The schema initiative is done, so the
-next pass direction is a fork for the user to call. The candidates, all on `main`: (a) the residual
-delivery-robustness follow-up pass (the feed/excerpt/permalink guards, the failure-path `frontmatter`
-typing, the reserved-`site`-key guard, the silent-empty-glob warning), small and self-contained; (b) the
-auth-hardening pass (`__Host-` cookie prefix, `/admin` security headers, rate-limit + `waitUntil` on the
-request endpoint, install-token KV caching), the last of the three engine-backlog passes; (c) the site
-migrations onto the delivery surface, now unblocked on the registry side. Per the established sequencing,
-the residual delivery follow-up lands before the site migrations. Each is design-bearing, so brainstorm
-with the user before writing the plan rather than auto-drafting. The `0.13.0`/`0.14.0` window is published
-as `0.14.0` (`latest`), so a migrating site can pin `^0.14.0`.
+**Immediate next action: execute the delivery-robustness plan,
+`docs/superpowers/plans/2026-06-01-cairn-delivery-robustness.md`, `subagent-driven`
+(`superpowers:subagent-driven-development`, one `cairn-implementer` per task, Sonnet default), from the
+cairn-cms directory on `main`.** The plan is fully written (five test-first tasks) and the design is settled
+(spec `docs/superpowers/specs/2026-06-01-cairn-delivery-robustness-design.md`, approved), so skip
+brainstorming and start at Task 1. It runs on `main` directly (additive, no site deploys on a cairn-cms
+push). The five tasks: keep invalid entries out of the typed read (`content-index.ts`, the Astro/Velite
+model, delete the `raw as F` cast), guard a missing or reserved-`site`-key glob at build
+(`site-indexes.ts`), omit a feed date rather than throw on a bad one (`feeds.ts`), scope feed autodiscovery
+to dated entries (`public-routes.ts`), then bump to `0.15.0` with the showcase production prerender as the
+end-to-end gate. Two items are deferred to the backlog (the permalink impossible-date and the excerpt CJK
+counting), near-unreachable for the English sites.
+
+After this pass lands, the remaining engine-backlog item is the auth-hardening pass (`__Host-` cookie
+prefix, `/admin` security headers, rate-limit + `waitUntil` on the request endpoint, install-token KV
+caching), independent and schedulable anytime. Then the site migrations onto the delivery surface, unblocked
+on the registry side (the `0.13.0`/`0.14.0` window is published as `0.14.0`, `latest`, so a site pins
+`^0.15.0` once this pass publishes).
 
 ## Where the work is (2026-06-01, schema Plan 2 / the contract cutover executed, unpublished)
 

@@ -65,7 +65,7 @@ export const cairn = defineAdapter({
   backend: { owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' },
   sender: { from: 'cms@showcase.test' },
   // Render through the engine so registered components (the callout) produce their markup.
-  render: (md) => renderMarkdown(md),
+  render: (md, opts) => renderMarkdown(md, opts),
   navMenu: { configPath: 'src/lib/site.config.yaml', menuName: 'primary', label: 'Navigation', maxDepth: 2 },
   registry,
   icons,

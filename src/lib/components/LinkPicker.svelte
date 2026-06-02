@@ -86,7 +86,7 @@ conventions. The plain-URL link stays the toolbar's link button; this is for an 
       {#each groups as group (group.concept)}
         <h3 class="mt-2 mb-1 text-xs font-semibold tracking-wide text-[var(--color-muted)] uppercase">{group.heading}</h3>
         <ul class="menu w-full">
-          {#each group.items as target (target.concept + '/' + target.id)}
+          {#each group.items as target (`${target.concept}/${target.id}`)}
             <li>
               <button type="button" onclick={() => choose(target)}>
                 <span class="flex flex-col items-start">

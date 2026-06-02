@@ -21,7 +21,11 @@ export interface RequestContext {
   request: Request;
   cookies: CookieJar;
   locals: { editor?: Editor | null };
-  platform?: { env?: AuthEnv; context?: { waitUntil(promise: Promise<unknown>): void } };
+  platform?: {
+    env?: AuthEnv;
+    ctx?: { waitUntil(promise: Promise<unknown>): void };
+    context?: { waitUntil(promise: Promise<unknown>): void };
+  };
   // Required so a site cannot silently drop the confirm page's Referrer-Policy header
   // (spec 7.1). A real SvelteKit RequestEvent always supplies it.
   setHeaders(headers: Record<string, string>): void;

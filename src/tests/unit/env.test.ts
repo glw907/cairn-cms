@@ -22,6 +22,10 @@ describe('requireOrigin', () => {
   it('throws on a non-https origin that is not local', () => {
     expect(() => requireOrigin({ PUBLIC_ORIGIN: 'http://ecnordic.ski' })).toThrow(/https/);
   });
+
+  it('rejects a lookalike localhost host', () => {
+    expect(() => requireOrigin({ PUBLIC_ORIGIN: 'http://localhost.evil.com' })).toThrow(/https/);
+  });
 });
 
 describe('requireDb', () => {

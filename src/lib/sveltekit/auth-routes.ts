@@ -53,7 +53,9 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
         const sending = send(env, buildMagicLinkMessage({ to: email, branding: config.branding, link })).catch(
           (err) => console.error('cairn: magic-link send failed', err),
         );
-        const ctx = event.platform?.context;
+        // adapter-cloudflare exposes the ExecutionContext as platform.ctx; platform.context is a
+        // deprecated alias kept as a fallback so an adapter that drops it keeps backgrounding.
+        const ctx = event.platform?.ctx ?? event.platform?.context;
         if (ctx?.waitUntil) ctx.waitUntil(sending);
         else await sending;
       }

@@ -65,7 +65,7 @@ export function makeEvent(input: {
     locals: { editor },
     platform: {
       env: { AUTH_DB: env.AUTH_DB, PUBLIC_ORIGIN: 'https://test.dev' },
-      context: waitUntil ? { waitUntil } : undefined,
+      ctx: waitUntil ? { waitUntil } : undefined,
     },
     setHeaders: () => {},
   };

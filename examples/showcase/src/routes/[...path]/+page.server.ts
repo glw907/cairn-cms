@@ -11,6 +11,7 @@ const routes = createPublicRoutes({
   origin: ORIGIN,
   siteName: cairn.siteName,
   description: SITE_DESCRIPTION,
+  defaultImage: ORIGIN + '/og/default.png',
   feeds: { rss: ORIGIN + '/feed.xml', json: ORIGIN + '/feed.json' },
 });
 

@@ -11,3 +11,4 @@ export { default as ComponentInsertDialog } from './ComponentInsertDialog.svelte
 export { default as ComponentForm } from './ComponentForm.svelte';
 export { default as IconPicker } from './IconPicker.svelte';
 export { default as NavTree } from './NavTree.svelte';
+export { default as LinkPicker } from './LinkPicker.svelte';

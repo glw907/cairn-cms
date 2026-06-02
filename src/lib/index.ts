@@ -52,7 +52,7 @@ export type { DatePrefix } from './content/ids.js';
 // Internal-link token and the committed content manifest (content-graph design). The corpus
 // builder and the request-time resolver ship from the delivery entry; this surface is the
 // grammar, the manifest operations, and their types a migrating site adopts.
-export { parseCairnToken, extractCairnLinks } from './content/links.js';
+export { parseCairnToken, extractCairnLinks, formatCairnToken } from './content/links.js';
 export type { CairnRef, LinkResolve } from './content/links.js';
 export {
   serializeManifest,

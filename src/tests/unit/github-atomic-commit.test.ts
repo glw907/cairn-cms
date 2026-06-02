@@ -1,7 +1,7 @@
 // src/tests/unit/github-atomic-commit.test.ts
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { commitFiles } from '../../lib/github/repo.js';
-import { type RepoRef } from '../../lib/github/types.js';
+import { CommitConflictError, type RepoRef } from '../../lib/github/types.js';
 
 const REPO: RepoRef = { owner: 'glw907', repo: 'ecnordic-ski', branch: 'main' };
 
@@ -100,5 +100,68 @@ describe('commitFiles', () => {
     await expect(
       commitFiles(REPO, [{ path: 'a.md', content: 'x' }], { message: 'm', author: { name: 'n', email: 'e' } }, 'tok'),
     ).rejects.toThrow(/500/);
+  });
+
+  it('retries the whole sequence on a non-fast-forward ref update, then succeeds', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      // attempt 1: the ref update is rejected as non-fast-forward
+      .mockResolvedValueOnce(json({ object: { sha: 'head1' } }))
+      .mockResolvedValueOnce(json({ tree: { sha: 'basetree1' } }))
+      .mockResolvedValueOnce(json({ sha: 'newtree1' }))
+      .mockResolvedValueOnce(json({ sha: 'commit1' }))
+      .mockResolvedValueOnce(new Response('{"message":"Update is not a fast forward"}', { status: 422 }))
+      // attempt 2: rebuilt on the new head, succeeds
+      .mockResolvedValueOnce(json({ object: { sha: 'head2' } }))
+      .mockResolvedValueOnce(json({ tree: { sha: 'basetree2' } }))
+      .mockResolvedValueOnce(json({ sha: 'newtree2' }))
+      .mockResolvedValueOnce(json({ sha: 'commit2' }))
+      .mockResolvedValueOnce(json({ ref: 'refs/heads/main' }));
+
+    const sha = await commitFiles(
+      REPO,
+      [{ path: 'a.md', content: 'x' }],
+      { message: 'm', author: { name: 'n', email: 'e' } },
+      'tok',
+    );
+
+    expect(sha).toBe('commit2');
+    expect(fetchMock).toHaveBeenCalledTimes(10);
+    // attempt 2's commit parents the new head, so the intervening commit is preserved
+    const commit2Body = JSON.parse((fetchMock.mock.calls[8][1] as RequestInit).body as string);
+    expect(commit2Body.parents).toEqual(['head2']);
+  });
+
+  it('throws CommitConflictError after exhausting retries on repeated non-fast-forward', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch');
+    // 4 attempts (the initial try plus 3 retries), each ending in a 422 ref update
+    for (let i = 0; i < 4; i++) {
+      fetchMock
+        .mockResolvedValueOnce(json({ object: { sha: `head${i}` } }))
+        .mockResolvedValueOnce(json({ tree: { sha: `basetree${i}` } }))
+        .mockResolvedValueOnce(json({ sha: `newtree${i}` }))
+        .mockResolvedValueOnce(json({ sha: `commit${i}` }))
+        .mockResolvedValueOnce(new Response('{"message":"Update is not a fast forward"}', { status: 422 }));
+    }
+
+    await expect(
+      commitFiles(REPO, [{ path: 'a.md', content: 'x' }], { message: 'm', author: { name: 'n', email: 'e' } }, 'tok'),
+    ).rejects.toBeInstanceOf(CommitConflictError);
+    expect(fetchMock).toHaveBeenCalledTimes(20);
+  });
+
+  it('throws on a non-422 ref update failure without retrying', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(json({ object: { sha: 'head1' } }))
+      .mockResolvedValueOnce(json({ tree: { sha: 'basetree' } }))
+      .mockResolvedValueOnce(json({ sha: 'newtree' }))
+      .mockResolvedValueOnce(json({ sha: 'commit1' }))
+      .mockResolvedValueOnce(new Response('forbidden', { status: 403 }));
+
+    await expect(
+      commitFiles(REPO, [{ path: 'a.md', content: 'x' }], { message: 'm', author: { name: 'n', email: 'e' } }, 'tok'),
+    ).rejects.toThrow(/403/);
+    expect(fetchMock).toHaveBeenCalledTimes(5);
   });
 });

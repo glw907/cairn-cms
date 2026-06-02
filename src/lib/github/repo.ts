@@ -184,6 +184,9 @@ function treeChanges(changes: FileChange[]): TreeChange[] {
   );
 }
 
+/** Retries after the initial attempt when the branch moves under an atomic commit. */
+const COMMIT_RETRIES = 3;
+
 /**
  * Commit several path changes in one commit over the Git Data API. The author is the editor; the
  * committer is omitted, so GitHub attributes the commit to the App. Returns the new commit sha.
@@ -200,30 +203,35 @@ export async function commitFiles(
   token: string,
 ): Promise<string> {
   const tree = treeChanges(changes);
-  const parent = await headCommitSha(repo, token);
-  const baseTree = await commitTreeSha(repo, parent, token);
+  for (let attempt = 0; attempt <= COMMIT_RETRIES; attempt++) {
+    const parent = await headCommitSha(repo, token);
+    const baseTree = await commitTreeSha(repo, parent, token);
 
-  const treeRes = await fetch(gitUrl(repo, 'trees'), {
-    method: 'POST',
-    headers: { ...ghHeaders('application/vnd.github+json', token), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ base_tree: baseTree, tree }),
-  });
-  if (!treeRes.ok) throw new Error(`GitHub tree create failed: ${treeRes.status} ${await treeRes.text()}`);
-  const newTree = ((await treeRes.json()) as { sha: string }).sha;
+    const treeRes = await fetch(gitUrl(repo, 'trees'), {
+      method: 'POST',
+      headers: { ...ghHeaders('application/vnd.github+json', token), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ base_tree: baseTree, tree }),
+    });
+    if (!treeRes.ok) throw new Error(`GitHub tree create failed: ${treeRes.status} ${await treeRes.text()}`);
+    const newTree = ((await treeRes.json()) as { sha: string }).sha;
 
-  const commitRes = await fetch(gitUrl(repo, 'commits'), {
-    method: 'POST',
-    headers: { ...ghHeaders('application/vnd.github+json', token), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: opts.message, tree: newTree, parents: [parent], author: opts.author }),
-  });
-  if (!commitRes.ok) throw new Error(`GitHub commit create failed: ${commitRes.status} ${await commitRes.text()}`);
-  const newCommit = ((await commitRes.json()) as { sha: string }).sha;
+    const commitRes = await fetch(gitUrl(repo, 'commits'), {
+      method: 'POST',
+      headers: { ...ghHeaders('application/vnd.github+json', token), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: opts.message, tree: newTree, parents: [parent], author: opts.author }),
+    });
+    if (!commitRes.ok) throw new Error(`GitHub commit create failed: ${commitRes.status} ${await commitRes.text()}`);
+    const newCommit = ((await commitRes.json()) as { sha: string }).sha;
 
-  const refRes = await fetch(gitUrl(repo, `refs/heads/${encodeURIComponent(repo.branch)}`), {
-    method: 'PATCH',
-    headers: { ...ghHeaders('application/vnd.github+json', token), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sha: newCommit, force: false }),
-  });
-  if (!refRes.ok) throw new Error(`GitHub ref update failed: ${refRes.status} ${await refRes.text()}`);
-  return newCommit;
+    const refRes = await fetch(gitUrl(repo, `refs/heads/${encodeURIComponent(repo.branch)}`), {
+      method: 'PATCH',
+      headers: { ...ghHeaders('application/vnd.github+json', token), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sha: newCommit, force: false }),
+    });
+    if (refRes.ok) return newCommit;
+    // A non-fast-forward means the branch moved; retry on the new head so a concurrent commit
+    // is preserved. Any other failure is not a race, so surface it.
+    if (refRes.status !== 422) throw new Error(`GitHub ref update failed: ${refRes.status} ${await refRes.text()}`);
+  }
+  throw new CommitConflictError(`${repo.branch} (atomic commit)`);
 }

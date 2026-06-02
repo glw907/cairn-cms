@@ -536,3 +536,28 @@ This plan touches the GitHub commit path, which writes to `main` and triggers a 
 - **TDD growth.** Task 1 writes the single pass (the first 422 throws), Task 2 widens the type for deletes, and Task 3 wraps the loop so the retry tests fail first for the right reason. Each task's test fails before its implementation lands.
 - **Testing altitude.** The GitHub layer is unit-tested by stubbing `fetch` per call, the established pattern in `github-commit.test.ts`, since the `integration` project has no GitHub double. This corrects the design doc's testing note. The five-call sequence and the retry are exact and deterministic under `mockResolvedValueOnce`.
 - **Versioning.** Additive and internal, no package export, no export-condition change, so no version bump. The version moves later in the initiative when a consumable surface lands.
+
+---
+
+## Post-mortem (executed 2026-06-02)
+
+Executed subagent-driven on `main`, one `cairn-implementer` per task (Sonnet), commits `51f36de..2e4cfde`, plus one review-gate fold-in `3ba73af`. Local only, not pushed. No version bump (additive and internal, `commitFiles` is unexported).
+
+**What landed.** `commitFiles(repo, changes, opts, token)` in `src/lib/github/repo.ts`, beside the single-file `commitFile`, with the module-private helpers `gitUrl`, `headCommitSha`, `commitTreeSha`, `treeChanges`, the `TreeChange` entry type, and the `COMMIT_RETRIES = 3` constant. It runs the five-call Git Data API sequence per attempt: read the branch head, read its base tree, POST a new tree on `base_tree` (so an unnamed path is preserved), POST one commit parented on the head with the editor as author and the committer omitted, then PATCH the ref with `force: false`. The exported `FileChange` is `{ path, content: string | null }`, where a null content encodes a delete as a `sha: null` tree entry, so one commit mixes writes and deletes (what a rename needs). A `422` non-fast-forward retries the whole sequence on the re-read head up to three times, rebuilding the tree on the new base so a concurrent commit survives; exhaustion throws the existing `CommitConflictError`. A non-422 ref failure throws immediately.
+
+**Verified.** Three task commits each landed test-first (the targeted test failed for the right reason, then passed). Final gate at the tip (`3ba73af`): `npm run check` 754 files 0/0, `npm test` 99 files / 489 tests exit 0. The eight-case `github-atomic-commit.test.ts` pins the URL sequence (GET singular `ref/`, PATCH plural `refs/`), the `base_tree`/parent wiring, the write and delete tree shapes, the retry-then-succeed (attempt 2 parents the fresh head), the exhaustion-to-`CommitConflictError` (exactly 20 fetch calls over four attempts), the non-422 immediate throw, and the empty-change-set guard. Verification item confirmed: `commitFiles` is not in `src/lib/index.ts` and is imported nowhere outside the test, so the pass adds no public surface.
+
+**Review gate.** The simplifier found nothing to change (it weighed factoring the thrice-repeated JSON-header spread and correctly left it inline to match `commitFile`'s idiom). `cloudflare-workers-reviewer` (Opus) returned no Critical or Important findings and a ship-it verdict, confirming the API sequence, the retry, and the fail-safe. A high-effort seven-angle `/code-review` confirmed the diff is cleanly additive with no caller, collision, or barrel leak. One finding was folded in test-first as `3ba73af`: an empty `changes` array would have built an empty tree, created a no-diff commit, and advanced the ref, pushing an empty commit that triggers a site redeploy for no content change; `commitFiles` now throws before any network call. The save and lifecycle callers always pass at least one change, but this writes to `main`, so it fails fast.
+
+**Decisions locked in.**
+- The GitHub backend stays unit-tested by stubbing `fetch` per call (the `github-commit.test.ts` pattern), correcting the design doc's note that said integration. The `integration` project has no GitHub double.
+- Inline `content` in the tree entry is text-only and sized for content files (markdown plus the JSON manifest). A future binary asset would need a separate base64 blob POST, not this primitive.
+- The delete entry carries `{ path, mode, type: 'blob', sha: null }` rather than the minimal `{ path, sha: null }`; GitHub accepts it and the tests pin this shape.
+
+**Carried follow-ups (latent, unreachable under current conventions).**
+- `headCommitSha` and the ref PATCH run `encodeURIComponent(repo.branch)` in a path position, which would turn a slash in a branch name into `%2F` and break the ref lookup. This matches the file-wide pattern (`treeUrl`, `contentsUrl` do the same) and is unreachable because cairn commits only to `main`. A later pass that supports a slashed branch fixes all sites together.
+- The retry treats every `422` on the ref PATCH as a non-fast-forward. GitHub can return `422` for other ref-update faults, which would retry four times and then surface as a `CommitConflictError` rather than the true cause. Low likelihood, bounded, and fail-safe.
+- The `CommitConflictError` on exhaustion carries the branch label in its `path` field (`main (atomic commit)`), informational only.
+- The GET helpers throw with the status alone and do not read the error body, matching the file's read helpers (`fileSha`, `readRaw`, `listMarkdown`); the write branches read `.text()`, matching `commitFile`. A future pass could unify the diagnostics on the write path.
+
+No `/admin` server surface changed (no route calls `commitFiles` yet), so the live admin smoke does not apply.

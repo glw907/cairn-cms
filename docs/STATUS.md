@@ -6,7 +6,50 @@ orientation is the workspace `CLAUDE.md`. Locked architecture decisions and the 
 the functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`).
 Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`.
 
-## Where the work is (2026-06-02, content-graph initiative planned, Plan 1 written)
+## Where the work is (2026-06-02, content-graph Plan 1 / the atomic commit primitive executed)
+
+Content-graph Plan 1 (the atomic multi-file commit primitive) executed subagent-driven on `main`, one
+`cairn-implementer` per task (Sonnet), commits `51f36de..2e4cfde`, plus one review-gate fold-in `3ba73af`. Local
+only, not pushed. No version bump (additive and internal, `commitFiles` is unexported from the package entry). It
+is the foundation of the content-graph initiative and the highest-stakes code in it (it writes to `main` and a
+later caller will trigger site deploys), so it landed and was verified in isolation before anything builds on it.
+
+`commitFiles(repo, changes, opts, token)` lives in `src/lib/github/repo.ts` beside the single-file `commitFile`.
+It commits several path changes in one commit over the Git Data API: read the branch head, read its base tree,
+POST a new tree on `base_tree` (so an unnamed path is preserved, including a concurrent commit's on a retry), POST
+one commit parented on the head with the editor as author and the committer omitted, then PATCH the ref with
+`force: false`. The exported `FileChange` is `{ path, content: string | null }`, where a null content encodes a
+delete as a `sha: null` tree entry, so one commit mixes writes and deletes (what a rename needs). A `422`
+non-fast-forward retries the whole sequence on the re-read head up to three times, rebuilding the tree on the new
+base, and exhaustion throws the existing `CommitConflictError` so the caller fails safe. A non-422 ref failure
+throws immediately. An empty change set is rejected before any network call (the review-gate fold-in).
+
+Final gate at the tip (`3ba73af`): `npm run check` 754 files 0/0, `npm test` 99 files / 489 tests exit 0. The
+eight-case `github-atomic-commit.test.ts` pins the URL sequence (GET singular `ref/`, PATCH plural `refs/`), the
+`base_tree`/parent wiring, the write and delete tree shapes, the retry-then-succeed, the
+exhaustion-to-`CommitConflictError`, the non-422 immediate throw, and the empty-set guard. The simplifier found
+nothing to change. `cloudflare-workers-reviewer` (Opus) returned a ship-it verdict, no Critical or Important. A
+high-effort seven-angle `/code-review` confirmed the diff is cleanly additive with no caller, collision, or barrel
+leak; its one folded finding is the empty-set guard. The `svelte-reviewer`, `web-auth-security-reviewer`,
+`daisyui-a11y-reviewer`, and the live admin smoke did not apply (no Svelte, auth, session, cookie, or DaisyUI code,
+and no route calls `commitFiles` yet). Plan and full post-mortem (with the locked decisions and the latent
+follow-ups): `docs/superpowers/plans/2026-06-02-cairn-content-graph-01-atomic-commit.md`.
+
+**Immediate next action: brainstorm then write content-graph Plan 2, the committed manifest.** Plan 1 is the last
+fully pre-written plan in the initiative; the remaining four are written just-in-time. Plan 2 is design-bearing, so
+run `superpowers:brainstorming` with the user on what the spec leaves open (the manifest's on-disk shape and path,
+what the build-time projection records per entry, how `commitFiles` writes the manifest alongside content, and the
+build-fail backstop), then `superpowers:writing-plans`. The spine is settled in the design spec
+(`docs/superpowers/specs/2026-06-02-cairn-content-graph-design.md`): files are truth, the manifest is a
+build-verified projection in git (not D1), and every content mutation commits content and manifest atomically
+through the new `commitFiles`. Do not auto-write the plan; settle the open decisions with the user first.
+
+**Latent follow-ups carried from Plan 1** (unreachable under current conventions, recorded in the post-mortem): the
+file-wide `encodeURIComponent(repo.branch)` in a ref path position would break a slashed branch name (cairn commits
+only to `main`); the retry treats every ref-PATCH `422` as a non-fast-forward; the GET helpers throw with the
+status alone and do not read the error body.
+
+### The content-graph initiative (design)
 
 The content-graph initiative is the active engine work, sequenced **before** the site migrations (decided this
 session, migration is unhurried so the slot ahead of it is the accepted trade). It gives cairn a committed,
@@ -37,14 +80,9 @@ on it. Plan 1 is internal and additive (no package export, no version bump). One
 plan: the GitHub layer is unit-tested by stubbing `fetch` (the `github-commit.test.ts` pattern), not in the
 integration project, which has no GitHub double.
 
-**Immediate next action: execute the content-graph Plan 1,
-`docs/superpowers/plans/2026-06-02-cairn-content-graph-01-atomic-commit.md`, `subagent-driven`
-(`superpowers:subagent-driven-development`, one `cairn-implementer` per task, Sonnet default), from the cairn-cms
-directory on `main`. Start at Task 1.** The design is settled (skip brainstorming). It runs on `main` directly
-(internal, no site deploys on a cairn-cms push). The pass-end review gate is `cloudflare-workers-reviewer` (Opus)
-plus a high-effort `/code-review` on the Git Data API sequence and the non-fast-forward retry; the other three
-reviewers and the live admin smoke do not apply (no Svelte, auth, session, cookie, or DaisyUI code, and no route
-calls `commitFiles` yet). After Plan 1 lands, draft Plan 2 (the committed manifest) just-in-time.
+**Plan 1 is DONE (executed 2026-06-02).** See the top entry for the landing detail and the authoritative next
+action (brainstorm then write Plan 2, the committed manifest). The plan series detail below remains as the
+initiative's roadmap.
 
 The site migrations (ecnordic then 907, `^0.17.0`) follow the whole initiative, so each site wires its complete
 content layer (delivery, resolver, manifest) in one site-pass and the scaffolder template captures the full

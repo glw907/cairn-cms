@@ -13,3 +13,4 @@ export { default as IconPicker } from './IconPicker.svelte';
 export { default as NavTree } from './NavTree.svelte';
 export { default as LinkPicker } from './LinkPicker.svelte';
 export { default as DeleteDialog } from './DeleteDialog.svelte';
+export { default as RenameDialog } from './RenameDialog.svelte';

@@ -1,0 +1,77 @@
+<!--
+@component
+The Delete control and its modal. With no inbound links it is a plain confirm that posts to the
+?/delete action. With inbound links it blocks: it names how many entries link here and lists them,
+each linking to its edit page, so the author repoints or removes those links first. Built on a native
+<dialog>, following the LinkPicker a11y conventions.
+-->
+<script lang="ts">
+  import type { InboundLink } from '../content/manifest.js';
+
+  interface Props {
+    /** The concept this entry belongs to, e.g. "posts". Posted with the confirm. */
+    conceptId: string;
+    /** The entry id within its concept. Posted with the confirm. */
+    id: string;
+    /** A human label for the concept, e.g. "Post", used in the prompts. */
+    label: string;
+    /** The entries that link to this one; non-empty blocks the delete. */
+    inboundLinks: InboundLink[];
+  }
+
+  let { conceptId, id, label, inboundLinks }: Props = $props();
+
+  let dialog = $state<HTMLDialogElement | null>(null);
+  const blocked = $derived(inboundLinks.length > 0);
+  const noun = $derived(label.toLowerCase());
+  const verb = $derived(inboundLinks.length === 1 ? 'links' : 'link');
+  const pronoun = $derived(inboundLinks.length === 1 ? 'it' : 'them');
+
+  function open() {
+    dialog?.showModal();
+  }
+  function close() {
+    dialog?.close();
+  }
+</script>
+
+<button type="button" class="btn btn-sm btn-ghost text-error" aria-haspopup="dialog" onclick={open}>
+  Delete
+</button>
+
+<dialog class="modal" aria-labelledby="cairn-delete-dialog-title" bind:this={dialog}>
+  <div class="modal-box">
+    <div class="mb-3 flex items-center justify-between">
+      <h2 id="cairn-delete-dialog-title" class="text-base font-semibold">Delete this {label.toLowerCase()}?</h2>
+      <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={close}>✕</button>
+    </div>
+
+    {#if blocked}
+      <p class="mb-2 text-sm">
+        {inboundLinks.length} {noun}{inboundLinks.length === 1 ? '' : 's'} {verb} here. Remove or repoint {pronoun} before
+        deleting, so no link is left broken.
+      </p>
+      <ul class="menu w-full">
+        {#each inboundLinks as link (link.concept + '/' + link.id)}
+          <li>
+            <a href={`/admin/${link.concept}/${link.id}`}>{link.title}</a>
+          </li>
+        {/each}
+      </ul>
+      <div class="mt-3 flex justify-end">
+        <button type="button" class="btn btn-sm" onclick={close}>Close</button>
+      </div>
+    {:else}
+      <p class="mb-3 text-sm">This cannot be undone.</p>
+      <form method="POST" action="?/delete" class="flex justify-end gap-2">
+        <input type="hidden" name="concept" value={conceptId} />
+        <input type="hidden" name="id" value={id} />
+        <button type="button" class="btn btn-sm" onclick={close}>Cancel</button>
+        <button type="submit" class="btn btn-sm btn-error">Delete this {label.toLowerCase()}</button>
+      </form>
+    {/if}
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button tabindex="-1" aria-label="Close">close</button>
+  </form>
+</dialog>

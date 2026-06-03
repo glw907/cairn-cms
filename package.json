@@ -53,6 +53,11 @@
       "svelte": "./dist/delivery/index.js",
       "default": "./dist/delivery/index.js"
     },
+    "./delivery/head": {
+      "types": "./dist/delivery/head.d.ts",
+      "svelte": "./dist/delivery/head.js",
+      "default": "./dist/delivery/head.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [

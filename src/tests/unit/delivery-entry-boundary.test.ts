@@ -14,7 +14,9 @@ describe('/delivery backend-free boundary', () => {
   it('exposes a barrel', () => {
     const barrel = readFileSync('src/lib/delivery/index.ts', 'utf8');
     expect(barrel).toContain('createSiteIndex');
-    expect(barrel).toContain('CairnHead');
+    // CairnHead moved to the dedicated ./delivery/head entry so the data barrel stays
+    // component-free and loads under node without the Svelte vitest plugin.
+    expect(barrel).not.toContain('CairnHead');
   });
 
   it('imports no github, auth, or email module', () => {

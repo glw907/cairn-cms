@@ -34,4 +34,3 @@ export type {
   TagIndexData,
   EntryData,
 } from '../sveltekit/public-routes.js';
-export { default as CairnHead } from './CairnHead.svelte';

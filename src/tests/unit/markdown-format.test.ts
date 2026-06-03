@@ -60,6 +60,10 @@ describe('insertInlineLink', () => {
     const res = insertInlineLink('see [keep] this', 4, 10, 'cairn:pages/x', 'Title');
     expect(res.doc).toBe('see [[keep]](cairn:pages/x) this');
   });
+  it('composes a pre-mount fallback link as inline markdown', () => {
+    // The MarkdownEditor pre-mount fallback appends insertInlineLink('', 0, 0, href, title).doc.
+    expect(insertInlineLink('', 0, 0, 'cairn:pages/about', 'About').doc).toBe('[About](cairn:pages/about)');
+  });
 });
 
 describe('unwrapCairnLink', () => {

@@ -109,7 +109,13 @@ preview lives in EditPage through the adapter's render. Swapping the editor stay
   }
 
   function insertLink(href: string, title: string) {
-    if (!view) return;
+    if (!view) {
+      // The editor has not mounted yet; append the link to the raw value so a pick is never lost,
+      // mirroring insertAtCursor's pre-mount fallback.
+      const link = insertInlineLink('', 0, 0, href, title).doc;
+      value = value ? `${value} ${link}` : link;
+      return;
+    }
     const { from, to } = view.state.selection.main;
     const doc = view.state.doc.toString();
     const next = insertInlineLink(doc, from, to, href, title);

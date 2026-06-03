@@ -809,3 +809,77 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - A high-effort `/code-review` over the branch diff.
 - Live `/admin` smoke does not apply (no `/admin` surface changed; the showcase runs `adapter-node`).
 - Fold findings in, then update the plan post-mortem and `docs/STATUS.md` per the `cairn-pass` consolidation ritual.
+
+---
+
+## Post-mortem (executed 2026-06-03, subagent-driven on `main`)
+
+Executed subagent-driven on `main`, one `cairn-implementer` per task (Sonnet throughout; the tasks were
+mechanical and well-specified, so Opus was not needed). Nine task commits `4ff9f56..c85c9d9`, one
+simplifier commit `b2a1b19`, one review fold-in `36d92a7`. Local only, not pushed, not published. The
+minor bumps to `0.22.0` (additive read-model surface plus one breaking import move).
+
+### What was built
+- `ContentSummary.concept` (`descriptor.id`, stamped in `createContentIndex`, flows through `summarize`
+  to every list, tag, adjacent, and detail read). Task 1.
+- `EntryData.concept`, set in `entryLoad` from the resolved `ContentEntry` (which extends
+  `ContentSummary`). Task 2.
+- The `summaryFields` descriptor knob: optional on `ConceptConfig`, non-optional `string[]` on
+  `ConceptDescriptor` (matching `datePrefix`/`permalink`/`fields`), defaulted to `[]` in
+  `normalizeConcepts`. Task 3.
+- `ContentSummary.fields`: a `Record<string, unknown>` copied from the validated `result.data` for each
+  nominated key, so a list card reads an authored field with no per-entry detail read. A key the entry
+  omits is simply absent (the `key in result.data` guard). Task 4.
+- `CairnHead` moved to a dedicated `@glw907/cairn-cms/delivery/head` entry (`src/lib/delivery/head.ts`
+  plus the `package.json` export), so the `/delivery` data barrel loads in node with no Svelte plugin.
+  Breaking import move. Task 5.
+- The package root re-exports the delivery route loaders (`createPublicRoutes`), the response helpers,
+  and the route types, while keeping `CairnHead` off root so root stays node-importable. Task 6.
+- The site guide import rule and the `0.22.0` `CHANGELOG.md` entry (the file was created; no prior
+  changelog existed). Task 7.
+- The showcase wired end to end: `summaryFields: ['description']` on the posts concept, a prerendered
+  home `+page.server.ts`/`+page.svelte` listing summaries from `summary.fields` and `data.concept`, and
+  the fixed `CairnHead` import. Task 8.
+
+### Verified (evidence)
+- Final gate at the tip (`c85c9d9`, the version bump): `npm run check` 779 files 0/0, `npm test` 110
+  files / 616 tests exit 0, `npm run check:package` all entries green including the new `./delivery/head`
+  subpath. The review fold-in `36d92a7` is comment-only and re-ran `npm run check` 779 0/0.
+- End-to-end: the showcase production build exits 0, and the prerendered home (`index.html`) carries
+  `class="summary"` (the authored `description`) and `data-concept="posts"`, proving both new fields reach
+  a list card with no detail read.
+
+### Two sound implementer deviations (both correct downstream consequences)
+- Task 5 updated a stale assertion in `delivery-entry-boundary.test.ts` (`toContain('CairnHead')` to
+  `not.toContain('CairnHead')`), invalidated directly by the barrel split. Necessary for a green suite.
+- Task 7 fixed a stale `CairnHead` import in a `+page.svelte` example inside the same guide, so the guide
+  does not contradict the rule it documents.
+
+### Review gate
+The simplifier dropped one redundant no-op `as Record<string, unknown>` cast in `content-index.ts`
+(`b2a1b19`; `result.data` already narrows to `Record<string, unknown>` after the `!result.ok` guard).
+`svelte-reviewer` (Opus) returned ship-it with one Nit. The high-effort `/code-review` (three correctness
+angles plus a combined cleanup/altitude angle) found no Critical, no Important, and no confirmed
+correctness bug: the removed-behavior and cross-file tracer angles returned empty (every construction site
+funnels through `normalizeConcepts`/`createContentIndex`, and `check` 0/0 covers the type surface). The
+one finding two reviewers converged on, the `fields` doc comment overselling "Namespaced" when the
+mechanism is a separate sub-record, folded in as `36d92a7`. `daisyui-a11y-reviewer` did not apply (plain
+markup), and `cloudflare-workers-reviewer`/`web-auth-security-reviewer` did not apply. Live `/admin` smoke
+did not apply.
+
+### Carried follow-ups (non-blocking, for later)
+- **The 13 hand-built `ConceptDescriptor` literals** across 9 unit-test files (the plan's own follow-up): a
+  shared `makeDescriptor(overrides)` test factory would localize each future resolved-field default to one
+  place. A test-infra refactor with its own blast radius, worth a small dedicated cleanup.
+- **Empty `fields: {}` allocated per entry** even when `summaryFields` is empty (the common case). A
+  build-time-only cost over a tiny corpus, negligible today. A `.length` guard reusing a shared frozen
+  empty record would avoid the per-entry churn if the corpus ever grows large.
+- **Dual export-list drift:** the root barrel and the `/delivery` barrel now hand-maintain overlapping
+  delivery export lists, so adding a delivery export means editing both. A `export *` from the
+  (now component-free) `/delivery` barrel into root could collapse the two lists. Out of scope here; revisit
+  if the lists drift.
+- **`summaryFields` fails open** on a nominated key absent from `result.data` (a typo, or a key not mirrored
+  into the schema): the key is silently dropped with no `problems()` entry or build warning. The behavior is
+  the designed contract (the tests assert it, and `types.ts` advises declaring the key in the schema), but a
+  validation that a `summaryFields` key is schema-declared would turn the silent miss into a loud one. A
+  candidate for the P2 schema-validation pass.

@@ -6,6 +6,47 @@ orientation is the workspace `CLAUDE.md`. Locked architecture decisions and the 
 the functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`).
 Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`.
 
+## Where the work is (2026-06-03, DX pass P1 / delivery read-model executed; 0.22.0 unpublished)
+
+The DX backlog triaged into the P1 through P4 engine-pass sequence (the entry below has the full triage and
+the P2 through P4 scope). **P1, the delivery read-model touch-ups, is now executed and review-gated on
+`main`.** It ran subagent-driven, one `cairn-implementer` per task (Sonnet throughout, the tasks were
+mechanical), nine task commits `4ff9f56..c85c9d9` plus a simplifier commit `b2a1b19` and a review fold-in
+`36d92a7`. **Local only, not pushed, not published.** The minor bumps to `0.22.0` (additive read-model
+surface plus one breaking import move).
+
+The pass delivers DX items 1, 2, 3: `ContentSummary.concept` and `EntryData.concept` (the read model carries
+its resolved concept id, so a list or page branches per concept without sniffing `entry.date`); the
+`summaryFields` descriptor knob feeding `ContentSummary.fields` (a list card reads an authored frontmatter
+key with no per-entry detail read); the package root re-exporting the delivery route loaders and response
+helpers; and `CairnHead` moved to its own `@glw907/cairn-cms/delivery/head` entry so the `/delivery` data
+barrel loads in node with no Svelte plugin (the one breaking import move). The showcase wires the whole
+surface end to end (a prerendered home listing summaries from `summary.fields` and `data.concept`).
+
+Gate at the tip: `npm run check` 779 files 0/0, `npm test` 110 files / 616 tests exit 0, `npm run
+check:package` all entries green including the new `./delivery/head` subpath. End-to-end, the showcase
+production build exits 0 and the prerendered home carries `class="summary"` and `data-concept="posts"`. The
+review gate (simplifier, `svelte-reviewer` Opus, a high-effort four-angle `/code-review`) found no Critical,
+no Important, and no confirmed correctness bug; the one convergent finding (a `fields` doc comment overselling
+"Namespaced") folded in as `36d92a7`. The full post-mortem with the four carried follow-ups (the
+`makeDescriptor` test factory, the per-entry empty-`{}` allocation, the dual-barrel export-list drift, and
+`summaryFields` failing open on an undeclared key) is in
+`docs/superpowers/plans/2026-06-03-cairn-delivery-readmodel.md`.
+
+**Immediate next action: brainstorm then write P2 (schema validation), the next pass in the DX sequence.**
+P2 covers DX items 10 and 12: declarative, serializable field options to restore the four validations the
+schema cutover dropped (calendar-date, date-format, tag-vocabulary, the at-least-one-tag rule), plus
+`readonly` field options. The open design decisions need the user's calls before the plan is written (per the
+`cairn-pass` ritual, never auto-write a plan without them), so run `superpowers:brainstorming` first, then
+`superpowers:writing-plans`. P2 runs on `main` directly (additive, no site deploys) and will bump `0.23.0`.
+The `summaryFields`-fails-open follow-up from P1 (a validation that a `summaryFields` key is schema-declared)
+is a candidate to fold into P2. After P2, P3 is render and component authoring, then publish the rolled
+`0.22.0`/`0.23.0`/P3 window, then the 907-life migration, then P4 (the scaffolder).
+
+**Publishing is held** (consistent with the held window the entry below describes): `0.21.0` is the registry
+`latest`, and `main` will carry `0.22.0` (P1) plus the later P2/P3 bumps until the window publishes together
+before the 907 migration. A site pins a range only after the publish.
+
 ## Where the work is (2026-06-03, DX backlog triaged into engine passes; P1 spec and plan written)
 
 The content-graph initiative is COMPLETE and `0.21.0` is the registry `latest` (see the entry below). This

@@ -43,6 +43,15 @@ export function normalizeConcepts(
   const descriptors: ConceptDescriptor[] = [];
   for (const [id, config] of Object.entries(content)) {
     if (!config) continue;
+    const summaryFields = config.summaryFields ?? [];
+    const declared = new Set(config.schema.fields.map((field) => field.name));
+    for (const key of summaryFields) {
+      if (!declared.has(key)) {
+        throw new Error(
+          `cairn: concept "${id}" summaryFields key "${key}" is not a declared field`,
+        );
+      }
+    }
     const policy = urlPolicy[id] ?? {};
     descriptors.push({
       id,
@@ -52,7 +61,7 @@ export function normalizeConcepts(
       permalink: policy.permalink ?? defaultPermalink(id),
       datePrefix: policy.datePrefix ?? 'day',
       fields: config.schema.fields,
-      summaryFields: config.summaryFields ?? [],
+      summaryFields,
       validate: config.schema.validate,
     });
   }

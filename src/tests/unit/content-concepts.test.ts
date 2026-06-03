@@ -78,7 +78,15 @@ describe('normalizeConcepts URL policy', () => {
 
   it('carries summaryFields onto the descriptor and defaults it to empty', () => {
     const [withFields] = normalizeConcepts({
-      posts: { dir: 'p', schema: defineFields([{ type: 'text', name: 'title', label: 'Title' }]), summaryFields: ['description', 'heroImage'] },
+      posts: {
+        dir: 'p',
+        schema: defineFields([
+          { type: 'text', name: 'title', label: 'Title' },
+          { type: 'textarea', name: 'description', label: 'Description' },
+          { type: 'text', name: 'heroImage', label: 'Hero image' },
+        ]),
+        summaryFields: ['description', 'heroImage'],
+      },
     });
     expect(withFields.summaryFields).toEqual(['description', 'heroImage']);
 
@@ -86,6 +94,32 @@ describe('normalizeConcepts URL policy', () => {
       pages: { dir: 'g', schema: defineFields([{ type: 'text', name: 'title', label: 'Title' }]) },
     });
     expect(withoutFields.summaryFields).toEqual([]);
+  });
+
+  it('throws when a summaryFields key is not a declared field', () => {
+    expect(() =>
+      normalizeConcepts({
+        posts: {
+          dir: 'p',
+          schema: defineFields([{ type: 'text', name: 'title', label: 'Title' }]),
+          summaryFields: ['description'],
+        },
+      }),
+    ).toThrow('cairn: concept "posts" summaryFields key "description" is not a declared field');
+  });
+
+  it('accepts a summaryFields key that names a declared field', () => {
+    const [descriptor] = normalizeConcepts({
+      posts: {
+        dir: 'p',
+        schema: defineFields([
+          { type: 'text', name: 'title', label: 'Title' },
+          { type: 'textarea', name: 'description', label: 'Description' },
+        ]),
+        summaryFields: ['description'],
+      },
+    });
+    expect(descriptor.summaryFields).toEqual(['description']);
   });
 });
 

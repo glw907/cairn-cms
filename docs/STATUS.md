@@ -69,14 +69,22 @@ banners are `{#if}`-gated and announced inconsistently), and a perf-and-reuse cl
 per save, double `parseMarkdown` per file at build, sequential `editLoad` reads, the `byKey`/resolver
 key-shape duplication).
 
-**Immediate next action: write content-graph Plan 5 (slug-only rename plus the multi-file inbound rewrite).**
-The Plan 5 design is brainstormed and approved in conversation (2026-06-02): slug-only rename (a page renames
-its id=slug; a dated post renames the date-stripped slug, keeping its date prefix; changing the date stays out
-of scope since the date is already an editable frontmatter field that resolves safely), the atomic inbound-link
-rewrite through `commitFiles`, and no cascade-unwrap-on-delete (block-until-clean already makes delete safe, and
-auto-editing other authors' pages is the wrong default for non-technical authors). The next step is to write the
-design spec to `docs/superpowers/specs/`, then the numbered Plan 5, then execute it subagent-driven on `main`.
-The `commitFiles` 422 edge and the concurrency-race note fold into the Plan 5 design.
+**Immediate next action: execute content-graph Plan 5,
+`docs/superpowers/plans/2026-06-02-cairn-content-graph-05-rename.md`, `subagent-driven`
+(`superpowers:subagent-driven-development`, one `cairn-implementer` per task, Sonnet default), from the cairn-cms
+directory on `main`. Start at Task 1.** The design is settled and approved (spec
+`docs/superpowers/specs/2026-06-02-cairn-content-graph-05-rename-design.md`), so skip brainstorming. It runs on
+`main` directly (additive, no site deploys) and bumps `0.21.0`. The pass is slug-only rename (a page renames its
+id=slug; a dated post renames the date-stripped slug, keeping its date prefix) with the atomic inbound-link
+rewrite through `commitFiles`, and no cascade-unwrap-on-delete. Ten test-first tasks: `renameId` and the mdast
+`rewriteCairnLink` helpers, the `commitFiles` tree-create 422 hardening, `renameAction` plus the `editLoad` slug
+field and parallel reads, the `RenameDialog` and `EditPage` wiring, a persistent edit-page live region, the
+showcase rename action, and the version bump. Two Plan 4 review carries fold in (the absent-path delete edge in
+Task 3, the alert live region in Task 7), and Task 9 wires the action into the showcase, the Plan 4 lesson. The
+pass-end review gate is the simplifier plus `svelte-reviewer` (the dialog and the live region),
+`daisyui-a11y-reviewer` (the dialog, the live region, the keyboard path), and `cloudflare-workers-reviewer` (the
+`renameAction` read-rewrite-commit path and the `commitFiles` hardening), all Opus, plus a high-effort
+`/code-review`; the live `/admin` smoke is a carried fast-follow for the ecnordic migration.
 
 **Deferred (user's call 2026-06-02): publishing is held.** The registry's `latest` is `0.18.0`; `main` carries
 the unpublished `0.19.0` (picker) and `0.20.0` (this lifecycle pass with its remediation). Publish the rolled

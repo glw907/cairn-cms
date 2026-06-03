@@ -52,6 +52,7 @@ export function normalizeConcepts(
       permalink: policy.permalink ?? defaultPermalink(id),
       datePrefix: policy.datePrefix ?? 'day',
       fields: config.schema.fields,
+      summaryFields: config.summaryFields ?? [],
       validate: config.schema.validate,
     });
   }

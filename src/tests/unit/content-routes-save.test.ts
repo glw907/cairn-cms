@@ -14,6 +14,7 @@ function runtime(validate: (fm: Record<string, unknown>, body: string) => Valida
         permalink: '/posts/:slug',
         datePrefix: 'day',
         fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
+        summaryFields: [],
         validate,
       },
     ],

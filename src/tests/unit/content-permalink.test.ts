@@ -5,7 +5,7 @@ import type { ConceptDescriptor } from '../../lib/content/types.js';
 const base: Omit<ConceptDescriptor, 'permalink'> = {
   id: 'posts', label: 'Posts', dir: 'd', datePrefix: 'day',
   routing: { routable: true, dated: true, inFeeds: true },
-  fields: [], validate: () => ({ ok: true, data: {} }),
+  fields: [], summaryFields: [], validate: () => ({ ok: true, data: {} }),
 };
 const desc = (permalink: string): ConceptDescriptor => ({ ...base, permalink });
 

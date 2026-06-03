@@ -75,6 +75,18 @@ describe('normalizeConcepts URL policy', () => {
     expect(posts.permalink).toBe('/:year/:month/:slug');
     expect(posts.datePrefix).toBe('month');
   });
+
+  it('carries summaryFields onto the descriptor and defaults it to empty', () => {
+    const [withFields] = normalizeConcepts({
+      posts: { dir: 'p', schema: defineFields([{ type: 'text', name: 'title', label: 'Title' }]), summaryFields: ['description', 'heroImage'] },
+    });
+    expect(withFields.summaryFields).toEqual(['description', 'heroImage']);
+
+    const [withoutFields] = normalizeConcepts({
+      pages: { dir: 'g', schema: defineFields([{ type: 'text', name: 'title', label: 'Title' }]) },
+    });
+    expect(withoutFields.summaryFields).toEqual([]);
+  });
 });
 
 describe('findConcept', () => {

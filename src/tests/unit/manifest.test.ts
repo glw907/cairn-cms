@@ -11,6 +11,7 @@ const posts: ConceptDescriptor = {
   permalink: '/:year/:month/:slug',
   datePrefix: 'day',
   fields: [],
+  summaryFields: [],
   validate: () => ({ ok: true, data: {} }),
 };
 

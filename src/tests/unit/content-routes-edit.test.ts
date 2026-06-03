@@ -17,6 +17,7 @@ function runtime(): CairnRuntime {
           { type: 'text', name: 'title', label: 'Title', required: true },
           { type: 'date', name: 'date', label: 'Date' },
         ],
+        summaryFields: [],
         validate: ok,
       },
     ],

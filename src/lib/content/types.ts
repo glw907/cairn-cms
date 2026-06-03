@@ -110,6 +110,9 @@ export interface ConceptConfig<S extends ConceptSchema = ConceptSchema> {
   label?: string;
   /** The concept's schema: the form projection, the generated validator, and the inferred type. */
   schema: S;
+  /** Frontmatter keys to surface on each `ContentSummary.fields`, so a list card reads an authored
+   *  field without a per-entry detail read. Each key should also be declared in `schema`. */
+  summaryFields?: string[];
 }
 
 /**
@@ -215,6 +218,9 @@ export interface ConceptDescriptor {
   /** Filename date-prefix granularity for a dated concept; resolved by `normalizeConcepts`. */
   datePrefix: DatePrefix;
   fields: FrontmatterField[];
+  /** Frontmatter keys the index copies onto each summary's `fields` record. `normalizeConcepts`
+   *  resolves it to `[]` when a concept omits `summaryFields`. */
+  summaryFields: string[];
   validate(frontmatter: Record<string, unknown>, body: string): ValidationResult;
 }
 

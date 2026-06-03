@@ -24,8 +24,12 @@ each linking to its edit page, so the author repoints or removes those links fir
   let dialog = $state<HTMLDialogElement | null>(null);
   const blocked = $derived(inboundLinks.length > 0);
   const noun = $derived(label.toLowerCase());
-  const verb = $derived(inboundLinks.length === 1 ? 'links' : 'link');
-  const pronoun = $derived(inboundLinks.length === 1 ? 'it' : 'them');
+  // One inbound link reads "1 post links here ... repoint it"; many reads "2 posts link here ...
+  // repoint them". The subject-verb agreement inverts the usual plural-s, so derive each form once.
+  const single = $derived(inboundLinks.length === 1);
+  const nouns = $derived(single ? noun : `${noun}s`);
+  const verb = $derived(single ? 'links' : 'link');
+  const pronoun = $derived(single ? 'it' : 'them');
 
   function open() {
     dialog?.showModal();
@@ -48,8 +52,8 @@ each linking to its edit page, so the author repoints or removes those links fir
 
     {#if blocked}
       <p class="mb-2 text-sm">
-        {inboundLinks.length} {noun}{inboundLinks.length === 1 ? '' : 's'} {verb} here. Remove or repoint {pronoun} before
-        deleting, so no link is left broken.
+        {inboundLinks.length} {nouns} {verb} here. Remove or repoint {pronoun} before deleting, so no link is left
+        broken.
       </p>
       <ul class="menu w-full">
         {#each inboundLinks as link (link.concept + '/' + link.id)}

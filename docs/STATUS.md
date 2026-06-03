@@ -39,20 +39,25 @@ locks it. The Svelte, a11y, Worker, and auth reviewers and the live `/admin` smo
 full post-mortem with the review triage and the carried follow-ups is in
 `docs/superpowers/plans/2026-06-03-cairn-render-authoring.md`.
 
-**Immediate next action: the DX engine-pass run reaches its publish point.** P1 (`0.22.0`), P2 (`0.23.0`),
-and P3 (`0.24.0`) are all executed and review-gated on `main`, unpushed and unpublished. The next step is
-to **push `main` and publish the rolled `0.22.0`/`0.23.0`/`0.24.0` window together** as a single release
-over the registry's prior `0.21.0` (the held window the entries below describe), via the OIDC
-trusted-publishing workflow off a `v0.24.0` GitHub Release. After the publish, run the **907-life
-migration** (the second proving ground, `site-pass` in that repo, pinning `^0.24.0`, `datePrefix: 'day'`),
-then **P4, the `create-cairn-site` scaffolder** (the capstone, DX items 4, 5, 6, 13, 14, 16). There is no
-new cairn-cms engine plan to draft before the publish: P4 is authored just-in-time after the 907 migration
-exercises the corrected surface, and the 907 migration is a site pass authored in the 907 repo.
+**The rolled window is PUBLISHED.** `main` is pushed (`d9bf1b6..7e9d49f`) and the
+`0.22.0`/`0.23.0`/`0.24.0` window published together as `0.24.0`, now `latest` on npm (OIDC
+trusted-publishing workflow off the `v0.24.0` GitHub Release, run `26916856627` green, build provenance
+attached), rolling over the prior `0.21.0`. P1 (delivery read-model), P2 (schema validation), and P3
+(render and component authoring) are all live.
 
-**Publishing the window is the gating decision for the user.** A site pins a range only after the publish,
-so the 907 migration waits on it. The carried P3 follow-ups (a `strAttr(ctx, key)` context helper, a
-`registry.iconField(name)` hoist, a `defineRegistry` guard for `defaultIconByRole` without an icon
-attribute, a configurable `headRow` heading level) feed P4 and later DX touches.
+**Immediate next action: the 907-life migration.** Run it as a `site-pass` in the 907-life repo, pinning
+`^0.24.0`, with `datePrefix: 'day'`. It is the second proving ground on the corrected surface (the first
+was the ecnordic `0.21` migration that produced this DX backlog). After 907 lands, draft and execute
+**P4, the `create-cairn-site` scaffolder** (the capstone, DX items 4, 5, 6, 13, 14, 16), authored
+just-in-time once 907 has exercised the corrected surface. There is no new cairn-cms engine plan to draft
+right now: the 907 migration is a site pass authored in the 907 repo, not a cairn-cms plan. The migration
+gotchas in the entries below still apply (pass every declared concept's glob, declare every read
+frontmatter key, the P2 strict-date and closed-tags failures, resolve `cairn:` links wherever a body
+renders to HTML).
+
+The carried P3 follow-ups (a `strAttr(ctx, key)` context helper, a `registry.iconField(name)` hoist, a
+`defineRegistry` guard for `defaultIconByRole` without an icon attribute, a configurable `headRow` heading
+level) feed P4 and later DX touches.
 
 ## Where the work is (2026-06-03, DX pass P2 / schema validation executed; 0.23.0 unpublished)
 

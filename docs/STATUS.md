@@ -6,6 +6,54 @@ orientation is the workspace `CLAUDE.md`. Locked architecture decisions and the 
 the functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`).
 Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`.
 
+## Where the work is (2026-06-03, DX pass P3 / render and component authoring executed; 0.24.0 unpublished)
+
+**P3, the render and component-authoring touch-ups, is executed and review-gated on `main`.** It ran
+subagent-driven, one `cairn-implementer` per task (Sonnet for the mechanical tasks, Opus for Task 2's
+byte-identical snapshot migration and Task 6's showcase build gate), seven task commits
+`4a9cf55..7afb031` plus a review-gate fold-in `c6ecdbc`. **Local only, not pushed, not published.** The
+minor bumps to `0.24.0`.
+
+The pass closes five render and component-authoring findings from the ecnordic DX backlog (items 7, 8,
+9, 11, 15). The unifying correction (item 9) routes a component's resolved icon through the declared
+`type: 'icon'` attribute: the stamper reads the author value, falls back to `defaultIconByRole`, and
+folds the result into that field's `data-attr-<key>`, so a role default now reaches the build through
+the one declared path. The dead `dataIcon` marker is gone (dropped from the stamp, `FIXED_MARKERS`, and
+the doc comment; `grep -rn "dataIcon" src/` is empty). The new `headRow(title, icon?)` helper builds the
+icon-plus-heading head and is exported beside `cardShell`/`iconSpan`. `createRenderer` gained an
+`anchorRel` option (`string | false`) over the `target="_blank"` rel policy (default `noopener
+noreferrer`). The engine drops an unclaimed directive `[label]` on a title-less component. The site
+guide states the declared-attribute contract, the icon-attribute requirement, `headRow`, `anchorRel`,
+and the no-`[]` template rule. The showcase wires an `alert` proving items 7 and 9 through a real build.
+
+Gate at the fold-in tip (`c6ecdbc`), run first-hand: `npm run check` 779 files 0/0, `npm test`
+110 files / 638 tests exit 0, `npm run check:package` exit 0. The render-pipeline snapshot stayed
+byte-identical across the pass (no `-u`). The showcase production build exits 0, the home still lists
+its post summaries, and the hello post carries `class="ec-head"` and the `caution` role-default
+`leaf` glyph (`class="ec-icon"`). The review gate was the simplifier (no change) plus a high-effort
+seven-angle `/code-review`, which found one actionable defect, folded in as `c6ecdbc`: a blank
+`icon=""` was kept and defeated the resolved role default (`?? icon` preserved the empty string), while
+a missing `icon` resolved it. The fix writes the already-resolved `icon` directly, so blank and missing
+behave alike, and it collapsed the icon double-read the simplification angle flagged. A regression test
+locks it. The Svelte, a11y, Worker, and auth reviewers and the live `/admin` smoke did not apply. The
+full post-mortem with the review triage and the carried follow-ups is in
+`docs/superpowers/plans/2026-06-03-cairn-render-authoring.md`.
+
+**Immediate next action: the DX engine-pass run reaches its publish point.** P1 (`0.22.0`), P2 (`0.23.0`),
+and P3 (`0.24.0`) are all executed and review-gated on `main`, unpushed and unpublished. The next step is
+to **push `main` and publish the rolled `0.22.0`/`0.23.0`/`0.24.0` window together** as a single release
+over the registry's prior `0.21.0` (the held window the entries below describe), via the OIDC
+trusted-publishing workflow off a `v0.24.0` GitHub Release. After the publish, run the **907-life
+migration** (the second proving ground, `site-pass` in that repo, pinning `^0.24.0`, `datePrefix: 'day'`),
+then **P4, the `create-cairn-site` scaffolder** (the capstone, DX items 4, 5, 6, 13, 14, 16). There is no
+new cairn-cms engine plan to draft before the publish: P4 is authored just-in-time after the 907 migration
+exercises the corrected surface, and the 907 migration is a site pass authored in the 907 repo.
+
+**Publishing the window is the gating decision for the user.** A site pins a range only after the publish,
+so the 907 migration waits on it. The carried P3 follow-ups (a `strAttr(ctx, key)` context helper, a
+`registry.iconField(name)` hoist, a `defineRegistry` guard for `defaultIconByRole` without an icon
+attribute, a configurable `headRow` heading level) feed P4 and later DX touches.
+
 ## Where the work is (2026-06-03, DX pass P2 / schema validation executed; 0.23.0 unpublished)
 
 **P2, the schema-validation touch-ups, is executed and review-gated on `main`.** It ran

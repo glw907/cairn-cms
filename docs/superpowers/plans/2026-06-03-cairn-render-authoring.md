@@ -686,3 +686,81 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - A high-effort `/code-review` over the branch diff, with attention to the icon resolution edge cases (a component with no icon field, an author value plus a role, multiple `type: 'icon'` fields) and the snapshot fixture migration.
 - Live `/admin` smoke does not apply (no `/admin` surface changed; the showcase runs `adapter-node`).
 - Fold findings in, then update the plan post-mortem and `docs/STATUS.md` per the `cairn-pass` consolidation ritual.
+
+---
+
+## Post-mortem (executed 2026-06-03)
+
+P3 executed subagent-driven on `main`, one `cairn-implementer` per task, Sonnet for the
+mechanical tasks and Opus for the two judgment-heavy ones (Task 2's byte-identical snapshot
+migration and Task 6's showcase build gate). Seven task commits `4a9cf55..7afb031`, then one
+review-gate fold-in `c6ecdbc`. Local only, not pushed, not published. The minor bumps to
+`0.24.0`.
+
+### What was built
+
+- **Task 1 (`4a9cf55`):** `headRow(title, icon?)` in `rehype-dispatch.ts`, exported from the
+  package beside `cardShell`/`iconSpan`. It builds
+  `<div class="ec-head">[icon]<h2 class="card-title">{title}</h2></div>`.
+- **Task 2 (`6a76e14`, Opus):** the directive stamper now finds the declared `type: 'icon'`
+  field, resolves the icon (author value, falling back to `defaultIconByRole`), and folds it into
+  that field's `data-attr-<key>`. The dead `dataIcon` marker write is gone, dropped from
+  `FIXED_MARKERS`, and the `strProp` doc comment no longer names it. `grep -rn "dataIcon" src/`
+  is empty. The snapshot fixture migrated onto `ctx.attributes.icon` plus `headRow` and stayed
+  byte-identical (no `-u`).
+- **Task 3 (`06484e4`):** `rehypeAnchorRel(rel)` is parameterized, and `RendererOptions.anchorRel`
+  (`string | false`) threads it. The default keeps `noopener noreferrer`; a string overrides; `false`
+  skips the push.
+- **Task 4 (`8684392`):** the stamper drops an unclaimed directive `[label]` when the component
+  declares no `title` slot, so a stray `[]` no longer renders an empty paragraph. `isDirectiveLabel`
+  matches only the mdast `directiveLabel`, so a genuine first body paragraph is never removed.
+- **Task 5 (`715ae2c`, docs):** the authoring rules in `creating-a-cairn-site.md` (declare every
+  attribute a build reads, the icon-attribute requirement, `headRow`, `anchorRel`, the no-`[]`
+  template rule) and the `0.24.0` changelog entry.
+- **Task 6 (`eda99e7`, Opus):** a showcase `alert` component using `headRow` + `defaultIconByRole`
+  and a post that uses it with a role and no explicit icon. The production build proves items 7 and
+  9: the hello post renders `class="ec-head"` once and `class="ec-icon"` once, with the `caution`
+  role default `leaf` glyph reaching the build through the declared attribute.
+- **Task 7 (`7afb031`):** the `0.24.0` bump and the full gate.
+
+### Verification (evidence)
+
+Gate at the fold-in tip (`c6ecdbc`), run first-hand: `npm run check` 779 files 0/0, `npm test`
+110 files / 638 tests exit 0, `npm run check:package` exit 0. The render-pipeline snapshot stayed
+byte-identical across the pass (no `-u`). The showcase production build exits 0; the home still
+lists its post summaries and the hello post carries `ec-head` and the role-default `ec-icon` glyph.
+
+### Review gate
+
+The simplifier found nothing to change (the icon double-read looked load-bearing in isolation, so
+it left it). `svelte-reviewer`, `daisyui-a11y-reviewer`, `cloudflare-workers-reviewer`,
+`web-auth-security-reviewer`, and the live `/admin` smoke did not apply. A high-effort seven-angle
+`/code-review` found one actionable defect, folded in as `c6ecdbc`: the icon-attribute branch wrote
+`attrs[field.key] ?? icon`, so a blank `icon=""` was kept and defeated the resolved role default,
+while a missing `icon` resolved it. The fix writes the already-resolved `icon` directly (it coerces
+a blank value through the same empty-is-absent rule as the up-front read), so blank and missing
+behave alike. That also collapsed the confusing double-read the simplification angle had flagged.
+A regression test (`falls back to the role default when the author icon is blank`) locks it, and the
+snapshot stayed byte-identical.
+
+### Carried follow-ups (recorded, not done this pass)
+
+- A component declaring `defaultIconByRole` with no `type: 'icon'` attribute drops the default
+  silently. This is the documented contract (the settled item-8 decision was documentation, not a
+  runtime warning), so it stays as-is. A `defineRegistry` guard that throws at config load is a
+  possible future hardening that would not contradict that decision (a build is developer code).
+- Multiple `type: 'icon'` fields on one component: the resolved default flows to the first declared
+  icon field only (`find` picks the first). Acceptable as first-icon-field-wins; record as a known
+  limitation if a component ever needs two.
+- The icon-field `find` runs per directive node on every render. It could hoist to a
+  `registry.iconField(name)` lookup beside `defaultIcon(name, role)`. Micro-cost (attribute lists are
+  tiny), low priority.
+- The unclaimed-label drop is a second pass over `node.children`, separate from the slot-marking
+  loop. Folding the drop into that loop would express the claimed/unclaimed policy once. Defensible
+  as-is; cosmetic.
+- The `typeof ctx.attributes.x === 'string' ? x : undefined` narrowing recurs in every string-reading
+  build, including the showcase (scaffolder seed). A small `strAttr(ctx, key)` context helper would
+  remove the copy-paste from every future site. Good candidate for P4 (scaffolder) or a later DX touch.
+- The three plan-listed follow-ups stand: a build-validation warning for a non-empty unclaimed label
+  (dropped silently now), a configurable heading level on `headRow` (`<h2>` for now), and
+  `parseFeedDate` being looser than `isCalendarDate` (carried from P2).

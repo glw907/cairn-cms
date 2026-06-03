@@ -40,15 +40,29 @@ Both are the loud failure P2 restores. One recorded known limitation: `isCalenda
 0000 through 0099 because of JavaScript's two-digit-year `Date` coercion, outside the cairn date
 domain and left unfixed by design.
 
-**Immediate next action: brainstorm and write P3 (render and component authoring), then execute it.**
-P3 is the third of the four DX engine passes (the entry below has the full P1 through P4 triage). It
-covers DX items 7, 8, 9, 11, 15: the `splitHead` replacement head helper (moved here from P1 during
-design, since it lives beside `cardShell`/`iconSpan`), the `rel` policy option, the alert role
-default, the empty-slot drop, and the declared-attribute read signal. P3 has open design decisions, so
-it needs a `superpowers:brainstorming` pass with the user before `superpowers:writing-plans` authors
-the numbered plan; do not auto-write it. After P3 lands, **publish** the rolled `0.22.0`/`0.23.0`/P3
-window together, then run the **907-life migration** (the second proving ground, `site-pass` in that
-repo, `datePrefix: 'day'`), then **P4, the `create-cairn-site` scaffolder** (the capstone).
+**P3 is brainstormed, specified, and planned on `main` (2026-06-03), not yet executed.** The design
+spec is `docs/superpowers/specs/2026-06-03-cairn-render-authoring-design.md` (`abdb6ef`); the plan is
+`docs/superpowers/plans/2026-06-03-cairn-render-authoring.md` (`a9a627c`). Seven test-first tasks
+covering DX items 7, 8, 9, 11, 15: the `headRow` head helper (item 7), routing the `defaultIconByRole`
+default through the declared `type: 'icon'` attribute and dropping the dead `dataIcon` marker (item 9,
+the unifying correction), the `anchorRel` `createRenderer` option (item 11), dropping an unclaimed
+directive label (item 15), and the declared-attribute contract in docs (item 8, docs-only). The pass
+bumps `0.24.0`, runs on `main`, and is additive plus two output bugfixes. One design call settled with
+the user: item 8 is resolved by documentation, not a runtime dev warning (the item-9 fix removes the
+concrete footgun, and a build is site-developer code with immediate feedback). Tasks 2 and 6 are
+judgment-heavy (the byte-identical snapshot-fixture migration; the showcase build gate), so dispatch
+them `model: opus`; the rest fit the Sonnet default.
+
+**Immediate next action: execute P3,
+`docs/superpowers/plans/2026-06-03-cairn-render-authoring.md`, `subagent-driven`
+(`superpowers:subagent-driven-development`, one `cairn-implementer` per task; Sonnet default, `model: opus`
+for Tasks 2 and 6), from the cairn-cms directory on `main`. Start at Task 1.** The design is settled and
+approved, so skip brainstorming. It runs on `main` directly (no site deploys). The pass-end review gate
+is the simplifier plus a high-effort `/code-review` (attention to the icon-resolution edge cases and the
+snapshot migration); `svelte-reviewer`, `daisyui-a11y-reviewer`, the Worker/auth reviewers, and the live
+`/admin` smoke do not apply. After P3 lands, **publish** the rolled `0.22.0`/`0.23.0`/`0.24.0` window
+together, then run the **907-life migration** (the second proving ground, `site-pass` in that repo,
+`datePrefix: 'day'`), then **P4, the `create-cairn-site` scaffolder** (the capstone).
 
 **Publishing stays held.** `0.21.0` is the registry `latest`. `main` carries the unpublished `0.22.0`
 (P1) and `0.23.0` (P2), and will carry the P3 bump, until the window publishes together before the

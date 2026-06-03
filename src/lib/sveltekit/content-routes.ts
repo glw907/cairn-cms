@@ -335,6 +335,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     const path = `${concept.dir}/${filenameFromId(id)}`;
     const token = await mintToken(event.platform?.env ?? {});
 
+    // An absent manifest degrades the inbound gate to "allow": with no manifest there is nothing to
+    // check, and the build's cairn: backstop still catches any dangling token, mirroring saveAction.
     const manifestRaw = await readRaw(runtime.backend, runtime.manifestPath, token);
     const manifest = manifestRaw === null ? emptyManifest() : parseManifest(manifestRaw);
     const inbound = inboundLinks(manifest, concept.id, id);

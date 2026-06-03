@@ -148,6 +148,36 @@ describe('EditPage', () => {
       .toBe('see gone here');
   });
 
+  it('surfaces a refused delete naming the new linkers', async () => {
+    const props = postProps();
+    (props as Record<string, unknown>).form = {
+      inboundLinks: [{ concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' }],
+    };
+    const screen = render(EditPage, props);
+    const banner = Array.from(screen.container.querySelectorAll('[role="alert"]')).find((el) =>
+      (el.textContent ?? '').includes('could not be deleted'),
+    );
+    expect(banner).toBeTruthy();
+    expect(banner!.textContent ?? '').toContain('Post B');
+    expect(banner!.querySelector('a[href="/admin/posts/b"]')).toBeTruthy();
+  });
+
+  it('clears a fixed broken-link row after Remove link', async () => {
+    const props = postProps();
+    props.data.body = 'see [gone](cairn:pages/gone) here';
+    (props as Record<string, unknown>).form = { brokenLinks: ['cairn:pages/gone'], body: props.data.body };
+    const screen = render(EditPage, props);
+    const banner = screen.container.querySelector('[role="alert"]');
+    expect(banner?.textContent ?? '').toContain('cairn:pages/gone');
+    await screen.getByRole('button', { name: /remove link/i }).click();
+    await expect
+      .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
+      .toBe('see gone here');
+    await expect
+      .poll(() => screen.container.textContent ?? '')
+      .not.toContain('cairn:pages/gone');
+  });
+
   it('preview toggle button exposes aria-expanded reflecting preview state', async () => {
     const screen = render(EditPage, postProps());
     const btn = screen.getByRole('button', { name: /show preview/i });

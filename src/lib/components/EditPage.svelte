@@ -28,8 +28,9 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
     render?: (md: string, opts?: { stagger?: boolean; resolve?: LinkResolve }) => string | Promise<string>;
     /** The site's icon set, for the guided form's icon fields. */
     icons?: IconSet;
-    /** The `?/save` action result. Carries the save guard's broken links when a save was blocked. */
-    form?: { brokenLinks?: string[]; body?: string } | null;
+    /** The `?/save` or `?/delete` action result. Carries the save guard's broken links when a save was
+     *  blocked, or the delete guard's inbound linkers when a delete was refused. */
+    form?: { brokenLinks?: string[]; body?: string; inboundLinks?: import('../content/manifest.js').InboundLink[] } | null;
   }
 
   let { data, registry, render, icons, form }: Props = $props();
@@ -45,9 +46,18 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
   // The save guard's broken links, from the blocked action result. The fix unwraps a link in the
   // local body, which the bound editor reconciles, so the author re-saves clean.
   const brokenLinks = $derived(form?.brokenLinks ?? []);
+  // Track the hrefs the author has already fixed this session. The banner reads the immutable action
+  // result, so without this a fixed row would linger and "Remove link" would read as a no-op.
+  let removedLinks = $state<string[]>([]);
+  const visibleBrokenLinks = $derived(brokenLinks.filter((h) => !removedLinks.includes(h)));
   function removeBrokenLink(href: string) {
     body = unwrapCairnLink(body, href);
+    removedLinks = [...removedLinks, href];
   }
+
+  // The delete guard's inbound linkers, from a refused delete (fail 409). Empty when the delete was
+  // not refused. When set, a delete was blocked by a link that appeared since the page loaded.
+  const deleteRefusedLinks = $derived(form?.inboundLinks ?? []);
 
   // After a save that links to a draft target, the redirect carries ?drafts=<tokens>.
   let draftWarning = $state('');
@@ -124,17 +134,30 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
   </div>
 </header>
 
-{#if data.saved}
+{#if data.saved && !draftWarning}
   <div role="status" class="alert alert-success mb-4 text-sm">Saved.</div>
 {/if}
 {#if data.error}
   <div role="alert" class="alert alert-error mb-4 text-sm">{data.error}</div>
 {/if}
-{#if brokenLinks.length}
+{#if deleteRefusedLinks.length}
   <div role="alert" class="alert alert-error mb-4 flex-col items-start text-sm">
-    <p>This page links to {brokenLinks.length === 1 ? 'a page' : 'pages'} that no longer {brokenLinks.length === 1 ? 'exists' : 'exist'}. Remove the broken {brokenLinks.length === 1 ? 'link' : 'links'} and save again.</p>
+    <p class="font-medium">This {data.label.toLowerCase()} could not be deleted.</p>
+    <p>{deleteRefusedLinks.length} {deleteRefusedLinks.length === 1 ? 'page' : 'pages'} now link to it. Open the delete dialog again to see them, then repoint or remove those links first.</p>
     <ul class="mt-1 w-full">
-      {#each brokenLinks as href (href)}
+      {#each deleteRefusedLinks as link (link.concept + '/' + link.id)}
+        <li>
+          <a class="link" href={`/admin/${link.concept}/${link.id}`}>{link.title}</a>
+        </li>
+      {/each}
+    </ul>
+  </div>
+{/if}
+{#if visibleBrokenLinks.length}
+  <div role="alert" class="alert alert-error mb-4 flex-col items-start text-sm">
+    <p>This page links to {visibleBrokenLinks.length === 1 ? 'a page' : 'pages'} that no longer {visibleBrokenLinks.length === 1 ? 'exists' : 'exist'}. Remove the broken {visibleBrokenLinks.length === 1 ? 'link' : 'links'} and save again.</p>
+    <ul class="mt-1 w-full">
+      {#each visibleBrokenLinks as href (href)}
         <li class="flex items-center justify-between gap-2">
           <code class="text-xs">{href}</code>
           <button type="button" class="btn btn-xs" onclick={() => removeBrokenLink(href)}>Remove link</button>

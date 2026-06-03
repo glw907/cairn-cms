@@ -35,9 +35,12 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
 
   let { data, registry, render, icons, form }: Props = $props();
 
-  // `body` is local editor state seeded once from the prop; it diverges as the user types.
-  // untrack() captures the initial value without subscribing to future prop changes.
-  let body = $state(untrack(() => data.body));
+  // `body` is local editor state seeded once; it diverges as the user types. A blocked save returns
+  // the author's edited markdown as form.body, so seed from that when present to keep the edits and
+  // the broken link they were told to fix. On the success and delete-refused paths form carries no
+  // body, so it falls back to the committed data.body. untrack() captures the initial value without
+  // subscribing to future prop changes.
+  let body = $state(untrack(() => form?.body ?? data.body));
   let showPreview = $state(false);
   let previewHtml = $state('');
   let insert = $state.raw<(text: string) => void>(() => {});
@@ -51,8 +54,12 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
   let removedLinks = $state<string[]>([]);
   const visibleBrokenLinks = $derived(brokenLinks.filter((h) => !removedLinks.includes(h)));
   function removeBrokenLink(href: string) {
-    body = unwrapCairnLink(body, href);
-    removedLinks = [...removedLinks, href];
+    // Hide the row only when the unwrap changed the body. A genuine no-op keeps the row honest.
+    const next = unwrapCairnLink(body, href);
+    if (next !== body) {
+      body = next;
+      removedLinks = [...removedLinks, href];
+    }
   }
 
   // The delete guard's inbound linkers, from a refused delete (fail 409). Empty when the delete was
@@ -143,7 +150,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
 {#if deleteRefusedLinks.length}
   <div role="alert" class="alert alert-error mb-4 flex-col items-start text-sm">
     <p class="font-medium">This {data.label.toLowerCase()} could not be deleted.</p>
-    <p>{deleteRefusedLinks.length} {deleteRefusedLinks.length === 1 ? 'page' : 'pages'} now link to it. Open the delete dialog again to see them, then repoint or remove those links first.</p>
+    <p>{deleteRefusedLinks.length} {deleteRefusedLinks.length === 1 ? 'page' : 'pages'} now link to it. Remove or repoint the {deleteRefusedLinks.length === 1 ? 'link' : 'links'} listed below, then delete again.</p>
     <ul class="mt-1 w-full">
       {#each deleteRefusedLinks as link (link.concept + '/' + link.id)}
         <li>

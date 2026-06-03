@@ -78,4 +78,13 @@ describe('unwrapCairnLink', () => {
   it('leaves the document unchanged when the href is absent', () => {
     expect(unwrapCairnLink('plain [keep](cairn:pages/home)', 'cairn:posts/gone')).toBe('plain [keep](cairn:pages/home)');
   });
+  it('unwraps and unescapes a display text with an escaped bracket', () => {
+    expect(unwrapCairnLink('see [Notes \\[draft\\]](cairn:posts/x) end', 'cairn:posts/x')).toBe('see Notes [draft] end');
+  });
+  it('unwraps a titled link', () => {
+    expect(unwrapCairnLink('a [t](cairn:posts/x "title") b', 'cairn:posts/x')).toBe('a t b');
+  });
+  it('leaves an occurrence inside a code span untouched, unwrapping only the prose link', () => {
+    expect(unwrapCairnLink('`[x](cairn:posts/x)` and [x](cairn:posts/x)', 'cairn:posts/x')).toBe('`[x](cairn:posts/x)` and x');
+  });
 });

@@ -148,6 +148,18 @@ describe('EditPage', () => {
       .toBe('see gone here');
   });
 
+  it('seeds the editor from the returned form body after a blocked save', async () => {
+    const props = postProps({ body: 'old committed text' });
+    (props as Record<string, unknown>).form = {
+      brokenLinks: ['cairn:pages/gone'],
+      body: 'edited [gone](cairn:pages/gone) text',
+    };
+    const screen = render(EditPage, props);
+    await expect
+      .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
+      .toBe('edited [gone](cairn:pages/gone) text');
+  });
+
   it('surfaces a refused delete naming the new linkers', async () => {
     const props = postProps();
     (props as Record<string, unknown>).form = {
@@ -159,6 +171,7 @@ describe('EditPage', () => {
     );
     expect(banner).toBeTruthy();
     expect(banner!.textContent ?? '').toContain('Post B');
+    expect(banner!.textContent ?? '').not.toContain('dialog');
     expect(banner!.querySelector('a[href="/admin/posts/b"]')).toBeTruthy();
   });
 

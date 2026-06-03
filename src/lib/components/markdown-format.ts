@@ -3,6 +3,11 @@
  * selection range to a new document and a new selection, with no DOM. The MarkdownEditor view
  * dispatches the result; keeping the logic here lets it unit-test without a browser.
  */
+import { unified } from 'unified';
+import remarkParse from 'remark-parse';
+import remarkGfm from 'remark-gfm';
+import { visit } from 'unist-util-visit';
+import type { Link } from 'mdast';
 import { escapeLinkText } from '../content/links.js';
 
 export type FormatKind = 'bold' | 'italic' | 'code' | 'heading' | 'quote' | 'ul' | 'link';
@@ -53,13 +58,37 @@ export function insertInlineLink(doc: string, from: number, to: number, href: st
   return { doc: doc.slice(0, from) + inserted + doc.slice(to), from: end, to: end };
 }
 
+/** Concatenate a link node's text-child values. The parser has already unescaped them, so a source
+ *  `Notes \[draft\]` yields `Notes [draft]`. Used instead of mdast-util-to-string, which is not a
+ *  direct dependency. Non-text children (a nested emphasis, say) contribute no value, which is fine
+ *  for the picker-produced links this fix targets. */
+function linkText(node: Link): string {
+  return node.children.map((c) => ('value' in c ? c.value : '')).join('');
+}
+
 /**
- * Unwrap every `[text](href)` link whose href is exactly `href`, replacing it with its display
- * text. The save guard's one-click fix calls this to remove a broken cairn: link while keeping the
- * words. The href is matched literally (escaped for the regex), so an unrelated link is untouched.
- * The link text matches a run without a closing bracket, the same shape the editor inserts.
+ * Unwrap every cairn: link whose href is exactly `href`, replacing it with its plain display text.
+ * The save guard's one-click fix calls this to drop a broken link while keeping the words. The
+ * document is parsed with the same remark pipeline extractCairnLinks uses, so the two agree on what
+ * a link is. Each matching link node is located by its source offsets and spliced out from last to
+ * first, which leaves the rest of the document exact and unescapes the display text. A token inside
+ * a code span or fence is not a link node, so it is never touched, and a link with a different url
+ * is left in place.
  */
 export function unwrapCairnLink(doc: string, href: string): string {
-  const escaped = href.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return doc.replace(new RegExp(`\\[([^\\]]*)\\]\\(${escaped}\\)`, 'g'), '$1');
+  const tree = unified().use(remarkParse).use(remarkGfm).parse(doc);
+  const spans: { start: number; end: number; text: string }[] = [];
+  visit(tree, 'link', (node: Link) => {
+    if (node.url !== href) return;
+    const start = node.position?.start?.offset;
+    const end = node.position?.end?.offset;
+    if (start == null || end == null) return;
+    spans.push({ start, end, text: linkText(node) });
+  });
+  spans.sort((a, b) => b.start - a.start);
+  let out = doc;
+  for (const span of spans) {
+    out = out.slice(0, span.start) + span.text + out.slice(span.end);
+  }
+  return out;
 }

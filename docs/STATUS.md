@@ -11,8 +11,11 @@ Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`
 Content-graph Plan 5 (slug-only rename plus the atomic inbound-link rewrite) executed subagent-driven on `main`, one
 `cairn-implementer` per task (Sonnet for the mechanical tasks, Opus for the judgment-heavy `renameAction` and the
 review fold-ins), commits `7b31e2c..eda6340` (the ten plan tasks), then a simplifier commit `9ab890a` and a review-gate
-fold-in `80fd6ff`. **Local only, not pushed, not published.** It bumps the minor to `0.21.0` (additive route surface, a
-new `RenameDialog`, the `EditData` `slug`/`renamed` fields, the pure helpers). **Plan 5 is the last plan of the
+fold-in `80fd6ff`. **`main` is pushed and the window is PUBLISHED as `0.21.0`, now `latest` on npm** (OIDC
+trusted-publishing workflow off the `v0.21.0` GitHub Release, build provenance attached), rolling the `0.19.0` (picker),
+`0.20.0` (delete and the guards), and `0.21.0` (rename) window over the registry's prior `0.18.0`. It bumps the minor to
+`0.21.0` (additive route surface, a new `RenameDialog`, the `EditData` `slug`/`renamed` fields, the pure helpers).
+**Plan 5 is the last plan of the
 content-graph initiative, so the initiative is now complete:** the atomic commit primitive, the committed manifest and
 the `cairn:` resolver, the editor link picker, content delete with the integrity guards, and now content rename all
 landed.
@@ -62,12 +65,11 @@ round-trip before the parallel pair; folding it into the `Promise.all` shaves on
 wasted read on the no-collision path. The manifest last-writer-wins races stay the documented posture, caught by the
 build's fail-closed backstop.
 
-**Immediate next action: the content-graph initiative is complete, so the next work is the site migrations, gated on the
-held publish.** Publishing is the user's call and is currently held: the registry's `latest` is `0.18.0`, and `main`
-carries the unpublished `0.19.0` (picker), `0.20.0` (delete and the guards), and `0.21.0` (rename) window. **Publish the
-rolled window as `0.21.0` before the site migrations**, since a site pins a range only after the publish; the release is
-the OIDC trusted-publishing workflow off a `v0.21.0` GitHub Release, and `main` should push first. Then the site
-migrations run per-site (`site-pass`, ecnordic then 907, from each site's own repo), pinning `^0.21.0`, where each site
+**Immediate next action: the content-graph initiative is complete and `0.21.0` is published, so the next work is the
+site migrations.** Publishing is DONE: the registry's `latest` is `0.21.0` (the `v0.21.0` GitHub Release published via the
+OIDC workflow, build provenance attached), rolling the `0.19.0`/`0.20.0`/`0.21.0` window over the prior `0.18.0`, and
+`main` is pushed. The site migrations run per-site (`site-pass`, ecnordic then 907, from each site's own repo), pinning
+`^0.21.0`, where each site
 wires its complete content layer (delivery, resolver, manifest, the editor link surface) in one site-pass and the
 scaffolder template captures the full picture. The migration gotchas in the entries below still apply (pass every
 declared concept's glob, declare every read frontmatter key, coerce an unquoted YAML date, resolve `cairn:` links

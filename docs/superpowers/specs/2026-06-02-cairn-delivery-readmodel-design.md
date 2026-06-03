@@ -86,9 +86,14 @@ the descriptor:
 summaryFields: ['description', 'heroImage']
 ```
 
-`ConceptDescriptor` gains `summaryFields: string[]` (defaulting to `[]` in `normalizeConcepts`).
-`createContentIndex` copies those keys off the validated, normalized frontmatter onto a new namespaced
-record:
+`ConceptDescriptor` gains `summaryFields?: string[]`. `normalizeConcepts` populates it
+(`config.summaryFields ?? []`) for the standard path, so a normalized descriptor always carries the
+resolved list. The descriptor type stays optional, unlike the non-optional `datePrefix`, for a
+deliberate reason: a hand-built descriptor (a test double, or any caller constructing one outside
+`normalizeConcepts`) may omit it, and the field has exactly one engine consumer, so the single read
+site tolerates absence with `?? []`. That keeps the pass from forcing a noise edit through the many
+hand-built descriptor literals in the admin-runtime tests. `createContentIndex` copies the named keys
+off the validated, normalized frontmatter onto a new namespaced record:
 
 ```ts
 export interface ContentSummary {
@@ -128,22 +133,28 @@ the graph, and a node-environment unit test then needs the Svelte vitest plugin 
 
 Two coordinated changes.
 
-**Superset root.** The root barrel (`src/lib/index.ts`) re-exports the symbols that today resolve only
-from `/delivery`: `createPublicRoutes`, its `PublicRoutesDeps`/`ListData`/`TagData`/`TagIndexData`/
-`EntryData` types, the four `*Response` helpers (`rssResponse`, `jsonFeedResponse`, `sitemapResponse`,
-`robotsResponse`), and `CairnHead`. A wrong guess from root now resolves. Root stays the full surface,
-which already pulls auth, github, and email, so it was never the backend-free entry and adding these
-re-exports changes nothing about its bundle character. `/delivery` stays the lean, backend-free public
-entry.
+**Superset root.** The root barrel (`src/lib/index.ts`) re-exports the JS and TS public symbols that
+today resolve only from `/delivery`: `createPublicRoutes`, its `PublicRoutesDeps`/`ListData`/`TagData`/
+`TagIndexData`/`EntryData` types, and the four `*Response` helpers (`rssResponse`, `jsonFeedResponse`,
+`sitemapResponse`, `robotsResponse`). A wrong guess from root for any of these now resolves. Root stays
+the full surface, which already pulls auth, github, and email, so it was never the backend-free entry
+and adding these re-exports changes nothing about its bundle character. `/delivery` stays the lean,
+backend-free public entry.
 
-A one-line rule lands in `creating-a-cairn-site.md`: a site's public pages import from
-`@glw907/cairn-cms/delivery` for the backend-free bundle; the root entry is the full surface and
-re-exports the same delivery symbols for convenience.
+The superset stops short of the one Svelte component. `CairnHead` is not re-exported from root, because
+the root barrel is node-importable today and the unit test suite imports it under the `node` project
+with no Svelte plugin. Re-exporting a `.svelte` module from root would break every node-environment test
+that imports the root entry. The head component resolves from its own `/delivery/head` entry instead, so
+root stays node-clean and the import surface still has one obvious home for the head.
 
-**Head split.** A new package export `./delivery/head` holds `CairnHead`. The `/delivery` barrel
+A one-line rule lands in `creating-a-cairn-site.md`: a site's public pages import the data builders,
+route loaders, and response helpers from `@glw907/cairn-cms/delivery` (or the root full surface), and the
+`CairnHead` component from `@glw907/cairn-cms/delivery/head`.
+
+**Head split.** A new package export `./delivery/head` holds `CairnHead`, backed by a thin
+`src/lib/delivery/head.ts` that re-exports the existing `CairnHead.svelte`. The `/delivery` barrel
 (`src/lib/delivery/index.ts`) stops re-exporting the component. After the split, a data import from
 `/delivery` evaluates no `.svelte` module, so a node-environment test loads it with no Svelte plugin.
-The root superset re-exports `CairnHead` from `./delivery/head`, so root stays complete.
 
 This moves one import path: `CairnHead` is no longer importable from `@glw907/cairn-cms/delivery`. A
 consumer imports it from `@glw907/cairn-cms/delivery/head` or from the root entry. ecnordic is the only
@@ -166,8 +177,9 @@ The pass is test-first, layered the way the rebuild's suite already is.
   no Svelte plugin configured, pinning the component-free guarantee.
 
 **Package resolution.** `check:package` covers the new `./delivery/head` entry (types and runtime both
-resolve) and the root superset re-exports (`createPublicRoutes`, the `*Response` helpers, `CairnHead`,
-and the `EntryData` type all resolve from root).
+resolve). A unit test on the root barrel asserts the superset re-exports resolve (`createPublicRoutes`
+and the four `*Response` helpers are functions from root), and that the root barrel still loads under the
+node project (no `.svelte` pulled in).
 
 **Showcase build (end-to-end).** The showcase declares a `summaryFields` on a concept and renders a
 list card that reads `summary.fields`, and a page that reads `data.concept`. The production build stays

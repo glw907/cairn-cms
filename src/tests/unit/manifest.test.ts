@@ -67,6 +67,24 @@ describe('serializeManifest / parseManifest', () => {
   });
 });
 
+describe('parseManifest hardening', () => {
+  it('rejects a wrong version', () => {
+    expect(() => parseManifest(JSON.stringify({ version: 2, entries: [] }))).toThrow(/version/i);
+  });
+  it('rejects an entry missing a required field', () => {
+    const raw = JSON.stringify({ version: 1, entries: [{ id: 'a', concept: 'posts' }] });
+    expect(() => parseManifest(raw)).toThrow(/entry/i);
+  });
+  it('rejects an entry whose links are not an array', () => {
+    const raw = JSON.stringify({ version: 1, entries: [{ id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: 'no' }] });
+    expect(() => parseManifest(raw)).toThrow(/entry/i);
+  });
+  it('accepts a well-formed manifest', () => {
+    const raw = JSON.stringify({ version: 1, entries: [{ id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [{ concept: 'pages', id: 'home' }] }] });
+    expect(parseManifest(raw).entries).toHaveLength(1);
+  });
+});
+
 const entryA: ManifestEntry = { id: 'a', concept: 'pages', title: 'A', permalink: '/a', draft: false, links: [] };
 const entryB: ManifestEntry = { id: 'b', concept: 'posts', title: 'B', date: '2026-01-02', permalink: '/b', draft: false, links: [] };
 

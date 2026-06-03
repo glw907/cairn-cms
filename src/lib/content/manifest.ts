@@ -97,13 +97,37 @@ export function serializeManifest(manifest: Manifest): string {
   return `${JSON.stringify({ version: 1, entries }, null, 2)}\n`;
 }
 
-/** Parse a committed manifest. Throws on malformed JSON or the wrong shape. */
+/** Parse a committed manifest. Throws on malformed JSON, a wrong version, or a malformed entry, so
+ *  every reader (the save guard, the delete path, the preview) sees a well-formed graph or a clear
+ *  error. The build regenerates the manifest, so a real file is always canonical; this guards a
+ *  hand-edited or truncated one. */
 export function parseManifest(raw: string): Manifest {
   const data = JSON.parse(raw) as unknown;
-  if (!data || typeof data !== 'object' || !Array.isArray((data as { entries?: unknown }).entries)) {
+  if (!data || typeof data !== 'object') {
     throw new Error('content manifest: malformed file, expected { version, entries: [] }');
   }
-  return { version: 1, entries: (data as Manifest).entries };
+  const obj = data as { version?: unknown; entries?: unknown };
+  if (obj.version !== 1) {
+    throw new Error(`content manifest: unsupported version ${String(obj.version)}, expected 1`);
+  }
+  if (!Array.isArray(obj.entries)) {
+    throw new Error('content manifest: malformed file, expected { version, entries: [] }');
+  }
+  for (const entry of obj.entries) {
+    const e = entry as Record<string, unknown>;
+    const ok =
+      e &&
+      typeof e.id === 'string' &&
+      typeof e.concept === 'string' &&
+      typeof e.title === 'string' &&
+      typeof e.permalink === 'string' &&
+      typeof e.draft === 'boolean' &&
+      Array.isArray(e.links);
+    if (!ok) {
+      throw new Error(`content manifest: malformed entry ${JSON.stringify(e)}`);
+    }
+  }
+  return { version: 1, entries: obj.entries as ManifestEntry[] };
 }
 
 /** Throw if the committed manifest drifts from what the corpus says. Both sides are compared in the

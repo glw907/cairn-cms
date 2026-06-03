@@ -6,9 +6,10 @@ import { redirect, error, fail } from '@sveltejs/kit';
 import { findConcept } from '../content/concepts.js';
 import { extractCairnLinks, formatCairnToken } from '../content/links.js';
 import { frontmatterFromForm, parseMarkdown, dateInputValue, serializeMarkdown } from '../content/frontmatter.js';
-import { isValidId, slugify, filenameFromId, composeDatedId } from '../content/ids.js';
+import { isValidId, slugify, filenameFromId, composeDatedId, slugFromId, renameId } from '../content/ids.js';
+import { rewriteCairnLink } from '../components/markdown-format.js';
 import { appCredentials, type GithubKeyEnv } from '../github/credentials.js';
-import { listMarkdown, readRaw, commitFiles } from '../github/repo.js';
+import { listMarkdown, readRaw, commitFiles, type FileChange } from '../github/repo.js';
 import { cachedInstallationToken } from '../github/signing.js';
 import { emptyManifest, manifestEntryFromFile, parseManifest, serializeManifest, upsertEntry, removeEntry, inboundLinks, type LinkTarget, type InboundLink } from '../content/manifest.js';
 import { CommitConflictError } from '../github/types.js';
@@ -65,6 +66,8 @@ export interface EditData {
   isNew: boolean;
   saved: boolean;
   error: string | null;
+  /** The current URL slug (the date-stripped id for a dated concept), for the rename dialog prefill. */
+  slug: string;
   /** The site's link targets, for the preview resolver and the link picker; from the committed manifest. */
   linkTargets: LinkTarget[];
   /** The entries that link to this one, for the delete guard. Empty when nothing links here. */
@@ -208,7 +211,12 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     if (!isValidId(id)) throw error(400, 'Invalid entry id');
     const isNew = event.url.searchParams.get('new') === '1';
     const token = await mintToken(event.platform?.env ?? {});
-    const raw = await readRaw(runtime.backend, `${concept.dir}/${filenameFromId(id)}`, token);
+    const datePrefix = concept.routing.dated ? concept.datePrefix : null;
+    // The entry file and the manifest are independent reads sharing the token; fetch them together.
+    const [raw, manifestRaw] = await Promise.all([
+      readRaw(runtime.backend, `${concept.dir}/${filenameFromId(id)}`, token),
+      readRaw(runtime.backend, runtime.manifestPath, token),
+    ]);
     if (raw === null && !isNew) throw error(404, 'Entry not found');
 
     const parsed = raw === null ? { frontmatter: {}, body: '' } : parseMarkdown(raw);
@@ -216,7 +224,6 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
 
     let linkTargets: LinkTarget[] = [];
     let inbound: InboundLink[] = [];
-    const manifestRaw = await readRaw(runtime.backend, runtime.manifestPath, token);
     if (manifestRaw !== null) {
       const manifest = parseManifest(manifestRaw);
       linkTargets = manifest.entries.map((e) => ({
@@ -241,6 +248,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       isNew,
       saved: event.url.searchParams.get('saved') === '1',
       error: event.url.searchParams.get('error'),
+      slug: slugFromId(id, datePrefix),
       linkTargets,
       inboundLinks: inbound,
     };
@@ -368,5 +376,90 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     throw redirect(303, `/admin/${concept.id}`);
   }
 
-  return { layoutLoad, indexRedirect, listLoad, createAction, editLoad, saveAction, deleteAction, mintToken };
+  /** Rename an entry: change its slug, move the file, and rewrite every inbound cairn token in one
+   *  atomic commit, so no internal link breaks. The collision check and the inbound recompute here
+   *  are the authoritative gate. The same last-writer-wins manifest race as save and delete applies,
+   *  caught by the build's fail-closed backstop. */
+  async function renameAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
+    const editor = sessionOf(event);
+    const concept = conceptOf(runtime, event.params);
+    const id = event.params.id ?? '';
+    if (!isValidId(id)) throw error(400, 'Invalid entry id');
+
+    const form = await event.request.formData();
+    const newSlug = String(form.get('slug') ?? '').trim();
+    if (!isValidId(newSlug)) {
+      return fail(400, { renameError: 'Enter a valid slug: lowercase letters, numbers, and hyphens.' });
+    }
+    const datePrefix = concept.routing.dated ? concept.datePrefix : null;
+    if (concept.routing.dated && /^\d{4}-/.test(newSlug)) {
+      return fail(400, { renameError: 'Leave the date out of the slug.' });
+    }
+    if (newSlug === slugFromId(id, datePrefix)) {
+      return fail(400, { renameError: 'That is already the slug.' });
+    }
+    const newId = renameId(id, newSlug, datePrefix);
+    const oldPath = `${concept.dir}/${filenameFromId(id)}`;
+    const newPath = `${concept.dir}/${filenameFromId(newId)}`;
+    const token = await mintToken(event.platform?.env ?? {});
+
+    // Collision guard: refuse if a file already exists at the new path.
+    const clobber = await readRaw(runtime.backend, newPath, token);
+    if (clobber !== null) {
+      return fail(409, { renameError: 'An entry with that slug already exists.' });
+    }
+
+    const [entryRaw, manifestRaw] = await Promise.all([
+      readRaw(runtime.backend, oldPath, token),
+      readRaw(runtime.backend, runtime.manifestPath, token),
+    ]);
+    if (entryRaw === null) throw error(404, 'Entry not found');
+    const manifest = manifestRaw === null ? emptyManifest() : parseManifest(manifestRaw);
+
+    const oldHref = formatCairnToken({ concept: concept.id, id });
+    const newHref = formatCairnToken({ concept: concept.id, id: newId });
+
+    // The moved file keeps its content, except a self-token rewrite. Re-derive its manifest row from
+    // the new path so the row carries the new id and permalink by construction.
+    const movedRaw = rewriteCairnLink(entryRaw, oldHref, newHref);
+    const changes: FileChange[] = [
+      { path: oldPath, content: null },
+      { path: newPath, content: movedRaw },
+    ];
+    let next = removeEntry(manifest, concept.id, id);
+    next = upsertEntry(next, manifestEntryFromFile(concept, { path: newPath, raw: movedRaw }));
+
+    // Rewrite every inbound linker's body and re-derive its row, so its outbound edge points at the
+    // new id. A linker missing from the repo is skipped; the build backstop catches any drift.
+    for (const linker of inboundLinks(manifest, concept.id, id)) {
+      const linkerConcept = findConcept(runtime.concepts, linker.concept);
+      if (!linkerConcept) continue;
+      const linkerPath = `${linkerConcept.dir}/${filenameFromId(linker.id)}`;
+      const linkerRaw = await readRaw(runtime.backend, linkerPath, token);
+      if (linkerRaw === null) continue;
+      const rewritten = rewriteCairnLink(linkerRaw, oldHref, newHref);
+      changes.push({ path: linkerPath, content: rewritten });
+      next = upsertEntry(next, manifestEntryFromFile(linkerConcept, { path: linkerPath, raw: rewritten }));
+    }
+
+    changes.push({ path: runtime.manifestPath, content: serializeManifest(next) });
+
+    try {
+      await commitFiles(
+        runtime.backend,
+        changes,
+        { message: `Rename ${concept.label.toLowerCase()}: ${id} to ${newId}`, author: { name: editor.displayName, email: editor.email } },
+        token,
+      );
+    } catch (err) {
+      if (isConflict(err)) {
+        const message = 'This file changed since you opened it. Reload and try again.';
+        throw redirect(303, `/admin/${concept.id}/${id}?error=${encodeURIComponent(message)}`);
+      }
+      throw err;
+    }
+    throw redirect(303, `/admin/${concept.id}/${newId}?renamed=1`);
+  }
+
+  return { layoutLoad, indexRedirect, listLoad, createAction, editLoad, saveAction, deleteAction, renameAction, mintToken };
 }

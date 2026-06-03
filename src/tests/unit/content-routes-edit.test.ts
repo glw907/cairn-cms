@@ -123,6 +123,17 @@ describe('editLoad', () => {
     expect(data.inboundLinks).toEqual([{ concept: 'posts', id: '2026-05-b', title: 'Post B', permalink: '/posts/b' }]);
   });
 
+  it('ships the current slug for the rename dialog', async () => {
+    // The posts concept uses a day prefix, so 2026-05-01-hello strips to the slug hello.
+    vi.stubGlobal('fetch', vi
+      .fn()
+      .mockResolvedValueOnce(new Response('---\ntitle: Hello\n---\nx', { status: 200 }))
+      .mockResolvedValueOnce(new Response('Not Found', { status: 404 })));
+    const routes = createContentRoutes(runtime(), deps);
+    const data = await routes.editLoad(editEvent('2026-05-01-hello') as never);
+    expect(data.slug).toBe('hello');
+  });
+
   it('reads saved and error flags from the query', async () => {
     vi.stubGlobal('fetch', vi
       .fn()

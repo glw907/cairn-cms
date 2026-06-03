@@ -23,6 +23,7 @@ function postProps(over = {}) {
       isNew: false,
       saved: false,
       error: null,
+      slug: 'hello',
       linkTargets: [] as LinkTarget[],
       inboundLinks: [],
       siteName: 'Test Site',

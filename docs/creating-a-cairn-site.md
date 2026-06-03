@@ -296,6 +296,13 @@ The engine ships the public read side as data helpers under `@glw907/cairn-cms/d
 owns the routes and the markup. Each recipe below is one surface, copied straight from the working
 showcase. `examples/showcase` carries all of them as a running site.
 
+A site's public pages import the data builders, the route loaders (`createPublicRoutes`), and the
+response helpers (`rssResponse`, `jsonFeedResponse`, `sitemapResponse`, `robotsResponse`) from
+`@glw907/cairn-cms/delivery`. That entry is backend-free, so it keeps auth, github, and email out of the
+public bundle. The package root re-exports the same symbols for convenience when a file already imports
+from the root. The `CairnHead` head component is the one exception. Import it from
+`@glw907/cairn-cms/delivery/head`, which keeps the data entry free of any Svelte component.
+
 ### The content layer
 
 One module globs the markdown, derives the descriptors, validates each concept into an index, and
@@ -378,7 +385,7 @@ export const load: PageServerLoad = ({ url }) => routes.entryLoad({ url });
 ```svelte
 <script lang="ts">
   import type { PageData } from './$types';
-  import { CairnHead } from '@glw907/cairn-cms/delivery';
+  import { CairnHead } from '@glw907/cairn-cms/delivery/head';
 
   let { data }: { data: PageData } = $props();
 </script>

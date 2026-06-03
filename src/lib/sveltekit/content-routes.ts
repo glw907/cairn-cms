@@ -2,8 +2,9 @@
 // A factory closes over the composed runtime and the GitHub token mint, so the read and
 // commit paths are unit-testable against a fetch double with an injected token, mirroring the
 // email `send` injection in auth-routes. A shim stays one line: `export const load = routes.editLoad`.
-import { redirect, error } from '@sveltejs/kit';
+import { redirect, error, fail } from '@sveltejs/kit';
 import { findConcept } from '../content/concepts.js';
+import { extractCairnLinks, formatCairnToken } from '../content/links.js';
 import { frontmatterFromForm, parseMarkdown, dateInputValue, serializeMarkdown } from '../content/frontmatter.js';
 import { isValidId, slugify, filenameFromId, composeDatedId } from '../content/ids.js';
 import { appCredentials, type GithubKeyEnv } from '../github/credentials.js';
@@ -245,7 +246,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
   }
 
   /** Save an edit: validate, then commit with the session editor as author. Fails safe on 409. */
-  async function saveAction(event: ContentEvent): Promise<never> {
+  async function saveAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
     const editor = sessionOf(event);
     const concept = conceptOf(runtime, event.params);
     const id = event.params.id ?? '';
@@ -277,7 +278,24 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     const manifestRaw = await readRaw(runtime.backend, runtime.manifestPath, token);
     const manifest = manifestRaw === null ? emptyManifest() : parseManifest(manifestRaw);
     const row = manifestEntryFromFile(concept, { path, raw: markdown });
-    const nextManifest = serializeManifest(upsertEntry(manifest, row));
+    const upserted = upsertEntry(manifest, row);
+    const nextManifest = serializeManifest(upserted);
+
+    // Save guard: resolve the body's cairn links against the manifest with this entry upserted, so a
+    // self-link and a link to any existing target resolves. A link to an absent target hard-blocks
+    // the save (it would red the deploy build and the author would not see it); a link to a draft
+    // target commits with a warning, since it is valid and resolves once the target is published.
+    const byKey = new Map(upserted.entries.map((e) => [`${e.concept}/${e.id}`, e]));
+    const absent: string[] = [];
+    const draft: string[] = [];
+    for (const ref of extractCairnLinks(body)) {
+      const target = byKey.get(`${ref.concept}/${ref.id}`);
+      if (!target) absent.push(formatCairnToken(ref));
+      else if (target.draft) draft.push(formatCairnToken(ref));
+    }
+    if (absent.length) {
+      return fail(400, { brokenLinks: absent, body });
+    }
 
     try {
       await commitFiles(
@@ -296,7 +314,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       }
       throw err;
     }
-    throw redirect(303, `/admin/${concept.id}/${id}?saved=1`);
+    const savedQuery = draft.length ? `saved=1&drafts=${encodeURIComponent(draft.join(','))}` : 'saved=1';
+    throw redirect(303, `/admin/${concept.id}/${id}?${savedQuery}`);
   }
 
   return { layoutLoad, indexRedirect, listLoad, createAction, editLoad, saveAction, mintToken };

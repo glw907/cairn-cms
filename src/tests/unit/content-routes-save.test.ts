@@ -67,7 +67,13 @@ afterEach(() => vi.restoreAllMocks());
 
 describe('saveAction', () => {
   it('commits the content file and the refreshed manifest in one commit', async () => {
-    const calls = commitFetch(null); // empty manifest: first save on a fresh repo
+    // A manifest holding the published pages/about the body links to, so the save guard passes.
+    const aboutRow = manifestEntryFromFile(runtime(() => ({ ok: true, data: {} })).concepts[0], {
+      path: 'src/content/pages/about.md',
+      raw: '---\ntitle: About\n---\nx',
+    });
+    const manifest = serializeManifest({ version: 1, entries: [{ ...aboutRow, concept: 'pages', id: 'about', draft: false }] });
+    const calls = commitFetch(manifest);
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })), deps);
     try {
       await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'See [about](cairn:pages/about) for more.' }) as never);
@@ -100,7 +106,10 @@ describe('saveAction', () => {
       path: 'src/content/posts/2026-05-hi.md',
       raw: '---\ntitle: Old\n---\nold body',
     });
-    const incoming = serializeManifest(upsertEntry(emptyManifest(), existingEntry));
+    // Seed the published pages/about target too, so the body's link clears the save guard.
+    const aboutRow = manifestEntryFromFile(concept, { path: 'src/content/pages/about.md', raw: '---\ntitle: About\n---\nx' });
+    const seeded = upsertEntry(emptyManifest(), { ...aboutRow, concept: 'pages', id: 'about', draft: false });
+    const incoming = serializeManifest(upsertEntry(seeded, existingEntry));
     const calls = commitFetch(incoming);
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'New' } })), deps);
     try {
@@ -162,6 +171,51 @@ describe('saveAction', () => {
     } catch (e) {
       expect((e as { location: string }).location).toMatch(/error=.*changed%20since/i);
     }
+  });
+
+  it('blocks a save that links to an absent target, with no commit', async () => {
+    const calls = commitFetch(null); // empty manifest: nothing to resolve against
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })), deps);
+    const result = (await routes.saveAction(
+      saveEvent('2026-05-hi', { title: 'Hi', body: 'see [gone](cairn:pages/gone)' }) as never,
+    )) as unknown as { status: number; data: { brokenLinks: string[] } };
+    expect(result.status).toBe(400);
+    expect(result.data.brokenLinks).toContain('cairn:pages/gone');
+    // No commit: the only fetch is the manifest read, no POST to /git/trees.
+    expect(calls.some((c) => (c.init?.method ?? 'GET') === 'POST' && c.url.endsWith('/git/trees'))).toBe(false);
+  });
+
+  it('allows a save that links to a draft target, with a warning', async () => {
+    // A manifest holding one draft page 'wip'. The saved post links to it.
+    const concept = runtime(() => ({ ok: true, data: {} })).concepts[0];
+    const draftRow = manifestEntryFromFile(concept, { path: 'src/content/posts/wip.md', raw: '---\ntitle: WIP\ndraft: true\n---\nx' });
+    // Force the draft row's concept/id to a pages target the body links to.
+    const manifest = serializeManifest({ version: 1, entries: [{ ...draftRow, concept: 'pages', id: 'wip', draft: true }] });
+    commitFetch(manifest);
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })), deps);
+    try {
+      await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'see [wip](cairn:pages/wip)' }) as never);
+      throw new Error('should have redirected');
+    } catch (e) {
+      const loc = (e as { location: string }).location;
+      expect(loc).toMatch(/saved=1/);
+      expect(loc).toMatch(/draft/i);
+    }
+  });
+
+  it('commits cleanly when every link resolves to a published target', async () => {
+    const concept = runtime(() => ({ ok: true, data: {} })).concepts[0];
+    const liveRow = manifestEntryFromFile(concept, { path: 'src/content/pages/home.md', raw: '---\ntitle: Home\n---\nx' });
+    const manifest = serializeManifest({ version: 1, entries: [{ ...liveRow, concept: 'pages', id: 'home', draft: false }] });
+    const calls = commitFetch(manifest);
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })), deps);
+    try {
+      await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'see [home](cairn:pages/home)' }) as never);
+      throw new Error('should have redirected');
+    } catch (e) {
+      expect((e as { location: string }).location).toBe('/admin/posts/2026-05-hi?saved=1');
+    }
+    expect(calls.some((c) => (c.init?.method ?? 'GET') === 'POST' && c.url.endsWith('/git/trees'))).toBe(true);
   });
 
   it('matches a conflict by name even if the class identity differs', async () => {

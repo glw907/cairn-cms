@@ -33,15 +33,23 @@ no Important, and no confirmed correctness bug; the one convergent finding (a `f
 `summaryFields` failing open on an undeclared key) is in
 `docs/superpowers/plans/2026-06-03-cairn-delivery-readmodel.md`.
 
-**Immediate next action: brainstorm then write P2 (schema validation), the next pass in the DX sequence.**
-P2 covers DX items 10 and 12: declarative, serializable field options to restore the four validations the
-schema cutover dropped (calendar-date, date-format, tag-vocabulary, the at-least-one-tag rule), plus
-`readonly` field options. The open design decisions need the user's calls before the plan is written (per the
-`cairn-pass` ritual, never auto-write a plan without them), so run `superpowers:brainstorming` first, then
-`superpowers:writing-plans`. P2 runs on `main` directly (additive, no site deploys) and will bump `0.23.0`.
-The `summaryFields`-fails-open follow-up from P1 (a validation that a `summaryFields` key is schema-declared)
-is a candidate to fold into P2. After P2, P3 is render and component authoring, then publish the rolled
-`0.22.0`/`0.23.0`/P3 window, then the 907-life migration, then P4 (the scaffolder).
+**Immediate next action: execute P2,
+`docs/superpowers/plans/2026-06-03-cairn-schema-validation.md`, `subagent-driven`
+(`superpowers:subagent-driven-development`, one `cairn-implementer` per task, Sonnet default; the tasks are
+mechanical and well-specified, so Opus is not needed), from the cairn-cms directory on `main`. Start at
+Task 1.** The design is settled and approved (spec
+`docs/superpowers/specs/2026-06-03-cairn-schema-validation-design.md`), so skip brainstorming. P2 covers DX
+items 10 and 12 plus the folded-in P1 `summaryFields` follow-up. The three design calls are locked: date
+validation is strict by default (a real `YYYY-MM-DD` calendar date, no flag, no custom `pattern`); closed
+`tags` membership is enforced by default (no `enforced` flag, since `freetags` is the open escape hatch);
+and no tag count bounds (at-least-one is `required: true`, already working). Seven test-first tasks: the
+`isCalendarDate` helper, the date check and the tags membership check in `validateFields`, the
+`summaryFields` declaration guard in `normalizeConcepts`, the `readonly` widening of `AttributeField.options`,
+the docs, and the `0.23.0` bump. It runs on `main` directly (no site deploys). The pass-end review gate is
+the simplifier plus a high-effort `/code-review` (attention to the `isCalendarDate` round-trip and the tags
+edge cases); `svelte-reviewer` runs only if a form component changes, and the Worker/auth/a11y reviewers and
+the live `/admin` smoke do not apply. After P2, brainstorm and write P3 (render and component authoring),
+then publish the rolled `0.22.0`/`0.23.0`/P3 window, then the 907-life migration, then P4 (the scaffolder).
 
 **Publishing is held** (consistent with the held window the entry below describes): `0.21.0` is the registry
 `latest`, and `main` will carry `0.22.0` (P1) plus the later P2/P3 bumps until the window publishes together

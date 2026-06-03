@@ -6,6 +6,83 @@ orientation is the workspace `CLAUDE.md`. Locked architecture decisions and the 
 the functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`).
 Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`.
 
+## Where the work is (2026-06-02, content-graph Plan 4 / content delete and the integrity guards executed and review-remediated)
+
+Content-graph Plan 4 (content delete, the delete and save integrity guards, and four carried link-integrity
+fixes) executed subagent-driven on `main`, one `cairn-implementer` per task (Sonnet, Opus for the
+judgment-heavy save guard, `deleteAction`, and `EditPage` wiring), commits `19e8c0b..b63ac2e` (the fifteen
+plan tasks), then a simplifier commit `30d363d` and a review-gate fold-in `afbf08b`. **Local only, not pushed,
+not published.** It bumps the minor to `0.20.0` (additive route surface, a new `DeleteDialog`, the pure
+helpers). The pass delivers: a Delete control that blocks until clean and names the inbound links, a save guard
+that hard-blocks a dangling `cairn:` link with a one-click unwrap-to-text fix and warns a draft target, and the
+four fold-ins (`escapeLinkText`, the hardened `parseManifest`, the manifest/site-index validation-exclusion
+reconciliation in `buildSiteManifest`, and the three Plan 3 editor nits: the `insertLink` pre-mount fallback,
+the `[[` code-block skip, the `LinkPicker` heading tiebreak).
+
+New code: `escapeLinkText` (`links.ts`), `unwrapCairnLink` (`markdown-format.ts`), `inboundLinks`/`InboundLink`
+(`manifest.ts`), `deleteAction` plus the `saveAction` guard and `editLoad` inbound field
+(`content-routes.ts`), and `DeleteDialog.svelte`. Gate at the fold-in tip (`afbf08b`): `npm run check` 774
+files 0/0, `npm test` 570 tests exit 0, `check:package` all-green.
+
+**The review gate found real bugs, all now fixed (commits `2cf82ee`, `5bd8718`, `64ffdc4`, `2640e71`).** Three
+Opus reviewers ran (`svelte-reviewer`, `daisyui-a11y-reviewer`, `cloudflare-workers-reviewer`; the workers one
+returned ship-it). The svelte and a11y reviewers converged on a broken post-action feedback flow, folded in as
+`afbf08b` (surface the `deleteAction` 409, clear a fixed broken-link row, kill the double "Saved" banner). A
+high-effort seven-angle `/code-review` then surfaced a cluster of CONFIRMED bugs that meant the save-guard
+recovery flow, the pass's headline feature, did not actually work. The remediation batch:
+
+- `2cf82ee` the keystone. A blocked save re-seeded the editor from the committed body and discarded the
+  author's edits (and the broken link to fix); `EditPage` now seeds from the returned `form.body`.
+  `unwrapCairnLink` was a raw regex that no-opped on the escaped-bracket and titled links the picker produces
+  and could rewrite a link inside a code span; it is now an mdast-located offset splice that unescapes the
+  display text and leaves code and the rest of the document exact. The banner row hides only on a real change,
+  and the refused-delete banner names the linkers itself instead of pointing at a stale dialog.
+- `5bd8718` `parseManifest` validated entry scalars but only that `links` was an array; a malformed link
+  element (a missing id, a string, or null) passed and `inboundLinks` silently dropped a real inbound linker,
+  letting the delete guard strand a link. It now validates each link element as a `{ concept, id }` string pair
+  and type-checks an optional `date`.
+- `64ffdc4` the save guard draft-warned a self-link on a draft entry; it now skips the entry being saved before
+  classifying, mirroring `inboundLinks`.
+- `2640e71` the showcase admin edit route registered only the `save` action, so the shipped delete 404'd in the
+  reference consumer and any site scaffolded from it; it now registers `delete: routes.deleteAction`. Showcase
+  production build exits 0.
+
+Gate at the remediation tip (`2640e71`): `npm run check` 774 files 0/0, `npm test` 579 tests exit 0, showcase
+build exit 0.
+
+**Live admin smoke: carried fast-follow.** The showcase runs `adapter-node`, so there is no `wrangler dev`
+admin Worker to smoke. The browser component tests cover the dialogs, the banner, and the unwrap fix; the
+interactive smoke (block a delete on a linked-to page, delete an unlinked page, recover a blocked save via the
+unwrap fix) is best run during the ecnordic migration against that site's real Worker.
+
+**Carried follow-ups (from the review gate, for Plan 5 or a later pass).** Folded into the Plan 5 design where
+noted: the `commitFiles` 422-on-absent-path delete edge (a delete of a path already absent from the tree
+surfaces as a raw 500, not the friendly conflict redirect; rename deletes the old path, so it folds into Plan
+5). Recorded as known limitations: the manifest concurrency races (a concurrent save adding an inbound link can
+be missed by a delete gate, and a concurrent delete of a target can be missed by a save guard; both are
+last-writer-wins on the git-committed manifest with no compare-and-swap, caught by the build's fail-closed
+`verifyManifest`/resolver backstop, which is the designed safety net for cairn's tiny write volume; rename
+shares the race). Smaller follow-ups: `buildSiteManifest` silently drops an invalid draft (a linked-to invalid
+draft reds the build far from root cause, since the site gate skips drafts but the manifest validate has no
+draft exception), a persistent always-present live region for the page alerts (the success/error/broken/draft
+banners are `{#if}`-gated and announced inconsistently), and a perf-and-reuse cleanup (double `extractCairnLinks`
+per save, double `parseMarkdown` per file at build, sequential `editLoad` reads, the `byKey`/resolver
+key-shape duplication).
+
+**Immediate next action: write content-graph Plan 5 (slug-only rename plus the multi-file inbound rewrite).**
+The Plan 5 design is brainstormed and approved in conversation (2026-06-02): slug-only rename (a page renames
+its id=slug; a dated post renames the date-stripped slug, keeping its date prefix; changing the date stays out
+of scope since the date is already an editable frontmatter field that resolves safely), the atomic inbound-link
+rewrite through `commitFiles`, and no cascade-unwrap-on-delete (block-until-clean already makes delete safe, and
+auto-editing other authors' pages is the wrong default for non-technical authors). The next step is to write the
+design spec to `docs/superpowers/specs/`, then the numbered Plan 5, then execute it subagent-driven on `main`.
+The `commitFiles` 422 edge and the concurrency-race note fold into the Plan 5 design.
+
+**Deferred (user's call 2026-06-02): publishing is held.** The registry's `latest` is `0.18.0`; `main` carries
+the unpublished `0.19.0` (picker) and `0.20.0` (this lifecycle pass with its remediation). Publish the rolled
+window before the site migrations, since a site pins a range only after the publish. The whole content-graph
+initiative still precedes the site migrations.
+
 ## Where the work is (2026-06-02, content-graph Plan 3 / the editor link picker executed)
 
 Content-graph Plan 3 (the editor link picker) executed subagent-driven on `main`, one `cairn-implementer` per
@@ -67,15 +144,9 @@ not see a failed build. Cascade-unwrap-on-delete defers to Plan 5 with rename. F
 editor nits). Fifteen test-first tasks, additive, bumps `0.20.0`. The plan corrects the spec's test-layer note: the
 content-route guards are unit-tested against a `fetch` double, since the routes have no D1.
 
-**Immediate next action: execute content-graph Plan 4,
-`docs/superpowers/plans/2026-06-02-cairn-content-graph-04-lifecycle.md`, `subagent-driven`
-(`superpowers:subagent-driven-development`, one `cairn-implementer` per task, Sonnet default), from the cairn-cms
-directory on `main`. Start at Task 1.** The design is settled (skip brainstorming). It runs on `main` directly
-(additive, no site deploys). The pass-end review gate is the simplifier plus `svelte-reviewer` (the `EditPage` `form`
-reactivity, the delete dialog, the unwrap fix on the bound body), `daisyui-a11y-reviewer` (the delete dialog and the
-alerts), and `cloudflare-workers-reviewer` (the `deleteAction` and the save-guard commit and fail paths), all Opus,
-plus a high-effort `/code-review`; the live `/admin` interactive smoke is a carried fast-follow for the ecnordic
-migration (the showcase has no admin routes).
+**Plan 4 is DONE (executed and review-remediated 2026-06-02).** See the top entry for the landing detail, the
+review remediation, and the authoritative next action (write Plan 5). The description below stays as the pass's
+design record.
 
 **Deferred (user's call 2026-06-02): publishing `0.19.0` is held.** The user chose to brainstorm Plan 4 rather than
 publish the picker pass. The registry's `latest` is `0.18.0`; `main` carries the unpublished `0.19.0` (picker) and will

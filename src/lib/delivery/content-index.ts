@@ -107,7 +107,7 @@ export function createContentIndex<F = Record<string, unknown>>(
     }
     const summaryFieldValues: Record<string, unknown> = {};
     for (const key of descriptor.summaryFields) {
-      if (key in result.data) summaryFieldValues[key] = (result.data as Record<string, unknown>)[key];
+      if (key in result.data) summaryFieldValues[key] = result.data[key];
     }
     entries.push({
       concept: descriptor.id,

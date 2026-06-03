@@ -16,6 +16,9 @@ export interface RawFile {
 
 /** The cheap, plain-data view of one entry, for lists, feeds, and the sitemap. */
 export interface ContentSummary {
+  /** The descriptor id this entry belongs to, e.g. "posts". Lets a list or page branch per
+   *  concept without re-deriving it from a proxy like `entry.date`. */
+  concept: string;
   id: string;
   slug: string;
   permalink: string;
@@ -99,6 +102,7 @@ export function createContentIndex<F = Record<string, unknown>>(
       continue;
     }
     entries.push({
+      concept: descriptor.id,
       id,
       slug,
       permalink: permalink(descriptor, { id, slug, date }),

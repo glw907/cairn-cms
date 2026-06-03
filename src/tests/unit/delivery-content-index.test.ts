@@ -53,6 +53,15 @@ describe('createContentIndex', () => {
     expect(index.adjacent('older')).toEqual({ newer: expect.objectContaining({ id: 'newer' }), older: undefined });
     expect(index.adjacent('newer').older).toEqual(expect.objectContaining({ id: 'older' }));
   });
+
+  it('stamps the concept id on every summary', () => {
+    expect(index.all()[0].concept).toBe('posts');
+    expect(index.byTag('a')[0].concept).toBe('posts');
+  });
+
+  it('stamps the concept id on a detail entry', () => {
+    expect(index.byId('older')?.concept).toBe('posts');
+  });
 });
 
 describe('content index slug', () => {

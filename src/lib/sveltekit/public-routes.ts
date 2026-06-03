@@ -45,6 +45,7 @@ export interface TagIndexData {
 
 /** One entry's data: the detail entry, its rendered html, and its canonical URL. */
 export interface EntryData {
+  concept: string;
   entry: ContentEntry;
   html: string;
   canonicalUrl: string;
@@ -87,7 +88,7 @@ export function createPublicRoutes(deps: PublicRoutesDeps) {
       ...(fields.author ? { author: fields.author } : {}),
       ...(entry.date ? { feeds } : {}),
     });
-    return { entry, html: await render(entry.body, { stagger: true, resolve: buildLinkResolver(site) }), canonicalUrl, seo, newer, older };
+    return { concept: entry.concept, entry, html: await render(entry.body, { stagger: true, resolve: buildLinkResolver(site) }), canonicalUrl, seo, newer, older };
   }
 
   /** The chronological archive for one concept: every non-draft summary, newest-first. */

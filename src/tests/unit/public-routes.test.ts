@@ -36,6 +36,13 @@ describe('createPublicRoutes', () => {
     expect(data.entry.id).toBe('about');
   });
 
+  it('entryLoad carries the resolved concept on EntryData', async () => {
+    const post = await routes.entryLoad({ url: new URL('https://example.com/2026/02/01/a') });
+    expect(post.concept).toBe('posts');
+    const page = await routes.entryLoad({ url: new URL('https://example.com/about') });
+    expect(page.concept).toBe('pages');
+  });
+
   it('entryLoad throws a 404 for an unknown path', async () => {
     await expect(routes.entryLoad({ url: new URL('https://example.com/missing') })).rejects.toMatchObject({ status: 404 });
   });

@@ -26,6 +26,18 @@ const globs = {
   pages: { '/src/content/pages/about.md': '---\ntitle: About\n---\n\nHi.\n' },
 };
 
+// A posts concept whose validate requires a non-empty title, so an empty-title file fails.
+const requiredTitleAdapter = defineAdapter({
+  siteName: 'T',
+  content: {
+    posts: { dir: 'src/content/posts', label: 'Posts', schema: defineFields([{ type: 'text', name: 'title', label: 'Title', required: true }, { type: 'date', name: 'date', label: 'Date' }]) },
+    pages: { dir: 'src/content/pages', label: 'Pages', schema: defineFields([{ type: 'text', name: 'title', label: 'Title' }]) },
+  },
+  backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
+  sender: { from: 'a@b.c' },
+  render: (md) => md,
+});
+
 describe('buildSiteManifest', () => {
   it('builds one entry per file across concepts with edges', () => {
     const manifest = buildSiteManifest(adapter, config, globs);
@@ -34,6 +46,19 @@ describe('buildSiteManifest', () => {
     const guide = manifest.entries.find((e) => e.id === '2026-01-04-guide');
     expect(guide?.permalink).toBe('/2026/01/guide');
     expect(guide?.links).toEqual([{ concept: 'pages', id: 'about' }]);
+  });
+
+  it('excludes a file whose frontmatter fails validation', () => {
+    const manifest = buildSiteManifest(requiredTitleAdapter, config, {
+      posts: {
+        'src/content/posts/2026-01-01-good.md': '---\ntitle: Good\ndate: 2026-01-01\n---\nbody',
+        'src/content/posts/2026-01-02-bad.md': '---\ntitle: ""\ndate: 2026-01-02\n---\nbody',
+      },
+      pages: {},
+    });
+    const ids = manifest.entries.map((e) => e.id);
+    expect(ids).toContain('2026-01-01-good');
+    expect(ids).not.toContain('2026-01-02-bad');
   });
 });
 

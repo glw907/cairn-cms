@@ -5,6 +5,7 @@
 // the build (the backstop). The admin preview uses manifestLinkResolver instead.
 import { siteDescriptors } from './site-descriptors.js';
 import { fromGlob } from './content-index.js';
+import { parseMarkdown } from '../content/frontmatter.js';
 import { emptyManifest, manifestEntryFromFile } from '../content/manifest.js';
 import type { Manifest } from '../content/manifest.js';
 import type { LinkResolve } from '../content/links.js';
@@ -21,6 +22,11 @@ export function buildSiteManifest<A extends CairnAdapter>(adapter: A, config: Si
   for (const descriptor of siteDescriptors(adapter, config)) {
     const record = globRecord[descriptor.id] ?? {};
     for (const file of fromGlob(record)) {
+      // Validate the same way createContentIndex does, so the manifest and the site index agree on
+      // which entries exist. A validation failure is excluded from both; otherwise the preview would
+      // resolve a link the build then rejects as a missing target.
+      const { frontmatter, body } = parseMarkdown(file.raw);
+      if (!descriptor.validate(frontmatter, body).ok) continue;
       manifest.entries.push(manifestEntryFromFile(descriptor, file));
     }
   }

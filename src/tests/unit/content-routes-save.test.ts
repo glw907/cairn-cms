@@ -203,6 +203,24 @@ describe('saveAction', () => {
     }
   });
 
+  it('does not draft-warn a draft entry that links to itself', async () => {
+    // A draft post that links to its own token. The self-link is valid by construction (the
+    // upserted manifest holds this very entry), so the save commits with no drafts= warning.
+    const concept = runtime(() => ({ ok: true, data: {} })).concepts[0];
+    const selfRow = manifestEntryFromFile(concept, { path: 'src/content/posts/2026-05-hi.md', raw: '---\ntitle: Hi\ndraft: true\n---\nx' });
+    const manifest = serializeManifest({ version: 1, entries: [{ ...selfRow, concept: 'posts', id: '2026-05-hi', draft: true }] });
+    commitFetch(manifest);
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi', draft: true } })), deps);
+    try {
+      await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'see [self](cairn:posts/2026-05-hi)' }) as never);
+      throw new Error('should have redirected');
+    } catch (e) {
+      const loc = (e as { location: string }).location;
+      expect(loc).toBe('/admin/posts/2026-05-hi?saved=1');
+      expect(loc).not.toMatch(/drafts=/);
+    }
+  });
+
   it('commits cleanly when every link resolves to a published target', async () => {
     const concept = runtime(() => ({ ok: true, data: {} })).concepts[0];
     const liveRow = manifestEntryFromFile(concept, { path: 'src/content/pages/home.md', raw: '---\ntitle: Home\n---\nx' });

@@ -295,6 +295,9 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     const absent: string[] = [];
     const draft: string[] = [];
     for (const ref of extractCairnLinks(body)) {
+      // A self-link is valid by construction (the upserted manifest holds this very entry), so
+      // skip it before classifying. Mirrors inboundLinks's self-exclusion.
+      if (ref.concept === concept.id && ref.id === id) continue;
       const target = byKey.get(`${ref.concept}/${ref.id}`);
       if (!target) absent.push(formatCairnToken(ref));
       else if (target.draft) draft.push(formatCairnToken(ref));

@@ -59,4 +59,12 @@ describe('remarkDirectiveStamp', () => {
     const html = await run('meet at 9:30 today');
     expect(html).toContain('9:30');
   });
+  it('drops an empty label on a title-less component', async () => {
+    const html = await run(':::card[]{icon=flag}\nbody\n:::');
+    expect(html).not.toContain('<p></p>');
+  });
+  it('drops a non-empty unclaimed label on a title-less component', async () => {
+    const html = await run(':::card[Stray]\nbody\n:::');
+    expect(html).not.toContain('Stray');
+  });
 });

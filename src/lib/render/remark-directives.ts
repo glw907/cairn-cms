@@ -94,6 +94,12 @@ export function remarkDirectiveStamp(registry: ComponentRegistry) {
           markSlot(child, (child as { name: string }).name);
         }
       }
+
+      // A directive [label] that the component has no `title` slot to claim would otherwise fall
+      // through as body content and render as a stray paragraph. Drop it.
+      if (!slotNames.has('title')) {
+        node.children = node.children.filter((child) => !isDirectiveLabel(child)) as typeof node.children;
+      }
     });
 
     visit(tree, ['textDirective', 'leafDirective'], (node, index, parent) => {

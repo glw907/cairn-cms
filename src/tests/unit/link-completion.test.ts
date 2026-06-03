@@ -1,6 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { matchCairnTrigger, linkCompletions } from '../../lib/components/link-completion.js';
+import { EditorState } from '@codemirror/state';
+import { markdown } from '@codemirror/lang-markdown';
+import { matchCairnTrigger, linkCompletions, cairnLinkCompletionSource } from '../../lib/components/link-completion.js';
 import type { LinkTarget } from '../../lib/content/manifest.js';
+
+function contextAt(doc: string, pos: number) {
+  const state = EditorState.create({ doc, extensions: [markdown()] });
+  return { state, pos, explicit: false } as unknown as import('@codemirror/autocomplete').CompletionContext;
+}
 
 const targets: LinkTarget[] = [
   { concept: 'pages', id: 'about', permalink: '/about', title: 'About Us', draft: false },
@@ -44,5 +51,19 @@ describe('linkCompletions', () => {
   it('escapes square brackets in the title for the apply text', () => {
     const t = [{ concept: 'pages', id: 'about', permalink: '/about', title: 'A [B] C', draft: false }];
     expect(linkCompletions(t, 'a')[0].apply).toBe('[A \\[B\\] C](cairn:pages/about)');
+  });
+});
+
+describe('cairnLinkCompletionSource code-block skip', () => {
+  const targets = [{ concept: 'pages', id: 'about', permalink: '/about', title: 'About Us', draft: false }];
+  it('offers completions for a [[ in prose', () => {
+    const doc = 'see [[Ab';
+    const res = cairnLinkCompletionSource(targets)(contextAt(doc, doc.length));
+    expect(res).not.toBeNull();
+  });
+  it('does not offer completions for a [[ inside a fenced code block', () => {
+    const doc = '```\nlet x = arr[[Ab';
+    const res = cairnLinkCompletionSource(targets)(contextAt(doc, doc.length));
+    expect(res).toBeNull();
   });
 });

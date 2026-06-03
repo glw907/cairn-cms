@@ -3,6 +3,7 @@
 // to CodeMirror's CompletionSource. The editor wires the source through a generic completionSources
 // prop, so this stays the only link-aware piece and the seam itself knows nothing about links.
 import type { Completion, CompletionContext, CompletionResult, CompletionSource } from '@codemirror/autocomplete';
+import { syntaxTree } from '@codemirror/language';
 import type { LinkTarget } from '../content/manifest.js';
 import { formatCairnToken, escapeLinkText } from '../content/links.js';
 
@@ -45,6 +46,12 @@ export function cairnLinkCompletionSource(targets: LinkTarget[]): CompletionSour
     const before = context.state.sliceDoc(line.from, context.pos);
     const trigger = matchCairnTrigger(before);
     if (!trigger) return null;
+    // Skip a [[ inside a fenced or inline code node: a cairn link there would be literal text, and
+    // the build resolver does not look inside code. The node name carries "Code" for both forms.
+    const node = syntaxTree(context.state).resolveInner(context.pos, -1);
+    for (let n: typeof node | null = node; n; n = n.parent) {
+      if (/Code/.test(n.name)) return null;
+    }
     return { from: line.from + trigger.from, options: linkCompletions(targets, trigger.query), filter: false };
   };
 }

@@ -82,24 +82,24 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
   // inserted fresh is announced inconsistently. A polite region carries the success and draft
   // notices; an assertive region carries the errors. The visible banners below keep their styling
   // but drop their roles, so a message is announced once.
-  const politeMessage = $derived(
-    draftWarning
-      ? `Saved. This page links to unpublished pages: ${draftWarning}.`
-      : data.saved
-        ? 'Saved.'
-        : '',
-  );
-  const assertiveMessage = $derived(
-    data.error
-      ? data.error
-      : renameError
-        ? renameError
-        : deleteRefusedLinks.length
-          ? `This ${data.label.toLowerCase()} could not be deleted. ${deleteRefusedLinks.length} ${deleteRefusedLinks.length === 1 ? 'page links' : 'pages link'} to it.`
-          : visibleBrokenLinks.length
-            ? `This page links to ${visibleBrokenLinks.length} missing ${visibleBrokenLinks.length === 1 ? 'page' : 'pages'}.`
-            : '',
-  );
+  const politeMessage = $derived.by(() => {
+    if (draftWarning) return `Saved. This page links to unpublished pages: ${draftWarning}.`;
+    if (data.saved) return 'Saved.';
+    return '';
+  });
+  const assertiveMessage = $derived.by(() => {
+    if (data.error) return data.error;
+    if (renameError) return renameError;
+    if (deleteRefusedLinks.length) {
+      const count = deleteRefusedLinks.length;
+      return `This ${data.label.toLowerCase()} could not be deleted. ${count} ${count === 1 ? 'page links' : 'pages link'} to it.`;
+    }
+    if (visibleBrokenLinks.length) {
+      const count = visibleBrokenLinks.length;
+      return `This page links to ${count} missing ${count === 1 ? 'page' : 'pages'}.`;
+    }
+    return '';
+  });
 
   // The manifest-backed resolver turns a cairn: link into its live permalink in the preview, and
   // returns undefined for a missing target so the render step marks it cairn-broken-link.

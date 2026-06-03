@@ -76,6 +76,16 @@ declared concept's glob, declare every read frontmatter key, coerce an unquoted 
 wherever a body renders to HTML). There is no new cairn-cms engine plan to draft: the initiative roadmap is exhausted, so
 the next plan is a site's own migration pass, authored in that site's repo.
 
+**DX backlog from the first site migration.** The ecnordic `^0.10` to `^0.21` migration (the first full-surface
+consumer migration) ran as a DX audit. The ranked engine backlog it produced is `docs/dx-backlog-ecnordic-migration.md`
+(evidence in `ecnordic-ski/docs/cairn-dx-findings.md`). The high-cost items, ranked by what they cost a SvelteKit
+developer new to cairn: the delivery root-versus-`/delivery` import split (and the `/delivery` barrel pulling
+`CairnHead.svelte` into a node test), `EntryData` carrying no resolved concept, `ContentSummary` omitting the authored
+summary field, and two build-time guarantees that lean on scaffold defaults a real SvelteKit site overrides (a `cairn:`
+token resolves content concepts only, not routes; the dangling-token backstop goes silent under an inherited
+`handleHttpError: 'warn'`). The file also carries the `create-cairn-site` scaffolder checklist. Fold these into the
+scaffolder pass and the next engine touch-ups.
+
 ## Where the work is (2026-06-02, content-graph Plan 4 / content delete and the integrity guards executed and review-remediated)
 
 Content-graph Plan 4 (content delete, the delete and save integrity guards, and four carried link-integrity

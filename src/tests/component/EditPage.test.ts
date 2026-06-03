@@ -22,6 +22,7 @@ function postProps(over = {}) {
       title: 'Hello',
       isNew: false,
       saved: false,
+      renamed: false,
       error: null,
       slug: 'hello',
       linkTargets: [] as LinkTarget[],
@@ -149,6 +150,19 @@ describe('EditPage', () => {
       (el.textContent ?? '').includes('already exists'),
     );
     expect(banner).toBeTruthy();
+  });
+
+  it('announces a rename success naming the new slug through the polite live region', async () => {
+    const screen = render(EditPage, postProps({ renamed: true, slug: 'new-slug' }));
+    const region = screen.container.querySelector('[aria-live="polite"]');
+    expect(region).not.toBeNull();
+    expect(region!.textContent ?? '').toMatch(/new-slug/);
+  });
+
+  it('shows a rename success banner', async () => {
+    const screen = render(EditPage, postProps({ renamed: true, slug: 'new-slug' }));
+    const banner = screen.container.querySelector('.alert-success');
+    expect(banner?.textContent ?? '').toMatch(/new-slug/);
   });
 
   it('announces a saved message through a persistent live region', async () => {

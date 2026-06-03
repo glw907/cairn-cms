@@ -20,6 +20,7 @@ DeleteDialog a11y conventions.
   let { conceptId, id, label, slug }: Props = $props();
 
   let dialog = $state<HTMLDialogElement | null>(null);
+  let slugInput = $state<HTMLInputElement | null>(null);
   // Seeded on open() rather than from the prop at declaration, so the input prefills with the
   // current slug each time the dialog opens without capturing only the initial prop value.
   let nextSlug = $state('');
@@ -27,6 +28,13 @@ DeleteDialog a11y conventions.
   function open() {
     nextSlug = slug;
     dialog?.showModal();
+    // showModal() lands focus on the first focusable element (the header Close button), so move
+    // it to the slug input the dialog exists for, and select the prefill so the author can replace
+    // it in one keystroke (WCAG 2.4.3). A microtask defers past the dialog's own focus handling.
+    queueMicrotask(() => {
+      slugInput?.focus();
+      slugInput?.select();
+    });
   }
   function close() {
     dialog?.close();
@@ -46,7 +54,7 @@ DeleteDialog a11y conventions.
       <input type="hidden" name="id" value={id} />
       <label class="flex flex-col gap-1">
         <span class="text-sm font-medium">URL slug</span>
-        <input class="input" name="slug" bind:value={nextSlug} aria-label="URL slug" autocomplete="off" />
+        <input class="input" name="slug" bind:value={nextSlug} bind:this={slugInput} autocomplete="off" />
       </label>
       <p class="text-xs text-[var(--color-muted)]">
         Links from other pages update automatically, so nothing breaks. The new URL slug will be

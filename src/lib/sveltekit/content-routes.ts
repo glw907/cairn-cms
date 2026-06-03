@@ -65,6 +65,8 @@ export interface EditData {
   title: string;
   isNew: boolean;
   saved: boolean;
+  /** True after a successful rename redirect (`?renamed=1`), to confirm the new URL to the author. */
+  renamed: boolean;
   error: string | null;
   /** The current URL slug (the date-stripped id for a dated concept), for the rename dialog prefill. */
   slug: string;
@@ -247,6 +249,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       title,
       isNew,
       saved: event.url.searchParams.get('saved') === '1',
+      renamed: event.url.searchParams.get('renamed') === '1',
       error: event.url.searchParams.get('error'),
       slug: slugFromId(id, datePrefix),
       linkTargets,
@@ -403,7 +406,9 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     const newPath = `${concept.dir}/${filenameFromId(newId)}`;
     const token = await mintToken(event.platform?.env ?? {});
 
-    // Collision guard: refuse if a file already exists at the new path.
+    // Collision guard: refuse if a file already exists at the new path. This 409 covers two cases a
+    // single readRaw cannot tell apart: a static collision with an existing entry, and a
+    // concurrent-rename race where another editor renamed onto this path between load and submit.
     const clobber = await readRaw(runtime.backend, newPath, token);
     if (clobber !== null) {
       return fail(409, { renameError: 'An entry with that slug already exists.' });

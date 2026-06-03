@@ -17,6 +17,13 @@ describe('RenameDialog', () => {
     const form = dialog.querySelector('form[action="?/rename"]');
     expect(form).not.toBeNull();
   });
+  it('seeds focus into the slug input when the dialog opens', async () => {
+    const screen = open({ conceptId: 'posts', id: '2026-05-hi', label: 'Post', slug: 'hi' });
+    await screen.getByRole('button', { name: /change url/i }).click();
+    const input = screen.container.querySelector<HTMLInputElement>('input[name="slug"]')!;
+    await expect.poll(() => document.activeElement).toBe(input);
+  });
+
   it('notes that links update automatically', async () => {
     const screen = open({ conceptId: 'pages', id: 'home', label: 'Page', slug: 'home' });
     await screen.getByRole('button', { name: /change url/i }).click();

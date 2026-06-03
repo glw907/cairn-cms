@@ -144,4 +144,14 @@ describe('editLoad', () => {
     expect(data.saved).toBe(true);
     expect(data.error).toBe('Nope');
   });
+
+  it('reads the renamed flag from the query', async () => {
+    vi.stubGlobal('fetch', vi
+      .fn()
+      .mockResolvedValueOnce(new Response('---\ntitle: Hi\n---\nx', { status: 200 }))
+      .mockResolvedValueOnce(new Response('Not Found', { status: 404 })));
+    const routes = createContentRoutes(runtime(), deps);
+    const data = await routes.editLoad(editEvent('hi', '?renamed=1') as never);
+    expect(data.renamed).toBe(true);
+  });
 });

@@ -85,6 +85,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
   const politeMessage = $derived.by(() => {
     if (draftWarning) return `Saved. This page links to unpublished pages: ${draftWarning}.`;
     if (data.saved) return 'Saved.';
+    if (data.renamed) return `The URL is now ${data.slug}.`;
     return '';
   });
   const assertiveMessage = $derived.by(() => {
@@ -174,6 +175,9 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
 
 {#if data.saved && !draftWarning}
   <div class="alert alert-success mb-4 text-sm">Saved.</div>
+{/if}
+{#if data.renamed}
+  <div class="alert alert-success mb-4 text-sm">The URL is now {data.slug}.</div>
 {/if}
 {#if data.error}
   <div class="alert alert-error mb-4 text-sm">{data.error}</div>

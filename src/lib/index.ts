@@ -92,6 +92,7 @@ export {
   strProp,
   iconSpan,
   cardShell,
+  headRow,
   markFirstList,
 } from './render/rehype-dispatch.js';
 export type { MakeIcon } from './render/rehype-dispatch.js';

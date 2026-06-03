@@ -28,6 +28,17 @@ export function cardShell(classes: string[], body: ElementContent[]): Element {
   return h('section', { className: classes }, [h('div', { className: ['card-body'] }, body)]);
 }
 
+/** Card head row: `<div class="ec-head">[icon]<h2 class="card-title">{title}</h2></div>`.
+ *  Pass the title's inline children and an optional pre-built icon element, the way `cardShell`
+ *  takes already-built body content. This factors the icon-plus-heading head that a titled
+ *  component build would otherwise rebuild by hand (the shape the removed `splitHead` produced). */
+export function headRow(title: ElementContent[], icon?: Element): Element {
+  const children: ElementContent[] = [];
+  if (icon) children.push(icon);
+  children.push(h('h2', { className: ['card-title'] }, title));
+  return h('div', { className: ['ec-head'] }, children);
+}
+
 /** Tag the first <ul> among children with `ec-grid` and strip its whitespace-only
  *  text nodes so the bare list serializes without newlines. Returns that <ul>. */
 export function markFirstList(children: ElementContent[]): Element | undefined {

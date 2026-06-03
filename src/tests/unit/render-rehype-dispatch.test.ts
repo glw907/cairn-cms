@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { h } from 'hastscript';
 import type { Root, Element, ElementContent } from 'hast';
-import { rehypeDispatch, cardShell, markFirstList, isElement } from '../../lib/render/rehype-dispatch.js';
+import { rehypeDispatch, cardShell, headRow, markFirstList, isElement } from '../../lib/render/rehype-dispatch.js';
 import { defineRegistry } from '../../lib/render/registry.js';
 
 // Local fixture helper: pull the <h2> out as a .card-title and wrap it in an
@@ -79,5 +79,28 @@ describe('rehypeDispatch', () => {
     const ul = h('ul', [h('li', ['a'])]);
     const out = markFirstList([h('p', ['x']), ul]);
     expect(out?.properties?.className).toContain('ec-grid');
+  });
+});
+
+describe('headRow', () => {
+  it('builds an ec-head with an h2.card-title and no icon when none is given', () => {
+    const row = headRow([{ type: 'text', value: 'Hello' }]);
+    expect(row.tagName).toBe('div');
+    expect(row.properties?.className).toEqual(['ec-head']);
+    expect(row.children).toHaveLength(1);
+    const heading = row.children[0] as Element;
+    expect(heading.tagName).toBe('h2');
+    expect(heading.properties?.className).toEqual(['card-title']);
+    expect((heading.children[0] as { value: string }).value).toBe('Hello');
+  });
+
+  it('places a pre-built icon before the heading when given', () => {
+    const icon = h('span', { className: ['ec-icon'] }, []);
+    const row = headRow([{ type: 'text', value: 'Hi' }], icon);
+    expect(row.children).toHaveLength(2);
+    const first = row.children[0] as Element;
+    expect(first.tagName).toBe('span');
+    expect(first.properties?.className).toEqual(['ec-icon']);
+    expect((row.children[1] as Element).tagName).toBe('h2');
   });
 });

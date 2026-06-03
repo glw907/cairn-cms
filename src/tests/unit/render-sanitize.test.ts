@@ -47,6 +47,18 @@ describe('render sanitize floor', () => {
     expect(html).toContain('rel="noopener noreferrer"');
   });
 
+  it('applies a custom anchorRel value', async () => {
+    const r = createRenderer(defineRegistry({ components: [] }), { anchorRel: 'nofollow' });
+    const html = await r.renderMarkdown('<a href="https://x.test" target="_blank">x</a>');
+    expect(html).toContain('rel="nofollow"');
+  });
+
+  it('omits rel when anchorRel is false', async () => {
+    const r = createRenderer(defineRegistry({ components: [] }), { anchorRel: false });
+    const html = await r.renderMarkdown('<a href="https://x.test" target="_blank">x</a>');
+    expect(html).not.toContain('rel=');
+  });
+
   it('preserves the directive markers so a registered component still renders', async () => {
     const reg = defineRegistry({
       components: [

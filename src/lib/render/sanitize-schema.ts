@@ -51,15 +51,16 @@ export function buildSanitizeSchema(
 }
 
 /**
- * Force rel="noopener noreferrer" on every target="_blank" anchor, to prevent reverse-tabnabbing.
+ * Force a `rel` value on every target="_blank" anchor, to prevent reverse-tabnabbing.
  * hast-util-sanitize runs no per-node hook, so this small transform carries the behavior the old
- * DOMPurify preview pass enforced, now on the delivered output as well.
+ * DOMPurify preview pass enforced, now on the delivered output as well. The value is the renderer's
+ * `anchorRel` option (default `noopener noreferrer`); a site can override it or disable it entirely.
  */
-export function rehypeAnchorRel() {
+export function rehypeAnchorRel(rel: string) {
   return (tree: Root) => {
     visit(tree, 'element', (node: Element) => {
       if (node.tagName === 'a' && node.properties?.target === '_blank') {
-        node.properties.rel = 'noopener noreferrer';
+        node.properties.rel = rel;
       }
     });
   };

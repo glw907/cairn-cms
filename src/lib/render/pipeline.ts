@@ -30,6 +30,10 @@ export interface RendererOptions {
    *  vector the floor closes, so it is only for a site whose content is fully developer-controlled.
    *  It is a code-level adapter decision, never an editor-facing setting. */
   unsafeDisableSanitize?: boolean;
+  /** The `rel` value forced on every `target="_blank"` anchor, applied last so it also covers
+   *  component-built anchors. Defaults to `'noopener noreferrer'`. Set a different string to change
+   *  it, or `false` to disable the injection (a site that owns its own anchor hardening). */
+  anchorRel?: string | false;
 }
 
 /** Compose a site's render pipeline from its component registry: directive syntax to
@@ -43,13 +47,14 @@ export function createRenderer(registry: ComponentRegistry, options: RendererOpt
   const floor: PluggableList = options.unsafeDisableSanitize
     ? []
     : [[rehypeSanitize, buildSanitizeSchema(registry, options.sanitizeSchema)]];
+  const rel = options.anchorRel ?? 'noopener noreferrer';
   const rehypePlugins: PluggableList = [
     rehypeRaw,
     ...floor,
     [rehypeDispatch, registry, options.stagger],
     rehypeSlug,
-    rehypeAnchorRel,
   ];
+  if (rel !== false) rehypePlugins.push([rehypeAnchorRel, rel]);
   const processor = unified()
     .use(remarkParse)
     .use(remarkGfm)

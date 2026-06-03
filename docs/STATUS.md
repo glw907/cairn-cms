@@ -54,13 +54,35 @@ test-first task); `insertLink` no-ops before the editor mounts (matches `applyFo
 a raw-value fallback); `matchCairnTrigger` has no syntax-tree awareness, so `[[` triggers inside a code block; and the
 section-order tiebreak uses the raw concept id, cosmetic past the two built-in concepts.
 
-**Immediate next action: publish the unpublished window as `0.19.0`, then brainstorm and write content-graph Plan 4
-(the lifecycle guards), then execute it.** The registry's `latest` is `0.18.0` (the content-graph manifest pass).
-`main` carries the unpublished `0.19.0` (this picker pass) on top of it, and the `0.15.0`-through-`0.17.0` work was
-already rolled into the published `0.17.0`/`0.18.0` releases. Push `main` and cut the `v0.19.0` OIDC release so a site
-can pin `^0.19.0`. Plan 4 is content delete/rename with inbound-link rewriting on the atomic `commitFiles` primitive,
-where several content-graph follow-ups land (a link to a draft or invalid target, the resolver-vs-index divergence)
-along with the four picker follow-ups above. The whole content-graph initiative still precedes the site migrations.
+**Content-graph Plan 4 is WRITTEN (brainstormed and authored 2026-06-02): content delete and the integrity guards,**
+`docs/superpowers/plans/2026-06-02-cairn-content-graph-04-lifecycle.md` (design spec
+`docs/superpowers/specs/2026-06-02-cairn-content-graph-04-lifecycle-design.md`, approved). The brainstorm split the
+spec's single lifecycle plan: **Plan 4 takes delete plus the two guards, and rename plus the multi-file inbound rewrite
+move to Plan 5** (the highest-blast-radius op, isolated). Decisions locked, each grounded against the field (Sanity,
+Contentful, Hugo, Docusaurus, WordPress, Notion): the delete guard is block-until-clean (refuse while inbound links
+exist, name them), and the save guard hard-blocks a dangling link (one-click unwrap-to-text fix) and warns a draft
+target. The posture is "keep `main` always deployable", since a cairn save is a deploy and a non-technical author will
+not see a failed build. Cascade-unwrap-on-delete defers to Plan 5 with rename. Four carried follow-ups fold in
+(bracket-escaping in link text, the `parseManifest` guard, validation-failing-entry consistency, the three minor Plan 3
+editor nits). Fifteen test-first tasks, additive, bumps `0.20.0`. The plan corrects the spec's test-layer note: the
+content-route guards are unit-tested against a `fetch` double, since the routes have no D1.
+
+**Immediate next action: execute content-graph Plan 4,
+`docs/superpowers/plans/2026-06-02-cairn-content-graph-04-lifecycle.md`, `subagent-driven`
+(`superpowers:subagent-driven-development`, one `cairn-implementer` per task, Sonnet default), from the cairn-cms
+directory on `main`. Start at Task 1.** The design is settled (skip brainstorming). It runs on `main` directly
+(additive, no site deploys). The pass-end review gate is the simplifier plus `svelte-reviewer` (the `EditPage` `form`
+reactivity, the delete dialog, the unwrap fix on the bound body), `daisyui-a11y-reviewer` (the delete dialog and the
+alerts), and `cloudflare-workers-reviewer` (the `deleteAction` and the save-guard commit and fail paths), all Opus,
+plus a high-effort `/code-review`; the live `/admin` interactive smoke is a carried fast-follow for the ecnordic
+migration (the showcase has no admin routes).
+
+**Deferred (user's call 2026-06-02): publishing `0.19.0` is held.** The user chose to brainstorm Plan 4 rather than
+publish the picker pass. The registry's `latest` is `0.18.0`; `main` carries the unpublished `0.19.0` (picker) and will
+carry `0.20.0` (this lifecycle pass) on top. Publish the rolled window (`0.20.0`) before the site migrations, since a
+site pins a range only after the publish. Plan 5 is rename plus the multi-file inbound rewrite (and cascade-unwrap-on-
+delete), where the remaining content-graph follow-ups land. The whole content-graph initiative still precedes the site
+migrations.
 
 ## Where the work is (2026-06-02, content-graph Plan 2 / the committed manifest and link resolution executed)
 

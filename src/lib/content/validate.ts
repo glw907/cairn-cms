@@ -34,6 +34,10 @@ export function validateFields(
       case 'freetags': {
         const list = Array.isArray(value) ? value.map(String) : [];
         if (field.required && list.length === 0) errors[field.name] = `${field.label} is required`;
+        else if (field.type === 'tags') {
+          const unknown = list.find((tag) => !field.options.includes(tag));
+          if (unknown !== undefined) errors[field.name] = `${field.label} contains an unknown value: ${unknown}`;
+        }
         if (list.length > 0) data[field.name] = list;
         break;
       }

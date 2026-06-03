@@ -122,3 +122,28 @@ describe('date validation', () => {
     if (result.ok) expect('date' in result.data).toBe(false);
   });
 });
+
+describe('tags vocabulary', () => {
+  const fields: FrontmatterField[] = [
+    { type: 'tags', name: 'tags', label: 'Tags', options: ['alpine', 'nordic', 'biathlon'] },
+  ];
+
+  it('accepts an in-vocabulary tag set and normalizes it', () => {
+    const result = validateFields(fields, { tags: ['alpine', 'nordic'] });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data.tags).toEqual(['alpine', 'nordic']);
+  });
+
+  it('rejects an out-of-vocabulary value and names it', () => {
+    const result = validateFields(fields, { tags: ['alpine', 'curling'] });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.errors.tags).toBe('Tags contains an unknown value: curling');
+  });
+
+  it('leaves a freetags field open', () => {
+    const free: FrontmatterField[] = [{ type: 'freetags', name: 'tags', label: 'Tags' }];
+    const result = validateFields(free, { tags: ['anything', 'goes'] });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data.tags).toEqual(['anything', 'goes']);
+  });
+});

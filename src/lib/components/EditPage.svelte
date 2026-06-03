@@ -10,6 +10,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
   import ComponentInsertDialog from './ComponentInsertDialog.svelte';
   import LinkPicker from './LinkPicker.svelte';
   import DeleteDialog from './DeleteDialog.svelte';
+  import RenameDialog from './RenameDialog.svelte';
   import { cairnLinkCompletionSource } from './link-completion.js';
   import { unwrapCairnLink } from './markdown-format.js';
   import type { ComponentRegistry } from '../render/registry.js';
@@ -30,7 +31,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
     icons?: IconSet;
     /** The `?/save` or `?/delete` action result. Carries the save guard's broken links when a save was
      *  blocked, or the delete guard's inbound linkers when a delete was refused. */
-    form?: { brokenLinks?: string[]; body?: string; inboundLinks?: import('../content/manifest.js').InboundLink[] } | null;
+    form?: { brokenLinks?: string[]; body?: string; inboundLinks?: import('../content/manifest.js').InboundLink[]; renameError?: string } | null;
   }
 
   let { data, registry, render, icons, form }: Props = $props();
@@ -65,6 +66,9 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
   // The delete guard's inbound linkers, from a refused delete (fail 409). Empty when the delete was
   // not refused. When set, a delete was blocked by a link that appeared since the page loaded.
   const deleteRefusedLinks = $derived(form?.inboundLinks ?? []);
+
+  // A rename that hit a collision or an invalid slug returns form.renameError.
+  const renameError = $derived(form?.renameError ?? '');
 
   // After a save that links to a draft target, the redirect carries ?drafts=<tokens>.
   let draftWarning = $state('');
@@ -128,6 +132,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
   <div class="flex items-center gap-2">
     <ComponentInsertDialog {registry} {insert} {icons} />
     <LinkPicker linkTargets={data.linkTargets} insert={insertLink} />
+    <RenameDialog conceptId={data.conceptId} id={data.id} label={data.label} slug={data.slug} />
     <DeleteDialog conceptId={data.conceptId} id={data.id} label={data.label} inboundLinks={data.inboundLinks} />
     <button
       type="button"
@@ -146,6 +151,9 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
 {/if}
 {#if data.error}
   <div role="alert" class="alert alert-error mb-4 text-sm">{data.error}</div>
+{/if}
+{#if renameError}
+  <div role="alert" class="alert alert-error mb-4 text-sm">{renameError}</div>
 {/if}
 {#if deleteRefusedLinks.length}
   <div role="alert" class="alert alert-error mb-4 flex-col items-start text-sm">

@@ -135,6 +135,21 @@ describe('EditPage', () => {
     await expect.element(screen.getByRole('button', { name: /^delete$/i })).toBeInTheDocument();
   });
 
+  it('renders the change-url control', async () => {
+    const screen = render(EditPage, postProps());
+    await expect.element(screen.getByRole('button', { name: /change url/i })).toBeInTheDocument();
+  });
+
+  it('surfaces a rename collision error', async () => {
+    const props = postProps();
+    (props as Record<string, unknown>).form = { renameError: 'An entry with that slug already exists.' };
+    const screen = render(EditPage, props);
+    const banner = Array.from(screen.container.querySelectorAll('[role="alert"], .alert')).find((el) =>
+      (el.textContent ?? '').includes('already exists'),
+    );
+    expect(banner).toBeTruthy();
+  });
+
   it('shows the broken-links banner and unwraps a link with the fix', async () => {
     const props = postProps();
     props.data.body = 'see [gone](cairn:pages/gone) here';

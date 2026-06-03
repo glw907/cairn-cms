@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { PageData } from './$types';
-  import { CairnHead } from '@glw907/cairn-cms/delivery';
+  import { CairnHead } from '@glw907/cairn-cms/delivery/head';
 
   let { data }: { data: PageData } = $props();
 </script>

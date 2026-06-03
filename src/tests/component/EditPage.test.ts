@@ -24,6 +24,7 @@ function postProps(over = {}) {
       saved: false,
       error: null,
       linkTargets: [] as LinkTarget[],
+      inboundLinks: [],
       siteName: 'Test Site',
       ...over,
     },

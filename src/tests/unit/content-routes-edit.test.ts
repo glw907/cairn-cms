@@ -105,6 +105,24 @@ describe('editLoad', () => {
     expect(withoutManifest.linkTargets).toEqual([]);
   });
 
+  it('ships the entry inbound links for the delete guard', async () => {
+    // A manifest where post 'b' links to the post '2026-05-hello' being edited.
+    const manifest = serializeManifest({
+      version: 1,
+      entries: [
+        { id: '2026-05-hello', concept: 'posts', title: 'Hello', permalink: '/posts/hello', draft: false, links: [] },
+        { id: '2026-05-b', concept: 'posts', title: 'Post B', permalink: '/posts/b', draft: false, links: [{ concept: 'posts', id: '2026-05-hello' }] },
+      ],
+    });
+    vi.stubGlobal('fetch', vi
+      .fn()
+      .mockResolvedValueOnce(new Response('---\ntitle: Hello\n---\nx', { status: 200 }))
+      .mockResolvedValueOnce(new Response(manifest, { status: 200 })));
+    const routes = createContentRoutes(runtime(), deps);
+    const data = await routes.editLoad(editEvent('2026-05-hello') as never);
+    expect(data.inboundLinks).toEqual([{ concept: 'posts', id: '2026-05-b', title: 'Post B', permalink: '/posts/b' }]);
+  });
+
   it('reads saved and error flags from the query', async () => {
     vi.stubGlobal('fetch', vi
       .fn()

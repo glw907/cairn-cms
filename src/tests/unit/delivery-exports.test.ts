@@ -30,4 +30,10 @@ describe('delivery exports', () => {
   it('re-exports the public route factory from the sveltekit entry', () => {
     expect(typeof sveltekit.createPublicRoutes).toBe('function');
   });
+
+  it('re-exports the route loaders and response helpers from the root entry', () => {
+    for (const name of ['createPublicRoutes', 'rssResponse', 'jsonFeedResponse', 'sitemapResponse', 'robotsResponse']) {
+      expect(typeof (root as Record<string, unknown>)[name]).toBe('function');
+    }
+  });
 });

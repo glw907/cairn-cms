@@ -155,3 +155,9 @@ export { readSeoFields, resolveImageUrl } from './delivery/seo-fields.js';
 export type { SeoFields } from './delivery/seo-fields.js';
 export { paginate } from './delivery/paginate.js';
 export type { Page } from './delivery/paginate.js';
+// Root superset of the delivery route surface: a wrong guess from root for a route loader or a
+// response helper now resolves. The CairnHead component stays out of root so the root barrel stays
+// node-importable for the unit suite; it resolves from @glw907/cairn-cms/delivery/head.
+export { rssResponse, jsonFeedResponse, sitemapResponse, robotsResponse } from './delivery/responses.js';
+export { createPublicRoutes } from './sveltekit/public-routes.js';
+export type { PublicRoutesDeps, ListData, TagData, TagIndexData, EntryData } from './sveltekit/public-routes.js';

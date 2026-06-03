@@ -79,9 +79,28 @@ describe('parseManifest hardening', () => {
     const raw = JSON.stringify({ version: 1, entries: [{ id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: 'no' }] });
     expect(() => parseManifest(raw)).toThrow(/entry/i);
   });
-  it('accepts a well-formed manifest', () => {
-    const raw = JSON.stringify({ version: 1, entries: [{ id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [{ concept: 'pages', id: 'home' }] }] });
-    expect(parseManifest(raw).entries).toHaveLength(1);
+  it('rejects a links element missing id', () => {
+    const raw = JSON.stringify({ version: 1, entries: [{ id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [{ concept: 'pages' }] }] });
+    expect(() => parseManifest(raw)).toThrow(/entry|link/i);
+  });
+  it('rejects a links element that is a string', () => {
+    const raw = JSON.stringify({ version: 1, entries: [{ id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: ['pages/home'] }] });
+    expect(() => parseManifest(raw)).toThrow(/entry|link/i);
+  });
+  it('rejects a links element that is null', () => {
+    const raw = JSON.stringify({ version: 1, entries: [{ id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [null] }] });
+    expect(() => parseManifest(raw)).toThrow(/entry|link/i);
+  });
+  it('rejects a present non-string date', () => {
+    const raw = JSON.stringify({ version: 1, entries: [{ id: 'a', concept: 'posts', title: 'A', date: 123, permalink: '/a', draft: false, links: [] }] });
+    expect(() => parseManifest(raw)).toThrow(/entry|date/i);
+  });
+  it('accepts a well-formed manifest including a valid link and an optional date', () => {
+    const raw = JSON.stringify({ version: 1, entries: [{ id: 'a', concept: 'posts', title: 'A', date: '2026-01-04', permalink: '/a', draft: false, links: [{ concept: 'pages', id: 'home' }] }] });
+    const parsed = parseManifest(raw);
+    expect(parsed.entries).toHaveLength(1);
+    expect(parsed.entries[0].date).toBe('2026-01-04');
+    expect(parsed.entries[0].links).toEqual([{ concept: 'pages', id: 'home' }]);
   });
 });
 

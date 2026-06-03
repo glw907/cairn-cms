@@ -122,9 +122,19 @@ export function parseManifest(raw: string): Manifest {
       typeof e.title === 'string' &&
       typeof e.permalink === 'string' &&
       typeof e.draft === 'boolean' &&
+      (e.date === undefined || typeof e.date === 'string') &&
       Array.isArray(e.links);
     if (!ok) {
       throw new Error(`content manifest: malformed entry ${JSON.stringify(e)}`);
+    }
+    // Validate each link element's shape, not just that links is an array. inboundLinks and the
+    // delete guard read l.concept and l.id, so a string, null, or id-less element would read as
+    // undefined and silently drop a real inbound linker. Reject it here instead.
+    for (const link of e.links as unknown[]) {
+      const l = link as Record<string, unknown> | null;
+      if (!l || typeof l !== 'object' || typeof l.concept !== 'string' || typeof l.id !== 'string') {
+        throw new Error(`content manifest: malformed link ${JSON.stringify(link)} in entry ${JSON.stringify(e)}`);
+      }
     }
   }
   return { version: 1, entries: obj.entries as ManifestEntry[] };

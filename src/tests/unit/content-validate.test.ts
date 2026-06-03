@@ -87,3 +87,38 @@ describe('validateFields', () => {
     if (!result.ok) expect(result.errors.tags).toBe('Tags is required');
   });
 });
+
+describe('date validation', () => {
+  const fields: FrontmatterField[] = [{ type: 'date', name: 'date', label: 'Date', required: true }];
+
+  it('accepts a real calendar date', () => {
+    const result = validateFields(fields, { date: '2026-01-01' });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data.date).toBe('2026-01-01');
+  });
+
+  it('rejects a date-rollover value', () => {
+    const result = validateFields(fields, { date: '2026-02-30' });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.errors.date).toBe('Date must be a valid date (YYYY-MM-DD)');
+  });
+
+  it('rejects a non-canonical format', () => {
+    const result = validateFields(fields, { date: '2026-1-1' });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.errors.date).toBe('Date must be a valid date (YYYY-MM-DD)');
+  });
+
+  it('still coerces a parsed YAML Date and passes', () => {
+    const result = validateFields(fields, { date: new Date(Date.UTC(2026, 0, 1)) });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data.date).toBe('2026-01-01');
+  });
+
+  it('omits an empty optional date with no error', () => {
+    const optional: FrontmatterField[] = [{ type: 'date', name: 'date', label: 'Date' }];
+    const result = validateFields(optional, { date: '' });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect('date' in result.data).toBe(false);
+  });
+});

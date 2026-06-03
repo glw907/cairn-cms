@@ -3,7 +3,7 @@
 // validator stays thin (engine-fat rule). Saving runs the concept's validator on the
 // server before any commit; invalid input bounces to the form (spec §7.4).
 import type { FrontmatterField, ValidationResult } from './types.js';
-import { dateInputValue } from './frontmatter.js';
+import { dateInputValue, isCalendarDate } from './frontmatter.js';
 
 /**
  * Validate raw frontmatter against a field list. Required text and date fields must be
@@ -40,6 +40,7 @@ export function validateFields(
       case 'date': {
         const text = value instanceof Date ? dateInputValue(value) : typeof value === 'string' ? value.trim() : '';
         if (field.required && text === '') errors[field.name] = `${field.label} is required`;
+        else if (text !== '' && !isCalendarDate(text)) errors[field.name] = `${field.label} must be a valid date (YYYY-MM-DD)`;
         if (text !== '') data[field.name] = text;
         break;
       }

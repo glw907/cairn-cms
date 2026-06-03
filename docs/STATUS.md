@@ -6,6 +6,45 @@ orientation is the workspace `CLAUDE.md`. Locked architecture decisions and the 
 the functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`).
 Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`.
 
+## Where the work is (2026-06-03, DX backlog triaged into engine passes; P1 spec and plan written)
+
+The content-graph initiative is COMPLETE and `0.21.0` is the registry `latest` (see the entry below). This
+session triaged the DX backlog from the ecnordic `0.21` migration
+(`docs/dx-backlog-ecnordic-migration.md`, 16 findings) into a sequenced set of engine passes, with the
+`create-cairn-site` scaffolder as the organizing goal:
+
+- **P1, delivery read-model** (DX items 1, 2, 3): the `concept` stamp on `ContentSummary`/`EntryData`, the
+  `summaryFields` knob, the root superset and the `CairnHead` `/delivery/head` split. Spec and plan written
+  this session.
+- **P2, schema validation** (items 10, 12): declarative serializable field options to restore the four
+  validations the cutover dropped; `readonly` options.
+- **P3, render and component authoring** (items 7, 8, 9, 11, 15): the `splitHead` replacement head helper
+  (moved here from P1 during design, since it lives beside `cardShell`/`iconSpan`), the `rel` policy option,
+  the alert role default, the empty-slot drop, the declared-attribute read signal.
+- Then **publish** the rolled window, then the **907-life migration** as the second proving ground on the
+  corrected surface (user's call: P1 through P3 first, then 907, then the scaffolder).
+- **P4, create-cairn-site scaffolder** (items 4, 5, 6, 13, 14, 16): the capstone, emitting the corrected
+  defaults and the canonical setup and migration docs.
+
+P1 is specified and planned. The spec is
+`docs/superpowers/specs/2026-06-02-cairn-delivery-readmodel-design.md`; the plan is
+`docs/superpowers/plans/2026-06-03-cairn-delivery-readmodel.md` (nine test-first tasks, additive surface
+plus one breaking import path, bumps `0.22.0`). Two design calls made and recorded: `CairnHead` stays off
+the root barrel so root stays node-importable for the unit suite (it resolves from `/delivery/head`), and
+`ConceptDescriptor.summaryFields` is non-optional (matching `datePrefix`/`permalink`), so Task 3 adds the
+field to all 13 hand-built descriptor literals in the unit tests (churn accepted under aggressive
+development; the recurring-literal smell is logged as a test-factory follow-up in the plan).
+
+**Immediate next action: execute P1,
+`docs/superpowers/plans/2026-06-03-cairn-delivery-readmodel.md`, `subagent-driven`
+(`superpowers:subagent-driven-development`, one `cairn-implementer` per task, Sonnet default; Opus is not
+needed, the tasks are mechanical and well-specified), from the cairn-cms directory on `main`. Start at
+Task 1.** The design is settled (skip brainstorming). It runs on `main` directly (additive, no site
+deploys) and bumps `0.22.0`. The pass-end review gate is the simplifier plus `svelte-reviewer` (the
+`EntryData` change and the showcase `+page.svelte`) and a high-effort `/code-review`;
+`cloudflare-workers-reviewer`, `web-auth-security-reviewer`, and the live `/admin` smoke do not apply. After
+P1 lands, brainstorm and write P2 (schema validation).
+
 ## Where the work is (2026-06-02, content-graph Plan 5 / slug-only rename executed and review-remediated; the content-graph initiative is COMPLETE)
 
 Content-graph Plan 5 (slug-only rename plus the atomic inbound-link rewrite) executed subagent-driven on `main`, one

@@ -234,16 +234,15 @@ export interface ConceptConfig<S extends ConceptSchema = ConceptSchema> {
 - [ ] **Step 4: Add `summaryFields` to `ConceptDescriptor`**
 
 In the same file, add the field to `ConceptDescriptor` (after `fields`, before `validate`). Type it
-optional, even though `normalizeConcepts` always populates it: a hand-built descriptor (the many test
-doubles in the admin-runtime tests, or any caller constructing one outside `normalizeConcepts`) may omit
-it, and the single read site (`createContentIndex`) tolerates absence with `?? []`. An optional type here
-keeps this pass from forcing a noise edit through every hand-built descriptor literal.
+non-optional. A normalized descriptor is fully resolved, so the field matches the other resolved members
+(`datePrefix`, `permalink`, `fields`) and every consumer reads a clean `string[]`. The cost is that every
+hand-built descriptor literal in the unit tests must add the field; Step 6 does exactly that.
 
 ```ts
   fields: FrontmatterField[];
   /** Frontmatter keys the index copies onto each summary's `fields` record. `normalizeConcepts`
-   *  resolves it to `[]` when a concept omits it; optional so a hand-built descriptor need not set it. */
-  summaryFields?: string[];
+   *  resolves it to `[]` when a concept omits `summaryFields`. */
+  summaryFields: string[];
   validate(frontmatter: Record<string, unknown>, body: string): ValidationResult;
 ```
 
@@ -265,16 +264,52 @@ In `src/lib/content/concepts.ts`, add the line to the `descriptors.push({ ... })
     });
 ```
 
-- [ ] **Step 6: Run the test to verify it passes**
+- [ ] **Step 6: Update every hand-built `ConceptDescriptor` literal in the unit tests**
 
-Run: `npx vitest run --project unit src/tests/unit/content-concepts.test.ts -t "summaryFields"`
-Expected: PASS.
+The non-optional field breaks `npm run check` on every test that builds a descriptor by hand (the
+admin-runtime and permalink tests construct descriptor literals directly, bypassing `normalizeConcepts`).
+Add `summaryFields: []` to each, right after its `fields:` entry. This is the exhaustive list (13
+literals across 9 files):
 
-- [ ] **Step 7: Commit**
+- `src/tests/unit/manifest.test.ts:13`, after `fields: [],`
+- `src/tests/unit/content-permalink.test.ts:8`, in `fields: [], validate: ...`, insert `summaryFields: [],` before `validate:`
+- `src/tests/unit/content-routes-edit.test.ts`, after the multi-line `fields: [ ... ]` (before `validate: ok,` near line 20)
+- `src/tests/unit/content-routes-delete.test.ts:15`, after `fields: [{ ... }],`
+- `src/tests/unit/content-routes-rename.test.ts:18` and `:26`, after each `fields: [{ ... }],` (two literals)
+- `src/tests/unit/content-routes-list.test.ts:10` (inline) and `:136` (multi-line), after each `fields:` entry
+- `src/tests/unit/content-routes-save.test.ts:16`, after `fields: [{ ... }],`
+- `src/tests/unit/content-routes-layout.test.ts:10` and `:11`, in each inline literal insert `summaryFields: [], ` before `validate: ok` (two literals)
+- `src/tests/unit/nav-routes-load.test.ts:10` and `:11`, in each inline literal insert `summaryFields: [], ` before `validate: ok` (two literals)
+
+For an inline literal the edit looks like:
+
+```ts
+{ id: 'posts', label: 'Posts', dir: 'src/content/posts', routing: { routable: true, dated: true, inFeeds: true }, permalink: '/posts/:slug', datePrefix: 'day', fields: [], summaryFields: [], validate: ok },
+```
+
+For a multi-line literal add a line:
+
+```ts
+  fields: [],
+  summaryFields: [],
+  validate: () => ({ ok: true, data: {} }),
+```
+
+- [ ] **Step 7: Run the targeted test and the full type check**
+
+Run: `npx vitest run --project unit src/tests/unit/content-concepts.test.ts -t "summaryFields" && npm run check`
+Expected: the test PASSES, and `npm run check` reports 0 errors / 0 warnings. A non-zero `check` names any
+hand-built literal still missing `summaryFields`; add it there and re-run until clean. The check is the
+completeness backstop for Step 6.
+
+- [ ] **Step 8: Commit**
 
 ```bash
-git add src/lib/content/types.ts src/lib/content/concepts.ts src/tests/unit/content-concepts.test.ts
+git add src/lib/content/types.ts src/lib/content/concepts.ts src/tests/unit/content-concepts.test.ts src/tests/unit/manifest.test.ts src/tests/unit/content-permalink.test.ts src/tests/unit/content-routes-edit.test.ts src/tests/unit/content-routes-delete.test.ts src/tests/unit/content-routes-rename.test.ts src/tests/unit/content-routes-list.test.ts src/tests/unit/content-routes-save.test.ts src/tests/unit/content-routes-layout.test.ts src/tests/unit/nav-routes-load.test.ts
 git commit -m "Add the summaryFields descriptor knob
+
+Non-optional resolved field on ConceptDescriptor, matching datePrefix/permalink.
+Every hand-built descriptor literal in the unit tests gains summaryFields: [].
 
 Co-Authored-By: Claude <noreply@anthropic.com>"
 ```
@@ -356,7 +391,7 @@ In `createContentIndex`, build the record from the validated `result.data` and a
 
 ```ts
     const summaryFieldValues: Record<string, unknown> = {};
-    for (const key of descriptor.summaryFields ?? []) {
+    for (const key of descriptor.summaryFields) {
       if (key in result.data) summaryFieldValues[key] = (result.data as Record<string, unknown>)[key];
     }
 ```
@@ -756,6 +791,14 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - The site guide states the import rule; the changelog records the additive surface and the one breaking import move.
 - The showcase declares `summaryFields`, renders a list card from `summary.fields`, reads `data.concept`, imports the head from `/delivery/head`, and builds clean.
 - Version is `0.22.0`. The full gate is green: `npm run check` 0/0, `npm test` exit 0, `npm run check:package` exit 0.
+
+## Follow-ups (record in the post-mortem, do not do in this pass)
+
+- The unit tests carry 13 hand-built `ConceptDescriptor` literals across 9 files, so every new resolved
+  descriptor field (this pass's `summaryFields`, a future one) forces a touch through all of them. A
+  shared `makeDescriptor(overrides)` test factory would localize the default to one place. It is a
+  test-infra refactor with its own blast radius, so it stays out of this delivery read-model pass. Worth
+  a small dedicated cleanup.
 
 ## Pass-end review gate (run after Task 9, before reporting done)
 

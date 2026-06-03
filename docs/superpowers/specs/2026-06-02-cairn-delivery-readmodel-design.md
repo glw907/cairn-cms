@@ -86,14 +86,16 @@ the descriptor:
 summaryFields: ['description', 'heroImage']
 ```
 
-`ConceptDescriptor` gains `summaryFields?: string[]`. `normalizeConcepts` populates it
-(`config.summaryFields ?? []`) for the standard path, so a normalized descriptor always carries the
-resolved list. The descriptor type stays optional, unlike the non-optional `datePrefix`, for a
-deliberate reason: a hand-built descriptor (a test double, or any caller constructing one outside
-`normalizeConcepts`) may omit it, and the field has exactly one engine consumer, so the single read
-site tolerates absence with `?? []`. That keeps the pass from forcing a noise edit through the many
-hand-built descriptor literals in the admin-runtime tests. `createContentIndex` copies the named keys
-off the validated, normalized frontmatter onto a new namespaced record:
+`ConceptDescriptor` gains `summaryFields: string[]`, non-optional, set by `normalizeConcepts`
+(`config.summaryFields ?? []`). A normalized descriptor is fully resolved, so the field matches the other
+resolved members (`datePrefix`, `permalink`, `fields`) rather than being the one weakly-typed resolved
+field. A non-optional type pays off as more consumers read it later (the scaffolder, a list helper),
+each reading a clean `string[]` with no `?? []` guard. The cost is a one-line addition to every
+hand-built `ConceptDescriptor` literal in the admin-runtime tests (13 across 9 files); under aggressive
+development that churn is acceptable in service of the honest type. The recurring-churn smell those
+literals create is logged as a separate follow-up (a shared test descriptor factory).
+`createContentIndex` copies the named keys off the validated, normalized frontmatter onto a new
+namespaced record:
 
 ```ts
 export interface ContentSummary {

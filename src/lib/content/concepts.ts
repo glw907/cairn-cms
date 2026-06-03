@@ -45,12 +45,11 @@ export function normalizeConcepts(
     if (!config) continue;
     const summaryFields = config.summaryFields ?? [];
     const declared = new Set(config.schema.fields.map((field) => field.name));
-    for (const key of summaryFields) {
-      if (!declared.has(key)) {
-        throw new Error(
-          `cairn: concept "${id}" summaryFields key "${key}" is not a declared field`,
-        );
-      }
+    const undeclared = summaryFields.find((key) => !declared.has(key));
+    if (undeclared !== undefined) {
+      throw new Error(
+        `cairn: concept "${id}" summaryFields key "${undeclared}" is not a declared field`,
+      );
     }
     const policy = urlPolicy[id] ?? {};
     descriptors.push({

@@ -2,6 +2,25 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.24.0
+
+### Added
+- `headRow(title, icon?)` builds the icon-plus-heading component head, exported beside `cardShell` and
+  `iconSpan`.
+- A `createRenderer` `anchorRel` option sets the `rel` value forced on `target="_blank"` anchors
+  (default `'noopener noreferrer'`), or disables the injection when set to `false`.
+
+### Changed
+- A component's `defaultIconByRole` default now reaches the build through the declared `type: 'icon'`
+  attribute (`ctx.attributes`), so a role default no longer needs a hardcoded fallback in the build. A
+  component using `defaultIconByRole` must declare a `type: 'icon'` attribute.
+- The engine drops an unclaimed directive `[label]` when a component has no `title` slot, so a stray
+  `[]` no longer renders an empty paragraph.
+
+### Removed
+- The internal `data-icon` marker, which no build read. The resolved icon now travels on the declared
+  attribute path.
+
 ## 0.23.0
 
 ### Changed (breaking)

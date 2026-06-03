@@ -279,6 +279,30 @@ Read this before you go any further.
 ::::
 ````
 
+### Authoring rules
+
+A component build reads only the attributes the component declares. Reading `ctx.attributes.x` for an
+attribute the component never declared returns `undefined`, with no error. Declare every attribute a
+build reads.
+
+A component that sets `defaultIconByRole` must also declare a `type: 'icon'` attribute. The engine
+resolves the icon from the author's value, falling back to the role default, and delivers it to the
+build through that declared attribute, so `defineFields` plus `defaultIconByRole` is the single source.
+A component with a role default but no icon attribute has no declared slot to carry the value, so the
+default does not reach the build.
+
+The `headRow(title, icon?)` helper builds the icon-plus-heading head a titled component shows. Pass the
+title's slot children and an optional icon element, the way `cardShell` takes already-built body
+content.
+
+`createRenderer` forces `rel="noopener noreferrer"` on every `target="_blank"` anchor. Set the
+`anchorRel` option to a different value to change it, or to `false` to disable the injection when a site
+owns its own anchor hardening.
+
+A component with no `title` slot must omit the `[]` label from its `insertTemplate`. The engine drops an
+unclaimed label, so a stray `:::panel[]{...}` no longer leaves an empty paragraph, and a clean template
+keeps the inserted markdown tidy.
+
 ## 7. Icons & assets in the editor
 
 - **Icon set:** your `icons.ts` (closed vocabulary of SVG path data). The editor offers a picker over

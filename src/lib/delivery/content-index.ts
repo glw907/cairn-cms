@@ -30,8 +30,8 @@ export interface ContentSummary {
   wordCount: number;
   draft: boolean;
   /** The frontmatter keys the descriptor nominated via `summaryFields`, read off the validated,
-   *  normalized frontmatter. Namespaced so a nominated key cannot collide with a typed summary
-   *  field. Empty when the concept declares no `summaryFields`. */
+   *  normalized frontmatter. Held in a separate record so a nominated key cannot collide with a
+   *  typed summary field. Empty when the concept declares no `summaryFields`. */
   fields: Record<string, unknown>;
 }
 

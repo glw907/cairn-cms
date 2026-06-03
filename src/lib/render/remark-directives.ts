@@ -59,17 +59,20 @@ export function remarkDirectiveStamp(registry: ComponentRegistry) {
       const def = registry.get(node.name);
       const attrs = node.attributes ?? {};
       const role = attrs.role || undefined;
-      let icon = attrs.icon || undefined;
+      const iconField = def?.attributes?.find((field) => field.type === 'icon');
+      const iconKey = iconField?.key ?? 'icon';
+      let icon = attrs[iconKey] || undefined;
       if (!icon && role) icon = registry.defaultIcon(node.name, role);
 
       const properties: Record<string, string> = { dataPrimitive: node.name };
-      if (icon) properties.dataIcon = icon;
       if (role) properties.dataRole = role;
       // Carry every declared attribute to hast so the dispatch partitioner can build the
-      // component context. data-attr-<key> survives to the element; build() consumes it and
-      // returns a fresh element, so the marker never reaches the published DOM.
+      // component context. For the icon attribute, fall back to the resolved icon (author value
+      // or the defaultIconByRole default) so a role default reaches the build through the one
+      // declared path. data-attr-<key> survives to the element; build() consumes it and returns a
+      // fresh element, so the marker never reaches the published DOM.
       for (const field of def?.attributes ?? []) {
-        const raw = attrs[field.key];
+        const raw = field === iconField ? (attrs[field.key] ?? icon) : attrs[field.key];
         if (raw != null) properties[dataAttrProp(field.key)] = raw;
       }
 

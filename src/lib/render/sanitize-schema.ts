@@ -5,7 +5,7 @@ import { dataAttrProp, type ComponentRegistry } from './registry.js';
 
 // The fixed directive markers the stamp writes and the dispatch reads. They are inert data
 // attributes, never a script vector, and must survive the floor so the dispatch still runs.
-const FIXED_MARKERS = ['dataPrimitive', 'dataSlot', 'dataIcon', 'dataRole', 'dataRise'];
+const FIXED_MARKERS = ['dataPrimitive', 'dataSlot', 'dataRole', 'dataRise'];
 
 /**
  * Build the delivery sanitize schema. Starts from hast-util-sanitize's defaultSchema, the

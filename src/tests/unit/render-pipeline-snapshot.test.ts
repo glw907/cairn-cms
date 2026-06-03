@@ -2,10 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { h } from 'hastscript';
 import type { Element, ElementContent } from 'hast';
 import { createRenderer } from '../../lib/render/pipeline.js';
-import { defineRegistry } from '../../lib/render/registry.js';
+import { defineRegistry, type ComponentContext } from '../../lib/render/registry.js';
 import { glyph } from '../../lib/render/glyph.js';
 import {
   cardShell,
+  headRow,
   markFirstList,
   iconSpan,
   isElement,
@@ -18,21 +19,18 @@ import {
 const ICONS = { flag: 'M16 16 240 16 240 240 16 240Z' };
 const makeIcon: MakeIcon = (name, role) => iconSpan(glyph(name, ICONS), role);
 
-// Local fixture helper: pull the <h2> out as a .card-title and build the .ec-head
-// row with an optional stamped icon. The engine no longer ships splitHead, so the
-// fixture reproduces the head it needs from the stamped section.
-function fixtureHead(node: Element, icon: MakeIcon): { head: Element; rest: ElementContent[] } {
-  const children = node.children as ElementContent[];
+// Local fixture helper: pull the <h2> out as the head's title and build the .ec-head row with
+// an optional icon read from the declared attribute path. Mirrors what a real site build does
+// with headRow now that the engine ships it.
+function fixtureHead(ctx: ComponentContext, icon: MakeIcon): { head: Element; rest: ElementContent[] } {
+  const children = ctx.node.children as ElementContent[];
   const i = children.findIndex((c) => isElement(c) && c.tagName === 'h2');
   const h2 = children[i] as Element;
-  h2.properties = { ...h2.properties, className: ['card-title'] };
   const rest = children.filter((_, j) => j !== i);
-  const iconName = strProp(node, 'dataIcon');
-  const role = strProp(node, 'dataRole');
-  const headKids: ElementContent[] = [];
-  if (iconName) headKids.push(icon(iconName, role));
-  headKids.push(h2);
-  return { head: h('div', { className: ['ec-head'] }, headKids), rest };
+  const iconName = typeof ctx.attributes.icon === 'string' ? ctx.attributes.icon : undefined;
+  const role = strProp(ctx.node, 'dataRole');
+  const iconEl = iconName ? icon(iconName, role) : undefined;
+  return { head: headRow(h2.children as ElementContent[], iconEl), rest };
 }
 
 const registry = defineRegistry({
@@ -42,8 +40,9 @@ const registry = defineRegistry({
       label: 'Card',
       description: '',
       insertTemplate: '',
+      attributes: [{ key: 'icon', label: 'Icon', type: 'icon' }],
       build: (ctx) => {
-        const { head, rest } = fixtureHead(ctx.node, makeIcon);
+        const { head, rest } = fixtureHead(ctx, makeIcon);
         return cardShell(['card'], [head, h('div', { className: ['section-body'] }, rest)]);
       },
     },
@@ -52,10 +51,11 @@ const registry = defineRegistry({
       label: 'Grid',
       description: '',
       insertTemplate: '',
+      attributes: [{ key: 'icon', label: 'Icon', type: 'icon' }],
       build: (ctx) => {
         const children = ctx.node.children as Element['children'];
         markFirstList(children);
-        const { head, rest } = fixtureHead(ctx.node, makeIcon);
+        const { head, rest } = fixtureHead(ctx, makeIcon);
         return cardShell(['grid'], [head, h('div', { className: ['section-body'] }, rest)]);
       },
     },

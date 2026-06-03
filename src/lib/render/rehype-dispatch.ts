@@ -7,7 +7,7 @@ export function isElement(node: ElementContent | undefined): node is Element {
 }
 
 // hast Properties values are PropertyValue (string | number | boolean | array | null).
-// Directive markers (dataIcon/dataRole/dataPrimitive) are always stamped as strings;
+// Directive markers (dataPrimitive/dataRole/dataAttr<Key>) are always stamped as strings;
 // this reads them back with that guarantee instead of casting at each call site.
 export function strProp(node: Element, name: string): string | undefined {
   const value = node.properties?.[name];

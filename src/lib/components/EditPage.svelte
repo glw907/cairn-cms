@@ -78,6 +78,29 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
     draftWarning = drafts ? drafts.split(',').filter(Boolean).join(', ') : '';
   });
 
+  // One persistent live region announces the current message, since a {#if}-gated role element
+  // inserted fresh is announced inconsistently. A polite region carries the success and draft
+  // notices; an assertive region carries the errors. The visible banners below keep their styling
+  // but drop their roles, so a message is announced once.
+  const politeMessage = $derived(
+    draftWarning
+      ? `Saved. This page links to unpublished pages: ${draftWarning}.`
+      : data.saved
+        ? 'Saved.'
+        : '',
+  );
+  const assertiveMessage = $derived(
+    data.error
+      ? data.error
+      : renameError
+        ? renameError
+        : deleteRefusedLinks.length
+          ? `This ${data.label.toLowerCase()} could not be deleted. ${deleteRefusedLinks.length} ${deleteRefusedLinks.length === 1 ? 'page links' : 'pages link'} to it.`
+          : visibleBrokenLinks.length
+            ? `This page links to ${visibleBrokenLinks.length} missing ${visibleBrokenLinks.length === 1 ? 'page' : 'pages'}.`
+            : '',
+  );
+
   // The manifest-backed resolver turns a cairn: link into its live permalink in the preview, and
   // returns undefined for a missing target so the render step marks it cairn-broken-link.
   const resolveLink = $derived(manifestLinkResolver(data.linkTargets));
@@ -146,17 +169,20 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
   </div>
 </header>
 
+<div class="sr-only" aria-live="polite">{politeMessage}</div>
+<div class="sr-only" aria-live="assertive">{assertiveMessage}</div>
+
 {#if data.saved && !draftWarning}
-  <div role="status" class="alert alert-success mb-4 text-sm">Saved.</div>
+  <div class="alert alert-success mb-4 text-sm">Saved.</div>
 {/if}
 {#if data.error}
-  <div role="alert" class="alert alert-error mb-4 text-sm">{data.error}</div>
+  <div class="alert alert-error mb-4 text-sm">{data.error}</div>
 {/if}
 {#if renameError}
-  <div role="alert" class="alert alert-error mb-4 text-sm">{renameError}</div>
+  <div class="alert alert-error mb-4 text-sm">{renameError}</div>
 {/if}
 {#if deleteRefusedLinks.length}
-  <div role="alert" class="alert alert-error mb-4 flex-col items-start text-sm">
+  <div class="alert alert-error mb-4 flex-col items-start text-sm">
     <p class="font-medium">This {data.label.toLowerCase()} could not be deleted.</p>
     <p>{deleteRefusedLinks.length} {deleteRefusedLinks.length === 1 ? 'page' : 'pages'} now link to it. Remove or repoint the {deleteRefusedLinks.length === 1 ? 'link' : 'links'} listed below, then delete again.</p>
     <ul class="mt-1 w-full">
@@ -169,7 +195,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
   </div>
 {/if}
 {#if visibleBrokenLinks.length}
-  <div role="alert" class="alert alert-error mb-4 flex-col items-start text-sm">
+  <div class="alert alert-error mb-4 flex-col items-start text-sm">
     <p>This page links to {visibleBrokenLinks.length === 1 ? 'a page' : 'pages'} that no longer {visibleBrokenLinks.length === 1 ? 'exists' : 'exist'}. Remove the broken {visibleBrokenLinks.length === 1 ? 'link' : 'links'} and save again.</p>
     <ul class="mt-1 w-full">
       {#each visibleBrokenLinks as href (href)}
@@ -182,7 +208,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
   </div>
 {/if}
 {#if draftWarning}
-  <div role="status" class="alert alert-warning mb-4 text-sm">
+  <div class="alert alert-warning mb-4 text-sm">
     Saved. Note: this page links to unpublished {draftWarning.includes(',') ? 'pages' : 'a page'} ({draftWarning}), which will 404 until published.
   </div>
 {/if}

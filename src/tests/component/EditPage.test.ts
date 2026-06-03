@@ -73,7 +73,8 @@ describe('EditPage', () => {
 
   it('shows a saved confirmation', async () => {
     const screen = render(EditPage, postProps({ saved: true }));
-    await expect.element(screen.getByText(/saved/i)).toBeInTheDocument();
+    const banner = screen.container.querySelector('.alert-success');
+    expect(banner?.textContent ?? '').toMatch(/saved/i);
   });
 
   it('renders preview HTML when the preview is shown', async () => {
@@ -150,13 +151,29 @@ describe('EditPage', () => {
     expect(banner).toBeTruthy();
   });
 
+  it('announces a saved message through a persistent live region', async () => {
+    const screen = render(EditPage, postProps({ saved: true }));
+    const region = screen.container.querySelector('[aria-live="polite"]');
+    expect(region).not.toBeNull();
+    expect(region!.textContent ?? '').toMatch(/saved/i);
+  });
+
+  it('announces an error through a persistent assertive region', async () => {
+    const props = postProps();
+    (props as Record<string, unknown>).form = { renameError: 'An entry with that slug already exists.' };
+    const screen = render(EditPage, props);
+    const region = screen.container.querySelector('[aria-live="assertive"]');
+    expect(region).not.toBeNull();
+    expect(region!.textContent ?? '').toMatch(/already exists/i);
+  });
+
   it('shows the broken-links banner and unwraps a link with the fix', async () => {
     const props = postProps();
     props.data.body = 'see [gone](cairn:pages/gone) here';
     // The action result the page receives after a blocked save.
     (props as Record<string, unknown>).form = { brokenLinks: ['cairn:pages/gone'], body: props.data.body };
     const screen = render(EditPage, props);
-    const banner = screen.container.querySelector('[role="alert"]');
+    const banner = screen.container.querySelector('.alert');
     expect(banner?.textContent ?? '').toContain('cairn:pages/gone');
     await screen.getByRole('button', { name: /remove link/i }).click();
     await expect
@@ -182,7 +199,7 @@ describe('EditPage', () => {
       inboundLinks: [{ concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' }],
     };
     const screen = render(EditPage, props);
-    const banner = Array.from(screen.container.querySelectorAll('[role="alert"]')).find((el) =>
+    const banner = Array.from(screen.container.querySelectorAll('.alert')).find((el) =>
       (el.textContent ?? '').includes('could not be deleted'),
     );
     expect(banner).toBeTruthy();
@@ -196,7 +213,7 @@ describe('EditPage', () => {
     props.data.body = 'see [gone](cairn:pages/gone) here';
     (props as Record<string, unknown>).form = { brokenLinks: ['cairn:pages/gone'], body: props.data.body };
     const screen = render(EditPage, props);
-    const banner = screen.container.querySelector('[role="alert"]');
+    const banner = screen.container.querySelector('.alert');
     expect(banner?.textContent ?? '').toContain('cairn:pages/gone');
     await screen.getByRole('button', { name: /remove link/i }).click();
     await expect

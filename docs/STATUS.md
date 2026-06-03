@@ -6,6 +6,74 @@ orientation is the workspace `CLAUDE.md`. Locked architecture decisions and the 
 the functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`).
 Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`.
 
+## Where the work is (2026-06-02, content-graph Plan 5 / slug-only rename executed and review-remediated; the content-graph initiative is COMPLETE)
+
+Content-graph Plan 5 (slug-only rename plus the atomic inbound-link rewrite) executed subagent-driven on `main`, one
+`cairn-implementer` per task (Sonnet for the mechanical tasks, Opus for the judgment-heavy `renameAction` and the
+review fold-ins), commits `7b31e2c..eda6340` (the ten plan tasks), then a simplifier commit `9ab890a` and a review-gate
+fold-in `80fd6ff`. **Local only, not pushed, not published.** It bumps the minor to `0.21.0` (additive route surface, a
+new `RenameDialog`, the `EditData` `slug`/`renamed` fields, the pure helpers). **Plan 5 is the last plan of the
+content-graph initiative, so the initiative is now complete:** the atomic commit primitive, the committed manifest and
+the `cairn:` resolver, the editor link picker, content delete with the integrity guards, and now content rename all
+landed.
+
+**Recovered after a battery interruption.** The prior session lost battery mid-Task-6, with the `EditPage` rename wiring
+and its two tests written but uncommitted. The recovered diff was complete and correct (targeted test 16/16, full gate
+green), so it committed as `f75a234` with no rework; Tasks 1 through 5 had already committed. No work was lost. The
+remaining Tasks 7 through 10 and the full review gate then ran this session.
+
+The pass delivers: slug-only rename (a page renames its whole id; a dated post keeps its date prefix and swaps the
+date-stripped slug), the file move plus the self-token rewrite plus every inbound linker's body rewrite plus each touched
+manifest row, all in one atomic `commitFiles` commit, so no internal link breaks. New code: `renameId` (`ids.ts`),
+`rewriteCairnLink` (`markdown-format.ts`), `renameAction` plus the `editLoad` `slug` field, the `renamed` field, and the
+parallel reads (`content-routes.ts`), the `commitFiles` tree-create 422-to-`CommitConflictError` hardening (`repo.ts`),
+`RenameDialog.svelte`, the `EditPage` rename wiring, and the persistent polite/assertive `aria-live` regions that replace
+the per-banner roles so each alert announces once.
+
+Gate at the tip (`80fd6ff`): `npm run check` 777 files 0/0, `npm test` 109 files / 606 tests exit 0, `check:package`
+all-green with no export-condition change. The showcase production build exits 0 with the rename action registered. The
+five `renameAction` unit cases pass (no-inbound rename, inbound-linker rewrite with its manifest edge, self-token rewrite,
+collision refused with no commit, no-op slug refused with no commit), and the `commitFiles` tree-create 422 throws
+`CommitConflictError`.
+
+**Review gate.** The simplifier replaced the Task 7 nested-ternary live-region derivations with `$derived.by` if-chains
+(`9ab890a`, behavior identical). Three Opus reviewers ran (`svelte-reviewer`, `daisyui-a11y-reviewer`,
+`cloudflare-workers-reviewer`); the workers reviewer returned clean on the atomicity, token rewriting, path safety, and
+the 422 fail-safe, and no reviewer found a Critical bug. Four findings folded in as `80fd6ff`: the successful rename was
+silent because `editLoad` never read the `?renamed=1` redirect (now read and confirmed visibly and through the polite
+region); `RenameDialog` now seeds focus into the slug input on open (WCAG 2.4.3) instead of the Close button; the
+redundant `aria-label` on the labelled slug input was dropped; and the 409 collision branch carries a comment that it also
+covers the concurrent-rename race. The separate high-effort `/code-review` was not run this pass: the three scoped Opus
+reviewers covered exactly this pass's surface, and a `/code-review` would diff the whole unpushed branch (the
+`0.19`/`0.20`/`0.21` window) and re-surface landed work. `web-auth-security-reviewer` did not apply.
+
+**Live admin smoke: carried fast-follow.** The showcase runs `adapter-node`, so there is no `wrangler dev` admin Worker.
+The browser component tests cover the dialog, the focus seeding, the live region, and the collision banner; the
+content-route unit tests cover the rewrite-and-commit path. The interactive smoke (rename an entry with an inbound link,
+confirm the link still resolves on the linking page, confirm a collision is refused) is best run during the ecnordic
+migration.
+
+**Carried follow-ups (from the review gate).** The persistent assertive region does not re-announce an identical repeat
+error (a colliding slug typed twice), since the derived string is unchanged; a nonce keyed off the action-result identity
+would force it, and the fix spans the whole Task 7 live-region design. The `RenameDialog` slug echo shows the raw typed
+value, so it can preview a slug the action rejects; running it through the shared `slugify` would match the create form,
+and tying it with `aria-describedby` would carry it to assistive tech. The collision read is a third sequential
+round-trip before the parallel pair; folding it into the `Promise.all` shaves one edge latency hop at the cost of one
+wasted read on the no-collision path. The manifest last-writer-wins races stay the documented posture, caught by the
+build's fail-closed backstop.
+
+**Immediate next action: the content-graph initiative is complete, so the next work is the site migrations, gated on the
+held publish.** Publishing is the user's call and is currently held: the registry's `latest` is `0.18.0`, and `main`
+carries the unpublished `0.19.0` (picker), `0.20.0` (delete and the guards), and `0.21.0` (rename) window. **Publish the
+rolled window as `0.21.0` before the site migrations**, since a site pins a range only after the publish; the release is
+the OIDC trusted-publishing workflow off a `v0.21.0` GitHub Release, and `main` should push first. Then the site
+migrations run per-site (`site-pass`, ecnordic then 907, from each site's own repo), pinning `^0.21.0`, where each site
+wires its complete content layer (delivery, resolver, manifest, the editor link surface) in one site-pass and the
+scaffolder template captures the full picture. The migration gotchas in the entries below still apply (pass every
+declared concept's glob, declare every read frontmatter key, coerce an unquoted YAML date, resolve `cairn:` links
+wherever a body renders to HTML). There is no new cairn-cms engine plan to draft: the initiative roadmap is exhausted, so
+the next plan is a site's own migration pass, authored in that site's repo.
+
 ## Where the work is (2026-06-02, content-graph Plan 4 / content delete and the integrity guards executed and review-remediated)
 
 Content-graph Plan 4 (content delete, the delete and save integrity guards, and four carried link-integrity

@@ -1,6 +1,6 @@
 // The showcase's adapter: the single seam the engine consumes. It declares one post-like concept,
 // a render that runs the engine pipeline, and a backend the dev GitHub double answers for.
-import { createRenderer, defineRegistry, defineFields, defineAdapter } from '@glw907/cairn-cms';
+import { createRenderer, defineRegistry, defineFields, defineAdapter, cardShell, headRow, iconSpan, glyph } from '@glw907/cairn-cms';
 import type { ComponentDef, IconSet } from '@glw907/cairn-cms';
 import { h } from 'hastscript';
 import type { ElementContent } from 'hast';
@@ -32,7 +32,34 @@ const callout: ComponentDef = {
   ],
 };
 
-const registry = defineRegistry({ components: [callout] });
+const makeIcon = (name: string, role?: string) => iconSpan(glyph(name, icons), role);
+
+const alert: ComponentDef = {
+  name: 'alert',
+  label: 'Alert',
+  description: 'A bordered note whose icon defaults from its role.',
+  use: 'Flag a caution in the flow of a post.',
+  defaultIconByRole: { caution: 'leaf' },
+  build: (ctx) => {
+    const name = typeof ctx.attributes.icon === 'string' ? ctx.attributes.icon : undefined;
+    const role = typeof ctx.attributes.role === 'string' ? ctx.attributes.role : undefined;
+    const icon = name ? makeIcon(name, role) : undefined;
+    return cardShell(['alert', `alert-${role ?? 'note'}`], [
+      headRow(ctx.slot('title'), icon),
+      h('div', { className: ['alert-body'] }, ctx.slot('body')),
+    ]);
+  },
+  attributes: [
+    { key: 'role', label: 'Role', type: 'select', options: ['note', 'caution'] },
+    { key: 'icon', label: 'Icon', type: 'icon' },
+  ],
+  slots: [
+    { name: 'title', label: 'Title', kind: 'inline' },
+    { name: 'body', label: 'Body', kind: 'markdown' },
+  ],
+};
+
+const registry = defineRegistry({ components: [callout, alert] });
 
 // The real render path: parse markdown through the engine so registered components render.
 const { renderMarkdown } = createRenderer(registry);

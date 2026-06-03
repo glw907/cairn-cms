@@ -10,4 +10,4 @@ const routes = createContentRoutes(composeRuntime(cairn), {
 });
 
 export const load = routes.editLoad;
-export const actions = { save: routes.saveAction, delete: routes.deleteAction };
+export const actions = { save: routes.saveAction, delete: routes.deleteAction, rename: routes.renameAction };

@@ -3,6 +3,7 @@ import matter from 'gray-matter';
 import {
   frontmatterFromForm,
   dateInputValue,
+  isCalendarDate,
   serializeMarkdown,
   parseMarkdown,
 } from '../../lib/content/frontmatter.js';
@@ -81,6 +82,31 @@ describe('dateInputValue', () => {
     expect(dateInputValue(42)).toBe('');
     expect(dateInputValue(new Date('nonsense'))).toBe('');
     expect(dateInputValue('not a date')).toBe('');
+  });
+});
+
+describe('isCalendarDate', () => {
+  it('accepts a canonical zero-padded calendar date', () => {
+    expect(isCalendarDate('2026-01-01')).toBe(true);
+    expect(isCalendarDate('2024-02-29')).toBe(true); // a real leap day
+  });
+
+  it('rejects a date-rollover that is not a real day', () => {
+    expect(isCalendarDate('2026-02-30')).toBe(false);
+    expect(isCalendarDate('2026-02-29')).toBe(false); // 2026 is not a leap year
+  });
+
+  it('rejects an impossible month or day', () => {
+    expect(isCalendarDate('2026-13-01')).toBe(false);
+    expect(isCalendarDate('2026-00-01')).toBe(false);
+    expect(isCalendarDate('2026-01-00')).toBe(false);
+  });
+
+  it('rejects a non-canonical format', () => {
+    expect(isCalendarDate('2026-1-1')).toBe(false);
+    expect(isCalendarDate('2026-01-01T00:00')).toBe(false);
+    expect(isCalendarDate('01/01/2026')).toBe(false);
+    expect(isCalendarDate('')).toBe(false);
   });
 });
 

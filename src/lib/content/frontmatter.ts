@@ -56,6 +56,27 @@ export function dateInputValue(value: unknown): string {
   return '';
 }
 
+/**
+ * True when `s` is a canonical zero-padded `YYYY-MM-DD` string naming a real calendar date.
+ * Rejects a wrong format, an impossible month or day, and a JS date-rollover such as
+ * `2026-02-30` (which `Date` would silently roll forward to March 2). The committed form a
+ * date field carries is exactly this canonical shape, which is what the form and
+ * `dateInputValue` emit, so a value outside it is a hand-edit or odd-YAML error.
+ */
+export function isCalendarDate(s: string): boolean {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (!match) return false;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+}
+
 /** Reassemble a markdown file from frontmatter and body for committing. */
 export function serializeMarkdown(frontmatter: object, body: string): string {
   return matter.stringify(body, frontmatter);

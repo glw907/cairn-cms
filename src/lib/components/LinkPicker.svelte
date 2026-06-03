@@ -44,8 +44,8 @@ conventions. The plain-URL link stays the toolbar's link button; this is for an 
       byConcept.set(t.concept, list);
     }
     return [...byConcept.entries()]
-      .sort(([a], [b]) => rank(a) - rank(b) || a.localeCompare(b))
-      .map(([concept, items]) => ({ concept, heading: heading(concept), items }));
+      .map(([concept, items]) => ({ concept, heading: heading(concept), items }))
+      .sort((a, b) => rank(a.concept) - rank(b.concept) || a.heading.localeCompare(b.heading));
   });
 
   function open() {

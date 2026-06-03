@@ -62,4 +62,16 @@ describe('LinkPicker', () => {
     await screen.getByRole('button', { name: /link to page/i }).click();
     expect(screen.container.querySelector('dialog')!.textContent ?? '').toMatch(/no pages or posts/i);
   });
+
+  it('orders unlisted concepts by heading', async () => {
+    const targets = [
+      { concept: 'zebra', id: 'z1', permalink: '/z1', title: 'Zebra One', draft: false },
+      { concept: 'apple', id: 'a1', permalink: '/a1', title: 'Apple One', draft: false },
+    ];
+    const screen = render(LinkPicker, { linkTargets: targets, insert: () => {} });
+    await screen.getByRole('button', { name: /link to page/i }).click();
+    const text = screen.container.querySelector('dialog')!.textContent ?? '';
+    // Headings are 'Apple' and 'Zebra'; Apple sorts first.
+    expect(text.indexOf('Apple')).toBeLessThan(text.indexOf('Zebra'));
+  });
 });

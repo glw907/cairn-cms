@@ -129,6 +129,25 @@ describe('EditPage', () => {
       .toContain('[About Us](cairn:pages/about)');
   });
 
+  it('renders the delete control', async () => {
+    const screen = render(EditPage, postProps());
+    await expect.element(screen.getByRole('button', { name: /^delete$/i })).toBeInTheDocument();
+  });
+
+  it('shows the broken-links banner and unwraps a link with the fix', async () => {
+    const props = postProps();
+    props.data.body = 'see [gone](cairn:pages/gone) here';
+    // The action result the page receives after a blocked save.
+    (props as Record<string, unknown>).form = { brokenLinks: ['cairn:pages/gone'], body: props.data.body };
+    const screen = render(EditPage, props);
+    const banner = screen.container.querySelector('[role="alert"]');
+    expect(banner?.textContent ?? '').toContain('cairn:pages/gone');
+    await screen.getByRole('button', { name: /remove link/i }).click();
+    await expect
+      .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
+      .toBe('see gone here');
+  });
+
   it('preview toggle button exposes aria-expanded reflecting preview state', async () => {
     const screen = render(EditPage, postProps());
     const btn = screen.getByRole('button', { name: /show preview/i });

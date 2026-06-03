@@ -9,7 +9,9 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
   import MarkdownEditor from './MarkdownEditor.svelte';
   import ComponentInsertDialog from './ComponentInsertDialog.svelte';
   import LinkPicker from './LinkPicker.svelte';
+  import DeleteDialog from './DeleteDialog.svelte';
   import { cairnLinkCompletionSource } from './link-completion.js';
+  import { unwrapCairnLink } from './markdown-format.js';
   import type { ComponentRegistry } from '../render/registry.js';
   import type { IconSet } from '../render/glyph.js';
   import type { EditData } from '../sveltekit/content-routes.js';
@@ -26,9 +28,11 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
     render?: (md: string, opts?: { stagger?: boolean; resolve?: LinkResolve }) => string | Promise<string>;
     /** The site's icon set, for the guided form's icon fields. */
     icons?: IconSet;
+    /** The `?/save` action result. Carries the save guard's broken links when a save was blocked. */
+    form?: { brokenLinks?: string[]; body?: string } | null;
   }
 
-  let { data, registry, render, icons }: Props = $props();
+  let { data, registry, render, icons, form }: Props = $props();
 
   // `body` is local editor state seeded once from the prop; it diverges as the user types.
   // untrack() captures the initial value without subscribing to future prop changes.
@@ -37,6 +41,21 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
   let previewHtml = $state('');
   let insert = $state.raw<(text: string) => void>(() => {});
   let insertLink = $state.raw<(href: string, title: string) => void>(() => {});
+
+  // The save guard's broken links, from the blocked action result. The fix unwraps a link in the
+  // local body, which the bound editor reconciles, so the author re-saves clean.
+  const brokenLinks = $derived(form?.brokenLinks ?? []);
+  function removeBrokenLink(href: string) {
+    body = unwrapCairnLink(body, href);
+  }
+
+  // After a save that links to a draft target, the redirect carries ?drafts=<tokens>.
+  let draftWarning = $state('');
+  $effect(() => {
+    const search = typeof location === 'undefined' ? '' : location.search;
+    const drafts = new URLSearchParams(search).get('drafts');
+    draftWarning = drafts ? drafts.split(',').filter(Boolean).join(', ') : '';
+  });
 
   // The manifest-backed resolver turns a cairn: link into its live permalink in the preview, and
   // returns undefined for a missing target so the render step marks it cairn-broken-link.
@@ -92,6 +111,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
   <div class="flex items-center gap-2">
     <ComponentInsertDialog {registry} {insert} {icons} />
     <LinkPicker linkTargets={data.linkTargets} insert={insertLink} />
+    <DeleteDialog conceptId={data.conceptId} id={data.id} label={data.label} inboundLinks={data.inboundLinks} />
     <button
       type="button"
       class="btn btn-sm btn-ghost"
@@ -109,6 +129,24 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
 {/if}
 {#if data.error}
   <div role="alert" class="alert alert-error mb-4 text-sm">{data.error}</div>
+{/if}
+{#if brokenLinks.length}
+  <div role="alert" class="alert alert-error mb-4 flex-col items-start text-sm">
+    <p>This page links to {brokenLinks.length === 1 ? 'a page' : 'pages'} that no longer {brokenLinks.length === 1 ? 'exists' : 'exist'}. Remove the broken {brokenLinks.length === 1 ? 'link' : 'links'} and save again.</p>
+    <ul class="mt-1 w-full">
+      {#each brokenLinks as href (href)}
+        <li class="flex items-center justify-between gap-2">
+          <code class="text-xs">{href}</code>
+          <button type="button" class="btn btn-xs" onclick={() => removeBrokenLink(href)}>Remove link</button>
+        </li>
+      {/each}
+    </ul>
+  </div>
+{/if}
+{#if draftWarning}
+  <div role="status" class="alert alert-warning mb-4 text-sm">
+    Saved. Note: this page links to unpublished {draftWarning.includes(',') ? 'pages' : 'a page'} ({draftWarning}), which will 404 until published.
+  </div>
 {/if}
 
 <form method="POST" action="?/save" class="lg:grid lg:grid-cols-[1fr_20rem] lg:gap-6">

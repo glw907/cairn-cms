@@ -6,6 +6,54 @@ orientation is the workspace `CLAUDE.md`. Locked architecture decisions and the 
 the functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`).
 Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`.
 
+## Where the work is (2026-06-03, DX pass P2 / schema validation executed; 0.23.0 unpublished)
+
+**P2, the schema-validation touch-ups, is executed and review-gated on `main`.** It ran
+subagent-driven, one `cairn-implementer` per task (Sonnet throughout, the tasks were mechanical),
+seven task commits `a3015a0..2160c42` plus a simplifier commit `4add8d7`. **Local only, not pushed,
+not published.** The minor bumps to `0.23.0`.
+
+The pass restores the four validations the schema cutover dropped and tightens two declaration-time
+contracts. A `date` field now validates a real `YYYY-MM-DD` calendar date through the new pure
+`isCalendarDate` helper in `frontmatter.ts`, rejecting an impossible date such as `2026-02-30`, an
+unpadded value, or a value carrying a time, while still coercing a parsed YAML `Date`. A `tags` field
+enforces its declared `options` as a closed vocabulary (`freetags` stays open). `normalizeConcepts`
+throws at config load on a `summaryFields` key that names no declared field. `AttributeField.options`
+widened to `readonly string[]`, so a site can share one frozen `as const` vocabulary with no call-site
+change. At-least-one-tag was already covered by `required: true` and needed no code.
+
+Gate at the simplifier tip (`4add8d7`), run first-hand: `npm run check` 779 files 0/0, `npm test`
+110 files / 631 tests exit 0, `npm run check:package` exit 0. The package and showcase builds exit 0
+and the prerendered home still renders all three posts, proving the stricter checks dropped no
+showcase entry. The review gate was the simplifier (one consistency fix folding the `summaryFields`
+guard onto the same `.find()` shape as the tags check) plus a high-effort four-angle `/code-review`,
+which surfaced no actionable defect within cairn's content domain. The Svelte, Worker, auth, and a11y
+reviewers and the live `/admin` smoke did not apply. The full post-mortem with the review triage and
+the carried follow-ups is in `docs/superpowers/plans/2026-06-03-cairn-schema-validation.md`.
+
+**Two migration gotchas land with this pass** (both intended, documented in the `0.23.0` changelog).
+A migrating site whose committed content holds a non-canonical string `date` (an ISO datetime, an
+unpadded value) will see that entry fail validation on its next `/admin` save; the save path
+canonicalizes a `Date` instance, so the exposure is a hand-edited or migrated string date. A post
+carrying a `tags` value the site has since removed or renamed from its `options` fails the same way.
+Both are the loud failure P2 restores. One recorded known limitation: `isCalendarDate` rejects years
+0000 through 0099 because of JavaScript's two-digit-year `Date` coercion, outside the cairn date
+domain and left unfixed by design.
+
+**Immediate next action: brainstorm and write P3 (render and component authoring), then execute it.**
+P3 is the third of the four DX engine passes (the entry below has the full P1 through P4 triage). It
+covers DX items 7, 8, 9, 11, 15: the `splitHead` replacement head helper (moved here from P1 during
+design, since it lives beside `cardShell`/`iconSpan`), the `rel` policy option, the alert role
+default, the empty-slot drop, and the declared-attribute read signal. P3 has open design decisions, so
+it needs a `superpowers:brainstorming` pass with the user before `superpowers:writing-plans` authors
+the numbered plan; do not auto-write it. After P3 lands, **publish** the rolled `0.22.0`/`0.23.0`/P3
+window together, then run the **907-life migration** (the second proving ground, `site-pass` in that
+repo, `datePrefix: 'day'`), then **P4, the `create-cairn-site` scaffolder** (the capstone).
+
+**Publishing stays held.** `0.21.0` is the registry `latest`. `main` carries the unpublished `0.22.0`
+(P1) and `0.23.0` (P2), and will carry the P3 bump, until the window publishes together before the
+907 migration. A site pins a range only after the publish.
+
 ## Where the work is (2026-06-03, DX pass P1 / delivery read-model executed; 0.22.0 unpublished)
 
 The DX backlog triaged into the P1 through P4 engine-pass sequence (the entry below has the full triage and

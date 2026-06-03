@@ -560,3 +560,89 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - A high-effort `/code-review` over the branch diff, with attention to the `isCalendarDate` round-trip and the tags membership edge cases.
 - Live `/admin` smoke does not apply (no `/admin` surface changed; the showcase runs `adapter-node`).
 - Fold findings in, then update the plan post-mortem and `docs/STATUS.md` per the `cairn-pass` consolidation ritual.
+
+---
+
+## Post-mortem (executed 2026-06-03)
+
+P2 executed subagent-driven on `main`, one `cairn-implementer` per task (Sonnet throughout, the
+tasks were mechanical and well-specified). Seven task commits `a3015a0..2160c42` plus a simplifier
+commit `4add8d7`. Local only, not pushed, not published. The minor bumps to `0.23.0`.
+
+### What was built
+
+- `isCalendarDate(s)` in `frontmatter.ts`: a pure predicate that a date string is a canonical
+  zero-padded `YYYY-MM-DD` naming a real day, with a `Date.UTC` round-trip rejecting a rollover such
+  as `2026-02-30`.
+- The `date` case in `validateFields` now rejects a present non-canonical or impossible date, while
+  still coercing a parsed YAML `Date` and omitting an empty optional date.
+- The combined `tags`/`freetags` case now enforces the closed `tags` vocabulary through
+  `field.options.includes`, naming the first out-of-vocabulary value. A `freetags` field stays open.
+  At-least-one-tag rides on the existing `required: true`, so it needed no code.
+- `normalizeConcepts` now throws at config load on a `summaryFields` key that names no declared
+  field, mirroring how `compilePatterns` rejects a malformed regex.
+- `AttributeField.options` widened to `readonly string[]`, so a site can share one frozen `as const`
+  vocabulary. Every reader is read-only, so no call site changed.
+- The site guide and the changelog record the new rules and the `0.23.0` breaking notes.
+
+### Verified (evidence)
+
+Gate at the simplifier tip (`4add8d7`), run first-hand: `npm run check` 779 files 0 errors 0
+warnings, `npm test` 110 files / 631 tests exit 0, `npm run check:package` exit 0. The package build
+and the showcase production build both exit 0, and the prerendered home still renders all three posts
+(`grep -o 'class="summary"' | wc -l` reports 3), proving the stricter date and tags checks dropped no
+showcase entry. Each task wrote its failing test first and confirmed the fail before implementing.
+
+### Decisions locked (from the design spec)
+
+- Date validation is strict by default: a real `YYYY-MM-DD` calendar date, no flag and no custom
+  `pattern`.
+- Closed `tags` membership is enforced by default. `freetags` is the open escape hatch, so no
+  `enforced` flag is needed.
+- No tag count bounds. At-least-one is `required: true`, already working.
+- The two intrinsic checks live in `validateFields` beside the coercion they extend, not in the
+  `applyRules` declarative-rule layer. A date being a real calendar date and a tag being in its
+  vocabulary are intrinsic to the field type, where `min`/`max`/`pattern` are optional declared rules.
+
+### Review gate
+
+The simplifier made one consistency fix (`4add8d7`): it collapsed the `summaryFields` guard from a
+`for`-loop-with-inner-throw to a `.find()`, matching the `.find(...) !== undefined` shape the same
+pass introduced for the tags check. Behavior is identical. A high-effort four-angle `/code-review`
+(line-by-line, removed-behavior, cross-file tracer, cleanup/altitude) surfaced no actionable defect
+within cairn's content domain. The `svelte-reviewer` did not apply (no form component changed), and
+the Worker, auth, and a11y reviewers and the live `/admin` smoke did not apply.
+
+The review's substantive findings, with the triage:
+
+- **`isCalendarDate` rejects years 0000 through 0099 (known limitation, no fix).** `Date.UTC` applies
+  JavaScript's legacy two-digit-year mapping, so a year argument of 0 through 99 lands in 1900 through
+  1999 and the round-trip year never matches. A `setUTCFullYear` repair reintroduces its own proleptic
+  leap-year edge for a year-0 Feb 29, and no cairn blog date falls in that range. Contorting the logic
+  for input the domain cannot produce is the wrong trade, so the helper is correct for every four-digit
+  year from 0100 to 9999 and this stays a recorded limitation.
+- **Non-canonical committed string dates now fail validation (intended, migration gotcha).** The save
+  path canonicalizes a `Date` instance through `dateInputValue`, so the exposure is a hand-edited or
+  migrated markdown file whose `date` was committed as a non-canonical string (an ISO datetime, an
+  unpadded value). Re-saving such a file through `/admin` now bounces. This is the loud failure the
+  pass restores, documented in the `0.23.0` changelog.
+- **A removed or renamed tag fails an otherwise-untouched post on re-save (intended, migration gotcha).**
+  Same posture as the date rule, documented in the changelog.
+- **The `normalizeConcepts` guard is a hard throw at config load (intended).** Fail-loud at startup is
+  the spec's posture, and the `config.schema.fields` deref is not new (the descriptor push already read
+  it two lines down).
+
+### Carried follow-ups (not done this pass)
+
+- `parseFeedDate` in `delivery/feeds.ts` is a looser date parser than `isCalendarDate`, so a
+  hand-committed impossible date such as `2026-02-30` would be silently rolled forward in a feed rather
+  than rejected. The save-time validator keeps authored content clean, so this bites only a date
+  hand-committed straight to the repo. Routing feed dates through `isCalendarDate` would align the two.
+- The tags check names only the first out-of-vocabulary value, so an editor fixing several bad tags
+  re-saves once per bad tag. Collecting all offenders into the one field message would fix it, at the
+  cost of diverging from the one-message-per-field shape the rest of `validateFields` keeps.
+- Date `min`/`max` in `applyRules` stays unenforced for an out-of-range but well-formed date. This is
+  pre-existing and out of P2's scope, which covered format and validity.
+- The `makeDescriptor(overrides)` test factory carried from P1 is still worth a small dedicated
+  cleanup. P2 added no new descriptor-literal churn, so it did not force the issue.
+- Numeric tag count bounds stay deferred until a site needs them.

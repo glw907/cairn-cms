@@ -6,6 +6,7 @@ import {
   slugify,
   slugFromId,
   composeDatedId,
+  renameId,
 } from '../../lib/content/ids.js';
 
 describe('id and filename', () => {
@@ -77,5 +78,20 @@ describe('composeDatedId', () => {
   });
   it('throws on a malformed date', () => {
     expect(() => composeDatedId('nope', 'x', 'day')).toThrow();
+  });
+});
+
+describe('renameId', () => {
+  it('renames an undated id to the new slug', () => {
+    expect(renameId('about', 'about-us', null)).toBe('about-us');
+  });
+  it('keeps a dated post date prefix and swaps the slug', () => {
+    expect(renameId('2026-05-28-ski-tips', 'nordic-ski-tips', 'day')).toBe('2026-05-28-nordic-ski-tips');
+  });
+  it('keeps a year-granularity prefix', () => {
+    expect(renameId('2026-recap', 'year-in-review', 'year')).toBe('2026-year-in-review');
+  });
+  it('leaves a year-like slug tail intact', () => {
+    expect(renameId('2026-05-28-2024-recap', 'the-2024-recap', 'day')).toBe('2026-05-28-the-2024-recap');
   });
 });

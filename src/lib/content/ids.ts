@@ -80,3 +80,15 @@ export function composeDatedId(date: string, slug: string, datePrefix: DatePrefi
   }
   return `${prefix}-${slug}`;
 }
+
+/**
+ * Rename an id by swapping its slug, keeping any date prefix. slugFromId strips only the leading
+ * date prefix, so the id is exactly its prefix followed by its slug; this replaces the slug suffix
+ * with newSlug. A non-dated concept passes null, so the whole id is the slug and the id becomes
+ * newSlug. The caller validates newSlug with isValidId first.
+ */
+export function renameId(oldId: string, newSlug: string, datePrefix: DatePrefix | null): string {
+  const oldSlug = slugFromId(oldId, datePrefix);
+  const prefix = oldId.slice(0, oldId.length - oldSlug.length);
+  return prefix + newSlug;
+}

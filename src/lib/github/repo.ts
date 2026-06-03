@@ -216,7 +216,14 @@ export async function commitFiles(
       headers: { ...ghHeaders('application/vnd.github+json', token), 'Content-Type': 'application/json' },
       body: JSON.stringify({ base_tree: baseTree, tree }),
     });
-    if (!treeRes.ok) throw new Error(`GitHub tree create failed: ${treeRes.status} ${await treeRes.text()}`);
+    if (!treeRes.ok) {
+      // A 422 means an entry is unprocessable against the base tree, which a delete of an
+      // already-removed path produces (a concurrent delete or rename got there first). Treat it as
+      // the same non-fast-forward conflict the ref PATCH surfaces, so the caller fails safe with the
+      // reload-and-retry path instead of a raw 500.
+      if (treeRes.status === 422) throw new CommitConflictError(`${repo.branch} (tree create)`);
+      throw new Error(`GitHub tree create failed: ${treeRes.status} ${await treeRes.text()}`);
+    }
     const newTree = ((await treeRes.json()) as { sha: string }).sha;
 
     const commitRes = await fetch(gitUrl(repo, 'commits'), {

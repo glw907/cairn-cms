@@ -110,6 +110,22 @@ describe('commitFiles', () => {
     ).rejects.toThrow(/500/);
   });
 
+  it('treats a tree-create 422 (a delete of an absent path) as a commit conflict', async () => {
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(json({ object: { sha: 'head1' } })) // GET ref
+      .mockResolvedValueOnce(json({ tree: { sha: 'basetree' } })) // GET commit
+      .mockResolvedValueOnce(new Response('unprocessable', { status: 422 })); // POST trees
+
+    await expect(
+      commitFiles(
+        REPO,
+        [{ path: 'src/content/posts/gone.md', content: null }],
+        { message: 'm', author: { name: 'E', email: 'e@t' } },
+        'tok',
+      ),
+    ).rejects.toThrow(CommitConflictError);
+  });
+
   it('retries the whole sequence on a non-fast-forward ref update, then succeeds', async () => {
     const fetchMock = vi
       .spyOn(globalThis, 'fetch')

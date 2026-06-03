@@ -10,7 +10,7 @@ import { isValidId, slugify, filenameFromId, composeDatedId } from '../content/i
 import { appCredentials, type GithubKeyEnv } from '../github/credentials.js';
 import { listMarkdown, readRaw, commitFiles } from '../github/repo.js';
 import { cachedInstallationToken } from '../github/signing.js';
-import { emptyManifest, manifestEntryFromFile, parseManifest, serializeManifest, upsertEntry, inboundLinks, type LinkTarget, type InboundLink } from '../content/manifest.js';
+import { emptyManifest, manifestEntryFromFile, parseManifest, serializeManifest, upsertEntry, removeEntry, inboundLinks, type LinkTarget, type InboundLink } from '../content/manifest.js';
 import { CommitConflictError } from '../github/types.js';
 import type { CairnRuntime, ConceptDescriptor, FrontmatterField } from '../content/types.js';
 import type { Editor, Role } from '../auth/types.js';
@@ -324,5 +324,44 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     throw redirect(303, `/admin/${concept.id}/${id}?${savedQuery}`);
   }
 
-  return { layoutLoad, indexRedirect, listLoad, createAction, editLoad, saveAction, mintToken };
+  /** Delete an entry. Block-until-clean: refuse while inbound links exist (naming them), else commit
+   *  the file removal and the manifest patch in one commit. The inbound recheck here is the
+   *  authoritative gate, closing the load-to-delete race. */
+  async function deleteAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
+    const editor = sessionOf(event);
+    const concept = conceptOf(runtime, event.params);
+    const id = event.params.id ?? '';
+    if (!isValidId(id)) throw error(400, 'Invalid entry id');
+    const path = `${concept.dir}/${filenameFromId(id)}`;
+    const token = await mintToken(event.platform?.env ?? {});
+
+    const manifestRaw = await readRaw(runtime.backend, runtime.manifestPath, token);
+    const manifest = manifestRaw === null ? emptyManifest() : parseManifest(manifestRaw);
+    const inbound = inboundLinks(manifest, concept.id, id);
+    if (inbound.length) {
+      return fail(409, { inboundLinks: inbound });
+    }
+
+    const nextManifest = serializeManifest(removeEntry(manifest, concept.id, id));
+    try {
+      await commitFiles(
+        runtime.backend,
+        [
+          { path, content: null },
+          { path: runtime.manifestPath, content: nextManifest },
+        ],
+        { message: `Delete ${concept.label.toLowerCase()}: ${id}`, author: { name: editor.displayName, email: editor.email } },
+        token,
+      );
+    } catch (err) {
+      if (isConflict(err)) {
+        const message = 'This file changed since you opened it. Reload and try again.';
+        throw redirect(303, `/admin/${concept.id}/${id}?error=${encodeURIComponent(message)}`);
+      }
+      throw err;
+    }
+    throw redirect(303, `/admin/${concept.id}`);
+  }
+
+  return { layoutLoad, indexRedirect, listLoad, createAction, editLoad, saveAction, deleteAction, mintToken };
 }

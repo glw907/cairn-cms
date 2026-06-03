@@ -130,6 +130,24 @@ export function removeEntry(manifest: Manifest, concept: string, id: string): Ma
   return { version: 1, entries: manifest.entries.filter((e) => !(e.concept === concept && e.id === id)) };
 }
 
+/** One inbound linker: enough to name it and link to its edit page in the delete guard. */
+export interface InboundLink {
+  concept: string;
+  id: string;
+  title: string;
+  permalink: string;
+}
+
+/** Every entry whose outbound edges point at the target, excluding the target itself. The delete
+ *  guard reads this to name "what links here"; the backlinks panel will reuse it. Pure over the
+ *  manifest, so the request-time delete path and a unit test call it the same way. */
+export function inboundLinks(manifest: Manifest, concept: string, id: string): InboundLink[] {
+  return manifest.entries
+    .filter((e) => !(e.concept === concept && e.id === id))
+    .filter((e) => e.links.some((l) => l.concept === concept && l.id === id))
+    .map((e) => ({ concept: e.concept, id: e.id, title: e.title, permalink: e.permalink }));
+}
+
 /** A resolver backed by manifest targets, for the admin preview. A miss returns undefined, so the
  *  render step marks the link broken rather than throwing. The build resolver throws instead. */
 export function manifestLinkResolver(targets: { concept: string; id: string; permalink: string }[]): LinkResolve {

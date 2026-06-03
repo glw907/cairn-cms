@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { manifestEntryFromFile, serializeManifest, parseManifest, emptyManifest, verifyManifest, upsertEntry, removeEntry, manifestLinkResolver } from '../../lib/content/manifest.js';
+import { manifestEntryFromFile, serializeManifest, parseManifest, emptyManifest, verifyManifest, upsertEntry, removeEntry, manifestLinkResolver, inboundLinks } from '../../lib/content/manifest.js';
 import type { ManifestEntry } from '../../lib/content/manifest.js';
 import type { ConceptDescriptor } from '../../lib/content/types.js';
 
@@ -107,5 +107,30 @@ describe('manifestLinkResolver', () => {
     ]);
     expect(resolve({ concept: 'pages', id: 'a' })).toBe('/a');
     expect(resolve({ concept: 'posts', id: 'missing' })).toBeUndefined();
+  });
+});
+
+describe('inboundLinks', () => {
+  const manifest = {
+    version: 1 as const,
+    entries: [
+      { id: 'a', concept: 'posts', title: 'Post A', permalink: '/a', draft: false, links: [{ concept: 'pages', id: 'home' }] },
+      { id: 'b', concept: 'posts', title: 'Post B', permalink: '/b', draft: false, links: [{ concept: 'pages', id: 'home' }, { concept: 'posts', id: 'a' }] },
+      { id: 'home', concept: 'pages', title: 'Home', permalink: '/', draft: false, links: [{ concept: 'pages', id: 'home' }] },
+    ],
+  };
+  it('returns the entries that link to the target', () => {
+    expect(inboundLinks(manifest, 'pages', 'home').map((e) => e.id).sort()).toEqual(['a', 'b']);
+  });
+  it('carries each linker concept, id, title, and permalink', () => {
+    expect(inboundLinks(manifest, 'posts', 'a')).toEqual([
+      { concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' },
+    ]);
+  });
+  it('excludes a self-link', () => {
+    expect(inboundLinks(manifest, 'pages', 'home').some((e) => e.id === 'home')).toBe(false);
+  });
+  it('returns an empty list when nothing links to the target', () => {
+    expect(inboundLinks(manifest, 'posts', 'b')).toEqual([]);
   });
 });

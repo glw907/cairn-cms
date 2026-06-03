@@ -2,6 +2,21 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.23.0
+
+### Changed (breaking)
+- A `date` field now validates a real `YYYY-MM-DD` calendar date. A site adopting this version whose
+  committed content holds a malformed or impossible date will see it fail validation, which is the loud
+  failure this restores.
+- A `tags` field now enforces its declared `options` as a closed vocabulary. A committed value outside
+  the list fails validation. Use a `freetags` field for free-form tags.
+- `normalizeConcepts` now throws when a `summaryFields` key names no declared field, so a typo fails at
+  config load instead of silently producing an empty list card.
+
+### Changed
+- `AttributeField.options` is now `readonly string[]`, so a site can share one frozen `as const`
+  vocabulary across components. Read-only by use, so no call site changes.
+
 ## 0.22.0
 
 ### Added

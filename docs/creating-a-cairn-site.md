@@ -161,6 +161,13 @@ Implement `CairnAdapter` (from `@glw907/cairn-cms`):
 - `navMenu?`: the git-committed YAML menu the nav editor manages.
 - Filename-based ids (no slug codec needed; day-bearing and dayless filenames both flow through).
 
+A `date` field validates a real calendar date in canonical `YYYY-MM-DD` form. An impossible date such
+as `2026-02-30`, a non-padded value such as `2026-1-1`, or a value carrying a time all fail validation.
+A `tags` field enforces its declared `options` as a closed vocabulary, so a value outside the list fails
+to save; use a `freetags` field for free-form tags. A `summaryFields` key must name a declared field, and
+a stray key throws when the site config loads, so a typo fails loud at startup rather than producing an
+empty list card.
+
 A concept's URL policy lives in the YAML site-config, not the adapter. `normalizeConcepts` resolves
 each concept's `permalink` pattern and `datePrefix` from that policy.
 

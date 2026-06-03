@@ -4,7 +4,7 @@
 // prop, so this stays the only link-aware piece and the seam itself knows nothing about links.
 import type { Completion, CompletionContext, CompletionResult, CompletionSource } from '@codemirror/autocomplete';
 import type { LinkTarget } from '../content/manifest.js';
-import { formatCairnToken } from '../content/links.js';
+import { formatCairnToken, escapeLinkText } from '../content/links.js';
 
 /** The known concepts in display order; an unlisted concept sorts after these under its own name. */
 const CONCEPT_SECTIONS: Record<string, { name: string; rank: number }> = {
@@ -32,7 +32,7 @@ export function linkCompletions(targets: LinkTarget[], query: string): Completio
     label: t.title,
     section: sectionFor(t.concept),
     detail: t.draft ? 'Draft' : t.date,
-    apply: `[${t.title}](${formatCairnToken(t)})`,
+    apply: `[${escapeLinkText(t.title)}](${formatCairnToken(t)})`,
   }));
 }
 

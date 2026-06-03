@@ -52,4 +52,12 @@ describe('insertInlineLink', () => {
     expect(res.from).toBe(res.to);
     expect(res.doc.slice(0, res.from)).toBe('see [About](cairn:pages/about)');
   });
+  it('escapes brackets in the title when there is no selection', () => {
+    const res = insertInlineLink('see  here', 4, 4, 'cairn:pages/x', 'A [B] C');
+    expect(res.doc).toBe('see [A \\[B\\] C](cairn:pages/x) here');
+  });
+  it('does not escape a live selection (the author owns that text)', () => {
+    const res = insertInlineLink('see [keep] this', 4, 10, 'cairn:pages/x', 'Title');
+    expect(res.doc).toBe('see [[keep]](cairn:pages/x) this');
+  });
 });

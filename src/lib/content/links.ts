@@ -36,6 +36,13 @@ export function formatCairnToken(ref: CairnRef): string {
   return `cairn:${ref.concept}/${ref.id}`;
 }
 
+/** Escape the characters that would break a markdown link's display text: a backslash and the
+ *  square brackets that delimit the text. Used where a content title becomes link display text,
+ *  so an unbalanced bracket in a title cannot truncate the generated link. */
+export function escapeLinkText(text: string): string {
+  return text.replace(/[\\[\]]/g, (ch) => `\\${ch}`);
+}
+
 /** The cairn links a markdown body points at, in first-occurrence order, deduped by concept/id.
  *  Parses the body as mdast, so a token inside a code span or fence is never matched. */
 export function extractCairnLinks(body: string): CairnRef[] {

@@ -3,6 +3,8 @@
  * selection range to a new document and a new selection, with no DOM. The MarkdownEditor view
  * dispatches the result; keeping the logic here lets it unit-test without a browser.
  */
+import { escapeLinkText } from '../content/links.js';
+
 export type FormatKind = 'bold' | 'italic' | 'code' | 'heading' | 'quote' | 'ul' | 'link';
 
 export interface FormatResult {
@@ -45,7 +47,7 @@ export function applyMarkdownFormat(doc: string, from: number, to: number, kind:
  * blank lines, since a link is inline. Pure, so the editor dispatches the result.
  */
 export function insertInlineLink(doc: string, from: number, to: number, href: string, title: string): FormatResult {
-  const text = from < to ? doc.slice(from, to) : title;
+  const text = from < to ? doc.slice(from, to) : escapeLinkText(title);
   const inserted = `[${text}](${href})`;
   const end = from + inserted.length;
   return { doc: doc.slice(0, from) + inserted + doc.slice(to), from: end, to: end };

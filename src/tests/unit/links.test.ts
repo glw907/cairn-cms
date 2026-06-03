@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseCairnToken, extractCairnLinks, formatCairnToken } from '../../lib/content/links.js';
+import { parseCairnToken, extractCairnLinks, formatCairnToken, escapeLinkText } from '../../lib/content/links.js';
 
 describe('parseCairnToken', () => {
   it('parses a concept and a dated id', () => {
@@ -54,5 +54,15 @@ describe('formatCairnToken', () => {
   it('round-trips with parseCairnToken', () => {
     const ref = { concept: 'posts', id: 'hello' };
     expect(parseCairnToken(formatCairnToken(ref))).toEqual(ref);
+  });
+});
+
+describe('escapeLinkText', () => {
+  it('escapes a backslash and square brackets', () => {
+    expect(escapeLinkText('a [b] c')).toBe('a \\[b\\] c');
+    expect(escapeLinkText('back\\slash')).toBe('back\\\\slash');
+  });
+  it('leaves text without metacharacters unchanged', () => {
+    expect(escapeLinkText('About Us (2026)')).toBe('About Us (2026)');
   });
 });

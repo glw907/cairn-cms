@@ -41,4 +41,8 @@ describe('linkCompletions', () => {
     expect(waxing.detail).toBe('2026-01-04');
     expect(waxing.section).toEqual({ name: 'Posts', rank: 1 });
   });
+  it('escapes square brackets in the title for the apply text', () => {
+    const t = [{ concept: 'pages', id: 'about', permalink: '/about', title: 'A [B] C', draft: false }];
+    expect(linkCompletions(t, 'a')[0].apply).toBe('[A \\[B\\] C](cairn:pages/about)');
+  });
 });

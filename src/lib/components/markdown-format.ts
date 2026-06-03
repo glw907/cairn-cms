@@ -52,3 +52,14 @@ export function insertInlineLink(doc: string, from: number, to: number, href: st
   const end = from + inserted.length;
   return { doc: doc.slice(0, from) + inserted + doc.slice(to), from: end, to: end };
 }
+
+/**
+ * Unwrap every `[text](href)` link whose href is exactly `href`, replacing it with its display
+ * text. The save guard's one-click fix calls this to remove a broken cairn: link while keeping the
+ * words. The href is matched literally (escaped for the regex), so an unrelated link is untouched.
+ * The link text matches a run without a closing bracket, the same shape the editor inserts.
+ */
+export function unwrapCairnLink(doc: string, href: string): string {
+  const escaped = href.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return doc.replace(new RegExp(`\\[([^\\]]*)\\]\\(${escaped}\\)`, 'g'), '$1');
+}

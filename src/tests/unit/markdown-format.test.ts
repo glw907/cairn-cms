@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { applyMarkdownFormat, insertInlineLink, type FormatKind } from '../../lib/components/markdown-format.js';
+import { applyMarkdownFormat, insertInlineLink, unwrapCairnLink, type FormatKind } from '../../lib/components/markdown-format.js';
 
 describe('applyMarkdownFormat', () => {
   const wrap: { kind: FormatKind; doc: string; out: string; from: number; to: number }[] = [
@@ -59,5 +59,19 @@ describe('insertInlineLink', () => {
   it('does not escape a live selection (the author owns that text)', () => {
     const res = insertInlineLink('see [keep] this', 4, 10, 'cairn:pages/x', 'Title');
     expect(res.doc).toBe('see [[keep]](cairn:pages/x) this');
+  });
+});
+
+describe('unwrapCairnLink', () => {
+  it('unwraps the link with the given href to its display text', () => {
+    const doc = 'see [the guide](cairn:posts/gone) and [home](cairn:pages/home) now';
+    expect(unwrapCairnLink(doc, 'cairn:posts/gone')).toBe('see the guide and [home](cairn:pages/home) now');
+  });
+  it('unwraps every occurrence of that href', () => {
+    const doc = '[a](cairn:posts/x) and [b](cairn:posts/x)';
+    expect(unwrapCairnLink(doc, 'cairn:posts/x')).toBe('a and b');
+  });
+  it('leaves the document unchanged when the href is absent', () => {
+    expect(unwrapCairnLink('plain [keep](cairn:pages/home)', 'cairn:posts/gone')).toBe('plain [keep](cairn:pages/home)');
   });
 });

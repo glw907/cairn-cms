@@ -88,6 +88,45 @@ describe('content index slug', () => {
   });
 });
 
+describe('summary fields', () => {
+  const [withSummary] = normalizeConcepts({
+    posts: {
+      dir: 'p',
+      schema: defineFields([
+        { type: 'text', name: 'title', label: 'Title' },
+        { type: 'date', name: 'date', label: 'Date' },
+        { type: 'textarea', name: 'description', label: 'Description' },
+        { type: 'text', name: 'image', label: 'Image' },
+      ]),
+      summaryFields: ['description', 'image'],
+    },
+  });
+
+  const files: RawFile[] = [
+    { path: '/p/2026-01-01-a.md', raw: '---\ntitle: A\ndate: 2026-01-01\ndescription: An authored summary.\nimage: /og/a.png\n---\n\nBody A.' },
+    { path: '/p/2026-02-01-b.md', raw: '---\ntitle: B\ndate: 2026-02-01\ndescription: Only a description.\n---\n\nBody B.' },
+  ];
+  const index = createContentIndex(files, withSummary);
+
+  it('copies the named frontmatter keys onto summary.fields', () => {
+    const a = index.all().find((e) => e.id === '2026-01-01-a')!;
+    expect(a.fields.description).toBe('An authored summary.');
+    expect(a.fields.image).toBe('/og/a.png');
+  });
+
+  it('omits a named key the entry does not carry', () => {
+    const b = index.all().find((e) => e.id === '2026-02-01-b')!;
+    expect(b.fields.description).toBe('Only a description.');
+    expect('image' in b.fields).toBe(false);
+  });
+
+  it('yields an empty fields object when summaryFields is unset', () => {
+    const [plain] = normalizeConcepts({ pages: { dir: 'g', schema: defineFields([{ type: 'text', name: 'title', label: 'Title' }]) } });
+    const plainIndex = createContentIndex([{ path: '/g/about.md', raw: '---\ntitle: About\n---\n\nAbout.' }], plain);
+    expect(plainIndex.all()[0].fields).toEqual({});
+  });
+});
+
 describe('fromGlob', () => {
   it('maps a Vite eager raw glob record to RawFile[]', () => {
     expect(fromGlob({ '/a/x.md': 'raw-x' })).toEqual([{ path: '/a/x.md', raw: 'raw-x' }]);

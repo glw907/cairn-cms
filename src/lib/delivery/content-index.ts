@@ -29,6 +29,10 @@ export interface ContentSummary {
   excerpt: string;
   wordCount: number;
   draft: boolean;
+  /** The frontmatter keys the descriptor nominated via `summaryFields`, read off the validated,
+   *  normalized frontmatter. Namespaced so a nominated key cannot collide with a typed summary
+   *  field. Empty when the concept declares no `summaryFields`. */
+  fields: Record<string, unknown>;
 }
 
 /** The detail view: a summary plus the frontmatter and the body to render. The frontmatter
@@ -101,6 +105,10 @@ export function createContentIndex<F = Record<string, unknown>>(
       problems.push({ id, draft, errors: result.errors });
       continue;
     }
+    const summaryFieldValues: Record<string, unknown> = {};
+    for (const key of descriptor.summaryFields) {
+      if (key in result.data) summaryFieldValues[key] = (result.data as Record<string, unknown>)[key];
+    }
     entries.push({
       concept: descriptor.id,
       id,
@@ -113,6 +121,7 @@ export function createContentIndex<F = Record<string, unknown>>(
       excerpt: deriveExcerpt(body, { description: asString(raw.description) }),
       wordCount: wordCount(body),
       draft,
+      fields: summaryFieldValues,
       frontmatter: result.data as F,
       body,
     });

@@ -19,7 +19,7 @@ export interface AttributeField {
   /** Initial value; a string for text/select/icon, a boolean for boolean. */
   default?: string | boolean;
   /** Allowed values for `type: 'select'`. */
-  options?: string[];
+  options?: readonly string[];
   /** Helper text shown under the field. */
   help?: string;
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { emptyValues, type ComponentDef } from '../../lib/render/registry.js';
+import { emptyValues, type AttributeField, type ComponentDef } from '../../lib/render/registry.js';
 
 const cta: ComponentDef = {
   name: 'cta',
@@ -29,5 +29,13 @@ describe('emptyValues', () => {
   it('returns empty maps for a component with no attributes or slots', () => {
     const bare: ComponentDef = { name: 'rule', label: 'Rule', description: 'A divider.', use: 'Separate sections.', build: (ctx) => ctx.node };
     expect(emptyValues(bare)).toEqual({ attributes: {}, slots: {} });
+  });
+});
+
+describe('readonly attribute options', () => {
+  it('accepts a frozen as-const options vocabulary', () => {
+    const TONES = ['info', 'warning'] as const;
+    const field: AttributeField = { key: 'tone', label: 'Tone', type: 'select', options: TONES };
+    expect(field.options).toEqual(['info', 'warning']);
   });
 });

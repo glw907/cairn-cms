@@ -67,12 +67,14 @@ export function remarkDirectiveStamp(registry: ComponentRegistry) {
       const properties: Record<string, string> = { dataPrimitive: node.name };
       if (role) properties.dataRole = role;
       // Carry every declared attribute to hast so the dispatch partitioner can build the
-      // component context. For the icon attribute, fall back to the resolved icon (author value
-      // or the defaultIconByRole default) so a role default reaches the build through the one
-      // declared path. data-attr-<key> survives to the element; build() consumes it and returns a
-      // fresh element, so the marker never reaches the published DOM.
+      // component context. The icon attribute uses the already-resolved `icon` (the author value
+      // coerced through the same empty-is-absent rule above, or the defaultIconByRole default), so
+      // a role default reaches the build through the one declared path and a blank `icon=` falls
+      // back to that default the same way a missing one does. data-attr-<key> survives to the
+      // element; build() consumes it and returns a fresh element, so the marker never reaches the
+      // published DOM.
       for (const field of def?.attributes ?? []) {
-        const raw = field === iconField ? (attrs[field.key] ?? icon) : attrs[field.key];
+        const raw = field === iconField ? icon : attrs[field.key];
         if (raw != null) properties[dataAttrProp(field.key)] = raw;
       }
 

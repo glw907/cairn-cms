@@ -51,6 +51,10 @@ describe('remarkDirectiveStamp', () => {
     const html = await run(':::alert{role=caution}\n## H\n:::');
     expect(html).toContain('data-attr-icon="warning"');
   });
+  it('falls back to the role default when the author icon is blank', async () => {
+    const html = await run(':::alert{role=caution icon=""}\n## H\n:::');
+    expect(html).toContain('data-attr-icon="warning"');
+  });
   it('leaves an unknown container directive unstamped', async () => {
     const html = await run(':::mystery\n## H\n:::');
     expect(html).not.toContain('data-primitive');

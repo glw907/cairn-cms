@@ -43,10 +43,11 @@ On top of that base the engine admits exactly what its render needs.
 ## What the floor strips
 
 The strip is the `defaultSchema` behavior, which the engine extends but never weakens. It removes
-`<script>`, inline event-handler attributes (`onclick` and the rest), and the dangerous URI
-schemes `javascript:` and `data:`. Any tag or attribute outside the allowlist is dropped. While
-the `cairn:` admission widens the href protocol list, the dangerous-protocol strip is preserved
-alongside it.
+`<script>`, inline event-handler attributes (`onclick` and the rest), and dangerous link protocols
+such as `javascript:` and `data:` on an `href`. An image `src` still admits a `data:` URI under
+`defaultSchema`, so an inline data image renders. Any tag or attribute outside the allowlist is
+dropped. While the `cairn:` admission widens the href protocol list, the dangerous-protocol strip
+is preserved alongside it.
 
 ## What the floor rewrites
 

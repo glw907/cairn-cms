@@ -13,6 +13,10 @@
     "type": "git",
     "url": "git+https://github.com/glw907/cairn-cms.git"
   },
+  "homepage": "https://github.com/glw907/cairn-cms#readme",
+  "bugs": {
+    "url": "https://github.com/glw907/cairn-cms/issues"
+  },
   "keywords": [
     "cms",
     "sveltekit",
@@ -74,7 +78,8 @@
   },
   "files": [
     "dist",
-    "src/lib"
+    "src/lib",
+    "CHANGELOG.md"
   ],
   "peerDependencies": {
     "@sveltejs/kit": "^2",

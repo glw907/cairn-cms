@@ -28,6 +28,7 @@
   "scripts": {
     "package": "svelte-package && chmod +x dist/vite/bin.js",
     "check:package": "npm run package && publint --strict && attw --pack . --ignore-rules no-resolution cjs-resolves-to-esm internal-resolution-error",
+    "check:reference": "npm run package && node scripts/reference-coverage.mjs",
     "prepare": "npm run package",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest run",

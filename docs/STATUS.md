@@ -58,15 +58,34 @@ internal helpers leaked through `export *`; the `.` root re-exports the whole de
 those symbols document on two pages; and `/sveltekit` re-exports the public route-data types whose
 home is `/delivery`, forcing a `PublicListData` alias off a `ListData` collision.
 
-**Immediate next action: brainstorm and write Phase 3 (Explanation) of the documentation initiative,
-in a fresh session from the cairn-cms directory on `main`.** Phase 3 has no plan yet. Run
-`superpowers:brainstorming` first to settle its open design calls with the user (what concepts the
-explanation arm covers and how each page relates to the reference set the prior phase landed), then
-`superpowers:writing-plans` to author the numbered plan under `docs/superpowers/plans/`. The
-initiative design spec (`docs/superpowers/specs/2026-06-04-cairn-docs-initiative-design.md`) scopes
-the explanation arm, and the just-landed `docs/reference/` pages are the cross-link target. Do not
-auto-write the plan without the user's design calls. The phase runs on `main` directly, publishes
-nothing, and touches no engine code, so no review subagents or `/admin` smoke apply.
+**Phase 3 (Explanation) is brainstormed, specced, and planned (2026-06-04), not yet executed.** The
+design spec is `docs/superpowers/specs/2026-06-04-cairn-docs-phase-3-explanation-design.md` (`3855c43`);
+the plan is `docs/superpowers/plans/2026-06-04-cairn-docs-phase-3-explanation.md` (`da0dfba`). Five
+tasks: relocate `data-architecture.md` to `explanation/data-tiers.md` (Sonnet), three new synthesis
+pages on Opus (`architecture.md` with two Mermaid diagrams, `security-model.md` plus a `SECURITY.md`
+repoint, `content-model.md`), and the explanation index plus the docs-index flip, with the
+functional-spec reconciliation pointer folded into the last task (Sonnet). Settled design calls: four
+pages, explain-and-link per Diátaxis (each links the Phase 2 reference, never restates a signature),
+prose-first with two to three Mermaid diagrams across the arm, and depth held to how-it-works plus the
+one clarifying rejected alternative. The page gate is the docs gate (prose-guard no blocking tell,
+links resolve, claims cross-checked by hand); there is no coverage gate, because explanation has no
+typed surface to enumerate.
+
+The brainstorm surfaced three engine improvements, now captured as a release gate (see `ROADMAP.md`
+"Engine hardening before the next release", the friction log, and the `cairn-engine-hardening-release-gate`
+memory): narrow the public export surface (also ahead of the scaffolder), harden render attribute
+sinks, and consolidate the URL-identity model. They must land before the next `0.x` publish. The docs
+initiative itself publishes nothing, so it does not trip the gate.
+
+**Immediate next action: execute Phase 3,
+`docs/superpowers/plans/2026-06-04-cairn-docs-phase-3-explanation.md`, `subagent-driven`
+(`superpowers:subagent-driven-development`, one `cairn-implementer` per page), from the cairn-cms
+directory on `main`. Start at Task 1.** The design is settled and approved, so skip brainstorming. It
+runs on `main` directly (docs-only, publishes nothing, no version bump). Dispatch Tasks 2, 3, and 4
+(`architecture.md`, `security-model.md`, `content-model.md`) `model: opus` for the synthesis and the
+why framing; Tasks 1 and 5 fit the Sonnet default. The page gate is the docs gate; no review subagents
+or `/admin` smoke apply (no engine, Worker, auth, or UI surface change). After Phase 3 lands, Phase 4
+(Guides) is next.
 
 ## Queued engine capstone: P4, the create-cairn-site scaffolder
 

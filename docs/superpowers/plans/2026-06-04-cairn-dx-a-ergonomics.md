@@ -489,3 +489,38 @@ git commit -m "Add a changelog convention and an upgrade guide, bump 0.25.0"
 ## Versioning and publishing
 
 DX-A bumps to `0.25.0` (Task 6). Publishing follows the rolling-window practice and is held until the user asks, the same as the prior passes. Do not publish or push as part of executing this plan.
+
+---
+
+## Post-mortem (executed 2026-06-03)
+
+DX-A executed subagent-driven, one `cairn-implementer` per task (Sonnet throughout, the tasks were mechanical), on a feature worktree off `main` (`dx-a-ergonomics`). Six task commits `38499ef..e867ab5` plus a review-gate fold-in `3cb5860`. The branch fast-forward merged to local `main` at `3cb5860` and the worktree was removed. **Local only, not pushed, not published.** The minor bumps to `0.25.0`.
+
+### What was built
+
+- **Task 1 (907 #1):** `createRenderer`'s registry parameter is optional, defaulting to `defineRegistry({ components: [] })`, so a plain-prose blog calls `createRenderer()`. The default is evaluated per call, so no registry object is shared across renderers. A new no-argument render test locks it.
+- **Task 2 (907 #6):** `composeRuntime` takes one `ComposeInput` object, `composeRuntime({ adapter, siteConfig, extensions? })`, and derives the per-concept URL policy from `siteConfig` via `urlPolicyFrom`, the same call the delivery path uses (`normalizeConcepts(content, urlPolicyFrom(siteConfig))`). A missing `siteConfig` throws. `ComposeInput` is exported from the package root. The new parity test pins the runtime and delivery derivations to one source.
+- **Task 3 (907 #6):** the showcase exports a single parsed `siteConfig` from `cairn.config.ts`, consumed in `content.ts` and passed at every `composeRuntime` call (the four admin routes plus healthz). This is the pattern the scaffolder will emit.
+- **Task 4 (907 #4):** the `freetags` two-layer invariant is pinned with two regression tests (the validator omits an absent tags key; the read model fills `[]`) and named in the type and validator comments. No behavior change.
+- **Task 5 (907 #8):** `docs/render-sanitize-floor.md` states what the floor keeps, strips, and rewrites, written from the code.
+- **Task 6 (907 #5):** `docs/upgrading.md` collects the `0.x` renames with a consumer action each, `CHANGELOG.md` adopts the "Consumers must:" convention in a `0.25.0` entry, and the version bumped. The stale committed lockfile (`0.21.0`) was reconciled to `0.25.0`.
+
+### Field-name adjustment (Task 2)
+
+The plan's test snippet asserted on `posts.routing.pattern`, but the real `ConceptDescriptor` exposes the resolved permalink as `posts.permalink` (confirmed in `src/lib/content/types.ts` and the pre-existing `content-compose.test.ts`). The implementer used `posts.permalink`, exactly the adaptation the plan flagged.
+
+### Gate (verified first-hand)
+
+At the merge tip `3cb5860`: `npm run check` 775 files 0 errors 0 warnings, `npm test` 110 files / 643 tests exit 0. The showcase carries its own gate (Task 3): showcase `check` 405 files 0 errors, production build exit 0. One load-induced test timeout flake (`delivery-head-split.test.ts` at 5000ms under machine load) cleared on a re-run and in isolation; two consecutive full-suite runs at and after the fold-in were clean.
+
+### Review gate
+
+The simplifier changed nothing: the compose rewrite mirrors the delivery path by construction, the `!siteConfig` guard is a tested defense against untyped callers, and the empty-registry default matches the existing idiom. A high-effort Opus review returned **SHIP**, no Critical and no Important. It verified the high-risk items first-hand: every `CairnRuntime` field is preserved across the compose rewrite, the policy derivation matches the delivery path exactly, the throw message matches the test, no positional caller remains, and the per-call default registry carries no shared-mutation risk. Two minor accuracy nits folded in as `3cb5860`: the sanitize-floor doc scopes the `data:` strip to `href` (an image `src` still admits a `data:` URI under `defaultSchema`), and the validator comment names `freetags` alongside `tags` in the omit rule. The Svelte, a11y, Worker, and auth reviewers and the live `/admin` smoke did not apply (no auth, Worker, or admin-UI surface change; the showcase admin routes changed only their `composeRuntime` call shape).
+
+### Showcase install reproducibility (carry-forward for the scaffolder)
+
+Task 3 surfaced a real DX finding. A naive `npm install` inside `examples/showcase` pulls a newer `@sveltejs/kit`/`vite` than the linked root pins, and `svelte-check` then reports duplicate-identifier errors inside `node_modules` (two physical kit/vite copies in the include graph), none in showcase `src/`. The implementer deduped by aligning the showcase's installed kit/vite to the root's exact versions, then reverted the showcase `package.json` to its committed loose caret ranges. The scaffolder (or a showcase install doc) should pin or dedupe the SvelteKit toolchain against the linked package so this gate stays reproducible.
+
+### Handoff item applied at pass-end
+
+The `cairn-pass` pass-end ritual gained a step enforcing the "Consumers must:" changelog line on any breaking change. That skill file lives outside this repo, so it was edited at pass-end, not committed here.

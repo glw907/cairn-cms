@@ -6,6 +6,56 @@ orientation is the workspace `CLAUDE.md`. Locked architecture decisions and the 
 the functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`).
 Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`.
 
+## Where the work is (2026-06-04, DX-A engine-surface ergonomics executed; 0.25.0 unpublished)
+
+**DX-A is executed and review-gated, landed on local `main`.** It ran subagent-driven, one
+`cairn-implementer` per task (Sonnet throughout, the tasks were mechanical), on a feature worktree off
+`main` (`dx-a-ergonomics`). Six task commits `38499ef..e867ab5` plus a review-gate fold-in `3cb5860`,
+fast-forward merged to `main` at `3cb5860`, worktree removed. **Local only, not pushed, not published.**
+The minor bumps to `0.25.0`.
+
+The pass closes five small 907-migration findings. `createRenderer()` now defaults its registry to the
+empty registry, so a plain-prose blog calls it with no argument (907 #1). `composeRuntime` takes one
+`ComposeInput` object, `composeRuntime({ adapter, siteConfig, extensions? })`, and derives the per-concept
+URL policy from `siteConfig` through the same `urlPolicyFrom` call the delivery path uses, so the runtime
+and delivery permalinks cannot diverge and a missing `siteConfig` throws (907 #6); the showcase wires the
+single shared `siteConfig` at every call, the pattern the scaffolder will emit. The `freetags` two-layer
+invariant is pinned with regression tests and named in the type and validator comments, no behavior change
+(907 #4). `docs/render-sanitize-floor.md` documents what the floor keeps, strips, and rewrites (907 #8).
+`docs/upgrading.md` plus a "Consumers must:" `CHANGELOG.md` convention collect the `0.x` renames with a
+consumer action each (907 #5).
+
+Gate at the merge tip `3cb5860`, run first-hand: `npm run check` 775 files 0/0, `npm test` 110 files /
+643 tests exit 0; the showcase carries its own gate (Task 3), `check` 405 files 0 errors and a production
+build exit 0. The review gate was the simplifier (no change, the compose rewrite mirrors the delivery path
+by construction) plus a high-effort Opus `/code-review` that returned SHIP with no Critical and no
+Important; two minor accuracy nits folded in as `3cb5860` (the sanitize-floor doc scopes the `data:` strip
+to `href` since an image `src` still admits a `data:` URI under `defaultSchema`, and the validator comment
+names `freetags` alongside `tags`). The Svelte, a11y, Worker, and auth reviewers and the live `/admin`
+smoke did not apply. The full post-mortem is in the plan file
+`docs/superpowers/plans/2026-06-04-cairn-dx-a-ergonomics.md`.
+
+**One carry-forward for the scaffolder (from Task 3).** A naive `npm install` inside `examples/showcase`
+pulls a newer `@sveltejs/kit`/`vite` than the linked root pins, and `svelte-check` then reports
+duplicate-identifier errors inside `node_modules` (two physical kit/vite copies), none in showcase `src/`.
+The scaffolder or a showcase install doc should pin or dedupe the SvelteKit toolchain against the linked
+package so the gate stays reproducible.
+
+**The `cairn-pass` ritual gained the "Consumers must:" step.** The pass-end consolidation now enforces a
+"Consumers must:" line on any breaking change in `CHANGELOG.md`. That skill file lives outside this repo,
+so it was edited at pass-end (the DX-A handoff item), not committed here.
+
+**Immediate next action: brainstorm and draft DX-B, then execute it.** DX-B is the manifest Vite plugin,
+scoped in the design spec `docs/superpowers/specs/2026-06-04-cairn-dx-907-hardening-design.md` (the locked
+fork: the manifest toolchain is rebuilt as a Vite plugin that verifies on build, fails the build red with a
+real diff, and shares one resolver with the build). Its detailed plan is authored just-in-time now that
+DX-A has landed, because the plugin design sharpens once the node-safe subpath (907 #3) is real. It folds
+907 #2/#3/#7 and ecnordic #13/#4. Run `superpowers:brainstorming` first to settle the open plugin-design
+decisions with the user, then `superpowers:writing-plans`. After DX-B lands, P4 (the `create-cairn-site`
+scaffolder) is the capstone, carrying the remaining ecnordic items (5, 6, 14) and the showcase-install
+carry-forward above. Publishing stays held: `0.24.0` is the registry `latest`, and `main` carries the
+unpublished `0.25.0` (DX-A) until the window publishes together before a site consumes it.
+
 ## Where the work is (2026-06-04, 907 migration landed; DX-A spec + plan written, not executed)
 
 **The 907-life migration shipped** (907 Pass 16, 2026-06-04) on `^0.24.0` with `datePrefix: 'day'`, the

@@ -11,7 +11,7 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-04): Documentation Initiative, Phase 3 (Explanation)
+## Immediate next action (2026-06-04): Documentation Initiative, Phase 4 (Guides)
 
 The documentation initiative is the current priority. It builds a self-contained docs set for
 external adopters plus the project-legibility files, and it makes documentation a standing pass
@@ -58,34 +58,54 @@ internal helpers leaked through `export *`; the `.` root re-exports the whole de
 those symbols document on two pages; and `/sveltekit` re-exports the public route-data types whose
 home is `/delivery`, forcing a `PublicListData` alias off a `ListData` collision.
 
-**Phase 3 (Explanation) is brainstormed, specced, and planned (2026-06-04), not yet executed.** The
-design spec is `docs/superpowers/specs/2026-06-04-cairn-docs-phase-3-explanation-design.md` (`3855c43`);
-the plan is `docs/superpowers/plans/2026-06-04-cairn-docs-phase-3-explanation.md` (`da0dfba`). Five
-tasks: relocate `data-architecture.md` to `explanation/data-tiers.md` (Sonnet), three new synthesis
-pages on Opus (`architecture.md` with two Mermaid diagrams, `security-model.md` plus a `SECURITY.md`
-repoint, `content-model.md`), and the explanation index plus the docs-index flip, with the
-functional-spec reconciliation pointer folded into the last task (Sonnet). Settled design calls: four
-pages, explain-and-link per Diátaxis (each links the Phase 2 reference, never restates a signature),
-prose-first with two to three Mermaid diagrams across the arm, and depth held to how-it-works plus the
-one clarifying rejected alternative. The page gate is the docs gate (prose-guard no blocking tell,
-links resolve, claims cross-checked by hand); there is no coverage gate, because explanation has no
-typed surface to enumerate.
+**Phase 3 (Explanation) landed on `main` 2026-06-04.** It built the understanding-oriented arm under
+`docs/explanation/`: four pages plus an index, with the functional spec reconciled to point at the arm.
+It ran subagent-driven, one `cairn-implementer` per page (Opus for the three synthesis pages, Sonnet
+for the relocate and the wiring), five task commits `eab6c61..69ba190` on `main` directly. The plan is
+`docs/superpowers/plans/2026-06-04-cairn-docs-phase-3-explanation.md` (post-mortem appended there); the
+design spec is `docs/superpowers/specs/2026-06-04-cairn-docs-phase-3-explanation-design.md`. The pages:
+`data-tiers.md` (relocated from `docs/data-architecture.md`, `git mv` with history preserved, light
+refresh, no drift found), `architecture.md` (the layered model and the commit/publish flow, two Mermaid
+diagrams), `security-model.md` (auth, GitHub-App commit trust, render safety, origin and CSRF, with
+`SECURITY.md` repointed to the new hub), `content-model.md` (fixed concepts, URL identity, schema as the
+source of truth, the content graph, one Mermaid diagram), and `explanation/README.md` (the arm index,
+flipping the `docs/README.md` Explanation line). Three Mermaid diagrams total across the arm, inside the
+two-to-three budget.
 
-The brainstorm surfaced three engine improvements, now captured as a release gate (see `ROADMAP.md`
+The arm corrected the stale source docs against the current engine where it drew on them: CodeMirror not
+Carta, the `render` adapter method not `renderPreview`, self-owned D1 magic-link not better-auth, fixed
+concepts not `collections[]`. The render-sink honesty check confirmed the documented residual stays
+site-developer-controlled (a component `build()` reaching a URL or style sink), not reachable by an author
+through markdown alone, so no escalation; the existing friction entry stands. Phase 3 added one friction
+entry (the URL-identity spread, corroborated firsthand while writing `content-model.md`).
+
+The page gate ran per page and again at the phase end: `prose-guard` shows no blocking tell on any of the
+seven authored files (advisory tells only: tricolon, low burstiness, anaphora, passive), every relative
+link across the arm and the flipped `docs/README.md` and the repointed `SECURITY.md` resolves, and
+`grep -rn data-architecture docs/README.md SECURITY.md` is clean (the old path is retired from the live
+public docs; historical references under `docs/superpowers/` and dated `docs/STATUS.md` entries stay as
+records). No `npm run check`, `npm test`, review subagent, or `/admin` smoke applied, because the arm
+changes no engine code and adds no test.
+
+The three release-gated engine improvements the brainstorm surfaced stand unchanged (see `ROADMAP.md`
 "Engine hardening before the next release", the friction log, and the `cairn-engine-hardening-release-gate`
-memory): narrow the public export surface (also ahead of the scaffolder), harden render attribute
-sinks, and consolidate the URL-identity model. They must land before the next `0.x` publish. The docs
-initiative itself publishes nothing, so it does not trip the gate.
+memory): narrow the public export surface, harden render attribute sinks, consolidate the URL-identity
+model. They must land before the next `0.x` publish. The docs initiative publishes nothing, so it does not
+trip the gate.
 
-**Immediate next action: execute Phase 3,
-`docs/superpowers/plans/2026-06-04-cairn-docs-phase-3-explanation.md`, `subagent-driven`
-(`superpowers:subagent-driven-development`, one `cairn-implementer` per page), from the cairn-cms
-directory on `main`. Start at Task 1.** The design is settled and approved, so skip brainstorming. It
-runs on `main` directly (docs-only, publishes nothing, no version bump). Dispatch Tasks 2, 3, and 4
-(`architecture.md`, `security-model.md`, `content-model.md`) `model: opus` for the synthesis and the
-why framing; Tasks 1 and 5 fit the Sonnet default. The page gate is the docs gate; no review subagents
-or `/admin` smoke apply (no engine, Worker, auth, or UI surface change). After Phase 3 lands, Phase 4
-(Guides) is next.
+**Immediate next action: brainstorm and write Phase 4 (Guides), the how-to arm of the docs initiative,
+then execute it subagent-driven on `main`.** Phase 4 is not yet planned; the initiative writes each
+plan just-in-time after the prior one lands. The initiative design spec
+(`docs/superpowers/specs/2026-06-04-cairn-docs-initiative-design.md`) scopes the Guides arm. Run
+`superpowers:brainstorming` first to settle the open calls with the user (which task-oriented guides the
+arm carries, how each leans on the Phase 2 reference and the Phase 3 explanation pages, and how the
+`docs/creating-a-cairn-site.md` SUPERSEDED disposition and the P4 scaffolder relate to the guides),
+since the spec leaves the per-guide scope open. Do not auto-write the plan without the user's design
+calls. Then write the numbered plan, pre-bake the handoff, and execute it `subagent-driven` with one
+`cairn-implementer` per guide. The page gate is the docs gate (prose-guard no blocking tell, links
+resolve, claims cross-checked by hand); the arm publishes nothing and touches no engine code, so no
+version bump, review subagent, or `/admin` smoke applies. After Guides, Phase 5 (Tutorial) and Phase 6
+(the process phase) remain, then P4 (the scaffolder).
 
 ## Queued engine capstone: P4, the create-cairn-site scaffolder
 

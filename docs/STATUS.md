@@ -38,11 +38,29 @@ adds `homepage`/`bugs`), relocated the historical docs under `docs/internal/` wi
 vulnerability reporting could not be enabled because the repo is private (the API 404s); `SECURITY.md`
 describes the intended public-state channel, and the gap is logged in the friction log.
 
-**Next: Phase 2 (Reference).** Brainstorm the open calls with the user, then write the just-in-time
-plan, then execute it with `superpowers:subagent-driven-development`, one `cairn-implementer` per task.
-The Reference arm is one page per export subpath from `package.json` (`.`, `/sveltekit`,
-`/components`, `/delivery`, `/delivery/data`, `/delivery/head`, `/vite`, plus the `cairn-manifest`
-bin), each hand-curated and checked against the exported type surface and `examples/showcase`.
+**Phase 2 (Reference) is brainstormed, specced, and planned (2026-06-04), not yet executed.** The
+design spec is `docs/superpowers/specs/2026-06-04-cairn-docs-phase-2-reference-design.md`; the plan is
+`docs/superpowers/plans/2026-06-04-cairn-docs-phase-2-reference.md` (`23e30af`). Nine tasks: an
+export-coverage gate (`scripts/reference-coverage.mjs`, TS-checker enumeration, RED output is the page
+worklist), seven hand-curated pages under `docs/reference/` (one per export subpath, `/delivery/head`
+folded into `delivery.md`, the `cairn-manifest` bin as its own page), and a reference index that flips
+the docs-index Reference line. Two design calls settled with the user: tiered depth (every export
+named, primary API gets a worked example, type aliases get a signature and a line), and `core.md`
+splits into Stable / Low-level / Types tiers because `.` exposes 174 exports including internal
+helpers leaked through `export *` (logged as an over-export friction finding for a future
+surface-narrowing engine pass). Real export counts proven against `dist/` during planning: 174 core,
+29 sveltekit, 39 delivery-data, 14 components, 6 vite, 6 delivery-own, 1 head.
+
+**Immediate next action: execute Phase 2,
+`docs/superpowers/plans/2026-06-04-cairn-docs-phase-2-reference.md`, `subagent-driven`
+(`superpowers:subagent-driven-development`, one `cairn-implementer` per page), from the cairn-cms
+directory on `main`. Start at Task 1.** The design is settled and approved, so skip brainstorming. It
+runs on `main` directly (docs-only, publishes nothing, no version bump). Dispatch Task 2 (`core.md`)
+`model: opus` for its 174-export stability-tier judgment; the rest fit the Sonnet default. The page
+gate is the docs gate (the coverage check `OK`, `prose-guard` no blocking tell, links resolve), not
+the unit suite; Task 1 is the exception and clears `npm run check` + `npm test` since it adds a test.
+No review subagents or `/admin` smoke apply (no engine, Worker, auth, or UI surface change). After
+Phase 2 lands, Phase 3 (Explanation) is next.
 
 ## Queued engine capstone: P4, the create-cairn-site scaffolder
 

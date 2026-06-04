@@ -9,7 +9,7 @@ All notable changes to this project are recorded here, most recent first.
   every build and fails the build with a diff naming what drifted. The check runs outside the prerender
   lifecycle, so `handleHttpError` cannot mask it. Consumers must: add `cairnManifest({ configModule,
   content, manifestPath })` to the Vite config.
-- A `cairn-manifest` bin regenerates the committed manifest from a Vite context. To adopt it, set the
+- A `cairn-manifest` bin regenerates the committed manifest from a Vite context. Consumers must: set the
   regenerate script to `"cairn:manifest": "cairn-manifest"` and delete the hand-written
   `scripts/build-manifest.mjs`.
 - A node-safe `@glw907/cairn-cms/delivery/data` entry exposes the pure delivery projections with no

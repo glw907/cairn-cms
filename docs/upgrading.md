@@ -1,0 +1,42 @@
+# Upgrading cairn
+
+cairn is a `0.x` library and it breaks often. While the version stays under `1.0`, a minor bump can
+still carry a breaking rename or a contract change that a consuming site has to follow before it will
+compile again. Every breaking change in `CHANGELOG.md` carries a "Consumers must:" line. That line
+names the action a site has to take. When you cross several versions in one jump, read each entry's
+"Consumers must:" line and apply them oldest first.
+
+The list below collects the renames a consumer crosses over the `0.x` window so far. They run oldest
+first, one heading per rename, with the action each one needs spelled out.
+
+## 0.7.0: the adapter `renderPreview` member became `render`
+
+The adapter's preview function was renamed from `renderPreview` to `render`. The matching `EditPage`
+prop moved with it. Consumers must: rename the adapter's `renderPreview` to `render`, and rename the
+`EditPage` `renderPreview` prop to `render`.
+
+## 0.9.0: the `EditPage` `preview` prop was dropped
+
+The `EditPage` component dropped its `preview` prop. That prop had passed Carta preview plugins, and
+the editor moved to CodeMirror in this window, so the plugin array no longer applies. Consumers must:
+remove the `preview` prop from every `EditPage` usage.
+
+## 0.13.0: the validator moved off the adapter contract
+
+A concept config dropped its separate `fields` and `validate` members for one generic `schema`
+member built with `defineFields`. The `validateFields` helper became internal and is no longer
+re-exported from the package entry. Consumers must: declare each concept's fields through the
+`schema` member, build it with `defineFields`, and stop importing `validateFields` from the package
+root.
+
+## 0.25.0: `composeRuntime` takes one object
+
+`composeRuntime` now takes a single object, `composeRuntime({ adapter, siteConfig, extensions? })`,
+and derives the per-concept URL policy from `siteConfig`. The loose third `urlPolicy` argument is
+gone, and a missing `siteConfig` throws. Consumers must: pass the parsed site config to every
+`composeRuntime` call and drop any hand-passed URL policy.
+
+## 0.25.0: `createRenderer()` defaults its registry
+
+`createRenderer()` now defaults its registry to the empty registry. A plain-prose site can call
+`createRenderer()` with no argument. Consumers must: nothing. Passing a built registry is unchanged.

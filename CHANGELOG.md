@@ -2,6 +2,23 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.25.0
+
+### Changed (breaking)
+- `composeRuntime` now takes a single object, `composeRuntime({ adapter, siteConfig, extensions? })`,
+  and derives the per-concept URL policy from `siteConfig`. The loose third `urlPolicy` argument is
+  gone, and a missing `siteConfig` throws. Consumers must: pass the parsed site config to every
+  `composeRuntime` call and drop any hand-passed URL policy.
+
+### Changed
+- `createRenderer()` now defaults its registry to the empty registry, so a plain-prose site calls
+  `createRenderer()` with no argument. Consumers must: nothing; passing a built registry is unchanged.
+
+### Docs
+- A render sanitize-floor reference (`docs/render-sanitize-floor.md`) states what the floor keeps,
+  strips, and rewrites, including the `target="_blank"` rel policy.
+- An upgrade guide (`docs/upgrading.md`) collects the `0.x` renames with a consumer action each.
+
 ## 0.24.0
 
 ### Added

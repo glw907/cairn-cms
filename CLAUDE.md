@@ -17,7 +17,7 @@ site that consumes the package through the relative `file:../..` path.
 
 The work is a clean, test-first **rebuild** that began 2026-05-28. The canonical source of truth is
 the functional spec at `docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`. It
-supersedes the older `docs/PLAN.md` and `docs/ARCHITECTURE.md`, which remain only as history. Read
+supersedes the older `docs/internal/PLAN.md` and `docs/internal/ARCHITECTURE.md`, which remain only as history. Read
 the spec at the start of a rebuild session.
 
 The rebuild ran as a numbered plan series, 00 (foundation) through 08 (scaffolder), each plan

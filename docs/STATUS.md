@@ -6,6 +6,74 @@ orientation is the workspace `CLAUDE.md`. Locked architecture decisions and the 
 the functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`).
 Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`.
 
+## Where the work is (2026-06-04, DX-B manifest Vite plugin executed; 0.26.0 unpublished)
+
+**DX-B is executed and review-gated, landed on local `main`.** It ran subagent-driven, one
+`cairn-implementer` per task (Opus for the Task 1 spike, the Task 4 package entry, the Task 5 bin, and the
+Task 6 showcase finalize; Sonnet for the barrel split, the diff, and the version bump), on a feature
+worktree off `main` (`dx-b-manifest-plugin`). Seven task commits `26fee41..bb4823b`, a review fold-in
+`fce30ab`, and the post-mortem `8403981`, fast-forward merged to `main` at `8403981`, worktree removed.
+**Local only, not pushed, not published.** The minor bumps to `0.26.0`.
+
+The pass replaces the per-consumer manifest boilerplate with a `cairnManifest()` Vite plugin from a new
+`@glw907/cairn-cms/vite` entry. The plugin owns a `virtual:cairn-manifest` module that runs
+`import.meta.glob` over the configured content globs inside the app's own Vite graph, builds the manifest,
+and verifies it against the committed file in `buildStart` through a nested Vite SSR load, so a drift fails
+the build as a hard error outside the prerender lifecycle (ecnordic #4 closed by construction, even under
+`handleHttpError: 'warn'`). A shipped `cairn-manifest` bin evaluates the same virtual module in write mode
+to regenerate (907 #2). A node-safe `@glw907/cairn-cms/delivery/data` barrel re-exports the pure
+projections with no `@sveltejs/kit` in the graph, so the plugin and the bin import the builder from plain
+Node (907 #3). `verifyManifest` now names the added, removed, and changed entries through a pure
+`diffManifests` (907 #7). The in-graph virtual module is the one shared resolver the build and the
+regenerate both use (ecnordic #13). The showcase drops `scripts/build-manifest.mjs`, wires the plugin, and
+removes its in-`content.ts` verify.
+
+Gate at the fold-in tip `fce30ab`, run first-hand: `npm run check` 781 files 0/0, `npm test` 113 files /
+655 tests exit 0, `npm run check:package` all entries green including the new `./vite` and `./delivery/data`
+subpaths. The headline end-to-end proof is the showcase production build with `handleHttpError: 'warn'` set:
+clean build exit 0, a deliberately stale manifest fails the build exit 1 in `buildStart` at `0 modules
+transformed` with the structured diff printed, and a regenerate goes green. The Task 1 spike proved the
+nested-SSR verify mechanism against the real showcase toolchain before the public surface was built. The
+review gate was the simplifier (no change) plus a high-effort three-angle `/code-review` (no critical bug;
+node-safety verified empirically by importing the built `dist/delivery/data.js` from plain Node). Two
+confirmed findings folded in as `fce30ab`: the diff now canonicalizes the built side so a links reorder no
+longer reports a false `links` drift, and the recursion-avoidance plugin strip is now recursive so a nested
+`cairnManifest()` cannot survive into the nested verify server. The Worker, auth, Svelte, and a11y reviewers
+and the live `/admin` smoke did not apply. The full post-mortem is in
+`docs/superpowers/plans/2026-06-04-cairn-dx-b-manifest-plugin.md`.
+
+**Migration gotchas this pass lands** (all in the `0.26.0` changelog with `Consumers must:` lines). A
+consumer adds `cairnManifest({ configModule, content, manifestPath })` to its Vite config, switches the
+regenerate script to `"cairn:manifest": "cairn-manifest"` and deletes the hand-written
+`scripts/build-manifest.mjs`, and moves any plain-Node import of a delivery data helper (such as
+`buildSiteManifest`) from `@glw907/cairn-cms/delivery` to `@glw907/cairn-cms/delivery/data`.
+
+**Carry-forwards (for P4 or a later touch).** The `cairn-manifest` bin resolves its paths against
+`process.cwd()` while the plugin verifies against the resolved Vite `config.root`; they agree for every
+SvelteKit consumer run from its project root, and diverge only under a custom Vite `root` (the principled
+fix separates the config-file location from the Vite root, deferred). The node-safety guarantee is proven
+empirically this pass, so a plain-Node dist-spawn test would rot-proof it. A first build before
+`cairn:manifest` has ever run (a freshly scaffolded site with no manifest file) fails with a cryptic Vite
+resolve error rather than a "run cairn:manifest" message, which P4 should address since it emits the wiring.
+The DX-A showcase-install carry-forward (pin or dedupe the SvelteKit toolchain against the linked package)
+now also covers a symlink-dev artifact this pass surfaced: the showcase `npm run check` reports about 24
+type errors in a dev worktree, all in `node_modules` or the `vite.config.ts` plugin-type line and none in
+showcase `src/`, because the worktree-root install carries a second physical SvelteKit toolchain that
+`svelte-check` reaches through the package symlink. The proven `main` checkout has no root vite, so its
+showcase check is clean, and a published consumer is unaffected. The acceptance proof for the showcase
+tasks is the production build, which is green.
+
+**Immediate next action: brainstorm and write P4, the `create-cairn-site` scaffolder, in a fresh session.**
+P4 is the capstone of the DX sequence, authored just-in-time now that DX-A and DX-B have corrected the
+engine surface. Run `superpowers:brainstorming` first to settle the scaffolder's open design decisions with
+the user (the template contract, the two reference templates, what defaults and docs it emits), since the
+spec leaves the scaffolder open; do not auto-write the plan without the user's design calls. P4 consumes the
+DX-B plugin and emits the `cairnManifest()` wiring plus the `cairn:manifest` script, and it carries the
+remaining ecnordic items (5, 6, 14), the DX-A showcase-install carry-forward, and the DX-B carry-forwards
+above. Publishing stays held: `0.24.0` is the registry `latest`, and `main` carries the unpublished `0.25.0`
+(DX-A) and `0.26.0` (DX-B); publish the rolled window before any site or the scaffolder consumes
+`@glw907/cairn-cms/vite`, `@glw907/cairn-cms/delivery/data`, or the `cairn-manifest` bin.
+
 ## Where the work is (2026-06-04, DX-A engine-surface ergonomics executed; 0.25.0 unpublished)
 
 **DX-A is executed and review-gated, landed on local `main`.** It ran subagent-driven, one

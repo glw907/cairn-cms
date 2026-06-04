@@ -559,3 +559,43 @@ After all tasks commit, before declaring the phase done:
 - The phase publishes nothing and carries no version bump. It adds one repo script (`scripts/reference-coverage.mjs`) and one test.
 - The TS-API enumeration was proven against the real `dist/` during planning: it resolves `export *` (delivery includes the re-exported `permalink`), the exclude logic yields delivery's exact six own exports, and the real counts are 174 core, 29 sveltekit, 39 delivery-data, 14 components, 6 vite, 1 head. The earlier grep counts undercounted, so the tasks cite the tool output, not a hand list.
 - `core.md` tiers Stable, Low-level, and Types because the 174-name surface includes internal helpers leaked through `export *`. The over-export is logged as a friction finding for a future surface-narrowing engine pass (the user's call, 2026-06-04). The other pages stay flat.
+
+---
+
+## Post-mortem (executed 2026-06-04)
+
+Phase 2 executed subagent-driven on `main`, one `cairn-implementer` per task, in order 1 through 9.
+Task 2 (`core.md`) ran on Opus for its 174-export stability-tier judgment. The rest ran on the
+Sonnet default. Nine commits `47092f8..03c1c3d`.
+
+**What was built.** Task 1 added the export-coverage gate (`scripts/reference-coverage.mjs`, the
+TypeScript compiler-API enumeration, the `check:reference` npm script) and its unit test, and
+cleared the full engine gate (`npm run check` 786 files 0/0, `npm test` 114 files / 658 tests exit
+0). Tasks 2 through 8 wrote the seven reference pages, each clearing the docs gate. Task 9 added the
+reference index and flipped the docs-index Reference line.
+
+**Verification, run first-hand at the phase end.** `npm run check:reference` reports `OK` for all
+seven configured subpaths and exits 0. No blocking prose tell on any authored page; the remaining
+tells are advisory (tricolon, burstiness, anaphora), which the plan declares non-blocking. No
+dangling relative link across the reference pages or the flipped docs-index line. The gate fails
+closed: blanking `stripCairnManifest` from `vite.md` reported it uncovered and exited 1, and
+restoring the page returned `OK`.
+
+**Deviation logged (Task 1).** The implementer removed three emit-only keys (`declaration`,
+`declarationMap`, `rootDir`) from the shared `tsconfig.json` and added JSDoc to the script, because
+the test imports the `.mjs` build tool into the check program and `svelte-check` broke without it.
+Nothing emits from that tsconfig: `check` is `svelte-check` and `package` is `svelte-package`, which
+computes its own dts emit. The removed keys were dead config for emit, and `npm run check:package`
+stays green, which proves dts emission is unaffected. The change was accepted as a cleanup over
+adding a second tsconfig.
+
+**Friction surfaced.** Three findings in `docs/internal/docs-friction-log.md`, all pointing at one
+future surface-narrowing engine pass: the `.` root over-exports 174 names with internal helpers
+leaked through `export *`; the `.` root re-exports the whole delivery builder set, dual-homing those
+symbols on `core.md` and the delivery pages; and `/sveltekit` re-exports the public route-data types
+whose home is `/delivery`, forcing a `PublicListData` alias off a `ListData` collision.
+
+**Tooling note.** The CLI `prose-guard <path>` exits 1 on any reported tell, advisory included, and
+does not distinguish the tiers by exit code. The blocking hook that gates a file write fires only on
+the blocking categories (em-dash, banned, structural, marketing). Every page commit succeeded, so no
+blocking tell fired, and the advisory exit-1 is expected rather than a gate.

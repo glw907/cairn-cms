@@ -11,7 +11,7 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-04): Documentation Initiative, Phase 2 (Reference)
+## Immediate next action (2026-06-04): Documentation Initiative, Phase 3 (Explanation)
 
 The documentation initiative is the current priority. It builds a self-contained docs set for
 external adopters plus the project-legibility files, and it makes documentation a standing pass
@@ -38,29 +38,35 @@ adds `homepage`/`bugs`), relocated the historical docs under `docs/internal/` wi
 vulnerability reporting could not be enabled because the repo is private (the API 404s); `SECURITY.md`
 describes the intended public-state channel, and the gap is logged in the friction log.
 
-**Phase 2 (Reference) is brainstormed, specced, and planned (2026-06-04), not yet executed.** The
-design spec is `docs/superpowers/specs/2026-06-04-cairn-docs-phase-2-reference-design.md`; the plan is
-`docs/superpowers/plans/2026-06-04-cairn-docs-phase-2-reference.md` (`23e30af`). Nine tasks: an
-export-coverage gate (`scripts/reference-coverage.mjs`, TS-checker enumeration, RED output is the page
-worklist), seven hand-curated pages under `docs/reference/` (one per export subpath, `/delivery/head`
-folded into `delivery.md`, the `cairn-manifest` bin as its own page), and a reference index that flips
-the docs-index Reference line. Two design calls settled with the user: tiered depth (every export
-named, primary API gets a worked example, type aliases get a signature and a line), and `core.md`
-splits into Stable / Low-level / Types tiers because `.` exposes 174 exports including internal
-helpers leaked through `export *` (logged as an over-export friction finding for a future
-surface-narrowing engine pass). Real export counts proven against `dist/` during planning: 174 core,
-29 sveltekit, 39 delivery-data, 14 components, 6 vite, 6 delivery-own, 1 head.
+**Phase 2 (Reference) landed on `main` 2026-06-04.** It added an export-coverage gate plus seven
+hand-curated reference pages, one per package export subpath, behind an automated check. Nine commits
+`47092f8..03c1c3d` on `main`. The gate (`scripts/reference-coverage.mjs`) enumerates each subpath's
+real exports from the built `.d.ts` through the TypeScript compiler API and fails when a page omits a
+name; `npm run check:reference` builds `dist` first, then checks all seven subpaths. The pages live
+under `docs/reference/`: `core.md` (the `.` root, 174 exports tiered Stable / Low-level / Types),
+`sveltekit.md`, `components.md`, `delivery.md` (with `/delivery/head` folded in), `delivery-data.md`,
+`vite.md`, and the `cli-cairn-manifest.md` bin page, plus a reference index that flips the docs-index
+Reference line. Task 1 added the gate and its unit test and cleared the full engine gate (`npm run
+check` 786 files 0/0, `npm test` 658 tests exit 0); the seven page tasks each cleared the docs gate
+(coverage `OK`, no blocking prose tell, links resolve). The gate was verified fail-closed at the
+phase end. Post-mortem at the end of the Phase 2 plan
+(`docs/superpowers/plans/2026-06-04-cairn-docs-phase-2-reference.md`).
 
-**Immediate next action: execute Phase 2,
-`docs/superpowers/plans/2026-06-04-cairn-docs-phase-2-reference.md`, `subagent-driven`
-(`superpowers:subagent-driven-development`, one `cairn-implementer` per page), from the cairn-cms
-directory on `main`. Start at Task 1.** The design is settled and approved, so skip brainstorming. It
-runs on `main` directly (docs-only, publishes nothing, no version bump). Dispatch Task 2 (`core.md`)
-`model: opus` for its 174-export stability-tier judgment; the rest fit the Sonnet default. The page
-gate is the docs gate (the coverage check `OK`, `prose-guard` no blocking tell, links resolve), not
-the unit suite; Task 1 is the exception and clears `npm run check` + `npm test` since it adds a test.
-No review subagents or `/admin` smoke apply (no engine, Worker, auth, or UI surface change). After
-Phase 2 lands, Phase 3 (Explanation) is next.
+The pass surfaced three design-friction findings, all in `docs/internal/docs-friction-log.md` and all
+pointing at one future surface-narrowing engine pass: the `.` root over-exports 174 names with
+internal helpers leaked through `export *`; the `.` root re-exports the whole delivery builder set, so
+those symbols document on two pages; and `/sveltekit` re-exports the public route-data types whose
+home is `/delivery`, forcing a `PublicListData` alias off a `ListData` collision.
+
+**Immediate next action: brainstorm and write Phase 3 (Explanation) of the documentation initiative,
+in a fresh session from the cairn-cms directory on `main`.** Phase 3 has no plan yet. Run
+`superpowers:brainstorming` first to settle its open design calls with the user (what concepts the
+explanation arm covers and how each page relates to the reference set the prior phase landed), then
+`superpowers:writing-plans` to author the numbered plan under `docs/superpowers/plans/`. The
+initiative design spec (`docs/superpowers/specs/2026-06-04-cairn-docs-initiative-design.md`) scopes
+the explanation arm, and the just-landed `docs/reference/` pages are the cross-link target. Do not
+auto-write the plan without the user's design calls. The phase runs on `main` directly, publishes
+nothing, and touches no engine code, so no review subagents or `/admin` smoke apply.
 
 ## Queued engine capstone: P4, the create-cairn-site scaffolder
 

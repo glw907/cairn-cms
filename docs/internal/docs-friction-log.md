@@ -33,3 +33,11 @@ Phase 1 seeds this file. Later phases append as they write.
   the rest), so the same symbols document on both `core.md` and the delivery pages. The core page
   notes the overlap and points a reader at the delivery surface, but the dual home is a sign the
   root re-export is wider than a site needs from `.`. Same surface-narrowing pass would resolve it.
+- **developer** (delivery duplication, from `reference/sveltekit.md`): the `/sveltekit` entry
+  re-exports `createPublicRoutes` and the public route-data types (`PublicRoutesDeps`, `TagData`,
+  `TagIndexData`, `EntryData`, and a second `ListData` re-aliased to `PublicListData`), whose natural
+  home is `/delivery`, where the matching `CairnHead` component lives. A site imports the public
+  loaders from `/delivery`, so the `/sveltekit` copy is a second home that the reference page has to
+  cross-link rather than document in place. The `ListData` collision, one admin shape and one public
+  shape on the same subpath, also forces the `PublicListData` alias. A surface-narrowing pass that
+  keeps the public loaders on `/delivery` alone would resolve both.

@@ -140,15 +140,66 @@ export function parseManifest(raw: string): Manifest {
   return { version: 1, entries: obj.entries as ManifestEntry[] };
 }
 
-/** Throw if the committed manifest drifts from what the corpus says. Both sides are compared in the
- *  canonical serialized form, so semantic equality never spuriously fails. The build calls this so a
- *  raw-git content edit, which leaves the committed manifest stale, fails the build loudly. */
-export function verifyManifest(built: Manifest, committedRaw: string): void {
-  if (committedRaw !== serializeManifest(built)) {
-    throw new Error(
-      'content manifest is stale: the committed file does not match the corpus. Regenerate it (npm run cairn:manifest) and commit the result.',
+/** A changed entry and the fields that differ between the built and committed manifests. */
+export interface ManifestEntryDiff {
+  concept: string;
+  id: string;
+  fields: string[];
+}
+
+/** The drift between a freshly built manifest and the committed one, keyed by concept+id. */
+export interface ManifestDiff {
+  added: ManifestEntry[];
+  removed: ManifestEntry[];
+  changed: ManifestEntryDiff[];
+}
+
+const keyOf = (e: ManifestEntry) => `${e.concept}/${e.id}`;
+
+/** Compare a built manifest against a committed one, keyed by concept+id (the same identity
+ *  upsertEntry and removeEntry use). A changed entry names the fields that differ. Pure, so it is
+ *  unit-tested apart from any build. */
+export function diffManifests(built: Manifest, committed: Manifest): ManifestDiff {
+  const builtByKey = new Map(built.entries.map((e) => [keyOf(e), e]));
+  const committedByKey = new Map(committed.entries.map((e) => [keyOf(e), e]));
+  const added = built.entries.filter((e) => !committedByKey.has(keyOf(e)));
+  const removed = committed.entries.filter((e) => !builtByKey.has(keyOf(e)));
+  const changed: ManifestEntryDiff[] = [];
+  for (const b of built.entries) {
+    const c = committedByKey.get(keyOf(b));
+    if (!c) continue;
+    // ManifestEntry has no index signature, so read its keys through an unknown-cast record.
+    const br = b as unknown as Record<string, unknown>;
+    const cr = c as unknown as Record<string, unknown>;
+    const fields = [...new Set([...Object.keys(b), ...Object.keys(c)])].filter(
+      (k) => JSON.stringify(br[k]) !== JSON.stringify(cr[k]),
     );
+    if (fields.length > 0) changed.push({ concept: b.concept, id: b.id, fields });
   }
+  return { added, removed, changed };
+}
+
+/** Format a diff into a short human-readable block for a build error. */
+function formatDiff(d: ManifestDiff): string {
+  const lines: string[] = [];
+  for (const e of d.added) lines.push(`  + ${keyOf(e)}`);
+  for (const e of d.removed) lines.push(`  - ${keyOf(e)}`);
+  for (const e of d.changed) lines.push(`  ~ ${e.concept}/${e.id} (${e.fields.join(', ')})`);
+  return lines.join('\n');
+}
+
+/** Throw if the committed manifest drifts from what the corpus says. The canonical serialized form
+ *  is the fast-path equality guard, so semantic equality never spuriously fails. On a mismatch the
+ *  error names the added, removed, and changed entries, so a raw-git content edit that leaves the
+ *  committed manifest stale fails the build loudly with what drifted. */
+export function verifyManifest(built: Manifest, committedRaw: string): void {
+  if (committedRaw === serializeManifest(built)) return;
+  const diff = diffManifests(built, parseManifest(committedRaw));
+  throw new Error(
+    'content manifest is stale: the committed file does not match the corpus.\n' +
+      formatDiff(diff) +
+      '\nRegenerate it (npm run cairn:manifest) and commit the result.',
+  );
 }
 
 /** Replace the entry with the same concept and id, or add it. Order does not matter, since

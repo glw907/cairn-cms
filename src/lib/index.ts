@@ -60,13 +60,14 @@ export {
   parseManifest,
   emptyManifest,
   verifyManifest,
+  diffManifests,
   upsertEntry,
   removeEntry,
   manifestEntryFromFile,
   manifestLinkResolver,
   inboundLinks,
 } from './content/manifest.js';
-export type { Manifest, ManifestEntry, LinkTarget, InboundLink } from './content/manifest.js';
+export type { Manifest, ManifestEntry, ManifestDiff, ManifestEntryDiff, LinkTarget, InboundLink } from './content/manifest.js';
 // Render engine (Plan 04): generic directive pipeline; sites own the component registry.
 export { defineRegistry, emptyValues } from './render/registry.js';
 export type {

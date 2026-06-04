@@ -20,7 +20,14 @@ dimension going forward. The design spec is
 phases, each plan written just-in-time after the prior one lands: legibility, reference, explanation,
 guides, tutorial, and a process phase that bakes docs into the pass ritual. The initiative absorbs
 the queued docs-refresh items below, which its later phases schedule. It publishes nothing and
-touches no engine code, so the held publishing window and P4 both stay queued behind it.
+touches no engine code.
+
+**The rolled version window is PUBLISHED.** `0.26.0` is now the registry `latest` (the `v0.26.0`
+GitHub Release triggered the OIDC trusted-publishing workflow, run `26978850083` green), folding the
+unpublished `0.25.0` (DX-A) and `0.26.0` (DX-B) over the prior `0.24.0`. Provenance was disabled in
+the publish workflow for this release because the repo is now private and provenance attestation
+requires a public repo; restore it when the repo goes public. P4 (the scaffolder) stays queued behind
+the docs initiative.
 
 **Phase 1 (legibility and split) landed on `main` 2026-06-04.** It rewrote the README as the adopter
 hub, added `SECURITY.md` and `ROADMAP.md`, fixed the npm packaging metadata (ships `CHANGELOG.md`,

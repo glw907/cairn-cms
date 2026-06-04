@@ -14,12 +14,20 @@ first-class concepts (Posts and Pages), not open-ended collections.
 
 ## Status
 
-`0.x`, published to public npm as `@glw907/cairn-cms` (MIT). The API still churns between minor
-versions, so pin a caret range and read the [CHANGELOG](./CHANGELOG.md) and `docs/upgrading.md`
-before bumping. Editor auth is self-owned: an atomic single-use magic-link token, a POST-confirm
-flow, opaque D1-backed session rows, and two-tier `owner`/`editor` roles. There is no better-auth,
-Drizzle, or ORM. The current version, the published-versus-unpublished window, and the next action
-live in [`docs/STATUS.md`](./docs/STATUS.md).
+cairn-cms runs two production sites today, [ecnordic.ski](https://ecnordic.ski) and
+[907.life](https://907.life). It is `0.x` and breaks between minor versions. The author is
+still working through the core-feature roadmap, and the project stays closely held until that
+core lands. See the [ROADMAP](./ROADMAP.md) for what is planned and the
+[CHANGELOG](./CHANGELOG.md) for what changed.
+
+Editor auth is self-owned: an atomic single-use magic-link token, a POST-confirm flow, opaque
+D1-backed session rows, and two-tier `owner`/`editor` roles. There is no better-auth, Drizzle,
+or ORM. Pin a caret range and read the CHANGELOG before bumping; every breaking entry carries a
+"Consumers must" line.
+
+A contributor who feels inspired is welcome to open an issue or a discussion to start a
+conversation. There is no formal contribution process yet, so this is not an open call for
+pull requests.
 
 ## Install
 
@@ -42,6 +50,14 @@ Each site binds a Cloudflare D1 database as `AUTH_DB` (the editor allowlist, ses
 magic tokens) and a `[[send_email]]` binding named `EMAIL`. The worked reference for every shape is
 `examples/showcase`.
 
+## Documentation
+
+The [`docs/`](./docs/README.md) tree is organized in four arms: a tutorial that builds a first
+site end to end, how-to guides for each setup task, a reference for every package export, and
+explanation pages for the architecture and design rules. Start at the
+[documentation index](./docs/README.md). The [security policy](./SECURITY.md) covers reporting
+and the security posture.
+
 ## How it's developed
 
 This is a standalone repo. Consumer sites install the published package from the npm registry by
@@ -49,6 +65,5 @@ version range. The library's own development proves changes against `examples/sh
 self-contained SvelteKit site that consumes the package through the relative `file:../..` path, so a
 change is exercised end to end before it publishes.
 
-See the functional spec at `docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md` for
-the locked architecture and the test plan, and `docs/STATUS.md` for where the work is now. The older
-`docs/PLAN.md` and `docs/ARCHITECTURE.md` remain only as history.
+The historical rebuild plan and the early architecture writeups live under `docs/internal/`.
+They are kept for history and are not current.

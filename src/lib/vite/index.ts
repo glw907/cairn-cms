@@ -6,6 +6,15 @@
 // could downgrade it). The same virtual module in write mode produces the serialized manifest, which
 // the cairn-manifest bin uses to regenerate. See the design spec, locked decision 1.
 import type { Plugin } from 'vite';
+import { writeFile, mkdir } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
+
+/** The key the cairnManifest plugin stashes its options under, so the write path can read them off the
+ *  plugin instance in the consumer's loaded config without re-parsing the config file. */
+const CAIRN_OPTIONS = Symbol.for('cairn-cms.manifest-options');
+
+/** A cairnManifest plugin instance with its options stashed for the write path to read. */
+type CairnManifestPlugin = Plugin & { [CAIRN_OPTIONS]?: CairnManifestOptions };
 
 /** Options for {@link cairnManifest}. Paths are app-root-absolute (the form `import.meta.glob` wants),
  *  so they match the build's own resolution. */
@@ -111,7 +120,7 @@ export async function buildManifestFromVite(opts: CairnManifestOptions, root: st
  *  buildStart, evaluates it through a nested Vite SSR load so a manifest drift fails the build. */
 export function cairnManifest(opts: CairnManifestOptions): Plugin {
   let root = process.cwd();
-  return {
+  const plugin: CairnManifestPlugin = {
     name: 'cairn-manifest',
     configResolved(config) {
       // Capture the resolved app root so the nested server loads the same config the build did.
@@ -131,6 +140,54 @@ export function cairnManifest(opts: CairnManifestOptions): Plugin {
       }
     },
   };
+  // Stash the options on the instance so the cairn-manifest bin's writeManifest can read the content
+  // globs, config module, and manifest path off the plugin in the consumer's loaded config, sharing
+  // exactly the options the build verifies with.
+  plugin[CAIRN_OPTIONS] = opts;
+  return plugin;
+}
+
+/** Regenerate the committed manifest from the consumer's corpus and write it to the configured
+ *  manifestPath. It loads the consumer's Vite config from `cwd`, reads the cairnManifest plugin's
+ *  options off the instance, evaluates the write-mode virtual module through the build's own
+ *  resolution, and writes the serialized manifest. The cairn-manifest bin calls this; it is exported
+ *  so the write logic is testable apart from the CLI shell. */
+export async function writeManifest(cwd: string = process.cwd()): Promise<void> {
+  const { loadConfigFromFile } = await import('vite');
+  const loaded = await loadConfigFromFile({ command: 'build', mode: 'production' }, undefined, cwd);
+  if (!loaded) {
+    throw new Error(`cairn-manifest: no Vite config found in ${cwd}`);
+  }
+  const opts = findCairnOptions(loaded.config.plugins);
+  if (!opts) {
+    throw new Error(
+      'cairn-manifest: the Vite config has no cairnManifest() plugin. Add it so the bin shares the build options.',
+    );
+  }
+  const serialized = await buildManifestFromVite(opts, cwd);
+  const manifestPath = opts.manifestPath ?? DEFAULT_MANIFEST_PATH;
+  // The manifest path is app-root-absolute (a leading slash relative to the project), so resolve it
+  // against cwd, not the filesystem root.
+  const outPath = join(cwd, manifestPath.replace(/^\//, ''));
+  await mkdir(dirname(outPath), { recursive: true });
+  await writeFile(outPath, serialized);
+}
+
+/** Walk a Vite plugins option (which may nest arrays, hold falsy slots, or be a thenable) and return
+ *  the stashed cairnManifest options from the first matching plugin, or null if there is none. */
+function findCairnOptions(plugins: unknown): CairnManifestOptions | null {
+  if (!plugins) return null;
+  if (Array.isArray(plugins)) {
+    for (const p of plugins) {
+      const found = findCairnOptions(p);
+      if (found) return found;
+    }
+    return null;
+  }
+  if (typeof plugins === 'object' && CAIRN_OPTIONS in plugins) {
+    return (plugins as CairnManifestPlugin)[CAIRN_OPTIONS] ?? null;
+  }
+  return null;
 }
 
 /** A minimal plugin that serves only the virtual module in one mode, for the nested SSR load. It

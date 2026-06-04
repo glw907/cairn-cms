@@ -69,6 +69,9 @@
     },
     "./package.json": "./package.json"
   },
+  "bin": {
+    "cairn-manifest": "./dist/vite/bin.js"
+  },
   "files": [
     "dist",
     "src/lib"

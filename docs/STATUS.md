@@ -11,7 +11,7 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-04): Documentation Initiative, Phase 4 (Guides)
+## Immediate next action (2026-06-04): execute Documentation Initiative, Phase 4 (Guides)
 
 The documentation initiative is the current priority. It builds a self-contained docs set for
 external adopters plus the project-legibility files, and it makes documentation a standing pass
@@ -93,19 +93,35 @@ memory): narrow the public export surface, harden render attribute sinks, consol
 model. They must land before the next `0.x` publish. The docs initiative publishes nothing, so it does not
 trip the gate.
 
-**Immediate next action: brainstorm and write Phase 4 (Guides), the how-to arm of the docs initiative,
-then execute it subagent-driven on `main`.** Phase 4 is not yet planned; the initiative writes each
-plan just-in-time after the prior one lands. The initiative design spec
-(`docs/superpowers/specs/2026-06-04-cairn-docs-initiative-design.md`) scopes the Guides arm. Run
-`superpowers:brainstorming` first to settle the open calls with the user (which task-oriented guides the
-arm carries, how each leans on the Phase 2 reference and the Phase 3 explanation pages, and how the
-`docs/creating-a-cairn-site.md` SUPERSEDED disposition and the P4 scaffolder relate to the guides),
-since the spec leaves the per-guide scope open. Do not auto-write the plan without the user's design
-calls. Then write the numbered plan, pre-bake the handoff, and execute it `subagent-driven` with one
-`cairn-implementer` per guide. The page gate is the docs gate (prose-guard no blocking tell, links
-resolve, claims cross-checked by hand); the arm publishes nothing and touches no engine code, so no
-version bump, review subagent, or `/admin` smoke applies. After Guides, Phase 5 (Tutorial) and Phase 6
-(the process phase) remain, then P4 (the scaffolder).
+**Phase 4 (Guides) is brainstormed, specced, and planned (2026-06-04), not yet executed.** The design
+spec is `docs/superpowers/specs/2026-06-04-cairn-docs-phase-4-guides-design.md` (`f8f9a37`); the plan is
+`docs/superpowers/plans/2026-06-04-cairn-docs-phase-4-guides.md` (`df9d216`). Eight tasks build seven
+how-to guides under `docs/guides/` plus an index. The dominant design call (Geoff, this brainstorm):
+the guides split into three tiers by evidence base. Three lean setup guides
+(`set-up-the-github-app`, `configure-auth-and-d1`, `deploy-to-cloudflare`) stay thin and link the
+authoritative ops docs (`github-app-key-rotation`, `admin-smoke-test`, `admin-route-structure`), because
+`examples/showcase` runs `adapter-node` and cannot validate Cloudflare/D1/GitHub-App plumbing and P4 will
+scaffold it; depth is deferred to when P4 makes the wiring concrete. Three full engine-surface guides
+(`define-an-adapter-and-schema`, `configure-rendering`, `wire-the-delivery-surface`) carry a worked
+example validated against the showcase. The seventh, `upgrade-cairn`, relocates from `docs/upgrading.md`
+with a light refresh, the Phase 3 `data-tiers` pattern. Each guide is a Diátaxis how-to (goal,
+prerequisites, numbered steps, verify, see-also) that links the Phase 2 reference for signatures and the
+Phase 3 explanation arm for the why, staying distinct from the forthcoming Phase 5 tutorial. The page gate
+is the docs gate; no coverage gate, because guides have no typed surface to enumerate.
+
+**Immediate next action: execute Phase 4,
+`docs/superpowers/plans/2026-06-04-cairn-docs-phase-4-guides.md`, `subagent-driven`
+(`superpowers:subagent-driven-development`, one `cairn-implementer` per guide), from the cairn-cms
+directory on `main`. Start at Task 1.** The design is settled and approved, so skip brainstorming. It runs
+on `main` directly (docs-only, publishes nothing, no version bump). Dispatch Tasks 4, 5, and 6
+(`define-an-adapter-and-schema`, `configure-rendering`, `wire-the-delivery-surface`) `model: opus` for the
+worked-example synthesis; Tasks 1, 2, 3, 7, and 8 fit the Sonnet default (the lean guides link the ops
+docs, the relocate and index are mechanical). Bake the docs-gate override into each dispatch: do not run
+`npm run check` or `npm test`; the gate is prose-guard no blocking tell, links resolve, and a manual
+accuracy cross-check (the full guides against `examples/showcase`, the lean guides against the engine
+source and the named ops doc). No review subagent or `/admin` smoke applies (no engine, Worker, auth, or
+UI surface change). After Phase 4 lands, Phase 5 (Tutorial) is next, then Phase 6 (the process phase),
+then P4 (the scaffolder).
 
 ## Queued engine capstone: P4, the create-cairn-site scaffolder
 

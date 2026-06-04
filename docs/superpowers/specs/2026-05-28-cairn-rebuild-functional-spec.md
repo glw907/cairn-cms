@@ -1,5 +1,11 @@
 # Cairn Rebuild: Functional Spec and Test Plan
 
+> **Status (2026-06-04):** the current architecture statement for adopters is the explanation arm
+> under `docs/explanation/` (architecture, data-tiers, security-model, content-model). This spec is
+> the locked rebuild design record and carries known drift: it predates the Carta-to-CodeMirror
+> editor swap (0.9.0) and the `renderPreview`-to-`render` adapter rename. Read it as design history,
+> not as the current surface.
+
 **Status:** Draft for review, 2026-05-28 (amended same day: scaffolding and templates promoted to
 in-scope; DaisyUI-component-first rule; packaging and commenting quality gates).
 **Supersedes:** the layered direction-changes in `docs/PLAN.md`, `docs/ARCHITECTURE.md`, and the

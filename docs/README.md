@@ -13,16 +13,14 @@ These docs are organized in four arms.
   Forthcoming. [`upgrading.md`](./upgrading.md) is the current upgrade guide until then.
 - **Reference** documents each package export, one page per subpath. See the
   [reference index](./reference/README.md).
-- **Explanation** covers the architecture and the design rules.
-  [`data-architecture.md`](./data-architecture.md) is the current data-tier writeup until the
-  arm lands.
+- **Explanation** covers the architecture and the design rules. See the
+  [explanation index](./explanation/README.md).
 
 ## Current pages
 
 While the arms fill in, these pages are live:
 
 - [Upgrading cairn](./upgrading.md)
-- [Where each kind of state lives](./data-architecture.md)
 - [Admin route structure](./admin-route-structure.md)
 - [The render sanitize floor](./render-sanitize-floor.md)
 

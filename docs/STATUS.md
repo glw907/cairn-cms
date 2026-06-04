@@ -45,16 +45,33 @@ package so the gate stays reproducible.
 "Consumers must:" line on any breaking change in `CHANGELOG.md`. That skill file lives outside this repo,
 so it was edited at pass-end (the DX-A handoff item), not committed here.
 
-**Immediate next action: brainstorm and draft DX-B, then execute it.** DX-B is the manifest Vite plugin,
-scoped in the design spec `docs/superpowers/specs/2026-06-04-cairn-dx-907-hardening-design.md` (the locked
-fork: the manifest toolchain is rebuilt as a Vite plugin that verifies on build, fails the build red with a
-real diff, and shares one resolver with the build). Its detailed plan is authored just-in-time now that
-DX-A has landed, because the plugin design sharpens once the node-safe subpath (907 #3) is real. It folds
-907 #2/#3/#7 and ecnordic #13/#4. Run `superpowers:brainstorming` first to settle the open plugin-design
-decisions with the user, then `superpowers:writing-plans`. After DX-B lands, P4 (the `create-cairn-site`
-scaffolder) is the capstone, carrying the remaining ecnordic items (5, 6, 14) and the showcase-install
-carry-forward above. Publishing stays held: `0.24.0` is the registry `latest`, and `main` carries the
-unpublished `0.25.0` (DX-A) until the window publishes together before a site consumes it.
+**DX-B is brainstormed, specced, and planned on `main` (2026-06-04), not yet executed.** The design spec is
+`docs/superpowers/specs/2026-06-04-cairn-dx-b-manifest-plugin-design.md` (`9690537`), sharpening the DX-B
+section of the combined hardening spec; the plan is
+`docs/superpowers/plans/2026-06-04-cairn-dx-b-manifest-plugin.md` (`44e1990`). Seven tasks, bumps `0.26.0`.
+Four forks settled in the brainstorm: the build-time verify reads the corpus through a plugin-owned
+**in-graph virtual module** (uses the build's exact `import.meta.glob` resolution, closing ecnordic #13 by
+construction, at the cost that regenerate must also run in a Vite context); the node-safe entry is the
+**`@glw907/cairn-cms/delivery/data` barrel** (chosen on architecture merit over a narrow `/manifest` entry,
+since it isolates the kit coupling generally, matches the P1 `/delivery/head` split run deeper, and removes
+the dual-barrel drift); a pure **`diffManifests`** names what drifted (907 #7); and regenerate is a shipped
+**`cairn-manifest` bin** (907 #2). Task 1 is a toolchain spike that proves the Vite evaluation mechanism (the
+verify as a build error outside prerender, and the bin's write evaluation) against a real SvelteKit build
+before the rest leans on it, the Plan-07 locked-build-assumption lesson applied first.
+
+**Immediate next action: execute DX-B,
+`docs/superpowers/plans/2026-06-04-cairn-dx-b-manifest-plugin.md`, `subagent-driven`
+(`superpowers:subagent-driven-development`, one `cairn-implementer` per task), on a feature worktree off
+`main`. Start at Task 1.** Dispatch Task 1 (the spike), Task 5 (the bin), and Task 6 (showcase finalize)
+`model: opus` (judgment-heavy); the rest fit the Sonnet default. The design is settled and approved, so skip
+brainstorming. The pass-end review gate is the simplifier plus a high-effort `/code-review` (attention to the
+Vite mechanism and the node-safety guarantee); `cloudflare-workers-reviewer` and `web-auth-security-reviewer`
+do not apply, `svelte-reviewer` only if a `.svelte` file changes, and the live `/admin` smoke does not apply
+(no auth, Worker, or admin-UI surface change). After DX-B lands, P4 (the `create-cairn-site` scaffolder) is
+the capstone, carrying the remaining ecnordic items (5, 6, 14) and the DX-A showcase-install carry-forward
+above. Publishing stays held: `0.24.0` is the registry `latest`, and `main` carries the unpublished `0.25.0`
+(DX-A) and will carry `0.26.0` (DX-B) until the window publishes together before a site consumes the new
+entries.
 
 ## Where the work is (2026-06-04, 907 migration landed; DX-A spec + plan written, not executed)
 

@@ -26,6 +26,30 @@ Publishing stays held: `0.24.0` is the registry `latest`, and `main` carries the
 (DX-A) and `0.26.0` (DX-B); publish the rolled window before any consumer or the scaffolder imports
 the new entries.
 
+## Queued: cairn-cms docs refresh pass (documented 2026-06-04)
+
+A docs-accuracy sweep during the workspace flatten found cairn-cms documentation that predates later
+engine passes. The two consumer sites and the durable front-door docs (README, CLAUDE.md) were fixed in
+that pass. The cairn-cms internal docs below are deferred to a dedicated docs pass.
+
+- **Functional spec** (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`): accurate on
+  auth and the fixed-concepts model, but it predates the `0.9.0` editor swap, so it describes a Carta
+  editor throughout (lines 30, 51, 57, 89, 101, 144, 196, 267, 310, 338) when the `MarkdownEditor` seam
+  is now CodeMirror 6, and it names the old `renderPreview` adapter method (lines 168, 268, 374) that the
+  public-delivery pass renamed to `render`. Planned action: a targeted update of the Carta-to-CodeMirror
+  references and `renderPreview`-to-`render`, plus a dated note that the editor swapped at `0.9.0`. Keep
+  the rest as the locked design record.
+- **`docs/creating-a-cairn-site.md`** (537 lines): broadly pre-rebuild (better-auth, a generic
+  `collections[]` array, `renderPreview`, `AUTH_SECRET`, a pointer to the superseded ARCHITECTURE.md
+  section 4). Decision (Geoff): MARK SUPERSEDED. Add a header pointing at the functional spec,
+  `examples/showcase`, and the forthcoming P4 create-cairn-site scaffolder, and leave the body as history
+  rather than rewriting a doc the scaffolder will replace.
+- **`cairn-implementer` agent** (`~/.dotfiles/claude/.claude/agents/cairn-implementer.md`): the body
+  still carries a `carta-md` client-only note (now CodeMirror) and a `rebuild`-branch assumption (the
+  branch merged; later work runs on feature worktrees off `main`). Refresh both in the dotfiles checkout.
+- `docs/PLAN.md` and `docs/ARCHITECTURE.md` stay as labeled history (CLAUDE.md and README mark them so);
+  no rewrite intended.
+
 ## Where the work is (2026-06-04, DX-B manifest Vite plugin executed; 0.26.0 unpublished)
 
 **DX-B is executed and review-gated, landed on local `main`.** It ran subagent-driven, one

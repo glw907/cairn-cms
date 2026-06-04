@@ -65,3 +65,21 @@ Phase 1 seeds this file. Later phases append as they write.
   The section could not be explained in plain prose without pointing at three places and leaning on a
   diagram, which corroborates the brainstorm finding that this concept is the strongest candidate for
   a consolidating helper. Release-gated with the surface-narrowing pass.
+- **developer/security** (render attribute sinks, RESOLVED check from `docs/explanation/security-model.md`):
+  the render-sink entry above asked the security page to escalate if an author could reach the
+  unsanitized sink. Writing the page resolved that question, and the answer is no. The source path is
+  `readAttributes` in `src/lib/render/rehype-dispatch.ts`, which reads the author-supplied directive
+  attribute values, then `transformNode` hands them to `def.build(ctx)`, a registry function the site
+  developer writes. An author controls the attribute values, and only a `build()` decides whether a
+  value reaches an `href`, `src`, or `style` sink. The hole is not reachable by an author through
+  markdown alone, so it stays site-developer-controlled and the blast radius stays narrow. No
+  escalation. The render-hardening candidate stays release-gated at its existing severity, a
+  defence-in-depth improvement rather than an open author-reachable hole. The fix still stands:
+  sanitize component-built attribute values, or constrain what `build()` may emit into URL and style
+  sinks, so a site developer cannot author the hole by accident.
+- **process** (no new candidate, from the Phase 3 explanation arm): the arm surfaced no engine
+  improvement beyond the three already gated. Each page instead applied adversarial pressure to a
+  known finding. `architecture.md` confirmed the `.` over-export contradicts a clean engine/site line
+  firsthand, `content-model.md` confirmed the URL spread, and `security-model.md` confirmed the render
+  sink stays narrow. Explaining a design is good pressure on its surface, since the explanation resists
+  where the surface is muddy. The arm validated the backlog rather than extending it.

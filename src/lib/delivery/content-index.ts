@@ -25,6 +25,10 @@ export interface ContentSummary {
   title: string;
   date?: string;
   updated?: string;
+  /** The entry's tags, always present as an array and empty when the file declares none. This is the
+   *  read-model normalization. It differs on purpose from the validated `frontmatter.tags`, which the
+   *  validator omits when empty, so a published file carries no `tags: []` noise. Read `tags` here for
+   *  a list; read `frontmatter.tags` only when you need the validated, possibly-absent value. */
   tags: string[];
   excerpt: string;
   wordCount: number;

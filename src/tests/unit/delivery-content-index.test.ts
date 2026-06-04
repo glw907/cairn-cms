@@ -64,6 +64,16 @@ describe('createContentIndex', () => {
   });
 });
 
+describe('read-model tags default', () => {
+  const files: RawFile[] = [{ path: '/src/content/posts/no-tags.md', raw: '---\ntitle: no-tags\ndate: 2026-01-04\n---\n\nBody of no-tags.' }];
+  const index = createContentIndex(files, posts);
+
+  it('fills an absent tags list with an empty array on the read model', () => {
+    const entry = index.byId('no-tags');
+    expect(entry?.tags).toEqual([]);
+  });
+});
+
 describe('content index slug', () => {
   it('derives a date-stripped slug and a non-doubled permalink for a dated concept', () => {
     const [posts] = normalizeConcepts(

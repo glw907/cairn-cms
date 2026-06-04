@@ -9,7 +9,9 @@ import { dateInputValue, isCalendarDate } from './frontmatter.js';
  * Validate raw frontmatter against a field list. Required text and date fields must be
  * non-empty; required tag fields must be non-empty lists. A present boolean coerces to `true`
  * and an unchecked one is omitted; a present tag field coerces to a string array and an empty
- * one is omitted; an empty optional text or date field is omitted, so the normalized data
+ * one is omitted, so validated data has no `tags` key when tags are absent. The delivery read model
+ * (`ContentSummary.tags`) fills that case with an empty array; the two layers differ on purpose.
+ * An empty optional text or date field is omitted, so the normalized data
  * carries only meaningful values and committed frontmatter stays minimal. Returns the
  * normalized data, or field-keyed errors when any required field is empty.
  *

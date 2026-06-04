@@ -78,6 +78,13 @@ describe('validateFields', () => {
     if (result.ok) expect(result.data.date).toBe('2026-01-05');
   });
 
+  it('omits an absent optional tags field from the normalized data', () => {
+    const fields: FrontmatterField[] = [{ type: 'tags', name: 'tags', label: 'Tags', options: ['a', 'b'] }];
+    const result = validateFields(fields, {});
+    expect(result.ok).toBe(true);
+    if (result.ok) expect('tags' in result.data).toBe(false);
+  });
+
   it('treats a missing required tags vocabulary as an error', () => {
     const fields: FrontmatterField[] = [
       { type: 'tags', name: 'tags', label: 'Tags', options: ['a'], required: true },

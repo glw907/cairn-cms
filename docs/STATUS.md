@@ -6,6 +6,43 @@ orientation is the workspace `CLAUDE.md`. Locked architecture decisions and the 
 the functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`).
 Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`.
 
+## Where the work is (2026-06-04, 907 migration landed; DX-A spec + plan written, not executed)
+
+**The 907-life migration shipped** (907 Pass 16, 2026-06-04) on `^0.24.0` with `datePrefix: 'day'`, the
+second proving ground on the corrected surface. It produced a DX feedback doc at the workspace root,
+`cairn-dx-feedback-2026-06-04.md`, eight findings from the `0.6` to `0.24` jump.
+
+**The 907 feedback is triaged into two engine passes before the scaffolder.** Most of it sharpens the
+existing ecnordic backlog; three items are new to the engine surface. The design spec covering both
+passes is `docs/superpowers/specs/2026-06-04-cairn-dx-907-hardening-design.md` (`7c44eae`). Two locked
+forks settled with the user: the manifest toolchain is rebuilt as a Vite plugin (verify-on-build, fail
+the build red with a real diff, one resolver shared with the build), and the work splits into two passes
+rather than one.
+
+- **DX-A (engine-surface ergonomics and docs)** is the immediate next action. The plan is
+  `docs/superpowers/plans/2026-06-04-cairn-dx-a-ergonomics.md` (`ee4a124`), six tasks closing 907 #1
+  (`createRenderer` defaults to the empty registry), #6 (`composeRuntime` takes one object input and
+  derives the URL policy from the site config, the loose third argument gone, a missing config throws),
+  #4 (the `freetags` two-layer invariant pinned and documented, no behavior change), #8 (a sanitize-floor
+  reference doc), and #5 (a "Consumers must:" changelog convention plus `docs/upgrading.md`). It bumps
+  `0.25.0`. The `composeRuntime` object form breaks every caller; Task 2 updates the engine and the
+  compose tests, Task 3 the showcase. The root `npm run check` does not cover the showcase, so Task 3
+  carries its own check and build.
+- **DX-B (the manifest Vite plugin)** is scoped in the spec and its detailed plan is authored
+  just-in-time after DX-A lands, because the plugin design sharpens once the node-safe subpath (907 #3)
+  is real. It folds 907 #2/#3/#7 and ecnordic #13/#4.
+- **P4 (the scaffolder)** stays the capstone after DX-B, carrying the remaining ecnordic items (5, 6, 14).
+
+**Immediate next action: execute DX-A, `docs/superpowers/plans/2026-06-04-cairn-dx-a-ergonomics.md`,
+`subagent-driven` (`superpowers:subagent-driven-development`, one `cairn-implementer` per task, Sonnet
+default; the tasks are mechanical, no Opus dispatch needed), on a feature worktree off `main`. Start at
+Task 1.** The design is settled and approved, so skip brainstorming. The pass-end review gate is the
+simplifier plus a `/code-review`; `svelte-reviewer`, `daisyui-a11y-reviewer`, the Worker/auth reviewers,
+and the live `/admin` smoke do not apply (no auth, Worker, or admin-UI surface changes; the showcase
+admin routes change only their `composeRuntime` call shape). One handoff item lands with this pass: the
+`cairn-pass` pass-end ritual gains a step enforcing the "Consumers must:" changelog line on any breaking
+change, a skill edit outside this repo, applied at pass-end. After DX-A lands, draft and execute DX-B.
+
 ## Where the work is (2026-06-03, DX pass P3 / render and component authoring executed; 0.24.0 unpublished)
 
 **P3, the render and component-authoring touch-ups, is executed and review-gated on `main`.** It ran

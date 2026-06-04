@@ -113,8 +113,8 @@ the code does not support is a defect the accuracy gate must catch.
 
 ## ROADMAP source and shape
 
-A first ROADMAP draft is synthesized from `docs/STATUS.md`, the dx-backlog, and the
-initiative memories, tiered Now, Next, Later, and Considering. That draft goes to the author
+A first ROADMAP draft is synthesized from `docs/STATUS.md`, the dx-backlog, the initiative
+memories, and the friction log as it fills, tiered Now, Next, Later, and Considering. That draft goes to the author
 to reorder before it lands, so final priority stays the author's call. A status block sits at
 the top so a reader sees the honest state before the plans.
 
@@ -125,6 +125,25 @@ because there is nothing to publish or rotate. The file carries no email address
 advisories are enabled on the repo during Phase 1. The body summarizes the supported-version
 policy and the auth and render security posture, linking the explanation arm for detail.
 
+## Docs-driven design feedback (the friction log)
+
+Writing a doc is also a design review. Explaining a flow in plain language exposes a rough
+edge that code review misses. Each phase captures the deficiencies it surfaces, held from two
+perspectives so neither audience's friction goes unrecorded.
+
+- The **cairn developer** is the integrator who builds and deploys a site on the package.
+  Friction here looks like an awkward adapter shape, a confusing export boundary, or a setup
+  step that needs too much tribal knowledge.
+- The **editor** is the non-technical author working in `/admin`. Friction here looks like an
+  unclear save flow, a field that needs explanation the UI does not give, or a preview that
+  disagrees with the published page.
+
+Findings land in `docs/internal/docs-friction-log.md`, one entry per item with its
+perspective, the doc that surfaced it, and a short note. Triage feeds the ROADMAP and the
+backlog; a finding is a candidate for future work, not a blocker on the doc that found it. The
+friction log is a standing part of the pass-dimension rule below, so a future pass that
+touches docs appends what it finds.
+
 ## Docs as a pass dimension (the going-forward rule)
 
 The catch-up only stays true if every future pass maintains it. The rule becomes a standing
@@ -133,8 +152,8 @@ gate in three places.
 - **`cairn-pass` skill:** the pass-end ritual gains a documentation step. Before a pass is
   done, the relevant `docs/` arm and the CHANGELOG or `upgrade-cairn.md` are updated for
   whatever the pass changed. A public-API change fails the gate until its reference page
-  matches. This sits beside the existing code-simplifier, `npm run check`, and `npm test`
-  gate.
+  matches. The step also appends any design friction the writing surfaced to the friction
+  log. This sits beside the existing code-simplifier, `npm run check`, and `npm test` gate.
 - **`cairn-cms/CLAUDE.md`:** a short "Documentation is a pass dimension" section states the
   rule and points at the `docs/` structure, so the expectation survives a skill bypass.
 - **Memory:** a feedback memory records the docs-dimension rule, and a project memory records
@@ -149,8 +168,8 @@ The scope of this round is `cairn-pass`, the library where these public docs liv
 Each phase is one plan, executed with `superpowers:subagent-driven-development`.
 
 1. **Legibility and split.** README rewrite, SECURITY.md, ROADMAP.md draft, npm metadata
-   audit, `docs/internal/` relocation, `docs/README.md` skeleton, private advisories enabled.
-   Smallest blast radius, and it fixes the repo's face first.
+   audit, `docs/internal/` relocation, `docs/README.md` skeleton, the friction log seeded,
+   private advisories enabled. Smallest blast radius, and it fixes the repo's face first.
 2. **Reference.** The seven subpath pages, each checked against the type surface.
 3. **Explanation.** architecture, data-tiers, security-model, content-model. Mostly a refresh
    of existing good material.
@@ -168,6 +187,7 @@ Each phase is one plan, executed with `superpowers:subagent-driven-development`.
 - API claims verified against `src/lib` and the exported types.
 - Links checked across the `docs/` tree and the root files.
 - Any doc that asserts an API shape is cross-checked against `examples/showcase`.
+- Design friction surfaced while writing is captured to the friction log.
 
 ## Out of scope
 

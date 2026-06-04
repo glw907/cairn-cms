@@ -11,16 +11,20 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-04): a workspace-infra task precedes the next engine pass
+## Immediate next action (2026-06-04): P4, the create-cairn-site scaffolder
 
-Before the next engine work (P4, the scaffolder), one infrastructure task is queued: flatten the cairn
-meta-workspace into standalone sibling repos under `~/Projects/`, point the two sites at the registry, and
-migrate the per-project Claude memory to the new path keys. The spec is
-`docs/superpowers/specs/2026-06-04-workspace-flatten-and-claude-infra-design.md` and the plan is
-`docs/superpowers/plans/2026-06-04-workspace-flatten-and-claude-infra.md`. Execute it INLINE with
-`superpowers:executing-plans` in a fresh session launched from `~/Projects` (not from inside
-`~/Projects/cairn/`, since the plan deletes that directory). After it lands, cairn-cms lives at
-`~/Projects/cairn-cms`, and the engine next action below (P4) resumes there.
+The workspace-flatten infra task is DONE (executed inline 2026-06-04, post-mortem in
+`docs/superpowers/plans/2026-06-04-workspace-flatten-and-claude-infra.md`). cairn-cms is a standalone
+repo at `~/Projects/cairn-cms`, both sites resolve the published package from the registry, and the
+per-project memory moved to the new working-directory keys.
+
+The next engine work is **P4, the create-cairn-site scaffolder** (the capstone). It is not yet
+written. Per the DX pass sequence, BRAINSTORM the open design calls with the user first, then write
+the numbered plan, then execute it subagent-driven with one `cairn-implementer` per task on a feature
+worktree off `main`. P4 carries the ecnordic DX items 5/6/14 and the DX-A and DX-B carry-forwards.
+Publishing stays held: `0.24.0` is the registry `latest`, and `main` carries the unpublished `0.25.0`
+(DX-A) and `0.26.0` (DX-B); publish the rolled window before any consumer or the scaffolder imports
+the new entries.
 
 ## Where the work is (2026-06-04, DX-B manifest Vite plugin executed; 0.26.0 unpublished)
 

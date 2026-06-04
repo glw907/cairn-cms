@@ -626,3 +626,101 @@ This is a stateful filesystem operation, so the recommended method is inline exe
 session from `~/Projects` (not inside `~/Projects/cairn/`), since Task 10 deletes that directory. Read this
 plan into context at the start. It moves with cairn-cms during Task 6, but an inline executor holds it in
 context, so the path change does not interrupt the run.
+
+---
+
+## Post-mortem (2026-06-04, executed inline with executing-plans)
+
+The plan ran end to end in one session launched from `~/Projects`. All eleven tasks landed.
+
+### What moved
+
+The three repos are now standalone siblings under `~/Projects/`: `cairn-cms`, `ecnordic-ski`, and
+`907-life`. A plain `mv` carried each repo's `.git`, `.claude`, and untracked files, so history and
+config survived. The `~/Projects/cairn/` wrapper (its meta `package.json`, `node_modules`, lockfile,
+`CLAUDE.md`, and `.claude/`) was deleted last, behind a dry-run that confirmed no `.git` remained.
+
+### Verification evidence
+
+- **Topology:** the three sibling repos exist and the wrapper is gone.
+- **Gates from the new locations:** cairn-cms `npm run check` 0 errors 0 warnings and `npm test`
+  exit 0 (113 files, 655 tests); ecnordic `npm run check` 0/0 and `npm run build` exit 0; 907
+  `npm run check` 0/0 and `npm run build` exit 0. All re-confirmed after the wrapper teardown.
+- **Registry resolution:** ecnordic resolves `@glw907/cairn-cms` `0.21.0` and 907 resolves `0.24.0`,
+  each a real directory in the site's own `node_modules`, not a workspace symlink. Both lockfiles
+  were untouched by the move, so no relock was needed.
+
+### Memory consolidation
+
+The per-project memory moved to the working-directory keys. Counts before: meta key 36 memories,
+`cairn-cairn-cms` 13, `cairn-907-life` 1, `ecnordic-ski` 12, `907-life` 8. After: the `cairn-cms`
+key holds 45 memories, `ecnordic-ski` 13, `907-life` 9, each with a rebuilt `MEMORY.md` at full
+one-pointer-per-memory parity. The three drained source keys (`-cairn`, `-cairn-cairn-cms`,
+`-cairn-907-life`) are emptied.
+
+Judgment calls resolved by hand:
+- `cairn-rebuild-initiative.md` collided. The meta key held a large, stale progress log (it
+  described Plan 01 as the latest work and named the `rebuild` worktree); the `cairn-cairn-cms` key
+  held a concise pointer that had intentionally moved status to `docs/STATUS.md` on 2026-05-30. Kept
+  the pointer, discarded the stale log.
+- `subagent-model-strategy.md` and `subagent-model-assignment.md` cover different facets (the
+  decision philosophy versus the per-agent assignment), so both were kept. The strategy memory's
+  mechanism paragraph was stale (it claimed `.bashrc` forced sonnet and a workspace `settings.json`
+  restored `inherit`); it was rewritten to the current reality, where `.bashrc` sets `inherit`
+  directly and there is no workspace.
+- `cairn-types-node-hoist-gotcha.md` was updated. Its prescribed fix (restore the workspace hoist)
+  is obsolete, so it now records the permanent fix applied this pass.
+- `workspace-symlink-and-next-pass.md` and `cairn-symlink-dev-mechanics.md` were deleted as
+  obsolete. `907-cairn-workspace-orientation.md` was rewritten and renamed to
+  `907-cairn-orientation.md` for the standalone path, keeping its Pass 16/17 roadmap.
+- All migration-caused dangling wikilinks were repaired (the deleted symlink memories and the
+  cross-key links to the routed ecnordic and 907 memories). The remaining unresolved links are
+  pre-existing danglers and false positives (a `[[send_email]]` TOML binding, literal `[[wikilink]]`
+  examples), out of scope.
+
+### The `memory:` agent feature (Task 9)
+
+Verified against the official subagents documentation (updated 2026-06-03) via the
+`claude-code-guide` agent: `memory:` is a real, supported subagent frontmatter field on Claude Code
+2.1.162, accepting `user`, `project`, or `local`. The verification surfaced a caveat the source
+report missed: setting `memory:` force-enables Read, Write, and Edit on the agent. The four reviewer
+agents are deliberately read-only, so applying it would break that posture. Applied `memory: project`
+to `cairn-implementer` only (it already has Write/Edit) with a memory-maintenance instruction in its
+body, and skipped the four reviewers. The change lives in the dotfiles checkout
+(`~/.dotfiles/claude/.claude/agents/`) and takes effect at the next session start. The Opus 4.8 tools
+(`/fast`, `ultracode` with `/workflows`, the effort levels) and `.claude/rules/*.md` with `paths:`
+frontmatter remain available levers, with no change required today.
+
+### Deviations from the plan
+
+- **`@types/node` (Tasks 4 and 5).** Both sites' `npm run check` failed standalone with
+  "Cannot find module 'node:fs'" errors in their test files. The meta-workspace root had hoisted
+  `@types/node` (pulled in transitively, never declared) into a shared `node_modules`, where each
+  site's `svelte-check` resolved it. Standalone, that crutch is gone. The fix was to declare
+  `@types/node` (`^24`, matching the Node 24 runtime) as a devDependency in each site (ecnordic
+  `b3207ea`, 907 `a5fae78`). A memory already documented this hoist gotcha; its workspace-restore fix
+  was obsolete, so it was updated to the permanent fix.
+- **Stale doc facts.** The meta `CLAUDE.md` and the functional spec both predate the `0.9.0`
+  editor swap and describe a Carta editor; the user flagged it. The current editor is CodeMirror 6
+  behind the `MarkdownEditor` seam. The new `cairn-cms/CLAUDE.md` and the refreshed `README.md` carry
+  the correct facts. The lesson: derive durable orientation from the live repo and `STATUS.md`, not
+  from the spec or the meta `CLAUDE.md`, both of which predate later passes.
+- **Broken-paths sweep (user request, mid-run).** A full sweep confirmed zero old-location
+  references in any operational file (code, CI workflows, `wrangler` config, `package.json`) across
+  the three repos, so they are fully operational from the new locations. The durable, forward-facing
+  docs were refreshed: the front-door `README.md` (it was a `0.4.x` artifact describing Carta,
+  better-auth, drizzle peers, and the meta-workspace), all three `CLAUDE.md` files, both site
+  `.claude/rules/development-workflow.md` files, and the STATUS top orientation. The superseded
+  `PLAN.md` and `ARCHITECTURE.md` (already labeled history in `CLAUDE.md` and `README.md`), the
+  dated and archived executed-plan files, and STATUS rolling history keep their original paths as
+  point-in-time records.
+
+### Follow-ups
+
+- The sites' own `docs/STATUS.md` and `docs/architecture.md` still describe the meta-workspace and
+  use `../cairn-cms` relative paths. Those paths resolve (the repos remain siblings), and the docs
+  are each site's own rolling record, so a future `site-pass` should refresh them rather than this
+  infra pass.
+- The `cairn-implementer` agent body still carries a stale `carta-md` client-only note and a
+  `rebuild`-branch assumption; both predate the CodeMirror swap and the merge to `main`. A future
+  agent-tooling pass should refresh them in the dotfiles checkout.

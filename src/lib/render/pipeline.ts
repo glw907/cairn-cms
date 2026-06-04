@@ -13,7 +13,7 @@ import { buildSanitizeSchema, rehypeAnchorRel } from './sanitize-schema.js';
 import { remarkDirectiveStamp } from './remark-directives.js';
 import { remarkResolveCairnLinks, CAIRN_RESOLVE } from './resolve-links.js';
 import { rehypeDispatch } from './rehype-dispatch.js';
-import type { ComponentRegistry } from './registry.js';
+import { defineRegistry, type ComponentRegistry } from './registry.js';
 import type { LinkResolve } from '../content/links.js';
 
 export interface RendererOptions {
@@ -39,7 +39,10 @@ export interface RendererOptions {
 /** Compose a site's render pipeline from its component registry: directive syntax to
  *  stamped markers to registry-built hast. Returns `renderMarkdown` plus the remark/
  *  rehype plugin arrays (so the admin editor preview can reuse the exact same set). */
-export function createRenderer(registry: ComponentRegistry, options: RendererOptions = {}) {
+export function createRenderer(
+  registry: ComponentRegistry = defineRegistry({ components: [] }),
+  options: RendererOptions = {},
+) {
   const remarkPlugins: PluggableList = [remarkDirective, [remarkDirectiveStamp, registry], remarkResolveCairnLinks];
   // The sanitize floor runs after rehype-raw (so author raw HTML is parsed, then cleaned) and
   // before the dispatch (so the site's trusted build() output and its inline SVG icons are never

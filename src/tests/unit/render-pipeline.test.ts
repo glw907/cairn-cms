@@ -8,6 +8,14 @@ describe('createRenderer', () => {
     expect(await renderMarkdown('# Hi\n\nText')).toContain('<h1');
   });
 
+  it('renders plain markdown with no registry argument', async () => {
+    const { renderMarkdown } = createRenderer();
+    const html = await renderMarkdown('# Hello\n\nA paragraph.');
+    expect(html).toContain('<h1');
+    expect(html).toContain('Hello');
+    expect(html).toContain('<p>A paragraph.</p>');
+  });
+
   it('exposes the remark/rehype plugin arrays for editor-preview wiring', () => {
     const r = createRenderer(defineRegistry({ components: [] }));
     expect(Array.isArray(r.remarkPlugins)).toBe(true);

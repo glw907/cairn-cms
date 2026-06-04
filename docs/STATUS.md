@@ -2,9 +2,14 @@
 
 The rolling status for the cairn-cms engine: where the work is now, what is next, and the open
 decisions. The `cairn-pass` skill reads this at pass-start and updates it at pass-end. Durable
-orientation is the workspace `CLAUDE.md`. Locked architecture decisions and the test plan are in
+orientation is this repo's `CLAUDE.md`. Locked architecture decisions and the test plan are in
 the functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`).
 Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`.
+
+**Standalone repo (2026-06-04).** cairn-cms now lives at `~/Projects/cairn-cms` as a standalone repo.
+Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the npm registry by
+version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
+library's own development proves changes against `examples/showcase`.
 
 ## Immediate next action (2026-06-04): a workspace-infra task precedes the next engine pass
 

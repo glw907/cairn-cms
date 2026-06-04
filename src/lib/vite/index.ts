@@ -40,7 +40,7 @@ function virtualSource(opts: CairnManifestOptions, mode: 'verify' | 'write'): st
   const resultExpr =
     mode === 'write' ? 'serializeManifest(built)' : '(verifyManifest(built, committed), "ok")';
   return `
-import { buildSiteManifest } from '@glw907/cairn-cms/delivery';
+import { buildSiteManifest } from '@glw907/cairn-cms/delivery/data';
 import { serializeManifest, verifyManifest } from '@glw907/cairn-cms';
 import { cairn, siteConfig } from ${JSON.stringify(opts.configModule)};
 ${committedImport}

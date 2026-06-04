@@ -11,7 +11,8 @@ These docs are organized in four arms.
 - **How-to guides** answer task questions: setting up the GitHub App, configuring auth and D1,
   defining an adapter, configuring rendering, wiring delivery, deploying, and upgrading.
   Forthcoming. [`upgrading.md`](./upgrading.md) is the current upgrade guide until then.
-- **Reference** documents each package export. Forthcoming in a later pass.
+- **Reference** documents each package export, one page per subpath. See the
+  [reference index](./reference/README.md).
 - **Explanation** covers the architecture and the design rules.
   [`data-architecture.md`](./data-architecture.md) is the current data-tier writeup until the
   arm lands.

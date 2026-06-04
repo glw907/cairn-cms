@@ -41,3 +41,20 @@ Phase 1 seeds this file. Later phases append as they write.
   cross-link rather than document in place. The `ListData` collision, one admin shape and one public
   shape on the same subpath, also forces the `PublicListData` alias. A surface-narrowing pass that
   keeps the public loaders on `/delivery` alone would resolve both.
+- **developer** (export surface, corroborated by the Phase 3 explanation brainstorm): the over-export
+  findings above show up a second time when the architecture narrative tries to draw a clean
+  engine/site line, since a root that re-exports half of `/delivery` contradicts a layered story. The
+  surface-narrowing pass is now a release gate (see `ROADMAP.md`, land it before the next `0.x`
+  publish and before the scaffolder, so the scaffolder templates the narrowed surface).
+- **developer/security** (render attribute sinks, from the Phase 3 explanation brainstorm): the
+  sanitize floor records a residual where a component `build()` that routes a directive attribute
+  value into an `href`, `src`, or `style` sink is not sanitized. An honest `security-model.md` has to
+  state it. Today the path is site-developer code rather than editor input, so the blast radius is
+  narrow, but a render-hardening pass should close it (sanitize component-built attribute values, or
+  constrain what `build()` may emit into URL and style sinks). Release-gated with the surface-narrowing
+  pass. If writing `security-model.md` shows the sink is broader than site-controlled code, escalate.
+- **developer** (URL identity spread, from the Phase 3 explanation brainstorm): one URL is assembled
+  from the YAML url policy, the catch-all `byPermalink` route, and the frontmatter `datePrefix`. It is
+  the concept most likely to need a diagram to explain, which is itself a complexity signal. Candidate:
+  a single overview helper or a consolidated explanation. Softer than the two above, release-gated with
+  them.

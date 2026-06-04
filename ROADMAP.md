@@ -11,10 +11,15 @@ needs. Items move up from lower tiers as the core fills in.
 ## Now
 
 - **Documentation initiative.** A self-contained docs set for external adopters, built in six
-  phases across the four Diátaxis arms. Phase 1 (legibility and split) is in progress.
-- **Publish the rolled version window.** `0.24.0` is the registry `latest`; `main` carries an
-  unpublished `0.25.0` and `0.26.0`. Publish the window before any consumer imports the new
-  `@glw907/cairn-cms/vite`, `@glw907/cairn-cms/delivery/data`, or `cairn-manifest` entries.
+  phases across the four Diátaxis arms. Phases 1 (legibility and split) and 2 (reference) have
+  landed. Phase 3 (explanation) is next. It publishes nothing.
+- **Engine hardening before the next release.** Three improvements the documentation effort
+  surfaced, gated to land before the next `0.x` publish. Narrow the public export surface so the
+  `.` root and `/sveltekit` stop re-exporting another subpath's symbols and the `export *` helper
+  leak ends; this precedes the scaffolder so it templates the clean surface. Harden render against
+  a component `build()` that routes a directive attribute value into an `href`, `src`, or `style`
+  sink. Consolidate the URL-identity model, which today spreads one URL across the YAML policy, the
+  catch-all route, and the frontmatter `datePrefix`.
 
 ## Next
 

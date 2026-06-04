@@ -684,3 +684,33 @@ git commit -m "Bump 0.26.0 with the manifest plugin changelog and upgrade notes"
 ## Versioning and publishing
 
 DX-B bumps to `0.26.0` (Task 7). Publishing follows the rolling-window practice and is held until the user asks. The package must be published before any site imports `@glw907/cairn-cms/vite`, `@glw907/cairn-cms/delivery/data`, or the `cairn-manifest` bin. Do not publish or push as part of executing this plan.
+
+---
+
+## Task 1 findings
+
+The primary candidate worked, with one adjustment to the nested-server construction. The mechanism is proven against the real showcase toolchain (`@sveltejs/kit` 2.61.1, `vite` 8.0.14, `@sveltejs/adapter-node` 5.5.4, `svelte` 5.56.0).
+
+### The hook and API that made the verify a build error
+
+Verification runs in the plugin's `buildStart` hook, which calls `this.error(message)` on a throw. A stale-manifest build failed with exit 1, printed `[plugin cairn-manifest] RolldownError: content manifest is stale...`, and showed `PluginContextImpl.buildStart` in the failure stack. Crucially the failure fired at `0 modules transformed`, before any module load and before prerender, so it is a hard build error that `handleHttpError: 'warn'` cannot reach. This closes ecnordic #4 by construction.
+
+The verify body is a nested Vite SSR module load. The plugin owns a virtual module (`virtual:cairn-manifest`, resolved id `\0virtual:cairn-manifest`) whose generated source runs `import.meta.glob` over the configured content globs, calls `buildSiteManifest`, and runs `verifyManifest(built, committed)`, then exports `result`. Inside `buildStart` the plugin creates a second, throwaway Vite server in `middlewareMode` and calls `server.ssrLoadModule('virtual:cairn-manifest')`. A throw inside the virtual module propagates out of `ssrLoadModule` and into `this.error`. So the verify runs inside the app's own Vite resolution, and its globs, package imports, and `?raw` reads are the build's own.
+
+### The nested server uses the loaded consumer config, not configFile:false plus explicit resolve
+
+A bare `configFile: false` plus `process.cwd()` root was not enough on its own. The virtual module imports `/src/lib/cairn.config.ts` and reads `/src/content/.cairn/index.json?raw`, both of which need the consumer's resolution (the app root, the `?raw` handling, and SvelteKit's plugin pipeline). So the working shape loads the consumer's real config with Vite's `loadConfigFromFile({ command: 'build', mode: 'production' }, undefined, root)`, spreads that loaded config into `createServer`, sets `root` to the resolved app root, and sets `configFile: false` so Vite does not re-read and re-merge the file on top of the spread. That app root comes from the plugin's `configResolved(config)` hook, captured into a closure variable, so the nested server loads the same root the outer build resolved.
+
+### How recursion was avoided
+
+A nested server must not include `cairnManifest` again, or its `buildStart` would recurse. So the plugin filters the loaded config's `plugins` list, dropping any plugin whose `name` is `cairn-manifest` (the guard is `isCairnManifestPlugin`, shape-safe against falsy and nested entries), and appends a minimal `cairnVirtualOnly` plugin that serves only the virtual module and carries no `buildStart`. SvelteKit's own plugins stay in the nested server (so `$lib`, `?raw`, and `import.meta.glob` still resolve), and only the recursing plugin is lost.
+
+### The working write invocation
+
+The same virtual module in write mode exports `serializeManifest(built)` as `result` and skips the committed-file import. A scratch script imported `buildManifestFromVite(opts, process.cwd())` from `dist/vite/index.js`, ran it from the `examples/showcase` directory, and got back the serialized manifest. It matched the committed `index.json` byte for byte (903 bytes, `MATCHES COMMITTED: true`). So `buildManifestFromVite(opts, root)` is the write path Task 5's bin calls: load the consumer config, eval the write-mode virtual module, read `result`, write it to `manifestPath`. The plugin already exports `buildManifestFromVite` and `verifyManifestFromVite` for the bin to reuse, so the bin needs no new evaluation code.
+
+### The import form the showcase needed before the /vite export exists
+
+No `@glw907/cairn-cms/vite` package export exists yet, and the package `exports` map blocks a deep `@glw907/cairn-cms/src/...` subpath import. So the showcase imported the plugin by relative path into the linked package source: `import { cairnManifest } from '../../src/lib/vite/index.ts'` in `examples/showcase/vite.config.ts` (the `node_modules/@glw907/cairn-cms` symlink points at the worktree root, so `../../src` from the showcase reaches the plugin source). Vite processes the config as TypeScript, so the `.ts` extension on the relative import is fine. Task 4 adds the `./vite` export and switches this line to `import { cairnManifest } from '@glw907/cairn-cms/vite'`.
+
+One operational note for Task 4 and Task 5: the virtual module imports `@glw907/cairn-cms/delivery` and `@glw907/cairn-cms`, which resolve through the package `exports` to `dist`. So `npm run package` must run after any `src` change before a showcase build sees the new builder code. The relative plugin import dodges this for the plugin itself, but the virtual module's package imports do not.

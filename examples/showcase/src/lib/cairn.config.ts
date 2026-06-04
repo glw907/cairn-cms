@@ -1,9 +1,10 @@
 // The showcase's adapter: the single seam the engine consumes. It declares one post-like concept,
 // a render that runs the engine pipeline, and a backend the dev GitHub double answers for.
-import { createRenderer, defineRegistry, defineFields, defineAdapter, cardShell, headRow, iconSpan, glyph } from '@glw907/cairn-cms';
+import { createRenderer, defineRegistry, defineFields, defineAdapter, cardShell, headRow, iconSpan, glyph, parseSiteConfig } from '@glw907/cairn-cms';
 import type { ComponentDef, IconSet } from '@glw907/cairn-cms';
 import { h } from 'hastscript';
 import type { ElementContent } from 'hast';
+import siteYaml from './site.config.yaml?raw';
 
 const icons: IconSet = {
   snowflake: 'M128 24v208M44 76l168 104M212 76L44 180',
@@ -98,3 +99,5 @@ export const cairn = defineAdapter({
   registry,
   icons,
 });
+
+export const siteConfig = parseSiteConfig(siteYaml);

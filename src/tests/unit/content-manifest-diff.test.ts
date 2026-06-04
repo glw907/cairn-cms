@@ -43,4 +43,34 @@ describe('verifyManifest', () => {
     const built: Manifest = { version: 1, entries: [entry()] };
     expect(() => verifyManifest(built, serializeManifest(built))).not.toThrow();
   });
+
+  it('does not report a links drift for an entry whose links only differ in order', () => {
+    // One entry's built links are in extraction (non-sorted) order; serializeManifest sorts links,
+    // so a naive diff of the non-canonical built side reports a false (links) drift. A second entry
+    // carries a genuine title drift, so the slow diff path runs.
+    const reordered = entry({
+      id: 'a',
+      links: [
+        { concept: 'posts', id: 'b' },
+        { concept: 'posts', id: 'a' },
+      ],
+    });
+    const builtDrift = entry({ id: 'c', permalink: '/c', title: 'New' });
+    const built: Manifest = { version: 1, entries: [reordered, builtDrift] };
+    // The committed side is canonical (links sorted) for the reordered entry, with a stale title for c.
+    const committed = serializeManifest({
+      version: 1,
+      entries: [reordered, entry({ id: 'c', permalink: '/c', title: 'Old' })],
+    });
+    let message = '';
+    try {
+      verifyManifest(built, committed);
+    } catch (err) {
+      message = err instanceof Error ? err.message : String(err);
+    }
+    expect(message).toContain('posts/c');
+    expect(message).toContain('title');
+    expect(message).not.toContain('links');
+    expect(message).not.toContain('posts/a (');
+  });
 });

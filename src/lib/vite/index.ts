@@ -5,7 +5,7 @@
 // the build as a hard build error, outside the prerender request lifecycle (where handleHttpError
 // could downgrade it). The same virtual module in write mode produces the serialized manifest, which
 // the cairn-manifest bin uses to regenerate. See the design spec, locked decision 1.
-import type { Plugin } from 'vite';
+import type { Plugin, PluginOption } from 'vite';
 import { writeFile, mkdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
@@ -78,16 +78,13 @@ async function evalVirtual(
   // virtual module in the requested mode.
   const loaded = await loadConfigFromFile({ command: 'build', mode: 'production' }, undefined, root);
   const inlineConfig = loaded?.config ?? {};
-  const inheritedPlugins = (inlineConfig.plugins ?? []).filter(
-    (p) => !isCairnManifestPlugin(p),
-  );
   const server = await createServer({
     ...inlineConfig,
     root,
     configFile: false,
     logLevel: 'silent',
     server: { middlewareMode: true, hmr: false, watch: null },
-    plugins: [...inheritedPlugins, cairnVirtualOnly(opts, mode)],
+    plugins: [...stripCairnManifest(inlineConfig.plugins ?? []), cairnVirtualOnly(opts, mode)],
   });
   try {
     const mod = (await server.ssrLoadModule(VIRTUAL_ID)) as { result: string };
@@ -102,6 +99,17 @@ async function evalVirtual(
  *  falsy slots, so guard the shape. */
 function isCairnManifestPlugin(p: unknown): boolean {
   return !!p && typeof p === 'object' && 'name' in p && (p as { name?: unknown }).name === 'cairn-manifest';
+}
+
+/** Flatten the consumer's plugins option and drop the cairnManifest plugin at any nesting depth, so
+ *  the nested verify server can never re-enter its buildStart. Vite supports (and flattens) nested
+ *  plugin arrays, and findCairnOptions recurses into them, so a flat single-level filter would miss a
+ *  cairnManifest nested inside a shared preset's sub-array and let it survive into the nested server.
+ *  This mirrors findCairnOptions's recursion. Falsy slots pass through, which Vite tolerates. */
+export function stripCairnManifest(plugins: PluginOption | PluginOption[]): PluginOption[] {
+  if (Array.isArray(plugins)) return plugins.flatMap(stripCairnManifest);
+  if (isCairnManifestPlugin(plugins)) return [];
+  return [plugins];
 }
 
 /** Verify the committed manifest against the corpus from a Vite context, throwing on drift. The bin

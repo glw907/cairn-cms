@@ -193,8 +193,13 @@ function formatDiff(d: ManifestDiff): string {
  *  error names the added, removed, and changed entries, so a raw-git content edit that leaves the
  *  committed manifest stale fails the build loudly with what drifted. */
 export function verifyManifest(built: Manifest, committedRaw: string): void {
-  if (committedRaw === serializeManifest(built)) return;
-  const diff = diffManifests(built, parseManifest(committedRaw));
+  const builtRaw = serializeManifest(built);
+  if (committedRaw === builtRaw) return;
+  // Diff the canonical built form, not the raw one. serializeManifest sorts each entry's links, so a
+  // build whose links are in extraction order would otherwise report a false (links) drift for an
+  // entry whose link set is identical and only the order differs. Reuse the serialized form so both
+  // sides are canonical.
+  const diff = diffManifests(parseManifest(builtRaw), parseManifest(committedRaw));
   throw new Error(
     'content manifest is stale: the committed file does not match the corpus.\n' +
       formatDiff(diff) +

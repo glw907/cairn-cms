@@ -22,3 +22,14 @@ Phase 1 seeds this file. Later phases append as they write.
   "Report a vulnerability" flow is unavailable while the repo stays private. `SECURITY.md`
   describes the intended public-state channel. Enable private reporting when the repo goes public,
   or add an interim email fallback if the project takes outside reports before then.
+- **developer** (public surface, from `reference/core.md`): the `.` entry exports 174 names, and
+  several are internal helpers leaked through `export *` (`signingSelfTest`, `fileSha`, `contentsUrl`,
+  `treeUrl`, `readRaw`, `strProp`, `markFirstList`, `isElement`, and similar). A site should not
+  depend on them, and documenting them as public cements an accidental surface. Candidate: a future
+  engine pass narrows `.` by stopping the `export *` leak, so the public surface is deliberate. The
+  reference page tiers them as Low-level in the meantime.
+- **developer** (delivery duplication, from `reference/core.md`): the `.` entry re-exports the whole
+  delivery builder and responder set (`buildRssFeed`, `jsonFeedResponse`, `createPublicRoutes`, and
+  the rest), so the same symbols document on both `core.md` and the delivery pages. The core page
+  notes the overlap and points a reader at the delivery surface, but the dual home is a sign the
+  root re-export is wider than a site needs from `.`. Same surface-narrowing pass would resolve it.

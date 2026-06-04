@@ -40,3 +40,22 @@ gone, and a missing `siteConfig` throws. Consumers must: pass the parsed site co
 
 `createRenderer()` now defaults its registry to the empty registry. A plain-prose site can call
 `createRenderer()` with no argument. Consumers must: nothing. Passing a built registry is unchanged.
+
+## 0.26.0: the `cairnManifest()` Vite plugin verifies the manifest on every build
+
+A `cairnManifest()` plugin from `@glw907/cairn-cms/vite` now owns the build-time manifest check, and it
+fails the build outside the prerender lifecycle so `handleHttpError` cannot downgrade it. Consumers
+must: add `cairnManifest({ configModule, content, manifestPath })` to the Vite config and drop any
+hand-rolled in-graph `verifyManifest` call.
+
+## 0.26.0: the `cairn-manifest` bin replaces the hand-written regenerate script
+
+A shipped `cairn-manifest` bin regenerates the committed manifest from a Vite context. To adopt it, set
+the regenerate script to `"cairn:manifest": "cairn-manifest"` and delete the hand-written
+`scripts/build-manifest.mjs`.
+
+## 0.26.0: node-side data imports move to `@glw907/cairn-cms/delivery/data`
+
+The pure delivery projections now live at a node-safe `@glw907/cairn-cms/delivery/data` entry that pulls
+no `@sveltejs/kit` into the graph. Consumers must: move any plain-Node import of a delivery data helper
+(such as `buildSiteManifest`) from `@glw907/cairn-cms/delivery` to `@glw907/cairn-cms/delivery/data`.

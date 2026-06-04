@@ -2,6 +2,24 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.26.0
+
+### Added
+- A `cairnManifest()` Vite plugin (`@glw907/cairn-cms/vite`) verifies the committed content manifest on
+  every build and fails the build with a diff naming what drifted. The check runs outside the prerender
+  lifecycle, so `handleHttpError` cannot mask it. Consumers must: add `cairnManifest({ configModule,
+  content, manifestPath })` to the Vite config.
+- A `cairn-manifest` bin regenerates the committed manifest from a Vite context. To adopt it, set the
+  regenerate script to `"cairn:manifest": "cairn-manifest"` and delete the hand-written
+  `scripts/build-manifest.mjs`.
+- A node-safe `@glw907/cairn-cms/delivery/data` entry exposes the pure delivery projections with no
+  `@sveltejs/kit` in the graph. Consumers must: move any plain-Node import of a delivery data helper
+  (such as `buildSiteManifest`) from `@glw907/cairn-cms/delivery` to `@glw907/cairn-cms/delivery/data`.
+
+### Changed
+- `verifyManifest` now throws an error that names the added, removed, and changed entries. Consumers
+  must: nothing. The message is strictly more informative.
+
 ## 0.25.0
 
 ### Changed (breaking)

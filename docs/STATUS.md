@@ -11,20 +11,31 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-04): Documentation Initiative, Phase 1
+## Immediate next action (2026-06-04): Documentation Initiative, Phase 2 (Reference)
 
 The documentation initiative is the current priority. It builds a self-contained docs set for
 external adopters plus the project-legibility files, and it makes documentation a standing pass
 dimension going forward. The design spec is
-`docs/superpowers/specs/2026-06-04-cairn-docs-initiative-design.md`. Phase 1, legibility and split, is
-planned at `docs/superpowers/plans/2026-06-04-cairn-docs-phase-1-legibility.md`.
+`docs/superpowers/specs/2026-06-04-cairn-docs-initiative-design.md`. The initiative runs in six
+phases, each plan written just-in-time after the prior one lands: legibility, reference, explanation,
+guides, tutorial, and a process phase that bakes docs into the pass ritual. The initiative absorbs
+the queued docs-refresh items below, which its later phases schedule. It publishes nothing and
+touches no engine code, so the held publishing window and P4 both stay queued behind it.
 
-Execute Phase 1 with `superpowers:subagent-driven-development`, one `cairn-implementer` per task. The
-initiative runs in six phases, each plan written just-in-time after the prior one lands: legibility,
-reference, explanation, guides, tutorial, and a process phase that bakes docs into the pass ritual.
-The initiative absorbs the queued docs-refresh items below, which its later phases schedule. Phase 1
-publishes nothing and touches no engine code, so the held publishing window and P4 both stay queued
-behind it.
+**Phase 1 (legibility and split) landed on `main` 2026-06-04.** It rewrote the README as the adopter
+hub, added `SECURITY.md` and `ROADMAP.md`, fixed the npm packaging metadata (ships `CHANGELOG.md`,
+adds `homepage`/`bugs`), relocated the historical docs under `docs/internal/` with a banner, added the
+`docs/README.md` index, and seeded `docs/internal/docs-friction-log.md`. Eight commits `3323eb8..` on
+`main`. Post-mortem at the end of the Phase 1 plan
+(`docs/superpowers/plans/2026-06-04-cairn-docs-phase-1-legibility.md`). One carry-forward: private
+vulnerability reporting could not be enabled because the repo is private (the API 404s); `SECURITY.md`
+describes the intended public-state channel, and the gap is logged in the friction log.
+
+**Next: Phase 2 (Reference).** Brainstorm the open calls with the user, then write the just-in-time
+plan, then execute it with `superpowers:subagent-driven-development`, one `cairn-implementer` per task.
+The Reference arm is one page per export subpath from `package.json` (`.`, `/sveltekit`,
+`/components`, `/delivery`, `/delivery/data`, `/delivery/head`, `/vite`, plus the `cairn-manifest`
+bin), each hand-curated and checked against the exported type surface and `examples/showcase`.
 
 ## Queued engine capstone: P4, the create-cairn-site scaffolder
 

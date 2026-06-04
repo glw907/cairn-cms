@@ -504,3 +504,30 @@ After all tasks commit, before declaring the phase done:
 - `SECURITY.md` links `docs/data-architecture.md` and `docs/render-sanitize-floor.md`, which exist now; Phase 3 repoints them to `security-model.md` when that arm lands.
 - The packaging task ships `CHANGELOG.md` (a stable filename), not the churning `docs/` tree, so the `files` array stays low-maintenance.
 - `docs/STATUS.md` and `docs/superpowers/` are untouched by the relocation because `cairn-pass` depends on their paths.
+
+## Post-mortem (2026-06-04, landed on `main`)
+
+All seven tasks executed in order on `main`, eight commits `3323eb8..` (the seven task commits plus a
+friction-log append). The phase is docs-only, so it ran inline rather than through one `cairn-implementer`
+per task: every task's content was specified verbatim in the plan, and the gate is `prose-guard` plus
+link resolution, not the test suite the implementer agent exists to drive.
+
+**What landed.** Historical docs moved under `docs/internal/` with a banner (Task 1), the friction log
+seeded (Task 2), `SECURITY.md` added (Task 3), npm metadata fixed so the tarball ships `CHANGELOG.md` and
+the manifest carries `homepage`/`bugs` (Task 4), `ROADMAP.md` drafted and confirmed by the user as-is
+(Task 5), the `docs/README.md` index added (Task 6), and the README rewritten as the adopter hub (Task 7).
+
+**Verification.** `prose-guard` shows no blocking tell on any authored file (only sweep-only advisories:
+a passive line and a tricolon in verbatim plan content, plus a low-burstiness flag on `SECURITY.md`; none
+chased per the plan). No dangling relative links in the root files or `docs/README.md`. `npm run
+check:package` stayed green with the metadata change: publint "All good", attw "No problems found", and
+`npm pack --dry-run` lists `CHANGELOG.md`. The historical-ref grep leaves `docs/PLAN.md` references inside
+`docs/superpowers/` and `docs/STATUS.md` and the superseded `docs/creating-a-cairn-site.md`, all
+intentional per the self-review note (dev-process and historical files, not the adopter path).
+
+**Carry-forward.** Private vulnerability reporting could not be enabled: the repo is private, so
+`PUT repos/glw907/cairn-cms/private-vulnerability-reporting` returns 404 and the Security-tab flow is
+unavailable. `SECURITY.md` describes the intended public-state channel. Enable reporting when the repo
+goes public, or add an interim email fallback. Logged in the friction log.
+
+**Next.** Phase 2 (Reference): brainstorm, then a just-in-time plan, then subagent-driven execution.

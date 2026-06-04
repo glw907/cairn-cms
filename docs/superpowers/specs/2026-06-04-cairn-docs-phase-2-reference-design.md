@@ -21,14 +21,17 @@ initiative spec.
 
 Seven pages live under `docs/reference/`, one per importable surface, plus an index.
 
-| Page | Subpath | Surface | Export size |
+The export counts below come from the TypeScript checker over the built `.d.ts` (the coverage script
+in the plan), not a grep, so they count every re-exported and type-only name a consumer can import.
+
+| Page | Subpath | Surface | Export count |
 |---|---|---|---|
-| `core.md` | `.` | the engine: adapter contract, `defineFields`/`defineAdapter`, `createRenderer`, `composeRuntime`, the schema and id helpers | ~63 |
-| `sveltekit.md` | `/sveltekit` | the server load and action logic | ~11 |
-| `components.md` | `/components` | the admin Svelte UI | ~14 |
+| `core.md` | `.` | the engine: adapter contract, `defineFields`/`defineAdapter`, `createRenderer`, `composeRuntime`, the schema and id helpers, and the public types | 174 |
+| `sveltekit.md` | `/sveltekit` | the server load and action route factories | 29 |
+| `components.md` | `/components` | the admin Svelte UI | 14 |
 | `delivery.md` | `/delivery` (and `/delivery/head`) | the route loaders and their types, plus `CairnHead`; re-exports all of `/delivery/data` | 6 own + re-export |
-| `delivery-data.md` | `/delivery/data` | the node-safe pure projections | ~23 |
-| `vite.md` | `/vite` | the `cairnManifest()` plugin | ~7 |
+| `delivery-data.md` | `/delivery/data` | the node-safe pure projections | 39 |
+| `vite.md` | `/vite` | the `cairnManifest()` plugin | 6 |
 | `cli-cairn-manifest.md` | the `cairn-manifest` bin | the manifest regenerate command | 1 |
 
 `/delivery/head` holds one symbol (`CairnHead`), so it folds into `delivery.md` rather than taking
@@ -56,9 +59,26 @@ Every page follows one skeleton so a reader learns the shape once.
 
 Every exported symbol is listed and named, so the page covers its subpath completely. The primary
 API (the functions, the components, the plugin, the bin) carries a worked example. A pure type alias
-carries a signature and a sentence, no example. Core exposes about 63 symbols, many of them type
-aliases, so an exhaustive example-per-symbol page would be long and low-value; the tiered rule keeps
-the page complete without that cost.
+carries a signature and a sentence, no example. Core exposes 174 symbols, roughly half of them types,
+so an exhaustive example-per-symbol page would be long and low-value; the tiered rule keeps the page
+complete without that cost.
+
+## Core stability tiering
+
+Core's 174 exports are not a flat surface. Several are internal helpers that leaked through
+`export *` (`signingSelfTest`, `fileSha`, `contentsUrl`, `treeUrl`, `readRaw`, `strProp`,
+`markFirstList`, `isElement`, and similar low-level utilities), which a site rarely calls and should
+not depend on. Documenting them at equal weight with `defineAdapter` would teach a consumer to lean
+on an accidental surface. So `core.md` splits into a **Stable API** tier (the deliberate public
+surface, with worked examples) and a **Low-level** tier (the helpers, each a name and a one-line
+meaning, with a note that they are not part of the supported surface). The coverage check still
+requires every name present, in either tier. The public types group as their own tier of
+signature-plus-a-line rows.
+
+This wide surface is itself a design finding. The reference phase logs an over-export finding to the
+friction log recommending a future engine pass to stop `export *`-leaking the internal helpers, so a
+later release narrows `.` to a deliberate surface. The reference pages regenerate cheaply against the
+coverage check once that lands.
 
 ## Worked snippets
 
@@ -92,7 +112,9 @@ and carries no version bump.
 
 Each page appends any design friction it surfaces to `docs/internal/docs-friction-log.md`: an awkward
 export boundary, a symbol whose purpose the types do not convey, or a split that confuses a reader.
-A finding is a candidate for the roadmap, not a blocker on the page that found it.
+A finding is a candidate for the roadmap, not a blocker on the page that found it. The phase logs at
+least the over-export finding above (core's `export *` leaks internal helpers into the public
+surface), which a future engine pass narrows.
 
 ## Out of scope
 

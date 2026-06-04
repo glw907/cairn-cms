@@ -31,6 +31,7 @@ export type {
 } from './content/types.js';
 export { CONCEPT_ROUTING, normalizeConcepts, findConcept } from './content/concepts.js';
 export { composeRuntime } from './content/compose.js';
+export type { ComposeInput } from './content/compose.js';
 export {
   frontmatterFromForm,
   dateInputValue,

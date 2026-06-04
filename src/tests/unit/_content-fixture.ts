@@ -2,6 +2,7 @@
 // minimal Pages form. Shared across the content-model unit tests so the field shapes
 // match what the editor and the validator rely on.
 import type { CairnAdapter, FrontmatterField } from '../../lib/content/types.js';
+import type { SiteConfig } from '../../lib/nav/site-config.js';
 import { defineFields } from '../../lib/content/schema.js';
 
 export const postFields: FrontmatterField[] = [
@@ -34,3 +35,5 @@ export const testAdapter: CairnAdapter = {
   sender: { from: 'noreply@test.example' },
   render: (md) => md,
 };
+
+export const testSiteConfig: SiteConfig = { siteName: 'Test' };

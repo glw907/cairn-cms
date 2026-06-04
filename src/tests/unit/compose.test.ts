@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { composeRuntime } from '../../lib/content/compose.js';
 import type { CairnAdapter, CairnExtension } from '../../lib/content/types.js';
 import { defineFields } from '../../lib/content/schema.js';
+import { testSiteConfig } from './_content-fixture.js';
 
 function adapter(): CairnAdapter {
   return {
@@ -19,13 +20,13 @@ describe('composeRuntime extension carry-through', () => {
       adminPanels: [{ id: 'calendar', label: 'Calendar', component: {} }],
       fieldTypes: [{ type: 'color' }],
     };
-    const runtime = composeRuntime(adapter(), [ext]);
+    const runtime = composeRuntime({ adapter: adapter(), siteConfig: testSiteConfig, extensions: [ext] });
     expect(runtime.adminPanels).toEqual([{ id: 'calendar', label: 'Calendar', component: {} }]);
     expect(runtime.fieldTypes).toEqual([{ type: 'color' }]);
   });
 
   it('defaults the carried arrays to empty when no extension contributes', () => {
-    const runtime = composeRuntime(adapter(), []);
+    const runtime = composeRuntime({ adapter: adapter(), siteConfig: testSiteConfig, extensions: [] });
     expect(runtime.adminPanels).toEqual([]);
     expect(runtime.fieldTypes).toEqual([]);
   });
@@ -33,9 +34,9 @@ describe('composeRuntime extension carry-through', () => {
 
 describe('composeRuntime manifestPath', () => {
   it('defaults the manifest path', () => {
-    expect(composeRuntime(adapter()).manifestPath).toBe('src/content/.cairn/index.json');
+    expect(composeRuntime({ adapter: adapter(), siteConfig: testSiteConfig }).manifestPath).toBe('src/content/.cairn/index.json');
   });
   it('honors an adapter override', () => {
-    expect(composeRuntime({ ...adapter(), manifestPath: 'content/.cairn/idx.json' }).manifestPath).toBe('content/.cairn/idx.json');
+    expect(composeRuntime({ adapter: { ...adapter(), manifestPath: 'content/.cairn/idx.json' }, siteConfig: testSiteConfig }).manifestPath).toBe('content/.cairn/idx.json');
   });
 });

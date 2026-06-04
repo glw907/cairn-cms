@@ -35,4 +35,10 @@ jobs:
       - run: npm run check:package
       # Stable release: publish to the default `latest` tag. (Pre-releases used `--tag rc`
       # to keep `latest` on the live 0.5.x while the rebuild stabilized.)
+      #
+      # Provenance is disabled because the repo is private and provenance attestation
+      # requires a public repository; npm would otherwise auto-enable it under OIDC and
+      # fail the publish. Drop this env when the repo goes public to restore provenance.
       - run: npm publish --access public
+        env:
+          NPM_CONFIG_PROVENANCE: false

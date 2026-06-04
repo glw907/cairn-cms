@@ -11,26 +11,42 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-04): P4, the create-cairn-site scaffolder
+## Immediate next action (2026-06-04): Documentation Initiative, Phase 1
+
+The documentation initiative is the current priority. It builds a self-contained docs set for
+external adopters plus the project-legibility files, and it makes documentation a standing pass
+dimension going forward. The design spec is
+`docs/superpowers/specs/2026-06-04-cairn-docs-initiative-design.md`. Phase 1, legibility and split, is
+planned at `docs/superpowers/plans/2026-06-04-cairn-docs-phase-1-legibility.md`.
+
+Execute Phase 1 with `superpowers:subagent-driven-development`, one `cairn-implementer` per task. The
+initiative runs in six phases, each plan written just-in-time after the prior one lands: legibility,
+reference, explanation, guides, tutorial, and a process phase that bakes docs into the pass ritual.
+The initiative absorbs the queued docs-refresh items below, which its later phases schedule. Phase 1
+publishes nothing and touches no engine code, so the held publishing window and P4 both stay queued
+behind it.
+
+## Queued engine capstone: P4, the create-cairn-site scaffolder
 
 The workspace-flatten infra task is DONE (executed inline 2026-06-04, post-mortem in
 `docs/superpowers/plans/2026-06-04-workspace-flatten-and-claude-infra.md`). cairn-cms is a standalone
 repo at `~/Projects/cairn-cms`, both sites resolve the published package from the registry, and the
 per-project memory moved to the new working-directory keys.
 
-The next engine work is **P4, the create-cairn-site scaffolder** (the capstone). It is not yet
-written. Per the DX pass sequence, BRAINSTORM the open design calls with the user first, then write
+P4, the create-cairn-site scaffolder, is the engine capstone queued after the docs initiative. It is
+not yet written. Per the DX pass sequence, BRAINSTORM the open design calls with the user first, then write
 the numbered plan, then execute it subagent-driven with one `cairn-implementer` per task on a feature
 worktree off `main`. P4 carries the ecnordic DX items 5/6/14 and the DX-A and DX-B carry-forwards.
 Publishing stays held: `0.24.0` is the registry `latest`, and `main` carries the unpublished `0.25.0`
 (DX-A) and `0.26.0` (DX-B); publish the rolled window before any consumer or the scaffolder imports
 the new entries.
 
-## Queued: cairn-cms docs refresh pass (documented 2026-06-04)
+## Absorbed into the docs initiative: docs-refresh items (documented 2026-06-04)
 
 A docs-accuracy sweep during the workspace flatten found cairn-cms documentation that predates later
 engine passes. The two consumer sites and the durable front-door docs (README, CLAUDE.md) were fixed in
-that pass. The cairn-cms internal docs below are deferred to a dedicated docs pass.
+that pass. The items below are now scheduled within the documentation initiative's later phases
+(reference, explanation, guides, tutorial) rather than a separate pass.
 
 - **Functional spec** (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`): accurate on
   auth and the fixed-concepts model, but it predates the `0.9.0` editor swap, so it describes a Carta

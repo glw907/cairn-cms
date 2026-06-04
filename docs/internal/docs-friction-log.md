@@ -58,3 +58,10 @@ Phase 1 seeds this file. Later phases append as they write.
   the concept most likely to need a diagram to explain, which is itself a complexity signal. Candidate:
   a single overview helper or a consolidated explanation. Softer than the two above, release-gated with
   them.
+
+- **developer** (URL identity spread, from `docs/explanation/content-model.md`): writing the URL
+  identity section confirmed the spread firsthand. One URL is assembled from the frontmatter date,
+  the per-concept `datePrefix`, and the YAML url policy that the catch-all `byPermalink` route reads.
+  The section could not be explained in plain prose without pointing at three places and leaning on a
+  diagram, which corroborates the brainstorm finding that this concept is the strongest candidate for
+  a consolidating helper. Release-gated with the surface-narrowing pass.

@@ -118,8 +118,9 @@ sound. So this workstream is small.
   work). The site `.claude/` directories travel intact in the directory move and need no change.
 - **Meta content relocation.** The `cairn-dx-feedback-2026-06-04.md` doc at the workspace root moves
   into `cairn-cms` (it is cairn-cms feedback). The now-obsolete `docs/runbooks/symlink-dev.md` runbook
-  is rewritten to describe registry-consumer development, or retired, and `cairn-cms` STATUS and memory
-  are updated for the new path and the dropped symlink-dev workflow.
+  is retired (deleted), since registry-consumer development is the standard SvelteKit story and needs
+  no cairn-specific runbook. `cairn-cms` STATUS and memory are updated for the new path and the dropped
+  symlink-dev workflow, and any reference to the runbook is removed.
 - **Optional enhancements, verified before adoption.** The research suggested `memory: project` on the
   recurring reviewer and implementer agents for cross-session review knowledge, and `.claude/rules/`
   with `paths:` frontmatter as the lever if any `CLAUDE.md` later grows past the target. The report was

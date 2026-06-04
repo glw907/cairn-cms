@@ -6,6 +6,17 @@ orientation is the workspace `CLAUDE.md`. Locked architecture decisions and the 
 the functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`).
 Per-plan detail lives in each plan's post-mortem under `docs/superpowers/plans/`.
 
+## Immediate next action (2026-06-04): a workspace-infra task precedes the next engine pass
+
+Before the next engine work (P4, the scaffolder), one infrastructure task is queued: flatten the cairn
+meta-workspace into standalone sibling repos under `~/Projects/`, point the two sites at the registry, and
+migrate the per-project Claude memory to the new path keys. The spec is
+`docs/superpowers/specs/2026-06-04-workspace-flatten-and-claude-infra-design.md` and the plan is
+`docs/superpowers/plans/2026-06-04-workspace-flatten-and-claude-infra.md`. Execute it INLINE with
+`superpowers:executing-plans` in a fresh session launched from `~/Projects` (not from inside
+`~/Projects/cairn/`, since the plan deletes that directory). After it lands, cairn-cms lives at
+`~/Projects/cairn-cms`, and the engine next action below (P4) resumes there.
+
 ## Where the work is (2026-06-04, DX-B manifest Vite plugin executed; 0.26.0 unpublished)
 
 **DX-B is executed and review-gated, landed on local `main`.** It ran subagent-driven, one

@@ -1,32 +1,25 @@
 # cairn-cms
 
 An embedded, **magic-link**, GitHub-committing CMS for SvelteKit + Cloudflare sites.
-Non-technical authors log in by email (no GitHub account, no password), edit **raw
-markdown** in a [Carta](https://github.com/BearToCode/carta) editor, and save. Each save
-commits to `main` via a **GitHub App** (committer = `cairn-cms[bot]`, author = the editor)
-and auto-deploys.
+Non-technical authors log in by email (no GitHub account, no password), edit **raw markdown**
+in a client-only CodeMirror editor with a live preview, and save. Each save commits to `main`
+via a **GitHub App** (committer = `cairn-cms[bot]`, author = the editor) and auto-deploys.
 
-It is **design-agnostic**: each consumer site supplies an adapter (collections, slug
-convention, frontmatter schema, and its own `renderPreview(md)`), so the same engine drives
-sites with completely different markdown pipelines (e.g. [ecnordic.ski](https://ecnordic.ski)
-(remark→rehype directive pipeline) and [907.life](https://907.life) (plain `remark-html`)).
+It is **design-agnostic**. Each consumer site supplies an adapter (the content contract through
+`defineAdapter`/`defineFields`, the slug and permalink rules, and its render configuration), so the
+same engine drives sites with completely different markdown pipelines. Two run in production today:
+[ecnordic.ski](https://ecnordic.ski) (a remark-to-rehype directive pipeline) and
+[907.life](https://907.life) (the engine's own `createRenderer`). Content is a fixed set of
+first-class concepts (Posts and Pages), not open-ended collections.
 
 ## Status
 
-**`0.4.x`: auth on [better-auth](https://better-auth.com); API not yet frozen.** The core was
-built *inside ecnordic.ski first* (the richer proving ground) with the cairn-core ↔ site-adapter
-seams designed in from day one, then extracted into this package and validated on a second design
-(907.life). Editor auth runs on **better-auth (Cloudflare D1 + magic-link)** behind a scanner-safe
-**POST-confirm** flow, with two-tier `owner`/`editor` roles; the GitHub-App commit signer stays
-bespoke. The GitHub commit path, Carta preview, the adapter contract, and the shared admin shell
-(`/sveltekit` server logic + `/components` Svelte UI + `/auth`) all run on both sites. Pin a caret
-range and expect 0.x churn.
-
-> **Breaking in `0.4.0`** (from `0.3.x`): editor auth moved off the hand-rolled magic-link/KV/
-> signed-cookie stack onto better-auth. Each site now needs a **D1 binding** (`AUTH_DB`) +
-> committed migrations, an `AUTH_SECRET`, a `/api/auth/[...all]` catch-all + `/admin/auth/confirm`
-> shims, and the new `better-auth` + `drizzle-orm` peer deps. Magic links are now POST-confirm
-> (a confirm page, not a GET link).
+`0.x`, published to public npm as `@glw907/cairn-cms` (MIT). The API still churns between minor
+versions, so pin a caret range and read the [CHANGELOG](./CHANGELOG.md) and `docs/upgrading.md`
+before bumping. Editor auth is self-owned: an atomic single-use magic-link token, a POST-confirm
+flow, opaque D1-backed session rows, and two-tier `owner`/`editor` roles. There is no better-auth,
+Drizzle, or ORM. The current version, the published-versus-unpublished window, and the next action
+live in [`docs/STATUS.md`](./docs/STATUS.md).
 
 ## Install
 
@@ -34,23 +27,28 @@ range and expect 0.x churn.
 npm install @glw907/cairn-cms
 ```
 
-Peers: `svelte@^5`, `@sveltejs/kit@^2`, and `carta-md@^4.11` (the editor component). Each site
-implements a `CairnAdapter` (see `docs/PLAN.md`) and mounts thin `/admin` route shims around
-`@glw907/cairn-cms/sveltekit` (server logic) and `@glw907/cairn-cms/components` (the admin UI).
+Peer dependencies: `svelte@^5` and `@sveltejs/kit@^2`. A consumer site implements a `CairnAdapter`
+and mounts thin `/admin` route shims around the package subpaths:
+
+- `@glw907/cairn-cms`: the core engine and adapter contract.
+- `@glw907/cairn-cms/sveltekit`: the server load and action logic.
+- `@glw907/cairn-cms/components`: the admin Svelte UI.
+- `@glw907/cairn-cms/delivery` and `/delivery/data`: the public read model (indexes, feeds,
+  sitemap, SEO head). The `/delivery/data` barrel is node-safe, with no `@sveltejs/kit` in its graph.
+- `@glw907/cairn-cms/vite`: the `cairnManifest()` Vite plugin, paired with the `cairn-manifest` bin,
+  that builds and verifies the committed content manifest at build time.
+
+Each site binds a Cloudflare D1 database as `AUTH_DB` (the editor allowlist, sessions, and single-use
+magic tokens) and a `[[send_email]]` binding named `EMAIL`. The worked reference for every shape is
+`examples/showcase`.
 
 ## How it's developed
 
-This repo lives in a dev meta-workspace alongside its consumer sites:
+This is a standalone repo. Consumer sites install the published package from the npm registry by
+version range. The library's own development proves changes against `examples/showcase`, a
+self-contained SvelteKit site that consumes the package through the relative `file:../..` path, so a
+change is exercised end to end before it publishes.
 
-```
-~/Projects/cairn/                 # npm workspace root (not a git repo)
-  cairn-cms/        ← this repo
-  ecnordic-ski/     ← consumer (first proving ground)
-  907-life/         ← consumer (second design, validates the abstraction)
-```
-
-npm workspaces symlink `cairn-cms` into each site's `node_modules` for zero-publish local
-dev. In CI, each site pins a published version so deploys stay reproducible.
-
-See **`docs/PLAN.md`** for the full architecture, locked decisions, phased passes, and
-risk register.
+See the functional spec at `docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md` for
+the locked architecture and the test plan, and `docs/STATUS.md` for where the work is now. The older
+`docs/PLAN.md` and `docs/ARCHITECTURE.md` remain only as history.

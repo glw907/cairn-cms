@@ -2,6 +2,25 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.27.0
+
+### Changed (breaking)
+Narrowed the public export surface so each symbol has one canonical home. The `.` root and
+`/sveltekit` no longer re-export another subpath's symbols, and the internal GitHub, signing, and
+hast helpers left the public API. No symbol changed behavior; only where it exports from.
+
+- Consumers must: import the delivery read helpers (`createContentIndex`, `createSiteIndexes`, the
+  feed, sitemap, robots, SEO, and pagination builders, `permalink`) from `@glw907/cairn-cms/delivery/data`
+  instead of the `.` root.
+- Consumers must: import the public route loaders and the `*Response` helpers (`createPublicRoutes`,
+  `rssResponse`, `jsonFeedResponse`, `sitemapResponse`, `robotsResponse`) and the public route types
+  (`PublicRoutesDeps`, the public `ListData`, `TagData`, `TagIndexData`, `EntryData`) from
+  `@glw907/cairn-cms/delivery` instead of the `.` root or `/sveltekit`.
+- Consumers must: stop importing the internal helpers that left the public API (`appJwt`,
+  `installationToken`, `signingSelfTest`, `appCredentials`, `treeUrl`, `contentsUrl`, `readRaw`,
+  `fileSha`, `listMarkdown`, `markdownFilesIn`, `commitFile`, `isElement`, `strProp`, `markFirstList`);
+  the engine wires GitHub token minting and the render pipeline internally, so no consumer needs them.
+
 ## 0.26.0
 
 ### Added

@@ -59,3 +59,24 @@ the regenerate script to `"cairn:manifest": "cairn-manifest"` and delete the han
 The pure delivery projections now live at a node-safe `@glw907/cairn-cms/delivery/data` entry that pulls
 no `@sveltejs/kit` into the graph. Consumers must: move any plain-Node import of a delivery data helper
 (such as `buildSiteManifest`) from `@glw907/cairn-cms/delivery` to `@glw907/cairn-cms/delivery/data`.
+
+## 0.27.0: the delivery read helpers move to `@glw907/cairn-cms/delivery/data`
+
+The `.` root stopped re-exporting the delivery read helpers. Consumers must: import
+`createContentIndex`, `createSiteIndexes`, the feed, sitemap, robots, SEO, and pagination builders, and
+`permalink` from `@glw907/cairn-cms/delivery/data` instead of the `.` root.
+
+## 0.27.0: the public route surface moves to `@glw907/cairn-cms/delivery`
+
+The `.` root and `/sveltekit` stopped re-exporting the public route surface. Consumers must: import the
+public route loaders, the `*Response` helpers (`createPublicRoutes`, `rssResponse`, `jsonFeedResponse`,
+`sitemapResponse`, `robotsResponse`), and the public route types (`PublicRoutesDeps`, the public
+`ListData`, `TagData`, `TagIndexData`, `EntryData`) from `@glw907/cairn-cms/delivery` instead of the `.`
+root or `/sveltekit`.
+
+## 0.27.0: the internal GitHub, signing, and hast helpers left the public API
+
+The internal helpers behind GitHub token minting and the render pipeline are no longer public. The
+engine wires them internally, so no consumer needs them. Consumers must: stop importing `appJwt`,
+`installationToken`, `signingSelfTest`, `appCredentials`, `treeUrl`, `contentsUrl`, `readRaw`,
+`fileSha`, `listMarkdown`, `markdownFilesIn`, `commitFile`, `isElement`, `strProp`, and `markFirstList`.

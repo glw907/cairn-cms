@@ -11,7 +11,7 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-04): execute Documentation Initiative, Phase 5 (Tutorial)
+## Immediate next action (2026-06-04): brainstorm and write Documentation Initiative, Phase 6 (the process phase)
 
 The documentation initiative is the current priority. It builds a self-contained docs set for
 external adopters plus the project-legibility files, and it makes documentation a standing pass
@@ -20,7 +20,46 @@ dimension going forward. The design spec is
 phases, each plan written just-in-time after the prior one lands: legibility, reference, explanation,
 guides, tutorial, and a process phase that bakes docs into the pass ritual. The initiative absorbs
 the queued docs-refresh items below, which its later phases schedule. It publishes nothing and
-touches no engine code.
+touches no engine code. Phases 1 through 5 have landed; Phase 6 (the process phase) is the last one,
+then P4 (the scaffolder) is the engine capstone.
+
+**Phase 5 (Tutorial) landed on `main` 2026-06-04.** It built the learning-oriented arm: one page,
+`docs/tutorial/build-your-first-cairn-site.md`, milestones 0 through 10, carrying a newcomer from an
+empty directory to a working `Field Notes` site running locally and touching the full feature set
+(adapter and schema, rendering, a custom `callout` component, the delivery surface, feeds, the nav
+menu, the local admin loop through a fenced `CAIRN_DEV_BACKEND` dev backend, and the rot-proof
+`cairn:` internal link). It ran subagent-driven, one `cairn-implementer` per task (Tasks 1-4 and 6 on
+Opus, Tasks 5 and 7 on Sonnet), ten commits `b46bbeb..cd64cff` on `main`, with `docs/README.md`
+flipped to the live tutorial. The plan is
+`docs/superpowers/plans/2026-06-04-cairn-docs-phase-5-tutorial.md` (post-mortem appended there); the
+design spec is `docs/superpowers/specs/2026-06-04-cairn-docs-phase-5-tutorial-design.md`.
+
+The docs gate ran per writing task and at phase end: no blocking prose tell on the page or the flipped
+index, every relative link resolves, each worked example cross-checked against `examples/showcase`. The
+capstone (Task 6) is the proof that matters: it followed the finished page literally in a throwaway
+`/tmp/field-notes` on the published `@glw907/cairn-cms@0.26.0` (no `main` tarball fallback), and `npm run
+cairn:manifest` plus `npm run build` exit 0, the home prerenders both post summaries, the packing-list
+page renders the callout and the resolved internal link `/2026/05/01/first-trail`, `npm run check` is
+0/0, and the admin loop drives headless (the editor and nav serve, a save commits through the dev
+GitHub). The reproduction folded back real page defects as `1eef926` so a newcomer succeeds (`async`
+`mintToken`, a dev-GitHub fixture grown to answer the atomic `commitFiles` Git Data API path, and the
+project-setup pieces a registry consumer needs that the symlinked showcase hides). Two friction entries
+landed: the missing first-class local admin dev mode and the reproduction note, both pointing at P4.
+
+**Carry-forward (engine-adjacent, found by the Phase 5 reproduction).** `examples/showcase/src/lib/fake-github.ts`
+is stale: it answers only single-file `PUT /contents`, but the engine content save now commits through
+the atomic `commitFiles` Git Data API (`POST git/trees`, `POST git/commits`, `PATCH git/refs/heads` in
+`src/lib/github/repo.ts`, called from `content-routes.ts`). The showcase golden-path E2E
+(`examples/showcase/e2e/golden-path.spec.ts`) drives a real save and asserts on `/test/last-commit`, so it
+would fail against the current engine; the gap stayed masked because Playwright E2E is not in `npm test`.
+Follow-up: run the golden-path E2E to confirm, then update the double to answer the atomic endpoints (and
+seed the manifest). Detail in the Phase 5 plan post-mortem and the friction log.
+
+**Immediate next action: brainstorm and write Phase 6, the process phase that bakes docs into the pass
+ritual, in a fresh session.** It is the last docs phase. Run `superpowers:brainstorming` first to settle
+its open design calls with the user (the design spec leaves the process phase open), then
+`superpowers:writing-plans`. After Phase 6 lands, P4 (the `create-cairn-site` scaffolder) is the engine
+capstone, carrying every friction the docs initiative surfaced.
 
 **The rolled version window is PUBLISHED.** `0.26.0` is now the registry `latest` (the `v0.26.0`
 GitHub Release triggered the OIDC trusted-publishing workflow, run `26978850083` green), folding the
@@ -126,9 +165,9 @@ finding already release-gated under the surface-narrowing pass; it extends no ba
 release-gated engine improvements stand unchanged (`ROADMAP.md`, the friction log, the
 `cairn-engine-hardening-release-gate` memory).
 
-**Phase 5 (Tutorial) is brainstormed, specced, and planned (2026-06-04), not yet executed.** The design
-spec is `docs/superpowers/specs/2026-06-04-cairn-docs-phase-5-tutorial-design.md` (`a0d5a27`); the plan is
-`docs/superpowers/plans/2026-06-04-cairn-docs-phase-5-tutorial.md` (`5e34d5a`). Seven tasks build one page,
+**Phase 5 (Tutorial) planning record (2026-06-04), executed; see the top entry for the landed result.** The
+design spec is `docs/superpowers/specs/2026-06-04-cairn-docs-phase-5-tutorial-design.md` (`a0d5a27`); the
+plan is `docs/superpowers/plans/2026-06-04-cairn-docs-phase-5-tutorial.md` (`5e34d5a`). Seven tasks build one page,
 `docs/tutorial/build-your-first-cairn-site.md`, a teach-once Diátaxis tutorial that carries a newcomer from
 an empty directory to a first working `Field Notes` site running locally. The forks settled with Geoff: the
 spine is a minimal-slice local loop widened to touch the full feature set (custom components, the
@@ -139,18 +178,9 @@ build-from-scratch with copy-paste blocks for the scaffolder-bound route boilerp
 build-and-run reproduction (Task 6 scaffolds the target site in a throwaway directory and runs a real build).
 The missing first-class local admin dev mode is logged as friction for P4.
 
-**Immediate next action: execute Phase 5,
-`docs/superpowers/plans/2026-06-04-cairn-docs-phase-5-tutorial.md`, `subagent-driven`
-(`superpowers:subagent-driven-development`, one `cairn-implementer` per task), from the cairn-cms directory
-on `main`. Start at Task 1.** The design is settled and approved, so skip brainstorming. It runs on `main`
-directly (docs-only, publishes nothing, no version bump). Dispatch Tasks 1, 2, 3, 4, and 6 `model: opus`
-(the four full-synthesis writing tasks and the reproduction); Tasks 5 and 7 fit the Sonnet default (the
-closing pointers and the docs-index flip are mechanical). Bake the docs-gate override into each writing-task
-dispatch: do not run `npm run check` or `npm test`; the gate is prose-guard no blocking tell, links resolve,
-and a code-block cross-check against `examples/showcase`. Task 6 is the one task that runs a real `vite
-build`, against a throwaway site outside the repo. No review subagent or `/admin` smoke applies. After Phase
-5 lands, Phase 6 (the process phase that bakes docs into the pass ritual) is the last docs phase, then P4
-(the scaffolder) is the engine capstone.
+This plan executed as written on `main` (Tasks 1-4 and 6 on Opus, Tasks 5 and 7 on Sonnet, the docs-gate
+override honored, Task 6 the one real `vite build`). The landed result, the verification evidence, and the
+engine-adjacent carry-forward are in the top entry; the post-mortem is in the plan file.
 
 ## Queued engine capstone: P4, the create-cairn-site scaffolder
 

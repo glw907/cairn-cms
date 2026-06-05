@@ -7,7 +7,7 @@ core lands.
 
 These docs are organized in four arms.
 
-- **Tutorial** teaches a first build end to end. Forthcoming in a later pass.
+- **Tutorial** teaches a first build end to end. See [Build your first cairn site](./tutorial/build-your-first-cairn-site.md).
 - **How-to guides** answer task questions: setting up the GitHub App, configuring auth and D1,
   defining an adapter, configuring rendering, wiring delivery, deploying, and upgrading. See the
   [guides index](./guides/README.md).
@@ -20,6 +20,7 @@ These docs are organized in four arms.
 
 While the arms fill in, these pages are live:
 
+- [Build your first cairn site](./tutorial/build-your-first-cairn-site.md)
 - [Upgrade cairn](./guides/upgrade-cairn.md)
 - [Admin route structure](./admin-route-structure.md)
 - [The render sanitize floor](./render-sanitize-floor.md)

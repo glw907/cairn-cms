@@ -145,7 +145,7 @@ A weekend on the ridge needs less than you think.
 Water, a stove, a warm layer, and a map cover most of it.
 ```
 
-This post stays plain for now. In milestone 4 you add a link back to the first-trail post, and in milestone 5 you add the callout component to it.
+This post stays plain for now. In milestone 5 you add the callout component to it, and in milestone 8 you add a link back to the first-trail post through the editor's link picker.
 
 Create the one page at `src/content/pages/about.md`:
 

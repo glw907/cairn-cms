@@ -189,23 +189,9 @@ export const load = nav.navLoad;
 export const actions = { default: nav.navSave };
 ```
 
-### `createPublicRoutes`
-
-```ts
-declare function createPublicRoutes(deps: PublicRoutesDeps): {
-  entryLoad: (event: { url: URL }) => Promise<EntryData>;
-  archiveLoad: (conceptId: string) => ListData;
-  tagIndexLoad: (conceptId: string) => TagIndexData;
-  tagLoad: (conceptId: string, event: { params: { tag: string } }) => TagData;
-  entries: () => { path: string }[];
-};
-```
-
-Build the public read-model loaders for a site's unified content index: one entry's detail, a
-concept archive, the tag index, and a single tag's filtered list. This is the same factory the
-delivery surface exports, and a site usually imports it from
-[`@glw907/cairn-cms/delivery`](./delivery.md), where the matching `CairnHead` component lives. See
-[the delivery reference](./delivery.md) for the worked catch-all route.
+The public read-model loaders live at [`@glw907/cairn-cms/delivery`](./delivery.md), where the
+matching `CairnHead` component sits. See [the delivery reference](./delivery.md) for the worked
+catch-all route.
 
 ### `healthLoad`
 
@@ -259,8 +245,4 @@ imports the matching `*Data` type to type its `data` prop.
 | `RequestContext` | `interface RequestContext { url; request; cookies: CookieJar; locals; platform?; setHeaders }` | The structural request the auth helpers read; a real SvelteKit `RequestEvent` satisfies it. |
 | `CookieJar` | `interface CookieJar { get; set; delete }` | The cookie accessor the auth helpers use, matching SvelteKit's `cookies`. |
 | `HandleInput` | `interface HandleInput { event: RequestContext; resolve(event): Promise<Response> \| Response }` | The argument the `createAuthGuard` handle receives, matching SvelteKit's `Handle` input. |
-| `PublicRoutesDeps` | `interface PublicRoutesDeps { site; render; origin; siteName; description; feeds?; defaultImage? }` | The injected dependencies for `createPublicRoutes`: the site index, the render, and the SEO defaults. |
-| `PublicListData` | `interface ListData { entries: ContentSummary[] }` | The public archive and tag list data, re-exported from the public routes as `PublicListData` to avoid colliding with the admin `ListData`. |
-| `TagData` | `interface TagData extends ListData { tag: string }` | A single tag's data plus the tag it filtered on. |
-| `TagIndexData` | `interface TagIndexData { tags: { tag: string; count: number }[] }` | The tag-index data: every tag with its count. |
-| `EntryData` | `interface EntryData { concept; entry; html; canonicalUrl; seo; newer?; older? }` | One public entry's data: the detail entry, its rendered html, and its canonical URL. |
+| `GithubKeyEnv` | `interface GithubKeyEnv { GITHUB_APP_PRIVATE_KEY_B64?: string }` | The Worker secret the token mint reads; it types the `mintToken` parameter on `ContentRoutesDeps` and `healthLoad`. |

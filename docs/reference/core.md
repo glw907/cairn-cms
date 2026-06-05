@@ -9,11 +9,14 @@ import { defineAdapter, defineFields, createRenderer } from '@glw907/cairn-cms';
 import type { CairnAdapter, ComponentDef } from '@glw907/cairn-cms';
 ```
 
-The `.` entry carries 174 names. The page groups them in three tiers. **Stable API** is the
+The `.` entry carries 118 names. The page groups them in three tiers. **Stable API** is the
 deliberate public surface, each primary entry point with a worked snippet. **Low-level** lists the
 internal helpers a site rarely calls. **Types** is a table of the public type aliases and
 interfaces. The TypeScript types in `src/lib` are the source of truth, and the export-coverage gate
 checks every name here against them.
+
+The public delivery read surface lives at [`/delivery`](./delivery.md) and
+[`/delivery/data`](./delivery-data.md). It is no longer re-exported from the root.
 
 ---
 
@@ -320,22 +323,6 @@ violation.
 const tree = validateNavTree(submitted, 2);
 ```
 
-#### `permalink`
-
-```ts
-declare function permalink(
-  descriptor: ConceptDescriptor,
-  entry: { id: string; slug: string; date?: string },
-): string;
-```
-
-Resolve an entry's canonical path from its concept's permalink pattern. Throws when the pattern uses
-a date token and the entry has no valid date, so a misconfiguration fails at build.
-
-```ts
-const path = permalink(descriptor, { id: '2026-01-01-hello', slug: 'hello', date: '2026-01-01' });
-```
-
 #### Id helpers
 
 ```ts
@@ -358,75 +345,9 @@ const id = composeDatedId('2026-01-01', slugify('Hello World'), 'day'); // 2026-
 
 ### Content and manifest
 
-The content index projects raw markdown into the query surfaces lists, feeds, and the sitemap read.
-The manifest is the committed, build-verified link graph. The showcase imports the index builders
-through the `/delivery` barrel; the same symbols re-export here, so a non-route module can import
-them from `.`.
-
-#### `createContentIndex`
-
-```ts
-declare function createContentIndex<F = Record<string, unknown>>(
-  files: RawFile[],
-  descriptor: ConceptDescriptor,
-): ContentIndex<F>;
-```
-
-Build one concept's index from its raw files and normalized descriptor.
-
-```ts
-const posts = createContentIndex(files, descriptor);
-const recent = posts.all().slice(0, 10);
-```
-
-#### `createSiteIndex`
-
-```ts
-declare function createSiteIndex(
-  concepts: ConceptIndex[],
-  opts?: { validate?: boolean },
-): SiteIndex;
-```
-
-Union per-concept indexes into a site-level resolver. Throws on a duplicate permalink and, unless
-`validate` is `false`, on a non-draft entry whose frontmatter fails its validator, so malformed
-content fails the build.
-
-```ts
-const site = createSiteIndex([{ descriptor, index: posts }]);
-const entry = site.byPermalink('/2026/hello');
-```
-
-#### `createSiteIndexes`
-
-```ts
-declare function createSiteIndexes<const A extends CairnAdapter>(
-  adapter: A,
-  config: SiteConfig,
-  globs: SiteGlobs<A>,
-  opts?: { validate?: boolean },
-): SiteIndexes<A>;
-```
-
-Build typed per-concept indexes and a site resolver from one adapter. Pass the per-concept raw globs
-keyed by concept id. The showcase uses this as its content read-model.
-
-```ts
-// examples/showcase/src/lib/content.ts
-const indexes = createSiteIndexes(cairn, siteConfig, { posts: postsRaw, pages: pagesRaw });
-```
-
-#### `fromGlob`
-
-```ts
-declare function fromGlob(record: Record<string, string>): RawFile[];
-```
-
-Map a Vite eager `?raw` glob record (`{ path: raw }`) to `RawFile[]`.
-
-```ts
-const files = fromGlob(import.meta.glob('/src/content/posts/*.md', { eager: true, query: '?raw', import: 'default' }));
-```
+The manifest is the committed, build-verified link graph. The content index that projects raw
+markdown into the query surfaces lives at [`/delivery`](./delivery.md); the manifest helpers and the
+`cairn:` link helpers stay on the root because the engine and the admin both read them.
 
 #### Manifest parse, serialize, verify, and diff
 
@@ -473,48 +394,9 @@ const ref = parseCairnToken('cairn:posts/2026-01-01-hello'); // { concept: 'post
 
 ### Auth and GitHub App
 
-These mint the GitHub App token, build and send the magic-link email, and commit a file. The error
-classes are defined in the package so `instanceof` is reliable across the peer boundary.
-
-#### `appJwt`
-
-```ts
-declare function appJwt(appId: string, privateKeyPem: string): Promise<string>;
-```
-
-Mint a GitHub App JWT (RS256), valid about nine minutes, with `iat` backdated for clock skew.
-
-```ts
-const jwt = await appJwt(appId, pem);
-```
-
-#### `appCredentials`
-
-```ts
-declare function appCredentials(
-  backend: Pick<BackendConfig, 'appId' | 'installationId'>,
-  env: GithubKeyEnv,
-): AppCredentials;
-```
-
-Assemble the `AppCredentials` the signer needs from the adapter's backend and the Worker's
-private-key secret. Throws when the secret is unset.
-
-```ts
-const creds = appCredentials(cairn.backend, platform.env);
-```
-
-#### `installationToken`
-
-```ts
-declare function installationToken(creds: AppCredentials): Promise<string>;
-```
-
-Exchange the App JWT for a short-lived installation access token.
-
-```ts
-const token = await installationToken(creds);
-```
+These build and send the magic-link email and commit a file. The GitHub App token mint moved off the
+root; a route mints through the `/sveltekit` content routes. The error classes are defined in the
+package so `instanceof` is reliable across the peer boundary.
 
 #### `buildMagicLinkMessage`
 
@@ -544,27 +426,6 @@ The production send: Cloudflare Email Sending through the `EMAIL` binding. Tests
 await cloudflareSend(env, message);
 ```
 
-#### `commitFile`
-
-```ts
-declare function commitFile(
-  repo: RepoRef,
-  path: string,
-  content: string,
-  opts: { message: string; author: CommitAuthor },
-  token: string,
-): Promise<string>;
-```
-
-Commit `content` to `path` on the configured branch through the contents API. The author is the
-editor; the committer is omitted, so GitHub attributes the commit to the App. Returns the commit
-sha, and a stale-sha 409 becomes a `CommitConflictError`. The caller must confine `path` to a
-concept directory and derive `author` from the verified session.
-
-```ts
-const sha = await commitFile(repo, path, fileText, { message, author }, token);
-```
-
 #### Error classes
 
 ```ts
@@ -584,41 +445,11 @@ is thrown by `parseSiteConfig` on a malformed root. `NavValidationError` is thro
 declare const MAX_NAV_NODES: 200;
 ```
 
-### Delivery builders and responders
+### Admin form helpers
 
-The read-model also re-exports the feed, sitemap, robots, SEO, and pagination builders, plus the
-response helpers that wrap them. The public site usually imports these from `/delivery`; the same
-symbols re-export here.
-
-```ts
-declare function deriveExcerpt(body: string, opts?: { description?: string; maxChars?: number }): string;
-declare function wordCount(body: string): number;
-declare function paginate<T>(items: T[], page: number, perPage: number): Page<T>;
-declare function buildRssFeed(channel: FeedChannel, items: FeedItem[]): string;
-declare function buildJsonFeed(channel: FeedChannel, items: FeedItem[]): string;
-declare function buildSitemap(urls: SitemapUrl[]): string;
-declare function buildRobots(opts: { sitemapUrl: string; disallow?: string[] }): string;
-declare function buildSeoMeta(input: SeoInput): SeoMeta;
-declare function readSeoFields(frontmatter: Record<string, unknown>): SeoFields;
-declare function resolveImageUrl(image: string, origin: string): string | undefined;
-declare function rssResponse(channel: FeedChannel, items: FeedItem[]): Response;
-declare function jsonFeedResponse(channel: FeedChannel, items: FeedItem[]): Response;
-declare function sitemapResponse(urls: SitemapUrl[]): Response;
-declare function robotsResponse(opts: { sitemapUrl: string; disallow?: string[] }): Response;
-declare function createPublicRoutes(/* deps */): { /* route loaders */ };
-```
-
-`deriveExcerpt` and `wordCount` derive a summary and a count from a body. `paginate` slices a list
-into a page. `buildRssFeed`, `buildJsonFeed`, `buildSitemap`, and `buildRobots` build the feed,
-sitemap, and robots documents; the matching `*Response` helpers wrap each in a `Response` with the
-right headers. `buildSeoMeta` builds the head data, `readSeoFields` reads the SEO fields off
-normalized frontmatter, and `resolveImageUrl` resolves an image path to an absolute URL.
-`createPublicRoutes` builds the public catch-all route loaders, which the delivery reference page
-documents in full.
-
-```ts
-return jsonFeedResponse(channel, items);
-```
+The admin form path decodes submitted frontmatter, coerces a date for the date input, and reads the
+public origin from config. The feed, sitemap, robots, SEO, and pagination builders live at
+[`/delivery`](./delivery.md), with the response helpers that wrap them.
 
 #### `frontmatterFromForm` and `dateInputValue`
 
@@ -644,16 +475,6 @@ const raw = frontmatterFromForm(descriptor.fields, formData);
 These are internal helpers leaked through `export *`. They are not part of the supported surface and
 a site should not depend on them. They are listed for completeness only.
 
-- `signingSelfTest` deploy-time self-test for the App signer, exercising the key import and sign with no network call.
-- `fileSha` the current blob sha for a repo path, or null when the file does not exist.
-- `contentsUrl` the contents-API URL for a repo path, pinned to the branch.
-- `treeUrl` the recursive Git Trees API URL for the configured branch.
-- `readRaw` fetch a file's raw markdown, or null when it does not exist.
-- `markdownFilesIn` the markdown files directly in a directory from a parsed tree, newest id first.
-- `listMarkdown` list a concept directory's markdown files through the Git Trees API.
-- `strProp` read a string hast property off an element.
-- `markFirstList` tag the first `<ul>` among children with `ec-grid` and strip its whitespace text nodes.
-- `isElement` a hast type guard for an element node.
 - `rehypeDispatch` the rehype transformer that dispatches each stamped element through its registry `build`.
 - `remarkDirectiveStamp` the remark transformer that stamps a recognized directive for dispatch.
 - `manifestEntryFromFile` build one manifest entry from a content file.
@@ -720,22 +541,6 @@ function signatures above reference these.
 | `ReferenceOptions` | `interface ReferenceOptions` | The title and summary for `generateComponentReference`. |
 | `SiteConfig` | `interface SiteConfig` | The shape of the YAML site-config file. |
 | `NavNode` | `interface NavNode` | One navigation node: label, optional url, optional children. |
-| `RawFile` | `interface RawFile` | A raw content file before parsing: the path and the markdown text. |
-| `ContentSummary` | `interface ContentSummary` | The cheap, plain-data view of one entry, for lists, feeds, and the sitemap. |
-| `ContentEntry` | `interface ContentEntry<F>` | The detail view: a summary plus the frontmatter and the body. |
-| `ContentIndex` | `interface ContentIndex<F>` | The per-concept query surface: all, byId, byTag, allTags, adjacent. |
-| `ContentProblem` | `interface ContentProblem` | One entry's validation failure recorded at build for the gate. |
-| `ConceptIndex` | `interface ConceptIndex` | One concept's descriptor paired with its built index. |
-| `SiteIndex` | `interface SiteIndex` | The cross-concept query surface a catch-all route and the sitemap read. |
-| `SiteIndexes` | `type SiteIndexes<A>` | The typed per-concept indexes plus the cross-concept `site` resolver. |
-| `SiteGlobs` | `type SiteGlobs<A>` | A per-concept raw glob record keyed by concept id, from `import.meta.glob`. |
-| `Page` | `interface Page<T>` | A page of items plus its navigation state. |
-| `FeedChannel` | `interface FeedChannel` | Feed channel metadata; URLs are absolute. |
-| `FeedItem` | `interface FeedItem` | One feed entry; `contentHtml` carries the rendered body. |
-| `SitemapUrl` | `interface SitemapUrl` | One sitemap URL, with an optional `lastmod` date. |
-| `SeoInput` | `interface SeoInput` | The inputs for the head; all URLs are absolute. |
-| `SeoMeta` | `interface SeoMeta` | Plain-data head: a title, meta tags, link tags, and one JSON-LD object. |
-| `SeoFields` | `interface SeoFields` | The head fields a concept can carry in frontmatter. |
 | `Role` | `type Role` | An editor's role: owner or editor. |
 | `Editor` | `interface Editor` | The session shape the whole admin reads: email, displayName, role. |
 | `AuthEnv` | `interface AuthEnv` | Worker bindings and vars the auth layer reads. |
@@ -746,9 +551,3 @@ function signatures above reference these.
 | `RepoFile` | `interface RepoFile` | A markdown file in a concept directory: id, name, path. |
 | `CommitAuthor` | `interface CommitAuthor` | A commit author: the signed-in editor's name and email. |
 | `AppCredentials` | `interface AppCredentials` | What the App signer needs: app id, installation, and the base64 PEM. |
-| `GithubKeyEnv` | `interface GithubKeyEnv` | The Worker secret holding the GitHub App private key. |
-| `PublicRoutesDeps` | `interface PublicRoutesDeps` | The deps `createPublicRoutes` takes; see the delivery page. |
-| `ListData` | `interface ListData` | The list route's load data; see the delivery page. |
-| `TagData` | `interface TagData` | The tag route's load data; see the delivery page. |
-| `TagIndexData` | `interface TagIndexData` | The tag-index route's load data; see the delivery page. |
-| `EntryData` | `interface EntryData` | The entry route's load data; see the delivery page. |

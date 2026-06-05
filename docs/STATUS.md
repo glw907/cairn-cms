@@ -11,18 +11,42 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-05): brainstorm and write P4, the create-cairn-site scaffolder
+## Immediate next action (2026-06-05): execute surface-narrowing, pass 1 of the engine-hardening series
 
-The documentation initiative is COMPLETE (all six phases landed), so the next work is the engine
-capstone, P4. The full P4 framing is in the "Queued engine capstone" section below: brainstorm the open
-design calls with the user first, then write the numbered plan, then execute it subagent-driven on a
-feature worktree off `main`. The Phase 5 reproduction sharpened P4's fresh-install worklist (a fenced
-local dev backend, the `App.Locals.editor` type, the robots collision, the `prerender.handleHttpError`
-policy, `@types/node`); see `ROADMAP.md` and `docs/internal/docs-friction-log.md`. The engine-adjacent
-showcase E2E regression the reproduction flagged is now confirmed and FIXED (`ba25359`): the golden-path
-E2E had drifted on two fronts (a Carta-era editor selector and the single-file `fake-github` double), both
-now updated for CodeMirror and the atomic `commitFiles` path, both tests green. The open follow-up is to
-wire that E2E into a gate so it stops rotting silently (tracked in ROADMAP Later).
+The documentation initiative is COMPLETE. The next work is the **engine-hardening series**, the three
+release-gate improvements the docs initiative surfaced, sequenced **before P4** so the scaffolder templates
+the clean surface. Geoff settled the scope and sequence: the three run as a just-in-time series,
+**surface-narrowing first, then render attribute-sink hardening, then URL-identity consolidation**, with
+the small engine-side DX riders handled separately (`mintToken` type widening as a trivial standalone, the
+`App.Locals.editor` type deferred to P4). Bucket C (the scaffolder-bound install findings) stays in P4.
+
+**Pass 1 (surface-narrowing) is brainstormed, specced, and planned (2026-06-05), not yet executed.** The
+design spec is `docs/superpowers/specs/2026-06-05-cairn-surface-narrowing-design.md` (`316c2e1`); the plan
+is `docs/superpowers/plans/2026-06-05-cairn-surface-narrowing.md` (`6733e56`). Four tasks: narrow the `.`
+root and `/sveltekit` barrels (drop the redundant delivery re-exports, the internal GitHub/signing/hast
+plumbing, and the public-route re-export that forced the `PublicListData` alias; relocate `GithubKeyEnv` to
+`/sveltekit`), prune the two reference pages, record the consumer actions and bump `0.27.0`, and prove both
+production sites build green against an `npm pack` tarball. The blast radius was audited import-by-import as
+**zero on both sites** (they import only engine-authoring symbols from root and the delivery surface from
+`/delivery`); breaking only for external consumers, covered by `Consumers must:` lines.
+
+**Immediate next action: execute pass 1,
+`docs/superpowers/plans/2026-06-05-cairn-surface-narrowing.md`, `subagent-driven`
+(`superpowers:subagent-driven-development`, one `cairn-implementer` per task), on a feature worktree off
+`main`. Start at Task 1.** The design is settled and approved, so skip brainstorming. Dispatch Task 4 (the
+two-site acceptance proof) `model: opus`; Tasks 1-3 fit the Sonnet default (mechanical export edits and
+doc/version changes), though Task 1's nameability fallout may warrant Opus if the gate surfaces a
+non-trivial type relocation. The pass-end review gate is the simplifier over the changed barrels plus a
+`/code-review`; the live `/admin` smoke and the Worker/auth reviewers do not apply (no runtime behavior
+change). After pass 1 lands, brainstorm and write pass 2 (render attribute-sink hardening). Publishing
+stays held: `0.26.0` is the registry `latest`; the hardening series accumulates on `main` and publishes
+before P4 consumes the narrowed surface.
+
+The engine-adjacent showcase E2E regression the Phase 5 reproduction flagged is confirmed and FIXED
+(`ba25359`): the golden-path E2E had drifted on two fronts (a Carta-era editor selector and the single-file
+`fake-github` double), both now updated for CodeMirror and the atomic `commitFiles` path, both tests green.
+The open follow-up is to wire that E2E into a gate so it stops rotting silently (ROADMAP Later). P4 framing
+stays in the "Queued engine capstone" section below; it now follows the three hardening passes.
 
 **The documentation initiative landed across six phases (2026-06-04 through 2026-06-05).** It built a
 self-contained docs set for external adopters plus the project-legibility files, and it made

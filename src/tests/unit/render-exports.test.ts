@@ -4,10 +4,7 @@ import {
   defineRegistry,
   glyph,
   cardShell,
-  markFirstList,
   iconSpan,
-  strProp,
-  isElement,
   remarkDirectiveStamp,
   rehypeDispatch,
 } from '../../lib/index.js';
@@ -20,13 +17,23 @@ describe('engine entry render surface', () => {
       defineRegistry,
       glyph,
       cardShell,
-      markFirstList,
       iconSpan,
-      strProp,
-      isElement,
       remarkDirectiveStamp,
       rehypeDispatch,
     ]) {
+      expect(typeof fn).toBe('function');
+    }
+  });
+
+  it('no longer exports the internal hast helpers from the root entry', () => {
+    for (const name of ['isElement', 'strProp', 'markFirstList']) {
+      expect(name in engine).toBe(false);
+    }
+  });
+
+  it('keeps the internal hast helpers reachable from their module', async () => {
+    const dispatch = await import('../../lib/render/rehype-dispatch.js');
+    for (const fn of [dispatch.isElement, dispatch.strProp, dispatch.markFirstList]) {
       expect(typeof fn).toBe('function');
     }
   });

@@ -17,11 +17,4 @@ export { createNavRoutes } from './nav-routes.js';
 export type { NavLoadData, NavPageOption, NavRoutesDeps } from './nav-routes.js';
 export { healthLoad, type HealthData } from './health.js';
 export type { RequestContext, CookieJar, HandleInput } from './types.js';
-export { createPublicRoutes } from './public-routes.js';
-export type {
-  PublicRoutesDeps,
-  ListData as PublicListData,
-  TagData,
-  TagIndexData,
-  EntryData,
-} from './public-routes.js';
+export type { GithubKeyEnv } from '../github/credentials.js';

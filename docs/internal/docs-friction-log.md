@@ -2,8 +2,8 @@
 
 Writing a doc is also a design review. This file collects the design friction that documenting
 cairn surfaces, so a rough edge becomes a tracked candidate for work instead of a lost
-observation. Triage feeds `ROADMAP.md` and the backlog. A finding here does not block the doc
-that found it.
+observation. Triage feeds `ROADMAP.md` and `docs/STATUS.md`; this repo keeps no separate backlog
+file. A finding here does not block the doc that found it.
 
 Record each finding with its perspective, the doc that surfaced it, and a short note. The
 perspective is `developer` (the integrator building and deploying a site) or `editor` (the
@@ -119,3 +119,33 @@ Phase 1 seeds this file. Later phases append as they write.
   SvelteKit failing the build on the uncrawled feed and robots routes without a `handleHttpError` policy).
   Candidate for the P4 scaffolder: emit the project-setup pieces and a working dev backend so a newcomer does
   not paste a fixture that the engine's commit path has since outgrown.
+
+The Phase 5 reproduction broke into these distinct candidates, triaged below so P4 and a hardening pass
+inherit a clean list rather than one prose note.
+
+- **developer** (likely bug, from the Phase 5 reproduction): `examples/showcase/src/lib/fake-github.ts` is
+  stale against the engine's save path. It answers only single-file `PUT /contents`, but the content save now
+  commits through the atomic `commitFiles` Git Data API (`POST git/trees`, `POST git/commits`, `PATCH
+  git/refs/heads` in `src/lib/github/repo.ts`, called from `content-routes.ts`). The showcase golden-path E2E
+  (`examples/showcase/e2e/golden-path.spec.ts`) drives a real save and asserts on `/test/last-commit`, so it
+  appears to fail against the current engine; the gap stayed masked because Playwright E2E is not in `npm
+  test`. Action: run the E2E to confirm, then update the double to answer the atomic endpoints and seed the
+  manifest. This is the headline finding, possibly a live regression rather than only DX.
+- **developer** (engine surface, from the Phase 5 reproduction): the engine sets `event.locals.editor` but
+  ships no ambient type for it, so a consumer must hand-write the `App.Locals.editor` augmentation in
+  `app.d.ts`. Candidate: ship the `App.Locals` augmentation from the package (or have the scaffolder emit it).
+- **developer** (engine surface, from the Phase 5 reproduction): the SvelteKit skeleton's default
+  `static/robots.txt` silently collides with the engine's robots route, and nothing warns; the consumer just
+  deletes the static file. Candidate: the scaffolder omits the static file, and the engine could detect and
+  warn on the collision.
+- **developer** (engine surface, from the Phase 5 reproduction): a current SvelteKit fails the build on the
+  uncrawled feed, sitemap, and robots routes unless `prerender.handleHttpError: 'warn'` is set, which the
+  consumer has to discover. Candidate: the scaffolder emits the prerender policy, and the delivery docs name
+  the flag where they introduce the feeds.
+- **developer** (docs and type, from the Phase 5 reproduction): `mintToken` returns `Promise<string>`, but the
+  `admin-route-structure.md` canonical example showed a sync `() => 'dev-token'`, which is a type error. Action:
+  fix the doc example; consider widening the type to `string | Promise<string>` so the simple case just works.
+- **developer** (consistency, from the Phase 5 reproduction): the showcase inlines `createContentRoutes(...)`
+  per route, while the docs prescribe the `$lib/cairn.server.ts` composer; the canonical pattern was not
+  validated end to end until the tutorial reproduction. Candidate: align the showcase to the composer so the
+  documented path stays exercised.

@@ -20,12 +20,22 @@ needs. Items move up from lower tiers as the core fills in.
   a component `build()` that routes a directive attribute value into an `href`, `src`, or `style`
   sink. Consolidate the URL-identity model, which today spreads one URL across the YAML policy, the
   catch-all route, and the frontmatter `datePrefix`.
+- **Confirm the showcase E2E against the atomic save path.** The Phase 5 tutorial reproduction found
+  `examples/showcase/src/lib/fake-github.ts` answers only single-file `PUT /contents`, while the content
+  save now commits through the atomic `commitFiles` Git Data API. The golden-path E2E drives a real save,
+  so it looks broken against the current engine, masked because Playwright E2E is not in `npm test`. Run the
+  E2E to confirm, then update the double to answer the atomic endpoints and seed the manifest.
 
 ## Next
 
 - **`create-cairn-site` scaffolder.** The engine capstone of the DX sequence. One command
   scaffolds a working site with the corrected defaults, the `cairnManifest()` Vite wiring, and
   the setup docs, so a new site skips the integration archaeology the first two migrations hit.
+  The Phase 5 reproduction sharpened its worklist from a fresh-install seat: ship a fenced local dev
+  backend so a newcomer never hand-pastes a fake GitHub and an auth bypass, emit the `App.Locals.editor`
+  type augmentation, omit the skeleton's clashing `static/robots.txt`, emit `prerender.handleHttpError:
+  'warn'` for the feed and robots and sitemap routes, and declare `@types/node`. The `mintToken` async
+  signature in the docs and the showcase composer alignment are smaller fixes that can land ahead of it.
 - **Image and gallery management.** Let a non-technical author add and place images from
   `/admin`. The open fork is storage: versioned in git next to content, or in Cloudflare R2.
   Needs a brainstorm before a plan.

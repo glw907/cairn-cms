@@ -271,3 +271,263 @@ A liter per person is the floor, more if the day is warm.
 ```
 
 The `[Don't forget water]` part fills the inline `title` slot, the `{tone="warning" icon="snowflake"}` part sets the two attributes, and the text inside the fence fills the markdown `body` slot. When the renderer meets this directive it calls the `callout`'s `build(ctx)`, so `ctx.slot('title')` returns the title content and `ctx.attributes.tone` returns `'warning'`. The post renders the `<aside>` markup, not the literal directive text. For the full directive grammar and how the editor inserts a component, see [Component grammar and insertion](../reference/core.md#component-grammar-and-insertion) in the core reference.
+
+## Milestone 6: Wire the delivery surface
+
+The content exists and renders, but no public page serves it yet. The delivery surface is the read model that turns your markdown into a home list, post and page permalinks, feeds, a sitemap, and a robots file. It lives on a separate package entry, `@glw907/cairn-cms/delivery`, so the public site imports it without pulling the admin in.
+
+Start with the site's URL policy, because the rest of the surface reads it. The slug codec and the per-concept date granularity live in a YAML site-config file, not on the adapter, so a site owner shapes permalinks without touching code. Create `src/lib/site.config.yaml`:
+
+```yaml
+siteName: Field Notes
+content:
+  posts:
+    permalink: /:year/:month/:day/:slug
+    datePrefix: day
+  pages:
+    permalink: /:slug
+```
+
+The `posts` policy sets `datePrefix: day`, so a post's id keeps its full `2026-05-15-packing-list` stem while its slug strips the leading date to `packing-list`, and the `permalink` pattern dates the public path. The packing-list post serves at `/2026/05/15/packing-list`. A page carries no date, so the `about` page serves at `/about`. The two permalink shapes differ, which is the point of the per-concept policy.
+
+The adapter reads that YAML and exports the parsed config. Open `src/lib/cairn.config.ts`, import the YAML as raw text, and parse it with `parseSiteConfig`:
+
+```ts
+import { createRenderer, defineRegistry, defineAdapter, defineFields, parseSiteConfig } from '@glw907/cairn-cms';
+import siteYaml from './site.config.yaml?raw';
+
+// ... the icons, the callout, the registry, the renderer, and the cairn adapter from milestones 4 and 5
+
+export const siteConfig = parseSiteConfig(siteYaml);
+```
+
+Now build the content layer. One module globs the markdown for every concept and hands the raw records to `createSiteIndexes`, which returns a typed index per concept plus a cross-concept `site` resolver. Vite needs the literal glob string at the call site, so the site supplies one `import.meta.glob` per concept. Create `src/lib/content.ts`:
+
+```ts
+import { createSiteIndexes } from '@glw907/cairn-cms/delivery';
+import { cairn, siteConfig } from './cairn.config.js';
+
+const postsRaw = import.meta.glob('/src/content/posts/*.md', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>;
+const pagesRaw = import.meta.glob('/src/content/pages/*.md', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>;
+
+const indexes = createSiteIndexes(cairn, siteConfig, { posts: postsRaw, pages: pagesRaw });
+
+export const site = indexes.site;
+export const posts = indexes.posts;
+export const pages = indexes.pages;
+
+export const ORIGIN = 'https://field-notes.test';
+export const SITE_DESCRIPTION = 'A small blog about walks on the ridge.';
+```
+
+`createSiteIndexes` runs the build gate as it builds, so an entry whose frontmatter fails its concept's validator fails the build instead of shipping broken. For the signature and the `SiteGlobs` shape it expects, see [the delivery reference](../reference/delivery.md) and [the delivery-data reference](../reference/delivery-data.md).
+
+The home page lists the post summaries. Its server load reads `posts.all()`, which returns the cheap summary view with no per-entry body read. Create `src/routes/+page.server.ts`:
+
+```ts
+import type { PageServerLoad } from './$types';
+import { posts } from '$lib/content';
+
+export const prerender = true;
+
+export const load: PageServerLoad = () => ({ posts: posts.all() });
+```
+
+The template renders one card per post. Each summary carries a `concept` field, a `permalink`, the `title`, and the `description` you declared in `summaryFields`, so a list card needs no detail read. Create `src/routes/+page.svelte`:
+
+```svelte
+<script lang="ts">
+  import type { PageData } from './$types';
+  let { data }: { data: PageData } = $props();
+</script>
+
+<h1>Field Notes</h1>
+
+<ul class="post-list">
+  {#each data.posts as post (post.id)}
+    <li data-concept={post.concept}>
+      <a href={post.permalink}>{post.title}</a>
+      {#if post.fields.description}
+        <p class="summary">{post.fields.description}</p>
+      {/if}
+    </li>
+  {/each}
+</ul>
+```
+
+The `data-concept` stamp on each card carries the concept id, so a template can style a post card and a page card differently from one list.
+
+A single catch-all route serves every post and page permalink. `createPublicRoutes` resolves a path against the `site` index with `byPermalink` under the hood, renders the entry's body with the adapter's `render`, and builds the SEO head. It returns an `entries` generator for prerendering and an `entryLoad` for the page load. Create `src/routes/[...path]/+page.server.ts`:
+
+```ts
+import type { PageServerLoad, EntryGenerator } from './$types';
+import { createPublicRoutes } from '@glw907/cairn-cms/delivery';
+import { site, ORIGIN, SITE_DESCRIPTION } from '$lib/content';
+import { cairn } from '$lib/cairn.config';
+
+export const prerender = true;
+
+const routes = createPublicRoutes({
+  site,
+  render: cairn.render,
+  origin: ORIGIN,
+  siteName: cairn.siteName,
+  description: SITE_DESCRIPTION,
+  feeds: { rss: ORIGIN + '/feed.xml', json: ORIGIN + '/feed.json' },
+});
+
+export const entries: EntryGenerator = () => routes.entries();
+export const load: PageServerLoad = ({ url }) => routes.entryLoad({ url });
+```
+
+The matching page reads `data.html` and `data.seo`, and renders the head through `CairnHead` from the component-free `/delivery/head` entry. Create `src/routes/[...path]/+page.svelte`:
+
+```svelte
+<script lang="ts">
+  import type { PageData } from './$types';
+  import { CairnHead } from '@glw907/cairn-cms/delivery/head';
+  let { data }: { data: PageData } = $props();
+</script>
+
+<CairnHead seo={data.seo} />
+
+<article>
+  <h1>{data.entry.title}</h1>
+  {@html data.html}
+</article>
+```
+
+Add the feeds, the sitemap, and the robots file. Each is a prerendered `+server.ts` that reads the indexes and returns a `Response` from a delivery responder. The RSS feed builds one item per post, renders the full body for a full-content feed, and resolves any internal `cairn:` link to an absolute URL with `buildLinkResolver`. Create `src/routes/feed.xml/+server.ts`:
+
+```ts
+import type { RequestHandler } from './$types';
+import { rssResponse, buildLinkResolver, type FeedItem } from '@glw907/cairn-cms/delivery';
+import { site, ORIGIN, SITE_DESCRIPTION } from '$lib/content';
+import { cairn } from '$lib/cairn.config';
+
+export const prerender = true;
+
+export const GET: RequestHandler = async () => {
+  const posts = site.concept('posts');
+  const toPermalink = buildLinkResolver(site);
+  const resolve = (ref: Parameters<typeof toPermalink>[0]) => ORIGIN + toPermalink(ref);
+  const items: FeedItem[] = await Promise.all(
+    (posts?.all() ?? []).map(async (p) => ({
+      title: p.title,
+      url: ORIGIN + p.permalink,
+      date: p.date,
+      summary: p.excerpt,
+      contentHtml: await cairn.render(posts!.byId(p.id)!.body, { resolve }),
+      tags: p.tags,
+    })),
+  );
+  return rssResponse(
+    { title: cairn.siteName, description: SITE_DESCRIPTION, siteUrl: ORIGIN, feedUrl: ORIGIN + '/feed.xml' },
+    items,
+  );
+};
+```
+
+The JSON feed at `src/routes/feed.json/+server.ts` mirrors this route and calls `jsonFeedResponse` instead of `rssResponse`, with `ORIGIN + '/feed.json'` as the feed URL. The sitemap reads the cross-concept `site` resolver directly. Create `src/routes/sitemap.xml/+server.ts`:
+
+```ts
+import type { RequestHandler } from './$types';
+import { sitemapResponse, type SitemapUrl } from '@glw907/cairn-cms/delivery';
+import { site, ORIGIN } from '$lib/content';
+
+export const prerender = true;
+
+export const GET: RequestHandler = () => {
+  const urls: SitemapUrl[] = [
+    { loc: ORIGIN + '/' },
+    ...site.all().map((s) => ({ loc: ORIGIN + s.permalink, ...(s.date ? { lastmod: s.date } : {}) })),
+  ];
+  return sitemapResponse(urls);
+};
+```
+
+The robots file points at the sitemap and disallows the admin. Create `src/routes/robots.txt/+server.ts`:
+
+```ts
+import type { RequestHandler } from './$types';
+import { robotsResponse } from '@glw907/cairn-cms/delivery';
+import { ORIGIN } from '$lib/content';
+
+export const prerender = true;
+
+export const GET: RequestHandler = () => {
+  return robotsResponse({ sitemapUrl: ORIGIN + '/sitemap.xml', disallow: ['/admin'] });
+};
+```
+
+One piece is left, the manifest. The manifest is a build-verified projection of your content files, and it is what keeps an internal `cairn:` link rot-proof. The `cairnManifest()` Vite plugin owns the verify: on every build it evaluates the content corpus and checks the committed manifest against it, and a stale manifest fails the build red. That verify runs outside the prerender lifecycle, so it fails the build regardless of any `handleHttpError` policy. Add the plugin to `vite.config.ts`, after `sveltekit()`:
+
+```ts
+import { sveltekit } from '@sveltejs/kit/vite';
+import tailwindcss from '@tailwindcss/vite';
+import { defineConfig } from 'vite';
+import { cairnManifest } from '@glw907/cairn-cms/vite';
+
+export default defineConfig({
+  plugins: [
+    tailwindcss(),
+    sveltekit(),
+    cairnManifest({
+      configModule: '/src/lib/cairn.config.ts',
+      content: { posts: '/src/content/posts/*.md', pages: '/src/content/pages/*.md' },
+      manifestPath: '/src/content/.cairn/index.json',
+    }),
+  ],
+  ssr: { noExternal: ['@glw907/cairn-cms'] },
+});
+```
+
+When you edit content outside the admin commit pipeline, regenerate the manifest with the `cairn-manifest` bin. Wire it as a script in `package.json`:
+
+```jsonc
+"scripts": {
+  "cairn:manifest": "cairn-manifest"
+}
+```
+
+The admin commit pipeline writes the manifest for you on every save, so you run `npm run cairn:manifest` by hand only after you edit a file on disk, which you do in milestone 9. For the plugin options and the bin, see [the vite reference](../reference/vite.md#cairnmanifest).
+
+One note on package entries. A SvelteKit route imports through `@glw907/cairn-cms/delivery`, which pulls `@sveltejs/kit` into its module graph. A plain-Node tool such as a custom manifest script cannot import that barrel. Point such an import at `@glw907/cairn-cms/delivery/data`, the node-safe surface that re-exports the same builders without the SvelteKit dependency:
+
+```ts
+import { buildSiteManifest } from '@glw907/cairn-cms/delivery/data';
+```
+
+For the task on its own, the [wire the delivery surface guide](../guides/wire-the-delivery-surface.md) traces this same wiring against the showcase files.
+
+## Milestone 7: Add the nav menu
+
+The site needs a navigation menu, and that menu lives in the same YAML site-config file you just created. A menu is a named list of links read at build time, so the public site renders it without a runtime call. Add a `primary` menu to `src/lib/site.config.yaml` with a link to the home list and a link to the about page:
+
+```yaml
+siteName: Field Notes
+menus:
+  primary:
+    - label: Home
+      url: /
+    - label: About
+      url: /about
+content:
+  posts:
+    permalink: /:year/:month/:day/:slug
+    datePrefix: day
+  pages:
+    permalink: /:slug
+```
+
+The site reads the menu at build time with `parseSiteConfig` and `extractMenu`, the same parse you already wired for the URL policy. A template pulls the `primary` menu out of the parsed config and renders one link per node. For the signatures, see [`parseSiteConfig` and `extractMenu`](../reference/core.md#parsesiteconfig) in the core reference.
+
+You do not hand-edit this YAML for every change. The admin carries a nav tree editor that reads this menu, lets an author reorder and rename its links, and commits the result back to the same file. You wire and exercise that nav editor in milestone 8. For why a page lives at a stable permalink that a menu link can point to, see [URL identity](../explanation/content-model.md#url-identity) in the content model.

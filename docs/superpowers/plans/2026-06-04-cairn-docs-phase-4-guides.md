@@ -463,3 +463,49 @@ After all tasks commit, before declaring the phase done:
 - The three lean guides run on Sonnet (goal, steps, links to the ops doc), the three full guides on Opus (the worked example and the synthesis), the relocate and the index on Sonnet.
 - Every cross-link target is named per task, with the expected transient forward-dangles called out so the link check is unambiguous. By Task 7 every sibling exists, so Tasks 5, 6, 7, and 8 expect zero dangles.
 - The arm publishes nothing and carries no version bump. The three release-gated engine candidates stay in `ROADMAP.md`, the friction log, and the project memory, separate from this docs phase.
+
+---
+
+## Post-mortem (executed 2026-06-04)
+
+Phase 4 executed subagent-driven on `main`, one `cairn-implementer` per task, eight task commits
+`f11b370..455b356` plus a STATUS commit `e21e475`. The three full engine-surface guides ran on Opus,
+the three lean guides and the relocate and the index on Sonnet. Docs-only, so no version bump, no
+publish, no review subagent, no `/admin` smoke.
+
+**What was built.** Seven how-to guides under `docs/guides/` plus the arm index, and the docs-index
+How-to-guides line flipped to point at the index. The lean guides (`set-up-the-github-app.md`,
+`configure-auth-and-d1.md`, `deploy-to-cloudflare.md`) state goal, steps, and verify, then link the
+authoritative ops docs, drawing their facts from the engine source and `CLAUDE.md`. The full guides
+(`define-an-adapter-and-schema.md`, `configure-rendering.md`, `wire-the-delivery-surface.md`) carry a
+worked example copied verbatim from the real showcase config, content, routes, and Vite plugin.
+`upgrade-cairn.md` relocated from `docs/upgrading.md` with `git mv`, history preserved, no CHANGELOG
+drift (the page's last heading `0.26.0` is the newest version, every recorded breaking change already
+represented), no content edit.
+
+**Gate evidence.** The page gate (the docs gate) ran per task and again at the phase end. `prose-guard`
+shows no blocking tell on any of the eight authored files; advisory tells appear on two (`tricolon` on
+`configure-rendering.md` and the index, `anaphora` on `define-an-adapter-and-schema.md` and the index),
+all sweep-only and non-blocking. Every relative link across the arm and the flipped `docs/README.md`
+resolves, with no dangling link at the phase end. `grep -n upgrading.md docs/README.md` is clean, so the
+old path is retired from the live public docs (historical references under `docs/superpowers/` and dated
+`docs/STATUS.md` entries stay as records). The transient forward-dangles the plan predicted (a guide
+linking a sibling not yet written) all resolved once the later task landed, exactly as the task ordering
+intended.
+
+**Friction surfaced.** One finding, logged in `docs/internal/docs-friction-log.md`. Task 4's draft asked
+for an adapter step setting the slug codec and per-concept `datePrefix`, but the real showcase adapter
+carries neither: the URL policy and `datePrefix` live in the YAML site config, and the showcase YAML
+carries only a menu, so the showcase relies on the concept defaults. The implementer wrote the step to
+point at the YAML and the URL-identity explanation rather than invent adapter fields, keeping the worked
+example true to the showcase. This corroborates the URL-spread finding already release-gated under the
+surface-narrowing pass; it extends no backlog. No new engine candidate beyond the three release-gated
+improvements.
+
+**Decisions confirmed.** The three-tier evidence-base split (lean linking the ops docs, full validated
+against the showcase, one relocate) held cleanly. Writing the full guides against the real showcase
+caught the one place the plan draft drifted from the engine (the adapter slug/datePrefix step), which is
+the value of validating a worked example against running code rather than against the plan.
+
+**Next.** Phase 5 (Tutorial): brainstorm the open calls, write the plan, execute subagent-driven on
+`main`. Then Phase 6 (process), then P4 (the scaffolder).

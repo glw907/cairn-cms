@@ -83,6 +83,16 @@ Phase 1 seeds this file. Later phases append as they write.
   firsthand, `content-model.md` confirmed the URL spread, and `security-model.md` confirmed the render
   sink stays narrow. Explaining a design is good pressure on its surface, since the explanation resists
   where the surface is muddy. The arm validated the backlog rather than extending it.
+- **developer** (no first-class local admin dev mode, from `docs/tutorial/build-your-first-cairn-site.md`,
+  milestone 8): bringing up the admin locally needs an authenticated editor and a committing GitHub App,
+  neither of which exists on a developer's machine. The engine ships no built-in local dev mode for the
+  admin, so the tutorial has to hand-roll two fixtures: a fake-GitHub `fetch` double that answers
+  `api.github.com` from memory, and an auth-bypass server hook gated by `CAIRN_DEV_BACKEND=1` that sets
+  `event.locals.editor`. Both are copied from the showcase's `fake-github.ts` and `hooks.server.ts`. A
+  newcomer must paste working-but-dangerous code before they can see the admin run. Candidate for the P4
+  scaffolder: generate a fenced, flag-gated local dev backend so the loop runs out of the box without the
+  reader hand-rolling an auth bypass.
+
 - **developer** (slug codec is not adapter surface, from `docs/guides/define-an-adapter-and-schema.md`):
   the guide asked for a step that sets "the slug codec and the per-concept `datePrefix`" on the adapter,
   but the real showcase adapter carries neither. The URL policy and `datePrefix` live in the YAML site

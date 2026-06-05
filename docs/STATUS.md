@@ -18,9 +18,11 @@ capstone, P4. The full P4 framing is in the "Queued engine capstone" section bel
 design calls with the user first, then write the numbered plan, then execute it subagent-driven on a
 feature worktree off `main`. The Phase 5 reproduction sharpened P4's fresh-install worklist (a fenced
 local dev backend, the `App.Locals.editor` type, the robots collision, the `prerender.handleHttpError`
-policy, `@types/node`); see `ROADMAP.md` and `docs/internal/docs-friction-log.md`. One engine-adjacent
-item should be confirmed independently of P4: the showcase golden-path E2E appears broken against the
-atomic `commitFiles` save path (the `fake-github.ts` double is stale); run the E2E and fix the double.
+policy, `@types/node`); see `ROADMAP.md` and `docs/internal/docs-friction-log.md`. The engine-adjacent
+showcase E2E regression the reproduction flagged is now confirmed and FIXED (`ba25359`): the golden-path
+E2E had drifted on two fronts (a Carta-era editor selector and the single-file `fake-github` double), both
+now updated for CodeMirror and the atomic `commitFiles` path, both tests green. The open follow-up is to
+wire that E2E into a gate so it stops rotting silently (tracked in ROADMAP Later).
 
 **The documentation initiative landed across six phases (2026-06-04 through 2026-06-05).** It built a
 self-contained docs set for external adopters plus the project-legibility files, and it made
@@ -64,14 +66,14 @@ GitHub). The reproduction folded back real page defects as `1eef926` so a newcom
 project-setup pieces a registry consumer needs that the symlinked showcase hides). Two friction entries
 landed: the missing first-class local admin dev mode and the reproduction note, both pointing at P4.
 
-**Carry-forward (engine-adjacent, found by the Phase 5 reproduction).** `examples/showcase/src/lib/fake-github.ts`
-is stale: it answers only single-file `PUT /contents`, but the engine content save now commits through
-the atomic `commitFiles` Git Data API (`POST git/trees`, `POST git/commits`, `PATCH git/refs/heads` in
-`src/lib/github/repo.ts`, called from `content-routes.ts`). The showcase golden-path E2E
-(`examples/showcase/e2e/golden-path.spec.ts`) drives a real save and asserts on `/test/last-commit`, so it
-would fail against the current engine; the gap stayed masked because Playwright E2E is not in `npm test`.
-Follow-up: run the golden-path E2E to confirm, then update the double to answer the atomic endpoints (and
-seed the manifest). Detail in the Phase 5 plan post-mortem and the friction log.
+**Carry-forward (engine-adjacent, found by the Phase 5 reproduction), RESOLVED 2026-06-05 (`ba25359`).**
+The showcase golden-path E2E (`examples/showcase/e2e/golden-path.spec.ts`) was confirmed broken against the
+current engine on two fronts, both masked because Playwright E2E is not in `npm test`. The proximate failure
+was a Carta-era editor selector (the editor swapped to CodeMirror at 0.9.0, which removes the SSR textarea).
+Behind it, `fake-github.ts` answered only single-file `PUT /contents` while content saves now commit through
+the atomic `commitFiles` Git Data API. The fix drives `.cm-content` in the E2E and grows the double to model
+the atomic endpoints, recording the `.md` content entry. Both golden-path tests pass. Open follow-up: wire
+the showcase E2E into a gate so it stops rotting silently (ROADMAP Later). Detail in the friction log.
 
 Phase 6 (the process phase) then landed and closed the initiative; see the top entry. The canonical next
 action is P4.

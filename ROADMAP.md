@@ -10,9 +10,10 @@ needs. Items move up from lower tiers as the core fills in.
 
 ## Now
 
-- **Documentation initiative.** A self-contained docs set for external adopters, built in six
-  phases across the four Diátaxis arms. Phases 1 (legibility and split) and 2 (reference) have
-  landed. Phase 3 (explanation) is next. It publishes nothing.
+- **Documentation initiative (complete).** A self-contained docs set for external adopters, built
+  across six phases (legibility, reference, explanation, guides, tutorial, process). All six landed,
+  and documentation is now a standing dimension of every pass (the rule lives in the `cairn-pass`
+  ritual and `CLAUDE.md`). It published nothing.
 - **Engine hardening before the next release.** Three improvements the documentation effort
   surfaced, gated to land before the next `0.x` publish. Narrow the public export surface so the
   `.` root and `/sveltekit` stop re-exporting another subpath's symbols and the `export *` helper
@@ -20,11 +21,6 @@ needs. Items move up from lower tiers as the core fills in.
   a component `build()` that routes a directive attribute value into an `href`, `src`, or `style`
   sink. Consolidate the URL-identity model, which today spreads one URL across the YAML policy, the
   catch-all route, and the frontmatter `datePrefix`.
-- **Confirm the showcase E2E against the atomic save path.** The Phase 5 tutorial reproduction found
-  `examples/showcase/src/lib/fake-github.ts` answers only single-file `PUT /contents`, while the content
-  save now commits through the atomic `commitFiles` Git Data API. The golden-path E2E drives a real save,
-  so it looks broken against the current engine, masked because Playwright E2E is not in `npm test`. Run the
-  E2E to confirm, then update the double to answer the atomic endpoints and seed the manifest.
 
 ## Next
 
@@ -49,6 +45,10 @@ needs. Items move up from lower tiers as the core fills in.
 - **Content lifecycle ergonomics.** Follow-ups carried from the rename and delete passes,
   including a live region that re-announces a repeated error and a slug preview that matches the
   create form.
+- **Wire the showcase E2E into a gate.** The Playwright golden-path E2E is in no automated gate, so
+  it rotted silently across two engine passes (the editor swap and the atomic-commit save) until the
+  Phase 5 reproduction caught it. Run it in CI, or at least in the cairn-pass ritual when a pass
+  touches the editor or the commit path, so a showcase-breaking engine change surfaces at once.
 
 ## Considering
 

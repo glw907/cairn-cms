@@ -123,14 +123,19 @@ Phase 1 seeds this file. Later phases append as they write.
 The Phase 5 reproduction broke into these distinct candidates, triaged below so P4 and a hardening pass
 inherit a clean list rather than one prose note.
 
-- **developer** (likely bug, from the Phase 5 reproduction): `examples/showcase/src/lib/fake-github.ts` is
-  stale against the engine's save path. It answers only single-file `PUT /contents`, but the content save now
-  commits through the atomic `commitFiles` Git Data API (`POST git/trees`, `POST git/commits`, `PATCH
-  git/refs/heads` in `src/lib/github/repo.ts`, called from `content-routes.ts`). The showcase golden-path E2E
-  (`examples/showcase/e2e/golden-path.spec.ts`) drives a real save and asserts on `/test/last-commit`, so it
-  appears to fail against the current engine; the gap stayed masked because Playwright E2E is not in `npm
-  test`. Action: run the E2E to confirm, then update the double to answer the atomic endpoints and seed the
-  manifest. This is the headline finding, possibly a live regression rather than only DX.
+- **developer** (CONFIRMED bug, FIXED, from the Phase 5 reproduction): the showcase golden-path E2E
+  (`examples/showcase/e2e/golden-path.spec.ts`) was broken against the current engine on two fronts, both
+  masked because Playwright E2E is not in `npm test`. Running it confirmed the regression. The proximate
+  failure was a stale Carta-era editor selector (`textarea.carta-font-code` / the SSR `aria-label` textarea):
+  the editor swapped to CodeMirror at 0.9.0, which mounts a contenteditable `.cm-content` and removes the SSR
+  textarea, so the test timed out before reaching the save. Behind it sat a second break: `fake-github.ts`
+  answered only single-file `PUT /contents`, but content saves now commit through the atomic `commitFiles`
+  Git Data API (`GET git/ref/heads`, `GET git/commits/<sha>`, `POST git/trees`, `POST git/commits`, `PATCH
+  git/refs/heads` in `src/lib/github/repo.ts`). Fixed in `ba25359`: the E2E drives `.cm-content`, and the
+  double models the atomic endpoints, recording the `.md` content entry as the commit. Both golden-path tests
+  pass. Open follow-up, separate from this fix: Playwright E2E is not in any gate, so this rot recurred
+  silently across two engine passes; a future pass could wire the showcase E2E into CI so an engine change
+  that breaks the showcase save surfaces at once.
 - **developer** (engine surface, from the Phase 5 reproduction): the engine sets `event.locals.editor` but
   ships no ambient type for it, so a consumer must hand-write the `App.Locals.editor` augmentation in
   `app.d.ts`. Candidate: ship the `App.Locals` augmentation from the package (or have the scaffolder emit it).

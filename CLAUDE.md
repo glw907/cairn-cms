@@ -54,6 +54,26 @@ durable orientation only.
 - **Cloudflare MCP** (account `glw907`, `120c269ad6d3dfbe6d63a0bb53758ca0`) provisions and queries D1
   for the auth store. Prefer it over the dashboard.
 
+## Documentation is a pass dimension
+
+Documentation is a standing dimension of every cairn-cms pass, not a separate project. A pass updates
+the relevant `docs/` arm for whatever it changed, and a public-API change is not done until its
+reference page matches. The `cairn-pass` pass-end ritual carries this step, and two automated gates
+back it: `npm run check:reference` fails on an undocumented export, and `npm run check:package` checks
+the entry points.
+
+The public docs follow a Diátaxis structure under `docs/`: [`reference/`](docs/reference/README.md)
+(one page per export subpath), [`guides/`](docs/guides/README.md) (task how-tos),
+[`explanation/`](docs/explanation/README.md) (the why), and
+[`tutorial/`](docs/tutorial/build-your-first-cairn-site.md) (the first-site build).
+[`docs/internal/docs-friction-log.md`](docs/internal/docs-friction-log.md) collects the design
+friction that writing a doc surfaces, from the developer and editor perspectives, triaged into
+[`ROADMAP.md`](ROADMAP.md) and [`docs/STATUS.md`](docs/STATUS.md). This repo keeps no separate backlog
+file.
+
+Two production sites depend on the package, so a stale doc costs real users. Treat the docs update as
+part of the work, not a chore after it. See the `docs-is-a-pass-dimension` memory.
+
 ## Durable gotcha (Cloudflare email)
 
 Email *Sending* (arbitrary recipients) is `env.EMAIL.send({ to, from, subject, html, text })`. The

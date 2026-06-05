@@ -11,17 +11,35 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-04): brainstorm and write Documentation Initiative, Phase 6 (the process phase)
+## Immediate next action (2026-06-05): brainstorm and write P4, the create-cairn-site scaffolder
 
-The documentation initiative is the current priority. It builds a self-contained docs set for
-external adopters plus the project-legibility files, and it makes documentation a standing pass
-dimension going forward. The design spec is
-`docs/superpowers/specs/2026-06-04-cairn-docs-initiative-design.md`. The initiative runs in six
-phases, each plan written just-in-time after the prior one lands: legibility, reference, explanation,
-guides, tutorial, and a process phase that bakes docs into the pass ritual. The initiative absorbs
-the queued docs-refresh items below, which its later phases schedule. It publishes nothing and
-touches no engine code. Phases 1 through 5 have landed; Phase 6 (the process phase) is the last one,
-then P4 (the scaffolder) is the engine capstone.
+The documentation initiative is COMPLETE (all six phases landed), so the next work is the engine
+capstone, P4. The full P4 framing is in the "Queued engine capstone" section below: brainstorm the open
+design calls with the user first, then write the numbered plan, then execute it subagent-driven on a
+feature worktree off `main`. The Phase 5 reproduction sharpened P4's fresh-install worklist (a fenced
+local dev backend, the `App.Locals.editor` type, the robots collision, the `prerender.handleHttpError`
+policy, `@types/node`); see `ROADMAP.md` and `docs/internal/docs-friction-log.md`. One engine-adjacent
+item should be confirmed independently of P4: the showcase golden-path E2E appears broken against the
+atomic `commitFiles` save path (the `fake-github.ts` double is stale); run the E2E and fix the double.
+
+**The documentation initiative landed across six phases (2026-06-04 through 2026-06-05).** It built a
+self-contained docs set for external adopters plus the project-legibility files, and it made
+documentation a standing pass dimension. The design spec is
+`docs/superpowers/specs/2026-06-04-cairn-docs-initiative-design.md`. The six phases: 1 legibility and
+split, 2 reference, 3 explanation, 4 guides, 5 tutorial, 6 process and infra. It published nothing and
+touched no engine code.
+
+**Phase 6 (process and infra) landed 2026-06-05.** It baked the docs-as-a-pass-dimension rule into the
+process surfaces, executed inline (cross-repo, process-doc editing, no test-first code). Four edits: the
+`cairn-pass` pass-end ritual gained a Documentation step (new step 5, leaning on `npm run check:reference`
+and `check:package` for the public-API-matches-reference rule, the rest renumbered to 9); `cairn-cms/CLAUDE.md`
+gained a "Documentation is a pass dimension" section; `site-pass` gained a one-line docs-currency note; and
+the `docs-is-a-pass-dimension` memory was updated to past tense. The initiative spec's friction-triage line
+was reconciled to ROADMAP and STATUS (no backlog). The two skill edits committed in the dotfiles repo
+(`~/.dotfiles`, `7b4194e` and `05031e7`); the in-repo edits committed in cairn-cms. The plan is
+`docs/superpowers/plans/2026-06-04-cairn-docs-phase-6-process.md` (post-mortem appended there); the design
+spec is `docs/superpowers/specs/2026-06-04-cairn-docs-phase-6-process-design.md`. Gate: prose-guard clean on
+all four authored files, the CLAUDE.md links resolve, the ritual reads 1 through 9.
 
 **Phase 5 (Tutorial) landed on `main` 2026-06-04.** It built the learning-oriented arm: one page,
 `docs/tutorial/build-your-first-cairn-site.md`, milestones 0 through 10, carrying a newcomer from an
@@ -55,11 +73,8 @@ would fail against the current engine; the gap stayed masked because Playwright 
 Follow-up: run the golden-path E2E to confirm, then update the double to answer the atomic endpoints (and
 seed the manifest). Detail in the Phase 5 plan post-mortem and the friction log.
 
-**Immediate next action: brainstorm and write Phase 6, the process phase that bakes docs into the pass
-ritual, in a fresh session.** It is the last docs phase. Run `superpowers:brainstorming` first to settle
-its open design calls with the user (the design spec leaves the process phase open), then
-`superpowers:writing-plans`. After Phase 6 lands, P4 (the `create-cairn-site` scaffolder) is the engine
-capstone, carrying every friction the docs initiative surfaced.
+Phase 6 (the process phase) then landed and closed the initiative; see the top entry. The canonical next
+action is P4.
 
 **The rolled version window is PUBLISHED.** `0.26.0` is now the registry `latest` (the `v0.26.0`
 GitHub Release triggered the OIDC trusted-publishing workflow, run `26978850083` green), folding the

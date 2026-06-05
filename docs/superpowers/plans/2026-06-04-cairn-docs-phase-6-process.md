@@ -276,3 +276,41 @@ After all tasks commit, before declaring the phase done:
 - The triage home is ROADMAP and STATUS with no backlog, consistent across the cairn-pass step, the CLAUDE.md section, and the spec reconciliation, matching the user's decision.
 - The cairn-pass step leans on the existing `check:reference` and `check:package` automated gates for the public-API-matches-reference rule, rather than a manual eyeball.
 - The gate is the docs gate scaled to process files (prose-guard, link check, read-back); no engine check/test, review subagent, or `/admin` smoke, since no engine code changes.
+
+---
+
+## Post-mortem (executed 2026-06-05)
+
+Phase 6 landed inline this session across two repositories, the last phase of the documentation
+initiative. It made the docs-as-a-pass-dimension rule live in the places a future pass reads.
+
+**What was built.** Four edits plus a spec reconciliation, one task each. The `cairn-pass` pass-end
+ritual gained a Documentation step as the new step 5, with the following steps renumbered to 9; the step
+leans on `npm run check:reference` and `npm run check:package` for the public-API-matches-reference rule,
+folds the breaking-change doc updates in beside the existing "Consumers must:" convention, and names the
+friction-log append with ROADMAP and STATUS triage. `cairn-cms/CLAUDE.md` gained a "Documentation is a
+pass dimension" section that states the rule, points at the Diátaxis arms and the friction log, and names
+the automated gates, so the rule survives a skill bypass. `site-pass` gained one docs-currency line. The
+`docs-is-a-pass-dimension` memory moved to past tense. The initiative spec's friction-triage line was
+reconciled from "ROADMAP and the backlog" to ROADMAP and STATUS.
+
+**Cross-repo commits.** The two skill edits committed in the dotfiles repo (`~/.dotfiles`): `7b4194e`
+(cairn-pass) and `05031e7` (site-pass). The in-repo edits committed in cairn-cms: `144267a` (CLAUDE.md),
+`701b4b8` (spec reconciliation), and the STATUS plus post-mortem commit that records this. The memory
+files live outside both repos and were saved directly.
+
+**What was verified.** The docs gate, scaled to process files: prose-guard shows no blocking tell on the
+two skill files, `CLAUDE.md`, or the initiative spec; the `cairn-pass` ritual headings read 1 through 9 in
+order with the new step 5 Documentation and no stale internal step-number reference (the surviving
+references to step 1 and step 2 stayed correct); and the new CLAUDE.md section's seven relative links all
+resolve. No engine `npm run check` or `npm test`, no review subagent, and no `/admin` smoke, since the
+phase changes no engine code.
+
+**Decision locked in.** The friction-triage home is ROADMAP and `docs/STATUS.md`, with no separate
+`BACKLOG.md`, codified consistently across the cairn-pass step, the CLAUDE.md section, the friction-log
+header, and the initiative spec. This was the open fork the user settled during the Phase 6 brainstorm.
+
+**The documentation initiative is complete.** All six phases landed: 1 legibility and split, 2 reference,
+3 explanation, 4 guides, 5 tutorial, 6 process and infra. The going-forward rule now lives in the ritual
+and in `CLAUDE.md`. The next engine work is P4, the create-cairn-site scaffolder, which inherits the
+fresh-install worklist the Phase 5 reproduction sharpened.

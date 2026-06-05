@@ -7,6 +7,13 @@
 //   readRaw      -> GET /repos/owner/repo/contents/<path>?ref=<branch>,   Accept: application/vnd.github.raw
 //   fileSha      -> GET /repos/owner/repo/contents/<path>?ref=<branch>,   Accept: application/vnd.github+json -> { sha }
 //   commitFile   -> PUT /repos/owner/repo/contents/<path>,                 body: { message, content, branch, author, sha? }
+//                   (single-file path, still used by nav-routes.ts)
+//   commitFiles  -> the atomic Git Data API path content saves now use (content + manifest in one commit):
+//                     headCommitSha  -> GET   /repos/owner/repo/git/ref/heads/<branch>   -> { object: { sha } }
+//                     commitTreeSha  -> GET   /repos/owner/repo/git/commits/<sha>        -> { tree: { sha } }
+//                     create tree    -> POST  /repos/owner/repo/git/trees                 body: { base_tree, tree[] }
+//                     create commit  -> POST  /repos/owner/repo/git/commits               body: { message, tree, parents, author }
+//                     update ref     -> PATCH /repos/owner/repo/git/refs/heads/<branch>   body: { sha, force }
 //                   (no committer field; GitHub attributes commit to cairn-cms[bot])
 
 /** The shape the E2E reads from /test/last-commit. */
@@ -20,6 +27,16 @@ export interface RecordedCommit {
 
 let lastCommit: RecordedCommit | null = null;
 let installed = false;
+
+/** Tree entries from the most recent POST /git/trees, read by the following POST /git/commits. */
+let pendingTree: Array<{ path: string; content?: string; sha?: string | null }> = [];
+
+function json(payload: unknown, status = 200): Response {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
 
 // The seeded post path must match the adapter's posts dir plus a valid id filename.
 // cairn.config.ts sets dir: 'src/content/posts'; idFromFilename strips the .md suffix.
@@ -53,12 +70,60 @@ export function installFakeGitHub(): void {
     const accept = headers['Accept'] ?? headers['accept'] ?? '';
 
     // Git Trees API: list all blobs so listMarkdown can filter by dir prefix.
-    if (url.includes('/git/trees/')) {
+    if (method === 'GET' && url.includes('/git/trees/')) {
       const tree = [...seededFiles.keys()].map((path) => ({ path, type: 'blob' }));
-      return new Response(JSON.stringify({ tree, truncated: false }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return json({ tree, truncated: false });
+    }
+
+    // Atomic commitFiles path (content saves: content + manifest in one commit).
+    const bareUrl = url.split('?')[0];
+
+    // headCommitSha: the branch head through the single-ref read.
+    if (method === 'GET' && url.includes('/git/ref/heads/')) {
+      return json({ object: { sha: 'parent-commit-sha' } });
+    }
+
+    // commitTreeSha: the parent commit's tree sha.
+    if (method === 'GET' && url.includes('/git/commits/')) {
+      return json({ tree: { sha: 'base-tree-sha' } });
+    }
+
+    // Create tree: apply each blob to the in-memory repo, and remember the entries for the commit.
+    if (method === 'POST' && bareUrl.endsWith('/git/trees')) {
+      const body = JSON.parse(String(init?.body ?? '{}')) as {
+        tree: Array<{ path: string; content?: string; sha?: string | null }>;
+      };
+      pendingTree = body.tree ?? [];
+      for (const entry of pendingTree) {
+        if (typeof entry.content === 'string') seededFiles.set(entry.path, entry.content);
+        else if (entry.sha === null) seededFiles.delete(entry.path);
+      }
+      return json({ sha: 'new-tree-sha' });
+    }
+
+    // Create commit: record the content file (the .md entry, not the manifest) as the last commit.
+    if (method === 'POST' && bareUrl.endsWith('/git/commits')) {
+      const body = JSON.parse(String(init?.body ?? '{}')) as {
+        author: { name: string; email: string };
+        committer?: unknown;
+      };
+      const fileEntry =
+        pendingTree.find((e) => e.path.endsWith('.md') && typeof e.content === 'string') ??
+        pendingTree.find((e) => typeof e.content === 'string');
+      if (fileEntry) {
+        lastCommit = {
+          path: fileEntry.path,
+          author: body.author,
+          committer: body.committer ?? null,
+          content: fileEntry.content ?? '',
+        };
+      }
+      return json({ sha: 'new-commit-sha' });
+    }
+
+    // Update ref: fast-forward the branch to the new commit.
+    if (method === 'PATCH' && url.includes('/git/refs/heads/')) {
+      return json({ object: { sha: 'new-commit-sha' } });
     }
 
     // Contents API: PUT (commitFile) or GET (readRaw / fileSha).

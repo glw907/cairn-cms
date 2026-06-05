@@ -23,14 +23,15 @@ test('an editor opens a post from the list, edits, saves, and the commit carries
   const previewSection = page.locator('section[aria-label="Preview"]');
   await expect(previewSection).toBeVisible({ timeout: 2000 });
 
-  // The body editor: Carta mounts client-side and replaces the SSR textarea with its own
-  // textarea (class carta-font-code). Prefer it; fall back to the SSR aria-label textarea.
-  const cartaTextarea = page.locator('textarea.carta-font-code');
-  const ssrTextarea = page.locator('textarea[aria-label="Markdown source"]');
-  const editorTextarea = (await cartaTextarea.isVisible()) ? cartaTextarea : ssrTextarea;
-  await editorTextarea.fill('An edited body line.');
+  // The body editor is CodeMirror. It mounts client-side into a contenteditable .cm-content and
+  // removes the SSR textarea. Focus it, select all, and type to replace the seeded body.
+  const editor = page.locator('.cm-content');
+  await expect(editor).toBeVisible();
+  await editor.click();
+  await page.keyboard.press('ControlOrMeta+A');
+  await page.keyboard.type('An edited body line.');
 
-  // The hidden input[name="body"] tracks the editor via the carta -> bind:value chain.
+  // The hidden input[name="body"] tracks the editor through the updateListener -> bind:value chain.
   const hiddenBody = page.locator('input[name="body"]');
   await expect(hiddenBody).toHaveValue('An edited body line.', { timeout: 2000 });
 

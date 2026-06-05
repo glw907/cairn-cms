@@ -101,3 +101,21 @@ Phase 1 seeds this file. Later phases append as they write.
   adapter fields. This corroborates the URL-spread finding above: a reader looking for where slugs are
   shaped has no single home to point at, which is the same complexity the surface-narrowing candidate
   targets.
+
+- **developer** (Reproduction, from `docs/tutorial/build-your-first-cairn-site.md`, Task 6): the build-and-run
+  reproduction followed the tutorial literally in a throwaway site (`/tmp/field-notes`) on the published
+  `@glw907/cairn-cms@0.26.0`, no `main` tarball fallback. The result reproduces: `npm run cairn:manifest`
+  and `npm run build` exit 0, the home prerenders both post summaries with their permalinks, the
+  packing-list page renders the callout and the resolved `cairn:` internal link (`/2026/05/01/first-trail`),
+  and the feeds, sitemap, and robots all prerender. `npm run check` is 0/0. The admin loop was driven
+  headless: `/healthz` serves 200, `/admin` redirects to the posts list, the list and the editor and the nav
+  editor serve 200, and a save (plain and with a `cairn:` link) commits through the dev GitHub and logs
+  `[dev-github] committed`. Several steps the build proved wrong were folded back as page fixes (commit
+  `1eef926`), and most of them point at the same gap the missing-local-admin-dev-mode finding above already
+  names: the tutorial hand-rolls a dev backend, and the hand-rolled fixture had to grow to answer the Git
+  Data API atomic-commit path and to seed the build manifest before a save would succeed. The other fixes
+  were project-setup omissions a registry consumer hits but the symlinked showcase does not (`@types/node`,
+  the `App.Locals.editor` declaration, deleting the skeleton's default `static/robots.txt`, and a current
+  SvelteKit failing the build on the uncrawled feed and robots routes without a `handleHttpError` policy).
+  Candidate for the P4 scaffolder: emit the project-setup pieces and a working dev backend so a newcomer does
+  not paste a fixture that the engine's commit path has since outgrown.

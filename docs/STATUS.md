@@ -126,15 +126,31 @@ finding already release-gated under the surface-narrowing pass; it extends no ba
 release-gated engine improvements stand unchanged (`ROADMAP.md`, the friction log, the
 `cairn-engine-hardening-release-gate` memory).
 
-**Immediate next action: execute Phase 5 (Tutorial), the docs initiative's fifth phase. Brainstorm and
-write the Phase 5 plan first, then execute it `subagent-driven` from the cairn-cms directory on `main`.**
-The Phase 5 plan is not yet written. Run `superpowers:brainstorming` to settle the tutorial's open design
-calls with Geoff (a Diátaxis tutorial teaches a first build once as a single narrative, distinct from the
-Phase 4 guides, so the open questions are what it builds, against what surface, and how it relates to
-`examples/showcase`), then `superpowers:writing-plans`. It runs on `main` directly (docs-only, publishes
-nothing, no version bump), and the page gate is the docs gate (prose-guard no blocking tell, links resolve,
-accuracy cross-check). After Phase 5, Phase 6 (the process phase that bakes docs into the pass ritual) is
-the last docs phase, then P4 (the scaffolder) is the engine capstone.
+**Phase 5 (Tutorial) is brainstormed, specced, and planned (2026-06-04), not yet executed.** The design
+spec is `docs/superpowers/specs/2026-06-04-cairn-docs-phase-5-tutorial-design.md` (`a0d5a27`); the plan is
+`docs/superpowers/plans/2026-06-04-cairn-docs-phase-5-tutorial.md` (`5e34d5a`). Seven tasks build one page,
+`docs/tutorial/build-your-first-cairn-site.md`, a teach-once Diátaxis tutorial that carries a newcomer from
+an empty directory to a first working `Field Notes` site running locally. The forks settled with Geoff: the
+spine is a minimal-slice local loop widened to touch the full feature set (custom components, the
+link-picker search, feeds, the admin loop); the admin-only features run locally through a fenced, copy-paste
+dev-backend fixture (a fake-GitHub double plus a fake-editor hook behind `CAIRN_DEV_BACKEND=1`, mirroring
+the showcase's `SHOWCASE_FAKE_BACKEND` and handed to the deploy guides for the real App and D1); the start is
+build-from-scratch with copy-paste blocks for the scaffolder-bound route boilerplate; and the capstone is a
+build-and-run reproduction (Task 6 scaffolds the target site in a throwaway directory and runs a real build).
+The missing first-class local admin dev mode is logged as friction for P4.
+
+**Immediate next action: execute Phase 5,
+`docs/superpowers/plans/2026-06-04-cairn-docs-phase-5-tutorial.md`, `subagent-driven`
+(`superpowers:subagent-driven-development`, one `cairn-implementer` per task), from the cairn-cms directory
+on `main`. Start at Task 1.** The design is settled and approved, so skip brainstorming. It runs on `main`
+directly (docs-only, publishes nothing, no version bump). Dispatch Tasks 1, 2, 3, 4, and 6 `model: opus`
+(the four full-synthesis writing tasks and the reproduction); Tasks 5 and 7 fit the Sonnet default (the
+closing pointers and the docs-index flip are mechanical). Bake the docs-gate override into each writing-task
+dispatch: do not run `npm run check` or `npm test`; the gate is prose-guard no blocking tell, links resolve,
+and a code-block cross-check against `examples/showcase`. Task 6 is the one task that runs a real `vite
+build`, against a throwaway site outside the repo. No review subagent or `/admin` smoke applies. After Phase
+5 lands, Phase 6 (the process phase that bakes docs into the pass ritual) is the last docs phase, then P4
+(the scaffolder) is the engine capstone.
 
 ## Queued engine capstone: P4, the create-cairn-site scaffolder
 

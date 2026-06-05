@@ -83,3 +83,11 @@ Phase 1 seeds this file. Later phases append as they write.
   firsthand, `content-model.md` confirmed the URL spread, and `security-model.md` confirmed the render
   sink stays narrow. Explaining a design is good pressure on its surface, since the explanation resists
   where the surface is muddy. The arm validated the backlog rather than extending it.
+- **developer** (slug codec is not adapter surface, from `docs/guides/define-an-adapter-and-schema.md`):
+  the guide asked for a step that sets "the slug codec and the per-concept `datePrefix`" on the adapter,
+  but the real showcase adapter carries neither. The URL policy and `datePrefix` live in the YAML site
+  config, and the showcase YAML carries only a menu, so the showcase relies on the concept defaults. The
+  guide step was written to point at the YAML and the URL identity explanation instead of inventing
+  adapter fields. This corroborates the URL-spread finding above: a reader looking for where slugs are
+  shaped has no single home to point at, which is the same complexity the surface-narrowing candidate
+  targets.

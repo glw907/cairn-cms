@@ -378,3 +378,96 @@ After all tasks commit, before declaring the pass done:
 - The coverage gate's one-directional behavior is called out, so Task 2's manual prune plus grep is the correct way to catch stale page entries the gate will not.
 - The acceptance proof uses an `npm pack` tarball install (the Phase 5 reproduction method), since a registry consumer installs the packaged tarball, not the source.
 - No symbol changes behavior; the pass is export-location only, so no test is weakened and no new unit test is forced. The gates (`check`, `test`, `check:reference`, `check:package`) plus the two-site build are the acceptance contract.
+
+---
+
+## Post-mortem (executed 2026-06-05, landed on `main`)
+
+Surface-narrowing, pass 1 of the engine-hardening series, executed subagent-driven with one
+`cairn-implementer` per task on `main` directly (Geoff's call: docs-and-barrel edits gated by the
+checks, no worktree). Tasks 1 and 4 ran on Opus, Tasks 2 and 3 on the Sonnet default. Four task
+commits plus a simplifier comment commit:
+
+- `15035b5` Task 1: narrow the `.` root and `/sveltekit` barrels.
+- `06d31b2` Task 2: prune the reference pages.
+- `04ce38b` Task 3: bump `0.27.0` and record the consumer actions.
+- `8bbbf6a` simplifier: a one-line comment on the relocated `GithubKeyEnv` export.
+
+Task 4 (the acceptance proof) committed nothing in cairn-cms; it committed one import fix in the
+ecnordic-ski repo (see the carry-forwards).
+
+### What was built
+
+The root barrel dropped 34 names, from 90 runtime exports to 56. Three groups left it: the delivery
+read surface (the content/site index builders, the feed, sitemap, robots, SEO, and pagination
+builders, `permalink`, the `*Response` helpers, `createPublicRoutes`, and their types), the GitHub
+signing and repo plumbing (`appJwt`, `installationToken`, `signingSelfTest`, `treeUrl`,
+`markdownFilesIn`, `listMarkdown`, `contentsUrl`, `readRaw`, `fileSha`, `commitFile`,
+`appCredentials`), and three internal hast helpers (`isElement`, `strProp`, `markFirstList`). The
+rehype-dispatch export narrowed to the four component-author helpers (`rehypeDispatch`, `iconSpan`,
+`cardShell`, `headRow`). `/sveltekit` stopped re-exporting the public route surface, so its
+`ListData` is now unambiguously the admin list type and the `PublicListData` alias is gone.
+`GithubKeyEnv` relocated to `/sveltekit`, the home of its real consumer (`ContentRoutesDeps.mintToken`),
+which is the one type-nameability case the design flagged.
+
+The delivery and `/delivery/data` barrels were untouched, so every dropped read symbol kept a home.
+The two reference pages were pruned by hand (the coverage gate is one-directional and does not flag a
+page that over-documents). `core.md` went from 174 documented names to 118; `sveltekit.md` lost the
+five public-route entries and gained a `GithubKeyEnv` entry.
+
+### Verification (evidence)
+
+- Full gate green at the tip: `npm run check` 786 files 0 errors 0 warnings, `npm test` 114 files /
+  661 tests exit 0, `npm run check:reference` exit 0 (all seven subpaths OK), `npm run check:package`
+  exit 0 (all entry points across node10/node16/bundler).
+- The dropped runtime names are absent from the built root (the Task 1 Step 6 node check printed
+  `root narrowed: dropped runtime names absent`).
+- The reference pages carry no stale export entry (the Task 2 grep printed no `STALE` line).
+- Every consumer-facing home the changelog names resolves: the delivery read helpers and `permalink`
+  are present on `/delivery/data`; the `*Response` helpers, `createPublicRoutes`, and the public route
+  types are present on `/delivery`; `createPublicRoutes` is correctly absent from `/delivery/data`
+  (it needs Svelte). Confirmed by importing the built `dist` barrels from plain Node.
+- Both production sites build green against the `0.27.0` `npm pack` tarball (see carry-forwards for
+  the one fix the proof drove): ecnordic-ski `check` 0/0 and `build` exit 0, 907-life `check` 0/0 and
+  `build` exit 0.
+
+### Review gate
+
+The simplifier ran over the two changed barrels and made one comment-only edit (no symbol changed).
+A high-effort `/code-review` over the full pass diff returned no finding: the change is
+export-location only, the gate is green, both sites build, and every changelog home resolves. The
+Worker, auth, Svelte, and a11y reviewers and the live `/admin` smoke did not apply, since the pass
+changes no runtime behavior.
+
+### Two implementer deviations, both correct
+
+- Task 1 realigned two surface tests (`delivery-exports.test.ts`, `render-exports.test.ts`) that
+  pinned the old export locations. Those tests are the contract for exactly this change, so the
+  implementer rewrote them to assert the new canonical homes plus negative `name in root === false`
+  assertions. This is realigning the contract, not weakening it; the tests shipped in the Task 1
+  commit because the gate stays red otherwise.
+- Task 3 found that `docs/upgrading.md` no longer exists; it was renamed to
+  `docs/guides/upgrade-cairn.md` in the Phase 4 guides pass (`f11b370`). The implementer edited the
+  real file. The plan's stale path is recorded here so a later reader corrects it.
+
+### Carry-forwards
+
+- **The audit had one miss, now fixed in the site.** ecnordic-ski's `src/lib/markdown/components.ts`
+  root-imported `isElement` and `markFirstList`, which the narrowing dropped as internal hast
+  plumbing. The fix inlined local copies in the site, since both are pure (hast types plus
+  `hastscript`, already site deps), so the barrel was not weakened. Committed in ecnordic as
+  `5183b3f`. 907-life imported neither, so the narrowing has zero impact there, as the audit claimed.
+- **Open design question for pass 2 or P4: should a hast type guard be public?** `isElement` is a
+  general hast type guard useful to any site writing custom render components, the same category as
+  the kept `iconSpan`, `cardShell`, `headRow`, and `rehypeDispatch`. The approved spec drew it on the
+  internal side, and the inline fix respects that, so `0.27.0` ships as designed. The question of a
+  small public component-authoring render helper surface (a `/render` authoring subpath carrying
+  `isElement` and friends) is worth settling when the next render-and-component pass or the scaffolder
+  touches that surface. Recommendation: do not widen reflexively now; decide it where the
+  component-authoring surface is in scope.
+- **Both sites carry a pre-existing `composeRuntime` break against their own `^0.24.0` pin**, unrelated
+  to this narrowing. Each calls the pre-0.24.0 positional `composeRuntime(cairn, [], urlPolicyFrom(...))`,
+  but the signature became a single object input at `0.24.0`. The acceptance proof applied the object
+  form temporarily to clear each site's build gate, then reverted it (out of scope for a narrowing
+  proof). A site-migration pass must update both call sites before either site can build against
+  `0.24.0` or later.

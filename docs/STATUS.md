@@ -11,36 +11,48 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-05): execute surface-narrowing, pass 1 of the engine-hardening series
+## Immediate next action (2026-06-05): brainstorm and write pass 2 (render attribute-sink hardening)
 
-The documentation initiative is COMPLETE. The next work is the **engine-hardening series**, the three
+The documentation initiative is COMPLETE. The work now is the **engine-hardening series**, the three
 release-gate improvements the docs initiative surfaced, sequenced **before P4** so the scaffolder templates
 the clean surface. Geoff settled the scope and sequence: the three run as a just-in-time series,
 **surface-narrowing first, then render attribute-sink hardening, then URL-identity consolidation**, with
 the small engine-side DX riders handled separately (`mintToken` type widening as a trivial standalone, the
 `App.Locals.editor` type deferred to P4). Bucket C (the scaffolder-bound install findings) stays in P4.
 
-**Pass 1 (surface-narrowing) is brainstormed, specced, and planned (2026-06-05), not yet executed.** The
-design spec is `docs/superpowers/specs/2026-06-05-cairn-surface-narrowing-design.md` (`316c2e1`); the plan
-is `docs/superpowers/plans/2026-06-05-cairn-surface-narrowing.md` (`6733e56`). Four tasks: narrow the `.`
-root and `/sveltekit` barrels (drop the redundant delivery re-exports, the internal GitHub/signing/hast
-plumbing, and the public-route re-export that forced the `PublicListData` alias; relocate `GithubKeyEnv` to
-`/sveltekit`), prune the two reference pages, record the consumer actions and bump `0.27.0`, and prove both
-production sites build green against an `npm pack` tarball. The blast radius was audited import-by-import as
-**zero on both sites** (they import only engine-authoring symbols from root and the delivery surface from
-`/delivery`); breaking only for external consumers, covered by `Consumers must:` lines.
+**Pass 1 (surface-narrowing) LANDED on `main` 2026-06-05.** It ran subagent-driven, one
+`cairn-implementer` per task on `main` directly (no worktree, Geoff's call), Tasks 1 and 4 on Opus and
+Tasks 2-3 on Sonnet. Four task commits `15035b5..04ce38b` plus a simplifier comment `8bbbf6a`. The root
+barrel dropped 34 names (90 to 56 runtime exports): the delivery read surface, the GitHub signing and repo
+plumbing, and three internal hast helpers (`isElement`, `strProp`, `markFirstList`). `/sveltekit` stopped
+re-exporting the public route surface (the `PublicListData` alias is gone, its `ListData` is now the admin
+type), and `GithubKeyEnv` relocated to `/sveltekit`. The two reference pages were pruned to match. The
+minor bumps `0.27.0`. Gate green at the tip: `npm run check` 786 files 0/0, `npm test` 114 files / 661
+tests exit 0, `check:reference` and `check:package` exit 0. Both production sites build green against the
+`0.27.0` `npm pack` tarball (ecnordic and 907 each `check` 0/0 and `build` exit 0). The review gate was the
+simplifier (one comment edit) plus a high-effort `/code-review` (no finding). The post-mortem is in the
+plan (`docs/superpowers/plans/2026-06-05-cairn-surface-narrowing.md`); the design spec is
+`docs/superpowers/specs/2026-06-05-cairn-surface-narrowing-design.md`.
 
-**Immediate next action: execute pass 1,
-`docs/superpowers/plans/2026-06-05-cairn-surface-narrowing.md`, `subagent-driven`
-(`superpowers:subagent-driven-development`, one `cairn-implementer` per task), on `main` directly (Geoff's
-call: docs-and-barrel edits gated by check/test/check:reference/check:package, no worktree). Start at Task
-1.** The design is settled and approved, so skip brainstorming. Dispatch Task 1 (the barrel narrowing with
-its type-nameability fallout) and Task 4 (the two-site acceptance proof) `model: opus`; Tasks 2-3 fit the
-Sonnet default (reference prune and the doc/version changes). The pass-end review gate is the simplifier over the changed barrels plus a
-`/code-review`; the live `/admin` smoke and the Worker/auth reviewers do not apply (no runtime behavior
-change). After pass 1 lands, brainstorm and write pass 2 (render attribute-sink hardening). Publishing
-stays held: `0.26.0` is the registry `latest`; the hardening series accumulates on `main` and publishes
-before P4 consumes the narrowed surface.
+**Three carry-forwards from pass 1.** (1) The import audit had one miss, now fixed in the site:
+ecnordic-ski root-imported `isElement` and `markFirstList`, so the fix inlined local copies in the site
+(both are pure hast helpers, so the barrel was not weakened), committed in ecnordic as `5183b3f`; 907-life
+imported neither. (2) An open design question for pass 2 or P4: `isElement` is a general hast type guard in
+the same category as the kept `iconSpan`/`cardShell`/`headRow`/`rehypeDispatch`, and the approved spec drew
+it on the internal side, so `0.27.0` ships as designed; whether to add a small public component-authoring
+render helper surface (a `/render` authoring subpath) is worth settling where that surface is next in
+scope, not widened reflexively now. (3) Both sites carry a pre-existing `composeRuntime` break against their
+own `^0.24.0` pin (the positional call predates the `0.24.0` object form), unrelated to this narrowing; a
+site-migration pass must update both call sites before either site builds against `0.24.0` or later.
+
+**Immediate next action: brainstorm pass 2 (render attribute-sink hardening) with Geoff, then write the
+numbered plan, then execute it subagent-driven on `main`.** Run `superpowers:brainstorming` first to settle
+the open design decisions (the render-sink residual the auth-hardening gate surfaced: a component `build()`
+routing a directive attribute value into an `href`, `src`, or `style` sink is unsanitized today, documented
+as a caveat in the `cairn-render-sanitize-gap` memory). Do not auto-write the plan without Geoff's calls on
+the open decisions. Publishing stays held: `0.26.0` is the registry `latest`, and `main` now carries the
+unpublished `0.27.0`; the hardening series accumulates on `main` and publishes before P4 consumes the
+narrowed surface.
 
 The engine-adjacent showcase E2E regression the Phase 5 reproduction flagged is confirmed and FIXED
 (`ba25359`): the golden-path E2E had drifted on two fronts (a Carta-era editor selector and the single-file

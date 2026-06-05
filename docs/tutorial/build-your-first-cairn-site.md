@@ -41,6 +41,12 @@ npm install -D tailwindcss @tailwindcss/vite
 npm install -D daisyui
 ```
 
+The dev backend and the admin hooks you wire later read `process.env` and decode base64 with `Buffer`, both Node globals. A site that installs cairn from the registry does not get the Node types transitively, so add them to the project:
+
+```bash
+npm install -D @types/node
+```
+
 Wire Tailwind into Vite and load DaisyUI as a plugin. Your `vite.config.ts` adds the Tailwind plugin alongside SvelteKit:
 
 ```ts
@@ -69,6 +75,37 @@ Import that stylesheet once from your root layout, `src/routes/+layout.svelte`:
 </script>
 
 {@render children()}
+```
+
+Two small project setup steps remain. The admin signs an editor in by setting `event.locals.editor`, so declare that field's type once in `src/app.d.ts`:
+
+```ts
+import type { Editor } from '@glw907/cairn-cms';
+
+declare global {
+  namespace App {
+    interface Locals {
+      editor: Editor | null;
+    }
+  }
+}
+
+export {};
+```
+
+The public feeds, the sitemap, and the robots file are endpoints nothing on the site links to, so the prerender crawler does not reach them on its own. Tell SvelteKit to treat an uncrawled prerenderable route as a warning rather than a hard build error. Open `svelte.config.js` and add a `prerender` policy to the `kit` block:
+
+```js
+kit: {
+  adapter: adapter(),
+  prerender: { handleHttpError: 'warn' }
+}
+```
+
+The minimal SvelteKit skeleton ships a default `static/robots.txt`. cairn serves its own robots file from a route in milestone 6, and a static file of the same name would shadow that route, so delete the default now:
+
+```bash
+rm static/robots.txt
 ```
 
 The project now builds and serves an empty SvelteKit site with Tailwind and DaisyUI ready. The next milestones turn it into `Field Notes`.
@@ -530,6 +567,12 @@ content:
 
 The site reads the menu at build time with `parseSiteConfig` and `extractMenu`, the same parse you already wired for the URL policy. A template pulls the `primary` menu out of the parsed config and renders one link per node. For the signatures, see [`parseSiteConfig` and `extractMenu`](../reference/core.md#parsesiteconfig) in the core reference.
 
+The admin nav editor needs to know which menu in the YAML it edits, so tell the adapter. Open `src/lib/cairn.config.ts` and add a `navMenu` entry to `defineAdapter`, naming the config file, the menu, and how deep the tree may nest:
+
+```ts
+  navMenu: { configPath: 'src/lib/site.config.yaml', menuName: 'primary', label: 'Navigation', maxDepth: 2 },
+```
+
 You do not hand-edit this YAML for every change. The admin carries a nav tree editor that reads this menu, lets an author reorder and rename its links, and commits the result back to the same file. You wire and exercise that nav editor in milestone 8. For why a page lives at a stable permalink that a menu link can point to, see [URL identity](../explanation/content-model.md#url-identity) in the content model.
 
 ## Milestone 8: Run the admin locally with the dev backend
@@ -540,12 +583,15 @@ A loud warning before you copy anything. The dev backend is for local developmen
 
 ### Copy the dev backend fixture
 
-The first file is the fake GitHub. It intercepts `fetch` calls to `api.github.com` and answers them from an in-memory file map, so a save reaches a fake repo and the engine never touches the network. It mirrors the showcase's `fake-github.ts`. Create `src/lib/dev-github.ts`:
+The first file is the fake GitHub. It intercepts `fetch` calls to `api.github.com` and answers them from an in-memory file map, so a save reaches a fake repo and the engine never touches the network. A save commits the content file and the manifest in one commit through the Git Data API, so the double answers the ref, commit, tree, and refs endpoints as well as the Contents API reads. It seeds the two posts and the build manifest, so the editor's link picker can resolve a `cairn:` link to an existing post. Create `src/lib/dev-github.ts`:
 
 ```ts
 // DEV ONLY. A fake GitHub that intercepts api.github.com and answers from memory, so the admin
 // can save without a real repository or App key. Installed only when CAIRN_DEV_BACKEND=1.
 // Never enable this in production: it fakes every commit and records nothing to a real repo.
+//
+// A save commits through the Git Data API atomic-commit path, so the double answers the ref,
+// commit, tree, and refs endpoints as well as the Contents API reads and the token exchange.
 
 let installed = false;
 
@@ -558,7 +604,25 @@ const seededFiles = new Map<string, string>([
     'src/content/posts/2026-05-15-packing-list.md',
     '---\ntitle: A weekend packing list\ndate: 2026-05-15\ndescription: What goes in the pack for an overnight on the ridge.\n---\nA weekend on the ridge needs less than you think.\n',
   ],
+  // The manifest the build commits. Seeded so the link picker can resolve a cairn: link to an
+  // existing post; without it a save guard would treat the target as a broken link.
+  [
+    'src/content/.cairn/index.json',
+    JSON.stringify({
+      version: 1,
+      entries: [
+        { id: '2026-05-01-first-trail', concept: 'posts', title: 'First trail on the ridge', date: '2026-05-01', permalink: '/2026/05/01/first-trail', draft: false, links: [] },
+        { id: '2026-05-15-packing-list', concept: 'posts', title: 'A weekend packing list', date: '2026-05-15', permalink: '/2026/05/15/packing-list', draft: false, links: [] },
+      ],
+    }),
+  ],
 ]);
+
+// A staged tree the engine builds with POST /git/trees, keyed by a fake sha. PATCH /git/refs
+// promotes one staged tree's file map into the live seededFiles map, modelling a commit.
+const stagedTrees = new Map<string, Map<string, string>>();
+let counter = 0;
+const nextSha = (prefix: string) => `${prefix}-${++counter}`;
 
 export function installDevGitHub(): void {
   if (installed) return;
@@ -574,25 +638,59 @@ export function installDevGitHub(): void {
     const headers = (init?.headers ?? {}) as Record<string, string>;
     const accept = headers['Accept'] ?? headers['accept'] ?? '';
 
+    // The installation token exchange the App would normally answer.
+    if (url.includes('/access_tokens')) return Response.json({ token: 'dev-token' }, { status: 201 });
+
     // List every blob so the engine can filter a concept's directory.
-    if (url.includes('/git/trees/')) {
+    if (url.includes('/git/trees/') && method === 'GET') {
       const tree = [...seededFiles.keys()].map((path) => ({ path, type: 'blob' }));
       return Response.json({ tree, truncated: false });
     }
 
-    const path = decodeURIComponent(url).match(/\/contents\/([^?]+)/)?.[1] ?? '';
-
-    // A save: decode the committed content and store it in the memory map.
-    if (method === 'PUT') {
-      const body = JSON.parse(String(init?.body ?? '{}')) as { content: string };
-      const decoded =
-        typeof atob === 'function'
-          ? atob(body.content)
-          : Buffer.from(body.content, 'base64').toString('utf-8');
-      seededFiles.set(path, decoded);
-      console.log('[dev-github] committed', path);
-      return Response.json({ commit: { sha: 'dev-sha' } });
+    // The branch head ref and its commit report a stable base, since the double commits by
+    // promoting a staged tree rather than tracking a real commit graph.
+    if (url.includes('/git/ref/heads/')) return Response.json({ object: { sha: 'dev-head' } });
+    if (url.match(/\/git\/commits\/[^/]+$/) && method === 'GET') {
+      return Response.json({ tree: { sha: 'dev-base-tree' } });
     }
+
+    // POST /git/trees: stage the file changes against the current file map under a fresh sha.
+    if (url.endsWith('/git/trees') && method === 'POST') {
+      const body = JSON.parse(String(init?.body ?? '{}')) as {
+        tree: Array<{ path: string; content?: string; sha?: null }>;
+      };
+      const next = new Map(seededFiles);
+      for (const entry of body.tree) {
+        if (entry.sha === null) next.delete(entry.path);
+        else if (typeof entry.content === 'string') next.set(entry.path, entry.content);
+      }
+      const sha = nextSha('tree');
+      stagedTrees.set(sha, next);
+      return Response.json({ sha });
+    }
+
+    // POST /git/commits: bind the staged tree to a commit sha.
+    if (url.endsWith('/git/commits') && method === 'POST') {
+      const body = JSON.parse(String(init?.body ?? '{}')) as { tree: string };
+      const sha = nextSha('commit');
+      const staged = stagedTrees.get(body.tree);
+      if (staged) stagedTrees.set(sha, staged);
+      return Response.json({ sha });
+    }
+
+    // PATCH /git/refs/heads/<branch>: promote the staged tree, modelling the commit landing.
+    if (url.includes('/git/refs/heads/') && method === 'PATCH') {
+      const body = JSON.parse(String(init?.body ?? '{}')) as { sha: string };
+      const staged = stagedTrees.get(body.sha);
+      if (staged) {
+        seededFiles.clear();
+        for (const [p, c] of staged) seededFiles.set(p, c);
+        console.log('[dev-github] committed', body.sha);
+      }
+      return Response.json({ object: { sha: body.sha } });
+    }
+
+    const path = decodeURIComponent(url).match(/\/contents\/([^?]+)/)?.[1] ?? '';
 
     // A read: raw body for the editor, JSON metadata for the file sha.
     if (path && seededFiles.has(path)) {
@@ -600,22 +698,18 @@ export function installDevGitHub(): void {
       return Response.json({ sha: 'old-sha', name: path.split('/').pop() });
     }
 
-    // The installation token exchange the App would normally answer.
-    if (url.includes('/access_tokens')) return Response.json({ token: 'dev-token' }, { status: 201 });
-
     return new Response('Not Found', { status: 404 });
   }) as typeof fetch;
 }
 ```
 
-The second file is the auth bypass. It installs the fake GitHub once and, on any `/admin` request, sets `event.locals.editor` to a fixed editor so the engine treats you as signed in. It mirrors the showcase's `hooks.server.ts`. Create `src/hooks.server.ts`:
+The second file is the auth bypass. It installs the fake GitHub once and, on any `/admin` request, sets `event.locals.editor` to a fixed editor so the engine treats you as signed in. With the flag unset it runs the engine's `createAuthGuard`, which resolves a real session and gates the admin. Create `src/hooks.server.ts`:
 
 ```ts
 // The site's server hook. The dev backend is for local development only and activates only when
-// CAIRN_DEV_BACKEND=1. With the flag unset this hook just runs the engine's auth guard, so the
-// admin requires a real session. Never set the flag in production: it bypasses authentication.
+// CAIRN_DEV_BACKEND=1. With the flag unset this hook is the engine's auth guard, so the admin
+// requires a real session. Never set the flag in production: it bypasses authentication.
 import type { Handle } from '@sveltejs/kit';
-import { sequence } from '@sveltejs/kit/hooks';
 import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
 import { installDevGitHub } from '$lib/dev-github.js';
 
@@ -625,18 +719,22 @@ if (DEV_BACKEND) {
   installDevGitHub();
 }
 
-const devAuth: Handle = async ({ event, resolve }) => {
-  if (DEV_BACKEND && event.url.pathname.startsWith('/admin')) {
-    // The locked dev editor identity. A real session carries the same shape.
-    event.locals.editor = { email: 'you@example.com', displayName: 'You', role: 'owner' };
-  }
-  return resolve(event);
-};
+const guard = createAuthGuard();
 
-export const handle = sequence(devAuth, createAuthGuard());
+export const handle: Handle = async ({ event, resolve }) => {
+  if (DEV_BACKEND) {
+    if (event.url.pathname.startsWith('/admin')) {
+      // The locked dev editor identity. A real session carries the same shape. The engine guard is
+      // bypassed in dev, so the per-load session check reads this editor straight from locals.
+      event.locals.editor = { email: 'you@example.com', displayName: 'You', role: 'owner' };
+    }
+    return resolve(event);
+  }
+  return guard({ event, resolve });
+};
 ```
 
-The engine's `createAuthGuard` gates every `/admin/**` path and runs last, so your dev hook sees the request first and the guard owns the gating. For the guard and the way a site sequences its own hook before it, see [the SvelteKit reference](../reference/sveltekit.md#createauthguard).
+In dev the hook signs you in and skips the guard, since the guard would resolve a session from a database you have not set up yet and redirect to a login page that does not exist. In production the flag is unset, so the hook is the engine's `createAuthGuard`, which gates every `/admin/**` path. For the guard, see [the SvelteKit reference](../reference/sveltekit.md#createauthguard).
 
 ### Wire the admin routes
 
@@ -650,8 +748,8 @@ import { createContentRoutes, createNavRoutes } from '@glw907/cairn-cms/svelteki
 import { cairn, siteConfig } from './cairn.config.js';
 
 export const runtime = composeRuntime({ adapter: cairn, siteConfig });
-export const content = createContentRoutes(runtime, { mintToken: () => 'dev-token' });
-export const nav = createNavRoutes(runtime, { mintToken: () => 'dev-token' });
+export const content = createContentRoutes(runtime, { mintToken: async () => 'dev-token' });
+export const nav = createNavRoutes(runtime, { mintToken: async () => 'dev-token' });
 ```
 
 The route tree splits in two. The login and auth pages sit directly under `admin/`, and the authed shell sits in an `(app)` group whose layout requires a session. The group folder does not appear in the URL, so its pages still resolve under `/admin/*`, but only the group runs the session-requiring layout load, which is what keeps a sessionless visit from looping. For why the tree has this exact shape, read [the admin route structure](../admin-route-structure.md).

@@ -139,8 +139,9 @@ perspectives so neither audience's friction goes unrecorded.
   disagrees with the published page.
 
 Findings land in `docs/internal/docs-friction-log.md`, one entry per item with its
-perspective, the doc that surfaced it, and a short note. Triage feeds the ROADMAP and the
-backlog; a finding is a candidate for future work, not a blocker on the doc that found it. The
+perspective, the doc that surfaced it, and a short note. Triage feeds the ROADMAP and
+`docs/STATUS.md`, since this repo keeps no separate backlog file; a finding is a candidate for
+future work, not a blocker on the doc that found it. The
 friction log is a standing part of the pass-dimension rule below, so a future pass that
 touches docs appends what it finds.
 

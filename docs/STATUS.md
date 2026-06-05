@@ -11,7 +11,7 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-04): execute Documentation Initiative, Phase 4 (Guides)
+## Immediate next action (2026-06-04): execute Documentation Initiative, Phase 5 (Tutorial)
 
 The documentation initiative is the current priority. It builds a self-contained docs set for
 external adopters plus the project-legibility files, and it makes documentation a standing pass
@@ -93,35 +93,48 @@ memory): narrow the public export surface, harden render attribute sinks, consol
 model. They must land before the next `0.x` publish. The docs initiative publishes nothing, so it does not
 trip the gate.
 
-**Phase 4 (Guides) is brainstormed, specced, and planned (2026-06-04), not yet executed.** The design
-spec is `docs/superpowers/specs/2026-06-04-cairn-docs-phase-4-guides-design.md` (`f8f9a37`); the plan is
-`docs/superpowers/plans/2026-06-04-cairn-docs-phase-4-guides.md` (`df9d216`). Eight tasks build seven
-how-to guides under `docs/guides/` plus an index. The dominant design call (Geoff, this brainstorm):
-the guides split into three tiers by evidence base. Three lean setup guides
-(`set-up-the-github-app`, `configure-auth-and-d1`, `deploy-to-cloudflare`) stay thin and link the
-authoritative ops docs (`github-app-key-rotation`, `admin-smoke-test`, `admin-route-structure`), because
-`examples/showcase` runs `adapter-node` and cannot validate Cloudflare/D1/GitHub-App plumbing and P4 will
-scaffold it; depth is deferred to when P4 makes the wiring concrete. Three full engine-surface guides
-(`define-an-adapter-and-schema`, `configure-rendering`, `wire-the-delivery-surface`) carry a worked
-example validated against the showcase. The seventh, `upgrade-cairn`, relocates from `docs/upgrading.md`
-with a light refresh, the Phase 3 `data-tiers` pattern. Each guide is a Diátaxis how-to (goal,
-prerequisites, numbered steps, verify, see-also) that links the Phase 2 reference for signatures and the
-Phase 3 explanation arm for the why, staying distinct from the forthcoming Phase 5 tutorial. The page gate
-is the docs gate; no coverage gate, because guides have no typed surface to enumerate.
+**Phase 4 (Guides) landed on `main` 2026-06-04.** It built the task-oriented arm under `docs/guides/`:
+seven how-to guides plus an index, with the docs-index How-to-guides line flipped to point at the arm. It
+ran subagent-driven, one `cairn-implementer` per task (Opus for the three full engine-surface guides,
+Sonnet for the three lean guides, the relocate, and the index), eight task commits `f11b370..455b356` on
+`main` directly. The plan is `docs/superpowers/plans/2026-06-04-cairn-docs-phase-4-guides.md`
+(post-mortem appended there); the design spec is
+`docs/superpowers/specs/2026-06-04-cairn-docs-phase-4-guides-design.md`.
 
-**Immediate next action: execute Phase 4,
-`docs/superpowers/plans/2026-06-04-cairn-docs-phase-4-guides.md`, `subagent-driven`
-(`superpowers:subagent-driven-development`, one `cairn-implementer` per guide), from the cairn-cms
-directory on `main`. Start at Task 1.** The design is settled and approved, so skip brainstorming. It runs
-on `main` directly (docs-only, publishes nothing, no version bump). Dispatch Tasks 4, 5, and 6
-(`define-an-adapter-and-schema`, `configure-rendering`, `wire-the-delivery-surface`) `model: opus` for the
-worked-example synthesis; Tasks 1, 2, 3, 7, and 8 fit the Sonnet default (the lean guides link the ops
-docs, the relocate and index are mechanical). Bake the docs-gate override into each dispatch: do not run
-`npm run check` or `npm test`; the gate is prose-guard no blocking tell, links resolve, and a manual
-accuracy cross-check (the full guides against `examples/showcase`, the lean guides against the engine
-source and the named ops doc). No review subagent or `/admin` smoke applies (no engine, Worker, auth, or
-UI surface change). After Phase 4 lands, Phase 5 (Tutorial) is next, then Phase 6 (the process phase),
-then P4 (the scaffolder).
+The three-tier split held. The three lean setup guides (`set-up-the-github-app.md`,
+`configure-auth-and-d1.md`, `deploy-to-cloudflare.md`) state goal, steps, and verify, then link the
+authoritative ops docs (`github-app-key-rotation`, `admin-smoke-test`, `admin-route-structure`) and draw
+their facts from the engine source and `CLAUDE.md`, because `examples/showcase` runs `adapter-node` and
+cannot validate the Cloudflare/D1/GitHub-App loop. The three full guides (`define-an-adapter-and-schema.md`,
+`configure-rendering.md`, `wire-the-delivery-surface.md`) carry a worked example copied from the real
+showcase config, content, routes, and Vite plugin. `upgrade-cairn.md` relocated from `docs/upgrading.md`
+with `git mv` (history preserved, no CHANGELOG drift, no content edit). The arm index groups the seven by
+reading sequence (set up the backend, build the site, maintain).
+
+The page gate ran per task and again at the phase end: `prose-guard` shows no blocking tell on any of the
+eight authored files (advisory tells only: tricolon and anaphora on two of them), every relative link
+across the arm and the flipped `docs/README.md` resolves, and `grep -n upgrading.md docs/README.md` is
+clean (the old path is retired from the live public docs; historical references under `docs/superpowers/`
+and dated `docs/STATUS.md` entries stay as records). No `npm run check`, `npm test`, review subagent, or
+`/admin` smoke applied, because the arm changes no engine code and adds no test.
+
+The arm surfaced one design-friction finding (in `docs/internal/docs-friction-log.md`): the adapter guide
+asked for an adapter step setting the slug codec and `datePrefix`, but the real showcase adapter carries
+neither, because the URL policy and `datePrefix` live in the YAML site config. The implementer wrote the
+guide to the real showcase shape rather than invent adapter fields. This corroborates the URL-spread
+finding already release-gated under the surface-narrowing pass; it extends no backlog. The three
+release-gated engine improvements stand unchanged (`ROADMAP.md`, the friction log, the
+`cairn-engine-hardening-release-gate` memory).
+
+**Immediate next action: execute Phase 5 (Tutorial), the docs initiative's fifth phase. Brainstorm and
+write the Phase 5 plan first, then execute it `subagent-driven` from the cairn-cms directory on `main`.**
+The Phase 5 plan is not yet written. Run `superpowers:brainstorming` to settle the tutorial's open design
+calls with Geoff (a Diátaxis tutorial teaches a first build once as a single narrative, distinct from the
+Phase 4 guides, so the open questions are what it builds, against what surface, and how it relates to
+`examples/showcase`), then `superpowers:writing-plans`. It runs on `main` directly (docs-only, publishes
+nothing, no version bump), and the page gate is the docs gate (prose-guard no blocking tell, links resolve,
+accuracy cross-check). After Phase 5, Phase 6 (the process phase that bakes docs into the pass ritual) is
+the last docs phase, then P4 (the scaffolder) is the engine capstone.
 
 ## Queued engine capstone: P4, the create-cairn-site scaffolder
 

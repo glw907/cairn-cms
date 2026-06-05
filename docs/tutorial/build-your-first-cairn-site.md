@@ -830,3 +830,11 @@ npm run cairn:manifest
 Reload the dev server and open the packing-list post at `/2026/05/15/packing-list`. The `cairn:` link now renders as a real anchor pointing at the first-trail post's permalink, `/2026/05/01/first-trail`. The renderer read the manifest, looked up the target id, and rewrote the token into the live URL.
 
 That lookup is what keeps an internal link rot-proof. The link stores a permanent id, the manifest maps every id to its current permalink, and the build verify fails red if the manifest drifts from the files. A target post can move to a different date or a different slug, and every link to it still resolves, because the id never changes. For the link helpers behind the token, see [`cairn:` link helpers](../reference/core.md#cairn-link-helpers) in the core reference. For the content graph the manifest projects, see [the content graph](../explanation/content-model.md#the-content-graph) in the content model.
+
+## Milestone 10: Where to go next
+
+`Field Notes` runs on your machine. To put it on the web with real logins and real commits, work through the four backend and deploy guides. [Set up the GitHub App](../guides/set-up-the-github-app.md) creates the App that commits to your repository. [Configure auth and D1](../guides/configure-auth-and-d1.md) sets up the magic-link login store. [Wire the delivery surface](../guides/wire-the-delivery-surface.md) revisits the public read model against the showcase. [Deploy to Cloudflare](../guides/deploy-to-cloudflare.md) ships the site.
+
+The deploy guides replace the dev backend with the real GitHub App and D1 auth and drop the `CAIRN_DEV_BACKEND` flag, so the bypass and the fake GitHub never reach production.
+
+For the reasoning behind the design, read [the explanation arm](../explanation/README.md). For the full API surface, the [reference](../reference/README.md) is the source of truth.

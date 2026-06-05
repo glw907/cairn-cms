@@ -17,4 +17,5 @@ export { createNavRoutes } from './nav-routes.js';
 export type { NavLoadData, NavPageOption, NavRoutesDeps } from './nav-routes.js';
 export { healthLoad, type HealthData } from './health.js';
 export type { RequestContext, CookieJar, HandleInput } from './types.js';
+// Re-exported here, not from root, so the public ContentRoutesDeps consumer can name it.
 export type { GithubKeyEnv } from '../github/credentials.js';

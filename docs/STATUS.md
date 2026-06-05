@@ -32,11 +32,11 @@ production sites build green against an `npm pack` tarball. The blast radius was
 
 **Immediate next action: execute pass 1,
 `docs/superpowers/plans/2026-06-05-cairn-surface-narrowing.md`, `subagent-driven`
-(`superpowers:subagent-driven-development`, one `cairn-implementer` per task), on a feature worktree off
-`main`. Start at Task 1.** The design is settled and approved, so skip brainstorming. Dispatch Task 4 (the
-two-site acceptance proof) `model: opus`; Tasks 1-3 fit the Sonnet default (mechanical export edits and
-doc/version changes), though Task 1's nameability fallout may warrant Opus if the gate surfaces a
-non-trivial type relocation. The pass-end review gate is the simplifier over the changed barrels plus a
+(`superpowers:subagent-driven-development`, one `cairn-implementer` per task), on `main` directly (Geoff's
+call: docs-and-barrel edits gated by check/test/check:reference/check:package, no worktree). Start at Task
+1.** The design is settled and approved, so skip brainstorming. Dispatch Task 1 (the barrel narrowing with
+its type-nameability fallout) and Task 4 (the two-site acceptance proof) `model: opus`; Tasks 2-3 fit the
+Sonnet default (reference prune and the doc/version changes). The pass-end review gate is the simplifier over the changed barrels plus a
 `/code-review`; the live `/admin` smoke and the Worker/auth reviewers do not apply (no runtime behavior
 change). After pass 1 lands, brainstorm and write pass 2 (render attribute-sink hardening). Publishing
 stays held: `0.26.0` is the registry `latest`; the hardening series accumulates on `main` and publishes

@@ -6,6 +6,7 @@ each page is checked against them by the export-coverage gate.
 - [Core (`@glw907/cairn-cms`)](./core.md): the engine, the adapter and schema contract, render, and the runtime.
 - [SvelteKit (`/sveltekit`)](./sveltekit.md): the server load and action route factories.
 - [Components (`/components`)](./components.md): the admin Svelte UI.
+- [Render authoring (`/render`)](./render.md): the component-authoring toolkit for a component `build()`.
 - [Delivery (`/delivery`)](./delivery.md): the public read-model route loaders, the response helpers, and `CairnHead`.
 - [Delivery data (`/delivery/data`)](./delivery-data.md): the node-safe pure projections.
 - [Vite (`/vite`)](./vite.md): the `cairnManifest()` build plugin.

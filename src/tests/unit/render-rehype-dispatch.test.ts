@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { h } from 'hastscript';
 import type { Root, Element, ElementContent } from 'hast';
-import { rehypeDispatch, cardShell, headRow, markFirstList, isElement } from '../../lib/render/rehype-dispatch.js';
+import { rehypeDispatch, cardShell, headRow, markFirstList, isElement, strAttr } from '../../lib/render/rehype-dispatch.js';
 import { defineRegistry } from '../../lib/render/registry.js';
+import type { ComponentContext } from '../../lib/render/registry.js';
 
 // Local fixture helper: pull the <h2> out as a .card-title and wrap it in an
 // .ec-head row. The engine no longer ships a heading-sniffing splitHead, so the
@@ -79,6 +80,22 @@ describe('rehypeDispatch', () => {
     const ul = h('ul', [h('li', ['a'])]);
     const out = markFirstList([h('p', ['x']), ul]);
     expect(out?.properties?.className).toContain('ec-grid');
+  });
+});
+
+function ctxWith(attributes: Record<string, string | boolean>): ComponentContext {
+  return { attributes, slot: () => [], items: () => [], node: { type: 'element', tagName: 'div', properties: {}, children: [] } };
+}
+
+describe('strAttr', () => {
+  it('returns a string attribute value', () => {
+    expect(strAttr(ctxWith({ icon: 'leaf' }), 'icon')).toBe('leaf');
+  });
+  it('returns undefined for a boolean attribute', () => {
+    expect(strAttr(ctxWith({ wide: true }), 'wide')).toBeUndefined();
+  });
+  it('returns undefined for an absent attribute', () => {
+    expect(strAttr(ctxWith({}), 'icon')).toBeUndefined();
   });
 });
 

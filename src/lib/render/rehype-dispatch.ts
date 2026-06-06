@@ -6,6 +6,13 @@ export function isElement(node: ElementContent | undefined): node is Element {
   return !!node && node.type === 'element';
 }
 
+/** Read a declared string attribute off the component context, returning undefined for a boolean or
+ *  absent value. Replaces the `typeof ctx.attributes[key] === 'string'` narrowing a build repeats. */
+export function strAttr(ctx: ComponentContext, key: string): string | undefined {
+  const value = ctx.attributes[key];
+  return typeof value === 'string' ? value : undefined;
+}
+
 // hast Properties values are PropertyValue (string | number | boolean | array | null).
 // Directive markers (dataPrimitive/dataRole/dataAttr<Key>) are always stamped as strings;
 // this reads them back with that guarantee instead of casting at each call site.

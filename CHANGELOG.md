@@ -2,6 +2,20 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.30.0
+
+Carved a `@glw907/cairn-cms/render` authoring subpath for the component-authoring toolkit. `iconSpan`,
+`cardShell`, `headRow`, the re-homed `isElement`, and the new `strAttr` now live there, so the root barrel
+stays lean and a component `build()` imports its helpers from one obvious place. Added `strAttr(ctx, key)`,
+a string-attribute reader, a configurable `headRow` heading level that defaults to 2, a
+`registry.iconField(name)` accessor, and a `defineRegistry` guard that fails a component declaring
+`defaultIconByRole` with no `type:'icon'` attribute. Dropped `rehypeDispatch` from the public surface, so
+`createRenderer` is the one public render pipeline.
+
+Consumers must: import `iconSpan`, `cardShell`, `headRow`, `isElement`, and `strAttr` from
+`@glw907/cairn-cms/render` instead of the package root, and replace any direct `rehypeDispatch` use with
+`createRenderer`.
+
 ## 0.29.0
 
 Consolidated the URL-identity model. A content entry's id, slug, date, and permalink are now derived in

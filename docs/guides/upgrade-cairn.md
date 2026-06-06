@@ -98,3 +98,23 @@ on a dated concept, a `datePrefix` must be `year`, `month`, or `day`, and a poli
 the adapter declares. A malformed policy that earlier defaulted silently now fails the build with a named
 error. Consumers must: nothing for a valid policy. If the build reports a policy error, correct the named
 `content:` entry in the site config.
+
+## 0.30.0: the render-authoring helpers move to `@glw907/cairn-cms/render`
+
+The component-authoring toolkit now lives behind a `@glw907/cairn-cms/render` subpath. `iconSpan`,
+`cardShell`, `headRow`, the re-homed `isElement`, and the new `strAttr` import from there, and the root
+barrel no longer carries them. Consumers must: import `iconSpan`, `cardShell`, `headRow`, `isElement`, and
+`strAttr` from `@glw907/cairn-cms/render` instead of the package root.
+
+## 0.30.0: `rehypeDispatch` is no longer exported
+
+The public surface dropped `rehypeDispatch`, so `createRenderer` is the one public render pipeline.
+Consumers must: replace any direct `rehypeDispatch` use with `createRenderer`.
+
+## 0.30.0: additive render-authoring helpers (non-breaking)
+
+This version also adds parts that need no migration. `headRow` takes a configurable heading level that
+defaults to 2, `registry.iconField(name)` reads a component's icon field, and `defineRegistry` now fails a
+component that declares `defaultIconByRole` with no `type:'icon'` attribute. Consumers must: nothing. If
+`defineRegistry` reports the icon guard, give the offending component a `type:'icon'` attribute or remove
+its `defaultIconByRole`.

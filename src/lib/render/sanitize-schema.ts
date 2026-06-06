@@ -112,6 +112,15 @@ function isSafeSrcset(value: unknown): boolean {
   });
 }
 
+// Decide whether one URL-bearing property value is safe to keep. srcset has its own
+// multi-candidate grammar. A non-string value carries no scheme to abuse, so the floor's own
+// handling stands and the guard leaves it alone.
+function isSafeUrlProp(key: string, value: unknown): boolean {
+  if (key === 'srcSet') return isSafeSrcset(value);
+  if (typeof value !== 'string') return true;
+  return isSafeUrl(value);
+}
+
 /**
  * Post-dispatch safety floor over the fully-built tree. The pre-dispatch rehype-sanitize floor
  * cleans author content, but a component build() runs after it and can route a raw author
@@ -132,9 +141,7 @@ export function rehypeSinkGuard() {
           continue;
         }
         if (!URL_PROPS.has(key)) continue;
-        const value = props[key];
-        const safe = key === 'srcSet' ? isSafeSrcset(value) : typeof value !== 'string' || isSafeUrl(value);
-        if (!safe) delete props[key];
+        if (!isSafeUrlProp(key, props[key])) delete props[key];
       }
     });
   };

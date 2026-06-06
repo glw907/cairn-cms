@@ -11,21 +11,31 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-05): publish the held window, then DX-sweep Pass A
+## Immediate next action (2026-06-06): DX-sweep Pass A (render authoring)
 
-The **engine-hardening series is COMPLETE**. All three release-gate improvements the docs initiative
-surfaced have landed on `main` unpublished: pass 1 (surface-narrowing, `0.27.0`), pass 2 (render
-attribute-sink hardening, `0.28.0`), and pass 3 (URL-identity consolidation, `0.29.0`). The series ran
-before P4 so the scaffolder templates the clean surface.
+The **engine-hardening series is COMPLETE and PUBLISHED.** All three release-gate improvements landed and
+the held window published together as `0.29.0`: pass 1 (surface-narrowing, `0.27.0`), pass 2 (render
+attribute-sink hardening, `0.28.0`), and pass 3 (URL-identity consolidation, `0.29.0`). The `v0.29.0` GitHub
+Release fired the OIDC trusted-publishing workflow (run `27057249585` green), and `0.29.0` is now the
+registry `latest` over the prior `0.26.0`. The pre-publish gate was green: both production sites'
+`site.config.yaml` `content:` blocks pass pass 3's new URL-policy validation (verified by running the real
+`parseSiteConfig` to `urlPolicyFrom` to `normalizeConcepts` chain against each site's config). The series
+ran before P4 so the scaffolder templates the clean surface.
 
-**Immediate next action: publish the held window** (`0.27.0` + `0.28.0` + `0.29.0` over the `0.26.0`
-`latest`), then resume the cleanup phase with DX-sweep Pass A (render authoring,
-`docs/superpowers/plans/2026-06-05-cairn-render-authoring-surface.md`). Pass A executes only after the window
-publishes, so its version step bumps the next minor above the published baseline. The publish path is the
-OIDC trusted-publishing workflow off a `v0.29.0` GitHub Release (provenance stays disabled while the repo is
-private). Before publishing, verify ecnordic's and 907's committed `site.config.yaml` `content:` blocks
-against pass 3's new URL-policy validation: a malformed policy that was silently defaulted now fails the
-build on upgrade, and the two sites are not exercised by this repo's fixtures.
+**Immediate next action: DX-sweep Pass A (render authoring),
+`docs/superpowers/plans/2026-06-05-cairn-render-authoring-surface.md`,** `subagent-driven`, on `main`. Its
+version step now bumps the next minor above the published `0.29.0` baseline.
+
+**A docs anti-drift gate landed alongside the publish (2026-06-06).** Verifying docs currency for the
+published window found five drifts passes 1 and 2 had shipped (the upgrade guide missed `0.28.0`/`0.29.0`,
+`security-model.md` and `architecture.md` still called the render attribute-sink an open residual that
+`0.28.0` closed, and four reference anchors that `0.27.0` moved or removed were still linked across three
+pages and a guide), all now fixed. A new `npm run check:docs` link gate (`scripts/docs-links.mjs` plus a
+unit test) fails on any dead relative link or stale `#anchor` under `docs/`, and CI now runs both
+`check:reference` and `check:docs`. The `cairn-pass` step-5 ritual was hardened (the three doc gates, a
+whole-`docs/` drift-grep on a removed or renamed symbol, an upgrade-guide entry for any behavior change, and
+a release-notes convention); that edit is in `~/.dotfiles` (`091e33f`). See the
+`docs-is-a-pass-dimension` memory.
 
 **Pass 3 (URL-identity consolidation) LANDED on `main` 2026-06-05 as `0.29.0`, unpublished.** It ran
 subagent-driven, one `cairn-implementer` per task on `main` directly (no worktree), Tasks 1 and 5 on Opus and

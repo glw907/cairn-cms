@@ -321,10 +321,25 @@ BY P4.
   rot it silently; best done before the surface grows under the gallery and P4.
 
 **The cleanup phase, in order:** execute pass 3 (URL-identity consolidation, the immediate next action
-above), publish the held window (`0.27.0` + `0.28.0` + `0.29.0` over the `0.26.0` `latest`), then a
-DX-completeness sweep clearing the pre-scaffold engine DX listed above (sized into one or more passes when
-brainstormed). Then the gallery initiative (a `superpowers:brainstorming` first for the git-versus-R2
-storage fork). Then P4, authored just-in-time once the surface it templates is final.
+above), publish the held window (`0.27.0` + `0.28.0` + `0.29.0` over the `0.26.0` `latest`), then the
+DX-completeness sweep. The sweep is decomposed (2026-06-05) into three passes by verification surface, run
+A then B then C: **Pass A (render authoring)**, **Pass B (tooling and CI robustness)**, **Pass C (admin and
+consumer alignments)**. Then the gallery initiative (a `superpowers:brainstorming` first for the
+git-versus-R2 storage fork). Then P4, authored just-in-time once the surface it templates is final.
+
+**DX-sweep Pass A is brainstormed, specced, and planned (2026-06-05), not yet executed.** The design spec
+is `docs/superpowers/specs/2026-06-05-cairn-render-authoring-surface-design.md`; the plan is
+`docs/superpowers/plans/2026-06-05-cairn-render-authoring-surface.md`. It carves a public
+`@glw907/cairn-cms/render` authoring subpath (relocating `iconSpan`/`cardShell`/`headRow`, re-homing
+`isElement`, adding `strAttr`, with a reference page), lands the P3 render ergonomics (`strAttr`, a
+configurable `headRow` level, a `registry.iconField` hoist, a `defineRegistry` icon guard, first-wins icon
+resolution), and drops `rehypeDispatch` from the public surface (reasoning recorded in the spec:
+`createRenderer` is the one public render pipeline). Seven tasks, a breaking minor (`0.30.0`), with a
+`Consumers must:` line. The keystone fork (carve `/render` over keeping authoring helpers on root) was
+settled against cairn's own coupling-boundary splits and the ecosystem norm. Passes B and C are scoped in
+the "Sequence to the scaffolder" split above and get their own specs when their turn comes. Pass A executes
+only after pass 3 ships and the window publishes, so its version step bumps the next minor above the
+published baseline.
 
 The workspace-flatten infra task is DONE (executed inline 2026-06-04, post-mortem in
 `docs/superpowers/plans/2026-06-04-workspace-flatten-and-claude-infra.md`). cairn-cms is a standalone

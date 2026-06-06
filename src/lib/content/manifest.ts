@@ -3,9 +3,8 @@
 // code reads the content graph without an N+1 GitHub crawl. The build regenerates and verifies
 // it; the save path patches one entry and commits it with the content in one commit. Each entry
 // carries its identity and its outbound cairn: edges, so the manifest is the link graph.
-import { idFromFilename, slugFromId } from './ids.js';
 import { parseMarkdown } from './frontmatter.js';
-import { permalink } from './permalink.js';
+import { entryIdentity, asString } from './identity.js';
 import { extractCairnLinks, type CairnRef, type LinkResolve } from './links.js';
 import type { ConceptDescriptor } from './types.js';
 
@@ -36,38 +35,18 @@ export interface LinkTarget {
   draft: boolean;
 }
 
-function basename(path: string): string {
-  const slash = path.lastIndexOf('/');
-  return slash >= 0 ? path.slice(slash + 1) : path;
-}
-
-/** Mirror content-index's frontmatter coercion: a present non-empty string, else undefined. */
-function asString(value: unknown): string | undefined {
-  return typeof value === 'string' && value.trim() ? value : undefined;
-}
-
-/** Mirror content-index's date coercion: an unquoted YAML date is a JS Date, a string is sliced. */
-function asDate(value: unknown): string | undefined {
-  if (value instanceof Date) return Number.isNaN(value.getTime()) ? undefined : value.toISOString().slice(0, 10);
-  if (typeof value === 'string') return value.match(/^\d{4}-\d{2}-\d{2}/)?.[0];
-  return undefined;
-}
-
-/** Build one manifest entry from a content file. Drafts are included and flagged. */
+/** Build one manifest entry from a content file. Drafts are included and flagged. The id, date, and
+ *  permalink come from entryIdentity, the same source content-index uses, so a cairn: link resolves to
+ *  one URL whether the admin preview reads the manifest or the public build reads the content index. */
 export function manifestEntryFromFile(descriptor: ConceptDescriptor, file: { path: string; raw: string }): ManifestEntry {
-  const id = idFromFilename(basename(file.path));
-  // Use the same slug rule content-index uses, so the manifest's permalink for an entry always
-  // equals content-index's permalink for it. A cairn link must resolve to one URL whether the
-  // admin preview reads the manifest or the public build reads the content index.
-  const slug = slugFromId(id, descriptor.routing.dated ? descriptor.datePrefix : null);
   const { frontmatter, body } = parseMarkdown(file.raw);
-  const date = asDate(frontmatter.date);
+  const { id, date, permalink } = entryIdentity(descriptor, file.path, frontmatter);
   return {
     id,
     concept: descriptor.id,
     title: asString(frontmatter.title) ?? id,
     date,
-    permalink: permalink(descriptor, { id, slug, date }),
+    permalink,
     draft: frontmatter.draft === true,
     links: extractCairnLinks(body),
   };

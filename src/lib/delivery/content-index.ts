@@ -3,8 +3,7 @@
 // returns cheap plain-data summaries plus an on-demand detail lookup. It is concept-generic:
 // every operation reads the descriptor and its routing rule, never a hardcoded concept id.
 import { parseMarkdown } from '../content/frontmatter.js';
-import { idFromFilename, slugFromId } from '../content/ids.js';
-import { permalink } from '../content/permalink.js';
+import { entryIdentity, asDate, asString, asTags } from '../content/identity.js';
 import { deriveExcerpt, wordCount } from './excerpt.js';
 import type { ConceptDescriptor } from '../content/types.js';
 
@@ -70,25 +69,6 @@ export function fromGlob(record: Record<string, string>): RawFile[] {
   return Object.entries(record).map(([path, raw]) => ({ path, raw }));
 }
 
-function basename(path: string): string {
-  const slash = path.lastIndexOf('/');
-  return slash >= 0 ? path.slice(slash + 1) : path;
-}
-
-function asString(value: unknown): string | undefined {
-  return typeof value === 'string' && value.trim() ? value : undefined;
-}
-
-function asDate(value: unknown): string | undefined {
-  if (value instanceof Date) return Number.isNaN(value.getTime()) ? undefined : value.toISOString().slice(0, 10);
-  if (typeof value === 'string') return value.match(/^\d{4}-\d{2}-\d{2}/)?.[0];
-  return undefined;
-}
-
-function asTags(value: unknown): string[] {
-  return Array.isArray(value) ? value.map(String) : [];
-}
-
 /** Build a concept's index from its raw files and normalized descriptor. */
 export function createContentIndex<F = Record<string, unknown>>(
   files: RawFile[],
@@ -97,10 +77,8 @@ export function createContentIndex<F = Record<string, unknown>>(
   const problems: ContentProblem[] = [];
   const entries: ContentEntry<F>[] = [];
   for (const file of files) {
-    const id = idFromFilename(basename(file.path));
-    const slug = slugFromId(id, descriptor.routing.dated ? descriptor.datePrefix : null);
     const { frontmatter: raw, body } = parseMarkdown(file.raw);
-    const date = asDate(raw.date);
+    const { id, slug, date, permalink } = entryIdentity(descriptor, file.path, raw);
     const draft = raw.draft === true;
     // Validate once at build. A failure is recorded for the site gate and excluded from the typed
     // read, so every readable entry's frontmatter is the validator's normalized output, never raw.
@@ -117,7 +95,7 @@ export function createContentIndex<F = Record<string, unknown>>(
       concept: descriptor.id,
       id,
       slug,
-      permalink: permalink(descriptor, { id, slug, date }),
+      permalink,
       title: asString(raw.title) ?? id,
       date,
       updated: asDate(raw.updated),

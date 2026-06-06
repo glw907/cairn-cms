@@ -29,6 +29,43 @@ function defaultPermalink(id: string): string {
   return id === 'pages' ? '/:slug' : `/${id}/:slug`;
 }
 
+/** Permalink tokens the resolver understands. */
+const KNOWN_TOKENS = new Set(['slug', 'year', 'month', 'day']);
+/** The date-bearing tokens; valid only for a dated concept. */
+const DATE_TOKENS = new Set(['year', 'month', 'day']);
+/** The valid date-prefix granularities. A runtime check, since the YAML is untyped. */
+const DATE_PREFIXES = new Set<string>(['year', 'month', 'day']);
+
+/**
+ * Validate one concept's URL policy at build, so a misconfigured permalink or datePrefix fails loudly
+ * here rather than emitting a wrong or defaulted URL at render. The permalink must be root-relative and
+ * use only known tokens, a date token requires a dated concept, and the datePrefix must be in range.
+ */
+function validateUrlPolicy(id: string, policy: ConceptUrlPolicy, dated: boolean): void {
+  if (policy.permalink !== undefined) {
+    const pattern = policy.permalink;
+    if (!pattern.startsWith('/')) {
+      throw new Error(`cairn: concept "${id}" permalink "${pattern}" must start with "/"`);
+    }
+    for (const match of pattern.matchAll(/:(\w+)/g)) {
+      const token = match[1];
+      if (!KNOWN_TOKENS.has(token)) {
+        throw new Error(`cairn: concept "${id}" permalink "${pattern}" uses unknown token ":${token}"`);
+      }
+      if (DATE_TOKENS.has(token) && !dated) {
+        throw new Error(
+          `cairn: concept "${id}" is not dated, so permalink "${pattern}" cannot use the date token ":${token}"`,
+        );
+      }
+    }
+  }
+  if (policy.datePrefix !== undefined && !DATE_PREFIXES.has(policy.datePrefix)) {
+    throw new Error(
+      `cairn: concept "${id}" datePrefix "${policy.datePrefix}" must be one of year, month, day`,
+    );
+  }
+}
+
 /**
  * Normalize an adapter's declared concepts into uniform descriptors (seam 1). URL policy
  * (`permalink`, `datePrefix`) comes from the YAML site-config, passed here as `urlPolicy` keyed by
@@ -42,6 +79,12 @@ export function normalizeConcepts(
   routing: Readonly<Record<string, RoutingRule>> = CONCEPT_ROUTING,
 ): ConceptDescriptor[] {
   const descriptors: ConceptDescriptor[] = [];
+  const declaredConcepts = new Set(Object.keys(content));
+  for (const key of Object.keys(urlPolicy)) {
+    if (!declaredConcepts.has(key)) {
+      throw new Error(`cairn: URL policy names concept "${key}", which is not declared under content`);
+    }
+  }
   for (const [id, config] of Object.entries(content)) {
     if (!config) continue;
     const summaryFields = config.summaryFields ?? [];
@@ -52,12 +95,14 @@ export function normalizeConcepts(
         `cairn: concept "${id}" summaryFields key "${undeclared}" is not a declared field`,
       );
     }
+    const conceptRouting = routing[id] ?? DEFAULT_ROUTING;
     const policy = urlPolicy[id] ?? {};
+    validateUrlPolicy(id, policy, conceptRouting.dated);
     descriptors.push({
       id,
       label: config.label ?? defaultLabel(id),
       dir: config.dir,
-      routing: routing[id] ?? DEFAULT_ROUTING,
+      routing: conceptRouting,
       permalink: policy.permalink ?? defaultPermalink(id),
       datePrefix: policy.datePrefix ?? 'day',
       fields: config.schema.fields,

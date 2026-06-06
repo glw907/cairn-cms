@@ -121,6 +121,46 @@ describe('normalizeConcepts URL policy', () => {
     });
     expect(descriptor.summaryFields).toEqual(['description']);
   });
+
+  it('throws when the URL policy names a concept that is not declared', () => {
+    expect(() => normalizeConcepts({ posts: cfg }, { events: { permalink: '/:slug' } })).toThrow(
+      'cairn: URL policy names concept "events", which is not declared under content',
+    );
+  });
+
+  it('throws on a permalink without a leading slash', () => {
+    expect(() => normalizeConcepts({ posts: cfg }, { posts: { permalink: 'posts/:slug' } })).toThrow(
+      'must start with "/"',
+    );
+  });
+
+  it('throws on an unknown permalink token', () => {
+    expect(() => normalizeConcepts({ posts: cfg }, { posts: { permalink: '/:category/:slug' } })).toThrow(
+      'unknown token ":category"',
+    );
+  });
+
+  it('throws on a date token in a non-dated concept', () => {
+    expect(() => normalizeConcepts({ pages: cfg }, { pages: { permalink: '/:year/:slug' } })).toThrow(
+      'cannot use the date token ":year"',
+    );
+  });
+
+  it('throws on an out-of-range datePrefix', () => {
+    expect(() =>
+      // @ts-expect-error the YAML is untyped at runtime, so an invalid datePrefix must be caught
+      normalizeConcepts({ posts: cfg }, { posts: { datePrefix: 'weekly' } }),
+    ).toThrow('datePrefix "weekly" must be one of year, month, day');
+  });
+
+  it('accepts the reference sites\' valid policies', () => {
+    expect(() =>
+      normalizeConcepts({ posts: cfg }, { posts: { permalink: '/:year/:month/:day/:slug', datePrefix: 'day' } }),
+    ).not.toThrow();
+    expect(() =>
+      normalizeConcepts({ posts: cfg }, { posts: { permalink: '/:year/:month/:slug', datePrefix: 'month' } }),
+    ).not.toThrow();
+  });
 });
 
 describe('findConcept', () => {

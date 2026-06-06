@@ -828,3 +828,65 @@ After all tasks commit, before declaring the pass done:
 - The refactor tasks (2, 3, 4) are behavior-preserving: each runs its contract suite before and after, and the parity test pins the one invariant that a comment used to hold.
 - The `permalink()` resolver keeps its per-entry token and date checks as a backstop; Task 5 adds the declaration-time checks without removing them, so a descriptor built directly in a test (not through `normalizeConcepts`) still fails safe.
 - The one behavior change (Task 5 validation) is scoped, tested for both the throw cases and the reference sites' valid policies, and recorded in the changelog with a behavior note and no `Consumers must:` line.
+
+---
+
+## Post-mortem (executed 2026-06-05, landed on `main` as `0.29.0`, unpublished)
+
+The pass ran subagent-driven, one `cairn-implementer` per task on `main` directly (no worktree, same as
+passes 1 and 2). Tasks 1 and 5 ran on Opus, Tasks 2, 3, 4, and 6 on the Sonnet default. Six task commits
+`6554673..ababec2`, a simplifier commit `8c57c52`, and a review fold-in `b9f025c`.
+
+**What landed.** `entryIdentity` in the new `src/lib/content/identity.ts` is the one home for a content
+entry's id, slug, date, and permalink, alongside the shared `asString`/`asDate`/`asTags` coercion and an
+`entryId(path)` helper. `createContentIndex` and `manifestEntryFromFile` both derive their identity through
+it, so the content index and the manifest cannot drift on an entry's URL. A `content-permalink-parity` test
+pins that the two produce one permalink for the same file. `resolveConcepts(content, siteConfig)` in
+`concepts.ts` is the one concept-resolution path that `composeRuntime` and `siteDescriptors` both take, so
+the per-concept URL policy is derived once from the YAML. `normalizeConcepts` now validates the URL policy
+at build: a permalink must be root-relative and use only `:slug`/`:year`/`:month`/`:day`, a date token
+requires a dated concept, a `datePrefix` must be `year`/`month`/`day`, and a policy keyed to an undeclared
+concept throws a named error. No public surface changed, so `check:reference` and `check:package` stayed
+green with no reference edit.
+
+**Gate at the tip `b9f025c`, run first-hand.** `npm run check` 790 files 0/0, `npm test` 117 files / 701
+tests exit 0, `npm run check:reference` exit 0, `npm run check:package` exit 0.
+
+**The review gate caught one real regression, folded in as `b9f025c`.** Routing `createContentIndex`
+through `entryIdentity` (Task 2) moved the throwing `permalink()` call to the top of the per-file loop,
+before the `descriptor.validate` gate. For a dated concept whose schema declares `date` as required and
+whose permalink carries a date token (the shape both production sites use), an entry missing its `date`
+previously failed validation, was recorded as a `ContentProblem`, and the build continued. The reorder made
+that one bad entry throw and abort the whole index build, breaking the pass's own behavior-preserving
+invariant and defeating cairn's graceful-degradation path. The regression was confirmed empirically against
+the built `dist` before the fix. The fold-in restores the validate-before-permalink ordering: `id` is
+derived via the new `entryId` before the gate for the problems path, and `slug`/`date`/`permalink` come from
+`entryIdentity` only after the gate passes. A regression test pins that a missing-date entry on a
+date-required dated concept degrades to a recorded problem rather than a crash. The same fold-in tightened
+the unknown-concept guard to filter `undefined`-valued content keys, so a URL policy keyed to a
+declared-but-undefined concept throws the same named error instead of being silently dropped, with its own
+test.
+
+**The manifest path was not regressed.** `manifestEntryFromFile` always resolved the permalink with no
+validate gate in front of it, so a missing-date entry on a date-token concept threw before this pass too.
+That behavior is preserved.
+
+**Two carry-forwards for a later touch (recorded, not fixed here).** (1) `siteDescriptors` calls
+`resolveConcepts(adapter.content, siteConfig)` with no extension-content merge, while `composeRuntime` merges
+extensions first. With the new unknown-concept guard, an extension concept keyed in the YAML URL policy would
+throw in the delivery build while the admin runtime accepts it. The combination is unused today (no shipped
+extension adds a concept and keys a URL policy to it), and fixing it means deciding whether the delivery
+layer should see extension concepts at all, a design question beyond this pass. (2) The validator and the
+`permalink()` resolver each hold their own copy of the token vocabulary (`:slug`/`:year`/`:month`/`:day`),
+and the validator and `ids.ts` each restate the date-prefix granularity set. The duplication is small and
+the values co-evolve rarely, so the simplifier left the sets separate by intent; a future touch could derive
+them from one source.
+
+**Pre-publish check the validation raises.** A site whose committed `site.config.yaml` carries a malformed
+URL policy that was silently defaulted will now fail its build on upgrade to `0.29.0`. The two production
+sites live in separate repos and are not exercised by this repo's fixtures, so verify ecnordic's and 907's
+committed `content:` blocks against the new validation before publishing the held window.
+
+**Series complete.** This was the last of the three-pass engine-hardening series. The next action is to
+publish the held window (`0.27.0` + `0.28.0` + `0.29.0` over the `0.26.0` `latest`), then the resequenced
+cleanup, then the gallery, then P4.

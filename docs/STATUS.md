@@ -11,7 +11,57 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-05): execute pass 3 (URL-identity consolidation)
+## Immediate next action (2026-06-05): publish the held window, then DX-sweep Pass A
+
+The **engine-hardening series is COMPLETE**. All three release-gate improvements the docs initiative
+surfaced have landed on `main` unpublished: pass 1 (surface-narrowing, `0.27.0`), pass 2 (render
+attribute-sink hardening, `0.28.0`), and pass 3 (URL-identity consolidation, `0.29.0`). The series ran
+before P4 so the scaffolder templates the clean surface.
+
+**Immediate next action: publish the held window** (`0.27.0` + `0.28.0` + `0.29.0` over the `0.26.0`
+`latest`), then resume the cleanup phase with DX-sweep Pass A (render authoring,
+`docs/superpowers/plans/2026-06-05-cairn-render-authoring-surface.md`). Pass A executes only after the window
+publishes, so its version step bumps the next minor above the published baseline. The publish path is the
+OIDC trusted-publishing workflow off a `v0.29.0` GitHub Release (provenance stays disabled while the repo is
+private). Before publishing, verify ecnordic's and 907's committed `site.config.yaml` `content:` blocks
+against pass 3's new URL-policy validation: a malformed policy that was silently defaulted now fails the
+build on upgrade, and the two sites are not exercised by this repo's fixtures.
+
+**Pass 3 (URL-identity consolidation) LANDED on `main` 2026-06-05 as `0.29.0`, unpublished.** It ran
+subagent-driven, one `cairn-implementer` per task on `main` directly (no worktree), Tasks 1 and 5 on Opus and
+Tasks 2, 3, 4, 6 on Sonnet, plus a simplifier pass and a review fold-in. Six task commits `6554673..ababec2`,
+a simplifier commit `8c57c52`, and a review fold-in `b9f025c`. `entryIdentity` (in the new
+`src/lib/content/identity.ts`) is the one home for an entry's id, slug, date, and permalink, and
+`createContentIndex` and `manifestEntryFromFile` both derive through it, with a `content-permalink-parity`
+test pinning that they agree. `resolveConcepts(content, siteConfig)` is the one concept-resolution path
+`composeRuntime` and `siteDescriptors` share. `normalizeConcepts` now validates the YAML URL policy at build
+(root-relative permalink, known tokens only, a date token requires a dated concept, an in-range `datePrefix`,
+and a declared concept key). No public surface changed, so `check:reference`/`check:package` stayed green with
+no reference edit. The minor bumps `0.29.0`, no `Consumers must:` line (a valid config needs no action). Gate
+green at the tip `b9f025c`, run first-hand: `npm run check` 790 files 0/0, `npm test` 117 files / 701 tests
+exit 0, `check:reference` and `check:package` exit 0. The post-mortem is in the plan
+(`docs/superpowers/plans/2026-06-05-cairn-url-identity-consolidation.md`); the design spec is
+`docs/superpowers/specs/2026-06-05-cairn-url-identity-consolidation-design.md`.
+
+**The review gate caught one real regression, folded in as `b9f025c`.** Routing `createContentIndex` through
+`entryIdentity` moved the throwing `permalink()` call before the `descriptor.validate` gate. For a dated
+concept that declares `date` required and uses a date-token permalink (the shape both production sites use),
+an entry missing its `date` previously degraded to a recorded `ContentProblem` and the build continued, but
+the reorder made that one bad entry abort the whole index build. The fold-in restored the
+validate-before-permalink ordering (id via the new `entryId` before the gate, the rest from `entryIdentity`
+after it) with a regression test, and tightened the unknown-concept guard to treat a declared-but-undefined
+content key as undeclared.
+
+**Two pass-3 carry-forwards (recorded, not fixed).** (1) `siteDescriptors` resolves concepts from
+`adapter.content` with no extension-content merge, while `composeRuntime` merges extensions first, so an
+extension concept keyed in the YAML URL policy would throw in the delivery build under the new
+unknown-concept guard while the admin runtime accepts it. The combination is unused today; fixing it means
+deciding whether the delivery layer should see extension concepts at all. (2) The validator and the
+`permalink()` resolver each restate the permalink token vocabulary, and the validator and `ids.ts` each
+restate the date-prefix granularity set; the duplication is small and left separate by intent, derivable from
+one source in a future touch.
+
+The previous "engine-hardening before P4" framing is preserved below for history.
 
 The documentation initiative is COMPLETE. The work now is the **engine-hardening series**, the three
 release-gate improvements the docs initiative surfaced, sequenced **before P4** so the scaffolder templates
@@ -80,30 +130,13 @@ pass that wants parity with the floor for `build()`-emitted element nodes would 
 a different mechanism from the scheme check. (2) The anchor `ping` beacon attribute is left out as a
 lower-severity exfiltration sink rather than a script vector; revisit it if a site surfaces a need.
 
-**Pass 3 (URL-identity consolidation) is brainstormed, specced, and planned (2026-06-05), not yet
-executed.** The design spec is `docs/superpowers/specs/2026-06-05-cairn-url-identity-consolidation-design.md`;
-the plan is `docs/superpowers/plans/2026-06-05-cairn-url-identity-consolidation.md`. It is the last of the
-three-pass series. Two forks settled with Geoff: consolidate AND add loud validation (over pure refactor),
-and use two focused shared units (`entryIdentity`, `resolveConcepts`) over a bundled forward-and-inverse
-object or reusing the frontmatter schema machinery. The spread is concrete: the entry id/slug/date/permalink
-is computed in two parallel places (`createContentIndex` and `manifestEntryFromFile`) kept in sync by a
-comment, the concept descriptor is derived twice (`composeRuntime` and `siteDescriptors`), and the YAML
-`content:` URL policy is consumed untyped. Six tasks, bumps `0.29.0`, no public surface added, no
-`Consumers must:` line (a valid config needs no action). The new units stay internal.
-
-**Immediate next action: execute pass 3,
-`docs/superpowers/plans/2026-06-05-cairn-url-identity-consolidation.md`, `subagent-driven`
-(`superpowers:subagent-driven-development`, one `cairn-implementer` per task), on `main` directly (same as
-passes 1 and 2: an internal refactor plus validation gated by check/test, no worktree). Start at Task 1.**
-The design is settled and approved, so skip brainstorming. Dispatch Task 1 (the `entryIdentity` unit, the
-parity foundation) and Task 5 (the loud validation edges) `model: opus`; Tasks 2, 3, 4 (mechanical swaps)
-and Task 6 (docs and version) fit the Sonnet default. The pass-end review gate is the simplifier over the
-changed `src/lib/content` and `src/lib/delivery` files plus a high-effort `/code-review` (attention to the
-permalink-parity invariant and the validation edges); the Worker, auth, Svelte, and a11y reviewers and the
-live `/admin` smoke do not apply. After pass 3 lands, the three-pass series is complete: publish the held
-window (`0.27.0` + `0.28.0` + `0.29.0` over the `0.26.0` `latest`), then the resequenced run is cleanup,
-then the gallery, then P4 last (see "Sequence to the scaffolder" below). Publishing stays held until then;
-`main` carries the unpublished `0.27.0` and `0.28.0` and will carry `0.29.0`.
+**Pass 3 (URL-identity consolidation) LANDED on `main` 2026-06-05 as `0.29.0`, unpublished.** See the
+top entry "Immediate next action" for the landed result, the review fold-in, the carry-forwards, and the
+gate evidence. The design spec is `docs/superpowers/specs/2026-06-05-cairn-url-identity-consolidation-design.md`
+and the plan with its post-mortem is `docs/superpowers/plans/2026-06-05-cairn-url-identity-consolidation.md`.
+This was the last of the three-pass engine-hardening series, so the series is now complete. Publishing stays
+held; `main` carries the unpublished `0.27.0`, `0.28.0`, and `0.29.0` over the `0.26.0` `latest`, and the
+window publishes together before any site or the scaffolder consumes the new surface.
 
 The engine-adjacent showcase E2E regression the Phase 5 reproduction flagged is confirmed and FIXED
 (`ba25359`): the golden-path E2E had drifted on two fronts (a Carta-era editor selector and the single-file

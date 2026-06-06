@@ -1,6 +1,7 @@
 // The showcase's adapter: the single seam the engine consumes. It declares one post-like concept,
 // a render that runs the engine pipeline, and a backend the dev GitHub double answers for.
-import { createRenderer, defineRegistry, defineFields, defineAdapter, cardShell, headRow, iconSpan, glyph, parseSiteConfig } from '@glw907/cairn-cms';
+import { createRenderer, defineRegistry, defineFields, defineAdapter, glyph, parseSiteConfig } from '@glw907/cairn-cms';
+import { cardShell, headRow, iconSpan, strAttr } from '@glw907/cairn-cms/render';
 import type { ComponentDef, IconSet } from '@glw907/cairn-cms';
 import { h } from 'hastscript';
 import type { ElementContent } from 'hast';
@@ -42,8 +43,8 @@ const alert: ComponentDef = {
   use: 'Flag a caution in the flow of a post.',
   defaultIconByRole: { caution: 'leaf' },
   build: (ctx) => {
-    const name = typeof ctx.attributes.icon === 'string' ? ctx.attributes.icon : undefined;
-    const role = typeof ctx.attributes.role === 'string' ? ctx.attributes.role : undefined;
+    const name = strAttr(ctx, 'icon');
+    const role = strAttr(ctx, 'role');
     const icon = name ? makeIcon(name, role) : undefined;
     return cardShell(['alert', `alert-${role ?? 'note'}`], [
       headRow(ctx.slot('title'), icon),

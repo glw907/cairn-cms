@@ -80,3 +80,21 @@ The internal helpers behind GitHub token minting and the render pipeline are no 
 engine wires them internally, so no consumer needs them. Consumers must: stop importing `appJwt`,
 `installationToken`, `signingSelfTest`, `appCredentials`, `treeUrl`, `contentsUrl`, `readRaw`,
 `fileSha`, `listMarkdown`, `markdownFilesIn`, `commitFile`, `isElement`, `strProp`, and `markFirstList`.
+
+## 0.28.0: a component `build()` can no longer emit unsafe attribute sinks
+
+A render guard runs last in `createRenderer` and neutralizes the sinks a component `build()` could route
+a raw author attribute value into. It rewrites an unsafe URL scheme on a URL-bearing attribute, drops an
+inline `on*` handler, and strips inline `style`. Safe schemes, relative URLs, anchors, and the `cairn:`
+token pass through untouched. Consumers must: nothing for a component that emits standard markup. If a
+component `build()` emits a non-standard URL scheme, an `on*` handler, or inline `style`, that output is
+neutralized, so route dynamic styling through a class or an inert `data-*` attribute instead.
+
+## 0.29.0: the YAML URL policy is validated at build
+
+The `content:` URL policy in the site config is now checked when the config loads. A permalink must be
+root-relative and use only the tokens `:slug`, `:year`, `:month`, and `:day`, a date token is valid only
+on a dated concept, a `datePrefix` must be `year`, `month`, or `day`, and a policy key must name a concept
+the adapter declares. A malformed policy that earlier defaulted silently now fails the build with a named
+error. Consumers must: nothing for a valid policy. If the build reports a policy error, correct the named
+`content:` entry in the site config.

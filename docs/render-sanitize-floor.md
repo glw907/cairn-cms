@@ -5,23 +5,38 @@ delivers with `{@html}`. Author content can carry raw HTML, so the pipeline clea
 delivery. This document states what the floor keeps, what it strips, and what it rewrites, so a
 site knows the guarantee it inherits and what is safe to extend.
 
-Two pieces make up the floor. `buildSanitizeSchema` in `src/lib/render/sanitize-schema.ts`
+Three pieces make up the floor. `buildSanitizeSchema` in `src/lib/render/sanitize-schema.ts`
 builds the allowlist that `rehype-sanitize` enforces. `rehypeAnchorRel` in the same file forces a
-`rel` on `target="_blank"` anchors. Both wire into the pipeline through `createRenderer` in
+`rel` on `target="_blank"` anchors. `rehypeSinkGuard` is a post-dispatch guard that inspects the
+fully-built tree last. All three wire into the pipeline through `createRenderer` in
 `src/lib/render/pipeline.ts`.
 
 ## Where the floor runs
 
 `rehype-sanitize` runs after `rehype-raw` and before the registry dispatch. `rehype-raw` parses
 the author's raw HTML into real hast nodes first, then the floor cleans that parsed tree. Running
-before the dispatch means the dispatch's `build()` output is never sanitized. A site author writes
-that build code, so its output is trusted, and the inline SVG icons a component emits stay intact
-rather than being stripped as unknown tags. Anchor-rel runs last in the rehype chain, after the
-dispatch and after `rehype-slug`, so it also covers anchors a component builds rather than only
-anchors from author markdown.
+before the dispatch leaves the dispatch's `build()` output unsanitized at that point, so the inline
+SVG icons a component emits stay intact rather than being stripped as unknown tags. Anchor-rel runs
+last in the rehype chain, after the dispatch and after `rehype-slug`, so it also covers anchors a
+component builds rather than only anchors from author markdown.
 
-When `unsafeDisableSanitize` is set, the floor plugin is dropped from the chain and no sanitize
-runs at all. The anchor-rel transform still runs unless `anchorRel` is `false`.
+## The post-dispatch sink guard
+
+`rehypeSinkGuard` runs last in the pipeline and inspects the fully-built tree, so it covers the
+attribute values a component `build()` produces as well as the values that survive the floor. It
+neutralizes the unsafe URL schemes `javascript:`, `data:`, and `vbscript:` in `href`, `src`,
+`srcSet`, `xlinkHref`, `poster`, and `formAction`. It removes inline `on*` event handlers. It
+strips inline `style` wholesale. Safe schemes, relative URLs, anchors, and the `cairn:` token are
+preserved.
+
+A `build()` no longer needs to coerce an attribute value by hand for safety, since the guard
+catches an unsafe value wherever it lands. Routing untrusted input into a sink is still
+discouraged. A `build()` that needs dynamic styling should use a class or an inert `data-*`
+attribute, since the guard strips inline `style`.
+
+When `unsafeDisableSanitize` is set, the floor plugin and the sink guard are both dropped from the
+chain and no sanitize runs at all. The anchor-rel transform still runs unless `anchorRel` is
+`false`.
 
 ## What the floor keeps
 

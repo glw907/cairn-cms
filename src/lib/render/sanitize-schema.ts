@@ -66,9 +66,21 @@ export function rehypeAnchorRel(rel: string) {
   };
 }
 
-// URL-bearing hast properties the post-dispatch guard checks. hast camelCases attribute
-// names (srcset -> srcSet, xlink:href -> xlinkHref, formaction -> formAction).
-const URL_PROPS = new Set(['href', 'src', 'srcSet', 'xlinkHref', 'poster', 'formAction']);
+// URL-bearing hast properties the post-dispatch guard scheme-checks. hast camelCases attribute
+// names through property-information (srcset -> srcSet, xlink:href -> xLinkHref with a capital L,
+// formaction -> formAction). data is the <object data> URL attribute; data-* attributes camelCase
+// to dataFoo and are not matched here.
+const URL_PROPS = new Set([
+  'href',
+  'src',
+  'srcSet',
+  'xLinkHref',
+  'poster',
+  'formAction',
+  'action',
+  'data',
+  'background',
+]);
 
 // The safe URL schemes: the union of every protocol list in defaultSchema, plus cairn. The
 // floor admits these and strips the rest, so deriving from the same source keeps the floor and
@@ -129,6 +141,10 @@ function isSafeUrlProp(key: string, value: unknown): boolean {
  * attribute, an inline on* event handler, or an inline style (stripped wholesale, matching the
  * floor and cairn's class-driven styling). It is gated by the same unsafeDisableSanitize switch as
  * the floor.
+ *
+ * The guard's boundary is the URL scheme check plus the on* and style strip. It does not remove a
+ * build()-emitted raw script, style, or iframe srcdoc element node. A build() that emits those is
+ * running site-developer code, and author markdown is cleaned by the pre-dispatch floor.
  */
 export function rehypeSinkGuard() {
   return (tree: Root) => {

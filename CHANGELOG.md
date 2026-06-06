@@ -8,9 +8,10 @@ All notable changes to this project are recorded here, most recent first.
 Closed the render attribute-sink residual by construction. A new post-dispatch guard runs last in
 `createRenderer` and neutralizes the sinks a component `build()` could route a raw author attribute
 value into, including the unsafe URL schemes `javascript:`, `data:`, and `vbscript:` in `href`,
-`src`, `srcSet`, `xlinkHref`, `poster`, and `formAction`, the inline `on*` event handlers, and
-inline `style`, which is stripped wholesale. Safe schemes, relative URLs, anchors, and the `cairn:`
-token are preserved. The guard is gated by the existing `unsafeDisableSanitize` switch.
+`src`, `srcset`, `xlink:href`, `poster`, `formaction`, `action`, `object`'s `data`, and
+`background`, the inline `on*` event handlers, and inline `style`, which is stripped wholesale. Safe
+schemes, relative URLs, anchors, and the `cairn:` token are preserved. The guard is gated by the
+existing `unsafeDisableSanitize` switch.
 
 Behavior note: a site whose component `build()` emits a non-standard URL scheme, an `on*` handler,
 or inline `style` will see that output neutralized. Route dynamic styling through a class or an

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { Root, Element } from 'hast';
-import { h } from 'hastscript';
+import { h, s } from 'hastscript';
 import { rehypeSinkGuard } from '../../lib/render/sanitize-schema.js';
 
 // Run the guard over a single element and return it for inspection.
@@ -83,5 +83,35 @@ describe('rehypeSinkGuard', () => {
   it('keeps a srcset whose candidates are all safe', () => {
     const el = guard(h('img', { srcSet: 'https://ok.test/a 1x, https://ok.test/b 2x' }));
     expect(el.properties?.srcSet).toBeDefined();
+  });
+
+  it('drops a javascript: xlink:href on an svg anchor', () => {
+    const el = guard(s('a', { 'xlink:href': 'javascript:alert(1)' }, 'x'));
+    expect(el.properties?.xLinkHref).toBeUndefined();
+  });
+
+  it('keeps a safe xlink:href on an svg use', () => {
+    const el = guard(s('use', { 'xlink:href': '#icon' }));
+    expect(el.properties?.xLinkHref).toBe('#icon');
+  });
+
+  it('drops a javascript: form action', () => {
+    const el = guard(h('form', { action: 'javascript:alert(1)' }));
+    expect(el.properties?.action).toBeUndefined();
+  });
+
+  it('drops a data: object data attribute', () => {
+    const el = guard(h('object', { data: 'data:text/html,<script>alert(1)</script>' }));
+    expect(el.properties?.data).toBeUndefined();
+  });
+
+  it('drops a javascript: background', () => {
+    const el = guard(h('body', { background: 'javascript:alert(1)' }));
+    expect(el.properties?.background).toBeUndefined();
+  });
+
+  it('keeps a data-* attribute that is not the object data url', () => {
+    const el = guard(h('div', { 'data-attr-url': 'javascript:alert(1)' }));
+    expect(el.properties?.dataAttrUrl).toBe('javascript:alert(1)');
   });
 });

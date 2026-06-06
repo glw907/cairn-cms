@@ -24,10 +24,15 @@ component builds rather than only anchors from author markdown.
 
 `rehypeSinkGuard` runs last in the pipeline and inspects the fully-built tree, so it covers the
 attribute values a component `build()` produces as well as the values that survive the floor. It
-neutralizes the unsafe URL schemes `javascript:`, `data:`, and `vbscript:` in `href`, `src`,
-`srcSet`, `xlinkHref`, `poster`, and `formAction`. It removes inline `on*` event handlers. It
-strips inline `style` wholesale. Safe schemes, relative URLs, anchors, and the `cairn:` token are
-preserved.
+neutralizes the unsafe URL schemes `javascript:`, `data:`, and `vbscript:` in the URL-bearing
+attributes, including `href`, `src`, `srcset`, `xlink:href`, `poster`, `formaction`, `action`,
+`object`'s `data`, and `background`. It removes inline `on*` event handlers. It strips inline
+`style` wholesale. Safe schemes, relative URLs, anchors, and the `cairn:` token are preserved.
+
+The guard's boundary is the URL scheme check plus the `on*` and `style` strip. It does not remove a
+`build()`-emitted raw `<script>`, `<style>`, or `<iframe srcdoc>` element node. A `build()` that
+emits those is running site-developer code, and author markdown is cleaned by the pre-dispatch
+floor.
 
 A `build()` no longer needs to coerce an attribute value by hand for safety, since the guard
 catches an unsafe value wherever it lands. Routing untrusted input into a sink is still

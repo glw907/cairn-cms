@@ -128,6 +128,12 @@ describe('normalizeConcepts URL policy', () => {
     );
   });
 
+  it('throws when the URL policy names a declared-but-undefined concept', () => {
+    expect(() => normalizeConcepts({ posts: undefined }, { posts: { permalink: '/:slug' } })).toThrow(
+      'cairn: URL policy names concept "posts", which is not declared under content',
+    );
+  });
+
   it('throws on a permalink without a leading slash', () => {
     expect(() => normalizeConcepts({ posts: cfg }, { posts: { permalink: 'posts/:slug' } })).toThrow(
       'must start with "/"',

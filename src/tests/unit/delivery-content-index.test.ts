@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { createContentIndex, fromGlob } from '../../lib/delivery/content-index.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
 import { defineFields } from '../../lib/content/schema.js';
-import type { RawFile } from '../../lib/delivery/content-index.js';
+import type { ContentIndex, RawFile } from '../../lib/delivery/content-index.js';
 
 const [posts] = normalizeConcepts({
   posts: {
@@ -163,6 +163,38 @@ describe('createContentIndex validate-once reads', () => {
     );
     expect(index.problems()).toEqual([
       { id: '2026-01-02-b', draft: false, errors: { title: 'Title is required' } },
+    ]);
+  });
+});
+
+describe('createContentIndex degrades a date-token permalink miss to a problem', () => {
+  const [dated] = normalizeConcepts(
+    {
+      posts: {
+        dir: 'd',
+        schema: defineFields([
+          { type: 'text', name: 'title', label: 'Title', required: true },
+          { type: 'date', name: 'date', label: 'Date', required: true },
+        ]),
+      },
+    },
+    { posts: { permalink: '/:year/:month/:day/:slug', datePrefix: 'day' } },
+  );
+
+  it('records the missing-date entry and still indexes the valid one, without throwing', () => {
+    let index!: ContentIndex;
+    expect(() => {
+      index = createContentIndex(
+        fromGlob({
+          '/d/2026-01-01-good.md': '---\ntitle: Good\ndate: 2026-01-01\n---\nBody.',
+          '/d/2026-01-02-undated.md': '---\ntitle: Undated\n---\nBody.',
+        }),
+        dated,
+      );
+    }).not.toThrow();
+    expect(index.all().map((e) => e.id)).toEqual(['2026-01-01-good']);
+    expect(index.problems()).toEqual([
+      { id: '2026-01-02-undated', draft: false, errors: { date: 'Date is required' } },
     ]);
   });
 });

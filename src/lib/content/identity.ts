@@ -37,6 +37,11 @@ export function asTags(value: unknown): string[] {
   return Array.isArray(value) ? value.map(String) : [];
 }
 
+/** A content entry's id: its filename stem (the date prefix is part of a dated id). */
+export function entryId(path: string): string {
+  return idFromFilename(basename(path));
+}
+
 /**
  * Resolve a content entry's URL identity from its concept descriptor, its file path, and its parsed
  * frontmatter. The slug strips the leading date prefix for a dated concept and is the id verbatim for
@@ -48,7 +53,7 @@ export function entryIdentity(
   path: string,
   frontmatter: Record<string, unknown>,
 ): EntryIdentity {
-  const id = idFromFilename(basename(path));
+  const id = entryId(path);
   const slug = slugFromId(id, descriptor.routing.dated ? descriptor.datePrefix : null);
   const date = asDate(frontmatter.date);
   return { id, slug, date, permalink: permalink(descriptor, { id, slug, date }) };

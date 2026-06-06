@@ -3,7 +3,7 @@
 // returns cheap plain-data summaries plus an on-demand detail lookup. It is concept-generic:
 // every operation reads the descriptor and its routing rule, never a hardcoded concept id.
 import { parseMarkdown } from '../content/frontmatter.js';
-import { entryIdentity, asDate, asString, asTags } from '../content/identity.js';
+import { entryId, entryIdentity, asDate, asString, asTags } from '../content/identity.js';
 import { deriveExcerpt, wordCount } from './excerpt.js';
 import type { ConceptDescriptor } from '../content/types.js';
 
@@ -78,15 +78,18 @@ export function createContentIndex<F = Record<string, unknown>>(
   const entries: ContentEntry<F>[] = [];
   for (const file of files) {
     const { frontmatter: raw, body } = parseMarkdown(file.raw);
-    const { id, slug, date, permalink } = entryIdentity(descriptor, file.path, raw);
+    const id = entryId(file.path);
     const draft = raw.draft === true;
-    // Validate once at build. A failure is recorded for the site gate and excluded from the typed
-    // read, so every readable entry's frontmatter is the validator's normalized output, never raw.
+    // Validate before resolving the permalink. A date-token permalink throws on an entry with no
+    // valid date; the validate gate records that as a content problem rather than aborting the whole
+    // index build, so one bad entry degrades to a skip, not a crash. A failure is also excluded from
+    // the typed read, so every readable entry's frontmatter is the validator's normalized output.
     const result = descriptor.validate(raw, body);
     if (!result.ok) {
       problems.push({ id, draft, errors: result.errors });
       continue;
     }
+    const { slug, date, permalink } = entryIdentity(descriptor, file.path, raw);
     const summaryFieldValues: Record<string, unknown> = {};
     for (const key of descriptor.summaryFields) {
       if (key in result.data) summaryFieldValues[key] = result.data[key];

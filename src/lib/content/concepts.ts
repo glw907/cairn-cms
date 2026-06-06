@@ -79,7 +79,9 @@ export function normalizeConcepts(
   routing: Readonly<Record<string, RoutingRule>> = CONCEPT_ROUTING,
 ): ConceptDescriptor[] {
   const descriptors: ConceptDescriptor[] = [];
-  const declaredConcepts = new Set(Object.keys(content));
+  const declaredConcepts = new Set(
+    Object.keys(content).filter((key) => content[key] !== undefined),
+  );
   for (const key of Object.keys(urlPolicy)) {
     if (!declaredConcepts.has(key)) {
       throw new Error(`cairn: URL policy names concept "${key}", which is not declared under content`);

@@ -14,7 +14,8 @@ a string-attribute reader, a configurable `headRow` heading level that defaults 
 
 Consumers must: import `iconSpan`, `cardShell`, `headRow`, `isElement`, and `strAttr` from
 `@glw907/cairn-cms/render` instead of the package root, and replace any direct `rehypeDispatch` use with
-`createRenderer`.
+`createRenderer`. A component that sets `defaultIconByRole` with no `type:'icon'` attribute now fails
+`defineRegistry`; give it an icon attribute or drop `defaultIconByRole`.
 
 ## 0.29.0
 

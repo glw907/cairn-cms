@@ -111,10 +111,12 @@ barrel no longer carries them. Consumers must: import `iconSpan`, `cardShell`, `
 The public surface dropped `rehypeDispatch`, so `createRenderer` is the one public render pipeline.
 Consumers must: replace any direct `rehypeDispatch` use with `createRenderer`.
 
-## 0.30.0: additive render-authoring helpers (non-breaking)
+## 0.30.0: render-authoring additions and a new registry guard
 
-This version also adds parts that need no migration. `headRow` takes a configurable heading level that
-defaults to 2, `registry.iconField(name)` reads a component's icon field, and `defineRegistry` now fails a
-component that declares `defaultIconByRole` with no `type:'icon'` attribute. Consumers must: nothing. If
-`defineRegistry` reports the icon guard, give the offending component a `type:'icon'` attribute or remove
-its `defaultIconByRole`.
+Two additions need no migration. `headRow` takes a configurable heading level that defaults to 2, and
+`registry.iconField(name)` reads a component's icon field.
+
+`defineRegistry` now fails a component that declares `defaultIconByRole` with no `type:'icon'` attribute.
+This catches a configuration that built before but never rendered its default icon, since the default only
+reaches the output through an icon attribute. Consumers must: if `defineRegistry` reports the icon guard,
+give the offending component a `type:'icon'` attribute or remove its `defaultIconByRole`.

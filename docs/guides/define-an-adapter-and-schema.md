@@ -57,7 +57,7 @@ This guide assumes you already have a running cairn site and want to shape its c
 
    For the field types, the `required` flag, and the cross-field `options.refine` check, see [the core reference](../reference/core.md#definefields).
 
-4. **Set the slug codec and the per-concept date granularity.** A dated entry's URL is derived from its filename stem, and how much of a leading date the slug strips is per-concept. The URL policy lives in the site's YAML config rather than the adapter, so the site owner controls the permalink shape without touching code. The showcase pairs its adapter with `examples/showcase/src/lib/site.config.yaml`, which the adapter reads through `navMenu.configPath`. For the id-to-slug split and the policy that resolves a permalink, see [URL identity](../explanation/content-model.md#url-identity) and [`permalink`](../reference/core.md#permalink).
+4. **Set the slug codec and the per-concept date granularity.** A dated entry's URL is derived from its filename stem, and how much of a leading date the slug strips is per-concept. The URL policy lives in the site's YAML config rather than the adapter, so the site owner controls the permalink shape without touching code. The showcase pairs its adapter with `examples/showcase/src/lib/site.config.yaml`, which the adapter reads through `navMenu.configPath`. For the id-to-slug split and the policy that resolves a permalink, see [URL identity](../explanation/content-model.md#url-identity) and [`permalink`](../reference/delivery-data.md#permalink).
 
 5. **Implement the `render` method.** The adapter's `render` turns a concept's markdown into HTML. The showcase builds it once from its component registry and forwards every call:
 

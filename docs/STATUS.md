@@ -11,7 +11,7 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-05): execute pass 2 (render attribute-sink hardening)
+## Immediate next action (2026-06-05): brainstorm and write pass 3 (URL-identity consolidation)
 
 The documentation initiative is COMPLETE. The work now is the **engine-hardening series**, the three
 release-gate improvements the docs initiative surfaced, sequenced **before P4** so the scaffolder templates
@@ -45,32 +45,50 @@ scope, not widened reflexively now. (3) Both sites carry a pre-existing `compose
 own `^0.24.0` pin (the positional call predates the `0.24.0` object form), unrelated to this narrowing; a
 site-migration pass must update both call sites before either site builds against `0.24.0` or later.
 
-**Pass 2 (render attribute-sink hardening) is brainstormed, specced, and planned (2026-06-05), not yet
-executed.** The design spec is `docs/superpowers/specs/2026-06-05-cairn-render-sink-hardening-design.md`;
-the plan is `docs/superpowers/plans/2026-06-05-cairn-render-sink-hardening.md`. It closes the render-sink
-residual the auth-hardening gate surfaced (a component `build()` routing a raw author attribute value into
-an `href`, `src`, `style`, or `on*` sink runs after the floor and is unsanitized today). The settled design:
-one internal post-dispatch rehype transform, `rehypeSinkGuard`, runs last in `createRenderer`, neutralizes
-unsafe URL schemes in URL-bearing attributes, drops `on*` handlers, and strips inline `style` wholesale, on
-every element regardless of which `build()` produced it, gated by the same `unsafeDisableSanitize` switch as
-the floor. Two forks settled with Geoff: enforce by construction (a post-dispatch guard, not an opt-in
-helper), and blanket-strip `style` (matching cairn's floor and every safe-by-default sanitizer, over the
-industry-discouraged denylist token-scan). Three tasks, bumps `0.28.0`, no public surface added, no
-`Consumers must:` line (a security fix). A typed `url` attribute field is logged out of scope for a later
-pass or P4.
+**Pass 2 (render attribute-sink hardening) LANDED on `main` 2026-06-05 as `0.28.0`, unpublished.** It ran
+subagent-driven, one `cairn-implementer` per task on `main` directly (no worktree), Tasks 1 and 2 on Opus
+and Task 3 on Sonnet, plus a simplifier pass and a review fold-in. Five commits: `dcd3c5a` (the
+`rehypeSinkGuard` transform and its 14-case unit suite), `310a85c` (the guard wired last in
+`createRenderer`, gated with the floor, three integration tests), `cde9e27` (the `0.28.0` bump, the
+changelog, the sanitize-floor doc), `f176e9a` (simplifier: extracted `isSafeUrlProp`), and `701ddab`
+(review fold-in). The guard walks the fully-built hast tree and neutralizes the sinks a component `build()`
+can route a raw author attribute value into: it scheme-checks the URL-bearing properties (`href`, `src`,
+`srcSet`, `xLinkHref`, `poster`, `formAction`, `action`, `data`, `background`), removes every inline `on*`
+handler, and strips inline `style` wholesale. The safe-scheme set is derived from `defaultSchema.protocols`
+plus `cairn`, so the floor and the guard cannot drift. It runs last, gated by the same `unsafeDisableSanitize`
+switch as the floor, and is added to no public barrel. Gate green at the tip `701ddab`: `npm run check` 787
+files 0/0, `npm test` 115 files / 684 tests exit 0, `check:reference` and `check:package` exit 0. The
+render-pipeline snapshot stayed byte-identical across the pass. The post-mortem is in the plan
+(`docs/superpowers/plans/2026-06-05-cairn-render-sink-hardening.md`); the design spec is
+`docs/superpowers/specs/2026-06-05-cairn-render-sink-hardening-design.md`.
 
-**Immediate next action: execute pass 2,
-`docs/superpowers/plans/2026-06-05-cairn-render-sink-hardening.md`, `subagent-driven`
-(`superpowers:subagent-driven-development`, one `cairn-implementer` per task), on `main` directly (same as
-pass 1: an internal render change gated by check/test, no worktree). Start at Task 1.** The design is
-settled and approved, so skip brainstorming. Dispatch Task 1 (the guard logic and its obfuscation edge
-cases) and Task 2 (the security integration) `model: opus`; Task 3 (docs, changelog, version) fits the
-Sonnet default. The pass-end review gate is the simplifier over the changed `src/lib/render` files plus a
-high-effort `/code-review` (attention to scheme normalization and `srcSet`); the Worker, auth, Svelte, and
-a11y reviewers and the live `/admin` smoke do not apply. After pass 2 lands, brainstorm and write pass 3
-(URL-identity consolidation). Publishing stays held: `0.26.0` is the registry `latest`, and `main` carries
-the unpublished `0.27.0` (and will carry `0.28.0`); the hardening series accumulates on `main` and publishes
-before P4 consumes the hardened surface.
+**The review gate caught one real bug, folded in as `701ddab`.** The `URL_PROPS` set first listed
+`xlinkHref`, but `property-information` camelCases `xlink:href` to `xLinkHref` with a capital L, so the SVG
+xlink entry was dead code that never matched a real tree, and an SVG anchor carrying a `javascript:`
+`xlink:href` from a `build()` would have survived. The high-effort `/code-review` found it, the fold-in
+corrected the casing, and the same review surfaced that the set covered `formAction` but not the form-level
+`action` and missed `<object>`'s `data` and `background`, all URL sinks the existing scheme check handles, so
+those three were added with regression tests. The fold-in confirmed empirically that `data-*` attributes
+camelCase to `dataFoo`, so adding `data` catches only the genuine `<object data>` and leaves cairn's
+`data-attr-*` dispatch routing untouched, pinned by a test.
+
+**Two pass-2 carry-forwards (the guard's documented boundary).** (1) The guard scheme-checks URL attributes
+and strips `on*` and inline `style`. It does not remove a `build()`-emitted raw `<script>`, `<style>`, or
+`<iframe srcdoc>` element node, since a `build()` that emits those is running site-developer code and author
+markdown is cleaned by the pre-dispatch floor; this is recorded in `docs/render-sanitize-floor.md`. A future
+pass that wants parity with the floor for `build()`-emitted element nodes would strip such nodes wholesale,
+a different mechanism from the scheme check. (2) The anchor `ping` beacon attribute is left out as a
+lower-severity exfiltration sink rather than a script vector; revisit it if a site surfaces a need.
+
+**Immediate next action: brainstorm and write pass 3, URL-identity consolidation**, the last of the
+three-pass engine-hardening series. There is no plan file yet. Run `superpowers:brainstorming` first to
+settle the open design calls with Geoff (the spec and the `cairn-url-identity-model` memory hold the shipped
+`0.8.0` model; surface only what consolidation leaves open), then `superpowers:writing-plans` to author the
+numbered plan, then execute it subagent-driven, one `cairn-implementer` per task, on `main` directly (same
+as passes 1 and 2, unless the brainstorm shows a blast radius that wants a worktree). After pass 3 lands,
+publish the held window before P4 consumes the hardened surface. Publishing stays held: `0.26.0` is the
+registry `latest`, and `main` carries the unpublished `0.27.0` and `0.28.0`; the series publishes together
+before P4.
 
 The engine-adjacent showcase E2E regression the Phase 5 reproduction flagged is confirmed and FIXED
 (`ba25359`): the golden-path E2E had drifted on two fronts (a Carta-era editor selector and the single-file

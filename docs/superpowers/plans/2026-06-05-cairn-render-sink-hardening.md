@@ -464,3 +464,60 @@ After all tasks commit, before declaring the pass done:
 - The safe-scheme allowlist is derived from the same `defaultSchema.protocols` the floor uses plus `cairn`, so the floor and the guard cannot drift, the spec's stated invariant.
 - The integration test's `sink` component routes attribute values into `href`/`src` and sets a constant `on*`/`style`, so it proves both the attribute-value residual and the build-emitted handler/style strip in one component.
 - Blanket `style` strip is the locked design decision; the guard removes `style` unconditionally, with no CSS parser or denylist token-scan.
+
+---
+
+## Post-mortem (2026-06-05)
+
+Render attribute-sink hardening landed on `main` as `0.28.0`, unpublished. The pass ran subagent-driven,
+one `cairn-implementer` per task, on `main` directly. Tasks 1 and 2 ran on Opus, Task 3 on the Sonnet
+default. A review fold-in and a simplifier pass also ran on `main`.
+
+**Commits.**
+
+- `dcd3c5a` Task 1: the internal `rehypeSinkGuard` transform and its 14-case unit suite.
+- `310a85c` Task 2: the guard wired last in `createRenderer`, gated with the floor, plus three
+  integration tests proving a malicious `build()` end to end.
+- `cde9e27` Task 3: the `0.28.0` bump, the changelog entry, and the sanitize-floor doc rewrite.
+- `f176e9a` simplifier: extracted `isSafeUrlProp` from the visitor body for readability, behavior
+  unchanged.
+- `701ddab` review fold-in: fixed the `xLinkHref` casing bug and added the `action`, `data`, and
+  `background` sinks, with six regression tests and the docs and changelog updated to match.
+
+**What was built.** `rehypeSinkGuard` walks the fully-built hast tree and neutralizes the sinks a
+component `build()` can route a raw author attribute value into. It scheme-checks the URL-bearing
+properties (`href`, `src`, `srcSet`, `xLinkHref`, `poster`, `formAction`, `action`, `data`, and
+`background`), removes every inline `on*` handler, and strips inline `style` wholesale. The safe-scheme
+set is derived from `defaultSchema.protocols` plus `cairn`, so the floor and the guard cannot drift on
+what a safe scheme is. Scheme detection strips whitespace and control characters first, so
+`java\tscript:` and a leading-space scheme are caught. The guard runs last, after the dispatch and
+`rehypeAnchorRel`, and it is gated by the same `unsafeDisableSanitize` switch as the floor. It is added
+to no public barrel, so the surface is unchanged.
+
+**Verified.** Gate green at the tip `701ddab`: `npm run check` 787 files 0/0, `npm test` 115 files /
+684 tests exit 0, `npm run check:reference` exit 0, `npm run check:package` exit 0. The render-pipeline
+snapshot stayed byte-identical across the whole pass, so the guard strips nothing from the showcase
+components, which route attribute values into class positions only.
+
+**Review gate.** The simplifier made one refinement (`f176e9a`). A high-effort `/code-review` found one
+real bug and a set of same-mechanism gaps, each empirically confirmed against `property-information`
+before folding in. The `URL_PROPS` set listed `xlinkHref`, but `property-information` camelCases
+`xlink:href` to `xLinkHref` with a capital L, so the SVG xlink entry was dead code that never matched a
+real tree, and an SVG anchor carrying a `javascript:` `xlink:href` from a `build()` would have survived.
+The set also covered `formAction` but not the form-level `action`, and it missed `<object>`'s `data` and
+`background`, all URL sinks the existing scheme check handles. The fold-in corrected the casing and added
+the three properties. It confirmed that `data-*` attributes camelCase to `dataFoo`, so adding `data`
+catches only the genuine `<object data>` and leaves cairn's `data-attr-*` dispatch routing untouched; a
+regression test pins that. The Worker, auth, Svelte, and a11y reviewers and the live `/admin` smoke did
+not apply, as the plan scoped, because no auth, Worker, or admin-UI surface changed.
+
+**Boundary (documented, not a defect).** The guard scheme-checks URL attributes and strips `on*`
+handlers and inline `style`. It does not remove a `build()`-emitted raw `<script>`, `<style>`, or
+`<iframe srcdoc>` element node, since a component `build()` that emits those is running site-developer
+code, and author markdown is cleaned by the pre-dispatch floor. The anchor `ping` beacon is left out as
+a lower-severity exfiltration sink rather than a script vector. Both facts are recorded in
+`docs/render-sanitize-floor.md` and carried forward in STATUS.
+
+**Next.** Pass 3, URL-identity consolidation, is the last of the three-pass engine-hardening series.
+Publishing stays held: `0.26.0` is the registry `latest`, and `main` carries the unpublished `0.27.0`
+and now `0.28.0`. The series publishes before P4 consumes the hardened surface.

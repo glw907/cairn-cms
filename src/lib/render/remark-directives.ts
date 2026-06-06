@@ -59,7 +59,7 @@ export function remarkDirectiveStamp(registry: ComponentRegistry) {
       const def = registry.get(node.name);
       const attrs = node.attributes ?? {};
       const role = attrs.role || undefined;
-      const iconField = def?.attributes?.find((field) => field.type === 'icon');
+      const iconField = registry.iconField(node.name);
       const iconKey = iconField?.key ?? 'icon';
       let icon = attrs[iconKey] || undefined;
       if (!icon && role) icon = registry.defaultIcon(node.name, role);

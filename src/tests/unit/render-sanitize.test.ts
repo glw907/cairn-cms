@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { h } from 'hastscript';
 import { createRenderer } from '../../lib/render/pipeline.js';
 import { defineRegistry } from '../../lib/render/registry.js';
 import type { Schema } from 'hast-util-sanitize';
@@ -92,5 +93,63 @@ describe('render sanitize floor', () => {
     const r = createRenderer(defineRegistry({ components: [] }), { unsafeDisableSanitize: true });
     const html = await r.renderMarkdown('<img src=x onerror="alert(1)">');
     expect(html).toContain('onerror');
+  });
+});
+
+describe('render sink guard (post-dispatch)', () => {
+  // A deliberately unsafe component: it routes attribute values into href and src and sets a
+  // constant on* handler and inline style, the exact residual the guard closes.
+  const sinkRegistry = () =>
+    defineRegistry({
+      components: [
+        {
+          name: 'sink',
+          label: '',
+          description: '',
+          build: (ctx) =>
+            h(
+              'a',
+              {
+                href: typeof ctx.attributes.url === 'string' ? ctx.attributes.url : undefined,
+                onClick: 'steal()',
+                style: 'color:red',
+              },
+              [
+                h('img', { src: typeof ctx.attributes.img === 'string' ? ctx.attributes.img : undefined }),
+                ...ctx.slot('body'),
+              ],
+            ),
+          attributes: [
+            { key: 'url', label: 'URL', type: 'text' },
+            { key: 'img', label: 'Image', type: 'text' },
+          ],
+          slots: [{ name: 'body', label: 'Body', kind: 'markdown' }],
+        },
+      ],
+    });
+
+  it('neutralizes a javascript: url a build routes from an attribute value', async () => {
+    const html = await createRenderer(sinkRegistry()).renderMarkdown(
+      ':::sink{url="javascript:alert(1)" img="javascript:alert(2)"}\nbody\n:::',
+    );
+    expect(html).not.toContain('javascript:');
+    expect(html.toLowerCase()).not.toContain('onclick');
+    expect(html).not.toContain('style=');
+    expect(html).toContain('body');
+  });
+
+  it('keeps a safe url a build routes from an attribute value', async () => {
+    const html = await createRenderer(sinkRegistry()).renderMarkdown(
+      ':::sink{url="https://ok.test/x" img="https://ok.test/i.png"}\nbody\n:::',
+    );
+    expect(html).toContain('href="https://ok.test/x"');
+    expect(html).toContain('src="https://ok.test/i.png"');
+  });
+
+  it('unsafeDisableSanitize lets a build-routed javascript: url through (developer-only hatch)', async () => {
+    const html = await createRenderer(sinkRegistry(), { unsafeDisableSanitize: true }).renderMarkdown(
+      ':::sink{url="javascript:alert(1)"}\nbody\n:::',
+    );
+    expect(html).toContain('javascript:');
   });
 });

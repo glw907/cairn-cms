@@ -9,7 +9,7 @@ import rehypeStringify from 'rehype-stringify';
 import rehypeSanitize from 'rehype-sanitize';
 import type { Schema } from 'hast-util-sanitize';
 import { VFile } from 'vfile';
-import { buildSanitizeSchema, rehypeAnchorRel } from './sanitize-schema.js';
+import { buildSanitizeSchema, rehypeAnchorRel, rehypeSinkGuard } from './sanitize-schema.js';
 import { remarkDirectiveStamp } from './remark-directives.js';
 import { remarkResolveCairnLinks, CAIRN_RESOLVE } from './resolve-links.js';
 import { rehypeDispatch } from './rehype-dispatch.js';
@@ -58,6 +58,9 @@ export function createRenderer(
     rehypeSlug,
   ];
   if (rel !== false) rehypePlugins.push([rehypeAnchorRel, rel]);
+  // The sink guard runs last, over the fully-built tree, so it neutralizes a sink a component
+  // build() emitted after the floor. Gated by the same switch as the floor.
+  if (!options.unsafeDisableSanitize) rehypePlugins.push(rehypeSinkGuard);
   const processor = unified()
     .use(remarkParse)
     .use(remarkGfm)

@@ -94,9 +94,9 @@ result through a sanitize floor before emitting HTML. The site delivers that HTM
 The same `render` runs in the editor preview and on the public page, so the author sees the live
 design while editing.
 
-The sanitize floor is the primary XSS control, and it runs on every render by default. See
-[the security model](./security-model.md) for the floor, the allowlist extension point, and the one
-residual a component build can introduce.
+The sanitize floor is the primary XSS control, and it runs on every render by default. A second
+post-dispatch guard covers a component's `build()` output, which the floor runs too early to see. See
+[the security model](./security-model.md) for the floor, the allowlist extension point, and the guard.
 
 ## Distribution and versioning
 

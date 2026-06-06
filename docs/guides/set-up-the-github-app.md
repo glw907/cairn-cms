@@ -35,6 +35,6 @@ With auth working, sign in to `/admin`, edit a page, and save. Open the resultin
 
 ## See also
 
-- [Core reference](../reference/core.md#appjwt) for `appJwt`, [`installationToken`](../reference/core.md#installationtoken), and [`commitFile`](../reference/core.md#commitfile), the helpers that mint the token and write the commit.
+- [Core reference](../reference/core.md#auth-and-github-app) for the public auth surface. The JWT signing, the token mint, and the commit helper are internal to the engine, which wires them behind the content routes.
 - [The security model](../explanation/security-model.md#commit-trust) for why the App holds the write capability and how the save path constrains it.
 - [GitHub App private-key rotation](../github-app-key-rotation.md) for rotating the key and the `/admin/healthz` check that confirms the live key still signs.

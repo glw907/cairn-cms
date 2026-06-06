@@ -70,9 +70,9 @@ Every write path is confined to the site's configured content directories, becau
 write anywhere in the repo. The commit author comes from the session, never from the request. A
 stale-base commit fails safe as a conflict the editor reapplies, never a silent merge.
 
-See [the core reference](../reference/core.md#auth-and-github-app) for
-[`appJwt`](../reference/core.md#appjwt), [`installationToken`](../reference/core.md#installationtoken),
-and [`commitFile`](../reference/core.md#commitfile).
+The JWT signing, the token mint, and the commit helper are internal to the engine, which wires them
+behind the content routes, so a consuming site never calls them directly. See [the core
+reference](../reference/core.md#auth-and-github-app) for the public auth surface.
 
 ## Render safety
 
@@ -89,15 +89,20 @@ site whose content is fully developer-controlled. It is a code-level adapter dec
 editor-facing setting. See [the render sanitize floor](../render-sanitize-floor.md) for exactly what
 the floor keeps, strips, and rewrites.
 
-There is one documented residual. The floor runs before the component dispatch, so a component's
-`build()` output is not sanitized. This is deliberate: a component emits inline SVG icons and other
-markup that the floor would strip as unknown. The hole is that a `build()` which routes a directive
-attribute value into an `href`, `src`, or `style` sink emits that value unsanitized. A site developer
-writes the `build()` functions, so this is site-developer-controlled code, not a path an editor reaches
-through markdown alone. An author supplies attribute values, but only a `build()` decides whether a
-value lands in a URL or style sink. The narrow blast radius rests on that line. It is a known
-limitation tracked for a render-hardening pass, which would sanitize component-built attribute values
-or constrain what `build()` may emit into URL and style sinks.
+A second guard covers the component dispatch. The floor runs before the dispatch, so a component's
+`build()` output does not pass through it, because a component emits inline SVG icons and other markup
+the floor would strip as unknown. A post-dispatch guard runs last in `createRenderer`, over the fully
+built tree, under the same `unsafeDisableSanitize` switch as the floor. It scheme-checks every
+URL-bearing attribute a `build()` could route a raw author value into, including `href`, `src`,
+`srcset`, `xlink:href`, `poster`, `formaction`, `action`, an `<object>`'s `data`, and `background`,
+against the same safe-scheme set the floor uses. It also drops every inline `on*` handler and strips
+inline `style`. A `build()` can no longer emit an unsafe URL scheme, an event handler, or inline style,
+whether or not an author supplied the value.
+
+A narrow boundary remains. The guard checks attributes, so it does not strip a `build()`-emitted raw
+`<script>`, `<style>`, or `<iframe srcdoc>` element node, and it leaves the anchor `ping` beacon. A
+site developer writes the `build()` functions, so emitting one of those nodes is
+site-developer-controlled code, not a path an author reaches through markdown alone.
 
 ## Origin and CSRF
 

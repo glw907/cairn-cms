@@ -4,8 +4,8 @@
 // concepts, components, field types, and save hooks. Shaped now so the extension contract
 // is additive later.
 import type { AdminPanel, CairnAdapter, CairnExtension, CairnRuntime, ConceptConfig, FieldTypeDef } from './types.js';
-import { normalizeConcepts } from './concepts.js';
-import { urlPolicyFrom, type SiteConfig } from '../nav/site-config.js';
+import { resolveConcepts } from './concepts.js';
+import type { SiteConfig } from '../nav/site-config.js';
 
 /** The input to {@link composeRuntime}. `siteConfig` is required so the per-concept URL policy is
  *  always derived from one source and can never be silently dropped. `extensions` fold in after the
@@ -36,7 +36,7 @@ export function composeRuntime({ adapter, siteConfig, extensions = [] }: Compose
   }
   return {
     siteName: adapter.siteName,
-    concepts: normalizeConcepts(content, urlPolicyFrom(siteConfig)),
+    concepts: resolveConcepts(content, siteConfig),
     backend: adapter.backend,
     sender: adapter.sender,
     render: adapter.render,

@@ -4,6 +4,7 @@
 // future Fragments concept attaches by adding one key under `content` and one routing
 // entry, with no reshape here.
 import type { ConceptConfig, ConceptDescriptor, ConceptUrlPolicy, RoutingRule } from './types.js';
+import { urlPolicyFrom, type SiteConfig } from '../nav/site-config.js';
 
 /**
  * Concept-fixed routing, keyed by concept id (spec §7.2). Posts are dated feed entries;
@@ -65,6 +66,18 @@ export function normalizeConcepts(
     });
   }
   return descriptors;
+}
+
+/**
+ * Resolve a site's concept descriptors from its content map and parsed site config. The admin runtime
+ * (composeRuntime) and the delivery layer (siteDescriptors) both call this, so the per-concept URL
+ * policy is derived once from the YAML and the runtime and delivery permalinks cannot diverge.
+ */
+export function resolveConcepts(
+  content: Record<string, ConceptConfig | undefined>,
+  siteConfig: SiteConfig,
+): ConceptDescriptor[] {
+  return normalizeConcepts(content, urlPolicyFrom(siteConfig));
 }
 
 /** Look up a normalized concept by id, or undefined when the site does not enable it. */

@@ -716,3 +716,63 @@ After all tasks commit, before declaring the pass done:
 - `rehypeDispatch` stays importable from its module for the pipeline and the tests; only the public barrel re-export is removed, and the omission carries a recorded comment plus the spec reasoning.
 - The snapshot stays byte-identical because the ergonomics are additive or behavior-preserving and `headRow` keeps its default level; the plan checks the snapshot explicitly in Tasks 2 and 3.
 - The version step accounts for the forward dependency on the engine-hardening series shipping `0.29.0`, with a reconciliation note if the baseline differs.
+
+---
+
+## Post-mortem (landed 2026-06-06 on `main`, `0.30.0`, unpublished)
+
+DX-sweep Pass A executed as written, subagent-driven, one `cairn-implementer` per task on `main` directly
+(no worktree). Tasks 3, 4, 5 ran on Opus (the registry guard, the public surface carve, the high-blast
+root-barrel removal); Tasks 1, 2, 6, 7 on Sonnet. Seven task commits `e219335..48b83d8`, a simplifier
+commit `7ee7c7b`, and a review fold-in `c69079e`.
+
+**What shipped.** A public `@glw907/cairn-cms/render` authoring subpath (`src/lib/render/authoring.ts`)
+holds `iconSpan`, `cardShell`, `headRow`, the re-homed `isElement`, and the new `strAttr(ctx, key)`, with a
+reference page (`docs/reference/render.md`) wired into the coverage gate. `headRow` gained an optional
+heading level (default 2). The registry gained `iconField(name)` (first-wins, matching the old inline
+`.find`), and `defineRegistry` now throws when a component sets `defaultIconByRole` with no `type:'icon'`
+attribute. The directive stamp routes its icon lookup through `registry.iconField`. The root barrel dropped
+the five authoring helpers and `rehypeDispatch` (createRenderer is the one public render pipeline). The
+showcase migrated to `/render` and adopted `strAttr` in its `alert` build. The minor bumps `0.30.0` with a
+`Consumers must:` line.
+
+**Gate evidence at the tip.** Engine gate at `7ee7c7b` (the last source commit), run first-hand: `npm run
+check` 793 files 0/0, `npm test` 118 files / 720 tests exit 0, `check:reference` and `check:package` exit 0.
+The render-pipeline snapshot stayed byte-identical across the pass (every snapshot run was without `-u`; the
+ergonomics are additive or behavior-preserving and `headRow` keeps its default level). The showcase carried
+its own gate (Task 6): `check` 0 errors in `src/` and a production build exit 0, the `alert` rendering
+byte-identical (`class="alert alert-caution"`, the `ec-head` row, the role-default leaf glyph). Docs gates at
+the fold-in tip `c69079e`: `check:docs`, `check:reference`, `check:package` all exit 0, prose-guard clean on
+both changed docs. The showcase `check` reports the known node_modules + `vite.config.ts` symlink-dev
+artifact (a second physical SvelteKit toolchain), no error in showcase `src/`; the production build is the
+acceptance proof.
+
+**Simplifier.** Factored the duplicated "first `type:'icon'` attribute" find in `registry.ts` onto one
+private `findIconField(def)` helper used by both the construction guard and the `iconField` method
+(`7ee7c7b`). The other four changed regions were already clean.
+
+**Review gate (high-effort `/code-review`, 3 finder angles).** The packaging trace was clean end to end (the
+`./render` stanza matches its siblings, the build emits `dist/render/authoring.{js,d.ts}`, every re-export
+name resolves, the reference page covers every export, the showcase imports are tight). The line-by-line and
+removed-behavior angles confirmed `strAttr` matches the old `typeof === 'string'` narrowing, `iconField`
+first-wins matches the old `.find`, the `field === iconField` identity comparison in `remark-directives.ts`
+still holds (same `def` instance via `byName`), no internal importer broke (grep of `src/` and
+`examples/showcase/src/`), and no test assertion lost real coverage (the `cardShell`/`iconSpan` positive
+checks moved to the `/render` barrel test). One finding folded in as `c69079e`: the `defineRegistry` icon
+guard was filed under "additive (non-breaking)" in the upgrade guide, but it converts a previously silent
+no-op into a hard throw at construction (a component with `defaultIconByRole` and no icon attribute never
+rendered its default icon before, since the default only stamps through an icon attribute). The fold-in moved
+it out of the non-breaking heading and states the conditional consumer action in both the changelog and the
+upgrade guide. The Worker, auth, a11y, and Svelte reviewers and the live `/admin` smoke did not apply (no
+such surface changed).
+
+**Carry-forwards.** (1) `headRow(title, icon?, level)` takes `level` as a plain `number` with no
+range validation, so an explicit `headRow(title, icon, 0)` or `7` emits an invalid `<h0>`/`<h7>` (the
+`level: number = 2` default fires only for `undefined`, not for an explicit `0`). No current caller passes
+anything but the default, so this is a latent robustness gap on a developer-facing authoring helper rather
+than an active bug; clamp or validate to 1..6 in a future render touch if a caller ever computes the level.
+(2) The `defineRegistry` icon guard enforces that an icon field exists, not that every role in
+`defaultIconByRole` is a reachable `role` option, so a default keyed to a role no author can select still
+never renders; the guard's message is accurate for the no-field case it does catch. (3) The guard iterates
+every entry in `components` while `byName` is last-wins, so on a duplicate component name the guard can throw
+on a shadowed def the engine would never dispatch; duplicate names are already an authoring error.

@@ -11,7 +11,46 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-06): DX-sweep Pass A (render authoring)
+## Immediate next action (2026-06-06): DX-sweep Pass B (tooling and CI robustness)
+
+**DX-sweep Pass A (render authoring) LANDED on `main` 2026-06-06 as `0.30.0`, unpublished.** It carved the
+public `@glw907/cairn-cms/render` authoring subpath (`iconSpan`, `cardShell`, `headRow`, the re-homed
+`isElement`, and the new `strAttr`), added a configurable `headRow` heading level (default 2), a
+`registry.iconField(name)` accessor, and a `defineRegistry` guard that fails a component declaring
+`defaultIconByRole` with no `type:'icon'` attribute, and dropped `rehypeDispatch` from the public surface
+(`createRenderer` is the one public render pipeline). It ran subagent-driven, one `cairn-implementer` per
+task on `main` directly (no worktree), Tasks 3, 4, 5 on Opus and Tasks 1, 2, 6, 7 on Sonnet. Seven task
+commits `e219335..48b83d8`, a simplifier commit `7ee7c7b` (a shared `findIconField` helper), and a review
+fold-in `c69079e`. The minor bumps `0.30.0` with a `Consumers must:` line (the render-authoring imports
+moved and `rehypeDispatch` is gone). Gate green at the source tip `7ee7c7b`, run first-hand: `npm run check`
+793 files 0/0, `npm test` 118 files / 720 tests exit 0, `check:reference` and `check:package` exit 0; the
+render-pipeline snapshot stayed byte-identical; the showcase `check` 0 errors in `src/` and a production
+build exit 0. The post-mortem (with the three carry-forwards and the review triage) is in the plan
+(`docs/superpowers/plans/2026-06-05-cairn-render-authoring-surface.md`); the design spec is
+`docs/superpowers/specs/2026-06-05-cairn-render-authoring-surface-design.md`.
+
+**The review gate caught one real doc-framing issue, folded in as `c69079e`.** The `defineRegistry` icon
+guard was filed under "additive (non-breaking)" in the upgrade guide, but it converts a previously silent
+no-op into a hard throw at registry construction: a component with `defaultIconByRole` and no icon attribute
+never rendered its default icon before (the default only stamps through an icon attribute), so a consumer
+build that succeeded before can now fail. The fold-in moved the guard out of the non-breaking heading and
+states the conditional consumer action in both `CHANGELOG.md` and `docs/guides/upgrade-cairn.md`.
+
+**Three Pass A carry-forwards (recorded, not fixed).** (1) `headRow`'s `level` is a plain `number` with no
+1..6 validation, so an explicit `headRow(title, icon, 0)` or `7` emits an invalid `<h0>`/`<h7>` (the
+default fires only for `undefined`); no current caller passes a non-default level, so it is a latent
+robustness gap on the new authoring helper, to clamp in a future render touch. (2) The icon guard checks an
+icon field exists, not that every `defaultIconByRole` role is a reachable `role` option. (3) The guard
+iterates every `components` entry while `byName` is last-wins, so on a duplicate component name it can throw
+on a shadowed def the engine would never dispatch (duplicate names are already an authoring error).
+
+**Immediate next action: DX-sweep Pass B (tooling and CI robustness).** Brainstorm and spec it first (it has
+no plan yet), then execute subagent-driven on `main`. Its scope is sketched in the "Sequence to the
+scaffolder" split below (the DX-B-engine manifest-bin `cwd`-versus-Vite-`config.root` fix, a plain-Node
+dist-spawn test for the `/delivery/data` node-safety guarantee, wiring the showcase golden-path E2E into a
+gate). After Pass B comes Pass C (admin and consumer alignments), then the gallery initiative, then P4.
+Publishing stays held: `0.29.0` is the registry `latest`, and `main` now carries the unpublished `0.30.0`;
+the window publishes before any site or the scaffolder consumes the `/render` subpath.
 
 The **engine-hardening series is COMPLETE and PUBLISHED.** All three release-gate improvements landed and
 the held window published together as `0.29.0`: pass 1 (surface-narrowing, `0.27.0`), pass 2 (render
@@ -21,10 +60,6 @@ registry `latest` over the prior `0.26.0`. The pre-publish gate was green: both 
 `site.config.yaml` `content:` blocks pass pass 3's new URL-policy validation (verified by running the real
 `parseSiteConfig` to `urlPolicyFrom` to `normalizeConcepts` chain against each site's config). The series
 ran before P4 so the scaffolder templates the clean surface.
-
-**Immediate next action: DX-sweep Pass A (render authoring),
-`docs/superpowers/plans/2026-06-05-cairn-render-authoring-surface.md`,** `subagent-driven`, on `main`. Its
-version step now bumps the next minor above the published `0.29.0` baseline.
 
 **A docs anti-drift gate landed alongside the publish (2026-06-06).** Verifying docs currency for the
 published window found five drifts passes 1 and 2 had shipped (the upgrade guide missed `0.28.0`/`0.29.0`,
@@ -370,7 +405,8 @@ A then B then C: **Pass A (render authoring)**, **Pass B (tooling and CI robustn
 consumer alignments)**. Then the gallery initiative (a `superpowers:brainstorming` first for the
 git-versus-R2 storage fork). Then P4, authored just-in-time once the surface it templates is final.
 
-**DX-sweep Pass A is brainstormed, specced, and planned (2026-06-05), not yet executed.** The design spec
+**DX-sweep Pass A is EXECUTED (landed 2026-06-06 as `0.30.0`, unpublished); see the top entry for the
+landed result, the review fold-in, and the carry-forwards.** The design spec
 is `docs/superpowers/specs/2026-06-05-cairn-render-authoring-surface-design.md`; the plan is
 `docs/superpowers/plans/2026-06-05-cairn-render-authoring-surface.md`. It carves a public
 `@glw907/cairn-cms/render` authoring subpath (relocating `iconSpan`/`cardShell`/`headRow`, re-homing

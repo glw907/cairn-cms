@@ -11,7 +11,7 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-05): brainstorm and write pass 3 (URL-identity consolidation)
+## Immediate next action (2026-06-05): execute pass 3 (URL-identity consolidation)
 
 The documentation initiative is COMPLETE. The work now is the **engine-hardening series**, the three
 release-gate improvements the docs initiative surfaced, sequenced **before P4** so the scaffolder templates
@@ -80,15 +80,29 @@ pass that wants parity with the floor for `build()`-emitted element nodes would 
 a different mechanism from the scheme check. (2) The anchor `ping` beacon attribute is left out as a
 lower-severity exfiltration sink rather than a script vector; revisit it if a site surfaces a need.
 
-**Immediate next action: brainstorm and write pass 3, URL-identity consolidation**, the last of the
-three-pass engine-hardening series. There is no plan file yet. Run `superpowers:brainstorming` first to
-settle the open design calls with Geoff (the spec and the `cairn-url-identity-model` memory hold the shipped
-`0.8.0` model; surface only what consolidation leaves open), then `superpowers:writing-plans` to author the
-numbered plan, then execute it subagent-driven, one `cairn-implementer` per task, on `main` directly (same
-as passes 1 and 2, unless the brainstorm shows a blast radius that wants a worktree). After pass 3 lands,
-publish the held window before P4 consumes the hardened surface. Publishing stays held: `0.26.0` is the
-registry `latest`, and `main` carries the unpublished `0.27.0` and `0.28.0`; the series publishes together
-before P4.
+**Pass 3 (URL-identity consolidation) is brainstormed, specced, and planned (2026-06-05), not yet
+executed.** The design spec is `docs/superpowers/specs/2026-06-05-cairn-url-identity-consolidation-design.md`;
+the plan is `docs/superpowers/plans/2026-06-05-cairn-url-identity-consolidation.md`. It is the last of the
+three-pass series. Two forks settled with Geoff: consolidate AND add loud validation (over pure refactor),
+and use two focused shared units (`entryIdentity`, `resolveConcepts`) over a bundled forward-and-inverse
+object or reusing the frontmatter schema machinery. The spread is concrete: the entry id/slug/date/permalink
+is computed in two parallel places (`createContentIndex` and `manifestEntryFromFile`) kept in sync by a
+comment, the concept descriptor is derived twice (`composeRuntime` and `siteDescriptors`), and the YAML
+`content:` URL policy is consumed untyped. Six tasks, bumps `0.29.0`, no public surface added, no
+`Consumers must:` line (a valid config needs no action). The new units stay internal.
+
+**Immediate next action: execute pass 3,
+`docs/superpowers/plans/2026-06-05-cairn-url-identity-consolidation.md`, `subagent-driven`
+(`superpowers:subagent-driven-development`, one `cairn-implementer` per task), on `main` directly (same as
+passes 1 and 2: an internal refactor plus validation gated by check/test, no worktree). Start at Task 1.**
+The design is settled and approved, so skip brainstorming. Dispatch Task 1 (the `entryIdentity` unit, the
+parity foundation) and Task 5 (the loud validation edges) `model: opus`; Tasks 2, 3, 4 (mechanical swaps)
+and Task 6 (docs and version) fit the Sonnet default. The pass-end review gate is the simplifier over the
+changed `src/lib/content` and `src/lib/delivery` files plus a high-effort `/code-review` (attention to the
+permalink-parity invariant and the validation edges); the Worker, auth, Svelte, and a11y reviewers and the
+live `/admin` smoke do not apply. After pass 3 lands, the three-pass series is complete: publish the held
+window (`0.27.0` + `0.28.0` + `0.29.0` over the `0.26.0` `latest`), then P4 (the scaffolder). Publishing
+stays held until then; `main` carries the unpublished `0.27.0` and `0.28.0` and will carry `0.29.0`.
 
 The engine-adjacent showcase E2E regression the Phase 5 reproduction flagged is confirmed and FIXED
 (`ba25359`): the golden-path E2E had drifted on two fronts (a Carta-era editor selector and the single-file

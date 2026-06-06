@@ -35,14 +35,14 @@ export function cardShell(classes: string[], body: ElementContent[]): Element {
   return h('section', { className: classes }, [h('div', { className: ['card-body'] }, body)]);
 }
 
-/** Card head row: `<div class="ec-head">[icon]<h2 class="card-title">{title}</h2></div>`.
- *  Pass the title's inline children and an optional pre-built icon element, the way `cardShell`
- *  takes already-built body content. This factors the icon-plus-heading head that a titled
- *  component build would otherwise rebuild by hand (the shape the removed `splitHead` produced). */
-export function headRow(title: ElementContent[], icon?: Element): Element {
+/** Card head row: `<div class="ec-head">[icon]<hN class="card-title">{title}</hN></div>`.
+ *  Pass the title's inline children, an optional pre-built icon element, and an optional heading
+ *  level (default 2). This factors the icon-plus-heading head that a titled component build would
+ *  otherwise rebuild by hand (the shape the removed `splitHead` produced). */
+export function headRow(title: ElementContent[], icon?: Element, level: number = 2): Element {
   const children: ElementContent[] = [];
   if (icon) children.push(icon);
-  children.push(h('h2', { className: ['card-title'] }, title));
+  children.push(h(`h${level}`, { className: ['card-title'] }, title));
   return h('div', { className: ['ec-head'] }, children);
 }
 

@@ -121,3 +121,16 @@ describe('headRow', () => {
     expect((row.children[1] as Element).tagName).toBe('h2');
   });
 });
+
+describe('headRow heading level', () => {
+  it('defaults to an h2', () => {
+    const row = headRow([{ type: 'text', value: 'Title' }]);
+    const heading = row.children.find((c) => c.type === 'element');
+    expect((heading as { tagName: string }).tagName).toBe('h2');
+  });
+  it('uses the given level', () => {
+    const row = headRow([{ type: 'text', value: 'Title' }], undefined, 3);
+    const heading = row.children.find((c) => c.type === 'element');
+    expect((heading as { tagName: string }).tagName).toBe('h3');
+  });
+});

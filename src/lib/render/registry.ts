@@ -93,19 +93,23 @@ export function dataAttrProp(key: string): string {
   return `dataAttr${key.charAt(0).toUpperCase()}${key.slice(1)}`;
 }
 
+/** A component's first `type:'icon'` attribute, or undefined when it declares none. Both the
+ *  construction-time guard and the registry's `iconField` derive the icon field from this one
+ *  predicate rather than spelling the `type === 'icon'` find twice. */
+function findIconField(def: ComponentDef): AttributeField | undefined {
+  return def.attributes?.find((field) => field.type === 'icon');
+}
+
 /**
  * Build a registry from a site's component definitions. The single source the render
  * pipeline (directive stamp plus rehype dispatch) and the editor palette both read.
  */
 export function defineRegistry({ components }: { components: ComponentDef[] }): ComponentRegistry {
   for (const c of components) {
-    if (c.defaultIconByRole && Object.keys(c.defaultIconByRole).length > 0) {
-      const hasIconField = c.attributes?.some((field) => field.type === 'icon') ?? false;
-      if (!hasIconField) {
-        throw new Error(
-          `cairn: component "${c.name}" sets defaultIconByRole but declares no type:'icon' attribute, so the default icon can never render`,
-        );
-      }
+    if (c.defaultIconByRole && Object.keys(c.defaultIconByRole).length > 0 && !findIconField(c)) {
+      throw new Error(
+        `cairn: component "${c.name}" sets defaultIconByRole but declares no type:'icon' attribute, so the default icon can never render`,
+      );
     }
   }
   const byName = new Map(components.map((c) => [c.name, c]));
@@ -114,7 +118,10 @@ export function defineRegistry({ components }: { components: ComponentDef[] }): 
     names: components.map((c) => c.name),
     get: (name) => byName.get(name),
     defaultIcon: (name, role) => (role ? byName.get(name)?.defaultIconByRole?.[role] : undefined),
-    iconField: (name) => byName.get(name)?.attributes?.find((field) => field.type === 'icon'),
+    iconField: (name) => {
+      const def = byName.get(name);
+      return def ? findIconField(def) : undefined;
+    },
   };
 }
 

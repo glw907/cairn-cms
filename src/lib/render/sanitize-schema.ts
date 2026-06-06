@@ -65,3 +65,77 @@ export function rehypeAnchorRel(rel: string) {
     });
   };
 }
+
+// URL-bearing hast properties the post-dispatch guard checks. hast camelCases attribute
+// names (srcset -> srcSet, xlink:href -> xlinkHref, formaction -> formAction).
+const URL_PROPS = new Set(['href', 'src', 'srcSet', 'xlinkHref', 'poster', 'formAction']);
+
+// The safe URL schemes: the union of every protocol list in defaultSchema, plus cairn. The
+// floor admits these and strips the rest, so deriving from the same source keeps the floor and
+// this guard from drifting on what a safe scheme is. javascript:/data:/vbscript: are never in
+// defaultSchema, so they are never safe.
+const SAFE_SCHEMES: Set<string> = (() => {
+  const protocols = defaultSchema.protocols ?? {};
+  const schemes = new Set<string>(['cairn']);
+  for (const list of Object.values(protocols)) {
+    for (const scheme of list ?? []) schemes.add(String(scheme).toLowerCase());
+  }
+  return schemes;
+})();
+
+// Read a URL value's scheme for the safety check, defeating the whitespace and control-character
+// tricks a browser ignores inside a scheme (java\tscript:, a leading space). A value with no
+// scheme (relative, anchor, query) returns undefined and is always safe.
+function urlScheme(value: string): string | undefined {
+  const cleaned = value.replace(/[\x00-\x20]+/g, '');
+  const match = /^([a-z][a-z0-9+.-]*):/i.exec(cleaned);
+  return match ? match[1].toLowerCase() : undefined;
+}
+
+function isSafeUrl(value: string): boolean {
+  const scheme = urlScheme(value);
+  return scheme === undefined || SAFE_SCHEMES.has(scheme);
+}
+
+// srcset is "url descriptor, url descriptor, …". hast may store it as a string or, because
+// property-information marks it comma-separated, as a string array. One unsafe candidate makes
+// the whole attribute unsafe.
+function isSafeSrcset(value: unknown): boolean {
+  const candidates = Array.isArray(value)
+    ? value.map(String)
+    : typeof value === 'string'
+      ? value.split(',')
+      : [];
+  return candidates.every((candidate) => {
+    const url = candidate.trim().split(/\s+/)[0];
+    return url === '' || isSafeUrl(url);
+  });
+}
+
+/**
+ * Post-dispatch safety floor over the fully-built tree. The pre-dispatch rehype-sanitize floor
+ * cleans author content, but a component build() runs after it and can route a raw author
+ * attribute value into a sink. This guard runs last and neutralizes those sinks on every element
+ * no matter which plugin or which build() produced it: an unsafe URL scheme in a URL-bearing
+ * attribute, an inline on* event handler, or an inline style (stripped wholesale, matching the
+ * floor and cairn's class-driven styling). It is gated by the same unsafeDisableSanitize switch as
+ * the floor.
+ */
+export function rehypeSinkGuard() {
+  return (tree: Root) => {
+    visit(tree, 'element', (node: Element) => {
+      const props = node.properties;
+      if (!props) return;
+      for (const key of Object.keys(props)) {
+        if (/^on/i.test(key) || key === 'style') {
+          delete props[key];
+          continue;
+        }
+        if (!URL_PROPS.has(key)) continue;
+        const value = props[key];
+        const safe = key === 'srcSet' ? isSafeSrcset(value) : typeof value !== 'string' || isSafeUrl(value);
+        if (!safe) delete props[key];
+      }
+    });
+  };
+}

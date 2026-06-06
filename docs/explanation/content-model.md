@@ -53,6 +53,13 @@ reads. That spread is real complexity, and it is the reason this section earns a
 reference rather than a one-liner. The id helpers and `permalink` are documented in
 [`core.md`](../reference/core.md#id-helpers).
 
+The URL policy is validated at build, so a wrong shape fails the build rather than emitting a
+defaulted URL. A permalink pattern must be root-relative, meaning it starts with `/`, and it may use
+only the tokens `:slug`, `:year`, `:month`, and `:day`. A date token is valid only on a dated
+concept. A `datePrefix` must be `year`, `month`, or `day`. A URL policy keyed to a concept the site
+does not declare under `content` also fails the build. A malformed policy throws a named error at
+build, never a wrong or silently defaulted URL.
+
 ## Schema as the source of truth
 
 A concept's frontmatter shape is declared once, with `defineFields`. That single declaration drives

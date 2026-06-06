@@ -2,6 +2,21 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.29.0
+
+Consolidated the URL-identity model. A content entry's id, slug, date, and permalink are now derived in
+one place (`entryIdentity`), so the content index and the manifest cannot drift on an entry's URL, and a
+site's concept descriptors are resolved through one path shared by the admin runtime and the delivery
+layer. No public surface changed.
+
+The YAML URL policy is now validated at build. A permalink pattern must be root-relative and use only the
+tokens `:slug`, `:year`, `:month`, and `:day`, a date token is valid only on a dated concept, a
+`datePrefix` must be `year`, `month`, or `day`, and a policy keyed to an undeclared concept fails the
+build.
+
+Behavior note: a site whose `content:` URL policy was malformed and silently defaulted will now fail the
+build with a named error. A valid policy is unaffected.
+
 ## 0.28.0
 
 ### Security

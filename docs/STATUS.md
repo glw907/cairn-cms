@@ -11,7 +11,7 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-05): brainstorm and write pass 2 (render attribute-sink hardening)
+## Immediate next action (2026-06-05): execute pass 2 (render attribute-sink hardening)
 
 The documentation initiative is COMPLETE. The work now is the **engine-hardening series**, the three
 release-gate improvements the docs initiative surfaced, sequenced **before P4** so the scaffolder templates
@@ -45,14 +45,32 @@ scope, not widened reflexively now. (3) Both sites carry a pre-existing `compose
 own `^0.24.0` pin (the positional call predates the `0.24.0` object form), unrelated to this narrowing; a
 site-migration pass must update both call sites before either site builds against `0.24.0` or later.
 
-**Immediate next action: brainstorm pass 2 (render attribute-sink hardening) with Geoff, then write the
-numbered plan, then execute it subagent-driven on `main`.** Run `superpowers:brainstorming` first to settle
-the open design decisions (the render-sink residual the auth-hardening gate surfaced: a component `build()`
-routing a directive attribute value into an `href`, `src`, or `style` sink is unsanitized today, documented
-as a caveat in the `cairn-render-sanitize-gap` memory). Do not auto-write the plan without Geoff's calls on
-the open decisions. Publishing stays held: `0.26.0` is the registry `latest`, and `main` now carries the
-unpublished `0.27.0`; the hardening series accumulates on `main` and publishes before P4 consumes the
-narrowed surface.
+**Pass 2 (render attribute-sink hardening) is brainstormed, specced, and planned (2026-06-05), not yet
+executed.** The design spec is `docs/superpowers/specs/2026-06-05-cairn-render-sink-hardening-design.md`;
+the plan is `docs/superpowers/plans/2026-06-05-cairn-render-sink-hardening.md`. It closes the render-sink
+residual the auth-hardening gate surfaced (a component `build()` routing a raw author attribute value into
+an `href`, `src`, `style`, or `on*` sink runs after the floor and is unsanitized today). The settled design:
+one internal post-dispatch rehype transform, `rehypeSinkGuard`, runs last in `createRenderer`, neutralizes
+unsafe URL schemes in URL-bearing attributes, drops `on*` handlers, and strips inline `style` wholesale, on
+every element regardless of which `build()` produced it, gated by the same `unsafeDisableSanitize` switch as
+the floor. Two forks settled with Geoff: enforce by construction (a post-dispatch guard, not an opt-in
+helper), and blanket-strip `style` (matching cairn's floor and every safe-by-default sanitizer, over the
+industry-discouraged denylist token-scan). Three tasks, bumps `0.28.0`, no public surface added, no
+`Consumers must:` line (a security fix). A typed `url` attribute field is logged out of scope for a later
+pass or P4.
+
+**Immediate next action: execute pass 2,
+`docs/superpowers/plans/2026-06-05-cairn-render-sink-hardening.md`, `subagent-driven`
+(`superpowers:subagent-driven-development`, one `cairn-implementer` per task), on `main` directly (same as
+pass 1: an internal render change gated by check/test, no worktree). Start at Task 1.** The design is
+settled and approved, so skip brainstorming. Dispatch Task 1 (the guard logic and its obfuscation edge
+cases) and Task 2 (the security integration) `model: opus`; Task 3 (docs, changelog, version) fits the
+Sonnet default. The pass-end review gate is the simplifier over the changed `src/lib/render` files plus a
+high-effort `/code-review` (attention to scheme normalization and `srcSet`); the Worker, auth, Svelte, and
+a11y reviewers and the live `/admin` smoke do not apply. After pass 2 lands, brainstorm and write pass 3
+(URL-identity consolidation). Publishing stays held: `0.26.0` is the registry `latest`, and `main` carries
+the unpublished `0.27.0` (and will carry `0.28.0`); the hardening series accumulates on `main` and publishes
+before P4 consumes the hardened surface.
 
 The engine-adjacent showcase E2E regression the Phase 5 reproduction flagged is confirmed and FIXED
 (`ba25359`): the golden-path E2E had drifted on two fronts (a Carta-era editor selector and the single-file

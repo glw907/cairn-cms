@@ -88,8 +88,10 @@ export type { ReferenceOptions } from './render/component-reference.js';
 export { glyph } from './render/glyph.js';
 export type { IconSet } from './render/glyph.js';
 export { remarkDirectiveStamp } from './render/remark-directives.js';
-export { rehypeDispatch, iconSpan, cardShell, headRow } from './render/rehype-dispatch.js';
-export type { MakeIcon } from './render/rehype-dispatch.js';
+// The component-authoring helpers (iconSpan, cardShell, headRow, isElement, strAttr) live on the
+// @glw907/cairn-cms/render subpath, not the root barrel. rehypeDispatch is deliberately not public:
+// createRenderer is the one public render pipeline, so the safe plugin ordering is the only public
+// path. See docs/superpowers/specs/2026-06-05-cairn-render-authoring-surface-design.md.
 export { createRenderer } from './render/pipeline.js';
 export type { RendererOptions } from './render/pipeline.js';
 

@@ -24,17 +24,21 @@ needs. Items move up from lower tiers as the core fills in.
 
 ## Next
 
-- **`create-cairn-site` scaffolder.** The engine capstone of the DX sequence. One command
-  scaffolds a working site with the corrected defaults, the `cairnManifest()` Vite wiring, and
-  the setup docs, so a new site skips the integration archaeology the first two migrations hit.
-  The Phase 5 reproduction sharpened its worklist from a fresh-install seat: ship a fenced local dev
-  backend so a newcomer never hand-pastes a fake GitHub and an auth bypass, emit the `App.Locals.editor`
-  type augmentation, omit the skeleton's clashing `static/robots.txt`, emit `prerender.handleHttpError:
-  'warn'` for the feed and robots and sitemap routes, and declare `@types/node`. The `mintToken` async
-  signature in the docs and the showcase composer alignment are smaller fixes that can land ahead of it.
 - **Image and gallery management.** Let a non-technical author add and place images from
   `/admin`. The open fork is storage: versioned in git next to content, or in Cloudflare R2.
-  Needs a brainstorm before a plan.
+  Needs a brainstorm before a plan. Sequenced ahead of the scaffolder so the capstone template
+  ships image support baked in.
+- **`create-cairn-site` scaffolder.** The last engine deliverable, sequenced after the gallery and
+  after the DX backlog is cleared, so it templates a surface that is already hardened, DX-complete, and
+  image-aware. One command scaffolds a working site with the corrected defaults, the `cairnManifest()`
+  Vite wiring, and the setup docs, so a new site skips the integration archaeology the first two
+  migrations hit. The Phase 5 reproduction sharpened its worklist from a fresh-install seat: ship a
+  fenced local dev backend so a newcomer never hand-pastes a fake GitHub and an auth bypass, emit the
+  `App.Locals.editor` type augmentation, omit the skeleton's clashing `static/robots.txt`, avoid
+  emitting `prerender.handleHttpError: 'warn'` so a dangling link fails the build, and declare
+  `@types/node`. Much of the remaining DX backlog is the scaffolder's own output (registering all four
+  admin actions by default, the single import surface, the one sanitize floor, the `cairn:` link
+  constraint README), so those items land here, not ahead of it.
 
 ## Later
 

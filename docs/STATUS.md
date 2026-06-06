@@ -101,8 +101,9 @@ and Task 6 (docs and version) fit the Sonnet default. The pass-end review gate i
 changed `src/lib/content` and `src/lib/delivery` files plus a high-effort `/code-review` (attention to the
 permalink-parity invariant and the validation edges); the Worker, auth, Svelte, and a11y reviewers and the
 live `/admin` smoke do not apply. After pass 3 lands, the three-pass series is complete: publish the held
-window (`0.27.0` + `0.28.0` + `0.29.0` over the `0.26.0` `latest`), then P4 (the scaffolder). Publishing
-stays held until then; `main` carries the unpublished `0.27.0` and `0.28.0` and will carry `0.29.0`.
+window (`0.27.0` + `0.28.0` + `0.29.0` over the `0.26.0` `latest`), then the resequenced run is cleanup,
+then the gallery, then P4 last (see "Sequence to the scaffolder" below). Publishing stays held until then;
+`main` carries the unpublished `0.27.0` and `0.28.0` and will carry `0.29.0`.
 
 The engine-adjacent showcase E2E regression the Phase 5 reproduction flagged is confirmed and FIXED
 (`ba25359`): the golden-path E2E had drifted on two fronts (a Carta-era editor selector and the single-file
@@ -285,20 +286,50 @@ This plan executed as written on `main` (Tasks 1-4 and 6 on Opus, Tasks 5 and 7 
 override honored, Task 6 the one real `vite build`). The landed result, the verification evidence, and the
 engine-adjacent carry-forward are in the top entry; the post-mortem is in the plan file.
 
-## Queued engine capstone: P4, the create-cairn-site scaffolder
+## Sequence to the scaffolder (resequenced 2026-06-05): cleanup, then gallery, then P4 last
+
+Geoff resequenced the run to the scaffolder on 2026-06-05: clear all the cleanup, then build the image
+and gallery initiative, then the `create-cairn-site` scaffolder (P4) last. The driving rule is that P4
+is the true capstone, so it must template a surface that is already hardened, DX-complete, and
+image-aware. The scaffolder runs after the gallery so the template ships image support baked in, and
+after the pre-scaffold DX is cleared so it does not bake a stale surface.
+
+**The split that makes "all the DX before the scaffold" concrete.** Most of the ecnordic DX backlog
+(`docs/internal/dx-backlog-ecnordic-migration.md`) is the scaffolder's OWN output, so those items land
+in P4, not ahead of it: item 4 (do not emit `prerender.handleHttpError: 'warn'`, so a dangling link
+fails the build), item 14 (the route stub registers all four admin actions by default), item 16 and the
+backlog's "Scaffolder checklist" (emit the manifest wiring whole, one obvious import surface with a
+component-free node path, teach the single sanitize floor, state the `cairn:` link constraint in the
+scaffolded README), plus the tutorial-reproduction worklist (a fenced local dev backend, the
+`App.Locals.editor` type augmentation, omit `static/robots.txt`, declare `@types/node`). These are done
+BY P4.
+
+**The pre-scaffold engine DX, to clear during cleanup so P4 templates the final shape:**
+- P3 ergonomics carry-forwards the scaffolder seed and components use: a `strAttr(ctx, key)` context
+  helper, a `registry.iconField(name)` hoist, a `defineRegistry` guard for `defaultIconByRole` without an
+  icon attribute, a configurable `headRow` heading level, and multiple `type:'icon'` fields resolving to
+  first-wins.
+- DX-B engine carry-forwards: the manifest-bin `cwd` versus Vite `config.root` principled fix (separate
+  the config-file location from the Vite root), and a plain-Node dist-spawn test that rot-proofs the
+  `/delivery/data` node-safety guarantee.
+- The `mintToken` async signature alignment in the docs and the showcase composer, a small fix.
+- Item 5's engine half: the editor link picker offers only real content targets, so a `cairn:` token
+  cannot be minted for a hand-built route (the doc half rides along).
+- The open `/render` public component-authoring surface question (pass-1 carry-forward): decide it before
+  the scaffolder templates component authoring, since the answer changes what the template imports.
+- Infra: wire the showcase golden-path E2E into a gate (ROADMAP Later) so a surface-growing change cannot
+  rot it silently; best done before the surface grows under the gallery and P4.
+
+**The cleanup phase, in order:** execute pass 3 (URL-identity consolidation, the immediate next action
+above), publish the held window (`0.27.0` + `0.28.0` + `0.29.0` over the `0.26.0` `latest`), then a
+DX-completeness sweep clearing the pre-scaffold engine DX listed above (sized into one or more passes when
+brainstormed). Then the gallery initiative (a `superpowers:brainstorming` first for the git-versus-R2
+storage fork). Then P4, authored just-in-time once the surface it templates is final.
 
 The workspace-flatten infra task is DONE (executed inline 2026-06-04, post-mortem in
 `docs/superpowers/plans/2026-06-04-workspace-flatten-and-claude-infra.md`). cairn-cms is a standalone
 repo at `~/Projects/cairn-cms`, both sites resolve the published package from the registry, and the
 per-project memory moved to the new working-directory keys.
-
-P4, the create-cairn-site scaffolder, is the engine capstone queued after the docs initiative. It is
-not yet written. Per the DX pass sequence, BRAINSTORM the open design calls with the user first, then write
-the numbered plan, then execute it subagent-driven with one `cairn-implementer` per task on a feature
-worktree off `main`. P4 carries the ecnordic DX items 5/6/14 and the DX-A and DX-B carry-forwards.
-Publishing stays held: `0.24.0` is the registry `latest`, and `main` carries the unpublished `0.25.0`
-(DX-A) and `0.26.0` (DX-B); publish the rolled window before any consumer or the scaffolder imports
-the new entries.
 
 ## Absorbed into the docs initiative: docs-refresh items (documented 2026-06-04)
 

@@ -25,17 +25,34 @@ isolation plus the route-structure pattern and dev guard), then two site retrofi
 907-life). The reference is used for look only, with no code copied (its layer is shadcn on bits-ui, a
 different system from DaisyUI).
 
-**Next: brainstorm and write plan 2 (the UX rebuild plus dark mode), then execute it.** Plan 2 is design
-section 2 of the spec. It is not written yet, and it carries open design decisions the spec leaves for
-brainstorming (the component inventory the rebuild commits to, the data-table and sidebar shape against
-the SvelteForge reference, the dark-mode toggle mechanism and where its variables live, the a11y bar).
-Run `superpowers:brainstorming` first to settle those with the user, then `superpowers:writing-plans`. The
-self-styling pipeline plan 1 landed scans the component source on every build, so it picks up whatever
-classes the rebuild adds with no build change. Plan 2 changes component markup, so its review gate adds
-`svelte-reviewer` and `daisyui-a11y-reviewer`, and a live `/admin` smoke applies once the UX surface
-moves. Publishing stays held: `0.29.0` is the registry `latest`, `main` carries the unpublished `0.30.0`
-and now `0.31.0`; the window publishes before any site or the scaffolder consumes the new surface, and
-the two site retrofits run only after the engine work publishes.
+**Next: execute plan 2 (the UX rebuild plus dark mode), then run a frontend-design polish pass.** Plan 2
+is written and ready: `docs/superpowers/plans/2026-06-07-cairn-admin-ux-rebuild.md`, 11 tasks, bumps
+`0.32.0`. It rebuilds the concept list as a searchable, sortable data-table (status badges, formatted
+dates, per-row delete reusing the inbound-link guard, pagination, a header create dialog), the sidebar
+with Lucide nav icons and a footer user menu, and a sticky topbar with breadcrumbs and a dark-mode toggle;
+dark mode is a second Warm Stone variable block plus a topbar toggle persisted through a `cairn-admin-theme`
+cookie scoped to `/admin` that the layout load reads for a zero-flash first paint (the `prefers-color-scheme`
+default applies on a first visit). It adds `@lucide/svelte` as a runtime dependency (per-icon imports) and a
+`listDeleteAction` on the content routes. The brainstorm settled two open items, recorded in the spec: one
+pass for UX plus dark mode, and the cookie-read first-paint mechanism.
+
+**Execute plan 2 `subagent-driven` (one `cairn-implementer` per task) on `main` directly, starting at Task 1.**
+Dispatch Task 4 (the data-table), Task 6 (per-row delete + the engine delete-core refactor), and Task 8 (the
+topbar toggle and cookie logic) `model: opus`; the rest fit the Sonnet default. Task 10 (the light-and-dark
+showcase visual proof) also fits Opus. The self-styling pipeline plan 1 landed scans the component source on
+every build, so it picks up the new classes with no build change. The pass-end review gate adds `svelte-reviewer`
+and `daisyui-a11y-reviewer` (plan 2 changes component markup) plus the simplifier and a `/code-review`, and a
+live `/admin` smoke applies. The Worker and auth reviewers do not apply.
+
+**After plan 2 lands green, run the `/frontend-design:frontend-design` polish pass** (at the user's request).
+It refines the visual quality against the SvelteForge reference with the Playwright render-and-compare loop,
+touching only component classes and the `cairn-admin.css` light and dark token values, keeping every test
+green, and re-anchoring the screenshot baselines. It runs as its own pass, because design refinement is visual
+and iterative rather than test-first (see the plan's "After structural completion" section). Then comes plan 3
+(chrome isolation, the dev guard, the route-structure docs, the showcase `(site)` group), then the two site
+retrofits. Publishing stays held: `0.29.0` is the registry `latest`, `main` carries the unpublished `0.30.0`
+and `0.31.0` and will carry `0.32.0`; the window publishes before any site or the scaffolder consumes the new
+surface, and the site retrofits run only after the engine work publishes.
 
 **Plan 1 (self-styling CSS foundation) LANDED on `main` 2026-06-07 as `0.31.0`, unpublished.** The admin
 now ships its own stylesheet from the engine. A new `scripts/build-admin-css.mjs` compiles the admin's

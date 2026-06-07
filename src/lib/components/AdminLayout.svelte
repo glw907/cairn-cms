@@ -39,9 +39,18 @@ identical on every host regardless of the site's own theme.
 
   const visibleNav = $derived(navItems.filter((item) => !item.owner || data.canManageEditors));
 
-  const initials = $derived(
-    data.user.displayName.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase() ?? '').join('') || '?',
-  );
+  // Up to two uppercase initials from the display name, falling back to '?' for an empty name.
+  function initialsOf(displayName: string): string {
+    const letters = displayName
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((word) => word[0]?.toUpperCase() ?? '')
+      .join('');
+    return letters || '?';
+  }
+
+  const initials = $derived(initialsOf(data.user.displayName));
 
   function isActive(href: string): boolean {
     return data.pathname === href || data.pathname.startsWith(`${href}/`);
@@ -107,74 +116,74 @@ identical on every host regardless of the site's own theme.
      scoped sheet style them. -->
 <div data-theme={theme}>
   <div class="drawer lg:drawer-open min-h-screen bg-base-200 text-base-content">
-  <input id="cairn-drawer" type="checkbox" class="drawer-toggle" bind:checked={drawerOpen} />
+    <input id="cairn-drawer" type="checkbox" class="drawer-toggle" bind:checked={drawerOpen} />
 
-  <div class="drawer-content flex flex-col">
-    <div class="navbar bg-base-100 border-b border-base-300 sticky top-0 z-30">
-      <div class="flex-none lg:hidden">
-        <label for="cairn-drawer" aria-label="Open menu" class="btn btn-square btn-ghost">
-          <MenuIcon class="h-5 w-5" />
-        </label>
+    <div class="drawer-content flex flex-col">
+      <div class="navbar bg-base-100 border-b border-base-300 sticky top-0 z-30">
+        <div class="flex-none lg:hidden">
+          <label for="cairn-drawer" aria-label="Open menu" class="btn btn-square btn-ghost">
+            <MenuIcon class="h-5 w-5" />
+          </label>
+        </div>
+        <div class="flex-1 px-2">
+          {#if crumbs.length}
+            <nav aria-label="Breadcrumb" class="breadcrumbs text-sm">
+              <ul>
+                {#each crumbs as crumb (crumb.label)}
+                  <li>{#if crumb.href}<a href={crumb.href}>{crumb.label}</a>{:else}{crumb.label}{/if}</li>
+                {/each}
+              </ul>
+            </nav>
+          {:else}
+            <span class="font-semibold">{data.siteName}</span>
+          {/if}
+        </div>
+        <div class="flex-none">
+          <button type="button" class="btn btn-square btn-ghost" aria-label="Toggle theme" onclick={toggleTheme}>
+            {#if theme === 'cairn-admin'}<MoonIcon class="h-5 w-5" />{:else}<SunIcon class="h-5 w-5" />{/if}
+          </button>
+        </div>
       </div>
-      <div class="flex-1 px-2">
-        {#if crumbs.length}
-          <nav aria-label="Breadcrumb" class="breadcrumbs text-sm">
-            <ul>
-              {#each crumbs as crumb (crumb.label)}
-                <li>{#if crumb.href}<a href={crumb.href}>{crumb.label}</a>{:else}{crumb.label}{/if}</li>
-              {/each}
-            </ul>
-          </nav>
-        {:else}
-          <span class="font-semibold">{data.siteName}</span>
-        {/if}
-      </div>
-      <div class="flex-none">
-        <button type="button" class="btn btn-square btn-ghost" aria-label="Toggle theme" onclick={toggleTheme}>
-          {#if theme === 'cairn-admin'}<MoonIcon class="h-5 w-5" />{:else}<SunIcon class="h-5 w-5" />{/if}
-        </button>
-      </div>
+
+      <main class="flex-1 p-4 lg:p-8">
+        {@render children()}
+      </main>
     </div>
 
-    <main class="flex-1 p-4 lg:p-8">
-      {@render children()}
-    </main>
-  </div>
-
-  <div class="drawer-side">
-    <label for="cairn-drawer" aria-label="Close menu" class="drawer-overlay"></label>
-    <nav class="bg-base-100 flex min-h-full w-64 flex-col border-r border-base-300 p-4" aria-label="Site content">
-      <div class="menu-title mb-2 px-2 text-xs uppercase tracking-wide text-[var(--color-muted)]">Content</div>
-      <ul class="menu menu-lg w-full">
-        {#each visibleNav as item (item.href)}
-          <li>
-            <a href={item.href} class:menu-active={isActive(item.href)} aria-current={isActive(item.href) ? 'page' : undefined}>
-              <item.icon class="h-4 w-4" aria-hidden="true" />
-              {item.label}
-            </a>
-          </li>
-        {/each}
-      </ul>
-      <div class="mt-auto border-t border-base-300 pt-3">
-        <div class="flex items-center gap-3 px-2">
-          <div class="avatar avatar-placeholder">
-            <div class="bg-neutral text-neutral-content w-9 rounded-full">
-              <span class="text-sm">{initials}</span>
+    <div class="drawer-side">
+      <label for="cairn-drawer" aria-label="Close menu" class="drawer-overlay"></label>
+      <nav class="bg-base-100 flex min-h-full w-64 flex-col border-r border-base-300 p-4" aria-label="Site content">
+        <div class="menu-title mb-2 px-2 text-xs uppercase tracking-wide text-[var(--color-muted)]">Content</div>
+        <ul class="menu menu-lg w-full">
+          {#each visibleNav as item (item.href)}
+            <li>
+              <a href={item.href} class:menu-active={isActive(item.href)} aria-current={isActive(item.href) ? 'page' : undefined}>
+                <item.icon class="h-4 w-4" aria-hidden="true" />
+                {item.label}
+              </a>
+            </li>
+          {/each}
+        </ul>
+        <div class="mt-auto border-t border-base-300 pt-3">
+          <div class="flex items-center gap-3 px-2">
+            <div class="avatar avatar-placeholder">
+              <div class="bg-neutral text-neutral-content w-9 rounded-full">
+                <span class="text-sm">{initials}</span>
+              </div>
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="truncate text-sm font-medium">{data.user.displayName}</div>
+              <div class="truncate text-xs text-[var(--color-muted)]">{data.user.email}</div>
+              <div class="text-xs capitalize text-[var(--color-subtle)]">{data.user.role}</div>
             </div>
           </div>
-          <div class="min-w-0 flex-1">
-            <div class="truncate text-sm font-medium">{data.user.displayName}</div>
-            <div class="truncate text-xs text-[var(--color-muted)]">{data.user.email}</div>
-            <div class="text-xs capitalize text-[var(--color-subtle)]">{data.user.role}</div>
-          </div>
+          <form method="POST" action="/admin/auth/logout" class="mt-3 px-2">
+            <button type="submit" class="btn btn-ghost btn-sm btn-block justify-start">
+              <LogOutIcon class="h-4 w-4" /> Sign out
+            </button>
+          </form>
         </div>
-        <form method="POST" action="/admin/auth/logout" class="mt-3 px-2">
-          <button type="submit" class="btn btn-ghost btn-sm btn-block justify-start">
-            <LogOutIcon class="h-4 w-4" /> Sign out
-          </button>
-        </form>
-      </div>
-    </nav>
-  </div>
+      </nav>
+    </div>
   </div>
 </div>

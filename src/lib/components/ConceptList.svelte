@@ -7,7 +7,7 @@ content sizes. The header New button opens a dialog holding the create form.
 -->
 <script lang="ts">
   import { slugify } from '../content/ids.js';
-  import type { ListData } from '../sveltekit/content-routes.js';
+  import type { EntrySummary, ListData } from '../sveltekit/content-routes.js';
   import type { InboundLink } from '../content/manifest.js';
   import DeleteDialog from './DeleteDialog.svelte';
   import { SearchIcon, ArrowUpIcon, ArrowDownIcon, ChevronsUpDownIcon, ChevronLeftIcon, ChevronRightIcon, PlusIcon, Trash2Icon } from './admin-icons.js';
@@ -44,11 +44,24 @@ content sizes. The header New button opens a dialog holding the create form.
     data.entries.filter((e) => e.title.toLowerCase().includes(query.trim().toLowerCase())),
   );
 
+  // Sort key for one entry: the lowercased title, or the ISO date string (lexical order is
+  // chronological). A null date sorts as the empty string.
+  function sortValue(entry: EntrySummary): string {
+    if (sortKey === 'title') return entry.title.toLowerCase();
+    return entry.date ?? '';
+  }
+
+  // Codepoint compare, matching the prior `<`/`>` ordering exactly. Avoids localeCompare so the
+  // order stays identical to before this refactor.
+  function compareStrings(a: string, b: string): number {
+    if (a < b) return -1;
+    if (a > b) return 1;
+    return 0;
+  }
+
   const sorted = $derived(
     [...filtered].sort((a, b) => {
-      const av = sortKey === 'title' ? a.title.toLowerCase() : (a.date ?? '');
-      const bv = sortKey === 'title' ? b.title.toLowerCase() : (b.date ?? '');
-      const cmp = av < bv ? -1 : av > bv ? 1 : 0;
+      const cmp = compareStrings(sortValue(a), sortValue(b));
       return sortAsc ? cmp : -cmp;
     }),
   );

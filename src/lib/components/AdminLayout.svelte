@@ -200,7 +200,7 @@ identical on every host regardless of the site's own theme.
         <div class="flex-1 space-y-1 overflow-y-auto py-4">
           {#snippet navSection(label: string, items: NavItem[])}
             <details class="px-2" open={!collapsed.has(label)} ontoggle={(e) => onToggleSection(label, e.currentTarget.open)}>
-              <summary class="group/sec flex cursor-pointer select-none items-center gap-2 rounded-field py-1.5 pl-5 pr-3 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)] transition-colors hover:text-base-content">
+              <summary class="group/sec flex cursor-pointer select-none items-center gap-2 rounded-field bg-base-content/[0.04] py-2 pl-5 pr-3 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)] transition-colors hover:bg-base-content/[0.08] hover:text-base-content">
                 <span class="truncate">{label}</span>
                 <ChevronRightIcon class="cairn-caret ml-auto h-3 w-3 shrink-0 opacity-50 transition-opacity group-hover/sec:opacity-90" aria-hidden="true" />
               </summary>

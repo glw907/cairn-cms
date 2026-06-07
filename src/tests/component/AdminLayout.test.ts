@@ -92,4 +92,12 @@ describe('AdminLayout', () => {
       delete (document as { cookie?: unknown }).cookie;
     }
   });
+
+  it('toggles the drawer with Ctrl+B', async () => {
+    const screen = render(AdminLayout, { data: data(true), children: child });
+    const toggle = () => screen.container.querySelector('#cairn-drawer') as HTMLInputElement;
+    const before = toggle().checked;
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true }));
+    await expect.poll(() => toggle().checked).toBe(!before);
+  });
 });

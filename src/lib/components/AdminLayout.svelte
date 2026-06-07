@@ -47,6 +47,21 @@ identical on every host regardless of the site's own theme.
     return data.pathname === href || data.pathname.startsWith(`${href}/`);
   }
 
+  let drawerOpen = $state(false);
+
+  function onKeydown(e: KeyboardEvent) {
+    if (e.key.toLowerCase() === 'b' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      drawerOpen = !drawerOpen;
+    }
+  }
+
+  // Close the mobile drawer whenever the active path changes (a nav click navigated).
+  $effect(() => {
+    data.pathname;
+    drawerOpen = false;
+  });
+
   // Seed from the SSR'd theme once. The live theme is owned by this state and the toggle, so the
   // initial read of data.theme is intentional and untracked to keep it out of any reactive graph.
   let theme = $state<'cairn-admin' | 'cairn-admin-dark'>(untrack(() => data.theme));
@@ -84,8 +99,10 @@ identical on every host regardless of the site's own theme.
   });
 </script>
 
+<svelte:window onkeydown={onKeydown} />
+
 <div data-theme={theme} class="drawer lg:drawer-open min-h-screen bg-base-200 text-base-content">
-  <input id="cairn-drawer" type="checkbox" class="drawer-toggle" />
+  <input id="cairn-drawer" type="checkbox" class="drawer-toggle" bind:checked={drawerOpen} />
 
   <div class="drawer-content flex flex-col">
     <div class="navbar bg-base-100 border-b border-base-300 sticky top-0 z-30">

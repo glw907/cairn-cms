@@ -105,14 +105,14 @@ content sizes. The header New button opens a dialog holding the create form.
   const sortButton = `inline-flex items-center gap-1 ${headerLabel} hover:text-base-content`;
 </script>
 
-<header class="mb-6 flex flex-wrap items-center justify-between gap-3">
+<header class="mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
   <h1 class="text-2xl font-bold tracking-tight">{data.label}</h1>
-  <div class="flex flex-1 flex-wrap items-center justify-end gap-3">
-    <label class="input input-sm w-full max-w-xs">
+  <div class="flex items-center gap-3 sm:flex-1 sm:flex-wrap sm:justify-end">
+    <label class="input input-sm min-w-0 flex-1 sm:max-w-xs">
       <SearchIcon class="h-4 w-4 opacity-60" aria-hidden="true" />
       <input type="search" aria-label="Search {data.label}" bind:value={query} placeholder="Search" oninput={() => (page = 1)} />
     </label>
-    <button type="button" class="btn btn-primary btn-sm" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
+    <button type="button" class="btn btn-primary btn-sm shrink-0" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
       <PlusIcon class="h-4 w-4" /> New {data.label}
     </button>
   </div>
@@ -159,7 +159,7 @@ content sizes. The header New button opens a dialog holding the create form.
             </button>
           </th>
           {#if data.dated}
-            <th aria-sort={sortKey === 'date' ? (sortAsc ? 'ascending' : 'descending') : 'none'}>
+            <th class="hidden sm:table-cell" aria-sort={sortKey === 'date' ? (sortAsc ? 'ascending' : 'descending') : 'none'}>
               <button type="button" class={sortButton} aria-label="Sort by date" onclick={() => toggleSort('date')}>
                 Date
                 {#if sortKey === 'date'}
@@ -176,7 +176,7 @@ content sizes. The header New button opens a dialog holding the create form.
         {#each pageRows as entry (entry.id)}
           <tr class="transition-colors hover:bg-base-200/60">
             <td><a class="font-medium hover:text-primary hover:underline" href={`/admin/${data.conceptId}/${entry.id}`}>{entry.title}</a></td>
-            {#if data.dated}<td class="text-sm text-[var(--color-muted)]">{formatDate(entry.date)}</td>{/if}
+            {#if data.dated}<td class="hidden text-sm text-[var(--color-muted)] sm:table-cell">{formatDate(entry.date)}</td>{/if}
             <td>
               {#if entry.draft}<span class="badge badge-warning badge-sm font-medium">Draft</span>
               {:else}<span class="badge badge-ghost badge-sm font-medium">Published</span>{/if}

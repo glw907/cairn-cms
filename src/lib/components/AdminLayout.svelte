@@ -15,7 +15,6 @@ identical on every host regardless of the site's own theme.
   import SignpostIcon from '@lucide/svelte/icons/signpost';
   import SettingsIcon from '@lucide/svelte/icons/settings';
   import UsersIcon from '@lucide/svelte/icons/users';
-  import PuzzleIcon from '@lucide/svelte/icons/puzzle';
   import BlocksIcon from '@lucide/svelte/icons/blocks';
   import './cairn-admin.css';
 
@@ -235,16 +234,10 @@ identical on every host regardless of the site's own theme.
             </details>
           {/snippet}
 
-          <!-- Core: the built-in Cairn functions, in one collapsible group. -->
+          <!-- Core is the built-in Cairn functions; each developer group sits at the same level. All
+               are peer collapsible sections. The extension groups are inert stubs until the
+               CairnExtension seam supplies them. -->
           {@render navSection('Core', coreItems)}
-
-          <!-- Extensions: a site developer's own admin tools, set apart from the core. Each group is
-               custom-named and collapsible. Inert stubs until the CairnExtension seam supplies them. -->
-          <div class="mx-5 my-3 border-t border-base-300"></div>
-          <div class="flex items-center gap-2 px-5 pb-1 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">
-            <PuzzleIcon class="h-3.5 w-3.5" aria-hidden="true" />
-            <span>Extensions</span>
-          </div>
           {#each extensionGroups as group (group.name)}
             {@render navSection(group.name, group.items)}
           {/each}

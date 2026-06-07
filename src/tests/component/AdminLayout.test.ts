@@ -40,12 +40,11 @@ describe('AdminLayout', () => {
     await expect.element(screen.getByText('Cairn', { exact: true })).toBeInTheDocument();
   });
 
-  it('groups the core functions and a developer-extensions area', async () => {
+  it('renders the core group and developer groups as peers', async () => {
     const screen = render(AdminLayout, { data: data(true), children: child });
     await expect.element(screen.getByText('Core', { exact: true })).toBeInTheDocument();
     await expect.element(screen.getByRole('link', { name: /settings/i })).toBeInTheDocument();
-    await expect.element(screen.getByText('Extensions', { exact: true })).toBeInTheDocument();
-    // A custom-named developer group renders alongside the core group.
+    // A custom-named developer group sits at the same level as the core group.
     await expect.element(screen.getByText('Marketing', { exact: true })).toBeInTheDocument();
   });
 

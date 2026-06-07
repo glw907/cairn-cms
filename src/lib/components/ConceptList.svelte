@@ -101,7 +101,7 @@ content sizes. The header New button opens a dialog holding the create form.
 
   // Shared column-header typography: small uppercase muted labels. The sort buttons add their own
   // flex layout and a hover affordance on top of this.
-  const headerLabel = 'text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]';
+  const headerLabel = 'text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]';
   const sortButton = `inline-flex items-center gap-1 ${headerLabel} hover:text-base-content`;
 </script>
 

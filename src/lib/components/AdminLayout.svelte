@@ -193,18 +193,18 @@ identical on every host regardless of the site's own theme.
         <!-- Brand band, the same height as the topbar so the two form one aligned header strip. -->
         <div class="flex h-16 flex-none items-center gap-2 border-b border-base-300 px-5">
           <CairnLogo class="h-7 w-7 text-primary" />
-          <span class="text-lg font-bold tracking-tight font-[family-name:var(--font-display)]">Cairn</span>
-          <span class="rounded bg-base-200 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)]">CMS</span>
+          <span class="text-lg font-bold tracking-[-0.01em] font-[family-name:var(--font-display)]">Cairn</span>
+          <span class="rounded-md border border-base-300 px-1.5 py-px text-[0.625rem] font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">CMS</span>
         </div>
 
         <div class="flex-1 space-y-1 overflow-y-auto py-4">
           {#snippet navSection(label: string, items: NavItem[])}
             <details class="px-2" open={!collapsed.has(label)} ontoggle={(e) => onToggleSection(label, e.currentTarget.open)}>
-              <summary class="flex cursor-pointer select-none items-center gap-2 rounded-field py-1.5 pl-5 pr-3 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)] hover:text-base-content">
+              <summary class="group/sec flex cursor-pointer select-none items-center gap-2 rounded-field py-1.5 pl-5 pr-3 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)] transition-colors hover:text-base-content">
                 <span class="truncate">{label}</span>
-                <ChevronRightIcon class="cairn-caret ml-auto h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden="true" />
+                <ChevronRightIcon class="cairn-caret ml-auto h-3 w-3 shrink-0 opacity-50 transition-opacity group-hover/sec:opacity-90" aria-hidden="true" />
               </summary>
-              <ul class="menu menu-md mt-1 w-full gap-0.5 p-0">
+              <ul class="menu menu-sm mt-1 w-full gap-0.5 p-0">
                 {#each items as item (item.href ?? item.label)}
                   <li>
                     {#if item.href}

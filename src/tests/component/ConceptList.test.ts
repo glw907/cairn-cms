@@ -38,12 +38,12 @@ describe('ConceptList', () => {
   it('shows a search-aware empty state when nothing matches', async () => {
     const screen = render(ConceptList, { data: data() });
     await screen.getByRole('searchbox', { name: /search/i }).fill('no such title');
-    await expect.element(screen.getByText(/no entries match/i)).toBeInTheDocument();
+    await expect.element(screen.getByText(/no posts match/i)).toBeInTheDocument();
   });
 
   it('shows a first-run empty state when the concept has no entries', async () => {
     const screen = render(ConceptList, { data: data({ entries: [] }) });
-    await expect.element(screen.getByText(/no entries yet/i)).toBeInTheDocument();
+    await expect.element(screen.getByText(/no posts yet/i)).toBeInTheDocument();
   });
 
   it('paginates and exposes a page-size control', async () => {
@@ -70,7 +70,7 @@ describe('ConceptList', () => {
 
   it('opens a create dialog from the header New button and auto-derives the slug', async () => {
     const screen = render(ConceptList, { data: data({ entries: [] }) });
-    await screen.getByRole('button', { name: /new posts/i }).click();
+    await screen.getByRole('button', { name: /new posts/i }).first().click();
     const title = screen.getByLabelText(/title/i);
     await title.fill('My New Post');
     await expect.element(screen.getByLabelText(/slug/i)).toHaveValue('my-new-post');
@@ -78,7 +78,7 @@ describe('ConceptList', () => {
 
   it('shows a date input defaulted to today for a dated concept in the create dialog', async () => {
     const screen = render(ConceptList, { data: data({ entries: [] }) });
-    await screen.getByRole('button', { name: /new posts/i }).click();
+    await screen.getByRole('button', { name: /new posts/i }).first().click();
     const date = screen.getByLabelText('Date');
     await expect.element(date).toBeVisible();
     await expect.poll(() => (date.element() as HTMLInputElement).value).toMatch(/^\d{4}-\d{2}-\d{2}$/);
@@ -86,13 +86,13 @@ describe('ConceptList', () => {
 
   it('omits the date input for a non-dated concept', async () => {
     const screen = render(ConceptList, { data: data({ conceptId: 'pages', label: 'Pages', dated: false, entries: [] }) });
-    await screen.getByRole('button', { name: /new pages/i }).click();
+    await screen.getByRole('button', { name: /new pages/i }).first().click();
     expect(screen.container.querySelector('input[name="date"]')).toBeNull();
   });
 
   it('uses a date-free slug placeholder for a dated concept in the create dialog', async () => {
     const screen = render(ConceptList, { data: data({ entries: [] }) });
-    await screen.getByRole('button', { name: /new posts/i }).click();
+    await screen.getByRole('button', { name: /new posts/i }).first().click();
     await expect.element(screen.getByLabelText('Slug')).toHaveAttribute('placeholder', 'my-entry');
   });
 

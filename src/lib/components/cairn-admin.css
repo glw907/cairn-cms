@@ -143,6 +143,12 @@
   :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) details[open] > summary .cairn-caret {
     rotate: 90deg;
   }
+
+  /* Selected text picks up the brand violet, so highlighting reads as Cairn rather than the browser
+     default blue. A light tint keeps the text legible. */
+  :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) ::selection {
+    background-color: color-mix(in oklch, var(--color-primary) 24%, transparent);
+  }
 }
 
 /* Respect a reduced-motion preference inside the admin. DaisyUI's modal, drawer, and the admin's

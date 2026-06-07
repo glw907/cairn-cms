@@ -10,6 +10,7 @@ content sizes. The header New button opens a dialog holding the create form.
   import type { EntrySummary, ListData } from '../sveltekit/content-routes.js';
   import type { InboundLink } from '../content/manifest.js';
   import DeleteDialog from './DeleteDialog.svelte';
+  import CairnLogo from './CairnLogo.svelte';
   import { SearchIcon, ArrowUpIcon, ArrowDownIcon, ChevronsUpDownIcon, ChevronLeftIcon, ChevronRightIcon, PlusIcon, Trash2Icon } from './admin-icons.js';
 
   interface Props {
@@ -143,9 +144,21 @@ content sizes. The header New button opens a dialog holding the create form.
 
 <div class="rounded-box border border-base-300 bg-base-100 mb-4 overflow-x-auto shadow-sm">
   {#if data.entries.length === 0}
-    <p class="p-8 text-center text-sm text-[var(--color-muted)]">No entries yet. Use the New button to create the first one.</p>
+    <div class="flex flex-col items-center gap-4 px-6 py-16 text-center">
+      <CairnLogo class="h-12 w-12 text-primary opacity-30" />
+      <div class="space-y-1">
+        <p class="font-semibold text-base-content">No {data.label.toLowerCase()} yet</p>
+        <p class="text-sm text-[var(--color-muted)]">Stack your first one and it will show up here.</p>
+      </div>
+      <button type="button" class="btn btn-primary btn-sm" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
+        <PlusIcon class="h-4 w-4" /> New {data.label}
+      </button>
+    </div>
   {:else if sorted.length === 0}
-    <p role="status" class="p-8 text-center text-sm text-[var(--color-muted)]">No entries match "{query}".</p>
+    <div role="status" class="flex flex-col items-center gap-3 px-6 py-14 text-center">
+      <SearchIcon class="h-8 w-8 text-[var(--color-subtle)] opacity-40" aria-hidden="true" />
+      <p class="text-sm text-[var(--color-muted)]">No {data.label.toLowerCase()} match <span class="font-medium text-base-content">"{query}"</span>.</p>
+    </div>
   {:else}
     <table class="table">
       <thead>

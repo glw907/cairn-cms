@@ -65,32 +65,31 @@ describe('ConceptList', () => {
     await expect.element(screen.getByText(/could not load/i)).toBeInTheDocument();
   });
 
-  it('auto-derives the slug from the title until edited', async () => {
+  it('opens a create dialog from the header New button and auto-derives the slug', async () => {
     const screen = render(ConceptList, { data: data({ entries: [] }) });
+    await screen.getByRole('button', { name: /new posts/i }).click();
     const title = screen.getByLabelText(/title/i);
     await title.fill('My New Post');
-    const slug = screen.getByLabelText(/slug/i);
-    await expect.element(slug).toHaveValue('my-new-post');
+    await expect.element(screen.getByLabelText(/slug/i)).toHaveValue('my-new-post');
   });
 
-  it('shows a date input defaulted to today for a dated concept', async () => {
+  it('shows a date input defaulted to today for a dated concept in the create dialog', async () => {
     const screen = render(ConceptList, { data: data({ entries: [] }) });
+    await screen.getByRole('button', { name: /new posts/i }).click();
     const date = screen.getByLabelText('Date');
     await expect.element(date).toBeVisible();
-    // The default lands after mount, so poll the value rather than reading it synchronously.
     await expect.poll(() => (date.element() as HTMLInputElement).value).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 
-  it('omits the date input for a non-dated concept', () => {
-    const screen = render(ConceptList, {
-      data: data({ conceptId: 'pages', label: 'Pages', dated: false, entries: [] }),
-    });
+  it('omits the date input for a non-dated concept', async () => {
+    const screen = render(ConceptList, { data: data({ conceptId: 'pages', label: 'Pages', dated: false, entries: [] }) });
+    await screen.getByRole('button', { name: /new pages/i }).click();
     expect(screen.container.querySelector('input[name="date"]')).toBeNull();
   });
 
-  it('uses a date-free slug placeholder for a dated concept', async () => {
+  it('uses a date-free slug placeholder for a dated concept in the create dialog', async () => {
     const screen = render(ConceptList, { data: data({ entries: [] }) });
-    const slug = screen.getByLabelText('Slug');
-    await expect.element(slug).toHaveAttribute('placeholder', 'my-entry');
+    await screen.getByRole('button', { name: /new posts/i }).click();
+    await expect.element(screen.getByLabelText('Slug')).toHaveAttribute('placeholder', 'my-entry');
   });
 });

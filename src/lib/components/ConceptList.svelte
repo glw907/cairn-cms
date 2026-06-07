@@ -3,12 +3,12 @@
 One concept's list view as a DaisyUI data-table: a search filter, a result count, sortable Title and
 Date headers, a status badge, a formatted date, and client-side pagination with a page-size control.
 Filtering, sorting, and paging run over the loaded entries in component state, which suits typical
-content sizes. The new-entry form lives below; Task 5 moves it behind the header New button.
+content sizes. The header New button opens a dialog holding the create form.
 -->
 <script lang="ts">
   import { slugify } from '../content/ids.js';
   import type { ListData } from '../sveltekit/content-routes.js';
-  import { SearchIcon, ArrowUpIcon, ArrowDownIcon, ChevronsUpDownIcon, ChevronLeftIcon, ChevronRightIcon } from './admin-icons.js';
+  import { SearchIcon, ArrowUpIcon, ArrowDownIcon, ChevronsUpDownIcon, ChevronLeftIcon, ChevronRightIcon, PlusIcon } from './admin-icons.js';
 
   interface Props {
     /** The list load's data: the concept, its entries, and any inline or form errors. */
@@ -60,7 +60,8 @@ content sizes. The new-entry form lives below; Task 5 moves it behind the header
     page = 1;
   }
 
-  // --- create form state (moves behind the header New button in Task 5) ---
+  // --- create form state, shown in a header-triggered dialog ---
+  let createDialog = $state<HTMLDialogElement>();
   let title = $state('');
   let slug = $state('');
   let slugEdited = $state(false);
@@ -79,6 +80,9 @@ content sizes. The new-entry form lives below; Task 5 moves it behind the header
     <SearchIcon class="h-4 w-4 opacity-60" aria-hidden="true" />
     <input type="search" aria-label="Search {data.label}" bind:value={query} placeholder="Search" oninput={() => (page = 1)} />
   </label>
+  <button type="button" class="btn btn-primary btn-sm" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
+    <PlusIcon class="h-4 w-4" /> New {data.label}
+  </button>
 </header>
 
 {#if data.formError}
@@ -90,7 +94,7 @@ content sizes. The new-entry form lives below; Task 5 moves it behind the header
 
 <div class="rounded-box border border-base-300 bg-base-100 mb-2 overflow-x-auto">
   {#if data.entries.length === 0}
-    <p class="p-4 text-sm opacity-70">No entries yet. Create the first one below.</p>
+    <p class="p-4 text-sm opacity-70">No entries yet. Use the New button to create the first one.</p>
   {:else if sorted.length === 0}
     <p class="p-4 text-sm opacity-70">No entries match "{query}".</p>
   {:else}
@@ -157,27 +161,40 @@ content sizes. The new-entry form lives below; Task 5 moves it behind the header
   </div>
 {/if}
 
-<form method="POST" action="?/create" class="rounded-box border border-base-300 bg-base-100 flex flex-col gap-3 p-4">
-  <h2 class="text-sm font-semibold">New entry</h2>
-  <label class="flex flex-col gap-1">
-    <span class="text-sm font-medium">Title</span>
-    <input class="input" name="title" bind:value={title} required />
-  </label>
-  <label class="flex flex-col gap-1">
-    <span class="text-sm font-medium">Slug</span>
-    <input
-      class="input"
-      name="slug"
-      placeholder={slugPlaceholder}
-      value={derivedSlug}
-      oninput={(e) => { slugEdited = true; slug = e.currentTarget.value; }}
-    />
-  </label>
-  {#if data.dated}
-    <label class="flex flex-col gap-1">
-      <span class="text-sm font-medium">Date</span>
-      <input class="input" type="date" name="date" value={dateDefault} />
-    </label>
-  {/if}
-  <button type="submit" class="btn btn-primary self-start">Create</button>
-</form>
+<dialog class="modal" aria-labelledby="cairn-create-dialog-title" bind:this={createDialog}>
+  <div class="modal-box">
+    <div class="mb-3 flex items-center justify-between">
+      <h2 id="cairn-create-dialog-title" class="text-base font-semibold">New {data.label}</h2>
+      <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={() => createDialog?.close()}>✕</button>
+    </div>
+    <form method="POST" action="?/create" class="flex flex-col gap-3">
+      <label class="flex flex-col gap-1">
+        <span class="text-sm font-medium">Title</span>
+        <input class="input w-full" name="title" bind:value={title} required />
+      </label>
+      <label class="flex flex-col gap-1">
+        <span class="text-sm font-medium">Slug</span>
+        <input
+          class="input w-full"
+          name="slug"
+          placeholder={slugPlaceholder}
+          value={derivedSlug}
+          oninput={(e) => { slugEdited = true; slug = e.currentTarget.value; }}
+        />
+      </label>
+      {#if data.dated}
+        <label class="flex flex-col gap-1">
+          <span class="text-sm font-medium">Date</span>
+          <input class="input w-full" type="date" name="date" value={dateDefault} />
+        </label>
+      {/if}
+      <div class="modal-action">
+        <button type="button" class="btn btn-sm" onclick={() => createDialog?.close()}>Cancel</button>
+        <button type="submit" class="btn btn-sm btn-primary">Create</button>
+      </div>
+    </form>
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button tabindex="-1" aria-label="Close">close</button>
+  </form>
+</dialog>

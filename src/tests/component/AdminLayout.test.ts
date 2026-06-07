@@ -14,6 +14,7 @@ function data(canManageEditors: boolean, navLabel: string | null = null, pathnam
     canManageEditors,
     navLabel,
     theme: 'cairn-admin' as const,
+    collapsedNav: [] as string[],
   };
 }
 

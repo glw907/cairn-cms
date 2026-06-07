@@ -77,6 +77,20 @@ identical on every host regardless of the site's own theme.
     return data.pathname === href || data.pathname.startsWith(`${href}/`);
   }
 
+  // Which nav groups are collapsed. Seeded once from the SSR'd cookie (so a collapsed group renders
+  // collapsed with no flash), then owned by the toggle below, which mirrors each change to the cookie.
+  let collapsed = $state(new Set(untrack(() => data.collapsedNav)));
+
+  function onToggleSection(label: string, open: boolean) {
+    const next = new Set(collapsed);
+    if (open) next.delete(label);
+    else next.add(label);
+    collapsed = next;
+    // 1 year, path-scoped to the admin so the cookie never reaches the host's pages.
+    const value = [...next].map((entry) => encodeURIComponent(entry)).join(',');
+    document.cookie = `cairn-admin-nav-collapsed=${value}; path=/admin; max-age=31536000; samesite=lax`;
+  }
+
   let drawerOpen = $state(false);
 
   function onKeydown(e: KeyboardEvent) {
@@ -186,7 +200,7 @@ identical on every host regardless of the site's own theme.
 
         <div class="flex-1 space-y-1 overflow-y-auto py-4">
           {#snippet navSection(label: string, items: NavItem[])}
-            <details class="px-2" open>
+            <details class="px-2" open={!collapsed.has(label)} ontoggle={(e) => onToggleSection(label, e.currentTarget.open)}>
               <summary class="flex cursor-pointer select-none items-center gap-2 rounded-field py-1.5 pl-5 pr-3 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)] hover:text-base-content">
                 <span class="truncate">{label}</span>
                 <ChevronRightIcon class="cairn-caret ml-auto h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden="true" />

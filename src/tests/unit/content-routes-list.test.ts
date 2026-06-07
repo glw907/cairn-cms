@@ -78,6 +78,26 @@ describe('layoutLoad', () => {
     });
     expect(routes.layoutLoad(event as never).theme).toBe('cairn-admin');
   });
+
+  it('reads the collapsed nav groups from the cookie, url-decoded', () => {
+    const routes = createContentRoutes(runtime(), { mintToken: async () => 'tok' });
+    const event = makeEvent({
+      pathname: '/admin/posts',
+      editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor' },
+      cookies: { 'cairn-admin-nav-collapsed': `Core,${encodeURIComponent('Black & White')}` },
+    });
+    expect(routes.layoutLoad(event as never).collapsedNav).toEqual(['Core', 'Black & White']);
+  });
+
+  it('defaults collapsedNav to empty when no cookie is set', () => {
+    const routes = createContentRoutes(runtime(), { mintToken: async () => 'tok' });
+    const event = makeEvent({
+      pathname: '/admin/posts',
+      editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor' },
+      cookies: {},
+    });
+    expect(routes.layoutLoad(event as never).collapsedNav).toEqual([]);
+  });
 });
 
 describe('listLoad', () => {

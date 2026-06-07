@@ -33,6 +33,9 @@ export interface LayoutData {
   navLabel: string | null;
   /** The admin theme resolved for SSR: the persisted cookie choice, or the light default. */
   theme: 'cairn-admin' | 'cairn-admin-dark';
+  /** The nav group labels the user has collapsed, from the persisted cookie. Read at SSR so a
+   *  collapsed group renders collapsed with no flash. Empty when none are collapsed. */
+  collapsedNav: string[];
 }
 
 /** One row in a concept's list view. */
@@ -118,6 +121,10 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     const editor = sessionOf(event);
     const cookieTheme = event.cookies?.get('cairn-admin-theme');
     const theme = cookieTheme === 'cairn-admin-dark' ? 'cairn-admin-dark' : 'cairn-admin';
+    const cookieCollapsed = event.cookies?.get('cairn-admin-nav-collapsed');
+    const collapsedNav = cookieCollapsed
+      ? cookieCollapsed.split(',').map((part) => decodeURIComponent(part)).filter(Boolean)
+      : [];
     return {
       siteName: runtime.siteName,
       user: { displayName: editor.displayName, email: editor.email, role: editor.role },
@@ -126,6 +133,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       canManageEditors: editor.role === 'owner',
       navLabel: runtime.navMenu?.label ?? null,
       theme,
+      collapsedNav,
     };
   }
 

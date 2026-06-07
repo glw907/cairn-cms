@@ -97,4 +97,19 @@ describe('ConceptList', () => {
     const screen = render(ConceptList, { data: data() });
     await expect.element(screen.getByRole('button', { name: /delete post 01/i })).toBeInTheDocument();
   });
+
+  it('surfaces a refused delete from the flat action result', async () => {
+    const form = {
+      id: '2026-05-01-post-1',
+      inboundLinks: [
+        { concept: 'posts', id: '2026-05-03-post-3', title: 'Post 03', permalink: '/posts/post-3' },
+      ],
+    };
+    const screen = render(ConceptList, { data: data(), form });
+    // The visible refusal alert names the blocker count and the linking entry, scoped to the
+    // banner so the assertion does not also match the entry's own list row.
+    const alert = screen.getByRole('alert', { name: /could not be deleted/i });
+    await expect.element(alert).toBeInTheDocument();
+    await expect.element(alert.getByRole('link', { name: 'Post 03' })).toBeInTheDocument();
+  });
 });

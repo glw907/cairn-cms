@@ -129,7 +129,7 @@ identical on every host regardless of the site's own theme.
           {#if crumbs.length}
             <nav aria-label="Breadcrumb" class="breadcrumbs text-sm">
               <ul>
-                {#each crumbs as crumb (crumb.label)}
+                {#each crumbs as crumb (crumb.href ?? crumb.label)}
                   <li>{#if crumb.href}<a href={crumb.href}>{crumb.label}</a>{:else}{crumb.label}{/if}</li>
                 {/each}
               </ul>

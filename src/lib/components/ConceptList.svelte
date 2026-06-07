@@ -16,15 +16,18 @@ content sizes. The header New button opens a dialog holding the create form.
     /** The list load's data: the concept, its entries, and any inline or form errors. */
     data: ListData;
     /** The `?/delete` action result. A blocked delete returns the refused entry id and the inbound
-     *  links that link to it, so the list opens a DeleteDialog naming them (block-until-clean). */
-    form?: { deleteRefused?: { id: string; inboundLinks: InboundLink[] } } | null;
+     *  links that link to it (the flat `fail(409, { inboundLinks, id })` shape), so the list names
+     *  the blockers and refuses (block-until-clean). */
+    form?: { id?: string; inboundLinks?: InboundLink[] } | null;
   }
 
   let { data, form = null }: Props = $props();
 
-  // The entry a `?/delete` refused, and its inbound links, surfaced through DeleteDialog. Null when
-  // the last submit succeeded or none ran.
-  const deleteRefused = $derived(form?.deleteRefused ?? null);
+  // The entry a `?/delete` refused, and its inbound links, keyed by the posted id. Null when the
+  // last submit succeeded, refused nothing, or none ran.
+  const deleteRefused = $derived(
+    form?.inboundLinks?.length ? { id: form.id, inboundLinks: form.inboundLinks } : null,
+  );
 
   type SortKey = 'title' | 'date';
   let query = $state('');
@@ -114,30 +117,46 @@ content sizes. The header New button opens a dialog holding the create form.
   <div role="alert" class="alert alert-warning mb-4 text-sm">{data.error}</div>
 {/if}
 
+{#if deleteRefused}
+  <!-- A `?/delete` was refused: name the blockers up front, matching the editor's refusal banner,
+       so the author sees why without re-opening a dialog. -->
+  <div role="alert" aria-label="This {data.label.toLowerCase()} could not be deleted" class="alert alert-error mb-4 flex-col items-start text-sm">
+    <p class="font-medium">This {data.label.toLowerCase()} could not be deleted.</p>
+    <p>{deleteRefused.inboundLinks.length} {deleteRefused.inboundLinks.length === 1 ? 'page links' : 'pages link'} to it. Remove or repoint the {deleteRefused.inboundLinks.length === 1 ? 'link' : 'links'} listed below, then delete again.</p>
+    <ul class="mt-1 w-full">
+      {#each deleteRefused.inboundLinks as link (link.concept + '/' + link.id)}
+        <li>
+          <a class="link" href={`/admin/${link.concept}/${link.id}`}>{link.title}</a>
+        </li>
+      {/each}
+    </ul>
+  </div>
+{/if}
+
 <div class="rounded-box border border-base-300 bg-base-100 mb-2 overflow-x-auto">
   {#if data.entries.length === 0}
     <p class="p-4 text-sm opacity-70">No entries yet. Use the New button to create the first one.</p>
   {:else if sorted.length === 0}
-    <p class="p-4 text-sm opacity-70">No entries match "{query}".</p>
+    <p role="status" class="p-4 text-sm opacity-70">No entries match "{query}".</p>
   {:else}
     <table class="table">
       <thead>
         <tr>
-          <th>
+          <th aria-sort={sortKey === 'title' ? (sortAsc ? 'ascending' : 'descending') : 'none'}>
             <button type="button" class="inline-flex items-center gap-1" aria-label="Sort by title" onclick={() => toggleSort('title')}>
               Title
               {#if sortKey === 'title'}
-                {#if sortAsc}<ArrowUpIcon class="h-3 w-3" />{:else}<ArrowDownIcon class="h-3 w-3" />{/if}
-              {:else}<ChevronsUpDownIcon class="h-3 w-3 opacity-40" />{/if}
+                {#if sortAsc}<ArrowUpIcon class="h-3 w-3" aria-hidden="true" />{:else}<ArrowDownIcon class="h-3 w-3" aria-hidden="true" />{/if}
+              {:else}<ChevronsUpDownIcon class="h-3 w-3 opacity-40" aria-hidden="true" />{/if}
             </button>
           </th>
           {#if data.dated}
-            <th>
+            <th aria-sort={sortKey === 'date' ? (sortAsc ? 'ascending' : 'descending') : 'none'}>
               <button type="button" class="inline-flex items-center gap-1" aria-label="Sort by date" onclick={() => toggleSort('date')}>
                 Date
                 {#if sortKey === 'date'}
-                  {#if sortAsc}<ArrowUpIcon class="h-3 w-3" />{:else}<ArrowDownIcon class="h-3 w-3" />{/if}
-                {:else}<ChevronsUpDownIcon class="h-3 w-3 opacity-40" />{/if}
+                  {#if sortAsc}<ArrowUpIcon class="h-3 w-3" aria-hidden="true" />{:else}<ArrowDownIcon class="h-3 w-3" aria-hidden="true" />{/if}
+                {:else}<ChevronsUpDownIcon class="h-3 w-3 opacity-40" aria-hidden="true" />{/if}
               </button>
             </th>
           {/if}
@@ -161,7 +180,7 @@ content sizes. The header New button opens a dialog holding the create form.
               {:else}
                 <form method="POST" action="?/delete">
                   <input type="hidden" name="id" value={entry.id} />
-                  <button type="submit" class="btn btn-ghost btn-xs" aria-label="Delete {entry.title}">
+                  <button type="submit" class="btn btn-ghost btn-sm" aria-label="Delete {entry.title}">
                     <Trash2Icon class="h-4 w-4 text-error" />
                   </button>
                 </form>
@@ -176,7 +195,7 @@ content sizes. The header New button opens a dialog holding the create form.
 
 {#if data.entries.length > 0}
   <div class="mb-6 flex flex-wrap items-center justify-between gap-2 text-sm">
-    <span class="text-[var(--color-muted)]">{sorted.length} of {data.entries.length}</span>
+    <span role="status" class="text-[var(--color-muted)]">{sorted.length} of {data.entries.length}</span>
     <div class="flex items-center gap-2">
       <label class="flex items-center gap-1">
         <span class="sr-only">Rows per page</span>

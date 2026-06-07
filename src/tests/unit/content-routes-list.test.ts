@@ -255,3 +255,82 @@ describe('createAction', () => {
     }
   });
 });
+
+describe('listDeleteAction', () => {
+  function deleteFormEvent(form: Record<string, string>) {
+    const body = new URLSearchParams(form);
+    return {
+      url: new URL('https://t.example/admin/posts'),
+      params: { concept: 'posts' },
+      request: new Request('https://t.example/admin/posts', { method: 'POST', body }),
+      locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+      platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
+    };
+  }
+
+  function json(body: unknown, status = 200): Response {
+    return new Response(JSON.stringify(body), { status });
+  }
+
+  // The delete path: one manifest read, then the commitFiles sequence (GET ref, GET commit,
+  // POST trees, POST commits, PATCH ref). Mirrors the deleteAction unit fixtures.
+  function commitFetch(manifestRaw: string) {
+    const calls: { url: string; init?: RequestInit }[] = [];
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      calls.push({ url, init });
+      const method = init?.method ?? 'GET';
+      if (method === 'GET' && url.includes('/contents/')) return new Response(manifestRaw, { status: 200 });
+      if (method === 'GET' && url.includes('/git/ref/')) return json({ object: { sha: 'head1' } });
+      if (method === 'GET' && url.includes('/git/commits/')) return json({ tree: { sha: 'basetree' } });
+      if (method === 'POST' && url.endsWith('/git/trees')) return json({ sha: 'newtree' });
+      if (method === 'POST' && url.endsWith('/git/commits')) return json({ sha: 'commit1' });
+      if (method === 'PATCH' && url.includes('/git/refs/')) return json({ ref: 'refs/heads/main' });
+      return new Response('unexpected', { status: 500 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    return calls;
+  }
+
+  it('deletes an entry whose id arrives in the form body when no inbound links exist', async () => {
+    const manifest = JSON.stringify({
+      version: 1,
+      entries: [{ id: '2026-05-01-hello', concept: 'posts', title: 'Hello', permalink: '/p/hello', draft: false, links: [] }],
+    });
+    commitFetch(manifest);
+    const routes = createContentRoutes(runtime(), { mintToken: async () => 'tok' });
+    const event = deleteFormEvent({ id: '2026-05-01-hello' });
+    try {
+      await routes.listDeleteAction(event as never);
+      throw new Error('should have redirected');
+    } catch (e) {
+      expect((e as { status: number }).status).toBe(303);
+      expect((e as { location: string }).location).toBe('/admin/posts');
+    }
+  });
+
+  it('blocks the delete and returns the inbound links when something links to the entry', async () => {
+    const manifest = JSON.stringify({
+      version: 1,
+      entries: [
+        { id: '2026-05-01-hello', concept: 'posts', title: 'Hello', permalink: '/p/hello', draft: false, links: [] },
+        { id: 'b', concept: 'posts', title: 'B', permalink: '/p/b', draft: false, links: [{ concept: 'posts', id: '2026-05-01-hello' }] },
+      ],
+    });
+    const calls = commitFetch(manifest);
+    const routes = createContentRoutes(runtime(), { mintToken: async () => 'tok' });
+    const event = deleteFormEvent({ id: '2026-05-01-hello' });
+    const result = (await routes.listDeleteAction(event as never)) as unknown as {
+      status: number; data: { inboundLinks: unknown[] };
+    };
+    expect(result.status).toBe(409);
+    expect(result.data.inboundLinks.length).toBeGreaterThan(0);
+    // Block-until-clean: no commit when links exist.
+    expect(calls.some((c) => (c.init?.method ?? 'GET') === 'POST' && c.url.endsWith('/git/trees'))).toBe(false);
+  });
+
+  it('rejects an invalid id from the form with a 400', async () => {
+    const routes = createContentRoutes(runtime(), { mintToken: async () => 'tok' });
+    const event = deleteFormEvent({ id: '../escape' });
+    await expect(routes.listDeleteAction(event as never)).rejects.toMatchObject({ status: 400 });
+  });
+});

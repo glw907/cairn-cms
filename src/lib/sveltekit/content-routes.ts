@@ -345,14 +345,17 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     throw redirect(303, `/admin/${concept.id}/${id}?${savedQuery}`);
   }
 
-  /** Delete an entry. Block-until-clean: refuse while inbound links exist (naming them), else commit
-   *  the file removal and the manifest patch in one commit. The inbound recheck here is the
-   *  authoritative gate, closing the load-to-delete race. */
-  async function deleteAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
-    const editor = sessionOf(event);
-    const concept = conceptOf(runtime, event.params);
-    const id = event.params.id ?? '';
-    if (!isValidId(id)) throw error(400, 'Invalid entry id');
+  /** The shared delete core. Block-until-clean: refuse while inbound links exist (naming them), else
+   *  commit the file removal and the manifest patch in one commit. The inbound recheck here is the
+   *  authoritative gate, closing the load-to-delete race. Both the editor delete (id from params) and
+   *  the list delete (id from the form body) call this with an already-validated id, so the guard is
+   *  enforced once. */
+  async function deleteEntry(
+    event: ContentEvent,
+    concept: ConceptDescriptor,
+    id: string,
+    editor: Editor,
+  ): Promise<ReturnType<typeof fail> | never> {
     const path = `${concept.dir}/${filenameFromId(id)}`;
     const token = await mintToken(event.platform?.env ?? {});
 
@@ -362,7 +365,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     const manifest = manifestRaw === null ? emptyManifest() : parseManifest(manifestRaw);
     const inbound = inboundLinks(manifest, concept.id, id);
     if (inbound.length) {
-      return fail(409, { inboundLinks: inbound });
+      return fail(409, { inboundLinks: inbound, id });
     }
 
     const nextManifest = serializeManifest(removeEntry(manifest, concept.id, id));
@@ -384,6 +387,25 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       throw err;
     }
     throw redirect(303, `/admin/${concept.id}`);
+  }
+
+  /** Delete an entry from its editor. The id comes from the route param. */
+  async function deleteAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
+    const editor = sessionOf(event);
+    const concept = conceptOf(runtime, event.params);
+    const id = event.params.id ?? '';
+    if (!isValidId(id)) throw error(400, 'Invalid entry id');
+    return deleteEntry(event, concept, id, editor);
+  }
+
+  /** Delete an entry from the concept list. The id comes from the form body. */
+  async function listDeleteAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
+    const editor = sessionOf(event);
+    const concept = conceptOf(runtime, event.params);
+    const form = await event.request.formData();
+    const id = String(form.get('id') ?? '');
+    if (!isValidId(id)) throw error(400, 'Invalid entry id');
+    return deleteEntry(event, concept, id, editor);
   }
 
   /** Rename an entry: change its slug, move the file, and rewrite every inbound cairn token in one
@@ -473,5 +495,5 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     throw redirect(303, `/admin/${concept.id}/${newId}?renamed=1`);
   }
 
-  return { layoutLoad, indexRedirect, listLoad, createAction, editLoad, saveAction, deleteAction, renameAction, mintToken };
+  return { layoutLoad, indexRedirect, listLoad, createAction, editLoad, saveAction, deleteAction, listDeleteAction, renameAction, mintToken };
 }

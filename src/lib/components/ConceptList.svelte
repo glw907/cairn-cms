@@ -8,14 +8,23 @@ content sizes. The header New button opens a dialog holding the create form.
 <script lang="ts">
   import { slugify } from '../content/ids.js';
   import type { ListData } from '../sveltekit/content-routes.js';
-  import { SearchIcon, ArrowUpIcon, ArrowDownIcon, ChevronsUpDownIcon, ChevronLeftIcon, ChevronRightIcon, PlusIcon } from './admin-icons.js';
+  import type { InboundLink } from '../content/manifest.js';
+  import DeleteDialog from './DeleteDialog.svelte';
+  import { SearchIcon, ArrowUpIcon, ArrowDownIcon, ChevronsUpDownIcon, ChevronLeftIcon, ChevronRightIcon, PlusIcon, Trash2Icon } from './admin-icons.js';
 
   interface Props {
     /** The list load's data: the concept, its entries, and any inline or form errors. */
     data: ListData;
+    /** The `?/delete` action result. A blocked delete returns the refused entry id and the inbound
+     *  links that link to it, so the list opens a DeleteDialog naming them (block-until-clean). */
+    form?: { deleteRefused?: { id: string; inboundLinks: InboundLink[] } } | null;
   }
 
-  let { data }: Props = $props();
+  let { data, form = null }: Props = $props();
+
+  // The entry a `?/delete` refused, and its inbound links, surfaced through DeleteDialog. Null when
+  // the last submit succeeded or none ran.
+  const deleteRefused = $derived(form?.deleteRefused ?? null);
 
   type SortKey = 'title' | 'date';
   let query = $state('');
@@ -120,6 +129,7 @@ content sizes. The header New button opens a dialog holding the create form.
             </th>
           {/if}
           <th>Status</th>
+          <th class="text-right"><span class="sr-only">Actions</span></th>
         </tr>
       </thead>
       <tbody>
@@ -130,6 +140,19 @@ content sizes. The header New button opens a dialog holding the create form.
             <td>
               {#if entry.draft}<span class="badge badge-warning badge-sm">Draft</span>
               {:else}<span class="badge badge-ghost badge-sm">Published</span>{/if}
+            </td>
+            <td class="text-right">
+              {#if deleteRefused?.id === entry.id}
+                <!-- A prior delete was refused: DeleteDialog names the blockers and offers no confirm. -->
+                <DeleteDialog conceptId={data.conceptId} id={entry.id} label={data.label} inboundLinks={deleteRefused.inboundLinks} />
+              {:else}
+                <form method="POST" action="?/delete">
+                  <input type="hidden" name="id" value={entry.id} />
+                  <button type="submit" class="btn btn-ghost btn-xs" aria-label="Delete {entry.title}">
+                    <Trash2Icon class="h-4 w-4 text-error" />
+                  </button>
+                </form>
+              {/if}
             </td>
           </tr>
         {/each}

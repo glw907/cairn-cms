@@ -92,4 +92,9 @@ describe('ConceptList', () => {
     await screen.getByRole('button', { name: /new posts/i }).click();
     await expect.element(screen.getByLabelText('Slug')).toHaveAttribute('placeholder', 'my-entry');
   });
+
+  it('offers a delete action per row', async () => {
+    const screen = render(ConceptList, { data: data() });
+    await expect.element(screen.getByRole('button', { name: /delete post 01/i })).toBeInTheDocument();
+  });
 });

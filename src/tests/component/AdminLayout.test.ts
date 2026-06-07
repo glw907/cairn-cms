@@ -34,6 +34,17 @@ describe('AdminLayout', () => {
     expect(document.querySelector('[data-theme="cairn-admin"]')).not.toBeNull();
   });
 
+  it('shows the Cairn brand in the sidebar', async () => {
+    const screen = render(AdminLayout, { data: data(true), children: child });
+    await expect.element(screen.getByText('Cairn', { exact: true })).toBeInTheDocument();
+  });
+
+  it('shows the Settings entry and the developer-extensions group', async () => {
+    const screen = render(AdminLayout, { data: data(true), children: child });
+    await expect.element(screen.getByRole('link', { name: /settings/i })).toBeInTheDocument();
+    await expect.element(screen.getByText('Extensions', { exact: true })).toBeInTheDocument();
+  });
+
   it('shows the manage-editors link to an owner', async () => {
     const screen = render(AdminLayout, { data: data(true), children: child });
     await expect.element(screen.getByRole('link', { name: /editors/i })).toBeInTheDocument();

@@ -120,3 +120,14 @@ Two additions need no migration. `headRow` takes a configurable heading level th
 This catches a configuration that built before but never rendered its default icon, since the default only
 reaches the output through an icon attribute. Consumers must: if `defineRegistry` reports the icon guard,
 give the offending component a `type:'icon'` attribute or remove its `defaultIconByRole`.
+
+## 0.31.0: the admin ships its own stylesheet
+
+The engine now compiles the admin's Tailwind utilities and DaisyUI component classes and ships them in
+`dist/components/cairn-admin.css`, scoped under the admin `data-theme`. The admin styles itself on any
+host, including one that ships no Tailwind and no DaisyUI. The scoped rules use `:where`, so they stay
+low-specificity and never override a host rule.
+
+This needs no migration. Consumers may: drop any Tailwind `@source` entry that existed only to generate
+the admin's classes, since the host build no longer feeds the admin its CSS. A host that provides DaisyUI
+globally keeps working unchanged.

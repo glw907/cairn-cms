@@ -2,13 +2,14 @@
 @component
 The admin shell: a DaisyUI drawer-and-navbar that wraps every authed admin page. The nav is
 data-driven from the enabled concepts and role-gated (owners see the manage-editors entry). The
-root sets `data-theme="cairn-admin"` and imports the self-contained Warm Stone theme, so the
-admin looks identical on every host regardless of the site's own theme.
+root sets `data-theme` to the resolved light or dark theme (seeded from the SSR'd cookie choice,
+flipped by the topbar toggle) and imports the self-contained Warm Stone theme, so the admin looks
+identical on every host regardless of the site's own theme.
 -->
 <script lang="ts">
-  import type { Component, Snippet } from 'svelte';
+  import { untrack, type Component, type Snippet } from 'svelte';
   import type { LayoutData } from '../sveltekit/content-routes.js';
-  import { MenuIcon, LogOutIcon } from './admin-icons.js';
+  import { MenuIcon, LogOutIcon, SunIcon, MoonIcon } from './admin-icons.js';
   import FileTextIcon from '@lucide/svelte/icons/file-text';
   import SettingsIcon from '@lucide/svelte/icons/settings';
   import UsersIcon from '@lucide/svelte/icons/users';
@@ -45,19 +46,72 @@ admin looks identical on every host regardless of the site's own theme.
   function isActive(href: string): boolean {
     return data.pathname === href || data.pathname.startsWith(`${href}/`);
   }
+
+  // Seed from the SSR'd theme once. The live theme is owned by this state and the toggle, so the
+  // initial read of data.theme is intentional and untracked to keep it out of any reactive graph.
+  let theme = $state<'cairn-admin' | 'cairn-admin-dark'>(untrack(() => data.theme));
+
+  // First mount with no persisted choice follows the OS preference. A returning user's cookie was
+  // already honored by the layout load (data.theme), so this only fires on a first-ever visit.
+  $effect(() => {
+    const hasCookie = document.cookie.split('; ').some((c) => c.startsWith('cairn-admin-theme='));
+    if (!hasCookie && window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
+      theme = 'cairn-admin-dark';
+    }
+  });
+
+  function toggleTheme() {
+    theme = theme === 'cairn-admin' ? 'cairn-admin-dark' : 'cairn-admin';
+    // 1 year, path-scoped to the admin so the cookie never reaches the host's pages.
+    document.cookie = `cairn-admin-theme=${theme}; path=/admin; max-age=31536000; samesite=lax`;
+  }
+
+  interface Crumb {
+    label: string;
+    href?: string;
+  }
+
+  // Path-derived breadcrumbs: the concept label (from the nav) then the entry id segment. Only the
+  // /admin/<concept>/<id> depth shows a trail; a bare concept list shows just the concept.
+  const crumbs = $derived.by<Crumb[]>(() => {
+    const segs = data.pathname.split('/').filter(Boolean); // ['admin', concept, id?]
+    if (segs.length < 2 || segs[0] !== 'admin') return [];
+    const conceptId = segs[1];
+    const concept = data.concepts.find((c) => c.id === conceptId);
+    const out: Crumb[] = [{ label: concept?.label ?? conceptId, href: `/admin/${conceptId}` }];
+    if (segs[2]) out.push({ label: decodeURIComponent(segs[2]) });
+    return out;
+  });
 </script>
 
-<div data-theme="cairn-admin" class="drawer lg:drawer-open min-h-screen bg-base-200 text-base-content">
+<div data-theme={theme} class="drawer lg:drawer-open min-h-screen bg-base-200 text-base-content">
   <input id="cairn-drawer" type="checkbox" class="drawer-toggle" />
 
   <div class="drawer-content flex flex-col">
-    <div class="navbar bg-base-100 border-b border-base-300">
+    <div class="navbar bg-base-100 border-b border-base-300 sticky top-0 z-30">
       <div class="flex-none lg:hidden">
         <label for="cairn-drawer" aria-label="Open menu" class="btn btn-square btn-ghost">
           <MenuIcon class="h-5 w-5" />
         </label>
       </div>
-      <div class="flex-1 px-2 font-semibold">{data.siteName}</div>
+      <div class="flex-1 px-2">
+        {#if crumbs.length}
+          <nav aria-label="Breadcrumb" class="breadcrumbs text-sm">
+            <ul>
+              {#each crumbs as crumb (crumb.label)}
+                <li>{#if crumb.href}<a href={crumb.href}>{crumb.label}</a>{:else}{crumb.label}{/if}</li>
+              {/each}
+            </ul>
+          </nav>
+        {:else}
+          <span class="font-semibold">{data.siteName}</span>
+        {/if}
+      </div>
+      <div class="flex-none">
+        <button type="button" class="btn btn-square btn-ghost" aria-label="Toggle theme" onclick={toggleTheme}>
+          {#if theme === 'cairn-admin'}<MoonIcon class="h-5 w-5" />{:else}<SunIcon class="h-5 w-5" />{/if}
+        </button>
+      </div>
     </div>
 
     <main class="flex-1 p-4 lg:p-8">

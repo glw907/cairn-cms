@@ -9,13 +9,14 @@ identical on every host regardless of the site's own theme.
 <script lang="ts">
   import { untrack, type Component, type Snippet } from 'svelte';
   import type { LayoutData } from '../sveltekit/content-routes.js';
-  import { MenuIcon, LogOutIcon, SunIcon, MoonIcon } from './admin-icons.js';
+  import { MenuIcon, LogOutIcon, SunIcon, MoonIcon, ChevronRightIcon } from './admin-icons.js';
   import CairnLogo from './CairnLogo.svelte';
   import FileTextIcon from '@lucide/svelte/icons/file-text';
   import SignpostIcon from '@lucide/svelte/icons/signpost';
   import SettingsIcon from '@lucide/svelte/icons/settings';
   import UsersIcon from '@lucide/svelte/icons/users';
   import PuzzleIcon from '@lucide/svelte/icons/puzzle';
+  import BlocksIcon from '@lucide/svelte/icons/blocks';
   import './cairn-admin.css';
 
   interface Props {
@@ -27,40 +28,37 @@ identical on every host regardless of the site's own theme.
 
   let { data, children }: Props = $props();
 
+  // A nav entry. `href` makes it a link; without one it is an inert stub (a developer-tool slot the
+  // extension mechanism has not wired yet).
   interface NavItem {
-    href: string;
     label: string;
     icon: Component;
+    href?: string;
   }
 
-  // The content concepts the site enabled.
-  const conceptItems: NavItem[] = $derived(
-    data.concepts.map((c) => ({ href: `/admin/${c.id}`, label: c.label, icon: FileTextIcon })),
-  );
-
-  // Core site management. The nav-menu editor appears when the site configures a nav (signpost, kept
-  // distinct from the Settings gear); Settings holds the site-configurable settings; Editors is
-  // owner-only.
-  const manageItems: NavItem[] = $derived([
-    ...(data.navLabel ? [{ href: '/admin/nav', label: data.navLabel, icon: SignpostIcon }] : []),
-    { href: '/admin/settings', label: 'Settings', icon: SettingsIcon },
-    ...(data.canManageEditors ? [{ href: '/admin/editors', label: 'Editors', icon: UsersIcon }] : []),
+  // The core Cairn functions, all in one group: the content concepts, the nav-menu editor (when the
+  // site configures one; a signpost, kept distinct from the Settings gear), the site Settings, and
+  // the owner-only Editors.
+  const coreItems: NavItem[] = $derived([
+    ...data.concepts.map((c) => ({ label: c.label, icon: FileTextIcon, href: `/admin/${c.id}` })),
+    ...(data.navLabel ? [{ label: data.navLabel, icon: SignpostIcon, href: '/admin/nav' }] : []),
+    { label: 'Settings', icon: SettingsIcon, href: '/admin/settings' },
+    ...(data.canManageEditors ? [{ label: 'Editors', icon: UsersIcon, href: '/admin/editors' }] : []),
   ]);
 
-  // Where a site developer's own admin tools group, separate from the core Cairn functions above.
-  // The CairnExtension seam will register real entries here; these are inert stubs until it lands, so
-  // the grouping is visible now.
-  const extensionStubs = [
-    { label: 'Media', icon: PuzzleIcon },
-    { label: 'Reports', icon: PuzzleIcon },
+  // The developer-extension groups: each custom-named, with its own items, collapsible like the core
+  // group. The CairnExtension seam will supply these; until it lands they are inert example stubs that
+  // show the shape, multiple named groups kept visually apart from the core functions.
+  const extensionGroups: { name: string; items: NavItem[] }[] = [
+    { name: 'Marketing', items: [
+      { label: 'Campaigns', icon: BlocksIcon },
+      { label: 'Audiences', icon: BlocksIcon },
+    ] },
+    { name: 'Shop', items: [
+      { label: 'Products', icon: BlocksIcon },
+      { label: 'Orders', icon: BlocksIcon },
+    ] },
   ];
-
-  // Shared styling for a sidebar group's title row. The Extensions title adds its own flex layout
-  // for the inline "stub" badge, so it composes this with extra classes rather than reusing it whole.
-  // Group titles align with the nav-item icons below them (the same left edge), so the sidebar reads
-  // on one vertical line. Styled fully here, so no DaisyUI `menu-title` (its own padding would offset).
-  const groupTitleClass =
-    'mb-2 px-5 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]';
 
   // Up to two uppercase initials from the display name, falling back to '?' for an empty name.
   function initialsOf(displayName: string): string {
@@ -186,54 +184,56 @@ identical on every host regardless of the site's own theme.
           <span class="rounded bg-base-200 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)]">CMS</span>
         </div>
 
-        <div class="flex-1 space-y-6 overflow-y-auto px-2 py-5">
-          {#snippet navGroup(title: string, items: NavItem[])}
-            <div>
-              <div class={groupTitleClass}>{title}</div>
-              <ul class="menu menu-md w-full gap-0.5 p-0">
-                {#each items as item (item.href)}
+        <div class="flex-1 space-y-1 overflow-y-auto py-4">
+          {#snippet navSection(label: string, items: NavItem[])}
+            <details class="px-2" open>
+              <summary class="flex cursor-pointer select-none items-center gap-2 rounded-field py-1.5 pl-5 pr-3 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)] hover:text-base-content">
+                <span class="truncate">{label}</span>
+                <ChevronRightIcon class="cairn-caret ml-auto h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden="true" />
+              </summary>
+              <ul class="menu menu-md mt-1 w-full gap-0.5 p-0">
+                {#each items as item (item.href ?? item.label)}
                   <li>
-                    <a
-                      href={item.href}
-                      class={isActive(item.href)
-                        ? 'bg-primary/10 font-semibold text-primary'
-                        : 'font-medium text-[var(--color-subtle)]'}
-                      aria-current={isActive(item.href) ? 'page' : undefined}
-                    >
-                      <item.icon class="h-4 w-4" aria-hidden="true" />
-                      {item.label}
-                    </a>
+                    {#if item.href}
+                      <a
+                        href={item.href}
+                        class={isActive(item.href)
+                          ? 'bg-primary/10 font-semibold text-primary'
+                          : 'font-medium text-[var(--color-subtle)]'}
+                        aria-current={isActive(item.href) ? 'page' : undefined}
+                      >
+                        <item.icon class="h-4 w-4" aria-hidden="true" />
+                        {item.label}
+                      </a>
+                    {:else}
+                      <span
+                        class="cursor-default font-medium text-[var(--color-muted)] opacity-60"
+                        aria-disabled="true"
+                        title="A slot for a site developer's own admin tool. Not wired yet."
+                      >
+                        <item.icon class="h-4 w-4" aria-hidden="true" />
+                        {item.label}
+                      </span>
+                    {/if}
                   </li>
                 {/each}
               </ul>
-            </div>
+            </details>
           {/snippet}
 
-          {@render navGroup('Content', conceptItems)}
-          {@render navGroup('Manage', manageItems)}
+          <!-- Core: the built-in Cairn functions, in one collapsible group. -->
+          {@render navSection('Core', coreItems)}
 
-          <!-- The developer-extension group: where a site's own admin tools live, kept apart from the
-               core Cairn functions. Inert stubs until the CairnExtension seam registers real entries. -->
-          <div>
-            <div class="{groupTitleClass} flex items-center gap-2">
-              <span>Extensions</span>
-              <span class="rounded bg-base-200 px-1 py-0.5 text-[9px] font-medium normal-case tracking-normal">stub</span>
-            </div>
-            <ul class="menu menu-md w-full gap-0.5 p-0">
-              {#each extensionStubs as stub (stub.label)}
-                <li>
-                  <span
-                    class="cursor-default font-medium text-[var(--color-muted)] opacity-60"
-                    aria-disabled="true"
-                    title="A slot for a site developer's own admin tool. Not wired yet."
-                  >
-                    <stub.icon class="h-4 w-4" aria-hidden="true" />
-                    {stub.label}
-                  </span>
-                </li>
-              {/each}
-            </ul>
+          <!-- Extensions: a site developer's own admin tools, set apart from the core. Each group is
+               custom-named and collapsible. Inert stubs until the CairnExtension seam supplies them. -->
+          <div class="mx-5 my-3 border-t border-base-300"></div>
+          <div class="flex items-center gap-2 px-5 pb-1 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">
+            <PuzzleIcon class="h-3.5 w-3.5" aria-hidden="true" />
+            <span>Extensions</span>
           </div>
+          {#each extensionGroups as group (group.name)}
+            {@render navSection(group.name, group.items)}
+          {/each}
         </div>
 
         <div class="flex-none border-t border-base-300 px-5 py-4">

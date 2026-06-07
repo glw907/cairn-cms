@@ -111,6 +111,22 @@
     color: inherit;
     text-decoration: none;
   }
+
+  /* Collapsible nav sections use a native <details>. Hide the default disclosure marker and rotate
+     the caret to point down when the section is open. Scoped to the admin, components layer so a
+     utility still wins. */
+  :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) summary {
+    list-style: none;
+  }
+  :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) summary::-webkit-details-marker {
+    display: none;
+  }
+  :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-caret {
+    transition: rotate 150ms ease;
+  }
+  :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) details[open] > summary .cairn-caret {
+    rotate: 90deg;
+  }
 }
 
 /* Respect a reduced-motion preference inside the admin. DaisyUI's modal, drawer, and the admin's

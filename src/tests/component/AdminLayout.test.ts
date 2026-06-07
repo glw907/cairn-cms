@@ -39,10 +39,13 @@ describe('AdminLayout', () => {
     await expect.element(screen.getByText('Cairn', { exact: true })).toBeInTheDocument();
   });
 
-  it('shows the Settings entry and the developer-extensions group', async () => {
+  it('groups the core functions and a developer-extensions area', async () => {
     const screen = render(AdminLayout, { data: data(true), children: child });
+    await expect.element(screen.getByText('Core', { exact: true })).toBeInTheDocument();
     await expect.element(screen.getByRole('link', { name: /settings/i })).toBeInTheDocument();
     await expect.element(screen.getByText('Extensions', { exact: true })).toBeInTheDocument();
+    // A custom-named developer group renders alongside the core group.
+    await expect.element(screen.getByText('Marketing', { exact: true })).toBeInTheDocument();
   });
 
   it('shows the manage-editors link to an owner', async () => {

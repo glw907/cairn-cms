@@ -49,9 +49,12 @@
   color-scheme: dark;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 
-  --color-base-100: oklch(25% 0.01 75);
-  --color-base-200: oklch(18.5% 0.008 75);
-  --color-base-300: oklch(32% 0.013 75);
+  /* Dark surface layering: the panels (sidebar, topbar, cards = base-100) lift clearly above the app
+     background (base-200, the deepest tone), with base-300 borders lighter still for a visible edge.
+     The wider base-100-to-base-200 gap is what reads as depth on dark, since shadows barely show. */
+  --color-base-100: oklch(24% 0.01 75);
+  --color-base-200: oklch(15.5% 0.009 75);
+  --color-base-300: oklch(30% 0.014 75);
   --color-base-content: oklch(93% 0.006 75);
 
   --color-primary: oklch(68% 0.18 293);

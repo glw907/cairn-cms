@@ -154,3 +154,16 @@ inherit a clean list rather than one prose note.
   per route, while the docs prescribe the `$lib/cairn.server.ts` composer; the canonical pattern was not
   validated end to end until the tutorial reproduction. Candidate: align the showcase to the composer so the
   documented path stays exercised.
+- **developer** (engine surface, from the admin UX rebuild plan 2, 2026-06-07): the self-styling CSS build
+  scoped DaisyUI's nested rules incorrectly, so the `lg:drawer-open` sidebar never rendered, and that defect
+  shipped in plan 1 unseen because the plan-1 visual proof confirmed only that components were styled, not
+  that the full drawer shell laid out. A render check that asserts a specific surface is present catches what
+  a "looks styled" glance misses. Action taken: plan 2 fixed the build (flatten nesting before scoping) and
+  the layout (`data-theme` on a wrapper), and added a regression test plus a light-and-dark showcase proof.
+  Candidate: the showcase admin render belongs in an automated visual or DOM check so a scoping regression
+  cannot reach a release on a glance again.
+- **editor** (admin UX, from plan 2's review gate, 2026-06-07): the per-row delete refusal first shipped with
+  a dead UI (the action returned a flat conflict shape the component did not read, and the route shim did not
+  forward the `form` prop), so a blocked delete refused server-side but told the author nothing. The engine
+  and the consumer route disagreed on the action result shape with no shared type to bind them. Candidate: a
+  published type for each action's `fail` payload, so the component and the shim cannot drift from the action.

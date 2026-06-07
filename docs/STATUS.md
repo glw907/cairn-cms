@@ -11,48 +11,73 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-07): the admin stands on its own (plan 2, UX rebuild plus dark mode)
+## Immediate next action (2026-06-07): the frontend-design polish pass on the rebuilt admin
 
-**The admin-stands-alone initiative is the active work (2026-06-07), at the user's direction, ahead of
-the prior DX-B, gallery, and P4 queue.** It makes `/admin` a self-contained CMS admin: rendered free of
-the host's chrome, self-styled with scoped Tailwind and DaisyUI independent of the host, and rebuilt in
-idiomatic DaisyUI against SvelteForge (`ColorlibHQ/svelteforge-admin`) as the layout and modal-placement
-reference, with a data-table list, a sidebar user menu and per-item icons (Lucide), a sticky topbar with
-breadcrumbs, and dark mode. It supersedes the admin half of the planned Pass C. The design spec is
-`docs/superpowers/specs/2026-06-07-cairn-admin-stands-alone-design.md`. It decomposes into three plans by
-verification surface (engine self-styling foundation, engine UX rebuild plus dark mode, engine chrome
-isolation plus the route-structure pattern and dev guard), then two site retrofits (ecnordic-ski,
-907-life). The reference is used for look only, with no code copied (its layer is shadcn on bits-ui, a
-different system from DaisyUI).
+**Plan 2 (the admin UX rebuild plus dark mode) LANDED on `main` as `0.32.0`, unpublished. The next action
+is the `/frontend-design:frontend-design` polish pass, at the user's request.** The structural rebuild is
+done and review-gated: correct behavior, accessible markup, idiomatic DaisyUI, light and dark, proven on
+the framework-free showcase. The polish pass now refines the visual quality against the SvelteForge
+reference (`ColorlibHQ/svelteforge-admin`, look only, no code copied) with the Playwright
+render-and-compare loop. It touches only the component markup classes and the `cairn-admin.css` light and
+dark token values. It changes no load, action, or content-route logic, keeps every component test green,
+and re-anchors the `vitest-browser-svelte` screenshot baselines once the look settles. It runs as its own
+pass, because design refinement is visual and iterative rather than test-first.
 
-**Next: execute plan 2 (the UX rebuild plus dark mode), then run a frontend-design polish pass.** Plan 2
-is written and ready: `docs/superpowers/plans/2026-06-07-cairn-admin-ux-rebuild.md`, 11 tasks, bumps
-`0.32.0`. It rebuilds the concept list as a searchable, sortable data-table (status badges, formatted
-dates, per-row delete reusing the inbound-link guard, pagination, a header create dialog), the sidebar
-with Lucide nav icons and a footer user menu, and a sticky topbar with breadcrumbs and a dark-mode toggle;
-dark mode is a second Warm Stone variable block plus a topbar toggle persisted through a `cairn-admin-theme`
-cookie scoped to `/admin` that the layout load reads for a zero-flash first paint (the `prefers-color-scheme`
-default applies on a first visit). It adds `@lucide/svelte` as a runtime dependency (per-icon imports) and a
-`listDeleteAction` on the content routes. The brainstorm settled two open items, recorded in the spec: one
-pass for UX plus dark mode, and the cookie-read first-paint mechanism.
+**Roll the polish pass's carry-forwards in.** Plan 2's review gate and tasks left visual and interaction
+refinements that suit this pass: the list default sort is oldest-first (newest-first is the usual CMS
+default), the breadcrumb shows a redundant single crumb on a bare list page, the list delete is a plain
+POST that resets list state on a 409 conflict (an `enhance`-with-`applyAction` fix is blocked only by
+`$app/forms` not resolving in the component test project), a first-ever-visit dark-OS user sees a light
+first paint before the client flips (an inline head script in the host `app.html` removes it), and the
+DaisyUI modal and drawer transitions are not behind a `prefers-reduced-motion` guard. See the plan
+post-mortem for the full list.
 
-**Execute plan 2 `subagent-driven` (one `cairn-implementer` per task) on `main` directly, starting at Task 1.**
-Dispatch Task 4 (the data-table), Task 6 (per-row delete + the engine delete-core refactor), and Task 8 (the
-topbar toggle and cookie logic) `model: opus`; the rest fit the Sonnet default. Task 10 (the light-and-dark
-showcase visual proof) also fits Opus. The self-styling pipeline plan 1 landed scans the component source on
-every build, so it picks up the new classes with no build change. The pass-end review gate adds `svelte-reviewer`
-and `daisyui-a11y-reviewer` (plan 2 changes component markup) plus the simplifier and a `/code-review`, and a
-live `/admin` smoke applies. The Worker and auth reviewers do not apply.
+**Then plan 3, then the two site retrofits.** Plan 3 is the chrome isolation, the dev guard, the
+route-structure docs, and the showcase `(site)` group; it also carries the plan-1 global at-rule leak
+(DaisyUI `@keyframes` and `@property` stay document-global). The site retrofits (ecnordic-ski, 907-life)
+run only after the engine work publishes. Publishing stays held: `0.29.0` is the registry `latest`, and
+`main` carries the unpublished `0.30.0`, `0.31.0`, and `0.32.0`. The window publishes before any site or
+the scaffolder consumes the new surface.
 
-**After plan 2 lands green, run the `/frontend-design:frontend-design` polish pass** (at the user's request).
-It refines the visual quality against the SvelteForge reference with the Playwright render-and-compare loop,
-touching only component classes and the `cairn-admin.css` light and dark token values, keeping every test
-green, and re-anchoring the screenshot baselines. It runs as its own pass, because design refinement is visual
-and iterative rather than test-first (see the plan's "After structural completion" section). Then comes plan 3
-(chrome isolation, the dev guard, the route-structure docs, the showcase `(site)` group), then the two site
-retrofits. Publishing stays held: `0.29.0` is the registry `latest`, `main` carries the unpublished `0.30.0`
-and `0.31.0` and will carry `0.32.0`; the window publishes before any site or the scaffolder consumes the new
-surface, and the site retrofits run only after the engine work publishes.
+**Plan 2 LANDED on `main` 2026-06-07 as `0.32.0`, unpublished.** It ran subagent-driven, one
+`cairn-implementer` per task on `main` directly, Tasks 4, 6, 8, and 10 on Opus and the rest on Sonnet.
+Eleven task commits `01751ae..1929b21` plus three fold-ins: the self-styling render fix `ed0d50a`, the
+simplifier `129ba6d`, and the review fold-in `73cf8a7`. The admin list is now a searchable, sortable
+DaisyUI data-table (status badges, formatted dates, per-row delete reusing the inbound-link guard,
+pagination, a header create dialog), the sidebar has Lucide nav icons and a footer user menu, the topbar is
+sticky with breadcrumbs, and the admin has a dark mode persisted through a `cairn-admin-theme` cookie that
+`layoutLoad` reads for a no-flash first paint. `@lucide/svelte` is a new runtime dependency; `lightningcss`
+is a new build-only devDependency. The minor bumps `0.32.0` with a "Consumers may:" line (additive;
+`listDeleteAction` is the one new opt-in action). Gate green at the tip `73cf8a7`, run first-hand: `npm run
+check` 816 files 0/0, `npm test` 120 files / 745 tests exit 0 (one re-run cleared the known
+`delivery-*-split` parallel-load flake), and `check:reference`/`check:package`/`check:docs` exit 0. The
+post-mortem is in the plan (`docs/superpowers/plans/2026-06-07-cairn-admin-ux-rebuild.md`).
+
+**The verification gate caught a latent plan-1 defect, fixed as `ed0d50a`.** Task 10's light-and-dark
+showcase proof found the admin sidebar never rendered at desktop width and the root background never
+filled. Two causes, both in the plan-1 self-styling foundation and unscrutinized until this pass rendered
+the full shell. First, `postcss-prefix-selector` prepended the scope to the front of every rule including
+the nested rules Tailwind v4 and DaisyUI emit, so a nested selector starting with a combinator became
+`:where(scope) > .x`, which native nesting composed as `& :where(scope) > .x` and severed the
+`lg:drawer-open` reveal from its parent. The fix flattens the nesting with lightningcss before scoping.
+Second, the admin root carried `data-theme` and the drawer classes on the same element, but every rule
+scopes as a descendant of the theme root, so `.drawer` on the theme element never matched; moving
+`data-theme` onto a bare wrapper makes the drawer a scoped descendant. A regression test in
+`admin-css-build.test.ts` pins both. The fix is proven on the showcase in both themes.
+
+**The review gate caught one Critical and two Important issues, folded in as `73cf8a7`.** The per-row
+delete-refusal UI was dead: the action returns a flat `fail(409, { inboundLinks, id })`, but `ConceptList`
+read a nested `form.deleteRefused` the action never produces, and the showcase shim never forwarded the
+`form` prop. The server still refused the unsafe delete, so data was safe, but the author saw no reason.
+The fold-in reads the flat shape, forwards `form` from the shim, and surfaces the refusal as a visible
+`role="alert"` banner for editor parity, with a new component test. The two a11y fixes add `aria-sort` to
+the sortable headers and a load-present `role="status"` live region for the filter result count and the
+empty state. Two cheap minors rode along: the breadcrumb `{#each}` key and a `btn-sm` delete target.
+
+The admin-stands-alone initiative spec is `docs/superpowers/specs/2026-06-07-cairn-admin-stands-alone-design.md`.
+It decomposes into three engine plans by verification surface (self-styling foundation, the UX rebuild plus
+dark mode, chrome isolation plus the route-structure pattern and dev guard), then two site retrofits. Plans
+1 and 2 have landed; the polish pass runs between plan 2 and plan 3.
 
 **Plan 1 (self-styling CSS foundation) LANDED on `main` 2026-06-07 as `0.31.0`, unpublished.** The admin
 now ships its own stylesheet from the engine. A new `scripts/build-admin-css.mjs` compiles the admin's

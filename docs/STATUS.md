@@ -11,7 +11,42 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-06): DX-sweep Pass B (tooling and CI robustness)
+## Immediate next action (2026-06-07): the admin stands on its own (plan 1, self-styling foundation)
+
+**The admin-stands-alone initiative is the immediate next action (2026-06-07), at the user's
+direction, ahead of the prior DX-B, gallery, and P4 queue.** It makes `/admin` a self-contained CMS
+admin: rendered free of the host's chrome, self-styled with scoped Tailwind and DaisyUI independent of
+the host, and rebuilt in idiomatic DaisyUI against SvelteForge (`ColorlibHQ/svelteforge-admin`) as the
+layout and modal-placement reference, with a data-table list, a sidebar user menu and per-item icons
+(Lucide), a sticky topbar with breadcrumbs, and dark mode. It supersedes the admin half of the planned
+Pass C. The design spec is `docs/superpowers/specs/2026-06-07-cairn-admin-stands-alone-design.md`. It
+decomposes into three plans by verification surface (engine self-styling foundation, engine UX rebuild
+plus dark mode, engine chrome isolation plus the route-structure pattern and dev guard), then two site
+retrofits (ecnordic-ski, 907-life). The reference is used for look only, with no code copied (its layer
+is shadcn on bits-ui, a different system from DaisyUI).
+
+**Plan 1 (the self-styling CSS foundation) is written and ready to execute:**
+`docs/superpowers/plans/2026-06-07-cairn-admin-self-styling-foundation.md`. The engine compiles the
+admin's Tailwind utilities and DaisyUI components (built-in themes off, no global Preflight) plus the
+Warm Stone variables, scopes every rule under `:where([data-theme='cairn-admin'],
+[data-theme='cairn-admin-dark'])` with `postcss-prefix-selector`, and writes the sheet to
+`dist/components/cairn-admin.css`, where the admin components already import it. The framework-free
+showcase proves it, since the admin renders styled on a site that ships no Tailwind and no DaisyUI. The
+compile-and-scope mechanism is pre-verified empirically (utilities and component classes present, no
+global leak, `@keyframes` intact); plan Task 1 re-confirms it in-repo before the rest leans on it. The
+pass bumps `0.31.0`.
+
+**Execute plan 1 `subagent-driven` (one `cairn-implementer` per task) on `main` directly, starting at
+Task 1.** Dispatch Task 5 (the build script) and Task 7 (the showcase visual proof) `model: opus`; the
+rest fit the Sonnet default. The pass-end review gate is the simplifier plus a `/code-review` with
+attention to the build mechanism and the CSS scoping. `svelte-reviewer` and `daisyui-a11y-reviewer` do
+not apply to plan 1, which changes no component markup (they apply to plan 2's UX rebuild), and the
+Worker and auth reviewers and the live `/admin` smoke do not apply. Publishing stays held: `0.29.0` is
+the registry `latest`, `main` carries the unpublished `0.30.0`, and this pass adds `0.31.0`; the window
+publishes before any site or the scaffolder consumes the new surface, and the two site retrofits run
+only after the engine work publishes.
+
+## Deferred behind the admin initiative: DX-sweep Pass B (tooling and CI robustness)
 
 **DX-sweep Pass A (render authoring) LANDED on `main` 2026-06-06 as `0.30.0`, unpublished.** It carved the
 public `@glw907/cairn-cms/render` authoring subpath (`iconSpan`, `cardShell`, `headRow`, the re-homed

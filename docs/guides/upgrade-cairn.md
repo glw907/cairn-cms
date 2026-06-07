@@ -131,3 +131,15 @@ low-specificity and never override a host rule.
 This needs no migration. Consumers may: drop any Tailwind `@source` entry that existed only to generate
 the admin's classes, since the host build no longer feeds the admin its CSS. A host that provides DaisyUI
 globally keeps working unchanged.
+
+## 0.32.0: the admin UX rebuild and dark mode
+
+The admin list, sidebar, and topbar are rebuilt in DaisyUI with Lucide icons and a dark mode. This
+needs no migration. Consumers may: wire per-row delete on the concept list by adding
+`delete: routes.listDeleteAction` to the list route's `actions`, the way the showcase does. The dark
+mode persists through a `cairn-admin-theme` cookie scoped to `/admin`, so it never reaches the host's
+pages.
+
+This release also fixes the self-styled admin stylesheet so the drawer sidebar renders. A consumer on
+an older `0.3x` that saw a missing admin sidebar gets the fix by upgrading. No consumer action is
+required.

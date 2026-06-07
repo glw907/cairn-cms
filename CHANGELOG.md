@@ -2,6 +2,25 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.32.0
+
+The admin gets a real CMS UX. The concept list is now a searchable, sortable data-table with status
+badges, formatted dates, per-row delete, and pagination. The sidebar carries an icon per nav item and
+a user menu with sign-out. The topbar is sticky and shows breadcrumbs. The admin has a dark mode, with
+a topbar toggle that persists through a cookie and follows the OS preference on a first visit. The admin
+icons are Lucide, added as a runtime dependency.
+
+This release also fixes the self-styled admin so its drawer sidebar renders: the stylesheet build now
+flattens CSS nesting before scoping (so DaisyUI's `lg:drawer-open` reveal is not severed from its
+parent), and the admin layout carries `data-theme` on a wrapper so the drawer's own classes are scoped
+descendants. The build gained `lightningcss` as a build-only devDependency for the flatten step; this
+does not affect a consumer's runtime.
+
+This is additive for a consumer that mounts the admin through the documented routes. The engine now
+depends on `@lucide/svelte`, which installs transitively, so no consumer action is required. A new
+`listDeleteAction` is available on the content routes for wiring per-row delete on the list page; the
+showcase wires it as the list `?/delete` action.
+
 ## 0.31.0
 
 The admin now ships its own stylesheet. The engine compiles the admin's Tailwind utilities and

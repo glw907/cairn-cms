@@ -3,25 +3,66 @@ import { render } from 'vitest-browser-svelte';
 import ConceptList from '../../lib/components/ConceptList.svelte';
 
 function data(over = {}) {
-  return {
-    conceptId: 'posts',
-    label: 'Posts',
-    dated: true,
-    entries: [
-      { id: '2026-05-hello', title: 'Hello', date: '2026-05-01', draft: false },
-      { id: '2026-04-draft', title: 'Draft Post', date: '2026-04-01', draft: true },
-    ],
-    error: null,
-    formError: null,
-    ...over,
-  };
+  const entries = Array.from({ length: 12 }, (_, i) => ({
+    id: `2026-05-${String(i + 1).padStart(2, '0')}-post-${i + 1}`,
+    title: `Post ${String(i + 1).padStart(2, '0')}`,
+    date: `2026-05-${String(i + 1).padStart(2, '0')}`,
+    draft: i === 1,
+  }));
+  return { conceptId: 'posts', label: 'Posts', dated: true, entries, error: null, formError: null, ...over };
 }
 
 describe('ConceptList', () => {
-  it('lists entries linking to their editor and flags drafts', async () => {
+  it('renders entries as table rows linking to their editor', async () => {
     const screen = render(ConceptList, { data: data() });
-    await expect.element(screen.getByRole('link', { name: /Hello/ })).toHaveAttribute('href', '/admin/posts/2026-05-hello');
+    await expect.element(screen.getByRole('link', { name: 'Post 01' })).toHaveAttribute('href', '/admin/posts/2026-05-01-post-1');
+  });
+
+  it('flags a draft row with a status badge', async () => {
+    const screen = render(ConceptList, { data: data() });
     await expect.element(screen.getByText('Draft', { exact: true })).toBeInTheDocument();
+  });
+
+  it('filters rows by a search query and shows a result count', async () => {
+    const screen = render(ConceptList, { data: data() });
+    const search = screen.getByRole('searchbox', { name: /search/i });
+    await search.fill('Post 03');
+    await expect.element(screen.getByRole('link', { name: 'Post 03' })).toBeInTheDocument();
+    await expect.element(screen.getByRole('link', { name: 'Post 01' })).not.toBeInTheDocument();
+    await expect.element(screen.getByText(/1 of 12/i)).toBeInTheDocument();
+  });
+
+  it('shows a search-aware empty state when nothing matches', async () => {
+    const screen = render(ConceptList, { data: data() });
+    await screen.getByRole('searchbox', { name: /search/i }).fill('no such title');
+    await expect.element(screen.getByText(/no entries match/i)).toBeInTheDocument();
+  });
+
+  it('shows a first-run empty state when the concept has no entries', async () => {
+    const screen = render(ConceptList, { data: data({ entries: [] }) });
+    await expect.element(screen.getByText(/no entries yet/i)).toBeInTheDocument();
+  });
+
+  it('paginates and exposes a page-size control', async () => {
+    const screen = render(ConceptList, { data: data() });
+    // Default page size 10, so 12 entries paginate to two pages: page 1 shows 10 rows.
+    await expect.element(screen.getByText(/page 1 of 2/i)).toBeInTheDocument();
+    await screen.getByRole('button', { name: /next page/i }).click();
+    await expect.element(screen.getByText(/page 2 of 2/i)).toBeInTheDocument();
+  });
+
+  it('sorts by title when the Title header is toggled', async () => {
+    const screen = render(ConceptList, { data: data() });
+    const header = screen.getByRole('button', { name: /sort by title/i });
+    await header.click(); // ascending
+    await header.click(); // descending
+    const links = screen.container.querySelectorAll('tbody a');
+    expect(links[0].textContent).toContain('Post 12');
+  });
+
+  it('shows an inline error when listing failed', async () => {
+    const screen = render(ConceptList, { data: data({ error: 'Could not load this content type from GitHub.', entries: [] }) });
+    await expect.element(screen.getByText(/could not load/i)).toBeInTheDocument();
   });
 
   it('auto-derives the slug from the title until edited', async () => {
@@ -30,11 +71,6 @@ describe('ConceptList', () => {
     await title.fill('My New Post');
     const slug = screen.getByLabelText(/slug/i);
     await expect.element(slug).toHaveValue('my-new-post');
-  });
-
-  it('shows an inline error when listing failed', async () => {
-    const screen = render(ConceptList, { data: data({ error: 'Could not load this content type from GitHub.', entries: [] }) });
-    await expect.element(screen.getByText(/could not load/i)).toBeInTheDocument();
   });
 
   it('shows a date input defaulted to today for a dated concept', async () => {

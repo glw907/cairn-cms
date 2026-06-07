@@ -40,3 +40,15 @@
   --depth: 1;
   --noise: 0;
 }
+
+/* The scoped reset that replaces global Preflight (which the admin sheet omits). It applies only
+   inside the admin theme roots, so it never reaches the host's pages. The dark root has no variables
+   yet (plan 2 adds them); naming it here is harmless and keeps the reset stable across both themes. */
+[data-theme='cairn-admin'] *,
+[data-theme='cairn-admin'] *::before,
+[data-theme='cairn-admin'] *::after,
+[data-theme='cairn-admin-dark'] *,
+[data-theme='cairn-admin-dark'] *::before,
+[data-theme='cairn-admin-dark'] *::after {
+  box-sizing: border-box;
+}

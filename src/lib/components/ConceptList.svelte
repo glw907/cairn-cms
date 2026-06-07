@@ -32,7 +32,8 @@ content sizes. The header New button opens a dialog holding the create form.
   type SortKey = 'title' | 'date';
   let query = $state('');
   let sortKey = $state<SortKey>('date');
-  let sortAsc = $state(true);
+  // Newest first by default: a dated concept reads most-recent-on-top, the usual CMS convention.
+  let sortAsc = $state(false);
   let pageSize = $state(10);
   let page = $state(1);
 
@@ -97,17 +98,24 @@ content sizes. The header New button opens a dialog holding the create form.
   });
   const derivedSlug = $derived(slugEdited ? slug : slugify(title));
   const slugPlaceholder = $derived(data.dated ? 'my-entry' : 'about-us');
+
+  // Shared column-header typography: small uppercase muted labels. The sort buttons add their own
+  // flex layout and a hover affordance on top of this.
+  const headerLabel = 'text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]';
+  const sortButton = `inline-flex items-center gap-1 ${headerLabel} hover:text-base-content`;
 </script>
 
-<header class="mb-4 flex flex-wrap items-center justify-between gap-3">
-  <h1 class="text-xl font-semibold">{data.label}</h1>
-  <label class="input input-sm w-full max-w-xs">
-    <SearchIcon class="h-4 w-4 opacity-60" aria-hidden="true" />
-    <input type="search" aria-label="Search {data.label}" bind:value={query} placeholder="Search" oninput={() => (page = 1)} />
-  </label>
-  <button type="button" class="btn btn-primary btn-sm" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
-    <PlusIcon class="h-4 w-4" /> New {data.label}
-  </button>
+<header class="mb-6 flex flex-wrap items-center justify-between gap-3">
+  <h1 class="text-2xl font-bold tracking-tight">{data.label}</h1>
+  <div class="flex flex-1 flex-wrap items-center justify-end gap-3">
+    <label class="input input-sm w-full max-w-xs">
+      <SearchIcon class="h-4 w-4 opacity-60" aria-hidden="true" />
+      <input type="search" aria-label="Search {data.label}" bind:value={query} placeholder="Search" oninput={() => (page = 1)} />
+    </label>
+    <button type="button" class="btn btn-primary btn-sm" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
+      <PlusIcon class="h-4 w-4" /> New {data.label}
+    </button>
+  </div>
 </header>
 
 {#if data.formError}
@@ -133,17 +141,17 @@ content sizes. The header New button opens a dialog holding the create form.
   </div>
 {/if}
 
-<div class="rounded-box border border-base-300 bg-base-100 mb-2 overflow-x-auto">
+<div class="rounded-box border border-base-300 bg-base-100 mb-3 overflow-x-auto shadow-sm">
   {#if data.entries.length === 0}
-    <p class="p-4 text-sm opacity-70">No entries yet. Use the New button to create the first one.</p>
+    <p class="p-8 text-center text-sm text-[var(--color-muted)]">No entries yet. Use the New button to create the first one.</p>
   {:else if sorted.length === 0}
-    <p role="status" class="p-4 text-sm opacity-70">No entries match "{query}".</p>
+    <p role="status" class="p-8 text-center text-sm text-[var(--color-muted)]">No entries match "{query}".</p>
   {:else}
     <table class="table">
       <thead>
-        <tr>
+        <tr class="border-base-300">
           <th aria-sort={sortKey === 'title' ? (sortAsc ? 'ascending' : 'descending') : 'none'}>
-            <button type="button" class="inline-flex items-center gap-1" aria-label="Sort by title" onclick={() => toggleSort('title')}>
+            <button type="button" class={sortButton} aria-label="Sort by title" onclick={() => toggleSort('title')}>
               Title
               {#if sortKey === 'title'}
                 {#if sortAsc}<ArrowUpIcon class="h-3 w-3" aria-hidden="true" />{:else}<ArrowDownIcon class="h-3 w-3" aria-hidden="true" />{/if}
@@ -152,7 +160,7 @@ content sizes. The header New button opens a dialog holding the create form.
           </th>
           {#if data.dated}
             <th aria-sort={sortKey === 'date' ? (sortAsc ? 'ascending' : 'descending') : 'none'}>
-              <button type="button" class="inline-flex items-center gap-1" aria-label="Sort by date" onclick={() => toggleSort('date')}>
+              <button type="button" class={sortButton} aria-label="Sort by date" onclick={() => toggleSort('date')}>
                 Date
                 {#if sortKey === 'date'}
                   {#if sortAsc}<ArrowUpIcon class="h-3 w-3" aria-hidden="true" />{:else}<ArrowDownIcon class="h-3 w-3" aria-hidden="true" />{/if}
@@ -160,18 +168,18 @@ content sizes. The header New button opens a dialog holding the create form.
               </button>
             </th>
           {/if}
-          <th>Status</th>
+          <th class={headerLabel}>Status</th>
           <th class="text-right"><span class="sr-only">Actions</span></th>
         </tr>
       </thead>
       <tbody>
         {#each pageRows as entry (entry.id)}
-          <tr>
-            <td><a class="link link-hover font-medium" href={`/admin/${data.conceptId}/${entry.id}`}>{entry.title}</a></td>
+          <tr class="transition-colors hover:bg-base-200/60">
+            <td><a class="font-medium hover:text-primary hover:underline" href={`/admin/${data.conceptId}/${entry.id}`}>{entry.title}</a></td>
             {#if data.dated}<td class="text-sm text-[var(--color-muted)]">{formatDate(entry.date)}</td>{/if}
             <td>
-              {#if entry.draft}<span class="badge badge-warning badge-sm">Draft</span>
-              {:else}<span class="badge badge-ghost badge-sm">Published</span>{/if}
+              {#if entry.draft}<span class="badge badge-warning badge-sm font-medium">Draft</span>
+              {:else}<span class="badge badge-ghost badge-sm font-medium">Published</span>{/if}
             </td>
             <td class="text-right">
               {#if deleteRefused?.id === entry.id}

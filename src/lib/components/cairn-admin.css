@@ -4,10 +4,10 @@
   color-scheme: light;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 
-  --color-base-100: oklch(98.5% 0.004 75);
-  --color-base-200: oklch(96% 0.005 75);
-  --color-base-300: oklch(92% 0.008 75);
-  --color-base-content: oklch(28% 0.012 75);
+  --color-base-100: oklch(99% 0.004 75);
+  --color-base-200: oklch(96.5% 0.006 75);
+  --color-base-300: oklch(89% 0.011 75);
+  --color-base-content: oklch(26% 0.014 75);
 
   --color-primary: oklch(52% 0.2 293);
   --color-primary-content: oklch(98% 0.012 293);
@@ -49,10 +49,10 @@
   color-scheme: dark;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 
-  --color-base-100: oklch(23% 0.008 75);
-  --color-base-200: oklch(20% 0.008 75);
-  --color-base-300: oklch(27% 0.01 75);
-  --color-base-content: oklch(92% 0.006 75);
+  --color-base-100: oklch(25% 0.01 75);
+  --color-base-200: oklch(18.5% 0.008 75);
+  --color-base-300: oklch(32% 0.013 75);
+  --color-base-content: oklch(93% 0.006 75);
 
   --color-primary: oklch(68% 0.18 293);
   --color-primary-content: oklch(20% 0.04 293);
@@ -96,4 +96,29 @@
 [data-theme='cairn-admin-dark'] *::before,
 [data-theme='cairn-admin-dark'] *::after {
   box-sizing: border-box;
+}
+
+/* Anchors inherit their color and drop the underline by default, which the omitted Preflight used to
+   do. This lives in the `components` layer, below `utilities`, so a Tailwind utility (a `text-*`
+   color, a `hover:underline`) and DaisyUI's own `.link`/`.breadcrumbs` rules (which sit in the
+   utilities layer) all override it. Cascade layers resolve before specificity, so an unlayered reset
+   here would instead beat every utility and silently kill those hover and link affordances. */
+@layer components {
+  :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) a {
+    color: inherit;
+    text-decoration: none;
+  }
+}
+
+/* Respect a reduced-motion preference inside the admin. DaisyUI's modal, drawer, and the admin's
+   own hover transitions otherwise animate regardless. Scoped to the admin roots, so it never
+   reaches the host's pages. */
+@media (prefers-reduced-motion: reduce) {
+  [data-theme='cairn-admin'] *,
+  [data-theme='cairn-admin-dark'] * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

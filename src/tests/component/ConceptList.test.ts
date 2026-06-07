@@ -3,11 +3,13 @@ import { render } from 'vitest-browser-svelte';
 import ConceptList from '../../lib/components/ConceptList.svelte';
 
 function data(over = {}) {
+  // The default sort is newest-first, so the last entry (Post 12) leads page 1; the draft sits there
+  // so the draft-badge assertion sees it on the default view.
   const entries = Array.from({ length: 12 }, (_, i) => ({
     id: `2026-05-${String(i + 1).padStart(2, '0')}-post-${i + 1}`,
     title: `Post ${String(i + 1).padStart(2, '0')}`,
     date: `2026-05-${String(i + 1).padStart(2, '0')}`,
-    draft: i === 1,
+    draft: i === 11,
   }));
   return { conceptId: 'posts', label: 'Posts', dated: true, entries, error: null, formError: null, ...over };
 }
@@ -15,7 +17,8 @@ function data(over = {}) {
 describe('ConceptList', () => {
   it('renders entries as table rows linking to their editor', async () => {
     const screen = render(ConceptList, { data: data() });
-    await expect.element(screen.getByRole('link', { name: 'Post 01' })).toHaveAttribute('href', '/admin/posts/2026-05-01-post-1');
+    // Newest-first, so Post 12 leads page 1.
+    await expect.element(screen.getByRole('link', { name: 'Post 12' })).toHaveAttribute('href', '/admin/posts/2026-05-12-post-12');
   });
 
   it('flags a draft row with a status badge', async () => {
@@ -95,7 +98,8 @@ describe('ConceptList', () => {
 
   it('offers a delete action per row', async () => {
     const screen = render(ConceptList, { data: data() });
-    await expect.element(screen.getByRole('button', { name: /delete post 01/i })).toBeInTheDocument();
+    // Newest-first puts Post 12 on page 1.
+    await expect.element(screen.getByRole('button', { name: /delete post 12/i })).toBeInTheDocument();
   });
 
   it('surfaces a refused delete from the flat action result', async () => {

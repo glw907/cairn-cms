@@ -119,14 +119,17 @@ identical on every host regardless of the site's own theme.
     <input id="cairn-drawer" type="checkbox" class="drawer-toggle" bind:checked={drawerOpen} />
 
     <div class="drawer-content flex flex-col">
-      <div class="navbar bg-base-100 border-b border-base-300 sticky top-0 z-30">
+      <div class="navbar bg-base-100/95 border-b border-base-300 sticky top-0 z-30 shadow-sm backdrop-blur">
         <div class="flex-none lg:hidden">
           <label for="cairn-drawer" aria-label="Open menu" class="btn btn-square btn-ghost">
             <MenuIcon class="h-5 w-5" />
           </label>
         </div>
         <div class="flex-1 px-2">
-          {#if crumbs.length}
+          {#if crumbs.length > 1}
+            <!-- Show the trail only inside an entry (concept then id). A bare concept list shows the
+                 site name instead, since the lone concept crumb would just echo the sidebar and the
+                 page heading. -->
             <nav aria-label="Breadcrumb" class="breadcrumbs text-sm">
               <ul>
                 {#each crumbs as crumb (crumb.href ?? crumb.label)}
@@ -135,7 +138,7 @@ identical on every host regardless of the site's own theme.
               </ul>
             </nav>
           {:else}
-            <span class="font-semibold">{data.siteName}</span>
+            <span class="font-semibold tracking-tight">{data.siteName}</span>
           {/if}
         </div>
         <div class="flex-none">
@@ -154,10 +157,16 @@ identical on every host regardless of the site's own theme.
       <label for="cairn-drawer" aria-label="Close menu" class="drawer-overlay"></label>
       <nav class="bg-base-100 flex min-h-full w-64 flex-col border-r border-base-300 p-4" aria-label="Site content">
         <div class="menu-title mb-2 px-2 text-xs uppercase tracking-wide text-[var(--color-muted)]">Content</div>
-        <ul class="menu menu-lg w-full">
+        <ul class="menu menu-md w-full gap-0.5">
           {#each visibleNav as item (item.href)}
             <li>
-              <a href={item.href} class:menu-active={isActive(item.href)} aria-current={isActive(item.href) ? 'page' : undefined}>
+              <a
+                href={item.href}
+                class={isActive(item.href)
+                  ? 'bg-primary/10 font-semibold text-primary'
+                  : 'font-medium text-[var(--color-subtle)]'}
+                aria-current={isActive(item.href) ? 'page' : undefined}
+              >
                 <item.icon class="h-4 w-4" aria-hidden="true" />
                 {item.label}
               </a>

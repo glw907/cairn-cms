@@ -148,7 +148,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
   }
 </script>
 
-<header class="mb-4 flex items-center justify-between gap-2">
+<header class="mb-6 flex items-center justify-between gap-2">
   <div>
     <h1 class="text-2xl font-bold tracking-tight">{data.title}</h1>
     <p class="text-xs text-[var(--color-muted)]">{data.label}: {data.id}</p>
@@ -301,7 +301,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
           </label>
         {/if}
       {/each}
-      <button type="submit" class="btn btn-primary mt-2">Save</button>
+      <button type="submit" class="btn btn-primary mt-3">Save</button>
     </fieldset>
   </aside>
 </form>

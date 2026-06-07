@@ -141,7 +141,7 @@ content sizes. The header New button opens a dialog holding the create form.
   </div>
 {/if}
 
-<div class="rounded-box border border-base-300 bg-base-100 mb-3 overflow-x-auto shadow-sm">
+<div class="rounded-box border border-base-300 bg-base-100 mb-4 overflow-x-auto shadow-sm">
   {#if data.entries.length === 0}
     <p class="p-8 text-center text-sm text-[var(--color-muted)]">No entries yet. Use the New button to create the first one.</p>
   {:else if sorted.length === 0}

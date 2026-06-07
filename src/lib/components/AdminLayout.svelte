@@ -57,8 +57,10 @@ identical on every host regardless of the site's own theme.
 
   // Shared styling for a sidebar group's title row. The Extensions title adds its own flex layout
   // for the inline "stub" badge, so it composes this with extra classes rather than reusing it whole.
+  // Group titles align with the nav-item icons below them (the same left edge), so the sidebar reads
+  // on one vertical line. Styled fully here, so no DaisyUI `menu-title` (its own padding would offset).
   const groupTitleClass =
-    'menu-title mb-1 px-2 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]';
+    'mb-2 px-5 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]';
 
   // Up to two uppercase initials from the display name, falling back to '?' for an empty name.
   function initialsOf(displayName: string): string {
@@ -140,13 +142,13 @@ identical on every host regardless of the site's own theme.
     <input id="cairn-drawer" type="checkbox" class="drawer-toggle" bind:checked={drawerOpen} />
 
     <div class="drawer-content flex flex-col">
-      <div class="navbar bg-base-100/95 border-b border-base-300 sticky top-0 z-30 shadow-sm backdrop-blur">
+      <div class="navbar bg-base-100/95 border-b border-base-300 sticky top-0 z-30 gap-2 px-4 shadow-sm backdrop-blur lg:px-8">
         <div class="flex-none lg:hidden">
           <label for="cairn-drawer" aria-label="Open menu" class="btn btn-square btn-ghost">
             <MenuIcon class="h-5 w-5" />
           </label>
         </div>
-        <div class="flex-1 px-2">
+        <div class="min-w-0 flex-1">
           {#if crumbs.length > 1}
             <!-- Show the trail only inside an entry (concept then id). A bare concept list shows the
                  site name instead, since the lone concept crumb would just echo the sidebar and the
@@ -176,58 +178,66 @@ identical on every host regardless of the site's own theme.
 
     <div class="drawer-side">
       <label for="cairn-drawer" aria-label="Close menu" class="drawer-overlay"></label>
-      <nav class="bg-base-100 flex min-h-full w-64 flex-col border-r border-base-300 p-4" aria-label="Site content">
-        <div class="mb-6 flex items-center gap-2 px-2">
+      <nav class="bg-base-100 flex min-h-full w-64 flex-col border-r border-base-300" aria-label="Site content">
+        <!-- Brand band, the same height as the topbar so the two form one aligned header strip. -->
+        <div class="flex h-16 flex-none items-center gap-2 border-b border-base-300 px-5">
           <CairnLogo class="h-7 w-7 text-primary" />
           <span class="text-lg font-bold tracking-tight">Cairn</span>
           <span class="rounded bg-base-200 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)]">CMS</span>
         </div>
 
-        {#snippet navGroup(title: string, items: NavItem[])}
-          <div class={groupTitleClass}>{title}</div>
-          <ul class="menu menu-md mb-4 w-full gap-0.5">
-            {#each items as item (item.href)}
-              <li>
-                <a
-                  href={item.href}
-                  class={isActive(item.href)
-                    ? 'bg-primary/10 font-semibold text-primary'
-                    : 'font-medium text-[var(--color-subtle)]'}
-                  aria-current={isActive(item.href) ? 'page' : undefined}
-                >
-                  <item.icon class="h-4 w-4" aria-hidden="true" />
-                  {item.label}
-                </a>
-              </li>
-            {/each}
-          </ul>
-        {/snippet}
+        <div class="flex-1 space-y-6 overflow-y-auto px-2 py-5">
+          {#snippet navGroup(title: string, items: NavItem[])}
+            <div>
+              <div class={groupTitleClass}>{title}</div>
+              <ul class="menu menu-md w-full gap-0.5 p-0">
+                {#each items as item (item.href)}
+                  <li>
+                    <a
+                      href={item.href}
+                      class={isActive(item.href)
+                        ? 'bg-primary/10 font-semibold text-primary'
+                        : 'font-medium text-[var(--color-subtle)]'}
+                      aria-current={isActive(item.href) ? 'page' : undefined}
+                    >
+                      <item.icon class="h-4 w-4" aria-hidden="true" />
+                      {item.label}
+                    </a>
+                  </li>
+                {/each}
+              </ul>
+            </div>
+          {/snippet}
 
-        {@render navGroup('Content', conceptItems)}
-        {@render navGroup('Manage', manageItems)}
+          {@render navGroup('Content', conceptItems)}
+          {@render navGroup('Manage', manageItems)}
 
-        <!-- The developer-extension group: where a site's own admin tools live, kept apart from the
-             core Cairn functions. Inert stubs until the CairnExtension seam registers real entries. -->
-        <div class="{groupTitleClass} flex items-center gap-2">
-          <span>Extensions</span>
-          <span class="rounded bg-base-200 px-1 py-0.5 text-[9px] font-medium normal-case tracking-normal">stub</span>
+          <!-- The developer-extension group: where a site's own admin tools live, kept apart from the
+               core Cairn functions. Inert stubs until the CairnExtension seam registers real entries. -->
+          <div>
+            <div class="{groupTitleClass} flex items-center gap-2">
+              <span>Extensions</span>
+              <span class="rounded bg-base-200 px-1 py-0.5 text-[9px] font-medium normal-case tracking-normal">stub</span>
+            </div>
+            <ul class="menu menu-md w-full gap-0.5 p-0">
+              {#each extensionStubs as stub (stub.label)}
+                <li>
+                  <span
+                    class="cursor-default font-medium text-[var(--color-muted)] opacity-60"
+                    aria-disabled="true"
+                    title="A slot for a site developer's own admin tool. Not wired yet."
+                  >
+                    <stub.icon class="h-4 w-4" aria-hidden="true" />
+                    {stub.label}
+                  </span>
+                </li>
+              {/each}
+            </ul>
+          </div>
         </div>
-        <ul class="menu menu-md w-full gap-0.5">
-          {#each extensionStubs as stub (stub.label)}
-            <li>
-              <span
-                class="cursor-default font-medium text-[var(--color-muted)] opacity-60"
-                aria-disabled="true"
-                title="A slot for a site developer's own admin tool. Not wired yet."
-              >
-                <stub.icon class="h-4 w-4" aria-hidden="true" />
-                {stub.label}
-              </span>
-            </li>
-          {/each}
-        </ul>
-        <div class="mt-auto border-t border-base-300 pt-3">
-          <div class="flex items-center gap-3 px-2">
+
+        <div class="flex-none border-t border-base-300 px-5 py-4">
+          <div class="flex items-center gap-3">
             <div class="avatar avatar-placeholder">
               <div class="bg-neutral text-neutral-content w-9 rounded-full">
                 <span class="text-sm">{initials}</span>
@@ -239,7 +249,7 @@ identical on every host regardless of the site's own theme.
               <div class="text-xs capitalize text-[var(--color-subtle)]">{data.user.role}</div>
             </div>
           </div>
-          <form method="POST" action="/admin/auth/logout" class="mt-3 px-2">
+          <form method="POST" action="/admin/auth/logout" class="mt-4">
             <button type="submit" class="btn btn-ghost btn-sm btn-block justify-start">
               <LogOutIcon class="h-4 w-4" /> Sign out
             </button>

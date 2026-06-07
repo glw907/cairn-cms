@@ -101,7 +101,12 @@ identical on every host regardless of the site's own theme.
 
 <svelte:window onkeydown={onKeydown} />
 
-<div data-theme={theme} class="drawer lg:drawer-open min-h-screen bg-base-200 text-base-content">
+<!-- data-theme sits on a bare wrapper, not on the drawer itself: every admin rule is scoped as a
+     descendant of the theme root (`:where([data-theme]) .drawer`), so a class on the theme element
+     itself never matches. Keeping the drawer and its base/utility classes one level in lets the
+     scoped sheet style them. -->
+<div data-theme={theme}>
+  <div class="drawer lg:drawer-open min-h-screen bg-base-200 text-base-content">
   <input id="cairn-drawer" type="checkbox" class="drawer-toggle" bind:checked={drawerOpen} />
 
   <div class="drawer-content flex flex-col">
@@ -170,5 +175,6 @@ identical on every host regardless of the site's own theme.
         </form>
       </div>
     </nav>
+  </div>
   </div>
 </div>

@@ -5,6 +5,7 @@
 import postcss from 'postcss';
 import tailwind from '@tailwindcss/postcss';
 import prefixSelector from 'postcss-prefix-selector';
+import { transform, Features } from 'lightningcss';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -22,6 +23,21 @@ export async function buildAdminCss() {
   // Stage 1: Tailwind and DaisyUI compile. `from` is the input path so @source and @import resolve
   // relatively and the plugins resolve from the repo's node_modules.
   const compiled = await postcss([tailwind()]).process(input, { from: inputPath });
+  // Stage 1b: flatten native CSS nesting before scoping. Tailwind v4 and DaisyUI emit nested rules
+  // whose nested selectors start with `&` or a combinator (`> .drawer-toggle ~ .drawer-side`). The
+  // selector-prefix scoper in stage 2 prepends the scope to the front of every rule, so a nested
+  // combinator selector becomes `:where(scope) > .x`, which native nesting then composes as
+  // `& :where(scope) > .x` and severs the rule from its parent. The `lg:drawer-open` sidebar reveal
+  // was the visible casualty. Flattening first makes every rule one complete flat selector, so the
+  // scope prepends once at the front and composes correctly. oklch tokens are preserved (no targets).
+  const flattened = new TextDecoder().decode(
+    transform({
+      filename: inputPath,
+      code: new TextEncoder().encode(compiled.css),
+      include: Features.Nesting,
+      minify: false,
+    }).code,
+  );
   // Stage 2: scope every rule under the admin theme roots.
   const scoped = await postcss([
     prefixSelector({
@@ -40,7 +56,7 @@ export async function buildAdminCss() {
         return prefixed;
       },
     }),
-  ]).process(compiled.css, { from: undefined });
+  ]).process(flattened, { from: undefined });
   return scoped.css;
 }
 

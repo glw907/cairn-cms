@@ -133,6 +133,7 @@
     "@vitest/browser": "^4.1.7",
     "@vitest/browser-playwright": "^4.1.7",
     "daisyui": "^5.5.23",
+    "lightningcss": "^1.32.0",
     "playwright": "^1.60.0",
     "postcss": "^8.5.15",
     "postcss-prefix-selector": "^2.1.1",

@@ -24,4 +24,14 @@ describe('admin css build', () => {
     // A scoped keyframe step like ":where(...) 0% {" would be a scoping bug.
     expect(css).not.toMatch(/:where\([^{]*\)\s*(0%|100%|from|to)\s*\{/);
   });
+
+  it('prepends the scope to a flat selector, never in front of a nested combinator', async () => {
+    const css = await buildAdminCss();
+    // Tailwind/DaisyUI emit native nesting; we flatten it before scoping. A selector that begins
+    // ":where(scope) > .x" (scope immediately followed by a combinator) is the signature of the
+    // pre-flatten bug that severed the lg:drawer-open sidebar reveal from its parent. There must be
+    // none, and the flat desktop reveal rule must survive intact.
+    expect(css).not.toMatch(/:where\(\[data-theme=[^)]*\)\s*[>~+]/);
+    expect(css).toContain('.lg\\:drawer-open > .drawer-toggle ~ .drawer-side');
+  });
 });

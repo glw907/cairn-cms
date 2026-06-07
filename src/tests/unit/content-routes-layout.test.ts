@@ -32,7 +32,7 @@ describe('layoutLoad', () => {
     const routes = createContentRoutes(runtime());
     const data = routes.layoutLoad(event('/admin/posts', 'owner') as never);
     expect(data.siteName).toBe('Test Site');
-    expect(data.user).toEqual({ displayName: 'Ed', role: 'owner' });
+    expect(data.user).toEqual({ displayName: 'Ed', email: 'e@test', role: 'owner' });
     expect(data.concepts).toEqual([
       { id: 'posts', label: 'Posts' },
       { id: 'pages', label: 'Pages' },

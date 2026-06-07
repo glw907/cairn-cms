@@ -30,6 +30,56 @@ function listEvent(params: Record<string, string>, search = '') {
 
 afterEach(() => vi.restoreAllMocks());
 
+/** A layout-load event with a settable editor, path, and cookie jar. */
+function makeEvent(opts: {
+  pathname: string;
+  editor: { email: string; displayName: string; role: 'owner' | 'editor' };
+  cookies?: Record<string, string>;
+}) {
+  return {
+    url: new URL(`https://t.example${opts.pathname}`),
+    params: {},
+    request: new Request('https://t.example'),
+    locals: { editor: opts.editor },
+    platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
+    cookies: { get: (name: string) => opts.cookies?.[name] },
+  };
+}
+
+describe('layoutLoad', () => {
+  it('carries the editor email and resolves the theme from the cookie', () => {
+    const routes = createContentRoutes(runtime(), { mintToken: async () => 'tok' });
+    const event = makeEvent({
+      pathname: '/admin/posts',
+      editor: { email: 'ed@example.com', displayName: 'Ed', role: 'owner' },
+      cookies: { 'cairn-admin-theme': 'cairn-admin-dark' },
+    });
+    const data = routes.layoutLoad(event as never);
+    expect(data.user.email).toBe('ed@example.com');
+    expect(data.theme).toBe('cairn-admin-dark');
+  });
+
+  it('defaults the theme to light when no cookie is set', () => {
+    const routes = createContentRoutes(runtime(), { mintToken: async () => 'tok' });
+    const event = makeEvent({
+      pathname: '/admin/posts',
+      editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor' },
+      cookies: {},
+    });
+    expect(routes.layoutLoad(event as never).theme).toBe('cairn-admin');
+  });
+
+  it('ignores an unknown cookie value and falls back to light', () => {
+    const routes = createContentRoutes(runtime(), { mintToken: async () => 'tok' });
+    const event = makeEvent({
+      pathname: '/admin/posts',
+      editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor' },
+      cookies: { 'cairn-admin-theme': 'bogus' },
+    });
+    expect(routes.layoutLoad(event as never).theme).toBe('cairn-admin');
+  });
+});
+
 describe('listLoad', () => {
   it('lists entries with title, date, and draft from each file frontmatter', async () => {
     const tree = {

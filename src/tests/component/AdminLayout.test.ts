@@ -8,11 +8,12 @@ const child = createRawSnippet(() => ({ render: () => '<p>page body</p>' }));
 function data(canManageEditors: boolean, navLabel: string | null = null) {
   return {
     siteName: 'Test Site',
-    user: { displayName: 'Ed', role: canManageEditors ? ('owner' as const) : ('editor' as const) },
+    user: { displayName: 'Ed', email: 'ed@example.com', role: canManageEditors ? ('owner' as const) : ('editor' as const) },
     concepts: [{ id: 'posts', label: 'Posts' }, { id: 'pages', label: 'Pages' }],
     pathname: '/admin/posts',
     canManageEditors,
     navLabel,
+    theme: 'cairn-admin' as const,
   };
 }
 

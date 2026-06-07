@@ -22,15 +22,17 @@ export interface NavConcept {
   label: string;
 }
 
-/** The admin layout's data: site identity, the signed-in user, the nav, and the active path. */
+/** The admin layout's data: site identity, the signed-in user, the nav, the active path, and theme. */
 export interface LayoutData {
   siteName: string;
-  user: { displayName: string; role: Role };
+  user: { displayName: string; email: string; role: Role };
   concepts: NavConcept[];
   pathname: string;
   canManageEditors: boolean;
   /** The nav menu's label when the site configures one; gates the Navigation nav entry. Null otherwise. */
   navLabel: string | null;
+  /** The admin theme resolved for SSR: the persisted cookie choice, or the light default. */
+  theme: 'cairn-admin' | 'cairn-admin-dark';
 }
 
 /** One row in a concept's list view. */
@@ -83,6 +85,8 @@ export interface ContentEvent {
   request: Request;
   locals: { editor?: Editor | null };
   platform?: { env?: GithubKeyEnv };
+  /** SvelteKit's cookie jar; the layout load reads the persisted admin theme. Optional for non-route callers. */
+  cookies?: { get(name: string): string | undefined };
 }
 
 /** Injectable dependencies; tests stub the token mint to avoid signing a real key. */
@@ -109,16 +113,19 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
   const mintToken =
     deps.mintToken ?? ((env: GithubKeyEnv) => cachedInstallationToken(appCredentials(runtime.backend, env)));
 
-  /** Layout load for every admin page: the nav, the user, and the active path. */
+  /** Layout load for every admin page: the nav, the user, the active path, and the resolved theme. */
   function layoutLoad(event: ContentEvent): LayoutData {
     const editor = sessionOf(event);
+    const cookieTheme = event.cookies?.get('cairn-admin-theme');
+    const theme = cookieTheme === 'cairn-admin-dark' ? 'cairn-admin-dark' : 'cairn-admin';
     return {
       siteName: runtime.siteName,
-      user: { displayName: editor.displayName, role: editor.role },
+      user: { displayName: editor.displayName, email: editor.email, role: editor.role },
       concepts: runtime.concepts.map((c) => ({ id: c.id, label: c.label })),
       pathname: event.url.pathname,
       canManageEditors: editor.role === 'owner',
       navLabel: runtime.navMenu?.label ?? null,
+      theme,
     };
   }
 

@@ -11,40 +11,67 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-07): the admin stands on its own (plan 1, self-styling foundation)
+## Immediate next action (2026-06-07): the admin stands on its own (plan 2, UX rebuild plus dark mode)
 
-**The admin-stands-alone initiative is the immediate next action (2026-06-07), at the user's
-direction, ahead of the prior DX-B, gallery, and P4 queue.** It makes `/admin` a self-contained CMS
-admin: rendered free of the host's chrome, self-styled with scoped Tailwind and DaisyUI independent of
-the host, and rebuilt in idiomatic DaisyUI against SvelteForge (`ColorlibHQ/svelteforge-admin`) as the
-layout and modal-placement reference, with a data-table list, a sidebar user menu and per-item icons
-(Lucide), a sticky topbar with breadcrumbs, and dark mode. It supersedes the admin half of the planned
-Pass C. The design spec is `docs/superpowers/specs/2026-06-07-cairn-admin-stands-alone-design.md`. It
-decomposes into three plans by verification surface (engine self-styling foundation, engine UX rebuild
-plus dark mode, engine chrome isolation plus the route-structure pattern and dev guard), then two site
-retrofits (ecnordic-ski, 907-life). The reference is used for look only, with no code copied (its layer
-is shadcn on bits-ui, a different system from DaisyUI).
+**The admin-stands-alone initiative is the active work (2026-06-07), at the user's direction, ahead of
+the prior DX-B, gallery, and P4 queue.** It makes `/admin` a self-contained CMS admin: rendered free of
+the host's chrome, self-styled with scoped Tailwind and DaisyUI independent of the host, and rebuilt in
+idiomatic DaisyUI against SvelteForge (`ColorlibHQ/svelteforge-admin`) as the layout and modal-placement
+reference, with a data-table list, a sidebar user menu and per-item icons (Lucide), a sticky topbar with
+breadcrumbs, and dark mode. It supersedes the admin half of the planned Pass C. The design spec is
+`docs/superpowers/specs/2026-06-07-cairn-admin-stands-alone-design.md`. It decomposes into three plans by
+verification surface (engine self-styling foundation, engine UX rebuild plus dark mode, engine chrome
+isolation plus the route-structure pattern and dev guard), then two site retrofits (ecnordic-ski,
+907-life). The reference is used for look only, with no code copied (its layer is shadcn on bits-ui, a
+different system from DaisyUI).
 
-**Plan 1 (the self-styling CSS foundation) is written and ready to execute:**
-`docs/superpowers/plans/2026-06-07-cairn-admin-self-styling-foundation.md`. The engine compiles the
-admin's Tailwind utilities and DaisyUI components (built-in themes off, no global Preflight) plus the
-Warm Stone variables, scopes every rule under `:where([data-theme='cairn-admin'],
-[data-theme='cairn-admin-dark'])` with `postcss-prefix-selector`, and writes the sheet to
-`dist/components/cairn-admin.css`, where the admin components already import it. The framework-free
-showcase proves it, since the admin renders styled on a site that ships no Tailwind and no DaisyUI. The
-compile-and-scope mechanism is pre-verified empirically (utilities and component classes present, no
-global leak, `@keyframes` intact); plan Task 1 re-confirms it in-repo before the rest leans on it. The
-pass bumps `0.31.0`.
+**Next: brainstorm and write plan 2 (the UX rebuild plus dark mode), then execute it.** Plan 2 is design
+section 2 of the spec. It is not written yet, and it carries open design decisions the spec leaves for
+brainstorming (the component inventory the rebuild commits to, the data-table and sidebar shape against
+the SvelteForge reference, the dark-mode toggle mechanism and where its variables live, the a11y bar).
+Run `superpowers:brainstorming` first to settle those with the user, then `superpowers:writing-plans`. The
+self-styling pipeline plan 1 landed scans the component source on every build, so it picks up whatever
+classes the rebuild adds with no build change. Plan 2 changes component markup, so its review gate adds
+`svelte-reviewer` and `daisyui-a11y-reviewer`, and a live `/admin` smoke applies once the UX surface
+moves. Publishing stays held: `0.29.0` is the registry `latest`, `main` carries the unpublished `0.30.0`
+and now `0.31.0`; the window publishes before any site or the scaffolder consumes the new surface, and
+the two site retrofits run only after the engine work publishes.
 
-**Execute plan 1 `subagent-driven` (one `cairn-implementer` per task) on `main` directly, starting at
-Task 1.** Dispatch Task 5 (the build script) and Task 7 (the showcase visual proof) `model: opus`; the
-rest fit the Sonnet default. The pass-end review gate is the simplifier plus a `/code-review` with
-attention to the build mechanism and the CSS scoping. `svelte-reviewer` and `daisyui-a11y-reviewer` do
-not apply to plan 1, which changes no component markup (they apply to plan 2's UX rebuild), and the
-Worker and auth reviewers and the live `/admin` smoke do not apply. Publishing stays held: `0.29.0` is
-the registry `latest`, `main` carries the unpublished `0.30.0`, and this pass adds `0.31.0`; the window
-publishes before any site or the scaffolder consumes the new surface, and the two site retrofits run
-only after the engine work publishes.
+**Plan 1 (self-styling CSS foundation) LANDED on `main` 2026-06-07 as `0.31.0`, unpublished.** The admin
+now ships its own stylesheet from the engine. A new `scripts/build-admin-css.mjs` compiles the admin's
+Tailwind utilities and DaisyUI components (built-in themes off, no global Preflight) plus the Warm Stone
+variables, scopes every rule under `:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])`
+with `postcss-prefix-selector`, and writes the sheet to `dist/components/cairn-admin.css`, where the admin
+components already import it. The `package` script runs the compile after `svelte-package`; the theme
+partial gained a box-sizing reset scoped to the admin roots in place of the omitted global Preflight. It
+ran subagent-driven, one `cairn-implementer` per task on `main` directly, Tasks 5 and 7 on Opus and the
+rest on Sonnet. Six task commits `2e7cf0d..968999f`, a review fold-in `fda004e`, and the upgrade-guide doc
+`bb6d1bd`. Gate green at Task 8, run first-hand: `npm run check` 797 files 0/0, `npm test` 119 files / 723
+tests exit 0, `check:reference`/`check:package`/`check:docs` exit 0. The compiled sheet is 168,236 bytes
+(23 `.btn`, 0 surviving raw directives, 623 scoped selectors). The minor bumps `0.31.0` with a "Consumers
+may:" line (the change is additive, no required action). The post-mortem is in the plan
+(`docs/superpowers/plans/2026-06-07-cairn-admin-self-styling-foundation.md`).
+
+**The review gate caught one real defect, folded in as `fda004e`.** The run-as-script guard that compared
+`import.meta.url` against a `file://`-prefixed `process.argv[1]` was fragile: `import.meta.url`
+percent-encodes path characters and resolves symlinks while `process.argv[1]` does neither, so on a
+checkout path with a space or reached through a symlink the guard is false, `npm run package` exits 0
+having shipped only the 2KB variables-only partial, and the admin renders unstyled with no error. The fix
+uses the standard `pathToFileURL(process.argv[1]).href` idiom with an `argv[1]` presence guard. The
+simplifier made no change; the `svelte-reviewer`, `daisyui-a11y-reviewer`, Worker, and auth reviewers and
+the live `/admin` smoke did not apply (no component markup, auth, or Worker change).
+
+**Plan-1 carry-forwards (recorded, not fixed).** (1) Global at-rule leaks: the review confirmed every
+style rule (621+) is correctly scoped, but `postcss-prefix-selector` rewrites rule selectors only, never
+at-rule identifiers, so DaisyUI's global `@keyframes` (the common name `spin`, plus `progress`, `toast`,
+`menu`, `dropdown`, `skeleton`) and its `@property` registrations (the unprefixed `--radialprogress` with
+`inherits:true`, and 41 prefixed `--tw-*` ones) stay document-global. The realistic collision is a host
+that defines `@keyframes spin` while the admin sheet loads document-wide. The risk is bounded today (the
+sheet is route-scoped to `/admin`, and plan 3 isolates the chrome), and a fix is keyframe and property
+name-mangling, a different mechanism from the selector scoping plan 1 locked; it belongs with plan 2 (the
+UX rebuild adds the bulk of DaisyUI keyframes) or plan 3. (2) The showcase mounts no `/admin/login` route,
+so the Task 7 visual proof ran against `/admin/posts` (the same `AdminLayout.svelte` self-styling path);
+wiring the login route into the showcase is a showcase gap, a candidate for a later showcase touch.
 
 ## Deferred behind the admin initiative: DX-sweep Pass B (tooling and CI robustness)
 

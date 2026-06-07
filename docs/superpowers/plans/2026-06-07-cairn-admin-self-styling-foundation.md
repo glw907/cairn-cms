@@ -408,3 +408,68 @@ git commit -m "Release 0.31.0: the admin ships its own scoped stylesheet"
 - Spec coverage: this plan implements design section 1 (self-contained admin styling) end to end, including the dev dependencies, the `themes: false` DaisyUI compile with no global Preflight, the scope under both theme roots, the dist build wiring, the isolation assertions, and the framework-free showcase proof. It deliberately defers the UX rebuild and dark-mode variables and toggle (design section 2, plan 2), the dev guard and route docs (sections 3 and 4, plan 3), and the site retrofits.
 - Type and name consistency: `buildAdminCss` is defined in `scripts/build-admin-css.mjs` (Task 5) and imported by the test (Task 4) and the `package` script (Task 6) under the same name. The scope string `:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])` is identical in the script and the verified mechanism.
 - The dark theme root appears in the scoped reset (Task 2) and the scope prefix (Task 5) before plan 2 adds its variables. A selector that matches no element is inert, so this is safe and avoids a later edit to the reset.
+
+---
+
+## Post-mortem (landed 2026-06-07 on `main`, `0.31.0`, unpublished)
+
+**What was built.** The admin now ships its own stylesheet from the engine. A new build script
+`scripts/build-admin-css.mjs` compiles the Tailwind utilities and DaisyUI component classes (built-in
+themes off, no global Preflight) plus the Warm Stone variables from the admin component source, scopes
+every rule under `:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])` with
+`postcss-prefix-selector`, and writes the sheet to `dist/components/cairn-admin.css`, where the admin
+components already import it. The `package` script runs the compile after `svelte-package` so the
+compiled sheet overwrites the variables-only partial. The theme partial gained a box-sizing reset
+scoped to the admin roots, which replaces the omitted global Preflight. A new compile input
+`scripts/admin-css.input.css` is the Tailwind entry, kept out of `src/lib` so it does not ship.
+
+**How it ran.** Subagent-driven, one `cairn-implementer` per task on `main` directly, Tasks 5 and 7 on
+Opus and the rest on Sonnet. Six task commits `2e7cf0d..968999f` (Task 4's failing test committed with
+Task 5's script), a review fold-in `fda004e`, and the upgrade-guide doc `bb6d1bd`. The simplifier found
+nothing to change.
+
+**Verification evidence.** The full gate ran green at Task 8: `npm run check` 797 files 0 errors 0
+warnings, `npm test` 119 files / 723 tests exit 0, `check:reference` all 8 subpaths OK,
+`check:package` all resolution modes green, `check:docs` 45 files all links resolve. The compiled sheet
+is 168,236 bytes with 23 `.btn` matches, 0 surviving raw directives, and 623 scoped selectors. The
+end-to-end proof (Task 7) is the framework-free showcase: with the compiled sheet in `dist`, the
+showcase admin renders fully styled (Warm Stone background, bordered topbar, rounded cards, styled
+inputs, a filled purple primary button), with `data-theme="cairn-admin"` on the root, one stylesheet
+loaded and no 404, `.btn` computing the theme token color, and zero console errors. The showcase ships
+no Tailwind and no DaisyUI, so this proves the engine self-styles on a host with neither.
+
+**Two deviations, both sound.** Task 1's mechanism spike could not run verbatim from `/tmp` (no
+resolvable `node_modules` there); it ran in-repo against the real installed versions, which is the
+spike's actual intent. Task 5 added `src/tests/postcss-prefix-selector.d.ts`, an ambient module
+declaration, because the `.mjs` script is pulled into the `svelte-check` program through the test
+import and the dependency ships JSDoc types but no `.d.ts`. The declaration mirrors the existing
+`src/tests/cloudflare-test.d.ts` convention.
+
+**Showcase login-route gap (Task 7).** The plan named `/admin/login` as the proof target, but the
+showcase mounts only the authed `(app)` admin shell, not the engine's `LoginPage.svelte`. The proof ran
+against `/admin/posts`, which renders through the same `AdminLayout.svelte` self-styling path
+(`import './cairn-admin.css'` plus `data-theme="cairn-admin"`). Wiring an `/admin/login` route into the
+showcase is a showcase gap, not an engine gap; candidate for the showcase touch in a later plan.
+
+**Review gate.** The simplifier made no change. A high-effort `/code-review` found one real defect,
+folded in as `fda004e`: the run-as-script guard `import.meta.url === \`file://${process.argv[1]}\`` is
+fragile, because `import.meta.url` percent-encodes path characters and resolves symlinks while
+`process.argv[1]` does neither. On a checkout path with a space or reached through a symlink, the guard
+is false, so `npm run package` exits 0 having shipped only the 2KB variables-only partial and the admin
+renders unstyled with no error. The fix uses the standard `pathToFileURL(process.argv[1]).href` idiom
+with an `argv[1]` presence guard. The `svelte-reviewer`, `daisyui-a11y-reviewer`, Worker, and auth
+reviewers and the live `/admin` smoke did not apply (no component markup, auth, or Worker change).
+
+**Carry-forward (recorded, not fixed): global at-rule leaks.** The review confirmed every style rule
+(621+) is correctly scoped, with zero unscoped style rules. `postcss-prefix-selector` rewrites rule
+selectors only, never at-rule identifiers, so DaisyUI's global `@keyframes` (including the common name
+`spin`, plus `progress`, `toast`, `menu`, `dropdown`, `skeleton`) and its `@property` registrations
+(the unprefixed `--radialprogress` with `inherits:true`, and 41 prefixed `--tw-*` ones) stay in the
+document-global namespace. If the admin sheet ever loads document-wide and a host defines a keyframe of
+the same name, the later declaration wins for elements animating that name. The realistic collision is
+`spin`. The bounded risk today: the admin sheet is route-scoped to `/admin`, and plan 3 isolates the
+admin chrome from the host entirely. A real fix is keyframe and property name-mangling (rewriting both
+the `@keyframes`/`@property` definitions and their `animation-name`/`var()` references), a different
+mechanism from the selector scoping this plan locked. It belongs with plan 2 (the UX rebuild adds the
+bulk of DaisyUI keyframes) or plan 3 (chrome isolation), and is left as a deliberate scope boundary
+here.

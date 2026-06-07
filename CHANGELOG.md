@@ -2,6 +2,18 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.31.0
+
+The admin now ships its own stylesheet. The engine compiles the admin's Tailwind utilities and
+DaisyUI component classes, scoped under the admin `data-theme`, and the admin styles itself on any
+host with no Tailwind or DaisyUI of its own. The compiled sheet leaks no global rule, so it never
+touches the host's pages.
+
+Consumers may: remove any Tailwind `@source` entry that existed only to generate the admin's classes;
+the admin no longer depends on the host's Tailwind or DaisyUI build. A host that already provides
+DaisyUI globally keeps working, since the engine's scoped rules are low-specificity (`:where`) and
+the class names match; a later pass moves the admin out of the host's chrome entirely.
+
 ## 0.30.0
 
 Carved a `@glw907/cairn-cms/render` authoring subpath for the component-authoring toolkit. `iconSpan`,

@@ -6,7 +6,7 @@ import postcss from 'postcss';
 import tailwind from '@tailwindcss/postcss';
 import prefixSelector from 'postcss-prefix-selector';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const repoRoot = new URL('../', import.meta.url);
 const inputPath = fileURLToPath(new URL('scripts/admin-css.input.css', repoRoot));
@@ -46,7 +46,7 @@ export async function buildAdminCss() {
 
 // When run as a script, write the compiled sheet into dist, overwriting the variables-only partial
 // that svelte-package copied there.
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const css = await buildAdminCss();
   mkdirSync(outDir, { recursive: true });
   writeFileSync(outPath, css);

@@ -57,7 +57,14 @@ export async function buildAdminCss() {
       },
     }),
   ]).process(flattened, { from: undefined });
-  return scoped.css;
+  // The self-hosted fonts are declared here, after compile, so the woff2 url is not rebased by the
+  // @import inlining (which resolves it against the source tree instead of the shipped sheet). The
+  // url is relative to this output, dist/components/cairn-admin.css, beside the dist/components/fonts/
+  // files svelte-package copies. Figtree is the body and UI face, Bricolage Grotesque the display.
+  const fontFace =
+    "@font-face{font-family:'Figtree Variable';font-style:normal;font-display:swap;font-weight:300 900;src:url('./fonts/figtree.woff2') format('woff2')}\n" +
+    "@font-face{font-family:'Bricolage Grotesque Variable';font-style:normal;font-display:swap;font-weight:400 800;src:url('./fonts/bricolage-grotesque.woff2') format('woff2')}\n";
+  return fontFace + scoped.css;
 }
 
 // When run as a script, write the compiled sheet into dist, overwriting the variables-only partial

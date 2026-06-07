@@ -150,7 +150,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
 
 <header class="mb-6 flex items-center justify-between gap-2">
   <div>
-    <h1 class="text-2xl font-bold tracking-tight">{data.title}</h1>
+    <h1 class="text-2xl font-bold tracking-tight font-[family-name:var(--font-display)]">{data.title}</h1>
     <p class="text-xs text-[var(--color-muted)]">{data.label}: {data.id}</p>
   </div>
   <div class="flex items-center gap-2">

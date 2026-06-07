@@ -25,6 +25,16 @@ describe('admin css build', () => {
     expect(css).not.toMatch(/:where\([^{]*\)\s*(0%|100%|from|to)\s*\{/);
   });
 
+  it('self-hosts the brand fonts with an output-relative woff2 url', async () => {
+    const css = await buildAdminCss();
+    // The fonts ship beside the compiled sheet, so the url must stay relative to the output, not the
+    // source tree. A url rebased to `../src/...` would 404 for a consumer loading the dist sheet.
+    expect(css).toContain('@font-face');
+    expect(css).toContain("font-family:'Figtree Variable'");
+    expect(css).toContain("url('./fonts/figtree.woff2')");
+    expect(css).toContain("url('./fonts/bricolage-grotesque.woff2')");
+  });
+
   it('prepends the scope to a flat selector, never in front of a nested combinator', async () => {
     const css = await buildAdminCss();
     // Tailwind/DaisyUI emit native nesting; we flatten it before scoping. A selector that begins

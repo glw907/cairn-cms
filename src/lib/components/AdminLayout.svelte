@@ -194,7 +194,7 @@ identical on every host regardless of the site's own theme.
         <!-- Brand band, the same height as the topbar so the two form one aligned header strip. -->
         <div class="flex h-16 flex-none items-center gap-2 border-b border-base-300 px-5">
           <CairnLogo class="h-7 w-7 text-primary" />
-          <span class="text-lg font-bold tracking-tight">Cairn</span>
+          <span class="text-lg font-bold tracking-tight font-[family-name:var(--font-display)]">Cairn</span>
           <span class="rounded bg-base-200 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)]">CMS</span>
         </div>
 

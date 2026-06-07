@@ -106,7 +106,7 @@ content sizes. The header New button opens a dialog holding the create form.
 </script>
 
 <header class="mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-  <h1 class="text-2xl font-bold tracking-tight">{data.label}</h1>
+  <h1 class="text-2xl font-bold tracking-tight font-[family-name:var(--font-display)]">{data.label}</h1>
   <div class="flex items-center gap-3 sm:flex-1 sm:flex-wrap sm:justify-end">
     <label class="input input-sm min-w-0 flex-1 sm:max-w-xs">
       <SearchIcon class="h-4 w-4 opacity-60" aria-hidden="true" />

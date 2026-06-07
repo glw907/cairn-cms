@@ -1,8 +1,16 @@
+/* Cairn's own typeface, self-hosted so the admin needs no external font request. Figtree carries the
+   body and UI (friendly, highly legible at small sizes); Bricolage Grotesque gives the brand and the
+   page headings a distinct voice. Both are variable (one file spans the weight range) and licensed
+   under the SIL Open Font License. The `@font-face` rules are added by scripts/build-admin-css.mjs
+   after compile (so the woff2 url stays relative to the shipped sheet, not the source tree). */
+
 /* Warm Stone: the cairn admin theme. Self-contained, since DaisyUI v5 reads these vars at point
    of use, so this fully overrides the host's theme with no @plugin and no host build step. */
 [data-theme='cairn-admin'] {
   color-scheme: light;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-body: 'Figtree Variable', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-display: 'Bricolage Grotesque Variable', var(--font-body);
+  font-family: var(--font-body);
 
   --color-base-100: oklch(99% 0.004 75);
   --color-base-200: oklch(96.5% 0.006 75);
@@ -47,7 +55,9 @@
    >= 4.5:1 contrast on the dark bases. The polish pass tunes these values against the reference. */
 [data-theme='cairn-admin-dark'] {
   color-scheme: dark;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-body: 'Figtree Variable', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-display: 'Bricolage Grotesque Variable', var(--font-body);
+  font-family: var(--font-body);
 
   /* Dark surface layering: the panels (sidebar, topbar, cards = base-100) lift clearly above the app
      background (base-200, the deepest tone), with base-300 borders lighter still for a visible edge.

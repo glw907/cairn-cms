@@ -40,4 +40,16 @@ describe('AdminLayout', () => {
     const screen = render(AdminLayout, { data: data(false, 'Primary nav'), children: child });
     await expect.element(screen.getByRole('link', { name: 'Primary nav' })).toBeInTheDocument();
   });
+
+  it('shows the user identity and a sign-out control in the sidebar', async () => {
+    const screen = render(AdminLayout, { data: data(true), children: child });
+    await expect.element(screen.getByText('ed@example.com')).toBeInTheDocument();
+    await expect.element(screen.getByText('Ed', { exact: true })).toBeInTheDocument();
+    await expect.element(screen.getByRole('button', { name: /sign out/i })).toBeInTheDocument();
+  });
+
+  it('shows the owner role in the user menu', async () => {
+    const screen = render(AdminLayout, { data: data(true), children: child });
+    await expect.element(screen.getByText(/owner/i)).toBeInTheDocument();
+  });
 });

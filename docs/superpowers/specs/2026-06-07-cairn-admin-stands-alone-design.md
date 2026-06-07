@@ -223,10 +223,16 @@ The work decomposes into plans by verification surface, which matches this repo'
    version, baring the root layout, moving chrome and `app.css` into `(site)`, and verifying the admin
    and login stand alone.
 
-Plans 1 and 2 may merge or split further when written just-in-time. The CSS pipeline and the UX
-rebuild are coupled (the pipeline must ship the classes the rebuilt components use), so they belong in
-the same pass. The engine work publishes before the site retrofits, so the retrofits can drop
-`app.css` from `/admin` safely against a self-styling admin.
+**Resolved when written just-in-time (2026-06-07).** The decomposition runs as three engine plans, not
+two. Plan 1 (the self-styling CSS pipeline) shipped standalone as `0.31.0`, because the `@source` scan
+makes the pipeline pick up whatever classes the later UX rebuild adds with no build change, so the
+pipeline did not have to wait for the rebuilt components. Plan 2 is the UX rebuild plus dark mode in one
+pass: its verification surface is unified (the styled admin on the framework-free showcase, gated by the
+Playwright render-compare loop, which captures light and dark together), dark mode is small now that
+plan 1 laid the scope root and reset, and the dark toggle lives in the new sticky topbar, so building
+the topbar and the toggle together avoids a second touch. Plan 3 is chrome isolation. The engine work
+publishes before the site retrofits, so the retrofits can drop `app.css` from `/admin` safely against a
+self-styling admin.
 
 ## Versioning and release
 
@@ -267,5 +273,8 @@ the admin's CSS, isolates the admin from host chrome, and retrofits the two site
 - The CSS scoping mechanism (native `@scope` versus a PostCSS selector-prefix pass) and the
   dist-compile plus showcase-consumption chain are validated by a spike at the start of plan 1, before
   the UX rebuild leans on them. This is the Plan-07 locked-build-assumption lesson applied first.
-- For dark-mode first paint, accept a minor hydration adjustment, or read a cookie in the layout load
-  to set the initial `data-theme`. The plan decides on cost.
+- For dark-mode first paint, the plan-2 decision (2026-06-07) is the cookie read in the layout load. The
+  toggle writes a cookie and the admin layout load reads it to SSR the initial `data-theme`, so a
+  dark-mode user sees no light flash on first paint. The admin layout load already runs for auth, so the
+  added cost is one cookie write and one read. The default still follows `prefers-color-scheme` when no
+  cookie is set.

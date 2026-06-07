@@ -143,3 +143,7 @@ pages.
 This release also fixes the self-styled admin stylesheet so the drawer sidebar renders. A consumer on
 an older `0.3x` that saw a missing admin sidebar gets the fix by upgrading. No consumer action is
 required.
+
+The admin's visual design was then polished: refined Warm Stone tokens, a soft active-nav state, a
+cleaner list table, a newest-first default sort, and a reduced-motion guard. This is visual only and
+needs no migration.

@@ -16,6 +16,12 @@ parent), and the admin layout carries `data-theme` on a wrapper so the drawer's 
 descendants. The build gained `lightningcss` as a build-only devDependency for the flatten step; this
 does not affect a consumer's runtime.
 
+A frontend-design polish pass then refined the look. The Warm Stone light and dark palettes gained
+clearer surface layering and crisper borders, the sidebar an active state in a soft primary tint, and
+the list table refined column labels, row hover, and cleaner entry-title links. The list now defaults
+to newest-first. A reduced-motion preference is honored inside the admin. A scoped anchor reset
+restores the no-underline, inherit-color default the omitted Preflight used to provide.
+
 This is additive for a consumer that mounts the admin through the documented routes. The engine now
 depends on `@lucide/svelte`, which installs transitively, so no consumer action is required. A new
 `listDeleteAction` is available on the content routes for wiring per-row delete on the list page; the

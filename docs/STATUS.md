@@ -11,32 +11,36 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-07): the frontend-design polish pass on the rebuilt admin
+## Immediate next action (2026-06-07): brainstorm and write plan 3 (admin chrome isolation)
 
-**Plan 2 (the admin UX rebuild plus dark mode) LANDED on `main` as `0.32.0`, unpublished. The next action
-is the `/frontend-design:frontend-design` polish pass, at the user's request.** The structural rebuild is
-done and review-gated: correct behavior, accessible markup, idiomatic DaisyUI, light and dark, proven on
-the framework-free showcase. The polish pass now refines the visual quality against the SvelteForge
-reference (`ColorlibHQ/svelteforge-admin`, look only, no code copied) with the Playwright
-render-and-compare loop. It touches only the component markup classes and the `cairn-admin.css` light and
-dark token values. It changes no load, action, or content-route logic, keeps every component test green,
-and re-anchors the `vitest-browser-svelte` screenshot baselines once the look settles. It runs as its own
-pass, because design refinement is visual and iterative rather than test-first.
+**Plan 2 (the admin UX rebuild plus dark mode) and its frontend-design polish pass both LANDED on `main`,
+folded into the unpublished `0.32.0`. The next action is plan 3, the admin chrome isolation.** Plan 3 has
+no plan file yet, so brainstorm it first (settle the open design calls with the user), then write the
+numbered plan, then execute subagent-driven. Its scope: a chrome-free admin root plus a `(site)` route
+group so the host's chrome never wraps `/admin`, a dev-only ancestor-detection guard, the route-structure
+docs, and the showcase `(site)` group. It also carries the plan-1 global at-rule leak (DaisyUI
+`@keyframes` and `@property` stay document-global; the nesting flatten fixed selector scoping, not
+at-rule scoping). After plan 3 come the two site retrofits.
 
-**Roll the polish pass's carry-forwards in.** Plan 2's review gate and tasks left visual and interaction
-refinements that suit this pass: the list default sort is oldest-first (newest-first is the usual CMS
-default), the breadcrumb shows a redundant single crumb on a bare list page, the list delete is a plain
-POST that resets list state on a 409 conflict (an `enhance`-with-`applyAction` fix is blocked only by
-`$app/forms` not resolving in the component test project), a first-ever-visit dark-OS user sees a light
-first paint before the client flips (an inline head script in the host `app.html` removes it), and the
-DaisyUI modal and drawer transitions are not behind a `prefers-reduced-motion` guard. See the plan
-post-mortem for the full list.
+**The polish pass LANDED 2026-06-07 (commit `97ff069`), folded into `0.32.0` (no version bump, the window
+is unpublished).** It refined the look with the Playwright render-and-compare loop, direction warm
+editorial utility: refined Warm Stone light and dark tokens for clearer surface layering, a soft
+`bg-primary/10` active-nav state, the site name instead of a redundant single breadcrumb on a bare list
+page, a refined list table (uppercase muted column labels, row hover, cleaner title links, card
+elevation), a newest-first default sort, and a scoped `prefers-reduced-motion` guard. A scoped anchor
+reset in `@layer components` restores the no-underline inherit-color default the omitted Preflight used to
+provide. The a11y review's contrast pass cleared AA in both themes; the dark active-nav at 4.53:1 is the
+one locked margin, so dark `--color-primary` and the `/10` tint opacity must not move without re-checking.
+A real cascade-layer lesson landed: an unlayered reset beats every layered utility because layers resolve
+before specificity, so the reset had to go in the `components` layer (below `utilities`). The pass-end
+post-mortem is in the plan file.
 
-**Then plan 3, then the two site retrofits.** Plan 3 is the chrome isolation, the dev guard, the
-route-structure docs, and the showcase `(site)` group; it also carries the plan-1 global at-rule leak
-(DaisyUI `@keyframes` and `@property` stay document-global). The site retrofits (ecnordic-ski, 907-life)
-run only after the engine work publishes. Publishing stays held: `0.29.0` is the registry `latest`, and
-`main` carries the unpublished `0.30.0`, `0.31.0`, and `0.32.0`. The window publishes before any site or
+**Carry-forwards still open after the polish (for plan 3 or a later touch).** (3) `use:enhance` with
+`applyAction` for the list delete, deferred because `$app/forms` does not resolve in the component test
+project. (4) The first-ever-visit dark-OS first-paint flash, which needs an inline head script in the host
+`app.html` and so suits plan 3 or a showcase touch. (6) The plan-1 global at-rule leak, for plan 3's
+chrome isolation. Publishing stays held: `0.29.0` is the registry `latest`, and `main` carries the
+unpublished `0.30.0`, `0.31.0`, and `0.32.0`. The window publishes before any site or
 the scaffolder consumes the new surface.
 
 **Plan 2 LANDED on `main` 2026-06-07 as `0.32.0`, unpublished.** It ran subagent-driven, one

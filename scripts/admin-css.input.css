@@ -1,0 +1,10 @@
+/* Compile input for the cairn admin stylesheet. Not shipped. scripts/build-admin-css.mjs reads it,
+   runs @tailwindcss/postcss over it, then scopes the output under the admin data-theme. Utilities
+   and the theme tokens come in without Preflight; DaisyUI emits component classes with its built-in
+   themes off, so the Warm Stone variables in the imported partial supply the palette. */
+@layer theme, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+@plugin "daisyui" { themes: false; }
+@source "../src/lib/components/**/*.{svelte,ts,js}";
+@import "../src/lib/components/cairn-admin.css";

@@ -35,4 +35,14 @@ describe('engine isolation', () => {
     // No bare global selectors that would reach a site's public pages.
     expect(css).not.toMatch(/(^|\})\s*(:root|html|body|\*)\s*\{/);
   });
+
+  it('defines a dark Warm Stone palette under the dark theme root', () => {
+    const css = readFileSync(join(libDir, 'components/cairn-admin.css'), 'utf8');
+    const dark = css.slice(css.indexOf("[data-theme='cairn-admin-dark']"));
+    expect(css).toContain("[data-theme='cairn-admin-dark'] {");
+    expect(dark).toContain('color-scheme: dark');
+    for (const token of ['--color-base-100', '--color-base-content', '--color-primary', '--color-error']) {
+      expect(dark, `dark theme missing ${token}`).toContain(token);
+    }
+  });
 });

@@ -117,6 +117,7 @@ export function createNavRoutes(runtime: CairnRuntime, deps: NavRoutesDeps = {})
     const raw = await readRaw(runtime.backend, config.configPath, token);
     if (raw === null) throw error(404, 'Site config not found');
 
+    const commitFields = { concept: 'nav', id: 'site-config', editor: editor.email };
     try {
       await commitFile(
         runtime.backend,
@@ -125,14 +126,14 @@ export function createNavRoutes(runtime: CairnRuntime, deps: NavRoutesDeps = {})
         { message: `Update ${config.label.toLowerCase()}`, author: { name: editor.displayName, email: editor.email } },
         token,
       );
-      log.info('commit.succeeded', { concept: 'nav', id: 'site-config', editor: editor.email });
+      log.info('commit.succeeded', commitFields);
     } catch (err) {
       if (isConflict(err)) {
-        log.warn('commit.failed', { concept: 'nav', id: 'site-config', editor: editor.email, reason: 'conflict' });
+        log.warn('commit.failed', { ...commitFields, reason: 'conflict' });
         const message = 'The site config changed since you opened it. Reload and reapply your edits.';
         throw redirect(303, `/admin/nav?error=${encodeURIComponent(message)}`);
       }
-      log.error('commit.failed', { concept: 'nav', id: 'site-config', editor: editor.email, error: String(err) });
+      log.error('commit.failed', { ...commitFields, error: String(err) });
       throw err;
     }
 

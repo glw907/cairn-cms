@@ -284,6 +284,17 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     return err instanceof CommitConflictError || (err as { name?: string } | null)?.name === 'CommitConflictError';
   }
 
+  /** Log a failed commit: a conflict is the expected last-writer-wins outcome, so it warns with a
+   *  reason; any other error is unexpected and logs at error with the stringified cause. The caller
+   *  still owns the redirect or rethrow, so control flow stays at the call site. */
+  function logCommitFailed(fields: { concept: string; id: string; editor: string }, err: unknown): void {
+    if (isConflict(err)) {
+      log.warn('commit.failed', { ...fields, reason: 'conflict' });
+    } else {
+      log.error('commit.failed', { ...fields, error: String(err) });
+    }
+  }
+
   /** Save an edit: validate, then commit with the session editor as author. Fails safe on 409. */
   async function saveAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
     const editor = sessionOf(event);
@@ -339,6 +350,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       return fail(400, { brokenLinks: absent, body });
     }
 
+    const commitFields = { concept: concept.id, id, editor: editor.email };
     try {
       await commitFiles(
         runtime.backend,
@@ -349,14 +361,13 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
         { message: `Update ${concept.label.toLowerCase()}: ${id}`, author: { name: editor.displayName, email: editor.email } },
         token,
       );
-      log.info('commit.succeeded', { concept: concept.id, id, editor: editor.email });
+      log.info('commit.succeeded', commitFields);
     } catch (err) {
+      logCommitFailed(commitFields, err);
       if (isConflict(err)) {
-        log.warn('commit.failed', { concept: concept.id, id, editor: editor.email, reason: 'conflict' });
         const message = 'This file changed since you opened it. Reload and reapply your edits.';
         throw redirect(303, `/admin/${concept.id}/${id}?error=${encodeURIComponent(message)}${suffix}`);
       }
-      log.error('commit.failed', { concept: concept.id, id, editor: editor.email, error: String(err) });
       throw err;
     }
     const savedQuery = draft.length ? `saved=1&drafts=${encodeURIComponent(draft.join(','))}` : 'saved=1';
@@ -387,6 +398,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     }
 
     const nextManifest = serializeManifest(removeEntry(manifest, concept.id, id));
+    const commitFields = { concept: concept.id, id, editor: editor.email };
     try {
       await commitFiles(
         runtime.backend,
@@ -397,14 +409,13 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
         { message: `Delete ${concept.label.toLowerCase()}: ${id}`, author: { name: editor.displayName, email: editor.email } },
         token,
       );
-      log.info('commit.succeeded', { concept: concept.id, id, editor: editor.email });
+      log.info('commit.succeeded', commitFields);
     } catch (err) {
+      logCommitFailed(commitFields, err);
       if (isConflict(err)) {
-        log.warn('commit.failed', { concept: concept.id, id, editor: editor.email, reason: 'conflict' });
         const message = 'This file changed since you opened it. Reload and try again.';
         throw redirect(303, `/admin/${concept.id}/${id}?error=${encodeURIComponent(message)}`);
       }
-      log.error('commit.failed', { concept: concept.id, id, editor: editor.email, error: String(err) });
       throw err;
     }
     throw redirect(303, `/admin/${concept.id}`);
@@ -499,6 +510,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
 
     changes.push({ path: runtime.manifestPath, content: serializeManifest(next) });
 
+    const commitFields = { concept: concept.id, id: newId, editor: editor.email };
     try {
       await commitFiles(
         runtime.backend,
@@ -506,14 +518,13 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
         { message: `Rename ${concept.label.toLowerCase()}: ${id} to ${newId}`, author: { name: editor.displayName, email: editor.email } },
         token,
       );
-      log.info('commit.succeeded', { concept: concept.id, id: newId, editor: editor.email });
+      log.info('commit.succeeded', commitFields);
     } catch (err) {
+      logCommitFailed(commitFields, err);
       if (isConflict(err)) {
-        log.warn('commit.failed', { concept: concept.id, id: newId, editor: editor.email, reason: 'conflict' });
         const message = 'This file changed since you opened it. Reload and try again.';
         throw redirect(303, `/admin/${concept.id}/${id}?error=${encodeURIComponent(message)}`);
       }
-      log.error('commit.failed', { concept: concept.id, id: newId, editor: editor.email, error: String(err) });
       throw err;
     }
     throw redirect(303, `/admin/${concept.id}/${newId}?renamed=1`);

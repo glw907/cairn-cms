@@ -9,7 +9,7 @@ identical on every host regardless of the site's own theme.
 <script lang="ts">
   import { untrack, type Component, type Snippet } from 'svelte';
   import type { LayoutData } from '../sveltekit/content-routes.js';
-  import { MenuIcon, LogOutIcon, SunIcon, MoonIcon, ChevronRightIcon } from './admin-icons.js';
+  import { MenuIcon, LogOutIcon, SunIcon, MoonIcon, ChevronRightIcon, SearchIcon } from './admin-icons.js';
   import CairnLogo from './CairnLogo.svelte';
   import { cairnFaviconHref } from './cairn-favicon.js';
   import FileTextIcon from '@lucide/svelte/icons/file-text';
@@ -17,6 +17,7 @@ identical on every host regardless of the site's own theme.
   import SettingsIcon from '@lucide/svelte/icons/settings';
   import UsersIcon from '@lucide/svelte/icons/users';
   import BlocksIcon from '@lucide/svelte/icons/blocks';
+  import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
   import './cairn-admin.css';
 
   interface Props {
@@ -98,6 +99,10 @@ identical on every host regardless of the site's own theme.
       e.preventDefault();
       drawerOpen = !drawerOpen;
     }
+    if (e.key.toLowerCase() === 'k' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      openPalette();
+    }
   }
 
   // Close the mobile drawer whenever the active path changes (a nav click navigated).
@@ -123,6 +128,41 @@ identical on every host regardless of the site's own theme.
     theme = theme === 'cairn-admin' ? 'cairn-admin-dark' : 'cairn-admin';
     // 1 year, path-scoped to the admin so the cookie never reaches the host's pages.
     document.cookie = `cairn-admin-theme=${theme}; path=/admin; max-age=31536000; samesite=lax`;
+  }
+
+  // The command palette: a quick jump-to over the admin's destinations plus a couple of actions, so
+  // the topbar carries something productive. Opened by the topbar trigger or Cmd/Ctrl+K.
+  interface Command {
+    label: string;
+    icon: Component;
+    href?: string;
+    external?: boolean;
+    action?: () => void;
+  }
+
+  let paletteDialog = $state<HTMLDialogElement>();
+  let paletteQuery = $state('');
+
+  const paletteCommands = $derived<Command[]>([
+    ...coreItems.map((item) => ({ label: item.label, icon: item.icon, href: item.href })),
+    { label: 'View the live site', icon: ExternalLinkIcon, href: '/', external: true },
+    theme === 'cairn-admin'
+      ? { label: 'Switch to dark mode', icon: MoonIcon, action: toggleTheme }
+      : { label: 'Switch to light mode', icon: SunIcon, action: toggleTheme },
+  ]);
+  const paletteResults = $derived(
+    paletteCommands.filter((c) => c.label.toLowerCase().includes(paletteQuery.trim().toLowerCase())),
+  );
+
+  function openPalette() {
+    paletteQuery = '';
+    paletteDialog?.showModal();
+  }
+  function runCommand(cmd: Command) {
+    paletteDialog?.close();
+    if (cmd.action) cmd.action();
+    else if (cmd.href && cmd.external) window.open(cmd.href, '_blank', 'noopener');
+    else if (cmd.href) location.assign(cmd.href);
   }
 
   interface Crumb {
@@ -170,11 +210,10 @@ identical on every host regardless of the site's own theme.
             <MenuIcon class="h-5 w-5" />
           </label>
         </div>
-        <div class="min-w-0 flex-1">
+        <!-- Context on the left: the breadcrumb trail inside an entry, the site name on a bare list.
+             Hidden on small screens to leave room for the palette trigger. -->
+        <div class="hidden min-w-0 max-w-[30%] flex-none truncate sm:block">
           {#if crumbs.length > 1}
-            <!-- Show the trail only inside an entry (concept then id). A bare concept list shows the
-                 site name instead, since the lone concept crumb would just echo the sidebar and the
-                 page heading. -->
             <nav aria-label="Breadcrumb" class="breadcrumbs text-sm">
               <ul>
                 {#each crumbs as crumb (crumb.href ?? crumb.label)}
@@ -186,6 +225,19 @@ identical on every host regardless of the site's own theme.
             <span class="font-semibold tracking-tight">{data.siteName}</span>
           {/if}
         </div>
+        <!-- The command-palette trigger fills the center: a quick jump-to over the admin, opened here
+             or with Cmd/Ctrl+K. -->
+        <div class="flex min-w-0 flex-1 justify-center">
+          <button
+            type="button"
+            onclick={openPalette}
+            class="flex w-full max-w-md items-center gap-2 rounded-field border border-[var(--cairn-card-border)] bg-base-200/70 px-3 py-1.5 text-sm text-[var(--color-muted)] transition-colors hover:bg-base-200 hover:text-base-content"
+          >
+            <SearchIcon class="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span class="truncate">Search or jump to&hellip;</span>
+            <kbd class="ml-auto hidden rounded border border-[var(--cairn-card-border)] px-1.5 text-[0.6875rem] font-medium sm:inline">&#8984;K</kbd>
+          </button>
+        </div>
         <div class="flex-none">
           <button type="button" class="btn btn-square btn-ghost" aria-label="Toggle theme" onclick={toggleTheme}>
             {#if theme === 'cairn-admin'}<MoonIcon class="h-5 w-5" />{:else}<SunIcon class="h-5 w-5" />{/if}
@@ -196,16 +248,69 @@ identical on every host regardless of the site's own theme.
       <main class="flex-1 p-4 lg:p-8">
         {@render children()}
       </main>
+
+      <dialog bind:this={paletteDialog} class="modal" aria-label="Search or jump to">
+        <div class="modal-box max-w-xl self-start p-0 sm:mt-[12vh]">
+          <div class="flex items-center gap-2 border-b border-[var(--cairn-card-border)] px-4">
+            <SearchIcon class="h-4 w-4 shrink-0 text-[var(--color-muted)]" aria-hidden="true" />
+            <input
+              bind:value={paletteQuery}
+              type="text"
+              aria-label="Search or jump to"
+              placeholder="Search or jump to…"
+              class="w-full bg-transparent py-3.5 text-sm outline-none placeholder:text-[var(--color-muted)]"
+              onkeydown={(e) => {
+                if (e.key === 'Enter' && paletteResults[0]) {
+                  e.preventDefault();
+                  runCommand(paletteResults[0]);
+                }
+              }}
+            />
+          </div>
+          {#if paletteResults.length}
+            <ul class="menu max-h-[60vh] w-full gap-0.5 overflow-y-auto p-2">
+              {#each paletteResults as cmd (cmd.label)}
+                <li>
+                  {#if cmd.href}
+                    <a
+                      href={cmd.href}
+                      target={cmd.external ? '_blank' : undefined}
+                      rel={cmd.external ? 'noopener' : undefined}
+                      onclick={() => paletteDialog?.close()}
+                    >
+                      <cmd.icon class="h-4 w-4 text-[var(--color-muted)]" aria-hidden="true" />
+                      {cmd.label}
+                      {#if cmd.external}<ExternalLinkIcon class="ml-auto h-3.5 w-3.5 opacity-50" aria-hidden="true" />{/if}
+                    </a>
+                  {:else}
+                    <button type="button" onclick={() => runCommand(cmd)}>
+                      <cmd.icon class="h-4 w-4 text-[var(--color-muted)]" aria-hidden="true" />
+                      {cmd.label}
+                    </button>
+                  {/if}
+                </li>
+              {/each}
+            </ul>
+          {:else}
+            <p class="px-4 py-6 text-center text-sm text-[var(--color-muted)]">No matches for "{paletteQuery}".</p>
+          {/if}
+        </div>
+        <form method="dialog" class="modal-backdrop"><button tabindex="-1" aria-label="Close">close</button></form>
+      </dialog>
     </div>
 
     <div class="drawer-side">
       <label for="cairn-drawer" aria-label="Close menu" class="drawer-overlay"></label>
       <nav class="bg-base-100 flex min-h-full w-64 flex-col border-r border-[var(--cairn-card-border)]" aria-label="Site content">
-        <!-- Brand band, the same height as the topbar so the two form one aligned header strip. -->
-        <div class="flex h-16 flex-none items-center gap-2 border-b border-[var(--cairn-card-border)] px-5">
-          <CairnLogo class="h-7 w-7 text-primary" />
-          <span class="text-lg font-bold tracking-[-0.01em] font-[family-name:var(--font-display)]">Cairn</span>
-          <span class="rounded-md border border-base-300 px-1.5 py-px text-[0.625rem] font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">CMS</span>
+        <!-- Brand band: a faint primary-tinted zone, so the brand corner reads as a deliberate place
+             and not just where the two header lines cross. Same height as the topbar; the logo and
+             wordmark link to the admin home. -->
+        <div class="flex h-16 flex-none items-center border-b border-[var(--cairn-card-border)] bg-primary/[0.05] px-3">
+          <a href="/admin" aria-label="Cairn admin home" class="flex items-center gap-2 rounded-field px-2 py-1.5 transition-colors hover:bg-primary/10">
+            <CairnLogo class="h-7 w-7 text-primary" />
+            <span class="text-lg font-bold tracking-[-0.01em] font-[family-name:var(--font-display)]">Cairn</span>
+            <span class="rounded-md border border-base-300 px-1.5 py-px text-[0.625rem] font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">CMS</span>
+          </a>
         </div>
 
         <div class="flex-1 space-y-1 overflow-y-auto py-4">

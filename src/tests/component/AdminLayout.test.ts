@@ -40,6 +40,14 @@ describe('AdminLayout', () => {
     await expect.element(screen.getByText('Cairn', { exact: true })).toBeInTheDocument();
   });
 
+  it('opens the command palette from the topbar trigger', async () => {
+    const screen = render(AdminLayout, { data: data(true), children: child });
+    await screen.getByRole('button', { name: /search or jump to/i }).click();
+    await expect.element(screen.getByRole('textbox', { name: /search or jump to/i })).toBeInTheDocument();
+    // A palette-only command confirms the dialog is open (a nav link like Posts also exists in the sidebar).
+    await expect.element(screen.getByText('View the live site')).toBeInTheDocument();
+  });
+
   it('renders the core group and developer groups as peers', async () => {
     const screen = render(AdminLayout, { data: data(true), children: child });
     await expect.element(screen.getByText('Core', { exact: true })).toBeInTheDocument();

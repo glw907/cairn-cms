@@ -11,16 +11,25 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-07): publish the held window, then the two site retrofits
+## Immediate next action (2026-06-08): the two site retrofits (907.life, ecnordic.ski)
 
-**Plan 3 (admin chrome isolation) LANDED on `main` 2026-06-07 as `0.33.0`, unpublished. It was the last
-engine plan of the admin-stands-alone initiative.** The next action is the publish decision for the held
-window, then the two production-site retrofits (907.life, ecnordic.ski), each a separate `site-pass`
-after the engine version publishes. The held window is now `0.30.0` (DX-A), `0.31.0` (self-styling
-foundation), `0.32.0` (UX rebuild plus the polish and design-identity arc), and `0.33.0` (chrome
-isolation), all over the `0.29.0` registry `latest`. A publish cuts a `v0.33.0` GitHub Release whose body
-summarizes each minor in the window and carries every `Consumers must:` line, which fires the OIDC
-trusted-publishing workflow.
+**The held window PUBLISHED 2026-06-08 as `0.33.0`, now the registry `latest`.** The `v0.33.0` GitHub
+Release fired the OIDC trusted-publishing workflow (run `27117496588` green, `check:package` plus
+`npm publish` both passed), folding `0.30.0` (DX-A render-authoring), `0.31.0` (self-styling foundation),
+`0.32.0` (UX rebuild plus the polish and design-identity arc), and `0.33.0` (chrome isolation) over the
+prior `0.29.0` `latest`. `main` is pushed to `origin` at the release tag. The next action is the two
+production-site retrofits (907.life, ecnordic.ski), each a separate `site-pass`, now that the engine
+version publishes.
+
+**Site-retrofit gotchas the published window carries (for each `site-pass`).** Both sites pin an older
+range and cross several breaking minors at once, so an upgrade reads the actions off the `Consumers must:`
+lines. The two breaking minors in this window: `0.30.0` moved the render-authoring helpers (`iconSpan`,
+`cardShell`, `headRow`, `isElement`, `strAttr`) to the `@glw907/cairn-cms/render` subpath and removed
+`rehypeDispatch` (use `createRenderer`), and a component with `defaultIconByRole` and no `type:'icon'`
+attribute now fails `defineRegistry`; `0.33.0` requires a chrome-free root layout with the public chrome
+plus `app.css` moved into a `(site)` route group. Both sites also still carry the pre-existing
+`composeRuntime` positional-call break against their `^0.24.0` pin (the `0.24.0` object form), to fix at
+the same retrofit. `0.31.0` and `0.32.0` are additive.
 
 **Plan 3 LANDED on `main` 2026-06-07 as `0.33.0`, unpublished.** It ran subagent-driven, one
 `cairn-implementer` per task on `main` directly, all seven tasks on Sonnet (mechanical, well-specified).
@@ -95,9 +104,8 @@ delete, deferred because `$app/forms` does not resolve in the component test pro
 first-ever-visit dark-OS first-paint flash, which needs an inline head script in the host `app.html` and so
 suits a showcase or scaffolder touch. (6) The plan-1 global at-rule leak is CLOSED by plan 3's chrome
 isolation (the sheet is code-split to the admin roots, so it loads only on `/admin`, and the route pattern
-keeps host CSS off `/admin`; a boundary test pins the import side). Publishing stays held: `0.29.0` is the
-registry `latest`, and `main` carries the unpublished `0.30.0`, `0.31.0`, `0.32.0`, and `0.33.0`. The
-window publishes before any site or the scaffolder consumes the new surface.
+keeps host CSS off `/admin`; a boundary test pins the import side). The held window PUBLISHED 2026-06-08 as
+`0.33.0`, now the registry `latest` over the prior `0.29.0` (`0.30.0` through `0.33.0` folded in).
 
 **Plan 2 LANDED on `main` 2026-06-07 as `0.32.0`, unpublished.** It ran subagent-driven, one
 `cairn-implementer` per task on `main` directly, Tasks 4, 6, 8, and 10 on Opus and the rest on Sonnet.

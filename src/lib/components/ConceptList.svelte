@@ -89,6 +89,8 @@ content sizes. The header New button opens a dialog holding the create form.
 
   // --- create form state, shown in a header-triggered dialog ---
   let createDialog = $state<HTMLDialogElement>();
+  // Pending from submit until the create navigation lands, so the button shows a calm working state.
+  let creating = $state(false);
   let title = $state('');
   let slug = $state('');
   let slugEdited = $state(false);
@@ -111,7 +113,7 @@ content sizes. The header New button opens a dialog holding the create form.
   <div class="flex items-center gap-3 sm:flex-1 sm:flex-wrap sm:justify-end">
     <label class="input input-sm min-w-0 flex-1 sm:max-w-xs">
       <SearchIcon class="h-4 w-4 opacity-60" aria-hidden="true" />
-      <input type="search" aria-label="Search {data.label}" bind:value={query} placeholder="Search" oninput={() => (page = 1)} />
+      <input type="search" aria-label="Search {data.label}" bind:value={query} placeholder="Search {data.label.toLowerCase()}" oninput={() => (page = 1)} />
     </label>
     <button type="button" class="btn btn-primary btn-sm shrink-0" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
       <PlusIcon class="h-4 w-4" /> New {data.label}
@@ -243,7 +245,7 @@ content sizes. The header New button opens a dialog holding the create form.
       <h2 id="cairn-create-dialog-title" class="text-base font-semibold">New {data.label}</h2>
       <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={() => createDialog?.close()}>✕</button>
     </div>
-    <form method="POST" action="?/create" class="flex flex-col gap-3">
+    <form method="POST" action="?/create" onsubmit={() => (creating = true)} class="flex flex-col gap-3">
       <label class="flex flex-col gap-1">
         <span class="text-sm font-medium">Title</span>
         <input class="input w-full" name="title" bind:value={title} required />
@@ -266,7 +268,9 @@ content sizes. The header New button opens a dialog holding the create form.
       {/if}
       <div class="modal-action">
         <button type="button" class="btn btn-sm" onclick={() => createDialog?.close()}>Cancel</button>
-        <button type="submit" class="btn btn-sm btn-primary">Create</button>
+        <button type="submit" class="btn btn-sm btn-primary" disabled={creating}>
+          {#if creating}<span class="loading loading-spinner loading-xs" aria-hidden="true"></span> Creating…{:else}Create{/if}
+        </button>
       </div>
     </form>
   </div>

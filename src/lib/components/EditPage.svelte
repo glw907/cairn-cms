@@ -42,6 +42,9 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
   // body, so it falls back to the committed data.body. untrack() captures the initial value without
   // subscribing to future prop changes.
   let body = $state(untrack(() => form?.body ?? data.body));
+  // True from the moment the save form submits until the navigation it triggers replaces the page,
+  // so the Save button shows a calm "Saving…" state instead of looking inert.
+  let saving = $state(false);
   let showPreview = $state(false);
   let previewHtml = $state('');
   let insert = $state.raw<(text: string) => void>(() => {});
@@ -217,7 +220,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
   </div>
 {/if}
 
-<form method="POST" action="?/save" class="lg:grid lg:grid-cols-[1fr_20rem] lg:gap-6">
+<form method="POST" action="?/save" onsubmit={() => (saving = true)} class="lg:grid lg:grid-cols-[1fr_20rem] lg:gap-6">
   {#if data.isNew}<input type="hidden" name="new" value="1" />{/if}
 
   <div class="lg:order-1">
@@ -301,7 +304,9 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
           </label>
         {/if}
       {/each}
-      <button type="submit" class="btn btn-primary mt-3">Save</button>
+      <button type="submit" class="btn btn-primary mt-3" disabled={saving}>
+        {#if saving}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Saving…{:else}Save{/if}
+      </button>
     </fieldset>
   </aside>
 </form>

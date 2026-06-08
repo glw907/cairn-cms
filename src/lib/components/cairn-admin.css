@@ -149,6 +149,14 @@
   :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) ::selection {
     background-color: color-mix(in oklch, var(--color-primary) 24%, transparent);
   }
+
+  /* One brand-violet keyboard-focus ring across the admin, so every control shows the same clear
+     focus, including the links, nav items, and summaries that the browser would otherwise outline in
+     its default color. Only keyboard focus triggers it. */
+  :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
 }
 
 /* Respect a reduced-motion preference inside the admin. DaisyUI's modal, drawer, and the admin's

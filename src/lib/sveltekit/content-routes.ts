@@ -13,6 +13,8 @@ import { listMarkdown, readRaw, commitFiles, type FileChange } from '../github/r
 import { cachedInstallationToken } from '../github/signing.js';
 import { emptyManifest, manifestEntryFromFile, parseManifest, serializeManifest, upsertEntry, removeEntry, inboundLinks, type LinkTarget, type InboundLink } from '../content/manifest.js';
 import { CommitConflictError } from '../github/types.js';
+import { issueCsrfToken } from './csrf.js';
+import type { CookieJar } from './types.js';
 import type { CairnRuntime, ConceptDescriptor, FrontmatterField } from '../content/types.js';
 import type { Editor, Role } from '../auth/types.js';
 
@@ -36,6 +38,8 @@ export interface LayoutData {
   /** The nav group labels the user has collapsed, from the persisted cookie. Read at SSR so a
    *  collapsed group renders collapsed with no flash. Empty when none are collapsed. */
   collapsedNav: string[];
+  /** The session's CSRF double-submit token, rendered as a hidden field in every admin form. */
+  csrf: string;
 }
 
 /** One row in a concept's list view. */
@@ -88,8 +92,9 @@ export interface ContentEvent {
   request: Request;
   locals: { editor?: Editor | null };
   platform?: { env?: GithubKeyEnv };
-  /** SvelteKit's cookie jar; the layout load reads the persisted admin theme. Optional for non-route callers. */
-  cookies?: { get(name: string): string | undefined };
+  /** SvelteKit's cookie jar. The layout load reads the persisted admin theme and issues the CSRF
+   *  token. Optional for non-route callers. */
+  cookies?: CookieJar;
 }
 
 /** Injectable dependencies; tests stub the token mint to avoid signing a real key. */
@@ -134,6 +139,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       navLabel: runtime.navMenu?.label ?? null,
       theme,
       collapsedNav,
+      csrf: event.cookies ? issueCsrfToken({ url: event.url, cookies: event.cookies }) : '',
     };
   }
 

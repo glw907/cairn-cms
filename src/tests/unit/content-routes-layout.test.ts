@@ -24,6 +24,11 @@ function event(pathname: string, role: 'owner' | 'editor') {
     request: new Request('https://test.example'),
     locals: { editor: { email: 'e@test', displayName: 'Ed', role } },
     platform: { env: {} },
+    cookies: {
+      get: () => undefined,
+      set: () => {},
+      delete: () => {},
+    },
   };
 }
 
@@ -40,6 +45,12 @@ describe('layoutLoad', () => {
     expect(data.pathname).toBe('/admin/posts');
     expect(data.canManageEditors).toBe(true);
     expect(data.navLabel).toBeNull();
+  });
+
+  it('issues a CSRF token in the layout data', () => {
+    const routes = createContentRoutes(runtime());
+    const data = routes.layoutLoad(event('/admin/posts', 'owner') as never);
+    expect(data.csrf).toMatch(/^[A-Za-z0-9_-]+$/);
   });
 
   it('denies the manage-editors capability to an editor', () => {

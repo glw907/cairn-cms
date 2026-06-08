@@ -42,7 +42,7 @@ function makeEvent(opts: {
     request: new Request('https://t.example'),
     locals: { editor: opts.editor },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
-    cookies: { get: (name: string) => opts.cookies?.[name] },
+    cookies: { get: (name: string) => opts.cookies?.[name], set: () => {}, delete: () => {} },
   };
 }
 

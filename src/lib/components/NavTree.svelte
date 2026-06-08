@@ -8,6 +8,7 @@ validates on save.
 -->
 <script lang="ts">
   import { untrack } from 'svelte';
+  import CsrfField from './CsrfField.svelte';
   import { SortableList, sortItems } from '@rodrigodagostino/svelte-sortable-list';
   import type { SortableList as SortableListNS } from '@rodrigodagostino/svelte-sortable-list';
   import '@rodrigodagostino/svelte-sortable-list/styles.css';
@@ -98,6 +99,7 @@ validates on save.
 {/if}
 
 <form method="POST" action="?/save">
+  <CsrfField />
   <input type="hidden" name="tree" value={treeJson} />
 
   <div class="mb-2">

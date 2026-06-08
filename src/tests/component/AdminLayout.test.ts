@@ -36,6 +36,14 @@ describe('AdminLayout', () => {
     expect(document.querySelector('[data-theme="cairn-admin"]')).not.toBeNull();
   });
 
+  it('carries a CSRF field in every POST form', async () => {
+    const screen = render(AdminLayout, { data: data(true), children: child });
+    const postForms = screen.container.querySelectorAll('form[method="POST"]');
+    const csrfFields = screen.container.querySelectorAll('form[method="POST"] input[name="csrf"]');
+    expect(postForms.length).toBeGreaterThan(0);
+    expect(csrfFields.length).toBe(postForms.length);
+  });
+
   it('shows the Cairn brand in the sidebar', async () => {
     const screen = render(AdminLayout, { data: data(true), children: child });
     await expect.element(screen.getByText('Cairn', { exact: true })).toBeInTheDocument();

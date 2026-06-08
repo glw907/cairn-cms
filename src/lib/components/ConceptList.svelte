@@ -9,6 +9,7 @@ content sizes. The header New button opens a dialog holding the create form.
   import { slugify } from '../content/ids.js';
   import type { EntrySummary, ListData } from '../sveltekit/content-routes.js';
   import type { InboundLink } from '../content/manifest.js';
+  import CsrfField from './CsrfField.svelte';
   import DeleteDialog from './DeleteDialog.svelte';
   import CairnLogo from './CairnLogo.svelte';
   import { SearchIcon, ArrowUpIcon, ArrowDownIcon, ChevronsUpDownIcon, ChevronLeftIcon, ChevronRightIcon, PlusIcon, Trash2Icon } from './admin-icons.js';
@@ -202,6 +203,7 @@ content sizes. The header New button opens a dialog holding the create form.
                 <DeleteDialog conceptId={data.conceptId} id={entry.id} label={data.label} inboundLinks={deleteRefused.inboundLinks} />
               {:else}
                 <form method="POST" action="?/delete">
+                  <CsrfField />
                   <input type="hidden" name="id" value={entry.id} />
                   <button type="submit" class="btn btn-ghost btn-sm" aria-label="Delete {entry.title}">
                     <Trash2Icon class="h-4 w-4 text-error" />
@@ -246,6 +248,7 @@ content sizes. The header New button opens a dialog holding the create form.
       <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={() => createDialog?.close()}>✕</button>
     </div>
     <form method="POST" action="?/create" onsubmit={() => (creating = true)} class="flex flex-col gap-3">
+      <CsrfField />
       <label class="flex flex-col gap-1">
         <span class="text-sm font-medium">Title</span>
         <input class="input w-full" name="title" bind:value={title} required />

@@ -6,6 +6,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
 -->
 <script lang="ts">
   import { untrack } from 'svelte';
+  import CsrfField from './CsrfField.svelte';
   import MarkdownEditor from './MarkdownEditor.svelte';
   import ComponentInsertDialog from './ComponentInsertDialog.svelte';
   import LinkPicker from './LinkPicker.svelte';
@@ -221,6 +222,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
 {/if}
 
 <form method="POST" action="?/save" onsubmit={() => (saving = true)} class="lg:grid lg:grid-cols-[1fr_20rem] lg:gap-6">
+  <CsrfField />
   {#if data.isNew}<input type="hidden" name="new" value="1" />{/if}
 
   <div class="lg:order-1">

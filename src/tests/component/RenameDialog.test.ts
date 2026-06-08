@@ -16,6 +16,8 @@ describe('RenameDialog', () => {
     expect(input.value).toBe('hi');
     const form = dialog.querySelector('form[action="?/rename"]');
     expect(form).not.toBeNull();
+    // The mutation form carries the CSRF field the guard validates.
+    expect(form!.querySelector('input[name="csrf"]')).not.toBeNull();
   });
   it('seeds focus into the slug input when the dialog opens', async () => {
     const screen = open({ conceptId: 'posts', id: '2026-05-hi', label: 'Post', slug: 'hi' });

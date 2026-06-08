@@ -60,6 +60,14 @@ describe('EditPage', () => {
     await expect.element(screen.getByLabelText(/draft/i)).toBeInTheDocument();
   });
 
+  it('carries a CSRF field in every POST form', async () => {
+    const screen = render(EditPage, postProps());
+    const postForms = screen.container.querySelectorAll('form[method="POST"]');
+    const csrfFields = screen.container.querySelectorAll('form[method="POST"] input[name="csrf"]');
+    expect(postForms.length).toBeGreaterThan(0);
+    expect(csrfFields.length).toBe(postForms.length);
+  });
+
   it('renders only the minimal field for a page', async () => {
     const screen = render(EditPage, pageProps());
     await expect.element(screen.getByLabelText(/title/i)).toBeInTheDocument();

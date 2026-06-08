@@ -6,6 +6,7 @@ last-owner anti-lockout rule itself is enforced server-side (editors-routes). Ac
 named `?/setRole`, `?/remove`, and `?/add` actions.
 -->
 <script lang="ts">
+  import CsrfField from './CsrfField.svelte';
   import type { Editor } from '../auth/types.js';
 
   interface Props {
@@ -45,6 +46,7 @@ named `?/setRole`, `?/remove`, and `?/add` actions.
           </td>
           <td class="flex justify-end gap-2">
             <form method="POST" action="?/setRole">
+              <CsrfField />
               <input type="hidden" name="email" value={editor.email} />
               <input type="hidden" name="role" value={editor.role === 'owner' ? 'editor' : 'owner'} />
               <button type="submit" class="btn btn-ghost btn-xs" disabled={isSelf} aria-label={`Toggle role for ${editor.displayName}`}>
@@ -52,6 +54,7 @@ named `?/setRole`, `?/remove`, and `?/add` actions.
               </button>
             </form>
             <form method="POST" action="?/remove">
+              <CsrfField />
               <input type="hidden" name="email" value={editor.email} />
               <button type="submit" class="btn btn-ghost btn-xs text-error" disabled={isSelf} aria-label={`Remove ${editor.displayName}`}>
                 Remove
@@ -65,6 +68,7 @@ named `?/setRole`, `?/remove`, and `?/add` actions.
 </div>
 
 <form method="POST" action="?/add" class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 grid gap-3 p-4 shadow-[var(--cairn-shadow)] sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
+  <CsrfField />
   <label class="flex flex-col gap-1">
     <span class="text-sm font-medium">Name</span>
     <input class="input" name="name" aria-label="Name" required />

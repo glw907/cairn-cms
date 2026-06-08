@@ -30,6 +30,14 @@ describe('ManageEditors', () => {
     await expect.element(screen.getByRole('button', { name: /add editor/i })).toBeInTheDocument();
   });
 
+  it('carries a CSRF field in every POST form', async () => {
+    const screen = render(ManageEditors, { data: data(), form: null });
+    const postForms = screen.container.querySelectorAll('form[method="POST"]');
+    const csrfFields = screen.container.querySelectorAll('form[method="POST"] input[name="csrf"]');
+    expect(postForms.length).toBeGreaterThan(0);
+    expect(csrfFields.length).toBe(postForms.length);
+  });
+
   it('surfaces an action error', async () => {
     const screen = render(ManageEditors, { data: data(), form: { error: 'That editor already exists' } });
     await expect.element(screen.getByText(/already exists/i)).toBeInTheDocument();

@@ -7,8 +7,10 @@ flipped by the topbar toggle) and imports the self-contained Warm Stone theme, s
 identical on every host regardless of the site's own theme.
 -->
 <script lang="ts">
-  import { onMount, untrack, type Component, type Snippet } from 'svelte';
+  import { onMount, setContext, untrack, type Component, type Snippet } from 'svelte';
   import type { LayoutData } from '../sveltekit/content-routes.js';
+  import CsrfField from './CsrfField.svelte';
+  import { CSRF_CONTEXT_KEY } from './csrf-context.js';
   import { MenuIcon, LogOutIcon, SunIcon, MoonIcon, ChevronRightIcon, SearchIcon } from './admin-icons.js';
   import CairnLogo from './CairnLogo.svelte';
   import { cairnFaviconHref } from './cairn-favicon.js';
@@ -29,6 +31,10 @@ identical on every host regardless of the site's own theme.
   }
 
   let { data, children }: Props = $props();
+
+  // Hand the CSRF token to every descendant admin form. layoutLoad issued and returned it. The
+  // token is stable for the session, so capture it once at init through untrack.
+  setContext(CSRF_CONTEXT_KEY, untrack(() => data.csrf));
 
   // Persist an admin preference for a year, path-scoped to /admin so the cookie never reaches the
   // host's own pages.
@@ -397,6 +403,7 @@ identical on every host regardless of the site's own theme.
             </div>
           </div>
           <form method="POST" action="/admin/auth/logout" class="mt-4">
+            <CsrfField token={data.csrf} />
             <button type="submit" class="btn btn-ghost btn-sm btn-block justify-start">
               <LogOutIcon class="h-4 w-4" /> Sign out
             </button>

@@ -6,6 +6,7 @@ each linking to its edit page, so the author repoints or removes those links fir
 <dialog>, following the LinkPicker a11y conventions.
 -->
 <script lang="ts">
+  import CsrfField from './CsrfField.svelte';
   import type { InboundLink } from '../content/manifest.js';
 
   interface Props {
@@ -68,6 +69,7 @@ each linking to its edit page, so the author repoints or removes those links fir
     {:else}
       <p class="mb-3 text-sm">This cannot be undone.</p>
       <form method="POST" action="?/delete" class="flex justify-end gap-2">
+        <CsrfField />
         <input type="hidden" name="concept" value={conceptId} />
         <input type="hidden" name="id" value={id} />
         <button type="button" class="btn btn-sm" onclick={close}>Cancel</button>

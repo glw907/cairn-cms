@@ -32,6 +32,14 @@ describe('NavTree', () => {
     await expect.element(screen.getByLabelText('Label').nth(2)).toHaveValue('Start');
   });
 
+  it('carries a CSRF field in every POST form', async () => {
+    const screen = render(NavTree, { data: data() });
+    const postForms = screen.container.querySelectorAll('form[method="POST"]');
+    const csrfFields = screen.container.querySelectorAll('form[method="POST"] input[name="csrf"]');
+    expect(postForms.length).toBeGreaterThan(0);
+    expect(csrfFields.length).toBe(postForms.length);
+  });
+
   it('serializes the flat rows back into a nested tree in the hidden field', async () => {
     const screen = render(NavTree, { data: data() });
     expect(treeFromForm(screen.container)).toEqual([

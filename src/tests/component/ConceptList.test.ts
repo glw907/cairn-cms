@@ -21,6 +21,14 @@ describe('ConceptList', () => {
     await expect.element(screen.getByRole('link', { name: 'Post 12' })).toHaveAttribute('href', '/admin/posts/2026-05-12-post-12');
   });
 
+  it('carries a CSRF field in every POST form', async () => {
+    const screen = render(ConceptList, { data: data() });
+    const postForms = screen.container.querySelectorAll('form[method="POST"]');
+    const csrfFields = screen.container.querySelectorAll('form[method="POST"] input[name="csrf"]');
+    expect(postForms.length).toBeGreaterThan(0);
+    expect(csrfFields.length).toBe(postForms.length);
+  });
+
   it('flags a draft row with a status badge', async () => {
     const screen = render(ConceptList, { data: data() });
     await expect.element(screen.getByText('Draft', { exact: true })).toBeInTheDocument();

@@ -16,6 +16,8 @@ describe('DeleteDialog', () => {
     // A delete form posts to ?/delete.
     const form = dialog.querySelector('form[action="?/delete"]');
     expect(form).not.toBeNull();
+    // The mutation form carries the CSRF field the guard validates.
+    expect(form!.querySelector('input[name="csrf"]')).not.toBeNull();
     // The confirm button is enabled.
     const confirm = screen.getByRole('button', { name: /^delete this/i });
     expect((confirm.element() as HTMLButtonElement).disabled).toBe(false);

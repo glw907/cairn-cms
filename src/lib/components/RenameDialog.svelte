@@ -6,6 +6,8 @@ dated post keeps its date; only the slug changes. Built on a native <dialog>, fo
 DeleteDialog a11y conventions.
 -->
 <script lang="ts">
+  import CsrfField from './CsrfField.svelte';
+
   interface Props {
     /** The concept this entry belongs to, e.g. "posts". Posted with the confirm. */
     conceptId: string;
@@ -50,6 +52,7 @@ DeleteDialog a11y conventions.
       <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={close}>✕</button>
     </div>
     <form method="POST" action="?/rename" class="flex flex-col gap-3">
+      <CsrfField />
       <input type="hidden" name="concept" value={conceptId} />
       <input type="hidden" name="id" value={id} />
       <label class="flex flex-col gap-1">

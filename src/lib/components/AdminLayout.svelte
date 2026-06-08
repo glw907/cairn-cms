@@ -11,6 +11,7 @@ identical on every host regardless of the site's own theme.
   import type { LayoutData } from '../sveltekit/content-routes.js';
   import { MenuIcon, LogOutIcon, SunIcon, MoonIcon, ChevronRightIcon } from './admin-icons.js';
   import CairnLogo from './CairnLogo.svelte';
+  import { cairnFaviconHref } from './cairn-favicon.js';
   import FileTextIcon from '@lucide/svelte/icons/file-text';
   import SignpostIcon from '@lucide/svelte/icons/signpost';
   import SettingsIcon from '@lucide/svelte/icons/settings';
@@ -140,7 +141,15 @@ identical on every host regardless of the site's own theme.
     if (segs[2]) out.push({ label: decodeURIComponent(segs[2]) });
     return out;
   });
+
+  // The browser-tab title: the deepest breadcrumb (the active concept or entry), then the brand.
+  const pageTitle = $derived(crumbs.length ? crumbs[crumbs.length - 1].label : 'Admin');
 </script>
+
+<svelte:head>
+  <title>{pageTitle} · {data.siteName}</title>
+  <link rel="icon" href={cairnFaviconHref} />
+</svelte:head>
 
 <svelte:window onkeydown={onKeydown} />
 

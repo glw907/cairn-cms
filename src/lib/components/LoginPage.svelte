@@ -6,6 +6,8 @@ the allowlist, so the page never leaks membership (spec §7.1).
 -->
 <script lang="ts">
   import './cairn-admin.css';
+  import CairnLogo from './CairnLogo.svelte';
+  import { cairnFaviconHref } from './cairn-favicon.js';
 
   interface Props {
     /** The login load's data: the site name and an optional error. */
@@ -18,13 +20,23 @@ the allowlist, so the page never leaks membership (spec §7.1).
 </script>
 
 <svelte:head>
+  <title>Sign in · Cairn</title>
+  <link rel="icon" href={cairnFaviconHref} />
   <meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 
-<div data-theme="cairn-admin" class="bg-base-200 text-base-content flex min-h-screen items-center justify-center p-4">
-  <div class="rounded-box border border-base-300 bg-base-100 w-full max-w-sm p-6 shadow">
-    <h1 class="mb-1 text-lg font-semibold">Sign in to {data.siteName}</h1>
-    <p class="mb-4 text-sm text-[var(--color-muted)]">Enter your email and we'll send a sign-in link.</p>
+<!-- data-theme on a bare wrapper: the scoped sheet styles descendants, so the layout classes go one
+     level in (a class on the theme element itself would not match). -->
+<div data-theme="cairn-admin">
+  <div class="flex min-h-screen flex-col items-center justify-center gap-6 bg-base-200 p-4 text-base-content">
+  <div class="w-full max-w-sm rounded-box border border-base-300 bg-base-100 p-7 shadow-sm">
+    <div class="mb-6 flex items-center gap-2">
+      <CairnLogo class="h-8 w-8 text-primary" />
+      <span class="text-xl font-bold tracking-[-0.01em] font-[family-name:var(--font-display)]">Cairn</span>
+    </div>
+
+    <h1 class="text-lg font-semibold">Sign in to {data.siteName}</h1>
+    <p class="mt-1 mb-5 text-sm text-[var(--color-muted)]">Enter your email and we'll send you a one-time sign-in link. No password to remember.</p>
 
     {#if form?.sent}
       <div role="status" class="alert alert-success text-sm">
@@ -32,7 +44,7 @@ the allowlist, so the page never leaks membership (spec §7.1).
       </div>
     {:else}
       {#if data.error}
-        <div role="alert" class="alert alert-error mb-3 text-sm">That link expired. Request a new one.</div>
+        <div role="alert" class="alert alert-error mb-3 text-sm">That link expired. Request a new one below.</div>
       {/if}
       <form method="POST" class="flex flex-col gap-3">
         <label class="flex flex-col gap-1">
@@ -50,5 +62,8 @@ the allowlist, so the page never leaks membership (spec §7.1).
         <button type="submit" class="btn btn-primary">Send sign-in link</button>
       </form>
     {/if}
+  </div>
+
+  <p class="text-xs text-[var(--color-muted)]">Powered by Cairn</p>
   </div>
 </div>

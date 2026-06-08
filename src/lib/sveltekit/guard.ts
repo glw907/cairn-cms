@@ -7,6 +7,7 @@ import { sessionCookieName } from '../auth/crypto.js';
 import { httpsRequiredPage } from './https-required-page.js';
 import { isUnsafeFormRequest, originMatches, validateCsrfToken } from './csrf.js';
 import { csrfRequiredPage } from './csrf-required-page.js';
+import { log } from '../log/index.js';
 import type { Editor } from '../auth/types.js';
 import type { HandleInput, RequestContext } from './types.js';
 
@@ -83,7 +84,10 @@ export function createAuthGuard() {
     // Rule 2 - non-admin: restore the framework's strict Origin check the consumer disabled when
     // they set checkOrigin: false to hand cairn the admin CSRF authority.
     if (!isAdminPath(pathname)) {
-      if (isUnsafeFormRequest(event.request) && !originMatches(event)) return csrfForbidden();
+      if (isUnsafeFormRequest(event.request) && !originMatches(event)) {
+        log.warn('guard.rejected', { reason: 'origin', path: pathname });
+        return csrfForbidden();
+      }
       return resolve(event);
     }
 
@@ -92,12 +96,14 @@ export function createAuthGuard() {
     // runs that check. This covers the public login/auth paths too, since that is where the form
     // posts. Local http (wrangler dev) is exempt.
     if (event.url.protocol === 'http:' && !isLocalHost(event.url.hostname)) {
+      log.warn('guard.rejected', { reason: 'https', path: pathname });
       return httpsRequiredResponse(event.url);
     }
 
     // Rule 1 - admin: every unsafe form POST carries a valid double-submit token, else the branded
     // 403 before resolve() runs. This covers the public login/auth posts too.
     if (isUnsafeFormRequest(event.request) && !(await validateCsrfToken(event))) {
+      log.warn('guard.rejected', { reason: 'csrf', path: pathname });
       return csrfRequiredResponse();
     }
 

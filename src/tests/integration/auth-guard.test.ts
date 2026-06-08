@@ -1,5 +1,5 @@
 import { env } from 'cloudflare:test';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { seedEditor, makeCookies, expectRedirect } from './_auth-harness.js';
 import { createAuthGuard } from '../../lib/sveltekit/guard.js';
 import { createSession } from '../../lib/auth/store.js';
@@ -210,5 +210,33 @@ describe('CSRF (cairn owns it)', () => {
     const res = await handle({ event: ev, resolve: async () => OK });
     expect(res).toBe(OK);
     expect(ev.locals.editor?.email).toBe('own@x.dev');
+  });
+});
+
+describe('guard rejection logging', () => {
+  it('logs guard.rejected reason=origin for a non-admin cross-origin form POST', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await handle({ event: formEvent('/contact', { origin: 'https://evil.dev' }), resolve: async () => OK });
+    const events = warnSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
+    const reasons = warnSpy.mock.calls.map((c) => (c[0] as { reason?: string }).reason);
+    expect(events).toContain('guard.rejected');
+    expect(reasons).toContain('origin');
+    vi.restoreAllMocks();
+  });
+
+  it('logs guard.rejected reason=https for a deployed admin request over http', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await handle({ event: httpEvent('/admin'), resolve: async () => OK });
+    const reasons = warnSpy.mock.calls.map((c) => (c[0] as { reason?: string }).reason);
+    expect(reasons).toContain('https');
+    vi.restoreAllMocks();
+  });
+
+  it('logs guard.rejected reason=csrf for an admin form POST with no valid token', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await handle({ event: formEvent('/admin/login'), resolve: async () => OK });
+    const reasons = warnSpy.mock.calls.map((c) => (c[0] as { reason?: string }).reason);
+    expect(reasons).toContain('csrf');
+    vi.restoreAllMocks();
   });
 });

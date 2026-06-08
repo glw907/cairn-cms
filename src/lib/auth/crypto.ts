@@ -14,6 +14,14 @@ export function sessionCookieName(secure: boolean): string {
   return secure ? `__Host-${COOKIE_BASE}` : COOKIE_BASE;
 }
 
+/** The CSRF double-submit cookie base name, __Host- prefixed when the cookie is Secure. */
+const CSRF_COOKIE_BASE = 'cairn_csrf';
+
+/** The CSRF cookie name, mirroring sessionCookieName: __Host- on https, bare on local http. */
+export function csrfCookieName(secure: boolean): string {
+  return secure ? `__Host-${CSRF_COOKIE_BASE}` : CSRF_COOKIE_BASE;
+}
+
 /** Magic-link tokens live 10 minutes. */
 export const TOKEN_TTL_MS = 10 * 60 * 1000;
 
@@ -38,6 +46,11 @@ export function generateToken(): string {
 
 /** A fresh 256-bit session id, url-safe. */
 export function generateSessionId(): string {
+  return randomBase64Url(32);
+}
+
+/** A fresh 256-bit double-submit token, url-safe. */
+export function generateCsrfToken(): string {
   return randomBase64Url(32);
 }
 

@@ -11,24 +11,57 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-08): execute the login-CSRF-ownership plan (then the two site retrofits)
+## Immediate next action (2026-06-08): publish `0.35.0`, then the two site retrofits
 
-**A second login-CSRF source is still open after `0.34.0`, and the fix is planned and ready to execute.**
-The 0.34 force-HTTPS work closed the cross-scheme 403. A privacy-hardened Firefox that sends no `Origin`
-header trips the same SvelteKit CSRF 403, so the legitimate operator (the only admin account) is locked out
-of both production sites right now. Filed in
-`docs/cairn-dx-feedback-2026-06-08-ecnordic-login-csrf-missing-origin.md`. The design call, brainstormed and
-committed: disable SvelteKit's global `checkOrigin` (the one consumer step) and make cairn's guard the single
-CSRF authority with one uniform `__Host-cairn_csrf` double-submit token over every admin form POST, issued
-lazily and stably, validated centrally, plus a faithful `Origin` reproduction for the site's own non-admin
-forms and a branded rejection page. Spec:
-`docs/superpowers/specs/2026-06-08-cairn-login-csrf-ownership-design.md`. Plan (eleven test-first tasks,
-landing `0.35.0`): `docs/superpowers/plans/2026-06-08-cairn-login-csrf-ownership.md`.
+**The login-CSRF-ownership plan LANDED on `main` 2026-06-08 as `0.35.0`, unpublished. NEXT ACTION: publish
+`0.35.0` over the `0.34.0` `latest`, then the two production-site retrofits.** Cut the `v0.35.0` GitHub Release
+against `main` to fire the OIDC trusted-publishing workflow, with the changelog window as the body and the
+`Consumers must:` line carried through. Then retrofit 907.life and ecnordic.ski, each a separate `site-pass`,
+each pinning `^0.35.0` and adding `csrf: { checkOrigin: false }` to `kit` in `svelte.config.js` (the one
+required consumer action this minor adds), along with the other breaking-window actions noted below. The first
+retrofit is where the real-runtime CSRF loop gets its live smoke (the engine pass judged the live wrangler
+smoke not proportionate without a consumer that wires `checkOrigin: false`).
 
-**NEXT ACTION: execute that plan with `superpowers:subagent-driven-development`, one `cairn-implementer` per
-task on `main` directly** (the pattern every recent pass used). Then publish `0.35.0` over the `0.34.0`
-`latest`, then the two site retrofits, each pinning `^0.35.0` and adding `csrf: { checkOrigin: false }` to its
-`svelte.config.js` along with the other breaking-window actions noted below.
+**What `0.35.0` did.** It moved login-CSRF ownership from SvelteKit's global `checkOrigin` to cairn's auth
+guard, closing the second source of the admin lockout that `0.34.0`'s force-HTTPS work did not reach: a
+privacy browser that sends no `Origin` header tripped the same opaque SvelteKit 403. A consuming site now
+disables the framework's global check, and the guard enforces two rules: every unsafe `/admin` form POST
+carries a valid `__Host-cairn_csrf` double-submit token (lazy and stable, HttpOnly, SameSite=Strict,
+session-scoped, bare `cairn_csrf` on local http), and every non-admin unsafe form POST keeps a strict `Origin`
+check, so disabling the global check is not a net loss. The token is issued by the login, confirm, and
+admin-shell loads, rendered by a new public `CsrfField` component, validated centrally with a constant-time
+compare, and a failed admin check serves a branded 403 page (not the raw framework text) built through a
+shared static-page shell extracted from the HTTPS-required page. Spec:
+`docs/superpowers/specs/2026-06-08-cairn-login-csrf-ownership-design.md`. Plan with the full post-mortem:
+`docs/superpowers/plans/2026-06-08-cairn-login-csrf-ownership.md`.
+
+It ran subagent-driven, one `cairn-implementer` per task on `main` directly, Tasks 5 and 10 on Opus and the
+rest on Sonnet. Thirteen commits `93774a6..b165df3`: eleven task commits, a simplifier commit `cbd8b31` (a
+shared branded-page response builder in the guard), and a svelte-review fold-in `b165df3` (the context hands a
+live token getter instead of a once-captured value, so a future mid-session rotation cannot leave a stale
+field). Gate green at the tip `b165df3`, run first-hand: `npm run check` 836 files 0/0, `npm test` 128 files /
+796 tests exit 0, `check:docs`/`check:reference`/`check:package` exit 0, and the `examples/showcase`
+production build exit 0. The new `CsrfField` export carries a `0.35.0` reference entry, and the deploy guide,
+upgrade guide, changelog, and security-model docs document cairn-owned CSRF.
+
+**The execution caught one plan gap, now closed.** The plan's Task 10 list missed two real admin mutation
+forms, `DeleteDialog.svelte` (`?/delete`) and `RenameDialog.svelte` (`?/rename`), which render as descendants
+of `EditPage` and `ConceptList`; both now carry a `CsrfField`. Without that, those two mutations would have
+failed closed at runtime (the branded 403) the moment a site enabled cairn's CSRF ownership. The implementer
+found them by surveying the real markup, the intended discipline for a broad task.
+
+**The review gate ran clean.** `web-auth-security-reviewer`: no Critical or Important (it confirmed the
+`__Host-` cookie fixation resistance, the constant-time compare with empty-token rejection, the body clone
+that leaves the action's body readable, and the guard ordering that gates every unsafe `/admin` POST before
+`resolve()`). `daisyui-a11y-reviewer`: both branded pages clear WCAG 2.2 AA in light and dark with margin.
+`svelte-reviewer`: one Important on the once-captured context token, folded in as `b165df3`.
+
+**Three `0.35.0` carry-forwards (recorded, not fixed).** (1) Bare `<CsrfField />` depends on an ancestor
+`setContext`, an undiscoverable coupling: a new admin form rendered outside `AdminLayout` (the coming
+`CairnExtension` seam) would ship an empty field and surface only as a submit-time 403; a dev-time warning
+when both the prop and the context getter are absent would make it loud. (2) The branded-page CTA hover has an
+ungated `transform` transition; a `prefers-reduced-motion` guard is optional polish (AAA, not required for AA).
+(3) `LayoutData.csrf` admits `''` for non-route callers; fail-closed either way, a clarity nit only.
 
 **`0.34.0` PUBLISHED 2026-06-08, now the registry `latest`.** The `v0.34.0` GitHub Release fired the OIDC
 trusted-publishing workflow (run `27156079198` green, `check:package` plus `npm publish` both passed),

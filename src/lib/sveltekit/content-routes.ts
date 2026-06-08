@@ -13,6 +13,7 @@ import { listMarkdown, readRaw, commitFiles, type FileChange } from '../github/r
 import { cachedInstallationToken } from '../github/signing.js';
 import { emptyManifest, manifestEntryFromFile, parseManifest, serializeManifest, upsertEntry, removeEntry, inboundLinks, type LinkTarget, type InboundLink } from '../content/manifest.js';
 import { CommitConflictError } from '../github/types.js';
+import { log } from '../log/index.js';
 import { issueCsrfToken } from './csrf.js';
 import type { CookieJar } from './types.js';
 import type { CairnRuntime, ConceptDescriptor, FrontmatterField } from '../content/types.js';
@@ -348,11 +349,14 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
         { message: `Update ${concept.label.toLowerCase()}: ${id}`, author: { name: editor.displayName, email: editor.email } },
         token,
       );
+      log.info('commit.succeeded', { concept: concept.id, id, editor: editor.email });
     } catch (err) {
       if (isConflict(err)) {
+        log.warn('commit.failed', { concept: concept.id, id, editor: editor.email, reason: 'conflict' });
         const message = 'This file changed since you opened it. Reload and reapply your edits.';
         throw redirect(303, `/admin/${concept.id}/${id}?error=${encodeURIComponent(message)}${suffix}`);
       }
+      log.error('commit.failed', { concept: concept.id, id, editor: editor.email, error: String(err) });
       throw err;
     }
     const savedQuery = draft.length ? `saved=1&drafts=${encodeURIComponent(draft.join(','))}` : 'saved=1';
@@ -393,11 +397,14 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
         { message: `Delete ${concept.label.toLowerCase()}: ${id}`, author: { name: editor.displayName, email: editor.email } },
         token,
       );
+      log.info('commit.succeeded', { concept: concept.id, id, editor: editor.email });
     } catch (err) {
       if (isConflict(err)) {
+        log.warn('commit.failed', { concept: concept.id, id, editor: editor.email, reason: 'conflict' });
         const message = 'This file changed since you opened it. Reload and try again.';
         throw redirect(303, `/admin/${concept.id}/${id}?error=${encodeURIComponent(message)}`);
       }
+      log.error('commit.failed', { concept: concept.id, id, editor: editor.email, error: String(err) });
       throw err;
     }
     throw redirect(303, `/admin/${concept.id}`);
@@ -499,11 +506,14 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
         { message: `Rename ${concept.label.toLowerCase()}: ${id} to ${newId}`, author: { name: editor.displayName, email: editor.email } },
         token,
       );
+      log.info('commit.succeeded', { concept: concept.id, id: newId, editor: editor.email });
     } catch (err) {
       if (isConflict(err)) {
+        log.warn('commit.failed', { concept: concept.id, id: newId, editor: editor.email, reason: 'conflict' });
         const message = 'This file changed since you opened it. Reload and try again.';
         throw redirect(303, `/admin/${concept.id}/${id}?error=${encodeURIComponent(message)}`);
       }
+      log.error('commit.failed', { concept: concept.id, id: newId, editor: editor.email, error: String(err) });
       throw err;
     }
     throw redirect(303, `/admin/${concept.id}/${newId}?renamed=1`);

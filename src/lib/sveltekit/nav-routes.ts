@@ -6,6 +6,7 @@ import { appCredentials, type GithubKeyEnv } from '../github/credentials.js';
 import { cachedInstallationToken } from '../github/signing.js';
 import { listMarkdown, readRaw, commitFile } from '../github/repo.js';
 import { CommitConflictError } from '../github/types.js';
+import { log } from '../log/index.js';
 import { parseSiteConfig, extractMenu, validateNavTree, setMenu, type NavNode } from '../nav/site-config.js';
 import type { CairnRuntime } from '../content/types.js';
 import type { ContentEvent } from './content-routes.js';
@@ -124,11 +125,14 @@ export function createNavRoutes(runtime: CairnRuntime, deps: NavRoutesDeps = {})
         { message: `Update ${config.label.toLowerCase()}`, author: { name: editor.displayName, email: editor.email } },
         token,
       );
+      log.info('commit.succeeded', { concept: 'nav', id: 'site-config', editor: editor.email });
     } catch (err) {
       if (isConflict(err)) {
+        log.warn('commit.failed', { concept: 'nav', id: 'site-config', editor: editor.email, reason: 'conflict' });
         const message = 'The site config changed since you opened it. Reload and reapply your edits.';
         throw redirect(303, `/admin/nav?error=${encodeURIComponent(message)}`);
       }
+      log.error('commit.failed', { concept: 'nav', id: 'site-config', editor: editor.email, error: String(err) });
       throw err;
     }
 

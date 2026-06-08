@@ -104,4 +104,23 @@ describe('deleteAction', () => {
     const committed = parseManifest(manifestEntry.content!);
     expect(committed.entries.find((e) => e.id === '2026-05-hi')).toBeUndefined();
   });
+
+  it('logs commit.succeeded after a delete lands', async () => {
+    const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const manifest = JSON.stringify({
+      version: 1,
+      entries: [{ id: '2026-05-hi', concept: 'posts', title: 'Hi', permalink: '/p/hi', draft: false, links: [] }],
+    });
+    commitFetch(manifest);
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })), deps);
+    try {
+      await routes.deleteAction(deleteEvent('2026-05-hi') as never);
+    } catch {
+      // swallow the success redirect
+    }
+    const record = infoSpy.mock.calls.map((c) => c[0] as { event?: string; editor?: string }).find((r) => r.event === 'commit.succeeded');
+    expect(record).toBeTruthy();
+    expect(record?.editor).toBe('ed@t');
+    vi.restoreAllMocks();
+  });
 });

@@ -237,6 +237,50 @@ describe('saveAction', () => {
     expect(calls.some((c) => (c.init?.method ?? 'GET') === 'POST' && c.url.endsWith('/git/trees'))).toBe(true);
   });
 
+  it('logs commit.succeeded after a save lands', async () => {
+    const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const aboutRow = manifestEntryFromFile(runtime(() => ({ ok: true, data: {} })).concepts[0], {
+      path: 'src/content/pages/about.md',
+      raw: '---\ntitle: About\n---\nx',
+    });
+    const manifest = serializeManifest({ version: 1, entries: [{ ...aboutRow, concept: 'pages', id: 'about', draft: false }] });
+    commitFetch(manifest);
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })), deps);
+    try {
+      await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'See [about](cairn:pages/about) for more.' }) as never);
+    } catch {
+      // swallow the success redirect
+    }
+    const record = infoSpy.mock.calls.map((c) => c[0] as { event?: string; editor?: string }).find((r) => r.event === 'commit.succeeded');
+    expect(record).toBeTruthy();
+    expect(record?.editor).toBe('ed@t');
+    vi.restoreAllMocks();
+  });
+
+  it('logs commit.failed reason=conflict on a 409', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      const method = init?.method ?? 'GET';
+      if (method === 'GET' && url.includes('/contents/')) return new Response('Not Found', { status: 404 });
+      if (method === 'GET' && url.includes('/git/ref/')) return json({ object: { sha: 'head1' } });
+      if (method === 'GET' && url.includes('/git/commits/')) return json({ tree: { sha: 'basetree' } });
+      if (method === 'POST' && url.endsWith('/git/trees')) return json({ sha: 'newtree' });
+      if (method === 'POST' && url.endsWith('/git/commits')) return json({ sha: 'commit1' });
+      if (method === 'PATCH' && url.includes('/git/refs/')) return new Response('{"message":"Update is not a fast forward"}', { status: 422 });
+      return new Response('unexpected', { status: 500 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })), deps);
+    try {
+      await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'b' }) as never);
+    } catch {
+      // swallow the conflict redirect
+    }
+    const reasons = warnSpy.mock.calls.map((c) => (c[0] as { event?: string; reason?: string }));
+    expect(reasons.some((r) => r.event === 'commit.failed' && r.reason === 'conflict')).toBe(true);
+    vi.restoreAllMocks();
+  });
+
   it('matches a conflict by name even if the class identity differs', async () => {
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })), {
       mintToken: () => Promise.resolve('t'),

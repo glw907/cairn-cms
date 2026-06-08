@@ -32,9 +32,9 @@ identical on every host regardless of the site's own theme.
 
   let { data, children }: Props = $props();
 
-  // Hand the CSRF token to every descendant admin form. layoutLoad issued and returned it. The
-  // token is stable for the session, so capture it once at init through untrack.
-  setContext(CSRF_CONTEXT_KEY, untrack(() => data.csrf));
+  // Hand descendant forms a live getter for the CSRF token layoutLoad issued, so the field stays
+  // correct even if the token ever rotates mid-session.
+  setContext(CSRF_CONTEXT_KEY, () => data.csrf);
 
   // Persist an admin preference for a year, path-scoped to /admin so the cookie never reaches the
   // host's own pages.

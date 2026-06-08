@@ -13,8 +13,8 @@ omits this field fails the guard's token check, which is the intended fail-close
     token?: string;
   }
   let { token }: Props = $props();
-  const fromContext = getContext<string | undefined>(CSRF_CONTEXT_KEY);
-  const value = $derived(token ?? fromContext ?? '');
+  const fromContext = getContext<(() => string) | undefined>(CSRF_CONTEXT_KEY);
+  const value = $derived(token ?? fromContext?.() ?? '');
 </script>
 
 <input type="hidden" name="csrf" value={value} />

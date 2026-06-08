@@ -54,9 +54,9 @@ describe('AdminLayout', () => {
     // navigation (which cancelled it). Re-rendering with a new pathname stands in for that nav.
     const screen = render(AdminLayout, { data: data(true), children: child });
     await screen.getByRole('button', { name: /search or jump to/i }).click();
-    expect(document.querySelector('dialog.modal')?.open).toBe(true);
+    expect(document.querySelector<HTMLDialogElement>('dialog.modal')?.open).toBe(true);
     await screen.rerender({ data: data(true, null, '/admin/pages'), children: child });
-    expect(document.querySelector('dialog.modal')?.open).toBe(false);
+    expect(document.querySelector<HTMLDialogElement>('dialog.modal')?.open).toBe(false);
   });
 
   it('renders the core group and developer groups as peers', async () => {

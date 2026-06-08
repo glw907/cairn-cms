@@ -11,17 +11,25 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-07): brainstorm and write plan 3 (admin chrome isolation)
+## Immediate next action (2026-06-07): execute plan 3 (admin chrome isolation)
 
 **Plan 2 (the admin UX rebuild plus dark mode), its frontend-design polish pass, and the design-identity
-arc that followed all LANDED on `main`, folded into the unpublished `0.32.0`. The next action is plan 3,
-the admin chrome isolation.** Plan 3 has
-no plan file yet, so brainstorm it first (settle the open design calls with the user), then write the
-numbered plan, then execute subagent-driven. Its scope: a chrome-free admin root plus a `(site)` route
-group so the host's chrome never wraps `/admin`, a dev-only ancestor-detection guard, the route-structure
-docs, and the showcase `(site)` group. It also carries the plan-1 global at-rule leak (DaisyUI
-`@keyframes` and `@property` stay document-global; the nesting flatten fixed selector scoping, not
-at-rule scoping). After plan 3 come the two site retrofits.
+arc that followed all LANDED on `main`, folded into the unpublished `0.32.0`. The next action is to
+execute plan 3, the admin chrome isolation.** The plan is written and committed at
+`docs/superpowers/plans/2026-06-07-cairn-admin-chrome-isolation.md`. Execute it subagent-driven (one
+`cairn-implementer` per task) on `main` directly, the way plans 1 and 2 ran. Seven tasks, test-first:
+the dev-only chrome-wrap detection function (Task 1) and its wiring into the admin and login roots (Task
+2), the at-rule boundary test (Task 3), the showcase `(site)` group demonstration (Task 4), the
+route-structure doc (Task 5) and tutorial (Task 6) updates, and the `0.33.0` release (Task 7). It bumps
+`0.33.0` over the unpublished `0.32.0`, still in the held window.
+
+The design is settled in the spec (`docs/superpowers/specs/2026-06-07-cairn-admin-stands-alone-design.md`,
+the "Resolved for plan 3 (2026-06-07)" block). The carried plan-1 global at-rule leak (DaisyUI
+`@keyframes` and Tailwind `@property` stay document-global) is closed by chrome isolation, not by
+name-mangling: the admin sheet is code-split to the admin roots that import it, so it loads only on
+`/admin`, and the route pattern keeps host CSS off `/admin`, so the sheets never co-occur. Task 3 pins
+that boundary. After plan 3 come the two site retrofits, each a separate `site-pass` after the engine
+version publishes.
 
 **The polish pass LANDED 2026-06-07 (commit `97ff069`), folded into `0.32.0` (no version bump, the window
 is unpublished).** It refined the look with the Playwright render-and-compare loop, direction warm

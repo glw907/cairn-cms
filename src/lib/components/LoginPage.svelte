@@ -8,12 +8,13 @@ the allowlist, so the page never leaks membership (spec §7.1).
   import './cairn-admin.css';
   import { onMount } from 'svelte';
   import CairnLogo from './CairnLogo.svelte';
+  import CsrfField from './CsrfField.svelte';
   import { cairnFaviconHref } from './cairn-favicon.js';
   import { warnIfChromeWrapped } from './chrome-guard.js';
 
   interface Props {
-    /** The login load's data: the site name and an optional error. */
-    data: { siteName: string; error: string | null };
+    /** The login load's data: the site name, an optional error, and the CSRF token. */
+    data: { siteName: string; error: string | null; csrf: string };
     /** The action result: `sent` is true once a request was accepted. */
     form: { sent?: boolean } | null;
   }
@@ -54,6 +55,7 @@ the allowlist, so the page never leaks membership (spec §7.1).
         <div role="alert" class="alert alert-error mb-3 text-sm">That link expired. Request a new one below.</div>
       {/if}
       <form method="POST" class="flex flex-col gap-3">
+        <CsrfField token={data.csrf} />
         <label class="flex flex-col gap-1">
           <span class="text-sm font-medium">Email</span>
           <input

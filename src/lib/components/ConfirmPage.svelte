@@ -6,11 +6,12 @@ in a hidden field and consumes nothing; only the explicit POST verifies (spec §
 <script lang="ts">
   import './cairn-admin.css';
   import CairnLogo from './CairnLogo.svelte';
+  import CsrfField from './CsrfField.svelte';
   import { cairnFaviconHref } from './cairn-favicon.js';
 
   interface Props {
-    /** The confirm load's data: the token to submit, the site name, and an optional error. */
-    data: { token: string; siteName: string; error: string | null };
+    /** The confirm load's data: the token to submit, the site name, an optional error, the CSRF token. */
+    data: { token: string; siteName: string; error: string | null; csrf: string };
   }
 
   let { data }: Props = $props();
@@ -41,6 +42,7 @@ in a hidden field and consumes nothing; only the explicit POST verifies (spec §
       <p class="mt-1 mb-5 text-sm text-[var(--color-muted)]">Confirm to finish signing in to {data.siteName}.</p>
       <form method="POST">
         <input type="hidden" name="token" value={data.token} />
+        <CsrfField token={data.csrf} />
         <button type="submit" class="btn btn-primary btn-block">Confirm sign-in</button>
       </form>
     {/if}

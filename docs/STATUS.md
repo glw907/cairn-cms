@@ -11,25 +11,53 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-07): execute plan 3 (admin chrome isolation)
+## Immediate next action (2026-06-07): publish the held window, then the two site retrofits
 
-**Plan 2 (the admin UX rebuild plus dark mode), its frontend-design polish pass, and the design-identity
-arc that followed all LANDED on `main`, folded into the unpublished `0.32.0`. The next action is to
-execute plan 3, the admin chrome isolation.** The plan is written and committed at
-`docs/superpowers/plans/2026-06-07-cairn-admin-chrome-isolation.md`. Execute it subagent-driven (one
-`cairn-implementer` per task) on `main` directly, the way plans 1 and 2 ran. Seven tasks, test-first:
-the dev-only chrome-wrap detection function (Task 1) and its wiring into the admin and login roots (Task
-2), the at-rule boundary test (Task 3), the showcase `(site)` group demonstration (Task 4), the
-route-structure doc (Task 5) and tutorial (Task 6) updates, and the `0.33.0` release (Task 7). It bumps
-`0.33.0` over the unpublished `0.32.0`, still in the held window.
+**Plan 3 (admin chrome isolation) LANDED on `main` 2026-06-07 as `0.33.0`, unpublished. It was the last
+engine plan of the admin-stands-alone initiative.** The next action is the publish decision for the held
+window, then the two production-site retrofits (907.life, ecnordic.ski), each a separate `site-pass`
+after the engine version publishes. The held window is now `0.30.0` (DX-A), `0.31.0` (self-styling
+foundation), `0.32.0` (UX rebuild plus the polish and design-identity arc), and `0.33.0` (chrome
+isolation), all over the `0.29.0` registry `latest`. A publish cuts a `v0.33.0` GitHub Release whose body
+summarizes each minor in the window and carries every `Consumers must:` line, which fires the OIDC
+trusted-publishing workflow.
 
-The design is settled in the spec (`docs/superpowers/specs/2026-06-07-cairn-admin-stands-alone-design.md`,
-the "Resolved for plan 3 (2026-06-07)" block). The carried plan-1 global at-rule leak (DaisyUI
-`@keyframes` and Tailwind `@property` stay document-global) is closed by chrome isolation, not by
-name-mangling: the admin sheet is code-split to the admin roots that import it, so it loads only on
-`/admin`, and the route pattern keeps host CSS off `/admin`, so the sheets never co-occur. Task 3 pins
-that boundary. After plan 3 come the two site retrofits, each a separate `site-pass` after the engine
-version publishes.
+**Plan 3 LANDED on `main` 2026-06-07 as `0.33.0`, unpublished.** It ran subagent-driven, one
+`cairn-implementer` per task on `main` directly, all seven tasks on Sonnet (mechanical, well-specified).
+Ten commits `c0280e9..b87cfd3`: seven task commits, a pre-existing-defect fix `89abb78`, a simplifier pass
+`373f24a`, and a review fold-in `b87cfd3`. A dev-only `chrome-guard.ts` (`detectChromeWrap` plus the
+`import.meta.env.DEV`-gated `warnIfChromeWrapped`) walks the admin root's ancestor chain on mount and logs
+one `console.error` when a width-constraining ancestor wraps the admin; both admin roots call it against a
+`bind:this`-bound `data-theme` wrapper. A boundary test pins that `cairn-admin.css` is imported only by the
+admin roots, so its document-global `@keyframes`/`@property` rules load only on `/admin`. The showcase
+gained a `(site)` route group with plain-CSS chrome, proving the admin self-styles on a framework-free
+site. The route pattern is documented (`docs/admin-route-structure.md`) and taught in the tutorial. Gate
+green at the tip `b87cfd3`, run first-hand: `npm run check` 823 files 0/0, `npm test` 121 files / 758 tests
+exit 0, `check:reference`/`check:package`/`check:docs` exit 0. The post-mortem is in the plan
+(`docs/superpowers/plans/2026-06-07-cairn-admin-chrome-isolation.md`).
+
+**This closes the plan-1 global at-rule carry-forward** by isolation rather than name-mangling: the sheet
+is code-split to the admin roots, so it loads only on `/admin`, and the route pattern keeps host CSS off
+`/admin` from the other side. **Two reconciliations the execution surfaced.** (1) `cairn-admin.css` is
+imported by THREE roots, not two: `ConfirmPage.svelte` also imports it, so the boundary test asserts all
+three (the guard wiring stays on `AdminLayout` and `LoginPage` per the plan; the confirm page is a brief
+interstitial). (2) `main` carried two pre-existing `svelte-check` errors in `AdminLayout.test.ts`
+(`dialog.modal` `.open` typed as `Element`) from the design-identity arc fold-in `a76aa8b`; the arc's
+reported "0/0 at a76aa8b" was inaccurate. They blocked the plan's 0/0 gate and were fixed first as
+`89abb78` (a typed `querySelector<HTMLDialogElement>`).
+
+The review gate ran the simplifier plus the `svelte-reviewer` (no Critical/Important; confirmed the
+runes/SSR pattern and `(site)` routing) and the `daisyui-a11y-reviewer` (one Important: the showcase header
+links lacked a `<nav>` landmark). The fold-in `b87cfd3` added the `<nav aria-label="Site">` landmark, a
+skip of non-constraining `max-width` values (`100%`, `100vw`) so a host's defensive wrapper does not trip
+the dev guard, and a fixture-only note on the test marker. The live `wrangler dev` admin smoke was judged
+not proportionate (the only runtime change is a dev-only `console.error` that compiles out of production
+and changes no rendering; the showcase preview smoke already proved `/admin` renders outside the chrome),
+the same call plan 1 made.
+
+The admin-stands-alone initiative spec is `docs/superpowers/specs/2026-06-07-cairn-admin-stands-alone-design.md`.
+Plans 1, 2, and 3 have all landed; the polish and design-identity arc ran between plans 2 and 3. The
+remaining initiative work is the two site retrofits, after the held window publishes.
 
 **The polish pass LANDED 2026-06-07 (commit `97ff069`), folded into `0.32.0` (no version bump, the window
 is unpublished).** It refined the look with the Playwright render-and-compare loop, direction warm
@@ -62,13 +90,14 @@ the `cairn-admin-design-system` memory, so continued interface work stays consis
 `a76aa8b`: `npm run check` 821 files 0/0, `npm test` 120 files / 751 tests exit 0, and
 `check:reference`/`check:package`/`check:docs` exit 0. The full post-mortem is in the plan file.
 
-**Carry-forwards still open after the polish (for plan 3 or a later touch).** (3) `use:enhance` with
-`applyAction` for the list delete, deferred because `$app/forms` does not resolve in the component test
-project. (4) The first-ever-visit dark-OS first-paint flash, which needs an inline head script in the host
-`app.html` and so suits plan 3 or a showcase touch. (6) The plan-1 global at-rule leak, for plan 3's
-chrome isolation. Publishing stays held: `0.29.0` is the registry `latest`, and `main` carries the
-unpublished `0.30.0`, `0.31.0`, and `0.32.0`. The window publishes before any site or
-the scaffolder consumes the new surface.
+**Carry-forwards still open (for a later touch).** (3) `use:enhance` with `applyAction` for the list
+delete, deferred because `$app/forms` does not resolve in the component test project. (4) The
+first-ever-visit dark-OS first-paint flash, which needs an inline head script in the host `app.html` and so
+suits a showcase or scaffolder touch. (6) The plan-1 global at-rule leak is CLOSED by plan 3's chrome
+isolation (the sheet is code-split to the admin roots, so it loads only on `/admin`, and the route pattern
+keeps host CSS off `/admin`; a boundary test pins the import side). Publishing stays held: `0.29.0` is the
+registry `latest`, and `main` carries the unpublished `0.30.0`, `0.31.0`, `0.32.0`, and `0.33.0`. The
+window publishes before any site or the scaffolder consumes the new surface.
 
 **Plan 2 LANDED on `main` 2026-06-07 as `0.32.0`, unpublished.** It ran subagent-driven, one
 `cairn-implementer` per task on `main` directly, Tasks 4, 6, 8, and 10 on Opus and the rest on Sonnet.

@@ -152,6 +152,12 @@ and `<body>`), they emit a precise `console.error` that names the problem and po
 surfaces the structural mistake rather than masking it, which is why it is preferred over forcing the
 admin to a fixed full-viewport overlay.
 
+**Resolved detection (plan 3).** The primary signal is a width-constraining ancestor: walking from the
+admin root to `<body>`, an ancestor whose computed `max-width` is not `none`, or whose width is
+narrower than the viewport, is the reliable tell of a host container wrapping the admin. The sibling
+signal (substantial elements in `<body>` outside the admin subtree) is noisier, so it rides along as
+context inside the one grouped `console.error` rather than firing on its own. The guard never throws.
+
 ### 4. The route-structure pattern
 
 The canonical structure gains one rule. The host root layout must be chrome-free, and all public
@@ -240,6 +246,24 @@ plan 1 laid the scope root and reset, and the dark toggle lives in the new stick
 the topbar and the toggle together avoids a second touch. Plan 3 is chrome isolation. The engine work
 publishes before the site retrofits, so the retrofits can drop `app.css` from `/admin` safely against a
 self-styling admin.
+
+**Resolved for plan 3 (2026-06-07).** Brainstorming the plan against the current tree settled four
+things. First, the at-rule leak (the carried plan-1 item) is treated as already fixed by chrome
+isolation, not by name-mangling. The admin sheet is code-split per route, so it loads only on `/admin`,
+and isolation moves the host's `app.css` out of `/admin`, so the admin sheet and any host sheet stop
+co-occurring on a page and the global `@keyframes` and `@property` rules have nothing to collide with.
+The `engine-isolation` test extends to pin that boundary, and the route-structure doc carries a
+known-limitation note (keep `app.css` in `(site)`; do not import admin components onto host pages).
+Rewriting 42 `--tw-*` properties and 10 keyframes plus every reference, re-run on each Tailwind or
+DaisyUI upgrade, is effort against a collision the route pattern already prevents.
+
+Second, the existing tree narrows the work. `docs/admin-route-structure.md` already exists and covers
+the `(app)` group, healthz, and the nested editor path, so plan 3 adds the chrome-isolation section
+rather than a new doc. The showcase root layout is already bare with no `app.css`, so plan 3 adds the
+`(site)` demo group to prove the pattern rather than to fix a current leak. Third, the dev guard uses
+the width-constraint heuristic above as its primary signal. Fourth, plan 3 is engine-only and folds into
+the held window as `0.33.0` over the unpublished `0.32.0`; the two production-site retrofits stay
+separate `site-pass` work after the engine version publishes.
 
 ## Versioning and release
 

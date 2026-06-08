@@ -310,7 +310,7 @@ identical on every host regardless of the site's own theme.
             <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-content shadow-sm">
               <CairnLogo class="h-5 w-5" />
             </span>
-            <span class="text-lg font-bold tracking-[-0.01em] font-[family-name:var(--font-display)]">Cairn</span>
+            <span class="text-xl font-bold tracking-[-0.01em] font-[family-name:var(--font-display)]">Cairn</span>
             <span class="rounded-md border border-base-300 px-1.5 py-px text-[0.625rem] font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">CMS</span>
           </a>
         </div>

@@ -141,6 +141,7 @@ identical on every host regardless of the site's own theme.
   }
 
   let paletteDialog = $state<HTMLDialogElement>();
+  let paletteList = $state<HTMLUListElement>();
   let paletteQuery = $state('');
 
   const paletteCommands = $derived<Command[]>([
@@ -155,14 +156,18 @@ identical on every host regardless of the site's own theme.
   );
 
   function openPalette() {
+    if (paletteDialog?.open) return; // showModal throws on an already-open dialog
     paletteQuery = '';
     paletteDialog?.showModal();
   }
+  // An action command (theme toggle). Link commands are real <a> elements that navigate on click, so
+  // the Enter shortcut clicks the first result element and both paths share the one navigation.
   function runCommand(cmd: Command) {
     paletteDialog?.close();
-    if (cmd.action) cmd.action();
-    else if (cmd.href && cmd.external) window.open(cmd.href, '_blank', 'noopener');
-    else if (cmd.href) location.assign(cmd.href);
+    cmd.action?.();
+  }
+  function submitPalette() {
+    (paletteList?.querySelector('a, button') as HTMLElement | null)?.click();
   }
 
   interface Crumb {
@@ -258,17 +263,17 @@ identical on every host regardless of the site's own theme.
               type="text"
               aria-label="Search or jump to"
               placeholder="Search or jump to…"
-              class="w-full bg-transparent py-3.5 text-sm outline-none placeholder:text-[var(--color-muted)]"
+              class="w-full bg-transparent py-3.5 text-sm outline-hidden placeholder:text-[var(--color-muted)]"
               onkeydown={(e) => {
-                if (e.key === 'Enter' && paletteResults[0]) {
+                if (e.key === 'Enter') {
                   e.preventDefault();
-                  runCommand(paletteResults[0]);
+                  submitPalette();
                 }
               }}
             />
           </div>
           {#if paletteResults.length}
-            <ul class="menu max-h-[60vh] w-full gap-0.5 overflow-y-auto p-2">
+            <ul bind:this={paletteList} class="menu max-h-[60vh] w-full gap-0.5 overflow-y-auto p-2">
               {#each paletteResults as cmd (cmd.label)}
                 <li>
                   {#if cmd.href}

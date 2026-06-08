@@ -17,9 +17,33 @@ library's own development proves changes against `examples/showcase`.
 Release fired the OIDC trusted-publishing workflow (run `27117496588` green, `check:package` plus
 `npm publish` both passed), folding `0.30.0` (DX-A render-authoring), `0.31.0` (self-styling foundation),
 `0.32.0` (UX rebuild plus the polish and design-identity arc), and `0.33.0` (chrome isolation) over the
-prior `0.29.0` `latest`. `main` is pushed to `origin` at the release tag. The next action is the two
-production-site retrofits (907.life, ecnordic.ski), each a separate `site-pass`, now that the engine
-version publishes.
+prior `0.29.0` `latest`. `main` has since advanced past the release tag with the login-CSRF hardening
+(`0.34.0`, unpublished; see the entry just below). The next action is the two production-site retrofits
+(907.life, ecnordic.ski), each a separate `site-pass`, now that the engine version publishes.
+
+**Login-CSRF hardening LANDED on `main` 2026-06-07 as `0.34.0`, unpublished (over the `0.33.0` `latest`).**
+Filed from the first real ecnordic admin login: a magic-link sign-in over http failed with SvelteKit's
+opaque CSRF 403, because the JS-free form POST needs a matching https origin
+(`docs/cairn-dx-feedback-2026-06-07-ecnordic-0.33-login-csrf.md`). Two commits on `main`, `5ef1d73` then
+`69a67f3` (plus the version bump). The auth guard now detects a deployed, non-local admin request over
+http and serves a self-contained, design-system-matched help page (status 400, light and dark) that names
+the problem, links to the https version for one-click recovery, and gives the Cloudflare fix, returned
+before `resolve()` runs the CSRF check; `wrangler dev` over http is exempt
+(`src/lib/sveltekit/https-required-page.ts`, wired in `guard.ts`). The login copy lost a tacked-on
+closer, and a new `npm run check:prose` (`scripts/check-admin-prose.mjs`, now in CI) scans the admin
+components' user-facing strings for AI tells, since the component copy ships compiled and a consuming
+site's `prose-guard` never sees it. The deploy guide now requires forcing HTTPS, the admin design system
+records the brand-prose standard, and the `web-auth-security-reviewer` cleared the guard change (no XSS in
+the escaped href, no session-gate bypass, no redirect primitive). Gate green, run first-hand: `npm run
+check` 825 files 0/0, `npm test` 122 files / 765 tests exit 0, `check:docs` and `check:prose` clean.
+
+The two production zones were set to force the scheme at the edge as the immediate site-side fix: **Always
+Use HTTPS and HSTS (`max-age` two years, `includeSubDomains`, preload off) are now on for ecnordic.ski and
+907.life** (via the Cloudflare API). The HSTS header the feedback saw earlier came from cairn's own
+`/admin` responses; the zone-level setting was off until now. `0.34.0` is additive (the help page only
+triggers on a misconfigured http request), so it joins the publish-held window with no required consumer
+action beyond forcing HTTPS: `0.33.0` stays the registry `latest`, and `main` now carries the unpublished
+`0.34.0` over it.
 
 **Site-retrofit gotchas the published window carries (for each `site-pass`).** Both sites pin an older
 range and cross several breaking minors at once, so an upgrade reads the actions off the `Consumers must:`

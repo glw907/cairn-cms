@@ -2,6 +2,23 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.34.0
+
+A deployed admin request that arrives over http now gets a clear, branded help page instead of the
+framework's opaque CSRF 403. The magic-link sign-in posts a JS-free form, and the framework rejects a
+form POST unless the request carries a matching https origin, so an admin reached over http cannot sign
+in. The auth guard detects that case on a deployed host and serves a self-contained page that names the
+problem, links to the https version for one-click recovery, and gives the exact Cloudflare fix (Always
+Use HTTPS). The page matches the admin design system in light and dark. Local `wrangler dev` over http
+is exempt.
+
+The release also adds a `check:prose` gate (`scripts/check-admin-prose.mjs`, in CI) that scans the admin
+components' user-facing strings for AI-writing tells, since the component copy ships compiled and a
+consuming site's prose tooling never sees it.
+
+Consumers may: force HTTPS at the edge (Always Use HTTPS plus HSTS), which the deploy guide now requires.
+The help page is a fallback for the window before that is set, not a substitute.
+
 ## 0.33.0
 
 The admin isolates itself from host chrome. A dev-only guard in the admin and login roots walks the

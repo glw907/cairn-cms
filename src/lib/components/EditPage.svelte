@@ -224,7 +224,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
   {#if data.isNew}<input type="hidden" name="new" value="1" />{/if}
 
   <div class="lg:order-1">
-    <div class="rounded-box border border-base-300 bg-base-100 overflow-hidden shadow-sm">
+    <div class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 overflow-hidden shadow-[var(--cairn-shadow)]">
       <MarkdownEditor
         bind:value={body}
         name="body"
@@ -237,7 +237,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
       <section
         id="cairn-preview"
         aria-label="Preview"
-        class="rounded-box border border-base-300 bg-base-100 prose mt-4 max-w-none p-4 shadow-sm"
+        class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 prose mt-4 max-w-none p-4 shadow-[var(--cairn-shadow)]"
       >
         {@html previewHtml}
       </section>
@@ -245,7 +245,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
   </div>
 
   <aside class="lg:order-2 mt-4 lg:mt-0">
-    <fieldset class="rounded-box border border-base-300 bg-base-100 flex flex-col gap-3 p-4 shadow-sm">
+    <fieldset class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 flex flex-col gap-3 p-4 shadow-[var(--cairn-shadow)]">
       <legend class="sr-only">Frontmatter</legend>
       {#each data.fields as field (field.name)}
         {#if field.type === 'textarea'}

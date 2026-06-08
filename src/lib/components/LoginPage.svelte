@@ -29,7 +29,7 @@ the allowlist, so the page never leaks membership (spec §7.1).
      level in (a class on the theme element itself would not match). -->
 <div data-theme="cairn-admin">
   <div class="flex min-h-screen flex-col items-center justify-center gap-6 bg-base-200 p-4 text-base-content">
-  <div class="w-full max-w-sm rounded-box border border-base-300 bg-base-100 p-7 shadow-sm">
+  <div class="w-full max-w-sm rounded-box border border-[var(--cairn-card-border)] bg-base-100 p-7 shadow-[var(--cairn-shadow)]">
     <div class="mb-6 flex items-center gap-2">
       <CairnLogo class="h-8 w-8 text-primary" />
       <span class="text-xl font-bold tracking-[-0.01em] font-[family-name:var(--font-display)]">Cairn</span>

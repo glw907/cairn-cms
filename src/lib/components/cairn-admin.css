@@ -43,13 +43,19 @@
   --color-subtle: oklch(42% 0.01 75);
 
   --radius-selector: 0.5rem;
-  --radius-field: 0.5rem;
-  --radius-box: 0.75rem;
+  --radius-field: 0.625rem;
+  --radius-box: 1rem;
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
   --border: 1px;
   --depth: 1;
   --noise: 0;
+
+  /* Soft, layered elevation: a close contact shadow plus a wide, diffuse one, warm-tinted. The cards
+     float gently instead of sitting in hard boxes, which reads more current than a flat border. */
+  --cairn-shadow: 0 1px 2px oklch(28% 0.02 75 / 0.05), 0 8px 24px -6px oklch(28% 0.02 75 / 0.1);
+  /* A faint hairline for the floating cards in light, where the shadow carries the definition. */
+  --cairn-card-border: oklch(93% 0.008 75);
 }
 
 /* Warm Stone, dark. Mirrors the light palette in dark tones, keeping the same hues (the warm 75 and
@@ -96,13 +102,18 @@
   --color-subtle: oklch(80% 0.008 75);
 
   --radius-selector: 0.5rem;
-  --radius-field: 0.5rem;
-  --radius-box: 0.75rem;
+  --radius-field: 0.625rem;
+  --radius-box: 1rem;
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
   --border: 1px;
   --depth: 1;
   --noise: 0;
+
+  /* On dark, a soft shadow barely registers, so it is deeper and darker to still lift the cards. */
+  --cairn-shadow: 0 1px 2px oklch(0% 0 0 / 0.35), 0 8px 24px -6px oklch(0% 0 0 / 0.5);
+  /* On dark the shadow does little, so the card keeps a visible border for definition. */
+  --cairn-card-border: oklch(30% 0.014 75);
 }
 
 /* The scoped reset that replaces global Preflight (which the admin sheet omits). It applies only
@@ -156,6 +167,19 @@
   :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) :focus-visible {
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;
+  }
+
+  /* The primary action carries a soft violet lift that grows on hover, so the main call to action
+     reads as raised and current rather than a flat fill. The mix adapts to the theme's primary. */
+  :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .btn-primary:not(:disabled) {
+    box-shadow:
+      0 1px 2px color-mix(in oklch, var(--color-primary) 22%, transparent),
+      0 6px 16px -5px color-mix(in oklch, var(--color-primary) 38%, transparent);
+  }
+  :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .btn-primary:not(:disabled):hover {
+    box-shadow:
+      0 2px 4px color-mix(in oklch, var(--color-primary) 26%, transparent),
+      0 10px 24px -5px color-mix(in oklch, var(--color-primary) 48%, transparent);
   }
 }
 

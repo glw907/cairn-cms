@@ -162,7 +162,7 @@ identical on every host regardless of the site's own theme.
     <input id="cairn-drawer" type="checkbox" class="drawer-toggle" bind:checked={drawerOpen} />
 
     <div class="drawer-content flex flex-col">
-      <div class="navbar bg-base-100/95 border-b border-base-300 sticky top-0 z-30 gap-2 px-4 shadow-sm backdrop-blur lg:px-8">
+      <div class="navbar bg-base-100/95 border-b border-[var(--cairn-card-border)] sticky top-0 z-30 gap-2 px-4 shadow-sm backdrop-blur lg:px-8">
         <div class="flex-none lg:hidden">
           <label for="cairn-drawer" aria-label="Open menu" class="btn btn-square btn-ghost">
             <MenuIcon class="h-5 w-5" />
@@ -198,9 +198,9 @@ identical on every host regardless of the site's own theme.
 
     <div class="drawer-side">
       <label for="cairn-drawer" aria-label="Close menu" class="drawer-overlay"></label>
-      <nav class="bg-base-100 flex min-h-full w-64 flex-col border-r border-base-300" aria-label="Site content">
+      <nav class="bg-base-100 flex min-h-full w-64 flex-col border-r border-[var(--cairn-card-border)]" aria-label="Site content">
         <!-- Brand band, the same height as the topbar so the two form one aligned header strip. -->
-        <div class="flex h-16 flex-none items-center gap-2 border-b border-base-300 px-5">
+        <div class="flex h-16 flex-none items-center gap-2 border-b border-[var(--cairn-card-border)] px-5">
           <CairnLogo class="h-7 w-7 text-primary" />
           <span class="text-lg font-bold tracking-[-0.01em] font-[family-name:var(--font-display)]">Cairn</span>
           <span class="rounded-md border border-base-300 px-1.5 py-px text-[0.625rem] font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">CMS</span>
@@ -252,7 +252,7 @@ identical on every host regardless of the site's own theme.
           {/each}
         </div>
 
-        <div class="flex-none border-t border-base-300 px-5 py-4">
+        <div class="flex-none border-t border-[var(--cairn-card-border)] px-5 py-4">
           <div class="flex items-center gap-3">
             <div class="avatar avatar-placeholder">
               <div class="bg-neutral text-neutral-content w-9 rounded-full">

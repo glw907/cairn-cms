@@ -144,7 +144,7 @@ content sizes. The header New button opens a dialog holding the create form.
   </div>
 {/if}
 
-<div class="rounded-box border border-base-300 bg-base-100 mb-4 overflow-x-auto shadow-sm">
+<div class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 mb-4 overflow-x-auto shadow-[var(--cairn-shadow)]">
   {#if data.entries.length === 0}
     <div class="flex flex-col items-center gap-4 px-6 py-16 text-center">
       <CairnLogo class="h-12 w-12 text-primary opacity-30" />

@@ -19,7 +19,9 @@ function event(search = '') {
 describe('auth page loads', () => {
   it('loginLoad returns the site name and no error by default', async () => {
     const { loginLoad } = createAuthRoutes({ branding });
-    expect(await loginLoad(event() as never)).toEqual({ siteName: 'Test Site', error: null });
+    const data = await loginLoad(event() as never);
+    expect(data).toMatchObject({ siteName: 'Test Site', error: null });
+    expect(data.csrf).toMatch(/^[A-Za-z0-9_-]+$/);
   });
 
   it('loginLoad surfaces the expired error from the query', async () => {
@@ -32,7 +34,8 @@ describe('auth page loads', () => {
     const { confirmLoad } = createAuthRoutes({ branding });
     const ev = event('?token=abc');
     const data = await confirmLoad(ev as never);
-    expect(data).toEqual({ token: 'abc', siteName: 'Test Site', error: null });
+    expect(data).toMatchObject({ token: 'abc', siteName: 'Test Site', error: null });
+    expect(data.csrf).toMatch(/^[A-Za-z0-9_-]+$/);
     expect(ev._headers['Referrer-Policy']).toBe('no-referrer');
   });
 });

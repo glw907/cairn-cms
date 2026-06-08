@@ -14,6 +14,7 @@ import {
 } from '../auth/crypto.js';
 import { findEditor, issueToken, consumeToken, createSession, deleteSession, recentlyIssued } from '../auth/store.js';
 import { buildMagicLinkMessage, cloudflareSend, type AuthBranding, type SendMagicLink } from '../email.js';
+import { issueCsrfToken } from './csrf.js';
 import type { RequestContext } from './types.js';
 
 export interface AuthRoutesConfig {
@@ -63,23 +64,29 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
     return { sent: true };
   }
 
-  /** GET /admin/login. Public. Carries the site name and an optional `?error` for the form. */
-  function loginLoad(event: RequestContext): { siteName: string; error: string | null } {
-    return { siteName: config.branding.siteName, error: event.url.searchParams.get('error') };
+  /** GET /admin/login. Public. Carries the site name, an optional `?error`, and the CSRF token. */
+  function loginLoad(event: RequestContext): { siteName: string; error: string | null; csrf: string } {
+    return {
+      siteName: config.branding.siteName,
+      error: event.url.searchParams.get('error'),
+      csrf: issueCsrfToken(event),
+    };
   }
 
   /**
    * GET /admin/auth/confirm. Renders the confirm page and consumes nothing; only the POST
-   * verifies. Sets Referrer-Policy: no-referrer so the token does not leak to a referrer.
+   * verifies. Sets Referrer-Policy: no-referrer so the token does not leak to a referrer, and
+   * issues the CSRF token so the confirm form can render the hidden field.
    */
   function confirmLoad(
     event: RequestContext,
-  ): { token: string; siteName: string; error: string | null } {
+  ): { token: string; siteName: string; error: string | null; csrf: string } {
     event.setHeaders({ 'Referrer-Policy': 'no-referrer' });
     return {
       token: event.url.searchParams.get('token') ?? '',
       siteName: config.branding.siteName,
       error: event.url.searchParams.get('error'),
+      csrf: issueCsrfToken(event),
     };
   }
 

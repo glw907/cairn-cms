@@ -125,6 +125,14 @@ dashes, one idea per sentence). Name the concept rather than a generic noun ("No
 entries"). Lean on the cairn/stacking metaphor where it fits naturally. This applies to button labels,
 empty states, hints, and confirmations.
 
+The component copy ships compiled inside the published package, so a consuming site's `prose-guard` hook
+never sees it. It is guarded here instead by `npm run check:prose` (`scripts/check-admin-prose.mjs`),
+which extracts the user-facing strings from `src/lib/components/*.svelte` and runs the blocking tells
+from the `writing-voice` standard over them. It runs in CI alongside the other `check:*` gates. The
+mechanical rules catch the lexical and structural class (marketing words, banned phrases, the
+antithesis frame, and the like); they cannot catch a judgment-level tell such as a tacked-on closer, so
+run `node scripts/check-admin-prose.mjs --list` for a release-time read of all admin copy at once.
+
 ## Adding a new admin surface
 
 Wrap it in a `data-theme` wrapper (or render it inside `AdminLayout`, which already provides one), import

@@ -43,7 +43,7 @@ the allowlist, so the page never leaks membership (spec §7.1).
     </div>
 
     <h1 class="text-lg font-semibold">Sign in to {data.siteName}</h1>
-    <p class="mt-1 mb-5 text-sm text-[var(--color-muted)]">Enter your email and we'll send you a one-time sign-in link. No password to remember.</p>
+    <p class="mt-1 mb-5 text-sm text-[var(--color-muted)]">Enter your email. We'll send a one-time sign-in link.</p>
 
     {#if form?.sent}
       <div role="status" class="alert alert-success text-sm">

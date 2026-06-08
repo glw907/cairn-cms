@@ -302,12 +302,14 @@ identical on every host regardless of the site's own theme.
     <div class="drawer-side">
       <label for="cairn-drawer" aria-label="Close menu" class="drawer-overlay"></label>
       <nav class="bg-base-100 flex min-h-full w-64 flex-col border-r border-[var(--cairn-card-border)]" aria-label="Site content">
-        <!-- Brand band: a faint primary-tinted zone, so the brand corner reads as a deliberate place
-             and not just where the two header lines cross. Same height as the topbar; the logo and
+        <!-- Brand band, the same height as the topbar. The mark sits in a filled "app-icon" tile, which
+             anchors the corner as a deliberate brand object rather than a washed box. The logo and
              wordmark link to the admin home. -->
-        <div class="flex h-16 flex-none items-center border-b border-[var(--cairn-card-border)] bg-primary/[0.05] px-3">
-          <a href="/admin" aria-label="Cairn admin home" class="flex items-center gap-2 rounded-field px-2 py-1.5 transition-colors hover:bg-primary/10">
-            <CairnLogo class="h-7 w-7 text-primary" />
+        <div class="flex h-16 flex-none items-center border-b border-[var(--cairn-card-border)] px-3">
+          <a href="/admin" aria-label="Cairn admin home" class="flex items-center gap-2.5 rounded-field px-2 py-1.5 transition-colors hover:bg-base-content/[0.05]">
+            <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-content shadow-sm">
+              <CairnLogo class="h-5 w-5" />
+            </span>
             <span class="text-lg font-bold tracking-[-0.01em] font-[family-name:var(--font-display)]">Cairn</span>
             <span class="rounded-md border border-base-300 px-1.5 py-px text-[0.625rem] font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">CMS</span>
           </a>

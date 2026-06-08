@@ -46,6 +46,16 @@ concurrent removals cannot both pass a separate check and strand the site at zer
 
 See [the core reference](../reference/core.md#auth-and-github-app) for the auth helper signatures.
 
+## What cairn logs
+
+cairn emits structured diagnostic events for the auth flow, the commit pipeline, and the request
+guard, written to `console` for Workers Logs (see the [log events reference](../reference/log-events.md)).
+The records carry an editor's email for attribution, so an operator can answer who did what. They
+withhold the secrets: no magic-link token, no session id in the clear, and no magic-link contents
+ever enter a record. A standing redaction test drives the token-confirm and logout handlers and
+asserts the raw secret never appears in any emitted record, so a later change cannot widen a field to
+leak one.
+
 ## Commit trust
 
 A save commits markdown to the repo's default branch, which auto-deploys. The identity on that commit

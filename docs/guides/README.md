@@ -19,3 +19,4 @@ Task-oriented guides for a returning adopter. Each answers one question and link
 ## Maintain
 
 - [Upgrade cairn](./upgrade-cairn.md): the `0.x` rename list, oldest first.
+- [Read cairn's logs](./read-cairn-logs.md): turn on Workers Logs and query the diagnostic events.

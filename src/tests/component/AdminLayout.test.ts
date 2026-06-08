@@ -48,6 +48,17 @@ describe('AdminLayout', () => {
     await expect.element(screen.getByText('View the live site')).toBeInTheDocument();
   });
 
+  it('closes the command palette once a navigation lands', async () => {
+    // A destination command is a plain link that navigates; the palette closes itself from the
+    // pathname effect after the route changes, rather than racing a close() against the link's own
+    // navigation (which cancelled it). Re-rendering with a new pathname stands in for that nav.
+    const screen = render(AdminLayout, { data: data(true), children: child });
+    await screen.getByRole('button', { name: /search or jump to/i }).click();
+    expect(document.querySelector('dialog.modal')?.open).toBe(true);
+    await screen.rerender({ data: data(true, null, '/admin/pages'), children: child });
+    expect(document.querySelector('dialog.modal')?.open).toBe(false);
+  });
+
   it('renders the core group and developer groups as peers', async () => {
     const screen = render(AdminLayout, { data: data(true), children: child });
     await expect.element(screen.getByText('Core', { exact: true })).toBeInTheDocument();

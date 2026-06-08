@@ -29,6 +29,12 @@ identical on every host regardless of the site's own theme.
 
   let { data, children }: Props = $props();
 
+  // Persist an admin preference for a year, path-scoped to /admin so the cookie never reaches the
+  // host's own pages.
+  function writeAdminCookie(name: string, value: string) {
+    document.cookie = `${name}=${value}; path=/admin; max-age=31536000; samesite=lax`;
+  }
+
   // A nav entry. `href` makes it a link; without one it is an inert stub (a developer-tool slot the
   // extension mechanism has not wired yet).
   interface NavItem {
@@ -87,9 +93,8 @@ identical on every host regardless of the site's own theme.
     if (open) next.delete(label);
     else next.add(label);
     collapsed = next;
-    // 1 year, path-scoped to the admin so the cookie never reaches the host's pages.
     const value = [...next].map((entry) => encodeURIComponent(entry)).join(',');
-    document.cookie = `cairn-admin-nav-collapsed=${value}; path=/admin; max-age=31536000; samesite=lax`;
+    writeAdminCookie('cairn-admin-nav-collapsed', value);
   }
 
   let drawerOpen = $state(false);
@@ -105,10 +110,13 @@ identical on every host regardless of the site's own theme.
     }
   }
 
-  // Close the mobile drawer whenever the active path changes (a nav click navigated).
+  // Close the mobile drawer and the command palette whenever the active path changes (a nav click
+  // navigated). Closing the palette here, after the navigation lands, avoids racing a synchronous
+  // close() against a result link's own navigation, which would cancel it.
   $effect(() => {
     data.pathname;
     drawerOpen = false;
+    paletteDialog?.close();
   });
 
   // Seed from the SSR'd theme once. The live theme is owned by this state and the toggle, so the
@@ -126,8 +134,7 @@ identical on every host regardless of the site's own theme.
 
   function toggleTheme() {
     theme = theme === 'cairn-admin' ? 'cairn-admin-dark' : 'cairn-admin';
-    // 1 year, path-scoped to the admin so the cookie never reaches the host's pages.
-    document.cookie = `cairn-admin-theme=${theme}; path=/admin; max-age=31536000; samesite=lax`;
+    writeAdminCookie('cairn-admin-theme', theme);
   }
 
   // The command palette: a quick jump-to over the admin's destinations plus a couple of actions, so
@@ -277,11 +284,14 @@ identical on every host regardless of the site's own theme.
               {#each paletteResults as cmd (cmd.label)}
                 <li>
                   {#if cmd.href}
+<!-- An internal link navigates and the pathname effect closes the palette once the route lands,
+                       so it carries no onclick (closing here would cancel the navigation). An external link
+                       opens a new tab and leaves this page, so it closes the palette itself. -->
                     <a
                       href={cmd.href}
                       target={cmd.external ? '_blank' : undefined}
                       rel={cmd.external ? 'noopener' : undefined}
-                      onclick={() => paletteDialog?.close()}
+                      onclick={cmd.external ? () => paletteDialog?.close() : undefined}
                     >
                       <cmd.icon class="h-4 w-4 text-[var(--color-muted)]" aria-hidden="true" />
                       {cmd.label}

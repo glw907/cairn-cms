@@ -6,10 +6,6 @@
 </script>
 
 <h1>cairn showcase</h1>
-<nav>
-  <a href="/calendar">Calendar (a non-cairn feature)</a>
-  <a href="/admin">Admin</a>
-</nav>
 
 <ul class="post-list">
   {#each data.posts as post (post.id)}

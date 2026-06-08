@@ -11,7 +11,24 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-08): the two site retrofits (907.life, ecnordic.ski)
+## Immediate next action (2026-06-08): execute the login-CSRF-ownership plan (then the two site retrofits)
+
+**A second login-CSRF source is still open after `0.34.0`, and the fix is planned and ready to execute.**
+The 0.34 force-HTTPS work closed the cross-scheme 403. A privacy-hardened Firefox that sends no `Origin`
+header trips the same SvelteKit CSRF 403, so the legitimate operator (the only admin account) is locked out
+of both production sites right now. Filed in
+`docs/cairn-dx-feedback-2026-06-08-ecnordic-login-csrf-missing-origin.md`. The design call, brainstormed and
+committed: disable SvelteKit's global `checkOrigin` (the one consumer step) and make cairn's guard the single
+CSRF authority with one uniform `__Host-cairn_csrf` double-submit token over every admin form POST, issued
+lazily and stably, validated centrally, plus a faithful `Origin` reproduction for the site's own non-admin
+forms and a branded rejection page. Spec:
+`docs/superpowers/specs/2026-06-08-cairn-login-csrf-ownership-design.md`. Plan (eleven test-first tasks,
+landing `0.35.0`): `docs/superpowers/plans/2026-06-08-cairn-login-csrf-ownership.md`.
+
+**NEXT ACTION: execute that plan with `superpowers:subagent-driven-development`, one `cairn-implementer` per
+task on `main` directly** (the pattern every recent pass used). Then publish `0.35.0` over the `0.34.0`
+`latest`, then the two site retrofits, each pinning `^0.35.0` and adding `csrf: { checkOrigin: false }` to its
+`svelte.config.js` along with the other breaking-window actions noted below.
 
 **`0.34.0` PUBLISHED 2026-06-08, now the registry `latest`.** The `v0.34.0` GitHub Release fired the OIDC
 trusted-publishing workflow (run `27156079198` green, `check:package` plus `npm publish` both passed),

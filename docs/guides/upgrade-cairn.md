@@ -132,6 +132,14 @@ This needs no migration. Consumers may: drop any Tailwind `@source` entry that e
 the admin's classes, since the host build no longer feeds the admin its CSS. A host that provides DaisyUI
 globally keeps working unchanged.
 
+## 0.33.0: the host root layout must be chrome-free
+
+The admin now isolates itself from host chrome, and a dev-only guard logs a console error when a site's
+root layout wraps the admin in its own nav, footer, or width-constraining container. Consumers must:
+keep the root layout bare and move the public chrome plus `app.css` into a URL-transparent `(site)`
+route group. Group folders do not change any URL, so the public pages keep their paths, and the admin,
+which sits outside the group, renders standalone. A site already on this structure needs no change.
+
 ## 0.32.0: the admin UX rebuild and dark mode
 
 The admin list, sidebar, and topbar are rebuilt in DaisyUI with Lucide icons and a dark mode. This

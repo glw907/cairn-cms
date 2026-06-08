@@ -2,6 +2,27 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.33.0
+
+The admin isolates itself from host chrome. A dev-only guard in the admin and login roots walks the
+ancestor chain on mount and logs one `console.error` when a width-constraining ancestor sits between the
+admin root and `<body>`, the sign that a site's root layout is wrapping the admin in its own nav, footer,
+or container. The guard compiles out of production and changes no rendering. The canonical route pattern
+is documented and demonstrated: a chrome-free root layout plus a URL-transparent `(site)` group that
+holds the public chrome and `app.css`, so the host chrome never wraps `/admin`. The showcase gains a
+`(site)` group with plain-CSS chrome, which proves the admin renders fully styled on a site that uses
+neither Tailwind nor DaisyUI.
+
+This closes the global at-rule note carried since the self-styling foundation. The compiled admin sheet
+holds DaisyUI `@keyframes` and Tailwind `@property` rules that are document-global by CSS spec, but the
+sheet is code-split to the admin roots that import it, so it loads only on `/admin`, and the route pattern
+keeps the host's CSS off `/admin` from the other side. A boundary test pins that the admin sheet is
+imported only by the admin roots.
+
+Consumers must: keep the host root layout chrome-free and move the public chrome plus `app.css` into a
+`(site)` route group, so the host chrome never wraps `/admin`. A site already on this structure needs no
+change. The dev guard names the problem in the console if a root layout still wraps the admin.
+
 ## 0.32.0
 
 The admin gets a real CMS UX. The concept list is now a searchable, sortable data-table with status

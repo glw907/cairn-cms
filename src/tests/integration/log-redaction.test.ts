@@ -57,6 +57,30 @@ describe('log redaction', () => {
     expect(blob).not.toContain(token);
   });
 
+  it('never logs the raw magic-link token on the request/mint path', async () => {
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    // The token is generated inside requestAction and embedded in the magic-link. Capture the
+    // sent message and pull the real token out of its link, so the redaction assert is exact.
+    let token = '';
+    const r = createAuthRoutes({
+      branding: { siteName: 'T', from: 'n@test.dev' },
+      send: async (_env, message) => {
+        const link = new URL(message.text.match(/https:\/\/\S+/)?.[0] ?? '');
+        token = link.searchParams.get('token') ?? '';
+      },
+    });
+    // makeEvent supplies no waitUntil, so the send is awaited inline and the callback runs here.
+    const captured = await records(() =>
+      r.requestAction(makeEvent({ url: 'https://test.dev/admin/auth/request', form: { email: 'ed@x.dev' } })),
+    );
+    // Guard: the send ran and we captured a real, full-length token; the assert below cannot pass
+    // vacuously on an empty string.
+    expect(token).not.toBe('');
+    expect(token.length).toBeGreaterThan(40);
+    const blob = JSON.stringify(captured);
+    expect(blob).not.toContain(token);
+  });
+
   it('never logs the raw session id at logout', async () => {
     await seedEditor('ed@x.dev', 'Ed', 'editor');
     const id = generateSessionId();

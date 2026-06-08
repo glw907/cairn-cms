@@ -37,7 +37,10 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
     const db = requireDb(env);
     const form = await event.request.formData();
     const email = String(form.get('email') ?? '').trim().toLowerCase();
-    log.info('auth.link.requested', { email });
+    // `email` here is unvalidated request input logged before the allowlist check, so bound the
+    // logged value to the RFC 5321 maximum to cap an abusive record's size. A real editor's address
+    // fits well under this; only a junk payload is truncated.
+    log.info('auth.link.requested', { email: email.slice(0, 320) });
 
     const editor = email ? await findEditor(db, email) : null;
     if (editor) {

@@ -36,6 +36,20 @@ describe('engine isolation', () => {
     expect(css).not.toMatch(/(^|\})\s*(:root|html|body|\*)\s*\{/);
   });
 
+  it('imports the admin stylesheet only from the admin root components, so it loads only on /admin', () => {
+    // The compiled cairn-admin.css carries DaisyUI @keyframes and Tailwind @property rules that are
+    // document-global by CSS spec. They cannot collide with a host's CSS because the sheet is
+    // code-split to the routes that import it, and only the admin roots do, so it never loads on a
+    // host page. Chrome isolation keeps host CSS off /admin from the other side. This pins that
+    // boundary; importing the sheet anywhere else would leak the globals onto host pages.
+    const importers = files
+      .filter((f) => f.endsWith('.svelte'))
+      .filter((f) => /import\s+['"]\.\/cairn-admin\.css['"]/.test(readFileSync(f, 'utf8')))
+      .map((f) => f.slice(f.lastIndexOf('/') + 1))
+      .sort();
+    expect(importers).toEqual(['AdminLayout.svelte', 'ConfirmPage.svelte', 'LoginPage.svelte']);
+  });
+
   it('defines a dark Warm Stone palette under the dark theme root', () => {
     const css = readFileSync(join(libDir, 'components/cairn-admin.css'), 'utf8');
     const dark = css.slice(css.indexOf("[data-theme='cairn-admin-dark']"));

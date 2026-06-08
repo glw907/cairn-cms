@@ -162,7 +162,9 @@ identical on every host regardless of the site's own theme.
     <input id="cairn-drawer" type="checkbox" class="drawer-toggle" bind:checked={drawerOpen} />
 
     <div class="drawer-content flex flex-col">
-      <div class="navbar bg-base-100/95 border-b border-[var(--cairn-card-border)] sticky top-0 z-30 gap-2 px-4 shadow-sm backdrop-blur lg:px-8">
+      <!-- The topbar is a flat, opaque continuation of the sidebar's brand band: same surface and the
+           same hairline, no shadow, so the two form one clean header strip across the sidebar seam. -->
+      <div class="navbar bg-base-100 border-b border-[var(--cairn-card-border)] sticky top-0 z-30 gap-2 px-4 lg:px-8">
         <div class="flex-none lg:hidden">
           <label for="cairn-drawer" aria-label="Open menu" class="btn btn-square btn-ghost">
             <MenuIcon class="h-5 w-5" />

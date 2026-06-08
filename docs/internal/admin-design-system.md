@@ -120,10 +120,21 @@ developer extensions.
 
 ## Voice
 
-Friendly-but-professional and plain, following the repo's `writing-voice` standard (no AI tells, no em
-dashes, one idea per sentence). Name the concept rather than a generic noun ("No posts yet", not "No
-entries"). Lean on the cairn/stacking metaphor where it fits naturally. This applies to button labels,
-empty states, hints, and confirmations.
+The copy is part of the brand, held to the same bar as the visuals. Editors read these strings on
+every screen, so a single AI-flavored line cheapens the whole admin. Treat every user-facing string as
+brand prose, not filler.
+
+The standard is the repo's `writing-voice` standard, applied to UI copy:
+
+- Plain and friendly-but-professional. No marketing gloss.
+- One idea per sentence. Short sentences are good. A two-sentence hint beats one clause-stacked line.
+- No AI tells: no em dashes, no "not X, but Y" frame, no tacked-on closer ("No password to remember."),
+  no reflexive three-item lists.
+- Name the concept, not a generic noun ("No posts yet", not "No entries").
+- Lean on the cairn/stacking metaphor where it fits naturally, never forced.
+
+This covers button labels, headings, empty states, hints, confirmations, and the standalone pages the
+engine serves outside the components (the guard's HTTPS-required page in `https-required-page.ts`).
 
 The component copy ships compiled inside the published package, so a consuming site's `prose-guard` hook
 never sees it. It is guarded here instead by `npm run check:prose` (`scripts/check-admin-prose.mjs`),
@@ -131,7 +142,9 @@ which extracts the user-facing strings from `src/lib/components/*.svelte` and ru
 from the `writing-voice` standard over them. It runs in CI alongside the other `check:*` gates. The
 mechanical rules catch the lexical and structural class (marketing words, banned phrases, the
 antithesis frame, and the like); they cannot catch a judgment-level tell such as a tacked-on closer, so
-run `node scripts/check-admin-prose.mjs --list` for a release-time read of all admin copy at once.
+run `node scripts/check-admin-prose.mjs --list` for a release-time read of all admin copy at once. The
+non-component surfaces (the standalone pages) sit outside that gate, so read them by hand against this
+same bar.
 
 ## Adding a new admin surface
 

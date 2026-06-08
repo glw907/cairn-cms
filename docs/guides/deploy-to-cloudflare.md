@@ -56,6 +56,8 @@ Goal: deploy the site Worker to Cloudflare so editor saves commit to GitHub and 
 
    The same `Origin` dependency is the reason the [admin smoke test](../admin-smoke-test.md) sends an explicit `Origin` header when it exercises a form action. Keep that note and this requirement together.
 
+   Until you force HTTPS, the guard catches the case for you: an `/admin` request that reaches a deployed host over http gets a styled "this admin needs HTTPS" page with a one-click link to the https version and these same instructions, rather than the opaque CSRF 403. Local `wrangler dev` over http is exempt. The page is a fallback, not a substitute, so turn the zone setting on.
+
 ## Verify
 
 After the deploy:

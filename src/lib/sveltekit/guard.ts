@@ -4,6 +4,7 @@
 import { redirect, error } from '@sveltejs/kit';
 import { resolveSession } from '../auth/store.js';
 import { sessionCookieName } from '../auth/crypto.js';
+import { httpsRequiredPage } from './https-required-page.js';
 import type { Editor } from '../auth/types.js';
 import type { HandleInput, RequestContext } from './types.js';
 
@@ -14,6 +15,22 @@ function isPublicAdminPath(pathname: string): boolean {
 
 function isAdminPath(pathname: string): boolean {
   return pathname === '/admin' || pathname.startsWith('/admin/');
+}
+
+/**
+ * Local development (`wrangler dev`) legitimately speaks http; a deployed host does not. The hostname
+ * comes from the client `Host` header, so this is UX only: it decides whether to show the help page,
+ * never whether to grant access. The session gate below runs regardless. Do not make it an auth check.
+ */
+function isLocalHost(hostname: string): boolean {
+  return (
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname === '0.0.0.0' ||
+    hostname === '::1' ||
+    hostname === '[::1]' ||
+    hostname.endsWith('.localhost')
+  );
 }
 
 /**
@@ -29,11 +46,30 @@ function applySecurityHeaders(headers: Headers): void {
   headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 }
 
+/** The hardened 400 help page for a deployed admin request that arrived over http. */
+function httpsRequiredResponse(url: URL): Response {
+  const httpsUrl = new URL(url);
+  httpsUrl.protocol = 'https:';
+  const headers = new Headers({
+    'Content-Type': 'text/html; charset=utf-8',
+    'Cache-Control': 'no-store',
+  });
+  applySecurityHeaders(headers);
+  return new Response(httpsRequiredPage(httpsUrl.toString()), { status: 400, headers });
+}
+
 /** The SvelteKit `Handle` that guards `/admin/**` and hardens admin responses. */
 export function createAuthGuard() {
   return async function handle({ event, resolve }: HandleInput): Promise<Response> {
     const { pathname } = event.url;
     if (!isAdminPath(pathname)) return resolve(event);
+    // A deployed admin request over http never works: the magic-link form POST would fail the
+    // framework's CSRF guard with an opaque 403. Serve the help page instead, before resolve()
+    // runs that check. This covers the public login/auth paths too, since that is where the form
+    // posts. Local http (wrangler dev) is exempt.
+    if (event.url.protocol === 'http:' && !isLocalHost(event.url.hostname)) {
+      return httpsRequiredResponse(event.url);
+    }
     if (!isPublicAdminPath(pathname)) {
       const env = event.platform?.env ?? {};
       const id = event.cookies.get(sessionCookieName(event.url.protocol === 'https:'));

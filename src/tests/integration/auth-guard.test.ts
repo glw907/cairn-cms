@@ -26,6 +26,18 @@ function event(pathname: string, cookies = makeCookies()): RequestContext {
   };
 }
 
+function httpEvent(pathname: string, host = 'test.dev', cookies = makeCookies()): RequestContext {
+  const url = `http://${host}${pathname}`;
+  return {
+    url: new URL(url),
+    request: new Request(url),
+    cookies,
+    locals: {},
+    platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: `https://${host}` } },
+    setHeaders: () => {},
+  };
+}
+
 async function seedSession(email: string): Promise<ReturnType<typeof makeCookies>> {
   await seedEditor(email, 'Ed', 'owner');
   await createSession(db, 'sid-ok', email, Date.now() + 10_000, Date.now());
@@ -55,6 +67,48 @@ describe('guard (scenario 6)', () => {
 
   it('ignores non-admin paths', async () => {
     const res = await handle({ event: event('/about'), resolve: async () => OK });
+    expect(res).toBe(OK);
+  });
+});
+
+describe('https requirement on a deployed host', () => {
+  it('serves the help page for an http admin request and never resolves', async () => {
+    let resolved = false;
+    const res = await handle({
+      event: httpEvent('/admin'),
+      resolve: async () => {
+        resolved = true;
+        return OK;
+      },
+    });
+    expect(resolved).toBe(false);
+    expect(res.status).toBe(400);
+    expect(res.headers.get('content-type')).toMatch(/text\/html/);
+    const body = await res.text();
+    expect(body).toContain('Always Use HTTPS');
+    expect(body).toContain('https://test.dev/admin');
+  });
+
+  it('covers the public login and auth paths too (where the form posts)', async () => {
+    const login = await handle({ event: httpEvent('/admin/login'), resolve: async () => OK });
+    const auth = await handle({ event: httpEvent('/admin/auth/request'), resolve: async () => OK });
+    expect(login.status).toBe(400);
+    expect(auth.status).toBe(400);
+  });
+
+  it('still hardens the help page with the baseline security headers', async () => {
+    const res = await handle({ event: httpEvent('/admin/login'), resolve: async () => OK });
+    expect(res.headers.get('X-Frame-Options')).toBe('DENY');
+    expect(res.headers.get('Cache-Control')).toBe('no-store');
+  });
+
+  it('exempts local http development (wrangler dev)', async () => {
+    const res = await handle({ event: httpEvent('/admin/login', 'localhost'), resolve: async () => OK });
+    expect(res).toBe(OK);
+  });
+
+  it('leaves non-admin http paths alone', async () => {
+    const res = await handle({ event: httpEvent('/about'), resolve: async () => OK });
     expect(res).toBe(OK);
   });
 });

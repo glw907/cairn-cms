@@ -13,15 +13,17 @@ library's own development proves changes against `examples/showcase`.
 
 ## Immediate next action (2026-06-08): the two site retrofits (907.life, ecnordic.ski)
 
-**The held window PUBLISHED 2026-06-08 as `0.33.0`, now the registry `latest`.** The `v0.33.0` GitHub
-Release fired the OIDC trusted-publishing workflow (run `27117496588` green, `check:package` plus
-`npm publish` both passed), folding `0.30.0` (DX-A render-authoring), `0.31.0` (self-styling foundation),
-`0.32.0` (UX rebuild plus the polish and design-identity arc), and `0.33.0` (chrome isolation) over the
-prior `0.29.0` `latest`. `main` has since advanced past the release tag with the login-CSRF hardening
-(`0.34.0`, unpublished; see the entry just below). The next action is the two production-site retrofits
-(907.life, ecnordic.ski), each a separate `site-pass`, now that the engine version publishes.
+**`0.34.0` PUBLISHED 2026-06-08, now the registry `latest`.** The `v0.34.0` GitHub Release fired the OIDC
+trusted-publishing workflow (run `27156079198` green, `check:package` plus `npm publish` both passed),
+putting the login-CSRF hardening over the prior `0.33.0` `latest`. The held window had published earlier
+the same day as `0.33.0` (run `27117496588` green), folding `0.30.0` (DX-A render-authoring), `0.31.0`
+(self-styling foundation), `0.32.0` (UX rebuild plus the polish and design-identity arc), and `0.33.0`
+(chrome isolation) over the prior `0.29.0`. `main` is now clean at the `v0.34.0` tag with nothing
+unpublished. The next action is the two production-site retrofits (907.life, ecnordic.ski), each a
+separate `site-pass`.
 
-**Login-CSRF hardening LANDED on `main` 2026-06-07 as `0.34.0`, unpublished (over the `0.33.0` `latest`).**
+**Login-CSRF hardening LANDED on `main` 2026-06-07 as `0.34.0`, PUBLISHED 2026-06-08 (over the `0.33.0`
+`latest`).**
 Filed from the first real ecnordic admin login: a magic-link sign-in over http failed with SvelteKit's
 opaque CSRF 403, because the JS-free form POST needs a matching https origin
 (`docs/cairn-dx-feedback-2026-06-07-ecnordic-0.33-login-csrf.md`). Two commits on `main`, `5ef1d73` then
@@ -41,9 +43,8 @@ The two production zones were set to force the scheme at the edge as the immedia
 Use HTTPS and HSTS (`max-age` two years, `includeSubDomains`, preload off) are now on for ecnordic.ski and
 907.life** (via the Cloudflare API). The HSTS header the feedback saw earlier came from cairn's own
 `/admin` responses; the zone-level setting was off until now. `0.34.0` is additive (the help page only
-triggers on a misconfigured http request), so it joins the publish-held window with no required consumer
-action beyond forcing HTTPS: `0.33.0` stays the registry `latest`, and `main` now carries the unpublished
-`0.34.0` over it.
+triggers on a misconfigured http request), so it published with no required consumer action beyond forcing
+HTTPS: `0.34.0` is now the registry `latest`.
 
 **Site-retrofit gotchas the published window carries (for each `site-pass`).** Both sites pin an older
 range and cross several breaking minors at once, so an upgrade reads the actions off the `Consumers must:`

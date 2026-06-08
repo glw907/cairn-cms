@@ -1452,3 +1452,76 @@ The polish pass ran after the structural rebuild landed, refining visual quality
 
 **Carry-forwards still open after the polish.** (3) `use:enhance` with `applyAction` for the list delete, still deferred because `$app/forms` does not resolve in the component test project. (4) The first-ever-visit dark-OS first-paint flash, which needs an inline head script in the host `app.html` and so belongs with plan 3 or a showcase touch. (6) The plan-1 global at-rule leak, for plan 3's chrome isolation. The reduced-motion guard (5) now also leans on `cairn-admin.css` rather than the compile input, which is the same scoped sheet.
 
+
+---
+
+## Design-identity pass (landed 2026-06-07 on `main`, folded into the unpublished `0.32.0`)
+
+The identity pass ran after the polish, driven by a long sequence of design refinements with the user
+against the live showcase. It gave the admin a distinct visual identity and stayed in the unpublished
+`0.32.0` window with no version bump, since nothing here changes the public API. It touched the admin
+components, `cairn-admin.css`, and the build script, kept every test green, and added the self-hosted
+fonts. The work commits are folded into the `main` history through the final fold-in commit
+`a76aa8b`.
+
+**Brand and type.** Cairn now has a wordmark set in Bricolage Grotesque over a Figtree body, both
+self-hosted as variable woff2 under the SIL Open Font License, so the admin makes no webfont network
+call. The fonts ship through the build: `build-admin-css.mjs` appends the `@font-face` rules after the
+Tailwind compile, because an `@import` at the top would rebase the `url()` against the source tree and
+break the path. The fonts live in `src/lib/components/fonts/` with their license files. An app-icon
+brand tile sits at the top of the sidebar: the Cairn cairn-stack mark (the CC0 public-domain Temaki
+glyph, provenance noted in `CairnLogo.svelte`) in a primary-tinted rounded tile, the wordmark beside
+it, and a CMS chip. The favicon and document title come from `cairn-favicon.ts`, which inlines the same
+glyph as a data URL.
+
+**Surfaces and the header strip.** The admin moved to softer radii and floating cards over a calm
+warm-neutral ground, with a soft violet shadow lift on the primary button. The sidebar and the topbar
+share one flat opaque header strip, so the seam where they meet reads as a single plane rather than the
+intersection of two borders. The topbar carries the command palette trigger, which fills the dead space
+it used to show.
+
+**Grouped, collapsible nav.** The nav separates the core Cairn functions from a developer's own
+extensions. The core functions live in one collapsible group; a developer's admin extensions sit in
+their own custom-named groups at the same level, with no parent "Extensions" wrapper. Each group is a
+native `<details>` with an eyebrow `<summary>` on a faint base-content band. The open or collapsed state
+persists through a `cairn-admin-nav-collapsed` cookie that `layoutLoad` reads into `data.collapsedNav`,
+so a collapsed group renders collapsed with no flash, the same no-flash mechanism the theme cookie uses.
+The collapse set is seeded once from the SSR'd cookie and then owned by the toggle, which mirrors each
+change back to the cookie through one `writeAdminCookie` helper shared with the theme toggle.
+
+**The command palette.** A palette opens with Cmd/Ctrl+K or the topbar search box. It filters over the
+admin destinations plus a couple of actions (the theme toggle, a link to the live site) and is a native
+`<dialog>`. Destinations are real `<a>` links so the browser navigates them; actions are buttons.
+
+**The agent-facing design system.** The pass wrote `docs/internal/admin-design-system.md`, a design
+system reference written for an implementing agent, so continued interface work stays consistent. It
+records the Warm Stone tokens, the type system and the eyebrow recipe, the radii and shadow and border
+variables, the component recipes (floating card, active nav, the collapsible eyebrow groups, the brand
+tile, the primary-CTA lift, empty states, the command palette, the flat header strip), the Cairn voice,
+and the load-bearing scoping rules that are invisible in the markup. The project `CLAUDE.md` gained an
+"Admin interface design" section pointing to it, which is the primary discovery hook since `CLAUDE.md`
+loads every session. The `cairn-admin-design-system` memory points to it too.
+
+**Two rendering bugs fixed in this window.** First, the login and confirm screens centered their layout
+classes on the `data-theme` element, which every scoped rule treats as the root rather than a styled
+target, so the screens did not fill the viewport. They now carry `data-theme` on a bare wrapper, the
+same fix the drawer needed in plan 2. Second, the command palette closed its dialog from a result
+link's own `onclick`, and closing a native dialog mid-click cancels the link's navigation, so selecting
+a destination did nothing. Internal links now carry no `onclick` and let the navigation proceed, and the
+existing pathname effect closes the palette once the new route lands; external links still close it
+themselves, since they open a new tab and leave the page in place. A regression test in
+`AdminLayout.test.ts` pins that the palette closes on a pathname change.
+
+**Verification.** The whole arc cleared the `svelte-reviewer` and `daisyui-a11y-reviewer` gate with no
+Criticals: every contrast pair passes AA in both themes (the brand tile at 5.69 and 5.94:1, the active
+nav at 5.08 and 4.66:1, the eyebrows above 5.9:1), the focus ring is a real `:focus-visible` outline,
+and the DaisyUI v5 usage is clean. The `code-simplifier` extracted the `writeAdminCookie` helper. A live
+showcase smoke drove the real rendered admin through four paths in a browser: a palette click that
+navigates and closes the palette, a palette Enter that navigates, a palette action command (the theme
+toggle), and the editor surface rendering in dark mode. The full gate is green at `a76aa8b`: `npm run
+check` 821 files 0/0, `npm test` 120 files / 751 tests exit 0, and `check:reference`,
+`check:package`, and `check:docs` exit 0.
+
+**Carry-forwards unchanged.** The polish pass carry-forwards (3) the `use:enhance` list delete, (4) the
+first-ever-visit dark-OS first-paint flash, and (6) the plan-1 global at-rule leak still stand for plan
+3 or a later touch. The identity pass added no new carry-forward.

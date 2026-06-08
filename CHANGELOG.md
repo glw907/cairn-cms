@@ -22,6 +22,27 @@ the list table refined column labels, row hover, and cleaner entry-title links. 
 to newest-first. A reduced-motion preference is honored inside the admin. A scoped anchor reset
 restores the no-underline, inherit-color default the omitted Preflight used to provide.
 
+A design-identity pass then gave the admin its own look. Cairn has a wordmark set in Bricolage
+Grotesque over a body face of Figtree, both self-hosted as variable woff2 under the SIL Open Font
+License, so the admin makes no webfont network call. An app-icon brand tile sits at the top of the
+sidebar with the Cairn cairn-stack mark, a CC0 public-domain glyph, beside a CMS chip. The surfaces
+moved to softer radii and floating cards over a calm warm-neutral ground, with a soft violet lift on
+the primary button. The sidebar and the topbar share one flat header strip, so their intersection
+reads as a single plane.
+
+The nav now groups its entries. The core Cairn functions live in one collapsible group, and a
+developer's own admin extensions sit in their own custom-named groups at the same level. Each group's
+open or collapsed state persists through a `cairn-admin-nav-collapsed` cookie that the layout load
+reads for a no-flash first paint, the way the theme cookie already works. A command palette opens with
+Cmd/Ctrl+K or the topbar search box, jumps to any admin destination, and runs a couple of actions like
+the theme toggle. The login and confirm screens carry the same wordmark, voice, and favicon.
+
+Two more rendering fixes landed in this window. The login and confirm screens centered on a wrapper
+rather than the themed element, so they now fill the viewport like the rest of the admin. The command
+palette closed its dialog from a result link's own click handler, and closing a native dialog mid-click
+cancelled the navigation, so a destination did nothing; a destination now navigates and the palette
+closes once the new route lands.
+
 This is additive for a consumer that mounts the admin through the documented routes. The engine now
 depends on `@lucide/svelte`, which installs transitively, so no consumer action is required. A new
 `listDeleteAction` is available on the content routes for wiring per-row delete on the list page; the

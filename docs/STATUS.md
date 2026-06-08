@@ -13,8 +13,9 @@ library's own development proves changes against `examples/showcase`.
 
 ## Immediate next action (2026-06-07): brainstorm and write plan 3 (admin chrome isolation)
 
-**Plan 2 (the admin UX rebuild plus dark mode) and its frontend-design polish pass both LANDED on `main`,
-folded into the unpublished `0.32.0`. The next action is plan 3, the admin chrome isolation.** Plan 3 has
+**Plan 2 (the admin UX rebuild plus dark mode), its frontend-design polish pass, and the design-identity
+arc that followed all LANDED on `main`, folded into the unpublished `0.32.0`. The next action is plan 3,
+the admin chrome isolation.** Plan 3 has
 no plan file yet, so brainstorm it first (settle the open design calls with the user), then write the
 numbered plan, then execute subagent-driven. Its scope: a chrome-free admin root plus a `(site)` route
 group so the host's chrome never wraps `/admin`, a dev-only ancestor-detection guard, the route-structure
@@ -34,6 +35,24 @@ one locked margin, so dark `--color-primary` and the `/10` tint opacity must not
 A real cascade-layer lesson landed: an unlayered reset beats every layered utility because layers resolve
 before specificity, so the reset had to go in the `components` layer (below `utilities`). The pass-end
 post-mortem is in the plan file.
+
+**The design-identity arc LANDED 2026-06-07 (final fold-in `a76aa8b`), folded into `0.32.0` (no version
+bump, still unpublished).** A long user-driven sequence after the polish gave the admin a distinct
+identity: a Bricolage Grotesque wordmark over a Figtree body, both self-hosted as variable woff2 under
+the SIL OFL (the `@font-face` is appended after the Tailwind compile so the `url()` is not rebased); an
+app-icon brand tile with the CC0 Temaki cairn glyph; softer radii and floating cards; a flat opaque
+sidebar-plus-topbar header strip; nav grouped into a core group and custom-named developer-extension
+groups, each a collapsible `<details>` whose state persists through a `cairn-admin-nav-collapsed` cookie
+that `layoutLoad` reads for a no-flash first paint; and a Cmd/Ctrl+K command palette in the topbar. The
+login and confirm screens were rebranded to match, with the favicon from `cairn-favicon.ts`. Two latent
+rendering bugs were fixed in the window: the auth screens centered on the `data-theme` element instead of
+a wrapper (the same defect class as the plan-2 drawer), and the command palette cancelled its own
+navigation by closing the dialog from a result link's `onclick` (internal links now navigate and the
+pathname effect closes the palette; a regression test pins it). The pass wrote an agent-facing design
+system at `docs/internal/admin-design-system.md`, with a `CLAUDE.md` "Admin interface design" pointer and
+the `cairn-admin-design-system` memory, so continued interface work stays consistent. Gate green at
+`a76aa8b`: `npm run check` 821 files 0/0, `npm test` 120 files / 751 tests exit 0, and
+`check:reference`/`check:package`/`check:docs` exit 0. The full post-mortem is in the plan file.
 
 **Carry-forwards still open after the polish (for plan 3 or a later touch).** (3) `use:enhance` with
 `applyAction` for the list delete, deferred because `$app/forms` does not resolve in the component test

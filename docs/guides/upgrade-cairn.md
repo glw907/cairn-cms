@@ -147,3 +147,9 @@ required.
 The admin's visual design was then polished: refined Warm Stone tokens, a soft active-nav state, a
 cleaner list table, a newest-first default sort, and a reduced-motion guard. This is visual only and
 needs no migration.
+
+A design-identity pass followed. The admin gained self-hosted display and body fonts, a brand tile and
+wordmark, softer radii and floating cards, collapsible nav groups whose state persists in a
+`cairn-admin-nav-collapsed` cookie, and a Cmd/Ctrl+K command palette. The login and confirm screens
+were rebranded to match. This is visual and additive and needs no migration. The new nav-collapse
+cookie is scoped to `/admin`, like the theme cookie, so it never reaches the host's pages.

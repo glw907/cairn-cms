@@ -135,6 +135,13 @@ Two SvelteForge behaviors are worth borrowing as polish, both cheap: a Cmd or Ct
 toggle the sidebar, and closing the mobile drawer on navigation. cairn keeps its DaisyUI drawer, so
 these are additive behaviors rather than a new component system.
 
+**Shipped beyond this spec.** Plan 2 and the design passes that followed it grew a full visual identity
+the original SvelteForge look-only reference did not specify: self-hosted display and body fonts, a brand
+tile and wordmark, grouped collapsible nav, a command palette, and the warm-neutral surface treatment.
+That identity is documented for an implementing agent in `docs/internal/admin-design-system.md`, which is
+the living reference for continued interface work. This spec stays the design intent; the design-system
+doc stays the current state.
+
 ### 3. The chrome-leak dev guard
 
 The engine cannot prevent the host mistake, so it catches it. `AdminLayout` and `LoginPage`, in dev

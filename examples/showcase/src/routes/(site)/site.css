@@ -3,12 +3,14 @@
    admin renders fully styled on a site whose own pages use neither framework. The chrome lives in the
    (site) group, so it never wraps /admin. */
 .site-header {
-  display: flex;
-  gap: 1.25rem;
-  align-items: center;
   padding: 1rem 1.5rem;
   border-bottom: 1px solid #e7e5e4;
   font-family: system-ui, sans-serif;
+}
+.site-header nav {
+  display: flex;
+  gap: 1.25rem;
+  align-items: center;
 }
 .site-header a {
   color: #44403c;

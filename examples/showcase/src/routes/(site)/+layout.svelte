@@ -9,9 +9,11 @@
 </script>
 
 <header class="site-header">
-  <a href="/">cairn showcase</a>
-  <a href="/calendar">Calendar</a>
-  <a href="/admin">Admin</a>
+  <nav aria-label="Site">
+    <a href="/">cairn showcase</a>
+    <a href="/calendar">Calendar</a>
+    <a href="/admin">Admin</a>
+  </nav>
 </header>
 <main class="site-main">
   {@render children()}

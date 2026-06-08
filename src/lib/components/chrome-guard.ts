@@ -8,6 +8,12 @@
 
 const DOC = 'docs/admin-route-structure.md';
 
+// max-width values that do not actually constrain the admin below the viewport. A host that sets a
+// defensive `max-width: 100%` or `100vw` on a wrapper is not chrome, so skip those to avoid a spurious
+// dev error. A real constraining container uses an absolute length (`64rem`, `1280px`) or a sub-100
+// percentage, both of which still trip the guard.
+const NON_CONSTRAINING = new Set(['none', '100%', '100vw']);
+
 function describe(el: Element): string {
 	const tag = el.tagName.toLowerCase();
 	const cls = el.getAttribute('class');
@@ -26,7 +32,7 @@ export function detectChromeWrap(root: HTMLElement): string | null {
 	let maxWidth = '';
 	for (let el = root.parentElement; el && el !== body; el = el.parentElement) {
 		const elMaxWidth = getComputedStyle(el).maxWidth;
-		if (elMaxWidth && elMaxWidth !== 'none') {
+		if (elMaxWidth && !NON_CONSTRAINING.has(elMaxWidth)) {
 			constrainer = el;
 			maxWidth = elMaxWidth;
 			break;

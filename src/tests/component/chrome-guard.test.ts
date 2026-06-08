@@ -1,6 +1,8 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { detectChromeWrap } from '../../lib/components/chrome-guard.js';
 
+// The data-admin-root attribute is a fixture convenience for locating the test root, not a marker the
+// guard looks for. Production binds the real root through bind:this on the bare data-theme wrapper.
 function mount(html: string): HTMLElement {
 	document.body.innerHTML = html;
 	return document.body.querySelector<HTMLElement>('[data-admin-root]')!;
@@ -21,6 +23,11 @@ describe('detectChromeWrap', () => {
 
 	it('stays silent when the admin root is a direct child of body', () => {
 		const root = mount('<div data-admin-root></div>');
+		expect(detectChromeWrap(root)).toBeNull();
+	});
+
+	it('stays silent on a non-constraining max-width like 100%', () => {
+		const root = mount('<div style="max-width: 100%"><div data-admin-root></div></div>');
 		expect(detectChromeWrap(root)).toBeNull();
 	});
 

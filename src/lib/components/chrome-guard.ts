@@ -23,16 +23,17 @@ function describe(el: Element): string {
 export function detectChromeWrap(root: HTMLElement): string | null {
 	const body = root.ownerDocument.body;
 	let constrainer: HTMLElement | null = null;
+	let maxWidth = '';
 	for (let el = root.parentElement; el && el !== body; el = el.parentElement) {
-		const maxWidth = getComputedStyle(el).maxWidth;
-		if (maxWidth && maxWidth !== 'none') {
+		const elMaxWidth = getComputedStyle(el).maxWidth;
+		if (elMaxWidth && elMaxWidth !== 'none') {
 			constrainer = el;
+			maxWidth = elMaxWidth;
 			break;
 		}
 	}
 	if (!constrainer) return null;
 
-	const maxWidth = getComputedStyle(constrainer).maxWidth;
 	const siblings = [...body.children].filter(
 		(el) => !el.contains(root) && !root.contains(el) && el !== root,
 	);

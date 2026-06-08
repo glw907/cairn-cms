@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { createRawSnippet } from 'svelte';
 import AdminLayout from '../../lib/components/AdminLayout.svelte';
@@ -124,6 +124,17 @@ describe('AdminLayout', () => {
       // The cookie accessor lives on the prototype; deleting the own override restores it.
       delete (document as { cookie?: unknown }).cookie;
     }
+  });
+
+  it('does not warn about host chrome on a clean mount', async () => {
+    const errors: string[] = [];
+    const spy = vi.spyOn(console, 'error').mockImplementation((...args) => {
+      errors.push(args.join(' '));
+    });
+    render(AdminLayout, { data: data(true), children: child });
+    await new Promise((resolve) => setTimeout(resolve, 0)); // let onMount run
+    spy.mockRestore();
+    expect(errors.join(' ')).not.toContain('rendering inside host chrome');
   });
 
   it('toggles the drawer with Ctrl+B', async () => {

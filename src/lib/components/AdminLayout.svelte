@@ -7,11 +7,12 @@ flipped by the topbar toggle) and imports the self-contained Warm Stone theme, s
 identical on every host regardless of the site's own theme.
 -->
 <script lang="ts">
-  import { untrack, type Component, type Snippet } from 'svelte';
+  import { onMount, untrack, type Component, type Snippet } from 'svelte';
   import type { LayoutData } from '../sveltekit/content-routes.js';
   import { MenuIcon, LogOutIcon, SunIcon, MoonIcon, ChevronRightIcon, SearchIcon } from './admin-icons.js';
   import CairnLogo from './CairnLogo.svelte';
   import { cairnFaviconHref } from './cairn-favicon.js';
+  import { warnIfChromeWrapped } from './chrome-guard.js';
   import FileTextIcon from '@lucide/svelte/icons/file-text';
   import SignpostIcon from '@lucide/svelte/icons/signpost';
   import SettingsIcon from '@lucide/svelte/icons/settings';
@@ -151,6 +152,12 @@ identical on every host regardless of the site's own theme.
   let paletteList = $state<HTMLUListElement>();
   let paletteQuery = $state('');
 
+  // The bare data-theme wrapper is the admin root the dev chrome-guard measures from.
+  let rootEl = $state<HTMLElement>();
+  onMount(() => {
+    if (rootEl) warnIfChromeWrapped(rootEl);
+  });
+
   const paletteCommands = $derived<Command[]>([
     ...coreItems.map((item) => ({ label: item.label, icon: item.icon, href: item.href })),
     { label: 'View the live site', icon: ExternalLinkIcon, href: '/', external: true },
@@ -209,7 +216,7 @@ identical on every host regardless of the site's own theme.
      descendant of the theme root (`:where([data-theme]) .drawer`), so a class on the theme element
      itself never matches. Keeping the drawer and its base/utility classes one level in lets the
      scoped sheet style them. -->
-<div data-theme={theme}>
+<div data-theme={theme} bind:this={rootEl}>
   <div class="drawer lg:drawer-open min-h-screen bg-base-200 text-base-content">
     <input id="cairn-drawer" type="checkbox" class="drawer-toggle" bind:checked={drawerOpen} />
 

@@ -6,8 +6,10 @@ the allowlist, so the page never leaks membership (spec §7.1).
 -->
 <script lang="ts">
   import './cairn-admin.css';
+  import { onMount } from 'svelte';
   import CairnLogo from './CairnLogo.svelte';
   import { cairnFaviconHref } from './cairn-favicon.js';
+  import { warnIfChromeWrapped } from './chrome-guard.js';
 
   interface Props {
     /** The login load's data: the site name and an optional error. */
@@ -17,6 +19,11 @@ the allowlist, so the page never leaks membership (spec §7.1).
   }
 
   let { data, form }: Props = $props();
+
+  let rootEl = $state<HTMLElement>();
+  onMount(() => {
+    if (rootEl) warnIfChromeWrapped(rootEl);
+  });
 </script>
 
 <svelte:head>
@@ -27,7 +34,7 @@ the allowlist, so the page never leaks membership (spec §7.1).
 
 <!-- data-theme on a bare wrapper: the scoped sheet styles descendants, so the layout classes go one
      level in (a class on the theme element itself would not match). -->
-<div data-theme="cairn-admin">
+<div data-theme="cairn-admin" bind:this={rootEl}>
   <div class="flex min-h-screen flex-col items-center justify-center gap-6 bg-base-200 p-4 text-base-content">
   <div class="w-full max-w-sm rounded-box border border-[var(--cairn-card-border)] bg-base-100 p-7 shadow-[var(--cairn-shadow)]">
     <div class="mb-6 flex items-center gap-2">

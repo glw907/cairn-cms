@@ -33,6 +33,43 @@ src/routes/
     +server.ts                 # healthLoad at site ROOT, not under /admin
 ```
 
+## The root layout must be chrome-free
+
+The host root layout wraps every route, including `/admin`. If it renders site chrome (a nav, a
+footer, a width-constraining container) or imports the host's `app.css`, that chrome wraps the admin,
+and the admin shell cannot fill the viewport. The admin self-styles and does not need the host's CSS,
+so the fix is to keep the root layout bare and move all public chrome plus `app.css` into a
+URL-transparent `(site)` group.
+
+```
+src/routes/
+  +layout.svelte        bare: {@render children()} and nothing else
+  (site)/               URL-transparent group; the public URLs do not change
+    +layout.svelte      imports app.css, renders the nav, <main>, and footer
+    +page.svelte ...    the home page and the public pages, moved in
+  admin/   ...          unchanged; now outside the chrome
+  feed.xml/ sitemap.xml/ robots.txt/ healthz/   endpoints; no layout, stay at the root
+```
+
+Group folders are invisible in the URL, so moving the public pages into `(site)/` changes no paths.
+Endpoints render no layout, so they stay at the root. The admin sits outside the group, so the host
+chrome never wraps it.
+
+A dev-only guard in the admin backs this rule. In development, `AdminLayout` and `LoginPage` walk their
+ancestor chain on mount, and when a width-constraining ancestor sits between the admin root and
+`<body>` they log one `console.error` that names the ancestor and points here. The guard compiles out
+of production and changes no rendering.
+
+**A known limitation this rule contains.** The compiled admin stylesheet carries DaisyUI `@keyframes`
+and Tailwind `@property` rules that are document-global by CSS spec; a selector scope cannot bound them.
+They cause no collision because the sheet is code-split to the routes that import it, and only the admin
+roots import it, so it loads only on `/admin`, where this rule keeps the host's CSS away. Two things
+preserve that boundary: keep `app.css` in the `(site)` group so it never loads on `/admin`, and do not
+import the engine's admin components onto a host page.
+
+The scaffolder (Plan 10) emits this shape from the start: a bare root layout and a `(site)` group for
+the public chrome.
+
 ## Why the `(app)` group
 
 `content.layoutLoad` calls `requireSession` and redirects a sessionless visitor to

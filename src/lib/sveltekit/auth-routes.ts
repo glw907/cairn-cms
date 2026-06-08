@@ -15,6 +15,7 @@ import {
 import { findEditor, issueToken, consumeToken, createSession, deleteSession, recentlyIssued } from '../auth/store.js';
 import { buildMagicLinkMessage, cloudflareSend, type AuthBranding, type SendMagicLink } from '../email.js';
 import { issueCsrfToken } from './csrf.js';
+import { log } from '../log/index.js';
 import type { RequestContext } from './types.js';
 
 export interface AuthRoutesConfig {
@@ -36,6 +37,7 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
     const db = requireDb(env);
     const form = await event.request.formData();
     const email = String(form.get('email') ?? '').trim().toLowerCase();
+    log.info('auth.link.requested', { email });
 
     const editor = email ? await findEditor(db, email) : null;
     if (editor) {
@@ -46,13 +48,14 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
       if (!(await recentlyIssued(db, email, now - SEND_COOLDOWN_MS))) {
         const token = generateToken();
         await issueToken(db, email, await hashToken(token), now + TOKEN_TTL_MS, now);
+        log.info('auth.token.minted', { email, expiresAt: now + TOKEN_TTL_MS });
         const link = `${origin}/admin/auth/confirm?token=${encodeURIComponent(token)}`;
         // The token row is the security-critical write the email depends on, so it is awaited. The
         // send is a post-response side effect, handed to waitUntil so a slow email provider does not
         // hold the response. An absent waitUntil (local dev, tests) falls back to await. A send
         // failure is logged so observability survives a backgrounded send.
         const sending = send(env, buildMagicLinkMessage({ to: email, branding: config.branding, link })).catch(
-          (err) => console.error('cairn: magic-link send failed', err),
+          (err) => log.error('auth.link.send_failed', { email, error: String(err) }),
         );
         // adapter-cloudflare exposes the ExecutionContext as platform.ctx; platform.context is a
         // deprecated alias kept as a fallback so an adapter that drops it keeps backgrounding.
@@ -104,9 +107,11 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
     const now = Date.now();
     const email = await consumeToken(db, await hashToken(token), now);
     if (!email) throw redirect(303, '/admin/login?error=expired');
+    log.info('auth.token.confirmed', { email });
 
     const id = generateSessionId();
     await createSession(db, id, email, now + SESSION_TTL_MS, now);
+    log.info('auth.session.created', { email });
     const secure = event.url.protocol === 'https:';
     event.cookies.set(sessionCookieName(secure), id, {
       path: '/',
@@ -124,7 +129,10 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
     const db = requireDb(event.platform?.env ?? {});
     const name = sessionCookieName(event.url.protocol === 'https:');
     const id = event.cookies.get(name);
-    if (id) await deleteSession(db, id);
+    if (id) {
+      await deleteSession(db, id);
+      log.info('auth.session.destroyed');
+    }
     event.cookies.delete(name, { path: '/' });
     throw redirect(303, '/admin/login');
   }

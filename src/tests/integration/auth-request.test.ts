@@ -1,5 +1,5 @@
 import { env } from 'cloudflare:test';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { seedEditor, makeEvent, countRows } from './_auth-harness.js';
 import { createAuthRoutes } from '../../lib/sveltekit/auth-routes.js';
 import type { MagicLinkMessage } from '../../lib/email.js';
@@ -75,5 +75,45 @@ describe('request hardening (Unit 4)', () => {
     expect(promises).toHaveLength(1);
     await Promise.all(promises);
     expect(sent).toHaveLength(1);
+  });
+});
+
+describe('request logging', () => {
+  const url = 'https://test.dev/admin/auth/request';
+
+  it('logs auth.link.requested then auth.token.minted for an allow-listed editor', async () => {
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const { routes } = routesWithSink();
+    await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' } }));
+    const events = infoSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
+    expect(events).toContain('auth.link.requested');
+    expect(events).toContain('auth.token.minted');
+    vi.restoreAllMocks();
+  });
+
+  it('logs auth.link.requested but never auth.token.minted for a stranger', async () => {
+    const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const { routes } = routesWithSink();
+    await routes.requestAction(makeEvent({ url, form: { email: 'stranger@x.dev' } }));
+    const events = infoSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
+    expect(events).toContain('auth.link.requested');
+    expect(events).not.toContain('auth.token.minted');
+    vi.restoreAllMocks();
+  });
+
+  it('logs auth.link.send_failed when the send rejects', async () => {
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const routes = createAuthRoutes({
+      branding: { siteName: 'Test', from: 'noreply@test.dev' },
+      send: async () => {
+        throw new Error('smtp down');
+      },
+    });
+    await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' } }));
+    const events = errorSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
+    expect(events).toContain('auth.link.send_failed');
+    vi.restoreAllMocks();
   });
 });

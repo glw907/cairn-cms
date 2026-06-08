@@ -1,5 +1,5 @@
 import { env } from 'cloudflare:test';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { seedEditor, makeEvent, makeCookies, makeRecordingCookies, countRows, expectRedirect } from './_auth-harness.js';
 import { createAuthRoutes } from '../../lib/sveltekit/auth-routes.js';
 import { generateToken, hashToken, sessionCookieName } from '../../lib/auth/crypto.js';
@@ -87,5 +87,33 @@ describe('session cookie prefix and attributes (Unit 1)', () => {
     );
     expect(cookies.sets[0].name).toBe('cairn_session');
     expect(cookies.sets[0].opts.secure).toBe(false);
+  });
+});
+
+describe('confirm and logout logging', () => {
+  const confirmUrl = 'https://test.dev/admin/auth/confirm';
+
+  it('logs auth.token.confirmed and auth.session.created on a valid confirm', async () => {
+    const token = await liveToken('ed@x.dev');
+    const cookies = makeCookies();
+    const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    await expectRedirect(() => routes.confirmAction(makeEvent({ url: confirmUrl, form: { token }, cookies })));
+    const events = infoSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
+    expect(events).toContain('auth.token.confirmed');
+    expect(events).toContain('auth.session.created');
+    vi.restoreAllMocks();
+  });
+
+  it('logs auth.session.destroyed on logout when a session cookie is present', async () => {
+    // Establish a session through confirm, keeping the cookie jar that holds its id.
+    const token = await liveToken('ed@x.dev');
+    const cookies = makeCookies();
+    await expectRedirect(() => routes.confirmAction(makeEvent({ url: confirmUrl, form: { token }, cookies })));
+    const logoutEvent = makeEvent({ url: 'https://test.dev/admin/auth/logout', form: {}, cookies });
+    const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    await expectRedirect(() => routes.logoutAction(logoutEvent));
+    const events = infoSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
+    expect(events).toContain('auth.session.destroyed');
+    vi.restoreAllMocks();
   });
 });

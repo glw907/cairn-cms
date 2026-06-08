@@ -11,16 +11,17 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-08): publish `0.35.0`, then the two site retrofits
+## Immediate next action (2026-06-08): the two site retrofits (`0.35.0` is published `latest`)
 
-**The login-CSRF-ownership plan LANDED on `main` 2026-06-08 as `0.35.0`, unpublished. NEXT ACTION: publish
-`0.35.0` over the `0.34.0` `latest`, then the two production-site retrofits.** Cut the `v0.35.0` GitHub Release
-against `main` to fire the OIDC trusted-publishing workflow, with the changelog window as the body and the
-`Consumers must:` line carried through. Then retrofit 907.life and ecnordic.ski, each a separate `site-pass`,
-each pinning `^0.35.0` and adding `csrf: { checkOrigin: false }` to `kit` in `svelte.config.js` (the one
-required consumer action this minor adds), along with the other breaking-window actions noted below. The first
-retrofit is where the real-runtime CSRF loop gets its live smoke (the engine pass judged the live wrangler
-smoke not proportionate without a consumer that wires `checkOrigin: false`).
+**The login-CSRF-ownership plan LANDED on `main` and PUBLISHED 2026-06-08 as `0.35.0`, now the registry
+`latest`. NEXT ACTION: the two production-site retrofits.** The `v0.35.0` GitHub Release fired the OIDC
+trusted-publishing workflow (run `27171273732` green, `check:package` plus `npm publish` both passed), putting
+cairn-owned CSRF over the prior `0.34.0` `latest`. `main` is clean at the `v0.35.0` tag with nothing
+unpublished. Retrofit 907.life and ecnordic.ski, each a separate `site-pass`, each pinning `^0.35.0` and adding
+`csrf: { checkOrigin: false }` to `kit` in `svelte.config.js` (the one required consumer action this minor
+adds), along with the other breaking-window actions noted below. The first retrofit is where the real-runtime
+CSRF loop gets its live smoke (the engine pass judged the live wrangler smoke not proportionate without a
+consumer that wires `checkOrigin: false`).
 
 **What `0.35.0` did.** It moved login-CSRF ownership from SvelteKit's global `checkOrigin` to cairn's auth
 guard, closing the second source of the admin lockout that `0.34.0`'s force-HTTPS work did not reach: a

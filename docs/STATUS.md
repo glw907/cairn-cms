@@ -11,6 +11,30 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
+## Engine next action (2026-06-08): execute the engine-logging plan (written, ready)
+
+The engine-logging design and plan are written and committed, ready to execute subagent-driven. This
+is cairn's first logging infrastructure. The engine logs nothing usable today (three bare
+`console.error` calls), and the rebuild needs structured diagnostics on the Cloudflare-first stack,
+built so the later admin-extension work can route logs without a rewrite.
+
+The design is a small owned structured logger behind one internal `src/lib/log/` chokepoint, writing
+JSON records to `console` for Workers Logs (the zero-config Cloudflare sink), with a fixed dotted-event
+vocabulary that becomes public-observable API. Two forward-compatibility invariants carry the
+"easy to extend later" requirement: structured records with dotted event names from the first call,
+and one module every diagnostic routes through. Three affordances are deferred to the undesigned
+admin-extension seam and named in the spec: a context-bound `event.locals.cairn.log`, an `onEvent`
+subscribe hook on `CairnExtension`, and per-extension namespacing. `render.failed` is deferred too,
+since no engine request path renders. The pass produces three docs (a reference page, a how-to guide,
+a security-model note).
+
+- Spec: `docs/superpowers/specs/2026-06-08-cairn-engine-logging-design.md`.
+- Plan: `docs/superpowers/plans/2026-06-08-cairn-engine-logging.md` (6 tasks, execute with
+  `superpowers:subagent-driven-development`, one `cairn-implementer` per task on `main`).
+- Publishing: additive, no breaking consumer action. The minor bumps when it lands.
+
+The two site retrofits below stay the separate `site-pass` track and are unaffected by this engine pass.
+
 ## Immediate next action (2026-06-08): the two site retrofits (`0.35.0` is published `latest`)
 
 **The login-CSRF-ownership plan LANDED on `main` and PUBLISHED 2026-06-08 as `0.35.0`, now the registry

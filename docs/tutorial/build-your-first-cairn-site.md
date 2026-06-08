@@ -77,6 +77,11 @@ Import that stylesheet once from your root layout, `src/routes/+layout.svelte`:
 {@render children()}
 ```
 
+This keeps the root layout almost bare, which matters later: the root layout wraps `/admin` too, so a
+real site keeps its nav, footer, and `app.css` out of the root and in a `(site)` route group instead.
+Milestone 8 covers the rule, and [the admin route structure](../admin-route-structure.md) has the full
+pattern.
+
 Two small project setup steps remain. The admin signs an editor in by setting `event.locals.editor`, so declare that field's type once in `src/app.d.ts`:
 
 ```ts
@@ -751,6 +756,16 @@ export const runtime = composeRuntime({ adapter: cairn, siteConfig });
 export const content = createContentRoutes(runtime, { mintToken: async () => 'dev-token' });
 export const nav = createNavRoutes(runtime, { mintToken: async () => 'dev-token' });
 ```
+
+### Keep host chrome out of /admin
+
+The host root layout wraps every route, `/admin` included. If it renders a nav, a footer, or a
+width-constraining container, that chrome wraps the admin and the admin shell cannot fill the viewport.
+The admin self-styles and does not need the host's CSS, so keep the root layout bare and put the public
+chrome plus `app.css` in a URL-transparent `(site)` group. The group folder does not change any public
+URL, and the admin, which sits outside the group, renders on its own. A dev-only guard in the admin logs
+a `console.error` when it detects host chrome wrapping it. See
+[the admin route structure](../admin-route-structure.md) for the full tree and the reasoning.
 
 The route tree splits in two. The login and auth pages sit directly under `admin/`, and the authed shell sits in an `(app)` group whose layout requires a session. The group folder does not appear in the URL, so its pages still resolve under `/admin/*`, but only the group runs the session-requiring layout load, which is what keeps a sessionless visit from looping. For why the tree has this exact shape, read [the admin route structure](../admin-route-structure.md).
 

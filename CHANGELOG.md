@@ -2,6 +2,25 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.35.0
+
+cairn now owns CSRF for the admin. A consuming site disables SvelteKit's global `checkOrigin`, and
+cairn's guard becomes the single authority. Every unsafe admin form POST must carry a valid
+`__Host-cairn_csrf` double-submit token (the cookie name is `cairn_csrf` bare on local http). The
+token is issued lazily and stably by the login, confirm, and admin shell loads, rendered as a hidden
+`csrf` field by the new `CsrfField` export, and validated centrally in the guard. A failed check
+serves a branded 403 page in place of the framework's raw text. The session cookie stays a second
+layer. The token tolerates a missing `Origin`, so the JS-free magic-link sign-in works from a
+browser that omits the header. The guard restores the strict `Origin === url.origin` check for the
+site's own non-admin form POSTs, so handing cairn the admin authority is not a net loss elsewhere.
+
+The `CsrfField` component is a new export from `@glw907/cairn-cms/components`. The `LoginPage` and
+`ConfirmPage` data now carries `csrf`, and `AdminLayout`'s `LayoutData` now carries `csrf`, which the
+shell provides to its descendant forms through context.
+
+Consumers must: set `csrf: { checkOrigin: false }` in `kit` in `svelte.config.js`. Without it the
+framework's global check rejects the JS-free auth POST and the admin sign-in fails.
+
 ## 0.34.0
 
 A deployed admin request that arrives over http now gets a clear, branded help page instead of the

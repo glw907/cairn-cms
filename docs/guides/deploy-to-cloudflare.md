@@ -50,13 +50,23 @@ Goal: deploy the site Worker to Cloudflare so editor saves commit to GitHub and 
 
 6. **Confirm the push redeploys.** Connect the GitHub repository to the Worker's build so a push to `main` rebuilds and redeploys. An editor save commits through the GitHub App, the push fires the build, and the new content goes live. Commit is publish.
 
-7. <a id="force-https"></a>**Force HTTPS on the zone.** This is a requirement, not a polish step. Turn on "Always Use HTTPS" so the edge redirects every plain-http request to https before it reaches the Worker, and confirm HSTS is set on https responses.
+7. <a id="disable-checkorigin"></a>**Hand cairn the admin CSRF authority.** Set `csrf: { checkOrigin: false }` in `kit` in `svelte.config.js`. cairn now owns CSRF for the admin through its guard, which validates a uniform double-submit token on every admin form POST. The JS-free magic-link sign-in posts from a browser that may omit the `Origin` header, and the framework's global check would reject that post, so the global check has to come off for the admin to work. cairn restores the strict `Origin` check for the site's own non-admin form POSTs inside the same guard, so disabling the global check is not a net loss.
 
-   The magic-link login submits a JS-free `<form method="POST">` from the login and confirm pages. SvelteKit's CSRF guard rejects any form POST whose `Origin` header does not exactly match the request's scheme and host, so a request that reaches the Worker over http (or with a cross-scheme `Origin`) fails with `Cross-site POST form submissions are forbidden` (a 403). A zone that serves `/admin` over both http and https makes that mismatch reachable: a first visit with no cached HSTS stays on http, and the auth guard builds its login redirect from the incoming request, so the http scheme sticks. Forcing HTTPS at the edge locks the scheme to https before the form ever posts, which is what keeps the `Origin` stable.
+   ```js
+   // svelte.config.js
+   const config = {
+     kit: {
+       adapter: adapter(),
+       csrf: { checkOrigin: false }
+     }
+   };
+   ```
 
-   The same `Origin` dependency is the reason the [admin smoke test](../admin-smoke-test.md) sends an explicit `Origin` header when it exercises a form action. Keep that note and this requirement together.
+8. <a id="force-https"></a>**Force HTTPS on the zone.** This is a requirement, not a polish step. Turn on "Always Use HTTPS" so the edge redirects every plain-http request to https before it reaches the Worker, and confirm HSTS is set on https responses.
 
-   Until you force HTTPS, the guard catches the case for you: an `/admin` request that reaches a deployed host over http gets a styled "this admin needs HTTPS" page with a one-click link to the https version and these same instructions, rather than the opaque CSRF 403. Local `wrangler dev` over http is exempt. The page is a fallback, not a substitute, so turn the zone setting on.
+   The magic-link login submits a JS-free `<form method="POST">` from the login and confirm pages. cairn's CSRF cookie carries the `__Host-` prefix on https, which binds it to the exact origin, and the session cookie does the same. A zone that serves `/admin` over both http and https makes the http scheme reachable: a first visit with no cached HSTS stays on http, and the auth guard builds its login redirect from the incoming request, so the http scheme sticks. Forcing HTTPS at the edge locks the scheme to https before the form ever posts, which is what keeps the `__Host-` cookies origin-bound.
+
+   Until you force HTTPS, the guard catches the case for you: an `/admin` request that reaches a deployed host over http gets a styled "this admin needs HTTPS" page with a one-click link to the https version and these same instructions, rather than a failed sign-in. Local `wrangler dev` over http is exempt. The page is a fallback, not a substitute, so turn the zone setting on.
 
 ## Verify
 

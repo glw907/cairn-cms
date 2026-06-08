@@ -48,6 +48,10 @@ into its default slot.
 </AdminLayout>
 ```
 
+`LayoutData` carries a `csrf` token alongside the shell fields. `AdminLayout` provides that token to
+its descendant forms through context, so an admin form inside the shell mounts `CsrfField` with no
+prop. See [`CsrfField`](#csrffield) for the field itself.
+
 ### `ConceptList`
 
 ```ts
@@ -110,14 +114,15 @@ re-renders the author's edits and the broken links to fix. Mount it in
 
 ```ts
 let { data, form }: {
-  data: { siteName: string; error: string | null };
+  data: { siteName: string; error: string | null; csrf: string };
   form: { sent?: boolean } | null;
 };
 ```
 
-The magic-link request screen. `data` carries the site name and an optional error; `form.sent` is
-true once a link request was accepted, which flips the page to the check-your-email state. Mount it
-in the unauthed `src/routes/admin/login/+page.svelte` against the login load and action.
+The magic-link request screen. `data` carries the site name, an optional error, and the `csrf`
+double-submit token the page renders into its form. `form.sent` is true once a link request was
+accepted, which flips the page to the check-your-email state. Mount it in the unauthed
+`src/routes/admin/login/+page.svelte` against the login load and action.
 
 ```svelte
 <script lang="ts">
@@ -132,12 +137,13 @@ in the unauthed `src/routes/admin/login/+page.svelte` against the login load and
 ### `ConfirmPage`
 
 ```ts
-let { data }: { data: { token: string; siteName: string; error: string | null } };
+let { data }: { data: { token: string; siteName: string; error: string | null; csrf: string } };
 ```
 
 The sign-in confirm screen reached from a magic link. `data` carries the token to POST back, the
-site name, and an optional error for an invalid or expired link. Mount it in
-`src/routes/admin/confirm/+page.svelte` against the confirm load.
+site name, an optional error for an invalid or expired link, and the `csrf` double-submit token the
+page renders into its confirm form. Mount it in `src/routes/admin/confirm/+page.svelte` against the
+confirm load.
 
 ```svelte
 <script lang="ts">
@@ -338,4 +344,21 @@ current slug. `EditPage` composes it.
 
 ```svelte
 <RenameDialog conceptId="posts" id="2026-06-04-hello" label="Post" slug="hello" />
+```
+
+### `CsrfField`
+
+```ts
+let { token }: { token?: string };
+```
+
+A hidden double-submit field that every admin form carries so the guard's CSRF check passes. Pass
+`token` directly, the way `LoginPage` and `ConfirmPage` do from their load data. Omit it inside the
+authed shell, where `AdminLayout` provides the token through context and the field reads it from
+there. A form that renders no `CsrfField` fails the guard's token check, which is the intended
+fail-closed signal. `EditPage`, `DeleteDialog`, `RenameDialog`, and the other authed admin forms
+compose it.
+
+```svelte
+<CsrfField {token} />
 ```

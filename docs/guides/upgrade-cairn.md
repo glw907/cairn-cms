@@ -161,3 +161,13 @@ wordmark, softer radii and floating cards, collapsible nav groups whose state pe
 `cairn-admin-nav-collapsed` cookie, and a Cmd/Ctrl+K command palette. The login and confirm screens
 were rebranded to match. This is visual and additive and needs no migration. The new nav-collapse
 cookie is scoped to `/admin`, like the theme cookie, so it never reaches the host's pages.
+
+## 0.35.0: cairn owns admin CSRF, so disable the framework's global check
+
+cairn's guard becomes the single CSRF authority for the admin. It validates a uniform
+`__Host-cairn_csrf` double-submit token on every admin form POST and serves a branded 403 on a
+failure. The token tolerates a missing `Origin`, so the JS-free magic-link sign-in works. The guard
+also restores the strict `Origin` check for the site's own non-admin form POSTs, so the global check
+coming off is not a net loss. Consumers must: set `csrf: { checkOrigin: false }` in `kit` in
+`svelte.config.js`. Without it the framework's global check rejects the JS-free auth POST and the
+admin sign-in fails.

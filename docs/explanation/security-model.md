@@ -108,14 +108,34 @@ site-developer-controlled code, not a path an author reaches through markdown al
 
 The magic-link confirmation origin comes from `PUBLIC_ORIGIN` in config, never from a request header.
 A forged `Host` header cannot redirect a link somewhere an attacker controls. The origin guard also
-requires https in production, so the link and the `__Host-` cookie stay origin-bound. http is allowed
+requires https in production, so the link and the `__Host-` cookies stay origin-bound. http is allowed
 only for `localhost` and `127.0.0.1`, matched exactly, so a lookalike host cannot skip the https
 requirement.
 
-Form actions inherit SvelteKit's built-in cross-origin protection, which rejects a form POST whose
-origin does not match the app. The session cookie is `SameSite=Lax`, so a cross-site request does not
-carry it on the kind of request that would forge a write. Cookie, CSRF, and session hygiene are the
-project's responsibility under self-owned auth, and the contract and integration tests cover the known
-failure modes.
+cairn owns CSRF for the admin. A consuming site sets `csrf: { checkOrigin: false }` to disable
+SvelteKit's global origin check, and the guard becomes the single authority. The framework's check
+relies on the `Origin` header, and the JS-free magic-link sign-in posts from a browser that may omit
+it, so the framework would reject the very form that signs an editor in. cairn replaces that check
+with a token it controls.
+
+The guard enforces two rules. The first covers the admin. Every unsafe `/admin` form POST must carry
+a valid double-submit token. The token is a random value the login, confirm, and admin shell loads
+issue lazily and stably: the load mints it on first need and sets it as a cookie, and a later load
+reuses the same value, so a second open admin tab still matches. The cookie is `__Host-` on https,
+which binds it to the exact origin, `HttpOnly`, and `SameSite=Strict`. It is session-scoped, so it
+clears when the browser closes. The cookie holds one half of the pair and the form's hidden `csrf`
+field holds the other; the guard compares them in constant time. A request that forges a write from
+another origin cannot read the cookie to copy its value into the field, so it fails the compare. A
+failed check serves a branded 403 page rather than raw framework text, and a form that ships no token
+fails closed. The session cookie is a second layer, since a forged cross-site write still needs a
+live session it cannot carry.
+
+The second rule covers the rest of the site. Disabling the framework's global check would otherwise
+leave the site's own non-admin form POSTs unprotected, so the guard reproduces the strict check for
+them: an unsafe non-admin form POST whose `Origin` does not exactly match the request origin is
+rejected. Handing cairn the admin authority is not a net loss for the site's other forms.
+
+Cookie, CSRF, and session hygiene are the project's responsibility under self-owned auth, and the
+contract and integration tests cover the known failure modes.
 </content>
 </invoke>

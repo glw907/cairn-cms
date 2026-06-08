@@ -88,7 +88,7 @@ validates on save.
   }
 </script>
 
-<h1 class="mb-4 text-xl font-semibold">{data.menu.label}</h1>
+<h1 class="mb-6 text-2xl font-bold tracking-tight font-[family-name:var(--font-display)]">{data.menu.label}</h1>
 
 {#if data.saved}
   <div role="status" class="alert alert-success mb-4 text-sm">Navigation saved.</div>
@@ -104,7 +104,7 @@ validates on save.
     <button type="button" class="btn btn-sm" onclick={addRow}>Add item</button>
   </div>
 
-  <div class="sortable-list-area" style="min-height:2.5rem">
+  <div class="sortable-list-area rounded-box border border-[var(--cairn-card-border)] bg-base-100 p-2 shadow-[var(--cairn-shadow)]" style="min-height:2.5rem">
     <SortableList.Root ondragend={handleDragEnd} aria-label="Navigation items">
       {#each rows as row, index (row.id)}
         <SortableList.Item id={row.id} {index} aria-label={`${row.label || 'Untitled'}, level ${row.depth + 1}`}>

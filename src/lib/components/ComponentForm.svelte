@@ -183,7 +183,7 @@ markdown. Back returns to the picker. This is not a nested HTML form; Insert cal
   {#each repeatableSlots as slot (slot.name)}
     {@const items = slotItems(slot.name)}
     {@const ids = slotIds(slot.name)}
-    <fieldset class="rounded-box border border-base-300 flex flex-col gap-2 p-2">
+    <fieldset class="rounded-box border border-[var(--cairn-card-border)] flex flex-col gap-2 p-2">
       <legend class="text-sm font-medium">{slot.label}</legend>
       <!-- Keyed by the parallel stable id so a mid-list removal drops the right node and focus follows the data; the value still binds to the canonical items[i] string the serializer reads. -->
       {#each ids as id, i (id)}

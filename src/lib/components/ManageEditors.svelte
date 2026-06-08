@@ -16,20 +16,23 @@ named `?/setRole`, `?/remove`, and `?/add` actions.
   }
 
   let { data, form }: Props = $props();
+
+  // Eyebrow styling for the table column headers, matching the concept list.
+  const col = 'text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]';
 </script>
 
-<header class="mb-4">
-  <h1 class="text-xl font-semibold">Editors</h1>
+<header class="mb-6">
+  <h1 class="text-2xl font-bold tracking-tight font-[family-name:var(--font-display)]">Editors</h1>
 </header>
 
 {#if form?.error}
   <div role="alert" class="alert alert-error mb-4 text-sm">{form.error}</div>
 {/if}
 
-<div class="overflow-x-auto rounded-box border border-base-300 bg-base-100 mb-6">
+<div class="overflow-x-auto rounded-box border border-[var(--cairn-card-border)] bg-base-100 mb-4 shadow-[var(--cairn-shadow)]">
   <table class="table">
     <thead>
-      <tr><th scope="col">Name</th><th scope="col">Email</th><th scope="col">Role</th><th scope="col"><span class="sr-only">Actions</span></th></tr>
+      <tr><th scope="col" class={col}>Name</th><th scope="col" class={col}>Email</th><th scope="col" class={col}>Role</th><th scope="col"><span class="sr-only">Actions</span></th></tr>
     </thead>
     <tbody>
       {#each data.editors as editor (editor.email)}
@@ -61,7 +64,7 @@ named `?/setRole`, `?/remove`, and `?/add` actions.
   </table>
 </div>
 
-<form method="POST" action="?/add" class="rounded-box border border-base-300 bg-base-100 grid gap-3 p-4 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
+<form method="POST" action="?/add" class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 grid gap-3 p-4 shadow-[var(--cairn-shadow)] sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
   <label class="flex flex-col gap-1">
     <span class="text-sm font-medium">Name</span>
     <input class="input" name="name" aria-label="Name" required />

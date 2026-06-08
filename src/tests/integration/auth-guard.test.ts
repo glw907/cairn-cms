@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { seedEditor, makeCookies, expectRedirect } from './_auth-harness.js';
 import { createAuthGuard } from '../../lib/sveltekit/guard.js';
 import { createSession } from '../../lib/auth/store.js';
-import { sessionCookieName } from '../../lib/auth/crypto.js';
+import { sessionCookieName, csrfCookieName } from '../../lib/auth/crypto.js';
 import type { RequestContext } from '../../lib/sveltekit/types.js';
 
 const db = env.AUTH_DB;
@@ -34,6 +34,27 @@ function httpEvent(pathname: string, host = 'test.dev', cookies = makeCookies())
     cookies,
     locals: {},
     platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: `https://${host}` } },
+    setHeaders: () => {},
+  };
+}
+
+function formEvent(
+  pathname: string,
+  opts: { csrfCookie?: string; csrfField?: string; origin?: string } = {},
+): RequestContext {
+  const url = `https://test.dev${pathname}`;
+  const body = new URLSearchParams();
+  if (opts.csrfField !== undefined) body.set('csrf', opts.csrfField);
+  const headers: Record<string, string> = { 'content-type': 'application/x-www-form-urlencoded' };
+  if (opts.origin !== undefined) headers.origin = opts.origin;
+  const cookieMap: Record<string, string> = {};
+  if (opts.csrfCookie) cookieMap[csrfCookieName(true)] = opts.csrfCookie;
+  return {
+    url: new URL(url),
+    request: new Request(url, { method: 'POST', headers, body }),
+    cookies: makeCookies(cookieMap),
+    locals: {},
+    platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: 'https://test.dev' } },
     setHeaders: () => {},
   };
 }
@@ -133,5 +154,61 @@ describe('admin security headers (Unit 2)', () => {
   it('leaves a non-admin response untouched', async () => {
     const res = await handle({ event: event('/about'), resolve: async () => new Response('ok') });
     expect(res.headers.get('X-Frame-Options')).toBeNull();
+  });
+});
+
+describe('CSRF (cairn owns it)', () => {
+  it('rejects a non-admin form POST with a mismatched Origin', async () => {
+    const res = await handle({ event: formEvent('/contact', { origin: 'https://evil.dev' }), resolve: async () => OK });
+    expect(res.status).toBe(403);
+  });
+
+  it('passes a non-admin form POST with a matching Origin', async () => {
+    const res = await handle({ event: formEvent('/contact', { origin: 'https://test.dev' }), resolve: async () => OK });
+    expect(res).toBe(OK);
+  });
+
+  it('serves the branded page for an admin form POST with no token, never resolving', async () => {
+    let resolved = false;
+    const res = await handle({
+      event: formEvent('/admin/login'),
+      resolve: async () => {
+        resolved = true;
+        return OK;
+      },
+    });
+    expect(resolved).toBe(false);
+    expect(res.status).toBe(403);
+    expect(res.headers.get('content-type')).toMatch(/text\/html/);
+    expect(await res.text()).toContain('Back to sign-in');
+  });
+
+  it('passes an admin form POST whose token matches, with no Origin header', async () => {
+    const res = await handle({
+      event: formEvent('/admin/login', { csrfCookie: 'TOK', csrfField: 'TOK' }),
+      resolve: async () => OK,
+    });
+    expect(res).toBe(OK);
+  });
+
+  it('passes an authenticated admin form POST with a valid token and no Origin', async () => {
+    const cookies = await seedSession('own@x.dev');
+    cookies.jar.set(csrfCookieName(true), 'TOK');
+    const url = 'https://test.dev/admin/posts/p1';
+    const ev: RequestContext = {
+      url: new URL(url),
+      request: new Request(url, {
+        method: 'POST',
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ csrf: 'TOK', title: 'x' }),
+      }),
+      cookies,
+      locals: {},
+      platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: 'https://test.dev' } },
+      setHeaders: () => {},
+    };
+    const res = await handle({ event: ev, resolve: async () => OK });
+    expect(res).toBe(OK);
+    expect(ev.locals.editor?.email).toBe('own@x.dev');
   });
 });

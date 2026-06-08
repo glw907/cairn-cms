@@ -5,6 +5,8 @@ import { redirect, error } from '@sveltejs/kit';
 import { resolveSession } from '../auth/store.js';
 import { sessionCookieName } from '../auth/crypto.js';
 import { httpsRequiredPage } from './https-required-page.js';
+import { isUnsafeFormRequest, originMatches, validateCsrfToken } from './csrf.js';
+import { csrfRequiredPage } from './csrf-required-page.js';
 import type { Editor } from '../auth/types.js';
 import type { HandleInput, RequestContext } from './types.js';
 
@@ -58,11 +60,33 @@ function httpsRequiredResponse(url: URL): Response {
   return new Response(httpsRequiredPage(httpsUrl.toString()), { status: 400, headers });
 }
 
+/** A plain 403 for a non-admin cross-origin form POST, matching the framework's wording. */
+function csrfForbidden(): Response {
+  return new Response('Cross-site POST form submissions are forbidden', {
+    status: 403,
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+  });
+}
+
+/** The branded 403 for a failed admin double-submit token check. */
+function csrfRequiredResponse(): Response {
+  const headers = new Headers({ 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+  applySecurityHeaders(headers);
+  return new Response(csrfRequiredPage(), { status: 403, headers });
+}
+
 /** The SvelteKit `Handle` that guards `/admin/**` and hardens admin responses. */
 export function createAuthGuard() {
   return async function handle({ event, resolve }: HandleInput): Promise<Response> {
     const { pathname } = event.url;
-    if (!isAdminPath(pathname)) return resolve(event);
+
+    // Rule 2 - non-admin: restore the framework's strict Origin check the consumer disabled when
+    // they set checkOrigin: false to hand cairn the admin CSRF authority.
+    if (!isAdminPath(pathname)) {
+      if (isUnsafeFormRequest(event.request) && !originMatches(event)) return csrfForbidden();
+      return resolve(event);
+    }
+
     // A deployed admin request over http never works: the magic-link form POST would fail the
     // framework's CSRF guard with an opaque 403. Serve the help page instead, before resolve()
     // runs that check. This covers the public login/auth paths too, since that is where the form
@@ -70,6 +94,13 @@ export function createAuthGuard() {
     if (event.url.protocol === 'http:' && !isLocalHost(event.url.hostname)) {
       return httpsRequiredResponse(event.url);
     }
+
+    // Rule 1 - admin: every unsafe form POST carries a valid double-submit token, else the branded
+    // 403 before resolve() runs. This covers the public login/auth posts too.
+    if (isUnsafeFormRequest(event.request) && !(await validateCsrfToken(event))) {
+      return csrfRequiredResponse();
+    }
+
     if (!isPublicAdminPath(pathname)) {
       const env = event.platform?.env ?? {};
       const id = event.cookies.get(sessionCookieName(event.url.protocol === 'https:'));

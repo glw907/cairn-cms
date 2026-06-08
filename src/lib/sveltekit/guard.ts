@@ -48,16 +48,18 @@ function applySecurityHeaders(headers: Headers): void {
   headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 }
 
+/** A branded full-document admin page, hardened with the baseline headers and never cached. */
+function brandedAdminPage(status: number, body: string): Response {
+  const headers = new Headers({ 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+  applySecurityHeaders(headers);
+  return new Response(body, { status, headers });
+}
+
 /** The hardened 400 help page for a deployed admin request that arrived over http. */
 function httpsRequiredResponse(url: URL): Response {
   const httpsUrl = new URL(url);
   httpsUrl.protocol = 'https:';
-  const headers = new Headers({
-    'Content-Type': 'text/html; charset=utf-8',
-    'Cache-Control': 'no-store',
-  });
-  applySecurityHeaders(headers);
-  return new Response(httpsRequiredPage(httpsUrl.toString()), { status: 400, headers });
+  return brandedAdminPage(400, httpsRequiredPage(httpsUrl.toString()));
 }
 
 /** A plain 403 for a non-admin cross-origin form POST, matching the framework's wording. */
@@ -70,9 +72,7 @@ function csrfForbidden(): Response {
 
 /** The branded 403 for a failed admin double-submit token check. */
 function csrfRequiredResponse(): Response {
-  const headers = new Headers({ 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
-  applySecurityHeaders(headers);
-  return new Response(csrfRequiredPage(), { status: 403, headers });
+  return brandedAdminPage(403, csrfRequiredPage());
 }
 
 /** The SvelteKit `Handle` that guards `/admin/**` and hardens admin responses. */

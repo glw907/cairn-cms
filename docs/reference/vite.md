@@ -2,9 +2,9 @@
 
 This subpath holds the build-time manifest plugin. The `cairnManifest()` plugin evaluates a site's
 content corpus through the build's own Vite resolution, verifies the committed manifest against it on
-every build, and fails the build on drift. Import it in your `vite.config.ts`. The lower-level
-functions the plugin and the [`cairn-manifest`](./cli-cairn-manifest.md) CLI call are exported too,
-so the verify and write logic is testable apart from the plugin shell.
+every build, and fails the build on drift. Import it in your `vite.config.ts`. The subpath also
+exports the lower-level functions the plugin and the [`cairn-manifest`](./cli-cairn-manifest.md)
+CLI call, so the verify and write logic is testable apart from the plugin shell.
 
 ```ts
 import { cairnManifest } from '@glw907/cairn-cms/vite';

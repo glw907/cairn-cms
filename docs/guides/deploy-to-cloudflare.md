@@ -26,9 +26,9 @@ Goal: deploy the site Worker to Cloudflare so editor saves commit to GitHub and 
    name = "EMAIL"
    ```
 
-   The `EMAIL` binding is one binding for both Cloudflare email products. The engine calls it as `env.EMAIL.send({ to, from, subject, html, text })`, which is the Email Sending shape that reaches arbitrary recipients.
+   The `EMAIL` binding serves both Cloudflare email products through the one declaration. The engine calls it as `env.EMAIL.send({ to, from, subject, html, text })`, which is the Email Sending shape that reaches arbitrary recipients.
 
-3. **Set the GitHub App secrets.** Push the App id, the installation id, and the base64 private key as Worker secrets, not as plaintext in `wrangler.toml`:
+3. **Set the GitHub App secrets.** Push the App id, the installation id, and the base64 private key as Worker secrets (never as plaintext in `wrangler.toml`):
 
    ```bash
    npx wrangler secret put GITHUB_APP_ID
@@ -38,7 +38,7 @@ Goal: deploy the site Worker to Cloudflare so editor saves commit to GitHub and 
 
    The Worker decodes `GITHUB_APP_PRIVATE_KEY_B64` with `atob()` before it signs, so store the PEM as a single-line base64 string.
 
-4. **Mount the canonical admin routes and `/healthz`.** The `/admin/*` tree uses the `(app)` group so the login page sits outside the session-requiring layout load, and `/healthz` lives at the site root so the auth guard does not gate the deploy check. Copy the tree from [the canonical admin route structure](../reference/admin-routes.md) rather than guessing the layout, and compose the runtime once in `$lib/cairn.server.ts`.
+4. **Mount the canonical admin routes and `/healthz`.** The `/admin/*` tree uses the `(app)` group (so the login page sits outside the session-requiring layout load), and `/healthz` lives at the site root (so the auth guard does not gate the deploy check). Copy the tree from [the canonical admin route structure](../reference/admin-routes.md) rather than guessing the layout, and compose the runtime once in `$lib/cairn.server.ts`.
 
 5. **Deploy the Worker.** With `CLOUDFLARE_API_TOKEN` in the environment, run:
 
@@ -48,9 +48,9 @@ Goal: deploy the site Worker to Cloudflare so editor saves commit to GitHub and 
 
    Wrangler picks up the token automatically.
 
-6. **Confirm the push redeploys.** Connect the GitHub repository to the Worker's build so a push to `main` rebuilds and redeploys. An editor save commits through the GitHub App, the push fires the build, and the new content goes live. Commit is publish.
+6. **Confirm the push redeploys.** Connect the GitHub repository to the Worker's build so a push to `main` rebuilds and redeploys. From here an editor save commits through the GitHub App, the push fires the build, and the new content goes live. Commit is publish.
 
-7. <a id="disable-checkorigin"></a>**Hand cairn the admin CSRF authority.** Set `csrf: { checkOrigin: false }` in `kit` in `svelte.config.js`. cairn now owns CSRF for the admin through its guard, which validates a uniform double-submit token on every admin form POST. The JS-free magic-link sign-in posts from a browser that may omit the `Origin` header, and the framework's global check would reject that post, so the global check has to come off for the admin to work. cairn restores the strict `Origin` check for the site's own non-admin form POSTs inside the same guard, so disabling the global check is not a net loss.
+7. <a id="disable-checkorigin"></a>**Hand cairn the admin CSRF authority.** Set `csrf: { checkOrigin: false }` in `kit` in `svelte.config.js`. cairn now owns CSRF for the admin through its guard, which validates a uniform double-submit token on every admin form POST. Why disable the framework check? The JS-free magic-link sign-in posts from a browser that may omit the `Origin` header, and SvelteKit's global check would reject that post, so it has to come off for the admin to work. You lose nothing on the rest of the site, because cairn restores the strict `Origin` check for your non-admin form POSTs inside the same guard.
 
    ```js
    // svelte.config.js
@@ -64,17 +64,17 @@ Goal: deploy the site Worker to Cloudflare so editor saves commit to GitHub and 
 
    SvelteKit 2.61 deprecates `csrf.checkOrigin` in favour of `csrf.trustedOrigins` and prints a build
    warning, but `checkOrigin: false` is still the correct and required setting. `trustedOrigins` cannot
-   replace it: SvelteKit's check forbids a form POST that carries no `Origin` header regardless of the
-   trusted list, which is the exact JS-free magic-link case cairn fixes, and the check runs before the
-   `handle` hook where cairn's guard lives, so the global switch is the only way to hand cairn the
-   authority. cairn tracks the eventual removal; the reasoning and the planned fallback are in
+   replace it. SvelteKit's check forbids a form POST that carries no `Origin` header regardless of the
+   trusted list (the exact JS-free magic-link case cairn fixes), and the check runs before the `handle`
+   hook where cairn's guard lives, so the global switch is the only way to hand cairn the authority.
+   cairn tracks the eventual removal; the reasoning and the planned fallback are in
    [the 2026-06-09 DX feedback note](../internal/feedback/2026-06-09-907-0.36-retrofit.md).
 
 8. <a id="force-https"></a>**Force HTTPS on the zone.** This is a requirement, not a polish step. Turn on "Always Use HTTPS" so the edge redirects every plain-http request to https before it reaches the Worker, and confirm HSTS is set on https responses.
 
-   The magic-link login submits a JS-free `<form method="POST">` from the login and confirm pages. cairn's CSRF cookie carries the `__Host-` prefix on https, which binds it to the exact origin, and the session cookie does the same. A zone that serves `/admin` over both http and https makes the http scheme reachable: a first visit with no cached HSTS stays on http, and the auth guard builds its login redirect from the incoming request, so the http scheme sticks. Forcing HTTPS at the edge locks the scheme to https before the form ever posts, which is what keeps the `__Host-` cookies origin-bound.
+   Here is what the setting protects. The magic-link login submits a JS-free `<form method="POST">` from the login and confirm pages, and cairn's CSRF cookie carries the `__Host-` prefix on https (which binds it to the exact origin), as does the session cookie. If your zone serves `/admin` over both http and https, the http scheme stays reachable: a first visit with no cached HSTS lands on http, the auth guard builds its login redirect from the incoming request, and the http scheme sticks. Forcing HTTPS at the edge locks the scheme to https before the form ever posts, which is what keeps the `__Host-` cookies origin-bound.
 
-   Until you force HTTPS, the guard catches the case for you: an `/admin` request that reaches a deployed host over http gets a styled "this admin needs HTTPS" page with a one-click link to the https version and these same instructions, rather than a failed sign-in. Local `wrangler dev` over http is exempt. The page is a fallback, not a substitute, so turn the zone setting on.
+   Until you force HTTPS, the guard catches the case for you. An `/admin` request that reaches a deployed host over http gets a styled "this admin needs HTTPS" page with a one-click link to the https version and these same instructions, rather than a failed sign-in. Local `wrangler dev` over http is exempt. The page is a fallback, not a substitute, so turn the zone setting on.
 
 ## Verify
 

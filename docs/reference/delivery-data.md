@@ -1,7 +1,7 @@
 # Delivery data (`@glw907/cairn-cms/delivery/data`)
 
-This subpath holds the node-safe pure projections: the index builders, the feed, sitemap, and
-robots builders and responders, the SEO head builder, and the small pure helpers. Nothing here pulls
+This subpath holds the index builders, the feed, sitemap, and robots builders and responders, the
+SEO head builder, and the small pure helpers. All of it is node-safe pure projection: nothing pulls
 `@sveltejs/kit` into the module graph, so a plain-Node tool such as the manifest bin or the Vite
 plugin can import the builders. A SvelteKit site usually imports these symbols through the
 [`/delivery`](./delivery.md) barrel, which re-exports this whole surface. Import from

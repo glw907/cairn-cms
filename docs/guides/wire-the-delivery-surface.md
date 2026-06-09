@@ -1,6 +1,6 @@
 # Wire the delivery surface
 
-Goal: serve your content publicly through the typed read model, the permalink route, the feeds, and the build-time manifest wiring.
+This guide takes your content public through the typed read model, the permalink route, the feeds, and the build-time manifest wiring.
 
 ## Prerequisites
 
@@ -11,7 +11,7 @@ This guide assumes a running cairn site whose content you want to deliver. The w
 
 ## Steps
 
-1. **Build the content layer with `createSiteIndexes`.** One module globs the markdown for every concept and hands the raw records to the adapter-driven builder. Vite needs the literal glob string at the call site, so the site supplies one `import.meta.glob` per concept. The builder returns a typed index per concept plus a cross-concept `site` resolver, and it runs the build gate that fails a malformed entry red.
+1. **Build the content layer with `createSiteIndexes`.** One module globs the markdown for every concept and hands the raw records to the adapter-driven builder. You supply one `import.meta.glob` per concept (Vite needs the literal glob string at the call site). In return the builder gives you a typed index per concept plus a cross-concept `site` resolver, and it runs the build gate that fails a malformed entry red.
 
    ```ts
    // examples/showcase/src/lib/content.ts
@@ -41,7 +41,7 @@ This guide assumes a running cairn site whose content you want to deliver. The w
 
    For the signature and the `SiteGlobs` shape it expects, see [`createPublicRoutes` and the index builders](../reference/delivery.md).
 
-2. **Add the catch-all `[...path]` route.** One route resolves any public path against the site index and ships the entry with a full head. `createPublicRoutes` returns an `entries` generator for prerendering and an `entryLoad` for the page load, both keyed off the `site` resolver and the adapter's `render`. A matching `+page.svelte` renders the resolved HTML and the SEO head.
+2. **Add the catch-all `[...path]` route.** One route resolves any public path against the site index and ships the entry with a full head. `createPublicRoutes` returns an `entries` generator for prerendering and an `entryLoad` for the page load, both keyed off the `site` resolver and the adapter's `render`. Your matching `+page.svelte` renders the resolved HTML and the SEO head.
 
    ```ts
    // examples/showcase/src/routes/[...path]/+page.server.ts
@@ -132,7 +132,7 @@ This guide assumes a running cairn site whose content you want to deliver. The w
    };
    ```
 
-4. **Wire the manifest with the `cairnManifest()` Vite plugin.** A manifest is a build-verified projection of the content files, and the plugin owns its verify. Add the plugin to `vite.config.ts` with the config module, the per-concept content globs, and the manifest path. That verify runs outside the prerender lifecycle, so a stale manifest fails the build red regardless of any `handleHttpError` policy.
+4. **Wire the manifest with the `cairnManifest()` Vite plugin.** A manifest is a build-verified projection of the content files, and the plugin owns its verify. Add the plugin to your `vite.config.ts` with the config module, the per-concept content globs, and the manifest path. The verify runs outside the prerender lifecycle, so a stale manifest fails the build red regardless of any `handleHttpError` policy.
 
    ```ts
    // examples/showcase/vite.config.ts
@@ -164,7 +164,7 @@ This guide assumes a running cairn site whose content you want to deliver. The w
 
    For the plugin options and the bin, see [`cairnManifest`](../reference/vite.md#cairnmanifest).
 
-5. **Import a delivery data helper from the node-safe barrel when you leave SvelteKit.** A SvelteKit route imports through `@glw907/cairn-cms/delivery`, which pulls `@sveltejs/kit` into its module graph. A plain-Node tool such as a custom manifest script cannot import that barrel. Point such an import at `@glw907/cairn-cms/delivery/data`, the node-safe surface that re-exports the same builders without the SvelteKit dependency.
+5. **Import a delivery data helper from the node-safe barrel when you leave SvelteKit.** A SvelteKit route imports through `@glw907/cairn-cms/delivery`, which pulls `@sveltejs/kit` into its module graph, so a plain-Node tool (a custom manifest script, say) cannot import that barrel. Point that import at `@glw907/cairn-cms/delivery/data` instead, the node-safe surface that re-exports the same builders without the SvelteKit dependency.
 
    ```ts
    import { buildSiteManifest } from '@glw907/cairn-cms/delivery/data';
@@ -172,7 +172,7 @@ This guide assumes a running cairn site whose content you want to deliver. The w
 
 ## Verify
 
-Run `npm run build` in `examples/showcase` and the production build exits 0, the prerendered home lists the post summaries through `routes/+page.server.ts` and `routes/+page.svelte`, and a post permalink resolves through `routes/[...path]/+page.server.ts`. Use these working reference routes when you compare against your own site: `examples/showcase/src/routes/[...path]/` for the permalink page, `routes/feed.xml/+server.ts` and `routes/feed.json/+server.ts` for the feeds, and `routes/sitemap.xml/+server.ts` for the sitemap. A stale `src/content/.cairn/index.json` fails that build, which proves the manifest verify is wired.
+Run `npm run build` in `examples/showcase`. The production build exits 0, the prerendered home lists the post summaries through `routes/+page.server.ts` and `routes/+page.svelte`, and a post permalink resolves through `routes/[...path]/+page.server.ts`. When you compare against your own site, the working reference routes are `examples/showcase/src/routes/[...path]/` for the permalink page, `routes/feed.xml/+server.ts` and `routes/feed.json/+server.ts` for the feeds, and `routes/sitemap.xml/+server.ts` for the sitemap. A stale `src/content/.cairn/index.json` fails that build, which proves the manifest verify is wired.
 
 ## See also
 

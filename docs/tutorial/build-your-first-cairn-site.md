@@ -1,12 +1,12 @@
 # Build your first cairn site
 
-This tutorial walks a newcomer through building a first cairn site from an empty directory to a working site running on your own machine. You will build a small blog called `Field Notes`, and along the way you will touch the full current feature set: the adapter and schema, the render pipeline, a custom component, internal links, the delivery surface, the nav menu, and the admin editor.
+This tutorial takes you from an empty directory to a working cairn site running on your own machine. You will build a small blog called `Field Notes`, and along the way you will touch everything cairn currently ships, including the adapter and schema, the render pipeline, a custom component, internal links, the delivery surface, the nav menu, and the admin editor. The repository carries a complete consumer site at [`examples/showcase`](../../examples/showcase); keep it open alongside this page, because every file you write here has a finished counterpart there.
 
-The tutorial teaches once, in build order. For a single task you already know how to do on an existing site, the [guides](../guides/README.md) are shorter. For exact signatures, the [reference](../reference/README.md) is the source of truth. This page links both at each step rather than restating them, so follow it top to bottom the first time.
+The tutorial teaches each piece once, in build order, so follow it top to bottom the first time. When you already know how to do a single task on an existing site, the [guides](../guides/README.md) get you there faster, and for exact signatures the [reference](../reference/README.md) is the source of truth. This page links both at each step rather than restating them.
 
 ## Milestone 0: What you will build, and prerequisites
 
-By the end you will have `Field Notes` running locally: a blog with two posts and one page, a custom callout component authored in markdown, an internal link from one post to another that survives a rename, RSS and JSON feeds, a sitemap, and a working admin editor where you log in, edit a post, and save. The content stays small on purpose. Each milestone adds one real shipped feature, so the breadth comes from the build rather than from the writing.
+By the end you will have `Field Notes` running locally. It is a blog with two posts and one page, a custom callout component authored in markdown, an internal link from one post to another that survives a rename, RSS and JSON feeds, a sitemap, and a working admin editor where you log in, edit a post, and save. The content stays small on purpose. Each milestone adds one real shipped feature, so the breadth comes from the build rather than from the writing.
 
 You need a few things before you start:
 
@@ -14,7 +14,7 @@ You need a few things before you start:
 - A terminal.
 - Basic SvelteKit familiarity, enough to recognize routes and server load functions.
 
-cairn is a markdown-in-git CMS for SvelteKit on Cloudflare. Content lives as markdown files in your repository, the admin commits edits through a GitHub App, and the public site renders the files. Two background reads explain the shape before you build it. [Architecture](../explanation/architecture.md) covers the engine and site line and the commit-and-publish flow. [The content model](../explanation/content-model.md) covers the fixed concepts and the URL identity model you will use here.
+cairn is a markdown-in-git CMS for SvelteKit on Cloudflare. Your content lives as markdown files in your repository, the admin commits edits through a GitHub App, and the public site renders the files. Two background reads explain the shape before you build it. [Architecture](../explanation/architecture.md) covers the engine and site line and the commit-and-publish flow. [The content model](../explanation/content-model.md) covers the fixed concepts and the URL identity model you will use here.
 
 One note on the starting point. The `create-cairn-site` scaffolder is forthcoming. Until it lands, this tutorial wires the project by hand, and a few later milestones give you copy-paste boilerplate that the scaffolder will eventually generate for you.
 
@@ -41,7 +41,7 @@ npm install -D tailwindcss @tailwindcss/vite
 npm install -D daisyui
 ```
 
-The dev backend and the admin hooks you wire later read `process.env` and decode base64 with `Buffer`, both Node globals. A site that installs cairn from the registry does not get the Node types transitively, so add them to the project:
+Later you will wire a dev backend and admin hooks that read `process.env` and decode base64 with `Buffer`, both Node globals. A site that installs cairn from the registry does not get the Node types transitively, so add them yourself:
 
 ```bash
 npm install -D @types/node
@@ -77,7 +77,7 @@ Import that stylesheet once from your root layout, `src/routes/+layout.svelte`:
 {@render children()}
 ```
 
-This keeps the root layout almost bare, which matters later: the root layout wraps `/admin` too, so a
+Notice how bare the root layout stays. That matters later, because the root layout wraps `/admin` too, so a
 real site keeps its nav, footer, and `app.css` out of the root and in a `(site)` route group instead.
 Milestone 8 covers the rule, and [the admin route structure](../reference/admin-routes.md) has the full
 pattern.
@@ -98,7 +98,7 @@ declare global {
 export {};
 ```
 
-The public feeds, the sitemap, and the robots file are endpoints nothing on the site links to, so the prerender crawler does not reach them on its own. Tell SvelteKit to treat an uncrawled prerenderable route as a warning rather than a hard build error. Open `svelte.config.js` and add a `prerender` policy to the `kit` block:
+You will add public feeds, a sitemap, and a robots file later, and nothing on the site links to them, so the prerender crawler never reaches them on its own. Tell SvelteKit to treat an uncrawled prerenderable route as a warning rather than a hard build error. Open `svelte.config.js` and add a `prerender` policy to the `kit` block:
 
 ```js
 kit: {
@@ -113,7 +113,7 @@ The minimal SvelteKit skeleton ships a default `static/robots.txt`. cairn serves
 rm static/robots.txt
 ```
 
-The project now builds and serves an empty SvelteKit site with Tailwind and DaisyUI ready. The next milestones turn it into `Field Notes`.
+If you started the dev server at this point, you would get an empty SvelteKit site with Tailwind and DaisyUI ready and nothing on it. The next milestones turn it into `Field Notes`.
 
 ## Milestone 2: Define the adapter and schema
 
@@ -151,11 +151,11 @@ export const cairn = defineAdapter({
 });
 ```
 
-The `render` method, the component registry, and the icon set are still missing from this adapter. You add them in milestones 4 and 5, after the content exists. The TypeScript compiler will flag the missing `render` until then, which is expected at this stage.
+Three pieces are still missing from this adapter (the `render` method, the component registry, and the icon set). You add them in milestones 4 and 5, after the content exists. Until then the TypeScript compiler flags the missing `render`, so if you run a check now and see that error, you are on track.
 
 The `summaryFields: ['description']` line tells the home list and the SEO head which field to read for a post's summary. The `description` field feeds both.
 
-One declaration carries a lot of weight here. The array you pass to `defineFields` is the single source of truth for three things: the editor form an author fills in, the validator that checks a save, and the inferred frontmatter type the rest of the engine reads. There is no second place to keep in sync, and the rule that follows is that every frontmatter key your site reads must be declared in the schema. For the field types and the exact signatures, see [`defineAdapter` and `defineFields`](../reference/core.md#defineadapter) in the core reference. For the task on its own, the [adapter and schema guide](../guides/define-an-adapter-and-schema.md) covers it.
+One declaration carries a lot of weight here. The array you pass to `defineFields` drives the editor form an author fills in, the validator that checks a save, and the inferred frontmatter type the rest of the engine reads, all from this one source. There is no second place to keep in sync. The rule that follows is that every frontmatter key your site reads must be declared in the schema. For the field types and the exact signatures, see [`defineAdapter` and `defineFields`](../reference/core.md#defineadapter) in the core reference. For the task on its own, the [adapter and schema guide](../guides/define-an-adapter-and-schema.md) covers it.
 
 Notice what the adapter does not carry. The slug codec and the per-concept date granularity, `datePrefix`, do not live on the adapter. They live in the site's YAML url policy, which you set in milestone 6, so the site owner controls the permalink shape without touching code. For the id-to-slug split behind that, see [URL identity](../explanation/content-model.md#url-identity).
 
@@ -199,11 +199,11 @@ description: A small blog about walks on the ridge.
 Field Notes is a small blog about walks on the ridge above town.
 ```
 
-The three files match the two schemas: every frontmatter key here is a declared field. For why content is a fixed set of concepts rather than open-ended collections, see [the content model](../explanation/content-model.md#fixed-concepts-not-generic-collections).
+Every frontmatter key in these three files is a field you declared in milestone 2, so the files and the schemas agree. For why content is a fixed set of concepts rather than open-ended collections, see [the content model](../explanation/content-model.md#fixed-concepts-not-generic-collections).
 
 ## Milestone 4: Configure rendering
 
-The site has content, but the adapter still has no way to turn a markdown body into the HTML a page delivers. That is the `render` method you left out in milestone 2. cairn builds the render pipeline for you with `createRenderer`, and the adapter's `render` delegates to it.
+Your site has content now, and still no way to turn a markdown body into the HTML a page delivers. That is the `render` method you left out in milestone 2. cairn builds the render pipeline for you with `createRenderer`, and the adapter's `render` delegates to it.
 
 Build the renderer near the top of `src/lib/cairn.config.ts`, then point `render` at it:
 
@@ -223,11 +223,11 @@ export const cairn = defineAdapter({
 });
 ```
 
-That one addition resolves the compiler error from milestone 2. The adapter now has every required field, so the project type-checks.
+That one addition clears the compiler error from milestone 2. The adapter now has every required field, so the project type-checks.
 
-`createRenderer` takes an optional component registry. Call it with no argument and it defaults to the empty registry, which is exactly right for a plain-prose blog: the full markdown-to-HTML pipeline still runs, there are just no custom components to dispatch. `Field Notes` adds a registry in the next milestone, and you will pass it here. For the signature and the options it accepts, see [`createRenderer`](../reference/core.md#createrenderer) in the core reference.
+`createRenderer` takes an optional component registry. Call it with no argument and you get the empty registry, which is exactly right for a plain-prose blog (the full markdown-to-HTML pipeline still runs, there are just no custom components to dispatch). `Field Notes` adds a registry in the next milestone, and you will pass it here. For the signature and the options it accepts, see [`createRenderer`](../reference/core.md#createrenderer) in the core reference.
 
-The pipeline cleans author HTML before it reaches a visitor. A markdown body can carry raw HTML, so a `<script>` tag or a `javascript:` link in author content would otherwise run in the browser. cairn runs the body through a `rehype-sanitize` floor that strips those, and the floor is on by default. It is extend-only: a site can widen the allowlist for benign tags it needs, but it cannot weaken the dangerous strip. For what the floor keeps, strips, and rewrites, see [the render sanitize floor](../explanation/render-safety.md).
+The pipeline cleans author HTML before it reaches a visitor. A markdown body can carry raw HTML, so a `<script>` tag or a `javascript:` link in author content would otherwise run in the browser. cairn runs the body through a `rehype-sanitize` floor that strips those, and the floor is on by default. The floor is also extend-only, so a site can widen the allowlist for benign tags it needs and cannot weaken the dangerous strip. For what the floor keeps, strips, and rewrites, see [the render sanitize floor](../explanation/render-safety.md).
 
 `render` resolves to an HTML string. A page delivers it with Svelte's `{@html}`:
 
@@ -273,7 +273,7 @@ const callout: ComponentDef = {
 };
 ```
 
-Each key in the `icons` map is a name, and each value is the SVG path data for one glyph. The `icon` attribute is typed `'icon'`, so the admin editor renders a picker that lists those names, and an author chooses one without typing path data. One glyph is enough here to see the picker work. The showcase callout also carries a repeatable `points` slot, which the tutorial drops to stay focused; see `examples/showcase/src/lib/cairn.config.ts` for that repeatable-slot shape.
+Each key in the `icons` map is a name, and each value is the SVG path data for one glyph. The `icon` attribute is typed `'icon'`, so the admin editor renders a picker that lists those names, and an author chooses one without ever typing path data. One glyph is enough here to see the picker work. The showcase callout also carries a repeatable `points` slot, which the tutorial drops to stay focused; see `examples/showcase/src/lib/cairn.config.ts` for that repeatable-slot shape.
 
 Build the registry from the component, then pass it to `createRenderer` and register it on the adapter so both the render path and the editor palette can see it:
 
@@ -296,7 +296,7 @@ export const cairn = defineAdapter({
 
 For the registry signature, see [`defineRegistry`](../reference/core.md#defineregistry) in the core reference.
 
-Now author the callout in the packing-list post. An author writes a component through cairn's directive grammar, a colon-fenced block that names the component, sets its attributes, and fills its slots. The admin editor builds this markup for you through the component dialog, but it is plain markdown, so you can write it by hand too. Open `src/content/posts/2026-05-15-packing-list.md` and add the callout to the body:
+Now author the callout in the packing-list post. An author writes a component through cairn's directive grammar, a colon-fenced block that names the component, sets its attributes, and fills its slots. The admin editor builds this markup for you through the component dialog, and it is plain markdown, so you can also write it by hand. Open `src/content/posts/2026-05-15-packing-list.md` and add the callout to the body:
 
 ```markdown
 ---
@@ -312,11 +312,11 @@ A liter per person is the floor, more if the day is warm.
 ::::
 ```
 
-The `[Don't forget water]` part fills the inline `title` slot, the `{tone="warning" icon="snowflake"}` part sets the two attributes, and the text inside the fence fills the markdown `body` slot. When the renderer meets this directive it calls the `callout`'s `build(ctx)`, so `ctx.slot('title')` returns the title content and `ctx.attributes.tone` returns `'warning'`. The post renders the `<aside>` markup, not the literal directive text. For the full directive grammar and how the editor inserts a component, see [Component grammar and insertion](../reference/core.md#component-grammar-and-insertion) in the core reference.
+The `[Don't forget water]` part fills the inline `title` slot, the `{tone="warning" icon="snowflake"}` part sets the two attributes, and the text inside the fence fills the markdown `body` slot. When the renderer meets this directive it calls the `callout`'s `build(ctx)`, so `ctx.slot('title')` returns the title content and `ctx.attributes.tone` returns `'warning'`. The post renders the `<aside>` markup, never the literal directive text. For the full directive grammar and how the editor inserts a component, see [Component grammar and insertion](../reference/core.md#component-grammar-and-insertion) in the core reference.
 
 ## Milestone 6: Wire the delivery surface
 
-The content exists and renders, but no public page serves it yet. The delivery surface is the read model that turns your markdown into a home list, post and page permalinks, feeds, a sitemap, and a robots file. It lives on a separate package entry, `@glw907/cairn-cms/delivery`, so the public site imports it without pulling the admin in.
+The content exists and renders, and no public page serves it yet. The delivery surface is the read model that turns your markdown into a home list, post and page permalinks, feeds, a sitemap, and a robots file. It lives on a separate package entry, `@glw907/cairn-cms/delivery`, so the public site imports it without pulling the admin in.
 
 Start with the site's URL policy, because the rest of the surface reads it. The slug codec and the per-concept date granularity live in a YAML site-config file, not on the adapter, so a site owner shapes permalinks without touching code. Create `src/lib/site.config.yaml`:
 
@@ -383,7 +383,7 @@ export const prerender = true;
 export const load: PageServerLoad = () => ({ posts: posts.all() });
 ```
 
-The template renders one card per post. Each summary carries a `concept` field, a `permalink`, the `title`, and the `description` you declared in `summaryFields`, so a list card needs no detail read. Create `src/routes/+page.svelte`:
+Its template renders one card per post. Each summary carries a `concept` field, a `permalink`, the `title`, and the `description` you declared in `summaryFields`, so a list card needs no detail read. Create `src/routes/+page.svelte`:
 
 ```svelte
 <script lang="ts">
@@ -405,9 +405,9 @@ The template renders one card per post. Each summary carries a `concept` field, 
 </ul>
 ```
 
-The `data-concept` stamp on each card carries the concept id, so a template can style a post card and a page card differently from one list.
+Each card's `data-concept` stamp carries the concept id, so a template can style a post card and a page card differently from one list.
 
-A single catch-all route serves every post and page permalink. `createPublicRoutes` resolves a path against the `site` index with `byPermalink` under the hood, renders the entry's body with the adapter's `render`, and builds the SEO head. It returns an `entries` generator for prerendering and an `entryLoad` for the page load. Create `src/routes/[...path]/+page.server.ts`:
+A single catch-all route serves every post and page permalink, so when a visitor requests `/about` or `/2026/05/15/packing-list`, this one route answers. `createPublicRoutes` resolves a path against the `site` index with `byPermalink` under the hood, renders the entry's body with the adapter's `render`, and builds the SEO head. It returns an `entries` generator for prerendering and an `entryLoad` for the page load. Create `src/routes/[...path]/+page.server.ts`:
 
 ```ts
 import type { PageServerLoad, EntryGenerator } from './$types';
@@ -447,7 +447,7 @@ The matching page reads `data.html` and `data.seo`, and renders the head through
 </article>
 ```
 
-Add the feeds, the sitemap, and the robots file. Each is a prerendered `+server.ts` that reads the indexes and returns a `Response` from a delivery responder. The RSS feed builds one item per post, renders the full body for a full-content feed, and resolves any internal `cairn:` link to an absolute URL with `buildLinkResolver`. Create `src/routes/feed.xml/+server.ts`:
+Next come the feeds, the sitemap, and the robots file. Each is a prerendered `+server.ts` that reads the indexes and returns a `Response` from a delivery responder. The RSS feed builds one item per post, renders the full body for a full-content feed, and resolves any internal `cairn:` link to an absolute URL with `buildLinkResolver`. Create `src/routes/feed.xml/+server.ts`:
 
 ```ts
 import type { RequestHandler } from './$types';
@@ -510,7 +510,7 @@ export const GET: RequestHandler = () => {
 };
 ```
 
-One piece is left, the manifest. The manifest is a build-verified projection of your content files, and it is what keeps an internal `cairn:` link rot-proof. The `cairnManifest()` Vite plugin owns the verify: on every build it evaluates the content corpus and checks the committed manifest against it, and a stale manifest fails the build red. That verify runs outside the prerender lifecycle, so it fails the build regardless of any `handleHttpError` policy. Add the plugin to `vite.config.ts`, after `sveltekit()`:
+One piece is left, the manifest. The manifest is a build-verified projection of your content files, and it is what keeps an internal `cairn:` link rot-proof. The `cairnManifest()` Vite plugin owns the verify. On every build it evaluates the content corpus, checks the committed manifest against it, and fails the build red on a stale manifest. That verify runs outside the prerender lifecycle, so it fails the build regardless of any `handleHttpError` policy. Add the plugin to `vite.config.ts`, after `sveltekit()`:
 
 ```ts
 import { sveltekit } from '@sveltejs/kit/vite';
@@ -570,7 +570,7 @@ content:
     permalink: /:slug
 ```
 
-The site reads the menu at build time with `parseSiteConfig` and `extractMenu`, the same parse you already wired for the URL policy. A template pulls the `primary` menu out of the parsed config and renders one link per node. For the signatures, see [`parseSiteConfig` and `extractMenu`](../reference/core.md#parsesiteconfig) in the core reference.
+Your site reads the menu at build time with `parseSiteConfig` and `extractMenu`, the same parse you already wired for the URL policy. A template pulls the `primary` menu out of the parsed config and renders one link per node. For the signatures, see [`parseSiteConfig` and `extractMenu`](../reference/core.md#parsesiteconfig) in the core reference.
 
 The admin nav editor needs to know which menu in the YAML it edits, so tell the adapter. Open `src/lib/cairn.config.ts` and add a `navMenu` entry to `defineAdapter`, naming the config file, the menu, and how deep the tree may nest:
 
@@ -582,9 +582,9 @@ You do not hand-edit this YAML for every change. The admin carries a nav tree ed
 
 ## Milestone 8: Run the admin locally with the dev backend
 
-The public site is complete. Now you bring up the admin, the editor where an author logs in, edits a post, inserts a component, adds an internal link, and saves a commit. The admin needs two things a real deployment supplies: an authenticated editor and a GitHub App that commits the save. You do not have either on your machine yet. The backend guides set up the real ones, and milestone 10 points you at them. To run the loop locally first, you install a dev backend, a copy-paste fixture that stands in for both.
+The public site is complete. Now you bring up the admin, the editor where an author logs in, edits a post, inserts a component, adds an internal link, and saves a commit. The admin needs two things a real deployment supplies, an authenticated editor and a GitHub App that commits the save, and you have neither on your machine yet. The backend guides set up the real ones, and milestone 10 points you at them. To run the loop locally first, you install a dev backend, a copy-paste fixture that stands in for both.
 
-A loud warning before you copy anything. The dev backend is for local development only. It installs an authentication bypass that signs you in as a fixed editor with no email check, and it installs a fake GitHub that records commits in memory instead of pushing them to a real repository. Never set the `CAIRN_DEV_BACKEND` flag in a deployed environment. With the flag unset, both fixtures are inert, so they are safe to keep in the repository, but the flag itself is the live wire. The deploy guide replaces this fixture with the real GitHub App and D1 auth and drops the flag entirely.
+A loud warning before you copy anything. The dev backend is for local development only. It installs an authentication bypass that signs you in as a fixed editor with no email check, and it installs a fake GitHub that records commits in memory instead of pushing them to a real repository. Never set the `CAIRN_DEV_BACKEND` flag in a deployed environment. With the flag unset, both fixtures are inert, so they are safe to keep in the repository, and the flag itself is the live wire. The deploy guide replaces this fixture with the real GitHub App and D1 auth and drops the flag entirely.
 
 ### Copy the dev backend fixture
 
@@ -767,9 +767,9 @@ URL, and the admin, which sits outside the group, renders on its own. A dev-only
 a `console.error` when it detects host chrome wrapping it. See
 [the admin route structure](../reference/admin-routes.md) for the full tree and the reasoning.
 
-The route tree splits in two. The login and auth pages sit directly under `admin/`, and the authed shell sits in an `(app)` group whose layout requires a session. The group folder does not appear in the URL, so its pages still resolve under `/admin/*`, but only the group runs the session-requiring layout load, which is what keeps a sessionless visit from looping. For why the tree has this exact shape, read [the admin route structure](../reference/admin-routes.md).
+The route tree splits in two. Login and auth pages sit directly under `admin/`, and the authed shell sits in an `(app)` group whose layout requires a session. The group folder does not appear in the URL, so its pages still resolve under `/admin/*`, and only the group runs the session-requiring layout load, which is what keeps a sessionless visit from looping. For why the tree has this exact shape, read [the admin route structure](../reference/admin-routes.md).
 
-The bare admin layout marks the subtree dynamic and renders its children through. Create `src/routes/admin/+layout.server.ts`:
+The bare admin layout switches prerendering off for the whole subtree and renders its children through. Create `src/routes/admin/+layout.server.ts`:
 
 ```ts
 // /admin must never prerender. The authed shell load lives in the (app) group below, so login
@@ -777,7 +777,7 @@ The bare admin layout marks the subtree dynamic and renders its children through
 export const prerender = false;
 ```
 
-Create `src/routes/admin/+layout.svelte`:
+Pair it with `src/routes/admin/+layout.svelte`:
 
 ```svelte
 <script lang="ts">
@@ -787,7 +787,7 @@ Create `src/routes/admin/+layout.svelte`:
 {@render children()}
 ```
 
-The `(app)` group's layout server runs the authed shell load. Create `src/routes/admin/(app)/+layout.server.ts`:
+The `(app)` group's layout server runs the authed shell load. Add `src/routes/admin/(app)/+layout.server.ts`:
 
 ```ts
 // The authed shell load: site identity, the signed-in user, and the nav sidebar.
@@ -796,7 +796,7 @@ import { content } from '$lib/cairn.server.js';
 export const load = content.layoutLoad;
 ```
 
-The group's layout renders the engine's `AdminLayout` shell around every authed page. Create `src/routes/admin/(app)/+layout.svelte`:
+Its layout renders the engine's `AdminLayout` shell around every authed page. Create `src/routes/admin/(app)/+layout.svelte`:
 
 ```svelte
 <script lang="ts">
@@ -812,7 +812,7 @@ The group's layout renders the engine's `AdminLayout` shell around every authed 
 </AdminLayout>
 ```
 
-The group's index redirects to the first concept's list. Create `src/routes/admin/(app)/+page.server.ts`:
+Next, the group's index redirects to the first concept's list. Now create `src/routes/admin/(app)/+page.server.ts`:
 
 ```ts
 // /admin redirects to the first concept's list.
@@ -821,7 +821,7 @@ import { content } from '$lib/cairn.server.js';
 export const load = content.indexRedirect;
 ```
 
-The concept list lists a concept's entries and creates a new one. Create `src/routes/admin/(app)/[concept]/+page.server.ts`:
+Each concept gets a list route that lists its entries and creates a new one. Create `src/routes/admin/(app)/[concept]/+page.server.ts`:
 
 ```ts
 // Lists one concept's entries and handles the new-entry create action.
@@ -831,7 +831,7 @@ export const load = content.listLoad;
 export const actions = { create: content.createAction };
 ```
 
-Create `src/routes/admin/(app)/[concept]/+page.svelte`:
+Its page mounts the list component. Create `src/routes/admin/(app)/[concept]/+page.svelte`:
 
 ```svelte
 <script lang="ts">
@@ -844,7 +844,7 @@ Create `src/routes/admin/(app)/[concept]/+page.svelte`:
 <ConceptList {data} />
 ```
 
-The editor loads one entry and handles save, delete, and rename. It nests at `[concept]/[id]`, the path the list links to and every redirect targets, so `params.concept` and `params.id` arrive natively. Create `src/routes/admin/(app)/[concept]/[id]/+page.server.ts`:
+Deeper in the tree, the editor loads one entry for editing and handles its save; the delete and rename actions live on the same route. It nests at `[concept]/[id]`, the path the list links to and every redirect targets, so `params.concept` and `params.id` arrive natively. Create `src/routes/admin/(app)/[concept]/[id]/+page.server.ts`:
 
 ```ts
 // Loads one entry for editing and handles the save, delete, and rename actions.
@@ -854,7 +854,7 @@ export const load = content.editLoad;
 export const actions = { save: content.saveAction, delete: content.deleteAction, rename: content.renameAction };
 ```
 
-The edit page mounts the engine's `EditPage`, passing the adapter's render, registry, and icons so the preview, the component palette, and the icon picker all work. Create `src/routes/admin/(app)/[concept]/[id]/+page.svelte`:
+The edit page mounts the engine's `EditPage`, passing the adapter's render, registry, and icons so the preview, the component palette, and the icon picker all work. Put it at `src/routes/admin/(app)/[concept]/[id]/+page.svelte`:
 
 ```svelte
 <script lang="ts">
@@ -868,7 +868,7 @@ The edit page mounts the engine's `EditPage`, passing the adapter's render, regi
 <EditPage data={{ ...data, siteName: cairn.siteName }} render={cairn.render} registry={cairn.registry} icons={cairn.icons} />
 ```
 
-The nav editor loads the menu tree and saves an edited one. Create `src/routes/admin/(app)/nav/+page.server.ts`:
+Last in the group, the nav editor loads the menu tree and saves an edited one. Create `src/routes/admin/(app)/nav/+page.server.ts`:
 
 ```ts
 // Loads the nav tree and the page options, and saves an edited tree to the site config.
@@ -878,7 +878,7 @@ export const load = nav.navLoad;
 export const actions = { default: nav.navSave };
 ```
 
-Create `src/routes/admin/(app)/nav/+page.svelte`:
+Then create `src/routes/admin/(app)/nav/+page.svelte`:
 
 ```svelte
 <script lang="ts">
@@ -932,7 +932,7 @@ You added the `cairn:` link inside the running admin, which committed through th
 For more on the trail itself, see the [first trail on the ridge](cairn:posts/2026-05-01-first-trail).
 ```
 
-That `cairn:posts/2026-05-01-first-trail` href is the internal link token. The first part is the concept, the second is the target post's permanent id. The link names the file, not the URL, so it survives a later change to the permalink shape or a rename of the target.
+That `cairn:posts/2026-05-01-first-trail` href is the internal link token. The first part is the concept, the second is the target post's permanent id. The link names the file rather than the URL, so it survives a later change to the permalink shape or a rename of the target.
 
 A `cairn:` link resolves through the manifest, the build-verified projection of your content that you wired in milestone 6. The admin commit pipeline rewrites the manifest on every save, so a link added in the editor is already resolvable. You edited the file on disk this time, so regenerate the manifest by hand:
 

@@ -2,7 +2,7 @@
 
 This subpath holds the server-side route factories. Each one composes the engine runtime into the
 `load` functions and form `actions` a SvelteKit `+page.server.ts` exports, plus the `Handle` that
-guards `/admin`. A site imports it in `src/hooks.server.ts` and in its admin route servers. The
+guards `/admin`. You import it in `src/hooks.server.ts` and in your admin route servers. The
 canonical route tree these factories mount is in
 [the admin route structure guide](./admin-routes.md).
 

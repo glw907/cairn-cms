@@ -1,9 +1,9 @@
 # The render sanitize floor
 
-cairn's render path runs author markdown through a unified pipeline and emits HTML that a site
+cairn's render path runs author markdown through a unified pipeline and emits HTML that your site
 delivers with `{@html}`. Author content can carry raw HTML, so the pipeline cleans it before
-delivery. This document states what the floor keeps, what it strips, and what it rewrites, so a
-site knows the guarantee it inherits and what is safe to extend.
+delivery. This page states what the floor keeps, what it strips, and what it rewrites, so you know
+the guarantee your site inherits and what is safe to extend.
 
 Three pieces make up the floor. `buildSanitizeSchema` in `src/lib/render/sanitize-schema.ts`
 builds the allowlist that `rehype-sanitize` enforces. `rehypeAnchorRel` in the same file forces a
@@ -15,10 +15,10 @@ fully-built tree last. All three wire into the pipeline through `createRenderer`
 
 `rehype-sanitize` runs after `rehype-raw` and before the registry dispatch. `rehype-raw` parses
 the author's raw HTML into real hast nodes first, then the floor cleans that parsed tree. Running
-before the dispatch leaves the dispatch's `build()` output unsanitized at that point, so the inline
-SVG icons a component emits stay intact rather than being stripped as unknown tags. Anchor-rel runs
-last in the rehype chain, after the dispatch and after `rehype-slug`, so it also covers anchors a
-component builds rather than only anchors from author markdown.
+before the dispatch deliberately leaves the dispatch's `build()` output unsanitized at that point,
+so the inline SVG icons a component emits stay intact rather than being stripped as unknown tags.
+Anchor-rel runs last in the rehype chain, after the dispatch and after `rehype-slug`, so it also
+covers anchors a component builds rather than only anchors from author markdown.
 
 ## The post-dispatch sink guard
 
@@ -29,15 +29,15 @@ attributes, including `href`, `src`, `srcset`, `xlink:href`, `poster`, `formacti
 `object`'s `data`, and `background`. It removes inline `on*` event handlers. It strips inline
 `style` wholesale. Safe schemes, relative URLs, anchors, and the `cairn:` token are preserved.
 
-The guard's boundary is the URL scheme check plus the `on*` and `style` strip. It does not remove a
-`build()`-emitted raw `<script>`, `<style>`, or `<iframe srcdoc>` element node. A `build()` that
-emits those is running site-developer code, and author markdown is cleaned by the pre-dispatch
-floor.
+The guard's boundary is the URL scheme check plus the `on*` and `style` strip. It does not remove
+a `build()`-emitted raw `<script>`, `<style>`, or `<iframe srcdoc>` element node. A `build()` that
+emits those is running site-developer code (your code), and the pre-dispatch floor has already
+cleaned the author markdown.
 
-A `build()` no longer needs to coerce an attribute value by hand for safety, since the guard
-catches an unsafe value wherever it lands. Routing untrusted input into a sink is still
+You no longer need to coerce an attribute value by hand inside a `build()` for safety, since the
+guard catches an unsafe value wherever it lands. Routing untrusted input into a sink is still
 discouraged. A `build()` that needs dynamic styling should use a class or an inert `data-*`
-attribute, since the guard strips inline `style`.
+attribute (the guard strips inline `style`).
 
 When `unsafeDisableSanitize` is set, the floor plugin and the sink guard are both dropped from the
 chain and no sanitize runs at all. The anchor-rel transform still runs unless `anchorRel` is
@@ -53,8 +53,8 @@ On top of that base the engine admits exactly what its render needs.
   data attributes, so the dispatch can read its stamps after the floor has run.
 - Three benign author tags real content uses: `nav`, `details`, and `summary`.
 - A free-form `className` on every element. The engine drops `defaultSchema`'s per-tag `className`
-  tuple on the `a` entry first, because that tuple would otherwise restrict a link's class to a
-  single footnote value and strip an author's link class.
+  tuple on the `a` entry first (that tuple would otherwise restrict a link's class to a single
+  footnote value and strip an author's link class).
 - `target` and `rel` on anchors.
 - The inert `cairn:` href scheme on top of the default protocol allowlist. The resolver rewrites a
   `cairn:` link to a live permalink before delivery. An unresolved one survives as its inert token
@@ -64,10 +64,10 @@ On top of that base the engine admits exactly what its render needs.
 
 The strip is the `defaultSchema` behavior, which the engine extends but never weakens. It removes
 `<script>`, inline event-handler attributes (`onclick` and the rest), and dangerous link protocols
-such as `javascript:` and `data:` on an `href`. An image `src` still admits a `data:` URI under
-`defaultSchema`, so an inline data image renders. Any tag or attribute outside the allowlist is
-dropped. While the `cairn:` admission widens the href protocol list, the dangerous-protocol strip
-is preserved alongside it.
+such as `javascript:` and `data:` on an `href`. One default is worth knowing about: an image `src`
+still admits a `data:` URI under `defaultSchema`, so an inline data image renders. Any tag or
+attribute outside the allowlist is dropped. While the `cairn:` admission widens the href protocol
+list, the dangerous-protocol strip is preserved alongside it.
 
 ## What the floor rewrites
 
@@ -75,14 +75,14 @@ is preserved alongside it.
 The default value is `noopener noreferrer`. The transform is scoped to `target="_blank"` anchors,
 not to every external link, so an ordinary same-tab link keeps the `rel` the author wrote.
 
-This value comes from the renderer's `anchorRel` option. Pass a string to set a different `rel`.
-Pass `false` to disable the injection entirely, for a site that owns its own anchor hardening.
+The value comes from the renderer's `anchorRel` option. Pass a string to set a different `rel`, or
+pass `false` to disable the injection entirely, for a site that owns its own anchor hardening.
 
 ## Extending the allowlist
 
-A `sanitizeSchema` option receives the engine's default schema and returns the schema to use.
-A site adds the benign tags or attributes its content needs by extending the argument it receives.
-Because the extension starts from the safe base, a site can only add to the allowlist, never remove
+The `sanitizeSchema` option receives the engine's default schema and returns the schema to use.
+Add the benign tags or attributes your content needs by extending the argument you receive.
+Because the extension starts from the safe base, you can only add to the allowlist, never remove
 the dangerous strip. This is the supported way to widen what the floor keeps.
 
 `unsafeDisableSanitize` is the developer-only escape that turns the floor off. It reintroduces the

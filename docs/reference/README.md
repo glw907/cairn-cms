@@ -1,7 +1,7 @@
 # Reference
 
 One page per package export subpath. The TypeScript types in `src/lib` are the source of truth, and
-each page is checked against them by the export-coverage gate.
+the export-coverage gate checks every page against them.
 
 - [Core (`@glw907/cairn-cms`)](./core.md): the engine, the adapter and schema contract, render, and the runtime.
 - [SvelteKit (`/sveltekit`)](./sveltekit.md): the server load and action route factories.

@@ -1,22 +1,23 @@
 # Core (`@glw907/cairn-cms`)
 
-The root export is the engine: the adapter and schema contract a site declares, the markdown render
-pipeline, the composed runtime, the content and manifest projections, and the auth and GitHub App
-primitives. A site imports it at `src/lib/cairn.config.ts` and in its admin and delivery code.
+The root export is the engine. It carries the adapter and schema contract your site declares, the
+markdown render pipeline, the composed runtime, the content and manifest projections, and the auth
+and GitHub App primitives. You import it at `src/lib/cairn.config.ts` and in your admin and
+delivery code.
 
 ```ts
 import { defineAdapter, defineFields, createRenderer } from '@glw907/cairn-cms';
 import type { CairnAdapter, ComponentDef } from '@glw907/cairn-cms';
 ```
 
-The `.` entry carries 118 names. The page groups them in three tiers. **Stable API** is the
+The `.` entry carries 118 names, so this page groups them in three tiers. **Stable API** is the
 deliberate public surface, each primary entry point with a worked snippet. **Low-level** lists the
 internal helpers a site rarely calls. **Types** is a table of the public type aliases and
 interfaces. The TypeScript types in `src/lib` are the source of truth, and the export-coverage gate
 checks every name here against them.
 
 The public delivery read surface lives at [`/delivery`](./delivery.md) and
-[`/delivery/data`](./delivery-data.md). It is no longer re-exported from the root.
+[`/delivery/data`](./delivery-data.md); the root no longer re-exports it.
 
 ---
 
@@ -472,8 +473,8 @@ const raw = frontmatterFromForm(descriptor.fields, formData);
 
 ## Low-level
 
-These are internal helpers leaked through `export *`. They are not part of the supported surface and
-a site should not depend on them. They are listed for completeness only.
+These are internal helpers leaked through `export *`. They are not part of the supported surface,
+so don't depend on them; the list is here for completeness.
 
 - `rehypeDispatch` the rehype transformer that dispatches each stamped element through its registry `build`.
 - `remarkDirectiveStamp` the remark transformer that stamps a recognized directive for dispatch.

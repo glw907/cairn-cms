@@ -1,13 +1,13 @@
 # Upgrading cairn
 
 cairn is a `0.x` library and it breaks often. While the version stays under `1.0`, a minor bump can
-still carry a breaking rename or a contract change that a consuming site has to follow before it will
-compile again. Every breaking change in `CHANGELOG.md` carries a "Consumers must:" line. That line
-names the action a site has to take. When you cross several versions in one jump, read each entry's
+still carry a breaking rename or a contract change your site has to follow before it compiles again.
+Every breaking change in `CHANGELOG.md` carries a "Consumers must:" line, and that line names the
+action your site has to take. When you cross several versions in one jump, read each entry's
 "Consumers must:" line and apply them oldest first.
 
-The list below collects the renames a consumer crosses over the `0.x` window so far. They run oldest
-first, one heading per rename, with the action each one needs spelled out.
+The list below collects the renames you cross over the `0.x` window so far. They run oldest first,
+one heading per rename, with the action each one needs spelled out.
 
 ## 0.7.0: the adapter `renderPreview` member became `render`
 

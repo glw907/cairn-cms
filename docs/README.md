@@ -1,31 +1,37 @@
 # cairn-cms documentation
 
-cairn-cms runs two production sites today, [ecnordic.ski](https://ecnordic.ski) and
-[907.life](https://907.life). It is `0.x` and breaks between minor versions. The author is
-still working through the core-feature roadmap, and the project stays closely held until that
-core lands.
+cairn-cms is an embedded, magic-link, GitHub-committing CMS for SvelteKit sites on
+Cloudflare. It runs two production sites today, [ecnordic.ski](https://ecnordic.ski) and
+[907.life](https://907.life). It is `0.x` and breaks between minor versions, and the project
+stays closely held while the author works through the core roadmap.
 
-These docs are organized in four arms.
+## First visit
 
-- **Tutorial** teaches a first build end to end. See [Build your first cairn site](./tutorial/build-your-first-cairn-site.md).
-- **How-to guides** answer task questions: setting up the GitHub App, configuring auth and D1,
-  defining an adapter, configuring rendering, wiring delivery, deploying, and upgrading. See the
-  [guides index](./guides/README.md).
-- **Reference** documents each package export, one page per subpath. See the
-  [reference index](./reference/README.md).
-- **Explanation** covers the architecture and the design rules. See the
-  [explanation index](./explanation/README.md).
+If you're new, this order works:
 
-## Current pages
+1. Read [Architecture](./explanation/architecture.md). It gives you the mental model: the
+   engine/site line, what a save actually does, and where your code stops and the engine
+   starts.
+2. Do the tutorial, [Build your first cairn site](./tutorial/build-your-first-cairn-site.md).
+   It goes from an empty directory to a deployed site with a working `/admin`.
+3. Keep [`examples/showcase`](../examples/showcase) open alongside. It is a complete consumer
+   site, and every shape the docs describe appears in it wired and running.
+4. After that, come back for a [guide](./guides/README.md) when a task comes up, and the
+   [reference](./reference/README.md) while you code.
 
-While the arms fill in, these pages are live:
+## The four arms
 
-- [Build your first cairn site](./tutorial/build-your-first-cairn-site.md)
-- [Upgrade cairn](./guides/upgrade-cairn.md)
-- [Admin route structure](./reference/admin-routes.md)
-- [The render sanitize floor](./explanation/render-safety.md)
+- **[Tutorial](./tutorial/build-your-first-cairn-site.md)** teaches a first build end to end.
+- **[How-to guides](./guides/README.md)** answer task questions: setting up the GitHub App,
+  configuring auth and D1, defining an adapter, configuring rendering, wiring delivery,
+  deploying, rotating the App key, and upgrading.
+- **[Reference](./reference/README.md)** documents each package export, one page per subpath,
+  plus the admin route contract and the log-event table.
+- **[Explanation](./explanation/README.md)** covers the architecture and the design rules,
+  including the security model and render safety.
 
 ## Project files
 
 [README](../README.md), [ROADMAP](../ROADMAP.md), [SECURITY](../SECURITY.md),
-[CHANGELOG](../CHANGELOG.md).
+[CHANGELOG](../CHANGELOG.md). Maintainer-facing material (the design system, the smoke test,
+DX feedback, and superseded history) lives under [internal/](./internal/README.md).

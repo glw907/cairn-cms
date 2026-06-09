@@ -1,10 +1,10 @@
 # Components (`@glw907/cairn-cms/components`)
 
-This subpath holds the admin Svelte UI: the layout shell, the sign-in and confirm pages, the
-content list and editor, the editors and nav screens, and the dialogs and pickers those compose. A
-site mounts the page-level components from its admin route shims and feeds them the route data from
-the matching `/sveltekit` load. The component-level pieces are composed inside `EditPage` and the
-dialogs, so a site rarely mounts them by hand. The canonical route tree these components mount in is
+This subpath holds the admin Svelte UI. It spans the layout shell, the sign-in and confirm pages,
+the content list and editor, the editors and nav screens, and the dialogs and pickers those
+compose. You mount the page-level components from your admin route shims and feed them the route
+data from the matching `/sveltekit` load. The component-level pieces compose inside `EditPage` and
+the dialogs, so you rarely mount them by hand. For the canonical route tree they mount in, see
 [the admin route structure guide](./admin-routes.md).
 
 ```ts
@@ -204,9 +204,9 @@ action.
 
 ## Composed components
 
-These mount inside `EditPage` and its dialogs, so a site does not wire them directly. They are
-documented here for completeness and for a site that builds its own admin surface against the
-`CairnExtension` seam. The snippets are minimal mounts with the real prop names.
+These mount inside `EditPage` and its dialogs, so you don't wire them directly. They appear here
+for completeness, and for a site that builds its own admin surface against the `CairnExtension`
+seam. The snippets are minimal mounts with the real prop names.
 
 ### `MarkdownEditor`
 

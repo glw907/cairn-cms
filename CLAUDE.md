@@ -27,10 +27,11 @@ Later engine work continues on feature worktrees off `main`, one worktree per pa
 releasable. The current published version, the unpublished window on `main`, and the next action all
 live in `docs/STATUS.md`; read it for where the work is now.
 
-Execute a plan with `superpowers:subagent-driven-development` (or `superpowers:executing-plans`),
-which drives it task-by-task against the test suite. The **`cairn-pass`** skill marks pass start and
-the pass-end ritual for this initiative. Honor this repo's own skills and conventions while working
-in it. Do not human-scale time-estimate; describe relative complexity.
+Execute a plan task-by-task in the main loop, test-first against the suite, clearing the full gate
+after each task; dispatch `cairn-implementer` only for tasks that can run in parallel or that want
+worktree isolation. The **`cairn-pass`** skill marks pass start and the pass-end ritual for this
+initiative. Honor this repo's own skills and conventions while working in it. Do not human-scale
+time-estimate; describe relative complexity.
 
 The rolling status lives in `docs/STATUS.md` (read and written by `cairn-pass`, canonical on
 `main`). Per-plan post-mortems live with the plans in `docs/superpowers/plans/`. This file stays
@@ -40,8 +41,9 @@ durable orientation only.
 
 - **Implementer subagent** (user-scoped): `cairn-implementer` drives one plan task test-first and
   clears the full gate before reporting done (targeted test + `npm run check` 0/0 + `npm test` exit
-  0), with the cairn conventions baked in. Dispatch one per task in subagent-driven-development. It
-  defaults to Sonnet; pass `model: opus` for judgment-heavy tasks.
+  0), with the cairn conventions baked in. The main loop executes sequential tasks itself; dispatch
+  this agent for parallel independent tasks or a worktree-isolated change. It defaults to Sonnet;
+  pass `model: opus` for judgment-heavy tasks.
 - **Review subagents** (user-scoped, read-only): `svelte-reviewer`, `cloudflare-workers-reviewer`,
   `web-auth-security-reviewer`, `daisyui-a11y-reviewer`. Fan them out in parallel at a review gate to
   complement `/code-review`.

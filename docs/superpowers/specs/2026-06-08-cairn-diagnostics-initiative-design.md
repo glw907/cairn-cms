@@ -24,6 +24,14 @@ The requirement is a 1:1:1 correspondence. One condition, one checklist entry, o
 runtime handler. The way to guarantee that is a single registry as the source of truth, with the three
 surfaces rendering from it rather than restating it.
 
+The 1:1:1 binds the registry-backed conditions. The checklist is a superset, because it also carries
+the human prerequisite steps cairn cannot probe or trap at runtime, for example registering a domain
+with Cloudflare or moving an existing one in. Those steps link out to Cloudflare and are marked as
+setup, not as checked conditions. The readiness checklist starts a developer from a default 2026
+Cloudflare account and names only the deltas a cairn site adds, pointing at Cloudflare's own docs for
+the generic operations rather than reproducing them. The detail lives in the companion preflight spec,
+Arm C.
+
 ## The condition model
 
 A condition is a plain data record with a stable id and the human fields every surface needs.
@@ -96,8 +104,10 @@ nothing in this sequence is time-critical, which is what lets the foundation com
   and the `CairnError` class.
 - The runtime renderer, a `renderConditionPage(condition, ctx)` that produces the branded static page
   from the shared shell the `0.34.0` and `0.35.0` work already extracted.
-- Registry entries for the conditions the two existing pages represent, for example `edge.https-not-forced`
-  for the HTTPS-required page and a CSRF condition for the rejected-token page.
+- Registry entries for the conditions the existing pages and guard reasons represent: `edge.https-not-forced`
+  for the HTTPS-required page, and two CSRF-family entries, one for the admin `__Host-cairn_csrf`
+  token rejection and one for the strict `Origin` rejection. The guard distinguishes these two in its
+  `reason` already, so they map to two conditions, not one.
 
 ### What it migrates
 
@@ -108,8 +118,10 @@ The two branded pages cairn already serves move onto the model with no behavior 
 - The branded CSRF 403 page in the auth guard becomes a render of its condition entry.
 
 The guard's `guard.rejected` log already carries a `reason` of `csrf`, `origin`, or `https`. Pass 1
-maps those reasons to condition ids, so the log event and the rendered page draw from one entry. The
-pages render the same output as before. The change is the source of that output, not its appearance.
+maps each reason to its own condition id, so the `csrf` and `origin` reasons become two separate
+CSRF-family conditions and `https` maps to the HTTPS condition. The log event and the rendered page
+draw from one entry per reason. The pages render the same output as before. The change is the source of
+that output, not its appearance.
 
 ### Scope discipline
 
@@ -139,7 +151,5 @@ its condition fields carry no secret.
 
 ## Open questions
 
-- Whether the CSRF condition is one entry or splits the `origin` and `csrf` guard reasons into two. The
-  guard distinguishes them in its log reason, so two entries may map more cleanly than one.
 - Whether `renderConditionPage` stays SvelteKit-shaped (a `Response`) or returns a string the caller
   wraps, which would let the doctor reuse it for a terminal rendering later.

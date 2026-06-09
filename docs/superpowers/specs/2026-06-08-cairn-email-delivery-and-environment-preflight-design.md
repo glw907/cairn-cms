@@ -193,10 +193,21 @@ a remediation naming the missing variable, so a partial environment still yields
   per-zone sending subdomain is the real gate. An unrestricted binding reaches any recipient. Routing's
   `message.forward()` is the verified-destination call. The `cloudflare-email-sending-vs-routing` memory
   is updated to match.
-- **Write the Cloudflare readiness checklist.** A new `docs/guides/cloudflare-readiness.md` lists every
-  pitfall with what it is, why it bites, and the remediation. It mirrors the `cairn doctor` check set
-  one-to-one and is generated from, or gated against, the check registry by a new `check:readiness`
-  script, the same anti-drift pattern as `check:reference`. The tool and the checklist stay in lockstep.
+- **Write the Cloudflare readiness checklist.** A new `docs/guides/cloudflare-readiness.md` walks a
+  developer from a default 2026 Cloudflare account to a working cairn site. It assumes the developer
+  starts by either registering a domain with Cloudflare or moving an existing domain to Cloudflare, and
+  it lists, in order, every delta they add or change on top of that baseline. The deltas: a Workers Paid
+  plan, the deployed Worker with its route or custom domain, Always Use HTTPS and HSTS, the onboarded
+  Email Sending domain, the D1 auth database and its schema, the `send_email`, `AUTH_DB`, and
+  observability bindings, the GitHub App install and its secrets, the `csrf: { checkOrigin: false }`
+  setting, and at least one owner in the allowlist. It links out to Cloudflare's own docs for the
+  generic operations (registrar, add a site, enable Email Sending, create a D1 database, upgrade the
+  plan) and spells out only the cairn-specific configuration, so it summarizes and points rather than
+  reproducing Cloudflare's instructions. The registry-backed conditions mirror the `cairn doctor` checks
+  one-to-one, gated by a `check:readiness` script the same way `check:reference` gates the reference
+  pages. The checklist is the superset. It also carries the human prerequisite steps the doctor cannot
+  probe, registering or moving the domain and upgrading the plan, each marked as a setup step rather than
+  a checked condition.
 - **Fold the onboarding step into the deploy guide.** The deploy guide gains an "Onboard your sending
   domain" section with the `wrangler email sending enable <domain>` command, the SPF, DKIM, and
   return-path records it adds, the Workers Paid note, and the exact error strings (`destination address

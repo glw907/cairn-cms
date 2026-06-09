@@ -3,7 +3,9 @@
 // a migration script) imports the builder from it. The kit route loaders stay in /delivery.
 import { describe, it, expect } from 'vitest';
 
-describe('delivery data split', () => {
+// The first barrel import pays the suite's parallel transform queue under a full run and can
+// exceed the 5s default; the same import finishes in about a second in isolation.
+describe('delivery data split', { timeout: 20_000 }, () => {
   it('exposes the pure projections from the data barrel', async () => {
     const data = await import('../../lib/delivery/data.js');
     expect(typeof data.buildSiteManifest).toBe('function');

@@ -44,9 +44,10 @@ sending subdomain is onboarded; cairn stays Cloudflare-native with `cloudflareSe
 binding `error.code`, and the `LoginPage` `send_error` and `throttled` states (the non-leak posture is
 deliberately relaxed for editor feedback). Pass 3 is `cairn doctor` and the generated, gated Cloudflare
 readiness checklist that starts a developer from a default 2026 Cloudflare setup and links out to
-Cloudflare for the generic steps. The working tree carries a leftover `LoginPage.svelte` edit and the
-throwaway `examples/showcase/src/routes/_login-preview/` route from the 0.37.0 session; both are Pass 2
-input, and Pass 1 does not touch them.
+Cloudflare for the generic steps. The 0.37.0 login-confirmation polish was committed standalone as
+`d2cf014` (the brand snippet and the inset help note), so Pass 2 builds its `send_error`/`throttled`
+states on top of it. The throwaway `examples/showcase/src/routes/_login-preview/` route is still
+untracked for eyeballing those states; Pass 2 deletes it before shipping. Pass 1 touches none of this.
 
 ## Login-confirmation UX shipped as `0.37.0` (2026-06-08)
 

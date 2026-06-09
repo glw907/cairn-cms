@@ -109,8 +109,8 @@ having trouble sending sign-in links right now. Please contact the site owner." 
 shows a neutral hint reading "You requested a link recently. Check your inbox, or wait a minute and try
 again." Both strings are provisional and confirmed at implementation.
 
-The uncommitted confirmation polish already in the working tree (the brand-in-both-states snippet, the
-inset note) folds into this rewrite, since these states share the same markup. The throwaway
+The confirmation polish committed standalone as `d2cf014` (the brand-in-both-states snippet, the inset
+note) is the base this rewrite builds on, since these states share the same markup. The throwaway
 `examples/showcase/src/routes/_login-preview/` route helps eyeball the states during implementation and
 is deleted before the pass ships.
 

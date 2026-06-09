@@ -1,6 +1,6 @@
 # Roadmap
 
-cairn-cms runs two production sites today, [ecnordic.ski](https://ecnordic.ski) and
+cairn-cms runs two production sites today, [ecxc.ski](https://ecxc.ski) (formerly ecnordic.ski) and
 [907.life](https://907.life). It is `0.x` and breaks between minor versions. The author is
 still working through the core-feature roadmap, and the project stays closely held until that
 core lands.
@@ -10,20 +10,29 @@ needs. Items move up from lower tiers as the core fills in.
 
 ## Now
 
-- **Documentation initiative (complete).** A self-contained docs set for external adopters, built
-  across six phases (legibility, reference, explanation, guides, tutorial, process). All six landed,
-  and documentation is now a standing dimension of every pass (the rule lives in the `cairn-pass`
-  ritual and `CLAUDE.md`). It published nothing.
-- **Engine hardening before the next release.** Three improvements the documentation effort
-  surfaced, gated to land before the next `0.x` publish. Narrow the public export surface so the
-  `.` root and `/sveltekit` stop re-exporting another subpath's symbols and the `export *` helper
-  leak ends; this precedes the scaffolder so it templates the clean surface. Harden render against
-  a component `build()` that routes a directive attribute value into an `href`, `src`, or `style`
-  sink. Consolidate the URL-identity model, which today spreads one URL across the YAML policy, the
-  catch-all route, and the frontmatter `datePrefix`.
+- **Diagnostics initiative (Pass 1 of 3 landed).** One condition registry is the single source of
+  truth for the readiness checklist, the `cairn doctor` probe, and the runtime error. Pass 1 (the
+  foundation) published in `0.37.1`. Pass 2 (the email-delivery runtime arm) has a written plan and
+  ships `0.38.0`, giving the login flow an awaited send with `send_error` and `throttled` feedback
+  and registering the two email conditions. Pass 3 closes the initiative with the doctor and the
+  generated, gated readiness checklist.
+- **ecxc.ski bump to `0.38.0` after Pass 2 publishes.** Both production sites are current
+  (907.life at `^0.36.0`, ecxc.ski at `^0.37.1` after its rename from ecnordic-ski). A small
+  bump-and-deploy on ecxc.ski after the publish puts the send-failure feedback live where the
+  originating finding was filed, the same proof role the 907.life retrofit played for CSRF
+  ownership.
 
 ## Next
 
+- **Gates and tooling pass.** One pass replaces the former DX-sweep Passes B and C. It aligns the
+  showcase to the documented `$lib/cairn.server.ts` composer and wires the golden-path E2E into CI
+  so the gate pins the documented pattern. It also adds an automated DOM check for the admin
+  render, adds the plain-Node dist-spawn test that rot-proofs the `/delivery/data` node-safety
+  guarantee, fixes the manifest bin's `cwd`-versus-Vite-`config.root` handling, narrows the editor
+  link picker to real content targets, and widens `mintToken` to accept a sync return. The
+  non-gate Pass C remnants (a published type for each action's `fail` payload, the
+  `App.Locals.editor` ambient type) move to the scaffolder and the extension seam, where they are
+  naturally exercised.
 - **Image and gallery management.** Let a non-technical author add and place images from
   `/admin`. The open fork is storage: versioned in git next to content, or in Cloudflare R2.
   Needs a brainstorm before a plan. Sequenced ahead of the scaffolder so the capstone template
@@ -49,10 +58,6 @@ needs. Items move up from lower tiers as the core fills in.
 - **Content lifecycle ergonomics.** Follow-ups carried from the rename and delete passes,
   including a live region that re-announces a repeated error and a slug preview that matches the
   create form.
-- **Wire the showcase E2E into a gate.** The Playwright golden-path E2E is in no automated gate, so
-  it rotted silently across two engine passes (the editor swap and the atomic-commit save) until the
-  Phase 5 reproduction caught it. Run it in CI, or at least in the cairn-pass ritual when a pass
-  touches the editor or the commit path, so a showcase-breaking engine change surfaces at once.
 - **Migrate cairn's CSRF-disable mechanism before SvelteKit removes `checkOrigin`.** cairn's admin
   CSRF ownership depends on `csrf: { checkOrigin: false }`, deprecated in SvelteKit 2.61 for
   `trustedOrigins`. `trustedOrigins` cannot replace it (a missing-`Origin` POST is always forbidden,

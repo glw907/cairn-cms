@@ -11,6 +11,33 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
+## Backlog resequenced (2026-06-09): five engine passes instead of six
+
+The queued work was re-cut on 2026-06-09, recorded here and in `ROADMAP.md`. The engine order is now
+diagnostics Pass 2 (unchanged, the immediate next action below), then diagnostics Pass 3, then one
+consolidated gates-and-tooling pass, then the gallery initiative, then the P4 scaffolder. Three
+changes from the prior sequence:
+
+- **The site track is already clear, so Pass 2's live proof rides a small ecxc bump.** The second
+  retrofit happened the same day as this re-cut: ecnordic-ski rebranded and renamed to ecxc-ski
+  (repo `glw907/ecxc-ski`, domain `ecxc.ski`, auth D1 `cairn-ecxc-auth`
+  `a47c56d2-25ef-4131-a505-8c9fd5a92f1f`) and bumped to `^0.37.1` with observability on; a live
+  login POST logged `auth.link.requested` and `auth.token.minted` with no send failure. After Pass
+  2 publishes, a bump-and-deploy to `^0.38.0` on ecxc.ski puts the `send_error`/`throttled` states
+  live where the originating finding was filed, the same proof role the 907.life retrofit played
+  for CSRF ownership.
+- **DX-sweep Passes B and C collapse into one gates-and-tooling pass.** Pass B's scope (the
+  manifest-bin `cwd` versus Vite `config.root` fix, the plain-Node dist-spawn test, the E2E gate
+  wiring) and Pass C's gate-shaped remnants (the admin DOM render check, the showcase composer
+  alignment, the link-picker narrowing, the `mintToken` widening) share one verification surface
+  (scripts and gates run in CI), and each item is small and mechanical. One spec, plan, review
+  gate, and publish replaces two of each. Pass C's non-gate remnants (the action `fail` payload
+  types, the `App.Locals.editor` ambient type) move to P4 and the extension seam, where they are
+  naturally exercised.
+- **Pass 3 stays ahead of the gates pass.** It closes the diagnostics initiative while the
+  registry and spec are warm, and its `check:readiness` gate is part of its own design. The gates
+  pass still lands before the gallery and P4, which is where the protection matters.
+
 ## Immediate next action (2026-06-09): execute the diagnostics Pass 2 plan (the email-delivery runtime arm)
 
 The **cairn diagnostics initiative** is a 1:1:1 model where one condition registry is the single source
@@ -146,10 +173,14 @@ and the scaffolder track) is unchanged by this pass. The two prod-site retrofits
 
 The two site retrofits below stay the separate `site-pass` track and are unaffected by this engine pass.
 
-## Immediate next action (2026-06-09): retrofit ecnordic.ski (907.life DONE, to `0.36.0`)
+## Site track (2026-06-09): both retrofits DONE (907.life `^0.36.0`; ecnordic-ski renamed ecxc-ski, `^0.37.1`)
 
 **907.life was retrofitted to `^0.36.0` and deployed 2026-06-09, and its live site verified cairn's CSRF
-ownership end to end. NEXT ACTION: the ecnordic.ski retrofit (the same `site-pass`).** 907 crossed the
+ownership end to end. The second retrofit is also DONE: ecnordic-ski rebranded and renamed to ecxc-ski
+the same day (repo `glw907/ecxc-ski`, domain `ecxc.ski`), bumped to `^0.37.1` with observability on,
+and a live login POST logged `auth.link.requested` and `auth.token.minted` with no send failure
+(details in `ecxc-ski/docs/STATUS.md`). The remaining site action is a small ecxc bump to `^0.38.0`
+after Pass 2 publishes; see the resequencing entry at the top.** 907 crossed the
 `0.24.0` → `0.36.0` window in one pass (`composeRuntime` object form, a `(site)` route group for
 chrome-free admin, `csrf: { checkOrigin: false }`, and `[observability]`); the commit and post-mortem are
 in `907-life/docs/STATUS.md` and `907-life/docs/architecture.md`. The deployed `https://907.life/admin/login`
@@ -159,9 +190,10 @@ now proven live (only the magic-link email click stays manual). The retrofit fil
 `docs/cairn-dx-feedback-2026-06-09-907-0.36-retrofit.md`: the `csrf.checkOrigin` deprecation in SvelteKit
 2.61 (cairn documents a spelling on a removal path), and the `custom_domain` local-smoke gap (`wrangler
 dev` presents `event.url` as the production https origin, so the documented local http admin smoke hits the
-`0.34.0` HTTPS-required page). Retrofit ecnordic.ski the same way, pinning `^0.36.0`.
+`0.34.0` HTTPS-required page). Both sites have now crossed; the ecxc-ski upgrade landed 2026-06-09
+at `^0.37.1`.
 
-**Window context (still applies to ecnordic).** The login-CSRF-ownership plan PUBLISHED 2026-06-08 as
+**Window context (historical; both sites have crossed).** The login-CSRF-ownership plan PUBLISHED 2026-06-08 as
 `0.35.0`, and the engine-logging pass PUBLISHED 2026-06-09 as `0.36.0` (now `latest`). A retrofit pins
 `^0.36.0` and adds `csrf: { checkOrigin: false }` to `kit` in `svelte.config.js`, along with the other
 breaking-window actions noted below.

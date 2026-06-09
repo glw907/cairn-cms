@@ -123,13 +123,16 @@ in `docs/internal/history/plan.md`).
 - **GITHUB_APP_ID:** `3847496`, in the encrypted registry (`~/.dotfiles/secrets/values.age`) and
   `~/.local/secrets` as `GITHUB_APP_ID`.
 - **GITHUB_APP_INSTALLATION_ID:** `135372268`, a single installation on glw907 covering both
-  ecnordic-ski and 907-life (verified via API). In `values.age` and `~/.local/secrets`.
+  ecxc-ski (renamed from ecnordic-ski 2026-06-09) and 907-life (verified via API). In `values.age`
+  and `~/.local/secrets`.
 - **Private key:** stored as `GITHUB_APP_PRIVATE_KEY_B64` (base64 of the PEM, single-line) in
   `values.age` and `~/.local/secrets`. The loose `.pem` was shredded. Documented in
   `~/.dotfiles/secrets/registry.md`. A consumer site pushes it to its Worker via `sync.sh`
   (`atob()` in-Worker before `@octokit/auth-app`).
-- **D1 AUTH_DB (self-owned magic-link auth store):** ecnordic = `cairn-ecnordic-auth`
-  `83178db3-0aae-4c1d-b6ad-1626193ebefd`. 907 = `cairn-907-auth`
+- **D1 AUTH_DB (self-owned magic-link auth store):** ecxc = `cairn-ecxc-auth`
+  `a47c56d2-25ef-4131-a505-8c9fd5a92f1f` (replaced `cairn-ecnordic-auth`
+  `83178db3-0aae-4c1d-b6ad-1626193ebefd` at the 2026-06-09 rename; the old DB still exists pending
+  deletion). 907 = `cairn-907-auth`
   `93aa929d-0228-4f8b-8d1e-5e7e0d755617`. Bound as `AUTH_DB` per site. The rebuilt auth uses opaque
   D1-backed session rows, so a signing secret is needed only if the auth design calls for one. Set
   any such per-site secret (worker-only) at cutover.

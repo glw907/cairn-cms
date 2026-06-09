@@ -2,7 +2,25 @@
 
 All notable changes to this project are recorded here, most recent first.
 
-## 0.37.0
+## 0.37.1
+
+Internal groundwork and a docs overhaul; nothing in the public surface or runtime behavior
+changes, and no consumer action is needed.
+
+The diagnostics foundation lands as an internal module: a condition registry
+(`CairnCondition`), a `CairnError` throw primitive, and a shared condition-response renderer
+that the admin guard's three rejection responses (the two CSRF reasons and the HTTPS check) now
+route through. Those responses are unchanged and regression-pinned, and the module exports from
+no package subpath. This is Pass 1 of the diagnostics initiative, the base the upcoming
+`cairn doctor` and readiness checks build on.
+
+Docs are reorganized and rewritten. A new README front door tells the save-flow story, says
+what cairn is not, names the chosen stack, and then opens three doors: the tutorial, the
+showcase, and the docs map. Stray top-level pages joined their Diátaxis arms (the admin route
+contract is `docs/reference/admin-routes.md`, the sanitize floor is
+`docs/explanation/render-safety.md`, key rotation is
+`docs/guides/rotate-the-github-app-key.md`), and every adopter-facing page is rewritten in a
+second-person, example-first voice with its technical content intact.
 
 The magic-link sign-in confirmation is now a branded panel in place of the flat success bar. After an
 editor requests a link, the page shows a mail icon in a soft success tile, a "Check your email"

@@ -8,6 +8,7 @@ the allowlist, so the page never leaks membership (spec §7.1).
   import './cairn-admin.css';
   import { onMount } from 'svelte';
   import MailCheckIcon from '@lucide/svelte/icons/mail-check';
+  import InfoIcon from '@lucide/svelte/icons/info';
   import CairnLogo from './CairnLogo.svelte';
   import CsrfField from './CsrfField.svelte';
   import { cairnFaviconHref } from './cairn-favicon.js';
@@ -37,46 +38,54 @@ the allowlist, so the page never leaks membership (spec §7.1).
   <meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 
+<!-- The brand mark renders in both states; the parent container sets its alignment (left for the
+     form, centered for the confirmation), so one snippet covers both. -->
+{#snippet brand()}
+  <div class="flex items-center gap-2">
+    <CairnLogo class="h-8 w-8 text-primary" />
+    <span class="text-xl font-bold tracking-[-0.01em] font-[family-name:var(--font-display)]">Cairn</span>
+  </div>
+{/snippet}
+
 <!-- data-theme on a bare wrapper: the scoped sheet styles descendants, so the layout classes go one
      level in (a class on the theme element itself would not match). -->
 <div data-theme="cairn-admin" bind:this={rootEl}>
   <div class="flex min-h-screen flex-col items-center justify-center gap-6 bg-base-200 p-4 text-base-content">
   <div class="w-full max-w-sm rounded-box border border-[var(--cairn-card-border)] bg-base-100 p-7 shadow-[var(--cairn-shadow)]">
-    <div class="mb-6 flex items-center gap-2">
-      <CairnLogo class="h-8 w-8 text-primary" />
-      <span class="text-xl font-bold tracking-[-0.01em] font-[family-name:var(--font-display)]">Cairn</span>
-    </div>
-
-    <h1 class="text-lg font-semibold">Sign in to {data.siteName}</h1>
-
     {#if form?.sent && !dismissed}
-      <div role="status" class="mt-5 flex flex-col items-center text-center">
+      <!-- The confirmation is a centered moment: brand, then the mail mark, heading, and one line of
+           instruction. The fallback help sits in a gentle inset note below. -->
+      <div role="status" class="flex flex-col items-center text-center">
+        <div class="mb-7">{@render brand()}</div>
         <div
-          class="mb-4 flex h-11 w-11 items-center justify-center rounded-xl text-[var(--color-success)]"
-          style="background-color: color-mix(in oklch, var(--color-success) 16%, transparent);"
+          class="flex h-12 w-12 items-center justify-center rounded-xl text-[var(--color-success)]"
+          style="background-color: color-mix(in oklch, var(--color-success) 15%, transparent); box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--color-success) 22%, transparent);"
         >
           <MailCheckIcon class="h-6 w-6" />
         </div>
-        <h2 class="text-lg font-semibold">Check your email</h2>
-        <p class="mt-1 text-sm text-[var(--color-muted)]">
+        <h1 class="mt-5 text-xl font-semibold tracking-tight">Check your email</h1>
+        <p class="mt-2 text-sm leading-relaxed text-[var(--color-muted)]">
           We sent a sign-in link to your inbox. Open it within 10 minutes to finish signing in.
         </p>
-        <div class="mt-5 w-full border-t border-[var(--cairn-card-border)] pt-4 text-left">
-          <p class="text-sm text-[var(--color-muted)]">
-            No link after a minute or two? Check your spam folder first. If it still hasn't arrived,
-            double-check the address. It has to match the one your site owner added.
+        <div class="mt-6 flex w-full items-start gap-2.5 rounded-[var(--radius-field)] bg-base-content/[0.04] p-3.5 text-left">
+          <InfoIcon class="mt-px h-4 w-4 shrink-0 text-[var(--color-muted)]" />
+          <p class="text-[0.8125rem] leading-relaxed text-[var(--color-subtle)]">
+            No link after a minute or two? Check your spam folder first. If it still hasn't arrived, the
+            address may not match the one your site owner added.
           </p>
-          <button
-            type="button"
-            class="btn btn-ghost btn-sm mt-3 -ml-2 text-primary"
-            onclick={() => (dismissed = true)}
-          >
-            Use a different email
-          </button>
         </div>
+        <button
+          type="button"
+          class="mt-5 cursor-pointer appearance-none border-none bg-transparent p-0 text-sm font-medium text-primary hover:underline"
+          onclick={() => (dismissed = true)}
+        >
+          Use a different email
+        </button>
       </div>
     {:else}
-      <p class="mt-1 mb-5 text-sm text-[var(--color-muted)]">Enter your email. We'll send a one-time sign-in link.</p>
+      <div class="mb-6 flex justify-center">{@render brand()}</div>
+      <h1 class="text-center text-lg font-semibold">Sign in to {data.siteName}</h1>
+      <p class="mt-1 mb-5 text-center text-sm text-[var(--color-muted)]">Enter your email. We'll send a one-time sign-in link.</p>
       {#if data.error}
         <div role="alert" class="alert alert-error mb-3 text-sm">That link expired. Request a new one below.</div>
       {/if}

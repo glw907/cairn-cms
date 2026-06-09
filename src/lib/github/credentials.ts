@@ -1,4 +1,3 @@
-// src/lib/github/credentials.ts
 // cairn-cms: the bridge from the adapter's backend config and the Worker's secret to the
 // App signer's input. One tested place owns the join and the missing-secret failure, so the
 // save action (Plan 05) stays thin and a misconfigured Worker fails by name, not with a deep

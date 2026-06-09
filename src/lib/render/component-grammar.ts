@@ -54,7 +54,7 @@ export function serializeComponent(def: ComponentDef, values: ComponentValues): 
         ? (Array.isArray(raw) ? raw : []).filter((i) => i !== '').map((i) => `- ${i}`).join('\n')
         : ((raw as string | undefined) ?? '');
     if (!content) continue;
-    if (lines.length > 1) lines.push(''); // blank line before this block
+    if (lines.length > 1) lines.push('');
     lines.push(`${COLON.repeat(3)}${slot.name}`, content, COLON.repeat(3));
   }
 

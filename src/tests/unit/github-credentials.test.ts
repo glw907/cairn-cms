@@ -1,4 +1,3 @@
-// src/tests/unit/github-credentials.test.ts
 import { describe, it, expect } from 'vitest';
 import { appCredentials } from '../../lib/github/credentials.js';
 import type { BackendConfig } from '../../lib/content/types.js';

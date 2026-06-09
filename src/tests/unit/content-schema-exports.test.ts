@@ -1,4 +1,3 @@
-// src/tests/unit/content-schema-exports.test.ts
 import { describe, it, expect, expectTypeOf } from 'vitest';
 import { defineFields, type Infer, type ConceptSchema } from '../../lib/index.js';
 

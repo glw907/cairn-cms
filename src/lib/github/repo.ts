@@ -1,4 +1,3 @@
-// src/lib/github/repo.ts
 // cairn-cms: repo reads and the commit, over the GitHub REST API. Listing a concept
 // directory uses the Git Trees API (the contents API silently truncates at 1,000 entries,
 // spec §7.3); a single-file read uses the contents API. An optional token lifts reads to

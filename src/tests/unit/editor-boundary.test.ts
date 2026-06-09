@@ -1,4 +1,3 @@
-// src/tests/unit/editor-boundary.test.ts
 import { describe, it, expect } from 'vitest';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';

@@ -1,4 +1,3 @@
-// src/tests/unit/github-read.test.ts
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   treeUrl,

@@ -1,4 +1,3 @@
-// src/lib/github/signing.ts
 // cairn-cms: the GitHub App auth path. Mint an RS256 App JWT signed in-Worker with Web
 // Crypto, exchange it for a short-lived installation access token, and self-test the
 // brittle key conversion. GitHub issues PKCS#1 private keys and Web Crypto's importKey

@@ -1,4 +1,3 @@
-// src/tests/unit/github-signing.test.ts
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { appJwt, installationToken, signingSelfTest } from '../../lib/github/signing.js';
 

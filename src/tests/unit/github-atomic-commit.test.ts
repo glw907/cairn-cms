@@ -1,4 +1,3 @@
-// src/tests/unit/github-atomic-commit.test.ts
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { commitFiles } from '../../lib/github/repo.js';
 import { CommitConflictError, type RepoRef } from '../../lib/github/types.js';

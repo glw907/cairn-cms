@@ -1,4 +1,3 @@
-// src/tests/unit/github-types.test.ts
 import { describe, it, expect } from 'vitest';
 import { CommitConflictError, type RepoRef } from '../../lib/github/types.js';
 import type { BackendConfig } from '../../lib/content/types.js';

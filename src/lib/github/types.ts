@@ -1,4 +1,3 @@
-// src/lib/github/types.ts
 // cairn-cms: the GitHub backend's plain data types and its one typed error. The backend
 // reads repo coordinates from the adapter's `BackendConfig` (spec §8); `RepoRef` is the
 // `{ owner, repo, branch }` subset, so `backend` is assignable wherever a `RepoRef` is

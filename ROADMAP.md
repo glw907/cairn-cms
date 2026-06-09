@@ -53,6 +53,13 @@ needs. Items move up from lower tiers as the core fills in.
   it rotted silently across two engine passes (the editor swap and the atomic-commit save) until the
   Phase 5 reproduction caught it. Run it in CI, or at least in the cairn-pass ritual when a pass
   touches the editor or the commit path, so a showcase-breaking engine change surfaces at once.
+- **Migrate cairn's CSRF-disable mechanism before SvelteKit removes `checkOrigin`.** cairn's admin
+  CSRF ownership depends on `csrf: { checkOrigin: false }`, deprecated in SvelteKit 2.61 for
+  `trustedOrigins`. `trustedOrigins` cannot replace it (a missing-`Origin` POST is always forbidden,
+  and the check runs before the `handle` hook), so when SvelteKit removes the disable, cairn needs a
+  new mechanism. The planned fallback is an edge Transform Rule that injects `Origin` for `/admin`
+  POSTs; the higher-leverage path is a drafted SvelteKit issue. Track the removal and act before a
+  major lands. Reasoning in `docs/cairn-dx-feedback-2026-06-09-907-0.36-retrofit.md`.
 
 ## Considering
 

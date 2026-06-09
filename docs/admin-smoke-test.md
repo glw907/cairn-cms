@@ -4,6 +4,19 @@ How to exercise a site's embedded `/admin` against a real Worker each pass, with
 email round-trip. Run this on both consumer sites (ecnordic-ski and 907-life) after the
 package gates pass; it is the live half of the cairn-pass verification.
 
+> **Custom-domain sites: smoke against the deployed https Worker, not local http.** Both
+> production sites declare a `custom_domain` route in `wrangler.toml` (`pattern = "907.life"`,
+> `custom_domain = true`). Under `wrangler dev`, the Worker then resolves `event.url` to the
+> production https origin regardless of the local request host, so a local `http://localhost`
+> request to `/admin` matches the guard's deployed-http branch and serves the `0.34.0`
+> "admin needs a secure connection" page (HTTP 400) instead of the login. The "wrangler dev over
+> http is exempt" path below does not apply to these sites: the host the guard sees is the custom
+> domain, never `localhost`. Run the checklist against the deployed `https://<site>` Worker
+> instead, and insert the session row into the **remote** D1 with `wrangler d1 execute <db>
+> --remote` (same SQL as the `--local` form below). Over https the guard's http branch never
+> fires, so `/admin/login` returns `200` and the authed checks work. The `--local` flow below
+> still fits a site with no `custom_domain` route.
+
 ## The session model (read this once)
 
 Auth is self-owned on D1. There is no better-auth, no signed cookie, and no `AUTH_SECRET`.

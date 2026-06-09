@@ -62,6 +62,14 @@ Goal: deploy the site Worker to Cloudflare so editor saves commit to GitHub and 
    };
    ```
 
+   SvelteKit 2.61 deprecates `csrf.checkOrigin` in favour of `csrf.trustedOrigins` and prints a build
+   warning, but `checkOrigin: false` is still the correct and required setting. `trustedOrigins` cannot
+   replace it: SvelteKit's check forbids a form POST that carries no `Origin` header regardless of the
+   trusted list, which is the exact JS-free magic-link case cairn fixes, and the check runs before the
+   `handle` hook where cairn's guard lives, so the global switch is the only way to hand cairn the
+   authority. cairn tracks the eventual removal; the reasoning and the planned fallback are in
+   [the 2026-06-09 DX feedback note](../cairn-dx-feedback-2026-06-09-907-0.36-retrofit.md).
+
 8. <a id="force-https"></a>**Force HTTPS on the zone.** This is a requirement, not a polish step. Turn on "Always Use HTTPS" so the edge redirects every plain-http request to https before it reaches the Worker, and confirm HSTS is set on https responses.
 
    The magic-link login submits a JS-free `<form method="POST">` from the login and confirm pages. cairn's CSRF cookie carries the `__Host-` prefix on https, which binds it to the exact origin, and the session cookie does the same. A zone that serves `/admin` over both http and https makes the http scheme reachable: a first visit with no cached HSTS stays on http, and the auth guard builds its login redirect from the incoming request, so the http scheme sticks. Forcing HTTPS at the edge locks the scheme to https before the form ever posts, which is what keeps the `__Host-` cookies origin-bound.

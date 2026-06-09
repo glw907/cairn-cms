@@ -58,3 +58,36 @@ The engine deferred the real-runtime CSRF verification to the first site retrofi
 renders chrome-free with the `cairn-admin` shell, sets the `__Host-cairn_csrf` cookie, and carries the
 `name="csrf"` hidden field. The `0.34.0` HTTPS-required page does not fire over https. The one step left
 manual is the magic-link email click, since the token is emailed and cannot be scripted.
+
+## Response (2026-06-09)
+
+Neither finding needs an engine code change. The current guard and the `checkOrigin: false` guidance
+are correct. The response is documentation plus a tracked plan for the one real risk.
+
+**Finding 1.** Keep `csrf: { checkOrigin: false }` as the prescribed action; it still fully disables
+SvelteKit's pre-`handle` check in 2.61, which is what hands cairn's guard the authority. The deploy
+guide now carries the deprecation context so a consumer who sees the build warning knows it is expected
+and required. The real risk is the removal: SvelteKit's source gates the whole CSRF block on
+`csrf_check_origin`, and a missing-`Origin` form POST is forbidden whenever the block runs, so once the
+global disable is gone there is no in-framework way to let the JS-free login through, and the check sits
+before the `handle` hook so cairn cannot intercept it there.
+
+The planned escape hatch, to adopt only if and when SvelteKit removes the disable: a Cloudflare
+request-header Transform Rule that sets `Origin: https://<site>` on unsafe (`POST`/`PUT`/`PATCH`/`DELETE`)
+requests to `/admin/*` that arrive without one. SvelteKit's check then sees a same-origin request and
+passes, cairn's `__Host-cairn_csrf` double-submit token stays the real protection for `/admin`, and the
+rule is scoped to `/admin` so the framework's check still covers the site's own non-admin forms. This
+keeps the fix at the edge and survives the removal. It is more per-site setup than one config line, so it
+is held until the removal forces it.
+
+The higher-leverage move is upstream: a SvelteKit issue arguing that a `handle`-hook-owned CSRF model
+needs either a surviving global disable or a documented way to allow a missing-`Origin` request, since
+`trustedOrigins` cannot. That issue is drafted and awaiting a decision to file. The removal is tracked in
+`ROADMAP.md` under Later so cairn migrates the mechanism before a SvelteKit major lands, not after a
+consumer build breaks.
+
+**Finding 2.** Documentation only. `docs/admin-smoke-test.md` now carries a custom-domain caveat at the
+top and the working recipe: smoke against the deployed https Worker with a session row inserted into the
+remote D1, since the local http flow cannot reach `/admin` on a `custom_domain` site. The stale
+`scripts/mint-session.mjs` in 907.life (it targets the retired better-auth model) is a site-local cleanup,
+noted in `907-life/docs/STATUS.md`.

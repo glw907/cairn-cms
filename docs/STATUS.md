@@ -11,9 +11,12 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Engine next action (2026-06-08): the engine-logging pass LANDED as `0.36.0` (unpublished)
+## Engine next action (2026-06-08): the engine-logging pass LANDED and PUBLISHED as `0.36.0` (registry `latest`)
 
-cairn's first logging infrastructure LANDED on `main` 2026-06-08 as `0.36.0`, unpublished. An internal
+cairn's first logging infrastructure LANDED on `main` 2026-06-08 as `0.36.0`, and PUBLISHED the same day
+as the registry `latest`. The `v0.36.0` GitHub Release fired the OIDC trusted-publishing workflow (run
+`27175127215` green, `check:package` plus `npm publish` both passed) over the prior `0.35.0` `latest`;
+`main` is clean at the `v0.36.0` tag with nothing unpublished. An internal
 `src/lib/log/` module owns one logger that assembles a structured JSON record
 (`{ level, event, timestamp, ...fields }`) and writes it to `console`, where Workers Logs ingests and
 indexes it when a site sets `observability.enabled`. Nine events route through it: the auth flow
@@ -51,11 +54,10 @@ server-side render path exists. (3) The three admin-extension affordances (`even
 `onEvent`, per-extension namespacing) stay deferred to the undesigned `CairnExtension` seam. (4) Each
 site retrofit gets a site-side "check Workers Logs" pointer when it runs.
 
-**Next engine action: publish the held window, then resume the queued engine backlog.** `main` now
-carries unpublished `0.36.0` over the `0.35.0` `latest`. The logging minor is additive (Consumers may:
-set `observability.enabled = true`), so it publishes cleanly whenever the next window is cut. The
-queued engine backlog (the DX-sweep tooling/CI robustness work and the scaffolder track) is unchanged
-by this pass.
+**Next engine action: resume the queued engine backlog.** `0.36.0` is published and `main` is clean at
+the `v0.36.0` tag with nothing held. The queued engine backlog (the DX-sweep tooling/CI robustness work
+and the scaffolder track) is unchanged by this pass. The two prod-site retrofits stay the separate
+`site-pass` track and now pick up `0.36.0` (additive) alongside the `0.35.0` CSRF action.
 
 The two site retrofits below stay the separate `site-pass` track and are unaffected by this engine pass.
 

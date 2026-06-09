@@ -82,9 +82,9 @@ is held until the removal forces it.
 
 The higher-leverage move is upstream: a SvelteKit issue arguing that a `handle`-hook-owned CSRF model
 needs either a surviving global disable or a documented way to allow a missing-`Origin` request, since
-`trustedOrigins` cannot. That issue is drafted and awaiting a decision to file. The removal is tracked in
-`ROADMAP.md` under Later so cairn migrates the mechanism before a SvelteKit major lands, not after a
-consumer build breaks.
+`trustedOrigins` cannot. Filed as [sveltejs/kit#15992](https://github.com/sveltejs/kit/issues/15992). The
+removal is tracked in `ROADMAP.md` under Later so cairn migrates the mechanism before a SvelteKit major
+lands, not after a consumer build breaks.
 
 **Finding 2.** Documentation only. `docs/admin-smoke-test.md` now carries a custom-domain caveat at the
 top and the working recipe: smoke against the deployed https Worker with a session row inserted into the

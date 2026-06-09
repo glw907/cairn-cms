@@ -58,8 +58,9 @@ needs. Items move up from lower tiers as the core fills in.
   `trustedOrigins`. `trustedOrigins` cannot replace it (a missing-`Origin` POST is always forbidden,
   and the check runs before the `handle` hook), so when SvelteKit removes the disable, cairn needs a
   new mechanism. The planned fallback is an edge Transform Rule that injects `Origin` for `/admin`
-  POSTs; the higher-leverage path is a drafted SvelteKit issue. Track the removal and act before a
-  major lands. Reasoning in `docs/cairn-dx-feedback-2026-06-09-907-0.36-retrofit.md`.
+  POSTs; the higher-leverage path is the upstream SvelteKit issue (sveltejs/kit#15992). Track the
+  removal and act before a major lands. Reasoning in
+  `docs/cairn-dx-feedback-2026-06-09-907-0.36-retrofit.md`.
 
 ## Considering
 

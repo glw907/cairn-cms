@@ -42,17 +42,17 @@ durable orientation only.
 - **Implementer subagent** (user-scoped): `cairn-implementer` drives one plan task test-first and
   clears the full gate before reporting done (targeted test + `npm run check` 0/0 + `npm test` exit
   0), with the cairn conventions baked in. The main loop executes sequential tasks itself; dispatch
-  this agent for parallel independent tasks or a worktree-isolated change. It defaults to Sonnet;
-  pass `model: opus` for judgment-heavy tasks.
+  this agent for parallel independent tasks or a worktree-isolated change. It inherits the main-loop
+  model; pass `model: sonnet` to downshift a mechanical, well-specified fan-out.
 - **Review subagents** (user-scoped, read-only): `svelte-reviewer`, `cloudflare-workers-reviewer`,
   `web-auth-security-reviewer`, `daisyui-a11y-reviewer`. Fan them out in parallel at a review gate to
   complement `/code-review`.
 - **Subagent models:** the workstation `.bashrc` sets `CLAUDE_CODE_SUBAGENT_MODEL=inherit`, so each
-  agent's frontmatter `model:` wins. A per-dispatch `model` beats the frontmatter, which beats the
-  main model. The `cairn-implementer` frontmatter pins Sonnet, and the four reviewer agents pin Opus,
-  so a bare call already runs each on its right tier. Pass `model: opus` per dispatch only to
-  override the implementer's Sonnet default for a judgment-heavy task. The `code-simplifier` plugin
-  agent pins Opus in its own frontmatter, so it already runs on Opus without a flag.
+  agent's frontmatter `model:` wins, and an unpinned agent rides the main model. A per-dispatch
+  `model` beats the frontmatter. The `cairn-implementer` is unpinned (it inherits the main model;
+  pass `model: sonnet` to downshift a mechanical fan-out). The four reviewer agents pin Opus
+  deliberately: the main model implements, Opus reviews, and the model diversity is part of the
+  gate. The `code-simplifier` plugin agent pins Opus in its own frontmatter.
 - **Cloudflare MCP** (account `glw907`, `120c269ad6d3dfbe6d63a0bb53758ca0`) provisions and queries D1
   for the auth store. Prefer it over the dashboard.
 

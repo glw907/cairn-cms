@@ -2,6 +2,19 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.37.0
+
+The magic-link sign-in confirmation is now a branded panel in place of the flat success bar. After an
+editor requests a link, the page shows a mail icon in a soft success tile, a "Check your email"
+heading, and the ten-minute expiry note, all in the admin's Warm Stone styling. Below a divider it
+adds guidance for the link that never arrives: check the spam folder first, then confirm the address
+matches the one the site owner added. This covers the common fat-finger case, where a mistyped address
+gets the same neutral confirmation and no email. A "Use a different email" action returns to the form
+so the address gets corrected without a reload. The confirmation copy stays identical whether or not
+the email is on the allowlist, so the page still never leaks membership.
+
+The change is internal to the `LoginPage` component and needs no action.
+
 ## 0.36.0
 
 cairn now emits structured diagnostic events. The engine had three bare `console.error` calls and no

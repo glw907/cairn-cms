@@ -11,6 +11,24 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
+## Login-confirmation UX shipped as `0.37.0` (2026-06-08)
+
+The magic-link sign-in confirmation became a branded panel in place of the flat DaisyUI success bar:
+a mail icon in a soft success tile (the Warm Stone `--color-success` token, not stock green), a "Check
+your email" heading, the ten-minute expiry note, and, below a divider, guidance for the link that never
+arrives (spam folder, then confirm the address matches the one the site owner added). This answers the
+fat-finger case, where a mistyped or unlisted email gets the same neutral confirmation and no email. A
+"Use a different email" action flips a client-only `dismissed` state back to the form. The confirmation
+copy stays identical whether or not the email is on the allowlist, so the page still never leaks
+membership. The change is internal to the `LoginPage` component, additive, and needs no consumer action.
+
+It landed on `main` directly (not a numbered plan): the `LoginPage.svelte` rebuild plus two new
+component tests (the help copy renders, and "Use a different email" returns to the form). Gate green at
+the source tip: `npm run check` 0/0, `npm test` 130 files / 816 tests exit 0, `check:prose` clean, and
+the visual was verified on the showcase against the compiled admin sheet in both states. The `v0.37.0`
+GitHub Release fires the OIDC trusted-publishing workflow over the prior `0.36.0` `latest`. The next
+engine action below (resume the queued backlog) is unchanged.
+
 ## Engine next action (2026-06-08): the engine-logging pass LANDED and PUBLISHED as `0.36.0` (registry `latest`)
 
 cairn's first logging infrastructure LANDED on `main` 2026-06-08 as `0.36.0`, and PUBLISHED the same day

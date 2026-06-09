@@ -61,17 +61,25 @@ and the scaffolder track) is unchanged by this pass. The two prod-site retrofits
 
 The two site retrofits below stay the separate `site-pass` track and are unaffected by this engine pass.
 
-## Immediate next action (2026-06-08): the two site retrofits (`0.35.0` is published `latest`)
+## Immediate next action (2026-06-09): retrofit ecnordic.ski (907.life DONE, to `0.36.0`)
 
-**The login-CSRF-ownership plan LANDED on `main` and PUBLISHED 2026-06-08 as `0.35.0`, now the registry
-`latest`. NEXT ACTION: the two production-site retrofits.** The `v0.35.0` GitHub Release fired the OIDC
-trusted-publishing workflow (run `27171273732` green, `check:package` plus `npm publish` both passed), putting
-cairn-owned CSRF over the prior `0.34.0` `latest`. `main` is clean at the `v0.35.0` tag with nothing
-unpublished. Retrofit 907.life and ecnordic.ski, each a separate `site-pass`, each pinning `^0.35.0` and adding
-`csrf: { checkOrigin: false }` to `kit` in `svelte.config.js` (the one required consumer action this minor
-adds), along with the other breaking-window actions noted below. The first retrofit is where the real-runtime
-CSRF loop gets its live smoke (the engine pass judged the live wrangler smoke not proportionate without a
-consumer that wires `checkOrigin: false`).
+**907.life was retrofitted to `^0.36.0` and deployed 2026-06-09, and its live site verified cairn's CSRF
+ownership end to end. NEXT ACTION: the ecnordic.ski retrofit (the same `site-pass`).** 907 crossed the
+`0.24.0` → `0.36.0` window in one pass (`composeRuntime` object form, a `(site)` route group for
+chrome-free admin, `csrf: { checkOrigin: false }`, and `[observability]`); the commit and post-mortem are
+in `907-life/docs/STATUS.md` and `907-life/docs/architecture.md`. The deployed `https://907.life/admin/login`
+returns `200`, renders chrome-free with the `cairn-admin` shell, sets the `__Host-cairn_csrf` cookie, and
+carries the `name="csrf"` field, so the real-runtime CSRF loop the engine deferred to the first retrofit is
+now proven live (only the magic-link email click stays manual). The retrofit filed two engine DX findings,
+`docs/cairn-dx-feedback-2026-06-09-907-0.36-retrofit.md`: the `csrf.checkOrigin` deprecation in SvelteKit
+2.61 (cairn documents a spelling on a removal path), and the `custom_domain` local-smoke gap (`wrangler
+dev` presents `event.url` as the production https origin, so the documented local http admin smoke hits the
+`0.34.0` HTTPS-required page). Retrofit ecnordic.ski the same way, pinning `^0.36.0`.
+
+**Window context (still applies to ecnordic).** The login-CSRF-ownership plan PUBLISHED 2026-06-08 as
+`0.35.0`, and the engine-logging pass PUBLISHED 2026-06-09 as `0.36.0` (now `latest`). A retrofit pins
+`^0.36.0` and adds `csrf: { checkOrigin: false }` to `kit` in `svelte.config.js`, along with the other
+breaking-window actions noted below.
 
 **What `0.35.0` did.** It moved login-CSRF ownership from SvelteKit's global `checkOrigin` to cairn's auth
 guard, closing the second source of the admin lockout that `0.34.0`'s force-HTTPS work did not reach: a

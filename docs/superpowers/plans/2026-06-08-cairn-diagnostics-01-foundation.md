@@ -266,16 +266,11 @@ Expected: FAIL, cannot resolve `../../lib/diagnostics/index.js`.
 // src/lib/diagnostics/index.ts
 // Internal barrel for the diagnostics model. Not re-exported from any public package subpath.
 export { condition, allConditions } from './conditions.js';
-export type { CairnCondition, ConditionId, ConditionSeverity } from './conditions.js';
+export type { CairnCondition, ConditionSeverity } from './conditions.js';
 export { CairnError } from './error.js';
 ```
 
-Note: `ConditionId` is added to `conditions.ts` in this step as `export type ConditionId = string;` is **not** wanted. Instead, add this line to `conditions.ts` right after the `CairnCondition` interface so the barrel's type re-export resolves:
-
-```ts
-/** The set of registered ids. A string alias today; tighten to a union if call sites want it. */
-export type ConditionId = string;
-```
+No `ConditionId` type yet; nothing in Pass 1 consumes one, so leave it out (YAGNI). The barrel re-exports only what `conditions.ts` and `error.ts` already define.
 
 - [ ] **Step 4: Run the test to verify it passes**
 

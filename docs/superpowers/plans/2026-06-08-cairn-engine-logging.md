@@ -789,3 +789,62 @@ git commit -m "Document the log events, the read-logs guide, and the redaction s
 **Type consistency.** `CairnLogEvent` is defined once in Task 1 and imported everywhere. The logger methods are `info`/`warn`/`error` with the signature `(event, fields?)` across all call sites. The fields use stable names: `email`, `expiresAt`, `error`, `concept`, `id`, `editor`, `reason`, `path`. `commit.failed` uses `reason: 'conflict'` for a 409 and `error` otherwise, consistently in Task 4 and the reference table.
 
 **Placeholder scan.** The call-site test steps (Tasks 2, 3, 4) say to copy the arrange/act from a named existing test in the same file rather than restate a long harness setup. That is a deliberate instruction with the exact file and scenario named, not a TODO. Every code edit shows the full code. The reference table, the guide, and the security note are written in full.
+
+---
+
+## Post-mortem (landed 2026-06-08, `0.36.0`)
+
+**What landed.** cairn's first logging infrastructure. An internal `src/lib/log/` module owns one
+logger that assembles a structured JSON record (`{ level, event, timestamp, ...fields }`) and writes
+it to `console`, where Workers Logs ingests and indexes it when a site sets `observability.enabled`.
+Nine events route through it: the auth flow, the commit pipeline, and the guard's three pre-resolve
+refusals. The module is exported from no package subpath, so its API stays free to grow; the event
+names are the public-observable contract. It ran subagent-driven, one `cairn-implementer` per task on
+`main` directly, Tasks 2, 3, 4 on Opus (judgment over the real test harness and the commit-site
+branch shapes) and Tasks 1, 5, 6 on Sonnet.
+
+**Commits.** Six task commits `231476a..f87af99`, a simplifier pass `2be2105` (a `logCommitFailed`
+helper plus shared `commitFields` locals across the four commit sites), a review fold-in `6be795b`
+(bound the request-path logged email, pinned mint-path token redaction), the release commit `f699ea7`
+(the `0.36.0` bump, changelog, upgrade-guide, and the reference note), and the infra commit `941cfa2`
+(the CLAUDE.md troubleshooting section). Gate green at the source tip `6be795b`, run first-hand:
+`npm run check` 841 files 0/0, `npm test` 130 files / 814 tests exit 0, and `check:docs`,
+`check:reference`, `check:package` all exit 0.
+
+**The execution caught one plan gap, recorded.** Task 4's plan listed five commit sites including
+`createAction`. The engine has four: `createAction` does not call `commitFiles`. It validates,
+composes the new id, refuses a clobber, then redirects to the editor, where `saveAction` makes the
+first real commit. The implementer followed the real code and left `createAction` unlogged rather than
+invent a commit record with no commit behind it. The four real sites (`saveAction`, `deleteEntry`,
+`renameAction`, `navSave`) each carry the full success/conflict/error triple.
+
+**The review gate ran clean, three reviewers, no Critical or Important.** `web-auth-security-reviewer`:
+traced every call site and confirmed no token, session id, or magic-link content reaches a field, and
+that `String(err)` cannot transitively carry the GitHub token (it lives only in the request header,
+never in the response body the error echoes) or the magic-link (Cloudflare's send rejection does not
+echo the message body). `cloudflare-workers-reviewer`: confirmed `console.log(object)` is the correct
+shape for Workers Logs field indexing (a pre-stringified string would lose per-field filtering), and
+that the send-failed `.catch` log lands because it rides the existing `ctx.waitUntil`. `svelte-reviewer`:
+confirmed every log sits correctly around the `throw redirect`/`throw error`/`fail` boundaries, firing
+once on each path, with no action or hook contract changed. All three independently flagged one spot:
+`auth.link.requested` logs the raw, unvalidated, attacker-controllable `email` before the allowlist
+check. The fold-in bounds the logged value to 320 chars (RFC 5321 max) and documents the field as
+unvalidated input. The mint-path redaction test was added and proven a real guard: with `link`
+temporarily logged it failed on the leaked token, then passed once reverted.
+
+**No live `wrangler` smoke.** Per the spec, the only runtime change is structured `console` output,
+which Workers Logs ingests with no cairn-side behavior to verify beyond the unit and integration
+level. The 814-test suite drives every event through the console sink on both success and failure
+paths.
+
+**Carry-forwards (recorded, not fixed).** (1) The `auth.link.requested` endpoint is unauthenticated
+and unrate-limited, so a flood of distinct bogus emails inflates a site's Workers Logs volume and
+index cardinality. The length cap bounds a single record's size, not the volume; bounding the volume
+needs edge rate-limiting on the request route, a broader change than a logging pass. Noted in the
+reference page. (2) `render.failed` stays deferred until a server-side render path exists (rendering is
+build-time and consumer-side, and the editor preview is client-only behind `MarkdownEditor`). (3) The
+three admin-extension affordances (`event.locals.cairn.log`, an `onEvent` subscribe hook, per-extension
+namespacing) stay deferred to the undesigned `CairnExtension` seam; the chokepoint and the
+structured-from-first-call shape are the two invariants that keep them additive. (4) The two production
+sites get a site-side "check Workers Logs" pointer when each retrofit runs; the engine CLAUDE.md now
+carries the troubleshooting orientation for library work.

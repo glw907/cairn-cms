@@ -11,27 +11,51 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Engine next action (2026-06-08): execute the engine-logging plan (written, ready)
+## Engine next action (2026-06-08): the engine-logging pass LANDED as `0.36.0` (unpublished)
 
-The engine-logging design and plan are written and committed, ready to execute subagent-driven. This
-is cairn's first logging infrastructure. The engine logs nothing usable today (three bare
-`console.error` calls), and the rebuild needs structured diagnostics on the Cloudflare-first stack,
-built so the later admin-extension work can route logs without a rewrite.
+cairn's first logging infrastructure LANDED on `main` 2026-06-08 as `0.36.0`, unpublished. An internal
+`src/lib/log/` module owns one logger that assembles a structured JSON record
+(`{ level, event, timestamp, ...fields }`) and writes it to `console`, where Workers Logs ingests and
+indexes it when a site sets `observability.enabled`. Nine events route through it: the auth flow
+(`auth.link.requested`, `auth.token.minted`, `auth.link.send_failed`, `auth.token.confirmed`,
+`auth.session.created`, `auth.session.destroyed`), the commit pipeline (`commit.succeeded`,
+`commit.failed`), and the guard's three pre-resolve refusals (`guard.rejected` with `reason`
+`csrf`/`origin`/`https`). The module is exported from no package subpath, so its API stays free to
+grow; the event names are the public-observable contract. The forward-compat invariants (structured
+records from the first call, one chokepoint) keep the deferred admin-extension affordances additive.
 
-The design is a small owned structured logger behind one internal `src/lib/log/` chokepoint, writing
-JSON records to `console` for Workers Logs (the zero-config Cloudflare sink), with a fixed dotted-event
-vocabulary that becomes public-observable API. Two forward-compatibility invariants carry the
-"easy to extend later" requirement: structured records with dotted event names from the first call,
-and one module every diagnostic routes through. Three affordances are deferred to the undesigned
-admin-extension seam and named in the spec: a context-bound `event.locals.cairn.log`, an `onEvent`
-subscribe hook on `CairnExtension`, and per-extension namespacing. `render.failed` is deferred too,
-since no engine request path renders. The pass produces three docs (a reference page, a how-to guide,
-a security-model note).
+It ran subagent-driven, one `cairn-implementer` per task on `main` directly, Tasks 2/3/4 on Opus and
+1/5/6 on Sonnet. Six task commits `231476a..f87af99`, a simplifier `2be2105`, a review fold-in
+`6be795b`, the release commit `f699ea7` (the `0.36.0` bump, changelog, upgrade-guide, reference note),
+and an infra commit `941cfa2` (a CLAUDE.md "Diagnosing a running site" section pointing troubleshooting
+at the logs first). Gate green at the source tip `6be795b`, run first-hand: `npm run check` 841 files
+0/0, `npm test` 130 files / 814 tests exit 0, and `check:docs`/`check:reference`/`check:package` exit 0.
+The post-mortem (the four-not-five commit-site plan gap, the three-reviewer-converged email-bounding
+fold-in, and the carry-forwards) is in the plan
+(`docs/superpowers/plans/2026-06-08-cairn-engine-logging.md`); the design spec is
+`docs/superpowers/specs/2026-06-08-cairn-engine-logging-design.md`.
 
-- Spec: `docs/superpowers/specs/2026-06-08-cairn-engine-logging-design.md`.
-- Plan: `docs/superpowers/plans/2026-06-08-cairn-engine-logging.md` (6 tasks, execute with
-  `superpowers:subagent-driven-development`, one `cairn-implementer` per task on `main`).
-- Publishing: additive, no breaking consumer action. The minor bumps when it lands.
+**The review gate ran clean.** Three reviewers, no Critical or Important. `web-auth-security-reviewer`
+confirmed no token, session id, or magic-link content reaches a field, and that `String(err)` cannot
+transitively carry the GitHub token or the link. `cloudflare-workers-reviewer` confirmed
+`console.log(object)` is the right shape for Workers Logs field indexing and that the send-failed
+`.catch` log lands on the existing `ctx.waitUntil`. `svelte-reviewer` confirmed every log sits correctly
+around the throw/return boundaries with no action or hook contract change. All three flagged the
+unvalidated `auth.link.requested` email; the fold-in bounds it to 320 chars and documents it, and a
+mint-path redaction test was added and proven a real guard.
+
+**Carry-forwards.** (1) The `auth.link.requested` route is unauthenticated and unrate-limited, so a
+flood of distinct emails inflates Workers Logs volume; the length cap bounds record size, not volume.
+Bounding volume needs edge rate-limiting, a broader change. (2) `render.failed` stays deferred until a
+server-side render path exists. (3) The three admin-extension affordances (`event.locals.cairn.log`,
+`onEvent`, per-extension namespacing) stay deferred to the undesigned `CairnExtension` seam. (4) Each
+site retrofit gets a site-side "check Workers Logs" pointer when it runs.
+
+**Next engine action: publish the held window, then resume the queued engine backlog.** `main` now
+carries unpublished `0.36.0` over the `0.35.0` `latest`. The logging minor is additive (Consumers may:
+set `observability.enabled = true`), so it publishes cleanly whenever the next window is cut. The
+queued engine backlog (the DX-sweep tooling/CI robustness work and the scaffolder track) is unchanged
+by this pass.
 
 The two site retrofits below stay the separate `site-pass` track and are unaffected by this engine pass.
 

@@ -1,6 +1,11 @@
 # Magic-link delivery, observability, and an environment preflight
 
-Design spec, 2026-06-08. Status: drafted, pending review.
+Design spec, 2026-06-08. Status: drafted, reframed as Passes 2 and 3 of the cairn diagnostics
+initiative (`2026-06-08-cairn-diagnostics-initiative-design.md`). Arm A is Pass 2, the email-delivery
+runtime arm. Arms B and C are Pass 3, the doctor and the readiness checklist. Both consume the Pass 1
+condition model rather than inventing their own error identities, so the messages, the doctor results,
+and the checklist all draw from one registry. The arms below stand, with that one change folded in
+during planning.
 
 This pass answers the ecxc DX finding
 (`docs/cairn-dx-feedback-2026-06-08-ecxc-magic-link-send-swallowed.md`). A real admin could not sign

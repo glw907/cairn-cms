@@ -4,7 +4,7 @@ This subpath holds the server-side route factories. Each one composes the engine
 `load` functions and form `actions` a SvelteKit `+page.server.ts` exports, plus the `Handle` that
 guards `/admin`. A site imports it in `src/hooks.server.ts` and in its admin route servers. The
 canonical route tree these factories mount is in
-[the admin route structure guide](../admin-route-structure.md).
+[the admin route structure guide](./admin-routes.md).
 
 ```ts
 import { createAuthGuard, createContentRoutes, healthLoad } from '@glw907/cairn-cms/sveltekit';

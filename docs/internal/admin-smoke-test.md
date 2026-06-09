@@ -98,7 +98,7 @@ header is `Cookie: cairn_session=<id>`. Use the form that matches the Worker you
    With `Accept: text/html` a form action returns a real 303; with curl's default `*/*` it
    returns 200 with the action result serialized in the body (both are correct). The deployed
    site has the same dependency, which is why a consuming site must force HTTPS so the magic-link
-   form always posts over a stable https `Origin`. See [Deploy to Cloudflare](guides/deploy-to-cloudflare.md#force-https).
+   form always posts over a stable https `Origin`. See [Deploy to Cloudflare](../guides/deploy-to-cloudflare.md#force-https).
 
 4. **Clean up.**
    ```bash

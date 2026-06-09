@@ -38,7 +38,7 @@ Goal: deploy the site Worker to Cloudflare so editor saves commit to GitHub and 
 
    The Worker decodes `GITHUB_APP_PRIVATE_KEY_B64` with `atob()` before it signs, so store the PEM as a single-line base64 string.
 
-4. **Mount the canonical admin routes and `/healthz`.** The `/admin/*` tree uses the `(app)` group so the login page sits outside the session-requiring layout load, and `/healthz` lives at the site root so the auth guard does not gate the deploy check. Copy the tree from [the canonical admin route structure](../admin-route-structure.md) rather than guessing the layout, and compose the runtime once in `$lib/cairn.server.ts`.
+4. **Mount the canonical admin routes and `/healthz`.** The `/admin/*` tree uses the `(app)` group so the login page sits outside the session-requiring layout load, and `/healthz` lives at the site root so the auth guard does not gate the deploy check. Copy the tree from [the canonical admin route structure](../reference/admin-routes.md) rather than guessing the layout, and compose the runtime once in `$lib/cairn.server.ts`.
 
 5. **Deploy the Worker.** With `CLOUDFLARE_API_TOKEN` in the environment, run:
 
@@ -68,7 +68,7 @@ Goal: deploy the site Worker to Cloudflare so editor saves commit to GitHub and 
    trusted list, which is the exact JS-free magic-link case cairn fixes, and the check runs before the
    `handle` hook where cairn's guard lives, so the global switch is the only way to hand cairn the
    authority. cairn tracks the eventual removal; the reasoning and the planned fallback are in
-   [the 2026-06-09 DX feedback note](../cairn-dx-feedback-2026-06-09-907-0.36-retrofit.md).
+   [the 2026-06-09 DX feedback note](../internal/feedback/2026-06-09-907-0.36-retrofit.md).
 
 8. <a id="force-https"></a>**Force HTTPS on the zone.** This is a requirement, not a polish step. Turn on "Always Use HTTPS" so the edge redirects every plain-http request to https before it reaches the Worker, and confirm HSTS is set on https responses.
 
@@ -90,4 +90,4 @@ After the deploy:
 
 - [The SvelteKit reference](../reference/sveltekit.md) for the route factories and the `healthLoad` signature behind `/healthz`.
 - [The architecture](../explanation/architecture.md#the-commit-and-publish-flow) for the commit-is-publish flow.
-- [The canonical admin route structure](../admin-route-structure.md) for the exact route tree to copy.
+- [The canonical admin route structure](../reference/admin-routes.md) for the exact route tree to copy.

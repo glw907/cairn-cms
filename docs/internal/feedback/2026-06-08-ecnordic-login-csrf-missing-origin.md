@@ -1,7 +1,7 @@
 # cairn DX feedback: login CSRF 403 when the browser sends no Origin header (ecnordic 0.34.0)
 
 Filed 2026-06-08 from ecnordic.ski running `@glw907/cairn-cms@0.34.0`, on a deployed admin login from
-Firefox. This is a direct follow-up to the [2026-06-07 login-CSRF note](./cairn-dx-feedback-2026-06-07-ecnordic-0.33-login-csrf.md).
+Firefox. This is a direct follow-up to the [2026-06-07 login-CSRF note](./2026-06-07-ecnordic-0.33-login-csrf.md).
 That note led to 0.34.0, which made "force HTTPS at the edge" a deploy requirement and added a branded
 "admin needs HTTPS" page for an http GET. The site applied that mitigation in full, and login still fails.
 The cause is a different source of the same 403: a browser that sends no `Origin` header. Forcing HTTPS
@@ -129,7 +129,7 @@ needs.
 
 ## References
 
-- The prior note: [`cairn-dx-feedback-2026-06-07-ecnordic-0.33-login-csrf.md`](./cairn-dx-feedback-2026-06-07-ecnordic-0.33-login-csrf.md).
+- The prior note: [`cairn-dx-feedback-2026-06-07-ecnordic-0.33-login-csrf.md`](./2026-06-07-ecnordic-0.33-login-csrf.md).
 - Deploy guide force-HTTPS step: `docs/guides/deploy-to-cloudflare.md#force-https`.
 - The `Origin` dependency note: `docs/admin-smoke-test.md:84`.
 - Auth forms: `src/lib/components/LoginPage.svelte`, `src/lib/components/ConfirmPage.svelte`.

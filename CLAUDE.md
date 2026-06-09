@@ -17,8 +17,8 @@ site that consumes the package through the relative `file:../..` path.
 
 The work is a clean, test-first **rebuild** that began 2026-05-28. The canonical source of truth is
 the functional spec at `docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`. It
-supersedes the older `docs/internal/PLAN.md` and `docs/internal/ARCHITECTURE.md`, which remain only as history. Read
-the spec at the start of a rebuild session.
+supersedes the older plan and architecture writeups (now under `docs/internal/history/`), which
+remain only as history. Read the spec at the start of a rebuild session.
 
 The rebuild ran as a numbered plan series, 00 (foundation) through 08 (scaffolder), each plan
 written just-in-time after the prior one landed, under `docs/superpowers/plans/`. Plans 00 through
@@ -115,8 +115,8 @@ no package subpath), so its API is free to grow; the event names are the public-
 Email *Sending* (arbitrary recipients) is `env.EMAIL.send({ to, from, subject, html, text })`. The
 `cloudflare:email` `EmailMessage`/mimetext MIME form is Email *Routing* and only sends to
 **verified** destinations. Both share the one `[[send_email]] name="EMAIL"` binding, so the **call
-shape** picks the product. Email Sending also needs Workers Paid plus dashboard onboarding (PLAN.md
-risk #1).
+shape** picks the product. Email Sending also needs Workers Paid plus dashboard onboarding (risk #1
+in `docs/internal/history/plan.md`).
 
 ## Credentials (machine-local, intentionally not in git)
 

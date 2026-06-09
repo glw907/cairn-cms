@@ -191,7 +191,7 @@ same descriptors, so the URL a page prerenders to and the URL the admin shows ne
 and components from `@glw907/cairn-cms/components`, passing your adapter. They are byte-identical
 across sites except `cairn.config.ts`. The exact tree, including the load-bearing `(app)` group,
 the root `/healthz`, and the nested editor route, is documented in
-[`docs/admin-route-structure.md`](admin-route-structure.md).
+[`docs/admin-route-structure.md`](../../reference/admin-routes.md).
 
 ## 4. Admin theme
 

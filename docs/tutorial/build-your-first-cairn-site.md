@@ -79,7 +79,7 @@ Import that stylesheet once from your root layout, `src/routes/+layout.svelte`:
 
 This keeps the root layout almost bare, which matters later: the root layout wraps `/admin` too, so a
 real site keeps its nav, footer, and `app.css` out of the root and in a `(site)` route group instead.
-Milestone 8 covers the rule, and [the admin route structure](../admin-route-structure.md) has the full
+Milestone 8 covers the rule, and [the admin route structure](../reference/admin-routes.md) has the full
 pattern.
 
 Two small project setup steps remain. The admin signs an editor in by setting `event.locals.editor`, so declare that field's type once in `src/app.d.ts`:
@@ -227,7 +227,7 @@ That one addition resolves the compiler error from milestone 2. The adapter now 
 
 `createRenderer` takes an optional component registry. Call it with no argument and it defaults to the empty registry, which is exactly right for a plain-prose blog: the full markdown-to-HTML pipeline still runs, there are just no custom components to dispatch. `Field Notes` adds a registry in the next milestone, and you will pass it here. For the signature and the options it accepts, see [`createRenderer`](../reference/core.md#createrenderer) in the core reference.
 
-The pipeline cleans author HTML before it reaches a visitor. A markdown body can carry raw HTML, so a `<script>` tag or a `javascript:` link in author content would otherwise run in the browser. cairn runs the body through a `rehype-sanitize` floor that strips those, and the floor is on by default. It is extend-only: a site can widen the allowlist for benign tags it needs, but it cannot weaken the dangerous strip. For what the floor keeps, strips, and rewrites, see [the render sanitize floor](../render-sanitize-floor.md).
+The pipeline cleans author HTML before it reaches a visitor. A markdown body can carry raw HTML, so a `<script>` tag or a `javascript:` link in author content would otherwise run in the browser. cairn runs the body through a `rehype-sanitize` floor that strips those, and the floor is on by default. It is extend-only: a site can widen the allowlist for benign tags it needs, but it cannot weaken the dangerous strip. For what the floor keeps, strips, and rewrites, see [the render sanitize floor](../explanation/render-safety.md).
 
 `render` resolves to an HTML string. A page delivers it with Svelte's `{@html}`:
 
@@ -765,9 +765,9 @@ The admin self-styles and does not need the host's CSS, so keep the root layout 
 chrome plus `app.css` in a URL-transparent `(site)` group. The group folder does not change any public
 URL, and the admin, which sits outside the group, renders on its own. A dev-only guard in the admin logs
 a `console.error` when it detects host chrome wrapping it. See
-[the admin route structure](../admin-route-structure.md) for the full tree and the reasoning.
+[the admin route structure](../reference/admin-routes.md) for the full tree and the reasoning.
 
-The route tree splits in two. The login and auth pages sit directly under `admin/`, and the authed shell sits in an `(app)` group whose layout requires a session. The group folder does not appear in the URL, so its pages still resolve under `/admin/*`, but only the group runs the session-requiring layout load, which is what keeps a sessionless visit from looping. For why the tree has this exact shape, read [the admin route structure](../admin-route-structure.md).
+The route tree splits in two. The login and auth pages sit directly under `admin/`, and the authed shell sits in an `(app)` group whose layout requires a session. The group folder does not appear in the URL, so its pages still resolve under `/admin/*`, but only the group runs the session-requiring layout load, which is what keeps a sessionless visit from looping. For why the tree has this exact shape, read [the admin route structure](../reference/admin-routes.md).
 
 The bare admin layout marks the subtree dynamic and renders its children through. Create `src/routes/admin/+layout.server.ts`:
 

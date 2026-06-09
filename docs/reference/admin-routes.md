@@ -7,7 +7,7 @@ naive layout hits, called out below. Copy the tree, not a guess at it.
 
 This structure assumes the site sets `csrf: { checkOrigin: false }` in `svelte.config.js`, since
 cairn's guard owns CSRF for the admin through a double-submit token. See the
-[deploy guide](./guides/deploy-to-cloudflare.md#disable-checkorigin) for that step.
+[deploy guide](../guides/deploy-to-cloudflare.md#disable-checkorigin) for that step.
 
 ```
 src/routes/

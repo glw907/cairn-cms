@@ -96,7 +96,7 @@ of it. A site can extend the allowlist through the `sanitizeSchema` option, whic
 base and returns the schema to use. The extension can only add to the allowlist, never weaken the
 dangerous strip. A developer-only `unsafeDisableSanitize` escape turns the floor off entirely, for a
 site whose content is fully developer-controlled. It is a code-level adapter decision and never an
-editor-facing setting. See [the render sanitize floor](../render-sanitize-floor.md) for exactly what
+editor-facing setting. See [the render sanitize floor](./render-safety.md) for exactly what
 the floor keeps, strips, and rewrites.
 
 A second guard covers the component dispatch. The floor runs before the dispatch, so a component's

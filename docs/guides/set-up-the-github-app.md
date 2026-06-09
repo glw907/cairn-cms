@@ -23,7 +23,7 @@ This guide assumes you already have a running cairn site. If you are building on
    - `GITHUB_APP_INSTALLATION_ID`: the installation ID from step 3.
    - `GITHUB_APP_PRIVATE_KEY_B64`: the base64 of the `.pem`, on a single line (`base64 -w0 your-key.pem`).
 
-   The Worker decodes the base64 with `atob()` in process before it signs, so the secret stays a single line. For key encoding, rotation, and the brittle conversion step, follow [GitHub App private-key rotation](../github-app-key-rotation.md) rather than hand-rolling it here.
+   The Worker decodes the base64 with `atob()` in process before it signs, so the secret stays a single line. For key encoding, rotation, and the brittle conversion step, follow [GitHub App private-key rotation](./rotate-the-github-app-key.md) rather than hand-rolling it here.
 
 The Worker converts the key from PKCS#1 to PKCS#8 in process, because Web Crypto's `importKey('pkcs8', ...)` accepts only PKCS#8 and GitHub issues PKCS#1. That conversion lives in the signer; you store the key as the base64 of the PKCS#1 PEM and the engine handles the rest.
 
@@ -37,4 +37,4 @@ With auth working, sign in to `/admin`, edit a page, and save. Open the resultin
 
 - [Core reference](../reference/core.md#auth-and-github-app) for the public auth surface. The JWT signing, the token mint, and the commit helper are internal to the engine, which wires them behind the content routes.
 - [The security model](../explanation/security-model.md#commit-trust) for why the App holds the write capability and how the save path constrains it.
-- [GitHub App private-key rotation](../github-app-key-rotation.md) for rotating the key and the `/admin/healthz` check that confirms the live key still signs.
+- [GitHub App private-key rotation](./rotate-the-github-app-key.md) for rotating the key and the `/admin/healthz` check that confirms the live key still signs.

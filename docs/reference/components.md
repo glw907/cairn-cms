@@ -5,7 +5,7 @@ content list and editor, the editors and nav screens, and the dialogs and picker
 site mounts the page-level components from its admin route shims and feeds them the route data from
 the matching `/sveltekit` load. The component-level pieces are composed inside `EditPage` and the
 dialogs, so a site rarely mounts them by hand. The canonical route tree these components mount in is
-[the admin route structure guide](../admin-route-structure.md).
+[the admin route structure guide](./admin-routes.md).
 
 ```ts
 import { AdminLayout, ConceptList, EditPage } from '@glw907/cairn-cms/components';

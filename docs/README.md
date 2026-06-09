@@ -22,8 +22,8 @@ While the arms fill in, these pages are live:
 
 - [Build your first cairn site](./tutorial/build-your-first-cairn-site.md)
 - [Upgrade cairn](./guides/upgrade-cairn.md)
-- [Admin route structure](./admin-route-structure.md)
-- [The render sanitize floor](./render-sanitize-floor.md)
+- [Admin route structure](./reference/admin-routes.md)
+- [The render sanitize floor](./explanation/render-safety.md)
 
 ## Project files
 

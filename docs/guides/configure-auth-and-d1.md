@@ -50,11 +50,11 @@ This guide assumes you already have a running cairn site. If you are building on
       VALUES ('you@example.com', 'Your Name', 'owner', 0);"
    ```
 
-For the session model and a local smoke that mints a session by inserting a `session` row, see [Admin smoke test](../admin-smoke-test.md).
+For the session model and a local smoke that mints a session by inserting a `session` row, see [Admin smoke test](../internal/admin-smoke-test.md).
 
 ## Verify
 
-Request a magic link from `/admin`, open it, confirm the POST-confirm page, and you land an authenticated session. To confirm the binding and schema without the email loop, run the [Admin smoke test](../admin-smoke-test.md), which mints a session by inserting a D1 row directly.
+Request a magic link from `/admin`, open it, confirm the POST-confirm page, and you land an authenticated session. To confirm the binding and schema without the email loop, run the [Admin smoke test](../internal/admin-smoke-test.md), which mints a session by inserting a D1 row directly.
 
 ## See also
 

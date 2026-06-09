@@ -7,6 +7,7 @@ import { sessionCookieName } from '../auth/crypto.js';
 import { httpsRequiredPage } from './https-required-page.js';
 import { isUnsafeFormRequest, originMatches, validateCsrfToken } from './csrf.js';
 import { csrfRequiredPage } from './csrf-required-page.js';
+import { applySecurityHeaders, brandedAdminPage } from './admin-response.js';
 import { log } from '../log/index.js';
 import type { Editor } from '../auth/types.js';
 import type { HandleInput, RequestContext } from './types.js';
@@ -34,26 +35,6 @@ function isLocalHost(hostname: string): boolean {
     hostname === '[::1]' ||
     hostname.endsWith('.localhost')
   );
-}
-
-/**
- * Attach the baseline security headers to an admin response. No full CSP; see the auth-hardening
- * design. frame-ancestors is the modern clickjacking control and the one CSP directive included.
- */
-function applySecurityHeaders(headers: Headers): void {
-  headers.set('X-Content-Type-Options', 'nosniff');
-  headers.set('X-Frame-Options', 'DENY');
-  headers.set('Content-Security-Policy', "frame-ancestors 'none'");
-  headers.set('Referrer-Policy', 'no-referrer');
-  headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains');
-  headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-}
-
-/** A branded full-document admin page, hardened with the baseline headers and never cached. */
-function brandedAdminPage(status: number, body: string): Response {
-  const headers = new Headers({ 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
-  applySecurityHeaders(headers);
-  return new Response(body, { status, headers });
 }
 
 /** The hardened 400 help page for a deployed admin request that arrived over http. */

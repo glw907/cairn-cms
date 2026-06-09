@@ -84,6 +84,30 @@ and the load-bearing rules that are not visible in the markup (most importantly:
 bare wrapper, never on a styled element, and scoped overrides go in `@layer components`). Keep the doc
 current when the design language changes, the same as any other doc.
 
+## Diagnosing a running site (look to the logs first)
+
+When troubleshooting a deployed or local cairn site's runtime behavior, read the structured logs
+before reaching for `console.log` or guesswork. The engine emits a JSON record for every operationally
+meaningful event through one internal chokepoint, `src/lib/log/`. Each record carries an envelope
+(`level`, `event`, `timestamp`) and event-specific fields. The vocabulary covers the auth flow
+(`auth.link.requested`, `auth.token.minted`, `auth.link.send_failed`, `auth.token.confirmed`,
+`auth.session.created`, `auth.session.destroyed`), the commit pipeline (`commit.succeeded`,
+`commit.failed`), and the admin guard's pre-resolve refusals (`guard.rejected` with a `reason` of
+`csrf`, `origin`, or `https`). The full table, with each event's trigger and fields, is
+[`docs/reference/log-events.md`](docs/reference/log-events.md).
+
+Map the symptom to its event. An admin who cannot sign in points at `auth.link.send_failed` or a
+`guard.rejected` with its `reason`. A save that does nothing points at `commit.failed`: a `reason` of
+`conflict` is a stale-edit collision, and an `error` field is the GitHub failure to act on. On
+Cloudflare the query surface is Workers Logs, which a site turns on with `observability.enabled = true`
+in `wrangler.jsonc`; filter by `event` or by `editor`. The operator how-to is
+[`docs/guides/read-cairn-logs.md`](docs/guides/read-cairn-logs.md). The records carry an editor's email
+for attribution and never a token or a session id, so a log is safe to read and paste.
+
+When a pass adds a diagnosable code path, give it an event in the vocabulary rather than a bare
+`console` call, and update the reference table in the same pass. The logger is internal (exported from
+no package subpath), so its API is free to grow; the event names are the public-observable contract.
+
 ## Durable gotcha (Cloudflare email)
 
 Email *Sending* (arbitrary recipients) is `env.EMAIL.send({ to, from, subject, html, text })`. The

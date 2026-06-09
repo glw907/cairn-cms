@@ -22,7 +22,8 @@ passes, designed in `docs/superpowers/specs/2026-06-08-cairn-diagnostics-initiat
 plus the Pass 1 detail) and
 `docs/superpowers/specs/2026-06-08-cairn-email-delivery-and-environment-preflight-design.md` (Passes 2 and 3).
 
-**Pass 1 (foundation) LANDED on `main` 2026-06-09, unpublished.** It stood up the internal
+**Pass 1 (foundation) LANDED on `main` 2026-06-09, published in `0.37.1` (2026-06-09; the
+patch also carried the docs reorganization and voice rewrite, with no consumer action).** It stood up the internal
 `src/lib/diagnostics/` module (the `CairnCondition` registry with three guard conditions, the `CairnError`
 throw primitive, the internal barrel) plus `src/lib/sveltekit/admin-response.ts` (extracted
 `applySecurityHeaders`/`brandedAdminPage`) and `src/lib/sveltekit/condition-response.ts`

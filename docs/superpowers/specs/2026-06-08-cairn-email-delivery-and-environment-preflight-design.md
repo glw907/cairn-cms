@@ -2,10 +2,17 @@
 
 Design spec, 2026-06-08. Status: drafted, reframed as Passes 2 and 3 of the cairn diagnostics
 initiative (`2026-06-08-cairn-diagnostics-initiative-design.md`). Arm A is Pass 2, the email-delivery
-runtime arm. Arms B and C are Pass 3, the doctor and the readiness checklist. Both consume the Pass 1
-condition model rather than inventing their own error identities, so the messages, the doctor results,
-and the checklist all draw from one registry. The arms below stand, with that one change folded in
-during planning.
+runtime arm. Arm B and most of Arm C are Pass 3, the doctor and the readiness checklist. Both consume
+the Pass 1 condition model rather than inventing their own error identities, so the messages, the doctor
+results, and the checklist all draw from one registry. The arms below stand, with that one change folded
+in during planning.
+
+**Pass 2/3 docs split (settled 2026-06-09).** Pass 2 carries its own change-docs (the
+`auth.link.send_failed` `code` field, and a changelog plus upgrade-guide entry for the additive
+`status`) and, because a known-wrong durable gotcha should not wait, the Arm C "Correct the stale
+gotcha" item (the `CLAUDE.md` email gotcha and the `cloudflare-email-sending-vs-routing` memory). The
+rest of Arm C, the readiness checklist, the deploy-guide "Onboard your sending domain" section, and the
+doctor reference page, lands with the Pass 3 doctor, since those are the setup walkthrough.
 
 This pass answers the ecxc DX finding
 (`docs/cairn-dx-feedback-2026-06-08-ecxc-magic-link-send-swallowed.md`). A real admin could not sign
@@ -188,11 +195,12 @@ a remediation naming the missing variable, so a partial environment still yields
 
 ## Arm C: documentation
 
-- **Correct the stale gotcha.** The `CLAUDE.md` "Durable gotcha (Cloudflare email)" predates the 2025
-  Email Service and conflates it with the dead MailChannels path. The rewrite states three facts. The
-  per-zone sending subdomain is the real gate. An unrestricted binding reaches any recipient. Routing's
-  `message.forward()` is the verified-destination call. The `cloudflare-email-sending-vs-routing` memory
-  is updated to match.
+- **Correct the stale gotcha (lands in Pass 2).** The `CLAUDE.md` "Durable gotcha (Cloudflare email)"
+  predates the 2025 Email Service and conflates it with the dead MailChannels path. The rewrite states
+  three facts. The per-zone sending subdomain is the real gate. An unrestricted binding reaches any
+  recipient. Routing's `message.forward()` is the verified-destination call. The
+  `cloudflare-email-sending-vs-routing` memory is updated to match. This rides with the Pass 2 runtime
+  arm rather than waiting for the Pass 3 checklist, since the gotcha is already known wrong.
 - **Write the Cloudflare readiness checklist.** A new `docs/guides/cloudflare-readiness.md` walks a
   developer from a default 2026 Cloudflare account to a working cairn site. It assumes the developer
   starts by either registering a domain with Cloudflare or moving an existing domain to Cloudflare, and
@@ -225,6 +233,14 @@ property held for the success path and still does. This pass narrows it on purpo
 rewritten to assert the byte-identical response for the neutral and send-ok paths, and to document that
 the `send_error` and `throttled` paths differ by design. Writing the relaxation into the test makes it
 explicit and puts it in front of the security reviewer rather than letting it slip in unremarked.
+
+**The timing side-channel rides along, noted not mitigated (settled 2026-06-09).** Awaiting the send
+means an editor's login POST waits on the email round trip while a non-editor's returns at once, so
+response latency now reveals editor membership the same way the `send_error` and `throttled` states do
+explicitly. It is strictly weaker than the body-level leak the posture already accepts, and a
+constant-time floor would add a fixed latency cost on every login to close a channel the explicit states
+leave open anyway. Pass 2 documents the side-channel and flags it to the `web-auth-security-reviewer` as
+subsumed, rather than padding the fast paths.
 
 ## Testing
 

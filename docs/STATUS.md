@@ -11,27 +11,44 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-08): execute the diagnostics Pass 1 foundation plan
+## Immediate next action (2026-06-09): draft and execute diagnostics Pass 2 (the email-delivery runtime arm)
 
-The next engine action is the **cairn diagnostics initiative**, a 1:1:1 model where one condition
-registry is the single source of truth for the readiness checklist, the `cairn doctor` probe, and the
-runtime error. It answers the ecxc magic-link-swallowed finding
-(`docs/cairn-dx-feedback-2026-06-08-ecxc-magic-link-send-swallowed.md`) and the recurring class of
-silent Cloudflare setup failures behind it (email not onboarded, HTTPS not forced, `checkOrigin: false`
-missing, observability off). It is decomposed foundation first across three passes, designed in
-`docs/superpowers/specs/2026-06-08-cairn-diagnostics-initiative-design.md` (umbrella plus the Pass 1
-detail) and `docs/superpowers/specs/2026-06-08-cairn-email-delivery-and-environment-preflight-design.md`
-(Passes 2 and 3).
+The **cairn diagnostics initiative** is a 1:1:1 model where one condition registry is the single source
+of truth for the readiness checklist, the `cairn doctor` probe, and the runtime error. It answers the
+ecxc magic-link-swallowed finding (`docs/cairn-dx-feedback-2026-06-08-ecxc-magic-link-send-swallowed.md`)
+and the recurring class of silent Cloudflare setup failures behind it (email not onboarded, HTTPS not
+forced, `checkOrigin: false` missing, observability off). It is decomposed foundation first across three
+passes, designed in `docs/superpowers/specs/2026-06-08-cairn-diagnostics-initiative-design.md` (umbrella
+plus the Pass 1 detail) and
+`docs/superpowers/specs/2026-06-08-cairn-email-delivery-and-environment-preflight-design.md` (Passes 2 and 3).
 
-**Pass 1 (foundation) has a written plan, ready to execute:**
-`docs/superpowers/plans/2026-06-08-cairn-diagnostics-01-foundation.md`. It stands up an internal
-`src/lib/diagnostics/` condition registry and a `CairnError` primitive, then routes the auth guard's
-three rejection responses (`https`, `csrf`, `origin`) through the registry with no behavior change. The
-two CSRF reasons become two conditions (`auth.csrf-token-invalid`, `auth.csrf-origin-mismatch`). The
-module is internal (no public subpath), so the docs dimension is "nothing public to document." Execute
-with `superpowers:subagent-driven-development`, one `cairn-implementer` per task. Seven tasks, each
-ending on the full gate (`npm run check` 0/0, `npm test` exit 0). The pre-existing `auth-guard.test.ts`
-is the regression proof that the guard migration changes no behavior.
+**Pass 1 (foundation) LANDED on `main` 2026-06-09, unpublished.** It stood up the internal
+`src/lib/diagnostics/` module (the `CairnCondition` registry with three guard conditions, the `CairnError`
+throw primitive, the internal barrel) plus `src/lib/sveltekit/admin-response.ts` (extracted
+`applySecurityHeaders`/`brandedAdminPage`) and `src/lib/sveltekit/condition-response.ts`
+(`renderConditionResponse` + `REASON_CONDITION`), then routed the auth guard's three rejection responses
+through the renderer with no behavior change. The two CSRF reasons are two conditions
+(`auth.csrf-token-invalid`, `auth.csrf-origin-mismatch`) alongside `edge.https-not-forced`. The module is
+internal (no public subpath), so the docs dimension was "nothing public to document" and
+`check:reference`/`check:package`/`check:docs` stayed green with no edit. It ran subagent-driven, one
+`cairn-implementer` per task (Tasks 1-6 each a fresh implementer, Task 7 verification inline), seven task
+commits `35825cb..8cbeacb`. Gate green at the tip `8cbeacb`, run first-hand: `npm run check` 853 files 0/0,
+`npm test` 135 files / 832 tests exit 0. The pre-existing `auth-guard.test.ts` is the regression proof the
+guard migration changed no behavior: 20/20 before and after, unchanged. The simplifier made no change and
+both reviewers (`web-auth-security-reviewer`, `cloudflare-workers-reviewer`) returned no Critical/Important.
+The live admin smoke was judged not proportionate (behavior-preserving re-home, no rendering change, the
+workerd integration suite already pins the responses). Post-mortem with the three carry-forwards (freeze
+`REGISTRY`; tie the renderer/registry 1:1 with one coverage test; the pre-existing untested
+https-vs-csrf branch ordering) is in the plan
+(`docs/superpowers/plans/2026-06-08-cairn-diagnostics-01-foundation.md`).
+
+**Pass 2 is next: the email-delivery runtime arm, which lands `CairnError`'s first throw-site.** No plan
+yet (Pass 1 was the only pre-written diagnostics plan), so brainstorm the open decisions, write the plan,
+then execute subagent-driven on `main`. It consumes the Pass 1 model: await the send, a typed `status`
+result additive with the existing `sent` boolean, the logged binding `error.code`, and the `LoginPage`
+`send_error` and `throttled` states (the non-leak posture is deliberately relaxed for editor feedback, on
+top of the `0.37.0` confirmation polish). The throwaway `examples/showcase/src/routes/_login-preview/`
+route (still untracked) is the eyeballing surface for those states; Pass 2 deletes it before shipping.
 
 **The ecxc production outage is already fixed.** The `ecxc.ski` sending domain was onboarded to
 Cloudflare Email Sending live on 2026-06-08 (subdomain `ecxc.ski`, return path `cf-bounce.ecxc.ski`,
@@ -39,15 +56,11 @@ status `ready`), so login there is unblocked. The renamed-domain gap (`ecnordic.
 `ecxc.ski` was not) was the surface fault. Email Sending reaches arbitrary recipients once the per-zone
 sending subdomain is onboarded; cairn stays Cloudflare-native with `cloudflareSend`, no second provider.
 
-**Passes 2 and 3 (after the foundation).** Pass 2 is the email-delivery runtime arm, consuming the Pass
-1 model: await the send, a typed `status` result additive with the existing `sent` boolean, the logged
-binding `error.code`, and the `LoginPage` `send_error` and `throttled` states (the non-leak posture is
-deliberately relaxed for editor feedback). Pass 3 is `cairn doctor` and the generated, gated Cloudflare
+**Pass 3 (after Pass 2).** `cairn doctor` and the generated, gated (`check:readiness`) Cloudflare
 readiness checklist that starts a developer from a default 2026 Cloudflare setup and links out to
 Cloudflare for the generic steps. The 0.37.0 login-confirmation polish was committed standalone as
 `d2cf014` (the brand snippet and the inset help note), so Pass 2 builds its `send_error`/`throttled`
-states on top of it. The throwaway `examples/showcase/src/routes/_login-preview/` route is still
-untracked for eyeballing those states; Pass 2 deletes it before shipping. Pass 1 touches none of this.
+states on top of it.
 
 ## Login-confirmation UX shipped as `0.37.0` (2026-06-08)
 

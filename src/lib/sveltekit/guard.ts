@@ -4,10 +4,9 @@
 import { redirect, error } from '@sveltejs/kit';
 import { resolveSession } from '../auth/store.js';
 import { sessionCookieName } from '../auth/crypto.js';
-import { httpsRequiredPage } from './https-required-page.js';
 import { isUnsafeFormRequest, originMatches, validateCsrfToken } from './csrf.js';
-import { csrfRequiredPage } from './csrf-required-page.js';
-import { applySecurityHeaders, brandedAdminPage } from './admin-response.js';
+import { applySecurityHeaders } from './admin-response.js';
+import { renderConditionResponse } from './condition-response.js';
 import { log } from '../log/index.js';
 import type { Editor } from '../auth/types.js';
 import type { HandleInput, RequestContext } from './types.js';
@@ -37,26 +36,6 @@ function isLocalHost(hostname: string): boolean {
   );
 }
 
-/** The hardened 400 help page for a deployed admin request that arrived over http. */
-function httpsRequiredResponse(url: URL): Response {
-  const httpsUrl = new URL(url);
-  httpsUrl.protocol = 'https:';
-  return brandedAdminPage(400, httpsRequiredPage(httpsUrl.toString()));
-}
-
-/** A plain 403 for a non-admin cross-origin form POST, matching the framework's wording. */
-function csrfForbidden(): Response {
-  return new Response('Cross-site POST form submissions are forbidden', {
-    status: 403,
-    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-  });
-}
-
-/** The branded 403 for a failed admin double-submit token check. */
-function csrfRequiredResponse(): Response {
-  return brandedAdminPage(403, csrfRequiredPage());
-}
-
 /** The SvelteKit `Handle` that guards `/admin/**` and hardens admin responses. */
 export function createAuthGuard() {
   return async function handle({ event, resolve }: HandleInput): Promise<Response> {
@@ -67,7 +46,7 @@ export function createAuthGuard() {
     if (!isAdminPath(pathname)) {
       if (isUnsafeFormRequest(event.request) && !originMatches(event)) {
         log.warn('guard.rejected', { reason: 'origin', path: pathname });
-        return csrfForbidden();
+        return renderConditionResponse('auth.csrf-origin-mismatch');
       }
       return resolve(event);
     }
@@ -78,14 +57,14 @@ export function createAuthGuard() {
     // posts. Local http (wrangler dev) is exempt.
     if (event.url.protocol === 'http:' && !isLocalHost(event.url.hostname)) {
       log.warn('guard.rejected', { reason: 'https', path: pathname });
-      return httpsRequiredResponse(event.url);
+      return renderConditionResponse('edge.https-not-forced', { url: event.url });
     }
 
     // Rule 1 - admin: every unsafe form POST carries a valid double-submit token, else the branded
     // 403 before resolve() runs. This covers the public login/auth posts too.
     if (isUnsafeFormRequest(event.request) && !(await validateCsrfToken(event))) {
       log.warn('guard.rejected', { reason: 'csrf', path: pathname });
-      return csrfRequiredResponse();
+      return renderConditionResponse('auth.csrf-token-invalid');
     }
 
     if (!isPublicAdminPath(pathname)) {

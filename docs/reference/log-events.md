@@ -21,3 +21,10 @@ redaction stance.
 | `commit.succeeded` | info | A content or nav commit lands on the branch. | `concept`, `id`, `editor` |
 | `commit.failed` | warn or error | A commit fails. `warn` with `reason: "conflict"` on a 409, `error` with `error` otherwise. | `concept`, `id`, `editor`, `reason` or `error` |
 | `guard.rejected` | warn | The admin guard refuses a request before `resolve()`. | `reason` (`csrf`, `origin`, or `https`), `path` |
+
+The `email` on `auth.link.requested` is the raw submitted address, logged before the allowlist
+check, so it is unvalidated request input. cairn lowercases it, trims it, and caps the logged value
+at 320 characters (the RFC 5321 maximum). Every other event that carries an `email` fires only for an
+allow-listed editor, so its address is a known one. The request endpoint itself is unauthenticated, so
+a flood of distinct addresses inflates log volume; rate-limit it at the edge if that matters for your
+site.

@@ -2,6 +2,24 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.36.0
+
+cairn now emits structured diagnostic events. The engine had three bare `console.error` calls and no
+queryable diagnostics. An internal logger assembles a JSON record for each event, with an envelope
+(`level`, `event`, `timestamp`) and event-specific fields, and writes it to `console`. Cloudflare
+Workers Logs ingests and indexes those records when a site sets `observability.enabled = true`, so
+each field filters. The event vocabulary covers the auth flow, the commit pipeline, and the admin
+guard's pre-resolve refusals. The records carry an editor's email for attribution and never carry a
+magic-link token, a session id, or a magic-link's contents; a standing redaction test pins that.
+
+The event names are a stable contract, so renaming one is a breaking change later. The full list, with
+each event's level, trigger, and fields, is in the new [log events reference](docs/reference/log-events.md),
+and the [read cairn's logs guide](docs/guides/read-cairn-logs.md) covers the one setup line and the
+dashboard query.
+
+Consumers may: set `observability.enabled = true` in `wrangler.jsonc` to read the events in Workers
+Logs. The change is otherwise additive and needs no action.
+
 ## 0.35.0
 
 cairn now owns CSRF for the admin. A consuming site disables SvelteKit's global `checkOrigin`, and

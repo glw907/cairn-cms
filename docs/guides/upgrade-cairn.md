@@ -171,3 +171,11 @@ also restores the strict `Origin` check for the site's own non-admin form POSTs,
 coming off is not a net loss. Consumers must: set `csrf: { checkOrigin: false }` in `kit` in
 `svelte.config.js`. Without it the framework's global check rejects the JS-free auth POST and the
 admin sign-in fails.
+
+## 0.36.0: structured logging, additive
+
+cairn emits structured diagnostic events for the auth flow, the commit pipeline, and the admin guard,
+written to `console` as JSON for Cloudflare Workers Logs. Consumers must: nothing. To read the events,
+set `observability.enabled = true` in `wrangler.jsonc`; see the
+[read cairn's logs guide](read-cairn-logs.md). The records carry an editor's email and never a token
+or session id.

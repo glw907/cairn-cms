@@ -11,7 +11,7 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-09): draft and execute diagnostics Pass 2 (the email-delivery runtime arm)
+## Immediate next action (2026-06-09): execute the diagnostics Pass 2 plan (the email-delivery runtime arm)
 
 The **cairn diagnostics initiative** is a 1:1:1 model where one condition registry is the single source
 of truth for the readiness checklist, the `cairn doctor` probe, and the runtime error. It answers the
@@ -42,13 +42,28 @@ workerd integration suite already pins the responses). Post-mortem with the thre
 https-vs-csrf branch ordering) is in the plan
 (`docs/superpowers/plans/2026-06-08-cairn-diagnostics-01-foundation.md`).
 
-**Pass 2 is next: the email-delivery runtime arm, which lands `CairnError`'s first throw-site.** No plan
-yet (Pass 1 was the only pre-written diagnostics plan), so brainstorm the open decisions, write the plan,
-then execute subagent-driven on `main`. It consumes the Pass 1 model: await the send, a typed `status`
-result additive with the existing `sent` boolean, the logged binding `error.code`, and the `LoginPage`
-`send_error` and `throttled` states (the non-leak posture is deliberately relaxed for editor feedback, on
-top of the `0.37.0` confirmation polish). The throwaway `examples/showcase/src/routes/_login-preview/`
-route (still untracked) is the eyeballing surface for those states; Pass 2 deletes it before shipping.
+**Pass 2 (the email-delivery runtime arm) HAS A WRITTEN PLAN, ready to execute:**
+`docs/superpowers/plans/2026-06-09-cairn-diagnostics-02-email-delivery.md`. Execute with
+`superpowers:subagent-driven-development`, one `cairn-implementer` per task, on `main` directly (the
+established precedent for this initiative). Seven tasks, each ending on the full gate (`npm run check`
+0/0, `npm test` exit 0). It consumes the Pass 1 model: await the send (remove the `waitUntil`
+backgrounding), a typed `status` result (`sent`/`send_error`/`throttled`) additive over the existing
+`sent` boolean, the logged binding `code` plus a new `conditionId` on `auth.link.send_failed`, and the
+`LoginPage` `send_error` and `throttled` states on top of the `0.37.0` confirmation polish. The non-leak
+posture is deliberately relaxed for editor feedback (the neutral and send-ok paths stay byte-identical;
+`send_error`/`throttled` reveal editor membership by design), and the await-the-send timing side-channel
+is noted not mitigated (flagged to `web-auth-security-reviewer`). Two email conditions
+(`email.sender-not-onboarded`, `email.send-failed`) join the Pass 1 registry, seeding Pass 3's doctor.
+The minor bumps `0.38.0` (additive). **Scope/reconciliation calls baked into the plan (settled with
+Geoff 2026-06-09):** Pass 2 also corrects the stale `CLAUDE.md` Cloudflare-email gotcha (a known-wrong
+durable gotcha should not wait), while the readiness checklist and the deploy-guide onboarding section
+stay Pass 3; and `CairnError`'s first use here is as the *carrier* of the mapped condition (Arm A has no
+rendered-error boundary), with its first thrown-and-rendered site moving to the Pass 3 doctor. The
+throwaway `examples/showcase/src/routes/_login-preview/` route (still untracked) is the eyeballing
+surface; Pass 2's last task deletes it.
+
+**Pass 1 docs split reconciled in the spec (2026-06-09).** The email-delivery design spec now records the
+Pass 2/3 docs split and the timing side-channel decision, committed as `370488e`.
 
 **The ecxc production outage is already fixed.** The `ecxc.ski` sending domain was onboarded to
 Cloudflare Email Sending live on 2026-06-08 (subdomain `ecxc.ski`, return path `cf-bounce.ecxc.ski`,

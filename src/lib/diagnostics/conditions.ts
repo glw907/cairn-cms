@@ -49,6 +49,22 @@ const REGISTRY: Record<string, CairnCondition> = {
 		remediation: 'Post the form from the same origin, or check a proxy that strips or rewrites the Origin header.',
 		logEvent: 'guard.rejected',
 	},
+	'email.sender-not-onboarded': {
+		id: 'email.sender-not-onboarded',
+		severity: 'blocker',
+		title: 'Email sending domain is not onboarded',
+		why: 'The from-address domain has no enabled Cloudflare sending subdomain, so env.EMAIL.send has no aligned sender and the magic-link send throws E_SENDER_NOT_VERIFIED. No editor can sign in.',
+		remediation: 'Onboard the sending domain with `wrangler email sending enable <domain>`, then re-deploy. The domain must match branding.from.',
+		logEvent: 'auth.link.send_failed',
+	},
+	'email.send-failed': {
+		id: 'email.send-failed',
+		severity: 'blocker',
+		title: 'Magic-link email send failed',
+		why: 'The magic-link send threw for a reason other than a missing sender onboarding (a delivery error, a binding misconfiguration, or a custom sender failure), so the editor never received a link.',
+		remediation: 'Read the auth.link.send_failed log record (the code and error fields) in Workers Logs, and check the EMAIL binding and the sender configuration.',
+		logEvent: 'auth.link.send_failed',
+	},
 };
 
 /** Resolve a condition by id. Throws on an unknown id, since ids are compile-time constants. */

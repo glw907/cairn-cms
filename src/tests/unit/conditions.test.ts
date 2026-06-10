@@ -8,6 +8,16 @@ describe('condition registry', () => {
 		expect(condition('auth.csrf-origin-mismatch').logEvent).toBe('guard.rejected');
 	});
 
+	it('resolves the two email conditions', () => {
+		expect(condition('email.sender-not-onboarded').severity).toBe('blocker');
+		expect(condition('email.sender-not-onboarded').remediation).toMatch(
+			/wrangler email sending enable/
+		);
+		expect(condition('email.sender-not-onboarded').logEvent).toBe('auth.link.send_failed');
+		expect(condition('email.send-failed').severity).toBe('blocker');
+		expect(condition('email.send-failed').logEvent).toBe('auth.link.send_failed');
+	});
+
 	it('throws on an unknown id', () => {
 		expect(() => condition('nope.not-real')).toThrow(/unknown cairn condition/);
 	});

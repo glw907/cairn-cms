@@ -10,6 +10,8 @@ import { isValidId, slugify, filenameFromId, composeDatedId, slugFromId, renameI
 import { rewriteCairnLink } from '../components/markdown-format.js';
 import { appCredentials, type GithubKeyEnv } from '../github/credentials.js';
 import { listMarkdown, readRaw, commitFiles, type FileChange } from '../github/repo.js';
+import { branchHeadSha, createBranch } from '../github/branches.js';
+import { pendingBranch } from '../content/pending.js';
 import { cachedInstallationToken } from '../github/signing.js';
 import { emptyManifest, manifestEntryFromFile, parseManifest, serializeManifest, upsertEntry, removeEntry, inboundLinks, type LinkTarget, type InboundLink } from '../content/manifest.js';
 import { CommitConflictError } from '../github/types.js';
@@ -210,6 +212,10 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     const token = await mintToken(event.platform?.env ?? {});
     const existing = await readRaw(runtime.backend, `${concept.dir}/${filenameFromId(id)}`, token);
     if (existing !== null) return bounce('An entry with that slug already exists.');
+    // A pending branch is an entry too (saved but not yet published); refuse to clobber it.
+    if ((await branchHeadSha(runtime.backend, pendingBranch(concept.id, id), token)) !== null) {
+      return bounce('An unpublished entry with that slug already exists.');
+    }
 
     throw redirect(303, `/admin/${concept.id}/${id}?new=1`);
   }
@@ -295,7 +301,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     }
   }
 
-  /** Save an edit: validate, then commit with the session editor as author. Fails safe on 409. */
+  /** Save an edit: validate, then commit to the entry's pending branch with the session editor
+   *  as author. Main and its manifest stay untouched until publish. Fails safe on 409. */
   async function saveAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
     const editor = sessionOf(event);
     const concept = conceptOf(runtime, event.params);
@@ -319,22 +326,20 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     const markdown = serializeMarkdown(result.data, body);
     const token = await mintToken(event.platform?.env ?? {});
 
-    // Read the committed manifest, upsert this entry's row, and commit content and manifest in one
-    // commit. A missing manifest starts empty (first save on a fresh repo). The build regenerates
-    // and verifies the manifest, so this incremental patch is the cheap request-time path. On a
-    // 422 retry commitFiles re-sends this manifest blob last-writer-wins. A concurrent save can then
-    // leave the committed manifest stale, which the next build rejects via verifyManifest; regenerate
-    // it with npm run cairn:manifest to recover.
+    // Read main's manifest (the authoritative one; pending branches carry no manifest copy) and
+    // upsert this entry's row in memory, for the link guard only. The save commits no manifest
+    // change; publish performs the upsert on main. A missing manifest starts empty (first save on
+    // a fresh repo).
     const manifestRaw = await readRaw(runtime.backend, runtime.manifestPath, token);
     const manifest = manifestRaw === null ? emptyManifest() : parseManifest(manifestRaw);
     const row = manifestEntryFromFile(concept, { path, raw: markdown });
     const upserted = upsertEntry(manifest, row);
-    const nextManifest = serializeManifest(upserted);
 
-    // Save guard: resolve the body's cairn links against the manifest with this entry upserted, so a
-    // self-link and a link to any existing target resolves. A link to an absent target hard-blocks
-    // the save (it would red the deploy build and the author would not see it); a link to a draft
-    // target commits with a warning, since it is valid and resolves once the target is published.
+    // Save guard: resolve the body's cairn links against main's manifest with this entry upserted,
+    // so a self-link and a link to any published target resolves. A link to a target absent from
+    // main hard-blocks the save (publishing this entry before its target would red the deploy
+    // build); a link to a draft target commits with a warning, since it is valid and resolves once
+    // the target is published.
     const byKey = new Map(upserted.entries.map((e) => [`${e.concept}/${e.id}`, e]));
     const absent: string[] = [];
     const draft: string[] = [];
@@ -350,14 +355,21 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       return fail(400, { brokenLinks: absent, body });
     }
 
-    const commitFields = { concept: concept.id, id, editor: editor.email };
+    // Ensure the entry's pending branch exists (cut lazily from main's head on first save), then
+    // commit only the entry file there. Main stays untouched until publish, so the branch differs
+    // from main at exactly this entry's path.
+    const branch = pendingBranch(concept.id, id);
+    if ((await branchHeadSha(runtime.backend, branch, token)) === null) {
+      const mainHead = await branchHeadSha(runtime.backend, runtime.backend.branch, token);
+      if (mainHead === null) throw error(500, 'Cannot read the default branch');
+      await createBranch(runtime.backend, branch, mainHead, token);
+    }
+
+    const commitFields = { concept: concept.id, id, editor: editor.email, branch };
     try {
       await commitFiles(
-        runtime.backend,
-        [
-          { path, content: markdown },
-          { path: runtime.manifestPath, content: nextManifest },
-        ],
+        { ...runtime.backend, branch },
+        [{ path, content: markdown }],
         { message: `Update ${concept.label.toLowerCase()}: ${id}`, author: { name: editor.displayName, email: editor.email } },
         token,
       );

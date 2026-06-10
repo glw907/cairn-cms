@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { CommitConflictError } from '../../lib/github/types.js';
-import { emptyManifest, manifestEntryFromFile, parseManifest, serializeManifest, upsertEntry } from '../../lib/content/manifest.js';
+import { manifestEntryFromFile, serializeManifest } from '../../lib/content/manifest.js';
 import type { CairnRuntime, ValidationResult } from '../../lib/content/types.js';
 
 function runtime(validate: (fm: Record<string, unknown>, body: string) => ValidationResult): CairnRuntime {
@@ -42,9 +43,11 @@ function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status });
 }
 
-/** A fetch double for the new save path: one manifest read, then the commitFiles sequence
- *  (GET ref, GET commit, POST trees, POST commits, PATCH ref). `manifestRaw` is the body the
- *  manifest read returns, or null for a 404 (the empty-manifest case). */
+/** A scripted fetch double for the save path: one manifest read, the pending-branch ref probe
+ *  (any GET /git/ref/ answers with a head, so the branch reads as existing), then the
+ *  commitFiles sequence (GET ref, GET commit, POST trees, POST commits, PATCH ref).
+ *  `manifestRaw` is the body the manifest read returns, or null for a 404 (the
+ *  empty-manifest case). */
 function commitFetch(manifestRaw: string | null) {
   const calls: { url: string; init?: RequestInit }[] = [];
   const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
@@ -67,14 +70,15 @@ function commitFetch(manifestRaw: string | null) {
 afterEach(() => vi.restoreAllMocks());
 
 describe('saveAction', () => {
-  it('commits the content file and the refreshed manifest in one commit', async () => {
-    // A manifest holding the published pages/about the body links to, so the save guard passes.
+  it('commits only the entry file to the pending branch, authored by the editor', async () => {
+    // A manifest on main holding the published pages/about the body links to, so the guard passes.
     const aboutRow = manifestEntryFromFile(runtime(() => ({ ok: true, data: {} })).concepts[0], {
       path: 'src/content/pages/about.md',
       raw: '---\ntitle: About\n---\nx',
     });
     const manifest = serializeManifest({ version: 1, entries: [{ ...aboutRow, concept: 'pages', id: 'about', draft: false }] });
-    const calls = commitFetch(manifest);
+    const gh = new GithubDouble({ main: { 'src/content/.cairn/index.json': manifest } });
+    gh.install();
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })), deps);
     try {
       await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'See [about](cairn:pages/about) for more.' }) as never);
@@ -83,50 +87,45 @@ describe('saveAction', () => {
       expect((e as { location: string }).location).toBe('/admin/posts/2026-05-hi?saved=1');
     }
 
-    const treeReq = calls.find((c) => (c.init?.method ?? 'GET') === 'POST' && c.url.endsWith('/git/trees'))!;
-    const treeBody = JSON.parse(String(treeReq.init!.body)) as { tree: { path: string; content?: string }[] };
-    const paths = treeBody.tree.map((t) => t.path);
-    expect(paths).toContain('src/content/posts/2026-05-hi.md');
-    expect(paths).toContain('src/content/.cairn/index.json');
+    // The saved content lands on the pending branch; main is untouched.
+    expect(gh.read('cairn/posts/2026-05-hi', 'src/content/posts/2026-05-hi.md')).toContain('title: Hi');
+    expect(gh.read('main', 'src/content/posts/2026-05-hi.md')).toBeNull();
 
-    const manifestEntry = treeBody.tree.find((t) => t.path === 'src/content/.cairn/index.json')!;
-    const committed = parseManifest(manifestEntry.content!);
-    const saved = committed.entries.find((e) => e.concept === 'posts' && e.id === '2026-05-hi')!;
-    expect(saved).toBeTruthy();
-    expect(saved.links).toEqual([{ concept: 'pages', id: 'about' }]);
+    // No manifest change rides the commit: both copies still hold the seeded bytes.
+    expect(gh.read('main', 'src/content/.cairn/index.json')).toBe(manifest);
+    expect(gh.read('cairn/posts/2026-05-hi', 'src/content/.cairn/index.json')).toBe(manifest);
 
-    const commitReq = calls.find((c) => (c.init?.method ?? 'GET') === 'POST' && c.url.endsWith('/git/commits'))!;
-    const commitBody = JSON.parse(String(commitReq.init!.body)) as { author: unknown; committer?: unknown };
+    const commitReq = gh.calls.find((c) => c.method === 'POST' && c.url.endsWith('/git/commits'))!;
+    const commitBody = commitReq.body as { author: unknown; committer?: unknown };
     expect(commitBody.author).toEqual({ name: 'Ed Editor', email: 'ed@t' });
     expect(commitBody.committer).toBeUndefined();
   });
 
-  it('upserts the saved entry into an existing committed manifest', async () => {
+  it('leaves the committed manifest untouched when the entry already has a row', async () => {
     const concept = runtime(() => ({ ok: true, data: {} })).concepts[0];
     const existingEntry = manifestEntryFromFile(concept, {
       path: 'src/content/posts/2026-05-hi.md',
       raw: '---\ntitle: Old\n---\nold body',
     });
-    // Seed the published pages/about target too, so the body's link clears the save guard.
-    const aboutRow = manifestEntryFromFile(concept, { path: 'src/content/pages/about.md', raw: '---\ntitle: About\n---\nx' });
-    const seeded = upsertEntry(emptyManifest(), { ...aboutRow, concept: 'pages', id: 'about', draft: false });
-    const incoming = serializeManifest(upsertEntry(seeded, existingEntry));
-    const calls = commitFetch(incoming);
+    const manifest = serializeManifest({ version: 1, entries: [existingEntry] });
+    const gh = new GithubDouble({
+      main: {
+        'src/content/.cairn/index.json': manifest,
+        'src/content/posts/2026-05-hi.md': '---\ntitle: Old\n---\nold body',
+      },
+    });
+    gh.install();
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'New' } })), deps);
     try {
-      await routes.saveAction(saveEvent('2026-05-hi', { title: 'New', body: 'links [about](cairn:pages/about) now' }) as never);
+      await routes.saveAction(saveEvent('2026-05-hi', { title: 'New', body: 'fresh body' }) as never);
       throw new Error('should have redirected');
     } catch (e) {
       expect((e as { location: string }).location).toBe('/admin/posts/2026-05-hi?saved=1');
     }
-    const treeReq = calls.find((c) => (c.init?.method ?? 'GET') === 'POST' && c.url.endsWith('/git/trees'))!;
-    const treeBody = JSON.parse(String(treeReq.init!.body)) as { tree: { path: string; content?: string }[] };
-    const manifestEntry = treeBody.tree.find((t) => t.path === 'src/content/.cairn/index.json')!;
-    const committed = parseManifest(manifestEntry.content!);
-    const saved = committed.entries.filter((e) => e.concept === 'posts' && e.id === '2026-05-hi');
-    expect(saved).toHaveLength(1); // upsert replaced, did not duplicate
-    expect(saved[0].title).toBe('New');
-    expect(saved[0].links).toEqual([{ concept: 'pages', id: 'about' }]);
+    // The branch carries the new content; main still serves the old file and the old manifest row.
+    expect(gh.read('cairn/posts/2026-05-hi', 'src/content/posts/2026-05-hi.md')).toContain('title: New');
+    expect(gh.read('main', 'src/content/posts/2026-05-hi.md')).toContain('title: Old');
+    expect(gh.read('main', 'src/content/.cairn/index.json')).toBe(manifest);
   });
 
   it('bounces invalid frontmatter back to the form and never commits', async () => {

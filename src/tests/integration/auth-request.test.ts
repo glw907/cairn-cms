@@ -62,6 +62,8 @@ describe('request a link (scenarios 1, 2)', () => {
     const strangerResult = await routes.requestAction(makeEvent({ url, form: { email: 'stranger@x.dev' } }));
     expect(editorResult).toEqual(strangerResult);
     expect(editorResult).toEqual({ status: 'sent', sent: true });
+    // toEqual is key-order-insensitive; the serialized comparison pins true byte-identity.
+    expect(JSON.stringify(editorResult)).toBe(JSON.stringify(strangerResult));
   });
 });
 
@@ -154,6 +156,28 @@ describe('request logging', () => {
     expect(record).toBeDefined();
     expect(record?.code).toBe('E_SENDER_NOT_VERIFIED');
     expect(record?.conditionId).toBe('email.sender-not-onboarded');
+    vi.restoreAllMocks();
+  });
+
+  it('scrubs a confirm-link token and truncates an oversized error in the send_failed record', async () => {
+    // A custom sender's thrown error is operator code, so it may embed the failed message (and
+    // with it the magic link). The logged error field must never carry the token, and it stays
+    // bounded so an abusive payload cannot inflate the record.
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const routes = createAuthRoutes({
+      branding,
+      send: async (_env, message) => {
+        throw new Error(`delivery failed for ${message.html}\n${'x'.repeat(1000)}`);
+      },
+    });
+    await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' } }));
+    const record = errorSpy.mock.calls
+      .map((c) => c[0] as { event?: string; error?: string })
+      .find((r) => r.event === 'auth.link.send_failed');
+    expect(record?.error).toBeDefined();
+    expect(record?.error).not.toMatch(/token=(?!\[redacted\])/);
+    expect(record?.error?.length).toBeLessThanOrEqual(300);
     vi.restoreAllMocks();
   });
 });

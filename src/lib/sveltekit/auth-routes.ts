@@ -33,6 +33,18 @@ export type RequestResult =
   | { status: 'send_error'; sent: false }
   | { status: 'throttled'; sent: false };
 
+/**
+ * The loggable form of a send failure. The engine's own senders throw clean errors, but `send` is
+ * an injection seam, and a custom sender's thrown error may embed the failed message and with it
+ * the magic link. Scrub any token query value and cap the length, so the documented "records never
+ * carry a token" guarantee holds for the seam too.
+ */
+function scrubSendError(err: unknown): string {
+  return String(err)
+    .replace(/([?&]token=)[^&\s"'<]+/g, '$1[redacted]')
+    .slice(0, 300);
+}
+
 export function createAuthRoutes(config: AuthRoutesConfig) {
   const send = config.send ?? cloudflareSend;
 
@@ -53,7 +65,9 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
     log.info('auth.link.requested', { email: email.slice(0, 320) });
 
     const editor = email ? await findEditor(db, email) : null;
-    // Non-editor: byte-identical to the editor send-ok path, so the response never leaks membership.
+    // Non-editor: byte-identical to the editor send-ok path, so the response body never leaks
+    // membership. Response timing still differs (the editor path awaits the send), the side-channel
+    // the design accepts as strictly weaker than the explicit throttled signal below.
     if (!editor) return { status: 'sent', sent: true };
 
     const now = Date.now();
@@ -78,7 +92,9 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
       // original as cause), and log the greppable code plus the conditionId so the next onboarding
       // gap reads straight to its fix. The editor sees only a generic message, never this detail.
       const failure = emailSendFailure(err);
-      log.error('auth.link.send_failed', { email, error: String(err), code: errorCode(err), conditionId: failure.conditionId });
+      log.error('auth.link.send_failed', { email, error: scrubSendError(err), code: errorCode(err), conditionId: failure.conditionId });
+      // A plain 200 with a status field, not fail(): the result stays one uniform union for the
+      // page, and the failure is already observable through the error-level log record.
       return { status: 'send_error', sent: false };
     }
     return { status: 'sent', sent: true };

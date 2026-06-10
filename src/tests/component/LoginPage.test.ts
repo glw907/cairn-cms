@@ -27,6 +27,17 @@ describe('LoginPage', () => {
     await expect.element(screen.getByRole('textbox', { name: /email/i })).toBeInTheDocument();
   });
 
+  it('shows the success panel for the engine result shape', async () => {
+    const screen = render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { status: 'sent', sent: true } });
+    await expect.element(screen.getByText(/check your email/i)).toBeInTheDocument();
+  });
+
+  it('lets a fresh action result supersede a stale expired-link error', async () => {
+    const screen = render(LoginPage, { data: { siteName: 'Test Site', error: 'expired', csrf: 'csrf-tok' }, form: { status: 'throttled', sent: false } });
+    await expect.element(screen.getByText(/requested a link recently/i)).toBeInTheDocument();
+    expect(screen.container.textContent).not.toMatch(/that link expired/i);
+  });
+
   it('shows a send-error warning and keeps the form available', async () => {
     const screen = render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { status: 'send_error', sent: false } });
     await expect.element(screen.getByRole('alert')).toBeInTheDocument();

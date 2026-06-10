@@ -69,7 +69,7 @@ describe('log redaction', () => {
         token = link.searchParams.get('token') ?? '';
       },
     });
-    // makeEvent supplies no waitUntil, so the send is awaited inline and the callback runs here.
+    // The send is awaited unconditionally (0.38.0), so the callback has run by the time records returns.
     const captured = await records(() =>
       r.requestAction(makeEvent({ url: 'https://test.dev/admin/auth/request', form: { email: 'ed@x.dev' } })),
     );

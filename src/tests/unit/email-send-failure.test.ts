@@ -12,6 +12,11 @@ describe('errorCode', () => {
     expect(errorCode({ code: 42 })).toBeUndefined();
     expect(errorCode(null)).toBeUndefined();
   });
+
+  it('reads an E_* code embedded in the message when no structured code exists', () => {
+    expect(errorCode(new Error('send failed: E_SENDER_NOT_VERIFIED'))).toBe('E_SENDER_NOT_VERIFIED');
+    expect(errorCode(new Error('binding rejected with E_DELIVERY_FAILED today'))).toBe('E_DELIVERY_FAILED');
+  });
 });
 
 describe('emailSendFailure', () => {
@@ -28,5 +33,12 @@ describe('emailSendFailure', () => {
     const failure = emailSendFailure(cause);
     expect(failure.conditionId).toBe('email.send-failed');
     expect(failure.cause).toBe(cause);
+  });
+
+  it('maps the not-verified message string to sender-not-onboarded when no code exists', () => {
+    // The live binding has been observed throwing this string with no structured code (the
+    // ecxc outage); the substring mapping keeps the onboarding remediation reachable either way.
+    const cause = new Error('destination address is not a verified address');
+    expect(emailSendFailure(cause).conditionId).toBe('email.sender-not-onboarded');
   });
 });

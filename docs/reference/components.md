@@ -115,14 +115,16 @@ re-renders the author's edits and the broken links to fix. Mount it in
 ```ts
 let { data, form }: {
   data: { siteName: string; error: string | null; csrf: string };
-  form: { sent?: boolean } | null;
+  form: { sent?: boolean; status?: 'sent' | 'send_error' | 'throttled' } | null;
 };
 ```
 
 The magic-link request screen. `data` carries the site name, an optional error, and the `csrf`
-double-submit token the page renders into its form. `form.sent` is true once a link request was
-accepted, which flips the page to the check-your-email state. Mount it in the unauthed
-`src/routes/admin/login/+page.svelte` against the login load and action.
+double-submit token the page renders into its form. A `sent` status (or the legacy `form.sent`
+boolean) flips the page to the check-your-email state; `send_error` renders a warning that links
+cannot be sent right now, and `throttled` renders a check-your-inbox hint, both above the form so
+the editor can retry. Mount it in the unauthed `src/routes/admin/login/+page.svelte` against the
+login load and action.
 
 ```svelte
 <script lang="ts">

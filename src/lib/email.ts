@@ -22,7 +22,9 @@ export interface AuthBranding {
   replyTo?: string;
 }
 
-/** The injected send. Production uses `cloudflareSend`; tests pass a sink. */
+/** The injected send. Production uses `cloudflareSend`; tests pass a sink. A thrown error's
+ *  text reaches the structured log (scrubbed and truncated), so a custom sender must not embed
+ *  the message body or the magic link in what it throws. */
 export type SendMagicLink = (env: AuthEnv, message: MagicLinkMessage) => Promise<void>;
 
 /** Escape the five HTML-significant characters. */
@@ -58,22 +60,27 @@ export const cloudflareSend: SendMagicLink = async (env, message) => {
 
 /**
  * Read the E_* code a Cloudflare Email Sending binding error carries (E_SENDER_NOT_VERIFIED,
- * E_DELIVERY_FAILED, and the rest of the set). A custom injected sender that throws a plain Error
- * has no code, so this returns undefined and the record still logs cleanly.
+ * E_DELIVERY_FAILED, and the rest of the set). The structured `code` property is the documented
+ * shape, but it is unproven against the live binding, so a code embedded in the message is read as
+ * a fallback. A custom injected sender that throws a plain Error has neither, so this returns
+ * undefined and the record still logs cleanly.
  */
 export function errorCode(err: unknown): string | undefined {
   if (typeof err === 'object' && err !== null && 'code' in err && typeof err.code === 'string') {
     return err.code;
   }
-  return undefined;
+  return String(err).match(/\bE_[A-Z][A-Z_]*\b/)?.[0];
 }
 
 /**
  * Map a magic-link send failure to its registered diagnostic condition, carrying the original error
- * as the cause. The not-verified code is the onboarding gap (the ecxc fault); everything else is the
- * generic send failure. The caller logs the conditionId and code, and returns a send_error status.
+ * as the cause. The not-verified code is the onboarding gap (the ecxc fault); the live binding has
+ * also been observed throwing the bare "not a verified address" string with no code, so that
+ * message maps to the same condition. Everything else is the generic send failure. The caller logs
+ * the conditionId and code, and returns a send_error status.
  */
 export function emailSendFailure(err: unknown): CairnError {
-  const id = errorCode(err) === 'E_SENDER_NOT_VERIFIED' ? 'email.sender-not-onboarded' : 'email.send-failed';
-  return new CairnError(id, { cause: err });
+  const onboarding =
+    errorCode(err) === 'E_SENDER_NOT_VERIFIED' || String(err).includes('not a verified address');
+  return new CairnError(onboarding ? 'email.sender-not-onboarded' : 'email.send-failed', { cause: err });
 }

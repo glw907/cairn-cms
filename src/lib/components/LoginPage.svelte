@@ -96,7 +96,9 @@ the allowlist, so the page never leaks membership (spec §7.1).
           You requested a link recently. Check your inbox, or wait a minute and try again.
         </div>
       {/if}
-      {#if data.error}
+      <!-- A fresh action result supersedes the GET-time error, so a resubmit into a throttle or a
+           send failure never shows the stale expired-link alert alongside the new state. -->
+      {#if data.error && !form?.status}
         <div role="alert" class="alert alert-error mb-3 text-sm">That link expired. Request a new one below.</div>
       {/if}
       <form method="POST" class="flex flex-col gap-3">

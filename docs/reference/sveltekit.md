@@ -75,9 +75,14 @@ export const load = (event) => {
 ### `createAuthRoutes`
 
 ```ts
+type RequestResult =
+  | { status: 'sent'; sent: true }
+  | { status: 'send_error'; sent: false }
+  | { status: 'throttled'; sent: false };
+
 declare function createAuthRoutes(config: AuthRoutesConfig): {
-  loginLoad: (event: RequestContext) => { siteName: string; error: string | null };
-  requestAction: (event: RequestContext) => Promise<{ sent: true }>;
+  loginLoad: (event: RequestContext) => { siteName: string; error: string | null; csrf: string };
+  requestAction: (event: RequestContext) => Promise<RequestResult>;
   confirmLoad: (event: RequestContext) => { token: string; siteName: string; error: string | null };
   confirmAction: (event: RequestContext) => Promise<never>;
   logoutAction: (event: RequestContext) => Promise<never>;
@@ -88,6 +93,12 @@ Build the magic-link login flow. `loginLoad` and `requestAction` back `/admin/lo
 and `confirmAction` back the magic-link landing at `/admin/auth/confirm`, and `logoutAction` clears
 the session. The `config.branding` sets the site name and sender shown in the email; pass a custom
 `config.send` to override the default Cloudflare sender.
+
+`requestAction` awaits the send, so its `RequestResult` (exported since 0.38.0) reflects the
+outcome. The `sent` status covers both a successful send and a non-allow-listed address (the two
+return identical results, so the response never reveals membership). A `send_error` means the email
+could not be sent; `throttled` means the same address requested a link inside the cooldown window.
+`sent` mirrors the old boolean, so a site rendering against `form.sent` keeps working.
 
 ```ts
 // src/routes/admin/login/+page.server.ts

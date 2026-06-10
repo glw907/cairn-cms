@@ -62,9 +62,8 @@ export const cloudflareSend: SendMagicLink = async (env, message) => {
  * has no code, so this returns undefined and the record still logs cleanly.
  */
 export function errorCode(err: unknown): string | undefined {
-  if (typeof err === 'object' && err !== null && 'code' in err) {
-    const code = (err as { code: unknown }).code;
-    if (typeof code === 'string') return code;
+  if (typeof err === 'object' && err !== null && 'code' in err && typeof err.code === 'string') {
+    return err.code;
   }
   return undefined;
 }

@@ -10,13 +10,25 @@ beforeEach(async () => {
   await db.batch([db.prepare('DELETE FROM magic_token'), db.prepare('DELETE FROM editor')]);
 });
 
+const branding = { siteName: 'Test', from: 'noreply@test.dev' };
+
 function routesWithSink() {
   const sent: MagicLinkMessage[] = [];
   const routes = createAuthRoutes({
-    branding: { siteName: 'Test', from: 'noreply@test.dev' },
+    branding,
     send: async (_env, message) => void sent.push(message),
   });
   return { routes, sent };
+}
+
+// A sender that fails the way an un-onboarded Cloudflare binding does.
+function routesWithFailingSend() {
+  return createAuthRoutes({
+    branding,
+    send: async () => {
+      throw Object.assign(new Error('not verified'), { code: 'E_SENDER_NOT_VERIFIED' });
+    },
+  });
 }
 
 describe('request a link (scenarios 1, 2)', () => {
@@ -84,7 +96,7 @@ describe('request hardening (Unit 4)', () => {
     const promises: Promise<unknown>[] = [];
     let finished = false;
     const routes = createAuthRoutes({
-      branding: { siteName: 'Test', from: 'noreply@test.dev' },
+      branding,
       send: async () => {
         await Promise.resolve();
         finished = true;
@@ -100,12 +112,7 @@ describe('request hardening (Unit 4)', () => {
 
   it('returns send_error when the send rejects, after awaiting it', async () => {
     await seedEditor('ed@x.dev', 'Ed', 'editor');
-    const routes = createAuthRoutes({
-      branding: { siteName: 'Test', from: 'noreply@test.dev' },
-      send: async () => {
-        throw Object.assign(new Error('not verified'), { code: 'E_SENDER_NOT_VERIFIED' });
-      },
-    });
+    const routes = routesWithFailingSend();
     const result = await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' } }));
     expect(result).toEqual({ status: 'send_error', sent: false });
     expect(await countRows('magic_token')).toBe(1); // the token row was written before the send threw
@@ -139,12 +146,7 @@ describe('request logging', () => {
   it('logs auth.link.send_failed with the binding code and the mapped condition when the send rejects', async () => {
     await seedEditor('ed@x.dev', 'Ed', 'editor');
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const routes = createAuthRoutes({
-      branding: { siteName: 'Test', from: 'noreply@test.dev' },
-      send: async () => {
-        throw Object.assign(new Error('not verified'), { code: 'E_SENDER_NOT_VERIFIED' });
-      },
-    });
+    const routes = routesWithFailingSend();
     await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' } }));
     const record = errorSpy.mock.calls
       .map((c) => c[0] as { event?: string; code?: string; conditionId?: string })

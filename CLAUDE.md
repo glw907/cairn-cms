@@ -112,11 +112,14 @@ no package subpath), so its API is free to grow; the event names are the public-
 
 ## Durable gotcha (Cloudflare email)
 
-Email *Sending* (arbitrary recipients) is `env.EMAIL.send({ to, from, subject, html, text })`. The
-`cloudflare:email` `EmailMessage`/mimetext MIME form is Email *Routing* and only sends to
-**verified** destinations. Both share the one `[[send_email]] name="EMAIL"` binding, so the **call
-shape** picks the product. Email Sending also needs Workers Paid plus dashboard onboarding (risk #1
-in `docs/internal/history/plan.md`).
+Email *Sending* to arbitrary recipients is `env.EMAIL.send({ to, from, subject, html, text })`. The
+real gate is the per-zone sending subdomain: onboard the `from` domain with `wrangler email sending
+enable <domain>` (or the API, which works with an account token) and the binding reaches any
+recipient. An un-onboarded sender throws `E_SENDER_NOT_VERIFIED`, the same string Routing uses for
+an unverified destination, which is how the ecxc outage hid. The `cloudflare:email`
+`EmailMessage`/mimetext MIME form is Email *Routing*'s forward call and reaches only **verified**
+destinations; do not confuse the two. Email Sending also needs Workers Paid plus dashboard
+onboarding.
 
 ## Credentials (machine-local, intentionally not in git)
 

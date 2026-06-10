@@ -155,6 +155,18 @@ describe('listLoad', () => {
     const data = await routes.listLoad(listEvent({ concept: 'posts' }, '?error=Bad+slug') as never);
     expect(data.formError).toBe('Bad slug');
   });
+
+  it('surfaces the publish-all count from the query and defaults it to null', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (url.includes('/git/matching-refs/')) return new Response('[]', { status: 200 });
+      return new Response(JSON.stringify({ tree: [], truncated: false }), { status: 200 });
+    }));
+    const routes = createContentRoutes(runtime(), deps);
+    const flashed = await routes.listLoad(listEvent({ concept: 'posts' }, '?publishedAll=3') as never);
+    expect(flashed.publishedAll).toBe(3);
+    const plain = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
+    expect(plain.publishedAll).toBeNull();
+  });
 });
 
 describe('listLoad with pending branches', () => {

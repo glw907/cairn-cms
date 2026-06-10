@@ -33,6 +33,21 @@ function runtime(): CairnRuntime {
   };
 }
 
+/** The posts runtime with a non-dated pages concept added, for the multi-concept batch. */
+function multiRuntime(): CairnRuntime {
+  const r = runtime();
+  r.concepts.push({
+    id: 'pages', label: 'Pages', dir: 'src/content/pages',
+    routing: { routable: true, dated: false, inFeeds: false },
+    permalink: '/:slug',
+    datePrefix: 'day',
+    fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
+    summaryFields: [],
+    validate: () => ({ ok: true as const, data: { title: 'About' } }),
+  });
+  return r;
+}
+
 const deps = { mintToken: () => Promise.resolve('test-token') };
 
 function actionEvent(id: string) {
@@ -166,6 +181,132 @@ describe('publishAction', () => {
     expect(record?.editor).toBe('ed@t');
 
     // The branch deletes only after the main commit lands, so a failure keeps the edits.
+    expect(gh.branches.has(BRANCH)).toBe(true);
+  });
+});
+
+describe('publishAllAction', () => {
+  const PAGE_PATH = 'src/content/pages/about.md';
+  const PAGE_BRANCH = 'cairn/pages/about';
+  const PAGE_MD = '---\ntitle: About\n---\nabout body';
+  const NEW_PATH = 'src/content/posts/2026-06-02-new.md';
+  const NEW_BRANCH = 'cairn/posts/2026-06-02-new';
+  const NEW_MD = '---\ntitle: New\ndate: 2026-06-02\n---\nnew body';
+
+  function listActionEvent(concept = 'posts') {
+    return {
+      url: new URL(`https://t.example/admin/${concept}`),
+      params: { concept },
+      request: new Request(`https://t.example/admin/${concept}`, { method: 'POST', body: new URLSearchParams() }),
+      locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+      platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
+    };
+  }
+
+  it('lands a multi-concept batch atomically and consumes every branch', async () => {
+    const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const gh = new GithubDouble({
+      main: {
+        [ENTRY_PATH]: '---\ntitle: Old\ndate: 2026-05-01\n---\nlive body',
+        [MANIFEST_PATH]: serializeManifest({
+          version: 1,
+          entries: [{ concept: 'posts', id: '2026-05-01-hi', permalink: '/posts/hi', title: 'Old', date: '2026-05-01', draft: false, links: [] }],
+        }),
+      },
+      [BRANCH]: { [ENTRY_PATH]: PENDING_MD },
+      [PAGE_BRANCH]: { [PAGE_PATH]: PAGE_MD },
+      [NEW_BRANCH]: { [NEW_PATH]: NEW_MD },
+    });
+    gh.install();
+    const routes = createContentRoutes(multiRuntime(), deps);
+
+    // The form posts from the pages list, but the redirect lands on the first concept.
+    const location = await redirectedTo(routes.publishAllAction(listActionEvent('pages') as never));
+    expect(location).toBe('/admin/posts?publishedAll=3');
+
+    // One commit (one main ref PATCH) lands every entry file plus the manifest.
+    expect(mainRefPatches(gh)).toHaveLength(1);
+    expect(gh.read('main', ENTRY_PATH)).toBe(PENDING_MD);
+    expect(gh.read('main', PAGE_PATH)).toBe(PAGE_MD);
+    expect(gh.read('main', NEW_PATH)).toBe(NEW_MD);
+    const manifest = parseManifest(gh.read('main', MANIFEST_PATH) ?? '');
+    expect(manifest.entries.map((e) => `${e.concept}/${e.id}`).sort()).toEqual([
+      'pages/about', 'posts/2026-05-01-hi', 'posts/2026-06-02-new',
+    ]);
+    expect(manifest.entries.find((e) => e.id === '2026-05-01-hi')?.title).toBe('Hi');
+
+    const commitCall = gh.calls.find((c) => c.method === 'POST' && c.url.endsWith('/git/commits'));
+    expect((commitCall?.body as { message?: string })?.message).toBe('Publish 3 entries');
+
+    // Every consumed branch is gone.
+    expect([...gh.branches.keys()]).toEqual(['main']);
+
+    // One entry.published record per entry, all batch: true.
+    const records = infoSpy.mock.calls
+      .map((c) => c[0] as { event?: string; concept?: string; id?: string; editor?: string; batch?: boolean })
+      .filter((r) => r.event === 'entry.published');
+    expect(records.map((r) => `${r.concept}/${r.id}`).sort()).toEqual([
+      'pages/about', 'posts/2026-05-01-hi', 'posts/2026-06-02-new',
+    ]);
+    expect(records.every((r) => r.batch === true && r.editor === 'ed@t')).toBe(true);
+  });
+
+  it('skips a ref whose concept is not configured instead of failing the batch', async () => {
+    const gh = new GithubDouble({
+      main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) },
+      [BRANCH]: { [ENTRY_PATH]: PENDING_MD },
+      'cairn/widgets/x': { 'src/content/widgets/x.md': '---\ntitle: W\n---\nw' },
+    });
+    gh.install();
+    const routes = createContentRoutes(runtime(), deps);
+
+    const location = await redirectedTo(routes.publishAllAction(listActionEvent() as never));
+    expect(location).toBe('/admin/posts?publishedAll=1');
+
+    expect(gh.read('main', ENTRY_PATH)).toBe(PENDING_MD);
+    expect(gh.read('main', 'src/content/widgets/x.md')).toBeNull();
+    // The unconfigured ref is left alone for a future discard, not consumed.
+    expect(gh.branches.has('cairn/widgets/x')).toBe(true);
+    expect(gh.branches.has(BRANCH)).toBe(false);
+  });
+
+  it('redirects back with no commit when nothing is pending', async () => {
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
+    gh.install();
+    const routes = createContentRoutes(runtime(), deps);
+
+    const location = await redirectedTo(routes.publishAllAction(listActionEvent() as never));
+    expect(location).toBe('/admin/posts');
+    expect(gh.calls.filter((c) => c.method === 'PATCH')).toHaveLength(0);
+  });
+
+  it('logs publish.failed on a commit conflict and bounces to the list page', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const gh = new GithubDouble({
+      main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) },
+      [BRANCH]: { [ENTRY_PATH]: PENDING_MD },
+    });
+    gh.install();
+    const double = globalThis.fetch;
+    vi.stubGlobal('fetch', async (input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input instanceof Request ? input.url : input);
+      const method = (init?.method ?? 'GET').toUpperCase();
+      if (method === 'PATCH' && url.includes('/git/refs/heads/main')) {
+        return new Response('{"message":"Update is not a fast forward"}', { status: 422 });
+      }
+      return double(input, init);
+    });
+    const routes = createContentRoutes(runtime(), deps);
+
+    const location = await redirectedTo(routes.publishAllAction(listActionEvent() as never));
+    expect(location).toMatch(/^\/admin\/posts\?error=/);
+
+    const record = warnSpy.mock.calls
+      .map((c) => c[0] as { event?: string; reason?: string })
+      .find((r) => r.event === 'publish.failed');
+    expect(record?.reason).toBe('conflict');
+
+    // The branch survives a failed commit, so the edits are not lost.
     expect(gh.branches.has(BRANCH)).toBe(true);
   });
 });

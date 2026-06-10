@@ -12,7 +12,7 @@ function data(over = {}) {
     draft: i === 11,
     status: 'published' as const,
   }));
-  return { conceptId: 'posts', label: 'Posts', dated: true, entries, error: null, formError: null, ...over };
+  return { conceptId: 'posts', label: 'Posts', dated: true, entries, error: null, formError: null, publishedAll: null, ...over };
 }
 
 describe('ConceptList', () => {

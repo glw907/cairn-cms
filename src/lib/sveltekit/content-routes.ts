@@ -69,6 +69,8 @@ export interface ListData {
   error: string | null;
   /** A create-form bounce error read from `?error`. */
   formError: string | null;
+  /** The entry count from a publish-all redirect (`?publishedAll=`), for the list page's flash. */
+  publishedAll: number | null;
 }
 
 /** The editor's data. `frontmatter` holds form-ready values (dates already `YYYY-MM-DD`). */
@@ -207,7 +209,9 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     sessionOf(event);
     const concept = conceptOf(runtime, event.params);
     const formError = event.url.searchParams.get('error');
-    const base = { conceptId: concept.id, label: concept.label, dated: concept.routing.dated, formError };
+    const publishedAllRaw = event.url.searchParams.get('publishedAll');
+    const publishedAll = publishedAllRaw !== null && /^\d+$/.test(publishedAllRaw) ? Number(publishedAllRaw) : null;
+    const base = { conceptId: concept.id, label: concept.label, dated: concept.routing.dated, formError, publishedAll };
     let token: string;
     try {
       token = await mintToken(event.platform?.env ?? {});
@@ -510,6 +514,81 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     throw redirect(303, `/admin/${concept.id}/${id}?published=1`);
   }
 
+  /** Publish every pending entry site-wide: one atomic commit on main carrying each branch's
+   *  entry file plus the manifest with every row upserted, then delete the consumed branches.
+   *  Mounted on the concept list shim, but the topbar posts here from anywhere, so the route's
+   *  concept param is ignored and the redirect lands on the first configured concept. */
+  async function publishAllAction(event: ContentEvent): Promise<never> {
+    const editor = sessionOf(event);
+    const first = runtime.concepts[0];
+    if (!first) throw error(404, 'No content types configured');
+    const token = await mintToken(event.platform?.env ?? {});
+    const listPage = `/admin/${first.id}`;
+
+    // Each cairn/ ref names a pending entry. Skip a malformed name, an id that fails the slug
+    // rule (the entry path is built from it, so this is the path confinement), and a concept
+    // this site does not configure, rather than failing the whole batch on one stray ref.
+    const names = await listBranches(runtime.backend, PENDING_PREFIX, token);
+    const pending: { concept: ConceptDescriptor; id: string; branch: string; path: string }[] = [];
+    for (const name of names) {
+      const ref = parsePendingBranch(name);
+      if (!ref || !isValidId(ref.id)) continue;
+      const concept = findConcept(runtime.concepts, ref.concept);
+      if (!concept) continue;
+      pending.push({ concept, id: ref.id, branch: name, path: `${concept.dir}/${filenameFromId(ref.id)}` });
+    }
+
+    // Read each branch's entry file, and main's manifest once; fold every row in, so the batch
+    // lands content and index together, the same shape as a single publish. A ghost ref whose
+    // entry file is missing is skipped (discard can clean it up); it carries nothing to publish.
+    const manifestRaw = await readRaw(runtime.backend, runtime.manifestPath, token);
+    let next = manifestRaw === null ? emptyManifest() : parseManifest(manifestRaw);
+    const changes: FileChange[] = [];
+    const published: { concept: string; id: string; branch: string }[] = [];
+    for (const entry of pending) {
+      const raw = await readRaw({ ...runtime.backend, branch: entry.branch }, entry.path, token);
+      if (raw === null) continue;
+      changes.push({ path: entry.path, content: raw });
+      next = upsertEntry(next, manifestEntryFromFile(entry.concept, { path: entry.path, raw }));
+      published.push({ concept: entry.concept.id, id: entry.id, branch: entry.branch });
+    }
+    if (published.length === 0) throw redirect(303, listPage);
+    changes.push({ path: runtime.manifestPath, content: serializeManifest(next) });
+
+    try {
+      await commitFiles(
+        runtime.backend,
+        changes,
+        { message: `Publish ${published.length} entries`, author: { name: editor.displayName, email: editor.email } },
+        token,
+      );
+      for (const entry of published) {
+        log.info('entry.published', { concept: entry.concept, id: entry.id, editor: editor.email, batch: true });
+      }
+    } catch (err) {
+      // One record per entry in the failed batch, so the log names what did not go live.
+      for (const entry of published) {
+        logCommitFailed({ concept: entry.concept, id: entry.id, editor: editor.email }, err, 'publish.failed');
+      }
+      if (isConflict(err)) {
+        const message = 'The site changed while publishing. Reload and try again.';
+        throw redirect(303, `${listPage}?error=${encodeURIComponent(message)}`);
+      }
+      throw err;
+    }
+    // Only after the main commit lands: a failure above keeps every branch and its edits. A
+    // failed delete here leaves an idempotent straggler (re-publishing copies the same content),
+    // so one failure does not abort the remaining deletes.
+    for (const entry of published) {
+      try {
+        await deleteBranch(runtime.backend, entry.branch, token);
+      } catch {
+        // The entry is live; the straggler just shows as still pending until the next publish.
+      }
+    }
+    throw redirect(303, `${listPage}?publishedAll=${published.length}`);
+  }
+
   /** Discard an entry's pending edits: delete the branch (tolerant of already-gone) and return to
    *  the edit page when the entry lives on main, else to the list (the entry is gone entirely). */
   async function discardAction(event: ContentEvent): Promise<never> {
@@ -683,5 +762,5 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     throw redirect(303, `/admin/${concept.id}/${newId}?renamed=1`);
   }
 
-  return { layoutLoad, indexRedirect, listLoad, createAction, editLoad, saveAction, publishAction, discardAction, deleteAction, listDeleteAction, renameAction, mintToken };
+  return { layoutLoad, indexRedirect, listLoad, createAction, editLoad, saveAction, publishAction, publishAllAction, discardAction, deleteAction, listDeleteAction, renameAction, mintToken };
 }

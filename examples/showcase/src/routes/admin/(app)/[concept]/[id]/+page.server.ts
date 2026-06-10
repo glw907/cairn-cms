@@ -10,4 +10,4 @@ const routes = createContentRoutes(composeRuntime({ adapter: cairn, siteConfig }
 });
 
 export const load = routes.editLoad;
-export const actions = { save: routes.saveAction, delete: routes.deleteAction, rename: routes.renameAction };
+export const actions = { save: routes.saveAction, delete: routes.deleteAction, rename: routes.renameAction, publish: routes.publishAction, discard: routes.discardAction };

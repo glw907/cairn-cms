@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
-import { parseManifest } from '../../lib/content/manifest.js';
+import { parseManifest, serializeManifest } from '../../lib/content/manifest.js';
 import type { CairnRuntime, ValidationResult } from '../../lib/content/types.js';
 
 function runtime(validate: (fm: Record<string, unknown>, body: string) => ValidationResult): CairnRuntime {
@@ -51,6 +52,7 @@ function commitFetch(manifestRaw: string | null) {
     if (method === 'GET' && url.includes('/contents/')) {
       return manifestRaw === null ? new Response('Not Found', { status: 404 }) : new Response(manifestRaw, { status: 200 });
     }
+    if (method === 'DELETE' && url.includes('/git/refs/')) return new Response('Not Found', { status: 404 }); // no pending branch
     if (method === 'GET' && url.includes('/git/ref/')) return json({ object: { sha: 'head1' } });
     if (method === 'GET' && url.includes('/git/commits/')) return json({ tree: { sha: 'basetree' } });
     if (method === 'POST' && url.endsWith('/git/trees')) return json({ sha: 'newtree' });
@@ -122,5 +124,52 @@ describe('deleteAction', () => {
     expect(record).toBeTruthy();
     expect(record?.editor).toBe('ed@t');
     vi.restoreAllMocks();
+  });
+});
+
+describe('deleteAction with a pending branch', () => {
+  const ENTRY_PATH = 'src/content/posts/2026-05-hi.md';
+  const MANIFEST_PATH = 'src/content/.cairn/index.json';
+
+  it('cascades: the branch goes and the main commit removes the file and the manifest row', async () => {
+    const manifest = serializeManifest({
+      version: 1,
+      entries: [{ id: '2026-05-hi', concept: 'posts', title: 'Hi', permalink: '/p/hi', draft: false, links: [] }],
+    });
+    const gh = new GithubDouble({
+      main: { [ENTRY_PATH]: '---\ntitle: Hi\n---\nlive', [MANIFEST_PATH]: manifest },
+    });
+    gh.createBranch('cairn/posts/2026-05-hi', 'main');
+    gh.install();
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })), deps);
+    try {
+      await routes.deleteAction(deleteEvent('2026-05-hi') as never);
+      throw new Error('should have redirected');
+    } catch (e) {
+      expect((e as { location: string }).location).toBe('/admin/posts');
+    }
+    expect(gh.branches.has('cairn/posts/2026-05-hi')).toBe(false);
+    expect(gh.read('main', ENTRY_PATH)).toBeNull();
+    const committed = parseManifest(gh.read('main', MANIFEST_PATH)!);
+    expect(committed.entries.find((e) => e.id === '2026-05-hi')).toBeUndefined();
+  });
+
+  it('deletes a never-published entry by removing only its branch, with no main commit', async () => {
+    const empty = serializeManifest({ version: 1, entries: [] });
+    const gh = new GithubDouble({
+      main: { [MANIFEST_PATH]: empty },
+      'cairn/posts/2026-05-hi': { [MANIFEST_PATH]: empty, [ENTRY_PATH]: '---\ntitle: Hi\n---\npending only' },
+    });
+    gh.install();
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })), deps);
+    try {
+      await routes.deleteAction(deleteEvent('2026-05-hi') as never);
+      throw new Error('should have redirected');
+    } catch (e) {
+      expect((e as { location: string }).location).toBe('/admin/posts');
+    }
+    expect(gh.branches.has('cairn/posts/2026-05-hi')).toBe(false);
+    expect(gh.calls.some((c) => c.method === 'POST' && c.url.endsWith('/git/trees'))).toBe(false);
+    expect(gh.read('main', MANIFEST_PATH)).toBe(empty);
   });
 });

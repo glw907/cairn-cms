@@ -377,6 +377,7 @@ describe('listDeleteAction', () => {
       calls.push({ url, init });
       const method = init?.method ?? 'GET';
       if (method === 'GET' && url.includes('/contents/')) return new Response(manifestRaw, { status: 200 });
+      if (method === 'DELETE' && url.includes('/git/refs/')) return new Response('Not Found', { status: 404 }); // no pending branch
       if (method === 'GET' && url.includes('/git/ref/')) return json({ object: { sha: 'head1' } });
       if (method === 'GET' && url.includes('/git/commits/')) return json({ tree: { sha: 'basetree' } });
       if (method === 'POST' && url.endsWith('/git/trees')) return json({ sha: 'newtree' });

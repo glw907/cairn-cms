@@ -629,6 +629,17 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       return fail(409, { inboundLinks: inbound, id });
     }
 
+    // Cascade to the pending branch before the main commit (tolerant of absence): the entry's
+    // unpublished edits go with it. When the entry was never published (absent from main), the
+    // branch delete is the whole operation; main has nothing to commit, so the only honest log
+    // record is the discard of the pending edits.
+    const onMain = await readRaw(runtime.backend, path, token);
+    await deleteBranch(runtime.backend, pendingBranch(concept.id, id), token);
+    if (onMain === null) {
+      log.info('entry.discarded', { concept: concept.id, id, editor: editor.email });
+      throw redirect(303, `/admin/${concept.id}`);
+    }
+
     const nextManifest = serializeManifest(removeEntry(manifest, concept.id, id));
     const commitFields = { concept: concept.id, id, editor: editor.email };
     try {
@@ -681,6 +692,13 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     const concept = conceptOf(runtime, event.params);
     const id = event.params.id ?? '';
     if (!isValidId(id)) throw error(400, 'Invalid entry id');
+    const token = await mintToken(event.platform?.env ?? {});
+
+    // Pending edits on the branch are keyed to the old id; renaming underneath them would strand
+    // them, so refuse until the editor publishes or discards.
+    if ((await branchHeadSha(runtime.backend, pendingBranch(concept.id, id), token)) !== null) {
+      return fail(409, { renameError: 'This entry has unpublished edits. Publish or discard them, then rename.' });
+    }
 
     const form = await event.request.formData();
     const newSlug = String(form.get('slug') ?? '').trim();
@@ -697,7 +715,6 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     const newId = renameId(id, newSlug, datePrefix);
     const oldPath = `${concept.dir}/${filenameFromId(id)}`;
     const newPath = `${concept.dir}/${filenameFromId(newId)}`;
-    const token = await mintToken(event.platform?.env ?? {});
 
     // Collision guard: refuse if a file already exists at the new path. This 409 covers two cases a
     // single readRaw cannot tell apart: a static collision with an existing entry, and a

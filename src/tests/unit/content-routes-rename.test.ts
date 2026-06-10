@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { parseManifest } from '../../lib/content/manifest.js';
 import type { CairnRuntime, ValidationResult } from '../../lib/content/types.js';
@@ -73,6 +74,8 @@ function renameFetch(files: Map<string, string | null>) {
       const raw = files.get(path);
       return raw == null ? new Response('Not Found', { status: 404 }) : new Response(raw, { status: 200 });
     }
+    // The pending-branch probe (a slashed name arrives percent-encoded) answers 404: no branch.
+    if (method === 'GET' && url.includes('/git/ref/heads/cairn%2F')) return new Response('Not Found', { status: 404 });
     if (method === 'GET' && url.includes('/git/ref/')) return json({ object: { sha: 'head1' } });
     if (method === 'GET' && url.includes('/git/commits/')) return json({ tree: { sha: 'basetree' } });
     if (method === 'POST' && url.endsWith('/git/trees')) return json({ sha: 'newtree' });
@@ -195,5 +198,45 @@ describe('renameAction', () => {
     };
     expect(result.status).toBe(400);
     expect(calls.some((c) => (c.init?.method ?? 'GET') === 'POST' && c.url.endsWith('/git/trees'))).toBe(false);
+  });
+});
+
+describe('renameAction with a pending branch', () => {
+  const ENTRY_PATH = 'src/content/posts/2026-05-01-hi.md';
+  const MANIFEST_PATH = 'src/content/.cairn/index.json';
+  const manifest = JSON.stringify({
+    version: 1,
+    entries: [{ id: '2026-05-01-hi', concept: 'posts', title: 'Hi', permalink: '/posts/hi', draft: false, links: [] }],
+  });
+
+  it('refuses with a 409 while the entry has unpublished edits, with no commit', async () => {
+    const gh = new GithubDouble({
+      main: { [ENTRY_PATH]: '---\ntitle: Hi\n---\nbody', [MANIFEST_PATH]: manifest },
+    });
+    gh.createBranch('cairn/posts/2026-05-01-hi', 'main');
+    gh.install();
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })), deps);
+    const result = (await routes.renameAction(renameEvent('2026-05-01-hi', 'new') as never)) as unknown as {
+      status: number; data: { renameError: string };
+    };
+    expect(result.status).toBe(409);
+    expect(result.data.renameError).toMatch(/unpublished edits/i);
+    expect(gh.calls.some((c) => c.method === 'POST' && c.url.endsWith('/git/trees'))).toBe(false);
+  });
+
+  it('proceeds when no pending branch exists', async () => {
+    const gh = new GithubDouble({
+      main: { [ENTRY_PATH]: '---\ntitle: Hi\n---\nbody', [MANIFEST_PATH]: manifest },
+    });
+    gh.install();
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })), deps);
+    try {
+      await routes.renameAction(renameEvent('2026-05-01-hi', 'new') as never);
+      throw new Error('should have redirected');
+    } catch (e) {
+      expect((e as { location: string }).location).toBe('/admin/posts/2026-05-01-new?renamed=1');
+    }
+    expect(gh.read('main', 'src/content/posts/2026-05-01-new.md')).toContain('title: Hi');
+    expect(gh.read('main', ENTRY_PATH)).toBeNull();
   });
 });

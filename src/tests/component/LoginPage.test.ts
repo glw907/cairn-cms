@@ -26,4 +26,17 @@ describe('LoginPage', () => {
     await screen.getByRole('button', { name: /use a different email/i }).click();
     await expect.element(screen.getByRole('textbox', { name: /email/i })).toBeInTheDocument();
   });
+
+  it('shows a send-error warning and keeps the form available', async () => {
+    const screen = render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { status: 'send_error', sent: false } });
+    await expect.element(screen.getByRole('alert')).toBeInTheDocument();
+    await expect.element(screen.getByText(/trouble sending sign-in links/i)).toBeInTheDocument();
+    await expect.element(screen.getByRole('textbox', { name: /email/i })).toBeInTheDocument();
+  });
+
+  it('shows a throttled hint and keeps the form available', async () => {
+    const screen = render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { status: 'throttled', sent: false } });
+    await expect.element(screen.getByText(/requested a link recently/i)).toBeInTheDocument();
+    await expect.element(screen.getByRole('textbox', { name: /email/i })).toBeInTheDocument();
+  });
 });

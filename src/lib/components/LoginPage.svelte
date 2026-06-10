@@ -17,8 +17,9 @@ the allowlist, so the page never leaks membership (spec §7.1).
   interface Props {
     /** The login load's data: the site name, an optional error, and the CSRF token. */
     data: { siteName: string; error: string | null; csrf: string };
-    /** The action result: `sent` is true once a request was accepted. */
-    form: { sent?: boolean } | null;
+    /** The action result. `sent` is true once a request was accepted; `status` discriminates the
+     * neutral, send-error, and throttled outcomes. */
+    form: { sent?: boolean; status?: 'sent' | 'send_error' | 'throttled' } | null;
   }
 
   let { data, form }: Props = $props();
@@ -52,7 +53,7 @@ the allowlist, so the page never leaks membership (spec §7.1).
 <div data-theme="cairn-admin" bind:this={rootEl}>
   <div class="flex min-h-screen flex-col items-center justify-center gap-6 bg-base-200 p-4 text-base-content">
   <div class="w-full max-w-sm rounded-box border border-[var(--cairn-card-border)] bg-base-100 p-7 shadow-[var(--cairn-shadow)]">
-    {#if form?.sent && !dismissed}
+    {#if (form?.status === 'sent' || form?.sent) && !dismissed}
       <!-- The confirmation is a centered moment: brand, then the mail mark, heading, and one line of
            instruction. The fallback help sits in a gentle inset note below. -->
       <div role="status" class="flex flex-col items-center text-center">
@@ -86,6 +87,15 @@ the allowlist, so the page never leaks membership (spec §7.1).
       <div class="mb-6 flex justify-center">{@render brand()}</div>
       <h1 class="text-center text-lg font-semibold">Sign in to {data.siteName}</h1>
       <p class="mt-1 mb-5 text-center text-sm text-[var(--color-muted)]">Enter your email. We'll send a one-time sign-in link.</p>
+      {#if form?.status === 'send_error'}
+        <div role="alert" class="alert alert-warning mb-3 text-sm">
+          We're having trouble sending sign-in links right now. Please contact the site owner.
+        </div>
+      {:else if form?.status === 'throttled'}
+        <div role="status" class="alert mb-3 text-sm">
+          You requested a link recently. Check your inbox, or wait a minute and try again.
+        </div>
+      {/if}
       {#if data.error}
         <div role="alert" class="alert alert-error mb-3 text-sm">That link expired. Request a new one below.</div>
       {/if}

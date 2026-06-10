@@ -2,6 +2,17 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.38.0
+
+The magic-link send is now awaited rather than fire-and-forget, so a delivery failure reaches the
+login response instead of being swallowed. `requestAction` returns a `status` discriminant
+(`sent` | `send_error` | `throttled`) alongside the existing `sent` boolean, and `LoginPage` renders
+a send-error and a throttled state. The `auth.link.send_failed` log record gains a `code` (the
+Cloudflare binding error code) and a `conditionId` (the mapped diagnostic condition).
+
+Consumers may: read `form.status` to render the new states. A site rendering against `form.sent` is
+unaffected, since `sent` is unchanged.
+
 ## 0.37.1
 
 Internal groundwork and a docs overhaul; nothing in the public surface or runtime behavior

@@ -179,3 +179,10 @@ written to `console` as JSON for Cloudflare Workers Logs. Consumers must: nothin
 set `observability.enabled = true` in `wrangler.jsonc`; see the
 [read cairn's logs guide](read-cairn-logs.md). The records carry an editor's email and never a token
 or session id.
+
+## 0.38.0: the login request reports its send outcome, additive
+
+The magic-link send is awaited, and `requestAction` returns `{ status, sent }` where `status` is
+`sent`, `send_error`, or `throttled`. `LoginPage` renders the two new states on its own. Consumers
+must: nothing. A site rendering its own form against `form.sent` sees the same value as before; it
+opts into the new states by reading `form.status`.

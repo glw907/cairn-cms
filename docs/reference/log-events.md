@@ -14,13 +14,18 @@ redaction stance.
 |---|---|---|---|
 | `auth.link.requested` | info | A magic-link request reaches `POST /admin/auth/request`. | `email` |
 | `auth.token.minted` | info | A token is issued for an allow-listed editor. | `email`, `expiresAt` |
-| `auth.link.send_failed` | error | The confirmation email send rejects. | `email`, `error` |
+| `auth.link.send_failed` | error | The confirmation email send rejects. | `email`, `error`, `code`, `conditionId` |
 | `auth.token.confirmed` | info | A valid token is consumed at `POST /admin/auth/confirm`. | `email` |
 | `auth.session.created` | info | A session row is created after a confirm. | `email` |
 | `auth.session.destroyed` | info | A session is deleted at logout. | none |
 | `commit.succeeded` | info | A content or nav commit lands on the branch. | `concept`, `id`, `editor` |
 | `commit.failed` | warn or error | A commit fails. `warn` with `reason: "conflict"` on a 409, `error` with `error` otherwise. | `concept`, `id`, `editor`, `reason` or `error` |
 | `guard.rejected` | warn | The admin guard refuses a request before `resolve()`. | `reason` (`csrf`, `origin`, or `https`), `path` |
+
+On `auth.link.send_failed`, `code` is the Cloudflare binding error code (`E_SENDER_NOT_VERIFIED`
+and the rest of the `E_*` set; absent when a custom sender throws a plain `Error`), and
+`conditionId` is the mapped diagnostic condition, `email.sender-not-onboarded` for the
+not-verified code and `email.send-failed` for everything else.
 
 The `email` on `auth.link.requested` is the raw submitted address, logged before the allowlist
 check, so it is unvalidated request input. cairn lowercases it, trims it, and caps the logged value

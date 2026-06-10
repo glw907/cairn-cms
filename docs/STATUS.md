@@ -26,16 +26,19 @@ six carry-forwards (the live `E_*` shape proof, the cooldown race, the disconnec
 missing-binding condition for Pass 3, the reference signature-currency gate idea, the per-IP limit)
 is in the plan (`docs/superpowers/plans/2026-06-09-cairn-diagnostics-02-email-delivery.md`).
 
-**Next: the publish workflow jumps the queued backlog (Geoff's call, 2026-06-10).** The approved
-spec is `docs/superpowers/specs/2026-06-10-cairn-publish-workflow-design.md` (committed `3734fd9`):
-edits hold on per-entry `cairn/<conceptKey>/<id>` branches until a deliberate Publish (per page,
-plus a site-wide publish-all in the topbar); publish is a content copy to `main`, never a merge;
-discard deletes the branch; the `draft:` flag stays, re-presented as Hidden. Write the
-implementation plan with `superpowers:writing-plans` from the spec, then execute main-loop,
-test-first, full gate per task, on `main` directly (the initiative precedent). After it, the order
-resumes: diagnostics Pass 3, the gates-and-tooling pass, the gallery, P4. The site-track ecxc bump
-to `^0.38.0` (Pass 2's live proof) stays queued as its own `site-pass` and can run any time after
-the `0.38.0` publish.
+**Next: execute the publish-workflow plan (jumps the queued backlog; Geoff's call, 2026-06-10).**
+The approved spec is `docs/superpowers/specs/2026-06-10-cairn-publish-workflow-design.md`
+(committed `3734fd9`): edits hold on per-entry `cairn/<conceptKey>/<id>` branches until a
+deliberate Publish (per page, plus a site-wide publish-all in the topbar); publish is a content
+copy to `main`, never a merge; discard deletes the branch; the `draft:` flag stays, re-presented as
+Hidden. The implementation plan is WRITTEN:
+`docs/superpowers/plans/2026-06-10-cairn-publish-workflow.md`, eleven tasks, engine-first, with two
+plan-time reconciliations recorded up top (consumer shims must add the new actions; branches carry
+no manifest copy). Execute main-loop, test-first, full gate per task, on `main` directly (the
+initiative precedent); bump `0.39.0` in the docs task. After it, the order resumes: diagnostics
+Pass 3, the gates-and-tooling pass, the gallery, P4. The site-track ecxc bump to `^0.38.0` (Pass
+2's live proof) stays queued as its own `site-pass` and can run any time after the `0.38.0`
+publish.
 
 ## Backlog resequenced (2026-06-09): five engine passes instead of six
 

@@ -13,7 +13,7 @@ import {
   sessionCookieName,
 } from '../auth/crypto.js';
 import { findEditor, issueToken, consumeToken, createSession, deleteSession, recentlyIssued } from '../auth/store.js';
-import { buildMagicLinkMessage, cloudflareSend, type AuthBranding, type SendMagicLink } from '../email.js';
+import { buildMagicLinkMessage, cloudflareSend, emailSendFailure, errorCode, type AuthBranding, type SendMagicLink } from '../email.js';
 import { issueCsrfToken } from './csrf.js';
 import { log } from '../log/index.js';
 import type { RequestContext } from './types.js';
@@ -23,15 +23,25 @@ export interface AuthRoutesConfig {
   send?: SendMagicLink;
 }
 
+/**
+ * The request-action result. `status` is the discriminant; `sent` is kept for a site rendering its
+ * own form against `form.sent`, so the field is additive. The neutral and send-ok paths return the
+ * identical `{ status: 'sent', sent: true }`, so the common case never leaks allowlist membership.
+ */
+export type RequestResult =
+  | { status: 'sent'; sent: true }
+  | { status: 'send_error'; sent: false }
+  | { status: 'throttled'; sent: false };
+
 export function createAuthRoutes(config: AuthRoutesConfig) {
   const send = config.send ?? cloudflareSend;
 
   /**
-   * POST /admin/auth/request. Looks the email up in the allowlist; on a match, issues a token
-   * and emails the confirmation link. The response is identical whether or not the email is
-   * allow-listed, so the endpoint never leaks membership.
+   * POST /admin/auth/request. Looks the email up in the allowlist; on a match, issues a token,
+   * emails the confirmation link, and awaits the send so the status reflects its outcome. The
+   * neutral and send-ok responses are identical, so the common case never leaks membership.
    */
-  async function requestAction(event: RequestContext): Promise<{ sent: true }> {
+  async function requestAction(event: RequestContext): Promise<RequestResult> {
     const env = event.platform?.env ?? {};
     const origin = requireOrigin(env);
     const db = requireDb(env);
@@ -43,31 +53,35 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
     log.info('auth.link.requested', { email: email.slice(0, 320) });
 
     const editor = email ? await findEditor(db, email) : null;
-    if (editor) {
-      const now = Date.now();
-      // Per-email cooldown: skip the reissue and send when a token for this email was issued within
-      // the window, so the endpoint cannot flood an editor's inbox. The response is unchanged, so
-      // the non-leak property holds.
-      if (!(await recentlyIssued(db, email, now - SEND_COOLDOWN_MS))) {
-        const token = generateToken();
-        await issueToken(db, email, await hashToken(token), now + TOKEN_TTL_MS, now);
-        log.info('auth.token.minted', { email, expiresAt: now + TOKEN_TTL_MS });
-        const link = `${origin}/admin/auth/confirm?token=${encodeURIComponent(token)}`;
-        // The token row is the security-critical write the email depends on, so it is awaited. The
-        // send is a post-response side effect, handed to waitUntil so a slow email provider does not
-        // hold the response. An absent waitUntil (local dev, tests) falls back to await. A send
-        // failure is logged so observability survives a backgrounded send.
-        const sending = send(env, buildMagicLinkMessage({ to: email, branding: config.branding, link })).catch(
-          (err) => log.error('auth.link.send_failed', { email, error: String(err) }),
-        );
-        // adapter-cloudflare exposes the ExecutionContext as platform.ctx; platform.context is a
-        // deprecated alias kept as a fallback so an adapter that drops it keeps backgrounding.
-        const ctx = event.platform?.ctx ?? event.platform?.context;
-        if (ctx?.waitUntil) ctx.waitUntil(sending);
-        else await sending;
-      }
+    // Non-editor: byte-identical to the editor send-ok path, so the response never leaks membership.
+    if (!editor) return { status: 'sent', sent: true };
+
+    const now = Date.now();
+    // Per-email cooldown: an editor who requested within the window gets the throttled signal rather
+    // than a second email. This reveals editor membership, the deliberate relaxed-non-leak posture.
+    if (await recentlyIssued(db, email, now - SEND_COOLDOWN_MS)) {
+      return { status: 'throttled', sent: false };
     }
-    return { sent: true };
+
+    const token = generateToken();
+    await issueToken(db, email, await hashToken(token), now + TOKEN_TTL_MS, now);
+    log.info('auth.token.minted', { email, expiresAt: now + TOKEN_TTL_MS });
+    const link = `${origin}/admin/auth/confirm?token=${encodeURIComponent(token)}`;
+    // The token row is the security-critical write the email depends on, so it is awaited first.
+    // The send is now awaited too (no waitUntil backgrounding), so its outcome drives the response:
+    // confirm the link went out before telling an editor to check their inbox. The cost is one
+    // email-API round trip on the login POST, the right trade for a login flow.
+    try {
+      await send(env, buildMagicLinkMessage({ to: email, branding: config.branding, link }));
+    } catch (err) {
+      // Map the binding failure to its registered condition (carried as a CairnError with the
+      // original as cause), and log the greppable code plus the conditionId so the next onboarding
+      // gap reads straight to its fix. The editor sees only a generic message, never this detail.
+      const failure = emailSendFailure(err);
+      log.error('auth.link.send_failed', { email, error: String(err), code: errorCode(err), conditionId: failure.conditionId });
+      return { status: 'send_error', sent: false };
+    }
+    return { status: 'sent', sent: true };
   }
 
   /** GET /admin/login. Public. Carries the site name, an optional `?error`, and the CSRF token. */

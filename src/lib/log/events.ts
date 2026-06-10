@@ -10,4 +10,7 @@ export type CairnLogEvent =
   | 'auth.session.destroyed'
   | 'commit.succeeded'
   | 'commit.failed'
+  | 'entry.published'
+  | 'entry.discarded'
+  | 'publish.failed'
   | 'guard.rejected';

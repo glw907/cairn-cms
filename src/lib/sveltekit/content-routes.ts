@@ -10,7 +10,7 @@ import { isValidId, slugify, filenameFromId, composeDatedId, slugFromId, renameI
 import { rewriteCairnLink } from '../components/markdown-format.js';
 import { appCredentials, type GithubKeyEnv } from '../github/credentials.js';
 import { listMarkdown, readRaw, commitFiles, type FileChange } from '../github/repo.js';
-import { branchHeadSha, createBranch, listBranches } from '../github/branches.js';
+import { branchHeadSha, createBranch, deleteBranch, listBranches } from '../github/branches.js';
 import { PENDING_PREFIX, pendingBranch, parsePendingBranch } from '../content/pending.js';
 import { cachedInstallationToken } from '../github/signing.js';
 import { emptyManifest, manifestEntryFromFile, parseManifest, serializeManifest, upsertEntry, removeEntry, inboundLinks, type LinkTarget, type InboundLink } from '../content/manifest.js';
@@ -359,12 +359,17 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
 
   /** Log a failed commit: a conflict is the expected last-writer-wins outcome, so it warns with a
    *  reason; any other error is unexpected and logs at error with the stringified cause. The caller
-   *  still owns the redirect or rethrow, so control flow stays at the call site. */
-  function logCommitFailed(fields: { concept: string; id: string; editor: string }, err: unknown): void {
+   *  still owns the redirect or rethrow, so control flow stays at the call site. Publish failures
+   *  carry the same shape under their own event name. */
+  function logCommitFailed(
+    fields: { concept: string; id: string; editor: string },
+    err: unknown,
+    event: 'commit.failed' | 'publish.failed' = 'commit.failed',
+  ): void {
     if (isConflict(err)) {
-      log.warn('commit.failed', { ...fields, reason: 'conflict' });
+      log.warn(event, { ...fields, reason: 'conflict' });
     } else {
-      log.error('commit.failed', { ...fields, error: String(err) });
+      log.error(event, { ...fields, error: String(err) });
     }
   }
 
@@ -451,6 +456,75 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     }
     const savedQuery = draft.length ? `saved=1&drafts=${encodeURIComponent(draft.join(','))}` : 'saved=1';
     throw redirect(303, `/admin/${concept.id}/${id}?${savedQuery}`);
+  }
+
+  /** Publish an entry's pending edits: copy the branch's entry file to main with the manifest row
+   *  upserted, in one atomic commit, then delete the branch. A copy, never a merge, so a stale
+   *  branch left by a crash between the commit and the delete re-publishes idempotently. */
+  async function publishAction(event: ContentEvent): Promise<never> {
+    const editor = sessionOf(event);
+    const concept = conceptOf(runtime, event.params);
+    const id = event.params.id ?? '';
+    if (!isValidId(id)) throw error(400, 'Invalid entry id');
+    const path = `${concept.dir}/${filenameFromId(id)}`;
+    const token = await mintToken(event.platform?.env ?? {});
+
+    const bounce = (msg: string): never => {
+      throw redirect(303, `/admin/${concept.id}/${id}?error=${encodeURIComponent(msg)}`);
+    };
+    const branch = pendingBranch(concept.id, id);
+    if ((await branchHeadSha(runtime.backend, branch, token)) === null) {
+      return bounce('Nothing to publish. This entry has no unpublished edits.');
+    }
+    const raw = await readRaw({ ...runtime.backend, branch }, path, token);
+    if (raw === null) return bounce('Could not read the unpublished edits from GitHub.');
+
+    // Main's manifest is the authoritative one (branches carry no manifest copy); the row derives
+    // from the branch file, so publish lands the content and its index entry together.
+    const manifestRaw = await readRaw(runtime.backend, runtime.manifestPath, token);
+    const manifest = manifestRaw === null ? emptyManifest() : parseManifest(manifestRaw);
+    const next = upsertEntry(manifest, manifestEntryFromFile(concept, { path, raw }));
+
+    const commitFields = { concept: concept.id, id, editor: editor.email };
+    try {
+      await commitFiles(
+        runtime.backend,
+        [
+          { path, content: raw },
+          { path: runtime.manifestPath, content: serializeManifest(next) },
+        ],
+        { message: `Publish ${concept.label.toLowerCase()}: ${id}`, author: { name: editor.displayName, email: editor.email } },
+        token,
+      );
+      log.info('entry.published', { ...commitFields, batch: false });
+    } catch (err) {
+      logCommitFailed(commitFields, err, 'publish.failed');
+      if (isConflict(err)) {
+        const message = 'This file changed since you opened it. Reload and reapply your edits.';
+        throw redirect(303, `/admin/${concept.id}/${id}?error=${encodeURIComponent(message)}`);
+      }
+      throw err;
+    }
+    // Only after the main commit lands: a failure above keeps the branch and its edits.
+    await deleteBranch(runtime.backend, branch, token);
+    throw redirect(303, `/admin/${concept.id}/${id}?published=1`);
+  }
+
+  /** Discard an entry's pending edits: delete the branch (tolerant of already-gone) and return to
+   *  the edit page when the entry lives on main, else to the list (the entry is gone entirely). */
+  async function discardAction(event: ContentEvent): Promise<never> {
+    const editor = sessionOf(event);
+    const concept = conceptOf(runtime, event.params);
+    const id = event.params.id ?? '';
+    if (!isValidId(id)) throw error(400, 'Invalid entry id');
+    const token = await mintToken(event.platform?.env ?? {});
+
+    await deleteBranch(runtime.backend, pendingBranch(concept.id, id), token);
+    log.info('entry.discarded', { concept: concept.id, id, editor: editor.email });
+
+    const onMain = await readRaw(runtime.backend, `${concept.dir}/${filenameFromId(id)}`, token);
+    if (onMain !== null) throw redirect(303, `/admin/${concept.id}/${id}?discarded=1`);
+    throw redirect(303, `/admin/${concept.id}`);
   }
 
   /** The shared delete core. Block-until-clean: refuse while inbound links exist (naming them), else
@@ -609,5 +683,5 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     throw redirect(303, `/admin/${concept.id}/${newId}?renamed=1`);
   }
 
-  return { layoutLoad, indexRedirect, listLoad, createAction, editLoad, saveAction, deleteAction, listDeleteAction, renameAction, mintToken };
+  return { layoutLoad, indexRedirect, listLoad, createAction, editLoad, saveAction, publishAction, discardAction, deleteAction, listDeleteAction, renameAction, mintToken };
 }

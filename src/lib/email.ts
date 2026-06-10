@@ -2,6 +2,7 @@
 // send_email binding; production passes `cloudflareSend`, which calls env.EMAIL.send
 // (Cloudflare Email Sending, arbitrary recipients).
 import type { AuthEnv } from './auth/types.js';
+import { CairnError } from './diagnostics/index.js';
 
 export type { AuthEnv };
 
@@ -54,3 +55,26 @@ export const cloudflareSend: SendMagicLink = async (env, message) => {
   if (!env.EMAIL) throw new Error('EMAIL binding is not configured');
   await env.EMAIL.send(message);
 };
+
+/**
+ * Read the E_* code a Cloudflare Email Sending binding error carries (E_SENDER_NOT_VERIFIED,
+ * E_DELIVERY_FAILED, and the rest of the set). A custom injected sender that throws a plain Error
+ * has no code, so this returns undefined and the record still logs cleanly.
+ */
+export function errorCode(err: unknown): string | undefined {
+  if (typeof err === 'object' && err !== null && 'code' in err) {
+    const code = (err as { code: unknown }).code;
+    if (typeof code === 'string') return code;
+  }
+  return undefined;
+}
+
+/**
+ * Map a magic-link send failure to its registered diagnostic condition, carrying the original error
+ * as the cause. The not-verified code is the onboarding gap (the ecxc fault); everything else is the
+ * generic send failure. The caller logs the conditionId and code, and returns a send_error status.
+ */
+export function emailSendFailure(err: unknown): CairnError {
+  const id = errorCode(err) === 'E_SENDER_NOT_VERIFIED' ? 'email.sender-not-onboarded' : 'email.send-failed';
+  return new CairnError(id, { cause: err });
+}

@@ -1,0 +1,32 @@
+import { describe, it, expect } from 'vitest';
+import { errorCode, emailSendFailure } from '../../lib/email.js';
+import { CairnError } from '../../lib/diagnostics/index.js';
+
+describe('errorCode', () => {
+  it('reads a string code off a binding error', () => {
+    expect(errorCode({ code: 'E_SENDER_NOT_VERIFIED' })).toBe('E_SENDER_NOT_VERIFIED');
+  });
+
+  it('falls back to undefined for a plain Error or a non-string code', () => {
+    expect(errorCode(new Error('smtp down'))).toBeUndefined();
+    expect(errorCode({ code: 42 })).toBeUndefined();
+    expect(errorCode(null)).toBeUndefined();
+  });
+});
+
+describe('emailSendFailure', () => {
+  it('maps the not-verified code to the sender-not-onboarded condition', () => {
+    const cause = Object.assign(new Error('not verified'), { code: 'E_SENDER_NOT_VERIFIED' });
+    const failure = emailSendFailure(cause);
+    expect(failure).toBeInstanceOf(CairnError);
+    expect(failure.conditionId).toBe('email.sender-not-onboarded');
+    expect(failure.cause).toBe(cause);
+  });
+
+  it('maps any other failure to the generic send-failed condition', () => {
+    const cause = new Error('smtp down');
+    const failure = emailSendFailure(cause);
+    expect(failure.conditionId).toBe('email.send-failed');
+    expect(failure.cause).toBe(cause);
+  });
+});

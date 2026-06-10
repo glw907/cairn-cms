@@ -147,6 +147,50 @@ describe('AdminLayout', () => {
     expect(errors.join(' ')).not.toContain('rendering inside host chrome');
   });
 
+  it('shows the publish-site trigger with the pending count', async () => {
+    const pending = [
+      { concept: 'posts', id: '2026-05-01-a' },
+      { concept: 'posts', id: '2026-05-02-b' },
+      { concept: 'pages', id: 'about' },
+      { concept: 'widgets', id: 'w1' },
+    ];
+    const screen = render(AdminLayout, { data: { ...data(true), pendingEntries: pending }, children: child });
+    await expect.element(screen.getByRole('button', { name: 'Publish site (4)' })).toBeInTheDocument();
+  });
+
+  it('confirms a publish-all with the pending ids grouped by concept label', async () => {
+    const pending = [
+      { concept: 'posts', id: '2026-05-01-a' },
+      { concept: 'posts', id: '2026-05-02-b' },
+      { concept: 'pages', id: 'about' },
+      { concept: 'widgets', id: 'w1' },
+    ];
+    const screen = render(AdminLayout, { data: { ...data(true), pendingEntries: pending }, children: child });
+    await screen.getByRole('button', { name: 'Publish site (4)' }).click();
+    const dialog = screen.container.querySelector('dialog[aria-labelledby="cairn-publish-all-title"]') as HTMLDialogElement;
+    expect(dialog.open).toBe(true);
+    const text = dialog.textContent ?? '';
+    // Configured concepts resolve to their labels; an unknown key falls back to the raw key.
+    expect(text).toContain('Posts');
+    expect(text).toContain('Pages');
+    expect(text).toContain('widgets');
+    expect(text).toContain('2026-05-01-a');
+    expect(text).toContain('2026-05-02-b');
+    expect(text).toContain('about');
+    expect(text).toContain('w1');
+    // The confirm posts to the first concept's list shim with the CSRF field.
+    const form = dialog.querySelector('form[action="/admin/posts?/publishAll"]');
+    expect(form).not.toBeNull();
+    expect(form!.querySelector('input[name="csrf"]')).not.toBeNull();
+  });
+
+  it('hides the publish-site trigger when nothing is pending', async () => {
+    const nullScreen = render(AdminLayout, { data: data(true), children: child });
+    await expect.element(nullScreen.getByRole('button', { name: /publish site/i })).not.toBeInTheDocument();
+    const emptyScreen = render(AdminLayout, { data: { ...data(true), pendingEntries: [] }, children: child });
+    await expect.element(emptyScreen.getByRole('button', { name: /publish site/i })).not.toBeInTheDocument();
+  });
+
   it('toggles the drawer with Ctrl+B', async () => {
     const screen = render(AdminLayout, { data: data(true), children: child });
     const toggle = () => screen.container.querySelector('#cairn-drawer') as HTMLInputElement;

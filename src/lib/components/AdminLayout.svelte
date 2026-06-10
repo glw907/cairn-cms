@@ -158,6 +158,21 @@ identical on every host regardless of the site's own theme.
   let paletteList = $state<HTMLUListElement>();
   let paletteQuery = $state('');
 
+  // The site-wide publish action. The trigger and its confirm render only while entries are
+  // pending; a null pendingEntries (GitHub unreachable) hides them rather than showing a stale count.
+  let publishAllDialog = $state<HTMLDialogElement>();
+  const pendingCount = $derived(data.pendingEntries?.length ?? 0);
+  // The pending ids grouped under their concept's nav label, in first-seen order. A ref whose
+  // concept is not in the nav (an unconfigured key) falls back to the raw key.
+  const pendingGroups = $derived.by(() => {
+    const groups = new Map<string, string[]>();
+    for (const entry of data.pendingEntries ?? []) {
+      const label = data.concepts.find((c) => c.id === entry.concept)?.label ?? entry.concept;
+      groups.set(label, [...(groups.get(label) ?? []), entry.id]);
+    }
+    return [...groups.entries()].map(([label, ids]) => ({ label, ids }));
+  });
+
   // The bare data-theme wrapper is the admin root the dev chrome-guard measures from.
   let rootEl = $state<HTMLElement>();
   onMount(() => {
@@ -263,6 +278,13 @@ identical on every host regardless of the site's own theme.
             <kbd class="ml-auto hidden rounded border border-[var(--cairn-card-border)] px-1.5 text-[0.6875rem] font-medium sm:inline">&#8984;K</kbd>
           </button>
         </div>
+        {#if pendingCount > 0}
+          <div class="flex-none">
+            <button type="button" class="btn btn-primary btn-sm" aria-haspopup="dialog" onclick={() => publishAllDialog?.showModal()}>
+              Publish site ({pendingCount})
+            </button>
+          </div>
+        {/if}
         <div class="flex-none">
           <button type="button" class="btn btn-square btn-ghost" aria-label="Toggle theme" onclick={toggleTheme}>
             {#if theme === 'cairn-admin'}<MoonIcon class="h-5 w-5" />{:else}<SunIcon class="h-5 w-5" />{/if}
@@ -325,6 +347,34 @@ identical on every host regardless of the site's own theme.
         </div>
         <form method="dialog" class="modal-backdrop"><button tabindex="-1" aria-label="Close">close</button></form>
       </dialog>
+
+      {#if pendingCount > 0}
+        <dialog bind:this={publishAllDialog} class="modal" aria-labelledby="cairn-publish-all-title">
+          <div class="modal-box">
+            <div class="mb-3 flex items-center justify-between">
+              <h2 id="cairn-publish-all-title" class="text-base font-semibold">Publish the whole site?</h2>
+              <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={() => publishAllDialog?.close()}>✕</button>
+            </div>
+            <p class="text-sm">Every entry below goes live in one step.</p>
+            {#each pendingGroups as group (group.label)}
+              <p class="mt-3 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">{group.label}</p>
+              <ul class="mt-1 text-sm">
+                {#each group.ids as id (id)}
+                  <li>{id}</li>
+                {/each}
+              </ul>
+            {/each}
+            <!-- The publishAll action is mounted on every concept-list shim; the first concept's
+                 route hosts the site-wide POST so the topbar works from any admin page. -->
+            <form method="POST" action={`/admin/${data.concepts[0].id}?/publishAll`} class="mt-4 flex justify-end gap-2">
+              <CsrfField token={data.csrf} />
+              <button type="button" class="btn btn-sm" onclick={() => publishAllDialog?.close()}>Cancel</button>
+              <button type="submit" class="btn btn-sm btn-primary">Publish site</button>
+            </form>
+          </div>
+          <form method="dialog" class="modal-backdrop"><button tabindex="-1" aria-label="Close">close</button></form>
+        </dialog>
+      {/if}
     </div>
 
     <div class="drawer-side">

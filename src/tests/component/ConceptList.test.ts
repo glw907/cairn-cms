@@ -30,9 +30,47 @@ describe('ConceptList', () => {
     expect(csrfFields.length).toBe(postForms.length);
   });
 
-  it('flags a draft row with a status badge', async () => {
+  it('flags a draft row with a Hidden badge', async () => {
     const screen = render(ConceptList, { data: data() });
-    await expect.element(screen.getByText('Draft', { exact: true })).toBeInTheDocument();
+    await expect.element(screen.getByText('Hidden', { exact: true })).toBeInTheDocument();
+  });
+
+  it('renders the status vocabulary: New, Edited, and Published badges', async () => {
+    const entries = [
+      { id: 'alpha', title: 'Alpha', date: '2026-05-03', draft: false, status: 'new' as const },
+      { id: 'beta', title: 'Beta', date: '2026-05-02', draft: false, status: 'edited' as const },
+      { id: 'gamma', title: 'Gamma', date: '2026-05-01', draft: false, status: 'published' as const },
+    ];
+    const screen = render(ConceptList, { data: data({ entries }) });
+    const badge = (text: string) =>
+      Array.from(screen.container.querySelectorAll('tbody .badge')).find(
+        (el) => el.textContent?.trim() === text,
+      );
+    await expect.element(screen.getByText('New', { exact: true })).toBeInTheDocument();
+    expect(badge('New')?.classList.contains('badge-info')).toBe(true);
+    expect(badge('Edited')?.classList.contains('badge-warning')).toBe(true);
+    expect(badge('Published')?.classList.contains('badge-ghost')).toBe(true);
+  });
+
+  it('stacks a Hidden badge beside the status badge for a hidden edited entry', async () => {
+    const entries = [
+      { id: 'alpha', title: 'Alpha', date: '2026-05-03', draft: true, status: 'edited' as const },
+    ];
+    const screen = render(ConceptList, { data: data({ entries }) });
+    const row = screen.container.querySelector('tbody tr')!;
+    const badges = Array.from(row.querySelectorAll('.badge')).map((el) => el.textContent?.trim());
+    expect(badges).toContain('Edited');
+    expect(badges).toContain('Hidden');
+    const hidden = Array.from(row.querySelectorAll('.badge')).find((el) => el.textContent?.trim() === 'Hidden');
+    expect(hidden?.classList.contains('badge-neutral')).toBe(true);
+  });
+
+  it('shows a publish-all flash through a status region', async () => {
+    const screen = render(ConceptList, { data: data({ publishedAll: 3 }) });
+    const status = Array.from(screen.container.querySelectorAll('[role="status"]')).find((el) =>
+      (el.textContent ?? '').includes('Published 3 entries.'),
+    );
+    expect(status).toBeTruthy();
   });
 
   it('filters rows by a search query and shows a result count', async () => {

@@ -250,6 +250,80 @@ describe('EditPage', () => {
       .not.toContain('cairn:pages/gone');
   });
 
+  it('shows the pending banner when the live site lags the edits', async () => {
+    const screen = render(EditPage, postProps({ pending: true, published: true }));
+    const banner = Array.from(screen.container.querySelectorAll('.alert')).find((el) =>
+      (el.textContent ?? '').includes('Unpublished changes'),
+    );
+    expect(banner).toBeTruthy();
+    expect(banner!.textContent ?? '').toContain('The live site still shows the last published version.');
+  });
+
+  it('shows the not-yet-published banner for a pending new entry', async () => {
+    const screen = render(EditPage, postProps({ pending: true, published: false }));
+    const banner = Array.from(screen.container.querySelectorAll('.alert')).find((el) =>
+      (el.textContent ?? '').includes('Not yet published.'),
+    );
+    expect(banner).toBeTruthy();
+  });
+
+  it('hides the pending banner when nothing is pending', async () => {
+    const screen = render(EditPage, postProps());
+    expect(screen.container.textContent ?? '').not.toContain('Unpublished changes');
+    expect(screen.container.textContent ?? '').not.toContain('Not yet published');
+  });
+
+  it('offers a Publish button riding the edit form when edits are pending', async () => {
+    const screen = render(EditPage, postProps({ pending: true }));
+    const publish = screen.container.querySelector('form[action="?/save"] button[formaction="?/publish"]');
+    expect(publish).not.toBeNull();
+    expect(publish!.classList.contains('btn-primary')).toBe(true);
+  });
+
+  it('hides the Publish and Discard controls when nothing is pending', async () => {
+    const screen = render(EditPage, postProps());
+    expect(screen.container.querySelector('button[formaction="?/publish"]')).toBeNull();
+    await expect.element(screen.getByRole('button', { name: 'Discard changes' })).not.toBeInTheDocument();
+  });
+
+  it('confirms a discard by naming the live version it restores', async () => {
+    const screen = render(EditPage, postProps({ pending: true, published: true }));
+    await screen.getByRole('button', { name: 'Discard changes' }).click();
+    const dialog = screen.container.querySelector('dialog[aria-labelledby="cairn-discard-dialog-title"]') as HTMLDialogElement;
+    expect(dialog.open).toBe(true);
+    expect(dialog.textContent ?? '').toContain('restores the live version');
+    const form = dialog.querySelector('form[action="?/discard"]');
+    expect(form).not.toBeNull();
+    expect(form!.querySelector('input[name="csrf"]')).not.toBeNull();
+  });
+
+  it('confirms a discard of a never-published entry by naming the delete', async () => {
+    const screen = render(EditPage, postProps({ pending: true, published: false }));
+    await screen.getByRole('button', { name: 'Discard changes' }).click();
+    const dialog = screen.container.querySelector('dialog[aria-labelledby="cairn-discard-dialog-title"]') as HTMLDialogElement;
+    expect(dialog.textContent ?? '').toContain('never been published');
+    expect(dialog.querySelector('form[action="?/discard"]')).not.toBeNull();
+  });
+
+  it('shows a published confirmation strip', async () => {
+    const screen = render(EditPage, postProps({ publishedFlash: true }));
+    const banner = screen.container.querySelector('.alert-success');
+    expect(banner?.textContent ?? '').toMatch(/published/i);
+  });
+
+  it('shows a discarded confirmation strip', async () => {
+    const screen = render(EditPage, postProps({ discardedFlash: true }));
+    const banner = screen.container.querySelector('.alert-success');
+    expect(banner?.textContent ?? '').toMatch(/discarded/i);
+  });
+
+  it('adds the pending-edits sentence to the delete confirm when edits are pending', async () => {
+    const screen = render(EditPage, postProps({ pending: true }));
+    await screen.getByRole('button', { name: /^delete$/i }).click();
+    const dialog = screen.container.querySelector('dialog[aria-labelledby="cairn-delete-dialog-title"]') as HTMLDialogElement;
+    expect(dialog.textContent ?? '').toContain('Unpublished edits to this entry are discarded too.');
+  });
+
   it('preview toggle button exposes aria-expanded reflecting preview state', async () => {
     const screen = render(EditPage, postProps());
     const btn = screen.getByRole('button', { name: /show preview/i });

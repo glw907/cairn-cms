@@ -18,9 +18,11 @@ each linking to its edit page, so the author repoints or removes those links fir
     label: string;
     /** The entries that link to this one; non-empty blocks the delete. */
     inboundLinks: InboundLink[];
+    /** True when the entry has unpublished edits, which the delete discards along with it. */
+    pending?: boolean;
   }
 
-  let { conceptId, id, label, inboundLinks }: Props = $props();
+  let { conceptId, id, label, inboundLinks, pending = false }: Props = $props();
 
   let dialog = $state<HTMLDialogElement | null>(null);
   const blocked = $derived(inboundLinks.length > 0);
@@ -67,7 +69,7 @@ each linking to its edit page, so the author repoints or removes those links fir
         <button type="button" class="btn btn-sm" onclick={close}>Close</button>
       </div>
     {:else}
-      <p class="mb-3 text-sm">This cannot be undone.</p>
+      <p class="mb-3 text-sm">This cannot be undone.{#if pending} Unpublished edits to this entry are discarded too.{/if}</p>
       <form method="POST" action="?/delete" class="flex justify-end gap-2">
         <CsrfField />
         <input type="hidden" name="concept" value={conceptId} />

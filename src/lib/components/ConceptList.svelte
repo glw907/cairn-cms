@@ -122,6 +122,11 @@ content sizes. The header New button opens a dialog holding the create form.
   </div>
 </header>
 
+{#if data.publishedAll !== null}
+  <div role="status" class="alert alert-success mb-4 text-sm">
+    Published {data.publishedAll} {data.publishedAll === 1 ? 'entry' : 'entries'}.
+  </div>
+{/if}
 {#if data.formError}
   <div role="alert" class="alert alert-error mb-4 text-sm">{data.formError}</div>
 {/if}
@@ -194,13 +199,17 @@ content sizes. The header New button opens a dialog holding the create form.
             <td><a class="font-medium hover:text-primary hover:underline" href={`/admin/${data.conceptId}/${entry.id}`}>{entry.title}</a></td>
             {#if data.dated}<td class="hidden text-sm text-[var(--color-muted)] sm:table-cell">{formatDate(entry.date)}</td>{/if}
             <td>
-              {#if entry.draft}<span class="badge badge-warning badge-sm font-medium">Draft</span>
-              {:else}<span class="badge badge-ghost badge-sm font-medium">Published</span>{/if}
+              <div class="flex flex-wrap items-center gap-1">
+                {#if entry.status === 'new'}<span class="badge badge-info badge-sm font-medium">New</span>
+                {:else if entry.status === 'edited'}<span class="badge badge-warning badge-sm font-medium">Edited</span>
+                {:else}<span class="badge badge-ghost badge-sm font-medium">Published</span>{/if}
+                {#if entry.draft}<span class="badge badge-neutral badge-sm font-medium">Hidden</span>{/if}
+              </div>
             </td>
             <td class="text-right">
               {#if deleteRefused?.id === entry.id}
                 <!-- A prior delete was refused: DeleteDialog names the blockers and offers no confirm. -->
-                <DeleteDialog conceptId={data.conceptId} id={entry.id} label={data.label} inboundLinks={deleteRefused.inboundLinks} />
+                <DeleteDialog conceptId={data.conceptId} id={entry.id} label={data.label} inboundLinks={deleteRefused.inboundLinks} pending={entry.status !== 'published'} />
               {:else}
                 <form method="POST" action="?/delete">
                   <CsrfField />

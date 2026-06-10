@@ -26,7 +26,15 @@ six carry-forwards (the live `E_*` shape proof, the cooldown race, the disconnec
 missing-binding condition for Pass 3, the reference signature-currency gate idea, the per-IP limit)
 is in the plan (`docs/superpowers/plans/2026-06-09-cairn-diagnostics-02-email-delivery.md`).
 
-**Next: execute the publish-workflow plan (jumps the queued backlog; Geoff's call, 2026-06-10).**
+**EXECUTION IN PROGRESS (2026-06-10): resume the publish-workflow plan at Task 3.** Tasks 1
+(`36bddc3`, the pending-branch codec) and 2 (`2d4fda4`, the stateful in-memory GitHub double) are
+done, each gate-green, dispatched to the Sonnet-pinned `cairn-implementer` per the model-economy
+policy (the main loop orchestrates, reviews each diff, and verifies the gate; see the global
+CLAUDE.md "Model economy" section). Tasks 3 through 11 remain. One plan defect was found and
+fixed in place: the draft tests' `RepoRef` literal carried `appId`/`installationId`, which the
+real `RepoRef` does not.
+
+**The initiative (context for the resume):**
 The approved spec is `docs/superpowers/specs/2026-06-10-cairn-publish-workflow-design.md`
 (committed `3734fd9`): edits hold on per-entry `cairn/<conceptKey>/<id>` branches until a
 deliberate Publish (per page, plus a site-wide publish-all in the topbar); publish is a content

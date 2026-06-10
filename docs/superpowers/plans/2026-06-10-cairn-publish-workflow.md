@@ -129,7 +129,7 @@ import { GithubDouble } from './_github-double.js';
 import { readRaw, commitFiles, listMarkdown } from '../../lib/github/repo.js';
 import type { RepoRef } from '../../lib/github/types.js';
 
-const repo: RepoRef = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
+const repo: RepoRef = { owner: 'o', repo: 'r', branch: 'main' };
 afterEach(() => vi.restoreAllMocks());
 
 describe('GithubDouble', () => {
@@ -384,7 +384,7 @@ import { GithubDouble } from './_github-double.js';
 import { branchHeadSha, createBranch, deleteBranch, listBranches } from '../../lib/github/branches.js';
 import type { RepoRef } from '../../lib/github/types.js';
 
-const repo: RepoRef = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
+const repo: RepoRef = { owner: 'o', repo: 'r', branch: 'main' };
 afterEach(() => vi.restoreAllMocks());
 
 describe('branches transport', () => {

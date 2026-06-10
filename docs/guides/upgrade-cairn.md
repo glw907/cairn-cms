@@ -186,3 +186,18 @@ The magic-link send is awaited, and `requestAction` returns `{ status, sent }` w
 `sent`, `send_error`, or `throttled`. `LoginPage` renders the two new states on its own. Consumers
 must: nothing. A site rendering its own form against `form.sent` sees the same value as before; it
 opts into the new states by reading `form.status`.
+
+## 0.39.0: saves hold on a pending branch until Publish
+
+A save now commits to the entry's pending branch (`cairn/<concept>/<id>`) and leaves the live site
+untouched; a deliberate Publish (per entry, or site-wide from the topbar) copies the held edits to
+the default branch and triggers the deploy. The behavior is unconditional, with no mode knob.
+Consumers must: add `publish: content.publishAction` and `discard: content.discardAction` to the
+edit shim's `actions`, and `publishAll: content.publishAllAction` to the list shim's `actions`, the
+shape [the admin route structure](../reference/admin-routes.md) shows. Without those lines the new
+Publish and Discard controls post to actions that do not exist, and since saves no longer deploy,
+nothing an editor does reaches the live site.
+
+Tell your editors too: Save now holds changes, and the new Publish button ships them. The
+[publish and discard guide](publish-and-discard.md) is the editor-facing walkthrough. The `draft:`
+checkbox keeps its mechanics under the name Hidden.

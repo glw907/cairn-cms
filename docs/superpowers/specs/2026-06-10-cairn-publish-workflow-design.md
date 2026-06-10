@@ -45,7 +45,8 @@ The four operations:
 - **Save** creates the branch from `main`'s current head if it does not exist, then runs the
   existing atomic commit pipeline against it (author = editor, committer = the App, manifest
   updated on the branch by the unchanged save path). The live site never changes and no deploy
-  fires.
+  fires. *Plan-time reconciliation: branches carry no manifest copy; a save commits only the entry
+  file, and publish performs the manifest upsert on `main`.*
 - **Publish** reads the entry's file from its branch, commits it to `main` through the same pipeline
   as one "Publish <title>" commit authored by the editor (content plus recomputed manifest entry),
   then deletes the branch. This is a content copy, never a git merge, so it cannot conflict no
@@ -166,7 +167,8 @@ architecture explanation and the security model gain the branch model and its tr
 App writes only under `cairn/` refs and the content directories on `main`). In the upgrade guide
 the entry is behavioral: saves no longer deploy, publish does, and no consumer code change is
 required since the actions wire through `composeRuntime`. Reference pages update for any changed
-public export surface.
+public export surface. *Plan-time reconciliation: consumer shims enumerate named actions, so they
+must add `publish`/`discard` to the edit shim and `publishAll` to the list shim.*
 
 ## Versioning and sequencing
 

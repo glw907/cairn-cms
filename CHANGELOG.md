@@ -2,6 +2,32 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.39.0
+
+Content edits are now held until a deliberate Publish. A save commits to the entry's pending
+branch, `cairn/<concept>/<id>`, cut lazily from the default branch's head, and the live site does
+not change. Publishing copies the held entry file to the default branch, with its manifest row
+upserted, in one commit, then deletes the branch; that commit is what triggers the deploy. A
+site-wide "Publish site (N)" action in the admin topbar ships every pending entry in one atomic
+commit. Discard deletes the pending branch, restoring the live version of a published entry or
+removing a never-published one entirely. The ref's existence is the only pending state; there is
+no metadata file and no database row.
+
+The admin shows the new state everywhere. List rows carry a status badge (New, Edited, or
+Published), with the `draft:` flag re-presented as a separate Hidden badge whose mechanics are
+unchanged. The edit page gains a pending banner, a Publish button, and a Discard changes confirm.
+Deleting an entry cascades to its pending branch, and renaming is refused while one exists.
+`EntrySummary`, `ListData`, `EditData`, and `LayoutData` widen accordingly, `createContentRoutes`
+returns the three new actions, and three log events join the vocabulary (`entry.published`,
+`entry.discarded`, `publish.failed`), with `commit.succeeded`/`commit.failed` carrying a `branch`
+field on the save path.
+
+Consumers must: add publish/discard to the edit shim's actions and publishAll to the list shim's actions; saves no longer deploy the site, Publish does.
+The exact lines are in
+[the upgrade guide](docs/guides/upgrade-cairn.md) and
+[the admin route structure](docs/reference/admin-routes.md). The editor-facing walkthrough is
+[the publish and discard guide](docs/guides/publish-and-discard.md).
+
 ## 0.38.0
 
 The magic-link send is now awaited rather than fire-and-forget, so a delivery failure reaches the

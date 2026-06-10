@@ -59,8 +59,9 @@ raw secret never appears in any emitted record, so a later change cannot widen a
 
 ## Commit trust
 
-A save commits markdown to the repo's default branch, which auto-deploys. The identity on that
-commit matters, so cairn splits it. The commit author is the editor who saved, derived from the
+A save commits markdown to the entry's pending branch under `cairn/`, and a deliberate Publish
+copies it to the repo's default branch, which auto-deploys. The identity on each commit matters,
+so cairn splits it. The commit author is the editor who saved or published, derived from the
 verified server-side session and never from request input. The committer is the GitHub App, which
 GitHub attributes to `cairn-cms[bot]`. Read the git history and you see who wrote the words, and
 that the machinery, not a person's own credentials, performed the write.
@@ -82,6 +83,14 @@ The commit helper cannot enforce two preconditions on its own, so the save and l
 must. Every write path is confined to the site's configured content directories, because the App
 token can write anywhere in the repo. The commit author comes from the session, never from the
 request. A stale-base commit fails safe as a conflict the editor reapplies, never a silent merge.
+
+The publish workflow widens the App's write surface in one bounded way. Beyond the content
+directories and the manifest on the default branch, the engine now creates, lists, and deletes
+refs under the `cairn/` prefix, where each pending entry holds its edits. Those are Git Data API
+calls under the same contents permission; no new App permission is granted and no pull requests
+are created. The branch names derive from validated concept and entry ids, and the publish-all
+path re-validates every id parsed from a ref before building a file path from it, so a stray ref
+someone pushed by hand cannot steer a write outside the content directories.
 
 The JWT signing, the token mint, and the commit helper are internal to the engine, which wires them
 behind the content routes, so your site never calls them directly. See [the core

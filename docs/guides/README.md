@@ -16,6 +16,10 @@ Task-oriented guides for a returning adopter. Each answers one question and link
 - [Configure rendering](./configure-rendering.md): markdown to delivered HTML, the registry, and the sanitize floor.
 - [Wire the delivery surface](./wire-the-delivery-surface.md): the read model, the permalink route, the feeds, and the manifest.
 
+## Edit content
+
+- [Publish and discard](./publish-and-discard.md): the editor-facing flow, from a held save to the live site.
+
 ## Maintain
 
 - [Upgrade cairn](./upgrade-cairn.md): the `0.x` rename list, oldest first.

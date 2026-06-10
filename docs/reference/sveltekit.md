@@ -143,13 +143,17 @@ export const actions = {
 
 ```ts
 declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutesDeps): {
-  layoutLoad: (event: ContentEvent) => LayoutData;
+  layoutLoad: (event: ContentEvent) => Promise<LayoutData>;
   indexRedirect: () => never;
   listLoad: (event: ContentEvent) => Promise<ListData>;
   createAction: (event: ContentEvent) => Promise<never>;
   editLoad: (event: ContentEvent) => Promise<EditData>;
   saveAction: (event: ContentEvent) => Promise<ReturnType<typeof fail> | never>;
+  publishAction: (event: ContentEvent) => Promise<never>;
+  publishAllAction: (event: ContentEvent) => Promise<never>;
+  discardAction: (event: ContentEvent) => Promise<never>;
   deleteAction: (event: ContentEvent) => Promise<ReturnType<typeof fail> | never>;
+  listDeleteAction: (event: ContentEvent) => Promise<ReturnType<typeof fail> | never>;
   renameAction: (event: ContentEvent) => Promise<ReturnType<typeof fail> | never>;
   mintToken: (env: GithubKeyEnv) => Promise<string>;
 };
@@ -157,9 +161,19 @@ declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutes
 
 The core of the admin surface. It takes the composed runtime and returns the loads and actions for
 the authed admin shell, the concept list, and the entry editor. `layoutLoad` backs the `(app)`
-group layout, `listLoad` and `createAction` back a concept's list page, and `editLoad` with the
-`save`, `delete`, and `rename` actions back the entry editor. The optional `deps.mintToken` stubs
-the GitHub App token mint, which is how the showcase runs in dev without a real key.
+group layout, `listLoad` with the `create`, `delete` (`listDeleteAction`), and `publishAll`
+actions back a concept's list page, and `editLoad` with the `save`, `publish`, `discard`,
+`delete`, and `rename` actions back the entry editor. The optional `deps.mintToken` stubs the
+GitHub App token mint, which is how the showcase runs in dev without a real key.
+
+A save holds the edit on the entry's pending branch (`cairn/<concept>/<id>`) and does not touch
+the default branch, so the live site stays as it was. `publishAction` copies the held entry file
+to the default branch, with its manifest row upserted, in one commit, then deletes the branch.
+`publishAllAction` does the same for every pending entry across concepts in one atomic commit; the
+admin topbar posts to it on the first concept's list route from anywhere. `discardAction` deletes
+the pending branch, returning to the edit page for a published entry (`?discarded=1`) or to the
+list for an entry that never published. `renameAction` refuses with a 409 `renameError` while a
+pending branch exists, and a delete cascades to the pending branch.
 
 ```ts
 // examples/showcase/src/routes/admin/(app)/[concept]/+page.server.ts
@@ -172,7 +186,7 @@ const routes = createContentRoutes(composeRuntime({ adapter: cairn, siteConfig }
 });
 
 export const load = routes.listLoad;
-export const actions = { create: routes.createAction };
+export const actions = { create: routes.createAction, delete: routes.listDeleteAction, publishAll: routes.publishAllAction };
 ```
 
 ### `createNavRoutes`
@@ -242,11 +256,11 @@ imports the matching `*Data` type to type its `data` prop.
 | Name | Signature | Meaning |
 | --- | --- | --- |
 | `AuthRoutesConfig` | `interface AuthRoutesConfig { branding: AuthBranding; send?: SendMagicLink }` | The config `createAuthRoutes` takes: the email branding and an optional custom sender. |
-| `LayoutData` | `interface LayoutData { siteName; user: { displayName; role }; concepts: NavConcept[]; pathname; canManageEditors; navLabel: string \| null }` | The admin layout's data: site identity, the signed-in user, the nav, and the active path. |
+| `LayoutData` | `interface LayoutData { siteName; user: { displayName; email; role }; concepts: NavConcept[]; pathname; canManageEditors; navLabel: string \| null; theme; collapsedNav; csrf; pendingEntries: { concept; id }[] \| null }` | The admin layout's data: site identity, the signed-in user, the nav, the active path, the CSRF token, and the pending entries for the topbar's publish-all (null when GitHub is unreachable, which hides the action). |
 | `NavConcept` | `interface NavConcept { id: string; label: string }` | A sidebar concept entry, just enough to render the nav without shipping validators to the client. |
-| `EntrySummary` | `interface EntrySummary { id: string; title: string; date: string \| null; draft: boolean }` | One row in a concept's list view. |
-| `ListData` | `interface ListData { conceptId; label; dated; entries: EntrySummary[]; error: string \| null; formError: string \| null }` | The concept list view's data, including a degraded-listing error and a create-form bounce error. |
-| `EditData` | `interface EditData { conceptId; id; label; fields; frontmatter; body; title; isNew; saved; renamed; error; slug; linkTargets; inboundLinks }` | The entry editor's data: form-ready frontmatter, the body, the link targets, and the inbound links for the delete guard. |
+| `EntrySummary` | `interface EntrySummary { id: string; title: string; date: string \| null; draft: boolean; status: 'published' \| 'edited' \| 'new' }` | One row in a concept's list view. `status` derives from the ref set: live as-is, live with held edits, or pending-branch only. |
+| `ListData` | `interface ListData { conceptId; label; dated; entries: EntrySummary[]; error: string \| null; formError: string \| null; publishedAll: number \| null }` | The concept list view's data, including a degraded-listing error, a create-form bounce error, and the publish-all flash count from `?publishedAll=`. |
+| `EditData` | `interface EditData { conceptId; id; label; fields; frontmatter; body; title; isNew; saved; renamed; error; slug; linkTargets; inboundLinks; pending; published; publishedFlash; discardedFlash }` | The entry editor's data: form-ready frontmatter, the body, the link targets, the inbound links for the delete guard, and the publish state (`pending` means the body came from the entry's branch; `published` means the file exists on the default branch). |
 | `ContentEvent` | `interface ContentEvent { url: URL; params; request: Request; locals: { editor? }; platform? }` | The structural event the content routes read; a real SvelteKit `RequestEvent` satisfies it. |
 | `ContentRoutesDeps` | `interface ContentRoutesDeps { mintToken?: (env: GithubKeyEnv) => Promise<string> }` | Injectable dependencies for `createContentRoutes`; tests stub the token mint. |
 | `NavPageOption` | `interface NavPageOption { label: string; url: string }` | One page option for the nav editor's URL picker datalist. |

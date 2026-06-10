@@ -18,9 +18,19 @@ redaction stance.
 | `auth.token.confirmed` | info | A valid token is consumed at `POST /admin/auth/confirm`. | `email` |
 | `auth.session.created` | info | A session row is created after a confirm. | `email` |
 | `auth.session.destroyed` | info | A session is deleted at logout. | none |
-| `commit.succeeded` | info | A content or nav commit lands on the branch. | `concept`, `id`, `editor` |
-| `commit.failed` | warn or error | A commit fails. `warn` with `reason: "conflict"` on a 409, `error` with `error` otherwise. | `concept`, `id`, `editor`, `reason` or `error` |
+| `commit.succeeded` | info | A content or nav commit lands. | `concept`, `id`, `editor`, `branch` on a save |
+| `commit.failed` | warn or error | A commit fails. `warn` with `reason: "conflict"` on a 409, `error` with `error` otherwise. | `concept`, `id`, `editor`, `reason` or `error`, `branch` on a save |
+| `entry.published` | info | A pending entry's edits land on the default branch. | `concept`, `id`, `editor`, `batch` |
+| `entry.discarded` | info | A pending branch is deleted: a discard, or the delete of a never-published entry. | `concept`, `id`, `editor` |
+| `publish.failed` | warn or error | A publish commit fails, with the `commit.failed` shape. | `concept`, `id`, `editor`, `reason` or `error` |
 | `guard.rejected` | warn | The admin guard refuses a request before `resolve()`. | `reason` (`csrf`, `origin`, or `https`), `path` |
+
+Saves land on the entry's pending branch, so `commit.succeeded` and `commit.failed` carry a
+`branch` field (`cairn/<concept>/<id>`) on the save path. Deletes, renames, and nav saves commit to
+the default branch and omit the field, which is how a held save and a direct commit are told apart
+in a query. On `entry.published`, `batch` is `true` when the entry shipped through a publish-all
+and `false` for a single publish. A failed publish-all logs one `publish.failed` record per entry
+in the batch, so the log names everything that did not go live.
 
 On `auth.link.send_failed`, `code` is the Cloudflare binding error code (`E_SENDER_NOT_VERIFIED`
 and the rest of the `E_*` set; absent when a custom sender throws a plain `Error`), and

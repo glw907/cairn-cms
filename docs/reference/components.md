@@ -52,6 +52,11 @@ into its default slot.
 its descendant forms through context, so an admin form inside the shell mounts `CsrfField` with no
 prop. See [`CsrfField`](#csrffield) for the field itself.
 
+When `data.pendingEntries` is non-empty, the topbar shows a "Publish site (N)" button whose confirm
+dialog lists the held entries grouped by concept and posts to the first concept's `?/publishAll`
+action. A null `pendingEntries` (GitHub unreachable) hides the button rather than showing a stale
+count.
+
 ### `ConceptList`
 
 ```ts
@@ -59,7 +64,9 @@ let { data }: { data: ListData };
 ```
 
 The list screen for one content concept: the entries, the create form, and any inline errors. `data`
-is the `ListData` from the list load. Mount it in
+is the `ListData` from the list load. Each row carries a status badge from `entry.status`
+(New, Edited, or Published), and an entry with `draft: true` carries a separate Hidden badge beside
+it. A `?publishedAll=` redirect renders a "Published N entries." flash above the list. Mount it in
 `src/routes/admin/(app)/[concept]/+page.svelte`.
 
 ```svelte
@@ -92,6 +99,14 @@ with the site name for the heading. `registry`, `render`, and `icons` come from 
 form's icon fields. `form` carries the last `?/save` or `?/delete` action result, so a blocked save
 re-renders the author's edits and the broken links to fix. Mount it in
 `src/routes/admin/(app)/[concept]/[id]/+page.svelte`.
+
+When `data.pending` is true, the page adds a state banner above the editor (the live site still
+shows the last published version, or "Not yet published." for a never-published entry), a Publish
+button posting to `?/publish` beside Save, and a Discard changes button whose confirm dialog posts
+to `?/discard`. The dialog copy branches on `data.published`: discarding an Edited entry restores
+the live version, and discarding a New one deletes the entry. The `publishedFlash` and
+`discardedFlash` fields render the matching confirmation strips after a publish or discard
+redirect.
 
 ```svelte
 <script lang="ts">
@@ -312,18 +327,21 @@ manifest; `insert` inserts the chosen link. `EditPage` composes it.
 ### `DeleteDialog`
 
 ```ts
-let { conceptId, id, label, inboundLinks }: {
+let { conceptId, id, label, inboundLinks, pending = false }: {
   conceptId: string;
   id: string;
   label: string;
   inboundLinks: InboundLink[];
+  pending?: boolean;
 };
 ```
 
 A confirm dialog that deletes one entry, with a guard that blocks the delete while other entries
 link to it. `conceptId` and `id` identify the entry and post with the confirm, `label` names the
 concept in the prompts, and `inboundLinks` is the list of entries that link here. A non-empty list
-shows the linkers and blocks the delete until they are repointed. `EditPage` composes it.
+shows the linkers and blocks the delete until they are repointed. Pass `pending` for an entry with
+unpublished edits; the confirm copy then warns that those edits are discarded too, since the delete
+cascades to the entry's pending branch. `EditPage` composes it.
 
 ```svelte
 <DeleteDialog conceptId="posts" id="2026-06-04-hello" label="Post" inboundLinks={[]} />

@@ -25,9 +25,9 @@ src/routes/
       +layout.server.ts        # content.layoutLoad  (the authed shell load)
       +layout.svelte           # AdminLayout
       +page.server.ts          # indexRedirect
-      [concept]/+page.server.ts        # listLoad + createAction
+      [concept]/+page.server.ts        # listLoad + create/delete/publishAll actions
       [concept]/+page.svelte           # ConceptList
-      [concept]/[id]/+page.server.ts   # editLoad + saveAction
+      [concept]/[id]/+page.server.ts   # editLoad + save/publish/discard/delete/rename actions
       [concept]/[id]/+page.svelte      # EditPage
       editors/+page.server.ts  # editor-management loads/actions
       editors/+page.svelte     # ManageEditors
@@ -146,11 +146,31 @@ export const content = createContentRoutes(runtime);
 ```
 
 ```ts
+// src/routes/admin/(app)/[concept]/+page.server.ts
+import { content } from '$lib/cairn.server.js';
+export const load = content.listLoad;
+export const actions = {
+  create: content.createAction,
+  delete: content.listDeleteAction,
+  publishAll: content.publishAllAction,
+};
+```
+
+```ts
 // src/routes/admin/(app)/[concept]/[id]/+page.server.ts
 import { content } from '$lib/cairn.server.js';
 export const load = content.editLoad;
-export const actions = { save: content.saveAction };
+export const actions = {
+  save: content.saveAction,
+  publish: content.publishAction,
+  discard: content.discardAction,
+  delete: content.deleteAction,
+  rename: content.renameAction,
+};
 ```
+
+The list shim's `publishAll` line is load-bearing even on a one-concept site: the topbar's
+"Publish site" form posts to the first concept's `?/publishAll` from every admin page.
 
 ## Preserving site hooks
 

@@ -10,8 +10,8 @@ import { isValidId, slugify, filenameFromId, composeDatedId, slugFromId, renameI
 import { rewriteCairnLink } from '../components/markdown-format.js';
 import { appCredentials, type GithubKeyEnv } from '../github/credentials.js';
 import { listMarkdown, readRaw, commitFiles, type FileChange } from '../github/repo.js';
-import { branchHeadSha, createBranch } from '../github/branches.js';
-import { pendingBranch } from '../content/pending.js';
+import { branchHeadSha, createBranch, listBranches } from '../github/branches.js';
+import { PENDING_PREFIX, pendingBranch, parsePendingBranch } from '../content/pending.js';
 import { cachedInstallationToken } from '../github/signing.js';
 import { emptyManifest, manifestEntryFromFile, parseManifest, serializeManifest, upsertEntry, removeEntry, inboundLinks, type LinkTarget, type InboundLink } from '../content/manifest.js';
 import { CommitConflictError } from '../github/types.js';
@@ -43,6 +43,9 @@ export interface LayoutData {
   collapsedNav: string[];
   /** The session's CSRF double-submit token, rendered as a hidden field in every admin form. */
   csrf: string;
+  /** Every entry with unpublished edits (a `cairn/` ref), for the topbar's publish-all action.
+   *  Null when GitHub is unreachable, so the topbar hides the action rather than lying. */
+  pendingEntries: { concept: string; id: string }[] | null;
 }
 
 /** One row in a concept's list view. */
@@ -51,6 +54,8 @@ export interface EntrySummary {
   title: string;
   date: string | null;
   draft: boolean;
+  /** Publish state derived from the ref set: live as-is, live with pending edits, or branch-only. */
+  status: 'published' | 'edited' | 'new';
 }
 
 /** The concept list view's data. */
@@ -86,6 +91,14 @@ export interface EditData {
   linkTargets: LinkTarget[];
   /** The entries that link to this one, for the delete guard. Empty when nothing links here. */
   inboundLinks: InboundLink[];
+  /** True when the entry has a pending branch, so the body above came from that branch. */
+  pending: boolean;
+  /** True when the entry file exists on the default branch (the live site shows it). */
+  published: boolean;
+  /** True after a publish redirect (`?published=1`), for the confirmation strip. */
+  publishedFlash: boolean;
+  /** True after a discard redirect (`?discarded=1`), for the confirmation strip. */
+  discardedFlash: boolean;
 }
 
 /** The structural event the content routes read; a real SvelteKit RequestEvent satisfies it. */
@@ -124,8 +137,9 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
   const mintToken =
     deps.mintToken ?? ((env: GithubKeyEnv) => cachedInstallationToken(appCredentials(runtime.backend, env)));
 
-  /** Layout load for every admin page: the nav, the user, the active path, and the resolved theme. */
-  function layoutLoad(event: ContentEvent): LayoutData {
+  /** Layout load for every admin page: the nav, the user, the active path, the resolved theme,
+   *  and the pending entries behind the topbar's publish-all action. */
+  async function layoutLoad(event: ContentEvent): Promise<LayoutData> {
     const editor = sessionOf(event);
     const cookieTheme = event.cookies?.get('cairn-admin-theme');
     const theme = cookieTheme === 'cairn-admin-dark' ? 'cairn-admin-dark' : 'cairn-admin';
@@ -133,6 +147,18 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     const collapsedNav = cookieCollapsed
       ? cookieCollapsed.split(',').map((part) => decodeURIComponent(part)).filter(Boolean)
       : [];
+    // Any failure here (the token mint, the network, a non-ok response) degrades to null rather
+    // than failing the whole admin shell or showing a wrong publish-all count.
+    let pendingEntries: { concept: string; id: string }[] | null = null;
+    try {
+      const token = await mintToken(event.platform?.env ?? {});
+      const names = await listBranches(runtime.backend, PENDING_PREFIX, token);
+      pendingEntries = names
+        .map(parsePendingBranch)
+        .filter((entry): entry is { concept: string; id: string } => entry !== null);
+    } catch {
+      pendingEntries = null;
+    }
     return {
       siteName: runtime.siteName,
       user: { displayName: editor.displayName, email: editor.email, role: editor.role },
@@ -143,6 +169,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       theme,
       collapsedNav,
       csrf: event.cookies ? issueCsrfToken({ url: event.url, cookies: event.cookies }) : '',
+      pendingEntries,
     };
   }
 
@@ -153,21 +180,29 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     throw redirect(307, `/admin/${first.id}`);
   }
 
-  /** Read a file's frontmatter for its list row, degrading to the id on any read failure. */
-  async function summarize(file: { id: string; path: string }, token: string): Promise<EntrySummary> {
+  /** Read a file's frontmatter for its list row, degrading to the id on any read failure. The
+   *  repo defaults to main; a branch-only (never published) entry passes its pending branch. */
+  async function summarize(
+    file: { id: string; path: string },
+    token: string,
+    status: EntrySummary['status'],
+    repo = runtime.backend,
+  ): Promise<EntrySummary> {
     try {
-      const raw = await readRaw(runtime.backend, file.path, token);
-      if (raw === null) return { id: file.id, title: file.id, date: null, draft: false };
+      const raw = await readRaw(repo, file.path, token);
+      if (raw === null) return { id: file.id, title: file.id, date: null, draft: false, status };
       const { frontmatter } = parseMarkdown(raw);
       const title = typeof frontmatter.title === 'string' && frontmatter.title.trim() ? frontmatter.title : file.id;
       const date = dateInputValue(frontmatter.date) || null;
-      return { id: file.id, title, date, draft: frontmatter.draft === true };
+      return { id: file.id, title, date, draft: frontmatter.draft === true, status };
     } catch {
-      return { id: file.id, title: file.id, date: null, draft: false };
+      return { id: file.id, title: file.id, date: null, draft: false, status };
     }
   }
 
-  /** List a concept's entries. A listing failure degrades to an inline error, not a thrown 500. */
+  /** List a concept's entries with their publish status. Main's files carry `edited` when a
+   *  pending ref exists, else `published`; a ref with no main file appends a `new` row read from
+   *  its branch. A listing failure degrades to an inline error, not a thrown 500. */
   async function listLoad(event: ContentEvent): Promise<ListData> {
     sessionOf(event);
     const concept = conceptOf(runtime, event.params);
@@ -180,9 +215,30 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       return { ...base, entries: [], error: 'Could not authenticate with GitHub.' };
     }
     try {
-      const files = await listMarkdown(runtime.backend, concept.dir, token);
-      const entries = await Promise.all(files.map((f) => summarize(f, token)));
-      return { ...base, entries, error: null };
+      const [files, refs] = await Promise.all([
+        listMarkdown(runtime.backend, concept.dir, token),
+        listBranches(runtime.backend, `${PENDING_PREFIX}${concept.id}/`, token),
+      ]);
+      const pendingIds = new Set(
+        refs.map(parsePendingBranch).flatMap((ref) => (ref && ref.concept === concept.id ? [ref.id] : [])),
+      );
+      const entries = await Promise.all(
+        files.map((f) => summarize(f, token, pendingIds.has(f.id) ? 'edited' : 'published')),
+      );
+      // A ref with no main file is a never-published entry; its row reads from its branch, and
+      // summarize already degrades a failed read to an id-only row.
+      const listed = new Set(files.map((f) => f.id));
+      const newRows = await Promise.all(
+        [...pendingIds]
+          .filter((id) => !listed.has(id))
+          .map((id) =>
+            summarize({ id, path: `${concept.dir}/${filenameFromId(id)}` }, token, 'new', {
+              ...runtime.backend,
+              branch: pendingBranch(concept.id, id),
+            }),
+          ),
+      );
+      return { ...base, entries: [...entries, ...newRows], error: null };
     } catch {
       return { ...base, entries: [], error: 'Could not load this content type from GitHub.' };
     }
@@ -242,12 +298,19 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     const isNew = event.url.searchParams.get('new') === '1';
     const token = await mintToken(event.platform?.env ?? {});
     const datePrefix = concept.routing.dated ? concept.datePrefix : null;
-    // The entry file and the manifest are independent reads sharing the token; fetch them together.
-    const [raw, manifestRaw] = await Promise.all([
-      readRaw(runtime.backend, `${concept.dir}/${filenameFromId(id)}`, token),
+    const path = `${concept.dir}/${filenameFromId(id)}`;
+    // A pending entry reads branch-first: the editor shows the unpublished edits. The manifest
+    // (link targets and the inbound-link guard) always reads main, the authoritative copy, and a
+    // pending entry adds a main read of its own path to derive its published state.
+    const branch = pendingBranch(concept.id, id);
+    const pending = (await branchHeadSha(runtime.backend, branch, token)) !== null;
+    const [raw, manifestRaw, mainRaw] = await Promise.all([
+      readRaw(pending ? { ...runtime.backend, branch } : runtime.backend, path, token),
       readRaw(runtime.backend, runtime.manifestPath, token),
+      pending ? readRaw(runtime.backend, path, token) : Promise.resolve(null),
     ]);
     if (raw === null && !isNew) throw error(404, 'Entry not found');
+    const published = pending ? mainRaw !== null : raw !== null;
 
     const parsed = raw === null ? { frontmatter: {}, body: '' } : parseMarkdown(raw);
     const title = typeof parsed.frontmatter.title === 'string' && parsed.frontmatter.title.trim() ? parsed.frontmatter.title : id;
@@ -282,6 +345,10 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       slug: slugFromId(id, datePrefix),
       linkTargets,
       inboundLinks: inbound,
+      pending,
+      published,
+      publishedFlash: event.url.searchParams.get('published') === '1',
+      discardedFlash: event.url.searchParams.get('discarded') === '1',
     };
   }
 

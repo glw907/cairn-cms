@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 
@@ -30,6 +31,11 @@ function listEvent(params: Record<string, string>, search = '') {
 
 afterEach(() => vi.restoreAllMocks());
 
+/** Stub fetch with an empty ref listing so layoutLoad's pending-branch scan resolves clean. */
+function stubNoRefs() {
+  vi.stubGlobal('fetch', vi.fn(async () => new Response('[]', { status: 200 })));
+}
+
 /** A layout-load event with a settable editor, path, and cookie jar. */
 function makeEvent(opts: {
   pathname: string;
@@ -47,56 +53,61 @@ function makeEvent(opts: {
 }
 
 describe('layoutLoad', () => {
-  it('carries the editor email and resolves the theme from the cookie', () => {
+  it('carries the editor email and resolves the theme from the cookie', async () => {
+    stubNoRefs();
     const routes = createContentRoutes(runtime(), { mintToken: async () => 'tok' });
     const event = makeEvent({
       pathname: '/admin/posts',
       editor: { email: 'ed@example.com', displayName: 'Ed', role: 'owner' },
       cookies: { 'cairn-admin-theme': 'cairn-admin-dark' },
     });
-    const data = routes.layoutLoad(event as never);
+    const data = await routes.layoutLoad(event as never);
     expect(data.user.email).toBe('ed@example.com');
     expect(data.theme).toBe('cairn-admin-dark');
   });
 
-  it('defaults the theme to light when no cookie is set', () => {
+  it('defaults the theme to light when no cookie is set', async () => {
+    stubNoRefs();
     const routes = createContentRoutes(runtime(), { mintToken: async () => 'tok' });
     const event = makeEvent({
       pathname: '/admin/posts',
       editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor' },
       cookies: {},
     });
-    expect(routes.layoutLoad(event as never).theme).toBe('cairn-admin');
+    expect((await routes.layoutLoad(event as never)).theme).toBe('cairn-admin');
   });
 
-  it('ignores an unknown cookie value and falls back to light', () => {
+  it('ignores an unknown cookie value and falls back to light', async () => {
+    stubNoRefs();
     const routes = createContentRoutes(runtime(), { mintToken: async () => 'tok' });
     const event = makeEvent({
       pathname: '/admin/posts',
       editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor' },
       cookies: { 'cairn-admin-theme': 'bogus' },
     });
-    expect(routes.layoutLoad(event as never).theme).toBe('cairn-admin');
+    expect((await routes.layoutLoad(event as never)).theme).toBe('cairn-admin');
   });
 
-  it('reads the collapsed nav groups from the cookie, url-decoded', () => {
+  it('reads the collapsed nav groups from the cookie, url-decoded', async () => {
+    stubNoRefs();
     const routes = createContentRoutes(runtime(), { mintToken: async () => 'tok' });
     const event = makeEvent({
       pathname: '/admin/posts',
       editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor' },
       cookies: { 'cairn-admin-nav-collapsed': `Core,${encodeURIComponent('Black & White')}` },
     });
-    expect(routes.layoutLoad(event as never).collapsedNav).toEqual(['Core', 'Black & White']);
+    expect((await routes.layoutLoad(event as never)).collapsedNav).toEqual(['Core', 'Black & White']);
   });
 
-  it('defaults collapsedNav to empty when no cookie is set', () => {
+  it('defaults collapsedNav to empty when no cookie is set', async () => {
+    stubNoRefs();
     const routes = createContentRoutes(runtime(), { mintToken: async () => 'tok' });
     const event = makeEvent({
       pathname: '/admin/posts',
       editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor' },
       cookies: {},
     });
-    expect(routes.layoutLoad(event as never).collapsedNav).toEqual([]);
+    expect((await routes.layoutLoad(event as never)).collapsedNav).toEqual([]);
   });
 });
 
@@ -110,6 +121,7 @@ describe('listLoad', () => {
       truncated: false,
     };
     vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (url.includes('/git/matching-refs/')) return new Response('[]', { status: 200 });
       if (url.includes('/git/trees/')) return new Response(JSON.stringify(tree), { status: 200 });
       if (url.includes('hello')) return new Response('---\ntitle: Hello\ndate: 2026-05-01\ndraft: true\n---\nbody', { status: 200 });
       return new Response('---\ntitle: Older\ndate: 2026-04-01\n---\nbody', { status: 200 });
@@ -121,6 +133,8 @@ describe('listLoad', () => {
     expect(data.dated).toBe(true);
     expect(data.entries[0]).toMatchObject({ id: '2026-05-hello', title: 'Hello', date: '2026-05-01', draft: true });
     expect(data.entries[1]).toMatchObject({ id: '2026-04-older', title: 'Older', draft: false });
+    // No pending refs: every entry is published.
+    expect(data.entries.map((e) => e.status)).toEqual(['published', 'published']);
     expect(data.error).toBeNull();
   });
 
@@ -133,10 +147,61 @@ describe('listLoad', () => {
   });
 
   it('surfaces a create-form error from the query', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ tree: [], truncated: false }), { status: 200 })));
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (url.includes('/git/matching-refs/')) return new Response('[]', { status: 200 });
+      return new Response(JSON.stringify({ tree: [], truncated: false }), { status: 200 });
+    }));
     const routes = createContentRoutes(runtime(), deps);
     const data = await routes.listLoad(listEvent({ concept: 'posts' }, '?error=Bad+slug') as never);
     expect(data.formError).toBe('Bad slug');
+  });
+});
+
+describe('listLoad with pending branches', () => {
+  it('marks an entry whose pending branch exists as edited', async () => {
+    const gh = new GithubDouble({
+      main: {
+        'src/content/posts/2026-05-hello.md': '---\ntitle: Hello\ndate: 2026-05-01\n---\nx',
+        'src/content/posts/2026-04-older.md': '---\ntitle: Older\ndate: 2026-04-01\n---\nx',
+      },
+      'cairn/posts/2026-05-hello': { 'src/content/posts/2026-05-hello.md': '---\ntitle: Hello edited\n---\nx' },
+    });
+    gh.install();
+    const routes = createContentRoutes(runtime(), deps);
+    const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
+    const byId = new Map(data.entries.map((e) => [e.id, e]));
+    expect(byId.get('2026-05-hello')?.status).toBe('edited');
+    expect(byId.get('2026-04-older')?.status).toBe('published');
+    expect(data.error).toBeNull();
+  });
+
+  it('appends a branch-only entry as new with its branch data', async () => {
+    const gh = new GithubDouble({
+      main: { 'src/content/posts/2026-04-older.md': '---\ntitle: Older\ndate: 2026-04-01\n---\nx' },
+      'cairn/posts/2026-06-fresh': {
+        'src/content/posts/2026-06-fresh.md': '---\ntitle: Brand New\ndate: 2026-06-01\n---\nx',
+      },
+    });
+    gh.install();
+    const routes = createContentRoutes(runtime(), deps);
+    const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
+    const fresh = data.entries.find((e) => e.id === '2026-06-fresh');
+    expect(fresh).toMatchObject({ id: '2026-06-fresh', title: 'Brand New', date: '2026-06-01', status: 'new' });
+    expect(data.entries.find((e) => e.id === '2026-04-older')?.status).toBe('published');
+  });
+
+  it('degrades a branch-only row to its id when the branch read fails', async () => {
+    // The ref exists but its tree lacks the entry file, so the branch read comes back empty.
+    const gh = new GithubDouble({
+      main: {},
+      'cairn/posts/2026-06-ghost': {},
+    });
+    gh.install();
+    const routes = createContentRoutes(runtime(), deps);
+    const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
+    expect(data.entries).toEqual([
+      { id: '2026-06-ghost', title: '2026-06-ghost', date: null, draft: false, status: 'new' },
+    ]);
   });
 });
 

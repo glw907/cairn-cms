@@ -1,7 +1,10 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { serializeManifest } from '../../lib/content/manifest.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
+
+const MANIFEST_PATH = 'src/content/.cairn/index.json';
 
 function runtime(): CairnRuntime {
   const ok = () => ({ ok: true as const, data: {} });
@@ -24,7 +27,7 @@ function runtime(): CairnRuntime {
     backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
     sender: { from: 'cms@test' },
     render: (md) => md,
-    manifestPath: 'src/content/.cairn/index.json',
+    manifestPath: MANIFEST_PATH,
   };
 }
 
@@ -40,15 +43,21 @@ function editEvent(id: string, search = '') {
   };
 }
 
+/** Scripted editLoad fetch for the non-pending cases: 404 the pending-branch probe, then serve
+ *  the entry and the manifest by path (null means a 404 for that read). */
+function editFetch(entry: string | null, manifest: string | null = null) {
+  vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+    if (url.includes('/git/ref/')) return new Response('Not Found', { status: 404 });
+    const body = url.includes('.cairn') ? manifest : entry;
+    return body === null ? new Response('Not Found', { status: 404 }) : new Response(body, { status: 200 });
+  }));
+}
+
 afterEach(() => vi.restoreAllMocks());
 
 describe('editLoad', () => {
   it('loads an existing file with parsed, form-ready frontmatter and body', async () => {
-    // The entry read returns the markdown; the trailing manifest read 404s (empty list).
-    vi.stubGlobal('fetch', vi
-      .fn()
-      .mockResolvedValueOnce(new Response('---\ntitle: Hello\ndate: 2026-05-01\n---\nThe body.', { status: 200 }))
-      .mockResolvedValueOnce(new Response('Not Found', { status: 404 })));
+    editFetch('---\ntitle: Hello\ndate: 2026-05-01\n---\nThe body.');
     const routes = createContentRoutes(runtime(), deps);
     const data = await routes.editLoad(editEvent('2026-05-hello') as never);
     expect(data).toMatchObject({
@@ -57,19 +66,24 @@ describe('editLoad', () => {
     });
     expect(data.frontmatter.title).toBe('Hello');
     expect(data.frontmatter.date).toBe('2026-05-01');
+    // No pending branch: the entry reads from main and is published by existence.
+    expect(data.pending).toBe(false);
+    expect(data.published).toBe(true);
   });
 
   it('returns a blank document for ?new=1 when the file is missing', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
+    editFetch(null);
     const routes = createContentRoutes(runtime(), deps);
     const data = await routes.editLoad(editEvent('2026-05-fresh', '?new=1') as never);
     expect(data.isNew).toBe(true);
     expect(data.body).toBe('');
     expect(data.title).toBe('2026-05-fresh');
+    expect(data.pending).toBe(false);
+    expect(data.published).toBe(false);
   });
 
   it('404s an unknown existing file that is not new', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
+    editFetch(null);
     const routes = createContentRoutes(runtime(), deps);
     await expect(routes.editLoad(editEvent('missing') as never)).rejects.toMatchObject({ status: 404 });
   });
@@ -84,24 +98,14 @@ describe('editLoad', () => {
       version: 1,
       entries: [{ id: 'about', concept: 'pages', title: 'About', permalink: '/about', draft: false, links: [] }],
     });
-    // editLoad reads the entry first, then the manifest, so the stub returns the entry on the
-    // first fetch and the manifest on the second.
-    const caseA = vi
-      .fn()
-      .mockResolvedValueOnce(new Response('---\ntitle: Hello\n---\nThe body.', { status: 200 }))
-      .mockResolvedValueOnce(new Response(manifest, { status: 200 }));
-    vi.stubGlobal('fetch', caseA);
+    editFetch('---\ntitle: Hello\n---\nThe body.', manifest);
     const routes = createContentRoutes(runtime(), deps);
     const withManifest = await routes.editLoad(editEvent('2026-05-hello') as never);
     expect(withManifest.linkTargets).toContainEqual({
       concept: 'pages', id: 'about', permalink: '/about', title: 'About', date: undefined, draft: false,
     });
 
-    const caseB = vi
-      .fn()
-      .mockResolvedValueOnce(new Response('---\ntitle: Hello\n---\nThe body.', { status: 200 }))
-      .mockResolvedValueOnce(new Response('Not Found', { status: 404 }));
-    vi.stubGlobal('fetch', caseB);
+    editFetch('---\ntitle: Hello\n---\nThe body.');
     const withoutManifest = await routes.editLoad(editEvent('2026-05-hello') as never);
     expect(withoutManifest.linkTargets).toEqual([]);
   });
@@ -115,10 +119,7 @@ describe('editLoad', () => {
         { id: '2026-05-b', concept: 'posts', title: 'Post B', permalink: '/posts/b', draft: false, links: [{ concept: 'posts', id: '2026-05-hello' }] },
       ],
     });
-    vi.stubGlobal('fetch', vi
-      .fn()
-      .mockResolvedValueOnce(new Response('---\ntitle: Hello\n---\nx', { status: 200 }))
-      .mockResolvedValueOnce(new Response(manifest, { status: 200 })));
+    editFetch('---\ntitle: Hello\n---\nx', manifest);
     const routes = createContentRoutes(runtime(), deps);
     const data = await routes.editLoad(editEvent('2026-05-hello') as never);
     expect(data.inboundLinks).toEqual([{ concept: 'posts', id: '2026-05-b', title: 'Post B', permalink: '/posts/b' }]);
@@ -126,20 +127,14 @@ describe('editLoad', () => {
 
   it('ships the current slug for the rename dialog', async () => {
     // The posts concept uses a day prefix, so 2026-05-01-hello strips to the slug hello.
-    vi.stubGlobal('fetch', vi
-      .fn()
-      .mockResolvedValueOnce(new Response('---\ntitle: Hello\n---\nx', { status: 200 }))
-      .mockResolvedValueOnce(new Response('Not Found', { status: 404 })));
+    editFetch('---\ntitle: Hello\n---\nx');
     const routes = createContentRoutes(runtime(), deps);
     const data = await routes.editLoad(editEvent('2026-05-01-hello') as never);
     expect(data.slug).toBe('hello');
   });
 
   it('reads saved and error flags from the query', async () => {
-    vi.stubGlobal('fetch', vi
-      .fn()
-      .mockResolvedValueOnce(new Response('---\ntitle: Hi\n---\nx', { status: 200 }))
-      .mockResolvedValueOnce(new Response('Not Found', { status: 404 })));
+    editFetch('---\ntitle: Hi\n---\nx');
     const routes = createContentRoutes(runtime(), deps);
     const data = await routes.editLoad(editEvent('hi', '?saved=1&error=Nope') as never);
     expect(data.saved).toBe(true);
@@ -147,12 +142,58 @@ describe('editLoad', () => {
   });
 
   it('reads the renamed flag from the query', async () => {
-    vi.stubGlobal('fetch', vi
-      .fn()
-      .mockResolvedValueOnce(new Response('---\ntitle: Hi\n---\nx', { status: 200 }))
-      .mockResolvedValueOnce(new Response('Not Found', { status: 404 })));
+    editFetch('---\ntitle: Hi\n---\nx');
     const routes = createContentRoutes(runtime(), deps);
     const data = await routes.editLoad(editEvent('hi', '?renamed=1') as never);
     expect(data.renamed).toBe(true);
+  });
+
+  it('reads the published and discarded flashes from the query', async () => {
+    editFetch('---\ntitle: Hi\n---\nx');
+    const routes = createContentRoutes(runtime(), deps);
+    const published = await routes.editLoad(editEvent('hi', '?published=1') as never);
+    expect(published.publishedFlash).toBe(true);
+    expect(published.discardedFlash).toBe(false);
+    const discarded = await routes.editLoad(editEvent('hi', '?discarded=1') as never);
+    expect(discarded.publishedFlash).toBe(false);
+    expect(discarded.discardedFlash).toBe(true);
+  });
+});
+
+describe('editLoad with a pending branch', () => {
+  const ENTRY_PATH = 'src/content/posts/2026-05-hello.md';
+
+  it('reads a published-and-edited entry from its branch and the manifest from main', async () => {
+    const manifest = serializeManifest({
+      version: 1,
+      entries: [{ id: 'about', concept: 'pages', title: 'About', permalink: '/about', draft: false, links: [] }],
+    });
+    const gh = new GithubDouble({
+      main: { [ENTRY_PATH]: '---\ntitle: Live\n---\nLive body.', [MANIFEST_PATH]: manifest },
+      'cairn/posts/2026-05-hello': { [ENTRY_PATH]: '---\ntitle: Edited\n---\nBranch body.' },
+    });
+    gh.install();
+    const routes = createContentRoutes(runtime(), deps);
+    const data = await routes.editLoad(editEvent('2026-05-hello') as never);
+    expect(data.pending).toBe(true);
+    expect(data.published).toBe(true);
+    expect(data.body).toBe('Branch body.');
+    expect(data.title).toBe('Edited');
+    // Link targets come from main's manifest even while the entry reads from its branch.
+    expect(data.linkTargets.map((t) => t.id)).toEqual(['about']);
+  });
+
+  it('marks a never-published entry pending and unpublished, reading its branch', async () => {
+    const gh = new GithubDouble({
+      main: {},
+      'cairn/posts/2026-05-fresh': { 'src/content/posts/2026-05-fresh.md': '---\ntitle: Fresh\n---\nNew body.' },
+    });
+    gh.install();
+    const routes = createContentRoutes(runtime(), deps);
+    const data = await routes.editLoad(editEvent('2026-05-fresh') as never);
+    expect(data.pending).toBe(true);
+    expect(data.published).toBe(false);
+    expect(data.body).toBe('New body.');
+    expect(data.title).toBe('Fresh');
   });
 });

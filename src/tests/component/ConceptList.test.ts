@@ -10,6 +10,7 @@ function data(over = {}) {
     title: `Post ${String(i + 1).padStart(2, '0')}`,
     date: `2026-05-${String(i + 1).padStart(2, '0')}`,
     draft: i === 11,
+    status: 'published' as const,
   }));
   return { conceptId: 'posts', label: 'Posts', dated: true, entries, error: null, formError: null, ...over };
 }

@@ -16,6 +16,7 @@ function data(canManageEditors: boolean, navLabel: string | null = null, pathnam
     theme: 'cairn-admin' as const,
     collapsedNav: [] as string[],
     csrf: 'test-csrf-token',
+    pendingEntries: null,
   };
 }
 

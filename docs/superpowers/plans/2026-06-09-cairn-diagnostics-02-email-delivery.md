@@ -653,3 +653,63 @@ Expected: 0 errors in `src/`. The showcase consumes the engine through the relat
 - **Type consistency.** `RequestResult` (Task 3) is the discriminated union `{ status: 'sent'; sent: true } | { status: 'send_error'; sent: false } | { status: 'throttled'; sent: false }`. `errorCode` and `emailSendFailure` (Task 2) are imported into `auth-routes.ts` in Task 3. The `LoginPage` `form` prop (Task 4) is the structural `{ sent?: boolean; status?: 'sent' | 'send_error' | 'throttled' } | null`, matching the result's observable fields without importing the server type.
 - **Security review at the gate.** The `web-auth-security-reviewer` is mandatory (auth/session/cookie path). It confirms the deliberate non-leak relaxation on `send_error`/`throttled` is the only body-level leak, that the timing side-channel is subsumed, that no token, session id, or magic-link URL reaches the result fields or the log fields, and that `code`/`conditionId`/`String(err)` cannot transitively carry the GitHub token or the link. The live admin smoke is in scope this pass (the login surface changes): mint a session via a D1 row per the smoke doc and eyeball the `send_error`/`throttled` states against a real Worker, or justify skipping if the component render proof is judged sufficient.
 - **Pass-end (ritual, not plan tasks).** Simplify the changed code, run the review gate, correct the `cloudflare-email-sending-vs-routing` memory to match Task 6, append the post-mortem, update STATUS, and cut the publish window when the user asks (the held window is then `0.38.0` over the `0.37.0` `latest`).
+
+---
+
+## Post-mortem (pass landed 2026-06-10)
+
+**What was built.** All seven tasks, as planned. The two email conditions joined the registry
+(`5d5c865`), `errorCode`/`emailSendFailure` landed in `email.ts` (`a2174ea`), `requestAction` awaits
+the send and returns the `RequestResult` discriminant (`57a7e5a`), `LoginPage` renders the
+`send_error` and `throttled` states (`e218d3c`), the docs and the `0.38.0` bump landed (`8dd6609`),
+the CLAUDE.md gotcha was corrected (`4862dce`), and the `_login-preview` scaffold was removed. The
+simplifier tightened `errorCode`'s narrowing and extracted the failing-send test helper (`6c5ea1e`).
+
+**Execution shape.** The pass ran across two sessions: Tasks 1 and 2 plus Task 3's edits landed in a
+prior session that ended before Task 3's commit, and this session resumed from the dirty tree after
+verifying the targeted suite green, then ran Tasks 4 through 7 in the main loop. The resume cost was
+near zero because the plan's task boundaries made the tree state legible.
+
+**Gate evidence (final, run first-hand).** `npm run check` 854 files 0/0; `npm test` 136 files / 846
+tests exit 0; `check:docs`/`check:reference`/`check:package`/`check:prose` all exit 0; showcase
+`check` 0 errors in `src/` (24 pre-existing errors in `node_modules` type declarations and
+`vite.config.ts`, the known toolchain noise).
+
+**The review gate found no Critical; the fold-in is `3f1d8f8`.** `web-auth-security-reviewer`
+confirmed the locked posture is bounded (fixed-literal results, no token reaches the result, the
+page, or the logs on engine paths) and rated the timing side-channel strictly weaker than the
+deliberate `throttled` oracle. Its one guarantee-level catch: `String(err)` from the injected-sender
+seam could carry the confirm URL into the logs; the fold-in scrubs the token query and caps the
+field at 300 chars, with a pinning test. `svelte-reviewer` caught both auth reference pages stale
+(`requestAction`'s return shape, and `loginLoad`'s `csrf` field missing since 0.35.0) plus
+`RequestResult` being exported but unreachable from the barrel; the fold-in fixed the pages,
+re-exported the type, gated the stale `?error=expired` alert behind `!form?.status`, and added the
+engine-shape success render test. `cloudflare-workers-reviewer`'s Important: the structured `E_*`
+`code` assumption is unproven against the live binding, while the repo's own record of the ecxc
+outage shows a bare "not a verified address" string; the fold-in adds a message-scan fallback for
+`E_*` codes and maps that observed substring to `email.sender-not-onboarded`, so the remediation
+stays reachable under either shape.
+
+**Live smoke: skipped with justification.** The component tests pin both new states and the
+showcase compiles against the widened prop. The designed live proof is the queued ecxc bump to
+`^0.38.0`, which puts `send_error`/`throttled` on the exact site where the originating finding was
+filed; a local `wrangler dev` smoke (no real EMAIL binding) would prove strictly less.
+
+**Decisions locked in.** `send_error` returns a plain 200 with a status field, not `fail(503)`: the
+union stays uniform for the page and the failure is observable through the error-level log record
+(commented at the return site). The LoginPage `form` prop stays structural (no server-type import),
+a deliberate decoupling.
+
+**Carry-forwards (recorded, not fixed).** (1) The live `E_*` error shape: treat the post-publish
+ecxc bump as the empirical proof, and adjust `errorCode` to whatever the real binding throws before
+runbooks lean on `conditionId`. (2) The cooldown is a SELECT-then-INSERT split, so concurrent POSTs
+can multiply the one-email-per-minute throttle; token security is unaffected (the mint batch
+replaces the prior row). Folding the window check into the mint closes it if wanted. (3) The awaited
+send has no `waitUntil` tether, so a client disconnect mid-send can abandon the send after the token
+row was written; the retry then sees `throttled` for up to 60s. The belt-and-suspenders tether
+(`waitUntil` plus await) contradicts this plan's locked no-backgrounding test, so adopting it is a
+deliberate future change. (4) A missing EMAIL binding maps to the generic `email.send-failed` though
+it is precisely detectable; a dedicated condition belongs with Pass 3's environment preflight.
+(5) The reference pages' signature drift went uncaught by every gate; a signature-currency check is
+filed in the friction log for the gates-and-tooling pass. (6) Pre-existing and restated: the request
+endpoint has no per-IP rate limit, and the new `throttled` oracle makes it more scriptable.

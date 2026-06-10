@@ -167,3 +167,10 @@ inherit a clean list rather than one prose note.
   forward the `form` prop), so a blocked delete refused server-side but told the author nothing. The engine
   and the consumer route disagreed on the action result shape with no shared type to bind them. Candidate: a
   published type for each action's `fail` payload, so the component and the shim cannot drift from the action.
+- **developer** (docs gates, from the Pass 2 review gate, 2026-06-10): both auth reference pages had
+  drifted and every gate stayed green. `sveltekit.md` documented `requestAction`'s pre-0.38.0 return
+  shape, and its `loginLoad` signature had missed the `csrf` field since 0.35.0; only the svelte
+  reviewer caught either. `check:reference` verifies export coverage (a page exists per export), not
+  signature currency, so a stale declared type inside an existing page is invisible to it. Candidate:
+  a signature-currency check that compares a reference page's declared types against the real
+  exports, or generated signature blocks; belongs with the gates-and-tooling pass.

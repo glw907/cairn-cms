@@ -11,10 +11,36 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
+## Immediate next action (2026-06-10): the publish-workflow plan, then execution (jumps the queue)
+
+**Diagnostics Pass 2 (email-delivery) LANDED on `main` 2026-06-10 as `0.38.0`.** Seven plan tasks
+plus the simplifier (`6c5ea1e`) and the review fold-in (`3f1d8f8`), commits `5d5c865..3f1d8f8`. The
+send is awaited, `requestAction` returns the `RequestResult` discriminant (now exported from the
+`/sveltekit` barrel), `LoginPage` renders the `send_error`/`throttled` states, and
+`auth.link.send_failed` carries `code` plus `conditionId`. Gate green at the tip, run first-hand:
+`npm run check` 854 files 0/0, `npm test` 136 files / 846 tests exit 0, all doc gates exit 0. Three
+reviewers, no Critical; the fold-in scrubs the send-failure log field, adds the message-scan
+fallback for the unproven `E_*` shape, and fixes two stale auth reference pages. The live smoke was
+skipped with justification: the ecxc `^0.38.0` bump is the designed live proof. The post-mortem with
+six carry-forwards (the live `E_*` shape proof, the cooldown race, the disconnect tether, the
+missing-binding condition for Pass 3, the reference signature-currency gate idea, the per-IP limit)
+is in the plan (`docs/superpowers/plans/2026-06-09-cairn-diagnostics-02-email-delivery.md`).
+
+**Next: the publish workflow jumps the queued backlog (Geoff's call, 2026-06-10).** The approved
+spec is `docs/superpowers/specs/2026-06-10-cairn-publish-workflow-design.md` (committed `3734fd9`):
+edits hold on per-entry `cairn/<conceptKey>/<id>` branches until a deliberate Publish (per page,
+plus a site-wide publish-all in the topbar); publish is a content copy to `main`, never a merge;
+discard deletes the branch; the `draft:` flag stays, re-presented as Hidden. Write the
+implementation plan with `superpowers:writing-plans` from the spec, then execute main-loop,
+test-first, full gate per task, on `main` directly (the initiative precedent). After it, the order
+resumes: diagnostics Pass 3, the gates-and-tooling pass, the gallery, P4. The site-track ecxc bump
+to `^0.38.0` (Pass 2's live proof) stays queued as its own `site-pass` and can run any time after
+the `0.38.0` publish.
+
 ## Backlog resequenced (2026-06-09): five engine passes instead of six
 
 The queued work was re-cut on 2026-06-09, recorded here and in `ROADMAP.md`. The engine order is now
-diagnostics Pass 2 (unchanged, the immediate next action below), then diagnostics Pass 3, then one
+diagnostics Pass 2 (landed above), then diagnostics Pass 3, then one
 consolidated gates-and-tooling pass, then the gallery initiative, then the P4 scaffolder. Three
 changes from the prior sequence:
 

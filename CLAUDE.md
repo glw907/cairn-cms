@@ -27,9 +27,11 @@ Later engine work continues on feature worktrees off `main`, one worktree per pa
 releasable. The current published version, the unpublished window on `main`, and the next action all
 live in `docs/STATUS.md`; read it for where the work is now.
 
-Execute a plan task-by-task in the main loop, test-first against the suite, clearing the full gate
-after each task; dispatch `cairn-implementer` only for tasks that can run in parallel or that want
-worktree isolation. The **`cairn-pass`** skill marks pass start and the pass-end ritual for this
+Execute a plan task-by-task by dispatching each well-specified task to `cairn-implementer`
+(pinned Sonnet), test-first against the suite; the main loop reviews each diff and confirms the
+full gate before the next dispatch, and implements inline (or upshifts the dispatch model) only
+for novel correctness-critical logic the plan does not fully specify. The **`cairn-pass`** skill
+marks pass start and the pass-end ritual for this
 initiative. Honor this repo's own skills and conventions while working in it. Do not human-scale
 time-estimate; describe relative complexity.
 
@@ -41,18 +43,20 @@ durable orientation only.
 
 - **Implementer subagent** (user-scoped): `cairn-implementer` drives one plan task test-first and
   clears the full gate before reporting done (targeted test + `npm run check` 0/0 + `npm test` exit
-  0), with the cairn conventions baked in. The main loop executes sequential tasks itself; dispatch
-  this agent for parallel independent tasks or a worktree-isolated change. It inherits the main-loop
-  model; pass `model: sonnet` to downshift a mechanical, well-specified fan-out.
+  0), with the cairn conventions baked in. It is the default executor for plan tasks and is pinned
+  to Sonnet for token economy; the main loop orchestrates, reviews each diff, and verifies the gate
+  between dispatches. Pass `model: opus` or `model: fable` to upshift a single
+  correctness-critical task.
 - **Review subagents** (user-scoped, read-only): `svelte-reviewer`, `cloudflare-workers-reviewer`,
   `web-auth-security-reviewer`, `daisyui-a11y-reviewer`. Fan them out in parallel at a review gate to
   complement `/code-review`.
 - **Subagent models:** the workstation `.bashrc` sets `CLAUDE_CODE_SUBAGENT_MODEL=inherit`, so each
-  agent's frontmatter `model:` wins, and an unpinned agent rides the main model. A per-dispatch
-  `model` beats the frontmatter. The `cairn-implementer` is unpinned (it inherits the main model;
-  pass `model: sonnet` to downshift a mechanical fan-out). The four reviewer agents pin Opus
-  deliberately: the main model implements, Opus reviews, and the model diversity is part of the
-  gate. The `code-simplifier` plugin agent pins Opus in its own frontmatter.
+  agent's frontmatter `model:` wins, and a per-dispatch `model` beats the frontmatter. Token
+  economy governs the assignments: `cairn-implementer` pins Sonnet (upshift per dispatch only for
+  novel correctness-critical logic), the four reviewer agents pin Opus deliberately (Sonnet
+  implements, Opus reviews, and the model diversity is part of the gate), and the
+  `code-simplifier` plugin agent pins Opus in its own frontmatter. The frontier main model keeps
+  the thinking work: brainstorms, specs, plans, review triage, post-mortems, and final prose.
 - **Cloudflare MCP** (account `glw907`, `120c269ad6d3dfbe6d63a0bb53758ca0`) provisions and queries D1
   for the auth store. Prefer it over the dashboard.
 

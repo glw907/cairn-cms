@@ -10,17 +10,12 @@ needs. Items move up from lower tiers as the core fills in.
 
 ## Now
 
-- **Diagnostics initiative (Pass 1 of 3 landed).** One condition registry is the single source of
-  truth for the readiness checklist, the `cairn doctor` probe, and the runtime error. Pass 1 (the
-  foundation) published in `0.37.1`. Pass 2 (the email-delivery runtime arm) has a written plan and
-  ships `0.38.0`, giving the login flow an awaited send with `send_error` and `throttled` feedback
-  and registering the two email conditions. Pass 3 closes the initiative with the doctor and the
-  generated, gated readiness checklist.
-- **ecxc.ski bump to `0.38.0` after Pass 2 publishes.** Both production sites are current
-  (907.life at `^0.36.0`, ecxc.ski at `^0.37.1` after its rename from ecnordic-ski). A small
-  bump-and-deploy on ecxc.ski after the publish puts the send-failure feedback live where the
-  originating finding was filed, the same proof role the 907.life retrofit played for CSRF
-  ownership.
+- **Site retrofits to `0.41.0`.** The diagnostics initiative is complete (`cairn doctor`, the
+  readiness checklist, and the runtime conditions all draw on one registry; shipped across
+  `0.37.1`, `0.38.0`, and `0.41.0`), and the publish workflow plus the edit-page redesign shipped
+  in `0.39.0`/`0.40.0`. Each site retrofit wires the publish/discard/publishAll shim actions,
+  requires kit `^2.12`, runs `cairn-doctor` as a retrofit step, and serves as the live proof of
+  the held-save workflow, the send-failure feedback, and the redesigned editor.
 
 ## Next
 

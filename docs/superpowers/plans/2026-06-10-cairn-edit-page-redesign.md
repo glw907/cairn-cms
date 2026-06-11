@@ -12,6 +12,39 @@
 
 **Project gate (every task ends green):** the task's targeted test passes, `npm run check` 0/0, `npm test` exit 0 (re-run once if only the known `delivery-*-split` import-timeout flake fails), `npm run check:prose` clean when admin copy changed. Bump the minor to `0.40.0` in the docs task.
 
+## Design direction (binding for every UI task)
+
+The reader of this page is smart and literate and not a technologist. The direction is a quiet
+writing room on the Warm Stone base: the document is the protagonist and the machinery recedes
+until wanted. Concretely:
+
+- **The manuscript is the memorable thing.** The hoisted title sets in Bricolage Grotesque (this
+  input IS the page's h1, so the display font is earned), large and borderless on the editor card,
+  with the monospace body below it reading as a calm typescript page. Generous editor type
+  (0.9375rem, line-height 1.8, comfortable padding) over `base-100`, on the recessed `base-200`
+  room.
+- **Highlight colors are marginalia ink, never christmas lights.** Headings in the violet primary,
+  links in info, code in accent, directive machinery in accent over a soft accent tint, syntax
+  marks in muted. Nothing saturated, everything AA against `base-100` in both themes.
+- **The toolbar is one instrument strip, not a row of app buttons.** Ghost square buttons,
+  hairline group separators (`w-px` in `--cairn-card-border`), the More menu as overflow, the
+  Write/Preview control as a small segmented pill at the right end. The strip, the surface, and
+  the footer share one card frame so the editor reads as a single object.
+- **The sticky header is a glass ruler.** A translucent band (`base-200` at high opacity with
+  backdrop blur) the page scrolls beneath; small breadcrumb, medium title, the status badges and
+  the save-state indicator as quiet text, the action cluster right. It must never feel like a
+  second topbar; the admin topbar stays the only opaque band.
+- **Motion is one good moment.** The save-state indicator eases between states (a soft dot while
+  unsaved, settling when saved) and the feedback strip slides in briefly. Everything behind the
+  existing `prefers-reduced-motion` guard; no other animation.
+- **Friendly without clutter.** Every control visible in the strip or the header earns its place
+  by frequency; everything rare lives in the More menu or the overflow. Copy follows the design
+  system's voice rules (warm, plain, concept-named).
+
+The Warm Stone tokens, the type recipes, and the load-bearing scoping rules in
+`docs/internal/admin-design-system.md` are binding; this direction composes with them and never
+overrides them.
+
 **Execution notes settled at plan time:**
 1. Tasks 1 through 9 and 11 are well-specified mechanics: dispatch each to `cairn-implementer` (Sonnet). Task 10 is the design pass: it runs through the `frontend-design:frontend-design` skill on the frontier model with a fresh-agent critique loop (Geoff's call; "mythos" is not an available dispatch model in this harness, so the frontier dispatches use `fable`).
 2. The toolbar leaves the `MarkdownEditor` seam. The seam's contract is "swapping the editor is a one-file change"; a toolbar hosting site pickers does not belong inside it. `EditorToolbar` becomes a child of the editor card in `EditPage`.

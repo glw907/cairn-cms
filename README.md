@@ -65,7 +65,7 @@ formal contribution process yet, so this is not an open call for pull requests.
 npm install @glw907/cairn-cms
 ```
 
-Peer dependencies: `svelte@^5` and `@sveltejs/kit@^2`. A consumer site implements a
+Peer dependencies: `svelte@^5` and `@sveltejs/kit@^2.12`. A consumer site implements a
 `CairnAdapter` and mounts thin `/admin` route shims around the package subpaths:
 
 - `@glw907/cairn-cms`: the core engine and adapter contract.

@@ -87,15 +87,37 @@ describe('email.sender-onboarded', () => {
 		expect(calls.every((c) => bearer(c) === 'Bearer tok')).toBe(true);
 	});
 
-	it('matches a subdomain sender and resolves the zone by the registrable domain', async () => {
-		const { fetch, calls } = scripted(
-			withZone(() => ({ result: [{ name: 'mail.ecxc.ski', enabled: true, tag: 't1' }] }))
-		);
+	it('matches a subdomain sender, falling back to the registrable domain when the exact name has no zone', async () => {
+		const { fetch, calls } = scripted((url) => {
+			if (url === `${API}/zones?name=mail.ecxc.ski`) return { result: [] };
+			if (url === `${API}/zones?name=ecxc.ski`) return ZONE_OK;
+			return { result: [{ name: 'mail.ecxc.ski', enabled: true, tag: 't1' }] };
+		});
 		const result = await emailSenderOnboarded.run(
 			ctx({ ...CREDS, from: 'alerts@mail.ecxc.ski', fetch })
 		);
 		expect(result.status).toBe('pass');
-		expect(calls[0].url).toBe(`${API}/zones?name=ecxc.ski`);
+		expect(calls.map((c) => c.url)).toEqual([
+			`${API}/zones?name=mail.ecxc.ski`,
+			`${API}/zones?name=ecxc.ski`,
+			`${API}/zones/zone-1/email/sending/subdomains`,
+		]);
+	});
+
+	it('uses the from-domain zone directly when the exact name is its own zone', async () => {
+		const { fetch, calls } = scripted((url) => {
+			if (url === `${API}/zones?name=mail.ecxc.ski`) return { result: [{ id: 'zone-sub' }] };
+			if (url.startsWith(`${API}/zones?name=`)) throw new Error('queried past the exact match');
+			return { result: [{ name: 'mail.ecxc.ski', enabled: true, tag: 't1' }] };
+		});
+		const result = await emailSenderOnboarded.run(
+			ctx({ ...CREDS, from: 'alerts@mail.ecxc.ski', fetch })
+		);
+		expect(result.status).toBe('pass');
+		expect(calls.map((c) => c.url)).toEqual([
+			`${API}/zones?name=mail.ecxc.ski`,
+			`${API}/zones/zone-sub/email/sending/subdomains`,
+		]);
 	});
 
 	it('fails when the domain is listed with sending disabled', async () => {
@@ -128,6 +150,15 @@ describe('email.sender-onboarded', () => {
 		const result = await emailSenderOnboarded.run(ctx({ ...CREDS, fetch }));
 		expect(result.status).toBe('fail');
 		expect(result.detail).toContain('socket hang up');
+	});
+
+	it('names the token scope, not the product, when the sending list returns 403', async () => {
+		const { fetch } = scripted(withZone(() => new Response('denied', { status: 403 })));
+		const result = await emailSenderOnboarded.run(ctx({ ...CREDS, fetch }));
+		expect(result.status).toBe('fail');
+		expect(result.detail).toContain('lacks permission');
+		expect(result.detail).toContain('403');
+		expect(result.detail).toContain('Email Sending: Read');
 	});
 
 	it('ties to the email.sender-not-onboarded condition', () => {
@@ -294,6 +325,38 @@ describe('auth.store', () => {
 		const result = await authStore.run(d1Ctx(fetch));
 		expect(result.status).toBe('fail');
 		expect(result.detail).toContain('ENOTFOUND');
+	});
+
+	it('names the token scope, not the product, when the query returns 403', async () => {
+		const { fetch } = d1Fetch({ response: new Response('denied', { status: 403 }) });
+		const result = await authStore.run(d1Ctx(fetch));
+		expect(result.status).toBe('fail');
+		expect(result.detail).toContain('lacks permission');
+		expect(result.detail).toContain('403');
+		expect(result.detail).toContain('D1: Read');
+		expect(result.detail).not.toContain('unreachable');
+	});
+
+	it('encodes the database id into the query path', async () => {
+		const wrangler = `{
+			"d1_databases": [
+				{ "binding": "AUTH_DB", "database_name": "auth", "database_id": "abc/123" }
+			]
+		}`;
+		const { fetch, calls } = scripted((url, init) => {
+			const body = JSON.parse(String(init?.body)) as { sql: string };
+			if (body.sql.includes('sqlite_master')) return { result: [{ results: SCHEMA_ROWS }] };
+			return { result: [{ results: [{ n: 1 }] }] };
+		});
+		const result = await authStore.run(
+			ctx({
+				...CREDS,
+				fetch,
+				readFile: async (relPath) => (relPath === 'wrangler.jsonc' ? wrangler : null),
+			})
+		);
+		expect(result.status).toBe('pass');
+		expect(calls[0].url).toBe(`${API}/accounts/acct/d1/database/abc%2F123/query`);
 	});
 
 	it('ties to the auth.store-unreachable condition', () => {

@@ -102,8 +102,10 @@ transient flashes, and the editor card's footer holds the word count and the Mar
   // navigation passes through because busy flips before it starts, and a non-edit POST's because
   // leaving does.
   beforeNavigate((navigation) => {
-    // A full-page unload already gets the browser's native dialog from the beforeunload handler
-    // below; cancel here without confirm() so the two prompts never stack.
+    // A full-page unload (refresh, tab close, external link): per SvelteKit semantics, cancel()
+    // on a leave navigation is what asks the browser for its native dialog, so no confirm()
+    // here or two prompts would stack. The beforeunload listener below is deliberate
+    // belt-and-braces, not the dialog's source.
     if (navigation.willUnload) {
       if (dirty && !busy && !leaving) navigation.cancel();
       return;

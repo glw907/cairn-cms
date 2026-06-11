@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readWranglerConfig } from '../../lib/doctor/wrangler-config.js';
+import { runDoctor } from '../../lib/doctor/run.js';
 import {
 	configBindings,
 	configObservability,
@@ -37,6 +38,13 @@ enabled = true
 
 const CSRF_DISABLED = `const config = { kit: { csrf: { checkOrigin: false } } };
 export default config;
+`;
+
+// The tutorial's hooks wiring: the engine guard imported from the package and handed the export.
+const CAIRN_HOOKS = `import type { Handle } from '@sveltejs/kit';
+import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
+const guard = createAuthGuard();
+export const handle: Handle = ({ event, resolve }) => guard({ event, resolve });
 `;
 
 const GOOD_SITE_CONFIG = `siteName: Test Site
@@ -91,6 +99,16 @@ describe('readWranglerConfig', () => {
 		expect(facts?.hasAuthDb).toBe(false);
 		expect(facts?.authDbId).toBeUndefined();
 	});
+
+	it('throws a clean error on malformed jsonc, echoing none of the content', async () => {
+		const broken = '{ "name": "site", "send_email": [ { SECRET-LOOKING-GARBAGE';
+		await expect(readWranglerConfig(ctx({ 'wrangler.jsonc': broken }).readFile)).rejects.toThrow(
+			'wrangler.jsonc did not parse'
+		);
+		await expect(
+			readWranglerConfig(ctx({ 'wrangler.jsonc': broken }).readFile)
+		).rejects.not.toThrow(/SECRET-LOOKING-GARBAGE/);
+	});
 });
 
 describe('config.bindings', () => {
@@ -119,6 +137,18 @@ describe('config.bindings', () => {
 		expect(result.status).toBe('skip');
 		expect(result.detail).toContain('wrangler.jsonc');
 		expect(result.detail).toContain('wrangler.toml');
+	});
+
+	it('fails (not skips) through the runner on a malformed wrangler.jsonc, with the clean detail', async () => {
+		const broken = '{ "name": "site", "send_email": [ { SECRET-LOOKING-GARBAGE';
+		const { results, failed } = await runDoctor(
+			[configBindings],
+			ctx({ 'wrangler.jsonc': broken })
+		);
+		expect(failed).toBe(1);
+		expect(results[0].result.status).toBe('fail');
+		expect(results[0].result.detail).toContain('wrangler.jsonc did not parse');
+		expect(results[0].result.detail).not.toContain('SECRET-LOOKING-GARBAGE');
 	});
 
 	it('ties to the config.bindings-missing condition', () => {
@@ -155,9 +185,49 @@ describe('config.observability', () => {
 });
 
 describe('config.csrf-disable', () => {
-	it('passes when svelte.config.js carries checkOrigin: false', async () => {
-		const result = await configCsrfDisable.run(ctx({ 'svelte.config.js': CSRF_DISABLED }));
+	it('passes when the disable is present and the hooks file wires the cairn guard, noting both', async () => {
+		const result = await configCsrfDisable.run(
+			ctx({ 'svelte.config.js': CSRF_DISABLED, 'src/hooks.server.ts': CAIRN_HOOKS })
+		);
 		expect(result.status).toBe('pass');
+		expect(result.detail).toContain('checkOrigin: false');
+		expect(result.detail).toContain('guard');
+	});
+
+	it('accepts the guard wiring in src/hooks.server.js when no .ts file exists', async () => {
+		const result = await configCsrfDisable.run(
+			ctx({ 'svelte.config.js': CSRF_DISABLED, 'src/hooks.server.js': CAIRN_HOOKS })
+		);
+		expect(result.status).toBe('pass');
+	});
+
+	it('fails when the only checkOrigin: false sits on a commented-out line', async () => {
+		const config = `const config = { kit: {
+	// csrf: { checkOrigin: false },
+} };
+export default config;
+`;
+		const result = await configCsrfDisable.run(
+			ctx({ 'svelte.config.js': config, 'src/hooks.server.ts': CAIRN_HOOKS })
+		);
+		expect(result.status).toBe('fail');
+		expect(result.detail).toContain('heuristic');
+	});
+
+	it('fails naming the risk when the disable is present but no hooks file exists', async () => {
+		const result = await configCsrfDisable.run(ctx({ 'svelte.config.js': CSRF_DISABLED }));
+		expect(result.status).toBe('fail');
+		expect(result.detail).toContain('no cairn guard found');
+		expect(result.detail).toContain('no CSRF protection');
+	});
+
+	it('fails when the hooks file never mentions cairn', async () => {
+		const hooks = `export const handle = ({ event, resolve }) => resolve(event);\n`;
+		const result = await configCsrfDisable.run(
+			ctx({ 'svelte.config.js': CSRF_DISABLED, 'src/hooks.server.ts': hooks })
+		);
+		expect(result.status).toBe('fail');
+		expect(result.detail).toContain('no cairn guard found');
 	});
 
 	it('fails when the disable is absent, naming the heuristic', async () => {
@@ -222,6 +292,7 @@ describe('the full local set against one good site', () => {
 		const site = ctx({
 			'wrangler.jsonc': GOOD_JSONC,
 			'svelte.config.js': CSRF_DISABLED,
+			'src/hooks.server.ts': CAIRN_HOOKS,
 			'site.config.yaml': GOOD_SITE_CONFIG,
 		});
 		for (const check of [configBindings, configObservability, configCsrfDisable, configSiteConfig]) {

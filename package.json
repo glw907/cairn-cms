@@ -92,7 +92,7 @@
     "CHANGELOG.md"
   ],
   "peerDependencies": {
-    "@sveltejs/kit": "^2",
+    "@sveltejs/kit": "^2.12",
     "svelte": "^5.0.0"
   },
   "dependencies": {

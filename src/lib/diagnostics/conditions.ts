@@ -97,8 +97,8 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		id: 'config.csrf-disable-missing',
 		severity: 'warning',
 		title: 'Framework CSRF check is not handed off',
-		why: "svelte.config.js does not carry csrf: { checkOrigin: false }, so SvelteKit's own Origin check runs ahead of cairn's guard and rejects an admin form POST that arrives without an Origin header.",
-		remediation: "Set csrf: { checkOrigin: false } in svelte.config.js; cairn's guard owns the Origin and double-submit token checks.",
+		why: "The CSRF authority is not handed to cairn cleanly. Either svelte.config.js does not carry csrf: { checkOrigin: false }, so SvelteKit's own Origin check runs ahead of cairn's guard and rejects an admin form POST that arrives without an Origin header, or the disable is present with no cairn guard wired in src/hooks.server.ts, which leaves the site with no CSRF protection at all.",
+		remediation: "Set csrf: { checkOrigin: false } in svelte.config.js and wire createAuthGuard into src/hooks.server.ts; cairn's guard owns the Origin and double-submit token checks.",
 		docsAnchor: 'cloudflare-readiness.md#hand-cairn-the-csrf-authority',
 	},
 	'config.site-config-invalid': {

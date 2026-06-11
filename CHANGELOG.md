@@ -24,13 +24,17 @@ Consumers may: run `npx cairn-doctor --from <address> --repo <owner/name>` as a 
 work through the readiness guide when standing up a fresh account, and filter Workers Logs on
 `github.unreachable` when the publish button goes missing.
 
-A debt batch rides along and needs no consumer action. The editor's link autocomplete no longer
+A debt batch rides along. The editor's link autocomplete no longer
 pulls CodeMirror into the server bundle, the edit page's load reads its GitHub probes in parallel,
 concurrent cold-start token mints coalesce into one, publish-all pluralizes its commit message and
 an empty publish-all explains itself instead of redirecting silently, the unsaved-changes warning
 tracks client-side navigation and no longer double-fires on a full page unload, the toolbar's
 keyboard tab stop holds across Preview round trips, the word count ignores markdown and directive
 syntax, and the list's publish flash announces reliably to screen readers.
+
+Consumers must: be on `@sveltejs/kit` 2.12 or later before taking this release. The edit page now
+reads `$app/state`, which shipped in kit 2.12.0, and the peer range says so (`^2.12`); a site on
+an older kit must upgrade kit first.
 
 ## 0.40.0
 

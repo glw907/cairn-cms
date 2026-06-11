@@ -40,6 +40,26 @@ export const configObservability: DoctorCheck = {
 	},
 };
 
+// A line whose trimmed start is a comment marker cannot disable anything, so a commented-out
+// checkOrigin: false never green-lights the handoff.
+function hasUncommentedDisable(text: string): boolean {
+	return text.split('\n').some((line) => {
+		const trimmed = line.trimStart();
+		if (trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*')) {
+			return false;
+		}
+		return /checkOrigin\s*:\s*false/.test(trimmed);
+	});
+}
+
+// The guard-wiring heuristic. The tutorial's hooks file imports createAuthGuard from
+// @glw907/cairn-cms/sveltekit and hands it the exported handle, which the first clause matches
+// directly; a site that wraps the guard in its own module still mentions cairn beside a handle.
+function wiresCairnGuard(text: string): boolean {
+	if (text.includes('@glw907/cairn-cms')) return true;
+	return /cairn/i.test(text) && /handle/.test(text);
+}
+
 export const configCsrfDisable: DoctorCheck = {
 	id: 'config.csrf-disable',
 	conditionId: 'config.csrf-disable-missing',
@@ -47,10 +67,21 @@ export const configCsrfDisable: DoctorCheck = {
 	async run(ctx: DoctorContext): Promise<CheckResult> {
 		const text = await ctx.readFile('svelte.config.js');
 		if (text === null) return skip('svelte.config.js not found');
-		if (/checkOrigin\s*:\s*false/.test(text)) {
-			return pass('checkOrigin: false found (heuristic text read)');
+		if (!hasUncommentedDisable(text)) {
+			return fail('no checkOrigin: false found (heuristic text read)');
 		}
-		return fail('no checkOrigin: false found (heuristic text read)');
+		// The disable alone proves nothing: with the framework check off and no cairn guard in
+		// the hooks, the admin form POSTs have no CSRF protection at all. The pair is the check.
+		const hooks =
+			(await ctx.readFile('src/hooks.server.ts')) ?? (await ctx.readFile('src/hooks.server.js'));
+		if (hooks === null || !wiresCairnGuard(hooks)) {
+			return fail(
+				'checkOrigin is off but no cairn guard found in src/hooks.server.ts; the site may have no CSRF protection'
+			);
+		}
+		return pass(
+			'checkOrigin: false found and the hooks file wires the cairn guard (heuristic text read)'
+		);
 	},
 };
 

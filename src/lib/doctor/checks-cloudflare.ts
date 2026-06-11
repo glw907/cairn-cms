@@ -35,21 +35,34 @@ function registrableDomain(domain: string): string {
 	return domain.split('.').slice(-2).join('.');
 }
 
+// A 401/403 means the token cannot make this read at all, so the product condition's
+// remediation (onboard the domain, fix the binding) would point the operator at the wrong fix.
+// The conditionId stays; the detail carries the scope truth.
+function permissionFail(status: number, scope: string): CheckResult | null {
+	if (status !== 401 && status !== 403) return null;
+	return fail(
+		`the API token lacks permission for this read (HTTP ${status}); grant the token ${scope} access`
+	);
+}
+
 async function resolveZoneId(
 	ctx: DoctorContext,
 	domain: string
 ): Promise<{ zoneId: string } | { fail: CheckResult }> {
-	const zone = registrableDomain(domain);
-	const res = await cfGet(ctx, `/zones?name=${encodeURIComponent(zone)}`);
-	if (!res.ok) {
-		return { fail: fail(`zone lookup for ${zone} returned ${res.status}`) };
+	// The from-domain may be its own Cloudflare zone (mail.example.com registered directly), so
+	// the exact name is tried first and the registrable domain is the fallback.
+	const apex = registrableDomain(domain);
+	const names = domain === apex ? [domain] : [domain, apex];
+	for (const name of names) {
+		const res = await cfGet(ctx, `/zones?name=${encodeURIComponent(name)}`);
+		if (!res.ok) {
+			return { fail: fail(`zone lookup for ${name} returned ${res.status}`) };
+		}
+		const body = (await res.json()) as { result?: { id?: string }[] };
+		const id = body.result?.[0]?.id;
+		if (typeof id === 'string') return { zoneId: id };
 	}
-	const body = (await res.json()) as { result?: { id?: string }[] };
-	const id = body.result?.[0]?.id;
-	if (typeof id !== 'string') {
-		return { fail: fail(`no zone named ${zone} is visible to this token`) };
-	}
-	return { zoneId: id };
+	return { fail: fail(`no zone named ${names.join(' or ')} is visible to this token`) };
 }
 
 /** Resolve the domain's zone and read one of its settings, returning `result.value`. */
@@ -81,7 +94,10 @@ export const emailSenderOnboarded: DoctorCheck = {
 			if ('fail' in zone) return zone.fail;
 			const res = await cfGet(ctx, `/zones/${zone.zoneId}/email/sending/subdomains`);
 			if (!res.ok) {
-				return fail(`sending subdomain list returned ${res.status}`);
+				return (
+					permissionFail(res.status, 'Email Sending: Read') ??
+					fail(`sending subdomain list returned ${res.status}`)
+				);
 			}
 			const body = (await res.json()) as { result?: { name?: string; enabled?: boolean }[] };
 			const entry = body.result?.find((s) => s.name === domain);
@@ -158,11 +174,17 @@ async function d1Query(
 	databaseId: string,
 	sql: string
 ): Promise<{ rows: Record<string, unknown>[] } | { fail: CheckResult }> {
-	const res = await cfPost(ctx, `/accounts/${ctx.cfAccountId}/d1/database/${databaseId}/query`, {
-		sql,
-	});
+	const res = await cfPost(
+		ctx,
+		`/accounts/${ctx.cfAccountId}/d1/database/${encodeURIComponent(databaseId)}/query`,
+		{ sql }
+	);
 	if (!res.ok) {
-		return { fail: fail(`AUTH_DB is unreachable: the query returned ${res.status}`) };
+		return {
+			fail:
+				permissionFail(res.status, 'D1: Read') ??
+				fail(`AUTH_DB is unreachable: the query returned ${res.status}`),
+		};
 	}
 	const body = (await res.json()) as { result?: { results?: Record<string, unknown>[] }[] };
 	return { rows: body.result?.[0]?.results ?? [] };

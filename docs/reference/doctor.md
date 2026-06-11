@@ -53,7 +53,7 @@ report, the runtime errors, and the readiness checklist share.
 |---|---|---|---|
 | `config.bindings` | `config.bindings-missing` | The wrangler config declares the `send_email` binding `EMAIL` and the D1 binding `AUTH_DB`. | No wrangler config file exists. |
 | `config.observability` | `config.observability-off` | `observability.enabled` is `true`, so Workers Logs has a sink. | No wrangler config file exists. |
-| `config.csrf-disable` | `config.csrf-disable-missing` | `svelte.config.js` carries `checkOrigin: false` (a heuristic text read). | `svelte.config.js` is absent. |
+| `config.csrf-disable` | `config.csrf-disable-missing` | `svelte.config.js` carries `checkOrigin: false` outside a comment, and `src/hooks.server.ts` (or `.js`) wires the cairn guard (a heuristic text read of both files). | `svelte.config.js` is absent. |
 | `config.site-config` | `config.site-config-invalid` | `site.config.yaml` parses and its URL policy validates. | `site.config.yaml` is absent. |
 | `email.sender-onboarded` | `email.sender-not-onboarded` | The from-domain has an enabled Email Sending subdomain on its zone. | No API token, or no from-address. |
 | `edge.https-forced` | `edge.https-not-forced` | Always Use HTTPS is on for the zone. | No API token, or no from-address. |

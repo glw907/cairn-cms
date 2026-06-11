@@ -96,7 +96,7 @@ The doctor walks the same chain the Worker does: the key parses, the App authent
 
 Condition: `config.csrf-disable-missing`.
 
-Set `csrf: { checkOrigin: false }` in `svelte.config.js`. cairn's guard owns the admin CSRF checks through a uniform double-submit token, and it restores the strict `Origin` check for your non-admin form POSTs, so the framework's global check has to come off for the JS-free sign-in to work. The deploy guide carries the full reasoning under [Hand cairn the admin CSRF authority](./deploy-to-cloudflare.md#disable-checkorigin).
+Set `csrf: { checkOrigin: false }` in `svelte.config.js`. cairn's guard owns the admin CSRF checks through a uniform double-submit token, and it restores the strict `Origin` check for your non-admin form POSTs, so the framework's global check has to come off for the JS-free sign-in to work. The handoff is a pair: the disable alone leaves the site with no CSRF protection, so `src/hooks.server.ts` must also wire `createAuthGuard`, and the doctor checks both halves. The deploy guide carries the full reasoning under [Hand cairn the admin CSRF authority](./deploy-to-cloudflare.md#disable-checkorigin).
 
 ## Validate the site config
 

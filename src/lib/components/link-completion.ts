@@ -53,6 +53,8 @@ export function cairnLinkCompletionSource(targets: LinkTarget[]): CompletionSour
     // Skip a [[ inside a fenced or inline code node: a cairn link there would be literal text, and
     // the build resolver does not look inside code. The node name carries "Code" for both forms.
     langMod ??= await import('@codemirror/language');
+    // The first completion awaits the import above, so the request may already be stale here.
+    if (context.aborted) return null;
     const node = langMod.syntaxTree(context.state).resolveInner(context.pos, -1);
     for (let n: typeof node | null = node; n; n = n.parent) {
       if (/Code/.test(n.name)) return null;

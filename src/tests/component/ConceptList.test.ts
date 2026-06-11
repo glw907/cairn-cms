@@ -65,12 +65,15 @@ describe('ConceptList', () => {
     expect(hidden?.classList.contains('badge-neutral')).toBe(true);
   });
 
-  it('shows a publish-all flash through a status region', async () => {
+  it('announces a publish-all flash through a persistent polite region beside the alert', async () => {
     const screen = render(ConceptList, { data: data({ publishedAll: 3 }) });
-    const status = Array.from(screen.container.querySelectorAll('[role="status"]')).find((el) =>
-      (el.textContent ?? '').includes('Published 3 entries.'),
-    );
-    expect(status).toBeTruthy();
+    // The always-mounted sr-only region carries the announcement (the EditPage pattern); a
+    // fresh-inserted role element announces inconsistently, so the visible alert drops its role.
+    const region = screen.container.querySelector('[aria-live="polite"]');
+    expect(region?.textContent ?? '').toContain('Published 3 entries.');
+    const alert = screen.container.querySelector('.alert-success');
+    expect(alert?.textContent ?? '').toContain('Published 3 entries.');
+    expect(alert?.getAttribute('role')).toBeNull();
   });
 
   it('hides the publish-all flash when zero entries were published', async () => {

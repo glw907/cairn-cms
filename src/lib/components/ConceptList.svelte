@@ -107,6 +107,14 @@ content sizes. The header New button opens a dialog holding the create form.
   // flex layout and a hover affordance on top of this.
   const headerLabel = 'text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]';
   const sortButton = `inline-flex items-center gap-1 ${headerLabel} hover:text-base-content`;
+
+  // The publish-all flash. A racing second admin can publish first, leaving this redirect
+  // counting zero; say nothing then.
+  const publishedAllMessage = $derived(
+    data.publishedAll !== null && data.publishedAll > 0
+      ? `Published ${data.publishedAll} ${data.publishedAll === 1 ? 'entry' : 'entries'}.`
+      : '',
+  );
 </script>
 
 <header class="mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
@@ -122,11 +130,12 @@ content sizes. The header New button opens a dialog holding the create form.
   </div>
 </header>
 
-<!-- A racing second admin can publish first, leaving this redirect counting zero; say nothing then. -->
-{#if data.publishedAll !== null && data.publishedAll > 0}
-  <div role="status" class="alert alert-success mb-4 text-sm">
-    Published {data.publishedAll} {data.publishedAll === 1 ? 'entry' : 'entries'}.
-  </div>
+<!-- One persistent live region announces the publish-all flash (the EditPage pattern): a
+     {#if}-gated role element inserted fresh is announced inconsistently, so the visible alert
+     below keeps its styling without a role and the message is announced once. -->
+<div class="sr-only" aria-live="polite">{publishedAllMessage}</div>
+{#if publishedAllMessage}
+  <div class="alert alert-success mb-4 text-sm">{publishedAllMessage}</div>
 {/if}
 {#if data.formError}
   <div role="alert" class="alert alert-error mb-4 text-sm">{data.formError}</div>

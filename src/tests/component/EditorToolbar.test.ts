@@ -86,6 +86,28 @@ describe('EditorToolbar', () => {
     await expect.element(screen.getByRole('tab', { name: 'Write' })).toHaveAttribute('aria-selected', 'false');
   });
 
+  it('keeps the roving stop in sync through a Preview round trip', async () => {
+    const screen = render(EditorToolbar, baseProps());
+    await expect.poll(() => controls(screen.container).filter((el) => el.tabIndex === 0).length).toBe(1);
+    const items = controls(screen.container);
+    items[0].focus();
+    // ArrowLeft wraps the stop to the last control.
+    await userEvent.keyboard('{ArrowLeft}');
+    await expect.poll(() => document.activeElement).toBe(items[items.length - 1]);
+    // Preview disables the format controls, shrinking the roving set to the two tabs; the
+    // clamped stop writes back, so Write resumes from the clamped position instead of jumping.
+    await screen.rerender(baseProps({ mode: 'preview' }));
+    await expect.poll(() => controls(screen.container).filter((el) => el.tabIndex === 0).length).toBe(1);
+    await screen.rerender(baseProps({ mode: 'write' }));
+    await expect.poll(() => controls(screen.container).filter((el) => el.tabIndex === 0).length).toBe(1);
+    const after = controls(screen.container);
+    expect(after[1].tabIndex).toBe(0);
+    // Arrow keys move from the displayed stop, not a stale pre-Preview index.
+    after[1].focus();
+    await userEvent.keyboard('{ArrowRight}');
+    await expect.poll(() => document.activeElement).toBe(controls(screen.container)[2]);
+  });
+
   it('keeps one roving tab stop and moves it with the arrow keys', async () => {
     const screen = render(EditorToolbar, baseProps());
     await expect.poll(() => controls(screen.container).filter((el) => el.tabIndex === 0).length).toBe(1);

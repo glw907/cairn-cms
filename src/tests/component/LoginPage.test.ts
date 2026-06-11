@@ -27,6 +27,19 @@ describe('LoginPage', () => {
     await expect.element(screen.getByRole('textbox', { name: /email/i })).toBeInTheDocument();
   });
 
+  it('dismisses the confirmation panel for the full engine result shape', async () => {
+    // Pins the dismissed-banner branch ((form?.status === 'sent' || form?.sent) && !dismissed),
+    // the exact expression svelte 5.56.1 miscompiled by dropping the parentheses.
+    const screen = render(LoginPage, {
+      data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' },
+      form: { sent: true, status: 'sent' },
+    });
+    await expect.element(screen.getByText(/check your email/i)).toBeInTheDocument();
+    await screen.getByRole('button', { name: /use a different email/i }).click();
+    await expect.element(screen.getByRole('textbox', { name: /email/i })).toBeInTheDocument();
+    expect(screen.container.textContent ?? '').not.toMatch(/check your email/i);
+  });
+
   it('shows the success panel for the engine result shape', async () => {
     const screen = render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { status: 'sent', sent: true } });
     await expect.element(screen.getByText(/check your email/i)).toBeInTheDocument();

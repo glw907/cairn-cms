@@ -113,6 +113,10 @@ are stroke SVG icons in the admin's house style (24x24 viewBox, `currentColor`, 
     const items = rovingControls();
     if (items.length === 0) return;
     const stop = Math.min(roving, items.length - 1);
+    // Write the clamp back so the stored stop never drifts from the displayed one across a
+    // Preview round trip. The effect reads roving, so the guarded write re-runs it once and
+    // converges (the second pass computes the same stop and writes nothing).
+    if (stop !== roving) roving = stop;
     for (const [i, el] of items.entries()) el.setAttribute('tabindex', i === stop ? '0' : '-1');
   });
 

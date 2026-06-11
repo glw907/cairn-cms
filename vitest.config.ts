@@ -35,10 +35,12 @@ export default defineConfig({
       {
         plugins: [svelte()],
         resolve: {
-          // EditPage's leave guard imports $app/navigation, which only a SvelteKit app provides.
-          // The component project resolves it to a recording stub so the guard stays testable.
+          // EditPage imports $app/navigation (the leave guard) and $app/state (the page URL),
+          // which only a SvelteKit app provides. The component project resolves them to stubs:
+          // a recording one for the guard, a settable one for the URL.
           alias: {
             '$app/navigation': path.resolve('./src/tests/component/app-navigation.ts'),
+            '$app/state': path.resolve('./src/tests/component/app-state.ts'),
           },
         },
         test: {

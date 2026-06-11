@@ -14,6 +14,7 @@ transient flashes, and the editor card's footer holds the word count and the Mar
 <script lang="ts">
   import { untrack } from 'svelte';
   import { beforeNavigate } from '$app/navigation';
+  import { page } from '$app/state';
   import CsrfField from './CsrfField.svelte';
   import MarkdownEditor from './MarkdownEditor.svelte';
   import EditorToolbar from './EditorToolbar.svelte';
@@ -25,7 +26,7 @@ transient flashes, and the editor card's footer holds the word count and the Mar
   import MarkdownHelpDialog from './MarkdownHelpDialog.svelte';
   import { cairnLinkCompletionSource } from './link-completion.js';
   import { unwrapCairnLink, type FormatKind } from './markdown-format.js';
-  import { directiveLineKind } from './markdown-directives.js';
+  import { directiveLineKind, findInlineDirectives } from './markdown-directives.js';
   import type { ComponentRegistry } from '../render/registry.js';
   import type { IconSet } from '../render/glyph.js';
   import type { EditData } from '../sveltekit/content-routes.js';
@@ -101,6 +102,12 @@ transient flashes, and the editor card's footer holds the word count and the Mar
   // navigation passes through because busy flips before it starts, and a non-edit POST's because
   // leaving does.
   beforeNavigate((navigation) => {
+    // A full-page unload already gets the browser's native dialog from the beforeunload handler
+    // below; cancel here without confirm() so the two prompts never stack.
+    if (navigation.willUnload) {
+      if (dirty && !busy && !leaving) navigation.cancel();
+      return;
+    }
     if (dirty && !busy && !leaving && !confirm('You have unsaved changes. Leave anyway?'))
       navigation.cancel();
   });
@@ -240,14 +247,12 @@ transient flashes, and the editor card's footer holds the word count and the Mar
     });
   });
 
-  // After a save that links to a draft target, the redirect carries ?drafts=<tokens>. Re-read on
-  // an entry change too, since a client-side navigation swaps the search string under this effect.
-  let draftWarning = $state('');
-  $effect(() => {
-    void entryKey;
-    const search = typeof location === 'undefined' ? '' : location.search;
-    const drafts = new URLSearchParams(search).get('drafts');
-    draftWarning = drafts ? drafts.split(',').filter(Boolean).join(', ') : '';
+  // After a save that links to a draft target, the redirect carries ?drafts=<tokens>. page.url
+  // is reactive kit state, so a client-side navigation that swaps the search string re-derives
+  // this, and the read is SSR-safe.
+  const draftWarning = $derived.by(() => {
+    const drafts = page.url.searchParams.get('drafts');
+    return drafts ? drafts.split(',').filter(Boolean).join(', ') : '';
   });
 
   // The one transient feedback strip under the sticky header. The redirect flags are mutually
@@ -284,12 +289,29 @@ transient flashes, and the editor card's footer holds the word count and the Mar
     return '';
   });
 
+  // One line of body text reduced to its prose: inline directives drop wholesale, then the
+  // markdown marker characters become spaces. Spacing rather than deleting keeps "[text](url)"
+  // as two words instead of mashing the link text into its destination, so a link counts its
+  // text plus its URL and the count never undercounts prose.
+  function proseOnly(line: string): string {
+    let out = '';
+    let cursor = 0;
+    for (const { from, to } of findInlineDirectives(line)) {
+      out += line.slice(cursor, from);
+      cursor = to;
+    }
+    out += line.slice(cursor);
+    return out.replace(/[*_~`[\]()#]/g, ' ');
+  }
+
   // The editor footer's word count, over the local body so it tracks every keystroke. Directive
-  // machinery lines and table rows are dropped first, so the count reads as the author's prose.
+  // machinery lines and table rows are dropped first and the inline syntax stripped, so the
+  // count reads as the author's prose.
   const countedBody = $derived(
     body
       .split('\n')
       .filter((line) => directiveLineKind(line) === null && !/^\s*\|/.test(line))
+      .map(proseOnly)
       .join('\n'),
   );
   const wordCount = $derived(countedBody.trim() ? countedBody.trim().split(/\s+/).length : 0);

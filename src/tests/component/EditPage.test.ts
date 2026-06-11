@@ -9,6 +9,8 @@ import { createRenderer } from '../../lib/render/pipeline.js';
 import { defineRegistry, type ComponentDef } from '../../lib/render/registry.js';
 // The same module instance EditPage receives for $app/navigation via the project alias.
 import { beforeNavigateCallbacks } from './app-navigation.js';
+// The same module instance EditPage receives for $app/state via the project alias.
+import { page as appPage } from './app-state.js';
 
 function postProps(over = {}) {
   return {
@@ -116,6 +118,26 @@ describe('EditPage', () => {
     const screen = render(EditPage, postProps({ saved: true }));
     const banner = screen.container.querySelector('.alert-success');
     expect(banner?.textContent ?? '').toMatch(/saved/i);
+  });
+
+  it('derives the draft-link warning from the page URL drafts flag', async () => {
+    const originalUrl = appPage.url;
+    appPage.url = new URL('http://localhost/admin/posts/2026-05-hello?drafts=pages/about');
+    try {
+      const screen = render(EditPage, postProps({ saved: true }));
+      const warning = screen.container.querySelector('.alert-warning');
+      expect(warning?.textContent ?? '').toContain('pages/about');
+      // The saved flash yields to the draft warning, so one strip shows.
+      expect(screen.container.querySelector('.alert-success')).toBeNull();
+    } finally {
+      appPage.url = originalUrl;
+    }
+  });
+
+  it('shows no draft-link warning without the drafts flag', async () => {
+    const screen = render(EditPage, postProps({ saved: true }));
+    expect(screen.container.querySelector('.alert-warning')).toBeNull();
+    expect(screen.container.querySelector('.alert-success')).not.toBeNull();
   });
 
   it('renders preview HTML when the preview is shown', async () => {
@@ -700,6 +722,37 @@ describe('EditPage', () => {
     }
   });
 
+  it('cancels a dirty full-page unload without a confirm prompt', async () => {
+    const countBefore = beforeNavigateCallbacks.length;
+    const screen = render(EditPage, postProps({ body: 'plain prose' }));
+    expect(beforeNavigateCallbacks.length).toBe(countBefore + 1);
+    const guard = beforeNavigateCallbacks[beforeNavigateCallbacks.length - 1];
+    const originalConfirm = window.confirm;
+    try {
+      let confirmCalls = 0;
+      window.confirm = () => {
+        confirmCalls += 1;
+        return false;
+      };
+      let cancelled = false;
+      const navigation = {
+        willUnload: true,
+        cancel: () => (cancelled = true),
+      } as unknown as BeforeNavigate;
+      // Clean: a full-page unload passes through untouched.
+      guard(navigation);
+      expect(cancelled).toBe(false);
+      // Dirty: the guard cancels so SvelteKit lets the browser's own beforeunload dialog run,
+      // and never stacks confirm() on top of it.
+      await makeDirty(screen);
+      guard(navigation);
+      expect(cancelled).toBe(true);
+      expect(confirmCalls).toBe(0);
+    } finally {
+      window.confirm = originalConfirm;
+    }
+  });
+
   it('opens the web link dialog on Ctrl+K inside the editor card', async () => {
     const screen = render(EditPage, postProps());
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
@@ -971,6 +1024,26 @@ describe('EditPage', () => {
     await expect.element(screen.getByText('3 words')).toBeInTheDocument();
   });
 
+  it('does not count bold markers as part of a word', async () => {
+    const screen = render(EditPage, postProps({ body: '**bold** word' }));
+    await expect.element(screen.getByText('2 words')).toBeInTheDocument();
+  });
+
+  it('leaves heading markers out of the word count', async () => {
+    const screen = render(EditPage, postProps({ body: '## Heading' }));
+    await expect.element(screen.getByText('1 word')).toBeInTheDocument();
+  });
+
+  it('leaves inline directives out of the word count', async () => {
+    const screen = render(EditPage, postProps({ body: ':icon[ski]{s=1} after' }));
+    await expect.element(screen.getByText('1 word')).toBeInTheDocument();
+  });
+
+  it('counts a link as its text plus its URL, markers spaced out rather than mashed', async () => {
+    const screen = render(EditPage, postProps({ body: '[text](https://example.com)' }));
+    await expect.element(screen.getByText('2 words')).toBeInTheDocument();
+  });
+
   it('updates the word count as the body changes', async () => {
     const props = postProps({ body: '' });
     props.data.linkTargets = [
@@ -978,10 +1051,11 @@ describe('EditPage', () => {
     ];
     const screen = render(EditPage, props);
     await expect.element(screen.getByText('0 words')).toBeInTheDocument();
-    // Inserting "[About Us](cairn:pages/about)" through the picker adds two whitespace-split words.
+    // Inserting "[About Us](cairn:pages/about)" through the picker adds three words once the
+    // link markers space out: the two-word link text plus its destination.
     await screen.getByRole('button', { name: /link to page/i }).click();
     await screen.getByRole('button', { name: /About Us/ }).click();
-    await expect.element(screen.getByText('2 words')).toBeInTheDocument();
+    await expect.element(screen.getByText('3 words')).toBeInTheDocument();
   });
 
   it('opens the Markdown help dialog from the editor footer and lists the cheat rows', async () => {

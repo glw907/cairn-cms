@@ -113,14 +113,26 @@ describe('MarkdownEditor', () => {
     expect(minHeight).toBeCloseTo(window.innerHeight * 0.5, 0);
   });
 
-  it('shows no focus ring after a pointer click into the editor', async () => {
-    const screen = render(MarkdownEditor, { value: 'plain prose', name: 'body' });
-    await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
-    const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
-    await userEvent.click(content);
-    await expect.poll(() => document.activeElement).toBe(content);
-    expect(getComputedStyle(screen.container.querySelector('.cm-editor')!).outlineStyle).toBe('none');
-    expect(getComputedStyle(content).outlineStyle).toBe('none');
+  it('keeps the focus indicator a quiet hairline while writing', async () => {
+    // The test page loads no admin sheet, so the outline's var(--color-primary) needs a value;
+    // unresolved, the declaration computes invalid and the outline silently reads "none".
+    document.documentElement.style.setProperty('--color-primary', 'rgb(12, 34, 56)');
+    try {
+      const screen = render(MarkdownEditor, { value: 'plain prose', name: 'body' });
+      await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+      const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
+      await userEvent.click(content);
+      await expect.poll(() => document.activeElement).toBe(content);
+      // The focused editor draws a 1px low-alpha line, never the 2px solid primary ring:
+      // browsers hold a focused text surface in keyboard modality, so a loud ring would
+      // persist while typing.
+      const editor = getComputedStyle(screen.container.querySelector('.cm-editor')!);
+      expect(editor.outlineStyle).toBe('solid');
+      expect(editor.outlineWidth).toBe('1px');
+      expect(content.matches(':focus')).toBe(true);
+    } finally {
+      document.documentElement.style.removeProperty('--color-primary');
+    }
   });
 
   it('passes a dark theme to CodeMirror inside the dark admin theme', async () => {

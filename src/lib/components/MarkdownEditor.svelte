@@ -74,10 +74,14 @@ through the adapter's render. Swapping the editor stays a one-file change.
           minHeight: '50vh',
         },
         '.cm-cursor': { borderLeftColor: 'var(--color-primary)' },
-        // No ring while writing: the caret is the focus cue on a pointer click. Keyboard focus
-        // keeps an indicator through the :focus-visible rule below.
-        '&.cm-focused': { outline: 'none' },
-        '.cm-content:focus-visible': { outline: '2px solid var(--color-primary)', outlineOffset: '-2px' },
+        // A quiet always-on focus hairline. :focus-visible is no escape here: browsers treat a
+        // focused text-entry surface as keyboard-modal, so a 2px ring would shout through every
+        // typing session. One subtle line keeps focus visible (WCAG 2.4.7) without competing
+        // with the manuscript.
+        '&.cm-focused': {
+          outline: '1px solid color-mix(in oklab, var(--color-primary) 45%, transparent)',
+          outlineOffset: '-1px',
+        },
         '.cm-line': { padding: '0' },
         '.cm-cairn-directive-fence': {
           backgroundColor: 'color-mix(in oklab, var(--color-accent) 8%, transparent)',

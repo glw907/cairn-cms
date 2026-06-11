@@ -102,6 +102,30 @@ Recipes:
   button, and the `method="dialog"` backdrop. `showModal()` gives focus trap and Escape for free.
 - **Command palette:** `<dialog>` opened by the topbar trigger or Cmd/Ctrl+K; commands are the nav
   destinations plus View-site and theme, filtered as you type. Built in `AdminLayout.svelte`.
+- **Sticky edit header (the glass ruler):** `sticky top-16 z-10 bg-base-200/90 backdrop-blur` with an
+  always-on `border-b border-[var(--cairn-card-border)]` hairline, bled to the content edges with
+  negative margins that mirror the main padding (`-mx-4 lg:-mx-8` against `p-4 lg:p-8`). It is a
+  translucent veil the page scrolls beneath, never a second opaque topbar. Left: breadcrumb, an
+  `sr-only` h1, the status badges, and the save-state indicator (a small `bg-warning` dot plus
+  muted text, fading via `transition-opacity`). Right: the overflow dropdown, then the outline
+  Publish, then solid Save, both tied to the form by `form="cairn-edit-form"`.
+- **Editor instrument strip:** one card frame holds the toolbar, the editing surface, and a slim
+  footer (word count left, Markdown help right). Ghost `btn-sm btn-square` glyph buttons in groups
+  divided by `w-px self-stretch bg-[var(--cairn-card-border)]` hairlines, a More dropdown for the
+  low-frequency formats, the host's insert controls through a snippet, and the Write/Preview
+  segmented `join` pinned right with `role="tablist"`. Roving tabindex carries keyboard traversal.
+  Formatting and insert controls disable while Preview shows.
+- **Document title input:** when the adapter defines a `title` field it renders above the editor
+  card as `cairn-doc-title`: `text-3xl font-bold tracking-tight` in the display face, borderless on
+  the recessed background. This input is the page's visible h1 (the header h1 is `sr-only`), which
+  is why the toolbar offers only H2/H3.
+- **Editor highlight palette (marginalia ink):** the CodeMirror theme in `editor-highlight.ts` maps
+  headings to `--color-primary`, links to `--color-info`, code and directive machinery to
+  `--color-accent`, syntax marks and quotes to `--color-muted`. Directive lines (`:::`, `::name`)
+  carry an 8% accent `color-mix` band plus a plain-language `title` tooltip. Light `--color-accent`
+  is a locked margin at `oklch(54% 0.16 300)`: it must hold AA both on `base-100` and on its own 8%
+  tint. The editor's focus indicator is a deliberate 1px 45%-alpha primary hairline, never a 2px
+  ring: a focused text surface sits in keyboard modality, so `:focus-visible` cannot quiet it.
 
 ## Chrome and spacing
 

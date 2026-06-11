@@ -24,7 +24,8 @@ export interface CairnCondition {
 	logEvent?: CairnLogEvent;
 }
 
-const REGISTRY: Record<string, CairnCondition> = {
+// Exported for the freeze test only; resolve entries through condition() everywhere else.
+export const REGISTRY: Record<string, CairnCondition> = {
 	'edge.https-not-forced': {
 		id: 'edge.https-not-forced',
 		severity: 'blocker',
@@ -65,7 +66,61 @@ const REGISTRY: Record<string, CairnCondition> = {
 		remediation: 'Read the auth.link.send_failed log record (the code and error fields) in Workers Logs, and check the EMAIL binding and the sender configuration.',
 		logEvent: 'auth.link.send_failed',
 	},
+	'config.bindings-missing': {
+		id: 'config.bindings-missing',
+		severity: 'blocker',
+		title: 'Wrangler bindings are missing',
+		why: 'The wrangler config declares no send_email binding named EMAIL or no D1 binding named AUTH_DB, so the magic-link send or the session store has nothing to call and no editor can sign in.',
+		remediation: 'Declare the send_email binding as EMAIL and the d1_databases binding as AUTH_DB in wrangler.jsonc (or wrangler.toml), then re-deploy.',
+	},
+	'config.observability-off': {
+		id: 'config.observability-off',
+		severity: 'warning',
+		title: 'Workers Logs has no sink',
+		why: 'observability.enabled is not true in the wrangler config, so the structured log records go nowhere and a runtime failure leaves nothing to read.',
+		remediation: 'Set observability.enabled to true in wrangler.jsonc, then re-deploy.',
+	},
+	'config.csrf-disable-missing': {
+		id: 'config.csrf-disable-missing',
+		severity: 'warning',
+		title: 'Framework CSRF check is not handed off',
+		why: "svelte.config.js does not carry csrf: { checkOrigin: false }, so SvelteKit's own Origin check runs ahead of cairn's guard and rejects an admin form POST that arrives without an Origin header.",
+		remediation: "Set csrf: { checkOrigin: false } in svelte.config.js; cairn's guard owns the Origin and double-submit token checks.",
+	},
+	'config.site-config-invalid': {
+		id: 'config.site-config-invalid',
+		severity: 'blocker',
+		title: 'Site config does not validate',
+		why: 'site.config.yaml fails to parse or fails the URL-policy validation, so the build and the admin cannot resolve the content concepts.',
+		remediation: 'Correct site.config.yaml; the parse or validation error names the failing field or URL-policy rule.',
+	},
+	'edge.hsts-off': {
+		id: 'edge.hsts-off',
+		severity: 'warning',
+		title: 'HSTS is off',
+		why: 'The zone sends no Strict-Transport-Security header with a meaningful max-age, so browsers do not pin https and a later http visit can still hit the admin guard rejection.',
+		remediation: 'Turn on HSTS for the zone under SSL/TLS, Edge Certificates, with a max-age of at least six months.',
+	},
+	'auth.store-unreachable': {
+		id: 'auth.store-unreachable',
+		severity: 'blocker',
+		title: 'Auth store is unreachable',
+		why: 'The AUTH_DB D1 database is missing, lacks the auth schema, or holds no owner row, so no magic-link token can be minted and nobody can sign in.',
+		remediation: 'Create the database, apply the auth schema with `wrangler d1 execute <db> --remote --file ./migrations/0000_auth.sql`, seed the owner row, and check the AUTH_DB binding id in wrangler.jsonc.',
+	},
+	'github.app-unreachable': {
+		id: 'github.app-unreachable',
+		severity: 'blocker',
+		title: 'GitHub App is unreachable',
+		why: 'The App key fails to parse, the App fails to authenticate, the installation token fails to mint, or the repository refuses a read, so saves and publishes cannot commit.',
+		remediation: 'Check GITHUB_APP_ID, GITHUB_APP_INSTALLATION_ID, and GITHUB_APP_PRIVATE_KEY_B64 against the App settings, and confirm the App is installed on the repository.',
+		// Task 2 adds the github.unreachable log event; wire logEvent here when it lands.
+	},
 };
+
+// The registry is shared identity, never working state; freeze every entry and the map itself.
+for (const entry of Object.values(REGISTRY)) Object.freeze(entry);
+Object.freeze(REGISTRY);
 
 /** Resolve a condition by id. Throws on an unknown id, since ids are compile-time constants. */
 export function condition(id: string): CairnCondition {

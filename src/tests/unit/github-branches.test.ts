@@ -31,4 +31,21 @@ describe('branches transport', () => {
     expect(await listBranches(repo, 'cairn/', 't')).toEqual([]);
     await expect(deleteBranch(repo, 'cairn/posts/x', 't')).resolves.toBeUndefined();
   });
+
+  it('lists every ref past GitHub default page size of 30', async () => {
+    const gh = new GithubDouble({ main: {} });
+    for (let i = 0; i < 35; i++) gh.createBranch(`cairn/posts/p${String(i).padStart(2, '0')}`, 'main');
+    gh.install();
+    expect(await listBranches(repo, 'cairn/', 't')).toHaveLength(35);
+  });
+
+  it('follows the Link rel=next header across pages past per_page=100', async () => {
+    const gh = new GithubDouble({ main: {} });
+    for (let i = 0; i < 130; i++) gh.createBranch(`cairn/posts/p${String(i).padStart(3, '0')}`, 'main');
+    gh.install();
+    const names = await listBranches(repo, 'cairn/', 't');
+    expect(names).toHaveLength(130);
+    expect(names[0]).toBe('cairn/posts/p000');
+    expect(names[129]).toBe('cairn/posts/p129');
+  });
 });

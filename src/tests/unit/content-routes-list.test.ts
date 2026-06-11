@@ -202,6 +202,34 @@ describe('listLoad with pending branches', () => {
     expect(data.entries.find((e) => e.id === '2026-04-older')?.status).toBe('published');
   });
 
+  it('summarizes an edited row from its branch, so pending edits show in the list', async () => {
+    const gh = new GithubDouble({
+      main: { 'src/content/posts/2026-05-hello.md': '---\ntitle: Old title\ndate: 2026-05-01\n---\nx' },
+      'cairn/posts/2026-05-hello': {
+        'src/content/posts/2026-05-hello.md': '---\ntitle: Pending title\ndate: 2026-05-01\ndraft: true\n---\nx',
+      },
+    });
+    gh.install();
+    const routes = createContentRoutes(runtime(), deps);
+    const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
+    expect(data.entries).toEqual([
+      { id: '2026-05-hello', title: 'Pending title', date: '2026-05-01', draft: true, status: 'edited' },
+    ]);
+  });
+
+  it('ignores a ref with an invalid id instead of listing a phantom row', async () => {
+    const gh = new GithubDouble({
+      main: { 'src/content/posts/2026-05-hello.md': '---\ntitle: Hello\ndate: 2026-05-01\n---\nx' },
+      'cairn/posts/a%2fb': {}, // percent-escaped id fails the slug rule, so it never reaches a read
+    });
+    gh.install();
+    const routes = createContentRoutes(runtime(), deps);
+    const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
+    expect(data.entries).toEqual([
+      { id: '2026-05-hello', title: 'Hello', date: '2026-05-01', draft: false, status: 'published' },
+    ]);
+  });
+
   it('degrades a branch-only row to its id when the branch read fails', async () => {
     // The ref exists but its tree lacks the entry file, so the branch read comes back empty.
     const gh = new GithubDouble({

@@ -146,6 +146,18 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     return raw === null ? emptyManifest() : parseManifest(raw);
   }
 
+  /** The pending entry a `cairn/` ref names, or null for a ref the engine must ignore: a
+   *  malformed name, an id that fails the slug rule (entry paths are built from it, so this is
+   *  the path confinement), or a concept this site does not configure. Every ref consumer
+   *  (the layout count, the list view, publish-all) applies this one predicate, so a stray
+   *  hand-pushed ref cannot inflate a count it can never clear or reach a contents read. */
+  function pendingEntryOf(name: string): { concept: ConceptDescriptor; id: string } | null {
+    const ref = parsePendingBranch(name);
+    if (!ref || !isValidId(ref.id)) return null;
+    const concept = findConcept(runtime.concepts, ref.concept);
+    return concept ? { concept, id: ref.id } : null;
+  }
+
   /** Layout load for every admin page: the nav, the user, the active path, the resolved theme,
    *  and the pending entries behind the topbar's publish-all action. */
   async function layoutLoad(event: ContentEvent): Promise<LayoutData> {
@@ -162,9 +174,10 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     try {
       const token = await mintToken(event.platform?.env ?? {});
       const names = await listBranches(runtime.backend, PENDING_PREFIX, token);
-      pendingEntries = names
-        .map(parsePendingBranch)
-        .filter((entry): entry is { concept: string; id: string } => entry !== null);
+      pendingEntries = names.flatMap((name) => {
+        const entry = pendingEntryOf(name);
+        return entry ? [{ concept: entry.concept.id, id: entry.id }] : [];
+      });
     } catch {
       pendingEntries = null;
     }
@@ -190,7 +203,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
   }
 
   /** Read a file's frontmatter for its list row, degrading to the id on any read failure. The
-   *  repo defaults to main; a branch-only (never published) entry passes its pending branch. */
+   *  repo defaults to main; a pending entry (edited or branch-only) passes its pending branch. */
   async function summarize(
     file: { id: string; path: string },
     token: string,
@@ -231,10 +244,19 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
         listBranches(runtime.backend, `${PENDING_PREFIX}${concept.id}/`, token),
       ]);
       const pendingIds = new Set(
-        refs.map(parsePendingBranch).flatMap((ref) => (ref && ref.concept === concept.id ? [ref.id] : [])),
+        refs.flatMap((name) => {
+          const entry = pendingEntryOf(name);
+          return entry && entry.concept.id === concept.id ? [entry.id] : [];
+        }),
       );
+      // An edited row reads branch-first like a new row, so a pending title or draft change
+      // shows in the list instead of reading as a lost save.
       const entries = await Promise.all(
-        files.map((f) => summarize(f, token, pendingIds.has(f.id) ? 'edited' : 'published')),
+        files.map((f) =>
+          pendingIds.has(f.id)
+            ? summarize(f, token, 'edited', { ...runtime.backend, branch: pendingBranch(concept.id, f.id) })
+            : summarize(f, token, 'published'),
+        ),
       );
       // A ref with no main file is a never-published entry; its row reads from its branch, and
       // summarize already degrades a failed read to an id-only row.
@@ -400,17 +422,34 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     throw err;
   }
 
-  /** Save an edit: validate, then commit to the entry's pending branch with the session editor
-   *  as author. Main and its manifest stay untouched until publish. Fails safe on 409. */
-  async function saveAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
-    const editor = sessionOf(event);
-    const concept = conceptOf(runtime, event.params);
-    const id = event.params.id ?? '';
-    // Confine the commit path to the concept dir, built from a validated id (the App token can
-    // write anywhere in the repo). Reject before touching GitHub.
-    if (!isValidId(id)) throw error(400, 'Invalid entry id');
-    const path = `${concept.dir}/${filenameFromId(id)}`;
+  /** The held outcome of a validated save: everything publish needs to copy the same markdown
+   *  to main without re-reading the branch. `branchSha` is the branch commit saveToBranch just
+   *  made, the guard for the post-publish branch delete; `manifest` is main's manifest with
+   *  this entry's row upserted from the new markdown (the same last-writer-wins manifest race
+   *  as delete and rename applies, caught by the build's fail-closed backstop). */
+  interface SaveHold {
+    path: string;
+    markdown: string;
+    branch: string;
+    branchSha: string;
+    manifest: Manifest;
+    /** The draft-target tokens the body links to, for save's warning query. */
+    draftLinks: string[];
+    token: string;
+  }
 
+  /** The shared core of save and publish: parse the posted form, validate the frontmatter,
+   *  guard the body's cairn links, ensure the pending branch, and commit the entry file there
+   *  with the session editor as author. Returns the broken-link fail for the page to render,
+   *  or the held state; throws the redirect bounces save has always thrown (invalid
+   *  frontmatter, a branch-commit conflict). Main stays untouched. */
+  async function saveToBranch(
+    event: ContentEvent,
+    editor: Editor,
+    concept: ConceptDescriptor,
+    id: string,
+  ): Promise<ReturnType<typeof fail> | SaveHold> {
+    const path = `${concept.dir}/${filenameFromId(id)}`;
     const form = await event.request.formData();
     const body = String(form.get('body') ?? '');
     const isNew = form.get('new') === '1';
@@ -425,8 +464,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     const markdown = serializeMarkdown(result.data, body);
     const token = await mintToken(event.platform?.env ?? {});
 
-    // Upsert this entry's row into main's manifest in memory, for the link guard only. The save
-    // commits no manifest change; publish performs the upsert on main.
+    // Upsert this entry's row into main's manifest in memory, for the link guard here and for
+    // the publish commit. The save commits no manifest change; publish lands the upsert on main.
     const manifest = await readManifest(token);
     const row = manifestEntryFromFile(concept, { path, raw: markdown });
     const upserted = upsertEntry(manifest, row);
@@ -438,14 +477,14 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     // the target is published.
     const byKey = new Map(upserted.entries.map((e) => [`${e.concept}/${e.id}`, e]));
     const absent: string[] = [];
-    const draft: string[] = [];
+    const draftLinks: string[] = [];
     for (const ref of extractCairnLinks(body)) {
       // A self-link is valid by construction (the upserted manifest holds this very entry), so
       // skip it before classifying. Mirrors inboundLinks's self-exclusion.
       if (ref.concept === concept.id && ref.id === id) continue;
       const target = byKey.get(`${ref.concept}/${ref.id}`);
       if (!target) absent.push(formatCairnToken(ref));
-      else if (target.draft) draft.push(formatCairnToken(ref));
+      else if (target.draft) draftLinks.push(formatCairnToken(ref));
     }
     if (absent.length) {
       return fail(400, { brokenLinks: absent, body });
@@ -462,8 +501,9 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     }
 
     const commitFields = { concept: concept.id, id, editor: editor.email, branch };
+    let branchSha: string;
     try {
-      await commitFiles(
+      branchSha = await commitFiles(
         { ...runtime.backend, branch },
         [{ path, content: markdown }],
         { message: `Update ${concept.label.toLowerCase()}: ${id}`, author: { name: editor.displayName, email: editor.email } },
@@ -474,53 +514,64 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       commitFailure(commitFields, err, `/admin/${concept.id}/${id}`,
         'This file changed since you opened it. Reload and reapply your edits.', { query: suffix });
     }
-    const savedQuery = draft.length ? `saved=1&drafts=${encodeURIComponent(draft.join(','))}` : 'saved=1';
+    return { path, markdown, branch, branchSha, manifest: upserted, draftLinks, token };
+  }
+
+  /** Save an edit: validate, then commit to the entry's pending branch with the session editor
+   *  as author. Main and its manifest stay untouched until publish. Fails safe on 409. */
+  async function saveAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
+    const editor = sessionOf(event);
+    const concept = conceptOf(runtime, event.params);
+    const id = event.params.id ?? '';
+    // Confine the commit path to the concept dir, built from a validated id (the App token can
+    // write anywhere in the repo). Reject before touching GitHub.
+    if (!isValidId(id)) throw error(400, 'Invalid entry id');
+    const held = await saveToBranch(event, editor, concept, id);
+    if (!('branchSha' in held)) return held;
+    const savedQuery = held.draftLinks.length
+      ? `saved=1&drafts=${encodeURIComponent(held.draftLinks.join(','))}`
+      : 'saved=1';
     throw redirect(303, `/admin/${concept.id}/${id}?${savedQuery}`);
   }
 
-  /** Publish an entry's pending edits: copy the branch's entry file to main with the manifest row
-   *  upserted, in one atomic commit, then delete the branch. A copy, never a merge, so a stale
-   *  branch left by a crash between the commit and the delete re-publishes idempotently. */
-  async function publishAction(event: ContentEvent): Promise<never> {
+  /** Publish an entry: validate and hold the posted form exactly like save (the branch gets the
+   *  same commit), then copy that markdown to main with the manifest row upserted in one atomic
+   *  commit. Publish-what-you-see: the posted form is the published content, so text typed
+   *  after the last save goes live too, and publish works regardless of prior branch state.
+   *  The branch is deleted only when its head still matches the commit this action made; a
+   *  concurrent save moved it, so the entry stays pending and the next publish picks it up. */
+  async function publishAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
     const editor = sessionOf(event);
     const concept = conceptOf(runtime, event.params);
     const id = event.params.id ?? '';
     if (!isValidId(id)) throw error(400, 'Invalid entry id');
-    const path = `${concept.dir}/${filenameFromId(id)}`;
-    const token = await mintToken(event.platform?.env ?? {});
-
-    const bounce = (msg: string): never => {
-      throw redirect(303, `/admin/${concept.id}/${id}?error=${encodeURIComponent(msg)}`);
-    };
-    const branch = pendingBranch(concept.id, id);
-    if ((await branchHeadSha(runtime.backend, branch, token)) === null) {
-      return bounce('Nothing to publish. This entry has no unpublished edits.');
-    }
-    const raw = await readRaw({ ...runtime.backend, branch }, path, token);
-    if (raw === null) return bounce('Could not read the unpublished edits from GitHub.');
-
-    // The row derives from the branch file, so publish lands the content and its index entry together.
-    const manifest = await readManifest(token);
-    const next = upsertEntry(manifest, manifestEntryFromFile(concept, { path, raw }));
+    const held = await saveToBranch(event, editor, concept, id);
+    if (!('branchSha' in held)) return held;
+    const { path, markdown, branch, branchSha, manifest, token } = held;
 
     const commitFields = { concept: concept.id, id, editor: editor.email };
     try {
       await commitFiles(
         runtime.backend,
         [
-          { path, content: raw },
-          { path: runtime.manifestPath, content: serializeManifest(next) },
+          { path, content: markdown },
+          { path: runtime.manifestPath, content: serializeManifest(manifest) },
         ],
         { message: `Publish ${concept.label.toLowerCase()}: ${id}`, author: { name: editor.displayName, email: editor.email } },
         token,
       );
       log.info('entry.published', { ...commitFields, batch: false });
     } catch (err) {
+      // The branch already holds the just-committed edits, so a conflict here loses nothing.
       commitFailure(commitFields, err, `/admin/${concept.id}/${id}`,
-        'This file changed since you opened it. Reload and reapply your edits.', { event: 'publish.failed' });
+        'Your edits are saved. Reload and publish again.', { event: 'publish.failed' });
     }
-    // Only after the main commit lands: a failure above keeps the branch and its edits.
-    await deleteBranch(runtime.backend, branch, token);
+    // Only after the main commit lands, and only when the branch head is still the commit this
+    // action made: a head that moved is a concurrent save, and deleting it would destroy edits.
+    // No log event for the skip; the pending badge is the surface.
+    if ((await branchHeadSha(runtime.backend, branch, token)) === branchSha) {
+      await deleteBranch(runtime.backend, branch, token);
+    }
     throw redirect(303, `/admin/${concept.id}/${id}?published=1`);
   }
 
@@ -535,31 +586,37 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     const token = await mintToken(event.platform?.env ?? {});
     const listPage = `/admin/${first.id}`;
 
-    // Each cairn/ ref names a pending entry. Skip a malformed name, an id that fails the slug
-    // rule (the entry path is built from it, so this is the path confinement), and a concept
-    // this site does not configure, rather than failing the whole batch on one stray ref.
+    // Each cairn/ ref names a pending entry; the shared predicate skips a stray ref rather
+    // than failing the whole batch on it.
     const names = await listBranches(runtime.backend, PENDING_PREFIX, token);
-    const pending: { concept: ConceptDescriptor; id: string; branch: string; path: string }[] = [];
-    for (const name of names) {
-      const ref = parsePendingBranch(name);
-      if (!ref || !isValidId(ref.id)) continue;
-      const concept = findConcept(runtime.concepts, ref.concept);
-      if (!concept) continue;
-      pending.push({ concept, id: ref.id, branch: name, path: `${concept.dir}/${filenameFromId(ref.id)}` });
-    }
+    const pending = names.flatMap((name) => {
+      const entry = pendingEntryOf(name);
+      return entry ? [{ ...entry, branch: name, path: `${entry.concept.dir}/${filenameFromId(entry.id)}` }] : [];
+    });
 
-    // Read each branch's entry file, and main's manifest once; fold every row in, so the batch
-    // lands content and index together, the same shape as a single publish. A ghost ref whose
-    // entry file is missing is skipped (discard can clean it up); it carries nothing to publish.
+    // Read every branch in parallel, capturing each head sha BEFORE its file read: the sha
+    // guards the post-publish delete, and probing first fails safe (a save landing between the
+    // probe and the read moves the head past the capture, so the delete is skipped and the
+    // entry stays pending). A ghost ref whose entry file is missing is skipped (discard can
+    // clean it up); it carries nothing to publish.
+    const reads = await Promise.all(
+      pending.map(async (entry) => {
+        const sha = await branchHeadSha(runtime.backend, entry.branch, token);
+        const raw = await readRaw({ ...runtime.backend, branch: entry.branch }, entry.path, token);
+        return { ...entry, sha, raw };
+      }),
+    );
+
+    // Fold main's manifest once over every row, so the batch lands content and index together,
+    // the same shape as a single publish.
     let next = await readManifest(token);
     const changes: FileChange[] = [];
-    const published: { concept: string; id: string; branch: string }[] = [];
-    for (const entry of pending) {
-      const raw = await readRaw({ ...runtime.backend, branch: entry.branch }, entry.path, token);
-      if (raw === null) continue;
-      changes.push({ path: entry.path, content: raw });
-      next = upsertEntry(next, manifestEntryFromFile(entry.concept, { path: entry.path, raw }));
-      published.push({ concept: entry.concept.id, id: entry.id, branch: entry.branch });
+    const published: { concept: string; id: string; branch: string; sha: string }[] = [];
+    for (const entry of reads) {
+      if (entry.raw === null || entry.sha === null) continue;
+      changes.push({ path: entry.path, content: entry.raw });
+      next = upsertEntry(next, manifestEntryFromFile(entry.concept, { path: entry.path, raw: entry.raw }));
+      published.push({ concept: entry.concept.id, id: entry.id, branch: entry.branch, sha: entry.sha });
     }
     if (published.length === 0) throw redirect(303, listPage);
     changes.push({ path: runtime.manifestPath, content: serializeManifest(next) });
@@ -585,12 +642,17 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       }
       throw err;
     }
-    // Only after the main commit lands: a failure above keeps every branch and its edits. A
-    // failed delete here leaves an idempotent straggler (re-publishing copies the same content),
-    // so one failure does not abort the remaining deletes.
+    // Only after the main commit lands: a failure above keeps every branch and its edits. Each
+    // branch deletes only when its head still matches the captured sha; a moved head is a
+    // concurrent save, so the entry stays pending and the next publish picks it up (no log
+    // event for the skip; the pending badge is the surface). A failed delete leaves an
+    // idempotent straggler (re-publishing copies the same content), so one failure does not
+    // abort the remaining deletes.
     for (const entry of published) {
       try {
-        await deleteBranch(runtime.backend, entry.branch, token);
+        if ((await branchHeadSha(runtime.backend, entry.branch, token)) === entry.sha) {
+          await deleteBranch(runtime.backend, entry.branch, token);
+        }
       } catch {
         // The entry is live; the straggler just shows as still pending until the next publish.
       }
@@ -637,13 +699,12 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       return fail(409, { inboundLinks: inbound, id });
     }
 
-    // Cascade to the pending branch before the main commit (tolerant of absence): the entry's
-    // unpublished edits go with it. When the entry was never published (absent from main), the
-    // branch delete is the whole operation; main has nothing to commit, so the only honest log
-    // record is the discard of the pending edits.
+    // When the entry was never published (absent from main), the branch delete is the whole
+    // operation; main has nothing to commit, so the only honest log record is the discard of
+    // the pending edits.
     const onMain = await readRaw(runtime.backend, path, token);
-    await deleteBranch(runtime.backend, pendingBranch(concept.id, id), token);
     if (onMain === null) {
+      await deleteBranch(runtime.backend, pendingBranch(concept.id, id), token);
       log.info('entry.discarded', { concept: concept.id, id, editor: editor.email });
       throw redirect(303, `/admin/${concept.id}`);
     }
@@ -664,6 +725,15 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     } catch (err) {
       commitFailure(commitFields, err, `/admin/${concept.id}/${id}`,
         'This file changed since you opened it. Reload and try again.');
+    }
+    // Cascade to the pending branch only after the removal lands on main, so a commit conflict
+    // keeps the unpublished edits. A straggler ref left by a failure here is idempotent and
+    // recoverable (it lists as a never-published row a discard can clean up), matching
+    // publish's posture, so the entry's deletion still completes.
+    try {
+      await deleteBranch(runtime.backend, pendingBranch(concept.id, id), token);
+    } catch {
+      // The entry is gone from main; the straggler shows as a pending row until discarded.
     }
     throw redirect(303, `/admin/${concept.id}`);
   }

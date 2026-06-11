@@ -38,6 +38,29 @@ describe('GithubDouble', () => {
     expect(gh.read('main', 'src/content/posts/a.md')).toBeNull();
   });
 
+  it('paginates matching-refs at 30 by default with a Link rel=next header', async () => {
+    const gh = new GithubDouble({ main: {} });
+    for (let i = 0; i < 31; i++) gh.createBranch(`cairn/posts/p${String(i).padStart(2, '0')}`, 'main');
+    gh.install();
+    const first = await fetch('https://api.github.com/repos/o/r/git/matching-refs/heads/cairn/');
+    const firstRefs = (await first.json()) as { ref: string }[];
+    expect(firstRefs).toHaveLength(30);
+    const next = first.headers.get('Link')?.match(/<([^>]+)>;\s*rel="next"/)?.[1];
+    expect(next).toBeTruthy();
+    const second = await fetch(next!);
+    expect(((await second.json()) as { ref: string }[])).toHaveLength(1);
+    expect(second.headers.get('Link')).toBeNull();
+  });
+
+  it('moves a branch head through the out-of-band commit hook', async () => {
+    const gh = new GithubDouble({ main: { 'a.md': 'A' } });
+    gh.createBranch('cairn/posts/a', 'main');
+    const before = gh.headSha('cairn/posts/a');
+    gh.commit('cairn/posts/a', 'a.md', 'newer');
+    expect(gh.headSha('cairn/posts/a')).not.toBe(before);
+    expect(gh.read('cairn/posts/a', 'a.md')).toBe('newer');
+  });
+
   it('creates, lists, and deletes refs through the raw API routes', async () => {
     const gh = new GithubDouble({ main: { 'x.md': 'x' } });
     gh.install();

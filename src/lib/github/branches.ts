@@ -23,8 +23,13 @@ function gitUrl(repo: RepoRef, suffix: string): string {
 /** The head commit sha of a branch, or null when the branch does not exist. */
 export async function branchHeadSha(repo: RepoRef, branch: string, token: string): Promise<string | null> {
   const res = await fetch(gitUrl(repo, `ref/heads/${encodeURIComponent(branch)}`), { headers: headers(token) });
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`GitHub ref ${branch} failed: ${res.status}`);
+  // The 404 probe is a hot path (every editLoad); drain the body so the connection frees
+  // immediately instead of pinning one of workerd's six until GC.
+  if (res.status === 404) {
+    await res.body?.cancel();
+    return null;
+  }
+  if (!res.ok) throw new Error(`GitHub ref ${branch} failed: ${res.status} ${await res.text()}`);
   return ((await res.json()) as { object: { sha: string } }).object.sha;
 }
 
@@ -36,6 +41,7 @@ export async function createBranch(repo: RepoRef, branch: string, fromSha: strin
     body: JSON.stringify({ ref: `refs/heads/${branch}`, sha: fromSha }),
   });
   if (!res.ok) throw new Error(`GitHub branch create ${branch} failed: ${res.status} ${await res.text()}`);
+  await res.body?.cancel();
 }
 
 /** Delete `branch`. A 404 (already gone) is success: the desired state holds. */
@@ -44,13 +50,34 @@ export async function deleteBranch(repo: RepoRef, branch: string, token: string)
     method: 'DELETE',
     headers: headers(token),
   });
-  if (!res.ok && res.status !== 404) throw new Error(`GitHub branch delete ${branch} failed: ${res.status}`);
+  if (!res.ok && res.status !== 404) {
+    throw new Error(`GitHub branch delete ${branch} failed: ${res.status} ${await res.text()}`);
+  }
+  await res.body?.cancel();
 }
 
-/** Branch names under `prefix`, sorted. The matching-refs API needs no pagination at cairn's scale. */
+/** The rel="next" URL from a GitHub Link header, or null on the last page. */
+function nextPageUrl(link: string | null): string | null {
+  if (!link) return null;
+  for (const part of link.split(',')) {
+    const match = part.match(/<([^>]+)>\s*;\s*rel="next"/);
+    if (match) return match[1];
+  }
+  return null;
+}
+
+/** Branch names under `prefix`, sorted. The matching-refs API paginates at 30 by default, so a
+ *  site with 31+ pending entries would silently truncate; request the 100-per-page maximum and
+ *  follow the Link rel="next" chain until exhausted. */
 export async function listBranches(repo: RepoRef, prefix: string, token: string): Promise<string[]> {
-  const res = await fetch(gitUrl(repo, `matching-refs/heads/${prefix}`), { headers: headers(token) });
-  if (!res.ok) throw new Error(`GitHub matching-refs ${prefix} failed: ${res.status}`);
-  const refs = (await res.json()) as { ref: string }[];
-  return refs.map((r) => r.ref.replace(/^refs\/heads\//, ''));
+  const names: string[] = [];
+  let url: string | null = `${gitUrl(repo, `matching-refs/heads/${prefix}`)}?per_page=100`;
+  while (url) {
+    const res: Response = await fetch(url, { headers: headers(token) });
+    if (!res.ok) throw new Error(`GitHub matching-refs ${prefix} failed: ${res.status} ${await res.text()}`);
+    const refs = (await res.json()) as { ref: string }[];
+    names.push(...refs.map((r) => r.ref.replace(/^refs\/heads\//, '')));
+    url = nextPageUrl(res.headers.get('Link'));
+  }
+  return names;
 }

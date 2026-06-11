@@ -1,6 +1,7 @@
-// The publish and discard actions against the stateful GitHub double: publish copies the
-// pending branch's entry file to main with the manifest row upserted in one commit and then
-// deletes the branch; discard deletes the branch and routes by the entry's main existence.
+// The publish and discard actions against the stateful GitHub double: publish validates and
+// holds the posted form like save (a branch commit), copies that same markdown to main with
+// the manifest row upserted in one commit, and deletes the branch only when its head still
+// matches the commit the action made; discard deletes the branch and routes by main existence.
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
@@ -50,11 +51,11 @@ function multiRuntime(): CairnRuntime {
 
 const deps = { mintToken: () => Promise.resolve('test-token') };
 
-function actionEvent(id: string) {
+function actionEvent(id: string, form: Record<string, string> = {}) {
   return {
     url: new URL(`https://t.example/admin/posts/${id}`),
     params: { concept: 'posts', id },
-    request: new Request(`https://t.example/admin/posts/${id}`, { method: 'POST', body: new URLSearchParams() }),
+    request: new Request(`https://t.example/admin/posts/${id}`, { method: 'POST', body: new URLSearchParams(form) }),
     locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
   };
@@ -88,10 +89,26 @@ function failMainRefPatch(): void {
   });
 }
 
+/** Wrap the installed double so the first main ref PATCH (the publish commit landing) first
+ *  injects a concurrent save onto `branch`, moving its head after publish captured its sha. */
+function injectSaveDuringMainPatch(gh: GithubDouble, branch: string, path: string, content: string): void {
+  const double = globalThis.fetch;
+  let injected = false;
+  vi.stubGlobal('fetch', async (input: string | URL | Request, init?: RequestInit) => {
+    const url = String(input instanceof Request ? input.url : input);
+    const method = (init?.method ?? 'GET').toUpperCase();
+    if (!injected && method === 'PATCH' && url.includes('/git/refs/heads/main')) {
+      injected = true;
+      gh.commit(branch, path, content);
+    }
+    return double(input, init);
+  });
+}
+
 afterEach(() => vi.restoreAllMocks());
 
 describe('publishAction', () => {
-  it('lands the entry file and the upserted manifest row on main in one commit and deletes the branch', async () => {
+  it('publishes the posted form, not the stale branch copy, in one main commit, and deletes the branch', async () => {
     const gh = new GithubDouble({
       main: {
         [ENTRY_PATH]: '---\ntitle: Old\ndate: 2026-05-01\n---\nlive body',
@@ -105,11 +122,16 @@ describe('publishAction', () => {
     gh.install();
     const routes = createContentRoutes(runtime(), deps);
 
-    const location = await redirectedTo(routes.publishAction(actionEvent('2026-05-01-hi') as never));
+    // The form carries text typed after the last save: publish-what-you-see.
+    const location = await redirectedTo(
+      routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'typed after the save' }) as never),
+    );
     expect(location).toBe('/admin/posts/2026-05-01-hi?published=1');
 
-    // Main carries the branch's content and the upserted row, applied by exactly one commit.
-    expect(gh.read('main', ENTRY_PATH)).toBe(PENDING_MD);
+    // Main carries the posted content (never the branch's last-saved copy) and the upserted
+    // row, applied by exactly one main commit; the branch got the same content first.
+    expect(gh.read('main', ENTRY_PATH)).toContain('typed after the save');
+    expect(gh.read('main', ENTRY_PATH)).not.toContain('pending body');
     const manifest = parseManifest(gh.read('main', MANIFEST_PATH) ?? '');
     const row = manifest.entries.find((e) => e.concept === 'posts' && e.id === '2026-05-01-hi');
     expect(row?.title).toBe('Hi');
@@ -127,21 +149,73 @@ describe('publishAction', () => {
     gh.install();
     const routes = createContentRoutes(runtime(), deps);
 
-    await redirectedTo(routes.publishAction(actionEvent('2026-05-01-hi') as never));
+    await redirectedTo(routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'pending body' }) as never));
 
-    expect(gh.read('main', ENTRY_PATH)).toBe(PENDING_MD);
+    expect(gh.read('main', ENTRY_PATH)).toContain('pending body');
     const manifest = parseManifest(gh.read('main', MANIFEST_PATH) ?? '');
     expect(manifest.entries.map((e) => e.id)).toEqual(['2026-05-01-hi']);
   });
 
-  it('redirects back with an error and commits nothing when no pending branch exists', async () => {
+  it('saves then publishes when no pending branch exists yet', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
     const routes = createContentRoutes(runtime(), deps);
 
-    const location = await redirectedTo(routes.publishAction(actionEvent('2026-05-01-hi') as never));
-    expect(location).toMatch(/^\/admin\/posts\/2026-05-01-hi\?error=/);
+    const location = await redirectedTo(
+      routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'straight to publish' }) as never),
+    );
+    expect(location).toBe('/admin/posts/2026-05-01-hi?published=1');
+    expect(gh.read('main', ENTRY_PATH)).toContain('straight to publish');
+    const manifest = parseManifest(gh.read('main', MANIFEST_PATH) ?? '');
+    expect(manifest.entries.map((e) => e.id)).toEqual(['2026-05-01-hi']);
+    // The lazily cut branch is consumed by the publish.
+    expect([...gh.branches.keys()]).toEqual(['main']);
+  });
+
+  it('bounces invalid frontmatter like save, touching nothing', async () => {
+    const gh = new GithubDouble({ main: {} });
+    gh.install();
+    const rt = runtime();
+    rt.concepts[0].validate = () => ({ ok: false as const, errors: { title: 'Title is required' } });
+    const routes = createContentRoutes(rt, deps);
+
+    const location = await redirectedTo(routes.publishAction(actionEvent('2026-05-01-hi', { body: 'b' }) as never));
+    expect(location).toMatch(/error=.*Title/);
     expect(gh.calls.filter((c) => c.method === 'PATCH')).toHaveLength(0);
+  });
+
+  it('returns the broken-link fail like save, with no commit anywhere', async () => {
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
+    gh.install();
+    const routes = createContentRoutes(runtime(), deps);
+
+    const result = (await routes.publishAction(
+      actionEvent('2026-05-01-hi', { title: 'Hi', body: 'see [gone](cairn:pages/gone)' }) as never,
+    )) as unknown as { status: number; data: { brokenLinks: string[] } };
+    expect(result.status).toBe(400);
+    expect(result.data.brokenLinks).toContain('cairn:pages/gone');
+    expect(gh.calls.filter((c) => c.method === 'PATCH')).toHaveLength(0);
+    expect([...gh.branches.keys()]).toEqual(['main']);
+  });
+
+  it('leaves the branch alone when a concurrent save moves its head mid-publish', async () => {
+    const gh = new GithubDouble({
+      main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) },
+      [BRANCH]: { [ENTRY_PATH]: PENDING_MD },
+    });
+    gh.install();
+    injectSaveDuringMainPatch(gh, BRANCH, ENTRY_PATH, '---\ntitle: Newer\n---\nsecond-tab save');
+    const routes = createContentRoutes(runtime(), deps);
+
+    const location = await redirectedTo(
+      routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'first-tab text' }) as never),
+    );
+    expect(location).toBe('/admin/posts/2026-05-01-hi?published=1');
+
+    // Main carries the publish; the branch survives with the concurrent save, still pending.
+    expect(gh.read('main', ENTRY_PATH)).toContain('first-tab text');
+    expect(gh.branches.has(BRANCH)).toBe(true);
+    expect(gh.read(BRANCH, ENTRY_PATH)).toContain('second-tab save');
   });
 
   it('logs entry.published with batch: false on success', async () => {
@@ -153,7 +227,7 @@ describe('publishAction', () => {
     gh.install();
     const routes = createContentRoutes(runtime(), deps);
 
-    await redirectedTo(routes.publishAction(actionEvent('2026-05-01-hi') as never));
+    await redirectedTo(routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'b' }) as never));
 
     const record = infoSpy.mock.calls
       .map((c) => c[0] as { event?: string; concept?: string; id?: string; editor?: string; batch?: boolean })
@@ -165,7 +239,7 @@ describe('publishAction', () => {
     expect(record?.batch).toBe(false);
   });
 
-  it('logs publish.failed on a commit conflict, keeps the branch, and redirects with an error', async () => {
+  it('logs publish.failed on a main-commit conflict, keeps the just-saved branch, and bounces', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const gh = new GithubDouble({
       main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) },
@@ -175,8 +249,11 @@ describe('publishAction', () => {
     failMainRefPatch();
     const routes = createContentRoutes(runtime(), deps);
 
-    const location = await redirectedTo(routes.publishAction(actionEvent('2026-05-01-hi') as never));
+    const location = await redirectedTo(
+      routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'typed text' }) as never),
+    );
     expect(location).toMatch(/^\/admin\/posts\/2026-05-01-hi\?error=/);
+    expect(decodeURIComponent(location)).toContain('Your edits are saved. Reload and publish again.');
 
     const record = warnSpy.mock.calls
       .map((c) => c[0] as { event?: string; reason?: string; editor?: string })
@@ -184,8 +261,10 @@ describe('publishAction', () => {
     expect(record?.reason).toBe('conflict');
     expect(record?.editor).toBe('ed@t');
 
-    // The branch deletes only after the main commit lands, so a failure keeps the edits.
+    // The branch deletes only after the main commit lands, and the save phase already committed
+    // the posted text there, so a conflict loses nothing.
     expect(gh.branches.has(BRANCH)).toBe(true);
+    expect(gh.read(BRANCH, ENTRY_PATH)).toContain('typed text');
   });
 });
 
@@ -272,6 +351,29 @@ describe('publishAllAction', () => {
     // The unconfigured ref is left alone for a future discard, not consumed.
     expect(gh.branches.has('cairn/widgets/x')).toBe(true);
     expect(gh.branches.has(BRANCH)).toBe(false);
+  });
+
+  it('publishes the batch but leaves a branch whose head moved mid-publish', async () => {
+    const gh = new GithubDouble({
+      main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) },
+      [BRANCH]: { [ENTRY_PATH]: PENDING_MD },
+      [PAGE_BRANCH]: { [PAGE_PATH]: PAGE_MD },
+    });
+    gh.install();
+    injectSaveDuringMainPatch(gh, PAGE_BRANCH, PAGE_PATH, '---\ntitle: Mid-publish\n---\nnewer save');
+    const routes = createContentRoutes(multiRuntime(), deps);
+
+    const location = await redirectedTo(routes.publishAllAction(listActionEvent() as never));
+    expect(location).toBe('/admin/posts?publishedAll=2');
+
+    // Both entries went live with the content read at publish time.
+    expect(gh.read('main', ENTRY_PATH)).toBe(PENDING_MD);
+    expect(gh.read('main', PAGE_PATH)).toBe(PAGE_MD);
+
+    // The unmoved branch is consumed; the moved one stays pending with the newer save.
+    expect(gh.branches.has(BRANCH)).toBe(false);
+    expect(gh.branches.has(PAGE_BRANCH)).toBe(true);
+    expect(gh.read(PAGE_BRANCH, PAGE_PATH)).toContain('newer save');
   });
 
   it('redirects back with no commit when nothing is pending', async () => {

@@ -154,6 +154,39 @@ describe('deleteAction with a pending branch', () => {
     expect(committed.entries.find((e) => e.id === '2026-05-hi')).toBeUndefined();
   });
 
+  it('keeps the pending branch when the main removal conflicts, so the edits survive', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const manifest = serializeManifest({
+      version: 1,
+      entries: [{ id: '2026-05-hi', concept: 'posts', title: 'Hi', permalink: '/p/hi', draft: false, links: [] }],
+    });
+    const gh = new GithubDouble({
+      main: { [ENTRY_PATH]: '---\ntitle: Hi\n---\nlive', [MANIFEST_PATH]: manifest },
+    });
+    gh.createBranch('cairn/posts/2026-05-hi', 'main');
+    gh.install();
+    // Main's ref update fails the way GitHub signals a stale head; everything else stays on the
+    // double, so the branch cascade (which runs only after the main commit) never fires.
+    const double = globalThis.fetch;
+    vi.stubGlobal('fetch', async (input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if ((init?.method ?? 'GET').toUpperCase() === 'PATCH' && url.includes('/git/refs/heads/main')) {
+        return new Response('{"message":"Update is not a fast forward"}', { status: 422 });
+      }
+      return double(input, init);
+    });
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })), deps);
+    try {
+      await routes.deleteAction(deleteEvent('2026-05-hi') as never);
+      throw new Error('should have redirected');
+    } catch (e) {
+      expect((e as { location: string }).location).toMatch(/error=.*changed%20since/i);
+    }
+    // The entry survives on main and the pending edits survive on their branch.
+    expect(gh.branches.has('cairn/posts/2026-05-hi')).toBe(true);
+    expect(gh.read('main', ENTRY_PATH)).toContain('live');
+  });
+
   it('deletes a never-published entry by removing only its branch, with no main commit', async () => {
     const empty = serializeManifest({ version: 1, entries: [] });
     const gh = new GithubDouble({

@@ -83,6 +83,17 @@ describe('layoutLoad', () => {
     ]);
   });
 
+  it('filters refs with an invalid id or an unconfigured concept out of pendingEntries', async () => {
+    const gh = new GithubDouble({ main: {} });
+    gh.createBranch('cairn/posts/2026-05-hello', 'main');
+    gh.createBranch('cairn/widgets/x', 'main'); // concept this site does not configure
+    gh.createBranch('cairn/posts/a%2fb', 'main'); // percent-escaped id fails the slug rule
+    gh.install();
+    const routes = createContentRoutes(runtime(), { mintToken: async () => 'tok' });
+    const data = await routes.layoutLoad(event('/admin/posts', 'owner') as never);
+    expect(data.pendingEntries).toEqual([{ concept: 'posts', id: '2026-05-hello' }]);
+  });
+
   it('degrades pendingEntries to null when the token mint fails, keeping the rest', async () => {
     const routes = createContentRoutes(runtime(), {
       mintToken: async () => {

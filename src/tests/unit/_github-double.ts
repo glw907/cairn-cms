@@ -46,6 +46,15 @@ export class GithubDouble {
     this.shas.set(name, this.nextSha());
   }
 
+  /** Write a file straight onto a branch and move its head, like a commit landing out of band.
+   *  Tests use it to simulate a concurrent save racing a publish. */
+  commit(branch: string, path: string, content: string): void {
+    const tree = this.branches.get(branch);
+    if (!tree) throw new Error(`github-double: no branch ${branch}`);
+    tree[path] = content;
+    this.shas.set(branch, this.nextSha());
+  }
+
   install(): void {
     vi.stubGlobal('fetch', vi.fn(this.handle.bind(this)));
   }
@@ -85,15 +94,25 @@ export class GithubDouble {
       return json({ object: { sha: this.headSha(branch) } });
     }
 
-    // Matching refs: GET /repos/o/r/git/matching-refs/heads/<prefix>
+    // Matching refs: GET /repos/o/r/git/matching-refs/heads/<prefix>. Paginates like GitHub:
+    // 30 per page by default, `per_page` honored up to 100, a `Link: rel="next"` header while
+    // more pages remain.
     const matching = path.match(/^\/repos\/[^/]+\/[^/]+\/git\/matching-refs\/heads\/(.*)$/);
     if (matching && method === 'GET') {
       const prefix = decodeURIComponent(matching[1]);
-      const refs = [...this.branches.keys()]
-        .filter((b) => b.startsWith(prefix))
-        .sort()
-        .map((b) => ({ ref: `refs/heads/${b}`, object: { sha: this.headSha(b) } }));
-      return json(refs);
+      const all = [...this.branches.keys()].filter((b) => b.startsWith(prefix)).sort();
+      const perPage = Math.min(Number(u.searchParams.get('per_page') ?? '30') || 30, 100);
+      const page = Math.max(Number(u.searchParams.get('page') ?? '1') || 1, 1);
+      const slice = all.slice((page - 1) * perPage, page * perPage);
+      const refs = slice.map((b) => ({ ref: `refs/heads/${b}`, object: { sha: this.headSha(b) } }));
+      const headers: Record<string, string> = {};
+      if (page * perPage < all.length) {
+        const next = new URL(u);
+        next.searchParams.set('per_page', String(perPage));
+        next.searchParams.set('page', String(page + 1));
+        headers.Link = `<${next}>; rel="next"`;
+      }
+      return new Response(JSON.stringify(refs), { status: 200, headers });
     }
 
     // Ref create: POST /repos/o/r/git/refs  { ref: 'refs/heads/x', sha }

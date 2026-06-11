@@ -4,7 +4,7 @@ import EditPage from '../../lib/components/EditPage.svelte';
 import type { FrontmatterField } from '../../lib/content/types.js';
 import type { LinkTarget } from '../../lib/content/manifest.js';
 import { createRenderer } from '../../lib/render/pipeline.js';
-import { defineRegistry } from '../../lib/render/registry.js';
+import { defineRegistry, type ComponentDef } from '../../lib/render/registry.js';
 
 function postProps(over = {}) {
   return {
@@ -386,5 +386,84 @@ describe('EditPage', () => {
     await btn.click();
     const btnAfter = screen.getByRole('button', { name: /hide preview/i });
     await expect.element(btnAfter).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('hosts the toolbar inside the editor card with the editor surface', async () => {
+    const screen = render(EditPage, postProps());
+    const toolbar = screen.container.querySelector('[role="toolbar"]');
+    expect(toolbar).not.toBeNull();
+    const card = toolbar!.closest('.rounded-box');
+    expect(card).not.toBeNull();
+    expect(card!.querySelector('input[name="body"]')).not.toBeNull();
+  });
+
+  it('offers a disabled Image placeholder in the toolbar', async () => {
+    const screen = render(EditPage, postProps());
+    const image = screen.container.querySelector<HTMLButtonElement>('button[aria-label="Image (coming soon)"]');
+    expect(image).not.toBeNull();
+    expect(image!.disabled).toBe(true);
+    expect(image!.closest('[role="toolbar"]')).not.toBeNull();
+  });
+
+  it('moves the link and component-insert triggers into the toolbar', async () => {
+    const registry = defineRegistry({
+      components: [
+        {
+          name: 'rule',
+          label: 'Rule',
+          description: 'A divider.',
+          insertTemplate: ':::rule\n:::',
+          build: (n: unknown) => n,
+        } as unknown as ComponentDef,
+      ],
+    });
+    const screen = render(EditPage, { ...postProps(), registry });
+    const toolbar = screen.container.querySelector('[role="toolbar"]')!;
+    const link = screen.container.querySelector('button[aria-label="Link to page"]');
+    const insert = screen.container.querySelector('button[aria-label="Insert component"]');
+    expect(link).not.toBeNull();
+    expect(insert).not.toBeNull();
+    expect(toolbar.contains(link)).toBe(true);
+    expect(toolbar.contains(insert)).toBe(true);
+    const header = screen.container.querySelector('header')!;
+    expect(header.querySelector('button[aria-label="Link to page"]')).toBeNull();
+    expect(header.querySelector('button[aria-label="Insert component"]')).toBeNull();
+  });
+
+  it('switching the toolbar tab to Preview shows the preview pane', async () => {
+    const props = { ...postProps({ body: 'Tab body' }), render: (md: string) => `<p>${md}</p>` };
+    const screen = render(EditPage, props);
+    await screen.getByRole('tab', { name: 'Preview' }).click();
+    await expect
+      .poll(() => screen.container.querySelector('section[aria-label="Preview"]')?.innerHTML ?? '')
+      .toContain('Tab body');
+    await expect.element(screen.getByRole('tab', { name: 'Preview' })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('wraps bold through the registered format on Ctrl+B inside the editor card', async () => {
+    // The keydown is dispatched on the editor card with an empty selection at the doc start, so the
+    // registered bold transform inserts an empty `****` wrap there. Asserting that marker in the
+    // hidden body input proves the whole seam (card keydown -> format state -> applyFormat ->
+    // CodeMirror dispatch -> hidden-input mirror) without simulating a CodeMirror selection.
+    const screen = render(EditPage, postProps({ body: 'plain prose' }));
+    await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+    const card = screen.container.querySelector('[role="toolbar"]')!.closest('.rounded-box')!;
+    const event = new KeyboardEvent('keydown', { key: 'b', ctrlKey: true, bubbles: true, cancelable: true });
+    card.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(true);
+    await expect
+      .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
+      .toContain('****');
+  });
+
+  it('opens the link picker on Ctrl+K inside the editor card', async () => {
+    const screen = render(EditPage, postProps());
+    await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+    const card = screen.container.querySelector('[role="toolbar"]')!.closest('.rounded-box')!;
+    const event = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true, cancelable: true });
+    card.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(true);
+    const dialog = screen.container.querySelector<HTMLDialogElement>('dialog[aria-labelledby="cairn-link-dialog-title"]')!;
+    await expect.poll(() => dialog.open).toBe(true);
   });
 });

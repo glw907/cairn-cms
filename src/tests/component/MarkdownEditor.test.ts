@@ -3,6 +3,7 @@ import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
 import MarkdownEditor from '../../lib/components/MarkdownEditor.svelte';
 import { cairnLinkCompletionSource } from '../../lib/components/link-completion.js';
+import type { FormatKind } from '../../lib/components/markdown-format.js';
 import type { LinkTarget } from '../../lib/content/manifest.js';
 
 describe('MarkdownEditor', () => {
@@ -50,6 +51,28 @@ describe('MarkdownEditor', () => {
     await expect
       .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
       .toContain('[About](cairn:pages/about)');
+  });
+
+  it('applies a markdown format through registerFormat and mirrors it', async () => {
+    let format: ((kind: FormatKind) => void) | undefined;
+    const screen = render(MarkdownEditor, {
+      value: 'start',
+      name: 'body',
+      registerFormat: (fn: (kind: FormatKind) => void) => {
+        format = fn;
+      },
+    });
+    await expect.poll(() => typeof format).toBe('function');
+    format!('h2');
+    await expect
+      .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
+      .toBe('## start');
+  });
+
+  it('renders no toolbar of its own; the host strip owns the controls', async () => {
+    const screen = render(MarkdownEditor, { value: 'plain', name: 'body' });
+    await expect.poll(() => screen.container.querySelector('.cm-editor')).not.toBeNull();
+    expect(screen.container.querySelector('[role="toolbar"]')).toBeNull();
   });
 
   it('reflects an external value reassignment into the mounted editor', async () => {

@@ -1,14 +1,14 @@
 <!--
 @component
 The `MarkdownEditor` seam (spec §6, seam 5): a thin wrapper over CodeMirror 6 exposing a bindable
-value and a cursor-insert callback. CodeMirror is client-only, so it mounts after the component does
+value and cursor-edit callbacks. CodeMirror is client-only, so it mounts after the component does
 through a dynamic import; until then a plain textarea carries the value so the form still submits, and
-the hidden field mirrors the value throughout. The edit surface owns its toolbar; the design-accurate
-preview lives in EditPage through the adapter's render. Swapping the editor stays a one-file change.
+the hidden field mirrors the value throughout. The host owns the toolbar and the card chrome, driving
+selection transforms through the registerFormat seam; the design-accurate preview lives in EditPage
+through the adapter's render. Swapping the editor stays a one-file change.
 -->
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import EditorToolbar from './EditorToolbar.svelte';
   import { applyMarkdownFormat, insertInlineLink, type FormatKind } from './markdown-format.js';
 
   interface Props {
@@ -20,12 +20,21 @@ preview lives in EditPage through the adapter's render. Swapping the editor stay
     registerInsert?: (insert: (text: string) => void) => void;
     /** Receives a `(href, title) => void` that inserts an inline link; the link picker calls it. */
     registerInsertLink?: (insert: (href: string, title: string) => void) => void;
+    /** Receives a `(kind) => void` that transforms the current selection; the host's toolbar calls it. */
+    registerFormat?: (format: (kind: FormatKind) => void) => void;
     /** Generic CodeMirror completion sources wired into the editor; the link autocomplete is one. The
      *  type is referenced inline so no static `@codemirror/*` import sits in this client-only file. */
     completionSources?: import('@codemirror/autocomplete').CompletionSource[];
   }
 
-  let { value = $bindable(), name, registerInsert, registerInsertLink, completionSources = [] }: Props = $props();
+  let {
+    value = $bindable(),
+    name,
+    registerInsert,
+    registerInsertLink,
+    registerFormat,
+    completionSources = [],
+  }: Props = $props();
 
   let host = $state<HTMLDivElement | null>(null);
   let mounted = $state(false);
@@ -96,6 +105,7 @@ preview lives in EditPage through the adapter's render. Swapping the editor stay
 
     registerInsert?.(insertAtCursor);
     registerInsertLink?.(insertLink);
+    registerFormat?.(applyFormat);
     mounted = true;
   });
 
@@ -156,10 +166,7 @@ preview lives in EditPage through the adapter's render. Swapping the editor stay
 
 <input type="hidden" {name} {value} />
 
-<div class="border-base-300 overflow-hidden rounded-box border">
-  <EditorToolbar format={applyFormat} />
-  <div bind:this={host}></div>
-  {#if !mounted}
-    <textarea class="textarea min-h-64 w-full font-mono text-sm" bind:value aria-label="Markdown source"></textarea>
-  {/if}
-</div>
+<div bind:this={host}></div>
+{#if !mounted}
+  <textarea class="textarea min-h-64 w-full font-mono text-sm" bind:value aria-label="Markdown source"></textarea>
+{/if}

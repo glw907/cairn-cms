@@ -1,20 +1,72 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
+import { userEvent } from 'vitest/browser';
 import EditorToolbar from '../../lib/components/EditorToolbar.svelte';
 
+function baseProps(over: Record<string, unknown> = {}) {
+  return { format: vi.fn(), mode: 'write' as const, onMode: vi.fn(), ...over };
+}
+
+/** The strip's top-level controls: every enabled button except the More menu's items. */
+function controls(container: HTMLElement): HTMLElement[] {
+  return Array.from(container.querySelectorAll<HTMLElement>('[role="toolbar"] button:not([disabled])')).filter(
+    (el) => !el.closest('.dropdown-content'),
+  );
+}
+
 describe('EditorToolbar', () => {
-  it('renders a labelled button for each format', async () => {
-    const screen = render(EditorToolbar, { format: () => {} });
-    for (const label of ['Bold', 'Italic', 'Heading', 'Link', 'Bulleted list', 'Quote', 'Code']) {
+  it('renders the primary controls with accessible names', async () => {
+    const screen = render(EditorToolbar, baseProps());
+    const labels = ['Bold', 'Italic', 'Heading 2', 'Heading 3', 'Bulleted list', 'Numbered list', 'Quote', 'More formatting'];
+    for (const label of labels) {
       await expect.element(screen.getByRole('button', { name: label })).toBeInTheDocument();
     }
   });
 
-  it('asks the host to apply a format on click', async () => {
-    const calls: string[] = [];
-    const screen = render(EditorToolbar, { format: (k: string) => calls.push(k) });
+  it('asks the host to apply a format on a primary click', async () => {
+    const format = vi.fn();
+    const screen = render(EditorToolbar, baseProps({ format }));
     await screen.getByRole('button', { name: 'Bold' }).click();
-    await screen.getByRole('button', { name: 'Link' }).click();
-    expect(calls).toEqual(['bold', 'link']);
+    await screen.getByRole('button', { name: 'Numbered list' }).click();
+    expect(format.mock.calls).toEqual([['bold'], ['ol']]);
+  });
+
+  it('lists the six secondary formats in the More menu and applies one', async () => {
+    const format = vi.fn();
+    const screen = render(EditorToolbar, baseProps({ format }));
+    for (const label of ['Strikethrough', 'Inline code', 'Code block', 'Table', 'Horizontal rule', 'Task list']) {
+      await expect.element(screen.getByRole('button', { name: label })).toBeInTheDocument();
+    }
+    await screen.getByRole('button', { name: 'Table' }).click();
+    expect(format).toHaveBeenCalledWith('table');
+  });
+
+  it('reflects the mode on the tablist and reports a switch', async () => {
+    const onMode = vi.fn();
+    const screen = render(EditorToolbar, baseProps({ onMode }));
+    await expect.element(screen.getByRole('tab', { name: 'Write' })).toHaveAttribute('aria-selected', 'true');
+    await expect.element(screen.getByRole('tab', { name: 'Preview' })).toHaveAttribute('aria-selected', 'false');
+    await screen.getByRole('tab', { name: 'Preview' }).click();
+    expect(onMode).toHaveBeenCalledWith('preview');
+  });
+
+  it('marks the Preview tab selected when the mode says so', async () => {
+    const screen = render(EditorToolbar, baseProps({ mode: 'preview' }));
+    await expect.element(screen.getByRole('tab', { name: 'Preview' })).toHaveAttribute('aria-selected', 'true');
+    await expect.element(screen.getByRole('tab', { name: 'Write' })).toHaveAttribute('aria-selected', 'false');
+  });
+
+  it('keeps one roving tab stop and moves it with the arrow keys', async () => {
+    const screen = render(EditorToolbar, baseProps());
+    await expect.poll(() => controls(screen.container).filter((el) => el.tabIndex === 0).length).toBe(1);
+    const items = controls(screen.container);
+    expect(items[0].tabIndex).toBe(0);
+    items[0].focus();
+    await userEvent.keyboard('{ArrowRight}');
+    await expect.poll(() => document.activeElement).toBe(controls(screen.container)[1]);
+    await expect.poll(() => controls(screen.container).filter((el) => el.tabIndex === 0).length).toBe(1);
+    expect(controls(screen.container)[1].tabIndex).toBe(0);
+    await userEvent.keyboard('{ArrowLeft}');
+    await expect.poll(() => document.activeElement).toBe(controls(screen.container)[0]);
   });
 });

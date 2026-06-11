@@ -9,12 +9,13 @@ adds a state banner plus Publish (riding the same form via formaction) and Disca
   import { untrack } from 'svelte';
   import CsrfField from './CsrfField.svelte';
   import MarkdownEditor from './MarkdownEditor.svelte';
+  import EditorToolbar from './EditorToolbar.svelte';
   import ComponentInsertDialog from './ComponentInsertDialog.svelte';
   import LinkPicker from './LinkPicker.svelte';
   import DeleteDialog from './DeleteDialog.svelte';
   import RenameDialog from './RenameDialog.svelte';
   import { cairnLinkCompletionSource } from './link-completion.js';
-  import { unwrapCairnLink } from './markdown-format.js';
+  import { unwrapCairnLink, type FormatKind } from './markdown-format.js';
   import type { ComponentRegistry } from '../render/registry.js';
   import type { IconSet } from '../render/glyph.js';
   import type { EditData } from '../sveltekit/content-routes.js';
@@ -62,9 +63,16 @@ adds a state banner plus Publish (riding the same form via formaction) and Disca
   // The discard confirm, on the DeleteDialog pattern: a native <dialog> holding the POST form.
   let discardDialog = $state<HTMLDialogElement | null>(null);
   let showPreview = $state(false);
+  // The toolbar's view state. For now it bridges onto showPreview so the tablist and the legacy
+  // toggle stay consistent; the tabbed-pane rework replaces the preview mechanics outright.
+  let mode = $state<'write' | 'preview'>('write');
   let previewHtml = $state('');
   let insert = $state.raw<(text: string) => void>(() => {});
   let insertLink = $state.raw<(href: string, title: string) => void>(() => {});
+  // The editor's selection transform, registered by MarkdownEditor on mount; a no-op until then.
+  let format = $state.raw<(kind: FormatKind) => void>(() => {});
+  // The link picker instance, for the Ctrl/Cmd+K shortcut. Typed structurally over its export.
+  let linkPicker = $state<{ open: () => void } | null>(null);
 
   // The save guard's broken links, from the blocked action result. The fix unwraps a link in the
   // local body, which the bound editor reconciles, so the author re-saves clean.
@@ -134,12 +142,45 @@ adds a state banner plus Publish (riding the same form via formaction) and Disca
 
   $effect(() => {
     // Restore the per-user preference once, on mount.
-    showPreview = localStorage.getItem(PREVIEW_KEY) === '1';
+    const stored = localStorage.getItem(PREVIEW_KEY) === '1';
+    showPreview = stored;
+    mode = stored ? 'preview' : 'write';
   });
 
-  function togglePreview() {
-    showPreview = !showPreview;
+  function setMode(m: 'write' | 'preview') {
+    mode = m;
+    showPreview = m === 'preview';
     localStorage.setItem(PREVIEW_KEY, showPreview ? '1' : '0');
+  }
+
+  function togglePreview() {
+    setMode(showPreview ? 'write' : 'preview');
+  }
+
+  // The editor card's keyboard shortcuts. Bound to the card so they fire wherever focus sits in the
+  // strip or the surface, without claiming the keys page-wide. The listener attaches
+  // programmatically: it is event delegation, not an interaction affordance, which Svelte's a11y
+  // rule cannot tell apart on a declarative handler.
+  let editorCard = $state<HTMLDivElement | null>(null);
+  $effect(() => {
+    const card = editorCard;
+    if (!card) return;
+    card.addEventListener('keydown', onEditorKeydown);
+    return () => card.removeEventListener('keydown', onEditorKeydown);
+  });
+  function onEditorKeydown(e: KeyboardEvent) {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    const key = e.key.toLowerCase();
+    if (key === 'b') {
+      e.preventDefault();
+      format('bold');
+    } else if (key === 'i') {
+      e.preventDefault();
+      format('italic');
+    } else if (key === 'k') {
+      e.preventDefault();
+      linkPicker?.open();
+    }
   }
 
   // Render the design-accurate preview as the body changes, debounced. The site's render is the
@@ -175,8 +216,6 @@ adds a state banner plus Publish (riding the same form via formaction) and Disca
     <p class="text-xs text-[var(--color-muted)]">{data.label}: {data.id}</p>
   </div>
   <div class="flex items-center gap-2">
-    <ComponentInsertDialog {registry} {insert} {icons} />
-    <LinkPicker linkTargets={data.linkTargets} insert={insertLink} />
     <RenameDialog conceptId={data.conceptId} id={data.id} label={data.label} slug={data.slug} />
     <DeleteDialog conceptId={data.conceptId} id={data.id} label={data.label} inboundLinks={data.inboundLinks} pending={data.pending} />
     <button
@@ -256,12 +295,39 @@ adds a state banner plus Publish (riding the same form via formaction) and Disca
   {#if data.isNew}<input type="hidden" name="new" value="1" />{/if}
 
   <div class="lg:order-1">
-    <div class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 overflow-hidden shadow-[var(--cairn-shadow)]">
+    <!-- The editor card: the toolbar strip and the editing surface share one frame, so the editor
+         reads as a single object. The card carries the formatting shortcuts for everything in it. -->
+    <div
+      bind:this={editorCard}
+      class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 overflow-hidden shadow-[var(--cairn-shadow)]"
+      role="group"
+      aria-label="Editor"
+    >
+      <EditorToolbar {format} {mode} onMode={setMode}>
+        {#snippet insertControls()}
+          <ComponentInsertDialog {registry} {insert} {icons} />
+          <LinkPicker bind:this={linkPicker} linkTargets={data.linkTargets} insert={insertLink} />
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm btn-square"
+            disabled
+            aria-label="Image (coming soon)"
+            title="Image (coming soon)"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+            </svg>
+          </button>
+        {/snippet}
+      </EditorToolbar>
       <MarkdownEditor
         bind:value={body}
         name="body"
         registerInsert={(fn) => (insert = fn)}
         registerInsertLink={(fn) => (insertLink = fn)}
+        registerFormat={(fn) => (format = fn)}
         {completionSources}
       />
     </div>

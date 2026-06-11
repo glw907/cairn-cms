@@ -48,7 +48,8 @@ conventions. The plain-URL link stays the toolbar's link button; this is for an 
       .sort((a, b) => rank(a.concept) - rank(b.concept) || a.heading.localeCompare(b.heading));
   });
 
-  function open() {
+  /** Open the picker programmatically; the edit page's Ctrl/Cmd+K shortcut calls it. */
+  export function open() {
     query = '';
     dialog?.showModal();
   }

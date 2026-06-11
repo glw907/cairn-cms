@@ -254,3 +254,67 @@ Seven small items:
 - **Type consistency.** `DoctorCheck`, `DoctorContext`, and `CheckResult` are defined once in Task 3 and consumed by name in Tasks 4-7; `runDoctor` and `formatReport` signatures match between Tasks 3 and 7. The wrangler reader (Task 4) feeds the D1 check's `authDbId` (Task 5) by the check calling the reader itself through `ctx.readFile`, keeping checks isolated; `contextFromEnv` never reads the wrangler config.
 - **Risk spots flagged to the implementer.** The Cloudflare endpoints must be verified against current docs, never trusted from this plan; the signing module's Node compatibility is asserted, not assumed; the `svelte-package` emission of `dist/doctor/` is verified empirically at Task 7 (the Plan 07 packaging lesson).
 - **Review gate (ritual, not tasks).** `web-auth-security-reviewer` (the doctor handles every credential the engine owns, the report must never print a secret value per the spec's security section, and the new log event's redaction posture); `cloudflare-workers-reviewer` (the API usage, though the doctor runs in Node); `svelte-reviewer` (the Task 10 component changes). The live admin smoke does not apply: no admin-surface behavior changes beyond Task 10's internals, which the component suites and the existing E2E cover.
+
+---
+
+## Post-mortem (2026-06-11, pass complete)
+
+**What was built.** Diagnostics Pass 3 plus the 0.39/0.40 debt batch, eleven plan tasks plus a
+simplifier pass, a review fold-in, and a live-run fix: commits `dce3925..95a7061` on `main`,
+version `0.41.0`. The pass closes the diagnostics initiative: the condition registry grew to
+twelve frozen entries with `docsAnchor`s, the `cairn-doctor` bin runs nine isolated checks
+(local config, Cloudflare API, GitHub App) into one accumulate-all report with per-failure
+remediation from the registry, the readiness checklist guide pins to the registry through the
+new `check:readiness` CI gate, and the `github.unreachable` event covers the admin layout's
+GitHub degrade. The debt batch cleared eleven carry-forwards across the engine and components.
+
+**The doctor proved itself on its first live run.** Run against the ecxc-ski checkout with real
+credentials, it found a real production misconfiguration: the `ecxc.ski` zone, created at the
+2026-06-09 rename, never received Always Use HTTPS or HSTS (the 2026-06-07 hardening reached
+only the old zones). Verified directly against the zone-settings API, fixed in place (HTTPS on,
+HSTS max-age two years with includeSubdomains), and re-verified: 9/9 checks pass. The run also
+surfaced a real DX gap (the site-config check probed only the cwd while sites keep the file at
+`src/lib/site.config.yaml`), fixed as the conventional-locations probe. This is exactly the
+silent-failure class the initiative was built to catch.
+
+**The review gate's keep.** Three reviewers, no Critical. One publish-blocking contract gap:
+`$app/state` (the draftWarning fix) raised the real SvelteKit floor to 2.12 while the peer range
+said `^2`; the fold-in bumps the peer to `^2.12` with a `Consumers must:` changelog line. One
+Important false assurance: the doctor's CSRF check green-lit `checkOrigin: false` alone, which
+without cairn's guard wired means no CSRF at all; the check now requires the pair (an
+uncommented disable AND a cairn-wired hooks file). Minors folded in: clean wrangler parse
+errors (no source-snippet echo), `encodeURIComponent` on the D1 path, 401/403 reported as
+token-scope guidance rather than the product condition, `process.exitCode` over `process.exit`
+(pipe truncation), exact-zone-then-apex resolution, the willUnload comment, and the
+`context.aborted` early return.
+
+**Verification evidence (run first-hand at the tip `95a7061`).** `npm run check` 887 files 0/0.
+`npm test` 148 files / 1146 tests exit 0. `check:reference`/`check:package`/`check:docs`/
+`check:readiness`/`check:prose` all clean. The doctor bin spawns and runs from plain Node
+against a fixture dir (the packaging proof) and 9/9 against the live production site. The live
+admin smoke was satisfied by the component suites plus the existing E2E (Task 10 changed
+component internals only); the doctor's live run is this pass's real-world proof.
+
+**Decisions locked.** Config discovery via `--from`/`CAIRN_FROM` and `--repo`/`GITHUB_REPO`
+(branding lives in the adapter; a CLI cannot evaluate TypeScript), with the site-config file
+probed at conventional locations. The GitHub check stops at reachability. The CSRF check is a
+paired heuristic by design. The kit peer floor is `^2.12`.
+
+**Carry-forwards (recorded, not fixed).**
+1. The doctor has no token-scope condition; a 401/403 carries the truth in the detail string
+   only. Add `cloudflare.token-scope` if it recurs.
+2. The child-zone fallback resolves exact-then-apex; a from-domain deeper than one zone level
+   (a.b.example.com under a b.example.com zone) would still miss. Unlikely; noted.
+3. ConceptList's error alerts (`formError`, `error`) still use the inserted-fresh `role="alert"`
+   pattern; converge on a persistent assertive region when next touched. The publish flash's
+   sr-only region pays off fully only once those forms gain `use:enhance`.
+4. The mint coalescing shares one in-flight promise across requests; a cancelled originating
+   request fails coalesced waiters once (self-healing, accepted).
+5. `branches.ts` error messages embed GitHub response bodies, which now reach the
+   `github.unreachable` log field; status-only messages on log-bound paths would remove the
+   dependency on GitHub's body behavior.
+6. The showcase's own hooks file fails the paired CSRF check (it wires a fixture handle);
+   correct behavior, noted so nobody chases it.
+7. The `0.40.0` carries still open: the live `%2F` ref-route proof and the consumer smoke (the
+   site retrofits), the Edited-badge vocabulary (parked), the publish-all dialog titles
+   (gallery-adjacent).

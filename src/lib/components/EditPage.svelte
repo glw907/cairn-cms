@@ -2,8 +2,9 @@
 @component
 The differentiated editor: the per-concept frontmatter form (from `data.fields`) beside the
 markdown editor and a live, design-accurate preview. The whole surface is one form posting to the
-`?/save` action; the preview toggle persists per user in localStorage (spec §7.6). A pending entry
-adds a state banner plus Publish (riding the same form via formaction) and Discard controls.
+`?/save` action. The toolbar's Write/Preview tabs swap the editing surface for the rendered
+preview inside the same card; every visit lands on Write. A pending entry adds a state banner
+plus Publish (riding the same form via formaction) and Discard controls.
 -->
 <script lang="ts">
   import { untrack } from 'svelte';
@@ -62,9 +63,8 @@ adds a state banner plus Publish (riding the same form via formaction) and Disca
   const busy = $derived(saving || publishing);
   // The discard confirm, on the DeleteDialog pattern: a native <dialog> holding the POST form.
   let discardDialog = $state<HTMLDialogElement | null>(null);
-  let showPreview = $state(false);
-  // The toolbar's view state. For now it bridges onto showPreview so the tablist and the legacy
-  // toggle stay consistent; the tabbed-pane rework replaces the preview mechanics outright.
+  // Which pane the editor card shows. The toolbar's tablist drives it; Write is always the
+  // landing tab.
   let mode = $state<'write' | 'preview'>('write');
   let previewHtml = $state('');
   let insert = $state.raw<(text: string) => void>(() => {});
@@ -138,23 +138,8 @@ adds a state banner plus Publish (riding the same form via formaction) and Disca
   // The [[ autocomplete source over the same link targets, handed to the editor's generic seam.
   const completionSources = $derived([cairnLinkCompletionSource(data.linkTargets)]);
 
-  const PREVIEW_KEY = 'cairn-admin:preview';
-
-  $effect(() => {
-    // Restore the per-user preference once, on mount.
-    const stored = localStorage.getItem(PREVIEW_KEY) === '1';
-    showPreview = stored;
-    mode = stored ? 'preview' : 'write';
-  });
-
   function setMode(m: 'write' | 'preview') {
     mode = m;
-    showPreview = m === 'preview';
-    localStorage.setItem(PREVIEW_KEY, showPreview ? '1' : '0');
-  }
-
-  function togglePreview() {
-    setMode(showPreview ? 'write' : 'preview');
   }
 
   // The editor card's keyboard shortcuts. Bound to the card so they fire wherever focus sits in the
@@ -189,7 +174,7 @@ adds a state banner plus Publish (riding the same form via formaction) and Disca
   // async render call resolves after a newer one has started, the stale result is discarded.
   let previewRun = 0;
   $effect(() => {
-    if (!showPreview || !render) return;
+    if (mode !== 'preview' || !render) return;
     const md = body;
     const resolve = resolveLink; // tracked read in the effect body
     const run = ++previewRun;
@@ -218,15 +203,6 @@ adds a state banner plus Publish (riding the same form via formaction) and Disca
   <div class="flex items-center gap-2">
     <RenameDialog conceptId={data.conceptId} id={data.id} label={data.label} slug={data.slug} />
     <DeleteDialog conceptId={data.conceptId} id={data.id} label={data.label} inboundLinks={data.inboundLinks} pending={data.pending} />
-    <button
-      type="button"
-      class="btn btn-sm btn-ghost"
-      aria-expanded={showPreview}
-      aria-controls="cairn-preview"
-      onclick={togglePreview}
-    >
-      {showPreview ? 'Hide preview' : 'Show preview'}
-    </button>
   </div>
 </header>
 
@@ -322,24 +298,24 @@ adds a state banner plus Publish (riding the same form via formaction) and Disca
           </button>
         {/snippet}
       </EditorToolbar>
-      <MarkdownEditor
-        bind:value={body}
-        name="body"
-        registerInsert={(fn) => (insert = fn)}
-        registerInsertLink={(fn) => (insertLink = fn)}
-        registerFormat={(fn) => (format = fn)}
-        {completionSources}
-      />
+      <!-- The Write pane stays mounted while Preview shows, so CodeMirror keeps its caret, scroll
+           position, and undo history across the tab switch. -->
+      <div id="cairn-pane-write" role="tabpanel" aria-labelledby="cairn-tab-write" class:hidden={mode === 'preview'}>
+        <MarkdownEditor
+          bind:value={body}
+          name="body"
+          registerInsert={(fn) => (insert = fn)}
+          registerInsertLink={(fn) => (insertLink = fn)}
+          registerFormat={(fn) => (format = fn)}
+          {completionSources}
+        />
+      </div>
+      {#if mode === 'preview'}
+        <div id="cairn-pane-preview" role="tabpanel" aria-labelledby="cairn-tab-preview" class="prose max-w-none p-4">
+          {@html previewHtml}
+        </div>
+      {/if}
     </div>
-    {#if showPreview}
-      <section
-        id="cairn-preview"
-        aria-label="Preview"
-        class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 prose mt-4 max-w-none p-4 shadow-[var(--cairn-shadow)]"
-      >
-        {@html previewHtml}
-      </section>
-    {/if}
   </div>
 
   <aside class="lg:order-2 mt-4 lg:mt-0">

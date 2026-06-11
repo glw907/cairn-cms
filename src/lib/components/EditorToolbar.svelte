@@ -175,11 +175,15 @@ are stroke SVG icons in the admin's house style (24x24 viewBox, `currentColor`, 
     {@render insertControls()}
   {/if}
 
+  <!-- The host renders the matching tabpanels (#cairn-pane-write and #cairn-pane-preview) below
+       the strip inside the same editor card. -->
   <div class="join ml-auto" role="tablist" aria-label="Editor view">
     <button
       type="button"
       role="tab"
+      id="cairn-tab-write"
       aria-selected={mode === 'write'}
+      aria-controls="cairn-pane-write"
       class="join-item btn btn-sm {mode === 'write' ? 'btn-active' : 'btn-ghost'}"
       onclick={() => onMode('write')}
     >
@@ -188,7 +192,9 @@ are stroke SVG icons in the admin's house style (24x24 viewBox, `currentColor`, 
     <button
       type="button"
       role="tab"
+      id="cairn-tab-preview"
       aria-selected={mode === 'preview'}
+      aria-controls="cairn-pane-preview"
       class="join-item btn btn-sm {mode === 'preview' ? 'btn-active' : 'btn-ghost'}"
       onclick={() => onMode('preview')}
     >

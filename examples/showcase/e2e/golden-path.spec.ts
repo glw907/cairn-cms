@@ -16,12 +16,11 @@ test('an editor opens a post from the list, edits, saves, and the commit carries
   await page.locator('a[href="/admin/posts/2026-06-hello"]').click();
   await expect(page).toHaveURL(/\/admin\/posts\/2026-06-hello$/);
 
-  // The preview toggle button starts with text "Show preview".
-  const previewBtn = page.getByRole('button', { name: 'Show preview' });
-  await expect(previewBtn).toBeVisible();
-  await previewBtn.click();
-  const previewSection = page.locator('section[aria-label="Preview"]');
-  await expect(previewSection).toBeVisible({ timeout: 2000 });
+  // The toolbar's Preview tab swaps the editing surface for the rendered preview; switch back to
+  // Write before editing, since the editor pane hides (but stays mounted) while Preview shows.
+  await page.getByRole('tab', { name: 'Preview' }).click();
+  await expect(page.locator('#cairn-pane-preview')).toBeVisible({ timeout: 2000 });
+  await page.getByRole('tab', { name: 'Write' }).click();
 
   // The body editor is CodeMirror. It mounts client-side into a contenteditable .cm-content and
   // removes the SSR textarea. Focus it, select all, and type to replace the seeded body.

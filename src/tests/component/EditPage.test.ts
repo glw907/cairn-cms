@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import EditPage from '../../lib/components/EditPage.svelte';
 import type { FrontmatterField } from '../../lib/content/types.js';
@@ -52,11 +52,6 @@ function pageProps() {
 }
 
 describe('EditPage', () => {
-  beforeEach(() => {
-    // Clear the preview preference so each test starts with the pane closed.
-    localStorage.removeItem('cairn-admin:preview');
-  });
-
   it('renders the rich frontmatter fields for a post', async () => {
     const screen = render(EditPage, postProps());
     await expect.element(screen.getByLabelText(/title/i)).toHaveValue('Hello');
@@ -78,10 +73,38 @@ describe('EditPage', () => {
     await expect.element(screen.getByLabelText(/date/i)).not.toBeInTheDocument();
   });
 
-  it('toggles the preview pane', async () => {
+  it('shows the preview pane inside the editor card when the Preview tab is selected', async () => {
     const screen = render(EditPage, postProps());
-    await screen.getByRole('button', { name: /show preview/i }).click();
-    await expect.element(screen.getByRole('region', { name: /preview/i })).toBeInTheDocument();
+    expect(screen.container.querySelector('#cairn-pane-preview')).toBeNull();
+    await screen.getByRole('tab', { name: 'Preview' }).click();
+    const pane = screen.container.querySelector('#cairn-pane-preview');
+    expect(pane).not.toBeNull();
+    // The pane sits inside the editor card frame, below the toolbar, not in a stacked card.
+    const card = screen.container.querySelector('[role="toolbar"]')!.closest('.rounded-box')!;
+    expect(card.contains(pane)).toBe(true);
+  });
+
+  it('keeps the editor mounted but hidden in preview and restores it intact on Write', async () => {
+    const screen = render(EditPage, postProps({ body: 'Round trip body' }));
+    await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+    await screen.getByRole('tab', { name: 'Preview' }).click();
+    const surface = screen.container.querySelector('#cairn-pane-write')!;
+    expect(surface.classList.contains('hidden')).toBe(true);
+    // Hidden, not unmounted: CodeMirror stays in the DOM so caret and undo history survive.
+    expect(surface.querySelector('.cm-content')).not.toBeNull();
+    await screen.getByRole('tab', { name: 'Write' }).click();
+    expect(surface.classList.contains('hidden')).toBe(false);
+    await expect
+      .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
+      .toBe('Round trip body');
+  });
+
+  it('never touches the legacy preview preference key', async () => {
+    localStorage.removeItem('cairn-admin:preview');
+    const screen = render(EditPage, postProps());
+    await screen.getByRole('tab', { name: 'Preview' }).click();
+    await screen.getByRole('tab', { name: 'Write' }).click();
+    expect(localStorage.getItem('cairn-admin:preview')).toBeNull();
   });
 
   it('shows a saved confirmation', async () => {
@@ -93,9 +116,9 @@ describe('EditPage', () => {
   it('renders preview HTML when the preview is shown', async () => {
     const props = { ...postProps({ body: 'Hello world' }), render: (md: string) => `<p>${md}</p>` };
     const screen = render(EditPage, props);
-    await screen.getByRole('button', { name: /show preview/i }).click();
+    await screen.getByRole('tab', { name: 'Preview' }).click();
     await expect
-      .poll(() => screen.container.querySelector('section[aria-label="Preview"]')?.innerHTML ?? '')
+      .poll(() => screen.container.querySelector('#cairn-pane-preview')?.innerHTML ?? '')
       .toContain('Hello world');
   });
 
@@ -106,11 +129,11 @@ describe('EditPage', () => {
       render: (md: string) => renderMarkdown(md),
     };
     const screen = render(EditPage, props);
-    await screen.getByRole('button', { name: /show preview/i }).click();
+    await screen.getByRole('tab', { name: 'Preview' }).click();
     await expect
-      .poll(() => screen.container.querySelector('section[aria-label="Preview"]')?.innerHTML ?? '')
+      .poll(() => screen.container.querySelector('#cairn-pane-preview')?.innerHTML ?? '')
       .toContain('safe text');
-    expect(screen.container.querySelector('section[aria-label="Preview"]')!.innerHTML).not.toContain('onerror');
+    expect(screen.container.querySelector('#cairn-pane-preview')!.innerHTML).not.toContain('onerror');
   });
 
   it('resolves cairn links in the preview, marking a missing target broken', async () => {
@@ -124,11 +147,11 @@ describe('EditPage', () => {
         renderMarkdown(md, opts),
     };
     const screen = render(EditPage, props);
-    await screen.getByRole('button', { name: /show preview/i }).click();
+    await screen.getByRole('tab', { name: 'Preview' }).click();
     await expect
-      .poll(() => screen.container.querySelector('section[aria-label="Preview"]')?.innerHTML ?? '')
+      .poll(() => screen.container.querySelector('#cairn-pane-preview')?.innerHTML ?? '')
       .toContain('href="/about"');
-    expect(screen.container.querySelector('section[aria-label="Preview"]')!.innerHTML).toContain('cairn-broken-link');
+    expect(screen.container.querySelector('#cairn-pane-preview')!.innerHTML).toContain('cairn-broken-link');
   });
 
   it('inserts a cairn link from the Link to page picker', async () => {
@@ -379,13 +402,21 @@ describe('EditPage', () => {
     expect(save.classList.contains('btn-outline')).toBe(false);
   });
 
-  it('preview toggle button exposes aria-expanded reflecting preview state', async () => {
+  it('wires the tabs to their panes with aria-controls and tabpanel roles', async () => {
     const screen = render(EditPage, postProps());
-    const btn = screen.getByRole('button', { name: /show preview/i });
-    await expect.element(btn).toHaveAttribute('aria-expanded', 'false');
-    await btn.click();
-    const btnAfter = screen.getByRole('button', { name: /hide preview/i });
-    await expect.element(btnAfter).toHaveAttribute('aria-expanded', 'true');
+    const writeTab = screen.getByRole('tab', { name: 'Write' });
+    const previewTab = screen.getByRole('tab', { name: 'Preview' });
+    await expect.element(writeTab).toHaveAttribute('aria-selected', 'true');
+    await expect.element(writeTab).toHaveAttribute('aria-controls', 'cairn-pane-write');
+    await expect.element(previewTab).toHaveAttribute('aria-controls', 'cairn-pane-preview');
+    const writePane = screen.container.querySelector('#cairn-pane-write')!;
+    expect(writePane.getAttribute('role')).toBe('tabpanel');
+    expect(writePane.getAttribute('aria-labelledby')).toBe('cairn-tab-write');
+    await previewTab.click();
+    await expect.element(previewTab).toHaveAttribute('aria-selected', 'true');
+    const previewPane = screen.container.querySelector('#cairn-pane-preview')!;
+    expect(previewPane.getAttribute('role')).toBe('tabpanel');
+    expect(previewPane.getAttribute('aria-labelledby')).toBe('cairn-tab-preview');
   });
 
   it('hosts the toolbar inside the editor card with the editor surface', async () => {
@@ -435,7 +466,7 @@ describe('EditPage', () => {
     const screen = render(EditPage, props);
     await screen.getByRole('tab', { name: 'Preview' }).click();
     await expect
-      .poll(() => screen.container.querySelector('section[aria-label="Preview"]')?.innerHTML ?? '')
+      .poll(() => screen.container.querySelector('#cairn-pane-preview')?.innerHTML ?? '')
       .toContain('Tab body');
     await expect.element(screen.getByRole('tab', { name: 'Preview' })).toHaveAttribute('aria-selected', 'true');
   });

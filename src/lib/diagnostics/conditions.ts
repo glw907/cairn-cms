@@ -18,7 +18,13 @@ export interface CairnCondition {
 	why: string;
 	/** The fix, often a command. */
 	remediation: string;
-	/** Anchor into the readiness checklist doc, filled in when that doc lands (Pass 3). */
+	/**
+	 * The condition's section in the readiness checklist, written as
+	 * 'cloudflare-readiness.md#<heading-slug>' so a doc can link it relative to docs/guides/.
+	 * The check:readiness gate parses the part after '#' and asserts the heading exists; two
+	 * conditions may share a section. Every entry carries one unless the gate's allowlist
+	 * excuses it.
+	 */
 	docsAnchor?: string;
 	/** The log vocabulary event this condition correlates with, if any. */
 	logEvent?: CairnLogEvent;
@@ -32,6 +38,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		title: 'Always Use HTTPS is off',
 		why: 'The JS-free admin sign-in posts a form, and the framework CSRF guard rejects a form POST whose origin scheme does not match, so an admin reached over http hits an opaque 403.',
 		remediation: 'Turn on Always Use HTTPS for the zone under SSL/TLS, Edge Certificates, and keep HSTS on.',
+		docsAnchor: 'cloudflare-readiness.md#force-https-at-the-edge',
 		logEvent: 'guard.rejected',
 	},
 	'auth.csrf-token-invalid': {
@@ -40,6 +47,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		title: 'Admin CSRF token check failed',
 		why: 'An admin form POST carried no valid __Host-cairn_csrf double-submit token, usually a stale tab or blocked cookies.',
 		remediation: 'Open the sign-in page fresh, allow cookies for the site, and request a new link.',
+		docsAnchor: 'cloudflare-readiness.md#admin-csrf-token-rejected',
 		logEvent: 'guard.rejected',
 	},
 	'auth.csrf-origin-mismatch': {
@@ -48,6 +56,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		title: 'Non-admin form Origin rejected',
 		why: "A non-admin unsafe form POST carried an Origin that did not match the site, so cairn's restored framework Origin check rejected it.",
 		remediation: 'Post the form from the same origin, or check a proxy that strips or rewrites the Origin header.',
+		docsAnchor: 'cloudflare-readiness.md#non-admin-origin-rejected',
 		logEvent: 'guard.rejected',
 	},
 	'email.sender-not-onboarded': {
@@ -56,6 +65,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		title: 'Email sending domain is not onboarded',
 		why: 'The from-address domain has no enabled Cloudflare sending subdomain, so env.EMAIL.send has no aligned sender and the magic-link send throws E_SENDER_NOT_VERIFIED. No editor can sign in.',
 		remediation: 'Onboard the sending domain with `wrangler email sending enable <domain>`, then re-deploy. The domain must match branding.from.',
+		docsAnchor: 'cloudflare-readiness.md#onboard-the-sending-domain',
 		logEvent: 'auth.link.send_failed',
 	},
 	'email.send-failed': {
@@ -64,6 +74,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		title: 'Magic-link email send failed',
 		why: 'The magic-link send threw for a reason other than a missing sender onboarding (a delivery error, a binding misconfiguration, or a custom sender failure), so the editor never received a link.',
 		remediation: 'Read the auth.link.send_failed log record (the code and error fields) in Workers Logs, and check the EMAIL binding and the sender configuration.',
+		docsAnchor: 'cloudflare-readiness.md#onboard-the-sending-domain',
 		logEvent: 'auth.link.send_failed',
 	},
 	'config.bindings-missing': {
@@ -72,6 +83,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		title: 'Wrangler bindings are missing',
 		why: 'The wrangler config declares no send_email binding named EMAIL or no D1 binding named AUTH_DB, so the magic-link send or the session store has nothing to call and no editor can sign in.',
 		remediation: 'Declare the send_email binding as EMAIL and the d1_databases binding as AUTH_DB in wrangler.jsonc (or wrangler.toml), then re-deploy.',
+		docsAnchor: 'cloudflare-readiness.md#deploy-the-worker-with-its-bindings',
 	},
 	'config.observability-off': {
 		id: 'config.observability-off',
@@ -79,6 +91,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		title: 'Workers Logs has no sink',
 		why: 'observability.enabled is not true in the wrangler config, so the structured log records go nowhere and a runtime failure leaves nothing to read.',
 		remediation: 'Set observability.enabled to true in wrangler.jsonc, then re-deploy.',
+		docsAnchor: 'cloudflare-readiness.md#turn-on-observability',
 	},
 	'config.csrf-disable-missing': {
 		id: 'config.csrf-disable-missing',
@@ -86,6 +99,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		title: 'Framework CSRF check is not handed off',
 		why: "svelte.config.js does not carry csrf: { checkOrigin: false }, so SvelteKit's own Origin check runs ahead of cairn's guard and rejects an admin form POST that arrives without an Origin header.",
 		remediation: "Set csrf: { checkOrigin: false } in svelte.config.js; cairn's guard owns the Origin and double-submit token checks.",
+		docsAnchor: 'cloudflare-readiness.md#hand-cairn-the-csrf-authority',
 	},
 	'config.site-config-invalid': {
 		id: 'config.site-config-invalid',
@@ -93,6 +107,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		title: 'Site config does not validate',
 		why: 'site.config.yaml fails to parse or fails the URL-policy validation, so the build and the admin cannot resolve the content concepts.',
 		remediation: 'Correct site.config.yaml; the parse or validation error names the failing field or URL-policy rule.',
+		docsAnchor: 'cloudflare-readiness.md#validate-the-site-config',
 	},
 	'edge.hsts-off': {
 		id: 'edge.hsts-off',
@@ -100,6 +115,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		title: 'HSTS is off',
 		why: 'The zone sends no Strict-Transport-Security header with a meaningful max-age, so browsers do not pin https and a later http visit can still hit the admin guard rejection.',
 		remediation: 'Turn on HSTS for the zone under SSL/TLS, Edge Certificates, with a max-age of at least six months.',
+		docsAnchor: 'cloudflare-readiness.md#turn-on-hsts',
 	},
 	'auth.store-unreachable': {
 		id: 'auth.store-unreachable',
@@ -107,6 +123,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		title: 'Auth store is unreachable',
 		why: 'The AUTH_DB D1 database is missing, lacks the auth schema, or holds no owner row, so no magic-link token can be minted and nobody can sign in.',
 		remediation: 'Create the database, apply the auth schema with `wrangler d1 execute <db> --remote --file ./migrations/0000_auth.sql`, seed the owner row, and check the AUTH_DB binding id in wrangler.jsonc.',
+		docsAnchor: 'cloudflare-readiness.md#provision-the-auth-store',
 	},
 	'github.app-unreachable': {
 		id: 'github.app-unreachable',
@@ -114,6 +131,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		title: 'GitHub App is unreachable',
 		why: 'The App key fails to parse, the App fails to authenticate, the installation token fails to mint, or the repository refuses a read, so saves and publishes cannot commit.',
 		remediation: 'Check GITHUB_APP_ID, GITHUB_APP_INSTALLATION_ID, and GITHUB_APP_PRIVATE_KEY_B64 against the App settings, and confirm the App is installed on the repository.',
+		docsAnchor: 'cloudflare-readiness.md#install-the-github-app',
 		logEvent: 'github.unreachable',
 	},
 };

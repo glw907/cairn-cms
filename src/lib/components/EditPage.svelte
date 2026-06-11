@@ -135,21 +135,27 @@ transient flashes, and the editor card's footer holds the word count and the Mar
   let getSelection = $state.raw<() => string>(() => '');
   // The editor's selection transform, registered by MarkdownEditor on mount; a no-op until then.
   let format = $state.raw<(kind: FormatKind) => void>(() => {});
-  // The web link dialog instance, for the Ctrl/Cmd+K shortcut. Typed structurally over its export.
-  let webLinkDialog = $state<{ open: () => void } | null>(null);
-  // The headless lifecycle dialogs, opened from the header's overflow menu. Typed structurally
-  // over their exported open(), the linkPicker idiom.
-  let deleteDialog = $state<{ open: () => void } | null>(null);
-  let renameDialog = $state<{ open: () => void } | null>(null);
+  // A headless dialog instance, typed structurally over its exported open() (the linkPicker idiom).
+  type DialogHandle = { open: () => void };
+  // The web link dialog, for the Ctrl/Cmd+K shortcut.
+  let webLinkDialog = $state<DialogHandle | null>(null);
+  // The lifecycle dialogs, opened from the header's overflow menu.
+  let deleteDialog = $state<DialogHandle | null>(null);
+  let renameDialog = $state<DialogHandle | null>(null);
   // The Markdown cheat sheet, opened from the editor card's footer.
-  let helpDialog = $state<{ open: () => void } | null>(null);
+  let helpDialog = $state<DialogHandle | null>(null);
 
   // The header's status badge, in ConceptList's vocabulary: a pending entry reads Edited (or New
   // when it has never been published); otherwise the live site matches and it reads Published.
-  const status = $derived(data.pending ? (data.published ? 'Edited' : 'New') : 'Published');
-  const statusBadge = $derived(
-    status === 'Edited' ? 'badge-warning' : status === 'New' ? 'badge-info' : 'badge-ghost',
-  );
+  const status = $derived.by(() => {
+    if (!data.pending) return 'Published';
+    return data.published ? 'Edited' : 'New';
+  });
+  const statusBadge = $derived.by(() => {
+    if (status === 'Edited') return 'badge-warning';
+    if (status === 'New') return 'badge-info';
+    return 'badge-ghost';
+  });
 
   // An overflow-menu pick runs its action, then blurs the item so the focus-driven DaisyUI
   // dropdown closes (the EditorToolbar More-menu pattern).
@@ -189,18 +195,26 @@ transient flashes, and the editor card's footer holds the word count and the Mar
     draftWarning = drafts ? drafts.split(',').filter(Boolean).join(', ') : '';
   });
 
-  // One persistent live region announces the current message, since a {#if}-gated role element
-  // inserted fresh is announced inconsistently. A polite region carries the success and draft
-  // notices; an assertive region carries the errors. The visible banners below keep their styling
-  // but drop their roles, so a message is announced once.
-  const politeMessage = $derived.by(() => {
-    if (draftWarning) return `Saved. This page links to unpublished pages: ${draftWarning}.`;
-    if (data.saved) return 'Saved. Your site keeps showing the published version until you publish.';
+  // The one transient feedback strip under the sticky header. The redirect flags are mutually
+  // exclusive in practice; the chain picks one so a surprise overlap still renders a single strip.
+  // A saved flash with a draft warning yields to the warning alert below, the prior behavior.
+  const flash = $derived.by(() => {
+    if (data.saved && !draftWarning)
+      return 'Saved. Your site keeps showing the published version until you publish.';
     if (data.publishedFlash) return 'Published. The live site is rebuilding.';
     if (data.discardedFlash) return 'Changes discarded.';
     if (data.renamed) return `The URL is now ${data.slug}.`;
     return '';
   });
+
+  // One persistent live region announces the current message, since a {#if}-gated role element
+  // inserted fresh is announced inconsistently. A polite region carries the success and draft
+  // notices (the flash, plus the draft notice the strip yields to); an assertive region carries
+  // the errors. The visible banners below keep their styling but drop their roles, so a message
+  // is announced once.
+  const politeMessage = $derived(
+    draftWarning ? `Saved. This page links to unpublished pages: ${draftWarning}.` : flash,
+  );
   const assertiveMessage = $derived.by(() => {
     if (data.error) return data.error;
     if (renameError) return renameError;
@@ -212,18 +226,6 @@ transient flashes, and the editor card's footer holds the word count and the Mar
       const count = visibleBrokenLinks.length;
       return `This page links to ${count} missing ${count === 1 ? 'page' : 'pages'}.`;
     }
-    return '';
-  });
-
-  // The one transient feedback strip under the sticky header. The redirect flags are mutually
-  // exclusive in practice; the chain picks one so a surprise overlap still renders a single strip.
-  // A saved flash with a draft warning yields to the warning alert below, the prior behavior.
-  const flash = $derived.by(() => {
-    if (data.saved && !draftWarning)
-      return 'Saved. Your site keeps showing the published version until you publish.';
-    if (data.publishedFlash) return 'Published. The live site is rebuilding.';
-    if (data.discardedFlash) return 'Changes discarded.';
-    if (data.renamed) return `The URL is now ${data.slug}.`;
     return '';
   });
 
@@ -310,6 +312,10 @@ transient flashes, and the editor card's footer holds the word count and the Mar
   function str(v: unknown): string {
     return v == null ? '' : String(v);
   }
+
+  // The eyebrow legend each sidebar group opens with, one class string for all three.
+  const eyebrowClass =
+    'mb-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]';
 
   // The sidebar's grouping. The title field hoists above the editor card as the document title,
   // and a boolean named draft becomes the Visibility group's Hidden toggle (both production
@@ -541,7 +547,7 @@ transient flashes, and the editor card's footer holds the word count and the Mar
     <div class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 flex flex-col gap-5 p-4 shadow-[var(--cairn-shadow)]">
       {#if detailFields.length}
       <fieldset class="m-0 flex min-w-0 flex-col gap-3 border-0 p-0">
-      <legend class="mb-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">Details</legend>
+      <legend class={eyebrowClass}>Details</legend>
       {#each detailFields as field (field.name)}
         {#if field.type === 'textarea'}
           {@const f = field as TextareaField}
@@ -603,7 +609,7 @@ transient flashes, and the editor card's footer holds the word count and the Mar
       {/if}
       {#if draftField}
       <fieldset class="m-0 flex min-w-0 flex-col gap-1 border-0 p-0">
-      <legend class="mb-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">Visibility</legend>
+      <legend class={eyebrowClass}>Visibility</legend>
         <label class="label cursor-pointer justify-start gap-2">
           <input class="checkbox checkbox-sm" type="checkbox" name="draft" checked={data.frontmatter.draft === true} />
           <span class="text-sm">Hidden</span>
@@ -612,7 +618,7 @@ transient flashes, and the editor card's footer holds the word count and the Mar
       </fieldset>
       {/if}
       <fieldset class="m-0 flex min-w-0 flex-col gap-1 border-0 p-0">
-      <legend class="mb-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">Address</legend>
+      <legend class={eyebrowClass}>Address</legend>
         <div class="flex items-center justify-between gap-2">
           <code class="min-w-0 break-all text-xs text-[var(--color-muted)]">/{data.slug}</code>
           <button

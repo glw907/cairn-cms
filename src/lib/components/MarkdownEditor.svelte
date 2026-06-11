@@ -9,7 +9,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
 -->
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { applyMarkdownFormat, insertInlineLink, type FormatKind } from './markdown-format.js';
+  import { applyMarkdownFormat, insertInlineLink, type FormatKind, type FormatResult } from './markdown-format.js';
 
   interface Props {
     /** The markdown source; bindable so the parent reads edits back. */
@@ -60,7 +60,12 @@ through the adapter's render. Swapping the editor stays a one-file change.
     const { EditorView, keymap } = viewMod;
     // Mirror the admin theme into CodeMirror's own dark flag, so its base chrome (the autocomplete
     // tooltip above all) renders dark-on-dark instead of light-on-dark.
-    const isDark = host?.closest('[data-theme]')?.getAttribute('data-theme')?.includes('dark') ?? false;
+    const isDark = host.closest('[data-theme]')?.getAttribute('data-theme')?.includes('dark') ?? false;
+    // The directive machinery ink, one rule for the fence, leaf, and inline decorations.
+    const directiveInk = {
+      backgroundColor: 'color-mix(in oklab, var(--color-accent) 8%, transparent)',
+      color: 'var(--color-accent)',
+    };
     const theme = EditorView.theme(
       {
         '&': { backgroundColor: 'var(--color-base-100)', color: 'var(--color-base-content)', fontSize: '0.9375rem' },
@@ -83,18 +88,9 @@ through the adapter's render. Swapping the editor stays a one-file change.
           outlineOffset: '-1px',
         },
         '.cm-line': { padding: '0' },
-        '.cm-cairn-directive-fence': {
-          backgroundColor: 'color-mix(in oklab, var(--color-accent) 8%, transparent)',
-          color: 'var(--color-accent)',
-        },
-        '.cm-cairn-directive-leaf': {
-          backgroundColor: 'color-mix(in oklab, var(--color-accent) 8%, transparent)',
-          color: 'var(--color-accent)',
-        },
-        '.cm-cairn-directive-inline': {
-          backgroundColor: 'color-mix(in oklab, var(--color-accent) 8%, transparent)',
-          color: 'var(--color-accent)',
-        },
+        '.cm-cairn-directive-fence': directiveInk,
+        '.cm-cairn-directive-leaf': directiveInk,
+        '.cm-cairn-directive-inline': directiveInk,
       },
       { dark: isDark },
     );
@@ -155,6 +151,20 @@ through the adapter's render. Swapping the editor stays a one-file change.
     view.focus();
   }
 
+  // Run a pure selection transform over the mounted editor: hand it the document and selection,
+  // dispatch the document and selection it returns, and put focus back on the surface.
+  function transformSelection(transform: (doc: string, from: number, to: number) => FormatResult) {
+    if (!view) return;
+    const { from, to } = view.state.selection.main;
+    const doc = view.state.doc.toString();
+    const next = transform(doc, from, to);
+    view.dispatch({
+      changes: { from: 0, to: doc.length, insert: next.doc },
+      selection: { anchor: next.from, head: next.to },
+    });
+    view.focus();
+  }
+
   function insertLink(href: string, title: string) {
     if (!view) {
       // The editor has not mounted yet; append the link to the raw value so a pick is never lost,
@@ -163,14 +173,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
       value = value ? `${value} ${link}` : link;
       return;
     }
-    const { from, to } = view.state.selection.main;
-    const doc = view.state.doc.toString();
-    const next = insertInlineLink(doc, from, to, href, title);
-    view.dispatch({
-      changes: { from: 0, to: doc.length, insert: next.doc },
-      selection: { anchor: next.from, head: next.to },
-    });
-    view.focus();
+    transformSelection((doc, from, to) => insertInlineLink(doc, from, to, href, title));
   }
 
   function selectedText(): string {
@@ -180,15 +183,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
   }
 
   function applyFormat(kind: FormatKind) {
-    if (!view) return;
-    const { from, to } = view.state.selection.main;
-    const doc = view.state.doc.toString();
-    const next = applyMarkdownFormat(doc, from, to, kind);
-    view.dispatch({
-      changes: { from: 0, to: doc.length, insert: next.doc },
-      selection: { anchor: next.from, head: next.to },
-    });
-    view.focus();
+    transformSelection((doc, from, to) => applyMarkdownFormat(doc, from, to, kind));
   }
 </script>
 

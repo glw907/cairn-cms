@@ -125,6 +125,14 @@ are stroke SVG icons in the admin's house style (24x24 viewBox, `currentColor`, 
   }
 </script>
 
+{#snippet strokeIcon(paths: string[])}
+  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+    {#each paths as d (d)}
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={d} />
+    {/each}
+  </svg>
+{/snippet}
+
 {#snippet glyphButton(button: ToolButton)}
   <button
     type="button"
@@ -134,11 +142,21 @@ are stroke SVG icons in the admin's house style (24x24 viewBox, `currentColor`, 
     disabled={mode === 'preview'}
     onclick={() => format(button.kind)}
   >
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-      {#each button.paths as d (d)}
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={d} />
-      {/each}
-    </svg>
+    {@render strokeIcon(button.paths)}
+  </button>
+{/snippet}
+
+{#snippet tab(m: 'write' | 'preview', label: string)}
+  <button
+    type="button"
+    role="tab"
+    id={`cairn-tab-${m}`}
+    aria-selected={mode === m}
+    aria-controls={`cairn-pane-${m}`}
+    class="join-item btn btn-sm {mode === m ? 'btn-active' : 'btn-ghost'}"
+    onclick={() => onMode(m)}
+  >
+    {label}
   </button>
 {/snippet}
 
@@ -170,11 +188,7 @@ are stroke SVG icons in the admin's house style (24x24 viewBox, `currentColor`, 
       aria-haspopup="true"
       disabled={mode === 'preview'}
     >
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-        {#each ellipsisPaths as d (d)}
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={d} />
-        {/each}
-      </svg>
+      {@render strokeIcon(ellipsisPaths)}
     </button>
     <ul class="dropdown-content menu menu-sm bg-base-100 rounded-box z-10 w-44 border border-[var(--cairn-card-border)] p-1 shadow-[var(--cairn-shadow)]">
       {#each moreItems as item (item.kind)}
@@ -199,27 +213,7 @@ are stroke SVG icons in the admin's house style (24x24 viewBox, `currentColor`, 
   <!-- The host renders the matching tabpanels (#cairn-pane-write and #cairn-pane-preview) below
        the strip inside the same editor card. -->
   <div class="join ml-auto" role="tablist" aria-label="Editor view">
-    <button
-      type="button"
-      role="tab"
-      id="cairn-tab-write"
-      aria-selected={mode === 'write'}
-      aria-controls="cairn-pane-write"
-      class="join-item btn btn-sm {mode === 'write' ? 'btn-active' : 'btn-ghost'}"
-      onclick={() => onMode('write')}
-    >
-      Write
-    </button>
-    <button
-      type="button"
-      role="tab"
-      id="cairn-tab-preview"
-      aria-selected={mode === 'preview'}
-      aria-controls="cairn-pane-preview"
-      class="join-item btn btn-sm {mode === 'preview' ? 'btn-active' : 'btn-ghost'}"
-      onclick={() => onMode('preview')}
-    >
-      Preview
-    </button>
+    {@render tab('write', 'Write')}
+    {@render tab('preview', 'Preview')}
   </div>
 </div>

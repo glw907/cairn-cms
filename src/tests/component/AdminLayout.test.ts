@@ -184,6 +184,43 @@ describe('AdminLayout', () => {
     expect(form!.querySelector('input[name="csrf"]')).not.toBeNull();
   });
 
+  it('closes the publish-all dialog once a navigation lands', async () => {
+    const pending = [{ concept: 'posts', id: '2026-05-01-a' }];
+    const screen = render(AdminLayout, { data: { ...data(true), pendingEntries: pending }, children: child });
+    await screen.getByRole('button', { name: 'Publish site (1)' }).click();
+    const dialog = () =>
+      screen.container.querySelector('dialog[aria-labelledby="cairn-publish-all-title"]') as HTMLDialogElement;
+    expect(dialog().open).toBe(true);
+    await screen.rerender({ data: { ...data(true, null, '/admin/pages'), pendingEntries: pending }, children: child });
+    expect(dialog().open).toBe(false);
+  });
+
+  it('hides the publish-site trigger when no concepts are configured', async () => {
+    // A stray pending ref with zero concepts would otherwise render a form action that reads
+    // data.concepts[0] and throw.
+    const screen = render(AdminLayout, {
+      data: { ...data(true), concepts: [], pendingEntries: [{ concept: 'posts', id: 'a' }] },
+      children: child,
+    });
+    await expect.element(screen.getByRole('button', { name: /publish site/i })).not.toBeInTheDocument();
+  });
+
+  it('associates each pending group list with its eyebrow label', async () => {
+    const pending = [
+      { concept: 'posts', id: '2026-05-01-a' },
+      { concept: 'pages', id: 'about' },
+    ];
+    const screen = render(AdminLayout, { data: { ...data(true), pendingEntries: pending }, children: child });
+    await screen.getByRole('button', { name: 'Publish site (2)' }).click();
+    const dialog = screen.container.querySelector('dialog[aria-labelledby="cairn-publish-all-title"]')!;
+    const lists = Array.from(dialog.querySelectorAll('ul[aria-labelledby]'));
+    expect(lists.length).toBe(2);
+    const labelTexts = lists.map(
+      (ul) => dialog.querySelector(`#${ul.getAttribute('aria-labelledby')}`)?.textContent?.trim(),
+    );
+    expect(labelTexts).toEqual(['Posts', 'Pages']);
+  });
+
   it('hides the publish-site trigger when nothing is pending', async () => {
     const nullScreen = render(AdminLayout, { data: data(true), children: child });
     await expect.element(nullScreen.getByRole('button', { name: /publish site/i })).not.toBeInTheDocument();

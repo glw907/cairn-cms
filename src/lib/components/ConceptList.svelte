@@ -122,7 +122,8 @@ content sizes. The header New button opens a dialog holding the create form.
   </div>
 </header>
 
-{#if data.publishedAll !== null}
+<!-- A racing second admin can publish first, leaving this redirect counting zero; say nothing then. -->
+{#if data.publishedAll !== null && data.publishedAll > 0}
   <div role="status" class="alert alert-success mb-4 text-sm">
     Published {data.publishedAll} {data.publishedAll === 1 ? 'entry' : 'entries'}.
   </div>

@@ -124,6 +124,7 @@ identical on every host regardless of the site's own theme.
     data.pathname;
     drawerOpen = false;
     paletteDialog?.close();
+    publishAllDialog?.close();
   });
 
   // Seed from the SSR'd theme once. The live theme is owned by this state and the toggle, so the
@@ -278,7 +279,7 @@ identical on every host regardless of the site's own theme.
             <kbd class="ml-auto hidden rounded border border-[var(--cairn-card-border)] px-1.5 text-[0.6875rem] font-medium sm:inline">&#8984;K</kbd>
           </button>
         </div>
-        {#if pendingCount > 0}
+        {#if pendingCount > 0 && data.concepts.length > 0}
           <div class="flex-none">
             <button type="button" class="btn btn-primary btn-sm" aria-haspopup="dialog" onclick={() => publishAllDialog?.showModal()}>
               Publish site ({pendingCount})
@@ -348,7 +349,9 @@ identical on every host regardless of the site's own theme.
         <form method="dialog" class="modal-backdrop"><button tabindex="-1" aria-label="Close">close</button></form>
       </dialog>
 
-      {#if pendingCount > 0}
+      <!-- The form action below reads data.concepts[0], so zero configured concepts (with a stray
+           pending ref) must hide the dialog along with its trigger. -->
+      {#if pendingCount > 0 && data.concepts.length > 0}
         <dialog bind:this={publishAllDialog} class="modal" aria-labelledby="cairn-publish-all-title">
           <div class="modal-box">
             <div class="mb-3 flex items-center justify-between">
@@ -356,9 +359,9 @@ identical on every host regardless of the site's own theme.
               <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={() => publishAllDialog?.close()}>✕</button>
             </div>
             <p class="text-sm">Every entry below goes live in one step.</p>
-            {#each pendingGroups as group (group.label)}
-              <p class="mt-3 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">{group.label}</p>
-              <ul class="mt-1 text-sm">
+            {#each pendingGroups as group, i (group.label)}
+              <p id={`cairn-publish-group-${i}`} class="mt-3 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">{group.label}</p>
+              <ul class="mt-1 text-sm" aria-labelledby={`cairn-publish-group-${i}`}>
                 {#each group.ids as id (id)}
                   <li>{id}</li>
                 {/each}

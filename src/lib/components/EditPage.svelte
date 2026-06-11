@@ -56,6 +56,9 @@ adds a state banner plus Publish (riding the same form via formaction) and Disca
     if (formaction === '?/publish') publishing = true;
     else saving = true;
   }
+  // Either in-flight submit disables both buttons, so a second click cannot fire a second POST
+  // while the first navigation is still pending.
+  const busy = $derived(saving || publishing);
   // The discard confirm, on the DeleteDialog pattern: a native <dialog> holding the POST form.
   let discardDialog = $state<HTMLDialogElement | null>(null);
   let showPreview = $state(false);
@@ -334,11 +337,12 @@ adds a state banner plus Publish (riding the same form via formaction) and Disca
         {/if}
       {/each}
       <div class="mt-3 flex flex-col gap-2">
-        <button type="submit" class="btn btn-primary" disabled={saving}>
+        <button type="submit" class="btn btn-primary" disabled={busy}>
           {#if saving}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Saving…{:else}Save{/if}
         </button>
         {#if data.pending}
-          <button type="submit" formaction="?/publish" class="btn btn-primary" disabled={publishing}>
+          <!-- Outline keeps Save the single solid primary action; Publish reads as its peer. -->
+          <button type="submit" formaction="?/publish" class="btn btn-outline btn-primary" disabled={busy}>
             {#if publishing}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Publishing…{:else}Publish{/if}
           </button>
           <button type="button" class="btn btn-ghost" aria-haspopup="dialog" onclick={() => discardDialog?.showModal()}>

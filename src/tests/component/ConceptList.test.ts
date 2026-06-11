@@ -73,6 +73,12 @@ describe('ConceptList', () => {
     expect(status).toBeTruthy();
   });
 
+  it('hides the publish-all flash when zero entries were published', async () => {
+    // A racing second admin can land first, leaving this redirect with publishedAll=0.
+    const screen = render(ConceptList, { data: data({ publishedAll: 0 }) });
+    expect(screen.container.textContent ?? '').not.toContain('Published 0');
+  });
+
   it('filters rows by a search query and shows a result count', async () => {
     const screen = render(ConceptList, { data: data() });
     const search = screen.getByRole('searchbox', { name: /search/i });

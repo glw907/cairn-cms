@@ -324,6 +324,61 @@ describe('EditPage', () => {
     expect(dialog.textContent ?? '').toContain('Unpublished edits to this entry are discarded too.');
   });
 
+  it('flips only the Publish button to its working state and disables both on publish', async () => {
+    const screen = render(EditPage, postProps({ pending: true }));
+    // The edit form posts for real; cancel the default navigation (which would replace the test
+    // page) while letting the component's own onsubmit handler still run and read the submitter.
+    const stop = (e: Event) => e.preventDefault();
+    document.addEventListener('submit', stop, true);
+    try {
+      await screen.getByRole('button', { name: 'Publish' }).click();
+      const publish = () =>
+        screen.container.querySelector<HTMLButtonElement>('button[formaction="?/publish"]')!;
+      const save = () =>
+        screen.container.querySelector<HTMLButtonElement>(
+          'form[action="?/save"] button[type="submit"]:not([formaction])',
+        )!;
+      await expect.poll(() => publish().textContent ?? '').toContain('Publishing');
+      expect(save().textContent ?? '').not.toContain('Saving');
+      expect(publish().disabled).toBe(true);
+      expect(save().disabled).toBe(true);
+    } finally {
+      document.removeEventListener('submit', stop, true);
+    }
+  });
+
+  it('flips only the Save button to its working state and disables both on save', async () => {
+    const screen = render(EditPage, postProps({ pending: true }));
+    const stop = (e: Event) => e.preventDefault();
+    document.addEventListener('submit', stop, true);
+    try {
+      await screen.getByRole('button', { name: 'Save' }).click();
+      const publish = () =>
+        screen.container.querySelector<HTMLButtonElement>('button[formaction="?/publish"]')!;
+      const save = () =>
+        screen.container.querySelector<HTMLButtonElement>(
+          'form[action="?/save"] button[type="submit"]:not([formaction])',
+        )!;
+      await expect.poll(() => save().textContent ?? '').toContain('Saving');
+      expect(publish().textContent ?? '').not.toContain('Publishing');
+      expect(publish().disabled).toBe(true);
+      expect(save().disabled).toBe(true);
+    } finally {
+      document.removeEventListener('submit', stop, true);
+    }
+  });
+
+  it('renders Publish as the outline variant beside the solid Save', async () => {
+    const screen = render(EditPage, postProps({ pending: true }));
+    const publish = screen.container.querySelector('button[formaction="?/publish"]')!;
+    expect(publish.classList.contains('btn-outline')).toBe(true);
+    expect(publish.classList.contains('btn-primary')).toBe(true);
+    const save = screen.container.querySelector(
+      'form[action="?/save"] button[type="submit"]:not([formaction])',
+    )!;
+    expect(save.classList.contains('btn-outline')).toBe(false);
+  });
+
   it('preview toggle button exposes aria-expanded reflecting preview state', async () => {
     const screen = render(EditPage, postProps());
     const btn = screen.getByRole('button', { name: /show preview/i });

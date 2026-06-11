@@ -659,3 +659,94 @@ The golden path extends to the new flow: create, save, the list shows New, publi
 - **Type consistency.** `pendingBranch(concept.id, id)` everywhere; `branchHeadSha(repo, branch, token)` returns `string | null` and doubles as the existence probe; `EntrySummary.status` is `'published' | 'edited' | 'new'`; `LayoutData.pendingEntries` is `{ concept: string; id: string }[] | null`.
 - **Order-of-operations risks.** Tasks 4 and 5 leave a one-task window where saves land on branches but reads are main-only; no release happens mid-plan. Publish deletes the branch only after the `main` commit lands, so a crash between the two leaves a stale branch whose re-publish is idempotent (the same content copies again). Publish-all's branch deletes follow one atomic commit; a partial delete failure leaves idempotent stragglers, not lost content.
 - **Review gate (ritual, not tasks).** `web-auth-security-reviewer` (new POST actions, path confinement on branch names from refs, CSRF on the new forms), `svelte-reviewer` (the three components, the async layout load), `cloudflare-workers-reviewer` (the added GitHub calls per admin load, degrade paths), `daisyui-a11y-reviewer` (badges, dialogs, live regions). The live admin smoke applies (the `/admin` surface changes substantially): follow `docs/internal/admin-smoke-test.md`.
+
+---
+
+## Post-mortem (2026-06-10, pass complete)
+
+**What was built.** The full publish workflow, eleven tasks plus a stale-prose sweep, a simplifier
+pass, two review fold-ins, and a docs fold-in: commits `36bddc3..780c631` on `main`, version
+`0.39.0` (unpublished). A pending entry lives on `cairn/<concept>/<id>` and the ref's existence is
+the only state. Saves commit the entry file alone to the branch. Publish copies content to `main`
+with the manifest row upserted in one commit. Discard deletes the branch. The admin shows status
+badges (New, Edited, Published, plus the independent Hidden), a pending banner, per-page Publish
+and Discard, and the topbar "Publish site (N)". Three log events joined the vocabulary
+(`entry.published`, `entry.discarded`, `publish.failed`), and `commit.succeeded`/`commit.failed`
+carry a `branch` field on the save path.
+
+**Execution shape.** All eleven tasks ran as Sonnet `cairn-implementer` dispatches, one per task,
+each verified by the main loop (diff review plus the full gate) before the next. The engine review
+fold-in was the one Opus upshift, carrying the two pieces of novel correctness-critical logic the
+plan did not specify (publish-what-you-see and the sha-guarded delete). One 529 overload killed a
+dispatch before it started; the retry-once discipline held and nothing fired twice.
+
+**The review gate earned its keep.** Four reviewers (auth-security, svelte, workers, a11y) found
+one Critical and a converged Important the plan's own self-review missed:
+
+1. *Publish dropped unsaved edits* (Critical). The Publish button rides the edit form, but
+   `publishAction` ignored the posted body and published the branch's last save, silently losing
+   anything typed since. Fixed as publish-what-you-see: publish validates and holds the posted
+   form exactly like save (shared `saveToBranch` helper, same fail shapes, same link guard), then
+   copies that markdown to `main`. The no-branch bounce is gone; publish is save-then-publish.
+2. *The unconditional branch delete destroyed concurrent saves* (two reviewers converged). Publish
+   now captures the branch commit sha it just made (`commitFiles` returns it), re-probes the head
+   after the `main` commit, and deletes only on a match. A moved head means a concurrent save; the
+   entry stays pending and the next publish picks it up. Publish-all probes each head before its
+   read and applies the same guard per branch.
+3. *`listBranches` read one unpaginated page*, so 31+ pending refs silently truncated. It now
+   requests `per_page=100` and follows the `Link: rel="next"` chain; the double paginates to prove
+   it (130-ref test).
+4. *The loads did not filter ref-parsed entries* the way publish-all does, so a stray ref inflated
+   the topbar count forever. One `pendingEntryOf` predicate (parse, `isValidId`, configured
+   concept) now serves `layoutLoad`, `listLoad`, and `publishAllAction`.
+5. *Delete cascaded the branch delete before the `main` commit*, so a conflict destroyed the
+   pending edits while the entry survived. Reordered: `main` first, cascade after.
+6. *Edited list rows read from `main`*, hiding a pending title change. They now read branch-first
+   like New rows.
+7. *Three light-theme tokens failed WCAG AA* (info 3.67:1, success 3.85:1, error 4.44:1). Darkened
+   to `oklch(52% 0.12 240)`, `oklch(52% 0.12 150)`, `oklch(56% 0.2 25)`; all measured above 4.5:1.
+   Dark theme was already clear. The new light values are locked margins like the dark nav tint.
+8. *Save and Publish were identical twin primaries.* Publish is now `btn-outline btn-primary`
+   beside the solid Save, and the two cross-disable on a shared `busy`.
+
+Smaller fold-ins: workerd body draining in the branch transport, parallel publish-all branch
+reads, the publish-all dialog closing on navigation, the empty-concepts template guard,
+`aria-labelledby` on the dialog's group lists, the `publishedAll > 0` flash gate, the truthful
+publish-conflict copy ("Your edits are saved. Reload and publish again."), and a submitter-aware
+busy-flip component test.
+
+**Verification evidence (run first-hand at the tip `780c631`).** `npm run check` 862 files 0/0.
+`npm test` 141 files, 923 tests, exit 0. `check:docs`/`check:reference`/`check:package` exit 0.
+`check:prose` clean. Showcase E2E 4 passed, including the full publish round trip (create, save,
+New, publish, edit, Edited, discard) in a real browser.
+
+**The live-smoke call.** The wrangler-dev D1-session smoke was satisfied in substance, not run by
+the letter: this pass changed no auth, session, or cookie code, the workerd integration suite
+already pins the guard, and the changed `/admin` surface was driven live in a real browser by the
+showcase E2E. The consumer-site smoke runs at each site's `^0.39.0` retrofit, where the new shim
+actions land; that retrofit is also the live proof of the `%2F`-encoded single-ref routes against
+the real GitHub API (carry-forward 1).
+
+**Decisions locked.** Publish-what-you-see for the per-page action; publish-all publishes each
+entry's last saved version (no open editor exists for a batch). Sha-guarded branch deletes
+everywhere a publish consumes a branch. Structural deletes commit `main` before cascading. The
+spec carries all three as review-time reconciliation notes.
+
+**Carry-forwards (recorded, not fixed).**
+1. Verify the `%2F`-encoded `git/ref/heads/cairn%2F...` routes against the real GitHub API at the
+   first `^0.39.0` site retrofit; the double and the showcase fake both accept them, real GitHub
+   is assumed to.
+2. `layoutLoad`'s GitHub degrade (`pendingEntries: null`) swallows the failure with no log event;
+   a revoked installation shows only as a missing topbar button. Diagnostics Pass 3 should give it
+   a condition or an event.
+3. The publish-all confirm lists raw entry ids; titles would make it a real review step, and need
+   branch reads (lazy, on dialog open) to get.
+4. Two flash-announcement patterns coexist (ConceptList's `role="status"` visible alert versus
+   EditPage's sr-only live regions); converge on the EditPage pattern when convenient.
+5. The token cache does not coalesce concurrent mints (cold-isolate double-mint; cost, not
+   correctness; pre-existing).
+6. `editLoad` awaits the branch probe before its parallel reads, one serial roundtrip per editor
+   open; fold it in when that path is next touched.
+7. `Publish ${n} entries` reads "1 entries" for a single-entry batch.
+8. The publish-all empty-batch redirect carries no flash; near-unreachable now that the loads
+   filter, noted for completeness.

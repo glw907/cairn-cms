@@ -11,42 +11,62 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-10): the publish-workflow plan, then execution (jumps the queue)
+## Immediate next action (2026-06-10): publish `0.39.0`, then diagnostics Pass 3
 
-**Diagnostics Pass 2 (email-delivery) LANDED on `main` 2026-06-10 as `0.38.0`.** Seven plan tasks
-plus the simplifier (`6c5ea1e`) and the review fold-in (`3f1d8f8`), commits `5d5c865..3f1d8f8`. The
-send is awaited, `requestAction` returns the `RequestResult` discriminant (now exported from the
-`/sveltekit` barrel), `LoginPage` renders the `send_error`/`throttled` states, and
-`auth.link.send_failed` carries `code` plus `conditionId`. Gate green at the tip, run first-hand:
-`npm run check` 854 files 0/0, `npm test` 136 files / 846 tests exit 0, all doc gates exit 0. Three
-reviewers, no Critical; the fold-in scrubs the send-failure log field, adds the message-scan
-fallback for the unproven `E_*` shape, and fixes two stale auth reference pages. The live smoke was
-skipped with justification: the ecxc `^0.38.0` bump is the designed live proof. The post-mortem with
-six carry-forwards (the live `E_*` shape proof, the cooldown race, the disconnect tether, the
-missing-binding condition for Pass 3, the reference signature-currency gate idea, the per-IP limit)
-is in the plan (`docs/superpowers/plans/2026-06-09-cairn-diagnostics-02-email-delivery.md`).
+**The publish workflow LANDED on `main` 2026-06-10 as `0.39.0`, unpublished.** Eleven plan tasks
+plus a stale-prose sweep, a simplifier pass, two review fold-ins, and a docs fold-in, commits
+`36bddc3..780c631`. Edits now hold on per-entry `cairn/<conceptKey>/<id>` branches until a
+deliberate Publish; the ref's existence is the only pending state. The per-page Publish is
+publish-what-you-see (it validates and holds the posted form like a save, then copies that
+markdown to `main` with the manifest upsert in one commit), the branch delete is sha-guarded so a
+concurrent save survives as a still-pending entry, publish-all ships every pending entry's last
+saved version in one atomic commit, discard deletes the branch, and the `draft:` flag is
+re-presented as the Hidden badge. The admin carries the status badges (New/Edited/Published), the
+pending banner, the outline Publish beside the solid Save, and the topbar "Publish site (N)".
+Breaking for consumers: the shims must add `publish`/`discard` (edit) and `publishAll` (list), and
+saves no longer deploy the site. Three new log events: `entry.published`, `entry.discarded`,
+`publish.failed`.
 
-**EXECUTION IN PROGRESS (2026-06-10): resume the publish-workflow plan at Task 3.** Tasks 1
-(`36bddc3`, the pending-branch codec) and 2 (`2d4fda4`, the stateful in-memory GitHub double) are
-done, each gate-green, dispatched to the Sonnet-pinned `cairn-implementer` per the model-economy
-policy (the main loop orchestrates, reviews each diff, and verifies the gate; see the global
-CLAUDE.md "Model economy" section). Tasks 3 through 11 remain. One plan defect was found and
-fixed in place: the draft tests' `RepoRef` literal carried `appId`/`installationId`, which the
-real `RepoRef` does not.
+Gate green at the tip `780c631`, run first-hand: `npm run check` 862 files 0/0, `npm test` 141
+files / 923 tests exit 0, all three doc gates exit 0, `check:prose` clean, showcase E2E 4 passed
+including the full publish round trip in a real browser. Four reviewers (auth-security, svelte,
+workers, a11y) found one Critical (publish dropped unsaved edits) and a converged Important (the
+unconditional branch delete destroyed concurrent saves); both are fixed in the engine fold-in
+`998cc30` (Opus-upshifted, the pass's one upshift) with the UI fold-in `941cf98` closing three
+light-theme WCAG token failures and the twin-primary Save/Publish stack. The wrangler-dev D1
+smoke was satisfied in substance by the showcase E2E (no auth code changed; the consumer-site
+smoke rides each `^0.39.0` retrofit). The post-mortem with eight carry-forwards (the live `%2F`
+ref-route proof, the layoutLoad degrade event for Pass 3, dialog titles, the flash-pattern
+convergence, the token-mint coalescing, the editLoad probe waterfall, the "1 entries" plural, the
+empty-batch flash) is in the plan (`docs/superpowers/plans/2026-06-10-cairn-publish-workflow.md`).
 
-**The initiative (context for the resume):**
-The approved spec is `docs/superpowers/specs/2026-06-10-cairn-publish-workflow-design.md`
-(committed `3734fd9`): edits hold on per-entry `cairn/<conceptKey>/<id>` branches until a
-deliberate Publish (per page, plus a site-wide publish-all in the topbar); publish is a content
-copy to `main`, never a merge; discard deletes the branch; the `draft:` flag stays, re-presented as
-Hidden. The implementation plan is WRITTEN:
-`docs/superpowers/plans/2026-06-10-cairn-publish-workflow.md`, eleven tasks, engine-first, with two
-plan-time reconciliations recorded up top (consumer shims must add the new actions; branches carry
-no manifest copy). Execute main-loop, test-first, full gate per task, on `main` directly (the
-initiative precedent); bump `0.39.0` in the docs task. After it, the order resumes: diagnostics
-Pass 3, the gates-and-tooling pass, the gallery, P4. The site-track ecxc bump to `^0.38.0` (Pass
-2's live proof) stays queued as its own `site-pass` and can run any time after the `0.38.0`
-publish.
+**Next actions, in order:**
+1. **Publish `0.39.0`** (needs the push, so it is Geoff's call): push `main`, then
+   `gh release create v0.39.0 --target main` with the changelog window as the body; the release
+   fires the OIDC trusted-publishing workflow. The `Consumers must:` line for the shim actions
+   must reach the release notes.
+2. **The queue resumes: diagnostics Pass 3** (doctor + the gated readiness checklist), designed in
+   `docs/superpowers/specs/2026-06-08-cairn-email-delivery-and-environment-preflight-design.md`;
+   no plan written yet (write it just-in-time at pass start). It picks up two queued conditions
+   (the missing-binding condition from Pass 2, the layoutLoad GitHub-degrade event from this
+   pass). Then the gates-and-tooling pass, the gallery, P4.
+3. **Site track:** the ecxc bump to `^0.38.0` (Pass 2's live proof) stays queued as its own
+   `site-pass`. Each site's eventual `^0.39.0` retrofit must wire the three new shim actions and
+   doubles as the live proof of the publish workflow and the `%2F`-encoded ref routes.
+
+**Diagnostics Pass 2 (email-delivery) LANDED on `main` 2026-06-10 as `0.38.0` (published).** Seven
+plan tasks plus the simplifier (`6c5ea1e`) and the review fold-in (`3f1d8f8`), commits
+`5d5c865..3f1d8f8`. The send is awaited, `requestAction` returns the `RequestResult` discriminant,
+`LoginPage` renders the `send_error`/`throttled` states, and `auth.link.send_failed` carries
+`code` plus `conditionId`. The post-mortem with six carry-forwards is in the plan
+(`docs/superpowers/plans/2026-06-09-cairn-diagnostics-02-email-delivery.md`).
+
+**The publish-workflow initiative (context, complete):** the approved spec is
+`docs/superpowers/specs/2026-06-10-cairn-publish-workflow-design.md`, now carrying two plan-time
+reconciliations (consumer shims must add the actions; branches hold no manifest copy) and two
+review-time ones (publish-what-you-see; the sha-guarded delete). The plan executed as eleven
+Sonnet `cairn-implementer` dispatches verified by the main loop, with the engine review fold-in as
+the one Opus upshift.
 
 ## Backlog resequenced (2026-06-09): five engine passes instead of six
 

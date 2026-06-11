@@ -222,6 +222,49 @@ The public read-model loaders live at [`@glw907/cairn-cms/delivery`](./delivery.
 matching `CairnHead` component sits. See [the delivery reference](./delivery.md) for the worked
 catch-all route.
 
+### `createCairnAdmin`
+
+```ts
+declare function createCairnAdmin(runtime: CairnRuntime, deps?: CairnAdminDeps): {
+  load: (event: AdminEvent) => Promise<AdminData>;
+};
+```
+
+The single-mount admin facade. It instantiates the auth, content, editor, and nav route
+factories over the composed runtime and serves every admin view through one `load`, so a site
+mounts the whole admin with a single catch-all route instead of a tree of shims. The load
+parses `event.url.pathname` with `parseAdminPath` and dispatches: an unrecognized path is a
+404, `/admin` redirects to the first concept's list, the public login and confirm views return
+bare page data, and every authed view returns `{ layout, page }` with the layout and view
+loads run concurrently. The nav view is a 404 unless the runtime configures a `navMenu`.
+
+`deps.branding` defaults from the runtime's `siteName` and `sender`, so most sites pass only a
+`mintToken` override in dev. The actions record for the same factory is on its way; until it
+lands, sites keep their per-route action shims.
+
+```ts
+// src/routes/admin/[...path]/+page.server.ts
+import { composeRuntime } from '@glw907/cairn-cms';
+import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
+import { cairn, siteConfig } from '$lib/cairn.config.js';
+
+const admin = createCairnAdmin(composeRuntime({ adapter: cairn, siteConfig }));
+
+export const load = admin.load;
+```
+
+### `parseAdminPath`
+
+```ts
+declare function parseAdminPath(pathname: string, concepts: ConceptDescriptor[]): AdminView | null;
+```
+
+The path authority behind `createCairnAdmin`. It maps a raw `URL.pathname` (never a SvelteKit
+rest param) to the `AdminView` it names, or null for any shape it does not recognize, which the
+caller maps to a 404. One trailing slash is tolerated; segments are percent-decoded one at a
+time, so an encoded slash can never escape its segment. Reserved first segments (`login`,
+`auth`, `editors`, `nav`) win before concept lookup.
+
 ### `healthLoad`
 
 ```ts
@@ -270,6 +313,9 @@ imports the matching `*Data` type to type its `data` prop.
 | `NavPageOption` | `interface NavPageOption { label: string; url: string }` | One page option for the nav editor's URL picker datalist. |
 | `NavLoadData` | `interface NavLoadData { menu: { name; label; maxDepth }; tree: NavNode[]; pages: NavPageOption[]; saved; error: string \| null }` | The nav editor's load data: the menu meta, the current tree, the page options, and the status flags. |
 | `NavRoutesDeps` | `interface NavRoutesDeps { mintToken?: (env: GithubKeyEnv) => Promise<string> }` | Injectable dependencies for `createNavRoutes`; tests stub the token mint. |
+| `CairnAdminDeps` | `interface CairnAdminDeps { branding?: AuthBranding; send?: SendMagicLink; mintToken?: ContentRoutesDeps['mintToken'] }` | Injectable dependencies for `createCairnAdmin`. Branding defaults from the runtime's `siteName` and `sender`; the other two pass through to the wrapped factories. |
+| `AdminData` | `type AdminData = { view: 'login' \| 'confirm'; page } \| { view: 'list' \| 'edit' \| 'editors' \| 'nav'; layout: LayoutData; page }` | One admin view's data, discriminated on `view` for the admin page component's switch. Each `page` is the matching per-surface load's return shape (`ListData`, `EditData`, `NavLoadData`, the auth page data, or the editor list). |
+| `AdminView` | `type AdminView = { view: 'index' \| 'login' \| 'confirm' \| 'editors' \| 'nav' } \| { view: 'list'; concept } \| { view: 'edit'; concept; id }` | The parsed admin view `parseAdminPath` returns, discriminated for the dispatcher's switch. |
 | `HealthData` | `interface HealthData { ok: boolean; checks: { githubAppSigning: { ok: boolean; detail? } } }` | The `/healthz` payload: the overall status and the signing self-test result. |
 | `RequestContext` | `interface RequestContext { url; request; cookies: CookieJar; locals; platform?; setHeaders }` | The structural request the auth helpers read; a real SvelteKit `RequestEvent` satisfies it. |
 | `CookieJar` | `interface CookieJar { get; set; delete }` | The cookie accessor the auth helpers use, matching SvelteKit's `cookies`. |

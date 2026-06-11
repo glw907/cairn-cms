@@ -15,6 +15,8 @@ export type {
 } from './content-routes.js';
 export { createNavRoutes } from './nav-routes.js';
 export type { NavLoadData, NavPageOption, NavRoutesDeps } from './nav-routes.js';
+export { parseAdminPath, type AdminView } from './admin-dispatch.js';
+export { createCairnAdmin, type CairnAdminDeps, type AdminData } from './cairn-admin.js';
 export { healthLoad, type HealthData } from './health.js';
 export type { RequestContext, CookieJar, HandleInput } from './types.js';
 // Re-exported here, not from root, so the public ContentRoutesDeps consumer can name it.

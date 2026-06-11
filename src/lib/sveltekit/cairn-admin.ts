@@ -1,0 +1,137 @@
+// The single-mount admin facade. One factory closes over the composed runtime, instantiates
+// the existing per-surface route factories (auth, content, editors, nav), and serves every
+// admin view through the one load a site's catch-all /admin/[...path] route exports. The
+// path authority is admin-dispatch's parseAdminPath; this module only maps each view to the
+// wrapped load it delegates to. The actions record (Task 3) joins the same factory, sharing
+// the instantiated factories below as its seam.
+import { error } from '@sveltejs/kit';
+import { parseAdminPath } from './admin-dispatch.js';
+import { createAuthRoutes } from './auth-routes.js';
+import {
+  createContentRoutes,
+  type ContentEvent,
+  type ContentRoutesDeps,
+  type LayoutData,
+  type ListData,
+  type EditData,
+} from './content-routes.js';
+import { createEditorRoutes } from './editors-routes.js';
+import { createNavRoutes, type NavLoadData } from './nav-routes.js';
+import type { AuthBranding, SendMagicLink } from '../email.js';
+import type { AuthEnv, Editor } from '../auth/types.js';
+import type { GithubKeyEnv } from '../github/credentials.js';
+import type { CairnRuntime } from '../content/types.js';
+import type { CookieJar } from './types.js';
+
+/**
+ * The structural event the single-mount load reads: the union of what the wrapped loads need
+ * (ContentEvent minus params, which the dispatcher synthesizes, plus RequestContext's cookies
+ * and setHeaders). A real SvelteKit RequestEvent satisfies it.
+ */
+export interface AdminEvent {
+  url: URL;
+  request: Request;
+  cookies: CookieJar;
+  locals: { editor?: Editor | null };
+  platform?: {
+    env?: GithubKeyEnv & AuthEnv;
+    ctx?: { waitUntil(promise: Promise<unknown>): void };
+    context?: { waitUntil(promise: Promise<unknown>): void };
+  };
+  setHeaders(headers: Record<string, string>): void;
+}
+
+/** Injectable dependencies. Branding defaults from the runtime's siteName and sender, so a
+ *  site overrides it only to change the magic-link email identity; `send` and `mintToken`
+ *  are the same seams the underlying factories take. */
+export interface CairnAdminDeps {
+  branding?: AuthBranding;
+  send?: SendMagicLink;
+  mintToken?: ContentRoutesDeps['mintToken'];
+}
+
+/**
+ * One admin view's data, discriminated for the admin page component's switch. The public
+ * views (login, confirm) carry no layout; every authed view pairs the shared layout with its
+ * page data, the same shapes the per-surface loads have always returned.
+ */
+export type AdminData =
+  | { view: 'login'; page: { siteName: string; error: string | null; csrf: string } }
+  | { view: 'confirm'; page: { token: string; siteName: string; error: string | null; csrf: string } }
+  | { view: 'list'; layout: LayoutData; page: ListData }
+  | { view: 'edit'; layout: LayoutData; page: EditData }
+  | { view: 'editors'; layout: LayoutData; page: { editors: Editor[]; self: string } }
+  | { view: 'nav'; layout: LayoutData; page: NavLoadData };
+
+export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {}) {
+  // The runtime already composes the site name and the sender identity, so the magic-link
+  // branding needs no second copy of either unless a site overrides it.
+  const branding: AuthBranding = deps.branding ?? {
+    siteName: runtime.siteName,
+    from: runtime.sender.from,
+    replyTo: runtime.sender.replyTo,
+  };
+  const auth = createAuthRoutes({ branding, send: deps.send });
+  const content = createContentRoutes(runtime, { mintToken: deps.mintToken });
+  const editors = createEditorRoutes();
+  // The nav surface exists only when the site configures a menu; without one its view is a 404.
+  const nav = runtime.navMenu ? createNavRoutes(runtime, { mintToken: deps.mintToken }) : null;
+
+  /** Build the event a wrapped content load reads. The catch-all route carries only a rest
+   *  param, so `concept` and `id` are synthesized from the parsed view. The override names
+   *  each field explicitly rather than spreading: a real RequestEvent's fields can sit behind
+   *  getters a bare spread copies poorly, and the structural ContentEvent contract needs only
+   *  these. */
+  function contentEvent(event: AdminEvent, params: Record<string, string>): ContentEvent {
+    return {
+      url: event.url,
+      params,
+      request: event.request,
+      locals: event.locals,
+      platform: event.platform,
+      cookies: event.cookies,
+    };
+  }
+
+  /** Serve the admin view the pathname names, or a 404 for any shape the parser refuses.
+   *  The authed views run the layout load and the view load concurrently; both mint a GitHub
+   *  token, and the installation-token cache coalesces the mints into one signing. */
+  async function load(event: AdminEvent): Promise<AdminData> {
+    const view = parseAdminPath(event.url.pathname, runtime.concepts);
+    if (!view) throw error(404, 'Not found');
+    switch (view.view) {
+      case 'index':
+        return content.indexRedirect();
+      case 'login':
+        return { view: 'login', page: auth.loginLoad(event) };
+      case 'confirm':
+        return { view: 'confirm', page: auth.confirmLoad(event) };
+      case 'list': {
+        const delegated = contentEvent(event, { concept: view.concept.id });
+        const [layout, page] = await Promise.all([content.layoutLoad(delegated), content.listLoad(delegated)]);
+        return { view: 'list', layout, page };
+      }
+      case 'edit': {
+        const delegated = contentEvent(event, { concept: view.concept.id, id: view.id });
+        const [layout, page] = await Promise.all([content.layoutLoad(delegated), content.editLoad(delegated)]);
+        return { view: 'edit', layout, page };
+      }
+      case 'editors': {
+        // editorsLoad gates itself with requireOwner, so the dispatcher adds no second gate.
+        const [layout, page] = await Promise.all([
+          content.layoutLoad(contentEvent(event, {})),
+          editors.editorsLoad(event),
+        ]);
+        return { view: 'editors', layout, page };
+      }
+      case 'nav': {
+        if (!nav) throw error(404, 'Not found');
+        const delegated = contentEvent(event, {});
+        const [layout, page] = await Promise.all([content.layoutLoad(delegated), nav.navLoad(delegated)]);
+        return { view: 'nav', layout, page };
+      }
+    }
+  }
+
+  return { load };
+}

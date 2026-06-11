@@ -62,6 +62,42 @@ describe('MarkdownEditor', () => {
       .toContain('second');
   });
 
+  it('enables spell check and decorates directive machinery', async () => {
+    const doc = ['## Title', '**bold** text', ':::gallery', '::hr', 'see :icon[ski]{s=1} here'].join('\n');
+    const screen = render(MarkdownEditor, { value: doc, name: 'body' });
+    await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+    const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
+    expect(content.getAttribute('spellcheck')).toBe('true');
+    await expect.poll(() => screen.container.querySelector('.cm-line.cm-cairn-directive-fence')).not.toBeNull();
+    expect(screen.container.querySelector('.cm-line.cm-cairn-directive-leaf')).not.toBeNull();
+    expect(screen.container.querySelector('.cm-cairn-directive-inline')).not.toBeNull();
+  });
+
+  it('renders heading lines through the cairn highlight theme', async () => {
+    // The test page loads no admin CSS, so --color-primary is pinned here; the cairn heading style
+    // is the only one that references it, which makes the computed color discriminate our theme
+    // from CodeMirror's default (which also bolds headings). The generated class names are not
+    // stable, so computed style is the robust handle.
+    document.documentElement.style.setProperty('--color-primary', 'rgb(12, 34, 56)');
+    try {
+      const screen = render(MarkdownEditor, { value: '## Title\n\nplain prose', name: 'body' });
+      await expect.poll(() => screen.container.querySelector('.cm-content')?.textContent ?? '').toContain('Title');
+      const headingThemedSpan = () => {
+        const line = Array.from(screen.container.querySelectorAll<HTMLElement>('.cm-line')).find((l) =>
+          (l.textContent ?? '').includes('Title'),
+        );
+        if (!line) return false;
+        return Array.from(line.querySelectorAll<HTMLElement>('span')).some((s) => {
+          const style = getComputedStyle(s);
+          return style.color === 'rgb(12, 34, 56)' && style.fontWeight === '700';
+        });
+      };
+      await expect.poll(headingThemedSpan).toBe(true);
+    } finally {
+      document.documentElement.style.removeProperty('--color-primary');
+    }
+  });
+
   it('offers and applies a cairn link through the [[ autocomplete', async () => {
     const targets: LinkTarget[] = [
       { concept: 'pages', id: 'about', permalink: '/about', title: 'About Us', draft: false },

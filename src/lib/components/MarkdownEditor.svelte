@@ -41,6 +41,7 @@ preview lives in EditPage through the adapter's render. Swapping the editor stay
     const commandsMod = await import('@codemirror/commands');
     const languageMod = await import('@codemirror/language');
     const autocompleteMod = await import('@codemirror/autocomplete');
+    const highlightMod = await import('./editor-highlight.js');
 
     if (!host) return;
 
@@ -52,6 +53,18 @@ preview lives in EditPage through the adapter's render. Swapping the editor stay
         '.cm-cursor': { borderLeftColor: 'var(--color-primary)' },
         '&.cm-focused': { outline: '2px solid var(--color-primary)', outlineOffset: '-2px' },
         '.cm-line': { padding: '0' },
+        '.cm-cairn-directive-fence': {
+          backgroundColor: 'color-mix(in oklab, var(--color-accent) 8%, transparent)',
+          color: 'var(--color-accent)',
+        },
+        '.cm-cairn-directive-leaf': {
+          backgroundColor: 'color-mix(in oklab, var(--color-accent) 8%, transparent)',
+          color: 'var(--color-accent)',
+        },
+        '.cm-cairn-directive-inline': {
+          backgroundColor: 'color-mix(in oklab, var(--color-accent) 8%, transparent)',
+          color: 'var(--color-accent)',
+        },
       },
       { dark: false },
     );
@@ -70,7 +83,9 @@ preview lives in EditPage through the adapter's render. Swapping the editor stay
               [autocompleteMod.autocompletion({ override: completionSources, interactionDelay: 0 })]
             : []),
           EditorView.lineWrapping,
-          languageMod.syntaxHighlighting(languageMod.defaultHighlightStyle, { fallback: true }),
+          languageMod.syntaxHighlighting(highlightMod.cairnHighlightStyle()),
+          highlightMod.cairnDirectivePlugin(),
+          EditorView.contentAttributes.of({ spellcheck: 'true', autocorrect: 'on', autocapitalize: 'sentences' }),
           theme,
           EditorView.updateListener.of((update) => {
             if (update.docChanged) value = update.state.doc.toString();

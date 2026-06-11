@@ -6,6 +6,7 @@
 // fetch, so only the repo read routes through ctx.fetch.
 import { appCredentials } from '../github/credentials.js';
 import { installationToken, signingSelfTest } from '../github/signing.js';
+import { fail, pass, skip } from './types.js';
 import type { CheckResult, DoctorCheck, DoctorContext } from './types.js';
 
 const API = 'https://api.github.com';
@@ -16,14 +17,12 @@ export const githubApp: DoctorCheck = {
 	title: 'GitHub App',
 	async run(ctx: DoctorContext): Promise<CheckResult> {
 		if (!ctx.github) {
-			return {
-				status: 'skip',
-				detail:
-					'set GITHUB_APP_ID, GITHUB_APP_INSTALLATION_ID, and GITHUB_APP_PRIVATE_KEY_B64 to run this check',
-			};
+			return skip(
+				'set GITHUB_APP_ID, GITHUB_APP_INSTALLATION_ID, and GITHUB_APP_PRIVATE_KEY_B64 to run this check'
+			);
 		}
 		if (!ctx.repo) {
-			return { status: 'skip', detail: 'pass --repo or set GITHUB_REPO to run this check' };
+			return skip('pass --repo or set GITHUB_REPO to run this check');
 		}
 		const creds = appCredentials(
 			{ appId: ctx.github.appId, installationId: ctx.github.installationId },
@@ -33,7 +32,7 @@ export const githubApp: DoctorCheck = {
 		// fixed classifier, so a bad key can never echo key bytes into the report.
 		const signed = await signingSelfTest(creds.appId, creds.privateKeyB64);
 		if (!signed.ok) {
-			return { status: 'fail', detail: `the App key failed to parse or sign: ${signed.detail}` };
+			return fail(`the App key failed to parse or sign: ${signed.detail}`);
 		}
 		// Stage 2: the token mint, through the uncached primitive. A one-shot CLI gains nothing
 		// from the Worker-lifecycle cache, and the probe should reach GitHub for real.
@@ -41,7 +40,7 @@ export const githubApp: DoctorCheck = {
 		try {
 			token = await installationToken(creds);
 		} catch (err) {
-			return { status: 'fail', detail: `App authentication failed: ${String(err)}` };
+			return fail(`App authentication failed: ${String(err)}`);
 		}
 		// Stage 3: the repo read, with the engine's standard GitHub headers.
 		try {
@@ -54,11 +53,11 @@ export const githubApp: DoctorCheck = {
 				},
 			});
 			if (!res.ok) {
-				return { status: 'fail', detail: `repo ${ctx.repo} returned ${res.status}` };
+				return fail(`repo ${ctx.repo} returned ${res.status}`);
 			}
-			return { status: 'pass', detail: `the App reads ${ctx.repo}` };
+			return pass(`the App reads ${ctx.repo}`);
 		} catch (err) {
-			return { status: 'fail', detail: String(err) };
+			return fail(String(err));
 		}
 	},
 };

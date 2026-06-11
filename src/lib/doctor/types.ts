@@ -9,6 +9,19 @@ export interface CheckResult {
 	detail: string;
 }
 
+/** Result constructors, so a check body reads one outcome per line instead of object literals. */
+export function pass(detail: string): CheckResult {
+	return { status: 'pass', detail };
+}
+
+export function fail(detail: string): CheckResult {
+	return { status: 'fail', detail };
+}
+
+export function skip(detail: string): CheckResult {
+	return { status: 'skip', detail };
+}
+
 export interface DoctorCheck {
 	/** Stable id, e.g. 'email.sender-onboarded'. */
 	id: string;

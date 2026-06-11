@@ -7,9 +7,9 @@
 //   POST /accounts/{account_id}/email/sending/send with { from, to, subject, text },
 //   where from and to take a plain address string.
 //   https://developers.cloudflare.com/api/resources/email_sending/
+import { fail, pass } from './types.js';
 import type { CheckResult, DoctorCheck, DoctorContext } from './types.js';
-
-const API = 'https://api.cloudflare.com/client/v4';
+import { cfPost, NO_ACCOUNT, NO_FROM } from './cloudflare-api.js';
 
 // Enough of an error body to act on without flooding the one-line report.
 const EXCERPT_MAX = 200;
@@ -21,36 +21,22 @@ export function liveSendCheck(to: string): DoctorCheck {
 		conditionId: 'email.send-failed',
 		title: 'Live test send',
 		async run(ctx: DoctorContext): Promise<CheckResult> {
-			if (!ctx.cfToken || !ctx.cfAccountId) {
-				return {
-					status: 'skip',
-					detail: 'set CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID to run this check',
-				};
-			}
-			if (!ctx.from) {
-				return { status: 'skip', detail: 'pass --from or set CAIRN_FROM to run this check' };
-			}
+			if (!ctx.cfToken || !ctx.cfAccountId) return NO_ACCOUNT;
+			if (!ctx.from) return NO_FROM;
 			try {
-				const res = await ctx.fetch(`${API}/accounts/${ctx.cfAccountId}/email/sending/send`, {
-					method: 'POST',
-					headers: {
-						authorization: `Bearer ${ctx.cfToken}`,
-						'content-type': 'application/json',
-					},
-					body: JSON.stringify({
-						from: ctx.from,
-						to,
-						subject: 'cairn doctor test send',
-						text: 'This is a cairn doctor test send. Receiving it proves the sending path.',
-					}),
+				const res = await cfPost(ctx, `/accounts/${ctx.cfAccountId}/email/sending/send`, {
+					from: ctx.from,
+					to,
+					subject: 'cairn doctor test send',
+					text: 'This is a cairn doctor test send. Receiving it proves the sending path.',
 				});
 				if (!res.ok) {
 					const excerpt = (await res.text()).slice(0, EXCERPT_MAX);
-					return { status: 'fail', detail: `send returned ${res.status}: ${excerpt}` };
+					return fail(`send returned ${res.status}: ${excerpt}`);
 				}
-				return { status: 'pass', detail: `sent to ${to}; check the inbox` };
+				return pass(`sent to ${to}; check the inbox`);
 			} catch (err) {
-				return { status: 'fail', detail: String(err) };
+				return fail(String(err));
 			}
 		},
 	};

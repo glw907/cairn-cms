@@ -1,5 +1,6 @@
 // The doctor's runner: every check executes, every result lands in the table. A throwing check
 // records a fail and the run continues, so one broken probe never hides the rest of the picture.
+import { fail } from './types.js';
 import type { CheckResult, DoctorCheck, DoctorContext } from './types.js';
 
 export async function runDoctor(
@@ -13,7 +14,7 @@ export async function runDoctor(
 		try {
 			result = await check.run(ctx);
 		} catch (err) {
-			result = { status: 'fail', detail: String(err) };
+			result = fail(String(err));
 		}
 		if (result.status === 'fail') failed += 1;
 		results.push({ check, result });

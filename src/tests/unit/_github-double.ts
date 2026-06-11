@@ -107,9 +107,9 @@ export class GithubDouble {
     }
 
     // Ref delete: DELETE /repos/o/r/git/refs/heads/<branch>
-    const refDel = path.match(/^\/repos\/[^/]+\/[^/]+\/git\/refs\/heads\/(.+)$/);
-    if (refDel && method === 'DELETE') {
-      const branch = decodeURIComponent(refDel[1]);
+    const refWrite = path.match(/^\/repos\/[^/]+\/[^/]+\/git\/refs\/heads\/(.+)$/);
+    if (refWrite && method === 'DELETE') {
+      const branch = decodeURIComponent(refWrite[1]);
       if (!this.branches.has(branch)) return new Response('Not Found', { status: 404 });
       this.branches.delete(branch);
       this.shas.delete(branch);
@@ -139,8 +139,8 @@ export class GithubDouble {
     }
 
     // Ref update (the atomic-commit landing): PATCH /repos/o/r/git/refs/heads/<branch>
-    if (refDel && method === 'PATCH') {
-      const branch = decodeURIComponent(refDel[1]);
+    if (refWrite && method === 'PATCH') {
+      const branch = decodeURIComponent(refWrite[1]);
       const tree = this.branches.get(branch);
       const staged = this.stagedTrees.get(this.stagedCommits.get(String(body?.sha ?? '')) ?? '');
       if (!tree || !staged) return new Response('Unprocessable', { status: 422 });

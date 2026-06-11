@@ -74,6 +74,20 @@ function mainRefPatches(gh: GithubDouble) {
   return gh.calls.filter((c) => c.method === 'PATCH' && c.url.includes('/git/refs/heads/main'));
 }
 
+/** Wrap the installed double so main's ref update fails the way GitHub signals a stale head,
+ *  leaving every other route on the double, so commitFiles raises its CommitConflictError. */
+function failMainRefPatch(): void {
+  const double = globalThis.fetch;
+  vi.stubGlobal('fetch', async (input: string | URL | Request, init?: RequestInit) => {
+    const url = String(input instanceof Request ? input.url : input);
+    const method = (init?.method ?? 'GET').toUpperCase();
+    if (method === 'PATCH' && url.includes('/git/refs/heads/main')) {
+      return new Response('{"message":"Update is not a fast forward"}', { status: 422 });
+    }
+    return double(input, init);
+  });
+}
+
 afterEach(() => vi.restoreAllMocks());
 
 describe('publishAction', () => {
@@ -158,17 +172,7 @@ describe('publishAction', () => {
       [BRANCH]: { [ENTRY_PATH]: PENDING_MD },
     });
     gh.install();
-    // Fail main's ref update the way GitHub signals a stale head, leaving every other route on
-    // the double, so commitFiles raises its CommitConflictError.
-    const double = globalThis.fetch;
-    vi.stubGlobal('fetch', async (input: string | URL | Request, init?: RequestInit) => {
-      const url = String(input instanceof Request ? input.url : input);
-      const method = (init?.method ?? 'GET').toUpperCase();
-      if (method === 'PATCH' && url.includes('/git/refs/heads/main')) {
-        return new Response('{"message":"Update is not a fast forward"}', { status: 422 });
-      }
-      return double(input, init);
-    });
+    failMainRefPatch();
     const routes = createContentRoutes(runtime(), deps);
 
     const location = await redirectedTo(routes.publishAction(actionEvent('2026-05-01-hi') as never));
@@ -287,15 +291,7 @@ describe('publishAllAction', () => {
       [BRANCH]: { [ENTRY_PATH]: PENDING_MD },
     });
     gh.install();
-    const double = globalThis.fetch;
-    vi.stubGlobal('fetch', async (input: string | URL | Request, init?: RequestInit) => {
-      const url = String(input instanceof Request ? input.url : input);
-      const method = (init?.method ?? 'GET').toUpperCase();
-      if (method === 'PATCH' && url.includes('/git/refs/heads/main')) {
-        return new Response('{"message":"Update is not a fast forward"}', { status: 422 });
-      }
-      return double(input, init);
-    });
+    failMainRefPatch();
     const routes = createContentRoutes(runtime(), deps);
 
     const location = await redirectedTo(routes.publishAllAction(listActionEvent() as never));

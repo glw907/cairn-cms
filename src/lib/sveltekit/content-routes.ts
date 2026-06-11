@@ -13,7 +13,7 @@ import { listMarkdown, readRaw, commitFiles, type FileChange } from '../github/r
 import { branchHeadSha, createBranch, deleteBranch, listBranches } from '../github/branches.js';
 import { PENDING_PREFIX, pendingBranch, parsePendingBranch } from '../content/pending.js';
 import { cachedInstallationToken } from '../github/signing.js';
-import { emptyManifest, manifestEntryFromFile, parseManifest, serializeManifest, upsertEntry, removeEntry, inboundLinks, type LinkTarget, type InboundLink } from '../content/manifest.js';
+import { emptyManifest, manifestEntryFromFile, parseManifest, serializeManifest, upsertEntry, removeEntry, inboundLinks, type Manifest, type LinkTarget, type InboundLink } from '../content/manifest.js';
 import { CommitConflictError } from '../github/types.js';
 import { log } from '../log/index.js';
 import { issueCsrfToken } from './csrf.js';
@@ -138,6 +138,13 @@ function conceptOf(runtime: CairnRuntime, params: Record<string, string>): Conce
 export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDeps = {}) {
   const mintToken =
     deps.mintToken ?? ((env: GithubKeyEnv) => cachedInstallationToken(appCredentials(runtime.backend, env)));
+
+  /** Main's manifest, parsed. A missing file starts empty (a fresh repo before the first commit).
+   *  Always read from main: pending branches carry no manifest copy. */
+  async function readManifest(token: string): Promise<Manifest> {
+    const raw = await readRaw(runtime.backend, runtime.manifestPath, token);
+    return raw === null ? emptyManifest() : parseManifest(raw);
+  }
 
   /** Layout load for every admin page: the nav, the user, the active path, the resolved theme,
    *  and the pending entries behind the topbar's publish-all action. */
@@ -362,9 +369,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
   }
 
   /** Log a failed commit: a conflict is the expected last-writer-wins outcome, so it warns with a
-   *  reason; any other error is unexpected and logs at error with the stringified cause. The caller
-   *  still owns the redirect or rethrow, so control flow stays at the call site. Publish failures
-   *  carry the same shape under their own event name. */
+   *  reason; any other error is unexpected and logs at error with the stringified cause. Publish
+   *  failures carry the same shape under their own event name. */
   function logCommitFailed(
     fields: { concept: string; id: string; editor: string },
     err: unknown,
@@ -375,6 +381,23 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     } else {
       log.error(event, { ...fields, error: String(err) });
     }
+  }
+
+  /** The shared commit catch for the entry actions: log the failure, bounce a conflict back to
+   *  `page` with `message` as the inline error, and rethrow anything else. `query` keeps any extra
+   *  params the bounce must carry (saveAction's `&new=1`). */
+  function commitFailure(
+    fields: { concept: string; id: string; editor: string },
+    err: unknown,
+    page: string,
+    message: string,
+    opts: { event?: 'commit.failed' | 'publish.failed'; query?: string } = {},
+  ): never {
+    logCommitFailed(fields, err, opts.event);
+    if (isConflict(err)) {
+      throw redirect(303, `${page}?error=${encodeURIComponent(message)}${opts.query ?? ''}`);
+    }
+    throw err;
   }
 
   /** Save an edit: validate, then commit to the entry's pending branch with the session editor
@@ -402,12 +425,9 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     const markdown = serializeMarkdown(result.data, body);
     const token = await mintToken(event.platform?.env ?? {});
 
-    // Read main's manifest (the authoritative one; pending branches carry no manifest copy) and
-    // upsert this entry's row in memory, for the link guard only. The save commits no manifest
-    // change; publish performs the upsert on main. A missing manifest starts empty (first save on
-    // a fresh repo).
-    const manifestRaw = await readRaw(runtime.backend, runtime.manifestPath, token);
-    const manifest = manifestRaw === null ? emptyManifest() : parseManifest(manifestRaw);
+    // Upsert this entry's row into main's manifest in memory, for the link guard only. The save
+    // commits no manifest change; publish performs the upsert on main.
+    const manifest = await readManifest(token);
     const row = manifestEntryFromFile(concept, { path, raw: markdown });
     const upserted = upsertEntry(manifest, row);
 
@@ -451,12 +471,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
-      logCommitFailed(commitFields, err);
-      if (isConflict(err)) {
-        const message = 'This file changed since you opened it. Reload and reapply your edits.';
-        throw redirect(303, `/admin/${concept.id}/${id}?error=${encodeURIComponent(message)}${suffix}`);
-      }
-      throw err;
+      commitFailure(commitFields, err, `/admin/${concept.id}/${id}`,
+        'This file changed since you opened it. Reload and reapply your edits.', { query: suffix });
     }
     const savedQuery = draft.length ? `saved=1&drafts=${encodeURIComponent(draft.join(','))}` : 'saved=1';
     throw redirect(303, `/admin/${concept.id}/${id}?${savedQuery}`);
@@ -483,10 +499,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     const raw = await readRaw({ ...runtime.backend, branch }, path, token);
     if (raw === null) return bounce('Could not read the unpublished edits from GitHub.');
 
-    // Main's manifest is the authoritative one (branches carry no manifest copy); the row derives
-    // from the branch file, so publish lands the content and its index entry together.
-    const manifestRaw = await readRaw(runtime.backend, runtime.manifestPath, token);
-    const manifest = manifestRaw === null ? emptyManifest() : parseManifest(manifestRaw);
+    // The row derives from the branch file, so publish lands the content and its index entry together.
+    const manifest = await readManifest(token);
     const next = upsertEntry(manifest, manifestEntryFromFile(concept, { path, raw }));
 
     const commitFields = { concept: concept.id, id, editor: editor.email };
@@ -502,12 +516,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       );
       log.info('entry.published', { ...commitFields, batch: false });
     } catch (err) {
-      logCommitFailed(commitFields, err, 'publish.failed');
-      if (isConflict(err)) {
-        const message = 'This file changed since you opened it. Reload and reapply your edits.';
-        throw redirect(303, `/admin/${concept.id}/${id}?error=${encodeURIComponent(message)}`);
-      }
-      throw err;
+      commitFailure(commitFields, err, `/admin/${concept.id}/${id}`,
+        'This file changed since you opened it. Reload and reapply your edits.', { event: 'publish.failed' });
     }
     // Only after the main commit lands: a failure above keeps the branch and its edits.
     await deleteBranch(runtime.backend, branch, token);
@@ -541,8 +551,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     // Read each branch's entry file, and main's manifest once; fold every row in, so the batch
     // lands content and index together, the same shape as a single publish. A ghost ref whose
     // entry file is missing is skipped (discard can clean it up); it carries nothing to publish.
-    const manifestRaw = await readRaw(runtime.backend, runtime.manifestPath, token);
-    let next = manifestRaw === null ? emptyManifest() : parseManifest(manifestRaw);
+    let next = await readManifest(token);
     const changes: FileChange[] = [];
     const published: { concept: string; id: string; branch: string }[] = [];
     for (const entry of pending) {
@@ -622,8 +631,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
 
     // An absent manifest degrades the inbound gate to "allow": with no manifest there is nothing to
     // check, and the build's cairn: backstop still catches any dangling token, mirroring saveAction.
-    const manifestRaw = await readRaw(runtime.backend, runtime.manifestPath, token);
-    const manifest = manifestRaw === null ? emptyManifest() : parseManifest(manifestRaw);
+    const manifest = await readManifest(token);
     const inbound = inboundLinks(manifest, concept.id, id);
     if (inbound.length) {
       return fail(409, { inboundLinks: inbound, id });
@@ -654,12 +662,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
-      logCommitFailed(commitFields, err);
-      if (isConflict(err)) {
-        const message = 'This file changed since you opened it. Reload and try again.';
-        throw redirect(303, `/admin/${concept.id}/${id}?error=${encodeURIComponent(message)}`);
-      }
-      throw err;
+      commitFailure(commitFields, err, `/admin/${concept.id}/${id}`,
+        'This file changed since you opened it. Reload and try again.');
     }
     throw redirect(303, `/admin/${concept.id}`);
   }
@@ -724,12 +728,11 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       return fail(409, { renameError: 'An entry with that slug already exists.' });
     }
 
-    const [entryRaw, manifestRaw] = await Promise.all([
+    const [entryRaw, manifest] = await Promise.all([
       readRaw(runtime.backend, oldPath, token),
-      readRaw(runtime.backend, runtime.manifestPath, token),
+      readManifest(token),
     ]);
     if (entryRaw === null) throw error(404, 'Entry not found');
-    const manifest = manifestRaw === null ? emptyManifest() : parseManifest(manifestRaw);
 
     const oldHref = formatCairnToken({ concept: concept.id, id });
     const newHref = formatCairnToken({ concept: concept.id, id: newId });
@@ -769,12 +772,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
-      logCommitFailed(commitFields, err);
-      if (isConflict(err)) {
-        const message = 'This file changed since you opened it. Reload and try again.';
-        throw redirect(303, `/admin/${concept.id}/${id}?error=${encodeURIComponent(message)}`);
-      }
-      throw err;
+      commitFailure(commitFields, err, `/admin/${concept.id}/${id}`,
+        'This file changed since you opened it. Reload and try again.');
     }
     throw redirect(303, `/admin/${concept.id}/${newId}?renamed=1`);
   }

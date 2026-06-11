@@ -91,12 +91,7 @@ export function installFakeGitHub(): void {
   const real = globalThis.fetch;
 
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-    const url =
-      typeof input === 'string'
-        ? input
-        : input instanceof URL
-          ? input.href
-          : (input as Request).url;
+    const url = String(input instanceof Request ? input.url : input);
 
     if (!url.includes('api.github.com')) return real(input, init);
 

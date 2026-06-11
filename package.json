@@ -26,7 +26,7 @@
     "markdown"
   ],
   "scripts": {
-    "package": "svelte-package && node scripts/build-admin-css.mjs && chmod +x dist/vite/bin.js",
+    "package": "svelte-package && node scripts/build-admin-css.mjs && chmod +x dist/vite/bin.js dist/doctor/bin.js",
     "check:package": "npm run package && publint --strict && attw --pack . --ignore-rules no-resolution cjs-resolves-to-esm internal-resolution-error",
     "check:reference": "npm run package && node scripts/reference-coverage.mjs",
     "check:docs": "node scripts/docs-links.mjs",
@@ -82,7 +82,8 @@
     "./package.json": "./package.json"
   },
   "bin": {
-    "cairn-manifest": "./dist/vite/bin.js"
+    "cairn-manifest": "./dist/vite/bin.js",
+    "cairn-doctor": "./dist/doctor/bin.js"
   },
   "files": [
     "dist",

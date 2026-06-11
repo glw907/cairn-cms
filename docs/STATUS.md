@@ -11,7 +11,21 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-10): publish `0.39.0`, then diagnostics Pass 3
+## Immediate next action (2026-06-10, later): execute the edit-page redesign plan (jumps the queue)
+
+**The edit-page redesign has an approved spec and a WRITTEN plan, ready to execute:**
+spec `docs/superpowers/specs/2026-06-10-cairn-edit-page-redesign-design.md`, plan
+`docs/superpowers/plans/2026-06-10-cairn-edit-page-redesign.md`, twelve tasks, bump `0.40.0` in the
+docs task. Four zones (sticky action header, editor column with hoisted title and Write/Preview
+tabs, grouped sidebar with Address, feedback strip), full GFM toolbar with a More menu and a
+disabled Image placeholder, code-editor syntax highlighting with first-class remark-directive
+machinery styling, native spell check, dirty tracking with a leave guard and Ctrl/Cmd+S. Execute
+main-loop on `main`: Tasks 1-9 and 11 to `cairn-implementer` (Sonnet), Task 10 is the design pass
+through `frontend-design:frontend-design` on `fable` with a fresh-agent critique loop (Geoff's
+call; cairn's UI must be exceptional for the non-technical editor). `0.39.0` remains unpublished
+below; this pass lands `0.40.0` on top and both publish together unless Geoff publishes earlier.
+
+## Prior next action (2026-06-10): publish `0.39.0`, then diagnostics Pass 3
 
 **The publish workflow LANDED on `main` 2026-06-10 as `0.39.0`, unpublished.** Eleven plan tasks
 plus a stale-prose sweep, a simplifier pass, two review fold-ins, and a docs fold-in, commits

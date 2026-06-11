@@ -11,25 +11,40 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-11, later): execute the diagnostics Pass 3 + debt plan
+## Immediate next action (2026-06-11, latest): publish `0.41.0`, then the queue resumes
 
-**The window PUBLISHED.** `v0.40.0` released 2026-06-11 (OIDC run `27367965755` green); the
-registry `latest` is `0.40.0`, carrying `0.39.0` (publish workflow, breaking) and `0.40.0` (edit
-page, additive). `main` is pushed and clean at the tag.
+**Diagnostics Pass 3 + the debt batch LANDED on `main` 2026-06-11 as `0.41.0`, closing the
+diagnostics initiative.** Eleven plan tasks plus a simplifier pass, a review fold-in, and a
+live-run fix, commits `dce3925..95a7061`. The `cairn-doctor` bin runs nine checks (local config,
+Cloudflare, GitHub App) into one accumulate-all report keyed to the now twelve-entry frozen
+condition registry; the readiness checklist guide pins to the registry via the new
+`check:readiness` CI gate; `github.unreachable` covers the admin layout degrade. The debt batch
+cleared eleven 0.39/0.40 carry-forwards (the SSR boundary leak, editLoad waterfall, mint
+coalescing, publish-all polish, draftWarning via page.url, willUnload, roving sync, word count,
+the LoginPage regression test, flash convergence; popover sweep found nothing).
 
-**Diagnostics Pass 3 + debt removal has a WRITTEN plan, ready to execute:**
-`docs/superpowers/plans/2026-06-11-cairn-diagnostics-03-doctor-and-debt.md`, eleven tasks, bump
-`0.41.0` in the docs task (the new versioning rule: x.1.0 for larger work). Tasks 1-8 build the
-doctor (seven new registry conditions plus the registry freeze, the `github.unreachable` layout
-event, the check runner and report, local/Cloudflare/GitHub checks, the `cairn-doctor` bin, the
-readiness checklist with its `check:readiness` gate); Tasks 9-10 clear the 0.39/0.40 debt
-carry-forwards (the SSR boundary leak, editLoad waterfall, mint coalescing, publish-all polish,
-draftWarning, willUnload, roving sync, word count, the LoginPage regression test, flash
-convergence, the popover sweep); Task 11 is docs. The plan settles the spec's three open
-questions up top (--from/CAIRN_FROM config discovery, reachability-only GitHub check, all v1
-checks at once). Execute main-loop on `main` (the initiative precedent): dispatch each task to
-`cairn-implementer` (Sonnet), review each diff, verify the gate between dispatches. After this
-pass: the gates-and-tooling pass, the gallery, P4, and the site retrofits to `^0.40.0`/`^0.41.0`.
+**The doctor proved itself live on day one.** Run against the ecxc-ski checkout with real
+credentials, it found that the `ecxc.ski` zone (new at the rename) never received Always Use
+HTTPS or HSTS; verified against the zone-settings API, fixed in place (HTTPS on, HSTS two
+years), re-run 9/9 green. One DX gap it surfaced (site.config.yaml at the adapter-configured
+`src/lib/` path) was fixed as the conventional-locations probe.
+
+Gate green at the tip `95a7061`, run first-hand: `npm run check` 887 files 0/0, `npm test` 148
+files / 1146 tests exit 0, all five doc/readiness gates clean. Three reviewers, no Critical; the
+fold-in raised the kit peer floor to `^2.12` (the `$app/state` import; a `Consumers must:` line
+rides the changelog) and paired the doctor's CSRF check (an uncommented `checkOrigin: false` AND
+a cairn-wired hooks file, closing a false-assurance gap). The post-mortem with seven
+carry-forwards is in the plan
+(`docs/superpowers/plans/2026-06-11-cairn-diagnostics-03-doctor-and-debt.md`).
+
+**Next actions, in order:**
+1. **Publish `0.41.0`**: push `main`, then `gh release create v0.41.0 --target main` with the
+   0.41.0 changelog entry as the body (the kit `^2.12` `Consumers must:` line included).
+2. **The queue resumes:** the gates-and-tooling pass (spec it first), then the gallery
+   initiative (brainstorm first: git-vs-R2), then P4. The site retrofits to `^0.41.0` can run
+   any time after the publish; each wires the 0.39 shim actions, checks its lockfile for svelte
+   5.56.1 and kit >= 2.12, runs `cairn-doctor` as part of the retrofit, and is the live proof of
+   the publish workflow, the `%2F` ref routes, and the redesigned editor.
 
 ## Prior next action (2026-06-11): publish the `0.39.0`+`0.40.0` window, then diagnostics Pass 3
 

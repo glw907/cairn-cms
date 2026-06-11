@@ -20,7 +20,7 @@ house style (24x24 viewBox, `currentColor`, round caps), so the row matches the 
   const buttons: { kind: FormatKind; label: string; paths: string[] }[] = [
     { kind: 'bold', label: 'Bold', paths: ['M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8'] },
     { kind: 'italic', label: 'Italic', paths: ['M19 4h-9', 'M14 20H5', 'M15 4 9 20'] },
-    { kind: 'heading', label: 'Heading', paths: ['M6 4v16', 'M18 4v16', 'M6 12h12'] },
+    { kind: 'h2', label: 'Heading', paths: ['M6 4v16', 'M18 4v16', 'M6 12h12'] },
     {
       kind: 'link',
       label: 'Link',

@@ -6,6 +6,7 @@ describe('applyMarkdownFormat', () => {
     { kind: 'bold', doc: 'abc', out: '**abc**', from: 2, to: 5 },
     { kind: 'italic', doc: 'abc', out: '_abc_', from: 1, to: 4 },
     { kind: 'code', doc: 'abc', out: '`abc`', from: 1, to: 4 },
+    { kind: 'strike', doc: 'abc', out: '~~abc~~', from: 2, to: 5 },
   ];
   for (const c of wrap) {
     it(`wraps a selection for ${c.kind}`, () => {
@@ -13,14 +14,24 @@ describe('applyMarkdownFormat', () => {
     });
   }
 
-  const linePrefix: { kind: FormatKind; out: string; to: number }[] = [
-    { kind: 'heading', out: '# abc', to: 5 },
-    { kind: 'quote', out: '> abc', to: 5 },
-    { kind: 'ul', out: '- abc', to: 5 },
+  it('unwraps a strike selection whose surrounding text already carries the markers', () => {
+    expect(applyMarkdownFormat('~~abc~~', 2, 5, 'strike')).toEqual({ doc: 'abc', from: 0, to: 3 });
+  });
+
+  it('unwraps a strike selection that includes the markers', () => {
+    expect(applyMarkdownFormat('~~abc~~', 0, 7, 'strike')).toEqual({ doc: 'abc', from: 0, to: 3 });
+  });
+
+  const linePrefix: { kind: FormatKind; out: string; from: number; to: number }[] = [
+    { kind: 'h2', out: '## abc', from: 3, to: 6 },
+    { kind: 'h3', out: '### abc', from: 4, to: 7 },
+    { kind: 'quote', out: '> abc', from: 2, to: 5 },
+    { kind: 'ul', out: '- abc', from: 2, to: 5 },
+    { kind: 'task', out: '- [ ] abc', from: 6, to: 9 },
   ];
   for (const c of linePrefix) {
     it(`prefixes the line for ${c.kind}`, () => {
-      expect(applyMarkdownFormat('abc', 0, 3, c.kind)).toEqual({ doc: c.out, from: 2, to: c.to });
+      expect(applyMarkdownFormat('abc', 0, 3, c.kind)).toEqual({ doc: c.out, from: c.from, to: c.to });
     });
   }
 
@@ -29,7 +40,59 @@ describe('applyMarkdownFormat', () => {
   });
 
   it('prefixes every line of a multi-line selection', () => {
-    expect(applyMarkdownFormat('a\nb', 0, 3, 'heading')).toEqual({ doc: '# a\n# b', from: 2, to: 7 });
+    expect(applyMarkdownFormat('a\nb', 0, 3, 'h2')).toEqual({ doc: '## a\n## b', from: 3, to: 9 });
+  });
+
+  it('removes the h2 prefix from a line already at that level', () => {
+    expect(applyMarkdownFormat('## abc', 0, 6, 'h2')).toEqual({ doc: 'abc', from: 0, to: 3 });
+  });
+
+  it('replaces another heading level with h2', () => {
+    expect(applyMarkdownFormat('### abc', 0, 7, 'h2')).toEqual({ doc: '## abc', from: 0, to: 6 });
+  });
+
+  it('removes the h3 prefix from a line already at that level', () => {
+    expect(applyMarkdownFormat('### abc', 0, 7, 'h3')).toEqual({ doc: 'abc', from: 0, to: 3 });
+  });
+
+  it('replaces another heading level with h3', () => {
+    expect(applyMarkdownFormat('## abc', 0, 6, 'h3')).toEqual({ doc: '### abc', from: 1, to: 7 });
+  });
+
+  it('numbers each selected line for ol', () => {
+    expect(applyMarkdownFormat('a\nb', 0, 3, 'ol')).toEqual({ doc: '1. a\n2. b', from: 3, to: 9 });
+  });
+
+  it('removes the numbering when every selected line is already numbered', () => {
+    expect(applyMarkdownFormat('1. a\n2. b', 0, 9, 'ol')).toEqual({ doc: 'a\nb', from: 0, to: 3 });
+  });
+
+  it('removes the task prefix when every selected line already carries one', () => {
+    expect(applyMarkdownFormat('- [ ] a\n- [x] b', 0, 15, 'task')).toEqual({ doc: 'a\nb', from: 0, to: 3 });
+  });
+
+  it('fences the selected lines for codeblock', () => {
+    expect(applyMarkdownFormat('abc', 0, 3, 'codeblock')).toEqual({ doc: '```\nabc\n```', from: 4, to: 7 });
+  });
+
+  it('fences a selection inside surrounding text', () => {
+    expect(applyMarkdownFormat('x\nabc\ny', 2, 5, 'codeblock')).toEqual({ doc: 'x\n```\nabc\n```\ny', from: 6, to: 9 });
+  });
+
+  it('removes the fences when the surrounding lines are already fences', () => {
+    expect(applyMarkdownFormat('```\nabc\n```', 4, 7, 'codeblock')).toEqual({ doc: 'abc', from: 0, to: 3 });
+    expect(applyMarkdownFormat('x\n```\nabc\n```\ny', 6, 9, 'codeblock')).toEqual({ doc: 'x\nabc\ny', from: 2, to: 5 });
+  });
+
+  it('inserts a divider at the cursor for hr and collapses the selection', () => {
+    expect(applyMarkdownFormat('ab', 1, 1, 'hr')).toEqual({ doc: 'a\n\n---\n\nb', from: 8, to: 8 });
+  });
+
+  it('inserts a starter table at the cursor with the selection on the first header cell', () => {
+    const grid = '| Column 1 | Column 2 |\n| -------- | -------- |\n|          |          |\n|          |          |';
+    const res = applyMarkdownFormat('ab', 1, 1, 'table');
+    expect(res.doc).toBe(`a\n\n${grid}\n\nb`);
+    expect(res.doc.slice(res.from, res.to)).toBe('Column 1');
   });
 });
 

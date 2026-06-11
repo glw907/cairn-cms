@@ -334,17 +334,21 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     const datePrefix = concept.routing.dated ? concept.datePrefix : null;
     const path = `${concept.dir}/${filenameFromId(id)}`;
     // A pending entry reads branch-first: the editor shows the unpublished edits. The manifest
-    // (link targets and the inbound-link guard) always reads main, the authoritative copy, and a
-    // pending entry adds a main read of its own path to derive its published state.
+    // (link targets and the inbound-link guard) always reads main, the authoritative copy.
+    // Stage 1 runs the branch probe, the main-path read, and the manifest read concurrently,
+    // so the probe does not serialize ahead of the other two; stage 2 adds the branch read
+    // only when the probe found a branch, with the stage-1 main read serving as the published
+    // signal either way.
     const branch = pendingBranch(concept.id, id);
-    const pending = (await branchHeadSha(runtime.backend, branch, token)) !== null;
-    const [raw, manifestRaw, mainRaw] = await Promise.all([
-      readRaw(pending ? { ...runtime.backend, branch } : runtime.backend, path, token),
+    const [headSha, mainRaw, manifestRaw] = await Promise.all([
+      branchHeadSha(runtime.backend, branch, token),
+      readRaw(runtime.backend, path, token),
       readRaw(runtime.backend, runtime.manifestPath, token),
-      pending ? readRaw(runtime.backend, path, token) : Promise.resolve(null),
     ]);
+    const pending = headSha !== null;
+    const raw = pending ? await readRaw({ ...runtime.backend, branch }, path, token) : mainRaw;
     if (raw === null && !isNew) throw error(404, 'Entry not found');
-    const published = pending ? mainRaw !== null : raw !== null;
+    const published = mainRaw !== null;
 
     const parsed = raw === null ? { frontmatter: {}, body: '' } : parseMarkdown(raw);
     const title = typeof parsed.frontmatter.title === 'string' && parsed.frontmatter.title.trim() ? parsed.frontmatter.title : id;
@@ -619,14 +623,18 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       next = upsertEntry(next, manifestEntryFromFile(entry.concept, { path: entry.path, raw: entry.raw }));
       published.push({ concept: entry.concept.id, id: entry.id, branch: entry.branch, sha: entry.sha });
     }
-    if (published.length === 0) throw redirect(303, listPage);
+    if (published.length === 0) {
+      const message = 'Nothing to publish. Every entry is already live.';
+      throw redirect(303, `${listPage}?error=${encodeURIComponent(message)}`);
+    }
     changes.push({ path: runtime.manifestPath, content: serializeManifest(next) });
 
+    const noun = published.length === 1 ? 'entry' : 'entries';
     try {
       await commitFiles(
         runtime.backend,
         changes,
-        { message: `Publish ${published.length} entries`, author: { name: editor.displayName, email: editor.email } },
+        { message: `Publish ${published.length} ${noun}`, author: { name: editor.displayName, email: editor.email } },
         token,
       );
       for (const entry of published) {

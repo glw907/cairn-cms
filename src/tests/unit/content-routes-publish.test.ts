@@ -351,6 +351,10 @@ describe('publishAllAction', () => {
     // The unconfigured ref is left alone for a future discard, not consumed.
     expect(gh.branches.has('cairn/widgets/x')).toBe(true);
     expect(gh.branches.has(BRANCH)).toBe(false);
+
+    // A one-entry batch reads as one entry, not "1 entries".
+    const commitCall = gh.calls.find((c) => c.method === 'POST' && c.url.endsWith('/git/commits'));
+    expect((commitCall?.body as { message?: string })?.message).toBe('Publish 1 entry');
   });
 
   it('publishes the batch but leaves a branch whose head moved mid-publish', async () => {
@@ -376,13 +380,14 @@ describe('publishAllAction', () => {
     expect(gh.read(PAGE_BRANCH, PAGE_PATH)).toContain('newer save');
   });
 
-  it('redirects back with no commit when nothing is pending', async () => {
+  it('redirects back with a flash and no commit when nothing is pending', async () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
     gh.install();
     const routes = createContentRoutes(runtime(), deps);
 
     const location = await redirectedTo(routes.publishAllAction(listActionEvent() as never));
-    expect(location).toBe('/admin/posts');
+    expect(location).toMatch(/^\/admin\/posts\?error=/);
+    expect(decodeURIComponent(location)).toContain('Nothing to publish. Every entry is already live.');
     expect(gh.calls.filter((c) => c.method === 'PATCH')).toHaveLength(0);
   });
 

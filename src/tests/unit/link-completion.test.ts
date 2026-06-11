@@ -56,14 +56,15 @@ describe('linkCompletions', () => {
 
 describe('cairnLinkCompletionSource code-block skip', () => {
   const targets = [{ concept: 'pages', id: 'about', permalink: '/about', title: 'About Us', draft: false }];
-  it('offers completions for a [[ in prose', () => {
+  // The source resolves syntaxTree lazily (the SSR boundary), so it returns a Promise.
+  it('offers completions for a [[ in prose', async () => {
     const doc = 'see [[Ab';
-    const res = cairnLinkCompletionSource(targets)(contextAt(doc, doc.length));
+    const res = await cairnLinkCompletionSource(targets)(contextAt(doc, doc.length));
     expect(res).not.toBeNull();
   });
-  it('does not offer completions for a [[ inside a fenced code block', () => {
+  it('does not offer completions for a [[ inside a fenced code block', async () => {
     const doc = '```\nlet x = arr[[Ab';
-    const res = cairnLinkCompletionSource(targets)(contextAt(doc, doc.length));
+    const res = await cairnLinkCompletionSource(targets)(contextAt(doc, doc.length));
     expect(res).toBeNull();
   });
 });

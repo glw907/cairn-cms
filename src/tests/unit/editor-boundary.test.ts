@@ -16,6 +16,16 @@ function tsFiles(dir: string): string[] {
   return out;
 }
 
+function sourceFiles(dir: string): string[] {
+  const out: string[] = [];
+  for (const name of readdirSync(dir)) {
+    const full = path.join(dir, name);
+    if (statSync(full).isDirectory()) out.push(...sourceFiles(full));
+    else if (name.endsWith('.ts') || name.endsWith('.svelte')) out.push(full);
+  }
+  return out;
+}
+
 // Matches a static `import ... from '@codemirror/...'`, `from 'codemirror'`, or the bare forms, but not
 // the dynamic `import('@codemirror/...')` the editor component uses on the client.
 const STATIC_EDITOR =
@@ -23,6 +33,12 @@ const STATIC_EDITOR =
 
 const STATIC_DOMPURIFY =
   /(?:^|\s)import\s[^(][\s\S]*?from\s+['"]dompurify['"]|(?:^|\s)import\s+['"]dompurify['"]/m;
+
+// Matches a static VALUE import of a codemirror or lezer package within one statement (no quote
+// or semicolon may intervene before the from clause, so the lazy span cannot jump statements).
+// A type-only `import type` is erased at compile time and stays legal anywhere.
+const STATIC_EDITOR_VALUE =
+  /(?:^|\s)import\s+(?!type\b)[^'";]*?from\s+['"](?:codemirror|@codemirror\/[^'"]+|@lezer\/[^'"]+)['"]|(?:^|\s)import\s+['"](?:codemirror|@codemirror\/[^'"]+|@lezer\/[^'"]+)['"]/m;
 
 describe('CodeMirror stays off the server', () => {
   it('no server-reachable module imports a codemirror package', () => {
@@ -42,6 +58,32 @@ describe('CodeMirror stays off the server', () => {
   it('the editor component loads codemirror only through a dynamic import', () => {
     const source = readFileSync('src/lib/components/MarkdownEditor.svelte', 'utf8');
     expect(STATIC_EDITOR.test(source)).toBe(false);
+  });
+
+  it('only editor-highlight.ts in components statically imports an editor package', () => {
+    // EditPage imports the component .ts helpers statically and a consumer's server bundle
+    // follows those edges, so a value import of @codemirror/* or @lezer/* anywhere but the
+    // dynamically-imported editor-highlight module leaks CodeMirror onto the server.
+    const offenders: string[] = [];
+    for (const file of tsFiles('src/lib/components')) {
+      if (path.basename(file) === 'editor-highlight.ts') continue;
+      if (STATIC_EDITOR_VALUE.test(readFileSync(file, 'utf8'))) offenders.push(file);
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it('editor-highlight is reached only through a dynamic import', () => {
+    // MarkdownEditor.svelte loads it via `await import('./editor-highlight.js')`, which carries
+    // no `from` clause; any `from '...editor-highlight...'` is a static edge that would pull the
+    // module (and its codemirror imports) into every importer's bundle.
+    const offenders: string[] = [];
+    for (const file of sourceFiles('src/lib')) {
+      const source = readFileSync(file, 'utf8');
+      if (source.includes("from './editor-highlight") || source.includes("from '../components/editor-highlight")) {
+        offenders.push(file);
+      }
+    }
+    expect(offenders).toEqual([]);
   });
 });
 

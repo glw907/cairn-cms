@@ -3,9 +3,13 @@
 // to CodeMirror's CompletionSource. The editor wires the source through a generic completionSources
 // prop, so this stays the only link-aware piece and the seam itself knows nothing about links.
 import type { Completion, CompletionContext, CompletionResult, CompletionSource } from '@codemirror/autocomplete';
-import { syntaxTree } from '@codemirror/language';
 import type { LinkTarget } from '../content/manifest.js';
 import { formatCairnToken, escapeLinkText } from '../content/links.js';
+
+// EditPage imports this module statically, so a static @codemirror value import here would pull
+// CodeMirror into a consumer's server bundle. syntaxTree resolves lazily inside the source
+// instead (a CompletionSource may return a Promise), cached after the first completion.
+let langMod: typeof import('@codemirror/language') | null = null;
 
 /** The known concepts in display order; an unlisted concept sorts after these under its own name. */
 const CONCEPT_SECTIONS: Record<string, { name: string; rank: number }> = {
@@ -41,14 +45,15 @@ export function linkCompletions(targets: LinkTarget[], query: string): Completio
  *  whole `[[query` with the chosen link, and sets filter:false because linkCompletions already
  *  filtered by the query (CodeMirror would otherwise re-filter against the literal `[[query`). */
 export function cairnLinkCompletionSource(targets: LinkTarget[]): CompletionSource {
-  return (context: CompletionContext): CompletionResult | null => {
+  return async (context: CompletionContext): Promise<CompletionResult | null> => {
     const line = context.state.doc.lineAt(context.pos);
     const before = context.state.sliceDoc(line.from, context.pos);
     const trigger = matchCairnTrigger(before);
     if (!trigger) return null;
     // Skip a [[ inside a fenced or inline code node: a cairn link there would be literal text, and
     // the build resolver does not look inside code. The node name carries "Code" for both forms.
-    const node = syntaxTree(context.state).resolveInner(context.pos, -1);
+    langMod ??= await import('@codemirror/language');
+    const node = langMod.syntaxTree(context.state).resolveInner(context.pos, -1);
     for (let n: typeof node | null = node; n; n = n.parent) {
       if (/Code/.test(n.name)) return null;
     }

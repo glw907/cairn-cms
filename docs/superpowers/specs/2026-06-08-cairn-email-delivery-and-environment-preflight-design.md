@@ -193,6 +193,10 @@ content config the way the `cairn-manifest` bin already loads site config. The e
 implementation question for the plan. A check that needs a credential it cannot find reports `skip` with
 a remediation naming the missing variable, so a partial environment still yields a useful report.
 
+Plan-time reconciliation (2026-06-11): the from-address arrives as `--from` or `CAIRN_FROM` rather than
+through a config loader, because `branding.from` lives in the site's TypeScript adapter, which a CLI
+cannot evaluate.
+
 ## Arm C: documentation
 
 - **Correct the stale gotcha (lands in Pass 2).** The `CLAUDE.md` "Durable gotcha (Cloudflare email)"

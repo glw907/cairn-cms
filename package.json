@@ -1,6 +1,6 @@
 {
   "name": "@glw907/cairn-cms",
-  "version": "0.40.0",
+  "version": "0.41.0",
   "description": "Embedded, magic-link, GitHub-committing CMS for SvelteKit/Cloudflare sites.",
   "type": "module",
   "sideEffects": [

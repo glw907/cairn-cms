@@ -216,3 +216,17 @@ Mind your svelte version too. Consumer sites compile the shipped `.svelte` sourc
 `5.56.1` has a compiler bug that misprints parenthesized boolean groupings, so use svelte `5.56.3`
 or newer. The editor-facing tour of the new page is
 [the write-in-the-editor guide](write-in-the-editor.md).
+
+## 0.41.0: the `cairn-doctor` preflight, additive
+
+The package ships a second bin, `cairn-doctor`, which checks a site's wrangler bindings, site
+config, Cloudflare zone settings, sending domain, D1 auth store, and GitHub App reachability in one
+report and exits non-zero on a failure. A new
+[Cloudflare readiness guide](cloudflare-readiness.md) walks the same list manually, and the admin
+layout now logs a warn-level `github.unreachable` event when its GitHub read fails, hiding the
+topbar's Publish site button until GitHub answers again. This needs no migration. Consumers may:
+run `npx cairn-doctor --from <address> --repo <owner/name>` as a pre-launch gate, work through the
+readiness guide when standing up a fresh account, and filter Workers Logs on `github.unreachable`
+when the publish button goes missing. A batch of internal fixes rides along (a leaner server
+bundle, a faster edit-page load, coalesced GitHub token mints, and several editor polish items)
+with no consumer action.

@@ -2,6 +2,36 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.41.0
+
+`cairn-doctor` ships as a second bin: a setup preflight that runs nine checks over the local config
+files (the wrangler bindings, observability, the CSRF handoff, the site config), the Cloudflare
+account (the onboarded sending domain, Always Use HTTPS, HSTS, the D1 auth store with its schema
+and an owner row), and the GitHub App's full reachability chain. Every check reports into one
+plain-text report, a failure prints its condition's why and remediation from the diagnostics
+registry, and the exit code is 1 on any failure, so the command slots into a deploy script as a
+gate. A missing credential makes the affected checks skip rather than fail, and
+`--send-test <address>` opts into one real email through the Email Sending API. The new
+[Cloudflare readiness guide](docs/guides/cloudflare-readiness.md) walks the same conditions
+manually, a `check:readiness` gate pins that guide to the condition registry, and
+[the doctor reference](docs/reference/doctor.md) covers the flags, the checks, and the CI wiring.
+
+The admin layout's GitHub degrade gains a signal. When the pending-entries read fails, the layout
+logs a warn-level `github.unreachable` record and the topbar's Publish site button hides instead
+of showing a count it cannot know.
+
+Consumers may: run `npx cairn-doctor --from <address> --repo <owner/name>` as a pre-launch gate,
+work through the readiness guide when standing up a fresh account, and filter Workers Logs on
+`github.unreachable` when the publish button goes missing.
+
+A debt batch rides along and needs no consumer action. The editor's link autocomplete no longer
+pulls CodeMirror into the server bundle, the edit page's load reads its GitHub probes in parallel,
+concurrent cold-start token mints coalesce into one, publish-all pluralizes its commit message and
+an empty publish-all explains itself instead of redirecting silently, the unsaved-changes warning
+tracks client-side navigation and no longer double-fires on a full page unload, the toolbar's
+keyboard tab stop holds across Preview round trips, the word count ignores markdown and directive
+syntax, and the list's publish flash announces reliably to screen readers.
+
 ## 0.40.0
 
 The edit page is redesigned around the manuscript. A sticky translucent header carries the

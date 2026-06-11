@@ -23,6 +23,7 @@ redaction stance.
 | `entry.published` | info | A pending entry's edits land on the default branch. | `concept`, `id`, `editor`, `batch` |
 | `entry.discarded` | info | A pending branch is deleted: a discard, or the delete of a never-published entry. | `concept`, `id`, `editor` |
 | `publish.failed` | warn or error | A publish commit fails, with the `commit.failed` shape. | `concept`, `id`, `editor`, `reason` or `error` |
+| `github.unreachable` | warn | The admin layout's pending-entries read fails because GitHub does not answer. | `scope` (`layout`), `error` |
 | `guard.rejected` | warn | The admin guard refuses a request before `resolve()`. | `reason` (`csrf`, `origin`, or `https`), `path` |
 
 Saves land on the entry's pending branch, so `commit.succeeded` and `commit.failed` carry a
@@ -31,6 +32,12 @@ the default branch and omit the field, which is how a held save and a direct com
 in a query. On `entry.published`, `batch` is `true` when the entry shipped through a publish-all
 and `false` for a single publish. A failed publish-all logs one `publish.failed` record per entry
 in the batch, so the log names everything that did not go live.
+
+`github.unreachable` fires when the admin layout cannot read the pending-entries state, usually a
+revoked installation, a bad credential, or a GitHub outage. The shell degrades rather than fails:
+pages still render, and the topbar's Publish site button hides instead of showing a count it
+cannot know. A missing publish button with this record in the log means GitHub needs attention,
+and the `error` field carries the failure to act on.
 
 On `auth.link.send_failed`, `code` is the Cloudflare binding error code (`E_SENDER_NOT_VERIFIED`
 and the rest of the `E_*` set; absent when a custom sender throws a plain `Error`), and

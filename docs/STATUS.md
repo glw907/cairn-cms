@@ -11,7 +11,27 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-11): publish the `0.39.0`+`0.40.0` window, then diagnostics Pass 3
+## Immediate next action (2026-06-11, later): execute the diagnostics Pass 3 + debt plan
+
+**The window PUBLISHED.** `v0.40.0` released 2026-06-11 (OIDC run `27367965755` green); the
+registry `latest` is `0.40.0`, carrying `0.39.0` (publish workflow, breaking) and `0.40.0` (edit
+page, additive). `main` is pushed and clean at the tag.
+
+**Diagnostics Pass 3 + debt removal has a WRITTEN plan, ready to execute:**
+`docs/superpowers/plans/2026-06-11-cairn-diagnostics-03-doctor-and-debt.md`, eleven tasks, bump
+`0.41.0` in the docs task (the new versioning rule: x.1.0 for larger work). Tasks 1-8 build the
+doctor (seven new registry conditions plus the registry freeze, the `github.unreachable` layout
+event, the check runner and report, local/Cloudflare/GitHub checks, the `cairn-doctor` bin, the
+readiness checklist with its `check:readiness` gate); Tasks 9-10 clear the 0.39/0.40 debt
+carry-forwards (the SSR boundary leak, editLoad waterfall, mint coalescing, publish-all polish,
+draftWarning, willUnload, roving sync, word count, the LoginPage regression test, flash
+convergence, the popover sweep); Task 11 is docs. The plan settles the spec's three open
+questions up top (--from/CAIRN_FROM config discovery, reachability-only GitHub check, all v1
+checks at once). Execute main-loop on `main` (the initiative precedent): dispatch each task to
+`cairn-implementer` (Sonnet), review each diff, verify the gate between dispatches. After this
+pass: the gates-and-tooling pass, the gallery, P4, and the site retrofits to `^0.40.0`/`^0.41.0`.
+
+## Prior next action (2026-06-11): publish the `0.39.0`+`0.40.0` window, then diagnostics Pass 3
 
 **The edit-page redesign LANDED on `main` 2026-06-11 as `0.40.0`.** Twelve plan tasks plus a
 simplifier pass and a review fold-in, commits `16c0a12..39c1f65`. The edit page has the four

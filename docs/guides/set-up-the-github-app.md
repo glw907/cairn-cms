@@ -1,6 +1,6 @@
 # Set up the GitHub App
 
-Goal: register and install a GitHub App so an editor's save in `/admin` commits to `main` as `cairn-cms[bot]`.
+Goal: register and install a GitHub App so an editor's saves and publishes in `/admin` commit to the repo as `cairn-cms[bot]`.
 
 ## Prerequisites
 

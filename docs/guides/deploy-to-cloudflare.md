@@ -1,6 +1,6 @@
 # Deploy to Cloudflare
 
-Goal: deploy the site Worker to Cloudflare so editor saves commit to GitHub and the push redeploys, which is how a save becomes a published change.
+Goal: deploy the site Worker to Cloudflare so editor publishes commit to GitHub and the push redeploys, which is how held edits become live content.
 
 ## Prerequisites
 
@@ -48,7 +48,7 @@ Goal: deploy the site Worker to Cloudflare so editor saves commit to GitHub and 
 
    Wrangler picks up the token automatically.
 
-6. **Confirm the push redeploys.** Connect the GitHub repository to the Worker's build so a push to `main` rebuilds and redeploys. From here an editor save commits through the GitHub App, the push fires the build, and the new content goes live. Commit is publish.
+6. **Confirm the push redeploys.** Connect the GitHub repository to the Worker's build so a push to `main` rebuilds and redeploys. From here an editor's saves hold on a pending branch, Publish commits the held content to `main` through the GitHub App, the push fires the build, and the new content goes live.
 
 7. <a id="disable-checkorigin"></a>**Hand cairn the admin CSRF authority.** Set `csrf: { checkOrigin: false }` in `kit` in `svelte.config.js`. cairn now owns CSRF for the admin through its guard, which validates a uniform double-submit token on every admin form POST. Why disable the framework check? The JS-free magic-link sign-in posts from a browser that may omit the `Origin` header, and SvelteKit's global check would reject that post, so it has to come off for the admin to work. You lose nothing on the rest of the site, because cairn restores the strict `Origin` check for your non-admin form POSTs inside the same guard.
 
@@ -83,11 +83,11 @@ After the deploy:
 - The deployed Worker serves the public site at its domain.
 - `/admin` redirects an unauthenticated visitor to `/admin/login` and a magic-link sign-in lands an authenticated session.
 - A plain-http request to the site redirects to https at the edge, so the magic-link form always posts over https.
-- An editor save commits to `main` and the push-triggered build redeploys with the new content.
+- An editor's Publish commits the held content to `main` and the push-triggered build redeploys with it. Saves hold on a pending branch and deploy nothing.
 - `/healthz` returns `ok:true`, which confirms the GitHub App signing self-test passes with the live key.
 
 ## See also
 
 - [The SvelteKit reference](../reference/sveltekit.md) for the route factories and the `healthLoad` signature behind `/healthz`.
-- [The architecture](../explanation/architecture.md#the-commit-and-publish-flow) for the commit-is-publish flow.
+- [The architecture](../explanation/architecture.md#the-commit-and-publish-flow) for the save-and-publish flow.
 - [The canonical admin route structure](../reference/admin-routes.md) for the exact route tree to copy.

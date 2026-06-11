@@ -4,11 +4,12 @@ A CMS that lives inside your SvelteKit site and commits to git. Your editors log
 email link (no GitHub account, no password), write raw markdown in a CodeMirror editor with a
 live preview, and hit Save.
 
-When they hit Save, cairn doesn't write to a database. It commits the markdown straight to
-the repo's `main` branch. The commit goes through a GitHub App, so the editor never touches
-GitHub; they still show up as the commit author, and `cairn-cms[bot]` does the signing. From
-there your normal Cloudflare deploy takes over, the same as if you'd pushed from a terminal.
-Commit is publish. If someone else changed the file mid-edit, cairn refuses the save instead
+When they hit Save, cairn doesn't write to a database. It commits the markdown to a holding
+branch in the repo, one branch per entry, where the edit waits until the editor hits Publish.
+Publish copies the held content to `main`, and from there your normal Cloudflare deploy takes
+over, the same as if you'd pushed from a terminal. Every commit goes through a GitHub App, so
+the editor never touches GitHub; they still show up as the commit author, and `cairn-cms[bot]`
+does the signing. If someone else changed the file mid-edit, cairn refuses the save instead
 of guessing how to merge.
 
 ## How it fits your site

@@ -8,7 +8,7 @@ Task-oriented guides for a returning adopter. Each answers one question and link
 
 - [Set up the GitHub App](./set-up-the-github-app.md): register and install the App so saves commit as `cairn-cms[bot]`.
 - [Configure auth and D1](./configure-auth-and-d1.md): stand up the magic-link auth store on D1.
-- [Deploy to Cloudflare](./deploy-to-cloudflare.md): the Worker, the bindings, and the commit-is-publish loop.
+- [Deploy to Cloudflare](./deploy-to-cloudflare.md): the Worker, the bindings, and the publish-and-deploy loop.
 
 ## Build the site
 

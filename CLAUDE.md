@@ -2,9 +2,9 @@
 
 An embedded, **magic-link**, GitHub-committing CMS for SvelteKit/Cloudflare sites. Non-technical
 authors log in by email (no GitHub account, no password), edit raw markdown in a CodeMirror 6
-editor (client-only, behind the `MarkdownEditor` seam) with a live preview, and saving commits to
-`main` via a **GitHub App** (committer = `cairn-cms[bot]`, author = the editor),
-which auto-deploys. The library is design-agnostic. Each site supplies an adapter: the content
+editor (client-only, behind the `MarkdownEditor` seam) with a live preview. Saving holds the edit
+on a per-entry `cairn/<concept>/<id>` branch, and a deliberate Publish copies it to `main` via a
+**GitHub App** (committer = `cairn-cms[bot]`, author = the editor), which auto-deploys. The library is design-agnostic. Each site supplies an adapter: the content
 contract, the slug codec, the frontmatter schema, and its own `renderPreview(md)`. Content is a
 fixed set of first-class concepts (Posts and Pages), not open-ended collections.
 

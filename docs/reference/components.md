@@ -92,21 +92,40 @@ let { data, registry, render, icons, form }: {
 };
 ```
 
-The single-entry editor: the markdown editor, the live preview, the component insert palette, the
-link picker, and the delete and rename dialogs. `data` is the `EditData` from the edit load, merged
-with the site name for the heading. `registry`, `render`, and `icons` come from the site's adapter:
-`render` powers the preview pane, `registry` drives the insert palette, and `icons` feeds the guided
-form's icon fields. `form` carries the last `?/save` or `?/delete` action result, so a blocked save
-re-renders the author's edits and the broken links to fix. Mount it in
+The single-entry editor. `data` is the `EditData` from the edit load, merged with the site name.
+`registry`, `render`, and `icons` come from the site's adapter: `render` powers the Preview tab,
+`registry` drives the Insert block dialog, and `icons` feeds the guided form's icon fields. `form`
+carries the last `?/save` or `?/delete` action result, so a blocked save re-renders the author's
+edits and the broken links to fix. Mount it in
 `src/routes/admin/(app)/[concept]/[id]/+page.svelte`.
 
-When `data.pending` is true, the page adds a state banner above the editor (the live site still
-shows the last published version, or "Not yet published." for a never-published entry), a Publish
-button posting to `?/publish` beside Save, and a Discard changes button whose confirm dialog posts
-to `?/discard`. The dialog copy branches on `data.published`: discarding an Edited entry restores
-the live version, and discarding a New one deletes the entry. The `publishedFlash` and
-`discardedFlash` fields render the matching confirmation strips after a publish or discard
-redirect.
+The page lays out in four zones. A sticky translucent header holds a breadcrumb back to the
+concept list, the entry's status badge (New, Edited, or Published, with a separate Hidden badge
+when the frontmatter `draft` flag is set), a save-state indicator reading "Unsaved changes" while
+the browser holds edits and "Saved" after a save lands, an overflow menu with Delete and, while
+`data.pending`, Discard changes, and the lifecycle buttons rightmost: an outline Publish posting
+to `?/publish` (rendered only while `data.pending`) and a solid Save, which sleeps while an
+existing entry is clean. Both buttons sit outside the form element and tie to it through
+`form="cairn-edit-form"`.
+
+The editor column is one card holding the formatting toolbar, the CodeMirror surface, and a footer
+with the word count and a Markdown help cheat sheet. When the adapter's schema declares a `title`
+field, that field leaves the sidebar and renders above the card as a large borderless
+document-title input. The toolbar's Write/Preview segmented tabs swap the editing surface for the
+rendered preview inside the same card, and the formatting and insert controls disable while
+Preview shows.
+
+The sidebar groups the remaining fields under three headings: Details (every other field),
+Visibility (a boolean field named `draft` renders here as the Hidden toggle), and Address (the
+read-only `/slug` beside a Change URL button opening the rename dialog). One feedback strip
+directly under the header renders the transient flash after a save, publish, discard, or rename
+redirect. The discard confirm's copy branches on `data.published`: discarding an Edited entry
+restores the live version, and discarding a New one deletes the entry.
+
+The page tracks dirtiness across the body and the sidebar fields. Leaving with unsaved edits asks
+for confirmation, through a `beforeunload` prompt and a SvelteKit navigation guard, and Ctrl/Cmd+S
+submits the save. Ctrl/Cmd+B and Ctrl/Cmd+I format the selection, and Ctrl/Cmd+K opens the
+web-link dialog.
 
 ```svelte
 <script lang="ts">
@@ -228,20 +247,33 @@ seam. The snippets are minimal mounts with the real prop names.
 ### `MarkdownEditor`
 
 ```ts
-let { value = $bindable(), name, registerInsert, registerInsertLink, completionSources = [] }: {
+let { value = $bindable(), name, registerInsert, registerInsertLink, registerGetSelection, registerFormat, completionSources = [] }: {
   value: string;
   name: string;
   registerInsert?: (insert: (text: string) => void) => void;
   registerInsertLink?: (insert: (href: string, title: string) => void) => void;
+  registerGetSelection?: (get: () => string) => void;
+  registerFormat?: (format: (kind: FormatKind) => void) => void;
   completionSources?: CompletionSource[];
 };
 ```
 
-The CodeMirror editing surface behind the `MarkdownEditor` seam. `value` is bindable, so the parent
-reads edits back; `name` is the hidden field the value mirrors to for form submit. `registerInsert`
-and `registerInsertLink` hand the parent the cursor-insert callbacks the palette and the link picker
-call. `completionSources` wires generic CodeMirror autocomplete, such as the internal-link source.
-CodeMirror loads only in the browser, so this component is client-only. `EditPage` composes it.
+The bare CodeMirror editing surface behind the `MarkdownEditor` seam. `value` is bindable, so the
+parent reads edits back; `name` is the hidden field the value mirrors to for form submit. The
+`register*` props each hand the parent a callback into the mounted editor. `registerInsert`
+inserts text at the cursor (the Insert block dialog calls it), `registerInsertLink` inserts an
+inline link (the pickers call it), `registerGetSelection` returns the selected text (the web-link
+dialog prefills from it), and `registerFormat` applies a named selection transform such as `bold`,
+`italic`, `h2`, `ol`, `codeblock`, or `table` (the toolbar calls it). `completionSources` wires
+generic CodeMirror autocomplete, such as the internal-link source. CodeMirror loads only in the
+browser, so this component is client-only.
+
+The component renders no toolbar and no card chrome of its own; the host frames it. `EditPage`
+composes it inside the editor card with the engine's toolbar. A site mounting `MarkdownEditor`
+directly gets the plain surface and supplies its own controls through `registerFormat`, since the
+engine's toolbar component is internal and not exported here. The surface ships with markdown
+syntax highlighting in the admin palette, an explicit highlight on `:::` directive machinery, and
+native browser spell check.
 
 ```svelte
 <MarkdownEditor bind:value={body} name="body" registerInsert={(fn) => (insert = fn)} />
@@ -250,16 +282,18 @@ CodeMirror loads only in the browser, so this component is client-only. `EditPag
 ### `ComponentInsertDialog`
 
 ```ts
-let { registry, insert, icons }: {
+let { registry, insert, icons, disabled = false }: {
   registry?: ComponentRegistry;
   insert: (text: string) => void;
   icons?: IconSet;
+  disabled?: boolean;
 };
 ```
 
-The insert palette: a button that opens a dialog listing the site's registered components, then
-hands off to `ComponentForm` for the chosen one. `registry` is the site's component registry,
-`insert` inserts the serialized markdown at the editor cursor, and `icons` feeds icon fields.
+The insert palette: an Insert block button that opens a dialog listing the site's registered
+components, then hands off to `ComponentForm` for the chosen one. `registry` is the site's
+component registry, `insert` inserts the serialized markdown at the editor cursor, and `icons`
+feeds icon fields. `disabled` greys the trigger; `EditPage` passes it while the Preview tab shows.
 `EditPage` composes it.
 
 ```svelte
@@ -310,15 +344,18 @@ choice is offered, and `onChange` receives the new name. `label` names the group
 ### `LinkPicker`
 
 ```ts
-let { linkTargets, insert }: {
+let { linkTargets, insert, disabled = false }: {
   linkTargets: LinkTarget[];
   insert: (href: string, title: string) => void;
+  disabled?: boolean;
 };
 ```
 
-A dialog that searches the site's content and inserts a rot-proof `cairn:` internal link at the
-editor cursor. `linkTargets` is the link target list the edit load ships from the committed
-manifest; `insert` inserts the chosen link. `EditPage` composes it.
+The Link to page control: a dialog that searches the site's content and inserts a rot-proof
+`cairn:` internal link at the editor cursor. `linkTargets` is the link target list the edit load
+ships from the committed manifest; `insert` inserts the chosen link. `disabled` greys the trigger;
+`EditPage` passes it while the Preview tab shows. The component exports an `open()` method, so a
+host holding the instance can open the dialog programmatically. `EditPage` composes it.
 
 ```svelte
 <LinkPicker {linkTargets} insert={insertLinkAtCursor} />
@@ -327,12 +364,13 @@ manifest; `insert` inserts the chosen link. `EditPage` composes it.
 ### `DeleteDialog`
 
 ```ts
-let { conceptId, id, label, inboundLinks, pending = false }: {
+let { conceptId, id, label, inboundLinks, pending = false, trigger = true }: {
   conceptId: string;
   id: string;
   label: string;
   inboundLinks: InboundLink[];
   pending?: boolean;
+  trigger?: boolean;
 };
 ```
 
@@ -341,7 +379,9 @@ link to it. `conceptId` and `id` identify the entry and post with the confirm, `
 concept in the prompts, and `inboundLinks` is the list of entries that link here. A non-empty list
 shows the linkers and blocks the delete until they are repointed. Pass `pending` for an entry with
 unpublished edits; the confirm copy then warns that those edits are discarded too, since the delete
-cascades to the entry's pending branch. `EditPage` composes it.
+cascades to the entry's pending branch. With `trigger={false}` the component renders only the
+dialog, no visible button, and the exported `open()` method shows it; `EditPage`'s overflow menu
+drives it that way. `EditPage` composes it.
 
 ```svelte
 <DeleteDialog conceptId="posts" id="2026-06-04-hello" label="Post" inboundLinks={[]} />
@@ -350,17 +390,20 @@ cascades to the entry's pending branch. `EditPage` composes it.
 ### `RenameDialog`
 
 ```ts
-let { conceptId, id, label, slug }: {
+let { conceptId, id, label, slug, trigger = true }: {
   conceptId: string;
   id: string;
   label: string;
   slug: string;
+  trigger?: boolean;
 };
 ```
 
 A confirm dialog that renames one entry's slug. `conceptId` and `id` identify the entry and post
 with the confirm, `label` names the concept in the prompts, and `slug` prefills the input with the
-current slug. `EditPage` composes it.
+current slug. With `trigger={false}` the component renders only the dialog, no visible button, and
+the exported `open()` method shows it; the sidebar's Change URL button drives it that way.
+`EditPage` composes it.
 
 ```svelte
 <RenameDialog conceptId="posts" id="2026-06-04-hello" label="Post" slug="hello" />

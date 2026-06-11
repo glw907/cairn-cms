@@ -2,6 +2,38 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.40.0
+
+The edit page is redesigned around the manuscript. A sticky translucent header carries the
+breadcrumb, the status badge (New, Edited, or Published, with Hidden beside it when the `draft`
+flag is set), an unsaved-changes indicator, Publish and Save, and an overflow menu holding Discard
+changes and Delete. The editor sits in one card frame: a full GFM toolbar (bold, italic, two
+heading levels, lists, quote, and a More menu with strikethrough, inline code, code block, a table
+starter, horizontal rule, and task list), the writing surface, and a footer with a word count and
+a Markdown help cheat sheet. Write/Preview tabs replace the stacked preview. When the schema
+declares a `title` field, the document title hoists above the card, and the sidebar groups into
+Details, Visibility (the `draft` flag as the Hidden toggle), and Address (the slug beside a Change
+URL button). On the surface itself: markdown syntax highlighting in the admin palette, a soft
+accent band with a plain-language tooltip on `:::` directive machinery, and native browser spell
+check.
+Ctrl/Cmd+B and Ctrl/Cmd+I format the selection, Ctrl/Cmd+K opens a new web-link dialog,
+Ctrl/Cmd+S saves, and leaving the page with unsaved edits asks first.
+
+The component surface grows additively. `MarkdownEditor` gains `registerFormat` and
+`registerGetSelection`, and it no longer renders its own toolbar or card chrome; the host frames
+it, and `EditPage` does. `DeleteDialog` and `RenameDialog` gain an exported `open()` and a
+`trigger` prop, `LinkPicker` gains an exported `open()` and a `disabled` prop, and
+`ComponentInsertDialog` gains `disabled`. The light theme's `--color-accent` darkened to
+`oklch(54% 0.16 300)` so the editor's directive ink holds AA contrast.
+
+Consumers must: nothing for a site mounting the admin through the route factories and `EditPage`;
+no shim, action, or load changes. A site that renders `MarkdownEditor` directly, outside
+`EditPage`, no longer gets an embedded toolbar or card frame; it may host its own controls through
+the new `registerFormat` seam or accept the plain surface. One advisory for every consumer: sites
+compile the shipped `.svelte` sources, and svelte `5.56.1` has a compiler bug that misprints
+parenthesized boolean groupings, so use svelte `5.56.3` or newer. The editor-facing walkthrough is
+[the write-in-the-editor guide](docs/guides/write-in-the-editor.md).
+
 ## 0.39.0
 
 Content edits are now held until a deliberate Publish. A save commits to the entry's pending

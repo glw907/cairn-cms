@@ -201,3 +201,18 @@ nothing an editor does reaches the live site.
 Tell your editors too: Save now holds changes, and the new Publish button ships them. The
 [publish and discard guide](publish-and-discard.md) is the editor-facing walkthrough. The `draft:`
 checkbox keeps its mechanics under the name Hidden.
+
+## 0.40.0: the edit page redesign, additive
+
+The edit page is rebuilt: lifecycle actions move into a sticky header, the toolbar grows the full
+GFM set with Write/Preview tabs, the sidebar groups into Details, Visibility, and Address, and the
+editing surface gains syntax highlighting, spell check, and unsaved-changes tracking. Consumers
+must: nothing for a site mounting `EditPage` through the route factories; no shim, action, or load
+changes. A site that renders `MarkdownEditor` directly, outside `EditPage`, no longer gets an
+embedded toolbar or card chrome; it may drive its own controls through the new `registerFormat`
+seam or accept the plain surface, since the engine's toolbar component is not exported.
+
+Mind your svelte version too. Consumer sites compile the shipped `.svelte` sources, and svelte
+`5.56.1` has a compiler bug that misprints parenthesized boolean groupings, so use svelte `5.56.3`
+or newer. The editor-facing tour of the new page is
+[the write-in-the-editor guide](write-in-the-editor.md).

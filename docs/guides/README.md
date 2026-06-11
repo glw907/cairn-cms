@@ -18,6 +18,7 @@ Task-oriented guides for a returning adopter. Each answers one question and link
 
 ## Edit content
 
+- [Write in the editor](./write-in-the-editor.md): the toolbar, links, layout blocks, Preview, and saving, from an editor's seat.
 - [Publish and discard](./publish-and-discard.md): the editor-facing flow, from a held save to the live site.
 
 ## Maintain

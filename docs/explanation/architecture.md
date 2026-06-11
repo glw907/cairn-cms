@@ -1,7 +1,7 @@
 # Architecture
 
 cairn is a CMS that lives inside your SvelteKit site and commits to git. An editor logs in by
-email, writes markdown next to a live preview, and hits Save; the save becomes a commit on the
+email, writes markdown with a live preview a tab away, and hits Save; the save becomes a commit on the
 entry's pending branch, and a deliberate Publish copies it to `main`, where your deploy does the
 rest. cairn is design-agnostic. The engine ships the
 machinery; your site supplies an adapter declaring its content concepts, its frontmatter

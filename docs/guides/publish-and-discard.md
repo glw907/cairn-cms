@@ -7,16 +7,18 @@ editor's seat.
 
 ## Save holds your changes
 
-Hit Save and your edit is stored safely, with nothing visible to visitors. The edit page shows a
-banner reminding you that unpublished changes exist. Reopen the entry later and you see your held
-version, with the same live preview you had while writing it.
+Hit Save and your edit is stored safely, with nothing visible to visitors. The bar at the top of
+the edit page tells you where things stand: the badge beside the title switches to Edited (or New,
+for a page that has never been published), and a short note confirms the save and reminds you that
+the live site keeps showing the published version. Reopen the entry later and you see your held
+version, ready to keep working.
 
 A brand-new entry works the same way. Create it, write, save. The page stays invisible to the site
 until its first publish, so you can draft in peace.
 
 ## What the badges mean
 
-Each entry in a list carries a badge:
+Each entry carries a badge, in the lists and in the bar at the top of its edit page:
 
 | Badge | Meaning |
 |---|---|
@@ -30,9 +32,10 @@ checkbox the editor form has always had, under a clearer name.
 
 ## Publish one page
 
-Open the entry and press Publish, next to Save. Publish takes whatever is in the editor right
-now, including anything you typed since the last save, saves it, and puts it live. The badge
-returns to Published and the site rebuilds. The rebuild takes a few minutes, the same as before.
+Open the entry and press Publish, in the top bar next to Save. The button appears whenever the
+entry has held changes. Publish takes whatever is in the editor right now, including anything you
+typed since the last save, saves it, and puts it live. The badge returns to Published and the site
+rebuilds. The rebuild takes a few minutes, the same as before.
 
 ## Publish the whole site
 
@@ -45,10 +48,11 @@ The button only appears while something is pending. No button means nothing is w
 
 ## Discard changes
 
-Discard changes, on the edit page, throws away the held edits. What happens next depends on the
-entry. An Edited entry returns to its live version, exactly as visitors see it. A New entry is
-deleted outright, since there is no published version to fall back to. The confirm dialog tells
-you which case you are in before anything happens, and a discard cannot be undone.
+Discard changes throws away the held edits. It lives in the edit page's "..." menu, in the top
+bar beside Publish and Save. What happens next depends on the entry. An Edited entry returns to
+its live version, exactly as visitors see it. A New entry is deleted outright, since there is no
+published version to fall back to. The confirm dialog tells you which case you are in before
+anything happens, and a discard cannot be undone.
 
 ## Two things to know
 

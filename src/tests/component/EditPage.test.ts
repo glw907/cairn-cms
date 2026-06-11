@@ -59,7 +59,8 @@ describe('EditPage', () => {
     const screen = render(EditPage, postProps());
     await expect.element(screen.getByLabelText(/title/i)).toHaveValue('Hello');
     await expect.element(screen.getByLabelText(/date/i)).toBeInTheDocument();
-    await expect.element(screen.getByLabelText(/draft/i)).toBeInTheDocument();
+    // The draft boolean renders as the Visibility group's Hidden toggle.
+    await expect.element(screen.getByLabelText(/hidden/i)).toBeInTheDocument();
   });
 
   it('carries a CSRF field in every POST form', async () => {
@@ -696,8 +697,69 @@ describe('EditPage', () => {
     expect(dialog.open).toBe(true);
   });
 
-  it('opens the rename dialog from the overflow menu', async () => {
+  it('keeps the sidebar to the one Change URL action', async () => {
+    const screen = render(EditPage, postProps({ pending: true }));
+    const buttons = screen.container.querySelectorAll('aside button');
+    expect(buttons.length).toBe(1);
+    expect(buttons[0].textContent ?? '').toContain('Change URL');
+  });
+
+  it('hoists the title input above the editor card inside the form', async () => {
     const screen = render(EditPage, postProps());
+    const form = screen.container.querySelector('#cairn-edit-form')!;
+    const title = form.querySelector<HTMLInputElement>('input[name="title"]');
+    expect(title).not.toBeNull();
+    expect(title!.value).toBe('Hello');
+    expect(title!.required).toBe(true);
+    const card = screen.container.querySelector('[role="toolbar"]')!.closest('.rounded-box')!;
+    expect(title!.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.container.querySelector('aside input[name="title"]')).toBeNull();
+  });
+
+  it('renders no document-title input for an adapter without a title field', async () => {
+    const props = postProps({
+      fields: [{ type: 'date', name: 'date', label: 'Date' }] satisfies FrontmatterField[],
+      frontmatter: { date: '2026-05-01' },
+    });
+    const screen = render(EditPage, props);
+    expect(screen.container.querySelector('input[name="title"]')).toBeNull();
+  });
+
+  it('groups the sidebar under the Details, Visibility, and Address eyebrows', async () => {
+    const screen = render(EditPage, postProps());
+    const legends = Array.from(screen.container.querySelectorAll('aside legend')).map((l) =>
+      l.textContent?.trim(),
+    );
+    expect(legends).toEqual(['Details', 'Visibility', 'Address']);
+  });
+
+  it('omits Details without remaining fields and Visibility without a draft boolean', async () => {
+    // The page concept carries only the title field, which is hoisted, so Address stands alone.
+    const screen = render(EditPage, pageProps());
+    const legends = Array.from(screen.container.querySelectorAll('aside legend')).map((l) =>
+      l.textContent?.trim(),
+    );
+    expect(legends).toEqual(['Address']);
+  });
+
+  it('renders the draft boolean as the Hidden toggle with its hint', async () => {
+    const screen = render(
+      EditPage,
+      postProps({ frontmatter: { title: 'Hello', date: '2026-05-01', draft: true } }),
+    );
+    const toggle = screen.container.querySelector<HTMLInputElement>('aside input[name="draft"]');
+    expect(toggle).not.toBeNull();
+    expect(toggle!.checked).toBe(true);
+    expect(toggle!.closest('label')?.textContent ?? '').toContain('Hidden');
+    expect(screen.container.querySelector('aside')!.textContent ?? '').toContain(
+      "Hidden entries stay off the site's lists and feeds, even when published.",
+    );
+  });
+
+  it('shows the address and opens the rename dialog from its Change URL button', async () => {
+    const screen = render(EditPage, postProps());
+    const aside = screen.container.querySelector('aside')!;
+    expect(aside.querySelector('code')?.textContent).toBe('/hello');
     await screen.getByRole('button', { name: /change url/i }).click();
     const dialog = screen.container.querySelector<HTMLDialogElement>(
       'dialog[aria-labelledby="cairn-rename-dialog-title"]',
@@ -705,8 +767,18 @@ describe('EditPage', () => {
     expect(dialog.open).toBe(true);
   });
 
-  it('keeps the sidebar free of action buttons', async () => {
-    const screen = render(EditPage, postProps({ pending: true }));
-    expect(screen.container.querySelectorAll('aside button').length).toBe(0);
+  it('drops Change URL from the header overflow menu', async () => {
+    const screen = render(EditPage, postProps());
+    const menu = screen.container.querySelector('header .dropdown-content')!;
+    expect(menu.textContent ?? '').not.toContain('Change URL');
+  });
+
+  it('flags unsaved changes when the hoisted title receives input', async () => {
+    const screen = render(EditPage, postProps());
+    const title = screen.container.querySelector('#cairn-edit-form input[name="title"]')!;
+    title.dispatchEvent(new Event('input', { bubbles: true }));
+    await expect
+      .poll(() => screen.container.querySelector('.cairn-save-state')?.textContent?.trim() ?? '')
+      .toBe('Unsaved changes');
   });
 });

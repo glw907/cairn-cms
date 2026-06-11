@@ -2,11 +2,13 @@
 @component
 The differentiated editor: the per-concept frontmatter form (from `data.fields`) beside the
 markdown editor and a live, design-accurate preview. The whole surface is one form posting to the
-`?/save` action. The toolbar's Write/Preview tabs swap the editing surface for the rendered
-preview inside the same card; every visit lands on Write. A sticky glass header carries the
-breadcrumb, the status badges, the save-state indicator, and the lifecycle actions: Save, Publish
-(riding the same form via formaction while edits are pending), and an overflow menu for Discard,
-Change URL, and Delete.
+`?/save` action. The title field is hoisted above the editor card as the document title; the
+remaining fields group in the sidebar under Details, Visibility (the draft boolean as the Hidden
+toggle), and Address (the slug with the Change URL trigger). The toolbar's Write/Preview tabs
+swap the editing surface for the rendered preview inside the same card; every visit lands on
+Write. A sticky glass header carries the breadcrumb, the status badges, the save-state indicator,
+and the lifecycle actions: Save, Publish (riding the same form via formaction while edits are
+pending), and an overflow menu for Discard and Delete.
 -->
 <script lang="ts">
   import { untrack } from 'svelte';
@@ -264,6 +266,13 @@ Change URL, and Delete.
   function str(v: unknown): string {
     return v == null ? '' : String(v);
   }
+
+  // The sidebar's grouping. The title field hoists above the editor card as the document title,
+  // and a boolean named draft becomes the Visibility group's Hidden toggle (both production
+  // adapters use that name); everything else is a Details field.
+  const titleField = $derived(data.fields.find((f) => f.name === 'title'));
+  const draftField = $derived(data.fields.find((f) => f.type === 'boolean' && f.name === 'draft'));
+  const detailFields = $derived(data.fields.filter((f) => f !== titleField && f !== draftField));
 </script>
 
 <!-- The sticky action header, a glass ruler: a translucent base-200 veil with backdrop blur the
@@ -317,12 +326,6 @@ Change URL, and Delete.
               </button>
             </li>
           {/if}
-          <!-- Change URL lives here until the sidebar's Address group takes the trigger over. -->
-          <li>
-            <button type="button" aria-haspopup="dialog" onclick={() => pickAction(() => renameDialog?.open())}>
-              Change URL
-            </button>
-          </li>
           <li>
             <button type="button" class="text-error" aria-haspopup="dialog" onclick={() => pickAction(() => deleteDialog?.open())}>
               Delete
@@ -409,6 +412,18 @@ Change URL, and Delete.
   {#if data.isNew}<input type="hidden" name="new" value="1" />{/if}
 
   <div class="lg:order-1">
+    {#if titleField}
+      <!-- The hoisted document title: large, borderless, in the display face, so the manuscript
+           reads as the protagonist. It submits as name="title", the same field as before. -->
+      <input
+        class="cairn-doc-title mb-4 w-full border-0 bg-transparent text-3xl font-bold tracking-tight font-[family-name:var(--font-display)] placeholder:text-[var(--color-muted)] focus:outline-none"
+        name="title"
+        value={str(data.frontmatter.title)}
+        placeholder={titleField.label}
+        aria-label={titleField.label}
+        required={titleField.required}
+      />
+    {/if}
     <!-- The editor card: the toolbar strip and the editing surface share one frame, so the editor
          reads as a single object. The card carries the formatting shortcuts for everything in it. -->
     <div
@@ -457,9 +472,13 @@ Change URL, and Delete.
   </div>
 
   <aside class="lg:order-2 mt-4 lg:mt-0">
-    <fieldset class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 flex flex-col gap-3 p-4 shadow-[var(--cairn-shadow)]">
-      <legend class="sr-only">Frontmatter</legend>
-      {#each data.fields as field (field.name)}
+    <!-- One sidebar card, three labeled groups. Each group is its own fieldset so its eyebrow is
+         a real legend that screen readers announce with the fields it holds. -->
+    <div class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 flex flex-col gap-5 p-4 shadow-[var(--cairn-shadow)]">
+      {#if detailFields.length}
+      <fieldset class="flex flex-col gap-3">
+      <legend class="mb-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">Details</legend>
+      {#each detailFields as field (field.name)}
         {#if field.type === 'textarea'}
           {@const f = field as TextareaField}
           <label class="flex flex-col gap-1">
@@ -516,7 +535,33 @@ Change URL, and Delete.
           </label>
         {/if}
       {/each}
-    </fieldset>
+      </fieldset>
+      {/if}
+      {#if draftField}
+      <fieldset class="flex flex-col gap-1">
+      <legend class="mb-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">Visibility</legend>
+        <label class="label cursor-pointer justify-start gap-2">
+          <input class="checkbox checkbox-sm" type="checkbox" name="draft" checked={data.frontmatter.draft === true} />
+          <span class="text-sm">Hidden</span>
+        </label>
+        <p class="text-xs text-[var(--color-muted)]">Hidden entries stay off the site's lists and feeds, even when published.</p>
+      </fieldset>
+      {/if}
+      <fieldset class="flex flex-col gap-1">
+      <legend class="mb-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">Address</legend>
+        <div class="flex items-center justify-between gap-2">
+          <code class="min-w-0 break-all text-xs text-[var(--color-muted)]">/{data.slug}</code>
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm shrink-0"
+            aria-haspopup="dialog"
+            onclick={() => renameDialog?.open()}
+          >
+            Change URL
+          </button>
+        </div>
+      </fieldset>
+    </div>
   </aside>
 </form>
 

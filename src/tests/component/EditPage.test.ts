@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
+import { userEvent } from 'vitest/browser';
 import type { BeforeNavigate } from '@sveltejs/kit';
 import EditPage from '../../lib/components/EditPage.svelte';
 import type { FrontmatterField } from '../../lib/content/types.js';
@@ -380,6 +381,8 @@ describe('EditPage', () => {
 
   it('flips only the Save button to its working state and disables both on save', async () => {
     const screen = render(EditPage, postProps({ pending: true }));
+    // Save stays disabled while clean, so edit the body before clicking it.
+    await makeDirty(screen);
     const stop = (e: Event) => e.preventDefault();
     document.addEventListener('submit', stop, true);
     try {
@@ -459,14 +462,14 @@ describe('EditPage', () => {
     const screen = render(EditPage, { ...postProps(), registry });
     const toolbar = screen.container.querySelector('[role="toolbar"]')!;
     const link = screen.container.querySelector('button[aria-label="Link to page"]');
-    const insert = screen.container.querySelector('button[aria-label="Insert component"]');
+    const insert = screen.container.querySelector('button[aria-label="Insert block"]');
     expect(link).not.toBeNull();
     expect(insert).not.toBeNull();
     expect(toolbar.contains(link)).toBe(true);
     expect(toolbar.contains(insert)).toBe(true);
     const header = screen.container.querySelector('header')!;
     expect(header.querySelector('button[aria-label="Link to page"]')).toBeNull();
-    expect(header.querySelector('button[aria-label="Insert component"]')).toBeNull();
+    expect(header.querySelector('button[aria-label="Insert block"]')).toBeNull();
   });
 
   it('switching the toolbar tab to Preview shows the preview pane', async () => {
@@ -505,6 +508,25 @@ describe('EditPage', () => {
       .poll(() => screen.container.querySelector('.cairn-save-state')?.textContent?.trim() ?? '')
       .toBe('Unsaved changes');
   }
+
+  it('disables Save on a clean page and enables it once edited', async () => {
+    const screen = render(EditPage, postProps({ body: 'plain prose' }));
+    const save = () =>
+      screen.container.querySelector<HTMLButtonElement>(
+        'button[type="submit"][form="cairn-edit-form"]:not([formaction])',
+      )!;
+    expect(save().disabled).toBe(true);
+    await makeDirty(screen);
+    await expect.poll(() => save().disabled).toBe(false);
+  });
+
+  it('keeps Save enabled for a new entry before any edit', async () => {
+    const screen = render(EditPage, postProps({ isNew: true }));
+    const save = screen.container.querySelector<HTMLButtonElement>(
+      'button[type="submit"][form="cairn-edit-form"]:not([formaction])',
+    )!;
+    expect(save.disabled).toBe(false);
+  });
 
   it('shows no save-state text on a clean mount', async () => {
     const screen = render(EditPage, postProps());
@@ -626,15 +648,57 @@ describe('EditPage', () => {
     }
   });
 
-  it('opens the link picker on Ctrl+K inside the editor card', async () => {
+  it('opens the web link dialog on Ctrl+K inside the editor card', async () => {
     const screen = render(EditPage, postProps());
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
     const card = screen.container.querySelector('[role="toolbar"]')!.closest('.rounded-box')!;
     const event = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true, cancelable: true });
     card.dispatchEvent(event);
     expect(event.defaultPrevented).toBe(true);
-    const dialog = screen.container.querySelector<HTMLDialogElement>('dialog[aria-labelledby="cairn-link-dialog-title"]')!;
+    const dialog = screen.container.querySelector<HTMLDialogElement>('dialog[aria-labelledby="cairn-web-link-dialog-title"]')!;
     await expect.poll(() => dialog.open).toBe(true);
+  });
+
+  it('inserts a web link from the toolbar dialog', async () => {
+    const screen = render(EditPage, postProps({ body: '' }));
+    await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+    await screen.getByRole('button', { name: /web link/i }).click();
+    await screen.getByLabelText('Web address').fill('https://example.com/guide');
+    await screen.getByLabelText('Text').fill('Read this');
+    await screen.getByRole('button', { name: 'Add link' }).click();
+    await expect
+      .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
+      .toContain('[Read this](https://example.com/guide)');
+  });
+
+  it('wraps the editor selection as the link text through the web link dialog', async () => {
+    const screen = render(EditPage, postProps({ body: 'me first' }));
+    await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+    const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
+    content.focus();
+    await userEvent.keyboard('{Shift>}{ArrowRight}{ArrowRight}{/Shift}');
+    await screen.getByRole('button', { name: /web link/i }).click();
+    // The selection rides in as the Text field's default.
+    await expect.element(screen.getByLabelText('Text')).toHaveValue('me');
+    await screen.getByLabelText('Web address').fill('https://example.com/');
+    await screen.getByRole('button', { name: 'Add link' }).click();
+    await expect
+      .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
+      .toBe('[me](https://example.com/) first');
+  });
+
+  it('disables the format and insert controls while Preview shows', async () => {
+    const screen = render(EditPage, postProps());
+    await screen.getByRole('tab', { name: 'Preview' }).click();
+    const bold = screen.container.querySelector<HTMLButtonElement>('button[aria-label="Bold (Ctrl+B)"]')!;
+    expect(bold.disabled).toBe(true);
+    const web = screen.container.querySelector<HTMLButtonElement>('button[aria-label="Web link (Ctrl+K)"]')!;
+    expect(web.disabled).toBe(true);
+    const page = screen.container.querySelector<HTMLButtonElement>('button[aria-label="Link to page"]')!;
+    expect(page.disabled).toBe(true);
+    // The tabs stay live so the editor can switch back.
+    const write = screen.container.querySelector<HTMLButtonElement>('#cairn-tab-write')!;
+    expect(write.disabled).toBe(false);
   });
 
   it('links back to the concept list from a header breadcrumb', async () => {
@@ -786,7 +850,11 @@ describe('EditPage', () => {
   // a single strip carrying the message, and that the message reaches the page exactly twice: the
   // visible strip plus the sr-only polite live region (no leftover per-flash alert divs).
   const flashCases = [
-    { name: 'saved', over: { saved: true }, message: 'Saved.' },
+    {
+      name: 'saved',
+      over: { saved: true },
+      message: 'Saved. Your site keeps showing the published version until you publish.',
+    },
     { name: 'published', over: { publishedFlash: true }, message: 'Published. The live site is rebuilding.' },
     { name: 'discarded', over: { discardedFlash: true }, message: 'Changes discarded.' },
     { name: 'renamed', over: { renamed: true, slug: 'new-slug' }, message: 'The URL is now new-slug.' },
@@ -809,7 +877,9 @@ describe('EditPage', () => {
   it('shows one strip even when several flash flags arrive together', async () => {
     const screen = render(EditPage, postProps({ saved: true, renamed: true }));
     expect(screen.container.querySelectorAll('.alert-success').length).toBe(1);
-    expect(screen.container.querySelector('.cairn-feedback')?.textContent?.trim()).toBe('Saved.');
+    expect(screen.container.querySelector('.cairn-feedback')?.textContent?.trim()).toBe(
+      'Saved. Your site keeps showing the published version until you publish.',
+    );
   });
 
   it('shows the word count in the editor card footer', async () => {
@@ -823,6 +893,12 @@ describe('EditPage', () => {
   it('uses the singular for a one-word body', async () => {
     const screen = render(EditPage, postProps({ body: 'hello' }));
     await expect.element(screen.getByText('1 word')).toBeInTheDocument();
+  });
+
+  it('leaves directive lines and table rows out of the word count', async () => {
+    const body = ':::gallery\nthree words here\n:::\n\n| Col | Col |\n| --- | --- |\n';
+    const screen = render(EditPage, postProps({ body }));
+    await expect.element(screen.getByText('3 words')).toBeInTheDocument();
   });
 
   it('updates the word count as the body changes', async () => {
@@ -848,6 +924,27 @@ describe('EditPage', () => {
     const text = dialog.textContent ?? '';
     expect(text).toContain('**bold**');
     expect(text).toContain('[[page-name]]');
+    expect(text).toContain('~~text~~');
+    expect(text).toContain('- [ ] item');
     expect(text).toContain('layout blocks');
+  });
+
+  it('shows a quiet line when the preview has nothing to render', async () => {
+    const props = { ...postProps({ body: '' }), render: (md: string) => (md ? `<p>${md}</p>` : '') };
+    const screen = render(EditPage, props);
+    await screen.getByRole('tab', { name: 'Preview' }).click();
+    await expect.element(screen.getByText('Nothing to preview yet.')).toBeInTheDocument();
+  });
+
+  it('names a preview render failure instead of blanking the pane', async () => {
+    const props = {
+      ...postProps({ body: 'some text' }),
+      render: () => {
+        throw new Error('boom');
+      },
+    };
+    const screen = render(EditPage, props);
+    await screen.getByRole('tab', { name: 'Preview' }).click();
+    await expect.element(screen.getByText('The preview could not render this content.')).toBeInTheDocument();
   });
 });

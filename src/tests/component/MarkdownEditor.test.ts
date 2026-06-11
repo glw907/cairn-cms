@@ -96,6 +96,46 @@ describe('MarkdownEditor', () => {
     expect(screen.container.querySelector('.cm-cairn-directive-inline')).not.toBeNull();
   });
 
+  it('explains the directive machinery lines through a title tooltip', async () => {
+    const doc = [':::gallery', 'inside', ':::', '::hr'].join('\n');
+    const screen = render(MarkdownEditor, { value: doc, name: 'body' });
+    await expect.poll(() => screen.container.querySelector('.cm-line.cm-cairn-directive-fence')).not.toBeNull();
+    const expected = 'Layout marker. Edit the text between these lines and leave this line as it is.';
+    expect(screen.container.querySelector('.cm-line.cm-cairn-directive-fence')?.getAttribute('title')).toBe(expected);
+    expect(screen.container.querySelector('.cm-line.cm-cairn-directive-leaf')?.getAttribute('title')).toBe(expected);
+  });
+
+  it('gives the editing surface a generous minimum height', async () => {
+    const screen = render(MarkdownEditor, { value: 'short', name: 'body' });
+    await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+    const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
+    const minHeight = parseFloat(getComputedStyle(content).minHeight);
+    expect(minHeight).toBeCloseTo(window.innerHeight * 0.5, 0);
+  });
+
+  it('shows no focus ring after a pointer click into the editor', async () => {
+    const screen = render(MarkdownEditor, { value: 'plain prose', name: 'body' });
+    await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+    const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
+    await userEvent.click(content);
+    await expect.poll(() => document.activeElement).toBe(content);
+    expect(getComputedStyle(screen.container.querySelector('.cm-editor')!).outlineStyle).toBe('none');
+    expect(getComputedStyle(content).outlineStyle).toBe('none');
+  });
+
+  it('passes a dark theme to CodeMirror inside the dark admin theme', async () => {
+    document.body.setAttribute('data-theme', 'cairn-admin-dark');
+    try {
+      const screen = render(MarkdownEditor, { value: 'night text', name: 'body' });
+      await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+      // CodeMirror's dark base theme sets a white caret on the content; the light base sets black.
+      const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
+      await expect.poll(() => getComputedStyle(content).caretColor).toBe('rgb(255, 255, 255)');
+    } finally {
+      document.body.removeAttribute('data-theme');
+    }
+  });
+
   it('renders heading lines through the cairn highlight theme', async () => {
     // The test page loads no admin CSS, so --color-primary is pinned here; the cairn heading style
     // is the only one that references it, which makes the computed color discriminate our theme

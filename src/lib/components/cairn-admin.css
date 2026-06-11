@@ -24,7 +24,9 @@
   --color-primary-content: oklch(98% 0.012 293);
   --color-secondary: oklch(45% 0.02 75);
   --color-secondary-content: oklch(98% 0.004 75);
-  --color-accent: oklch(58% 0.16 300);
+  /* 54% holds AA for the editor's directive ink on base-100 (5.28:1) and on its own 8% accent
+     tint (4.75:1); 58% failed the tint at 4.04:1. A locked margin, like the dark nav pair. */
+  --color-accent: oklch(54% 0.16 300);
   --color-accent-content: oklch(98% 0.012 300);
   --color-neutral: oklch(32% 0.012 75);
   --color-neutral-content: oklch(96% 0.004 75);

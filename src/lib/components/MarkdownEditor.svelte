@@ -20,6 +20,8 @@ through the adapter's render. Swapping the editor stays a one-file change.
     registerInsert?: (insert: (text: string) => void) => void;
     /** Receives a `(href, title) => void` that inserts an inline link; the link picker calls it. */
     registerInsertLink?: (insert: (href: string, title: string) => void) => void;
+    /** Receives a `() => string` returning the selected text; the web link dialog reads it. */
+    registerGetSelection?: (get: () => string) => void;
     /** Receives a `(kind) => void` that transforms the current selection; the host's toolbar calls it. */
     registerFormat?: (format: (kind: FormatKind) => void) => void;
     /** Generic CodeMirror completion sources wired into the editor; the link autocomplete is one. The
@@ -32,6 +34,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
     name,
     registerInsert,
     registerInsertLink,
+    registerGetSelection,
     registerFormat,
     completionSources = [],
   }: Props = $props();
@@ -55,12 +58,26 @@ through the adapter's render. Swapping the editor stays a one-file change.
     if (!host) return;
 
     const { EditorView, keymap } = viewMod;
+    // Mirror the admin theme into CodeMirror's own dark flag, so its base chrome (the autocomplete
+    // tooltip above all) renders dark-on-dark instead of light-on-dark.
+    const isDark = host?.closest('[data-theme]')?.getAttribute('data-theme')?.includes('dark') ?? false;
     const theme = EditorView.theme(
       {
-        '&': { backgroundColor: 'var(--color-base-100)', color: 'var(--color-base-content)', fontSize: '0.875rem' },
-        '.cm-content': { fontFamily: 'ui-monospace, monospace', padding: '0.75rem', lineHeight: '1.7' },
+        '&': { backgroundColor: 'var(--color-base-100)', color: 'var(--color-base-content)', fontSize: '0.9375rem' },
+        // The 50vh floor keeps a short entry reading as a writing surface, and because the
+        // contenteditable content area carries the height, a click in the empty space below the
+        // text still lands in the editor and focuses it.
+        '.cm-content': {
+          fontFamily: 'ui-monospace, monospace',
+          padding: '0.875rem 1.25rem',
+          lineHeight: '1.8',
+          minHeight: '50vh',
+        },
         '.cm-cursor': { borderLeftColor: 'var(--color-primary)' },
-        '&.cm-focused': { outline: '2px solid var(--color-primary)', outlineOffset: '-2px' },
+        // No ring while writing: the caret is the focus cue on a pointer click. Keyboard focus
+        // keeps an indicator through the :focus-visible rule below.
+        '&.cm-focused': { outline: 'none' },
+        '.cm-content:focus-visible': { outline: '2px solid var(--color-primary)', outlineOffset: '-2px' },
         '.cm-line': { padding: '0' },
         '.cm-cairn-directive-fence': {
           backgroundColor: 'color-mix(in oklab, var(--color-accent) 8%, transparent)',
@@ -75,7 +92,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
           color: 'var(--color-accent)',
         },
       },
-      { dark: false },
+      { dark: isDark },
     );
 
     view = new EditorView({
@@ -105,6 +122,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
 
     registerInsert?.(insertAtCursor);
     registerInsertLink?.(insertLink);
+    registerGetSelection?.(selectedText);
     registerFormat?.(applyFormat);
     mounted = true;
   });
@@ -151,6 +169,12 @@ through the adapter's render. Swapping the editor stays a one-file change.
     view.focus();
   }
 
+  function selectedText(): string {
+    if (!view) return '';
+    const { from, to } = view.state.selection.main;
+    return view.state.sliceDoc(from, to);
+  }
+
   function applyFormat(kind: FormatKind) {
     if (!view) return;
     const { from, to } = view.state.selection.main;
@@ -168,5 +192,5 @@ through the adapter's render. Swapping the editor stays a one-file change.
 
 <div bind:this={host}></div>
 {#if !mounted}
-  <textarea class="textarea min-h-64 w-full font-mono text-sm" bind:value aria-label="Markdown source"></textarea>
+  <textarea class="textarea min-h-[50vh] w-full font-mono text-sm" bind:value aria-label="Markdown source"></textarea>
 {/if}

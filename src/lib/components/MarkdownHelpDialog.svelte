@@ -35,10 +35,12 @@ open(), so the component renders no trigger of its own.
         <tr><td><code>### Heading</code></td><td>A smaller heading</td></tr>
         <tr><td><code>**bold**</code></td><td>Bold text</td></tr>
         <tr><td><code>*italic*</code></td><td>Italic text</td></tr>
+        <tr><td><code>~~text~~</code></td><td>Crossed-out text</td></tr>
         <tr><td><code>[text](url)</code></td><td>A link</td></tr>
         <tr><td><code>[[page-name]]</code></td><td>A link to one of your pages</td></tr>
         <tr><td><code>- item</code></td><td>A bulleted list</td></tr>
         <tr><td><code>1. item</code></td><td>A numbered list</td></tr>
+        <tr><td><code>- [ ] item</code></td><td>A checklist</td></tr>
         <tr><td><code>&gt; quote</code></td><td>A quote</td></tr>
         <tr><td><code>`code`</code></td><td>Code</td></tr>
         <tr><td>Table</td><td>The Table button in the toolbar inserts one</td></tr>

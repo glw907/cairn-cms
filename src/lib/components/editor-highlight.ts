@@ -23,8 +23,12 @@ export function cairnHighlightStyle(): HighlightStyle {
   ]);
 }
 
-const fenceLine = Decoration.line({ class: 'cm-cairn-directive-fence' });
-const leafLine = Decoration.line({ class: 'cm-cairn-directive-leaf' });
+// The machinery lines explain themselves on hover, so an editor who has never seen ::: syntax
+// learns what the line is without leaving the page.
+const MACHINERY_HINT = 'Layout marker. Edit the text between these lines and leave this line as it is.';
+
+const fenceLine = Decoration.line({ class: 'cm-cairn-directive-fence', attributes: { title: MACHINERY_HINT } });
+const leafLine = Decoration.line({ class: 'cm-cairn-directive-leaf', attributes: { title: MACHINERY_HINT } });
 const inlineMark = Decoration.mark({ class: 'cm-cairn-directive-inline' });
 
 function buildDirectiveDecorations(view: EditorView): DecorationSet {

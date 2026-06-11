@@ -17,9 +17,11 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
     insert: (text: string) => void;
     /** The site's icon set, for icon fields. */
     icons?: IconSet;
+    /** Disable the trigger; the host sets it while Preview shows. */
+    disabled?: boolean;
   }
 
-  let { registry, insert, icons }: Props = $props();
+  let { registry, insert, icons, disabled = false }: Props = $props();
 
   let dialog = $state<HTMLDialogElement | null>(null);
   let picked = $state<ComponentDef | null>(null);
@@ -56,7 +58,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
 </script>
 
 {#if defs.length > 0}
-  <button type="button" class="btn btn-sm btn-ghost" aria-haspopup="dialog" aria-label="Insert component" onclick={open}>Insert</button>
+  <button type="button" class="btn btn-sm btn-ghost" aria-haspopup="dialog" aria-label="Insert block" {disabled} onclick={open}>Insert block</button>
 
   <dialog class="modal" aria-labelledby="cairn-insert-dialog-title" bind:this={dialog} onclose={() => (picked = null)}>
     <div class="modal-box">

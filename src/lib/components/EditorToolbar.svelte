@@ -27,20 +27,22 @@ are stroke SVG icons in the admin's house style (24x24 viewBox, `currentColor`, 
   // markup stays declarative (no per-icon raw html). Paths follow the house outline style.
   type ToolButton = { kind: FormatKind; label: string; paths: string[] };
 
+  // Labels carry the shortcut where one exists. "Ctrl" is written literally for macOS readers
+  // too; detecting the platform buys little for what it costs.
   const textButtons: ToolButton[] = [
-    { kind: 'bold', label: 'Bold', paths: ['M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8'] },
-    { kind: 'italic', label: 'Italic', paths: ['M19 4h-9', 'M14 20H5', 'M15 4 9 20'] },
+    { kind: 'bold', label: 'Bold (Ctrl+B)', paths: ['M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8'] },
+    { kind: 'italic', label: 'Italic (Ctrl+I)', paths: ['M19 4h-9', 'M14 20H5', 'M15 4 9 20'] },
   ];
 
   const structureButtons: ToolButton[] = [
     {
       kind: 'h2',
-      label: 'Heading 2',
+      label: 'Heading',
       paths: ['M4 12h8', 'M4 18V6', 'M12 18V6', 'M21 18h-4c0-4 4-3 4-6 0-1.5-2-2.5-4-1'],
     },
     {
       kind: 'h3',
-      label: 'Heading 3',
+      label: 'Smaller heading',
       paths: [
         'M4 12h8',
         'M4 18V6',
@@ -88,18 +90,21 @@ are stroke SVG icons in the admin's house style (24x24 viewBox, `currentColor`, 
   // pattern allows either, and one arrow model over the whole strip is the simpler of the two.
   let roving = $state(0);
 
-  /** The strip's top-level controls in DOM order: every enabled button outside the More menu. The
-   *  host's insertControls render their own buttons, so the set is queried, not declared. */
+  /** The strip's top-level controls in DOM order: every enabled button outside the More menu and
+   *  outside the insert controls' dialogs. The host's insertControls render their own buttons, so
+   *  the set is queried, not declared. */
   function rovingControls(): HTMLElement[] {
     if (!toolbarEl) return [];
     return Array.from(toolbarEl.querySelectorAll<HTMLElement>('button')).filter(
-      (el) => !el.hasAttribute('disabled') && !el.closest('.dropdown-content'),
+      (el) => !el.hasAttribute('disabled') && !el.closest('.dropdown-content') && !el.closest('dialog'),
     );
   }
 
   // Keep exactly one tab stop. Runs on mount (the snippet's buttons render synchronously, so the
-  // first pass sees them) and again whenever the stop moves.
+  // first pass sees them) and again whenever the stop moves or a mode switch changes which
+  // controls are enabled.
   $effect(() => {
+    void mode;
     const items = rovingControls();
     if (items.length === 0) return;
     const stop = Math.min(roving, items.length - 1);
@@ -126,6 +131,7 @@ are stroke SVG icons in the admin's house style (24x24 viewBox, `currentColor`, 
     class="btn btn-ghost btn-sm btn-square"
     aria-label={button.label}
     title={button.label}
+    disabled={mode === 'preview'}
     onclick={() => format(button.kind)}
   >
     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
@@ -140,7 +146,7 @@ are stroke SVG icons in the admin's house style (24x24 viewBox, `currentColor`, 
      carries keyboard entry, per the ARIA toolbar pattern. -->
 <div
   bind:this={toolbarEl}
-  class="bg-base-100 flex items-center gap-1 border-b border-[var(--cairn-card-border)] p-1"
+  class="bg-base-100 flex flex-wrap items-center gap-1 border-b border-[var(--cairn-card-border)] p-1"
   role="toolbar"
   aria-label="Formatting"
   tabindex="-1"
@@ -156,7 +162,14 @@ are stroke SVG icons in the admin's house style (24x24 viewBox, `currentColor`, 
     {@render glyphButton(button)}
   {/each}
   <div class="dropdown">
-    <button type="button" class="btn btn-ghost btn-sm btn-square" aria-label="More formatting" title="More formatting" aria-haspopup="true">
+    <button
+      type="button"
+      class="btn btn-ghost btn-sm btn-square"
+      aria-label="More formatting"
+      title="More formatting"
+      aria-haspopup="true"
+      disabled={mode === 'preview'}
+    >
       <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
         {#each ellipsisPaths as d (d)}
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={d} />
@@ -172,7 +185,15 @@ are stroke SVG icons in the admin's house style (24x24 viewBox, `currentColor`, 
 
   {#if insertControls}
     <div class="w-px self-stretch bg-[var(--cairn-card-border)]" aria-hidden="true"></div>
-    {@render insertControls()}
+    <!-- The host's controls carry their own disabled state in Preview; this wrapper just keeps
+         any stray pointer target in the snippet inert while the pane is read-only. -->
+    <div
+      class="flex items-center gap-1"
+      class:pointer-events-none={mode === 'preview'}
+      class:opacity-50={mode === 'preview'}
+    >
+      {@render insertControls()}
+    </div>
   {/if}
 
   <!-- The host renders the matching tabpanels (#cairn-pane-write and #cairn-pane-preview) below

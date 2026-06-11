@@ -19,11 +19,13 @@ transient flashes, and the editor card's footer holds the word count and the Mar
   import EditorToolbar from './EditorToolbar.svelte';
   import ComponentInsertDialog from './ComponentInsertDialog.svelte';
   import LinkPicker from './LinkPicker.svelte';
+  import WebLinkDialog from './WebLinkDialog.svelte';
   import DeleteDialog from './DeleteDialog.svelte';
   import RenameDialog from './RenameDialog.svelte';
   import MarkdownHelpDialog from './MarkdownHelpDialog.svelte';
   import { cairnLinkCompletionSource } from './link-completion.js';
   import { unwrapCairnLink, type FormatKind } from './markdown-format.js';
+  import { directiveLineKind } from './markdown-directives.js';
   import type { ComponentRegistry } from '../render/registry.js';
   import type { IconSet } from '../render/glyph.js';
   import type { EditData } from '../sveltekit/content-routes.js';
@@ -124,12 +126,17 @@ transient flashes, and the editor card's footer holds the word count and the Mar
   // landing tab.
   let mode = $state<'write' | 'preview'>('write');
   let previewHtml = $state('');
+  // True after a render call threw, so the preview pane can say so instead of going blank.
+  let previewFailed = $state(false);
   let insert = $state.raw<(text: string) => void>(() => {});
   let insertLink = $state.raw<(href: string, title: string) => void>(() => {});
+  // The editor's current selection, registered by MarkdownEditor on mount; the web link dialog
+  // reads it for the Text field's default.
+  let getSelection = $state.raw<() => string>(() => '');
   // The editor's selection transform, registered by MarkdownEditor on mount; a no-op until then.
   let format = $state.raw<(kind: FormatKind) => void>(() => {});
-  // The link picker instance, for the Ctrl/Cmd+K shortcut. Typed structurally over its export.
-  let linkPicker = $state<{ open: () => void } | null>(null);
+  // The web link dialog instance, for the Ctrl/Cmd+K shortcut. Typed structurally over its export.
+  let webLinkDialog = $state<{ open: () => void } | null>(null);
   // The headless lifecycle dialogs, opened from the header's overflow menu. Typed structurally
   // over their exported open(), the linkPicker idiom.
   let deleteDialog = $state<{ open: () => void } | null>(null);
@@ -188,7 +195,7 @@ transient flashes, and the editor card's footer holds the word count and the Mar
   // but drop their roles, so a message is announced once.
   const politeMessage = $derived.by(() => {
     if (draftWarning) return `Saved. This page links to unpublished pages: ${draftWarning}.`;
-    if (data.saved) return 'Saved.';
+    if (data.saved) return 'Saved. Your site keeps showing the published version until you publish.';
     if (data.publishedFlash) return 'Published. The live site is rebuilding.';
     if (data.discardedFlash) return 'Changes discarded.';
     if (data.renamed) return `The URL is now ${data.slug}.`;
@@ -212,15 +219,23 @@ transient flashes, and the editor card's footer holds the word count and the Mar
   // exclusive in practice; the chain picks one so a surprise overlap still renders a single strip.
   // A saved flash with a draft warning yields to the warning alert below, the prior behavior.
   const flash = $derived.by(() => {
-    if (data.saved && !draftWarning) return 'Saved.';
+    if (data.saved && !draftWarning)
+      return 'Saved. Your site keeps showing the published version until you publish.';
     if (data.publishedFlash) return 'Published. The live site is rebuilding.';
     if (data.discardedFlash) return 'Changes discarded.';
     if (data.renamed) return `The URL is now ${data.slug}.`;
     return '';
   });
 
-  // The editor footer's word count, over the local body so it tracks every keystroke.
-  const wordCount = $derived(body.trim() ? body.trim().split(/\s+/).length : 0);
+  // The editor footer's word count, over the local body so it tracks every keystroke. Directive
+  // machinery lines and table rows are dropped first, so the count reads as the author's prose.
+  const countedBody = $derived(
+    body
+      .split('\n')
+      .filter((line) => directiveLineKind(line) === null && !/^\s*\|/.test(line))
+      .join('\n'),
+  );
+  const wordCount = $derived(countedBody.trim() ? countedBody.trim().split(/\s+/).length : 0);
   const wordLabel = $derived(wordCount === 1 ? '1 word' : `${wordCount} words`);
 
   // The manifest-backed resolver turns a cairn: link into its live permalink in the preview, and
@@ -233,6 +248,10 @@ transient flashes, and the editor card's footer holds the word count and the Mar
   function setMode(m: 'write' | 'preview') {
     mode = m;
   }
+
+  // Preview is read-only, so the insert controls the page renders into the toolbar disable with
+  // the strip's own format buttons.
+  const insertDisabled = $derived(mode === 'preview');
 
   // The editor card's keyboard shortcuts. Bound to the card so they fire wherever focus sits in the
   // strip or the surface, without claiming the keys page-wide. The listener attaches
@@ -256,7 +275,7 @@ transient flashes, and the editor card's footer holds the word count and the Mar
       format('italic');
     } else if (key === 'k') {
       e.preventDefault();
-      linkPicker?.open();
+      webLinkDialog?.open();
     }
   }
 
@@ -273,9 +292,15 @@ transient flashes, and the editor card's footer holds the word count and the Mar
     const handle = setTimeout(async () => {
       try {
         const html = await render(md, { resolve });
-        if (run === previewRun) previewHtml = html;
+        if (run === previewRun) {
+          previewHtml = html;
+          previewFailed = false;
+        }
       } catch {
-        if (run === previewRun) previewHtml = '';
+        if (run === previewRun) {
+          previewHtml = '';
+          previewFailed = true;
+        }
       }
     }, 150);
     return () => clearTimeout(handle);
@@ -312,7 +337,9 @@ transient flashes, and the editor card's footer holds the word count and the Mar
         </svg>
         {data.label}
       </a>
-      <h1 class="truncate text-lg font-bold tracking-tight font-[family-name:var(--font-display)]">{data.title}</h1>
+      <!-- The manuscript heading below is the visible title; repeating it here read as
+           duplication, so the header keeps the h1 for assistive tech only. -->
+      <h1 class="sr-only">{data.title}</h1>
       <span class="badge badge-sm font-medium {statusBadge}">{status}</span>
       {#if data.frontmatter.draft === true}
         <span class="badge badge-neutral badge-sm font-medium">Hidden</span>
@@ -358,7 +385,9 @@ transient flashes, and the editor card's footer holds the word count and the Mar
           {#if publishing}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Publishing…{:else}Publish{/if}
         </button>
       {/if}
-      <button type="submit" form="cairn-edit-form" class="btn btn-primary btn-sm" disabled={busy}>
+      <!-- Save sleeps while the page is clean, agreeing with the header indicator; a new entry
+           stays saveable so it can be created as loaded. -->
+      <button type="submit" form="cairn-edit-form" class="btn btn-primary btn-sm" disabled={busy || (!dirty && !data.isNew)}>
         {#if saving}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Saving…{:else}Save{/if}
       </button>
     </div>
@@ -448,8 +477,9 @@ transient flashes, and the editor card's footer holds the word count and the Mar
     >
       <EditorToolbar {format} {mode} onMode={setMode}>
         {#snippet insertControls()}
-          <ComponentInsertDialog {registry} {insert} {icons} />
-          <LinkPicker bind:this={linkPicker} linkTargets={data.linkTargets} insert={insertLink} />
+          <ComponentInsertDialog {registry} {insert} {icons} disabled={insertDisabled} />
+          <WebLinkDialog bind:this={webLinkDialog} insert={insertLink} selection={getSelection} disabled={insertDisabled} />
+          <LinkPicker linkTargets={data.linkTargets} insert={insertLink} disabled={insertDisabled} />
           <button
             type="button"
             class="btn btn-ghost btn-sm btn-square"
@@ -473,13 +503,20 @@ transient flashes, and the editor card's footer holds the word count and the Mar
           name="body"
           registerInsert={(fn) => (insert = fn)}
           registerInsertLink={(fn) => (insertLink = fn)}
+          registerGetSelection={(fn) => (getSelection = fn)}
           registerFormat={(fn) => (format = fn)}
           {completionSources}
         />
       </div>
       {#if mode === 'preview'}
         <div id="cairn-pane-preview" role="tabpanel" aria-labelledby="cairn-tab-preview" class="prose max-w-none p-4">
-          {@html previewHtml}
+          {#if previewHtml}
+            {@html previewHtml}
+          {:else if previewFailed}
+            <p class="text-sm text-[var(--color-muted)]">The preview could not render this content.</p>
+          {:else}
+            <p class="text-sm text-[var(--color-muted)]">Nothing to preview yet.</p>
+          {/if}
         </div>
       {/if}
       <!-- The card footer, part of the same instrument frame. It stays up in Preview too, so the
@@ -503,7 +540,7 @@ transient flashes, and the editor card's footer holds the word count and the Mar
          a real legend that screen readers announce with the fields it holds. -->
     <div class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 flex flex-col gap-5 p-4 shadow-[var(--cairn-shadow)]">
       {#if detailFields.length}
-      <fieldset class="flex flex-col gap-3">
+      <fieldset class="m-0 flex min-w-0 flex-col gap-3 border-0 p-0">
       <legend class="mb-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">Details</legend>
       {#each detailFields as field (field.name)}
         {#if field.type === 'textarea'}
@@ -565,7 +602,7 @@ transient flashes, and the editor card's footer holds the word count and the Mar
       </fieldset>
       {/if}
       {#if draftField}
-      <fieldset class="flex flex-col gap-1">
+      <fieldset class="m-0 flex min-w-0 flex-col gap-1 border-0 p-0">
       <legend class="mb-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">Visibility</legend>
         <label class="label cursor-pointer justify-start gap-2">
           <input class="checkbox checkbox-sm" type="checkbox" name="draft" checked={data.frontmatter.draft === true} />
@@ -574,7 +611,7 @@ transient flashes, and the editor card's footer holds the word count and the Mar
         <p class="text-xs text-[var(--color-muted)]">Hidden entries stay off the site's lists and feeds, even when published.</p>
       </fieldset>
       {/if}
-      <fieldset class="flex flex-col gap-1">
+      <fieldset class="m-0 flex min-w-0 flex-col gap-1 border-0 p-0">
       <legend class="mb-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">Address</legend>
         <div class="flex items-center justify-between gap-2">
           <code class="min-w-0 break-all text-xs text-[var(--color-muted)]">/{data.slug}</code>

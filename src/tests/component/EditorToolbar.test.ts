@@ -17,18 +17,30 @@ function controls(container: HTMLElement): HTMLElement[] {
 describe('EditorToolbar', () => {
   it('renders the primary controls with accessible names', async () => {
     const screen = render(EditorToolbar, baseProps());
-    const labels = ['Bold', 'Italic', 'Heading 2', 'Heading 3', 'Bulleted list', 'Numbered list', 'Quote', 'More formatting'];
+    const labels = ['Bold (Ctrl+B)', 'Italic (Ctrl+I)', 'Heading', 'Smaller heading', 'Bulleted list', 'Numbered list', 'Quote', 'More formatting'];
     for (const label of labels) {
-      await expect.element(screen.getByRole('button', { name: label })).toBeInTheDocument();
+      await expect.element(screen.getByRole('button', { name: label, exact: true })).toBeInTheDocument();
     }
   });
 
   it('asks the host to apply a format on a primary click', async () => {
     const format = vi.fn();
     const screen = render(EditorToolbar, baseProps({ format }));
-    await screen.getByRole('button', { name: 'Bold' }).click();
+    await screen.getByRole('button', { name: 'Bold (Ctrl+B)' }).click();
     await screen.getByRole('button', { name: 'Numbered list' }).click();
     expect(format.mock.calls).toEqual([['bold'], ['ol']]);
+  });
+
+  it('disables the format buttons and the More trigger in Preview but not the tabs', async () => {
+    const screen = render(EditorToolbar, baseProps({ mode: 'preview' }));
+    const bold = screen.container.querySelector<HTMLButtonElement>('button[aria-label="Bold (Ctrl+B)"]')!;
+    expect(bold.disabled).toBe(true);
+    const more = screen.container.querySelector<HTMLButtonElement>('button[aria-label="More formatting"]')!;
+    expect(more.disabled).toBe(true);
+    const tabs = screen.container.querySelectorAll<HTMLButtonElement>('[role="tab"]');
+    for (const tab of tabs) expect(tab.disabled).toBe(false);
+    // The roving tab stop lands on an enabled control, never a disabled one.
+    await expect.poll(() => controls(screen.container).filter((el) => el.tabIndex === 0).length).toBe(1);
   });
 
   it('lists the six secondary formats in the More menu and applies one', async () => {

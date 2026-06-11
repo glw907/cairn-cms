@@ -17,9 +17,12 @@ conventions. The plain-URL link is the toolbar's Web link dialog; this is for an
     insert: (href: string, title: string) => void;
     /** Disable the trigger; the host sets it while Preview shows. */
     disabled?: boolean;
+    /** Render the built-in Link to page trigger. False mounts only the dialog, for a host that
+     *  supplies its own trigger and opens the dialog through the exported open(). */
+    trigger?: boolean;
   }
 
-  let { linkTargets, insert, disabled = false }: Props = $props();
+  let { linkTargets, insert, disabled = false, trigger = true }: Props = $props();
 
   let dialog = $state<HTMLDialogElement | null>(null);
   let query = $state('');
@@ -64,9 +67,11 @@ conventions. The plain-URL link is the toolbar's Web link dialog; this is for an
   }
 </script>
 
-<button type="button" class="btn btn-sm btn-ghost" aria-haspopup="dialog" aria-label="Link to page" {disabled} onclick={open}>
-  Link to page
-</button>
+{#if trigger}
+  <button type="button" class="btn btn-sm btn-ghost" aria-haspopup="dialog" aria-label="Link to page" {disabled} onclick={open}>
+    Link to page
+  </button>
+{/if}
 
 <dialog class="modal" aria-labelledby="cairn-link-dialog-title" bind:this={dialog}>
   <div class="modal-box">

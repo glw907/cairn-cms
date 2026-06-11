@@ -99,7 +99,16 @@ Recipes:
 - **Empty state:** the cairn mark plus warm, concept-named copy ("No posts yet", "Stack your first one
   and it will show up here") and the create CTA. Not a bare line of text.
 - **Dialog:** a native `<dialog class="modal">` with a `modal-box`, an `aria-labelledby` title, a close
-  button, and the `method="dialog"` backdrop. `showModal()` gives focus trap and Escape for free.
+  button, and the `method="dialog"` backdrop. `showModal()` gives focus trap and Escape for free. A
+  dialog that holds its own `<form>` must mount outside any page-level form: nested forms are invalid
+  HTML the parser repairs by dropping the outer tag, which breaks SSR and hydration. `EditPage` mounts
+  all its dialogs headless at the bottom and renders plain triggers where they belong.
+- **Popover menu:** the small action menus (the edit header's overflow, the toolbar's More formatting)
+  are DaisyUI v5 popover dropdowns, never the focus-driven `.dropdown` wrapper, which opens on
+  focus-in-transit and ignores Escape. The trigger is a `<button popovertarget="<id>">` with an
+  `anchor-name`, carrying `aria-expanded` mirrored from the popover's `toggle` event; the panel is a
+  `<ul class="dropdown menu" popover id="<id>">` with the matching `position-anchor`. Escape and light
+  dismiss come from the Popover API. A pick runs its action, then `hidePopover()` if still open.
 - **Command palette:** `<dialog>` opened by the topbar trigger or Cmd/Ctrl+K; commands are the nav
   destinations plus View-site and theme, filtered as you type. Built in `AdminLayout.svelte`.
 - **Sticky edit header (the glass ruler):** `sticky top-16 z-10 bg-base-200/90 backdrop-blur` with an
@@ -107,11 +116,13 @@ Recipes:
   negative margins that mirror the main padding (`-mx-4 lg:-mx-8` against `p-4 lg:p-8`). It is a
   translucent veil the page scrolls beneath, never a second opaque topbar. Left: breadcrumb, an
   `sr-only` h1, the status badges, and the save-state indicator (a small `bg-warning` dot plus
-  muted text, fading via `transition-opacity`). Right: the overflow dropdown, then the outline
-  Publish, then solid Save, both tied to the form by `form="cairn-edit-form"`.
+  muted text, fading via `transition-opacity`). Right: the overflow popover menu, then the outline
+  Publish, then solid Save, both tied to the form by `form="cairn-edit-form"`. An `sr-only` default
+  submit button precedes the header (first form-owned submit in tree order), so Enter in a
+  single-line field saves rather than firing the Publish formaction.
 - **Editor instrument strip:** one card frame holds the toolbar, the editing surface, and a slim
   footer (word count left, Markdown help right). Ghost `btn-sm btn-square` glyph buttons in groups
-  divided by `w-px self-stretch bg-[var(--cairn-card-border)]` hairlines, a More dropdown for the
+  divided by `w-px self-stretch bg-[var(--cairn-card-border)]` hairlines, a More popover menu for the
   low-frequency formats, the host's insert controls through a snippet, and the Write/Preview
   segmented `join` pinned right with `role="tablist"`. Roving tabindex carries keyboard traversal.
   Formatting and insert controls disable while Preview shows.
@@ -124,8 +135,11 @@ Recipes:
   `--color-accent`, syntax marks and quotes to `--color-muted`. Directive lines (`:::`, `::name`)
   carry an 8% accent `color-mix` band plus a plain-language `title` tooltip. Light `--color-accent`
   is a locked margin at `oklch(54% 0.16 300)`: it must hold AA both on `base-100` and on its own 8%
-  tint. The editor's focus indicator is a deliberate 1px 45%-alpha primary hairline, never a 2px
-  ring: a focused text surface sits in keyboard modality, so `:focus-visible` cannot quiet it.
+  tint. The editor's focus indicator is a deliberate 1px 70%-alpha primary hairline, never a 2px
+  ring: a focused text surface sits in keyboard modality, so `:focus-visible` cannot quiet it. That
+  70% mix is a locked floor: it clears the 3:1 non-text contrast minimum on both themes, where 45%
+  measured near 2:1. A scoped `.cairn-doc-title:focus` rule in `cairn-admin.css` gives the document
+  title input the same hairline.
 
 ## Chrome and spacing
 

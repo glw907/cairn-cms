@@ -17,7 +17,7 @@ transient flashes, and the editor card's footer holds the word count and the Mar
   import CsrfField from './CsrfField.svelte';
   import MarkdownEditor from './MarkdownEditor.svelte';
   import EditorToolbar from './EditorToolbar.svelte';
-  import ComponentInsertDialog from './ComponentInsertDialog.svelte';
+  import ComponentInsertDialog, { insertableDefs } from './ComponentInsertDialog.svelte';
   import LinkPicker from './LinkPicker.svelte';
   import WebLinkDialog from './WebLinkDialog.svelte';
   import DeleteDialog from './DeleteDialog.svelte';
@@ -70,6 +70,10 @@ transient flashes, and the editor card's footer holds the word count and the Mar
   // Either in-flight submit disables both buttons, so a second click cannot fire a second POST
   // while the first navigation is still pending.
   const busy = $derived(saving || publishing);
+  // True once a non-edit POST (discard, delete, rename) submits. Those forms navigate the
+  // document without flipping busy, so without this the leave guard would fire mid-discard while
+  // the page is still dirty, which is the primary discard scenario.
+  let leaving = $state(false);
 
   // Dirty tracking. The body compares against the text the page loaded with (or the edited body a
   // blocked save returned, which seeded the editor); the uncontrolled sidebar fields flip a flag
@@ -94,23 +98,32 @@ transient flashes, and the editor card's footer holds the word count and the Mar
 
   // The SvelteKit half of the leave guard. Registered at component init (beforeNavigate wraps
   // onMount, so it must run synchronously here) and auto-unregistered on destroy. A submit's own
-  // navigation passes through because busy flips before it starts.
+  // navigation passes through because busy flips before it starts, and a non-edit POST's because
+  // leaving does.
   beforeNavigate((navigation) => {
-    if (dirty && !busy && !confirm('You have unsaved changes. Leave anyway?')) navigation.cancel();
+    if (dirty && !busy && !leaving && !confirm('You have unsaved changes. Leave anyway?'))
+      navigation.cancel();
   });
 
   // The browser half of the leave guard plus the page-wide save shortcut. The handlers read the
   // current dirty and busy values at event time, so the effect itself tracks nothing and runs once.
   $effect(() => {
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (dirty && !busy) e.preventDefault();
+      if (dirty && !busy && !leaving) e.preventDefault();
     };
     // Guard-clause style on purpose: svelte 5.56.1 misprints `(a || b) && c` by dropping the
     // parentheses, and consumers compile this source with their own svelte.
     const onWindowKeydown = (e: KeyboardEvent) => {
       if (!(e.ctrlKey || e.metaKey)) return;
       if (e.key.toLowerCase() !== 's') return;
+      // Always claim the shortcut so the browser's save-page dialog never opens over the admin.
       e.preventDefault();
+      // Gate the submit itself: an in-flight POST must not race a second one, a clean page has
+      // nothing to save (a no-op save would still cut a pending branch), and a save from inside
+      // an open modal would act on a surface the author cannot see.
+      if (busy) return;
+      if (!dirty && !data.isNew) return;
+      if ((e.target as Element | null)?.closest?.('dialog')) return;
       editForm?.requestSubmit();
     };
     window.addEventListener('beforeunload', onBeforeUnload);
@@ -137,13 +150,21 @@ transient flashes, and the editor card's footer holds the word count and the Mar
   let format = $state.raw<(kind: FormatKind) => void>(() => {});
   // A headless dialog instance, typed structurally over its exported open() (the linkPicker idiom).
   type DialogHandle = { open: () => void };
-  // The web link dialog, for the Ctrl/Cmd+K shortcut.
+  // The toolbar's insert dialogs. Each holds its own <form>, so they mount outside the edit form
+  // (a form nested in a form is invalid HTML the parser repairs by dropping the outer tag, which
+  // breaks SSR and hydration); the toolbar snippet renders plain triggers that open them here.
   let webLinkDialog = $state<DialogHandle | null>(null);
+  let linkPicker = $state<DialogHandle | null>(null);
+  let insertDialog = $state<DialogHandle | null>(null);
   // The lifecycle dialogs, opened from the header's overflow menu.
   let deleteDialog = $state<DialogHandle | null>(null);
   let renameDialog = $state<DialogHandle | null>(null);
   // The Markdown cheat sheet, opened from the editor card's footer.
   let helpDialog = $state<DialogHandle | null>(null);
+
+  // Whether the registry offers anything insertable, the same condition the insert dialog lists
+  // by, so the toolbar trigger and the dialog appear and disappear together.
+  const hasComponents = $derived(insertableDefs(registry).length > 0);
 
   // The header's status badge, in ConceptList's vocabulary: a pending entry reads Edited (or New
   // when it has never been published); otherwise the live site matches and it reads Published.
@@ -157,11 +178,17 @@ transient flashes, and the editor card's footer holds the word count and the Mar
     return 'badge-ghost';
   });
 
-  // An overflow-menu pick runs its action, then blurs the item so the focus-driven DaisyUI
-  // dropdown closes (the EditorToolbar More-menu pattern).
+  // The header overflow menu's popover element and its open state, mirrored from the toggle
+  // event into aria-expanded on the trigger.
+  let actionsMenu = $state<HTMLUListElement | null>(null);
+  let actionsOpen = $state(false);
+
+  // An overflow-menu pick runs its action, then dismisses the popover menu. Opening a modal
+  // dialog already closes an auto popover, so the explicit hide fires only when the menu is
+  // still up.
   function pickAction(action: () => void) {
     action();
-    (document.activeElement as HTMLElement | null)?.blur();
+    if (actionsMenu?.matches(':popover-open')) actionsMenu.hidePopover();
   }
 
   // The save guard's broken links, from the blocked action result. The fix unwraps a link in the
@@ -187,9 +214,37 @@ transient flashes, and the editor card's footer holds the word count and the Mar
   // A rename that hit a collision or an invalid slug returns form.renameError.
   const renameError = $derived(form?.renameError ?? '');
 
-  // After a save that links to a draft target, the redirect carries ?drafts=<tokens>.
+  // The entry this surface is editing. SvelteKit reuses the page component across a same-route
+  // navigation (the delete-refused and broken-link banners link entry to entry), so the per-entry
+  // state seeded at init would survive the hop and show entry A's body over entry B's data with
+  // the dirty indicator armed. When the identity changes, re-seed the state here; the {#key}
+  // block around the template remounts the DOM to match (CodeMirror with its undo history, the
+  // uncontrolled sidebar fields, any open dialog). The leave guard still protects the hop:
+  // beforeNavigate runs before the navigation completes, so it reads the old dirty value.
+  const entryKey = $derived(data.conceptId + '/' + data.id);
+  let seededKey = untrack(() => entryKey);
+  $effect.pre(() => {
+    const key = entryKey;
+    if (key === seededKey) return;
+    seededKey = key;
+    untrack(() => {
+      body = form?.body ?? data.body;
+      saving = false;
+      publishing = false;
+      leaving = false;
+      fieldsDirty = false;
+      mode = 'write';
+      previewHtml = '';
+      previewFailed = false;
+      removedLinks = [];
+    });
+  });
+
+  // After a save that links to a draft target, the redirect carries ?drafts=<tokens>. Re-read on
+  // an entry change too, since a client-side navigation swaps the search string under this effect.
   let draftWarning = $state('');
   $effect(() => {
+    void entryKey;
     const search = typeof location === 'undefined' ? '' : location.search;
     const drafts = new URLSearchParams(search).get('drafts');
     draftWarning = drafts ? drafts.split(',').filter(Boolean).join(', ') : '';
@@ -325,6 +380,27 @@ transient flashes, and the editor card's footer holds the word count and the Mar
   const detailFields = $derived(data.fields.filter((f) => f !== titleField && f !== draftField));
 </script>
 
+<!-- The whole edit surface remounts when navigation lands on another entry (see the entryKey
+     reset above); script-level state and the beforeNavigate registration sit outside the block,
+     so only the template rebuilds. -->
+{#key entryKey}
+<!-- The form's default button. The header's Publish (while pending) and Save submit the edit form
+     from outside it, and the default button for implicit submission (Enter in a single-line
+     field) is the FIRST form-owned submit button in tree order, which the header's Publish would
+     otherwise be: Enter in the title would publish a half-finished edit. This sr-only button sits
+     before the header, carries no formaction (so an implicit submit posts ?/save), and mirrors
+     Save's disabled state, so Enter on a clean page submits nothing. -->
+<button
+  type="submit"
+  form="cairn-edit-form"
+  class="sr-only"
+  tabindex="-1"
+  aria-hidden="true"
+  disabled={busy || (!dirty && !data.isNew)}
+>
+  Save
+</button>
+
 <!-- The sticky action header, a glass ruler: a translucent base-200 veil with backdrop blur the
      page scrolls beneath, never a second opaque band (the admin topbar keeps that role). It sticks
      under the h-16 topbar and bleeds across AdminLayout's content padding (p-4, lg:p-8) with
@@ -362,29 +438,45 @@ transient flashes, and the editor card's footer holds the word count and the Mar
       </span>
     </div>
     <div class="ml-auto flex items-center gap-2">
-      <div class="dropdown dropdown-end">
-        <button type="button" class="btn btn-ghost btn-sm btn-square" aria-label="More actions" title="More actions" aria-haspopup="true">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 12h.01" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 12h.01" />
-          </svg>
-        </button>
-        <ul class="dropdown-content menu menu-sm bg-base-100 rounded-box z-10 w-44 border border-[var(--cairn-card-border)] p-1 shadow-[var(--cairn-shadow)]">
-          {#if data.pending}
-            <li>
-              <button type="button" aria-haspopup="dialog" onclick={() => pickAction(() => discardDialog?.showModal())}>
-                Discard changes
-              </button>
-            </li>
-          {/if}
+      <!-- The overflow menu is a DaisyUI v5 popover dropdown: click to open (never
+           focus-in-transit), Escape and light dismiss from the Popover API, and the
+           anchor-name/position-anchor pair places the panel under its trigger. -->
+      <button
+        type="button"
+        class="btn btn-ghost btn-sm btn-square"
+        aria-label="More actions"
+        title="More actions"
+        aria-expanded={actionsOpen}
+        popovertarget="cairn-edit-actions-menu"
+        style="anchor-name:--cairn-edit-actions"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 12h.01" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 12h.01" />
+        </svg>
+      </button>
+      <ul
+        bind:this={actionsMenu}
+        popover="auto"
+        id="cairn-edit-actions-menu"
+        style="position-anchor:--cairn-edit-actions"
+        ontoggle={(e) => (actionsOpen = e.newState === 'open')}
+        class="dropdown dropdown-end menu menu-sm bg-base-100 rounded-box w-44 border border-[var(--cairn-card-border)] p-1 shadow-[var(--cairn-shadow)]"
+      >
+        {#if data.pending}
           <li>
-            <button type="button" class="text-error" aria-haspopup="dialog" onclick={() => pickAction(() => deleteDialog?.open())}>
-              Delete
+            <button type="button" aria-haspopup="dialog" onclick={() => pickAction(() => discardDialog?.showModal())}>
+              Discard changes
             </button>
           </li>
-        </ul>
-      </div>
+        {/if}
+        <li>
+          <button type="button" class="text-error" aria-haspopup="dialog" onclick={() => pickAction(() => deleteDialog?.open())}>
+            Delete
+          </button>
+        </li>
+      </ul>
       {#if data.pending}
         <!-- Outline keeps Save the single solid primary action; Publish reads as its peer. -->
         <button type="submit" form="cairn-edit-form" formaction="?/publish" class="btn btn-outline btn-primary btn-sm" disabled={busy}>
@@ -463,9 +555,10 @@ transient flashes, and the editor card's footer holds the word count and the Mar
   <div class="lg:order-1">
     {#if titleField}
       <!-- The hoisted document title: large, borderless, in the display face, so the manuscript
-           reads as the protagonist. It submits as name="title", the same field as before. -->
+           reads as the protagonist. It submits as name="title", the same field as before. The
+           admin sheet gives it the editor's quiet focus hairline (see .cairn-doc-title there). -->
       <input
-        class="cairn-doc-title mb-4 w-full border-0 bg-transparent text-3xl font-bold tracking-tight font-[family-name:var(--font-display)] placeholder:text-[var(--color-muted)] focus:outline-none"
+        class="cairn-doc-title mb-4 w-full border-0 bg-transparent text-3xl font-bold tracking-tight font-[family-name:var(--font-display)] placeholder:text-[var(--color-muted)]"
         name="title"
         value={str(data.frontmatter.title)}
         placeholder={titleField.label}
@@ -483,9 +576,41 @@ transient flashes, and the editor card's footer holds the word count and the Mar
     >
       <EditorToolbar {format} {mode} onMode={setMode}>
         {#snippet insertControls()}
-          <ComponentInsertDialog {registry} {insert} {icons} disabled={insertDisabled} />
-          <WebLinkDialog bind:this={webLinkDialog} insert={insertLink} selection={getSelection} disabled={insertDisabled} />
-          <LinkPicker linkTargets={data.linkTargets} insert={insertLink} disabled={insertDisabled} />
+          <!-- Plain triggers only: the dialogs they open hold their own <form> elements, so the
+               dialogs themselves mount outside the edit form at the bottom of this component. -->
+          {#if hasComponents}
+            <button
+              type="button"
+              class="btn btn-sm btn-ghost"
+              aria-haspopup="dialog"
+              aria-label="Insert block"
+              disabled={insertDisabled}
+              onclick={() => insertDialog?.open()}
+            >
+              Insert block
+            </button>
+          {/if}
+          <button
+            type="button"
+            class="btn btn-sm btn-ghost"
+            aria-haspopup="dialog"
+            aria-label="Web link (Ctrl+K)"
+            title="Web link (Ctrl+K)"
+            disabled={insertDisabled}
+            onclick={() => webLinkDialog?.open()}
+          >
+            Web link
+          </button>
+          <button
+            type="button"
+            class="btn btn-sm btn-ghost"
+            aria-haspopup="dialog"
+            aria-label="Link to page"
+            disabled={insertDisabled}
+            onclick={() => linkPicker?.open()}
+          >
+            Link to page
+          </button>
           <button
             type="button"
             class="btn btn-ghost btn-sm btn-square"
@@ -515,7 +640,9 @@ transient flashes, and the editor card's footer holds the word count and the Mar
         />
       </div>
       {#if mode === 'preview'}
-        <div id="cairn-pane-preview" role="tabpanel" aria-labelledby="cairn-tab-preview" class="prose max-w-none p-4">
+        <!-- tabindex 0: the pane holds no focusable content, so it is itself a tab stop (the
+             tabpanel pattern's completeness requirement). -->
+        <div id="cairn-pane-preview" role="tabpanel" aria-labelledby="cairn-tab-preview" tabindex="0" class="prose max-w-none p-4">
           {#if previewHtml}
             {@html previewHtml}
           {:else if previewFailed}
@@ -635,9 +762,25 @@ transient flashes, and the editor card's footer holds the word count and the Mar
   </aside>
 </form>
 
+<!-- The toolbar's insert dialogs, mounted headless outside the edit form: each holds its own
+     <form>, and a form nested in a form is invalid HTML the parser repairs by dropping the outer
+     tag, which breaks the SSR'd document and hydration. The toolbar snippet's triggers drive them
+     through their exported open(). -->
+<ComponentInsertDialog bind:this={insertDialog} trigger={false} {registry} {insert} {icons} />
+<WebLinkDialog bind:this={webLinkDialog} trigger={false} insert={insertLink} selection={getSelection} />
+<LinkPicker bind:this={linkPicker} trigger={false} linkTargets={data.linkTargets} insert={insertLink} />
+
 <!-- The lifecycle dialogs, mounted headless: the header's overflow menu drives them through their
-     exported open(). -->
-<RenameDialog bind:this={renameDialog} trigger={false} conceptId={data.conceptId} id={data.id} label={data.label} slug={data.slug} />
+     exported open(). Their POST forms flip the leaving flag so the leave guard stands down. -->
+<RenameDialog
+  bind:this={renameDialog}
+  trigger={false}
+  conceptId={data.conceptId}
+  id={data.id}
+  label={data.label}
+  slug={data.slug}
+  onsubmitting={() => (leaving = true)}
+/>
 <MarkdownHelpDialog bind:this={helpDialog} />
 <DeleteDialog
   bind:this={deleteDialog}
@@ -647,6 +790,7 @@ transient flashes, and the editor card's footer holds the word count and the Mar
   label={data.label}
   inboundLinks={data.inboundLinks}
   pending={data.pending}
+  onsubmitting={() => (leaving = true)}
 />
 
 {#if data.pending}
@@ -661,7 +805,7 @@ transient flashes, and the editor card's footer holds the word count and the Mar
       {:else}
         <p class="mb-3 text-sm">This entry has never been published, so discarding deletes it. Nothing can be recovered.</p>
       {/if}
-      <form method="POST" action="?/discard" class="flex justify-end gap-2">
+      <form method="POST" action="?/discard" class="flex justify-end gap-2" onsubmit={() => (leaving = true)}>
         <CsrfField />
         <button type="button" class="btn btn-sm" onclick={() => discardDialog?.close()}>Cancel</button>
         <button type="submit" class="btn btn-sm btn-error">Discard</button>
@@ -672,3 +816,4 @@ transient flashes, and the editor card's footer holds the word count and the Mar
     </form>
   </dialog>
 {/if}
+{/key}

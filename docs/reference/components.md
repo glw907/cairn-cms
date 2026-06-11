@@ -282,19 +282,21 @@ native browser spell check.
 ### `ComponentInsertDialog`
 
 ```ts
-let { registry, insert, icons, disabled = false }: {
+let { registry, insert, icons, disabled = false, trigger = true }: {
   registry?: ComponentRegistry;
   insert: (text: string) => void;
   icons?: IconSet;
   disabled?: boolean;
+  trigger?: boolean;
 };
 ```
 
 The insert palette: an Insert block button that opens a dialog listing the site's registered
 components, then hands off to `ComponentForm` for the chosen one. `registry` is the site's
 component registry, `insert` inserts the serialized markdown at the editor cursor, and `icons`
-feeds icon fields. `disabled` greys the trigger; `EditPage` passes it while the Preview tab shows.
-`EditPage` composes it.
+feeds icon fields. `disabled` greys the trigger. With `trigger={false}` the component renders only
+the dialog and the exported `open()` method shows it; `EditPage`'s toolbar drives it that way,
+keeping the dialog's own form outside the edit form. `EditPage` composes it.
 
 ```svelte
 <ComponentInsertDialog {registry} insert={insertAtCursor} {icons} />
@@ -344,18 +346,20 @@ choice is offered, and `onChange` receives the new name. `label` names the group
 ### `LinkPicker`
 
 ```ts
-let { linkTargets, insert, disabled = false }: {
+let { linkTargets, insert, disabled = false, trigger = true }: {
   linkTargets: LinkTarget[];
   insert: (href: string, title: string) => void;
   disabled?: boolean;
+  trigger?: boolean;
 };
 ```
 
 The Link to page control: a dialog that searches the site's content and inserts a rot-proof
 `cairn:` internal link at the editor cursor. `linkTargets` is the link target list the edit load
-ships from the committed manifest; `insert` inserts the chosen link. `disabled` greys the trigger;
-`EditPage` passes it while the Preview tab shows. The component exports an `open()` method, so a
-host holding the instance can open the dialog programmatically. `EditPage` composes it.
+ships from the committed manifest; `insert` inserts the chosen link. `disabled` greys the trigger.
+With `trigger={false}` the component renders only the dialog, and the exported `open()` method
+shows it; `EditPage`'s toolbar drives it that way, keeping the dialog's search form outside the
+edit form. `EditPage` composes it.
 
 ```svelte
 <LinkPicker {linkTargets} insert={insertLinkAtCursor} />
@@ -364,13 +368,14 @@ host holding the instance can open the dialog programmatically. `EditPage` compo
 ### `DeleteDialog`
 
 ```ts
-let { conceptId, id, label, inboundLinks, pending = false, trigger = true }: {
+let { conceptId, id, label, inboundLinks, pending = false, trigger = true, onsubmitting }: {
   conceptId: string;
   id: string;
   label: string;
   inboundLinks: InboundLink[];
   pending?: boolean;
   trigger?: boolean;
+  onsubmitting?: () => void;
 };
 ```
 
@@ -381,7 +386,8 @@ shows the linkers and blocks the delete until they are repointed. Pass `pending`
 unpublished edits; the confirm copy then warns that those edits are discarded too, since the delete
 cascades to the entry's pending branch. With `trigger={false}` the component renders only the
 dialog, no visible button, and the exported `open()` method shows it; `EditPage`'s overflow menu
-drives it that way. `EditPage` composes it.
+drives it that way. `onsubmitting` fires when the confirm form submits, before the document
+navigates; `EditPage` uses it to stand down its unsaved-changes guard. `EditPage` composes it.
 
 ```svelte
 <DeleteDialog conceptId="posts" id="2026-06-04-hello" label="Post" inboundLinks={[]} />
@@ -390,12 +396,13 @@ drives it that way. `EditPage` composes it.
 ### `RenameDialog`
 
 ```ts
-let { conceptId, id, label, slug, trigger = true }: {
+let { conceptId, id, label, slug, trigger = true, onsubmitting }: {
   conceptId: string;
   id: string;
   label: string;
   slug: string;
   trigger?: boolean;
+  onsubmitting?: () => void;
 };
 ```
 
@@ -403,7 +410,8 @@ A confirm dialog that renames one entry's slug. `conceptId` and `id` identify th
 with the confirm, `label` names the concept in the prompts, and `slug` prefills the input with the
 current slug. With `trigger={false}` the component renders only the dialog, no visible button, and
 the exported `open()` method shows it; the sidebar's Change URL button drives it that way.
-`EditPage` composes it.
+`onsubmitting` fires when the rename form submits, before the document navigates; `EditPage` uses
+it to stand down its unsaved-changes guard. `EditPage` composes it.
 
 ```svelte
 <RenameDialog conceptId="posts" id="2026-06-04-hello" label="Post" slug="hello" />

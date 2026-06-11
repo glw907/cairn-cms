@@ -78,10 +78,15 @@ are stroke SVG icons in the admin's house style (24x24 viewBox, `currentColor`, 
     { kind: 'task', label: 'Task list' },
   ];
 
+  // The More menu's popover element and its open state, mirrored from the toggle event into
+  // aria-expanded on the trigger.
+  let moreMenu = $state<HTMLUListElement | null>(null);
+  let moreOpen = $state(false);
+
   function pickMore(kind: FormatKind) {
     format(kind);
-    // The DaisyUI dropdown is focus-driven, so blurring the clicked item closes the menu.
-    (document.activeElement as HTMLElement | null)?.blur();
+    // Picking dismisses the menu; hiding returns focus to the trigger, keeping the roving order.
+    if (moreMenu?.matches(':popover-open')) moreMenu.hidePopover();
   }
 
   let toolbarEl = $state<HTMLDivElement | null>(null);
@@ -90,13 +95,13 @@ are stroke SVG icons in the admin's house style (24x24 viewBox, `currentColor`, 
   // pattern allows either, and one arrow model over the whole strip is the simpler of the two.
   let roving = $state(0);
 
-  /** The strip's top-level controls in DOM order: every enabled button outside the More menu and
-   *  outside the insert controls' dialogs. The host's insertControls render their own buttons, so
-   *  the set is queried, not declared. */
+  /** The strip's top-level controls in DOM order: every enabled button outside the More menu's
+   *  popover and outside the insert controls' dialogs. The host's insertControls render their own
+   *  buttons, so the set is queried, not declared. */
   function rovingControls(): HTMLElement[] {
     if (!toolbarEl) return [];
     return Array.from(toolbarEl.querySelectorAll<HTMLElement>('button')).filter(
-      (el) => !el.hasAttribute('disabled') && !el.closest('.dropdown-content') && !el.closest('dialog'),
+      (el) => !el.hasAttribute('disabled') && !el.closest('[popover]') && !el.closest('dialog'),
     );
   }
 
@@ -114,7 +119,7 @@ are stroke SVG icons in the admin's house style (24x24 viewBox, `currentColor`, 
   function onToolbarKeydown(e: KeyboardEvent) {
     if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
     // Leave the keys alone inside the open More menu; its items are not part of the roving order.
-    if ((e.target as HTMLElement | null)?.closest('.dropdown-content')) return;
+    if ((e.target as HTMLElement | null)?.closest('[popover]')) return;
     const items = rovingControls();
     if (items.length === 0) return;
     const current = items.indexOf(document.activeElement as HTMLElement);
@@ -179,23 +184,33 @@ are stroke SVG icons in the admin's house style (24x24 viewBox, `currentColor`, 
   {#each structureButtons as button (button.kind)}
     {@render glyphButton(button)}
   {/each}
-  <div class="dropdown">
-    <button
-      type="button"
-      class="btn btn-ghost btn-sm btn-square"
-      aria-label="More formatting"
-      title="More formatting"
-      aria-haspopup="true"
-      disabled={mode === 'preview'}
-    >
-      {@render strokeIcon(ellipsisPaths)}
-    </button>
-    <ul class="dropdown-content menu menu-sm bg-base-100 rounded-box z-10 w-44 border border-[var(--cairn-card-border)] p-1 shadow-[var(--cairn-shadow)]">
-      {#each moreItems as item (item.kind)}
-        <li><button type="button" onclick={() => pickMore(item.kind)}>{item.label}</button></li>
-      {/each}
-    </ul>
-  </div>
+  <!-- The More menu is a DaisyUI v5 popover dropdown: click to open (never focus-in-transit),
+       Escape and light dismiss from the Popover API, and the anchor-name/position-anchor pair
+       places the panel under its trigger. -->
+  <button
+    type="button"
+    class="btn btn-ghost btn-sm btn-square"
+    aria-label="More formatting"
+    title="More formatting"
+    aria-expanded={moreOpen}
+    popovertarget="cairn-more-formatting-menu"
+    style="anchor-name:--cairn-more-formatting"
+    disabled={mode === 'preview'}
+  >
+    {@render strokeIcon(ellipsisPaths)}
+  </button>
+  <ul
+    bind:this={moreMenu}
+    popover="auto"
+    id="cairn-more-formatting-menu"
+    style="position-anchor:--cairn-more-formatting"
+    ontoggle={(e) => (moreOpen = e.newState === 'open')}
+    class="dropdown menu menu-sm bg-base-100 rounded-box w-44 border border-[var(--cairn-card-border)] p-1 shadow-[var(--cairn-shadow)]"
+  >
+    {#each moreItems as item (item.kind)}
+      <li><button type="button" onclick={() => pickMore(item.kind)}>{item.label}</button></li>
+    {/each}
+  </ul>
 
   {#if insertControls}
     <div class="w-px self-stretch bg-[var(--cairn-card-border)]" aria-hidden="true"></div>

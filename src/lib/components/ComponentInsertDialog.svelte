@@ -5,8 +5,21 @@ intended use. A component with a schema opens the guided ComponentForm; a templa
 inserts directly; a component with neither is not listed. Built on a native <dialog> for focus
 trapping and Escape, following the dropdown's a11y conventions used elsewhere in the admin.
 -->
-<script lang="ts">
+<script module lang="ts">
   import type { ComponentRegistry, ComponentDef } from '../render/registry.js';
+
+  function hasSchema(def: ComponentDef): boolean {
+    return (def.attributes?.length ?? 0) > 0 || (def.slots?.length ?? 0) > 0;
+  }
+  /** The registry's actionable components: a schema opens the guided form, a template inserts
+   *  directly, and a component with neither is not listed. Exported so a host rendering its own
+   *  trigger (the edit page's toolbar) can hide it under the same condition the dialog uses. */
+  export function insertableDefs(registry?: ComponentRegistry): ComponentDef[] {
+    return (registry?.defs ?? []).filter((def) => hasSchema(def) || Boolean(def.insertTemplate));
+  }
+</script>
+
+<script lang="ts">
   import type { IconSet } from '../render/glyph.js';
   import ComponentForm from './ComponentForm.svelte';
 
@@ -19,23 +32,20 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
     icons?: IconSet;
     /** Disable the trigger; the host sets it while Preview shows. */
     disabled?: boolean;
+    /** Render the built-in Insert block trigger. False mounts only the dialog, for a host that
+     *  supplies its own trigger and opens the dialog through the exported open(). */
+    trigger?: boolean;
   }
 
-  let { registry, insert, icons, disabled = false }: Props = $props();
+  let { registry, insert, icons, disabled = false, trigger = true }: Props = $props();
 
   let dialog = $state<HTMLDialogElement | null>(null);
   let picked = $state<ComponentDef | null>(null);
 
-  function hasSchema(def: ComponentDef): boolean {
-    return (def.attributes?.length ?? 0) > 0 || (def.slots?.length ?? 0) > 0;
-  }
-  function actionable(def: ComponentDef): boolean {
-    return hasSchema(def) || Boolean(def.insertTemplate);
-  }
+  const defs = $derived(insertableDefs(registry));
 
-  const defs = $derived((registry?.defs ?? []).filter(actionable));
-
-  function open() {
+  /** Open the picker. Exported so a trigger={false} host can drive the dialog itself. */
+  export function open() {
     picked = null;
     dialog?.showModal();
   }
@@ -57,9 +67,11 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
   }
 </script>
 
-{#if defs.length > 0}
+{#if trigger && defs.length > 0}
   <button type="button" class="btn btn-sm btn-ghost" aria-haspopup="dialog" aria-label="Insert block" {disabled} onclick={open}>Insert block</button>
+{/if}
 
+{#if defs.length > 0}
   <dialog class="modal" aria-labelledby="cairn-insert-dialog-title" bind:this={dialog} onclose={() => (picked = null)}>
     <div class="modal-box">
       <div class="mb-3 flex items-center justify-between">

@@ -185,6 +185,24 @@
       0 2px 4px color-mix(in oklch, var(--color-primary) 26%, transparent),
       0 10px 24px -5px color-mix(in oklch, var(--color-primary) 48%, transparent);
   }
+
+  /* The hoisted document title is a text-entry surface like the editor: browsers treat a focused
+     text input as keyboard-modal, so the page-wide 2px focus-visible ring above would shout
+     through every typing session. It gets the editor's quiet always-on hairline instead (WCAG
+     2.4.7), at the 70% primary mix that clears the 3:1 non-text contrast floor on both themes
+     (WCAG 1.4.11). The class-plus-pseudo selector outranks the bare :focus-visible rule. */
+  :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-doc-title:focus {
+    outline: 1px solid color-mix(in oklab, var(--color-primary) 70%, transparent);
+    outline-offset: -1px;
+  }
+
+  /* The admin topbar plus the edit page's sticky action header stack about 120px of veil over the
+     top of the content column, and a control the browser scrolls into view could land hidden
+     beneath them (WCAG 2.4.11 Focus Not Obscured). The scroll margin keeps any focus or fragment
+     scroll clear of the whole sticky stack. */
+  :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) :is(a, button, input, textarea, select, summary, [tabindex]) {
+    scroll-margin-top: 8.5rem;
+  }
 }
 
 /* Respect a reduced-motion preference inside the admin. DaisyUI's modal, drawer, and the admin's

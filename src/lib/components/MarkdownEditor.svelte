@@ -82,9 +82,10 @@ through the adapter's render. Swapping the editor stays a one-file change.
         // A quiet always-on focus hairline. :focus-visible is no escape here: browsers treat a
         // focused text-entry surface as keyboard-modal, so a 2px ring would shout through every
         // typing session. One subtle line keeps focus visible (WCAG 2.4.7) without competing
-        // with the manuscript.
+        // with the manuscript. The 70% primary mix clears the 3:1 non-text contrast floor
+        // (WCAG 1.4.11) on both themes (3.23:1 light, 3.32:1 dark), where 45% measured near 2:1.
         '&.cm-focused': {
-          outline: '1px solid color-mix(in oklab, var(--color-primary) 45%, transparent)',
+          outline: '1px solid color-mix(in oklab, var(--color-primary) 70%, transparent)',
           outlineOffset: '-1px',
         },
         '.cm-line': { padding: '0' },

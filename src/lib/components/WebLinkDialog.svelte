@@ -14,11 +14,15 @@ and opened by the host's Ctrl/Cmd+K shortcut through the exported open().
     selection?: () => string;
     /** Disable the trigger; the host sets it while Preview shows. */
     disabled?: boolean;
+    /** Render the built-in Web link trigger. False mounts only the dialog, for a host that
+     *  supplies its own trigger and opens the dialog through the exported open(). */
+    trigger?: boolean;
   }
 
-  let { insert, selection, disabled = false }: Props = $props();
+  let { insert, selection, disabled = false, trigger = true }: Props = $props();
 
   let dialog = $state<HTMLDialogElement | null>(null);
+  let hrefInput = $state<HTMLInputElement | null>(null);
   let href = $state('');
   let text = $state('');
 
@@ -27,6 +31,10 @@ and opened by the host's Ctrl/Cmd+K shortcut through the exported open().
     href = '';
     text = selection?.() ?? '';
     dialog?.showModal();
+    // showModal() lands focus on the first focusable element (the header Close button), so move
+    // it to the address input the dialog exists for (WCAG 2.4.3). A microtask defers past the
+    // dialog's own focus handling, the RenameDialog recipe.
+    queueMicrotask(() => hrefInput?.focus());
   }
   function close() {
     dialog?.close();
@@ -40,17 +48,19 @@ and opened by the host's Ctrl/Cmd+K shortcut through the exported open().
   }
 </script>
 
-<button
-  type="button"
-  class="btn btn-sm btn-ghost"
-  aria-haspopup="dialog"
-  aria-label="Web link (Ctrl+K)"
-  title="Web link (Ctrl+K)"
-  {disabled}
-  onclick={open}
->
-  Web link
-</button>
+{#if trigger}
+  <button
+    type="button"
+    class="btn btn-sm btn-ghost"
+    aria-haspopup="dialog"
+    aria-label="Web link (Ctrl+K)"
+    title="Web link (Ctrl+K)"
+    {disabled}
+    onclick={open}
+  >
+    Web link
+  </button>
+{/if}
 
 <dialog class="modal" aria-labelledby="cairn-web-link-dialog-title" bind:this={dialog}>
   <div class="modal-box">
@@ -61,7 +71,7 @@ and opened by the host's Ctrl/Cmd+K shortcut through the exported open().
     <form onsubmit={submit} class="flex flex-col gap-3">
       <label class="flex flex-col gap-1">
         <span class="text-sm font-medium">Web address</span>
-        <input class="input w-full" type="url" required placeholder="https://…" bind:value={href} />
+        <input class="input w-full" type="url" required placeholder="https://…" bind:value={href} bind:this={hrefInput} />
       </label>
       <label class="flex flex-col gap-1">
         <span class="text-sm font-medium">Text</span>

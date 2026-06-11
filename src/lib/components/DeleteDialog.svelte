@@ -23,9 +23,12 @@ each linking to its edit page, so the author repoints or removes those links fir
     /** Render the built-in Delete trigger. False mounts only the dialog, for a host that supplies
      *  its own trigger and opens the dialog through the exported open(). */
     trigger?: boolean;
+    /** Called when the delete confirm submits, before the document navigates. The edit page uses
+     *  it to stand down its leave guard while the POST is in flight. */
+    onsubmitting?: () => void;
   }
 
-  let { conceptId, id, label, inboundLinks, pending = false, trigger = true }: Props = $props();
+  let { conceptId, id, label, inboundLinks, pending = false, trigger = true, onsubmitting }: Props = $props();
 
   let dialog = $state<HTMLDialogElement | null>(null);
   const blocked = $derived(inboundLinks.length > 0);
@@ -76,7 +79,7 @@ each linking to its edit page, so the author repoints or removes those links fir
       </div>
     {:else}
       <p class="mb-3 text-sm">This cannot be undone.{#if pending} Unpublished edits to this entry are discarded too.{/if}</p>
-      <form method="POST" action="?/delete" class="flex justify-end gap-2">
+      <form method="POST" action="?/delete" class="flex justify-end gap-2" onsubmit={() => onsubmitting?.()}>
         <CsrfField />
         <input type="hidden" name="concept" value={conceptId} />
         <input type="hidden" name="id" value={id} />

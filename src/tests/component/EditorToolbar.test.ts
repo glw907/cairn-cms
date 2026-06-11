@@ -10,7 +10,7 @@ function baseProps(over: Record<string, unknown> = {}) {
 /** The strip's top-level controls: every enabled button except the More menu's items. */
 function controls(container: HTMLElement): HTMLElement[] {
   return Array.from(container.querySelectorAll<HTMLElement>('[role="toolbar"] button:not([disabled])')).filter(
-    (el) => !el.closest('.dropdown-content'),
+    (el) => !el.closest('[popover]'),
   );
 }
 
@@ -46,11 +46,29 @@ describe('EditorToolbar', () => {
   it('lists the six secondary formats in the More menu and applies one', async () => {
     const format = vi.fn();
     const screen = render(EditorToolbar, baseProps({ format }));
+    // The menu is a popover, hidden until the trigger opens it.
+    await screen.getByRole('button', { name: 'More formatting' }).click();
     for (const label of ['Strikethrough', 'Inline code', 'Code block', 'Table', 'Horizontal rule', 'Task list']) {
       await expect.element(screen.getByRole('button', { name: label })).toBeInTheDocument();
     }
     await screen.getByRole('button', { name: 'Table' }).click();
     expect(format).toHaveBeenCalledWith('table');
+    // Picking a format closes the menu.
+    const menu = screen.container.querySelector('#cairn-more-formatting-menu')!;
+    await expect.poll(() => menu.matches(':popover-open')).toBe(false);
+  });
+
+  it('drives the More menu as a popover with aria-expanded and Escape', async () => {
+    const screen = render(EditorToolbar, baseProps());
+    const trigger = screen.getByRole('button', { name: 'More formatting' });
+    await expect.element(trigger).toHaveAttribute('aria-expanded', 'false');
+    await trigger.click();
+    await expect.element(trigger).toHaveAttribute('aria-expanded', 'true');
+    const menu = screen.container.querySelector('#cairn-more-formatting-menu')!;
+    expect(menu.matches(':popover-open')).toBe(true);
+    await userEvent.keyboard('{Escape}');
+    await expect.element(trigger).toHaveAttribute('aria-expanded', 'false');
+    expect(menu.matches(':popover-open')).toBe(false);
   });
 
   it('reflects the mode on the tablist and reports a switch', async () => {

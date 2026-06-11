@@ -174,6 +174,7 @@ describe('EditPage', () => {
 
   it('renders the delete control', async () => {
     const screen = render(EditPage, postProps());
+    await screen.getByRole('button', { name: 'More actions' }).click();
     await expect.element(screen.getByRole('button', { name: /^delete$/i })).toBeInTheDocument();
   });
 
@@ -320,6 +321,7 @@ describe('EditPage', () => {
 
   it('confirms a discard by naming the live version it restores', async () => {
     const screen = render(EditPage, postProps({ pending: true, published: true }));
+    await screen.getByRole('button', { name: 'More actions' }).click();
     await screen.getByRole('button', { name: 'Discard changes' }).click();
     const dialog = screen.container.querySelector('dialog[aria-labelledby="cairn-discard-dialog-title"]') as HTMLDialogElement;
     expect(dialog.open).toBe(true);
@@ -331,6 +333,7 @@ describe('EditPage', () => {
 
   it('confirms a discard of a never-published entry by naming the delete', async () => {
     const screen = render(EditPage, postProps({ pending: true, published: false }));
+    await screen.getByRole('button', { name: 'More actions' }).click();
     await screen.getByRole('button', { name: 'Discard changes' }).click();
     const dialog = screen.container.querySelector('dialog[aria-labelledby="cairn-discard-dialog-title"]') as HTMLDialogElement;
     expect(dialog.textContent ?? '').toContain('never been published');
@@ -351,6 +354,7 @@ describe('EditPage', () => {
 
   it('adds the pending-edits sentence to the delete confirm when edits are pending', async () => {
     const screen = render(EditPage, postProps({ pending: true }));
+    await screen.getByRole('button', { name: 'More actions' }).click();
     await screen.getByRole('button', { name: /^delete$/i }).click();
     const dialog = screen.container.querySelector('dialog[aria-labelledby="cairn-delete-dialog-title"]') as HTMLDialogElement;
     expect(dialog.textContent ?? '').toContain('Unpublished edits to this entry are discarded too.');
@@ -368,7 +372,7 @@ describe('EditPage', () => {
         screen.container.querySelector<HTMLButtonElement>('button[formaction="?/publish"]')!;
       const save = () =>
         screen.container.querySelector<HTMLButtonElement>(
-          'button[type="submit"][form="cairn-edit-form"]:not([formaction])',
+          'header button[type="submit"][form="cairn-edit-form"]:not([formaction])',
         )!;
       await expect.poll(() => publish().textContent ?? '').toContain('Publishing');
       expect(save().textContent ?? '').not.toContain('Saving');
@@ -391,7 +395,7 @@ describe('EditPage', () => {
         screen.container.querySelector<HTMLButtonElement>('button[formaction="?/publish"]')!;
       const save = () =>
         screen.container.querySelector<HTMLButtonElement>(
-          'button[type="submit"][form="cairn-edit-form"]:not([formaction])',
+          'header button[type="submit"][form="cairn-edit-form"]:not([formaction])',
         )!;
       await expect.poll(() => save().textContent ?? '').toContain('Saving');
       expect(publish().textContent ?? '').not.toContain('Publishing');
@@ -408,7 +412,7 @@ describe('EditPage', () => {
     expect(publish.classList.contains('btn-outline')).toBe(true);
     expect(publish.classList.contains('btn-primary')).toBe(true);
     const save = screen.container.querySelector(
-      'button[type="submit"][form="cairn-edit-form"]:not([formaction])',
+      'header button[type="submit"][form="cairn-edit-form"]:not([formaction])',
     )!;
     expect(save.classList.contains('btn-outline')).toBe(false);
   });
@@ -428,6 +432,9 @@ describe('EditPage', () => {
     const previewPane = screen.container.querySelector('#cairn-pane-preview')!;
     expect(previewPane.getAttribute('role')).toBe('tabpanel');
     expect(previewPane.getAttribute('aria-labelledby')).toBe('cairn-tab-preview');
+    // The preview pane holds no focusable content, so it is itself a tab stop (the tabpanel
+    // pattern's completeness requirement).
+    expect(previewPane.getAttribute('tabindex')).toBe('0');
   });
 
   it('hosts the toolbar inside the editor card with the editor surface', async () => {
@@ -513,7 +520,7 @@ describe('EditPage', () => {
     const screen = render(EditPage, postProps({ body: 'plain prose' }));
     const save = () =>
       screen.container.querySelector<HTMLButtonElement>(
-        'button[type="submit"][form="cairn-edit-form"]:not([formaction])',
+        'header button[type="submit"][form="cairn-edit-form"]:not([formaction])',
       )!;
     expect(save().disabled).toBe(true);
     await makeDirty(screen);
@@ -523,7 +530,7 @@ describe('EditPage', () => {
   it('keeps Save enabled for a new entry before any edit', async () => {
     const screen = render(EditPage, postProps({ isNew: true }));
     const save = screen.container.querySelector<HTMLButtonElement>(
-      'button[type="submit"][form="cairn-edit-form"]:not([formaction])',
+      'header button[type="submit"][form="cairn-edit-form"]:not([formaction])',
     )!;
     expect(save.disabled).toBe(false);
   });
@@ -567,9 +574,9 @@ describe('EditPage', () => {
       .toBe('Saved');
   });
 
-  it('submits the edit form on Ctrl+S from anywhere on the page', async () => {
-    const screen = render(EditPage, postProps());
-    await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+  it('submits the edit form on Ctrl+S once the page is dirty', async () => {
+    const screen = render(EditPage, postProps({ body: 'plain prose' }));
+    await makeDirty(screen);
     let submitted = false;
     const stop = (e: Event) => {
       e.preventDefault();
@@ -581,6 +588,51 @@ describe('EditPage', () => {
       window.dispatchEvent(event);
       expect(event.defaultPrevented).toBe(true);
       await expect.poll(() => submitted).toBe(true);
+    } finally {
+      document.removeEventListener('submit', stop, true);
+    }
+  });
+
+  it('ignores Ctrl+S while the page is clean', async () => {
+    const screen = render(EditPage, postProps());
+    await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+    let submitted = false;
+    const stop = (e: Event) => {
+      e.preventDefault();
+      submitted = true;
+    };
+    document.addEventListener('submit', stop, true);
+    try {
+      const event = new KeyboardEvent('keydown', { key: 's', ctrlKey: true, cancelable: true });
+      window.dispatchEvent(event);
+      // The shortcut is still claimed (no browser save dialog), but nothing submits: a clean
+      // page has nothing to save, and a no-op save would still cut a pending branch.
+      expect(event.defaultPrevented).toBe(true);
+      expect(submitted).toBe(false);
+    } finally {
+      document.removeEventListener('submit', stop, true);
+    }
+  });
+
+  it('ignores Ctrl+S from inside an open dialog', async () => {
+    const screen = render(EditPage, postProps({ body: 'plain prose' }));
+    await makeDirty(screen);
+    await screen.getByRole('button', { name: /web link/i }).click();
+    const dialog = screen.container.querySelector<HTMLDialogElement>(
+      'dialog[aria-labelledby="cairn-web-link-dialog-title"]',
+    )!;
+    await expect.poll(() => dialog.open).toBe(true);
+    let submitted = false;
+    const stop = (e: Event) => {
+      e.preventDefault();
+      submitted = true;
+    };
+    document.addEventListener('submit', stop, true);
+    try {
+      const input = dialog.querySelector<HTMLInputElement>('input[type="url"]')!;
+      const event = new KeyboardEvent('keydown', { key: 's', ctrlKey: true, cancelable: true, bubbles: true });
+      input.dispatchEvent(event);
+      expect(submitted).toBe(false);
     } finally {
       document.removeEventListener('submit', stop, true);
     }
@@ -657,6 +709,8 @@ describe('EditPage', () => {
     expect(event.defaultPrevented).toBe(true);
     const dialog = screen.container.querySelector<HTMLDialogElement>('dialog[aria-labelledby="cairn-web-link-dialog-title"]')!;
     await expect.poll(() => dialog.open).toBe(true);
+    // Initial focus lands on the URL field the dialog exists for, not the Close button.
+    await expect.poll(() => document.activeElement === dialog.querySelector('input[type="url"]')).toBe(true);
   });
 
   it('inserts a web link from the toolbar dialog', async () => {
@@ -740,25 +794,41 @@ describe('EditPage', () => {
 
   it('lists Delete in the overflow menu and omits Discard changes while clean', async () => {
     const screen = render(EditPage, postProps());
-    const menu = screen.container.querySelector('header .dropdown-content')!;
+    const menu = screen.container.querySelector('#cairn-edit-actions-menu')!;
     expect(menu.textContent ?? '').toContain('Delete');
     expect(menu.textContent ?? '').not.toContain('Discard changes');
   });
 
   it('adds Discard changes to the overflow menu while pending', async () => {
     const screen = render(EditPage, postProps({ pending: true }));
-    const menu = screen.container.querySelector('header .dropdown-content')!;
+    const menu = screen.container.querySelector('#cairn-edit-actions-menu')!;
     expect(menu.textContent ?? '').toContain('Delete');
     expect(menu.textContent ?? '').toContain('Discard changes');
   });
 
-  it('opens the delete confirm from the overflow menu', async () => {
+  it('opens the delete confirm from the overflow menu and closes the menu', async () => {
     const screen = render(EditPage, postProps());
+    await screen.getByRole('button', { name: 'More actions' }).click();
     await screen.getByRole('button', { name: /^delete$/i }).click();
     const dialog = screen.container.querySelector<HTMLDialogElement>(
       'dialog[aria-labelledby="cairn-delete-dialog-title"]',
     )!;
     expect(dialog.open).toBe(true);
+    const menu = screen.container.querySelector('#cairn-edit-actions-menu')!;
+    await expect.poll(() => menu.matches(':popover-open')).toBe(false);
+  });
+
+  it('drives the header overflow as a popover with aria-expanded and Escape', async () => {
+    const screen = render(EditPage, postProps());
+    const trigger = screen.getByRole('button', { name: 'More actions' });
+    await expect.element(trigger).toHaveAttribute('aria-expanded', 'false');
+    await trigger.click();
+    await expect.element(trigger).toHaveAttribute('aria-expanded', 'true');
+    const menu = screen.container.querySelector('#cairn-edit-actions-menu')!;
+    expect(menu.matches(':popover-open')).toBe(true);
+    await userEvent.keyboard('{Escape}');
+    await expect.element(trigger).toHaveAttribute('aria-expanded', 'false');
+    expect(menu.matches(':popover-open')).toBe(false);
   });
 
   it('keeps the sidebar to the one Change URL action', async () => {
@@ -833,7 +903,7 @@ describe('EditPage', () => {
 
   it('drops Change URL from the header overflow menu', async () => {
     const screen = render(EditPage, postProps());
-    const menu = screen.container.querySelector('header .dropdown-content')!;
+    const menu = screen.container.querySelector('#cairn-edit-actions-menu')!;
     expect(menu.textContent ?? '').not.toContain('Change URL');
   });
 
@@ -927,6 +997,113 @@ describe('EditPage', () => {
     expect(text).toContain('~~text~~');
     expect(text).toContain('- [ ] item');
     expect(text).toContain('layout blocks');
+  });
+
+  it('makes a hidden save button the form default so Enter never publishes', async () => {
+    const screen = render(EditPage, postProps({ pending: true }));
+    // The default button for implicit submission (Enter in a single-line field) is the first
+    // form-owned submit button in tree order, INCLUDING the header's external submitters, which
+    // precede the form element. querySelectorAll returns tree order across the comma groups.
+    const owned = Array.from(
+      screen.container.querySelectorAll<HTMLButtonElement>(
+        'button[type="submit"][form="cairn-edit-form"], #cairn-edit-form button[type="submit"]',
+      ),
+    );
+    expect(owned.length).toBeGreaterThan(2);
+    const fallback = owned[0];
+    expect(fallback.hasAttribute('formaction')).toBe(false);
+    expect(fallback.getAttribute('aria-hidden')).toBe('true');
+    expect(fallback.tabIndex).toBe(-1);
+    // It mirrors Save's disabled state, so Enter on a clean page submits nothing at all.
+    expect(fallback.disabled).toBe(true);
+    await makeDirty(screen);
+    await expect.poll(() => fallback.disabled).toBe(false);
+  });
+
+  it('mounts the toolbar dialogs outside the edit form so no form nests', async () => {
+    const registry = defineRegistry({
+      components: [
+        {
+          name: 'rule',
+          label: 'Rule',
+          description: 'A divider.',
+          insertTemplate: ':::rule\n:::',
+          build: (n: unknown) => n,
+        } as unknown as ComponentDef,
+      ],
+    });
+    const props = { ...postProps({ pending: true }), registry };
+    props.data.linkTargets = [
+      { concept: 'pages', id: 'about', permalink: '/about', title: 'About Us', draft: false },
+    ];
+    const screen = render(EditPage, props);
+    // The toolbar still offers all three triggers...
+    const toolbar = screen.container.querySelector('[role="toolbar"]')!;
+    expect(toolbar.querySelector('button[aria-label="Insert block"]')).not.toBeNull();
+    expect(toolbar.querySelector('button[aria-label="Web link (Ctrl+K)"]')).not.toBeNull();
+    expect(toolbar.querySelector('button[aria-label="Link to page"]')).not.toBeNull();
+    // ...but no dialog form renders inside the edit form: a form nested in a form is invalid
+    // HTML the parser repairs by dropping the outer tag, which breaks SSR and hydration.
+    expect(screen.container.querySelectorAll('#cairn-edit-form form').length).toBe(0);
+  });
+
+  it('hides the Insert block trigger when the registry offers nothing insertable', async () => {
+    const screen = render(EditPage, postProps());
+    expect(screen.container.querySelector('button[aria-label="Insert block"]')).toBeNull();
+  });
+
+  it('remounts the edit surface when navigation lands on another entry', async () => {
+    const screen = render(EditPage, postProps({ body: 'first body' }));
+    await makeDirty(screen);
+    await screen.rerender(postProps({ body: 'second body', id: '2026-06-other', slug: 'other' }));
+    await expect
+      .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
+      .toBe('second body');
+    await expect
+      .poll(() => screen.container.querySelector('.cairn-save-state')?.textContent?.trim() ?? '')
+      .toBe('');
+  });
+
+  it('lets a discard submission through the leave guard', async () => {
+    // Capture the beforeunload handler the component registers (a real dispatch on window would
+    // unload the test page), the recipe the beforeunload test above uses.
+    const handlers: EventListener[] = [];
+    const originalAdd = window.addEventListener;
+    const callOriginal = originalAdd.bind(window) as (
+      type: string,
+      fn: EventListenerOrEventListenerObject,
+      opts?: unknown,
+    ) => void;
+    window.addEventListener = ((type: string, fn: EventListenerOrEventListenerObject, opts?: unknown) => {
+      if (type === 'beforeunload' && typeof fn === 'function') handlers.push(fn);
+      callOriginal(type, fn, opts);
+    }) as typeof window.addEventListener;
+    let screen: ReturnType<typeof render>;
+    try {
+      screen = render(EditPage, postProps({ pending: true, published: true, body: 'plain prose' }));
+      await expect.poll(() => handlers.length).toBe(1);
+    } finally {
+      window.addEventListener = originalAdd;
+    }
+    await makeDirty(screen);
+    // Dirty: the guard holds.
+    const dirtyEvent = new Event('beforeunload', { cancelable: true });
+    handlers[0](dirtyEvent);
+    expect(dirtyEvent.defaultPrevented).toBe(true);
+    // Submit the discard POST (capture-phase preventDefault keeps the page from navigating).
+    // Discarding while dirty is the primary discard scenario, so the guard must stand down.
+    await screen.getByRole('button', { name: 'More actions' }).click();
+    await screen.getByRole('button', { name: 'Discard changes' }).click();
+    const stop = (e: Event) => e.preventDefault();
+    document.addEventListener('submit', stop, true);
+    try {
+      await screen.getByRole('button', { name: 'Discard', exact: true }).click();
+    } finally {
+      document.removeEventListener('submit', stop, true);
+    }
+    const event = new Event('beforeunload', { cancelable: true });
+    handlers[0](event);
+    expect(event.defaultPrevented).toBe(false);
   });
 
   it('shows a quiet line when the preview has nothing to render', async () => {

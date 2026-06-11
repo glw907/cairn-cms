@@ -20,9 +20,12 @@ DeleteDialog a11y conventions.
     /** Render the built-in Change URL trigger. False mounts only the dialog, for a host that
      *  supplies its own trigger and opens the dialog through the exported open(). */
     trigger?: boolean;
+    /** Called when the rename form submits, before the document navigates. The edit page uses it
+     *  to stand down its leave guard while the POST is in flight. */
+    onsubmitting?: () => void;
   }
 
-  let { conceptId, id, label, slug, trigger = true }: Props = $props();
+  let { conceptId, id, label, slug, trigger = true, onsubmitting }: Props = $props();
 
   let dialog = $state<HTMLDialogElement | null>(null);
   let slugInput = $state<HTMLInputElement | null>(null);
@@ -57,7 +60,7 @@ DeleteDialog a11y conventions.
       <h2 id="cairn-rename-dialog-title" class="text-base font-semibold">Change this {label.toLowerCase()} URL</h2>
       <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={close}>✕</button>
     </div>
-    <form method="POST" action="?/rename" class="flex flex-col gap-3">
+    <form method="POST" action="?/rename" class="flex flex-col gap-3" onsubmit={() => onsubmitting?.()}>
       <CsrfField />
       <input type="hidden" name="concept" value={conceptId} />
       <input type="hidden" name="id" value={id} />

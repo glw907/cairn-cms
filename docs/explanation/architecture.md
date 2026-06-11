@@ -72,11 +72,14 @@ the edited file to the GitHub App, which commits it to the entry's pending branc
 `cairn-cms[bot]` and the author is the editor, so the git history records who wrote each change
 while the machine identity does the writing. The live site does not change and no deploy fires.
 
-Publish is the deliberate step. It copies the held entry file to `main`, with its manifest row
-upserted, in one commit, then deletes the branch. That push triggers your existing Cloudflare
-build, which redeploys. A site-wide publish-all ships every pending entry the same way in one
-atomic commit. Discard deletes the branch, so a published entry returns to its live version and a
-never-published one disappears.
+Publish is the deliberate step. The per-page Publish rides the edit form, so it first holds the
+posted content like a save (publish-what-you-see), then commits that markdown to `main`, with its
+manifest row upserted, in one commit, and deletes the branch. The delete is sha-guarded: it runs
+only when the branch head still matches the commit publish made, so a save landing mid-publish
+leaves the entry pending instead of vanishing. That push triggers your existing Cloudflare build,
+which redeploys. A site-wide publish-all ships every pending entry's last saved version the same
+way in one atomic commit. Discard deletes the branch, so a published entry returns to its live
+version and a never-published one disappears.
 
 ```mermaid
 sequenceDiagram
@@ -98,9 +101,8 @@ sequenceDiagram
 
 The ref's existence is the only pending state. There is no metadata file and no database row, so
 deleting a stray branch by hand in GitHub leaves nothing to reconcile. Publish is a content copy,
-never a git merge: the branch differs from `main` only at the entry's path, so a branch cut from
-an old `main` head publishes exactly what the editor last saved, no matter how far `main` has
-advanced since.
+never a git merge: the branch differs from `main` only at the entry's path, so branch base
+staleness is irrelevant, no matter how far `main` has advanced since the branch was cut.
 
 The GitHub App holds a machine identity separate from the editor's magic-link session. See
 [the security model](./security-model.md) for the commit trust model and how the two

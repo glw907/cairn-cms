@@ -6,8 +6,10 @@ All notable changes to this project are recorded here, most recent first.
 
 Content edits are now held until a deliberate Publish. A save commits to the entry's pending
 branch, `cairn/<concept>/<id>`, cut lazily from the default branch's head, and the live site does
-not change. Publishing copies the held entry file to the default branch, with its manifest row
-upserted, in one commit, then deletes the branch; that commit is what triggers the deploy. A
+not change. The per-page Publish validates and holds the posted form like a save, then commits
+that markdown to the default branch, with its manifest row upserted, in one commit; that commit
+triggers the deploy. The pending branch is then deleted, guarded by a head-sha check so a save
+landing mid-publish is never destroyed. A
 site-wide "Publish site (N)" action in the admin topbar ships every pending entry in one atomic
 commit. Discard deletes the pending branch, restoring the live version of a published entry or
 removing a never-published one entirely. The ref's existence is the only pending state; there is

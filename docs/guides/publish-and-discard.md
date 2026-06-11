@@ -30,14 +30,16 @@ checkbox the editor form has always had, under a clearer name.
 
 ## Publish one page
 
-Open the entry and press Publish, next to Save. Your held changes go live, the badge returns to
-Published, and the site rebuilds. The rebuild takes a few minutes, the same as before.
+Open the entry and press Publish, next to Save. Publish takes whatever is in the editor right
+now, including anything you typed since the last save, saves it, and puts it live. The badge
+returns to Published and the site rebuilds. The rebuild takes a few minutes, the same as before.
 
 ## Publish the whole site
 
 When several entries are waiting, the top bar shows a Publish site button with the count. Press it
 and a confirm dialog lists everything that will go live, grouped by type. Confirming ships the
-whole batch in one go, with one rebuild.
+whole batch in one go, with one rebuild. The batch publishes each entry's last saved version, so
+save anything you still have open before using it.
 
 The button only appears while something is pending. No button means nothing is waiting.
 

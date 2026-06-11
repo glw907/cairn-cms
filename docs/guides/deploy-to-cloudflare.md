@@ -7,7 +7,7 @@ Goal: deploy the site Worker to Cloudflare so editor publishes commit to GitHub 
 - The GitHub App created and its credentials in hand. If you have not done that, start from [Set up the GitHub App](./set-up-the-github-app.md).
 - The auth store provisioned. See [Configure auth and D1](./configure-auth-and-d1.md) for the `AUTH_DB` D1 database and the magic-link wiring.
 - The delivery surface wired so the public site renders. See [Wire the delivery surface](./wire-the-delivery-surface.md).
-- A Cloudflare account on the Workers Paid plan with Email Sending onboarded, which the magic-link email requires.
+- A Cloudflare account on the Workers Paid plan with Email Sending onboarded, which the magic-link email requires. The paid plan's subrequest limit also matters: an admin list page makes one GitHub read per entry, which outgrows the free plan's cap around 45 entries.
 - The zone set to force HTTPS, which the magic-link login depends on ([Force HTTPS on the zone](#force-https) below covers why and how).
 
 ## Steps

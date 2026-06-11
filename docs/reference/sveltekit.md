@@ -149,7 +149,7 @@ declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutes
   createAction: (event: ContentEvent) => Promise<never>;
   editLoad: (event: ContentEvent) => Promise<EditData>;
   saveAction: (event: ContentEvent) => Promise<ReturnType<typeof fail> | never>;
-  publishAction: (event: ContentEvent) => Promise<never>;
+  publishAction: (event: ContentEvent) => Promise<ReturnType<typeof fail> | never>;
   publishAllAction: (event: ContentEvent) => Promise<never>;
   discardAction: (event: ContentEvent) => Promise<never>;
   deleteAction: (event: ContentEvent) => Promise<ReturnType<typeof fail> | never>;
@@ -167,13 +167,17 @@ actions back a concept's list page, and `editLoad` with the `save`, `publish`, `
 GitHub App token mint, which is how the showcase runs in dev without a real key.
 
 A save holds the edit on the entry's pending branch (`cairn/<concept>/<id>`) and does not touch
-the default branch, so the live site stays as it was. `publishAction` copies the held entry file
-to the default branch, with its manifest row upserted, in one commit, then deletes the branch.
-`publishAllAction` does the same for every pending entry across concepts in one atomic commit; the
+the default branch, so the live site stays as it was. `publishAction` publishes what the author
+sees: it validates and holds the posted form exactly like a save (the same fail shapes on a
+validation or link-guard refusal), then copies that markdown to the default branch, with its
+manifest row upserted, in one commit. The pending branch is deleted only when its head still
+matches the commit the action just made; a concurrent save moved it, so the entry stays pending
+instead of losing the newer edit. `publishAllAction` publishes the saved branch content of every
+pending entry across concepts in one atomic commit, with the same guarded per-branch delete; the
 admin topbar posts to it on the first concept's list route from anywhere. `discardAction` deletes
 the pending branch, returning to the edit page for a published entry (`?discarded=1`) or to the
 list for an entry that never published. `renameAction` refuses with a 409 `renameError` while a
-pending branch exists, and a delete cascades to the pending branch.
+pending branch exists, and a delete cascades to the pending branch after its own commit lands.
 
 ```ts
 // examples/showcase/src/routes/admin/(app)/[concept]/+page.server.ts

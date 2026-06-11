@@ -51,6 +51,11 @@ The four operations:
   as one "Publish <title>" commit authored by the editor (content plus recomputed manifest entry),
   then deletes the branch. This is a content copy, never a git merge, so it cannot conflict no
   matter how far `main` has advanced since the branch was cut. The deploy fires here and only here.
+  *Review-time reconciliation: the per-page Publish button rides the edit form, so it validates and
+  holds the posted form like a save first, then publishes that markdown (publish-what-you-see);
+  reading only the branch would silently drop text typed since the last save. The branch delete is
+  also sha-guarded: it runs only when the branch head still matches the commit publish made, so a
+  concurrent save survives as a still-pending entry.*
 - **Publish all** is the same copy for every pending entry in one atomic multi-file commit on
   `main`, then deletes every consumed branch. One deploy ships the batch.
 - **Discard** deletes the branch. For an entry that exists on `main` this restores the live version

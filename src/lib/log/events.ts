@@ -13,4 +13,5 @@ export type CairnLogEvent =
   | 'entry.published'
   | 'entry.discarded'
   | 'publish.failed'
+  | 'github.unreachable'
   | 'guard.rejected';

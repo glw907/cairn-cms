@@ -114,7 +114,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		title: 'GitHub App is unreachable',
 		why: 'The App key fails to parse, the App fails to authenticate, the installation token fails to mint, or the repository refuses a read, so saves and publishes cannot commit.',
 		remediation: 'Check GITHUB_APP_ID, GITHUB_APP_INSTALLATION_ID, and GITHUB_APP_PRIVATE_KEY_B64 against the App settings, and confirm the App is installed on the repository.',
-		// Task 2 adds the github.unreachable log event; wire logEvent here when it lands.
+		logEvent: 'github.unreachable',
 	},
 };
 

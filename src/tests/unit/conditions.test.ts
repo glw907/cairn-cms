@@ -59,18 +59,21 @@ describe('condition registry', () => {
 		expect(condition('github.app-unreachable').severity).toBe('blocker');
 	});
 
-	it('carries no logEvent on the config, hsts, and github entries yet', () => {
-		// Task 2 adds the github.unreachable log event; until then the entry stays bare.
+	it('carries no logEvent on the config and hsts entries', () => {
+		// These conditions surface at deploy or doctor time, not through a runtime log record.
 		for (const id of [
 			'config.bindings-missing',
 			'config.observability-off',
 			'config.csrf-disable-missing',
 			'config.site-config-invalid',
 			'edge.hsts-off',
-			'github.app-unreachable',
 		]) {
 			expect(condition(id).logEvent, id).toBeUndefined();
 		}
+	});
+
+	it('correlates github.app-unreachable with the github.unreachable log event', () => {
+		expect(condition('github.app-unreachable').logEvent).toBe('github.unreachable');
 	});
 
 	it('includes every Pass 3 id in allConditions()', () => {

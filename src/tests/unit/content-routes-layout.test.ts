@@ -94,10 +94,13 @@ describe('layoutLoad', () => {
     expect(data.pendingEntries).toEqual([{ concept: 'posts', id: '2026-05-hello' }]);
   });
 
-  it('degrades pendingEntries to null when the token mint fails, keeping the rest', async () => {
+  it('degrades pendingEntries to null and logs github.unreachable when the token mint fails', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const routes = createContentRoutes(runtime(), {
       mintToken: async () => {
-        throw new Error('no key');
+        // The real missing-secret failure from appCredentials; the message names the env var
+        // and never carries PEM material, which the redaction assertion below pins.
+        throw new Error('GITHUB_APP_PRIVATE_KEY_B64 is not configured');
       },
     });
     const data = await routes.layoutLoad(event('/admin/posts', 'owner') as never);
@@ -105,6 +108,15 @@ describe('layoutLoad', () => {
     expect(data.siteName).toBe('Test Site');
     expect(data.user.email).toBe('e@test');
     expect(data.concepts).toHaveLength(2);
+
+    const records = warnSpy.mock.calls
+      .map((c) => c[0] as { event?: string; scope?: string; error?: string })
+      .filter((r) => r.event === 'github.unreachable');
+    expect(records).toHaveLength(1);
+    expect(records[0].scope).toBe('layout');
+    expect(records[0].error).toContain('GITHUB_APP_PRIVATE_KEY_B64 is not configured');
+    expect(records[0].error).not.toContain('BEGIN');
+    expect(records[0].error).not.toContain('PRIVATE KEY');
   });
 });
 

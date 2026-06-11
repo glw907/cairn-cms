@@ -178,8 +178,9 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
         const entry = pendingEntryOf(name);
         return entry ? [{ concept: entry.concept.id, id: entry.id }] : [];
       });
-    } catch {
+    } catch (err) {
       pendingEntries = null;
+      log.warn('github.unreachable', { scope: 'layout', error: String(err) });
     }
     return {
       siteName: runtime.siteName,

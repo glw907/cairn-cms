@@ -11,7 +11,32 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-11, latest): publish `0.41.0`, then the queue resumes
+## Immediate next action (2026-06-11, latest): execute the single-mount-admin plan (0.50.0)
+
+**A foundation review of the engine (2026-06-11, run before the next feature round) redirected
+the queue.** The engine internals reviewed strong; the weak joint is the consumer seam: ~18
+string-coupled route shims per site that every action-adding release forces each site to
+hand-edit, with silent failure when a key is missed (the 0.39 lesson). Geoff accepted breaking
+work for better future-site DX, waived the heavy ritual, and retargeted the version to open the
+**0.50.x series**.
+
+**The plan is `docs/superpowers/plans/2026-06-11-cairn-single-mount-admin.md`, in progress.**
+Thirteen tasks: a `createCairnAdmin(runtime, deps)` dispatcher returning one `load` plus one
+static `actions` record, a `CairnAdmin.svelte` view switcher, the showcase converted to the
+two-file mount, and the review's completion-debt riders (diagnostics conditions finished,
+manifest-first `listLoad`, unified `fail()` vocabulary, the layering/dedupe batch, delivery
+renames, the `/ambient` types subpath, the docs arm). Execution is the standard loop: one
+`cairn-implementer` per task on `main`, full gate between dispatches.
+
+**Sequencing consequences, decided 2026-06-11:**
+- Work lands on `main` atop the **unpublished `0.41.0`**; the window (`0.41.0` + `0.50.0`)
+  publishes together, the 0.39/0.40 precedent.
+- **The site retrofits are held.** Retrofitting to 0.41.0 would hand-wire the 0.39 shim actions
+  that 0.50.0 deletes; each site instead crosses once, straight onto the single mount.
+- The review's remaining small findings stay with the gates-and-tooling pass (see the plan's
+  out-of-scope list). The gallery and P4 follow as before, now shim-free.
+
+## Prior next action (2026-06-11): publish `0.41.0`, then the queue resumes
 
 **Diagnostics Pass 3 + the debt batch LANDED on `main` 2026-06-11 as `0.41.0`, closing the
 diagnostics initiative.** Eleven plan tasks plus a simplifier pass, a review fold-in, and a

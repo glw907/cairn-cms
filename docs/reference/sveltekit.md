@@ -227,6 +227,7 @@ catch-all route.
 ```ts
 declare function createCairnAdmin(runtime: CairnRuntime, deps?: CairnAdminDeps): {
   load: (event: AdminEvent) => Promise<AdminData>;
+  actions: Record<string, (event: AdminEvent) => Promise<unknown>>;
 };
 ```
 
@@ -239,8 +240,25 @@ bare page data, and every authed view returns `{ layout, page }` with the layout
 loads run concurrently. The nav view is a 404 unless the runtime configures a `navMenu`.
 
 `deps.branding` defaults from the runtime's `siteName` and `sender`, so most sites pass only a
-`mintToken` override in dev. The actions record for the same factory is on its way; until it
-lands, sites keep their per-route action shims.
+`mintToken` override in dev.
+
+`actions` covers the full admin action vocabulary. Each named action parses the pathname the
+same way the load does, throws a 404 when the parsed view does not support it, synthesizes the
+params the wrapped action reads, and delegates:
+
+| Action | Valid views | Delegates to |
+| --- | --- | --- |
+| `request` | login | the magic-link request |
+| `confirm` | confirm | the token confirm |
+| `logout` | any parsed view | the session logout |
+| `create` | list | the entry create |
+| `save` | edit, nav | the entry save, or the nav save (404 without a `navMenu`) |
+| `publish` | edit | the entry publish |
+| `discard` | edit | the pending-edit discard |
+| `rename` | edit | the entry rename |
+| `delete` | edit, list | the entry delete (id from the path, or from the form body on a list) |
+| `publishAll` | list, edit, editors, nav | the site-wide publish |
+| `addEditor`, `removeEditor`, `setRole` | editors | the owner-gated editor management |
 
 ```ts
 // src/routes/admin/[...path]/+page.server.ts
@@ -251,6 +269,7 @@ import { cairn, siteConfig } from '$lib/cairn.config.js';
 const admin = createCairnAdmin(composeRuntime({ adapter: cairn, siteConfig }));
 
 export const load = admin.load;
+export const actions = admin.actions;
 ```
 
 ### `parseAdminPath`

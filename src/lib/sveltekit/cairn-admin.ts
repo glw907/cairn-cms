@@ -1,11 +1,11 @@
 // The single-mount admin facade. One factory closes over the composed runtime, instantiates
 // the existing per-surface route factories (auth, content, editors, nav), and serves every
-// admin view through the one load a site's catch-all /admin/[...path] route exports. The
-// path authority is admin-dispatch's parseAdminPath; this module only maps each view to the
-// wrapped load it delegates to. The actions record (Task 3) joins the same factory, sharing
-// the instantiated factories below as its seam.
+// admin view through the one load and one actions record a site's catch-all /admin/[...path]
+// route exports. The path authority is admin-dispatch's parseAdminPath; this module only maps
+// each view to the wrapped load it delegates to, and each named action validates that the
+// parsed view supports it before delegating to the same wrapped factories.
 import { error } from '@sveltejs/kit';
-import { parseAdminPath } from './admin-dispatch.js';
+import { parseAdminPath, type AdminView } from './admin-dispatch.js';
 import { createAuthRoutes } from './auth-routes.js';
 import {
   createContentRoutes,
@@ -133,5 +133,53 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
     }
   }
 
-  return { load };
+  /** Wrap a delegate in the parse-and-check every action shares: parse the pathname exactly
+   *  as load does, 404 on a null parse or a view outside the allowed set, then hand the
+   *  narrowed view to the delegate. */
+  function viewAction<V extends AdminView['view'], R>(
+    allowed: readonly V[],
+    delegate: (event: AdminEvent, view: Extract<AdminView, { view: V }>) => Promise<R>,
+  ): (event: AdminEvent) => Promise<R> {
+    return async (event) => {
+      const view = parseAdminPath(event.url.pathname, runtime.concepts);
+      if (!view || !(allowed as readonly string[]).includes(view.view)) throw error(404, 'Not found');
+      // The includes check above proves the membership the cast asserts.
+      return delegate(event, view as Extract<AdminView, { view: V }>);
+    };
+  }
+
+  // The topbar posts publishAll from every authed admin page; login and confirm may not.
+  const authedViews = ['list', 'edit', 'editors', 'nav'] as const;
+  // An editor signs out from wherever they are, so logout accepts any parsed view.
+  const anyView = ['index', 'login', 'confirm', 'list', 'edit', 'editors', 'nav'] as const;
+
+  /** The full admin action vocabulary, one named async function per action, so a site's
+   *  catch-all route exports `admin.actions` directly. Each wrapper stays thin: parse,
+   *  validate the view, synthesize the params the wrapped action reads, delegate. The
+   *  editor actions gate themselves with requireOwner, so no second gate is added here. */
+  const actions = {
+    request: viewAction(['login'], (event) => auth.requestAction(event)),
+    confirm: viewAction(['confirm'], (event) => auth.confirmAction(event)),
+    logout: viewAction(anyView, (event) => auth.logoutAction(event)),
+    create: viewAction(['list'], (event, view) => content.createAction(contentEvent(event, { concept: view.concept.id }))),
+    save: viewAction(['edit', 'nav'], (event, view) => {
+      if (view.view === 'edit') return content.saveAction(contentEvent(event, { concept: view.concept.id, id: view.id }));
+      if (!nav) throw error(404, 'Not found');
+      return nav.navSave(contentEvent(event, {}));
+    }),
+    publish: viewAction(['edit'], (event, view) => content.publishAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
+    discard: viewAction(['edit'], (event, view) => content.discardAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
+    rename: viewAction(['edit'], (event, view) => content.renameAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
+    delete: viewAction(['edit', 'list'], (event, view) =>
+      view.view === 'edit'
+        ? content.deleteAction(contentEvent(event, { concept: view.concept.id, id: view.id }))
+        : content.listDeleteAction(contentEvent(event, { concept: view.concept.id })),
+    ),
+    publishAll: viewAction(authedViews, (event) => content.publishAllAction(contentEvent(event, {}))),
+    addEditor: viewAction(['editors'], (event) => editors.addEditorAction(event)),
+    removeEditor: viewAction(['editors'], (event) => editors.removeEditorAction(event)),
+    setRole: viewAction(['editors'], (event) => editors.setRoleAction(event)),
+  };
+
+  return { load, actions };
 }

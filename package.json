@@ -140,7 +140,7 @@
     "postcss": "^8.5.15",
     "postcss-prefix-selector": "^2.1.1",
     "publint": "^0.3.21",
-    "svelte": "^5.55",
+    "svelte": "^5.56.3",
     "svelte-check": "^4",
     "tailwindcss": "^4.3.0",
     "typescript": "^6.0.3",

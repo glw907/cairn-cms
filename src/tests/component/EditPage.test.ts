@@ -1,10 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
+import type { BeforeNavigate } from '@sveltejs/kit';
 import EditPage from '../../lib/components/EditPage.svelte';
 import type { FrontmatterField } from '../../lib/content/types.js';
 import type { LinkTarget } from '../../lib/content/manifest.js';
 import { createRenderer } from '../../lib/render/pipeline.js';
 import { defineRegistry, type ComponentDef } from '../../lib/render/registry.js';
+// The same module instance EditPage receives for $app/navigation via the project alias.
+import { beforeNavigateCallbacks } from './app-navigation.js';
 
 function postProps(over = {}) {
   return {
@@ -485,6 +488,137 @@ describe('EditPage', () => {
     await expect
       .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
       .toContain('****');
+  });
+
+  // Edits the body through the registered format seam (an empty-selection bold wrap) and waits
+  // for the save-state indicator to acknowledge the change.
+  async function makeDirty(screen: ReturnType<typeof render>) {
+    await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+    const card = screen.container.querySelector('[role="toolbar"]')!.closest('.rounded-box')!;
+    card.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true, bubbles: true, cancelable: true }));
+    await expect
+      .poll(() => screen.container.querySelector('.cairn-save-state')?.textContent?.trim() ?? '')
+      .toBe('Unsaved changes');
+  }
+
+  it('shows no save-state text on a clean mount', async () => {
+    const screen = render(EditPage, postProps());
+    await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+    expect(screen.container.querySelector('.cairn-save-state')?.textContent?.trim() ?? '').toBe('');
+  });
+
+  it('flags unsaved changes when the body diverges from the committed text', async () => {
+    const screen = render(EditPage, postProps({ body: 'plain prose' }));
+    await makeDirty(screen);
+  });
+
+  it('flags unsaved changes when a sidebar field receives input', async () => {
+    const screen = render(EditPage, postProps());
+    const date = screen.container.querySelector('input[name="date"]')!;
+    date.dispatchEvent(new Event('input', { bubbles: true }));
+    await expect
+      .poll(() => screen.container.querySelector('.cairn-save-state')?.textContent?.trim() ?? '')
+      .toBe('Unsaved changes');
+  });
+
+  it('does not flag dirty from the link picker search box', async () => {
+    const props = postProps();
+    props.data.linkTargets = [
+      { concept: 'pages', id: 'about', permalink: '/about', title: 'About Us', draft: false },
+    ];
+    const screen = render(EditPage, props);
+    await screen.getByRole('button', { name: /link to page/i }).click();
+    const search = screen.container.querySelector('dialog input[type="search"]')!;
+    search.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(screen.container.querySelector('.cairn-save-state')?.textContent?.trim() ?? '').toBe('');
+  });
+
+  it('shows Saved after a save lands with nothing edited', async () => {
+    const screen = render(EditPage, postProps({ saved: true }));
+    await expect
+      .poll(() => screen.container.querySelector('.cairn-save-state')?.textContent?.trim() ?? '')
+      .toBe('Saved');
+  });
+
+  it('submits the edit form on Ctrl+S from anywhere on the page', async () => {
+    const screen = render(EditPage, postProps());
+    await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+    let submitted = false;
+    const stop = (e: Event) => {
+      e.preventDefault();
+      submitted = true;
+    };
+    document.addEventListener('submit', stop, true);
+    try {
+      const event = new KeyboardEvent('keydown', { key: 's', ctrlKey: true, cancelable: true });
+      window.dispatchEvent(event);
+      expect(event.defaultPrevented).toBe(true);
+      await expect.poll(() => submitted).toBe(true);
+    } finally {
+      document.removeEventListener('submit', stop, true);
+    }
+  });
+
+  it('prevents beforeunload while dirty and leaves it alone when clean', async () => {
+    // Dispatching a real beforeunload on window makes the vitest browser orchestrator treat the
+    // test page as unloading, so capture the handler the component registers and call it directly.
+    const handlers: EventListener[] = [];
+    const originalAdd = window.addEventListener;
+    // Bound and loosened: the shared tsconfig types window against the workers event map, which
+    // has no beforeunload, so the spy calls through a structurally typed reference.
+    const callOriginal = originalAdd.bind(window) as (type: string, fn: EventListenerOrEventListenerObject, opts?: unknown) => void;
+    window.addEventListener = ((type: string, fn: EventListenerOrEventListenerObject, opts?: unknown) => {
+      if (type === 'beforeunload' && typeof fn === 'function') handlers.push(fn);
+      callOriginal(type, fn, opts);
+    }) as typeof window.addEventListener;
+    let screen: ReturnType<typeof render>;
+    try {
+      screen = render(EditPage, postProps({ body: 'plain prose' }));
+      await expect.poll(() => handlers.length).toBe(1);
+    } finally {
+      window.addEventListener = originalAdd;
+    }
+    const onBeforeUnload = handlers[0];
+    const cleanEvent = new Event('beforeunload', { cancelable: true });
+    onBeforeUnload(cleanEvent);
+    expect(cleanEvent.defaultPrevented).toBe(false);
+    await makeDirty(screen);
+    const dirtyEvent = new Event('beforeunload', { cancelable: true });
+    onBeforeUnload(dirtyEvent);
+    expect(dirtyEvent.defaultPrevented).toBe(true);
+  });
+
+  it('registers a navigation guard that cancels a dirty leave the editor declines', async () => {
+    const countBefore = beforeNavigateCallbacks.length;
+    const screen = render(EditPage, postProps({ body: 'plain prose' }));
+    expect(beforeNavigateCallbacks.length).toBe(countBefore + 1);
+    const guard = beforeNavigateCallbacks[beforeNavigateCallbacks.length - 1];
+    const originalConfirm = window.confirm;
+    try {
+      // Clean: the guard neither prompts nor cancels.
+      let confirmCalls = 0;
+      let cancelled = false;
+      window.confirm = () => {
+        confirmCalls += 1;
+        return false;
+      };
+      const navigation = { cancel: () => (cancelled = true) } as unknown as BeforeNavigate;
+      guard(navigation);
+      expect(confirmCalls).toBe(0);
+      expect(cancelled).toBe(false);
+      // Dirty plus a declined confirm: the navigation is cancelled.
+      await makeDirty(screen);
+      guard(navigation);
+      expect(confirmCalls).toBe(1);
+      expect(cancelled).toBe(true);
+      // Dirty plus an accepted confirm: the navigation proceeds.
+      window.confirm = () => true;
+      cancelled = false;
+      guard(navigation);
+      expect(cancelled).toBe(false);
+    } finally {
+      window.confirm = originalConfirm;
+    }
   });
 
   it('opens the link picker on Ctrl+K inside the editor card', async () => {

@@ -8,6 +8,7 @@ plus Publish (riding the same form via formaction) and Discard controls.
 -->
 <script lang="ts">
   import { untrack } from 'svelte';
+  import { beforeNavigate } from '$app/navigation';
   import CsrfField from './CsrfField.svelte';
   import MarkdownEditor from './MarkdownEditor.svelte';
   import EditorToolbar from './EditorToolbar.svelte';
@@ -61,6 +62,56 @@ plus Publish (riding the same form via formaction) and Discard controls.
   // Either in-flight submit disables both buttons, so a second click cannot fire a second POST
   // while the first navigation is still pending.
   const busy = $derived(saving || publishing);
+
+  // Dirty tracking. The body compares against the text the page loaded with (or the edited body a
+  // blocked save returned, which seeded the editor); the uncontrolled sidebar fields flip a flag
+  // on any input event, and the navigation a save triggers reloads the page, which resets both.
+  const bodyDirty = $derived(body !== (form?.body ?? data.body));
+  let fieldsDirty = $state(false);
+  const dirty = $derived(bodyDirty || fieldsDirty);
+  // What the save-state indicator says. Task 7 relocates this into the sticky header.
+  const saveState = $derived(dirty ? 'Unsaved changes' : data.saved ? 'Saved' : '');
+  function onFormInput(e: Event) {
+    const target = e.target as Element | null;
+    // Two kinds of input event bubble through the form without being frontmatter edits: the link
+    // picker's search box (its dialog sits in the toolbar snippet) and the editing surface's
+    // contenteditable. Skipping the surface keeps body edits owned by bodyDirty, so undoing back
+    // to the committed text reads clean again.
+    if (target?.closest('dialog, #cairn-pane-write')) return;
+    fieldsDirty = true;
+  }
+
+  // The edit form element, for the Ctrl/Cmd+S shortcut's requestSubmit.
+  let editForm = $state<HTMLFormElement | null>(null);
+
+  // The SvelteKit half of the leave guard. Registered at component init (beforeNavigate wraps
+  // onMount, so it must run synchronously here) and auto-unregistered on destroy. A submit's own
+  // navigation passes through because busy flips before it starts.
+  beforeNavigate((navigation) => {
+    if (dirty && !busy && !confirm('You have unsaved changes. Leave anyway?')) navigation.cancel();
+  });
+
+  // The browser half of the leave guard plus the page-wide save shortcut. The handlers read the
+  // current dirty and busy values at event time, so the effect itself tracks nothing and runs once.
+  $effect(() => {
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (dirty && !busy) e.preventDefault();
+    };
+    // Guard-clause style on purpose: svelte 5.56.1 misprints `(a || b) && c` by dropping the
+    // parentheses, and consumers compile this source with their own svelte.
+    const onWindowKeydown = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      if (e.key.toLowerCase() !== 's') return;
+      e.preventDefault();
+      editForm?.requestSubmit();
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    window.addEventListener('keydown', onWindowKeydown);
+    return () => {
+      window.removeEventListener('beforeunload', onBeforeUnload);
+      window.removeEventListener('keydown', onWindowKeydown);
+    };
+  });
   // The discard confirm, on the DeleteDialog pattern: a native <dialog> holding the POST form.
   let discardDialog = $state<HTMLDialogElement | null>(null);
   // Which pane the editor card shows. The toolbar's tablist drives it; Write is always the
@@ -266,7 +317,14 @@ plus Publish (riding the same form via formaction) and Discard controls.
   </div>
 {/if}
 
-<form method="POST" action="?/save" onsubmit={onEditSubmit} class="lg:grid lg:grid-cols-[1fr_20rem] lg:gap-6">
+<form
+  method="POST"
+  action="?/save"
+  bind:this={editForm}
+  onsubmit={onEditSubmit}
+  oninput={onFormInput}
+  class="lg:grid lg:grid-cols-[1fr_20rem] lg:gap-6"
+>
   <CsrfField />
   {#if data.isNew}<input type="hidden" name="new" value="1" />{/if}
 
@@ -379,6 +437,8 @@ plus Publish (riding the same form via formaction) and Discard controls.
         {/if}
       {/each}
       <div class="mt-3 flex flex-col gap-2">
+        <!-- The save-state indicator, here beside Save until Task 7 moves it into the header. -->
+        <span class="cairn-save-state text-xs text-[var(--color-muted)]" aria-live="off">{saveState}</span>
         <button type="submit" class="btn btn-primary" disabled={busy}>
           {#if saving}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Saving…{:else}Save{/if}
         </button>

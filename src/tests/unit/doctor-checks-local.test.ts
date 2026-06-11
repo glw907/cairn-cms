@@ -276,10 +276,15 @@ describe('config.site-config', () => {
 		expect(result.detail).toContain('date token');
 	});
 
-	it('skips when site.config.yaml is absent', async () => {
+	it('finds the config at the src/lib conventional location', async () => {
+		const result = await configSiteConfig.run(ctx({ 'src/lib/site.config.yaml': GOOD_SITE_CONFIG }));
+		expect(result.status).toBe('pass');
+	});
+
+	it('skips when site.config.yaml is absent from every conventional location', async () => {
 		const result = await configSiteConfig.run(ctx({}));
 		expect(result.status).toBe('skip');
-		expect(result.detail).toContain('site.config.yaml');
+		expect(result.detail).toContain('src/lib/site.config.yaml');
 	});
 
 	it('ties to the config.site-config-invalid condition', () => {

@@ -85,13 +85,22 @@ export const configCsrfDisable: DoctorCheck = {
 	},
 };
 
+// Where sites keep site.config.yaml. The adapter's configPath is TypeScript the CLI cannot
+// evaluate, so the check probes the conventional spots instead (the repo root and the two
+// src locations the production sites use).
+const SITE_CONFIG_PATHS = ['site.config.yaml', 'src/lib/site.config.yaml', 'src/site.config.yaml'];
+
 export const configSiteConfig: DoctorCheck = {
 	id: 'config.site-config',
 	conditionId: 'config.site-config-invalid',
 	title: 'Site config',
 	async run(ctx: DoctorContext): Promise<CheckResult> {
-		const text = await ctx.readFile('site.config.yaml');
-		if (text === null) return skip('site.config.yaml not found');
+		let text: string | null = null;
+		for (const path of SITE_CONFIG_PATHS) {
+			text = await ctx.readFile(path);
+			if (text !== null) break;
+		}
+		if (text === null) return skip(`no site.config.yaml found (looked in ${SITE_CONFIG_PATHS.join(', ')})`);
 		try {
 			const policy = urlPolicyFrom(parseSiteConfig(text));
 			// Run the engine's own URL-policy validation by declaring a synthetic empty concept

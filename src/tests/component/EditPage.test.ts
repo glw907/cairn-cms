@@ -276,32 +276,36 @@ describe('EditPage', () => {
       .not.toContain('cairn:pages/gone');
   });
 
-  it('shows the pending banner when the live site lags the edits', async () => {
+  it('shows the Edited badge in the header when the live site lags the edits', async () => {
+    const screen = render(EditPage, postProps({ pending: true, published: true }));
+    const badge = screen.container.querySelector('header .badge-warning');
+    expect(badge?.textContent?.trim()).toBe('Edited');
+  });
+
+  it('shows the New badge in the header for a pending new entry', async () => {
+    const screen = render(EditPage, postProps({ pending: true, published: false }));
+    const badge = screen.container.querySelector('header .badge-info');
+    expect(badge?.textContent?.trim()).toBe('New');
+  });
+
+  it('shows the Published badge when the live site matches', async () => {
+    const screen = render(EditPage, postProps());
+    const badge = screen.container.querySelector('header .badge-ghost');
+    expect(badge?.textContent?.trim()).toBe('Published');
+  });
+
+  it('drops the standing pending banner in favor of the header badge', async () => {
     const screen = render(EditPage, postProps({ pending: true, published: true }));
     const banner = Array.from(screen.container.querySelectorAll('.alert')).find((el) =>
       (el.textContent ?? '').includes('Unpublished changes'),
     );
-    expect(banner).toBeTruthy();
-    expect(banner!.textContent ?? '').toContain('The live site still shows the last published version.');
-  });
-
-  it('shows the not-yet-published banner for a pending new entry', async () => {
-    const screen = render(EditPage, postProps({ pending: true, published: false }));
-    const banner = Array.from(screen.container.querySelectorAll('.alert')).find((el) =>
-      (el.textContent ?? '').includes('Not yet published.'),
-    );
-    expect(banner).toBeTruthy();
-  });
-
-  it('hides the pending banner when nothing is pending', async () => {
-    const screen = render(EditPage, postProps());
-    expect(screen.container.textContent ?? '').not.toContain('Unpublished changes');
+    expect(banner).toBeUndefined();
     expect(screen.container.textContent ?? '').not.toContain('Not yet published');
   });
 
   it('offers a Publish button riding the edit form when edits are pending', async () => {
     const screen = render(EditPage, postProps({ pending: true }));
-    const publish = screen.container.querySelector('form[action="?/save"] button[formaction="?/publish"]');
+    const publish = screen.container.querySelector('button[formaction="?/publish"][form="cairn-edit-form"]');
     expect(publish).not.toBeNull();
     expect(publish!.classList.contains('btn-primary')).toBe(true);
   });
@@ -362,7 +366,7 @@ describe('EditPage', () => {
         screen.container.querySelector<HTMLButtonElement>('button[formaction="?/publish"]')!;
       const save = () =>
         screen.container.querySelector<HTMLButtonElement>(
-          'form[action="?/save"] button[type="submit"]:not([formaction])',
+          'button[type="submit"][form="cairn-edit-form"]:not([formaction])',
         )!;
       await expect.poll(() => publish().textContent ?? '').toContain('Publishing');
       expect(save().textContent ?? '').not.toContain('Saving');
@@ -383,7 +387,7 @@ describe('EditPage', () => {
         screen.container.querySelector<HTMLButtonElement>('button[formaction="?/publish"]')!;
       const save = () =>
         screen.container.querySelector<HTMLButtonElement>(
-          'form[action="?/save"] button[type="submit"]:not([formaction])',
+          'button[type="submit"][form="cairn-edit-form"]:not([formaction])',
         )!;
       await expect.poll(() => save().textContent ?? '').toContain('Saving');
       expect(publish().textContent ?? '').not.toContain('Publishing');
@@ -400,7 +404,7 @@ describe('EditPage', () => {
     expect(publish.classList.contains('btn-outline')).toBe(true);
     expect(publish.classList.contains('btn-primary')).toBe(true);
     const save = screen.container.querySelector(
-      'form[action="?/save"] button[type="submit"]:not([formaction])',
+      'button[type="submit"][form="cairn-edit-form"]:not([formaction])',
     )!;
     expect(save.classList.contains('btn-outline')).toBe(false);
   });
@@ -630,5 +634,79 @@ describe('EditPage', () => {
     expect(event.defaultPrevented).toBe(true);
     const dialog = screen.container.querySelector<HTMLDialogElement>('dialog[aria-labelledby="cairn-link-dialog-title"]')!;
     await expect.poll(() => dialog.open).toBe(true);
+  });
+
+  it('links back to the concept list from a header breadcrumb', async () => {
+    const screen = render(EditPage, postProps());
+    const crumb = screen.container.querySelector('header a[href="/admin/posts"]');
+    expect(crumb).not.toBeNull();
+    expect(crumb!.textContent ?? '').toContain('Posts');
+  });
+
+  it('shows the title in the header and drops the id sub-line', async () => {
+    const screen = render(EditPage, postProps());
+    const header = screen.container.querySelector('header')!;
+    expect(header.querySelector('h1')?.textContent).toBe('Hello');
+    expect(header.textContent ?? '').not.toContain('2026-05-hello');
+  });
+
+  it('stacks the Hidden badge beside the status badge for a hidden entry', async () => {
+    const screen = render(
+      EditPage,
+      postProps({ frontmatter: { title: 'Hello', date: '2026-05-01', draft: true } }),
+    );
+    const header = screen.container.querySelector('header')!;
+    expect(header.querySelector('.badge-neutral')?.textContent?.trim()).toBe('Hidden');
+    expect(header.querySelector('.badge-ghost')?.textContent?.trim()).toBe('Published');
+  });
+
+  it('hosts the save-state indicator inside the header', async () => {
+    const screen = render(EditPage, postProps());
+    expect(screen.container.querySelector('header .cairn-save-state')).not.toBeNull();
+  });
+
+  it('wires the header Save and Publish to the edit form by id', async () => {
+    const screen = render(EditPage, postProps({ pending: true }));
+    expect(screen.container.querySelector('form[action="?/save"]')?.id).toBe('cairn-edit-form');
+    const header = screen.container.querySelector('header')!;
+    expect(header.querySelector('button[type="submit"][form="cairn-edit-form"]:not([formaction])')).not.toBeNull();
+    expect(header.querySelector('button[formaction="?/publish"][form="cairn-edit-form"]')).not.toBeNull();
+  });
+
+  it('lists Delete in the overflow menu and omits Discard changes while clean', async () => {
+    const screen = render(EditPage, postProps());
+    const menu = screen.container.querySelector('header .dropdown-content')!;
+    expect(menu.textContent ?? '').toContain('Delete');
+    expect(menu.textContent ?? '').not.toContain('Discard changes');
+  });
+
+  it('adds Discard changes to the overflow menu while pending', async () => {
+    const screen = render(EditPage, postProps({ pending: true }));
+    const menu = screen.container.querySelector('header .dropdown-content')!;
+    expect(menu.textContent ?? '').toContain('Delete');
+    expect(menu.textContent ?? '').toContain('Discard changes');
+  });
+
+  it('opens the delete confirm from the overflow menu', async () => {
+    const screen = render(EditPage, postProps());
+    await screen.getByRole('button', { name: /^delete$/i }).click();
+    const dialog = screen.container.querySelector<HTMLDialogElement>(
+      'dialog[aria-labelledby="cairn-delete-dialog-title"]',
+    )!;
+    expect(dialog.open).toBe(true);
+  });
+
+  it('opens the rename dialog from the overflow menu', async () => {
+    const screen = render(EditPage, postProps());
+    await screen.getByRole('button', { name: /change url/i }).click();
+    const dialog = screen.container.querySelector<HTMLDialogElement>(
+      'dialog[aria-labelledby="cairn-rename-dialog-title"]',
+    )!;
+    expect(dialog.open).toBe(true);
+  });
+
+  it('keeps the sidebar free of action buttons', async () => {
+    const screen = render(EditPage, postProps({ pending: true }));
+    expect(screen.container.querySelectorAll('aside button').length).toBe(0);
   });
 });

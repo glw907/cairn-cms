@@ -3,8 +3,10 @@
 The differentiated editor: the per-concept frontmatter form (from `data.fields`) beside the
 markdown editor and a live, design-accurate preview. The whole surface is one form posting to the
 `?/save` action. The toolbar's Write/Preview tabs swap the editing surface for the rendered
-preview inside the same card; every visit lands on Write. A pending entry adds a state banner
-plus Publish (riding the same form via formaction) and Discard controls.
+preview inside the same card; every visit lands on Write. A sticky glass header carries the
+breadcrumb, the status badges, the save-state indicator, and the lifecycle actions: Save, Publish
+(riding the same form via formaction while edits are pending), and an overflow menu for Discard,
+Change URL, and Delete.
 -->
 <script lang="ts">
   import { untrack } from 'svelte';
@@ -69,7 +71,7 @@ plus Publish (riding the same form via formaction) and Discard controls.
   const bodyDirty = $derived(body !== (form?.body ?? data.body));
   let fieldsDirty = $state(false);
   const dirty = $derived(bodyDirty || fieldsDirty);
-  // What the save-state indicator says. Task 7 relocates this into the sticky header.
+  // What the header's save-state indicator says.
   const saveState = $derived(dirty ? 'Unsaved changes' : data.saved ? 'Saved' : '');
   function onFormInput(e: Event) {
     const target = e.target as Element | null;
@@ -124,6 +126,24 @@ plus Publish (riding the same form via formaction) and Discard controls.
   let format = $state.raw<(kind: FormatKind) => void>(() => {});
   // The link picker instance, for the Ctrl/Cmd+K shortcut. Typed structurally over its export.
   let linkPicker = $state<{ open: () => void } | null>(null);
+  // The headless lifecycle dialogs, opened from the header's overflow menu. Typed structurally
+  // over their exported open(), the linkPicker idiom.
+  let deleteDialog = $state<{ open: () => void } | null>(null);
+  let renameDialog = $state<{ open: () => void } | null>(null);
+
+  // The header's status badge, in ConceptList's vocabulary: a pending entry reads Edited (or New
+  // when it has never been published); otherwise the live site matches and it reads Published.
+  const status = $derived(data.pending ? (data.published ? 'Edited' : 'New') : 'Published');
+  const statusBadge = $derived(
+    status === 'Edited' ? 'badge-warning' : status === 'New' ? 'badge-info' : 'badge-ghost',
+  );
+
+  // An overflow-menu pick runs its action, then blurs the item so the focus-driven DaisyUI
+  // dropdown closes (the EditorToolbar More-menu pattern).
+  function pickAction(action: () => void) {
+    action();
+    (document.activeElement as HTMLElement | null)?.blur();
+  }
 
   // The save guard's broken links, from the blocked action result. The fix unwraps a link in the
   // local body, which the bound editor reconciles, so the author re-saves clean.
@@ -246,14 +266,80 @@ plus Publish (riding the same form via formaction) and Discard controls.
   }
 </script>
 
-<header class="mb-6 flex items-center justify-between gap-2">
-  <div>
-    <h1 class="text-2xl font-bold tracking-tight font-[family-name:var(--font-display)]">{data.title}</h1>
-    <p class="text-xs text-[var(--color-muted)]">{data.label}: {data.id}</p>
-  </div>
-  <div class="flex items-center gap-2">
-    <RenameDialog conceptId={data.conceptId} id={data.id} label={data.label} slug={data.slug} />
-    <DeleteDialog conceptId={data.conceptId} id={data.id} label={data.label} inboundLinks={data.inboundLinks} pending={data.pending} />
+<!-- The sticky action header, a glass ruler: a translucent base-200 veil with backdrop blur the
+     page scrolls beneath, never a second opaque band (the admin topbar keeps that role). It sticks
+     under the h-16 topbar and bleeds across AdminLayout's content padding (p-4, lg:p-8) with
+     matching negative margins, so the veil spans the whole content column. -->
+<header
+  class="sticky top-16 z-10 -mx-4 mb-6 border-b border-[var(--cairn-card-border)] bg-base-200/90 px-4 py-3 backdrop-blur lg:-mx-8 lg:px-8"
+>
+  <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+    <div class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+      <a
+        href={`/admin/${data.conceptId}`}
+        class="flex shrink-0 items-center gap-0.5 text-sm text-[var(--color-muted)] transition-colors hover:text-base-content"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m15 18-6-6 6-6" />
+        </svg>
+        {data.label}
+      </a>
+      <h1 class="truncate text-lg font-bold tracking-tight font-[family-name:var(--font-display)]">{data.title}</h1>
+      <span class="badge badge-sm font-medium {statusBadge}">{status}</span>
+      {#if data.frontmatter.draft === true}
+        <span class="badge badge-neutral badge-sm font-medium">Hidden</span>
+      {/if}
+      <!-- The save-state indicator eases in and out; the admin sheet's prefers-reduced-motion rule
+           squashes the transition for editors who asked for that. The dot is the quiet unsaved cue. -->
+      <span
+        class="cairn-save-state flex items-center gap-1.5 text-xs text-[var(--color-muted)] transition-opacity duration-300"
+        class:opacity-0={!saveState}
+        aria-live="off"
+      >
+        {#if dirty}<span class="h-1.5 w-1.5 shrink-0 rounded-full bg-warning" aria-hidden="true"></span>{/if}
+        {saveState}
+      </span>
+    </div>
+    <div class="ml-auto flex items-center gap-2">
+      <div class="dropdown dropdown-end">
+        <button type="button" class="btn btn-ghost btn-sm btn-square" aria-label="More actions" title="More actions" aria-haspopup="true">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 12h.01" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 12h.01" />
+          </svg>
+        </button>
+        <ul class="dropdown-content menu menu-sm bg-base-100 rounded-box z-10 w-44 border border-[var(--cairn-card-border)] p-1 shadow-[var(--cairn-shadow)]">
+          {#if data.pending}
+            <li>
+              <button type="button" aria-haspopup="dialog" onclick={() => pickAction(() => discardDialog?.showModal())}>
+                Discard changes
+              </button>
+            </li>
+          {/if}
+          <!-- Change URL lives here until the sidebar's Address group takes the trigger over. -->
+          <li>
+            <button type="button" aria-haspopup="dialog" onclick={() => pickAction(() => renameDialog?.open())}>
+              Change URL
+            </button>
+          </li>
+          <li>
+            <button type="button" class="text-error" aria-haspopup="dialog" onclick={() => pickAction(() => deleteDialog?.open())}>
+              Delete
+            </button>
+          </li>
+        </ul>
+      </div>
+      {#if data.pending}
+        <!-- Outline keeps Save the single solid primary action; Publish reads as its peer. -->
+        <button type="submit" form="cairn-edit-form" formaction="?/publish" class="btn btn-outline btn-primary btn-sm" disabled={busy}>
+          {#if publishing}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Publishing…{:else}Publish{/if}
+        </button>
+      {/if}
+      <button type="submit" form="cairn-edit-form" class="btn btn-primary btn-sm" disabled={busy}>
+        {#if saving}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Saving…{:else}Save{/if}
+      </button>
+    </div>
   </div>
 </header>
 
@@ -310,16 +396,10 @@ plus Publish (riding the same form via formaction) and Discard controls.
   </div>
 {/if}
 
-{#if data.pending}
-  <!-- A standing state notice, not a flash: the branch holds edits the live site does not show. -->
-  <div class="alert alert-warning mb-4 text-sm">
-    {#if data.published}Unpublished changes. The live site still shows the last published version.{:else}Not yet published.{/if}
-  </div>
-{/if}
-
 <form
   method="POST"
   action="?/save"
+  id="cairn-edit-form"
   bind:this={editForm}
   onsubmit={onEditSubmit}
   oninput={onFormInput}
@@ -436,25 +516,22 @@ plus Publish (riding the same form via formaction) and Discard controls.
           </label>
         {/if}
       {/each}
-      <div class="mt-3 flex flex-col gap-2">
-        <!-- The save-state indicator, here beside Save until Task 7 moves it into the header. -->
-        <span class="cairn-save-state text-xs text-[var(--color-muted)]" aria-live="off">{saveState}</span>
-        <button type="submit" class="btn btn-primary" disabled={busy}>
-          {#if saving}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Saving…{:else}Save{/if}
-        </button>
-        {#if data.pending}
-          <!-- Outline keeps Save the single solid primary action; Publish reads as its peer. -->
-          <button type="submit" formaction="?/publish" class="btn btn-outline btn-primary" disabled={busy}>
-            {#if publishing}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Publishing…{:else}Publish{/if}
-          </button>
-          <button type="button" class="btn btn-ghost" aria-haspopup="dialog" onclick={() => discardDialog?.showModal()}>
-            Discard changes
-          </button>
-        {/if}
-      </div>
     </fieldset>
   </aside>
 </form>
+
+<!-- The lifecycle dialogs, mounted headless: the header's overflow menu drives them through their
+     exported open(). -->
+<RenameDialog bind:this={renameDialog} trigger={false} conceptId={data.conceptId} id={data.id} label={data.label} slug={data.slug} />
+<DeleteDialog
+  bind:this={deleteDialog}
+  trigger={false}
+  conceptId={data.conceptId}
+  id={data.id}
+  label={data.label}
+  inboundLinks={data.inboundLinks}
+  pending={data.pending}
+/>
 
 {#if data.pending}
   <dialog class="modal" aria-labelledby="cairn-discard-dialog-title" bind:this={discardDialog}>

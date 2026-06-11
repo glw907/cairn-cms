@@ -17,9 +17,12 @@ DeleteDialog a11y conventions.
     label: string;
     /** The current slug, prefilled into the input. */
     slug: string;
+    /** Render the built-in Change URL trigger. False mounts only the dialog, for a host that
+     *  supplies its own trigger and opens the dialog through the exported open(). */
+    trigger?: boolean;
   }
 
-  let { conceptId, id, label, slug }: Props = $props();
+  let { conceptId, id, label, slug, trigger = true }: Props = $props();
 
   let dialog = $state<HTMLDialogElement | null>(null);
   let slugInput = $state<HTMLInputElement | null>(null);
@@ -27,7 +30,8 @@ DeleteDialog a11y conventions.
   // current slug each time the dialog opens without capturing only the initial prop value.
   let nextSlug = $state('');
 
-  function open() {
+  /** Open the dialog with a fresh prefill. Exported so a trigger={false} host can drive it. */
+  export function open() {
     nextSlug = slug;
     dialog?.showModal();
     // showModal() lands focus on the first focusable element (the header Close button), so move
@@ -43,7 +47,9 @@ DeleteDialog a11y conventions.
   }
 </script>
 
-<button type="button" class="btn btn-sm btn-ghost" aria-haspopup="dialog" onclick={open}>Change URL</button>
+{#if trigger}
+  <button type="button" class="btn btn-sm btn-ghost" aria-haspopup="dialog" onclick={open}>Change URL</button>
+{/if}
 
 <dialog class="modal" aria-labelledby="cairn-rename-dialog-title" bind:this={dialog}>
   <div class="modal-box">

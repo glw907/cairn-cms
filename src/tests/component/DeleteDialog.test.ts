@@ -37,6 +37,22 @@ describe('DeleteDialog', () => {
     expect(text).not.toContain('Unpublished edits');
   });
 
+  it('renders no trigger with trigger=false but still opens through the exported open()', async () => {
+    const screen = render(DeleteDialog, {
+      conceptId: 'posts',
+      id: '2026-05-hi',
+      label: 'Post',
+      inboundLinks: [],
+      trigger: false,
+    });
+    // Headless: only the dialog renders, no button outside it.
+    expect(screen.container.querySelector('button[aria-haspopup="dialog"]')).toBeNull();
+    const dialog = screen.container.querySelector('dialog')!;
+    expect(dialog.open).toBe(false);
+    screen.component.open();
+    expect(dialog.open).toBe(true);
+  });
+
   it('blocks the delete and names inbound links', async () => {
     const screen = open({
       conceptId: 'pages', id: 'home', label: 'Page',

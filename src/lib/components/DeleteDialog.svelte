@@ -20,9 +20,12 @@ each linking to its edit page, so the author repoints or removes those links fir
     inboundLinks: InboundLink[];
     /** True when the entry has unpublished edits, which the delete discards along with it. */
     pending?: boolean;
+    /** Render the built-in Delete trigger. False mounts only the dialog, for a host that supplies
+     *  its own trigger and opens the dialog through the exported open(). */
+    trigger?: boolean;
   }
 
-  let { conceptId, id, label, inboundLinks, pending = false }: Props = $props();
+  let { conceptId, id, label, inboundLinks, pending = false, trigger = true }: Props = $props();
 
   let dialog = $state<HTMLDialogElement | null>(null);
   const blocked = $derived(inboundLinks.length > 0);
@@ -34,7 +37,8 @@ each linking to its edit page, so the author repoints or removes those links fir
   const verb = $derived(single ? 'links' : 'link');
   const pronoun = $derived(single ? 'it' : 'them');
 
-  function open() {
+  /** Open the confirm. Exported so a trigger={false} host can drive the dialog itself. */
+  export function open() {
     dialog?.showModal();
   }
   function close() {
@@ -42,9 +46,11 @@ each linking to its edit page, so the author repoints or removes those links fir
   }
 </script>
 
-<button type="button" class="btn btn-sm btn-ghost text-error" aria-haspopup="dialog" onclick={open}>
-  Delete
-</button>
+{#if trigger}
+  <button type="button" class="btn btn-sm btn-ghost text-error" aria-haspopup="dialog" onclick={open}>
+    Delete
+  </button>
+{/if}
 
 <dialog class="modal" aria-labelledby="cairn-delete-dialog-title" bind:this={dialog}>
   <div class="modal-box">

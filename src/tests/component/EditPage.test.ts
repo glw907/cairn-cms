@@ -781,4 +781,73 @@ describe('EditPage', () => {
       .poll(() => screen.container.querySelector('.cairn-save-state')?.textContent?.trim() ?? '')
       .toBe('Unsaved changes');
   });
+
+  // The four transient flashes share one feedback strip under the sticky header. Each case asserts
+  // a single strip carrying the message, and that the message reaches the page exactly twice: the
+  // visible strip plus the sr-only polite live region (no leftover per-flash alert divs).
+  const flashCases = [
+    { name: 'saved', over: { saved: true }, message: 'Saved.' },
+    { name: 'published', over: { publishedFlash: true }, message: 'Published. The live site is rebuilding.' },
+    { name: 'discarded', over: { discardedFlash: true }, message: 'Changes discarded.' },
+    { name: 'renamed', over: { renamed: true, slug: 'new-slug' }, message: 'The URL is now new-slug.' },
+  ];
+  for (const { name, over, message } of flashCases) {
+    it(`renders the ${name} flash as the one feedback strip`, async () => {
+      const screen = render(EditPage, postProps(over));
+      const strips = screen.container.querySelectorAll('.cairn-feedback');
+      expect(strips.length).toBe(1);
+      expect(strips[0].classList.contains('alert-success')).toBe(true);
+      expect(strips[0].textContent?.trim()).toBe(message);
+      const leaves = Array.from(screen.container.querySelectorAll('*')).filter(
+        (el) => el.children.length === 0 && (el.textContent ?? '').trim() === message,
+      );
+      expect(leaves.length).toBe(2);
+      expect(leaves.some((el) => el.closest('[aria-live="polite"]'))).toBe(true);
+    });
+  }
+
+  it('shows one strip even when several flash flags arrive together', async () => {
+    const screen = render(EditPage, postProps({ saved: true, renamed: true }));
+    expect(screen.container.querySelectorAll('.alert-success').length).toBe(1);
+    expect(screen.container.querySelector('.cairn-feedback')?.textContent?.trim()).toBe('Saved.');
+  });
+
+  it('shows the word count in the editor card footer', async () => {
+    const screen = render(EditPage, postProps({ body: '' }));
+    const card = screen.container.querySelector('[role="toolbar"]')!.closest('.rounded-box')!;
+    const count = screen.getByText('0 words');
+    await expect.element(count).toBeInTheDocument();
+    expect(card.contains(count.element())).toBe(true);
+  });
+
+  it('uses the singular for a one-word body', async () => {
+    const screen = render(EditPage, postProps({ body: 'hello' }));
+    await expect.element(screen.getByText('1 word')).toBeInTheDocument();
+  });
+
+  it('updates the word count as the body changes', async () => {
+    const props = postProps({ body: '' });
+    props.data.linkTargets = [
+      { concept: 'pages', id: 'about', permalink: '/about', title: 'About Us', draft: false },
+    ];
+    const screen = render(EditPage, props);
+    await expect.element(screen.getByText('0 words')).toBeInTheDocument();
+    // Inserting "[About Us](cairn:pages/about)" through the picker adds two whitespace-split words.
+    await screen.getByRole('button', { name: /link to page/i }).click();
+    await screen.getByRole('button', { name: /About Us/ }).click();
+    await expect.element(screen.getByText('2 words')).toBeInTheDocument();
+  });
+
+  it('opens the Markdown help dialog from the editor footer and lists the cheat rows', async () => {
+    const screen = render(EditPage, postProps());
+    await screen.getByRole('button', { name: 'Markdown help' }).click();
+    const dialog = screen.container.querySelector<HTMLDialogElement>(
+      'dialog[aria-labelledby="cairn-markdown-help-title"]',
+    )!;
+    expect(dialog.open).toBe(true);
+    const text = dialog.textContent ?? '';
+    expect(text).toContain('**bold**');
+    expect(text).toContain('[[page-name]]');
+    expect(text).toContain('layout blocks');
+  });
 });

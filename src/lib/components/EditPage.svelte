@@ -8,7 +8,8 @@ toggle), and Address (the slug with the Change URL trigger). The toolbar's Write
 swap the editing surface for the rendered preview inside the same card; every visit lands on
 Write. A sticky glass header carries the breadcrumb, the status badges, the save-state indicator,
 and the lifecycle actions: Save, Publish (riding the same form via formaction while edits are
-pending), and an overflow menu for Discard and Delete.
+pending), and an overflow menu for Discard and Delete. One feedback strip under the header carries the
+transient flashes, and the editor card's footer holds the word count and the Markdown help.
 -->
 <script lang="ts">
   import { untrack } from 'svelte';
@@ -20,6 +21,7 @@ pending), and an overflow menu for Discard and Delete.
   import LinkPicker from './LinkPicker.svelte';
   import DeleteDialog from './DeleteDialog.svelte';
   import RenameDialog from './RenameDialog.svelte';
+  import MarkdownHelpDialog from './MarkdownHelpDialog.svelte';
   import { cairnLinkCompletionSource } from './link-completion.js';
   import { unwrapCairnLink, type FormatKind } from './markdown-format.js';
   import type { ComponentRegistry } from '../render/registry.js';
@@ -132,6 +134,8 @@ pending), and an overflow menu for Discard and Delete.
   // over their exported open(), the linkPicker idiom.
   let deleteDialog = $state<{ open: () => void } | null>(null);
   let renameDialog = $state<{ open: () => void } | null>(null);
+  // The Markdown cheat sheet, opened from the editor card's footer.
+  let helpDialog = $state<{ open: () => void } | null>(null);
 
   // The header's status badge, in ConceptList's vocabulary: a pending entry reads Edited (or New
   // when it has never been published); otherwise the live site matches and it reads Published.
@@ -203,6 +207,21 @@ pending), and an overflow menu for Discard and Delete.
     }
     return '';
   });
+
+  // The one transient feedback strip under the sticky header. The redirect flags are mutually
+  // exclusive in practice; the chain picks one so a surprise overlap still renders a single strip.
+  // A saved flash with a draft warning yields to the warning alert below, the prior behavior.
+  const flash = $derived.by(() => {
+    if (data.saved && !draftWarning) return 'Saved.';
+    if (data.publishedFlash) return 'Published. The live site is rebuilding.';
+    if (data.discardedFlash) return 'Changes discarded.';
+    if (data.renamed) return `The URL is now ${data.slug}.`;
+    return '';
+  });
+
+  // The editor footer's word count, over the local body so it tracks every keystroke.
+  const wordCount = $derived(body.trim() ? body.trim().split(/\s+/).length : 0);
+  const wordLabel = $derived(wordCount === 1 ? '1 word' : `${wordCount} words`);
 
   // The manifest-backed resolver turns a cairn: link into its live permalink in the preview, and
   // returns undefined for a missing target so the render step marks it cairn-broken-link.
@@ -349,17 +368,12 @@ pending), and an overflow menu for Discard and Delete.
 <div class="sr-only" aria-live="polite">{politeMessage}</div>
 <div class="sr-only" aria-live="assertive">{assertiveMessage}</div>
 
-{#if data.saved && !draftWarning}
-  <div class="alert alert-success mb-4 text-sm">Saved.</div>
-{/if}
-{#if data.publishedFlash}
-  <div class="alert alert-success mb-4 text-sm">Published. The live site is rebuilding.</div>
-{/if}
-{#if data.discardedFlash}
-  <div class="alert alert-success mb-4 text-sm">Changes discarded.</div>
-{/if}
-{#if data.renamed}
-  <div class="alert alert-success mb-4 text-sm">The URL is now {data.slug}.</div>
+<!-- The feedback strip slides in just under the header: @starting-style drives the entry, so the
+     motion is pure CSS and the admin sheet's prefers-reduced-motion rule squashes it. -->
+{#if flash}
+  <div class="cairn-feedback alert alert-success mb-4 text-sm transition-all duration-300 starting:-translate-y-2 starting:opacity-0">
+    {flash}
+  </div>
 {/if}
 {#if data.error}
   <div class="alert alert-error mb-4 text-sm">{data.error}</div>
@@ -468,6 +482,19 @@ pending), and an overflow menu for Discard and Delete.
           {@html previewHtml}
         </div>
       {/if}
+      <!-- The card footer, part of the same instrument frame. It stays up in Preview too, so the
+           frame never jumps between tabs and the count keeps reading while proofing. -->
+      <div class="flex items-center justify-between border-t border-[var(--cairn-card-border)] px-3 py-1 text-xs text-[var(--color-muted)]">
+        <span>{wordLabel}</span>
+        <button
+          type="button"
+          class="btn btn-ghost btn-xs font-normal text-[var(--color-muted)]"
+          aria-haspopup="dialog"
+          onclick={() => helpDialog?.open()}
+        >
+          Markdown help
+        </button>
+      </div>
     </div>
   </div>
 
@@ -568,6 +595,7 @@ pending), and an overflow menu for Discard and Delete.
 <!-- The lifecycle dialogs, mounted headless: the header's overflow menu drives them through their
      exported open(). -->
 <RenameDialog bind:this={renameDialog} trigger={false} conceptId={data.conceptId} id={data.id} label={data.label} slug={data.slug} />
+<MarkdownHelpDialog bind:this={helpDialog} />
 <DeleteDialog
   bind:this={deleteDialog}
   trigger={false}

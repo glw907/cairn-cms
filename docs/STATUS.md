@@ -11,19 +11,45 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-10, later): execute the edit-page redesign plan (jumps the queue)
+## Immediate next action (2026-06-11): publish the `0.39.0`+`0.40.0` window, then diagnostics Pass 3
 
-**The edit-page redesign has an approved spec and a WRITTEN plan, ready to execute:**
-spec `docs/superpowers/specs/2026-06-10-cairn-edit-page-redesign-design.md`, plan
-`docs/superpowers/plans/2026-06-10-cairn-edit-page-redesign.md`, twelve tasks, bump `0.40.0` in the
-docs task. Four zones (sticky action header, editor column with hoisted title and Write/Preview
-tabs, grouped sidebar with Address, feedback strip), full GFM toolbar with a More menu and a
-disabled Image placeholder, code-editor syntax highlighting with first-class remark-directive
-machinery styling, native spell check, dirty tracking with a leave guard and Ctrl/Cmd+S. Execute
-main-loop on `main`: Tasks 1-9 and 11 to `cairn-implementer` (Sonnet), Task 10 is the design pass
-through `frontend-design:frontend-design` on `fable` with a fresh-agent critique loop (Geoff's
-call; cairn's UI must be exceptional for the non-technical editor). `0.39.0` remains unpublished
-below; this pass lands `0.40.0` on top and both publish together unless Geoff publishes earlier.
+**The edit-page redesign LANDED on `main` 2026-06-11 as `0.40.0`.** Twelve plan tasks plus a
+simplifier pass and a review fold-in, commits `16c0a12..39c1f65`. The edit page has the four
+zones (sticky glass header with status badges and the save-state indicator, the editor column
+with the hoisted Bricolage document title and the instrument-strip toolbar with the full GFM set,
+Write/Preview tabs, the grouped Details/Visibility/Address sidebar, one feedback strip), the Warm
+Stone highlight theme with first-class remark-directive machinery styling and tooltips, native
+spell check, dirty tracking with the leave guard and Ctrl/Cmd+S, and a new Web link dialog
+(Ctrl/Cmd+K). Additive for consumer sites (no shim, action, or load change); the changelog
+carries the conditional MarkdownEditor-direct-embed note and the svelte `5.56.1` compiler
+advisory (floor `^5.56.3`).
+
+Gate green at the tip `39c1f65`, run first-hand: `npm run check` 868 files 0/0, `npm test` 142
+files / 1019 tests exit 0, all three doc gates and `check:prose` clean, showcase E2E 5/5 in a real
+browser. Task 10 ran as the frontend-design pass with a fresh-agent critique (3 Criticals folded
+in: the missing web-link control, the postage-stamp manuscript, the loud focus ring). The review
+gate then caught three more Criticals, all fixed in the Opus fold-in `39c1f65`: Enter in a text
+field implicitly submitted Publish (an sr-only default Save submitter now precedes the header in
+tree order); the toolbar dialogs nested forms inside the edit form, breaking SSR and hydration
+(all dialogs mount headless outside the form, now a design-system rule); and same-route
+navigation carried entry A's body into entry B over an armed Save (`{#key}` plus an entry-key
+reset effect). The a11y reviewer's computed-contrast pass drove the focus hairline to 70% alpha
+(3.23:1), added the sticky-stack `scroll-margin-top` rule (WCAG 2.4.11), and moved both new
+dropdowns to DaisyUI v5's Popover API pattern. The post-mortem with nine carry-forwards is in the
+plan (`docs/superpowers/plans/2026-06-10-cairn-edit-page-redesign.md`).
+
+**Next actions, in order:**
+1. **Publish the held window** (`0.39.0` publish workflow + `0.40.0` edit page): push `main`, then
+   `gh release create v0.40.0 --target main` with the changelog window since `v0.38.0` as the
+   body, carrying `0.39.0`'s `Consumers must:` shim-actions line and `0.40.0`'s conditional notes.
+   The release fires the OIDC trusted-publishing workflow.
+2. **The queue resumes: diagnostics Pass 3** (doctor + the gated readiness checklist), spec
+   `docs/superpowers/specs/2026-06-08-cairn-email-delivery-and-environment-preflight-design.md`;
+   no plan yet (write it just-in-time at pass start). Then the gates-and-tooling pass, the
+   gallery (which replaces the editor's disabled Image placeholder), P4.
+3. **Site track:** the ecxc `^0.38.0` bump stays queued; each site's `^0.40.0` retrofit wires the
+   three publish-workflow shim actions, checks its lockfile for svelte `5.56.1`, and doubles as
+   the live proof of the publish workflow, the `%2F` ref routes, and the redesigned editor.
 
 ## Prior next action (2026-06-10): publish `0.39.0`, then diagnostics Pass 3
 

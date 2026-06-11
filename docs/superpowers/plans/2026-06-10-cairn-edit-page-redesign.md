@@ -394,3 +394,81 @@ This task is NOT a `cairn-implementer` dispatch. Process, run from the main loop
 - **Order-of-operations.** Task 1 retargets the old toolbar's `heading` button minimally so the gate holds before Task 4 rebuilds it. Task 5 depends on Task 4's tabs; Task 7 depends on Task 6's indicator; Task 8 depends on Task 7's dialog refactor. The design pass runs after all functional tasks so it polishes the final structure.
 - **Risk.** The `$app/navigation` dynamic import in Task 6 is the one platform-coupled piece; it degrades to beforeunload-only in tests and in any non-SvelteKit mount, which is acceptable (the guard is advisory UX, not a data-integrity mechanism; the branch holds saved work regardless).
 - **Review gate (ritual, not tasks).** `svelte-reviewer` (the reactive dirty tracking, the tab state, the dialog open() exports), `daisyui-a11y-reviewer` (the toolbar pattern, roving tabindex, the sticky header, contrast on the highlight palette), `web-auth-security-reviewer` (light touch: no auth change, but the header buttons move outside the form element and must keep the CSRF field association). The live admin smoke applies (the `/admin` surface changes substantially).
+
+---
+
+## Post-mortem (2026-06-11, pass complete)
+
+**What was built.** The full edit-page redesign, twelve plan tasks plus a simplifier pass and a
+review fold-in: commits `16c0a12..39c1f65` on `main`, version `0.40.0` (unpublished until the
+release below). The page now has the four zones: the sticky glass header (breadcrumb, sr-only h1,
+status badges, the save-state indicator, overflow menu, outline Publish, solid Save), the editor
+column (hoisted Bricolage document title, the instrument-strip toolbar with the full GFM set and a
+More menu, Write/Preview tabs, the word-count and Markdown-help footer), the grouped sidebar
+(Details, Visibility, Address), and the single feedback strip. The editing surface gained the Warm
+Stone highlight theme, first-class remark-directive machinery styling with tooltips, native spell
+check, a 50vh floor, and a quiet focus hairline. The save model gained dirty tracking, the leave
+guard, and Ctrl/Cmd+S.
+
+**Execution shape.** Tasks 1-9, 11, 12 ran as Sonnet `cairn-implementer` dispatches verified by
+the main loop. Task 10 ran in the main loop through the `frontend-design:frontend-design` skill on
+the frontier model with a Playwright render loop and computed contrast checks, then a FRESH
+fable-model agent delivered the design critique (3 Critical, 9 Important, 10 Minor, 6 Praise); the
+accepted findings went to a Sonnet fold-in. The review-gate fold-in was the one Opus upshift.
+
+**What the two critique/review rounds caught that the build missed.**
+- Design critique: no plain web-link control (the single most-used action after bold), a
+  postage-stamp manuscript on short entries, the loud always-on focus ring, formatting live in
+  Preview, light-only CodeMirror chrome, the save-model copy gap.
+- Review gate (svelte): three Criticals. Enter in any text field implicitly submitted Publish
+  (the header's external submitter was the form's first-in-tree-order default button; fixed with
+  an sr-only default Save submitter placed before the header). The toolbar dialogs nested forms
+  inside the edit form, which the HTML parser repairs by dropping the outer form, breaking SSR
+  and hydration (all dialogs now mount headless outside the form). Same-route navigation reused
+  the component and carried entry A's body into entry B over an armed Save (fixed with `{#key}`
+  plus an entry-key reset effect, since `#key` remounts the template but does not re-run script
+  state).
+- Review gate (a11y, with computed ratios): the title input had no focus indicator, the 45%-alpha
+  hairline measured 2.03:1 against the 3:1 non-text floor (raised to 70%, 3.23:1/3.32:1), focus
+  could hide under the ~120px sticky stack (a scoped `scroll-margin-top` rule now compensates,
+  WCAG 2.4.11), and the two new dropdowns moved to DaisyUI v5's Popover API pattern (Escape,
+  light-dismiss, `aria-expanded`, open-on-activation).
+- Auth (targeted): the moved submitters, Ctrl+S, and the new dialogs hold the CSRF double-submit
+  posture; two Ctrl+S hardening nits folded in.
+
+**Verification evidence (run first-hand at the tip `39c1f65`).** `npm run check` 868 files 0/0.
+`npm test` 142 files / 1019 tests exit 0. `check:reference`/`check:package`/`check:docs` exit 0.
+`check:prose` clean. Showcase E2E 5/5 in a real browser, including the redesigned-editor walk
+(toolbar bold, tabs, sticky save, flash) and the popover-driven discard. The live admin smoke was
+satisfied in substance by the E2E (no auth, session, or cookie code changed); the consumer-site
+smoke rides each `^0.40.0` retrofit.
+
+**Decisions locked.**
+- Publish-grade defaults: the form's implicit submission always means Save, never Publish.
+- Dialogs with their own forms mount outside any page-level form (now a design-system rule).
+- The editor focus indicator is a 1px 70%-alpha primary hairline (keyboard-modality makes
+  `:focus-visible` useless on a text surface); recorded in the design system with the contrast
+  floor.
+- The two new dropdowns use the Popover API pattern; the design system carries the recipe.
+- Svelte devDependency floor `^5.56.3` (the 5.56.1 compiler misprints parenthesized boolean
+  groupings; consumers compile shipped sources, so the changelog carries the advisory).
+
+**Carry-forwards (recorded, not fixed).**
+1. The legacy focus-driven dropdowns elsewhere in the admin (AdminLayout's palette trigger area
+   uses dialogs, but any future dropdown should use the popover recipe; sweep existing surfaces
+   when next touched).
+2. The boundary test does not pin `editor-highlight.ts` to the dynamic path, and
+   `link-completion.ts` already reaches the SSR bundle with a static `@codemirror/language`
+   import; extend `editor-boundary.test.ts` to scan `src/lib/components/*.ts`.
+3. `draftWarning` is effect-derived from `location.search` with a dead SSR guard and goes stale
+   across client-side navigation; derive from `page.url` when next touched.
+4. The `beforeNavigate` confirm double-fires with the native dialog on full unloads; an early
+   `willUnload` branch would settle it.
+5. The roving tab stop can jump after a Preview round trip (cosmetic; sync `roving` in the
+   effect).
+6. The word count strips directive lines and table rows but not inline syntax marks.
+7. The disabled Image button stays tooltip-only on touch (deliberate; the gallery initiative
+   replaces it).
+8. The Edited badge vocabulary ("Edited" vs "Unpublished changes") was flagged by the critique
+   and kept; revisit with editor feedback.
+9. Check both production sites' lockfiles for svelte 5.56.1 at their `^0.40.0` retrofit.

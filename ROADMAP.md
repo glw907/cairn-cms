@@ -10,24 +10,26 @@ needs. Items move up from lower tiers as the core fills in.
 
 ## Now
 
-- **Site retrofits to `0.41.0`.** The diagnostics initiative is complete (`cairn doctor`, the
-  readiness checklist, and the runtime conditions all draw on one registry; shipped across
-  `0.37.1`, `0.38.0`, and `0.41.0`), and the publish workflow plus the edit-page redesign shipped
-  in `0.39.0`/`0.40.0`. Each site retrofit wires the publish/discard/publishAll shim actions,
-  requires kit `^2.12`, runs `cairn-doctor` as a retrofit step, and serves as the live proof of
-  the held-save workflow, the send-failure feedback, and the redesigned editor.
+- **Publish the `0.41.0`+`0.50.0` window, then the site retrofits.** The 2026-06-11 foundation
+  review led to the single-mount admin (`0.50.0`, opening the 0.50.x series): a site's `/admin`
+  surface is now the composer plus one catch-all route pair, and an action-adding release no
+  longer touches consumer files. Each retrofit crosses straight to `0.50.0` (delete the shim
+  tree, add the two-file mount, swap `app.d.ts` for the `/ambient` import, kit `^2.12`), runs
+  `cairn-doctor`, and serves as the live proof of the held-save workflow, the send-failure
+  feedback, and the redesigned editor.
 
 ## Next
 
-- **Gates and tooling pass.** One pass replaces the former DX-sweep Passes B and C. It aligns the
-  showcase to the documented `$lib/cairn.server.ts` composer and wires the golden-path E2E into CI
-  so the gate pins the documented pattern. It also adds an automated DOM check for the admin
-  render, adds the plain-Node dist-spawn test that rot-proofs the `/delivery/data` node-safety
-  guarantee, fixes the manifest bin's `cwd`-versus-Vite-`config.root` handling, narrows the editor
-  link picker to real content targets, and widens `mintToken` to accept a sync return. The
-  non-gate Pass C remnants (a published type for each action's `fail` payload, the
-  `App.Locals.editor` ambient type) move to the scaffolder and the extension seam, where they are
-  naturally exercised.
+- **Gates and tooling pass.** One pass replaces the former DX-sweep Passes B and C, and the
+  `0.50.0` window absorbed several of its items (the showcase composer alignment, the `mintToken`
+  widening, the published `fail` payload types, and the `App.Locals.editor` ambient type all
+  landed there). What remains: wire the golden-path E2E into CI so the gate pins the documented
+  pattern, add an automated DOM check for the admin render, add the plain-Node dist-spawn test
+  that rot-proofs the `/delivery/data` node-safety guarantee, fix the manifest bin's
+  `cwd`-versus-Vite-`config.root` handling, and narrow the editor link picker to real content
+  targets. Candidates from the `0.50.0` review ride along: a signature-currency check for the
+  reference pages, and a registry entry for `PUBLIC_ORIGIN` faults so `requireOrigin` joins the
+  condition model.
 - **Image and gallery management.** Let a non-technical author add and place images from
   `/admin`. The open fork is storage: versioned in git next to content, or in Cloudflare R2.
   Needs a brainstorm before a plan. Sequenced ahead of the scaffolder so the capstone template

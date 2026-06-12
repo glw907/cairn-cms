@@ -11,7 +11,42 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-11, latest): execute the single-mount-admin plan (0.50.0)
+## Immediate next action (2026-06-11, latest): publish the `0.41.0`+`0.50.0` window, then the site retrofits
+
+**The single-mount admin pass LANDED on `main` 2026-06-11 as `0.50.0`, opening the 0.50.x
+series.** Thirteen plan tasks plus a simplifier touch, a converged review fold-in, and two
+changelog accuracy fixes, commits `4e72582..08bc85e` (and the bump). A site's whole `/admin`
+surface is now three files: the `$lib/cairn.server.ts` composer plus the `/admin/[...path]`
+route pair (`createCairnAdmin` serves one `load` and one static `actions` record;
+`CairnAdmin.svelte` switches the views; `parseAdminPath` is the one path authority). The riders
+landed in the same window: diagnostics conditions reach their remaining runtime sites (a missing
+`AUTH_DB` renders a branded page on every admin path), `listLoad` is manifest-first,
+the `fail()` payloads unify on `error`, the layering and dedupe batch, `createSiteResolver` and
+the delivery trim, the `/ambient` App.Locals subpath, and the docs arm (admin-routes rewritten,
+tutorial milestone rebuilt, the wrong `default:` action examples fixed).
+
+Gate green at the tip, run first-hand: `npm run check` 895 files 0/0, `npm test` 152 files /
+1242 tests exit 0, all five doc/package gates exit 0, showcase E2E 5/5 in a real browser. Both
+reviewers converged on one Critical (the `ManageEditors` form names), fixed in the fold-in
+`08bc85e` with a new form-action contract test across all six views. The post-mortem with seven
+carry-forwards is in the plan
+(`docs/superpowers/plans/2026-06-11-cairn-single-mount-admin.md`).
+
+**Next actions, in order:**
+1. **Publish the held window** (`0.41.0` diagnostics + `0.50.0` single-mount): push `main`, then
+   `gh release create v0.50.0 --target main` with the changelog window since `v0.40.0` as the
+   body, carrying `0.41.0`'s kit `^2.12` `Consumers must:` line and `0.50.0`'s migration block.
+2. **Site retrofits, one per site** (ecxc-ski, then 907-life), each crossing straight to
+   `0.50.0`: delete the admin shim tree, add the composer plus the two-file mount, swap
+   `app.d.ts` for `import '@glw907/cairn-cms/ambient'`, pick up the `createSiteResolver` rename
+   where used, run `cairn-doctor`, and live-prove the publish workflow plus the
+   `send_error`/`throttled` states owed since `0.38.0`.
+3. **The queue resumes:** the gates-and-tooling pass (smaller now: the showcase composer
+   alignment and `mintToken` widening landed here; E2E-in-CI, the admin DOM check, the
+   dist-spawn test, and the manifest-bin cwd fix remain), then the gallery brainstorm
+   (git-vs-R2), then P4.
+
+## Prior next action (2026-06-11): execute the single-mount-admin plan (0.50.0)
 
 **A foundation review of the engine (2026-06-11, run before the next feature round) redirected
 the queue.** The engine internals reviewed strong; the weak joint is the consumer seam: ~18

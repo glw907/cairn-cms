@@ -1,6 +1,6 @@
 # Single-mount admin and the site-seam consolidation (0.50.0, opening the 0.50.x series)
 
-**Status: in progress (started 2026-06-11).**
+**Status: LANDED on `main` 2026-06-11 as `0.50.0`, unpublished. Post-mortem below.**
 
 ## Why
 
@@ -129,4 +129,47 @@ tabs-versus-spaces drift in `doctor/`/`diagnostics/` waits for an editorconfig t
 
 ## Post-mortem
 
-(at pass end)
+All thirteen tasks ran as planned, one `cairn-implementer` per task on `main`, commits
+`ea075d9..08bc85e` plus the plan commit and two changelog accuracy fixes. Gate green at the tip,
+run first-hand: `npm run check` 895 files 0/0, `npm test` 152 files / 1242 tests exit 0, all five
+doc and package gates exit 0, showcase E2E 5/5 in a real browser after the fold-in. The
+simplifier made one idiom alignment (`escapeXml` onto `replaceAll`).
+
+**The review gate earned its keep.** Both reviewers (svelte, web-auth-security) independently
+found the same Critical: `ManageEditors` posted `?/add`/`?/remove` while the dispatcher record
+defines `addEditor`/`removeEditor`, so the owner surface failed closed under the mount. The unit
+tests called the record's functions directly and never exercised the components' form strings,
+which is exactly how the mismatch slipped twelve green gates. The fold-in (`08bc85e`) fixed the
+names, added the contract test both reviewers asked for (every rendered `?/name` across all six
+views must be a key of the record; proven red before the name fix), reserved `settings` in the
+parser, keyed the list view by concept so filter state cannot bleed across a same-route hop, and
+moved the guard's bindings pre-check ahead of the public-path split so a misbound deploy gets the
+branded page everywhere under `/admin`.
+
+**Deviations from the plan.** `requireOrigin` keeps plain Errors: no registered condition covers
+a bad `PUBLIC_ORIGIN`, the registry stays frozen, and a wrong mapping would print misleading
+remediation, so the mapping waits for a registry pass. The nav-load swallow gained a new
+`config.invalid` log event (the vocabulary rule beat the no-new-events assumption). `listLoad`
+reads the manifest through `readRaw` + `parseManifest` rather than `readManifest`, preserving the
+absent-versus-empty distinction the fallback needs. The tutorial's dev backend is no longer
+embedded; the milestone copies the showcase's branch-aware `fake-github.ts` with a reseed block,
+since the old ~115-line fixture predated the publish flow.
+
+**Carry-forwards.**
+1. A registry entry for `PUBLIC_ORIGIN` faults, so `requireOrigin` can join the condition model
+   (the registry unfreezes in a deliberate pass).
+2. The branded bindings page names `EMAIL`/`AUTH_DB` to anonymous visitors on a misbound deploy;
+   accepted as the diagnosability tradeoff, revisit only if a generic-to-anonymous posture is
+   ever wanted.
+3. The confirm page still reflects the raw token into the hidden field (pre-existing accepted
+   design; POST-confirm stays defense in depth, noted again by this pass's auth review).
+4. `nav-routes.ts` carries a private `sessionOf` duplicate of content-routes' (pre-existing;
+   fold into a shared helper on the next nav touch).
+5. The showcase's `/admin/editors` view 500s under the fake backend (no D1 double); a future
+   showcase touch could stub it or hide the nav entry without a binding.
+6. The per-surface factories stay public as the advanced seam; once both production sites cross
+   to the mount, measure whether anything still uses them and consider narrowing.
+7. The site retrofits (ecxc-ski, 907-life) cross straight to `0.50.0`: delete the shim tree, add
+   the two-file mount plus the composer, swap `app.d.ts` for the ambient import, run
+   `cairn-doctor`, and live-prove the publish workflow and the send-failure states that have been
+   waiting since 0.38.0.

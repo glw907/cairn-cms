@@ -75,9 +75,10 @@ through the adapter's render. Swapping the editor stays a one-file change.
     // tooltip above all) renders dark-on-dark instead of light-on-dark.
     const isDark = host.closest('[data-theme]')?.getAttribute('data-theme')?.includes('dark') ?? false;
     // The directive machinery treatment: rails, not bands. A row at depth N draws every rail
-    // 1..N as literal nested brackets: 2px accent bars at x offsets 0-2, 4-6, and 8-10 with 2px
-    // of surface between them, stacked as inset box shadows (top layer first, so each bar sits
-    // over the spacer and deeper bar beneath it). The alphas step through the per-theme vars in
+    // 1..N as literal nested brackets: 2px accent bars at x offsets 0-2, 6-8, and 12-14 with 4px
+    // of surface between them (a gap of twice the bar weight, the floor for two parallel rules
+    // to read as separate lines rather than one thick one), stacked as inset box shadows (top
+    // layer first, so each bar sits over the spacer and deeper bar beneath it). The alphas step through the per-theme vars in
     // cairn-admin.css; the fallbacks are the light values, so the editor still renders sensibly
     // outside an admin theme wrapper. On a fence line the colon runs, brackets, and {attrs}
     // braces dim to the marker tone while the name and label keep a depth-stepped ink. Leaf and
@@ -91,7 +92,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
     const rails = (depth: number, active = false): string => {
       const layers: string[] = [];
       for (let d = 1; d <= depth; d++) {
-        const edge = 4 * d - 2;
+        const edge = 6 * d - 4;
         if (d > 1) layers.push(`inset ${edge - 2}px 0 0 0 var(--color-base-100, oklch(99% 0.004 75))`);
         const own = active && d === depth;
         layers.push(
@@ -145,9 +146,10 @@ through the adapter's render. Swapping the editor stays a one-file change.
           outlineOffset: '-1px',
         },
         '.cm-line': { padding: '0' },
-        // The gutter: directive rows pad left so the text clears the deepest rail stack. It is
-        // static structure (caret-independent), so caret movement shifts no layout.
-        '.cm-cairn-directive-fence, .cm-cairn-directive-content': { paddingLeft: '1.25rem' },
+        // The gutter: directive rows pad left so the text clears the deepest rail stack (the
+        // depth-3 bar ends at 14px, the active one at 15px; 1.5rem keeps ~10px of air beyond
+        // it). Static structure (caret-independent), so caret movement shifts no layout.
+        '.cm-cairn-directive-fence, .cm-cairn-directive-content': { paddingLeft: '1.5rem' },
         ...railRules,
         '.cm-cairn-directive-mark': { color: 'var(--color-muted)' },
         '.cm-cairn-directive-label': { color: 'var(--color-accent)' },

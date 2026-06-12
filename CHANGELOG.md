@@ -2,6 +2,14 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.52.1
+
+Two field reports from the first 0.52.0 session, both in-editor polish with no consumer action.
+In Write mode the editor card now hugs the manuscript (the column caps at 48rem and centers), so
+a wide window no longer frames empty space inside the card; Preview keeps the full column for
+its device widths. The directive rails take a 4px gap between nested bars (twice the bar
+weight, so two rails read as two lines), and directive text gains a matching step of gutter.
+
 ## 0.52.0
 
 The editor became a quiet writing surface. The manuscript renders in self-hosted iA Writer Mono

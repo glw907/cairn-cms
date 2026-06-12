@@ -369,3 +369,9 @@ No consumer action. A site embedding `MarkdownEditor` directly may pass the new 
 `focusMode` and `typewriter` booleans, documented in
 [the components reference](../reference/components.md#markdowneditor); the stock `EditPage`
 wires and persists both.
+
+## 0.52.1: editor polish from the field, additive
+
+In Write mode the editor card caps near the manuscript's measure and centers, so wide windows no
+longer frame empty space; Preview keeps the full width. Nested directive rails space out to a
+4px gap with a matching gutter step. No consumer action.

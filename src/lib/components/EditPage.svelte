@@ -638,7 +638,12 @@ transient flashes, and the editor card's footer holds the word count and the Mar
   <CsrfField />
   {#if data.isNew}<input type="hidden" name="new" value="1" />{/if}
 
-  <div class="lg:order-1">
+  <!-- In Write mode the card hugs the manuscript: the column caps near the 70ch measure and
+       centers, so the card frame never spans emptiness on a wide window. Preview keeps the full
+       column for its device frames. 48rem = the measure (70ch of the editor face at 1rem is
+       about 42rem) plus the surface padding and the card borders, with enough left over that
+       the toolbar keeps its single row. -->
+  <div class={mode === 'preview' ? 'lg:order-1' : 'lg:order-1 mx-auto w-full max-w-[48rem]'}>
     {#if titleField}
       <!-- The hoisted document title: large, borderless, in the display face, so the manuscript
            reads as the protagonist. It submits as name="title", the same field as before. The

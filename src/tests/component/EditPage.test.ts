@@ -105,6 +105,18 @@ describe('EditPage', () => {
     expect(card.contains(pane)).toBe(true);
   });
 
+  it('caps the editor column at the measure in Write and frees it in Preview', async () => {
+    const screen = render(EditPage, postProps());
+    const column = screen.container.querySelector('form#cairn-edit-form > div')!;
+    // Write mode: the card hugs the manuscript, so the column carries the measure cap.
+    expect(column.classList.contains('max-w-[48rem]')).toBe(true);
+    await screen.getByRole('tab', { name: 'Preview' }).click();
+    // Preview mode: the device frames need the full column.
+    expect(column.classList.contains('max-w-[48rem]')).toBe(false);
+    await screen.getByRole('tab', { name: 'Write' }).click();
+    expect(column.classList.contains('max-w-[48rem]')).toBe(true);
+  });
+
   it('keeps the editor mounted but hidden in preview and restores it intact on Write', async () => {
     const screen = render(EditPage, postProps({ body: 'Round trip body' }));
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();

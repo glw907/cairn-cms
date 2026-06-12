@@ -154,6 +154,23 @@ export interface NavMenuConfig {
   maxDepth?: number;
 }
 
+/**
+ * How the edit page's preview frame reproduces the live site's content styling. The admin
+ * deliberately never loads the site's CSS (chrome isolation), so a design-accurate preview needs
+ * the site to name its stylesheets for the preview frame; without this knob the preview renders
+ * unstyled markup.
+ */
+export interface PreviewConfig {
+  /** Absolute or root-relative URLs of the site's compiled stylesheets, linked inside the
+   *  preview document. A Vite `?url` import of the site's CSS resolves the hashed asset URL. */
+  stylesheets: string[];
+  /** Class list applied to the preview document's body, for theme or typography roots. */
+  bodyClass?: string;
+  /** Class list for a wrapper element around the rendered content, reproducing the site's
+   *  content container (a prose or measure class). Omitted renders the content bare. */
+  containerClass?: string;
+}
+
 /** Reserved asset slot (seam 4). Typed and unused in the rebuild; R7/R9 read it later with no contract change. */
 export interface AssetConfig {
   /** Repo-relative asset roots, e.g. ["static/images"]. */
@@ -187,6 +204,9 @@ export interface CairnAdapter {
   /** The site's glyph name to SVG path-data map, for the admin icon picker and the renderer. */
   icons?: IconSet;
   navMenu?: NavMenuConfig;
+  /** The live site's content styling for the preview frame. The admin's chrome isolation keeps
+   *  the site's CSS out of the admin document, so the preview frame links these instead. */
+  preview?: PreviewConfig;
   assets?: AssetConfig;
 }
 
@@ -285,6 +305,8 @@ export interface CairnRuntime {
   /** The site's glyph name to SVG path-data map, for the admin icon picker and the renderer. */
   icons?: IconSet;
   navMenu?: NavMenuConfig;
+  /** The live site's content styling for the preview frame; passed through from the adapter. */
+  preview?: PreviewConfig;
   assets?: AssetConfig;
   /** Admin panels contributed by extensions (Mode 2). Empty until Plan 09 wires the dispatch route. */
   adminPanels?: AdminPanel[];

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { composeRuntime } from '../../lib/content/compose.js';
-import type { CairnAdapter, CairnExtension } from '../../lib/content/types.js';
+import type { CairnAdapter, CairnExtension, PreviewConfig } from '../../lib/content/types.js';
 import { defineFields } from '../../lib/content/schema.js';
 import { testSiteConfig } from './_content-fixture.js';
 
@@ -29,6 +29,23 @@ describe('composeRuntime extension carry-through', () => {
     const runtime = composeRuntime({ adapter: adapter(), siteConfig: testSiteConfig, extensions: [] });
     expect(runtime.adminPanels).toEqual([]);
     expect(runtime.fieldTypes).toEqual([]);
+  });
+});
+
+describe('composeRuntime preview pass-through', () => {
+  it('carries the adapter preview config onto the runtime untouched', () => {
+    // The showcase shape: a hashed stylesheet URL from a Vite `?url` import plus theme roots.
+    const preview: PreviewConfig = {
+      stylesheets: ['/_app/immutable/assets/app.B3xJk2.css'],
+      bodyClass: 'bg-base-100',
+      containerClass: 'prose mx-auto',
+    };
+    const runtime = composeRuntime({ adapter: { ...adapter(), preview }, siteConfig: testSiteConfig });
+    expect(runtime.preview).toBe(preview);
+  });
+
+  it('leaves preview undefined when the adapter omits it', () => {
+    expect(composeRuntime({ adapter: adapter(), siteConfig: testSiteConfig }).preview).toBeUndefined();
   });
 });
 

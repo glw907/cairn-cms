@@ -20,6 +20,7 @@ export type {
   BackendConfig,
   SenderConfig,
   NavMenuConfig,
+  PreviewConfig,
   AssetConfig,
   RoutingRule,
   ConceptDescriptor,

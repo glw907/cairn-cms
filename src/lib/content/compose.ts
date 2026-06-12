@@ -44,6 +44,7 @@ export function composeRuntime({ adapter, siteConfig, extensions = [] }: Compose
     registry: adapter.registry,
     icons: adapter.icons,
     navMenu: adapter.navMenu,
+    preview: adapter.preview,
     assets: adapter.assets,
     adminPanels,
     fieldTypes,

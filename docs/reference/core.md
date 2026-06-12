@@ -61,6 +61,41 @@ export const cairn = defineAdapter({
 });
 ```
 
+#### `preview` (adapter member)
+
+```ts
+interface PreviewConfig {
+  stylesheets: string[];
+  bodyClass?: string;
+  containerClass?: string;
+}
+```
+
+How the edit page's preview frame reproduces the live site's content styling. Chrome isolation
+means the admin deliberately never loads the site's CSS, so a design-accurate preview needs the
+site to name its compiled stylesheets here; without the knob the preview renders unstyled markup.
+`composeRuntime` passes the value through to the runtime untouched.
+
+`stylesheets` holds absolute or root-relative URLs linked inside the preview document. A Vite
+`?url` import of the site's CSS entry resolves the hashed asset URL at build time. `bodyClass`
+applies theme or typography root classes to the preview document's body, and `containerClass`
+wraps the rendered content in the site's content container (a prose or measure class); when
+omitted, the content renders bare.
+
+```ts
+// src/lib/cairn.config.ts
+import appCssUrl from '../app.css?url';
+
+export const cairn = defineAdapter({
+  // ...concepts, backend, sender, render...
+  preview: {
+    stylesheets: [appCssUrl],
+    bodyClass: 'bg-base-100',
+    containerClass: 'prose mx-auto',
+  },
+});
+```
+
 #### `defineFields`
 
 ```ts
@@ -501,6 +536,7 @@ function signatures above reference these.
 | `BackendConfig` | `interface BackendConfig` | The GitHub App backend a site reads from and commits to. |
 | `SenderConfig` | `interface SenderConfig` | Magic-link sender identity for Cloudflare Email Sending. |
 | `NavMenuConfig` | `interface NavMenuConfig` | A git-committed YAML menu the nav editor manages. |
+| `PreviewConfig` | `interface PreviewConfig` | The live site's stylesheets and container classes for the edit page's preview frame. |
 | `AssetConfig` | `interface AssetConfig` | Reserved asset slot (seam 4), typed and unused in the rebuild. |
 | `CairnExtension` | `interface CairnExtension` | A future build-time extension that folds in like the adapter. |
 | `CairnRuntime` | `interface CairnRuntime` | The composed runtime the engine serves from (seam 2 output). |

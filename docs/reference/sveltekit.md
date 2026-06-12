@@ -112,11 +112,12 @@ time, so an encoded slash can never escape its segment. Reserved first segments 
 ### `requireSession`
 
 ```ts
-declare function requireSession(event: RequestContext): Editor;
+declare function requireSession(event: { locals: { editor?: Editor | null } }): Editor;
 ```
 
 Return the session the guard already resolved, or throw a redirect to `/admin/login`. Call it at the
-top of a protected `load` or action when you need the signed-in editor.
+top of a protected `load` or action when you need the signed-in editor. Its parameter is structural
+and asks only for `locals`, so any event shape that carries the guard's editor satisfies it.
 
 ```ts
 import { requireSession } from '@glw907/cairn-cms/sveltekit';

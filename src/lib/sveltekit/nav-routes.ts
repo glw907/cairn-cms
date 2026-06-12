@@ -8,9 +8,9 @@ import { listMarkdown, readRaw, commitFile } from '../github/repo.js';
 import { isConflict } from '../github/types.js';
 import { log } from '../log/index.js';
 import { parseSiteConfig, extractMenu, validateNavTree, setMenu, type NavNode } from '../nav/site-config.js';
+import { requireSession } from './guard.js';
 import type { CairnRuntime } from '../content/types.js';
 import type { ContentEvent } from './content-routes.js';
-import type { Editor } from '../auth/types.js';
 
 /** One page option for the URL picker datalist. */
 export interface NavPageOption {
@@ -32,13 +32,6 @@ export interface NavRoutesDeps {
   /** Mint a GitHub App installation token from the Worker env. Defaults to the real signer.
    *  A bare string works too; the routes await whatever comes back. */
   mintToken?: (env: GithubKeyEnv) => string | Promise<string>;
-}
-
-/** The signed-in editor the guard resolved, or a login redirect. */
-function sessionOf(event: ContentEvent): Editor {
-  const editor = event.locals.editor;
-  if (!editor) throw redirect(303, '/admin/login');
-  return editor;
 }
 
 export function createNavRoutes(runtime: CairnRuntime, deps: NavRoutesDeps = {}) {
@@ -63,7 +56,7 @@ export function createNavRoutes(runtime: CairnRuntime, deps: NavRoutesDeps = {})
 
   /** Load the nav editor. A missing or unparsable config degrades to an empty tree so it still opens. */
   async function navLoad(event: ContentEvent): Promise<NavLoadData> {
-    sessionOf(event);
+    requireSession(event);
     const config = runtime.navMenu;
     if (!config) throw error(404, 'No navigation menu configured');
     const maxDepth = config.maxDepth ?? 2;
@@ -109,7 +102,7 @@ export function createNavRoutes(runtime: CairnRuntime, deps: NavRoutesDeps = {})
 
   /** Save the nav tree: validate, then read-modify-commit the one menu with the session editor as author. */
   async function navSave(event: ContentEvent): Promise<never> {
-    const editor = sessionOf(event);
+    const editor = requireSession(event);
     const config = runtime.navMenu;
     if (!config) throw error(404, 'No navigation menu configured');
     const maxDepth = config.maxDepth ?? 2;

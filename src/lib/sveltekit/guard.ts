@@ -93,8 +93,10 @@ export function createAuthGuard() {
   };
 }
 
-/** For a protected load/action: the session the guard already resolved, or a login redirect. */
-export function requireSession(event: RequestContext): Editor {
+/** For a protected load/action: the session the guard already resolved, or a login redirect.
+ *  The parameter is the minimal structural need (just `locals`), so every engine event shape
+ *  (RequestContext, the content routes' ContentEvent) and a real RequestEvent all satisfy it. */
+export function requireSession(event: { locals: { editor?: Editor | null } }): Editor {
   const editor = event.locals.editor;
   if (!editor) throw redirect(303, '/admin/login');
   return editor;

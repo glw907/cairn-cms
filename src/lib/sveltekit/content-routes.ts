@@ -16,6 +16,7 @@ import { emptyManifest, manifestEntryFromFile, parseManifest, serializeManifest,
 import { isConflict } from '../github/types.js';
 import { log } from '../log/index.js';
 import { issueCsrfToken } from './csrf.js';
+import { requireSession } from './guard.js';
 import type { CookieJar, EventBase } from './types.js';
 import type { CairnRuntime, ConceptDescriptor, FrontmatterField } from '../content/types.js';
 import type { Editor, Role } from '../auth/types.js';
@@ -148,13 +149,6 @@ export interface RenameFailure {
  *  keys identify which guard refused. */
 export type ContentFormFailure = Partial<SaveFailure & DeleteRefusal & RenameFailure>;
 
-/** The signed-in editor the guard resolved, or a login redirect. Kept local to decouple event shapes. */
-function sessionOf(event: ContentEvent): Editor {
-  const editor = event.locals.editor;
-  if (!editor) throw redirect(303, '/admin/login');
-  return editor;
-}
-
 /** Look up the concept named by the `[concept]` route param, or a 404. */
 function conceptOf(runtime: CairnRuntime, params: Record<string, string>): ConceptDescriptor {
   const concept = findConcept(runtime.concepts, params.concept ?? '');
@@ -188,7 +182,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
   /** Layout load for every admin page: the nav, the user, the active path, the resolved theme,
    *  and the pending entries behind the topbar's publish-all action. */
   async function layoutLoad(event: ContentEvent): Promise<LayoutData> {
-    const editor = sessionOf(event);
+    const editor = requireSession(event);
     const cookieTheme = event.cookies?.get('cairn-admin-theme');
     const theme = cookieTheme === 'cairn-admin-dark' ? 'cairn-admin-dark' : 'cairn-admin';
     const cookieCollapsed = event.cookies?.get('cairn-admin-nav-collapsed');
@@ -282,7 +276,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
    *  with no manifest row appends a `new` row read from its branch. A listing failure degrades
    *  to an inline error, not a thrown 500. */
   async function listLoad(event: ContentEvent): Promise<ListData> {
-    sessionOf(event);
+    requireSession(event);
     const concept = conceptOf(runtime, event.params);
     const formError = event.url.searchParams.get('error');
     const publishedAllRaw = event.url.searchParams.get('publishedAll');
@@ -333,7 +327,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
 
   /** Create a new entry: validate the slug, compose a dated id when the concept is dated, refuse to clobber. */
   async function createAction(event: ContentEvent): Promise<never> {
-    sessionOf(event);
+    requireSession(event);
     const concept = conceptOf(runtime, event.params);
     const form = await event.request.formData();
     const slug = String(form.get('slug') ?? '').trim() || slugify(String(form.get('title') ?? ''));
@@ -378,7 +372,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
 
   /** Open a file for editing. A `?new=1` miss yields a blank document; any other miss is a 404. */
   async function editLoad(event: ContentEvent): Promise<EditData> {
-    sessionOf(event);
+    requireSession(event);
     const concept = conceptOf(runtime, event.params);
     const id = event.params.id ?? '';
     if (!isValidId(id)) throw error(400, 'Invalid entry id');
@@ -578,7 +572,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
   /** Save an edit: validate, then commit to the entry's pending branch with the session editor
    *  as author. Main and its manifest stay untouched until publish. Fails safe on 409. */
   async function saveAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
-    const editor = sessionOf(event);
+    const editor = requireSession(event);
     const concept = conceptOf(runtime, event.params);
     const id = event.params.id ?? '';
     // Confine the commit path to the concept dir, built from a validated id (the App token can
@@ -599,7 +593,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
    *  The branch is deleted only when its head still matches the commit this action made; a
    *  concurrent save moved it, so the entry stays pending and the next publish picks it up. */
   async function publishAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
-    const editor = sessionOf(event);
+    const editor = requireSession(event);
     const concept = conceptOf(runtime, event.params);
     const id = event.params.id ?? '';
     if (!isValidId(id)) throw error(400, 'Invalid entry id');
@@ -638,7 +632,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
    *  Mounted on the concept list shim, but the topbar posts here from anywhere, so the route's
    *  concept param is ignored and the redirect lands on the first configured concept. */
   async function publishAllAction(event: ContentEvent): Promise<never> {
-    const editor = sessionOf(event);
+    const editor = requireSession(event);
     const first = runtime.concepts[0];
     if (!first) throw error(404, 'No content types configured');
     const token = await mintToken(event.platform?.env ?? {});
@@ -725,7 +719,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
   /** Discard an entry's pending edits: delete the branch (tolerant of already-gone) and return to
    *  the edit page when the entry lives on main, else to the list (the entry is gone entirely). */
   async function discardAction(event: ContentEvent): Promise<never> {
-    const editor = sessionOf(event);
+    const editor = requireSession(event);
     const concept = conceptOf(runtime, event.params);
     const id = event.params.id ?? '';
     if (!isValidId(id)) throw error(400, 'Invalid entry id');
@@ -806,7 +800,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
 
   /** Delete an entry from its editor. The id comes from the route param. */
   async function deleteAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
-    const editor = sessionOf(event);
+    const editor = requireSession(event);
     const concept = conceptOf(runtime, event.params);
     const id = event.params.id ?? '';
     if (!isValidId(id)) throw error(400, 'Invalid entry id');
@@ -815,7 +809,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
 
   /** Delete an entry from the concept list. The id comes from the form body. */
   async function listDeleteAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
-    const editor = sessionOf(event);
+    const editor = requireSession(event);
     const concept = conceptOf(runtime, event.params);
     const form = await event.request.formData();
     const id = String(form.get('id') ?? '');
@@ -828,7 +822,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
    *  are the authoritative gate. The same last-writer-wins manifest race as save and delete applies,
    *  caught by the build's fail-closed backstop. */
   async function renameAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
-    const editor = sessionOf(event);
+    const editor = requireSession(event);
     const concept = conceptOf(runtime, event.params);
     const id = event.params.id ?? '';
     if (!isValidId(id)) throw error(400, 'Invalid entry id');

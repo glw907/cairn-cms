@@ -177,6 +177,28 @@ test('the publish workflow round-trips: create, save, New, publish, edit, Edited
   await expect(row.getByText('Published', { exact: true })).toBeVisible();
 });
 
+test('the editors view runs against the dev AUTH_DB double: list the seeds, add one', async ({ page }) => {
+  await page.goto('/admin/editors');
+
+  // The fake-auth-db seeds: the fixture session's owner plus one plain editor. A reused local
+  // server may carry editors a prior run added, so the count assertion is relative.
+  const rows = page.locator('tbody tr');
+  await expect(rows.filter({ hasText: 'editor@showcase.test' })).toBeVisible();
+  await expect(rows.filter({ hasText: 'writer@showcase.test' })).toBeVisible();
+  const before = await rows.count();
+  expect(before).toBeGreaterThanOrEqual(2);
+
+  // Add an editor through the form; the action round-trips through the double and the reloaded
+  // list shows the new row. The email is unique per run (reuseExistingServer keeps state).
+  const email = `added-${Date.now()}@showcase.test`;
+  const addForm = page.locator('form[action="?/addEditor"]');
+  await addForm.getByLabel('Name').fill('Added Editor');
+  await addForm.getByLabel('Email').fill(email);
+  await addForm.getByRole('button', { name: 'Add editor' }).click();
+  await expect(rows.filter({ hasText: email })).toBeVisible();
+  await expect(rows).toHaveCount(before + 1);
+});
+
 test('a non-cairn feature coexists with the admin (Mode 1)', async ({ page }) => {
   await page.goto('/calendar');
   await expect(page.getByRole('heading', { name: 'Calendar' })).toBeVisible();

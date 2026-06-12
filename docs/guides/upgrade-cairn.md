@@ -230,3 +230,78 @@ readiness guide when standing up a fresh account, and filter Workers Logs on `gi
 when the publish button goes missing. A batch of internal fixes rides along (a leaner server
 bundle, a faster edit-page load, coalesced GitHub token mints, and several editor polish items)
 with no consumer action.
+
+One note on the window: `0.41.0` and `0.50.0` publish together, so a site crossing from `0.40.0`
+applies this entry and the `0.50.0` entries below in one upgrade.
+
+## 0.50.0: the admin mounts as one catch-all route
+
+The per-route admin tree is gone as the canonical wiring. `createCairnAdmin` now serves every
+admin view through one `load` and one `actions` record, and the new `CairnAdmin` component
+switches the views, so a site no longer restates the route table or couples to action names by
+string. Consumers must: delete the admin route tree and replace it with the two-file catch-all
+mount plus the composer. The tree a site carried looked like this:
+
+```
+src/routes/admin/
+  +layout.server.ts
+  +layout.svelte
+  login/+page.server.ts                  login/+page.svelte
+  auth/confirm/+page.server.ts           auth/confirm/+page.svelte
+  auth/logout/+server.ts
+  (app)/+layout.server.ts                (app)/+layout.svelte
+  (app)/+page.server.ts
+  (app)/[concept]/+page.server.ts        (app)/[concept]/+page.svelte
+  (app)/[concept]/[id]/+page.server.ts   (app)/[concept]/[id]/+page.svelte
+  (app)/editors/+page.server.ts          (app)/editors/+page.svelte
+  (app)/nav/+page.server.ts              (app)/nav/+page.svelte
+```
+
+Three files replace it:
+
+```
+src/lib/cairn.server.ts                    composeRuntime + createCairnAdmin, once
+src/routes/admin/[...path]/+page.server.ts re-exports admin.load and admin.actions
+src/routes/admin/[...path]/+page.svelte    mounts CairnAdmin
+```
+
+The exact file contents are in [the canonical admin mount](../reference/admin-routes.md). The
+admin URLs do not change, so no editor bookmark breaks, and the single mount also serves the
+login, editors, and nav views a partial tree may have skipped.
+
+A site that keeps mounting `LoginPage`, `ConfirmPage`, or `AdminLayout` directly (the advanced
+per-route seam) must know two things. The components' forms now post named actions (`?/request`
+on the login form, `?/confirm` on the confirm form, `?/logout` and `?/publishAll` from the
+shell), so a route that registered a handler as `default` no longer receives the post; register
+it under the named key instead. And the shell's sign-out posts `?/logout` on the current URL, so
+the `/admin/auth/logout` `+server.ts` route is gone from the contract; delete it.
+
+## 0.50.0: the ambient Locals type ships as a subpath
+
+The `App.Locals.editor` declaration the guard relies on now ships at
+`@glw907/cairn-cms/ambient`. Consumers must: replace the hand-written `App.Locals` block in
+`src/app.d.ts` with one line, `import '@glw907/cairn-cms/ambient';`, so the editor's type tracks
+the engine instead of a copy.
+
+## 0.50.0: `createSiteIndex` becomes `createSiteResolver`, and `paginate` is gone
+
+The cross-concept resolver builder and its type are renamed: `createSiteIndex` is now
+`createSiteResolver` and `SiteIndex` is now `SiteResolver`, matching what the thing returns. The
+unused `paginate` helper is deleted. Consumers must: rename both identifiers where they import
+them from `@glw907/cairn-cms/delivery/data`, and drop any `paginate` import (page math is the
+site's own few lines). A site that only calls `createSiteIndexes` needs no change.
+
+## 0.50.0: every action failure carries `error`
+
+The `fail()` payloads from the admin actions unify on one summary key. Every failure now carries
+`error: string`, and the rename failure's separate `renameError` key is gone. Consumers must:
+nothing for a site rendering the engine's components, which read the unified shape. A site that
+read `form.renameError` in its own markup must read `form.error` instead.
+
+## 0.50.0: diagnostics conditions and a wider `mintToken`, additive
+
+Two additions need no migration. A missing runtime binding (the D1 auth store, the email sender,
+the GitHub App credentials) and an invalid site config now surface as branded condition pages
+with their registered condition ids, in place of a bare 500 or a silent redirect. And
+`deps.mintToken` accepts a plain string return as well as a promise, so a test stub no longer
+needs an `async` wrapper.

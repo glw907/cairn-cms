@@ -4,7 +4,8 @@ One page per package export subpath. The TypeScript types in `src/lib` are the s
 the export-coverage gate checks every page against them.
 
 - [Core (`@glw907/cairn-cms`)](./core.md): the engine, the adapter and schema contract, render, and the runtime.
-- [SvelteKit (`/sveltekit`)](./sveltekit.md): the server load and action route factories.
+- [SvelteKit (`/sveltekit`)](./sveltekit.md): the single-mount `createCairnAdmin` facade, the auth guard, and the per-route factories.
+- [The canonical admin mount](./admin-routes.md): the two-file catch-all mount and the composer a site copies.
 - [Components (`/components`)](./components.md): the admin Svelte UI.
 - [Render authoring (`/render`)](./render.md): the component-authoring toolkit for a component `build()`.
 - [Delivery (`/delivery`)](./delivery.md): the public read-model route loaders, the response helpers, and `CairnHead`.

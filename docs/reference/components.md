@@ -2,13 +2,13 @@
 
 This subpath holds the admin Svelte UI. It spans the layout shell, the sign-in and confirm pages,
 the content list and editor, the editors and nav screens, and the dialogs and pickers those
-compose. You mount the page-level components from your admin route shims and feed them the route
-data from the matching `/sveltekit` load. The component-level pieces compose inside `EditPage` and
-the dialogs, so you rarely mount them by hand. For the canonical route tree they mount in, see
-[the admin route structure guide](./admin-routes.md).
+compose. The canonical mount is one component: `CairnAdmin`, rendered from the catch-all
+`/admin/[...path]` route, switches every view for you. The per-view components below it stay
+public as the advanced seam for a site that mounts routes by hand. For the catch-all wiring, see
+[the canonical admin mount](./admin-routes.md).
 
 ```ts
-import { AdminLayout, ConceptList, EditPage } from '@glw907/cairn-cms/components';
+import { CairnAdmin } from '@glw907/cairn-cms/components';
 ```
 
 Each component sets `data-theme="cairn-admin"` (or sits inside `AdminLayout`, which does), so the
@@ -20,8 +20,9 @@ against them.
 
 ## Page-level components
 
-These mount directly from an admin route shim. The showcase mounts `AdminLayout`, `ConceptList`, and
-`EditPage`; the snippets below come from its admin routes.
+`CairnAdmin` is the one component the canonical mount renders. The view components after it are
+what it switches between; a site on the advanced per-route mounting renders them directly against
+the matching `/sveltekit` loads, and their snippets show that shape.
 
 ### `CairnAdmin`
 
@@ -36,10 +37,27 @@ let { data, form, render, registry, icons }: {
 ```
 
 The single-mount admin page. Render it from the catch-all `/admin/[...path]` route with the
-discriminated `AdminData` that `createCairnAdmin`'s load returns, and it mounts the right view:
-the sign-in and confirm pages bare, and the list, edit, editors, and nav views inside
-`AdminLayout`. `form` forwards the route's action result to whichever view rendered; `render`,
-`registry`, and `icons` pass through to `EditPage`.
+discriminated `AdminData` that `createCairnAdmin`'s load returns, and it switches `data.view` to
+mount the right component: the sign-in and confirm pages bare, and the list, edit, editors, and
+nav views wrapped in `AdminLayout` with the load's `layout` data. `form` forwards the route's
+action result to whichever view rendered, so a blocked save reaches `EditPage` and a login
+outcome reaches `LoginPage` through the one prop. `render`, `registry`, and `icons` come from the
+site's adapter and pass through to `EditPage` for the preview, the insert palette, and the icon
+fields. The showcase mounts it like this:
+
+```svelte
+<!-- src/routes/admin/[...path]/+page.svelte -->
+<script lang="ts">
+  import { CairnAdmin } from '@glw907/cairn-cms/components';
+  import type { AdminData } from '@glw907/cairn-cms/sveltekit';
+  import { cairn } from '$lib/cairn.config.js';
+  import type { ActionData } from './$types';
+
+  let { data, form }: { data: AdminData; form: ActionData } = $props();
+</script>
+
+<CairnAdmin {data} {form} render={cairn.render} registry={cairn.registry} icons={cairn.icons} />
+```
 
 ### `AdminLayout`
 
@@ -48,9 +66,10 @@ let { data, children }: { data: LayoutData; children: Snippet };
 ```
 
 The authed admin shell: the sidebar nav, the top bar, and the content slot. `data` is the
-`LayoutData` from the layout server load (site name, signed-in user, nav concepts, active path, and
-the owner capability). Mount it in `src/routes/admin/(app)/+layout.svelte` and render the page body
-into its default slot.
+`LayoutData` from the layout load (site name, signed-in user, nav concepts, active path, and
+the owner capability). `CairnAdmin` wraps every authed view in it for you; on the per-route
+mounting it lives at `src/routes/admin/(app)/+layout.svelte` with the page body rendered into its
+default slot. Its sign-out form posts the named `?/logout` action on the current URL.
 
 ```svelte
 <script lang="ts">
@@ -84,8 +103,8 @@ let { data }: { data: ListData };
 The list screen for one content concept: the entries, the create form, and any inline errors. `data`
 is the `ListData` from the list load. Each row carries a status badge from `entry.status`
 (New, Edited, or Published), and an entry with `draft: true` carries a separate Hidden badge beside
-it. A `?publishedAll=` redirect renders a "Published N entries." flash above the list. Mount it in
-`src/routes/admin/(app)/[concept]/+page.svelte`.
+it. A `?publishedAll=` redirect renders a "Published N entries." flash above the list. On the
+per-route mounting it lives at `src/routes/admin/(app)/[concept]/+page.svelte`.
 
 ```svelte
 <script lang="ts">
@@ -106,16 +125,16 @@ let { data, registry, render, icons, form }: {
   registry?: ComponentRegistry;
   render?: (md: string, opts?: { stagger?: boolean; resolve?: LinkResolve }) => string | Promise<string>;
   icons?: IconSet;
-  form?: { brokenLinks?: string[]; body?: string; inboundLinks?: InboundLink[]; renameError?: string } | null;
+  form?: ContentFormFailure | null;
 };
 ```
 
 The single-entry editor. `data` is the `EditData` from the edit load, merged with the site name.
 `registry`, `render`, and `icons` come from the site's adapter: `render` powers the Preview tab,
 `registry` drives the Insert block dialog, and `icons` feeds the guided form's icon fields. `form`
-carries the last `?/save` or `?/delete` action result, so a blocked save re-renders the author's
-edits and the broken links to fix. Mount it in
-`src/routes/admin/(app)/[concept]/[id]/+page.svelte`.
+carries the last content action's failure as a `ContentFormFailure` (always with its `error`
+summary), so a blocked save re-renders the author's edits and the broken links to fix. On the
+per-route mounting it lives at `src/routes/admin/(app)/[concept]/[id]/+page.svelte`.
 
 The page lays out in four zones. A sticky translucent header holds a breadcrumb back to the
 concept list, the entry's status badge (New, Edited, or Published, with a separate Hidden badge
@@ -175,8 +194,9 @@ The magic-link request screen. `data` carries the site name, an optional error, 
 double-submit token the page renders into its form. A `sent` status (or the legacy `form.sent`
 boolean) flips the page to the check-your-email state; `send_error` renders a warning that links
 cannot be sent right now, and `throttled` renders a check-your-inbox hint, both above the form so
-the editor can retry. Mount it in the unauthed `src/routes/admin/login/+page.svelte` against the
-login load and action.
+the editor can retry. The request form posts the named `?/request` action; on the per-route
+mounting, register `requestAction` under that name in the unauthed
+`src/routes/admin/login/+page.server.ts`.
 
 ```svelte
 <script lang="ts">
@@ -196,8 +216,9 @@ let { data }: { data: { token: string; siteName: string; error: string | null; c
 
 The sign-in confirm screen reached from a magic link. `data` carries the token to POST back, the
 site name, an optional error for an invalid or expired link, and the `csrf` double-submit token the
-page renders into its confirm form. Mount it in `src/routes/admin/confirm/+page.svelte` against the
-confirm load.
+page renders into its confirm form. The confirm form posts the named `?/confirm` action; on the
+per-route mounting it lives at `src/routes/admin/auth/confirm/+page.svelte` against the confirm
+load and a `confirm`-named action.
 
 ```svelte
 <script lang="ts">
@@ -220,7 +241,8 @@ let { data, form }: {
 
 The owner-only editors screen: the allowlist and the add and remove actions. `data.editors` is the
 current allowlist and `data.self` is the acting owner's email, which the anti-lockout guard uses.
-`form` carries the last action's result. Mount it in
+`form` carries the last action's result. Its forms post the named `?/add`, `?/remove`, and
+`?/setRole` actions. On the per-route mounting it lives at
 `src/routes/admin/(app)/editors/+page.svelte` against the editors load and actions.
 
 ```svelte
@@ -240,8 +262,9 @@ let { data }: { data: NavLoadData };
 ```
 
 The drag-to-reorder navigation editor. `data` is the `NavLoadData` from the nav load (the menu
-metadata, the current tree, the page options, and the feature flags). Saving commits the rebuilt nav
-to the site config. Mount it in `src/routes/admin/(app)/nav/+page.svelte` against the nav load and
+metadata, the current tree, the page options, and the feature flags). Saving posts the named
+`?/save` action, which commits the rebuilt nav to the site config. On the per-route mounting it
+lives at `src/routes/admin/(app)/nav/+page.svelte` against the nav load and a `save`-named
 action.
 
 ```svelte

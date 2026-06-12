@@ -45,7 +45,7 @@ doesn't, cairn is the wrong tool and will not try to meet you halfway.
    tutorial, takes you from an empty directory to a deployed site with a working `/admin`.
 2. **[`examples/showcase`](./examples/showcase)** is a complete consumer site wired to the
    engine, and the worked reference for every shape in the docs. When a guide says "mount the
-   route shims," the showcase shows the mounted result.
+   admin," the showcase shows the mounted result.
 3. **[The docs](./docs/README.md)** are organized in four arms: the tutorial, task guides,
    one reference page per export, and explanation pages for the architecture and design
    rules.
@@ -66,7 +66,7 @@ npm install @glw907/cairn-cms
 ```
 
 Peer dependencies: `svelte@^5` and `@sveltejs/kit@^2.12`. A consumer site implements a
-`CairnAdapter` and mounts thin `/admin` route shims around the package subpaths:
+`CairnAdapter` and mounts the whole `/admin` with one catch-all route over the package subpaths:
 
 - `@glw907/cairn-cms`: the core engine and adapter contract.
 - `@glw907/cairn-cms/sveltekit`: the server load and action logic.

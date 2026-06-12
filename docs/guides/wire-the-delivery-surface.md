@@ -44,7 +44,7 @@ This guide assumes a running cairn site whose content you want to deliver. The w
 2. **Add the catch-all `[...path]` route.** One route resolves any public path against the site resolver and ships the entry with a full head. `createPublicRoutes` returns an `entries` generator for prerendering and an `entryLoad` for the page load, both keyed off the `site` resolver and the adapter's `render`. Your matching `+page.svelte` renders the resolved HTML and the SEO head.
 
    ```ts
-   // examples/showcase/src/routes/[...path]/+page.server.ts
+   // examples/showcase/src/routes/(site)/[...path]/+page.server.ts
    import type { PageServerLoad, EntryGenerator } from './$types';
    import { createPublicRoutes } from '@glw907/cairn-cms/delivery';
    import { site, ORIGIN, SITE_DESCRIPTION } from '$lib/content';
@@ -69,7 +69,7 @@ This guide assumes a running cairn site whose content you want to deliver. The w
    The page reads `data.html` and `data.seo` and renders the head through `CairnHead`:
 
    ```svelte
-   <!-- examples/showcase/src/routes/[...path]/+page.svelte -->
+   <!-- examples/showcase/src/routes/(site)/[...path]/+page.svelte -->
    <script lang="ts">
      import type { PageData } from './$types';
      import { CairnHead } from '@glw907/cairn-cms/delivery/head';
@@ -172,7 +172,7 @@ This guide assumes a running cairn site whose content you want to deliver. The w
 
 ## Verify
 
-Run `npm run build` in `examples/showcase`. The production build exits 0, the prerendered home lists the post summaries through `routes/+page.server.ts` and `routes/+page.svelte`, and a post permalink resolves through `routes/[...path]/+page.server.ts`. When you compare against your own site, the working reference routes are `examples/showcase/src/routes/[...path]/` for the permalink page, `routes/feed.xml/+server.ts` and `routes/feed.json/+server.ts` for the feeds, and `routes/sitemap.xml/+server.ts` for the sitemap. A stale `src/content/.cairn/index.json` fails that build, which proves the manifest verify is wired.
+Run `npm run build` in `examples/showcase`. The production build exits 0, the prerendered home lists the post summaries through `routes/(site)/+page.server.ts` and `routes/(site)/+page.svelte`, and a post permalink resolves through `routes/(site)/[...path]/+page.server.ts`. The `(site)` group folder is URL-transparent; it exists to keep the public chrome off `/admin`, and it changes no public path. When you compare against your own site, the working reference routes are `examples/showcase/src/routes/(site)/[...path]/` for the permalink page, `routes/feed.xml/+server.ts` and `routes/feed.json/+server.ts` for the feeds, and `routes/sitemap.xml/+server.ts` for the sitemap. A stale `src/content/.cairn/index.json` fails that build, which proves the manifest verify is wired.
 
 ## See also
 

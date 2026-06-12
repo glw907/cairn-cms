@@ -48,7 +48,7 @@ Goal: deploy the site Worker to Cloudflare so editor publishes commit to GitHub 
 
    The Worker decodes `GITHUB_APP_PRIVATE_KEY_B64` with `atob()` before it signs, so store the PEM as a single-line base64 string.
 
-5. **Mount the canonical admin routes and `/healthz`.** The `/admin/*` tree uses the `(app)` group (so the login page sits outside the session-requiring layout load), and `/healthz` lives at the site root (so the auth guard does not gate the deploy check). Copy the tree from [the canonical admin route structure](../reference/admin-routes.md) rather than guessing the layout, and compose the runtime once in `$lib/cairn.server.ts`.
+5. **Mount the admin and `/healthz`.** The whole `/admin` surface mounts as one catch-all route pair, and `/healthz` lives at the site root (so the auth guard does not gate the deploy check). Copy the two files and the composer from [the canonical admin mount](../reference/admin-routes.md) rather than guessing the layout, and compose the runtime once in `$lib/cairn.server.ts`.
 
 6. **Deploy the Worker.** With `CLOUDFLARE_API_TOKEN` in the environment, run:
 
@@ -99,7 +99,7 @@ After the deploy:
 
 ## See also
 
-- [The SvelteKit reference](../reference/sveltekit.md) for the route factories and the `healthLoad` signature behind `/healthz`.
+- [The SvelteKit reference](../reference/sveltekit.md) for `createCairnAdmin` and the `healthLoad` signature behind `/healthz`.
 - [The architecture](../explanation/architecture.md#the-commit-and-publish-flow) for the save-and-publish flow.
-- [The canonical admin route structure](../reference/admin-routes.md) for the exact route tree to copy.
+- [The canonical admin mount](../reference/admin-routes.md) for the exact files to copy.
 - [The `cairn-doctor` CLI](../reference/doctor.md) and [the readiness checklist](./cloudflare-readiness.md) for the pre-launch gate over this whole setup.

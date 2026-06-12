@@ -17,7 +17,7 @@ between Save and the redeployed page.
 flowchart TB
   subgraph site["Consumer site (SvelteKit on Cloudflare)"]
     adapter["adapter: concepts, schema, slug codec, render"]
-    shims["admin + delivery route shims"]
+    mount["the admin mount + delivery routes"]
   end
   subgraph engine["@glw907/cairn-cms (the engine)"]
     core["core (.): runtime, render, content graph, auth, GitHub App"]
@@ -35,14 +35,15 @@ flowchart TB
 Three things sit in the picture. The engine is the `@glw907/cairn-cms` npm package, exposing
 its surface through subpath exports: the root `.`, `/components`, `/sveltekit`, `/delivery`,
 and a few narrower entries. Your site is a full SvelteKit app on Cloudflare: you own the
-code, you import the engine, you supply the adapter, and you mount the route shims SvelteKit
-requires. In return the engine hands you two surfaces: `/admin`, the editing app, and the
-delivery surface, the public read model your own pages call.
+code, you import the engine, you supply the adapter, and you mount the whole admin with one
+catch-all route. In return the engine hands you two surfaces: `/admin`, the editing app, and
+the delivery surface, the public read model your own pages call.
 
 The engine is fat and your site is thin. That's deliberate: anything security-critical or
-fix-prone (auth, the commit path, the admin shell, the render machinery) lives in the engine,
-so when something needs fixing you bump a version instead of patching sites. What you own is
-presentation: the adapter, the component registry data, the CSS, and the thin route shims.
+fix-prone (auth, the commit path, the admin route table, the admin shell, the render machinery)
+lives in the engine, so when something needs fixing you bump a version instead of patching
+sites. What you own is presentation: the adapter, the component registry data, the CSS, and a
+handful of thin routes that hand the engine the request.
 
 ## The engine and site line
 

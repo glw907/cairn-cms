@@ -1,41 +1,126 @@
-# Canonical admin route structure
+# The canonical admin mount
 
-This is the route tree a Cairn site mounts to consume the engine's `/admin` surface. Both
-production sites (907.life and ecnordic.ski) use it unchanged, and it is the shape the Plan 10
-scaffolder should template. The structure is load-bearing: three of its choices fix bugs that a
-naive layout hits, called out below. Copy the tree, not a guess at it.
+A cairn site mounts the whole `/admin` surface with one catch-all route pair plus one server
+composer. The engine's `createCairnAdmin` facade serves every admin view through a single `load`
+and a single `actions` record, so the site restates no route table and wires no action names by
+hand. The showcase at `examples/showcase` is the working model of this shape; copy its files, not
+a guess at them.
 
-This structure assumes the site sets `csrf: { checkOrigin: false }` in `svelte.config.js`, since
+This wiring assumes the site sets `csrf: { checkOrigin: false }` in `svelte.config.js`, since
 cairn's guard owns CSRF for the admin through a double-submit token. See the
 [deploy guide](../guides/deploy-to-cloudflare.md#disable-checkorigin) for that step.
 
+## The two files plus the composer
+
+The catch-all route pair, reproduced from the showcase:
+
+```ts
+// src/routes/admin/[...path]/+page.server.ts
+// The single-mount admin route: one catch-all serves every /admin view through the engine's
+// load and actions. The composition (runtime, deps) lives in $lib/cairn.server.
+import { admin } from '$lib/cairn.server.js';
+
+// The admin must never be prerendered; a site that defaults to prerender=true would bake a
+// build-time snapshot of a session-gated page.
+export const prerender = false;
+
+export const load = admin.load;
+export const actions = admin.actions;
 ```
-src/routes/
-  admin/
-    +layout.server.ts          # prerender = false only; no session load
-    +layout.svelte             # pass-through (<slot/> or {@render children()})
-    login/
-      +page.server.ts          # createAuthRoutes().loginLoad + requestAction
-      +page.svelte
-    auth/
-      confirm/+page.server.ts  # confirmLoad + confirmAction (magic-link landing)
-      confirm/+page.svelte
-      logout/+server.ts         # logoutAction
-    (app)/                      # URL-transparent group: still /admin/*
-      +layout.server.ts        # content.layoutLoad  (the authed shell load)
-      +layout.svelte           # AdminLayout
-      +page.server.ts          # indexRedirect
-      [concept]/+page.server.ts        # listLoad + create/delete/publishAll actions
-      [concept]/+page.svelte           # ConceptList
-      [concept]/[id]/+page.server.ts   # editLoad + save/publish/discard/delete/rename actions
-      [concept]/[id]/+page.svelte      # EditPage
-      editors/+page.server.ts  # editor-management loads/actions
-      editors/+page.svelte     # ManageEditors
-      nav/+page.server.ts      # navLoad + navSave
-      nav/+page.svelte         # NavTree
-  healthz/
-    +server.ts                 # healthLoad at site ROOT, not under /admin
+
+```svelte
+<!-- src/routes/admin/[...path]/+page.svelte -->
+<script lang="ts">
+  import { CairnAdmin } from '@glw907/cairn-cms/components';
+  import type { AdminData } from '@glw907/cairn-cms/sveltekit';
+  import { cairn } from '$lib/cairn.config.js';
+  import type { ActionData } from './$types';
+
+  let { data, form }: { data: AdminData; form: ActionData } = $props();
+</script>
+
+<CairnAdmin {data} {form} render={cairn.render} registry={cairn.registry} icons={cairn.icons} />
 ```
+
+The composer builds the runtime once, and every server route that needs it (the admin mount,
+`/healthz`) imports it rather than re-running `composeRuntime` per route:
+
+```ts
+// src/lib/cairn.server.ts
+import { composeRuntime } from '@glw907/cairn-cms';
+import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
+import { cairn, siteConfig } from './cairn.config.js';
+
+export const runtime = composeRuntime({ adapter: cairn, siteConfig });
+export const admin = createCairnAdmin(runtime);
+```
+
+`createCairnAdmin` defaults the magic-link branding from the runtime's `siteName` and `sender`,
+so most sites pass no deps at all. The showcase passes `{ mintToken: async () => 'dev-token' }`
+to pair with its fake GitHub backend; a deployed site mints real installation tokens and omits
+it.
+
+Keep the `prerender = false` line. The admin is session-gated, and a site that prerenders by
+default would otherwise try to bake a build-time snapshot of it; the explicit opt-out keeps the
+whole subtree request-time.
+
+## What the catch-all serves
+
+The one route answers every admin URL. `createCairnAdmin`'s load parses `event.url.pathname`
+(never the rest param, so an encoded segment cannot confuse the split) and dispatches:
+
+| URL | View | Notes |
+| --- | --- | --- |
+| `/admin` | index | Redirects to the first concept's list. |
+| `/admin/login` | login | The magic-link request form. Public. |
+| `/admin/auth/confirm` | confirm | The magic-link landing. Public. |
+| `/admin/<concept>` | list | One concept's entries, with create, delete, and publish-all. |
+| `/admin/<concept>/<id>` | edit | The entry editor. |
+| `/admin/editors` | editors | The owner-gated editor management. |
+| `/admin/nav` | nav | The nav tree editor. A 404 unless the adapter configures `navMenu`. |
+
+Any other shape is a 404, and one trailing slash is tolerated. Logout has no URL of its own; the
+admin shell posts it as the named `?/logout` action on whatever page the editor is on.
+
+## The actions vocabulary
+
+`actions` covers the full admin vocabulary in one static record. Each named action parses the
+pathname the same way the load does and throws a 404 when the parsed view does not support it,
+so a `save` posted to a list URL refuses rather than misfiring:
+
+| Action | Valid views | Delegates to |
+| --- | --- | --- |
+| `request` | login | the magic-link request |
+| `confirm` | confirm | the token confirm |
+| `logout` | any parsed view | the session logout |
+| `create` | list | the entry create |
+| `save` | edit, nav | the entry save, or the nav save (404 without a `navMenu`) |
+| `publish` | edit | the entry publish |
+| `discard` | edit | the pending-edit discard |
+| `rename` | edit | the entry rename |
+| `delete` | edit, list | the entry delete (id from the path, or from the form body on a list) |
+| `publishAll` | list, edit, editors, nav | the site-wide publish |
+| `addEditor`, `removeEditor`, `setRole` | editors | the owner-gated editor management |
+
+The engine's components post these names, so an action-adding release reaches a site through the
+version bump alone; there is no per-site action table to keep in sync.
+
+## The guard and the ambient type
+
+The engine's auth guard (`createAuthGuard()`, wired in `hooks.server.ts`) gates the whole
+`/admin/*` subtree before any load runs. The mount itself does no access control; the guard owns
+it. The guard sets `event.locals.editor`, and one line in `src/app.d.ts` types it:
+`import '@glw907/cairn-cms/ambient';` (see the [ambient types reference](./ambient.md)).
+
+A site that already has a `handle` hook (for example, injecting a saved theme into the SSR'd
+`<html data-theme>`) keeps it by sequencing the engine guard after its own:
+
+```ts
+// src/hooks.server.ts
+export const handle = sequence(theme, createAuthGuard());
+```
+
+The guard owns `/admin` gating and runs last; the site's hook runs first and sees every request.
 
 ## The root layout must be chrome-free
 
@@ -51,7 +136,7 @@ src/routes/
   (site)/               URL-transparent group; the public URLs do not change
     +layout.svelte      imports app.css, renders the nav, <main>, and footer
     +page.svelte ...    the home page and the public pages, moved in
-  admin/   ...          unchanged; now outside the chrome
+  admin/[...path]/      the catch-all mount; outside the chrome
   feed.xml/ sitemap.xml/ robots.txt/ healthz/   endpoints; no layout, stay at the root
 ```
 
@@ -59,10 +144,10 @@ Group folders are invisible in the URL, so moving the public pages into `(site)/
 Endpoints render no layout, so they stay at the root. The admin sits outside the group, so the host
 chrome never wraps it.
 
-A dev-only guard in the admin backs this rule. In development, `AdminLayout` and `LoginPage` walk their
-ancestor chain on mount, and when a width-constraining ancestor sits between the admin root and
-`<body>` they log one `console.error` that names the ancestor and points here. The guard compiles out
-of production and changes no rendering.
+A dev-only guard in the admin backs this rule. In development, the admin shell and the login page
+walk their ancestor chain on mount, and when a width-constraining ancestor sits between the admin
+root and `<body>` they log one `console.error` that names the ancestor and points here. The guard
+compiles out of production and changes no rendering.
 
 **A known limitation this rule contains.** The compiled admin stylesheet carries DaisyUI `@keyframes`
 and Tailwind `@property` rules that are document-global by CSS spec; a selector scope cannot bound them.
@@ -70,39 +155,6 @@ They cause no collision because the sheet is code-split to the routes that impor
 roots import it, so it loads only on `/admin`, where this rule keeps the host's CSS away. Two things
 preserve that boundary: keep `app.css` in the `(site)` group so it never loads on `/admin`, and do not
 import the engine's admin components onto a host page.
-
-The scaffolder (Plan 10) emits this shape from the start: a bare root layout and a `(site)` group for
-the public chrome.
-
-## Why the `(app)` group
-
-`content.layoutLoad` calls `requireSession` and redirects a sessionless visitor to
-`/admin/login`. If the login page rendered under that same layout, the redirect would land on a
-page whose own layout load redirects again, and the request loops forever.
-
-The fix is the `(app)` route group. SvelteKit group folders (`(app)`) do not appear in the URL,
-so every page inside still resolves under `/admin/*`, but only that group runs the
-session-requiring `layoutLoad`. The login and auth pages sit as siblings one level up, under a
-bare `admin/+layout` that does nothing but mark the subtree dynamic:
-
-```ts
-// src/routes/admin/+layout.server.ts
-export const prerender = false;
-```
-
-```ts
-// src/routes/admin/(app)/+layout.server.ts
-import { content } from '$lib/cairn.server.js';
-export const load = content.layoutLoad;
-```
-
-A sessionless visitor to `/admin/posts` runs `layoutLoad`, gets redirected to `/admin/login`,
-and the login page renders without ever touching `layoutLoad`. No loop.
-
-The engine's auth guard (`createAuthGuard()`, wired in `hooks.server.ts`) gates the whole
-`/admin/*` subtree, so the group boundary is about which pages run the *layout load*, not about
-access control. The guard sets `event.locals.editor`; one line in `src/app.d.ts` types it:
-`import '@glw907/cairn-cms/ambient';` (see the [ambient types reference](./ambient.md)).
 
 ## Why `/healthz` lives at the site root
 
@@ -118,69 +170,15 @@ export const GET = async (event) => json(await healthLoad(event, runtime));
 
 On a site that prerenders by default, the explicit `prerender = false` is required. Without it
 the endpoint prerenders at build time, when the GitHub App key is absent, freezing a permanent
-`ok:false` that also 404s at runtime. The `/admin` subtree inherits dynamic rendering from its
-`+layout.server.ts`; this root endpoint needs its own opt-out.
+`ok:false` that also 404s at runtime. The admin mount carries its own `prerender = false`; this
+root endpoint needs its own opt-out.
 
-## Why the editor is `/admin/[concept]/[id]`
+## Per-route mounting (advanced)
 
-The edit page nests under its concept. The engine reads `params.concept` and `params.id`
-natively at that path, and `ConceptList` links plus every save, create, and error redirect
-target `/admin/<concept>/<id>`. A flat `edit/[type]/[id]` path (the shape the showcase aliased
-during Plan 07) 404s on a list click and again after a save, because those redirects point at
-the nested path. Use the nested route and skip the aliasing.
-
-## The composer: `$lib/cairn.server.ts`
-
-Each site composes the runtime once and builds all handler groups, so every `+page.server.ts` is
-a one-line re-export:
-
-```ts
-// src/lib/cairn.server.ts (sketch)
-import { composeRuntime, createContentRoutes /* …auth, editor, nav… */ } from '@glw907/cairn-cms/sveltekit';
-import { adapter } from './cairn.config.js';
-
-export const runtime = composeRuntime(adapter);
-export const content = createContentRoutes(runtime);
-// export const auth = createAuthRoutes({ branding: { siteName, from } });
-// export const editors = createEditorRoutes();
-// export const nav = createNavRoutes(runtime);
-```
-
-```ts
-// src/routes/admin/(app)/[concept]/+page.server.ts
-import { content } from '$lib/cairn.server.js';
-export const load = content.listLoad;
-export const actions = {
-  create: content.createAction,
-  delete: content.listDeleteAction,
-  publishAll: content.publishAllAction,
-};
-```
-
-```ts
-// src/routes/admin/(app)/[concept]/[id]/+page.server.ts
-import { content } from '$lib/cairn.server.js';
-export const load = content.editLoad;
-export const actions = {
-  save: content.saveAction,
-  publish: content.publishAction,
-  discard: content.discardAction,
-  delete: content.deleteAction,
-  rename: content.renameAction,
-};
-```
-
-The list shim's `publishAll` line is load-bearing even on a one-concept site: the topbar's
-"Publish site" form posts to the first concept's `?/publishAll` from every admin page.
-
-## Preserving site hooks
-
-A site that already has a `handle` hook (for example, injecting a saved theme into the SSR'd
-`<html data-theme>`) keeps it by sequencing the engine guard after its own:
-
-```ts
-// src/hooks.server.ts
-export const handle = sequence(theme, createAuthGuard());
-```
-
-The guard owns `/admin` gating and runs last; the site's hook runs first and sees every request.
+The per-surface factories behind the facade (`createAuthRoutes`, `createContentRoutes`,
+`createEditorRoutes`, `createNavRoutes`) remain public, so a site that needs to interpose on one
+surface, or to mount a single admin view inside its own shell, can wire routes by hand against
+them. That path trades the single mount's stability for control: the site then owns its route
+tree and must track the action vocabulary across releases itself. The factory signatures, the
+view components' named-action contracts, and worked per-route examples live in
+[the SvelteKit reference](./sveltekit.md).

@@ -251,11 +251,9 @@ is derived from the site-config, the same source delivery uses, so the runtime a
 permalinks cannot diverge.
 
 ```ts
-// examples/showcase/src/routes/admin/(app)/+layout.server.ts
-const routes = createContentRoutes(composeRuntime({ adapter: cairn, siteConfig }), {
-  mintToken: async () => 'dev-token',
-});
-export const load = routes.layoutLoad;
+// src/lib/cairn.server.ts
+export const runtime = composeRuntime({ adapter: cairn, siteConfig });
+export const admin = createCairnAdmin(runtime);
 ```
 
 #### `parseSiteConfig`

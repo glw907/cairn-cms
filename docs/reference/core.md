@@ -82,9 +82,14 @@ applies theme or typography root classes to the preview document's body, and `co
 wraps the rendered content in the site's content container (a prose or measure class); when
 omitted, the content renders bare.
 
+The named sheet must be referenced only through `?url`, with the site layout linking the resolved
+URL from a `<svelte:head>`. A layout that also imports the same file statically folds it into the
+layout's CSS chunk, and that chunk's basename differs between the client and server builds, so the
+URL the server-rendered edit page hands the frame names a file the client build never serves.
+
 ```ts
 // src/lib/cairn.config.ts
-import appCssUrl from '../app.css?url';
+import appCssUrl from './app.css?url';
 
 export const cairn = defineAdapter({
   // ...concepts, backend, sender, render...
@@ -94,6 +99,17 @@ export const cairn = defineAdapter({
     containerClass: 'prose mx-auto',
   },
 });
+```
+
+```svelte
+<!-- src/routes/(site)/+layout.svelte: the same URL, linked instead of statically imported -->
+<script lang="ts">
+  import appCssUrl from '$lib/app.css?url';
+</script>
+
+<svelte:head>
+  <link rel="stylesheet" href={appCssUrl} />
+</svelte:head>
 ```
 
 #### `defineFields`

@@ -52,6 +52,11 @@ The two tabs at the right end of the toolbar switch between writing and a previe
 page, styled the way your site will show it. Formatting buttons rest while Preview is showing.
 Switch back to Write and your text is exactly where you left it, cursor and all.
 
+While Preview is showing, a width button sits beside the tabs. It starts at Desktop. Pick Tablet,
+Phone, or Small phone to see the page the way a smaller screen will show it, and the editor
+remembers your pick for next time. Links in the preview are just for looking; clicking one will
+not carry you away from your edits.
+
 ## Help, word count, and spelling
 
 The bottom edge of the editor shows a running word count, and the Markdown help link beside it

@@ -15,6 +15,32 @@ to `^2.12` where it sits lower) and reinstall so the lockfile re-resolves. A sit
 below the floor now draws an npm peer warning or resolution failure on install, and the doctor
 reports the below-floor version as a blocker.
 
+The edit page's preview now renders inside a sandboxed iframe whose document links the site's own
+stylesheets, so an entry proofs in the site's real styling without that CSS ever touching the
+admin document. The adapter gains an optional `preview` member naming the compiled CSS URLs (a
+Vite `?url` import resolves the hashed asset) plus `bodyClass` and `containerClass` for the site's
+body classes and content wrapper. While Preview shows, the sidebar steps aside so the document
+takes the full width, and a width menu on the Preview tab sizes the frame to Desktop, Tablet,
+Phone, or Small phone, persisted per browser.
+
+Consumers should: wire `preview` in the adapter, referencing the sheet only through `?url` and
+linking the same URL from the site layout, the way
+[the adapter guide](docs/guides/define-an-adapter-and-schema.md) shows. Without the knob the
+preview renders unstyled markup behind a one-line hint.
+
+The editor's directive highlighting now recognizes labeled and attributed `:::` openers and fences
+of four or more colons, where before only bare closers matched, and nested containers step their
+band and rail tint by depth. No consumer action.
+
+`cairn-doctor` derives its missing inputs from the repo it runs in: the backend owner and repo
+plus the sender address come from evaluating the site's config module through the manifest bin's
+Vite machinery, and the Cloudflare account id comes from the wrangler config, with flags and
+environment variables taking precedence. A new `--probe <url>` flag runs a zero-side-effect live
+check against the deployed admin's sign-in surface: the login envelope, the CSRF cookie and field,
+and the uniform non-leak answer to a stranger's sign-in request. Consumers may: drop the `--from`
+and `--repo` flags from doctor invocations and run `npx cairn-doctor --probe <url>` after a
+deploy.
+
 ## 0.50.0
 
 The admin now mounts as one catch-all route. A new `createCairnAdmin(runtime, deps)` facade

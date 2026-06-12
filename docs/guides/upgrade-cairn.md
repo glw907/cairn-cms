@@ -269,6 +269,11 @@ The exact file contents are in [the canonical admin mount](../reference/admin-ro
 admin URLs do not change, so no editor bookmark breaks, and the single mount also serves the
 login, editors, and nav views a partial tree may have skipped.
 
+After swapping the route tree, run `npx svelte-kit sync` before anything else. SvelteKit
+generates the `./$types` modules per route directory, and the generated set still describes the
+deleted tree until the sync runs, so the first `npm run check` otherwise fails on a missing
+`./$types` import in the new catch-all route.
+
 A site that keeps mounting `LoginPage`, `ConfirmPage`, or `AdminLayout` directly (the advanced
 per-route seam) must know two things. The components' forms now post named actions (`?/request`
 on the login form, `?/confirm` on the confirm form, `?/logout` and `?/publishAll` from the
@@ -307,3 +312,46 @@ missing email binding, missing GitHub App credentials, or an invalid site config
 through the error chain and the logs, where `cairn-doctor` and Workers Logs can name the fix. And
 `deps.mintToken` accepts a plain string return as well as a promise, so a test stub no longer
 needs an `async` wrapper.
+
+## 0.51.0: the svelte peer floor rises to `^5.56.3`
+
+The 0.40.0 advisory becomes an enforced range. Consumer sites compile the shipped `.svelte`
+sources, and svelte `5.56.1` miscompiles parenthesized boolean groupings, so the engine's
+`peerDependencies` now declares svelte `^5.56.3` and `cairn-doctor` checks the lockfile's resolved
+versions against the declared floors. Consumers must: raise the `svelte` devDependency range to at
+least `^5.56.3` (and `@sveltejs/kit` to `^2.12` where it sits lower) and reinstall so the lockfile
+re-resolves.
+
+## 0.51.0: the preview renders in an iframe with the site's own CSS
+
+The editor's Preview tab now renders inside a sandboxed iframe whose document links the site's
+stylesheets, so an entry proofs in the site's real styling without that CSS ever touching the
+admin. A width menu on the Preview tab sizes the frame to Desktop, Tablet, Phone, or Small phone.
+Consumers should: wire the adapter's new `preview` member so the frame has stylesheets to link.
+The `?url` import resolves the compiled asset's URL at build time:
+
+```ts
+import siteCss from './site.css?url';
+
+// ...inside defineAdapter:
+preview: { stylesheets: [siteCss], containerClass: 'site-main' },
+```
+
+Reference the sheet only through `?url` and link the resolved URL from the site layout's
+`<svelte:head>`; a static import of the same file breaks the frame's link, for the reason
+[the core reference](../reference/core.md#preview-adapter-member) explains. Without the knob the
+preview renders unstyled markup behind a one-line hint, which is no worse than before.
+
+The editor also fixes its directive highlighting (labeled and attributed `:::` openers and fences
+of four or more colons now highlight, where before only bare closers did) and steps nested
+containers' tint by depth. No consumer action.
+
+## 0.51.0: `cairn-doctor` derives its inputs and gains `--probe`, additive
+
+The doctor now derives its missing inputs from the repo it runs in: the backend owner and repo
+plus the sender address come from evaluating the site's config module, and the Cloudflare account
+id comes from the wrangler config, with flags and environment variables taking precedence. A new
+`--probe <url>` flag runs a zero-side-effect live check against the deployed admin's sign-in
+surface. Consumers may: drop the `--from` and `--repo` flags from doctor invocations and run
+`npx cairn-doctor --probe https://your-site.example` after a deploy. The flag details are in
+[the doctor reference](../reference/doctor.md).

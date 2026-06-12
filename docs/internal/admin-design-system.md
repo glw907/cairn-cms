@@ -126,6 +126,14 @@ Recipes:
   low-frequency formats, the host's insert controls through a snippet, and the Write/Preview
   segmented `join` pinned right with `role="tablist"`. Roving tabindex carries keyboard traversal.
   Formatting and insert controls disable while Preview shows.
+- **Preview frame:** the Preview tabpanel is a recessed ground (`bg-base-200 px-4 py-6 lg:px-8`)
+  holding a centered frame column whose width follows the picked device, eased with
+  `transition-[width]` under the reduced-motion guard. Inside the column, the standard floating
+  card wraps the sandboxed iframe, and a right-aligned eyebrow caption names the device and its
+  width for any non-desktop pick. A device trigger joins the Write/Preview `join` capsule as a
+  third segment (a plain menu button, never a tab; daisyUI join radii need direct children) and
+  opens the standard popover menu of widths; the pick persists under `cairn-editor-preview-device`.
+  While Preview shows, the sidebar hides so the document proofs at the full content width.
 - **Document title input:** when the adapter defines a `title` field it renders above the editor
   card as `cairn-doc-title`: `text-3xl font-bold tracking-tight` in the display face, borderless on
   the recessed background. This input is the page's visible h1 (the header h1 is `sr-only`), which

@@ -73,6 +73,19 @@ This guide assumes you already have a running cairn site and want to shape its c
 
    For the pipeline `createRenderer` assembles and how to register components, see [Configure rendering](./configure-rendering.md).
 
+6. **Name your stylesheets for the preview frame.** The admin keeps your site's CSS out of its own document on purpose (chrome isolation is what lets the admin render correctly on any host), so the editor's Preview tab renders inside a sandboxed iframe instead. The optional `preview` member tells that frame which stylesheets to link, and a Vite `?url` import resolves the compiled, hashed asset URL at build time:
+
+   ```ts
+   import siteCss from './site.css?url';
+
+   // ...inside defineAdapter:
+   preview: { stylesheets: [siteCss], containerClass: 'site-main' },
+   ```
+
+   `containerClass` reproduces your content wrapper (the element your pages render entries into), so the preview takes the same measure and padding as the live page. `bodyClass` does the same for any classes your site puts on `<body>`, such as a theme root. One rule comes with the idiom: reference the sheet only through `?url`, and have the site layout link the resolved URL from a `<svelte:head>` rather than importing the file statically. A static import folds the sheet into a CSS chunk whose name differs between the client and server builds, and the preview frame's link then 404s. The showcase's `site.css` header comment and [the core reference](../reference/core.md#preview-adapter-member) carry the full explanation.
+
+   With the knob wired, editors get a design-accurate proof, and the Preview tab's width menu lets them check the page at tablet and phone widths too. Without it the preview still renders, unstyled, behind a one-line hint naming this option.
+
 ## Verify
 
 Compile first. When `cairn.config.ts` type-checks, the adapter and each schema agree (the showcase copy compiles, which is the working proof). Then sign in to `/admin` and open a post for editing. You should see one input per declared field (a text input for `title`, a date input for `date`, a textarea for `description`, and so on), because the form is generated from the same `defineFields` declaration you just wrote. If you want a known-good starting point, copy the showcase config and replace its concepts and fields with your own.

@@ -155,7 +155,8 @@ stylesheets from the adapter's `preview` knob (`data.preview`), so the entry pro
 real styling without the site CSS touching the admin document; without the knob the frame renders
 unstyled markup behind a one-line hint. While Preview shows, the sidebar hides and the card takes
 the full content width, and a device trigger beside the Preview tab picks the frame width
-(Desktop, Tablet, Phone, or Small phone), persisted per browser.
+(Desktop, Tablet, Phone, or Small phone), persisted per browser under the
+`cairn-editor-preview-device` localStorage key.
 
 The sidebar groups the remaining fields under three headings: Details (every other field),
 Visibility (a boolean field named `draft` renders here as the Hidden toggle), and Address (the

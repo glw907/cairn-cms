@@ -4,7 +4,7 @@
 > the main loop reviews each diff and verifies the full gate between dispatches. Steps use
 > checkbox syntax for tracking.
 
-**Status: in progress (started 2026-06-12).**
+**Status: LANDED on `main` 2026-06-12. Post-mortem at the end.**
 
 **Goal:** rebuild the in-editor writing experience per the approved spec
 (`docs/superpowers/specs/2026-06-12-cairn-editor-experience-design.md`): a quiet monospace
@@ -319,3 +319,63 @@ the Playwright capture loop:
 
 Marker hiding and live widgets; toolbar, header, and footer redesign; the preview pane; the
 render pipeline; in-place machinery affordances (recorded in the spec as a later pass).
+
+## Post-mortem (2026-06-12)
+
+**What shipped.** All seven tasks, commits `98472bb..4c4b3b9` plus the docs arm. The GFM base and
+the keymap pins (`98472bb`), the quiet surface (`a20661b`), the rail/label directive treatment
+(`a836b60`), the caret-container emphasis (`b4aedc5`), the persisted focus and typewriter modes
+(`71698c6`), the critique fold-in (`d831e62`), iA Writer Mono self-hosted (`a8197f2`), the
+simplifier touch (`73e0326`), and the review fold-in (`4c4b3b9`).
+
+**One plan fact was false, caught red-first.** `markdown()` wires `markdownKeymap` at high
+precedence by default, so list continuation and markup-aware Backspace worked all along; the
+spec's "two defects" was really one (the commonmark-only base). Task 1 pinned the keymap behavior
+with tests instead of adding a dead binding, and the spec and plan both carry the correction.
+
+**The design loop earned its three iterations.** The fresh-eyes critique measured rather than
+eyeballed and found the gray economy collapsed into one band (full ink 14% gray; muted, quote,
+and focus dim all crowded into 37 to 43%), which made focus mode and the caret emphasis
+invisible and a focused blockquote read *lighter* than its dim surroundings. The fixes: focus dim
+to a deliberate sub-AA ~3:1 (the spec's transient-state permission), quote text to full ink
+(muted means machinery, never content; now a design-system rule), and nested-bracket rails at
+2/6/10px offsets with a caret-side width step. The critique's proposed rail-alpha spread failed
+the 3:1 non-text floor when priced (35/50/65% measured 1.6 to 2.7:1), so depth legibility rides
+the bar count and the width step rather than color spread, the honest resolution of taste versus
+floor. The font trial rendered six candidates on the real surface; iA Writer Mono won on prose
+warmth and its true italic, with Atkinson Hyperlegible Mono the runner-up, and ships self-hosted
+through the existing post-compile @font-face mechanism as `--font-editor`.
+
+**A capture gotcha worth keeping.** The showcase resolves the engine through `dist`, so every
+visual-loop iteration needs `npm run package` plus a preview-server restart first; a stale dist
+silently shows the previous design. (It also produced a phantom: the first focus-mode "failure"
+was a pre-pass build with no toggles at all.)
+
+**The review gate.** Both reviewers converged on one Blocker: `role="menuitemcheckbox"` inside
+the deliberately non-menu popover list (invalid ARIA context); fixed to `aria-pressed` toggle
+buttons per the file's own device-list idiom, and a toggle flip now leaves the menu open so the
+state change is perceivable. The a11y reviewer verified every locked contrast pair
+computationally (all reproduced exactly; one comment corrected to the gamut-clipped 8.84:1) and
+endorsed the sub-AA focus dim as G174-shaped, while catching that dim ink over chip backgrounds
+fell to 2.6:1; dimmed lines now flatten their chips. The svelte reviewer's sharpest catch:
+`caretContainerRange` re-parsed fence lines blind to code blocks, so a fence-shaped example
+inside a code block could clip the emphasis range; `fenceScan` now derives roles during the one
+cached scan. SSR safety, the compartment effects, and the queueMicrotask dispatch guard all
+verified clean; no load/action contract impact.
+
+**Verification evidence (run first-hand at the tip).** `npm run check` 904 files 0/0; `npm test`
+157 files / 1404 tests exit 0; all five doc gates exit 0; showcase E2E 7/7 in a real browser
+against a freshly packaged dist; the design loop's final captures confirmed both themes.
+
+**Carry-forwards.**
+1. **Commit a contrast verifier** (the a11y reviewer rebuilt the oklch math by hand; a small
+   script plus a unit test over the locked pairs in `cairn-admin.css` would make the ledger
+   re-checkable). The gamut-clip pricing rule is in the implementer memory.
+2. **The directive hover hints are mouse-only** (pre-existing, carried): an always-visible
+   affordance on the caret-active fence row would reach keyboard and touch authors.
+3. **Typewriter recenter fires on the external value-reconcile replace** (an annotation-tagged
+   transaction would exempt it if it ever annoys).
+4. **The leaf/inline chip's literal 8% accent tint** can be retuned if it reads too quiet on
+   dark; the band variables it replaced are gone.
+5. **`docLines` is mirrored** across `editor-highlight.ts` and `editor-modes.ts` (documented,
+   deliberate); consolidate if a third consumer appears.

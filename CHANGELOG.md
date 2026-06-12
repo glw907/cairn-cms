@@ -2,6 +2,27 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.52.0
+
+The editor became a quiet writing surface. The manuscript renders in self-hosted iA Writer Mono
+(SIL OFL) at a centered 70-character measure, heading sizes step by level, every syntax marker
+and URL recedes to the muted ink while the content keeps full strength, inline code sits on a
+soft chip, and quote text reads in full ink with only the `>` dimmed. The editor also parses
+GFM now, so the toolbar's strikethrough, tables, and task lists highlight as you type.
+
+Directive machinery trades its row bands for bracket rails: a container draws a depth-stepped
+rail from opener to closer, nested containers draw nested rails, the fence line's name and label
+keep the accent while the colons and braces fade, and the block holding your caret reads one
+step stronger. The treatment is AA-checked in both themes.
+
+Two writing modes join the toolbar's overflow menu, each persisted per browser: focus mode fades
+every paragraph but the caret's (a deliberate, documented sub-AA dim with chip backgrounds
+flattened), and typewriter scrolling holds the caret line at vertical center.
+
+Consumers may: pass the new optional `focusMode` and `typewriter` booleans when embedding
+`MarkdownEditor` directly; sites on the stock `EditPage` get the toggles and persistence for
+free. No action required; the release is additive.
+
 ## 0.51.0
 
 The `svelte` peer dependency floor rises from `^5.0.0` to `^5.56.3`, turning the 0.40.0 advisory

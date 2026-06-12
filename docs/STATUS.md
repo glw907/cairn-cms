@@ -11,7 +11,29 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-12, latest): the editor-experience pass, then the queue
+## Immediate next action (2026-06-12, latest): publish `0.52.0`, then the queue
+
+**The editor-experience pass LANDED on `main` 2026-06-12 as `0.52.0`.** Seven plan tasks plus a
+simplifier touch and a converged review fold-in, commits `98472bb..4c4b3b9` and the docs arm. The
+editor is now a quiet writing surface: self-hosted iA Writer Mono (picked by a six-candidate
+trial on the real surface) on a centered 70ch measure, stepped heading sizes, muted markers, a
+code chip, GFM parsing, directive machinery as nested bracket rails with meaning-over-machinery
+fences and caret-container emphasis, and persisted focus/typewriter modes. The design loop's
+measured critique drove the load-bearing fixes (the collapsed gray economy; quote text to full
+ink; the sub-AA focus dim; nested rails). The review gate's Blocker (menuitemcheckbox in a
+non-menu popover) landed as aria-pressed toggles. Gate at the tip, run first-hand: `npm run
+check` 904 files 0/0, `npm test` 157 files / 1404 tests exit 0, five doc gates, showcase E2E 7/7.
+Post-mortem with five carry-forwards in the plan
+(`docs/superpowers/plans/2026-06-12-cairn-editor-experience.md`).
+
+**Next actions, in order:**
+1. **Publish `0.52.0`**: push `main`, then `gh release create v0.52.0 --target main` with the
+   changelog entry as the body (additive, no consumer action).
+2. **The queue resumes:** the gates-and-tooling pass, then the gallery brainstorm (git-vs-R2),
+   then P4. The two sites pick up `^0.52.0` whenever convenient (additive; the editor upgrades
+   in place).
+
+## Prior next action (2026-06-12): the editor-experience pass, then the queue
 
 **The 907-life retrofit LANDED and DEPLOYED 2026-06-12 (Pass 16.2 in `907-life/docs/STATUS.md`),
 closing the single-mount initiative: both consumer sites now run `^0.51.0` on the three-file

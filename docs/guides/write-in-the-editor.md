@@ -39,12 +39,16 @@ Insert block adds one of your site's building blocks, such as a callout or a gal
 short guided form. Fill in the form and the block lands at your cursor as a few lines of text
 fenced by `:::` markers.
 
-## The colored ::: lines
+## The ::: lines and their rails
 
-Some lines in your page start with `:::` and carry a soft colored tint. Those are layout blocks,
-the machinery behind the building blocks described above. The tinted lines are markers, and the
-plain text between them is yours. Edit the text between the markers freely, and leave the marker
-lines themselves alone. Hovering one shows a short reminder saying the same thing.
+Some lines in your page start with `:::`. Those are layout blocks, the machinery behind the
+building blocks described above. A thin colored rail runs down the left edge from a block's
+opening line to its closing one, so you can see where the block begins and ends, and blocks
+inside blocks draw a second rail beside the first. The block name on the opening line keeps its
+color while the colons fade back; the plain text between the markers is yours. Edit that text
+freely and leave the marker lines alone; hovering one shows a short reminder saying the same
+thing. The block your cursor is sitting in draws its rail a little heavier, which is a handy way
+to check which block you are about to type into.
 
 ## Write and Preview
 
@@ -56,6 +60,19 @@ While Preview is showing, a width button sits beside the tabs. It starts at Desk
 Phone, or Small phone to see the page the way a smaller screen will show it, and the editor
 remembers your pick for next time. Links in the preview are just for looking; clicking one will
 not carry you away from your edits.
+
+## Focus mode and typewriter scrolling
+
+Two quiet helpers live behind the `…` button on the toolbar, and the editor remembers each choice
+the way it remembers your preview width.
+
+Focus mode fades everything except the paragraph you are working on. The rest of the page stays
+readable, just stepped back, and moving your cursor moves the spotlight with it. Flip it off the
+same way you flipped it on and the whole page returns to full strength.
+
+Typewriter scrolling keeps the line you are typing near the middle of the screen, the way a
+typewriter holds the paper still and moves the carriage. Your eyes stay in one place while the
+page scrolls underneath.
 
 ## Help, word count, and spelling
 

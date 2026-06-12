@@ -355,3 +355,17 @@ id comes from the wrangler config, with flags and environment variables taking p
 surface. Consumers may: drop the `--from` and `--repo` flags from doctor invocations and run
 `npx cairn-doctor --probe https://your-site.example` after a deploy. The flag details are in
 [the doctor reference](../reference/doctor.md).
+
+## 0.52.0: the editor becomes a quiet writing surface, additive
+
+The in-editor experience reworks around the manuscript: self-hosted iA Writer Mono on a centered
+70-character measure, stepped heading sizes, syntax markers and URLs dimmed to the muted ink,
+an inline-code chip, GFM parsing (the toolbar's strikethrough, tables, and task lists now
+highlight), directive machinery drawn as depth-stepped bracket rails with the caret's block one
+step stronger, and two persisted writing modes (focus mode, typewriter scrolling) behind the
+toolbar's overflow menu. Everything ships inside the admin's own stylesheet and components.
+
+No consumer action. A site embedding `MarkdownEditor` directly may pass the new optional
+`focusMode` and `typewriter` booleans, documented in
+[the components reference](../reference/components.md#markdowneditor); the stock `EditPage`
+wires and persists both.

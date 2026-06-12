@@ -295,7 +295,7 @@ seam. The snippets are minimal mounts with the real prop names.
 ### `MarkdownEditor`
 
 ```ts
-let { value = $bindable(), name, registerInsert, registerInsertLink, registerGetSelection, registerFormat, completionSources = [] }: {
+let { value = $bindable(), name, registerInsert, registerInsertLink, registerGetSelection, registerFormat, completionSources = [], focusMode = false, typewriter = false }: {
   value: string;
   name: string;
   registerInsert?: (insert: (text: string) => void) => void;
@@ -303,6 +303,8 @@ let { value = $bindable(), name, registerInsert, registerInsertLink, registerGet
   registerGetSelection?: (get: () => string) => void;
   registerFormat?: (format: (kind: FormatKind) => void) => void;
   completionSources?: CompletionSource[];
+  focusMode?: boolean;
+  typewriter?: boolean;
 };
 ```
 
@@ -313,15 +315,19 @@ inserts text at the cursor (the Insert block dialog calls it), `registerInsertLi
 inline link (the pickers call it), `registerGetSelection` returns the selected text (the web-link
 dialog prefills from it), and `registerFormat` applies a named selection transform such as `bold`,
 `italic`, `h2`, `ol`, `codeblock`, or `table` (the toolbar calls it). `completionSources` wires
-generic CodeMirror autocomplete, such as the internal-link source. CodeMirror loads only in the
-browser, so this component is client-only.
+generic CodeMirror autocomplete, such as the internal-link source. `focusMode` fades every
+paragraph except the caret's, and `typewriter` keeps the caret line vertically centered while
+typing; both are plain reactive booleans, so the host owns the toggles and any persistence
+(`EditPage` persists them per browser). CodeMirror loads only in the browser, so this component
+is client-only.
 
 The component renders no toolbar and no card chrome of its own; the host frames it. `EditPage`
 composes it inside the editor card with the engine's toolbar. A site mounting `MarkdownEditor`
 directly gets the plain surface and supplies its own controls through `registerFormat`, since the
-engine's toolbar component is internal and not exported here. The surface ships with markdown
-syntax highlighting in the admin palette, an explicit highlight on `:::` directive machinery, and
-native browser spell check.
+engine's toolbar component is internal and not exported here. The surface ships as a quiet
+writing surface: the self-hosted iA Writer Mono face on a centered measure, stepped heading
+sizes, dimmed syntax markers, GFM parsing, depth-stepped rails on `:::` directive machinery with
+a plain-language hover hint, and native browser spell check.
 
 ```svelte
 <MarkdownEditor bind:value={body} name="body" registerInsert={(fn) => (insert = fn)} />

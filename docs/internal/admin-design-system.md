@@ -149,19 +149,36 @@ Recipes:
   card as `cairn-doc-title`: `text-3xl font-bold tracking-tight` in the display face, borderless on
   the recessed background. This input is the page's visible h1 (the header h1 is `sr-only`), which
   is why the toolbar offers only H2/H3.
-- **Editor highlight palette (marginalia ink):** the CodeMirror theme in `editor-highlight.ts` maps
-  headings to `--color-primary`, links to `--color-info`, code and directive machinery to
-  `--color-accent`, syntax marks and quotes to `--color-muted`. Directive lines (`:::`, `::name`)
-  carry an accent `color-mix` band plus a plain-language `title` tooltip. Nested containers step
-  the treatment by depth, single hue, never a rainbow: the fence band's alpha steps through
-  `--cairn-directive-band-1/2/3` (light 8/14/20%, dark slightly stronger), content lines inside a
-  container carry a 2px inset accent rail stepped through `--cairn-directive-rail-1/2/3`, and the
-  depth 2 and 3 bands swap in `--cairn-directive-ink-2/3` (darker in light, lighter in dark) so
-  the ink holds AA on its own tint; the locked pairs are documented beside the vars in
-  `cairn-admin.css`. Depth comes from a stack scan in `markdown-directives.ts` (`fenceDepths`),
-  pairing a bare closer with the most recent named opener rather than trusting colon counts.
-  Light `--color-accent` is a locked margin at `oklch(54% 0.16 300)`: it must hold AA both on
-  `base-100` and on its own 8% tint. The editor's focus indicator is a deliberate 1px 70%-alpha primary hairline, never a 2px
+- **Editor: the quiet writing surface (0.52.0).** The manuscript carries the page; everything
+  else recedes. The face is self-hosted iA Writer Mono via `--font-editor` at 1rem on a centered
+  `70ch` measure. Heading sizes step by level (`tags.heading1/2/3` at 1.5/1.3/1.17em) in
+  `base-content`, never primary. Every syntax marker (`##`, `**`, `>`, list marks, link brackets,
+  URLs) drops to `--color-muted`; quote and struck *text* keep full content ink (muted means
+  machinery, never content). Inline code sits on a `--cairn-code-chip` background in content ink.
+  Links keep the page's one accent. The `HighlightStyle` rule ORDER in `editor-highlight.ts` is
+  load-bearing: later rules win ties on mark spans, so `processingInstruction` stays last.
+- **Editor: the directive grammar (rails, never bands).** Identity lives in a left rail plus a
+  labeled head, never painted rows. A directive line at depth N stacks all rails 1..N as inset
+  bars at 2/6/10px offsets (with `base-100` spacer layers), so a container reads as one bracketed
+  region and nesting reads as nested brackets. Fence machinery (colon runs, `[` `]`, `{attrs}`)
+  is marker-muted; the name and label carry depth-stepped accent inks
+  (`--cairn-directive-ink-2/3`). The caret's innermost container steps up one notch
+  (`--cairn-directive-rail-active`/`--cairn-directive-ink-active`, plus a 1px rail-width step);
+  rails step alpha through `--cairn-directive-rail-1/2/3` with every bar holding 3:1 non-text on
+  `base-100` (the locked floors sit beside the vars in `cairn-admin.css`). Directive lines carry
+  a plain-language `title` tooltip and a constant left gutter. Depth and roles come from one
+  cached scan in `markdown-directives.ts` (`fenceScan`), which pairs a bare closer with the most
+  recent named opener and disowns fence-shaped lines inside code blocks.
+- **Editor: the writing modes.** Focus mode dims non-caret paragraphs to `--cairn-focus-dim-ink`,
+  a DELIBERATE sub-AA transient-state call (~3:1 floor, user-toggled, one activation from full
+  contrast; G174 is the conformance shape) that also flattens chip backgrounds on dimmed lines.
+  Typewriter scroll recenters via an instant `scrollIntoView`, so no reduced-motion gate is owed.
+  Both persist per browser (`cairn-editor-focus-mode`, `cairn-editor-typewriter`) and surface as
+  `aria-pressed` toggle buttons in the More popover (never `menuitemcheckbox`; the popover list
+  is deliberately not an ARIA menu, and a toggle flip leaves the menu open so the new state reads
+  in place).
+- Light `--color-accent` is a locked margin at `oklch(54% 0.16 300)`: it must hold AA both on
+  `base-100` and on its own 8% tint (the leaf/inline directive chips). The editor's focus indicator is a deliberate 1px 70%-alpha primary hairline, never a 2px
   ring: a focused text surface sits in keyboard modality, so `:focus-visible` cannot quiet it. That
   70% mix is a locked floor: it clears the 3:1 non-text contrast minimum on both themes, where 45%
   measured near 2:1. A scoped `.cairn-doc-title:focus` rule in `cairn-admin.css` gives the document

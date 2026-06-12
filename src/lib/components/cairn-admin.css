@@ -45,6 +45,9 @@
   --cairn-directive-rail-1: 75%;
   --cairn-directive-rail-2: 82%;
   --cairn-directive-rail-3: 90%;
+  /* The editor's inline-code chip, a quiet tint beside base-200. Locked pair: base-content ink
+     on the chip measures 13.2:1 (AA). Do not darken the chip without re-checking. */
+  --cairn-code-chip: oklch(94.5% 0.008 75);
   --color-neutral: oklch(32% 0.012 75);
   --color-neutral-content: oklch(96% 0.004 75);
 
@@ -122,6 +125,10 @@
   --cairn-directive-rail-1: 65%;
   --cairn-directive-rail-2: 75%;
   --cairn-directive-rail-3: 85%;
+  /* The inline-code chip on dark sits one step above base-100 so it reads raised. Locked pair:
+     base-content ink on the chip measures 11.3:1 (AA). Do not lighten the chip without
+     re-checking. */
+  --cairn-code-chip: oklch(29.5% 0.012 75);
   --color-neutral: oklch(80% 0.01 75);
   --color-neutral-content: oklch(22% 0.008 75);
 

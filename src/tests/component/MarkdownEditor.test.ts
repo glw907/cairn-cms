@@ -10,6 +10,24 @@ import type { LinkTarget } from '../../lib/content/manifest.js';
 const hiddenValue = (container: Element) =>
   container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '';
 
+// Pins admin theme variables on the document root for one test; the test page loads no admin
+// sheet, so an unpinned var() resolves to nothing and the declaration silently drops.
+function pinThemeVars(vars: Record<string, string>): () => void {
+  for (const [name, value] of Object.entries(vars)) document.documentElement.style.setProperty(name, value);
+  return () => {
+    for (const name of Object.keys(vars)) document.documentElement.style.removeProperty(name);
+  };
+}
+
+// Finds the rendered line and token spans by text; generated highlight class names are not
+// stable, so text plus computed style is the robust handle.
+const lineWith = (container: Element, text: string) =>
+  Array.from(container.querySelectorAll<HTMLElement>('.cm-line')).find((l) => (l.textContent ?? '').includes(text));
+const spanWith = (line: HTMLElement | undefined, text: string) =>
+  line
+    ? Array.from(line.querySelectorAll<HTMLElement>('span')).find((s) => (s.textContent ?? '').trim() === text)
+    : undefined;
+
 // Clicks the surface into focus and moves the caret to the end of the document, where the
 // list-continuation behaviors act. Ctrl-End is cursorDocEnd in the default keymap.
 async function focusEditorEnd(container: Element) {
@@ -189,28 +207,135 @@ describe('MarkdownEditor', () => {
     }
   });
 
-  it('renders heading lines through the cairn highlight theme', async () => {
-    // The test page loads no admin CSS, so --color-primary is pinned here; the cairn heading style
-    // is the only one that references it, which makes the computed color discriminate our theme
-    // from CodeMirror's default (which also bolds headings). The generated class names are not
-    // stable, so computed style is the robust handle.
-    document.documentElement.style.setProperty('--color-primary', 'rgb(12, 34, 56)');
+  it('steps the heading sizes by level and inks them in content color, not primary', async () => {
+    // The test page loads no admin CSS, so the theme variables are pinned here; the heading rules
+    // are the only ones that resolve them on a sized span, which discriminates the cairn style
+    // from CodeMirror's default (which bolds headings but never sizes them). Generated class
+    // names are not stable, so computed style is the robust handle.
+    const unpin = pinThemeVars({
+      '--color-base-content': 'rgb(20, 30, 40)',
+      '--color-primary': 'rgb(200, 0, 50)',
+    });
     try {
-      const screen = render(MarkdownEditor, { value: '## Title\n\nplain prose', name: 'body' });
-      await expect.poll(() => screen.container.querySelector('.cm-content')?.textContent ?? '').toContain('Title');
-      const headingThemedSpan = () => {
-        const line = Array.from(screen.container.querySelectorAll<HTMLElement>('.cm-line')).find((l) =>
-          (l.textContent ?? '').includes('Title'),
-        );
-        if (!line) return false;
-        return Array.from(line.querySelectorAll<HTMLElement>('span')).some((s) => {
-          const style = getComputedStyle(s);
-          return style.color === 'rgb(12, 34, 56)' && style.fontWeight === '700';
-        });
-      };
-      await expect.poll(headingThemedSpan).toBe(true);
+      const screen = render(MarkdownEditor, { value: '## Alpha\n### Beta\nplain body', name: 'body' });
+      await expect.poll(() => screen.container.querySelector('.cm-content')?.textContent ?? '').toContain('Beta');
+      await expect.poll(() => spanWith(lineWith(screen.container, 'Alpha'), 'Alpha')).toBeTruthy();
+      const h2 = spanWith(lineWith(screen.container, 'Alpha'), 'Alpha')!;
+      const h3 = spanWith(lineWith(screen.container, 'Beta'), 'Beta')!;
+      const body = lineWith(screen.container, 'plain body')!;
+      const h2Size = parseFloat(getComputedStyle(h2).fontSize);
+      const h3Size = parseFloat(getComputedStyle(h3).fontSize);
+      const bodySize = parseFloat(getComputedStyle(body).fontSize);
+      expect(h2Size).toBeGreaterThan(h3Size);
+      expect(h3Size).toBeGreaterThan(bodySize);
+      // The surface reads at the standard 1rem body size; the old 0.9375rem was the cramped design.
+      expect(bodySize).toBe(16);
+      expect(getComputedStyle(h2).fontWeight).toBe('700');
+      expect(getComputedStyle(h2).color).toBe('rgb(20, 30, 40)');
+      expect(getComputedStyle(h2).color).not.toBe('rgb(200, 0, 50)');
     } finally {
-      document.documentElement.style.removeProperty('--color-primary');
+      unpin();
+    }
+  });
+
+  it('renders heading and emphasis markers muted, distinct from their content', async () => {
+    const unpin = pinThemeVars({
+      '--color-base-content': 'rgb(20, 30, 40)',
+      '--color-muted': 'rgb(120, 110, 100)',
+    });
+    try {
+      const screen = render(MarkdownEditor, { value: '## A **b**', name: 'body' });
+      await expect.poll(() => screen.container.querySelector('.cm-content')?.textContent ?? '').toContain('A');
+      const line = () => lineWith(screen.container, 'A');
+      await expect.poll(() => spanWith(line(), '##')).toBeTruthy();
+      const headingMark = spanWith(line(), '##')!;
+      expect(getComputedStyle(headingMark).color).toBe('rgb(120, 110, 100)');
+      // The quiet weight: markers shed the heading's bold along with its ink.
+      expect(getComputedStyle(headingMark).fontWeight).toBe('400');
+      const content = spanWith(line(), 'A')!;
+      expect(getComputedStyle(content).color).toBe('rgb(20, 30, 40)');
+      const emphasisMarks = Array.from(line()!.querySelectorAll<HTMLElement>('span')).filter(
+        (s) => (s.textContent ?? '').trim() === '**',
+      );
+      expect(emphasisMarks.length).toBeGreaterThan(0);
+      for (const mark of emphasisMarks) {
+        expect(getComputedStyle(mark).color).toBe('rgb(120, 110, 100)');
+      }
+      const bold = spanWith(line(), 'b')!;
+      expect(getComputedStyle(bold).color).toBe('rgb(20, 30, 40)');
+    } finally {
+      unpin();
+    }
+  });
+
+  it('carries the accent on link text and mutes the URL part', async () => {
+    const unpin = pinThemeVars({
+      '--color-accent': 'rgb(0, 130, 60)',
+      '--color-muted': 'rgb(120, 110, 100)',
+    });
+    try {
+      const screen = render(MarkdownEditor, { value: '[t](https://e.com)', name: 'body' });
+      await expect.poll(() => screen.container.querySelector('.cm-content')?.textContent ?? '').toContain('e.com');
+      const line = () => lineWith(screen.container, 'e.com');
+      await expect.poll(() => spanWith(line(), 't')).toBeTruthy();
+      expect(getComputedStyle(spanWith(line(), 't')!).color).toBe('rgb(0, 130, 60)');
+      expect(getComputedStyle(spanWith(line(), 'https://e.com')!).color).toBe('rgb(120, 110, 100)');
+    } finally {
+      unpin();
+    }
+  });
+
+  it('renders inline code as a chip in content ink, not accent', async () => {
+    const unpin = pinThemeVars({
+      '--cairn-code-chip': 'rgb(240, 233, 224)',
+      '--color-base-content': 'rgb(20, 30, 40)',
+      '--color-accent': 'rgb(0, 130, 60)',
+    });
+    try {
+      const screen = render(MarkdownEditor, { value: 'a `code` b', name: 'body' });
+      await expect.poll(() => screen.container.querySelector('.cm-content')?.textContent ?? '').toContain('code');
+      const line = () => lineWith(screen.container, 'code');
+      await expect.poll(() => spanWith(line(), 'code')).toBeTruthy();
+      const chip = spanWith(line(), 'code')!;
+      const chipStyle = getComputedStyle(chip);
+      expect(chipStyle.backgroundColor).toBe('rgb(240, 233, 224)');
+      const editorBackground = getComputedStyle(screen.container.querySelector('.cm-editor')!).backgroundColor;
+      expect(chipStyle.backgroundColor).not.toBe(editorBackground);
+      expect(chipStyle.color).toBe('rgb(20, 30, 40)');
+      expect(chipStyle.color).not.toBe('rgb(0, 130, 60)');
+    } finally {
+      unpin();
+    }
+  });
+
+  it('caps the content column at 70ch and centers it', async () => {
+    const screen = render(MarkdownEditor, { value: 'plain prose', name: 'body' });
+    await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+    // The default browser viewport is narrower than the measure, so the host widens past it to
+    // make the cap and the centering observable.
+    (screen.container as HTMLElement).style.width = '64rem';
+    const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
+    const contentStyle = getComputedStyle(content);
+    // 70ch computes to an absolute length; a probe in the same font supplies the expected value.
+    const probe = document.createElement('div');
+    probe.style.position = 'absolute';
+    probe.style.fontFamily = contentStyle.fontFamily;
+    probe.style.fontSize = contentStyle.fontSize;
+    probe.style.width = '70ch';
+    document.body.appendChild(probe);
+    try {
+      const expected = probe.getBoundingClientRect().width;
+      expect(parseFloat(contentStyle.maxWidth)).toBeCloseTo(expected, 0);
+      // Auto horizontal margins center the capped column inside the wider scroller.
+      const scroller = screen.container.querySelector<HTMLElement>('.cm-scroller')!;
+      const contentRect = content.getBoundingClientRect();
+      const scrollerRect = scroller.getBoundingClientRect();
+      const leftGap = contentRect.left - scrollerRect.left;
+      const rightGap = scrollerRect.right - contentRect.right;
+      expect(leftGap).toBeGreaterThan(0);
+      expect(Math.abs(leftGap - rightGap)).toBeLessThan(2);
+    } finally {
+      probe.remove();
     }
   });
 

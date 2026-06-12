@@ -75,15 +75,18 @@ through the adapter's render. Swapping the editor stays a one-file change.
     };
     const theme = EditorView.theme(
       {
-        '&': { backgroundColor: 'var(--color-base-100)', color: 'var(--color-base-content)', fontSize: '0.9375rem' },
+        '&': { backgroundColor: 'var(--color-base-100)', color: 'var(--color-base-content)', fontSize: '1rem' },
         // The 50vh floor keeps a short entry reading as a writing surface, and because the
         // contenteditable content area carries the height, a click in the empty space below the
-        // text still lands in the editor and focuses it.
+        // text still lands in the editor and focuses it. The 70ch cap with auto margins holds
+        // the manuscript to a readable measure, centered in whatever width the card gives it.
         '.cm-content': {
           fontFamily: 'ui-monospace, monospace',
           padding: '0.875rem 1.25rem',
           lineHeight: '1.8',
           minHeight: '50vh',
+          maxWidth: '70ch',
+          margin: '0 auto',
         },
         '.cm-cursor': { borderLeftColor: 'var(--color-primary)' },
         // A quiet always-on focus hairline. :focus-visible is no escape here: browsers treat a

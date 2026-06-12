@@ -9,17 +9,32 @@ import { directiveLineKind, fenceDepths, findInlineDirectives } from './markdown
 
 /** Markdown token colors over the admin theme variables. */
 export function cairnHighlightStyle(): HighlightStyle {
+  // Rule order is load-bearing. HighlightStyle emits its CSS in spec order, so on a span that
+  // carries several classes (a marker inherits its heading's or link's class on top of its own
+  // processingInstruction one) the later rule wins the tie. The url and processingInstruction
+  // rules sit last so the URL part of a link and every syntax marker stay muted under the
+  // heading, emphasis, and link inks.
   return HighlightStyle.define([
-    { tag: tags.heading, color: 'var(--color-primary)', fontWeight: '700' },
+    { tag: tags.heading1, fontSize: '1.5em', fontWeight: '700', color: 'var(--color-base-content)' },
+    { tag: tags.heading2, fontSize: '1.3em', fontWeight: '700', color: 'var(--color-base-content)' },
+    { tag: tags.heading3, fontSize: '1.12em', fontWeight: '700', color: 'var(--color-base-content)' },
+    // h4 and deeper share the weight only; body size keeps the low levels from outranking h3.
+    { tag: tags.heading, fontWeight: '700', color: 'var(--color-base-content)' },
     { tag: tags.strong, fontWeight: '700' },
     { tag: tags.emphasis, fontStyle: 'italic' },
     { tag: tags.strikethrough, textDecoration: 'line-through' },
-    { tag: tags.link, color: 'var(--color-info)' },
-    { tag: tags.url, color: 'var(--color-info)' },
     { tag: tags.quote, color: 'var(--color-muted)', fontStyle: 'italic' },
-    { tag: tags.monospace, color: 'var(--color-accent)' },
-    { tag: tags.processingInstruction, color: 'var(--color-muted)' },
     { tag: tags.list, color: 'var(--color-muted)' },
+    { tag: tags.link, color: 'var(--color-accent)' },
+    { tag: tags.url, color: 'var(--color-muted)' },
+    {
+      tag: tags.monospace,
+      color: 'var(--color-base-content)',
+      backgroundColor: 'var(--cairn-code-chip)',
+      borderRadius: '0.25rem',
+      padding: '0.05em 0.3em',
+    },
+    { tag: tags.processingInstruction, color: 'var(--color-muted)', fontWeight: '400' },
   ]);
 }
 

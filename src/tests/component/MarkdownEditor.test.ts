@@ -161,10 +161,12 @@ describe('MarkdownEditor', () => {
 
   it('rails the fence rows without a band and steps the rail by depth', async () => {
     // The rail vars carry fallbacks in the theme, but their color-mix needs --color-accent to
-    // resolve or the whole declaration drops on the bare test page.
+    // resolve or the whole declaration drops on the bare test page. The leading plain line
+    // parks the default caret outside the containers, so the rails read in their quiet state
+    // (the caret-block emphasis has its own test).
     const unpin = pinThemeVars({ '--color-accent': 'rgb(100, 60, 200)' });
     try {
-      const screen = render(MarkdownEditor, { value: NESTED_DOC, name: 'body' });
+      const screen = render(MarkdownEditor, { value: `quiet prose\n${NESTED_DOC}`, name: 'body' });
       await expect
         .poll(() => screen.container.querySelectorAll('.cm-line.cm-cairn-directive-fence').length)
         .toBe(6);
@@ -200,7 +202,9 @@ describe('MarkdownEditor', () => {
       '--cairn-directive-ink-2': 'rgb(80, 40, 160)',
     });
     try {
-      const screen = render(MarkdownEditor, { value: NESTED_DOC, name: 'body' });
+      // The leading plain line parks the default caret outside the containers, keeping the
+      // label inks in their quiet depth-stepped state.
+      const screen = render(MarkdownEditor, { value: `quiet prose\n${NESTED_DOC}`, name: 'body' });
       await expect.poll(() => spanWith(lineWith(screen.container, '::::split'), '::::')).toBeTruthy();
       const opener = lineWith(screen.container, '::::split')!;
       // The colon run is machinery and recedes to the marker-muted tone.
@@ -238,6 +242,34 @@ describe('MarkdownEditor', () => {
     } finally {
       unpin();
     }
+  });
+
+  it('strengthens only the caret container and follows the cursor across nesting', async () => {
+    // Cursor-aware emphasis: the block the caret sits inside carries cm-cairn-caret-block on
+    // every row, fence and content alike; the other containers sit quieter without it.
+    const doc = ['plain intro', NESTED_DOC, 'plain outro'].join('\n');
+    const screen = render(MarkdownEditor, { value: doc, name: 'body' });
+    await expect.poll(() => screen.container.querySelectorAll('.cm-line.cm-cairn-directive-fence').length).toBe(6);
+    const caretRows = () => [...screen.container.querySelectorAll<HTMLElement>('.cm-line.cm-cairn-caret-block')];
+    // The fresh editor's caret sits at the document start, outside any container.
+    expect(caretRows()).toHaveLength(0);
+    // Caret into the first panel's prose: only that panel's three rows strengthen.
+    await userEvent.click(lineWith(screen.container, 'Cost.')!);
+    await expect.poll(() => caretRows().length).toBe(3);
+    expect(caretRows().some((l) => l.textContent?.includes('hand-coins'))).toBe(true);
+    expect(caretRows().some((l) => l.textContent?.includes('::::split'))).toBe(false);
+    // Caret onto the outer split's own content line (the blank between the panels): the class
+    // moves to the outer container's full row span.
+    const blank = [...screen.container.querySelectorAll<HTMLElement>('.cm-line')].find(
+      (l) => (l.textContent ?? '') === '',
+    )!;
+    await userEvent.click(blank);
+    await expect.poll(() => caretRows().length).toBe(9);
+    expect(caretRows().some((l) => l.textContent?.includes('::::split'))).toBe(true);
+    expect(caretRows().some((l) => l.textContent?.includes('plain intro'))).toBe(false);
+    // Caret outside any container: no row carries the class.
+    await userEvent.click(lineWith(screen.container, 'plain outro')!);
+    await expect.poll(() => caretRows().length).toBe(0);
   });
 
   it('explains the directive machinery lines through a title tooltip', async () => {

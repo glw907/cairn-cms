@@ -65,6 +65,54 @@ export function fenceDepths(lines: string[]): (number | null)[] {
   return depths;
 }
 
+// Tells a fence row's role apart with the FENCE name group, mirroring the depth scan's pairing
+// rule: a named fence opens a container and a bare colon run closes one.
+function fenceRole(line: string): 'opener' | 'closer' | null {
+  const m = FENCE.exec(line);
+  if (!m) return null;
+  return m[2] ? 'opener' : 'closer';
+}
+
+/** The inclusive line span of one directive container. */
+export interface ContainerRange {
+  fromLine: number;
+  toLine: number;
+  depth: number;
+}
+
+/**
+ * The innermost container around a caret line, as an inclusive line range, or null outside any
+ * container. Works from the cached depth array without re-parsing: the caret line's own depth
+ * names the container (fence rows carry the depth they delimit, so a caret on a fence belongs
+ * to that fence's container), and within a container the only same-depth fences are its opener
+ * and closer (nested containers sit deeper, siblings sit outside), so the nearest named fence
+ * above and the nearest bare fence below bound the range. An unclosed container runs to the
+ * document end.
+ */
+export function caretContainerRange(
+  lines: string[],
+  depths: (number | null)[],
+  caretLine: number,
+): ContainerRange | null {
+  const depth = depths[caretLine] ?? null;
+  if (depth === null) return null;
+  let fromLine = caretLine;
+  for (let i = caretLine; i >= 0; i--) {
+    if (depths[i] === depth && fenceRole(lines[i]) === 'opener') {
+      fromLine = i;
+      break;
+    }
+  }
+  let toLine = lines.length - 1;
+  for (let i = caretLine; i < lines.length; i++) {
+    if (depths[i] === depth && fenceRole(lines[i]) === 'closer') {
+      toLine = i;
+      break;
+    }
+  }
+  return { fromLine, toLine, depth };
+}
+
 /** One span of a fence line, in line-local offsets: machinery (`mark`) or meaning (`label`). */
 export interface FenceToken {
   from: number;

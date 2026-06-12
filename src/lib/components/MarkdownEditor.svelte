@@ -67,8 +67,8 @@ through the adapter's render. Swapping the editor stays a one-file change.
     // theme wrapper. On a fence line the colon runs, brackets, and {attrs} braces dim to the
     // marker tone while the name and label keep a depth-stepped ink. Leaf and inline directives
     // keep a fixed 8% accent chip; the accent ink holds AA on it (4.75:1 light, 5.20:1 dark).
-    const rail = (depth: number, fallback: string) =>
-      `inset 2px 0 0 0 color-mix(in oklab, var(--color-accent) var(--cairn-directive-rail-${depth}, ${fallback}), transparent)`;
+    const rail = (step: number | 'active', fallback: string) =>
+      `inset 2px 0 0 0 color-mix(in oklab, var(--color-accent) var(--cairn-directive-rail-${step}, ${fallback}), transparent)`;
     const directiveInk = {
       backgroundColor: 'color-mix(in oklab, var(--color-accent) 8%, transparent)',
       color: 'var(--color-accent)',
@@ -112,6 +112,16 @@ through the adapter's render. Swapping the editor stays a one-file change.
         '.cm-cairn-directive-label': { color: 'var(--color-accent)' },
         '.cm-cairn-directive-label.cm-cairn-depth-2': { color: 'var(--cairn-directive-ink-2, oklch(50% 0.16 300))' },
         '.cm-cairn-directive-label.cm-cairn-depth-3': { color: 'var(--cairn-directive-ink-3, oklch(48% 0.16 300))' },
+        // Cursor-aware emphasis: the container the caret sits inside strengthens one step, a
+        // full-strength accent rail and the strongest label ink, through the -active variable
+        // pair in cairn-admin.css. These rules tie the depth rules on specificity, so their
+        // placement after them is what breaks the tie toward the active state.
+        '.cm-cairn-caret-block.cm-cairn-directive-fence, .cm-cairn-caret-block.cm-cairn-directive-content': {
+          boxShadow: rail('active', '100%'),
+        },
+        '.cm-cairn-caret-block .cm-cairn-directive-label': {
+          color: 'var(--cairn-directive-ink-active, oklch(46% 0.16 300))',
+        },
         '.cm-cairn-directive-leaf': directiveInk,
         '.cm-cairn-directive-inline': directiveInk,
       },

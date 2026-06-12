@@ -5,7 +5,13 @@ import { HighlightStyle } from '@codemirror/language';
 import { tags } from '@lezer/highlight';
 import { Decoration, ViewPlugin, type DecorationSet, type EditorView, type ViewUpdate } from '@codemirror/view';
 import { RangeSetBuilder } from '@codemirror/state';
-import { directiveLineKind, fenceDepths, fenceTokens, findInlineDirectives } from './markdown-directives.js';
+import {
+  caretContainerRange,
+  directiveLineKind,
+  fenceDepths,
+  fenceTokens,
+  findInlineDirectives,
+} from './markdown-directives.js';
 
 /** Markdown token colors over the admin theme variables. */
 export function cairnHighlightStyle(): HighlightStyle {
@@ -55,25 +61,38 @@ const inlineMark = Decoration.mark({ class: 'cm-cairn-directive-inline' });
 // directive name and label keep a depth-stepped ink: meaning over machinery.
 const fenceMark = Decoration.mark({ class: 'cm-cairn-directive-mark' });
 const fenceLabels = DEPTH_STEPS.map((d) => Decoration.mark({ class: `cm-cairn-directive-label cm-cairn-depth-${d}` }));
+// Cursor-aware emphasis: every row of the container the caret sits inside, fence and content
+// alike, carries this class on top of its depth classes; the theme steps that block's rail and
+// label ink up one notch while the other containers sit quieter.
+const caretBlockLine = Decoration.line({ class: 'cm-cairn-caret-block' });
 
 // Depth needs the whole document, since a visible line's containers can open above the viewport.
 // One regex pass per line, linear in the document; at admin entry sizes (tens of kilobytes) that
-// is well under a millisecond. The plugin caches the result, so the scan reruns only when the
-// document changes and a scroll rebuilds the viewport decorations from the cached array.
-function docDepths(view: EditorView): (number | null)[] {
+// is well under a millisecond. The plugin caches the lines and their depths, so the scan reruns
+// only when the document changes; a scroll or a caret move rebuilds the viewport decorations
+// from the cached arrays.
+function docLines(view: EditorView): string[] {
   const doc = view.state.doc;
   const lines: string[] = [];
   for (let n = 1; n <= doc.lines; n++) lines.push(doc.line(n).text);
-  return fenceDepths(lines);
+  return lines;
 }
 
-function buildDirectiveDecorations(view: EditorView, depths: (number | null)[]): DecorationSet {
+function buildDirectiveDecorations(view: EditorView, lines: string[], depths: (number | null)[]): DecorationSet {
   const builder = new RangeSetBuilder<Decoration>();
+  // The caret's container, one helper call over the cached arrays per rebuild. Line decorations
+  // at the same position must enter the builder in add order, so the caret-block class goes in
+  // as its own line decoration just ahead of the row's depth decoration.
+  const caretLine = view.state.doc.lineAt(view.state.selection.main.head).number - 1;
+  const caret = caretContainerRange(lines, depths, caretLine);
   for (const { from, to } of view.visibleRanges) {
     for (let pos = from; pos <= to; ) {
       const line = view.state.doc.lineAt(pos);
       const kind = directiveLineKind(line.text);
       const depth = Math.min(depths[line.number - 1] ?? 0, DEPTH_STEPS.length);
+      if (caret && line.number - 1 >= caret.fromLine && line.number - 1 <= caret.toLine) {
+        builder.add(line.from, line.from, caretBlockLine);
+      }
       // A fence-shaped line at depth 0 is one the depth scan disowned (a documented example
       // inside a code block, outside any container); it gets no machinery treatment.
       if (kind === 'fence' && depth > 0) {
@@ -103,15 +122,22 @@ export function cairnDirectivePlugin() {
   return ViewPlugin.fromClass(
     class {
       decorations: DecorationSet;
+      lines: string[];
       depths: (number | null)[];
       constructor(view: EditorView) {
-        this.depths = docDepths(view);
-        this.decorations = buildDirectiveDecorations(view, this.depths);
+        this.lines = docLines(view);
+        this.depths = fenceDepths(this.lines);
+        this.decorations = buildDirectiveDecorations(view, this.lines, this.depths);
       }
       update(update: ViewUpdate) {
-        if (update.docChanged) this.depths = docDepths(update.view);
-        if (update.docChanged || update.viewportChanged)
-          this.decorations = buildDirectiveDecorations(update.view, this.depths);
+        if (update.docChanged) {
+          this.lines = docLines(update.view);
+          this.depths = fenceDepths(this.lines);
+        }
+        // A selection change rebuilds too, so the caret-block emphasis follows the cursor; the
+        // depth scan stays cached, keeping a caret move at viewport cost.
+        if (update.docChanged || update.viewportChanged || update.selectionSet)
+          this.decorations = buildDirectiveDecorations(update.view, this.lines, this.depths);
       }
     },
     { decorations: (v) => v.decorations },

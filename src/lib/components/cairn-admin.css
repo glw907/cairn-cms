@@ -42,6 +42,11 @@
   --cairn-directive-rail-1: 75%;
   --cairn-directive-rail-2: 82%;
   --cairn-directive-rail-3: 90%;
+  /* Cursor-aware emphasis: the container holding the caret steps up to a full-strength accent
+     rail and an ink one notch past depth 3. Locked pairs on base-100: rail = solid accent
+     (5.28:1, non-text floor 3:1), ink 46% (7.47:1). Do not lighten without re-checking. */
+  --cairn-directive-rail-active: 100%;
+  --cairn-directive-ink-active: oklch(46% 0.16 300);
   /* The editor's inline-code chip, a quiet tint beside base-200. Locked pair: base-content ink
      on the chip measures 13.2:1 (AA). Do not darken the chip without re-checking. */
   --cairn-code-chip: oklch(94.5% 0.008 75);
@@ -118,6 +123,11 @@
   --cairn-directive-rail-1: 65%;
   --cairn-directive-rail-2: 75%;
   --cairn-directive-rail-3: 85%;
+  /* Cursor-aware emphasis on dark: the caret's container steps to a solid accent rail and an
+     ink one notch past depth 3. Locked pairs on base-100: rail = solid accent (5.86:1, non-text
+     floor 3:1), ink 82% (9.03:1). Do not darken without re-checking. */
+  --cairn-directive-rail-active: 100%;
+  --cairn-directive-ink-active: oklch(82% 0.14 300);
   /* The inline-code chip on dark sits one step above base-100 so it reads raised. Locked pair:
      base-content ink on the chip measures 11.3:1 (AA). Do not lighten the chip without
      re-checking. */

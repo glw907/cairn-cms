@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  caretContainerRange,
   directiveLineKind,
   fenceDepths,
   fenceTokens,
@@ -116,6 +117,32 @@ describe('fenceTokens', () => {
   it('returns nothing for a non-fence line', () => {
     expect(fenceTokens('plain prose')).toEqual([]);
     expect(fenceTokens('::leaf[Label]')).toEqual([]);
+  });
+});
+
+describe('caretContainerRange', () => {
+  const fixtureDepths = fenceDepths(NESTED_FIXTURE);
+  it('finds the innermost container around the caret', () => {
+    // Caret in the first panel's prose: the panel's opener through its closer, at depth 2.
+    expect(caretContainerRange(NESTED_FIXTURE, fixtureDepths, 2)).toEqual({ fromLine: 1, toLine: 3, depth: 2 });
+    // A fence row carries the depth of the container it delimits, so a caret on the panel's
+    // closer still belongs to the panel, not to the outer split.
+    expect(caretContainerRange(NESTED_FIXTURE, fixtureDepths, 3)).toEqual({ fromLine: 1, toLine: 3, depth: 2 });
+  });
+  it('returns the outer container when the caret sits between panels', () => {
+    // The blank line between the panels is the outer split's own content line.
+    expect(caretContainerRange(NESTED_FIXTURE, fixtureDepths, 4)).toEqual({ fromLine: 0, toLine: 8, depth: 1 });
+  });
+  it('returns null outside any container', () => {
+    const lines = ['before', ':::aside', 'inside', ':::', 'after'];
+    const depths = fenceDepths(lines);
+    expect(caretContainerRange(lines, depths, 0)).toBeNull();
+    expect(caretContainerRange(lines, depths, 4)).toBeNull();
+  });
+  it('runs an unclosed container to the document end', () => {
+    const lines = [':::aside', 'one', 'two'];
+    const depths = fenceDepths(lines);
+    expect(caretContainerRange(lines, depths, 2)).toEqual({ fromLine: 0, toLine: 2, depth: 1 });
   });
 });
 

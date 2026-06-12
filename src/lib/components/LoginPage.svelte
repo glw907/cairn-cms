@@ -1,6 +1,6 @@
 <!--
 @component
-The magic-link sign-in page. A plain form POST to the page's default action (the engine's
+The magic-link sign-in page. A plain form POST to the named `?/request` action (the engine's
 `requestAction`); no client SDK. The success message is identical whether or not the email is on
 the allowlist, so the page never leaks membership (spec §7.1).
 -->
@@ -101,7 +101,7 @@ the allowlist, so the page never leaks membership (spec §7.1).
       {#if data.error && !form?.status}
         <div role="alert" class="alert alert-error mb-3 text-sm">That link expired. Request a new one below.</div>
       {/if}
-      <form method="POST" class="flex flex-col gap-3">
+      <form method="POST" action="?/request" class="flex flex-col gap-3">
         <CsrfField token={data.csrf} />
         <label class="flex flex-col gap-1">
           <span class="text-sm font-medium">Email</span>

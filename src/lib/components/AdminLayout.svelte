@@ -279,7 +279,7 @@ identical on every host regardless of the site's own theme.
             <kbd class="ml-auto hidden rounded border border-[var(--cairn-card-border)] px-1.5 text-[0.6875rem] font-medium sm:inline">&#8984;K</kbd>
           </button>
         </div>
-        {#if pendingCount > 0 && data.concepts.length > 0}
+        {#if pendingCount > 0}
           <div class="flex-none">
             <button type="button" class="btn btn-primary btn-sm" aria-haspopup="dialog" onclick={() => publishAllDialog?.showModal()}>
               Publish site ({pendingCount})
@@ -349,9 +349,7 @@ identical on every host regardless of the site's own theme.
         <form method="dialog" class="modal-backdrop"><button tabindex="-1" aria-label="Close">close</button></form>
       </dialog>
 
-      <!-- The form action below reads data.concepts[0], so zero configured concepts (with a stray
-           pending ref) must hide the dialog along with its trigger. -->
-      {#if pendingCount > 0 && data.concepts.length > 0}
+      {#if pendingCount > 0}
         <dialog bind:this={publishAllDialog} class="modal" aria-labelledby="cairn-publish-all-title">
           <div class="modal-box">
             <div class="mb-3 flex items-center justify-between">
@@ -367,9 +365,9 @@ identical on every host regardless of the site's own theme.
                 {/each}
               </ul>
             {/each}
-            <!-- The publishAll action is mounted on every concept-list shim; the first concept's
-                 route hosts the site-wide POST so the topbar works from any admin page. -->
-            <form method="POST" action={`/admin/${data.concepts[0].id}?/publishAll`} class="mt-4 flex justify-end gap-2">
+            <!-- The publishAll named action is valid on every authed admin view, so the confirm
+                 posts to the current page and the topbar works from anywhere. -->
+            <form method="POST" action="?/publishAll" class="mt-4 flex justify-end gap-2">
               <CsrfField token={data.csrf} />
               <button type="button" class="btn btn-sm" onclick={() => publishAllDialog?.close()}>Cancel</button>
               <button type="submit" class="btn btn-sm btn-primary">Publish site</button>
@@ -455,7 +453,7 @@ identical on every host regardless of the site's own theme.
               <div class="text-xs capitalize text-[var(--color-subtle)]">{data.user.role}</div>
             </div>
           </div>
-          <form method="POST" action="/admin/auth/logout" class="mt-4">
+          <form method="POST" action="?/logout" class="mt-4">
             <CsrfField token={data.csrf} />
             <button type="submit" class="btn btn-ghost btn-sm btn-block justify-start">
               <LogOutIcon class="h-4 w-4" /> Sign out

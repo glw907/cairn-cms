@@ -40,7 +40,7 @@ in a hidden field and consumes nothing; only the explicit POST verifies (spec §
     {:else}
       <h1 class="text-lg font-semibold">Almost there</h1>
       <p class="mt-1 mb-5 text-sm text-[var(--color-muted)]">Confirm to finish signing in to {data.siteName}.</p>
-      <form method="POST">
+      <form method="POST" action="?/confirm">
         <input type="hidden" name="token" value={data.token} />
         <CsrfField token={data.csrf} />
         <button type="submit" class="btn btn-primary btn-block">Confirm sign-in</button>

@@ -1,0 +1,66 @@
+<!--
+@component
+The single-mount admin page. A site's catch-all `/admin/[...path]` route renders this one
+component for every admin view, feeding it the discriminated `AdminData` from `createCairnAdmin`'s
+load. It is a pure switcher on `data.view`: the public auth pages mount bare, and the authed views
+mount inside `AdminLayout`. No styling or wrapper elements of its own.
+-->
+<script lang="ts">
+  import AdminLayout from './AdminLayout.svelte';
+  import LoginPage from './LoginPage.svelte';
+  import ConfirmPage from './ConfirmPage.svelte';
+  import ConceptList from './ConceptList.svelte';
+  import EditPage from './EditPage.svelte';
+  import ManageEditors from './ManageEditors.svelte';
+  import NavTree from './NavTree.svelte';
+  import type { AdminData } from '../sveltekit/cairn-admin.js';
+  import type { ComponentRegistry } from '../render/registry.js';
+  import type { IconSet } from '../render/glyph.js';
+  import type { LinkResolve } from '../content/links.js';
+  import type { InboundLink } from '../content/manifest.js';
+
+  interface Props {
+    /** The discriminated view data from `createCairnAdmin`'s load. */
+    data: AdminData;
+    /** The last action's result, forwarded to whichever view rendered. Typed pragmatically as the
+     *  merge of the view components' form shapes (every field optional), so the route's one
+     *  `form` export covers the auth, list, edit, and editors results. */
+    form?: {
+      sent?: boolean;
+      status?: 'sent' | 'send_error' | 'throttled';
+      error?: string;
+      ok?: boolean;
+      id?: string;
+      inboundLinks?: InboundLink[];
+      brokenLinks?: string[];
+      body?: string;
+      renameError?: string;
+    } | null;
+    /** The site's design-accurate render pipeline, for the edit view's preview pane. */
+    render?: (md: string, opts?: { stagger?: boolean; resolve?: LinkResolve }) => string | Promise<string>;
+    /** The site's component registry, for the edit view's insert palette. */
+    registry?: ComponentRegistry;
+    /** The site's icon set, for the edit view's guided form fields. */
+    icons?: IconSet;
+  }
+
+  let { data, form = null, render, registry, icons }: Props = $props();
+</script>
+
+{#if data.view === 'login'}
+  <LoginPage data={data.page} {form} />
+{:else if data.view === 'confirm'}
+  <ConfirmPage data={data.page} />
+{:else}
+  <AdminLayout data={data.layout}>
+    {#if data.view === 'list'}
+      <ConceptList data={data.page} {form} />
+    {:else if data.view === 'edit'}
+      <EditPage data={{ ...data.page, siteName: data.layout.siteName }} {render} {registry} {icons} {form} />
+    {:else if data.view === 'editors'}
+      <ManageEditors data={data.page} {form} />
+    {:else if data.view === 'nav'}
+      <NavTree data={data.page} />
+    {/if}
+  </AdminLayout>
+{/if}

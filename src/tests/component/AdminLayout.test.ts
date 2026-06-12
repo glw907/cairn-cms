@@ -178,8 +178,8 @@ describe('AdminLayout', () => {
     expect(text).toContain('2026-05-02-b');
     expect(text).toContain('about');
     expect(text).toContain('w1');
-    // The confirm posts to the first concept's list shim with the CSRF field.
-    const form = dialog.querySelector('form[action="/admin/posts?/publishAll"]');
+    // The confirm posts the named action to the current page with the CSRF field.
+    const form = dialog.querySelector('form[action="?/publishAll"]');
     expect(form).not.toBeNull();
     expect(form!.querySelector('input[name="csrf"]')).not.toBeNull();
   });
@@ -195,14 +195,15 @@ describe('AdminLayout', () => {
     expect(dialog().open).toBe(false);
   });
 
-  it('hides the publish-site trigger when no concepts are configured', async () => {
-    // A stray pending ref with zero concepts would otherwise render a form action that reads
-    // data.concepts[0] and throw.
+  it('shows the publish-site trigger even when no concepts are configured', async () => {
+    // The confirm posts the named ?/publishAll action to the current page, so a stray pending
+    // ref with zero configured concepts no longer reads data.concepts[0].
     const screen = render(AdminLayout, {
       data: { ...data(true), concepts: [], pendingEntries: [{ concept: 'posts', id: 'a' }] },
       children: child,
     });
-    await expect.element(screen.getByRole('button', { name: /publish site/i })).not.toBeInTheDocument();
+    await expect.element(screen.getByRole('button', { name: /publish site/i })).toBeInTheDocument();
+    expect(screen.container.querySelector('form[action="?/publishAll"]')).not.toBeNull();
   });
 
   it('associates each pending group list with its eyebrow label', async () => {

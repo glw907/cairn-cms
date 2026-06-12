@@ -23,6 +23,24 @@ against them.
 These mount directly from an admin route shim. The showcase mounts `AdminLayout`, `ConceptList`, and
 `EditPage`; the snippets below come from its admin routes.
 
+### `CairnAdmin`
+
+```ts
+let { data, form, render, registry, icons }: {
+  data: AdminData;
+  form?: Record<string, unknown> | null;
+  render?: (md: string) => string | Promise<string>;
+  registry?: ComponentRegistry;
+  icons?: IconSet;
+};
+```
+
+The single-mount admin page. Render it from the catch-all `/admin/[...path]` route with the
+discriminated `AdminData` that `createCairnAdmin`'s load returns, and it mounts the right view:
+the sign-in and confirm pages bare, and the list, edit, editors, and nav views inside
+`AdminLayout`. `form` forwards the route's action result to whichever view rendered; `render`,
+`registry`, and `icons` pass through to `EditPage`.
+
 ### `AdminLayout`
 
 ```ts
@@ -53,9 +71,9 @@ its descendant forms through context, so an admin form inside the shell mounts `
 prop. See [`CsrfField`](#csrffield) for the field itself.
 
 When `data.pendingEntries` is non-empty, the topbar shows a "Publish site (N)" button whose confirm
-dialog lists the held entries grouped by concept and posts to the first concept's `?/publishAll`
-action. A null `pendingEntries` (GitHub unreachable) hides the button rather than showing a stale
-count.
+dialog lists the held entries grouped by concept and posts the named `?/publishAll` action to the
+current page. A null `pendingEntries` (GitHub unreachable) hides the button rather than showing a
+stale count.
 
 ### `ConceptList`
 

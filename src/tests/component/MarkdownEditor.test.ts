@@ -309,7 +309,7 @@ describe('MarkdownEditor', () => {
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
     const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
     const minHeight = parseFloat(getComputedStyle(content).minHeight);
-    expect(minHeight).toBeCloseTo(window.innerHeight * 0.5, 0);
+    expect(minHeight).toBeCloseTo(window.innerHeight * 0.6, 0);
   });
 
   it('keeps the focus indicator a quiet hairline while writing', async () => {
@@ -348,6 +348,7 @@ describe('MarkdownEditor', () => {
   });
 
   it('steps the heading sizes by level and inks them in content color, not primary', async () => {
+    // Pinned in markup posture, where the body sits at the 16px base step.
     // The test page loads no admin CSS, so the theme variables are pinned here; the heading rules
     // are the only ones that resolve them on a sized span, which discriminates the cairn style
     // from CodeMirror's default (which bolds headings but never sizes them). Generated class
@@ -357,7 +358,7 @@ describe('MarkdownEditor', () => {
       '--color-primary': 'rgb(200, 0, 50)',
     });
     try {
-      const screen = render(MarkdownEditor, { value: '## Alpha\n### Beta\nplain body', name: 'body' });
+      const screen = render(MarkdownEditor, { value: '## Alpha\n### Beta\nplain body', name: 'body', surface: 'markup' });
       await expect.poll(() => screen.container.querySelector('.cm-content')?.textContent ?? '').toContain('Beta');
       await expect.poll(() => spanWith(lineWith(screen.container, 'Alpha'), 'Alpha')).toBeTruthy();
       const h2 = spanWith(lineWith(screen.container, 'Alpha'), 'Alpha')!;
@@ -468,35 +469,25 @@ describe('MarkdownEditor', () => {
     }
   });
 
-  it('caps the content column at 70ch and centers it', async () => {
+  it('defaults to the prose posture: a 72ch measure at the larger type step', async () => {
     const screen = render(MarkdownEditor, { value: 'plain prose', name: 'body' });
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
-    // The default browser viewport is narrower than the measure, so the host widens past it to
-    // make the cap and the centering observable.
-    (screen.container as HTMLElement).style.width = '64rem';
     const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
-    const contentStyle = getComputedStyle(content);
-    // 70ch computes to an absolute length; a probe in the same font supplies the expected value.
-    const probe = document.createElement('div');
-    probe.style.position = 'absolute';
-    probe.style.fontFamily = contentStyle.fontFamily;
-    probe.style.fontSize = contentStyle.fontSize;
-    probe.style.width = '70ch';
-    document.body.appendChild(probe);
-    try {
-      const expected = probe.getBoundingClientRect().width;
-      expect(parseFloat(contentStyle.maxWidth)).toBeCloseTo(expected, 0);
-      // Auto horizontal margins center the capped column inside the wider scroller.
-      const scroller = screen.container.querySelector<HTMLElement>('.cm-scroller')!;
-      const contentRect = content.getBoundingClientRect();
-      const scrollerRect = scroller.getBoundingClientRect();
-      const leftGap = contentRect.left - scrollerRect.left;
-      const rightGap = scrollerRect.right - contentRect.right;
-      expect(leftGap).toBeGreaterThan(0);
-      expect(Math.abs(leftGap - rightGap)).toBeLessThan(2);
-    } finally {
-      probe.remove();
-    }
+    const style = getComputedStyle(content);
+    expect(style.maxWidth).not.toBe('none');
+    expect(parseFloat(style.fontSize)).toBeCloseTo(17, 0);
+    expect(parseFloat(style.lineHeight) / parseFloat(style.fontSize)).toBeCloseTo(1.9, 1);
+  });
+
+  it('markup posture fills its pane with no inner measure cap', async () => {
+    // The working surface fills the card the way a code editor fills its pane; the host's card
+    // cap is the one width constraint.
+    const screen = render(MarkdownEditor, { value: 'plain prose', name: 'body', surface: 'markup' });
+    await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+    const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
+    const markupStyle = getComputedStyle(content);
+    expect(markupStyle.maxWidth).toBe('none');
+    expect(parseFloat(markupStyle.fontSize)).toBeCloseTo(16, 0);
   });
 
   it('parses strikethrough under the GFM base and renders it struck', async () => {
@@ -561,6 +552,18 @@ describe('MarkdownEditor', () => {
     } finally {
       unpin();
     }
+  });
+
+  it('dims the directive rails with their lines in focus mode', async () => {
+    // Without the override a dimmed directive block keeps full-strength bars and becomes the
+    // one chromatic object in the field; the dim rule re-resolves the rail percentages.
+    const doc = ['lit paragraph', '', ':::panel', 'inside', ':::'].join('\n');
+    const screen = render(MarkdownEditor, { value: doc, name: 'body', focusMode: true });
+    await expect.poll(() => screen.container.querySelector('.cm-line.cm-cairn-directive-content')).not.toBeNull();
+    const inside = lineWith(screen.container, 'inside')!;
+    expect(inside.classList.contains('cm-cairn-focus-dim')).toBe(true);
+    // The dimmed line resolves the focus-mode rail percentage (the theme fallback, 24%).
+    expect(getComputedStyle(inside).getPropertyValue('--cairn-directive-rail-1').trim()).toBe('24%');
   });
 
   it('flattens chip backgrounds on dimmed lines in focus mode', async () => {

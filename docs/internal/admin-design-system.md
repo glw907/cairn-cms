@@ -71,7 +71,9 @@ theme roots, with font-smoothing on. The brand pair is variable; the editor face
 
 - Display: `var(--font-display)` = Bricolage Grotesque. Brand wordmark and page `h1` only, so it stays
   an accent and never overbears. Apply as `font-[family-name:var(--font-display)]`.
-- Body and UI: `var(--font-body)` = Figtree. The default everywhere else.
+- Body and UI: `var(--font-body)` = IBM Plex Sans. The default everywhere else, chosen to
+  harmonize with the editor face (iA Writer Mono descends from IBM Plex Mono, so chrome and
+  manuscript share one superfamily skeleton; Geoff's direction, 2026-06-12).
 - Editor writing surface: `var(--font-editor)` = iA Writer Mono, on the CodeMirror `.cm-content` only.
   Chosen 2026-06-12 by the editor-experience pass's font trial over the Monaspace, Courier Prime,
   JetBrains Mono, Intel One Mono, and Atkinson Hyperlegible Mono candidates.
@@ -169,14 +171,22 @@ Recipes:
   a plain-language `title` tooltip and a constant left gutter. Depth and roles come from one
   cached scan in `markdown-directives.ts` (`fenceScan`), which pairs a bare closer with the most
   recent named opener and disowns fence-shaped lines inside code blocks.
+- **Editor: the surface postures and the footer strip.** The editor card's footer is the
+  writing-environment strip (the top toolbar acts on the text; the bottom carries how you are
+  writing): word count left, then the posture pair, the writing-mode toggles, a hairline, and
+  Markdown help, all ghost `btn-xs` with `aria-pressed` and the `bg-primary/10 text-primary`
+  pressed pair. The postures: Prose (default) is the writing instrument, a 72ch measure centered
+  in a 49rem card at a 1.0625rem type step and 1.9 leading; Markup is the working surface, a
+  56rem card the text fills at 1rem/1.8 for tables, attributed directives, and long URLs. The
+  posture persists as `cairn-editor-surface`; the card cap and the title wrapper follow it.
 - **Editor: the writing modes.** Focus mode dims non-caret paragraphs to `--cairn-focus-dim-ink`,
   a DELIBERATE sub-AA transient-state call (~3:1 floor, user-toggled, one activation from full
-  contrast; G174 is the conformance shape) that also flattens chip backgrounds on dimmed lines.
-  Typewriter scroll recenters via an instant `scrollIntoView`, so no reduced-motion gate is owed.
-  Both persist per browser (`cairn-editor-focus-mode`, `cairn-editor-typewriter`) and surface as
-  `aria-pressed` toggle buttons in the More popover (never `menuitemcheckbox`; the popover list
-  is deliberately not an ARIA menu, and a toggle flip leaves the menu open so the new state reads
-  in place).
+  contrast; G174 is the conformance shape) that also flattens chip backgrounds on dimmed lines
+  AND eases the rails and the document title back with the field. Typewriter scroll recenters
+  via an instant `scrollIntoView`, so no reduced-motion gate is owed. Both persist per browser
+  (`cairn-editor-focus-mode`, `cairn-editor-typewriter`) as visible `aria-pressed` toggles in
+  the footer strip (never `menuitemcheckbox` in the More popover; that list is deliberately not
+  an ARIA menu).
 - Light `--color-accent` is a locked margin at `oklch(54% 0.16 300)`: it must hold AA both on
   `base-100` and on its own 8% tint (the leaf/inline directive chips). The editor's focus indicator is a deliberate 1px 70%-alpha primary hairline, never a 2px
   ring: a focused text surface sits in keyboard modality, so `:focus-visible` cannot quiet it. That
@@ -186,8 +196,13 @@ Recipes:
 
 ## Chrome and spacing
 
-- The sidebar and topbar form one flat header strip: both `h-16`, `bg-base-100`, the same hairline
-  border-bottom, no shadow, so they read as one band across the sidebar seam. The content area is
+- The sidebar and topbar form one flat header strip: both `h-16` (the topbar PINNED with
+  `h-16 min-h-16 py-0`, since a content-driven navbar drifts with font metrics and the two
+  border-bottoms stop meeting at the seam), `bg-base-100`, the same hairline border-bottom, no
+  shadow, so they read as one band across the sidebar seam. The nav sidebar is `w-56`; the
+  chrome cedes width to the editor (the edit page's details column is `17rem` behind a `gap-10`
+  gutter, its card hairline-only with no shadow, so the editor is the page's one floating
+  object). The content area is
   `bg-base-200`; panels are `bg-base-100`.
 - Align the brand mark, the group eyebrows, and the nav-item icons on one left edge. Keep consistent
   vertical rhythm between groups. The list table drops its Date column below `sm` and stacks its header.

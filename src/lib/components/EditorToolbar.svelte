@@ -5,9 +5,9 @@ More overflow menu, then the host's Insert controls) and the Write/Preview segme
 right. Format buttons ask the host to transform the editor's current selection; the host supplies the
 Insert group through the `insertControls` snippet so the strip stays free of picker wiring. While
 Preview shows, a device trigger joins the segmented capsule and opens a popover menu of preview
-widths, reported to the host through `onDevice`. The More menu also carries the host's persisted
-writing-mode toggles (focus mode, typewriter scrolling) as pressed-state buttons above the format picks. The glyphs are stroke SVG icons in the admin's
-house style (24x24 viewBox, `currentColor`, round caps).
+widths, reported to the host through `onDevice`. The writing-mode toggles live in the host's card
+footer (the bottom strip carries the writing environment; this strip acts on the text). The glyphs
+are stroke SVG icons in the admin's house style (24x24 viewBox, `currentColor`, round caps).
 -->
 <script lang="ts">
   import type { Snippet } from 'svelte';
@@ -26,14 +26,6 @@ house style (24x24 viewBox, `currentColor`, round caps).
     /** Pick a preview-frame width. When set, a device trigger joins the Write/Preview capsule
      *  while Preview shows. */
     onDevice?: (id: PreviewDeviceId) => void;
-    /** Whether focus mode is on; the More menu's toggle reflects it. */
-    focusMode?: boolean;
-    /** Flip focus mode. When set, the toggle joins the More menu. */
-    onFocusMode?: (on: boolean) => void;
-    /** Whether typewriter scrolling is on; the More menu's toggle reflects it. */
-    typewriter?: boolean;
-    /** Flip typewriter scrolling. When set, the toggle joins the More menu. */
-    onTypewriter?: (on: boolean) => void;
     /** The host's Insert controls (link picker, component insert, image), rendered in the Insert group. */
     insertControls?: Snippet;
   }
@@ -44,10 +36,6 @@ house style (24x24 viewBox, `currentColor`, round caps).
     onMode,
     device = 'desktop',
     onDevice,
-    focusMode = false,
-    onFocusMode,
-    typewriter = false,
-    onTypewriter,
     insertControls,
   }: Props = $props();
 
@@ -265,34 +253,6 @@ house style (24x24 viewBox, `currentColor`, round caps).
     ontoggle={(e) => (moreOpen = e.newState === 'open')}
     class="dropdown menu menu-sm bg-base-100 rounded-box w-44 border border-[var(--cairn-card-border)] p-1 shadow-[var(--cairn-shadow)]"
   >
-    <!-- The writing modes sit above the format items behind a hairline, persisted by the host.
-         The device list's idiom: plain buttons with aria-pressed carrying the on/off state (this
-         popover list is not an ARIA menu, so a menuitemcheckbox would sit in an invalid context);
-         the check glyph mirrors the state visually. A flip leaves the menu open so the new
-         pressed state is perceivable in place; only a format pick dismisses it. -->
-    {#if onFocusMode}
-      <li>
-        <button type="button" aria-pressed={focusMode} onclick={() => onFocusMode(!focusMode)}>
-          <span class="grow">Focus mode</span>
-          {#if focusMode}
-            {@render strokeIcon(checkPaths)}
-          {/if}
-        </button>
-      </li>
-    {/if}
-    {#if onTypewriter}
-      <li>
-        <button type="button" aria-pressed={typewriter} onclick={() => onTypewriter(!typewriter)}>
-          <span class="grow">Typewriter scrolling</span>
-          {#if typewriter}
-            {@render strokeIcon(checkPaths)}
-          {/if}
-        </button>
-      </li>
-    {/if}
-    {#if onFocusMode || onTypewriter}
-      <li class="my-1 border-t border-[var(--cairn-card-border)]" role="separator"></li>
-    {/if}
     {#each moreItems as item (item.kind)}
       <li><button type="button" onclick={() => pickMore(item.kind)}>{item.label}</button></li>
     {/each}

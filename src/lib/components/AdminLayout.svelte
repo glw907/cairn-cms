@@ -244,8 +244,10 @@ identical on every host regardless of the site's own theme.
 
     <div class="drawer-content flex flex-col">
       <!-- The topbar is a flat, opaque continuation of the sidebar's brand band: same surface and the
-           same hairline, no shadow, so the two form one clean header strip across the sidebar seam. -->
-      <div class="navbar bg-base-100 border-b border-[var(--cairn-card-border)] sticky top-0 z-30 gap-2 px-4 lg:px-8">
+           same hairline, no shadow, so the two form one clean header strip across the sidebar seam.
+           The height is pinned to the brand band's h-16 (a content-driven navbar drifts with font
+           metrics, and the two border-bottoms stop meeting at the seam). -->
+      <div class="navbar bg-base-100 border-b border-[var(--cairn-card-border)] sticky top-0 z-30 h-16 min-h-16 gap-2 px-4 py-0 lg:px-8">
         <div class="flex-none lg:hidden">
           <label for="cairn-drawer" aria-label="Open menu" class="btn btn-square btn-ghost">
             <MenuIcon class="h-5 w-5" />
@@ -293,7 +295,7 @@ identical on every host regardless of the site's own theme.
         </div>
       </div>
 
-      <main class="flex-1 p-4 lg:p-8">
+      <main class="flex-1 p-4 lg:px-10 lg:py-8">
         {@render children()}
       </main>
 
@@ -380,7 +382,7 @@ identical on every host regardless of the site's own theme.
 
     <div class="drawer-side">
       <label for="cairn-drawer" aria-label="Close menu" class="drawer-overlay"></label>
-      <nav class="bg-base-100 flex min-h-full w-64 flex-col border-r border-[var(--cairn-card-border)]" aria-label="Site content">
+      <nav class="bg-base-100 flex min-h-full w-56 flex-col border-r border-[var(--cairn-card-border)]" aria-label="Site content">
         <!-- Brand band, the same height as the topbar. The mark sits in a filled "app-icon" tile, which
              anchors the corner as a deliberate brand object rather than a washed box. The logo and
              wordmark link to the admin home. -->

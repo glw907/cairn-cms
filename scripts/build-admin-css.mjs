@@ -60,8 +60,10 @@ export async function buildAdminCss() {
   // The self-hosted fonts are declared here, after compile, so the woff2 url is not rebased by the
   // @import inlining (which resolves it against the source tree instead of the shipped sheet). The
   // url is relative to this output, dist/components/cairn-admin.css, beside the dist/components/fonts/
-  // files svelte-package copies. Figtree is the body and UI face, Bricolage Grotesque the display,
-  // and iA Writer Mono the editor writing surface (static faces, so four files cover the styles).
+  // files svelte-package copies. IBM Plex Sans is the body and UI face (the same superfamily as
+  // the editor's iA Writer Mono, which descends from Plex Mono, so the chrome and the manuscript
+  // share one skeleton), Bricolage Grotesque the display accent, and iA Writer Mono the editor
+  // writing surface (static faces, so four files cover the styles).
   /**
    * @param {number} weight the face's font-weight, 400 or 700
    * @param {string} style the face's font-style, normal or italic
@@ -70,7 +72,7 @@ export async function buildAdminCss() {
   const iaWriterFace = (weight, style) =>
     `@font-face{font-family:'iA Writer Mono';font-style:${style};font-display:swap;font-weight:${weight};src:url('./fonts/ia-writer-mono-latin-${weight}-${style}.woff2') format('woff2')}\n`;
   const fontFace =
-    "@font-face{font-family:'Figtree Variable';font-style:normal;font-display:swap;font-weight:300 900;src:url('./fonts/figtree.woff2') format('woff2')}\n" +
+    "@font-face{font-family:'IBM Plex Sans Variable';font-style:normal;font-display:swap;font-weight:100 700;src:url('./fonts/ibm-plex-sans.woff2') format('woff2')}\n" +
     "@font-face{font-family:'Bricolage Grotesque Variable';font-style:normal;font-display:swap;font-weight:400 800;src:url('./fonts/bricolage-grotesque.woff2') format('woff2')}\n" +
     iaWriterFace(400, 'normal') +
     iaWriterFace(700, 'normal') +

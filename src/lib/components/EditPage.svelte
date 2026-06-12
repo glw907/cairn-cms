@@ -18,6 +18,9 @@ transient flashes, and the editor card's footer holds the word count and the Mar
   import { flushSync, untrack } from 'svelte';
   import { beforeNavigate } from '$app/navigation';
   import { page } from '$app/state';
+  import BlocksIcon from '@lucide/svelte/icons/blocks';
+  import LinkIcon from '@lucide/svelte/icons/link';
+  import FileSymlinkIcon from '@lucide/svelte/icons/file-symlink';
   import CsrfField from './CsrfField.svelte';
   import MarkdownEditor from './MarkdownEditor.svelte';
   import EditorToolbar from './EditorToolbar.svelte';
@@ -178,16 +181,21 @@ transient flashes, and the editor card's footer holds the word count and the Mar
     device = id;
     localStorage.setItem(deviceStorageKey, id);
   }
-  // The writing modes (focus, typewriter), per-browser preferences on the device pick's pattern:
-  // off by default, read in an effect so SSR never touches localStorage, written by the
-  // toolbar's toggles. The effect tracks nothing reactive, so it runs once.
+  // The writing modes (focus, typewriter) and the surface posture, per-browser preferences on
+  // the device pick's pattern: read in an effect so SSR never touches localStorage, written by
+  // the card footer's toggles. The effect tracks nothing reactive, so it runs once.
   const focusStorageKey = 'cairn-editor-focus-mode';
   const typewriterStorageKey = 'cairn-editor-typewriter';
+  const surfaceStorageKey = 'cairn-editor-surface';
   let focusMode = $state(false);
   let typewriter = $state(false);
+  // The surface posture: prose (the writing instrument) by default; markup is the dense
+  // working surface.
+  let surface = $state<'prose' | 'markup'>('prose');
   $effect(() => {
     focusMode = localStorage.getItem(focusStorageKey) === 'true';
     typewriter = localStorage.getItem(typewriterStorageKey) === 'true';
+    if (localStorage.getItem(surfaceStorageKey) === 'markup') surface = 'markup';
   });
   function setFocusMode(on: boolean) {
     focusMode = on;
@@ -196,6 +204,15 @@ transient flashes, and the editor card's footer holds the word count and the Mar
   function setTypewriter(on: boolean) {
     typewriter = on;
     localStorage.setItem(typewriterStorageKey, String(on));
+  }
+  function setSurface(posture: 'prose' | 'markup') {
+    surface = posture;
+    localStorage.setItem(surfaceStorageKey, posture);
+  }
+  // One source for the footer toggles' pressed/idle styling. The class names must stay verbatim
+  // string literals: the admin CSS build's @source scan reads this file as raw text.
+  function footerToggleClass(pressed: boolean): string {
+    return `btn btn-ghost btn-xs font-normal ${pressed ? 'bg-primary/10 text-primary' : 'text-[var(--color-muted)]'}`;
   }
   const activeDevice = $derived(previewDevice(device));
   // The iframe document around the rendered html: the site's stylesheets from the adapter's
@@ -633,29 +650,37 @@ transient flashes, and the editor card's footer holds the word count and the Mar
   onsubmit={onEditSubmit}
   oninput={onFormInput}
   oninvalidcapture={onFormInvalid}
-  class={mode === 'preview' ? '' : 'lg:grid lg:grid-cols-[1fr_20rem] lg:gap-6'}
+  class={mode === 'preview' ? '' : 'lg:grid lg:grid-cols-[1fr_17rem] lg:gap-10'}
 >
   <CsrfField />
   {#if data.isNew}<input type="hidden" name="new" value="1" />{/if}
 
   <!-- In Write mode the card hugs the manuscript: the column caps near the 70ch measure and
        centers, so the card frame never spans emptiness on a wide window. Preview keeps the full
-       column for its device frames. 48rem = the measure (70ch of the editor face at 1rem is
-       about 42rem) plus the surface padding and the card borders, with enough left over that
-       the toolbar keeps its single row. -->
-  <div class={mode === 'preview' ? 'lg:order-1' : 'lg:order-1 mx-auto w-full max-w-[48rem]'}>
+       column for its device frames. The cap follows the surface posture: prose hugs its 72ch
+       measure (49rem covers it at the prose type step), markup puts the ceiling near 89ch of
+       the base face for tables, attributed directives, and long URLs. The toggle lives in the
+       card footer with the other writing preferences. -->
+  <div class={mode === 'preview' ? 'lg:order-1' : `lg:order-1 mx-auto w-full ${surface === 'prose' ? 'max-w-[49rem]' : 'max-w-[56rem]'}`}>
     {#if titleField}
       <!-- The hoisted document title: large, borderless, in the display face, so the manuscript
            reads as the protagonist. It submits as name="title", the same field as before. The
-           admin sheet gives it the editor's quiet focus hairline (see .cairn-doc-title there). -->
-      <input
-        class="cairn-doc-title mb-4 w-full border-0 bg-transparent text-3xl font-bold tracking-tight font-[family-name:var(--font-display)] placeholder:text-[var(--color-muted)]"
-        name="title"
-        value={str(data.frontmatter.title)}
-        placeholder={titleField.label}
-        aria-label={titleField.label}
-        required={titleField.required}
-      />
+           admin sheet gives it the editor's quiet focus hairline (see .cairn-doc-title there).
+           In markup posture the surface fills the card, so shared inline padding is the whole
+           alignment; in prose posture the manuscript centers on its measure, so the wrapper
+           mirrors that geometry (the editor face at the prose size, the measure, auto margins).
+           Under focus mode the title eases back with the rest of the context unless it holds
+           focus itself. -->
+      <div class={surface === 'prose' ? 'mb-4 mx-auto w-full max-w-[72ch] px-5 text-[1.0625rem] font-[family-name:var(--font-editor,ui-monospace,monospace)]' : 'mb-4 w-full px-5'}>
+        <input
+          class="cairn-doc-title w-full border-0 bg-transparent text-3xl font-bold tracking-tight font-[family-name:var(--font-display)] placeholder:text-[var(--color-muted)] {focusMode ? 'cairn-doc-title-dim' : ''}"
+          name="title"
+          value={str(data.frontmatter.title)}
+          placeholder={titleField.label}
+          aria-label={titleField.label}
+          required={titleField.required}
+        />
+      </div>
     {/if}
     <!-- The editor card: the toolbar strip and the editing surface share one frame, so the editor
          reads as a single object. The card carries the formatting shortcuts for everything in it. -->
@@ -665,52 +690,46 @@ transient flashes, and the editor card's footer holds the word count and the Mar
       role="group"
       aria-label="Editor"
     >
-      <EditorToolbar
-        {format}
-        {mode}
-        onMode={setMode}
-        {device}
-        onDevice={setDevice}
-        {focusMode}
-        onFocusMode={setFocusMode}
-        {typewriter}
-        onTypewriter={setTypewriter}
-      >
+      <EditorToolbar {format} {mode} onMode={setMode} {device} onDevice={setDevice}>
         {#snippet insertControls()}
           <!-- Plain triggers only: the dialogs they open hold their own <form> elements, so the
-               dialogs themselves mount outside the edit form at the bottom of this component. -->
+               dialogs themselves mount outside the edit form at the bottom of this component.
+               Icon buttons like the format strip beside them: the labels live in aria-label and
+               the title tooltip, so the Insert group reads as part of one instrument strip. -->
           {#if hasComponents}
             <button
               type="button"
-              class="btn btn-sm btn-ghost"
+              class="btn btn-sm btn-ghost btn-square"
               aria-haspopup="dialog"
               aria-label="Insert block"
+              title="Insert block"
               disabled={insertDisabled}
               onclick={() => insertDialog?.open()}
             >
-              Insert block
+              <BlocksIcon class="h-4 w-4" aria-hidden="true" />
             </button>
           {/if}
           <button
             type="button"
-            class="btn btn-sm btn-ghost"
+            class="btn btn-sm btn-ghost btn-square"
             aria-haspopup="dialog"
             aria-label="Web link (Ctrl+K)"
             title="Web link (Ctrl+K)"
             disabled={insertDisabled}
             onclick={() => webLinkDialog?.open()}
           >
-            Web link
+            <LinkIcon class="h-4 w-4" aria-hidden="true" />
           </button>
           <button
             type="button"
-            class="btn btn-sm btn-ghost"
+            class="btn btn-sm btn-ghost btn-square"
             aria-haspopup="dialog"
             aria-label="Link to page"
+            title="Link to page"
             disabled={insertDisabled}
             onclick={() => linkPicker?.open()}
           >
-            Link to page
+            <FileSymlinkIcon class="h-4 w-4" aria-hidden="true" />
           </button>
           <button
             type="button"
@@ -733,6 +752,7 @@ transient flashes, and the editor card's footer holds the word count and the Mar
         <MarkdownEditor
           bind:value={body}
           name="body"
+          {surface}
           registerInsert={(fn) => (insert = fn)}
           registerInsertLink={(fn) => (insertLink = fn)}
           registerGetSelection={(fn) => (getSelection = fn)}
@@ -793,17 +813,56 @@ transient flashes, and the editor card's footer holds the word count and the Mar
         </div>
       {/if}
       <!-- The card footer, part of the same instrument frame. It stays up in Preview too, so the
-           frame never jumps between tabs and the count keeps reading while proofing. -->
+           frame never jumps between tabs and the count keeps reading while proofing. The strip
+           carries the writing environment (the count, the persisted writing modes, help) while
+           the top toolbar acts on the text; the toggles live here visible rather than buried in
+           an overflow menu. -->
       <div class="flex items-center justify-between border-t border-[var(--cairn-card-border)] px-3 py-1 text-xs text-[var(--color-muted)]">
         <span>{wordLabel}</span>
-        <button
-          type="button"
-          class="btn btn-ghost btn-xs font-normal text-[var(--color-muted)]"
-          aria-haspopup="dialog"
-          onclick={() => helpDialog?.open()}
-        >
-          Markdown help
-        </button>
+        <div class="flex items-center gap-1">
+          <button
+            type="button"
+            class={footerToggleClass(surface === 'prose')}
+            aria-pressed={surface === 'prose'}
+            onclick={() => setSurface('prose')}
+          >
+            Prose
+          </button>
+          <button
+            type="button"
+            class={footerToggleClass(surface === 'markup')}
+            aria-pressed={surface === 'markup'}
+            onclick={() => setSurface('markup')}
+          >
+            Markup
+          </button>
+          <div class="mx-1 h-4 w-px bg-[var(--cairn-card-border)]" aria-hidden="true"></div>
+          <button
+            type="button"
+            class={footerToggleClass(focusMode)}
+            aria-pressed={focusMode}
+            onclick={() => setFocusMode(!focusMode)}
+          >
+            Focus mode
+          </button>
+          <button
+            type="button"
+            class={footerToggleClass(typewriter)}
+            aria-pressed={typewriter}
+            onclick={() => setTypewriter(!typewriter)}
+          >
+            Typewriter
+          </button>
+          <div class="mx-1 h-4 w-px bg-[var(--cairn-card-border)]" aria-hidden="true"></div>
+          <button
+            type="button"
+            class="btn btn-ghost btn-xs font-normal text-[var(--color-muted)]"
+            aria-haspopup="dialog"
+            onclick={() => helpDialog?.open()}
+          >
+            Markdown help
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -813,7 +872,9 @@ transient flashes, and the editor card's footer holds the word count and the Mar
   <aside class="lg:order-2 mt-4 lg:mt-0" class:hidden={mode === 'preview'}>
     <!-- One sidebar card, three labeled groups. Each group is its own fieldset so its eyebrow is
          a real legend that screen readers announce with the fields it holds. -->
-    <div class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 flex flex-col gap-5 p-4 shadow-[var(--cairn-shadow)]">
+    <!-- Quieter than the editor card on purpose (hairline, no shadow): the editor is the one
+         floating object on the page, and the details read as margin furniture beside it. -->
+    <div class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 flex flex-col gap-6 p-4">
       {#if detailFields.length}
       <fieldset class="m-0 flex min-w-0 flex-col gap-3 border-0 p-0">
       <legend class={eyebrowClass}>Details</legend>
@@ -822,12 +883,12 @@ transient flashes, and the editor card's footer holds the word count and the Mar
           {@const f = field as TextareaField}
           <label class="flex flex-col gap-1">
             <span class="text-sm font-medium">{f.label}</span>
-            <textarea class="textarea" name={f.name} aria-label={f.label} rows={f.rows ?? 3}>{str(data.frontmatter[f.name])}</textarea>
+            <textarea class="textarea textarea-sm" name={f.name} aria-label={f.label} rows={f.rows ?? 3}>{str(data.frontmatter[f.name])}</textarea>
           </label>
         {:else if field.type === 'date'}
           <label class="flex flex-col gap-1">
             <span class="text-sm font-medium">{field.label}</span>
-            <input class="input" type="date" name={field.name} aria-label={field.label} value={str(data.frontmatter[field.name])} />
+            <input class="input input-sm" type="date" name={field.name} aria-label={field.label} value={str(data.frontmatter[field.name])} />
           </label>
         {:else if field.type === 'boolean'}
           <label class="label cursor-pointer justify-start gap-2">
@@ -860,7 +921,7 @@ transient flashes, and the editor card's footer holds the word count and the Mar
           <label class="flex flex-col gap-1">
             <span class="text-sm font-medium">{f.label}</span>
             <input
-              class="input"
+              class="input input-sm"
               name={f.name}
               aria-label={f.label}
               placeholder={f.placeholder}
@@ -870,7 +931,7 @@ transient flashes, and the editor card's footer holds the word count and the Mar
         {:else}
           <label class="flex flex-col gap-1">
             <span class="text-sm font-medium">{field.label}</span>
-            <input class="input" name={field.name} aria-label={field.label} value={str(data.frontmatter[field.name])} required={field.required} />
+            <input class="input input-sm" name={field.name} aria-label={field.label} value={str(data.frontmatter[field.name])} required={field.required} />
           </label>
         {/if}
       {/each}

@@ -31,6 +31,9 @@ through the adapter's render. Swapping the editor stays a one-file change.
     focusMode?: boolean;
     /** Typewriter scroll: hold the cursor line at vertical center while typing. Off by default. */
     typewriter?: boolean;
+    /** The surface posture. Prose is the writing instrument (72ch measure, larger type, looser
+     *  leading); markup is the working surface (fills the card, denser). Prose by default. */
+    surface?: 'prose' | 'markup';
   }
 
   let {
@@ -43,6 +46,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
     completionSources = [],
     focusMode = false,
     typewriter = false,
+    surface = 'prose',
   }: Props = $props();
 
   let host = $state<HTMLDivElement | null>(null);
@@ -57,6 +61,12 @@ through the adapter's render. Swapping the editor stays a one-file change.
   let modes: typeof import('./editor-modes.js') | null = null;
   let focusCompartment: import('@codemirror/state').Compartment | null = null;
   let typewriterCompartment: import('@codemirror/state').Compartment | null = null;
+  let surfaceCompartment: import('@codemirror/state').Compartment | null = null;
+  // The posture themes, swapped through the surface compartment. Each owns its type step and
+  // leading (the base theme deliberately sets neither on the content node, so the postures never
+  // contest it on adoption order). Built in onMount beside the base theme.
+  let proseTheme: import('@codemirror/state').Extension | null = null;
+  let markupTheme: import('@codemirror/state').Extension | null = null;
 
   onMount(async () => {
     const viewMod = await import('@codemirror/view');
@@ -121,19 +131,23 @@ through the adapter's render. Swapping the editor stays a one-file change.
     const theme = EditorView.theme(
       {
         '&': { backgroundColor: 'var(--color-base-100)', color: 'var(--color-base-content)', fontSize: '1rem' },
-        // The 50vh floor keeps a short entry reading as a writing surface, and because the
-        // contenteditable content area carries the height, a click in the empty space below the
-        // text still lands in the editor and focuses it. The 70ch cap with auto margins holds
-        // the manuscript to a readable measure, centered in whatever width the card gives it.
+        // The 60vh floor keeps the surface reading as the page's center stage even when the
+        // entry is short, and because the contenteditable content area carries the height, a
+        // click in the empty space below the text still lands in the editor and focuses it.
+        // No inner measure cap: the surface fills the card the way a code editor fills its
+        // pane, and the card's own width (the host caps it near 89ch of this face) is the one
+        // constraint. The surface carries tables, attributed directives, and long URLs, so the
+        // ceiling leans toward the code-editor end of the ergonomic band rather than the
+        // long-form ideal; paragraphs wrap comfortably below it.
         '.cm-content': {
           // The theme roots set --font-editor to the self-hosted iA Writer Mono; the inline
           // fallback keeps the surface monospace outside an admin theme wrapper.
           fontFamily: "var(--font-editor, ui-monospace, monospace)",
-          padding: '0.875rem 1.25rem',
-          lineHeight: '1.8',
-          minHeight: '50vh',
-          maxWidth: '70ch',
-          margin: '0 auto',
+          // Vertical padding holds at least one line-height of the body (1.8 x 1rem), with a
+          // touch more below than above (the optical center sits high); the sides then read as
+          // gutters rather than letterboxing.
+          padding: '2rem 1.25rem 2.5rem',
+          minHeight: '60vh',
         },
         '.cm-cursor': { borderLeftColor: 'var(--color-primary)' },
         // A quiet always-on focus hairline. :focus-visible is no escape here: browsers treat a
@@ -176,13 +190,38 @@ through the adapter's render. Swapping the editor stays a one-file change.
           color: 'var(--cairn-focus-dim-ink, oklch(66% 0.01 75))',
           backgroundColor: 'transparent',
         },
+        // The rails dim with their text: the rail color-mix reads --cairn-directive-rail-N per
+        // element, so overriding the percentages on dimmed lines re-resolves every bar in place.
+        // Without this the directive block keeps full-strength bars and becomes the one
+        // chromatic object in the dimmed field. The active rail never lands on a dimmed line
+        // (the caret's paragraph is the lit one), so only the quiet steps need overrides.
+        '.cm-cairn-focus-dim': {
+          '--cairn-directive-rail-1': 'var(--cairn-focus-dim-rail-1, 24%)',
+          '--cairn-directive-rail-2': 'var(--cairn-focus-dim-rail-2, 28%)',
+          '--cairn-directive-rail-3': 'var(--cairn-focus-dim-rail-3, 32%)',
+        },
       },
       { dark: isDark },
     );
 
+    // The prose posture: the writing instrument. A 72ch measure centered in the card, one type
+    // step up, looser leading. Markup posture (the base theme) keeps the dense fill for tables,
+    // directives, and long URLs. Placed after the base theme in the extension list, so its keys
+    // win the spec-order ties.
+    proseTheme = EditorView.theme(
+      {
+        // Scoped to the content node (not the editor root) so the base theme's root font-size
+        // never contests it, and so the 72ch measure resolves against the prose type step.
+        '.cm-content': { fontSize: '1.0625rem', lineHeight: '1.9', maxWidth: '72ch', margin: '0 auto' },
+      },
+      { dark: isDark },
+    );
+    markupTheme = EditorView.theme({ '.cm-content': { lineHeight: '1.8' } }, { dark: isDark });
+
     modes = modesMod;
     focusCompartment = new stateMod.Compartment();
     typewriterCompartment = new stateMod.Compartment();
+    surfaceCompartment = new stateMod.Compartment();
 
     view = new EditorView({
       parent: host,
@@ -207,6 +246,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
           highlightMod.cairnDirectivePlugin(),
           EditorView.contentAttributes.of({ spellcheck: 'true', autocorrect: 'on', autocapitalize: 'sentences' }),
           theme,
+          surfaceCompartment.of(surface === 'prose' ? proseTheme : markupTheme),
           EditorView.updateListener.of((update) => {
             if (update.docChanged) value = update.state.doc.toString();
           }),
@@ -239,11 +279,13 @@ through the adapter's render. Swapping the editor stays a one-file change.
   $effect(() => {
     const focus = focusMode;
     const typing = typewriter;
-    if (!mounted || !view || !modes || !focusCompartment || !typewriterCompartment) return;
+    const posture = surface;
+    if (!mounted || !view || !modes || !focusCompartment || !typewriterCompartment || !surfaceCompartment) return;
     view.dispatch({
       effects: [
         focusCompartment.reconfigure(focus ? modes.focusMode() : []),
         typewriterCompartment.reconfigure(typing ? modes.typewriterScroll() : []),
+        surfaceCompartment.reconfigure((posture === 'prose' ? proseTheme : markupTheme) ?? []),
       ],
     });
   });

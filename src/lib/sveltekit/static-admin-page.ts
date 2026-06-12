@@ -32,7 +32,7 @@ const SHARED_STYLE = `:root {
   --shadow: 0 1px 2px oklch(28% 0.02 75 / 0.05), 0 18px 40px -12px oklch(28% 0.02 75 / 0.16);
   --radius-box: 1rem;
   --radius-field: 0.625rem;
-  --font: 'Figtree Variable', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font: 'IBM Plex Sans Variable', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 @media (prefers-color-scheme: dark) {
   :root {

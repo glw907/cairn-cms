@@ -2,6 +2,28 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## Unreleased
+
+An iterative design session on the editor-as-home direction, shipped as one window.
+
+The admin's UI face is now IBM Plex Sans (self-hosted, SIL OFL), replacing Figtree: the editor
+writes in iA Writer Mono, which descends from IBM Plex Mono, so the chrome and the manuscript
+share one type skeleton. The brand display face (Bricolage Grotesque) is unchanged.
+
+The editor gains two surface postures, persisted and toggled from the card footer: Prose (the
+default) is the writing instrument, a 72ch centered measure at a larger type step; Markup is the
+working surface, a wide dense fill for tables, attributed directives, and long URLs. The footer
+is now the writing-environment strip (word count, postures, focus mode, typewriter, help), the
+insert actions joined the toolbar as icons, and the document title sits on the manuscript's left
+edge. Focus mode now also eases the directive rails and the title back with the dimmed field.
+
+The chrome cedes the stage: a narrower nav sidebar and details column, a wider gutter around the
+editor, a quieter details card, rebalanced surface margins, and the topbar pinned to the brand
+band's height so the header hairline meets across the seam.
+
+Consumers may: pass the new optional `surface` prop ('prose' | 'markup') when embedding
+`MarkdownEditor` directly. No action required; the release is additive.
+
 ## 0.52.1
 
 Two field reports from the first 0.52.0 session, both in-editor polish with no consumer action.

@@ -30,8 +30,8 @@ describe('admin css build', () => {
     // The fonts ship beside the compiled sheet, so the url must stay relative to the output, not the
     // source tree. A url rebased to `../src/...` would 404 for a consumer loading the dist sheet.
     expect(css).toContain('@font-face');
-    expect(css).toContain("font-family:'Figtree Variable'");
-    expect(css).toContain("url('./fonts/figtree.woff2')");
+    expect(css).toContain("font-family:'IBM Plex Sans Variable'");
+    expect(css).toContain("url('./fonts/ibm-plex-sans.woff2')");
     expect(css).toContain("url('./fonts/bricolage-grotesque.woff2')");
   });
 

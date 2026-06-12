@@ -375,3 +375,12 @@ wires and persists both.
 In Write mode the editor card caps near the manuscript's measure and centers, so wide windows no
 longer frame empty space; Preview keeps the full width. Nested directive rails space out to a
 4px gap with a matching gutter step. No consumer action.
+
+## 0.53.0: editor-as-home refinements, additive
+
+The UI face moves to IBM Plex Sans (harmonizing with the iA Writer Mono editor face), the editor
+gains persisted Prose/Markup surface postures toggled from its footer strip, the writing-mode
+toggles move from the toolbar overflow into that footer, the insert actions become toolbar icons,
+and the admin chrome narrows around a more central editor. No consumer action. A site embedding
+`MarkdownEditor` directly may pass the new optional `surface` prop, documented in
+[the components reference](../reference/components.md#markdowneditor).

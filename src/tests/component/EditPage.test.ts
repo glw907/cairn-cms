@@ -105,16 +105,43 @@ describe('EditPage', () => {
     expect(card.contains(pane)).toBe(true);
   });
 
-  it('caps the editor column at the measure in Write and frees it in Preview', async () => {
+  it('aligns the title with the manuscript edge and dims it under focus mode', async () => {
+    const screen = render(EditPage, postProps());
+    const title = screen.container.querySelector('input.cairn-doc-title')!;
+    // The surface fills the card, so the title aligns by carrying the surface's inline padding.
+    const wrapper = title.parentElement!;
+    expect(wrapper.classList.contains('px-5')).toBe(true);
+    // Focus mode eases the title back with the rest of the context.
+    expect(title.classList.contains('cairn-doc-title-dim')).toBe(false);
+    await screen.getByRole('button', { name: 'Focus mode', exact: true }).click();
+    expect(title.classList.contains('cairn-doc-title-dim')).toBe(true);
+  });
+
+  it('caps the editor column by posture in Write and frees it in Preview', async () => {
     const screen = render(EditPage, postProps());
     const column = screen.container.querySelector('form#cairn-edit-form > div')!;
-    // Write mode: the card hugs the manuscript, so the column carries the measure cap.
-    expect(column.classList.contains('max-w-[48rem]')).toBe(true);
+    // Prose posture (the default) hugs the 72ch measure.
+    expect(column.classList.contains('max-w-[49rem]')).toBe(true);
+    // Markup posture widens to the working ceiling.
+    await screen.getByRole('button', { name: 'Markup', exact: true }).click();
+    expect(column.classList.contains('max-w-[56rem]')).toBe(true);
+    expect(localStorage.getItem('cairn-editor-surface')).toBe('markup');
     await screen.getByRole('tab', { name: 'Preview' }).click();
     // Preview mode: the device frames need the full column.
-    expect(column.classList.contains('max-w-[48rem]')).toBe(false);
+    expect(column.classList.contains('max-w-[56rem]')).toBe(false);
     await screen.getByRole('tab', { name: 'Write' }).click();
-    expect(column.classList.contains('max-w-[48rem]')).toBe(true);
+    expect(column.classList.contains('max-w-[56rem]')).toBe(true);
+  });
+
+  it('seeds the surface posture from the persisted choice with a prose default', async () => {
+    localStorage.setItem('cairn-editor-surface', 'markup');
+    const screen = render(EditPage, postProps());
+    await expect
+      .element(screen.getByRole('button', { name: 'Markup', exact: true }))
+      .toHaveAttribute('aria-pressed', 'true');
+    await expect
+      .element(screen.getByRole('button', { name: 'Prose', exact: true }))
+      .toHaveAttribute('aria-pressed', 'false');
   });
 
   it('keeps the editor mounted but hidden in preview and restores it intact on Write', async () => {
@@ -253,10 +280,10 @@ describe('EditPage', () => {
     expect(localStorage.getItem('cairn-editor-preview-device')).toBe('tablet');
   });
 
-  it('toggles focus mode from the More menu and persists the flip', async () => {
+  it('toggles focus mode from the card footer and persists the flip', async () => {
     const screen = render(EditPage, postProps({ body: 'one\n\ntwo' }));
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
-    await screen.getByRole('button', { name: 'More formatting', exact: true }).click();
+    // The writing modes live visible in the footer strip, not behind the More overflow.
     const focusToggle = () => screen.getByRole('button', { name: 'Focus mode', exact: true });
     await expect.element(focusToggle()).toHaveAttribute('aria-pressed', 'false');
     await focusToggle().click();
@@ -264,20 +291,15 @@ describe('EditPage', () => {
     // The flip reaches the mounted editor: the caret sits at the start, so the second
     // paragraph dims.
     await expect.poll(() => screen.container.querySelector('.cm-line.cm-cairn-focus-dim')).not.toBeNull();
-    // A flip leaves the menu open (unlike a format pick), so the new pressed state is
-    // perceivable in place without reopening.
-    expect(screen.container.querySelector('#cairn-more-formatting-menu')!.matches(':popover-open')).toBe(true);
     await expect.element(focusToggle()).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('toggles typewriter scrolling from the More menu and persists the flip', async () => {
+  it('toggles typewriter scrolling from the card footer and persists the flip', async () => {
     const screen = render(EditPage, postProps());
-    await screen.getByRole('button', { name: 'More formatting', exact: true }).click();
-    const toggle = () => screen.getByRole('button', { name: 'Typewriter scrolling', exact: true });
+    const toggle = () => screen.getByRole('button', { name: 'Typewriter', exact: true });
     await expect.element(toggle()).toHaveAttribute('aria-pressed', 'false');
     await toggle().click();
     expect(localStorage.getItem('cairn-editor-typewriter')).toBe('true');
-    // The menu stays open across the flip; the pressed state updates in place.
     await expect.element(toggle()).toHaveAttribute('aria-pressed', 'true');
   });
 
@@ -287,12 +309,11 @@ describe('EditPage', () => {
     const screen = render(EditPage, postProps({ body: 'one\n\ntwo' }));
     // Focus mode arrives enabled: the editor dims the paragraph away from the mount caret.
     await expect.poll(() => screen.container.querySelector('.cm-line.cm-cairn-focus-dim')).not.toBeNull();
-    await screen.getByRole('button', { name: 'More formatting', exact: true }).click();
     await expect
       .element(screen.getByRole('button', { name: 'Focus mode', exact: true }))
       .toHaveAttribute('aria-pressed', 'true');
     await expect
-      .element(screen.getByRole('button', { name: 'Typewriter scrolling', exact: true }))
+      .element(screen.getByRole('button', { name: 'Typewriter', exact: true }))
       .toHaveAttribute('aria-pressed', 'true');
   });
 

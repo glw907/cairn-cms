@@ -305,6 +305,7 @@ let { value = $bindable(), name, registerInsert, registerInsertLink, registerGet
   completionSources?: CompletionSource[];
   focusMode?: boolean;
   typewriter?: boolean;
+  surface?: 'prose' | 'markup';
 };
 ```
 
@@ -317,8 +318,10 @@ dialog prefills from it), and `registerFormat` applies a named selection transfo
 `italic`, `h2`, `ol`, `codeblock`, or `table` (the toolbar calls it). `completionSources` wires
 generic CodeMirror autocomplete, such as the internal-link source. `focusMode` fades every
 paragraph except the caret's, and `typewriter` keeps the caret line vertically centered while
-typing; both are plain reactive booleans, so the host owns the toggles and any persistence
-(`EditPage` persists them per browser). CodeMirror loads only in the browser, so this component
+typing. `surface` picks the posture: `prose` (the default) sets a 72ch centered measure at a
+larger type step, `markup` fills the pane densely for tables and directives. All three are plain
+reactive props, so the host owns the toggles and any persistence (`EditPage` persists them per
+browser). CodeMirror loads only in the browser, so this component
 is client-only.
 
 The component renders no toolbar and no card chrome of its own; the host frames it. `EditPage`

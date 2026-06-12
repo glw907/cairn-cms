@@ -61,10 +61,18 @@ Phone, or Small phone to see the page the way a smaller screen will show it, and
 remembers your pick for next time. Links in the preview are just for looking; clicking one will
 not carry you away from your edits.
 
+## Prose and Markup
+
+The bottom edge of the editor carries your writing setup. Two postures sit there, and the editor
+remembers your pick. Prose, the everyday one, gives you a comfortable reading width and slightly
+larger type, sized for paragraphs. Markup widens the page and tightens the type for the things
+that need room: tables, layout blocks with long option lists, links with long addresses. Flip
+between them any time; your text never changes, only the desk it sits on.
+
 ## Focus mode and typewriter scrolling
 
-Two quiet helpers live behind the `…` button on the toolbar, and the editor remembers each choice
-the way it remembers your preview width.
+Two quiet helpers sit beside the postures on the editor's bottom edge, and the editor remembers
+each choice the way it remembers your preview width.
 
 Focus mode fades everything except the paragraph you are working on. The rest of the page stays
 readable, just stepped back, and moving your cursor moves the spotlight with it. Flip it off the

@@ -34,14 +34,17 @@ describe('composeRuntime extension carry-through', () => {
 
 describe('composeRuntime preview pass-through', () => {
   it('carries the adapter preview config onto the runtime untouched', () => {
-    // The showcase shape: a hashed stylesheet URL from a Vite `?url` import plus theme roots.
+    // The showcase shape: a hashed stylesheet URL from a Vite `?url` import plus theme roots,
+    // with a per-concept wrapper override (the ecxc shape: posts wrap differently from pages).
     const preview: PreviewConfig = {
       stylesheets: ['/_app/immutable/assets/app.B3xJk2.css'],
       bodyClass: 'bg-base-100',
       containerClass: 'prose mx-auto',
+      byConcept: { posts: { bodyClass: 'post-body', containerClass: 'post-module' } },
     };
     const runtime = composeRuntime({ adapter: { ...adapter(), preview }, siteConfig: testSiteConfig });
     expect(runtime.preview).toBe(preview);
+    expect(runtime.preview?.byConcept).toEqual({ posts: { bodyClass: 'post-body', containerClass: 'post-module' } });
   });
 
   it('leaves preview undefined when the adapter omits it', () => {

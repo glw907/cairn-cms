@@ -158,7 +158,9 @@ export interface NavMenuConfig {
  * How the edit page's preview frame reproduces the live site's content styling. The admin
  * deliberately never loads the site's CSS (chrome isolation), so a design-accurate preview needs
  * the site to name its stylesheets for the preview frame; without this knob the preview renders
- * unstyled markup.
+ * unstyled markup. The frame's srcdoc pins a white body background as a deliberately overridable
+ * default, so a site whose ground is not white should state its body background in its own
+ * stylesheet.
  */
 export interface PreviewConfig {
   /** Absolute or root-relative URLs of the site's compiled stylesheets, linked inside the
@@ -169,7 +171,15 @@ export interface PreviewConfig {
   /** Class list for a wrapper element around the rendered content, reproducing the site's
    *  content container (a prose or measure class). Omitted renders the content bare. */
   containerClass?: string;
+  /** Per-concept overrides of bodyClass and containerClass, keyed by concept id. An entry's
+   *  preview resolves the override for its concept over the top-level values; stylesheets are
+   *  always shared. */
+  byConcept?: Record<string, { bodyClass?: string; containerClass?: string }>;
 }
+
+/** The flat preview shape `editLoad` ships to the edit page: the top-level `PreviewConfig`
+ *  values with the entry's concept override applied, and no `byConcept` map. */
+export type ResolvedPreview = Omit<PreviewConfig, 'byConcept'>;
 
 /** Reserved asset slot (seam 4). Typed and unused in the rebuild; R7/R9 read it later with no contract change. */
 export interface AssetConfig {

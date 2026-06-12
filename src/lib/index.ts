@@ -21,6 +21,7 @@ export type {
   SenderConfig,
   NavMenuConfig,
   PreviewConfig,
+  ResolvedPreview,
   AssetConfig,
   RoutingRule,
   ConceptDescriptor,

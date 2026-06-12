@@ -68,7 +68,10 @@ interface PreviewConfig {
   stylesheets: string[];
   bodyClass?: string;
   containerClass?: string;
+  byConcept?: Record<string, { bodyClass?: string; containerClass?: string }>;
 }
+
+type ResolvedPreview = Omit<PreviewConfig, 'byConcept'>;
 ```
 
 How the edit page's preview frame reproduces the live site's content styling. Chrome isolation
@@ -80,7 +83,27 @@ site to name its compiled stylesheets here; without the knob the preview renders
 `?url` import of the site's CSS entry resolves the hashed asset URL at build time. `bodyClass`
 applies theme or typography root classes to the preview document's body, and `containerClass`
 wraps the rendered content in the site's content container (a prose or measure class); when
-omitted, the content renders bare.
+omitted, the content renders bare. One default worth knowing: the frame's srcdoc pins a white body
+background, deliberately overridable, so a site whose ground is not white should state its body
+background in one of the named stylesheets.
+
+`byConcept` overrides `bodyClass` and `containerClass` per concept, keyed by concept id, for a
+site whose concepts wrap content differently (a blog whose posts render inside a post module while
+its pages use a static-page wrapper). An entry's preview resolves the override for its concept
+over the top-level values, key by key: a missing override key keeps the top-level value, and only
+a string replaces it. Stylesheets are always shared. `editLoad` ships the already-resolved flat
+shape, `ResolvedPreview`, so the map itself never reaches the client.
+
+```ts
+preview: {
+  stylesheets: [siteCssUrl],
+  bodyClass: 'static-page',
+  containerClass: 'page-measure',
+  byConcept: {
+    posts: { bodyClass: 'post-body', containerClass: 'post-module' },
+  },
+},
+```
 
 The named sheet must be referenced only through `?url`, with the site layout linking the resolved
 URL from a `<svelte:head>`. A layout that also imports the same file statically folds it into the
@@ -552,7 +575,8 @@ function signatures above reference these.
 | `BackendConfig` | `interface BackendConfig` | The GitHub App backend a site reads from and commits to. |
 | `SenderConfig` | `interface SenderConfig` | Magic-link sender identity for Cloudflare Email Sending. |
 | `NavMenuConfig` | `interface NavMenuConfig` | A git-committed YAML menu the nav editor manages. |
-| `PreviewConfig` | `interface PreviewConfig` | The live site's stylesheets and container classes for the edit page's preview frame. |
+| `PreviewConfig` | `interface PreviewConfig` | The live site's stylesheets and container classes for the edit page's preview frame, with optional per-concept wrapper overrides. |
+| `ResolvedPreview` | `type ResolvedPreview = Omit<PreviewConfig, 'byConcept'>` | The flat per-entry preview shape `editLoad` ships: the top-level values with the entry's concept override applied. |
 | `AssetConfig` | `interface AssetConfig` | Reserved asset slot (seam 4), typed and unused in the rebuild. |
 | `CairnExtension` | `interface CairnExtension` | A future build-time extension that folds in like the adapter. |
 | `CairnRuntime` | `interface CairnRuntime` | The composed runtime the engine serves from (seam 2 output). |

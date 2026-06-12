@@ -82,7 +82,17 @@ This guide assumes you already have a running cairn site and want to shape its c
    preview: { stylesheets: [siteCss], containerClass: 'site-main' },
    ```
 
-   `containerClass` reproduces your content wrapper (the element your pages render entries into), so the preview takes the same measure and padding as the live page. `bodyClass` does the same for any classes your site puts on `<body>`, such as a theme root. One rule comes with the idiom: reference the sheet only through `?url`, and have the site layout link the resolved URL from a `<svelte:head>` rather than importing the file statically. A static import folds the sheet into a CSS chunk whose name differs between the client and server builds, and the preview frame's link then 404s. The showcase's `site.css` header comment and [the core reference](../reference/core.md#preview-adapter-member) carry the full explanation.
+   `containerClass` reproduces your content wrapper (the element your pages render entries into), so the preview takes the same measure and padding as the live page. `bodyClass` does the same for any classes your site puts on `<body>`, such as a theme root. When your concepts wrap content differently (posts inside a post module, pages inside a static-page wrapper), the optional `byConcept` map overrides either class per concept id, and an entry's preview picks the override for its own concept:
+
+   ```ts
+   preview: {
+     stylesheets: [siteCss],
+     containerClass: 'static-page',
+     byConcept: { posts: { bodyClass: 'post-body', containerClass: 'post-module' } },
+   },
+   ```
+
+   The frame's document pins a white body background as a deliberately overridable default, so if your site's ground is not white, state the body background in your own stylesheet. One rule comes with the idiom: reference the sheet only through `?url`, and have the site layout link the resolved URL from a `<svelte:head>` rather than importing the file statically. A static import folds the sheet into a CSS chunk whose name differs between the client and server builds, and the preview frame's link then 404s. The showcase's `site.css` header comment and [the core reference](../reference/core.md#preview-adapter-member) carry the full explanation.
 
    With the knob wired, editors get a design-accurate proof, and the Preview tab's width menu lets them check the page at tablet and phone widths too. Without it the preview still renders, unstyled, behind a one-line hint naming this option.
 

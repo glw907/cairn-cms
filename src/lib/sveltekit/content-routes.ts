@@ -18,7 +18,7 @@ import { log } from '../log/index.js';
 import { issueCsrfToken } from './csrf.js';
 import { requireSession } from './guard.js';
 import type { CookieJar, EventBase } from './types.js';
-import type { CairnRuntime, ConceptDescriptor, FrontmatterField, PreviewConfig } from '../content/types.js';
+import type { CairnRuntime, ConceptDescriptor, FrontmatterField, PreviewConfig, ResolvedPreview } from '../content/types.js';
 import type { Editor, Role } from '../auth/types.js';
 
 /** A sidebar concept entry: just enough to render the nav without shipping validators to the client. */
@@ -101,9 +101,10 @@ export interface EditData {
   publishedFlash: boolean;
   /** True after a discard redirect (`?discarded=1`), for the confirmation strip. */
   discardedFlash: boolean;
-  /** The adapter's preview knob for the styled preview frame; null when the site sets none,
-   *  which leaves the frame rendering unstyled markup behind a hint. */
-  preview: PreviewConfig | null;
+  /** The adapter's preview knob resolved for this entry's concept (its `byConcept` override,
+   *  when one exists, applied over the top-level values); null when the site sets none, which
+   *  leaves the frame rendering unstyled markup behind a hint. */
+  preview: ResolvedPreview | null;
 }
 
 /** The structural event the content routes read; a real SvelteKit RequestEvent satisfies it. */
@@ -151,6 +152,19 @@ export interface RenameFailure {
  *  last failed, merged with every field optional. `error` is always set on a failure; the richer
  *  keys identify which guard refused. */
 export type ContentFormFailure = Partial<SaveFailure & DeleteRefusal & RenameFailure>;
+
+/** Resolve the effective preview for one concept: its `byConcept` override wins per key, with
+ *  nullish coalescing so an override key that is present but undefined keeps the top-level value.
+ *  Stylesheets are always shared, and the `byConcept` map never reaches the client. */
+function resolvePreview(preview: PreviewConfig | undefined, conceptId: string): ResolvedPreview | null {
+  if (!preview) return null;
+  const override = preview.byConcept?.[conceptId];
+  return {
+    stylesheets: preview.stylesheets,
+    bodyClass: override?.bodyClass ?? preview.bodyClass,
+    containerClass: override?.containerClass ?? preview.containerClass,
+  };
+}
 
 /** Look up the concept named by the `[concept]` route param, or a 404. */
 function conceptOf(runtime: CairnRuntime, params: Record<string, string>): ConceptDescriptor {
@@ -437,7 +451,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       published,
       publishedFlash: event.url.searchParams.get('published') === '1',
       discardedFlash: event.url.searchParams.get('discarded') === '1',
-      preview: runtime.preview ?? null,
+      preview: resolvePreview(runtime.preview, concept.id),
     };
   }
 

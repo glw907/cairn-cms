@@ -106,6 +106,72 @@ describe('editLoad', () => {
     expect(data.preview).toEqual(preview);
   });
 
+  it('resolves the concept byConcept preview override and never ships the byConcept map', async () => {
+    editFetch('---\ntitle: Hello\n---\nThe body.');
+    const preview = {
+      stylesheets: ['/assets/site.css'],
+      bodyClass: 'static-page',
+      containerClass: 'page-measure',
+      byConcept: { posts: { bodyClass: 'post-body', containerClass: 'post-module' } },
+    };
+    const routes = createContentRoutes({ ...runtime(), preview }, deps);
+    const data = await routes.editLoad(editEvent('2026-05-hello') as never);
+    expect(data.preview).toEqual({
+      stylesheets: ['/assets/site.css'],
+      bodyClass: 'post-body',
+      containerClass: 'post-module',
+    });
+    expect(data.preview).not.toHaveProperty('byConcept');
+  });
+
+  it('leaves a concept without a byConcept entry on the top-level preview values', async () => {
+    editFetch('---\ntitle: Hello\n---\nThe body.');
+    const preview = {
+      stylesheets: ['/assets/site.css'],
+      bodyClass: 'static-page',
+      containerClass: 'page-measure',
+      byConcept: { pages: { bodyClass: 'page-body' } },
+    };
+    const routes = createContentRoutes({ ...runtime(), preview }, deps);
+    const data = await routes.editLoad(editEvent('2026-05-hello') as never);
+    expect(data.preview).toEqual({
+      stylesheets: ['/assets/site.css'],
+      bodyClass: 'static-page',
+      containerClass: 'page-measure',
+    });
+  });
+
+  it('merges a partial byConcept override over the top-level values', async () => {
+    editFetch('---\ntitle: Hello\n---\nThe body.');
+    const preview = {
+      stylesheets: ['/assets/site.css'],
+      bodyClass: 'static-page',
+      containerClass: 'page-measure',
+      byConcept: { posts: { containerClass: 'post-module' } },
+    };
+    const routes = createContentRoutes({ ...runtime(), preview }, deps);
+    const data = await routes.editLoad(editEvent('2026-05-hello') as never);
+    expect(data.preview).toEqual({
+      stylesheets: ['/assets/site.css'],
+      bodyClass: 'static-page',
+      containerClass: 'post-module',
+    });
+  });
+
+  it('keeps the top-level value when an override key is present but undefined', async () => {
+    editFetch('---\ntitle: Hello\n---\nThe body.');
+    const preview = {
+      stylesheets: ['/assets/site.css'],
+      bodyClass: 'static-page',
+      containerClass: 'page-measure',
+      byConcept: { posts: { bodyClass: undefined, containerClass: 'post-module' } },
+    };
+    const routes = createContentRoutes({ ...runtime(), preview }, deps);
+    const data = await routes.editLoad(editEvent('2026-05-hello') as never);
+    expect(data.preview?.bodyClass).toBe('static-page');
+    expect(data.preview?.containerClass).toBe('post-module');
+  });
+
   it('ships the manifest link targets, and an empty list when the manifest is missing', async () => {
     const manifest = serializeManifest({
       version: 1,

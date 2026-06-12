@@ -19,9 +19,10 @@ The edit page's preview now renders inside a sandboxed iframe whose document lin
 stylesheets, so an entry proofs in the site's real styling without that CSS ever touching the
 admin document. The adapter gains an optional `preview` member naming the compiled CSS URLs (a
 Vite `?url` import resolves the hashed asset) plus `bodyClass` and `containerClass` for the site's
-body classes and content wrapper. While Preview shows, the sidebar steps aside so the document
-takes the full width, and a width menu on the Preview tab sizes the frame to Desktop, Tablet,
-Phone, or Small phone, persisted per browser.
+body classes and content wrapper, and a `byConcept` map overrides either class per concept for a
+site whose posts and pages wrap content differently. While Preview shows, the sidebar steps aside
+so the document takes the full width, and a width menu on the Preview tab sizes the frame to
+Desktop, Tablet, Phone, or Small phone, persisted per browser.
 
 Consumers should: wire `preview` in the adapter, referencing the sheet only through `?url` and
 linking the same URL from the site layout, the way

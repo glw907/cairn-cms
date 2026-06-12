@@ -223,9 +223,37 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     }
   }
 
-  /** List a concept's entries with their publish status. Main's files carry `edited` when a
-   *  pending ref exists, else `published`; a ref with no main file appends a `new` row read from
-   *  its branch. A listing failure degrades to an inline error, not a thrown 500. */
+  /** Read an entry's list row from its pending branch, so a pending title or draft change shows
+   *  in the list instead of reading as a lost save. summarize degrades a failed or empty read to
+   *  an id-only row, so a ghost ref still lists. */
+  function pendingRow(concept: ConceptDescriptor, id: string, status: EntrySummary['status'], token: string): Promise<EntrySummary> {
+    return summarize({ id, path: `${concept.dir}/${filenameFromId(id)}` }, token, status, {
+      ...runtime.backend,
+      branch: pendingBranch(concept.id, id),
+    });
+  }
+
+  /** The per-file crawl, kept only for a repo with no committed manifest yet: list main's files
+   *  and read each one for its row, with edited and new rows reading branch-first. */
+  async function crawlEntries(concept: ConceptDescriptor, pendingIds: Set<string>, token: string): Promise<EntrySummary[]> {
+    const files = await listMarkdown(runtime.backend, concept.dir, token);
+    const entries = await Promise.all(
+      files.map((f) => (pendingIds.has(f.id) ? pendingRow(concept, f.id, 'edited', token) : summarize(f, token, 'published'))),
+    );
+    // A ref with no main file is a never-published entry; its row reads from its branch.
+    const listed = new Set(files.map((f) => f.id));
+    const newRows = await Promise.all(
+      [...pendingIds].filter((id) => !listed.has(id)).map((id) => pendingRow(concept, id, 'new', token)),
+    );
+    return [...entries, ...newRows];
+  }
+
+  /** List a concept's entries with their publish status. Published rows project straight from
+   *  main's manifest, which publish, delete, and rename keep atomically in sync with main, so
+   *  the listing costs one manifest read plus one branch read per pending entry rather than one
+   *  read per file. A manifest row with a pending ref is `edited` and reads branch-first; a ref
+   *  with no manifest row appends a `new` row read from its branch. A listing failure degrades
+   *  to an inline error, not a thrown 500. */
   async function listLoad(event: ContentEvent): Promise<ListData> {
     sessionOf(event);
     const concept = conceptOf(runtime, event.params);
@@ -240,8 +268,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       return { ...base, entries: [], error: 'Could not authenticate with GitHub.' };
     }
     try {
-      const [files, refs] = await Promise.all([
-        listMarkdown(runtime.backend, concept.dir, token),
+      const [manifestRaw, refs] = await Promise.all([
+        readRaw(runtime.backend, runtime.manifestPath, token),
         listBranches(runtime.backend, `${PENDING_PREFIX}${concept.id}/`, token),
       ]);
       const pendingIds = new Set(
@@ -250,27 +278,25 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
           return entry && entry.concept.id === concept.id ? [entry.id] : [];
         }),
       );
-      // An edited row reads branch-first like a new row, so a pending title or draft change
-      // shows in the list instead of reading as a lost save.
+      // A repo with no committed manifest yet (a fresh site before its first publish) falls back
+      // to the crawl; a manifest that parses but is empty is trusted as-is.
+      if (manifestRaw === null) {
+        return { ...base, entries: await crawlEntries(concept, pendingIds, token), error: null };
+      }
+      // Newest id first, the same order the crawl's file listing produced.
+      const rows = parseManifest(manifestRaw)
+        .entries.filter((e) => e.concept === concept.id)
+        .sort((a, b) => b.id.localeCompare(a.id));
       const entries = await Promise.all(
-        files.map((f) =>
-          pendingIds.has(f.id)
-            ? summarize(f, token, 'edited', { ...runtime.backend, branch: pendingBranch(concept.id, f.id) })
-            : summarize(f, token, 'published'),
+        rows.map((e) =>
+          pendingIds.has(e.id)
+            ? pendingRow(concept, e.id, 'edited', token)
+            : { id: e.id, title: e.title, date: e.date ?? null, draft: e.draft, status: 'published' as const },
         ),
       );
-      // A ref with no main file is a never-published entry; its row reads from its branch, and
-      // summarize already degrades a failed read to an id-only row.
-      const listed = new Set(files.map((f) => f.id));
+      const listed = new Set(rows.map((e) => e.id));
       const newRows = await Promise.all(
-        [...pendingIds]
-          .filter((id) => !listed.has(id))
-          .map((id) =>
-            summarize({ id, path: `${concept.dir}/${filenameFromId(id)}` }, token, 'new', {
-              ...runtime.backend,
-              branch: pendingBranch(concept.id, id),
-            }),
-          ),
+        [...pendingIds].filter((id) => !listed.has(id)).map((id) => pendingRow(concept, id, 'new', token)),
       );
       return { ...base, entries: [...entries, ...newRows], error: null };
     } catch {

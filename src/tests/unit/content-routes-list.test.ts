@@ -19,6 +19,21 @@ function runtime(): CairnRuntime {
 
 const deps = { mintToken: () => Promise.resolve('test-token') };
 
+const MANIFEST_PATH = 'src/content/.cairn/index.json';
+
+/** Serialize a manifest fixture; entries default the fields listLoad does not read. */
+function manifestRaw(entries: Partial<{ id: string; concept: string; title: string; date: string; draft: boolean }>[]): string {
+  return JSON.stringify({
+    version: 1,
+    entries: entries.map((e) => ({ concept: 'posts', permalink: `/posts/${e.id}`, draft: false, links: [], ...e })),
+  });
+}
+
+/** The contents-API reads the double served, the calls the manifest path exists to avoid. */
+function contentsReads(gh: GithubDouble): string[] {
+  return gh.calls.filter((c) => c.method === 'GET' && c.url.includes('/contents/')).map((c) => c.url);
+}
+
 function listEvent(params: Record<string, string>, search = '') {
   return {
     url: new URL(`https://t.example/admin/posts${search}`),
@@ -112,30 +127,40 @@ describe('layoutLoad', () => {
 });
 
 describe('listLoad', () => {
-  it('lists entries with title, date, and draft from each file frontmatter', async () => {
-    const tree = {
-      tree: [
-        { path: 'src/content/posts/2026-05-hello.md', type: 'blob' },
-        { path: 'src/content/posts/2026-04-older.md', type: 'blob' },
-      ],
-      truncated: false,
-    };
-    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
-      if (url.includes('/git/matching-refs/')) return new Response('[]', { status: 200 });
-      if (url.includes('/git/trees/')) return new Response(JSON.stringify(tree), { status: 200 });
-      if (url.includes('hello')) return new Response('---\ntitle: Hello\ndate: 2026-05-01\ndraft: true\n---\nbody', { status: 200 });
-      return new Response('---\ntitle: Older\ndate: 2026-04-01\n---\nbody', { status: 200 });
-    }));
-
+  it('projects published rows straight from the manifest, with no per-file reads', async () => {
+    // Main carries only the manifest: no entry files exist, so a row can come from nowhere else.
+    const gh = new GithubDouble({
+      main: {
+        [MANIFEST_PATH]: manifestRaw([
+          { id: '2026-04-older', title: 'Older', date: '2026-04-01' },
+          { id: '2026-05-hello', title: 'Hello', date: '2026-05-01', draft: true },
+          { id: 'about', concept: 'pages', title: 'About' }, // another concept's row stays out
+        ]),
+      },
+    });
+    gh.install();
     const routes = createContentRoutes(runtime(), deps);
     const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
     expect(data.conceptId).toBe('posts');
     expect(data.dated).toBe(true);
-    expect(data.entries[0]).toMatchObject({ id: '2026-05-hello', title: 'Hello', date: '2026-05-01', draft: true });
-    expect(data.entries[1]).toMatchObject({ id: '2026-04-older', title: 'Older', draft: false });
-    // No pending refs: every entry is published.
-    expect(data.entries.map((e) => e.status)).toEqual(['published', 'published']);
+    // Newest id first, the same order the old crawl produced.
+    expect(data.entries).toEqual([
+      { id: '2026-05-hello', title: 'Hello', date: '2026-05-01', draft: true, status: 'published' },
+      { id: '2026-04-older', title: 'Older', date: '2026-04-01', draft: false, status: 'published' },
+    ]);
     expect(data.error).toBeNull();
+    // One contents read total: the manifest itself.
+    expect(contentsReads(gh)).toEqual([expect.stringContaining('.cairn/index.json')]);
+  });
+
+  it('trusts a manifest that parses but is empty, without crawling the tree', async () => {
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: manifestRaw([]) } });
+    gh.install();
+    const routes = createContentRoutes(runtime(), deps);
+    const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
+    expect(data.entries).toEqual([]);
+    expect(data.error).toBeNull();
+    expect(gh.calls.some((c) => c.method === 'GET' && c.url.includes('/git/trees/'))).toBe(false);
   });
 
   it('degrades to an inline error when the listing fails', async () => {
@@ -146,21 +171,33 @@ describe('listLoad', () => {
     expect(data.error).toMatch(/could not load/i);
   });
 
+  it('degrades to the same inline error when the manifest is malformed', async () => {
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: 'not json' } });
+    gh.install();
+    const routes = createContentRoutes(runtime(), deps);
+    const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
+    expect(data.entries).toEqual([]);
+    expect(data.error).toMatch(/could not load/i);
+  });
+
+  it('degrades to its own message when the token mint fails', async () => {
+    const routes = createContentRoutes(runtime(), { mintToken: async () => { throw new Error('no key'); } });
+    const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
+    expect(data.entries).toEqual([]);
+    expect(data.error).toMatch(/could not authenticate/i);
+  });
+
   it('surfaces a create-form error from the query', async () => {
-    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
-      if (url.includes('/git/matching-refs/')) return new Response('[]', { status: 200 });
-      return new Response(JSON.stringify({ tree: [], truncated: false }), { status: 200 });
-    }));
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: manifestRaw([]) } });
+    gh.install();
     const routes = createContentRoutes(runtime(), deps);
     const data = await routes.listLoad(listEvent({ concept: 'posts' }, '?error=Bad+slug') as never);
     expect(data.formError).toBe('Bad slug');
   });
 
   it('surfaces the publish-all count from the query and defaults it to null', async () => {
-    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
-      if (url.includes('/git/matching-refs/')) return new Response('[]', { status: 200 });
-      return new Response(JSON.stringify({ tree: [], truncated: false }), { status: 200 });
-    }));
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: manifestRaw([]) } });
+    gh.install();
     const routes = createContentRoutes(runtime(), deps);
     const flashed = await routes.listLoad(listEvent({ concept: 'posts' }, '?publishedAll=3') as never);
     expect(flashed.publishedAll).toBe(3);
@@ -170,41 +207,14 @@ describe('listLoad', () => {
 });
 
 describe('listLoad with pending branches', () => {
-  it('marks an entry whose pending branch exists as edited', async () => {
+  it('marks a manifest row whose pending branch exists as edited, read branch-first', async () => {
     const gh = new GithubDouble({
       main: {
-        'src/content/posts/2026-05-hello.md': '---\ntitle: Hello\ndate: 2026-05-01\n---\nx',
-        'src/content/posts/2026-04-older.md': '---\ntitle: Older\ndate: 2026-04-01\n---\nx',
+        [MANIFEST_PATH]: manifestRaw([
+          { id: '2026-05-hello', title: 'Old title', date: '2026-05-01' },
+          { id: '2026-04-older', title: 'Older', date: '2026-04-01' },
+        ]),
       },
-      'cairn/posts/2026-05-hello': { 'src/content/posts/2026-05-hello.md': '---\ntitle: Hello edited\n---\nx' },
-    });
-    gh.install();
-    const routes = createContentRoutes(runtime(), deps);
-    const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
-    const byId = new Map(data.entries.map((e) => [e.id, e]));
-    expect(byId.get('2026-05-hello')?.status).toBe('edited');
-    expect(byId.get('2026-04-older')?.status).toBe('published');
-    expect(data.error).toBeNull();
-  });
-
-  it('appends a branch-only entry as new with its branch data', async () => {
-    const gh = new GithubDouble({
-      main: { 'src/content/posts/2026-04-older.md': '---\ntitle: Older\ndate: 2026-04-01\n---\nx' },
-      'cairn/posts/2026-06-fresh': {
-        'src/content/posts/2026-06-fresh.md': '---\ntitle: Brand New\ndate: 2026-06-01\n---\nx',
-      },
-    });
-    gh.install();
-    const routes = createContentRoutes(runtime(), deps);
-    const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
-    const fresh = data.entries.find((e) => e.id === '2026-06-fresh');
-    expect(fresh).toMatchObject({ id: '2026-06-fresh', title: 'Brand New', date: '2026-06-01', status: 'new' });
-    expect(data.entries.find((e) => e.id === '2026-04-older')?.status).toBe('published');
-  });
-
-  it('summarizes an edited row from its branch, so pending edits show in the list', async () => {
-    const gh = new GithubDouble({
-      main: { 'src/content/posts/2026-05-hello.md': '---\ntitle: Old title\ndate: 2026-05-01\n---\nx' },
       'cairn/posts/2026-05-hello': {
         'src/content/posts/2026-05-hello.md': '---\ntitle: Pending title\ndate: 2026-05-01\ndraft: true\n---\nx',
       },
@@ -212,14 +222,37 @@ describe('listLoad with pending branches', () => {
     gh.install();
     const routes = createContentRoutes(runtime(), deps);
     const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
+    // The edited row carries the branch's title and draft flag, not the manifest's.
     expect(data.entries).toEqual([
       { id: '2026-05-hello', title: 'Pending title', date: '2026-05-01', draft: true, status: 'edited' },
+      { id: '2026-04-older', title: 'Older', date: '2026-04-01', draft: false, status: 'published' },
+    ]);
+    expect(data.error).toBeNull();
+    // Two contents reads: the manifest plus the one pending entry's branch file.
+    expect(contentsReads(gh)).toHaveLength(2);
+  });
+
+  it('appends a branch-only entry as new with its branch data, after the manifest rows', async () => {
+    const gh = new GithubDouble({
+      main: { [MANIFEST_PATH]: manifestRaw([{ id: '2026-04-older', title: 'Older', date: '2026-04-01' }]) },
+      'cairn/posts/2026-06-fresh': {
+        'src/content/posts/2026-06-fresh.md': '---\ntitle: Brand New\ndate: 2026-06-01\n---\nx',
+      },
+    });
+    gh.install();
+    const routes = createContentRoutes(runtime(), deps);
+    const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
+    // Ordering parity with the old crawl: new rows append after the published set even when
+    // their ids would sort first.
+    expect(data.entries).toEqual([
+      { id: '2026-04-older', title: 'Older', date: '2026-04-01', draft: false, status: 'published' },
+      { id: '2026-06-fresh', title: 'Brand New', date: '2026-06-01', draft: false, status: 'new' },
     ]);
   });
 
   it('ignores a ref with an invalid id instead of listing a phantom row', async () => {
     const gh = new GithubDouble({
-      main: { 'src/content/posts/2026-05-hello.md': '---\ntitle: Hello\ndate: 2026-05-01\n---\nx' },
+      main: { [MANIFEST_PATH]: manifestRaw([{ id: '2026-05-hello', title: 'Hello', date: '2026-05-01' }]) },
       'cairn/posts/a%2fb': {}, // percent-escaped id fails the slug rule, so it never reaches a read
     });
     gh.install();
@@ -233,7 +266,7 @@ describe('listLoad with pending branches', () => {
   it('degrades a branch-only row to its id when the branch read fails', async () => {
     // The ref exists but its tree lacks the entry file, so the branch read comes back empty.
     const gh = new GithubDouble({
-      main: {},
+      main: { [MANIFEST_PATH]: manifestRaw([]) },
       'cairn/posts/2026-06-ghost': {},
     });
     gh.install();
@@ -241,6 +274,61 @@ describe('listLoad with pending branches', () => {
     const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
     expect(data.entries).toEqual([
       { id: '2026-06-ghost', title: '2026-06-ghost', date: null, draft: false, status: 'new' },
+    ]);
+  });
+});
+
+describe('listLoad without a manifest (fallback crawl)', () => {
+  it('crawls the tree and reads each file when the manifest is absent', async () => {
+    const gh = new GithubDouble({
+      main: {
+        'src/content/posts/2026-05-hello.md': '---\ntitle: Hello\ndate: 2026-05-01\ndraft: true\n---\nx',
+        'src/content/posts/2026-04-older.md': '---\ntitle: Older\ndate: 2026-04-01\n---\nx',
+      },
+    });
+    gh.install();
+    const routes = createContentRoutes(runtime(), deps);
+    const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
+    expect(data.entries).toEqual([
+      { id: '2026-05-hello', title: 'Hello', date: '2026-05-01', draft: true, status: 'published' },
+      { id: '2026-04-older', title: 'Older', date: '2026-04-01', draft: false, status: 'published' },
+    ]);
+    expect(data.error).toBeNull();
+    expect(gh.calls.some((c) => c.method === 'GET' && c.url.includes('/git/trees/'))).toBe(true);
+  });
+
+  it('marks an entry whose pending branch exists as edited, read branch-first', async () => {
+    const gh = new GithubDouble({
+      main: {
+        'src/content/posts/2026-05-hello.md': '---\ntitle: Old title\ndate: 2026-05-01\n---\nx',
+        'src/content/posts/2026-04-older.md': '---\ntitle: Older\ndate: 2026-04-01\n---\nx',
+      },
+      'cairn/posts/2026-05-hello': {
+        'src/content/posts/2026-05-hello.md': '---\ntitle: Pending title\ndate: 2026-05-01\ndraft: true\n---\nx',
+      },
+    });
+    gh.install();
+    const routes = createContentRoutes(runtime(), deps);
+    const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
+    expect(data.entries).toEqual([
+      { id: '2026-05-hello', title: 'Pending title', date: '2026-05-01', draft: true, status: 'edited' },
+      { id: '2026-04-older', title: 'Older', date: '2026-04-01', draft: false, status: 'published' },
+    ]);
+  });
+
+  it('appends a branch-only entry as new with its branch data', async () => {
+    const gh = new GithubDouble({
+      main: { 'src/content/posts/2026-04-older.md': '---\ntitle: Older\ndate: 2026-04-01\n---\nx' },
+      'cairn/posts/2026-06-fresh': {
+        'src/content/posts/2026-06-fresh.md': '---\ntitle: Brand New\ndate: 2026-06-01\n---\nx',
+      },
+    });
+    gh.install();
+    const routes = createContentRoutes(runtime(), deps);
+    const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
+    expect(data.entries).toEqual([
+      { id: '2026-04-older', title: 'Older', date: '2026-04-01', draft: false, status: 'published' },
+      { id: '2026-06-fresh', title: 'Brand New', date: '2026-06-01', draft: false, status: 'new' },
     ]);
   });
 });

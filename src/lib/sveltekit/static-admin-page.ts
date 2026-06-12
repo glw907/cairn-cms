@@ -107,7 +107,7 @@ main {
 h1 {
   margin: 0 0 0.75rem;
   font-size: 1.6rem;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.15;
 }

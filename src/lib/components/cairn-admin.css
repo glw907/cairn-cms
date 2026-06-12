@@ -70,6 +70,7 @@
   --cairn-focus-dim-rail-1: 24%;
   --cairn-focus-dim-rail-2: 28%;
   --cairn-focus-dim-rail-3: 32%;
+  --cairn-focus-dim-rail-active: 36%;
   --color-neutral: oklch(32% 0.012 75);
   --color-neutral-content: oklch(96% 0.004 75);
 
@@ -126,6 +127,9 @@
   --color-base-300: oklch(30% 0.014 75);
   --color-base-content: oklch(93% 0.006 75);
 
+  /* Locked pair: pressed footer-toggle text (text-primary on the bg-primary/10 plate over
+     dark base-100) measures 4.66:1, only 0.16 above the AA floor. Do not darken dark
+     --color-primary without re-checking that pair. */
   --color-primary: oklch(68% 0.18 293);
   --color-primary-content: oklch(20% 0.04 293);
   --color-secondary: oklch(72% 0.02 75);
@@ -165,6 +169,7 @@
   --cairn-focus-dim-rail-1: 21%;
   --cairn-focus-dim-rail-2: 25%;
   --cairn-focus-dim-rail-3: 29%;
+  --cairn-focus-dim-rail-active: 33%;
   --color-neutral: oklch(80% 0.01 75);
   --color-neutral-content: oklch(22% 0.008 75);
 

@@ -566,6 +566,19 @@ describe('MarkdownEditor', () => {
     expect(getComputedStyle(inside).getPropertyValue('--cairn-directive-rail-1').trim()).toBe('24%');
   });
 
+  it('dims the active rail on dimmed rows of the caret container', async () => {
+    // Focus mode's lit unit is the paragraph while the caret-block spans the container, so a
+    // container holding a blank line has dimmed rows that still carry the active rail; the dim
+    // rule must override the active step too or those rows keep a full-chroma bar.
+    const doc = [':::panel', 'lit here', '', 'dim tail', ':::'].join('\n');
+    const screen = render(MarkdownEditor, { value: doc, name: 'body', focusMode: true });
+    await expect.poll(() => screen.container.querySelector('.cm-line.cm-cairn-focus-dim')).not.toBeNull();
+    const tail = lineWith(screen.container, 'dim tail')!;
+    expect(tail.classList.contains('cm-cairn-caret-block')).toBe(true);
+    expect(tail.classList.contains('cm-cairn-focus-dim')).toBe(true);
+    expect(getComputedStyle(tail).getPropertyValue('--cairn-directive-rail-active').trim()).toBe('36%');
+  });
+
   it('flattens chip backgrounds on dimmed lines in focus mode', async () => {
     // Dim ink on a tinted chip measures under the 3:1 floor, so the dim arm drops the chip
     // backgrounds along with the ink: the inline-code chip, the inline directive chip, and the

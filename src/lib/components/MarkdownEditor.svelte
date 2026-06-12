@@ -193,12 +193,15 @@ through the adapter's render. Swapping the editor stays a one-file change.
         // The rails dim with their text: the rail color-mix reads --cairn-directive-rail-N per
         // element, so overriding the percentages on dimmed lines re-resolves every bar in place.
         // Without this the directive block keeps full-strength bars and becomes the one
-        // chromatic object in the dimmed field. The active rail never lands on a dimmed line
-        // (the caret's paragraph is the lit one), so only the quiet steps need overrides.
+        // chromatic object in the dimmed field. The active step needs the override too: focus
+        // mode's lit unit is the caret PARAGRAPH while the caret-block class spans the whole
+        // container, so a container holding a blank line has dimmed rows that still carry the
+        // active rail.
         '.cm-cairn-focus-dim': {
           '--cairn-directive-rail-1': 'var(--cairn-focus-dim-rail-1, 24%)',
           '--cairn-directive-rail-2': 'var(--cairn-focus-dim-rail-2, 28%)',
           '--cairn-directive-rail-3': 'var(--cairn-focus-dim-rail-3, 32%)',
+          '--cairn-directive-rail-active': 'var(--cairn-focus-dim-rail-active, 36%)',
         },
       },
       { dark: isDark },

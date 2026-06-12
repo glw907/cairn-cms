@@ -12,7 +12,8 @@ sizes to a persisted device width picked from the toolbar's capsule. A sticky gl
 carries the breadcrumb, the status badges, the save-state indicator,
 and the lifecycle actions: Save, Publish (riding the same form via formaction while edits are
 pending), and an overflow menu for Discard and Delete. One feedback strip under the header carries the
-transient flashes, and the editor card's footer holds the word count and the Markdown help.
+transient flashes, and the editor card's footer is the writing-environment strip: the word
+count, the Prose/Markup posture pair, the focus and typewriter toggles, and the Markdown help.
 -->
 <script lang="ts">
   import { flushSync, untrack } from 'svelte';
@@ -820,22 +821,28 @@ transient flashes, and the editor card's footer holds the word count and the Mar
       <div class="flex items-center justify-between border-t border-[var(--cairn-card-border)] px-3 py-1 text-xs text-[var(--color-muted)]">
         <span>{wordLabel}</span>
         <div class="flex items-center gap-1">
-          <button
-            type="button"
-            class={footerToggleClass(surface === 'prose')}
-            aria-pressed={surface === 'prose'}
-            onclick={() => setSurface('prose')}
-          >
-            Prose
-          </button>
-          <button
-            type="button"
-            class={footerToggleClass(surface === 'markup')}
-            aria-pressed={surface === 'markup'}
-            onclick={() => setSurface('markup')}
-          >
-            Markup
-          </button>
+          <!-- The pressed check is the non-color state cue (WCAG 1.4.1): pressed and idle
+               toggles share weight and size, so hue alone must not carry the state. -->
+          <div role="group" aria-label="Editing surface" class="flex items-center gap-1">
+            <button
+              type="button"
+              class={footerToggleClass(surface === 'prose')}
+              aria-pressed={surface === 'prose'}
+              onclick={() => setSurface('prose')}
+            >
+              {#if surface === 'prose'}<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>{/if}
+              Prose
+            </button>
+            <button
+              type="button"
+              class={footerToggleClass(surface === 'markup')}
+              aria-pressed={surface === 'markup'}
+              onclick={() => setSurface('markup')}
+            >
+              {#if surface === 'markup'}<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>{/if}
+              Markup
+            </button>
+          </div>
           <div class="mx-1 h-4 w-px bg-[var(--cairn-card-border)]" aria-hidden="true"></div>
           <button
             type="button"
@@ -843,6 +850,7 @@ transient flashes, and the editor card's footer holds the word count and the Mar
             aria-pressed={focusMode}
             onclick={() => setFocusMode(!focusMode)}
           >
+            {#if focusMode}<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>{/if}
             Focus mode
           </button>
           <button
@@ -851,6 +859,7 @@ transient flashes, and the editor card's footer holds the word count and the Mar
             aria-pressed={typewriter}
             onclick={() => setTypewriter(!typewriter)}
           >
+            {#if typewriter}<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>{/if}
             Typewriter
           </button>
           <div class="mx-1 h-4 w-px bg-[var(--cairn-card-border)]" aria-hidden="true"></div>

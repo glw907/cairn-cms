@@ -2,7 +2,7 @@
 
 All notable changes to this project are recorded here, most recent first.
 
-## Unreleased
+## 0.53.0
 
 An iterative design session on the editor-as-home direction, shipped as one window.
 

@@ -6,14 +6,11 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
 import { healthLoad } from '@glw907/cairn-cms/sveltekit';
-import { composeRuntime } from '@glw907/cairn-cms';
-import { cairn, siteConfig } from '$lib/cairn.config.js';
+import { runtime } from '$lib/cairn.server.js';
 
 // A site that defaults to prerender=true must force this dynamic, or it gets prerendered to a
 // build-time ok:false and can 404 at runtime.
 export const prerender = false;
-
-const runtime = composeRuntime({ adapter: cairn, siteConfig });
 
 export const GET: RequestHandler = async (event) => {
   try {

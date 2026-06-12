@@ -182,10 +182,10 @@ describe('renameAction', () => {
     const calls = renameFetch(files);
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })), deps);
     const result = (await routes.renameAction(renameEvent('2026-05-01-hi', 'new') as never)) as unknown as {
-      status: number; data: { renameError: string };
+      status: number; data: { error: string };
     };
     expect(result.status).toBe(409);
-    expect(result.data.renameError).toMatch(/already exists/i);
+    expect(result.data.error).toMatch(/already exists/i);
     expect(calls.some((c) => (c.init?.method ?? 'GET') === 'POST' && c.url.endsWith('/git/trees'))).toBe(false);
   });
 
@@ -194,7 +194,7 @@ describe('renameAction', () => {
     const calls = renameFetch(files);
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })), deps);
     const result = (await routes.renameAction(renameEvent('2026-05-01-hi', 'hi') as never)) as unknown as {
-      status: number; data: { renameError: string };
+      status: number; data: { error: string };
     };
     expect(result.status).toBe(400);
     expect(calls.some((c) => (c.init?.method ?? 'GET') === 'POST' && c.url.endsWith('/git/trees'))).toBe(false);
@@ -217,10 +217,10 @@ describe('renameAction with a pending branch', () => {
     gh.install();
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })), deps);
     const result = (await routes.renameAction(renameEvent('2026-05-01-hi', 'new') as never)) as unknown as {
-      status: number; data: { renameError: string };
+      status: number; data: { error: string };
     };
     expect(result.status).toBe(409);
-    expect(result.data.renameError).toMatch(/unpublished edits/i);
+    expect(result.data.error).toMatch(/unpublished edits/i);
     expect(gh.calls.some((c) => c.method === 'POST' && c.url.endsWith('/git/trees'))).toBe(false);
   });
 

@@ -117,9 +117,41 @@ export interface ContentEvent {
 
 /** Injectable dependencies; tests stub the token mint to avoid signing a real key. */
 export interface ContentRoutesDeps {
-  /** Mint a GitHub App installation token from the Worker env. Defaults to the real signer. */
-  mintToken?: (env: GithubKeyEnv) => Promise<string>;
+  /** Mint a GitHub App installation token from the Worker env. Defaults to the real signer.
+   *  A bare string works too; the routes await whatever comes back. */
+  mintToken?: (env: GithubKeyEnv) => string | Promise<string>;
 }
+
+/** A blocked save or publish: `fail(400)` when the body links to a target absent from main. */
+export interface SaveFailure {
+  /** The one-line human summary every content action failure carries. */
+  error: string;
+  /** The cairn tokens that resolve to no entry, for the editor's fix-it banner. */
+  brokenLinks: string[];
+  /** The author's edited markdown, so the editor reseeds with the unsaved work. */
+  body: string;
+}
+
+/** A refused delete: `fail(409)` while other entries still link to this one. */
+export interface DeleteRefusal {
+  /** The one-line human summary every content action failure carries. */
+  error: string;
+  /** The entries whose bodies link to the refused one, for the blockers list. */
+  inboundLinks: InboundLink[];
+  /** The refused entry's id, so a list view marks the right row. */
+  id: string;
+}
+
+/** A refused rename: `fail(400)` on a bad slug, `fail(409)` on a collision or pending edits. */
+export interface RenameFailure {
+  /** The one-line human summary every content action failure carries. */
+  error: string;
+}
+
+/** What a route's single `form` export presents to a view component: whichever content action
+ *  last failed, merged with every field optional. `error` is always set on a failure; the richer
+ *  keys identify which guard refused. */
+export type ContentFormFailure = Partial<SaveFailure & DeleteRefusal & RenameFailure>;
 
 /** The signed-in editor the guard resolved, or a login redirect. Kept local to decouple event shapes. */
 function sessionOf(event: ContentEvent): Editor {
@@ -518,7 +550,12 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       else if (target.draft) draftLinks.push(formatCairnToken(ref));
     }
     if (absent.length) {
-      return fail(400, { brokenLinks: absent, body });
+      const noun = absent.length === 1 ? 'page' : 'pages';
+      return fail(400, {
+        error: `This page links to ${absent.length} missing ${noun}.`,
+        brokenLinks: absent,
+        body,
+      } satisfies SaveFailure);
     }
 
     // Ensure the entry's pending branch exists (cut lazily from main's head on first save), then
@@ -731,7 +768,11 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     const manifest = await readManifest(token);
     const inbound = inboundLinks(manifest, concept.id, id);
     if (inbound.length) {
-      return fail(409, { inboundLinks: inbound, id });
+      return fail(409, {
+        error: `Cannot delete ${id}: ${inbound.length} ${inbound.length === 1 ? 'page links' : 'pages link'} to it.`,
+        inboundLinks: inbound,
+        id,
+      } satisfies DeleteRefusal);
     }
 
     // When the entry was never published (absent from main), the branch delete is the whole
@@ -806,20 +847,20 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     // Pending edits on the branch are keyed to the old id; renaming underneath them would strand
     // them, so refuse until the editor publishes or discards.
     if ((await branchHeadSha(runtime.backend, pendingBranch(concept.id, id), token)) !== null) {
-      return fail(409, { renameError: 'This entry has unpublished edits. Publish or discard them, then rename.' });
+      return fail(409, { error: 'This entry has unpublished edits. Publish or discard them, then rename.' } satisfies RenameFailure);
     }
 
     const form = await event.request.formData();
     const newSlug = String(form.get('slug') ?? '').trim();
     if (!isValidId(newSlug)) {
-      return fail(400, { renameError: 'Enter a valid slug: lowercase letters, numbers, and hyphens.' });
+      return fail(400, { error: 'Enter a valid slug: lowercase letters, numbers, and hyphens.' } satisfies RenameFailure);
     }
     const datePrefix = concept.routing.dated ? concept.datePrefix : null;
     if (concept.routing.dated && /^\d{4}-/.test(newSlug)) {
-      return fail(400, { renameError: 'Leave the date out of the slug.' });
+      return fail(400, { error: 'Leave the date out of the slug.' } satisfies RenameFailure);
     }
     if (newSlug === slugFromId(id, datePrefix)) {
-      return fail(400, { renameError: 'That is already the slug.' });
+      return fail(400, { error: 'That is already the slug.' } satisfies RenameFailure);
     }
     const newId = renameId(id, newSlug, datePrefix);
     const oldPath = `${concept.dir}/${filenameFromId(id)}`;
@@ -830,7 +871,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     // concurrent-rename race where another editor renamed onto this path between load and submit.
     const clobber = await readRaw(runtime.backend, newPath, token);
     if (clobber !== null) {
-      return fail(409, { renameError: 'An entry with that slug already exists.' });
+      return fail(409, { error: 'An entry with that slug already exists.' } satisfies RenameFailure);
     }
 
     const [entryRaw, manifest] = await Promise.all([

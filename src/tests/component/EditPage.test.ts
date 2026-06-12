@@ -207,7 +207,7 @@ describe('EditPage', () => {
 
   it('surfaces a rename collision error', async () => {
     const props = postProps();
-    (props as Record<string, unknown>).form = { renameError: 'An entry with that slug already exists.' };
+    (props as Record<string, unknown>).form = { error: 'An entry with that slug already exists.' };
     const screen = render(EditPage, props);
     const banner = Array.from(screen.container.querySelectorAll('[role="alert"], .alert')).find((el) =>
       (el.textContent ?? '').includes('already exists'),
@@ -237,7 +237,7 @@ describe('EditPage', () => {
 
   it('announces an error through a persistent assertive region', async () => {
     const props = postProps();
-    (props as Record<string, unknown>).form = { renameError: 'An entry with that slug already exists.' };
+    (props as Record<string, unknown>).form = { error: 'An entry with that slug already exists.' };
     const screen = render(EditPage, props);
     const region = screen.container.querySelector('[aria-live="assertive"]');
     expect(region).not.toBeNull();
@@ -247,11 +247,17 @@ describe('EditPage', () => {
   it('shows the broken-links banner and unwraps a link with the fix', async () => {
     const props = postProps();
     props.data.body = 'see [gone](cairn:pages/gone) here';
-    // The action result the page receives after a blocked save.
-    (props as Record<string, unknown>).form = { brokenLinks: ['cairn:pages/gone'], body: props.data.body };
+    // The action result the page receives after a blocked save. The shared error summary rides
+    // along but the page renders only the richer broken-links banner, never a second alert.
+    (props as Record<string, unknown>).form = {
+      error: 'This page links to 1 missing page.',
+      brokenLinks: ['cairn:pages/gone'],
+      body: props.data.body,
+    };
     const screen = render(EditPage, props);
     const banner = screen.container.querySelector('.alert');
     expect(banner?.textContent ?? '').toContain('cairn:pages/gone');
+    expect(screen.container.querySelectorAll('.alert')).toHaveLength(1);
     await screen.getByRole('button', { name: /remove link/i }).click();
     await expect
       .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
@@ -261,6 +267,7 @@ describe('EditPage', () => {
   it('seeds the editor from the returned form body after a blocked save', async () => {
     const props = postProps({ body: 'old committed text' });
     (props as Record<string, unknown>).form = {
+      error: 'This page links to 1 missing page.',
       brokenLinks: ['cairn:pages/gone'],
       body: 'edited [gone](cairn:pages/gone) text',
     };
@@ -273,7 +280,9 @@ describe('EditPage', () => {
   it('surfaces a refused delete naming the new linkers', async () => {
     const props = postProps();
     (props as Record<string, unknown>).form = {
+      error: 'Cannot delete 2026-05-hi: 1 page links to it.',
       inboundLinks: [{ concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' }],
+      id: '2026-05-hi',
     };
     const screen = render(EditPage, props);
     const banner = Array.from(screen.container.querySelectorAll('.alert')).find((el) =>
@@ -288,7 +297,11 @@ describe('EditPage', () => {
   it('clears a fixed broken-link row after Remove link', async () => {
     const props = postProps();
     props.data.body = 'see [gone](cairn:pages/gone) here';
-    (props as Record<string, unknown>).form = { brokenLinks: ['cairn:pages/gone'], body: props.data.body };
+    (props as Record<string, unknown>).form = {
+      error: 'This page links to 1 missing page.',
+      brokenLinks: ['cairn:pages/gone'],
+      body: props.data.body,
+    };
     const screen = render(EditPage, props);
     const banner = screen.container.querySelector('.alert');
     expect(banner?.textContent ?? '').toContain('cairn:pages/gone');

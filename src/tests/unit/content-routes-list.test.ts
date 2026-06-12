@@ -534,9 +534,10 @@ describe('listDeleteAction', () => {
     const routes = createContentRoutes(runtime(), { mintToken: async () => 'tok' });
     const event = deleteFormEvent({ id: '2026-05-01-hello' });
     const result = (await routes.listDeleteAction(event as never)) as unknown as {
-      status: number; data: { inboundLinks: unknown[] };
+      status: number; data: { error: string; inboundLinks: unknown[] };
     };
     expect(result.status).toBe(409);
+    expect(result.data.error).toContain('2026-05-01-hello');
     expect(result.data.inboundLinks.length).toBeGreaterThan(0);
     // Block-until-clean: no commit when links exist.
     expect(calls.some((c) => (c.init?.method ?? 'GET') === 'POST' && c.url.endsWith('/git/trees'))).toBe(false);

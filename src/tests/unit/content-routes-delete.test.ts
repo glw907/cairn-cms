@@ -78,9 +78,11 @@ describe('deleteAction', () => {
     const calls = commitFetch(manifest);
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })), deps);
     const result = (await routes.deleteAction(deleteEvent('2026-05-hi') as never)) as unknown as {
-      status: number; data: { inboundLinks: { id: string }[] };
+      status: number; data: { error: string; inboundLinks: { id: string }[]; id: string };
     };
     expect(result.status).toBe(409);
+    expect(result.data.error).toContain('2026-05-hi');
+    expect(result.data.id).toBe('2026-05-hi');
     expect(result.data.inboundLinks.map((l) => l.id)).toEqual(['b']);
     expect(calls.some((c) => (c.init?.method ?? 'GET') === 'POST' && c.url.endsWith('/git/trees'))).toBe(false);
   });

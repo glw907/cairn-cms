@@ -14,28 +14,24 @@ mount inside `AdminLayout`. No styling or wrapper elements of its own.
   import ManageEditors from './ManageEditors.svelte';
   import NavTree from './NavTree.svelte';
   import type { AdminData } from '../sveltekit/cairn-admin.js';
+  import type { ContentFormFailure } from '../sveltekit/content-routes.js';
   import type { ComponentRegistry } from '../render/registry.js';
   import type { IconSet } from '../render/glyph.js';
   import type { LinkResolve } from '../content/links.js';
-  import type { InboundLink } from '../content/manifest.js';
 
   interface Props {
     /** The discriminated view data from `createCairnAdmin`'s load. */
     data: AdminData;
-    /** The last action's result, forwarded to whichever view rendered. Typed pragmatically as the
-     *  merge of the view components' form shapes (every field optional), so the route's one
-     *  `form` export covers the auth, list, edit, and editors results. */
-    form?: {
-      sent?: boolean;
-      status?: 'sent' | 'send_error' | 'throttled';
-      error?: string;
-      ok?: boolean;
-      id?: string;
-      inboundLinks?: InboundLink[];
-      brokenLinks?: string[];
-      body?: string;
-      renameError?: string;
-    } | null;
+    /** The last action's result, forwarded to whichever view rendered: the shared content-action
+     *  failure family (every failure carries `error`), merged with the auth and editors results,
+     *  so the route's one `form` export covers every view. */
+    form?:
+      | (ContentFormFailure & {
+          sent?: boolean;
+          status?: 'sent' | 'send_error' | 'throttled';
+          ok?: boolean;
+        })
+      | null;
     /** The site's design-accurate render pipeline, for the edit view's preview pane. */
     render?: (md: string, opts?: { stagger?: boolean; resolve?: LinkResolve }) => string | Promise<string>;
     /** The site's component registry, for the edit view's insert palette. */

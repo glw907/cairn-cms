@@ -7,8 +7,7 @@ content sizes. The header New button opens a dialog holding the create form.
 -->
 <script lang="ts">
   import { slugify } from '../content/ids.js';
-  import type { EntrySummary, ListData } from '../sveltekit/content-routes.js';
-  import type { InboundLink } from '../content/manifest.js';
+  import type { DeleteRefusal, EntrySummary, ListData } from '../sveltekit/content-routes.js';
   import CsrfField from './CsrfField.svelte';
   import DeleteDialog from './DeleteDialog.svelte';
   import CairnLogo from './CairnLogo.svelte';
@@ -17,10 +16,10 @@ content sizes. The header New button opens a dialog holding the create form.
   interface Props {
     /** The list load's data: the concept, its entries, and any inline or form errors. */
     data: ListData;
-    /** The `?/delete` action result. A blocked delete returns the refused entry id and the inbound
-     *  links that link to it (the flat `fail(409, { inboundLinks, id })` shape), so the list names
+    /** The `?/delete` action result. A blocked delete returns the `DeleteRefusal` payload (the
+     *  shared `error` summary, the refused entry id, and its inbound linkers), so the list names
      *  the blockers and refuses (block-until-clean). */
-    form?: { id?: string; inboundLinks?: InboundLink[] } | null;
+    form?: Partial<DeleteRefusal> | null;
   }
 
   let { data, form = null }: Props = $props();

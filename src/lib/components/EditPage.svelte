@@ -29,7 +29,7 @@ transient flashes, and the editor card's footer holds the word count and the Mar
   import { directiveLineKind, findInlineDirectives } from './markdown-directives.js';
   import type { ComponentRegistry } from '../render/registry.js';
   import type { IconSet } from '../render/glyph.js';
-  import type { EditData } from '../sveltekit/content-routes.js';
+  import type { ContentFormFailure, EditData } from '../sveltekit/content-routes.js';
   import type { TextareaField, TagsField, FreeTagsField } from '../content/types.js';
   import type { LinkResolve } from '../content/links.js';
   import { manifestLinkResolver } from '../content/manifest.js';
@@ -43,9 +43,9 @@ transient flashes, and the editor card's footer holds the word count and the Mar
     render?: (md: string, opts?: { stagger?: boolean; resolve?: LinkResolve }) => string | Promise<string>;
     /** The site's icon set, for the guided form's icon fields. */
     icons?: IconSet;
-    /** The `?/save` or `?/delete` action result. Carries the save guard's broken links when a save was
-     *  blocked, or the delete guard's inbound linkers when a delete was refused. */
-    form?: { brokenLinks?: string[]; body?: string; inboundLinks?: import('../content/manifest.js').InboundLink[]; renameError?: string } | null;
+    /** The last content action's failure: the save guard's broken links, the delete guard's
+     *  inbound linkers, or a rename refusal, each carrying the shared `error` summary. */
+    form?: ContentFormFailure | null;
   }
 
   let { data, registry, render, icons, form }: Props = $props();
@@ -220,8 +220,12 @@ transient flashes, and the editor card's footer holds the word count and the Mar
   // not refused. When set, a delete was blocked by a link that appeared since the page loaded.
   const deleteRefusedLinks = $derived(form?.inboundLinks ?? []);
 
-  // A rename that hit a collision or an invalid slug returns form.renameError.
-  const renameError = $derived(form?.renameError ?? '');
+  // The shared failure summary, rendered only when no richer banner claims the failure: the save
+  // and delete guards get their own banners from brokenLinks and inboundLinks below, so this
+  // surfaces the rest (a rename refusal, today).
+  const formError = $derived(
+    form?.error && !form.brokenLinks?.length && !form.inboundLinks?.length ? form.error : '',
+  );
 
   // The entry this surface is editing. SvelteKit reuses the page component across a same-route
   // navigation (the delete-refused and broken-link banners link entry to entry), so the per-entry
@@ -279,7 +283,7 @@ transient flashes, and the editor card's footer holds the word count and the Mar
   );
   const assertiveMessage = $derived.by(() => {
     if (data.error) return data.error;
-    if (renameError) return renameError;
+    if (formError) return formError;
     if (deleteRefusedLinks.length) {
       const count = deleteRefusedLinks.length;
       return `This ${data.label.toLowerCase()} could not be deleted. ${count} ${count === 1 ? 'page links' : 'pages link'} to it.`;
@@ -529,8 +533,8 @@ transient flashes, and the editor card's footer holds the word count and the Mar
 {#if data.error}
   <div class="alert alert-error mb-4 text-sm">{data.error}</div>
 {/if}
-{#if renameError}
-  <div class="alert alert-error mb-4 text-sm">{renameError}</div>
+{#if formError}
+  <div class="alert alert-error mb-4 text-sm">{formError}</div>
 {/if}
 {#if deleteRefusedLinks.length}
   <div class="alert alert-error mb-4 flex-col items-start text-sm">

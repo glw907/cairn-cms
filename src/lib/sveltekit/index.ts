@@ -12,6 +12,10 @@ export type {
   EditData,
   ContentEvent,
   ContentRoutesDeps,
+  SaveFailure,
+  DeleteRefusal,
+  RenameFailure,
+  ContentFormFailure,
 } from './content-routes.js';
 export { createNavRoutes } from './nav-routes.js';
 export type { NavLoadData, NavPageOption, NavRoutesDeps } from './nav-routes.js';

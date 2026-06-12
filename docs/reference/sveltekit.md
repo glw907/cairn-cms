@@ -155,7 +155,7 @@ declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutes
   deleteAction: (event: ContentEvent) => Promise<ReturnType<typeof fail> | never>;
   listDeleteAction: (event: ContentEvent) => Promise<ReturnType<typeof fail> | never>;
   renameAction: (event: ContentEvent) => Promise<ReturnType<typeof fail> | never>;
-  mintToken: (env: GithubKeyEnv) => Promise<string>;
+  mintToken: (env: GithubKeyEnv) => string | Promise<string>;
 };
 ```
 
@@ -176,8 +176,14 @@ instead of losing the newer edit. `publishAllAction` publishes the saved branch 
 pending entry across concepts in one atomic commit, with the same guarded per-branch delete; the
 admin topbar posts to it on the first concept's list route from anywhere. `discardAction` deletes
 the pending branch, returning to the edit page for a published entry (`?discarded=1`) or to the
-list for an entry that never published. `renameAction` refuses with a 409 `renameError` while a
-pending branch exists, and a delete cascades to the pending branch after its own commit lands.
+list for an entry that never published. `renameAction` refuses with a 409 while a pending branch
+exists, and a delete cascades to the pending branch after its own commit lands.
+
+Every action failure carries `error: string` as its one-line summary, alongside the payload that
+names what refused: a blocked save or publish returns `SaveFailure` (the broken links and the
+edited body), a refused delete returns `DeleteRefusal` (the inbound linkers and the entry id),
+and a refused rename returns `RenameFailure`. A page component types its `form` prop with
+`ContentFormFailure`, the optional merge of the three.
 
 ```ts
 // examples/showcase/src/routes/admin/(app)/[concept]/+page.server.ts
@@ -328,10 +334,14 @@ imports the matching `*Data` type to type its `data` prop.
 | `ListData` | `interface ListData { conceptId; label; dated; entries: EntrySummary[]; error: string \| null; formError: string \| null; publishedAll: number \| null }` | The concept list view's data, including a degraded-listing error, a create-form bounce error, and the publish-all flash count from `?publishedAll=`. |
 | `EditData` | `interface EditData { conceptId; id; label; fields; frontmatter; body; title; isNew; saved; renamed; error; slug; linkTargets; inboundLinks; pending; published; publishedFlash; discardedFlash }` | The entry editor's data: form-ready frontmatter, the body, the link targets, the inbound links for the delete guard, and the publish state (`pending` means the body came from the entry's branch; `published` means the file exists on the default branch). |
 | `ContentEvent` | `interface ContentEvent { url: URL; params; request: Request; locals: { editor? }; platform? }` | The structural event the content routes read; a real SvelteKit `RequestEvent` satisfies it. |
-| `ContentRoutesDeps` | `interface ContentRoutesDeps { mintToken?: (env: GithubKeyEnv) => Promise<string> }` | Injectable dependencies for `createContentRoutes`; tests stub the token mint. |
+| `ContentRoutesDeps` | `interface ContentRoutesDeps { mintToken?: (env: GithubKeyEnv) => string \| Promise<string> }` | Injectable dependencies for `createContentRoutes`; tests stub the token mint, and a bare string return works (the routes await either way). |
+| `SaveFailure` | `interface SaveFailure { error: string; brokenLinks: string[]; body: string }` | A blocked save or publish: the one-line summary, the cairn tokens that resolve to no entry, and the author's edited markdown for reseeding the editor. |
+| `DeleteRefusal` | `interface DeleteRefusal { error: string; inboundLinks: InboundLink[]; id: string }` | A refused delete: the one-line summary, the entries that still link to the refused one, and its id so a list marks the right row. |
+| `RenameFailure` | `interface RenameFailure { error: string }` | A refused rename (bad slug, collision, or pending edits): just the one-line summary. |
+| `ContentFormFailure` | `type ContentFormFailure = Partial<SaveFailure & DeleteRefusal & RenameFailure>` | The shape a route's single `form` export presents to a view component: whichever content action last failed, every field optional, `error` always set on a failure. |
 | `NavPageOption` | `interface NavPageOption { label: string; url: string }` | One page option for the nav editor's URL picker datalist. |
 | `NavLoadData` | `interface NavLoadData { menu: { name; label; maxDepth }; tree: NavNode[]; pages: NavPageOption[]; saved; error: string \| null }` | The nav editor's load data: the menu meta, the current tree, the page options, and the status flags. |
-| `NavRoutesDeps` | `interface NavRoutesDeps { mintToken?: (env: GithubKeyEnv) => Promise<string> }` | Injectable dependencies for `createNavRoutes`; tests stub the token mint. |
+| `NavRoutesDeps` | `interface NavRoutesDeps { mintToken?: (env: GithubKeyEnv) => string \| Promise<string> }` | Injectable dependencies for `createNavRoutes`; tests stub the token mint, and a bare string return works. |
 | `CairnAdminDeps` | `interface CairnAdminDeps { branding?: AuthBranding; send?: SendMagicLink; mintToken?: ContentRoutesDeps['mintToken'] }` | Injectable dependencies for `createCairnAdmin`. Branding defaults from the runtime's `siteName` and `sender`; the other two pass through to the wrapped factories. |
 | `AdminData` | `type AdminData = { view: 'login' \| 'confirm'; page } \| { view: 'list' \| 'edit' \| 'editors' \| 'nav'; layout: LayoutData; page }` | One admin view's data, discriminated on `view` for the admin page component's switch. Each `page` is the matching per-surface load's return shape (`ListData`, `EditData`, `NavLoadData`, the auth page data, or the editor list). |
 | `AdminView` | `type AdminView = { view: 'index' \| 'login' \| 'confirm' \| 'editors' \| 'nav' } \| { view: 'list'; concept } \| { view: 'edit'; concept; id }` | The parsed admin view `parseAdminPath` returns, discriminated for the dispatcher's switch. |

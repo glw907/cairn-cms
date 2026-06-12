@@ -160,6 +160,7 @@ describe('ConceptList', () => {
 
   it('surfaces a refused delete from the flat action result', async () => {
     const form = {
+      error: 'Cannot delete 2026-05-01-post-1: 1 page links to it.',
       id: '2026-05-01-post-1',
       inboundLinks: [
         { concept: 'posts', id: '2026-05-03-post-3', title: 'Post 03', permalink: '/posts/post-3' },

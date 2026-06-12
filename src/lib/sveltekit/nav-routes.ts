@@ -29,7 +29,9 @@ export interface NavLoadData {
 
 /** Injectable dependencies; tests stub the token mint to avoid signing a real key. */
 export interface NavRoutesDeps {
-  mintToken?: (env: GithubKeyEnv) => Promise<string>;
+  /** Mint a GitHub App installation token from the Worker env. Defaults to the real signer.
+   *  A bare string works too; the routes await whatever comes back. */
+  mintToken?: (env: GithubKeyEnv) => string | Promise<string>;
 }
 
 /** The signed-in editor the guard resolved, or a login redirect. */

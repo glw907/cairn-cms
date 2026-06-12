@@ -178,11 +178,27 @@ describe('saveAction', () => {
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })), deps);
     const result = (await routes.saveAction(
       saveEvent('2026-05-hi', { title: 'Hi', body: 'see [gone](cairn:pages/gone)' }) as never,
-    )) as unknown as { status: number; data: { brokenLinks: string[] } };
+    )) as unknown as { status: number; data: { error: string; brokenLinks: string[] } };
     expect(result.status).toBe(400);
+    expect(result.data.error).toMatch(/1 missing page/i);
     expect(result.data.brokenLinks).toContain('cairn:pages/gone');
     // No commit: the only fetch is the manifest read, no POST to /git/trees.
     expect(calls.some((c) => (c.init?.method ?? 'GET') === 'POST' && c.url.endsWith('/git/trees'))).toBe(false);
+  });
+
+  it('accepts a mintToken that returns a bare string', async () => {
+    const gh = new GithubDouble({ main: {} });
+    gh.install();
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })), {
+      mintToken: () => 'sync-token',
+    });
+    try {
+      await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'plain body' }) as never);
+      throw new Error('should have redirected');
+    } catch (e) {
+      expect((e as { location: string }).location).toBe('/admin/posts/2026-05-hi?saved=1');
+    }
+    expect(gh.read('cairn/posts/2026-05-hi', 'src/content/posts/2026-05-hi.md')).toContain('title: Hi');
   });
 
   it('allows a save that links to a draft target, with a warning', async () => {

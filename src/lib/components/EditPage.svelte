@@ -178,6 +178,25 @@ transient flashes, and the editor card's footer holds the word count and the Mar
     device = id;
     localStorage.setItem(deviceStorageKey, id);
   }
+  // The writing modes (focus, typewriter), per-browser preferences on the device pick's pattern:
+  // off by default, read in an effect so SSR never touches localStorage, written by the
+  // toolbar's toggles. The effect tracks nothing reactive, so it runs once.
+  const focusStorageKey = 'cairn-editor-focus-mode';
+  const typewriterStorageKey = 'cairn-editor-typewriter';
+  let focusMode = $state(false);
+  let typewriter = $state(false);
+  $effect(() => {
+    focusMode = localStorage.getItem(focusStorageKey) === 'true';
+    typewriter = localStorage.getItem(typewriterStorageKey) === 'true';
+  });
+  function setFocusMode(on: boolean) {
+    focusMode = on;
+    localStorage.setItem(focusStorageKey, String(on));
+  }
+  function setTypewriter(on: boolean) {
+    typewriter = on;
+    localStorage.setItem(typewriterStorageKey, String(on));
+  }
   const activeDevice = $derived(previewDevice(device));
   // The iframe document around the rendered html: the site's stylesheets from the adapter's
   // preview knob, or a styleless document (behind the hint below) when the site sets none.
@@ -641,7 +660,17 @@ transient flashes, and the editor card's footer holds the word count and the Mar
       role="group"
       aria-label="Editor"
     >
-      <EditorToolbar {format} {mode} onMode={setMode} {device} onDevice={setDevice}>
+      <EditorToolbar
+        {format}
+        {mode}
+        onMode={setMode}
+        {device}
+        onDevice={setDevice}
+        {focusMode}
+        onFocusMode={setFocusMode}
+        {typewriter}
+        onTypewriter={setTypewriter}
+      >
         {#snippet insertControls()}
           <!-- Plain triggers only: the dialogs they open hold their own <form> elements, so the
                dialogs themselves mount outside the edit form at the bottom of this component. -->
@@ -704,6 +733,8 @@ transient flashes, and the editor card's footer holds the word count and the Mar
           registerGetSelection={(fn) => (getSelection = fn)}
           registerFormat={(fn) => (format = fn)}
           {completionSources}
+          {focusMode}
+          {typewriter}
         />
       </div>
       {#if mode === 'preview'}

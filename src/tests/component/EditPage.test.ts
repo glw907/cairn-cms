@@ -64,8 +64,13 @@ function previewSrcdoc(screen: { container: HTMLElement }) {
 }
 
 describe('EditPage', () => {
-  // The device choice persists per browser; clear it so each test starts from the Desktop default.
-  beforeEach(() => localStorage.removeItem('cairn-editor-preview-device'));
+  // The editor preferences persist per browser; clear them so each test starts from the defaults
+  // (Desktop preview width, both writing modes off).
+  beforeEach(() => {
+    localStorage.removeItem('cairn-editor-preview-device');
+    localStorage.removeItem('cairn-editor-focus-mode');
+    localStorage.removeItem('cairn-editor-typewriter');
+  });
 
   it('renders the rich frontmatter fields for a post', async () => {
     const screen = render(EditPage, postProps());
@@ -234,6 +239,48 @@ describe('EditPage', () => {
     await screen.getByRole('button', { name: 'Tablet · 768 px', exact: true }).click();
     await expect.poll(() => frame().style.width).toBe('768px');
     expect(localStorage.getItem('cairn-editor-preview-device')).toBe('tablet');
+  });
+
+  it('toggles focus mode from the More menu and persists the flip', async () => {
+    const screen = render(EditPage, postProps({ body: 'one\n\ntwo' }));
+    await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+    await screen.getByRole('button', { name: 'More formatting', exact: true }).click();
+    const focusToggle = () => screen.getByRole('menuitemcheckbox', { name: 'Focus mode', exact: true });
+    await expect.element(focusToggle()).toHaveAttribute('aria-checked', 'false');
+    await focusToggle().click();
+    expect(localStorage.getItem('cairn-editor-focus-mode')).toBe('true');
+    // The flip reaches the mounted editor: the caret sits at the start, so the second
+    // paragraph dims.
+    await expect.poll(() => screen.container.querySelector('.cm-line.cm-cairn-focus-dim')).not.toBeNull();
+    // A pick closes the menu (the pickMore behavior); reopen to read the checked state.
+    await screen.getByRole('button', { name: 'More formatting', exact: true }).click();
+    await expect.element(focusToggle()).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it('toggles typewriter scrolling from the More menu and persists the flip', async () => {
+    const screen = render(EditPage, postProps());
+    await screen.getByRole('button', { name: 'More formatting', exact: true }).click();
+    const toggle = () => screen.getByRole('menuitemcheckbox', { name: 'Typewriter scrolling', exact: true });
+    await expect.element(toggle()).toHaveAttribute('aria-checked', 'false');
+    await toggle().click();
+    expect(localStorage.getItem('cairn-editor-typewriter')).toBe('true');
+    await screen.getByRole('button', { name: 'More formatting', exact: true }).click();
+    await expect.element(toggle()).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it('seeds the writing modes from the persisted choices', async () => {
+    localStorage.setItem('cairn-editor-focus-mode', 'true');
+    localStorage.setItem('cairn-editor-typewriter', 'true');
+    const screen = render(EditPage, postProps({ body: 'one\n\ntwo' }));
+    // Focus mode arrives enabled: the editor dims the paragraph away from the mount caret.
+    await expect.poll(() => screen.container.querySelector('.cm-line.cm-cairn-focus-dim')).not.toBeNull();
+    await screen.getByRole('button', { name: 'More formatting', exact: true }).click();
+    await expect
+      .element(screen.getByRole('menuitemcheckbox', { name: 'Focus mode', exact: true }))
+      .toHaveAttribute('aria-checked', 'true');
+    await expect
+      .element(screen.getByRole('menuitemcheckbox', { name: 'Typewriter scrolling', exact: true }))
+      .toHaveAttribute('aria-checked', 'true');
   });
 
   it('seeds the device from the persisted choice with a Desktop default', async () => {

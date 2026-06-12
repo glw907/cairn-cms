@@ -60,27 +60,35 @@ describe('CodeMirror stays off the server', () => {
     expect(STATIC_EDITOR.test(source)).toBe(false);
   });
 
-  it('only editor-highlight.ts in components statically imports an editor package', () => {
+  // The two component modules MarkdownEditor reaches only through dynamic imports; they alone
+  // may import @codemirror/* statically.
+  const DYNAMIC_ONLY = ['editor-highlight.ts', 'editor-modes.ts'];
+
+  it('only the dynamically-imported editor modules statically import an editor package', () => {
     // EditPage imports the component .ts helpers statically and a consumer's server bundle
     // follows those edges, so a value import of @codemirror/* or @lezer/* anywhere but the
-    // dynamically-imported editor-highlight module leaks CodeMirror onto the server.
+    // dynamically-imported editor modules leaks CodeMirror onto the server.
     const offenders: string[] = [];
     for (const file of tsFiles('src/lib/components')) {
-      if (path.basename(file) === 'editor-highlight.ts') continue;
+      if (DYNAMIC_ONLY.includes(path.basename(file))) continue;
       if (STATIC_EDITOR_VALUE.test(readFileSync(file, 'utf8'))) offenders.push(file);
     }
     expect(offenders).toEqual([]);
   });
 
-  it('editor-highlight is reached only through a dynamic import', () => {
-    // MarkdownEditor.svelte loads it via `await import('./editor-highlight.js')`, which carries
-    // no `from` clause; any `from '...editor-highlight...'` is a static edge that would pull the
-    // module (and its codemirror imports) into every importer's bundle.
+  it('the editor modules are reached only through dynamic imports', () => {
+    // MarkdownEditor.svelte loads them via `await import('./editor-highlight.js')` and
+    // `await import('./editor-modes.js')`, which carry no `from` clause; any `from '...'` edge
+    // is a static one that would pull the module (and its codemirror imports) into every
+    // importer's bundle.
     const offenders: string[] = [];
     for (const file of sourceFiles('src/lib')) {
       const source = readFileSync(file, 'utf8');
-      if (source.includes("from './editor-highlight") || source.includes("from '../components/editor-highlight")) {
-        offenders.push(file);
+      for (const name of DYNAMIC_ONLY) {
+        const stem = name.replace(/\.ts$/, '');
+        if (source.includes(`from './${stem}`) || source.includes(`from '../components/${stem}`)) {
+          offenders.push(file);
+        }
       }
     }
     expect(offenders).toEqual([]);

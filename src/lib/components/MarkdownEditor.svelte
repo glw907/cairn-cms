@@ -27,6 +27,10 @@ through the adapter's render. Swapping the editor stays a one-file change.
     /** Generic CodeMirror completion sources wired into the editor; the link autocomplete is one. The
      *  type is referenced inline so no static `@codemirror/*` import sits in this client-only file. */
     completionSources?: import('@codemirror/autocomplete').CompletionSource[];
+    /** Focus mode: dim every line outside the caret's paragraph. Off by default. */
+    focusMode?: boolean;
+    /** Typewriter scroll: hold the cursor line at vertical center while typing. Off by default. */
+    typewriter?: boolean;
   }
 
   let {
@@ -37,6 +41,8 @@ through the adapter's render. Swapping the editor stays a one-file change.
     registerGetSelection,
     registerFormat,
     completionSources = [],
+    focusMode = false,
+    typewriter = false,
   }: Props = $props();
 
   let host = $state<HTMLDivElement | null>(null);
@@ -45,6 +51,12 @@ through the adapter's render. Swapping the editor stays a one-file change.
   // browser. The type-only `import(...)` annotation is erased; the value import is dynamic in onMount,
   // so the server bundle never pulls CodeMirror (guarded by the editor-boundary test).
   let view: import('@codemirror/view').EditorView | null = null;
+  // The writing-mode extensions live in their own compartments so the toolbar toggles swap them
+  // in and out of the mounted editor without rebuilding it. Assigned in onMount with the rest of
+  // the dynamic editor modules.
+  let modes: typeof import('./editor-modes.js') | null = null;
+  let focusCompartment: import('@codemirror/state').Compartment | null = null;
+  let typewriterCompartment: import('@codemirror/state').Compartment | null = null;
 
   onMount(async () => {
     const viewMod = await import('@codemirror/view');
@@ -54,6 +66,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
     const languageMod = await import('@codemirror/language');
     const autocompleteMod = await import('@codemirror/autocomplete');
     const highlightMod = await import('./editor-highlight.js');
+    const modesMod = await import('./editor-modes.js');
 
     if (!host) return;
 
@@ -124,15 +137,28 @@ through the adapter's render. Swapping the editor stays a one-file change.
         },
         '.cm-cairn-directive-leaf': directiveInk,
         '.cm-cairn-directive-inline': directiveInk,
+        // Focus mode's dim ink, on the lines editor-modes marks outside the caret's paragraph.
+        // Last on purpose: a dimmed line's spans (markers, tokens, directive labels) all drop to
+        // the dim tone, and spec order breaks the specificity ties with the label rules above.
+        // The fallback is the light theme's value, like the rail fallbacks.
+        '.cm-cairn-focus-dim, .cm-cairn-focus-dim span, .cm-cairn-focus-dim .cm-cairn-directive-label': {
+          color: 'var(--cairn-focus-dim-ink, oklch(54% 0.01 75))',
+        },
       },
       { dark: isDark },
     );
+
+    modes = modesMod;
+    focusCompartment = new stateMod.Compartment();
+    typewriterCompartment = new stateMod.Compartment();
 
     view = new EditorView({
       parent: host,
       state: stateMod.EditorState.create({
         doc: value,
         extensions: [
+          focusCompartment.of(focusMode ? modesMod.focusMode() : []),
+          typewriterCompartment.of(typewriter ? modesMod.typewriterScroll() : []),
           commandsMod.history(),
           keymap.of([...autocompleteMod.completionKeymap, ...commandsMod.defaultKeymap, ...commandsMod.historyKeymap]),
           // The GFM base (strikethrough, tables, task lists, autolink) over the commonmark
@@ -173,6 +199,21 @@ through the adapter's render. Swapping the editor stays a one-file change.
     const current = view.state.doc.toString();
     if (incoming === current) return;
     view.dispatch({ changes: { from: 0, to: current.length, insert: incoming } });
+  });
+
+  // Reconfigure the writing-mode compartments when their props change. Reading `mounted` re-runs
+  // the effect once the editor exists, so a preference arriving between render and mount still
+  // applies; the reconfigure is idempotent, so the extra pass after mount costs nothing.
+  $effect(() => {
+    const focus = focusMode;
+    const typing = typewriter;
+    if (!mounted || !view || !modes || !focusCompartment || !typewriterCompartment) return;
+    view.dispatch({
+      effects: [
+        focusCompartment.reconfigure(focus ? modes.focusMode() : []),
+        typewriterCompartment.reconfigure(typing ? modes.typewriterScroll() : []),
+      ],
+    });
   });
 
   function insertAtCursor(text: string) {

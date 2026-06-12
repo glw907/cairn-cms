@@ -50,6 +50,10 @@
   /* The editor's inline-code chip, a quiet tint beside base-200. Locked pair: base-content ink
      on the chip measures 13.2:1 (AA). Do not darken the chip without re-checking. */
   --cairn-code-chip: oklch(94.5% 0.008 75);
+  /* Focus mode's dim ink for the lines outside the caret's paragraph. A color, not opacity, so
+     the contrast is checkable. Locked pair on base-100: 4.92:1 (AA as text), sitting lighter
+     than muted (48%) so the dim step reads. Do not lighten without re-checking. */
+  --cairn-focus-dim-ink: oklch(54% 0.01 75);
   --color-neutral: oklch(32% 0.012 75);
   --color-neutral-content: oklch(96% 0.004 75);
 
@@ -132,6 +136,9 @@
      base-content ink on the chip measures 11.3:1 (AA). Do not lighten the chip without
      re-checking. */
   --cairn-code-chip: oklch(29.5% 0.012 75);
+  /* Focus mode's dim ink on dark. Locked pair on base-100: 4.89:1 (AA as text), sitting darker
+     than muted (72%) so the dim step reads. Do not darken without re-checking. */
+  --cairn-focus-dim-ink: oklch(64% 0.01 75);
   --color-neutral: oklch(80% 0.01 75);
   --color-neutral-content: oklch(22% 0.008 75);
 

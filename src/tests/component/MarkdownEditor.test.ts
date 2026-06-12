@@ -489,6 +489,59 @@ describe('MarkdownEditor', () => {
     await expect.poll(() => hiddenValue(screen.container)).toBe('- first\n  ');
   });
 
+  it('dims everything outside the caret paragraph in focus mode and follows the caret', async () => {
+    const unpin = pinThemeVars({
+      '--color-base-content': 'rgb(20, 30, 40)',
+      '--cairn-focus-dim-ink': 'rgb(150, 140, 130)',
+    });
+    try {
+      const doc = ['first one', 'first two', '', 'second para', '', 'third para'].join('\n');
+      const screen = render(MarkdownEditor, { value: doc, name: 'body', focusMode: true });
+      await expect.poll(() => screen.container.querySelectorAll('.cm-line.cm-cairn-focus-dim').length).toBe(4);
+      const dimmed = (text: string) => lineWith(screen.container, text)!.classList.contains('cm-cairn-focus-dim');
+      // The fresh editor's caret sits at the document start, so the opening paragraph is the lit
+      // one, and the paragraph is the contiguous non-blank block, both of its lines.
+      expect(dimmed('first one')).toBe(false);
+      expect(dimmed('first two')).toBe(false);
+      expect(dimmed('second para')).toBe(true);
+      expect(dimmed('third para')).toBe(true);
+      // The dim is a real ink, not a bare class: the line color resolves the per-theme variable
+      // while the lit paragraph keeps the content ink.
+      expect(getComputedStyle(lineWith(screen.container, 'third para')!).color).toBe('rgb(150, 140, 130)');
+      expect(getComputedStyle(lineWith(screen.container, 'first one')!).color).toBe('rgb(20, 30, 40)');
+      // The dim follows the caret.
+      await userEvent.click(lineWith(screen.container, 'third para')!);
+      await expect.poll(() => dimmed('third para')).toBe(false);
+      expect(dimmed('first one')).toBe(true);
+      expect(dimmed('first two')).toBe(true);
+      expect(dimmed('second para')).toBe(true);
+    } finally {
+      unpin();
+    }
+  });
+
+  it('keeps both writing modes off by default', async () => {
+    const screen = render(MarkdownEditor, { value: 'alpha\n\nbeta', name: 'body' });
+    await expect.poll(() => screen.container.querySelector('.cm-content')?.textContent ?? '').toContain('beta');
+    expect(screen.container.querySelector('.cm-cairn-focus-dim')).toBeNull();
+    // No typewriter recentering either: an edit leaves the scroller where it was.
+    await focusEditorEnd(screen.container);
+    await userEvent.keyboard('x');
+    await expect.poll(() => hiddenValue(screen.container)).toBe('alpha\n\nbetax');
+    expect(screen.container.querySelector<HTMLElement>('.cm-scroller')!.scrollTop).toBe(0);
+    expect(screen.container.querySelector('.cm-cairn-focus-dim')).toBeNull();
+  });
+
+  it('keeps editing intact with typewriter scroll enabled', async () => {
+    // The recenter dispatch is queued behind each doc change; this drives that path in a real
+    // browser, where a dispatch-during-update mistake or a rejected microtask would fail the run.
+    const screen = render(MarkdownEditor, { value: 'line', name: 'body', typewriter: true });
+    await expect.poll(() => screen.container.querySelector('.cm-content')?.textContent ?? '').toContain('line');
+    await focusEditorEnd(screen.container);
+    await userEvent.keyboard(' more');
+    await expect.poll(() => hiddenValue(screen.container)).toBe('line more');
+  });
+
   it('offers and applies a cairn link through the [[ autocomplete', async () => {
     const targets: LinkTarget[] = [
       { concept: 'pages', id: 'about', permalink: '/about', title: 'About Us', draft: false },

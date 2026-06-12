@@ -174,3 +174,21 @@ inherit a clean list rather than one prose note.
   signature currency, so a stale declared type inside an existing page is invisible to it. Candidate:
   a signature-currency check that compares a reference page's declared types against the real
   exports, or generated signature blocks; belongs with the gates-and-tooling pass.
+- **developer** (types, from the 907 0.51 crossing's review gate, 2026-06-12): both site retrofits
+  imported `AuthEnv` from `@glw907/cairn-cms/sveltekit`, which never exported it, and the error was
+  invisible because `skipLibCheck` swallows missing-member errors inside a consumer's `app.d.ts`,
+  silently degrading `Platform.env.EMAIL` to an error type. The sites copied the import from each
+  other; whatever shape they first copied read naturally enough that two retrofits repeated it.
+  Candidate: re-export `AuthEnv` from the `/sveltekit` subpath (it is consumed there in practice),
+  and show the `app.d.ts` Platform block verbatim in the deploy guide.
+- **developer** (preview knob docs, from the 907 0.51 crossing, 2026-06-12): the adapter guide says
+  the preview frame links "the same sheet the site layout loads", but with `?url` imports in both
+  the layout and the adapter, the client and server pipelines each emit their own differently
+  transformed hashed copy (the page links the client copy, the frame the server copy; both ship,
+  ecxc and 907 confirmed). Candidate: document the dual emission honestly in the adapter guide and
+  the upgrade entry, so a developer diffing their build output does not read it as a defect.
+- **developer** (doctor self-derivation, from the 907 0.51 crossing, 2026-06-12): a site without
+  the `cairnManifest` Vite plugin gets four doctor skips (`--from`/`--repo`/zone checks) because
+  the derivation rides the manifest bin's Vite machinery. The skip copy says "configure the
+  cairnManifest plugin" but no doc states that the plugin is what powers doctor derivation.
+  Candidate: a line in the doctor reference and the deploy guide tying derivation to the plugin.

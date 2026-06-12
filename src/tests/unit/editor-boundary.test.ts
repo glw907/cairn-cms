@@ -80,13 +80,17 @@ describe('CodeMirror stays off the server', () => {
     // MarkdownEditor.svelte loads them via `await import('./editor-highlight.js')` and
     // `await import('./editor-modes.js')`, which carry no `from` clause; any `from '...'` edge
     // is a static one that would pull the module (and its codemirror imports) into every
-    // importer's bundle.
+    // importer's bundle. The $lib alias spelling reaches the same files, so it is scanned too.
     const offenders: string[] = [];
     for (const file of sourceFiles('src/lib')) {
       const source = readFileSync(file, 'utf8');
       for (const name of DYNAMIC_ONLY) {
         const stem = name.replace(/\.ts$/, '');
-        if (source.includes(`from './${stem}`) || source.includes(`from '../components/${stem}`)) {
+        if (
+          source.includes(`from './${stem}`) ||
+          source.includes(`from '../components/${stem}`) ||
+          source.includes(`from '$lib/components/${stem}`)
+        ) {
           offenders.push(file);
         }
       }

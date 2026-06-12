@@ -245,27 +245,28 @@ describe('EditPage', () => {
     const screen = render(EditPage, postProps({ body: 'one\n\ntwo' }));
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
     await screen.getByRole('button', { name: 'More formatting', exact: true }).click();
-    const focusToggle = () => screen.getByRole('menuitemcheckbox', { name: 'Focus mode', exact: true });
-    await expect.element(focusToggle()).toHaveAttribute('aria-checked', 'false');
+    const focusToggle = () => screen.getByRole('button', { name: 'Focus mode', exact: true });
+    await expect.element(focusToggle()).toHaveAttribute('aria-pressed', 'false');
     await focusToggle().click();
     expect(localStorage.getItem('cairn-editor-focus-mode')).toBe('true');
     // The flip reaches the mounted editor: the caret sits at the start, so the second
     // paragraph dims.
     await expect.poll(() => screen.container.querySelector('.cm-line.cm-cairn-focus-dim')).not.toBeNull();
-    // A pick closes the menu (the pickMore behavior); reopen to read the checked state.
-    await screen.getByRole('button', { name: 'More formatting', exact: true }).click();
-    await expect.element(focusToggle()).toHaveAttribute('aria-checked', 'true');
+    // A flip leaves the menu open (unlike a format pick), so the new pressed state is
+    // perceivable in place without reopening.
+    expect(screen.container.querySelector('#cairn-more-formatting-menu')!.matches(':popover-open')).toBe(true);
+    await expect.element(focusToggle()).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('toggles typewriter scrolling from the More menu and persists the flip', async () => {
     const screen = render(EditPage, postProps());
     await screen.getByRole('button', { name: 'More formatting', exact: true }).click();
-    const toggle = () => screen.getByRole('menuitemcheckbox', { name: 'Typewriter scrolling', exact: true });
-    await expect.element(toggle()).toHaveAttribute('aria-checked', 'false');
+    const toggle = () => screen.getByRole('button', { name: 'Typewriter scrolling', exact: true });
+    await expect.element(toggle()).toHaveAttribute('aria-pressed', 'false');
     await toggle().click();
     expect(localStorage.getItem('cairn-editor-typewriter')).toBe('true');
-    await screen.getByRole('button', { name: 'More formatting', exact: true }).click();
-    await expect.element(toggle()).toHaveAttribute('aria-checked', 'true');
+    // The menu stays open across the flip; the pressed state updates in place.
+    await expect.element(toggle()).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('seeds the writing modes from the persisted choices', async () => {
@@ -276,11 +277,11 @@ describe('EditPage', () => {
     await expect.poll(() => screen.container.querySelector('.cm-line.cm-cairn-focus-dim')).not.toBeNull();
     await screen.getByRole('button', { name: 'More formatting', exact: true }).click();
     await expect
-      .element(screen.getByRole('menuitemcheckbox', { name: 'Focus mode', exact: true }))
-      .toHaveAttribute('aria-checked', 'true');
+      .element(screen.getByRole('button', { name: 'Focus mode', exact: true }))
+      .toHaveAttribute('aria-pressed', 'true');
     await expect
-      .element(screen.getByRole('menuitemcheckbox', { name: 'Typewriter scrolling', exact: true }))
-      .toHaveAttribute('aria-checked', 'true');
+      .element(screen.getByRole('button', { name: 'Typewriter scrolling', exact: true }))
+      .toHaveAttribute('aria-pressed', 'true');
   });
 
   it('seeds the device from the persisted choice with a Desktop default', async () => {

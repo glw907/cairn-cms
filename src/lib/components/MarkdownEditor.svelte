@@ -164,9 +164,15 @@ through the adapter's render. Swapping the editor stays a one-file change.
         // Focus mode's dim ink, on the lines editor-modes marks outside the caret's paragraph.
         // Last on purpose: a dimmed line's spans (markers, tokens, directive labels) all drop to
         // the dim tone, and spec order breaks the specificity ties with the label rules above.
-        // The fallback is the light theme's value, like the rail fallbacks.
+        // The fallback is the light theme's value, like the rail fallbacks. Backgrounds flatten
+        // along with the ink: the dim tone on the code chip or an 8% accent chip measures under
+        // the design's 3:1 floor, so a dimmed line keeps no tinted chip behind its text. The
+        // span arm outranks the chip rules on specificity (the highlight style's generated
+        // class, the inline-directive mark); the line arm covers the leaf chip, where spec
+        // order breaks the tie.
         '.cm-cairn-focus-dim, .cm-cairn-focus-dim span, .cm-cairn-focus-dim .cm-cairn-directive-label': {
           color: 'var(--cairn-focus-dim-ink, oklch(66% 0.01 75))',
+          backgroundColor: 'transparent',
         },
       },
       { dark: isDark },

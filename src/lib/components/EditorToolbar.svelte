@@ -6,7 +6,7 @@ right. Format buttons ask the host to transform the editor's current selection; 
 Insert group through the `insertControls` snippet so the strip stays free of picker wiring. While
 Preview shows, a device trigger joins the segmented capsule and opens a popover menu of preview
 widths, reported to the host through `onDevice`. The More menu also carries the host's persisted
-writing-mode toggles (focus mode, typewriter scrolling) as checked items above the format picks. The glyphs are stroke SVG icons in the admin's
+writing-mode toggles (focus mode, typewriter scrolling) as pressed-state buttons above the format picks. The glyphs are stroke SVG icons in the admin's
 house style (24x24 viewBox, `currentColor`, round caps).
 -->
 <script lang="ts">
@@ -120,13 +120,6 @@ house style (24x24 viewBox, `currentColor`, round caps).
 
   function pickMore(kind: FormatKind) {
     format(kind);
-    hideMenu(moreMenu);
-  }
-
-  // The writing-mode toggles follow pickMore: a flip dismisses the menu the same way a format
-  // pick does, so the menu behaves one way throughout.
-  function pickToggle(flip: () => void) {
-    flip();
     hideMenu(moreMenu);
   }
 
@@ -273,16 +266,13 @@ house style (24x24 viewBox, `currentColor`, round caps).
     class="dropdown menu menu-sm bg-base-100 rounded-box w-44 border border-[var(--cairn-card-border)] p-1 shadow-[var(--cairn-shadow)]"
   >
     <!-- The writing modes sit above the format items behind a hairline, persisted by the host.
-         menuitemcheckbox carries the on/off state for assistive tech; the check glyph mirrors it
-         visually, the device menu's idiom. -->
+         The device list's idiom: plain buttons with aria-pressed carrying the on/off state (this
+         popover list is not an ARIA menu, so a menuitemcheckbox would sit in an invalid context);
+         the check glyph mirrors the state visually. A flip leaves the menu open so the new
+         pressed state is perceivable in place; only a format pick dismisses it. -->
     {#if onFocusMode}
       <li>
-        <button
-          type="button"
-          role="menuitemcheckbox"
-          aria-checked={focusMode}
-          onclick={() => pickToggle(() => onFocusMode(!focusMode))}
-        >
+        <button type="button" aria-pressed={focusMode} onclick={() => onFocusMode(!focusMode)}>
           <span class="grow">Focus mode</span>
           {#if focusMode}
             {@render strokeIcon(checkPaths)}
@@ -292,12 +282,7 @@ house style (24x24 viewBox, `currentColor`, round caps).
     {/if}
     {#if onTypewriter}
       <li>
-        <button
-          type="button"
-          role="menuitemcheckbox"
-          aria-checked={typewriter}
-          onclick={() => pickToggle(() => onTypewriter(!typewriter))}
-        >
+        <button type="button" aria-pressed={typewriter} onclick={() => onTypewriter(!typewriter)}>
           <span class="grow">Typewriter scrolling</span>
           {#if typewriter}
             {@render strokeIcon(checkPaths)}
@@ -306,7 +291,7 @@ house style (24x24 viewBox, `currentColor`, round caps).
       </li>
     {/if}
     {#if onFocusMode || onTypewriter}
-      <li class="my-1 border-t border-[var(--cairn-card-border)]" aria-hidden="true"></li>
+      <li class="my-1 border-t border-[var(--cairn-card-border)]" role="separator"></li>
     {/if}
     {#each moreItems as item (item.kind)}
       <li><button type="button" onclick={() => pickMore(item.kind)}>{item.label}</button></li>

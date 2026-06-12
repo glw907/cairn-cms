@@ -3,6 +3,7 @@ import {
   caretContainerRange,
   directiveLineKind,
   fenceDepths,
+  fenceScan,
   fenceTokens,
   findInlineDirectives,
 } from '../../lib/components/markdown-directives.js';
@@ -91,6 +92,16 @@ describe('fenceDepths', () => {
   });
 });
 
+describe('fenceScan', () => {
+  it('reports roles alongside depths, disowning fence-shaped lines inside code blocks', () => {
+    const { depths, roles } = fenceScan([':::aside', '```', ':::note', ':::', '```', ':::']);
+    expect(depths).toEqual([1, 1, 1, 1, 1, 1]);
+    // The two fences inside the code block are documented examples, not delimiters, so their
+    // roles come back null along with the code fences and any content line.
+    expect(roles).toEqual(['opener', null, null, null, null, 'closer']);
+  });
+});
+
 describe('fenceTokens', () => {
   it('splits a labeled opener into machinery and meaning', () => {
     expect(fenceTokens('::::split[Costs & volunteers]')).toEqual([
@@ -121,28 +132,34 @@ describe('fenceTokens', () => {
 });
 
 describe('caretContainerRange', () => {
-  const fixtureDepths = fenceDepths(NESTED_FIXTURE);
+  const fixtureScan = fenceScan(NESTED_FIXTURE);
   it('finds the innermost container around the caret', () => {
     // Caret in the first panel's prose: the panel's opener through its closer, at depth 2.
-    expect(caretContainerRange(NESTED_FIXTURE, fixtureDepths, 2)).toEqual({ fromLine: 1, toLine: 3, depth: 2 });
+    expect(caretContainerRange(fixtureScan, 2)).toEqual({ fromLine: 1, toLine: 3, depth: 2 });
     // A fence row carries the depth of the container it delimits, so a caret on the panel's
     // closer still belongs to the panel, not to the outer split.
-    expect(caretContainerRange(NESTED_FIXTURE, fixtureDepths, 3)).toEqual({ fromLine: 1, toLine: 3, depth: 2 });
+    expect(caretContainerRange(fixtureScan, 3)).toEqual({ fromLine: 1, toLine: 3, depth: 2 });
   });
   it('returns the outer container when the caret sits between panels', () => {
     // The blank line between the panels is the outer split's own content line.
-    expect(caretContainerRange(NESTED_FIXTURE, fixtureDepths, 4)).toEqual({ fromLine: 0, toLine: 8, depth: 1 });
+    expect(caretContainerRange(fixtureScan, 4)).toEqual({ fromLine: 0, toLine: 8, depth: 1 });
   });
   it('returns null outside any container', () => {
-    const lines = ['before', ':::aside', 'inside', ':::', 'after'];
-    const depths = fenceDepths(lines);
-    expect(caretContainerRange(lines, depths, 0)).toBeNull();
-    expect(caretContainerRange(lines, depths, 4)).toBeNull();
+    const scan = fenceScan(['before', ':::aside', 'inside', ':::', 'after']);
+    expect(caretContainerRange(scan, 0)).toBeNull();
+    expect(caretContainerRange(scan, 4)).toBeNull();
   });
   it('runs an unclosed container to the document end', () => {
-    const lines = [':::aside', 'one', 'two'];
-    const depths = fenceDepths(lines);
-    expect(caretContainerRange(lines, depths, 2)).toEqual({ fromLine: 0, toLine: 2, depth: 1 });
+    const scan = fenceScan([':::aside', 'one', 'two']);
+    expect(caretContainerRange(scan, 2)).toEqual({ fromLine: 0, toLine: 2, depth: 1 });
+  });
+  it('spans the real container across fence-shaped lines inside a code block', () => {
+    // A documented directive example inside a fenced code block inside a real container: the
+    // caret range must reach the real opener and closer, never clip at the fakes the code-block
+    // tracking already disowned.
+    const scan = fenceScan([':::aside', 'before', '```', ':::note', ':::', '```', 'after', ':::']);
+    expect(caretContainerRange(scan, 1)).toEqual({ fromLine: 0, toLine: 7, depth: 1 });
+    expect(caretContainerRange(scan, 6)).toEqual({ fromLine: 0, toLine: 7, depth: 1 });
   });
 });
 

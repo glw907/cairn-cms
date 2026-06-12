@@ -24,17 +24,28 @@ export function directiveLineKind(line: string): 'fence' | 'leaf' | null {
   return null;
 }
 
+/** One pass over the document: each line's container depth alongside its fence role. */
+export interface FenceScan {
+  /** The 1-based container depth per line, or null outside any container. */
+  depths: (number | null)[];
+  /** Whether a line opened or closed a container, or null for everything else. A fence-shaped
+   *  line the code-block tracking disowned is null too, so the role array is the one source of
+   *  truth for pairing and no caller re-parses a line the scan already judged. */
+  roles: ('opener' | 'closer' | null)[];
+}
+
 /**
- * The 1-based container depth each line sits at, or null outside any container. A named fence
- * opens a container; a bare fence closes the most recent one (colon counts are not trusted for
- * pairing, since authors vary them). An opener and its closer share the opener's depth, and a
- * line between them carries the depth of its innermost container. Lines inside a fenced code
- * block are plain content, so a documented ::: example cannot open a phantom container running
- * to end of document. Author errors are tolerated: an unmatched closer reads as depth 1 and the
- * count never goes below zero.
+ * Scan the document's container structure in one pass. A named fence opens a container; a bare
+ * fence closes the most recent one (colon counts are not trusted for pairing, since authors
+ * vary them). An opener and its closer share the opener's depth, and a line between them
+ * carries the depth of its innermost container. Lines inside a fenced code block are plain
+ * content, so a documented ::: example cannot open a phantom container running to end of
+ * document. Author errors are tolerated: an unmatched closer reads as depth 1 and the count
+ * never goes below zero.
  */
-export function fenceDepths(lines: string[]): (number | null)[] {
+export function fenceScan(lines: string[]): FenceScan {
   const depths: (number | null)[] = [];
+  const roles: ('opener' | 'closer' | null)[] = [];
   let open = 0;
   // The marker character that opened the current code block, or null outside one. Only a line
   // opening with the same character closes it, so tildes inside a backtick block stay literal.
@@ -45,32 +56,34 @@ export function fenceDepths(lines: string[]): (number | null)[] {
       if (codeMarker === null) codeMarker = code[1][0];
       else if (code[1][0] === codeMarker) codeMarker = null;
       depths.push(open > 0 ? open : null);
+      roles.push(null);
       continue;
     }
     if (codeMarker !== null) {
       depths.push(open > 0 ? open : null);
+      roles.push(null);
       continue;
     }
     const fence = FENCE.exec(line);
     if (!fence) {
       depths.push(open > 0 ? open : null);
+      roles.push(null);
     } else if (fence[2]) {
       open += 1;
       depths.push(open);
+      roles.push('opener');
     } else {
       depths.push(Math.max(open, 1));
+      roles.push('closer');
       if (open > 0) open -= 1;
     }
   }
-  return depths;
+  return { depths, roles };
 }
 
-// Tells a fence row's role apart with the FENCE name group, mirroring the depth scan's pairing
-// rule: a named fence opens a container and a bare colon run closes one.
-function fenceRole(line: string): 'opener' | 'closer' | null {
-  const m = FENCE.exec(line);
-  if (!m) return null;
-  return m[2] ? 'opener' : 'closer';
+/** The depth half of {@link fenceScan}, for callers that need no roles. */
+export function fenceDepths(lines: string[]): (number | null)[] {
+  return fenceScan(lines).depths;
 }
 
 /** The inclusive line span of one directive container. */
@@ -82,30 +95,28 @@ export interface ContainerRange {
 
 /**
  * The innermost container around a caret line, as an inclusive line range, or null outside any
- * container. Works from the cached depth array without re-parsing: the caret line's own depth
- * names the container (fence rows carry the depth they delimit, so a caret on a fence belongs
- * to that fence's container), and within a container the only same-depth fences are its opener
- * and closer (nested containers sit deeper, siblings sit outside), so the nearest named fence
- * above and the nearest bare fence below bound the range. An unclosed container runs to the
- * document end.
+ * container. Works from the cached scan without re-parsing: the caret line's own depth names
+ * the container (fence rows carry the depth they delimit, so a caret on a fence belongs to
+ * that fence's container), and within a container the only same-depth real fences are its
+ * opener and closer (nested containers sit deeper, siblings sit outside), so the nearest
+ * opener above and the nearest closer below bound the range. The scan's roles already disown a
+ * fence-shaped line inside a code block, so a documented example can never clip the range. An
+ * unclosed container runs to the document end.
  */
-export function caretContainerRange(
-  lines: string[],
-  depths: (number | null)[],
-  caretLine: number,
-): ContainerRange | null {
+export function caretContainerRange(scan: FenceScan, caretLine: number): ContainerRange | null {
+  const { depths, roles } = scan;
   const depth = depths[caretLine] ?? null;
   if (depth === null) return null;
   let fromLine = caretLine;
   for (let i = caretLine; i >= 0; i--) {
-    if (depths[i] === depth && fenceRole(lines[i]) === 'opener') {
+    if (depths[i] === depth && roles[i] === 'opener') {
       fromLine = i;
       break;
     }
   }
-  let toLine = lines.length - 1;
-  for (let i = caretLine; i < lines.length; i++) {
-    if (depths[i] === depth && fenceRole(lines[i]) === 'closer') {
+  let toLine = depths.length - 1;
+  for (let i = caretLine; i < depths.length; i++) {
+    if (depths[i] === depth && roles[i] === 'closer') {
       toLine = i;
       break;
     }

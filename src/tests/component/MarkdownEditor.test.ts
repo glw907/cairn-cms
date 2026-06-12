@@ -563,6 +563,40 @@ describe('MarkdownEditor', () => {
     }
   });
 
+  it('flattens chip backgrounds on dimmed lines in focus mode', async () => {
+    // Dim ink on a tinted chip measures under the 3:1 floor, so the dim arm drops the chip
+    // backgrounds along with the ink: the inline-code chip, the inline directive chip, and the
+    // leaf directive line all flatten while the lit paragraph keeps its chips.
+    const unpin = pinThemeVars({
+      '--cairn-code-chip': 'rgb(240, 233, 224)',
+      '--color-accent': 'rgb(100, 60, 200)',
+    });
+    try {
+      const doc = ['lit `chip` here', '', 'dim `code` and :icon[ski]{s=1}', '', '::hr'].join('\n');
+      const screen = render(MarkdownEditor, { value: doc, name: 'body', focusMode: true });
+      await expect.poll(() => screen.container.querySelector('.cm-line.cm-cairn-directive-leaf')).not.toBeNull();
+      await expect.poll(() => spanWith(lineWith(screen.container, 'lit'), 'chip')).toBeTruthy();
+      // The caret paragraph stays lit, chips intact.
+      expect(getComputedStyle(spanWith(lineWith(screen.container, 'lit'), 'chip')!).backgroundColor).toBe(
+        'rgb(240, 233, 224)',
+      );
+      const dimLine = lineWith(screen.container, 'dim')!;
+      expect(dimLine.classList.contains('cm-cairn-focus-dim')).toBe(true);
+      expect(getComputedStyle(spanWith(dimLine, 'code')!).backgroundColor).toBe('rgba(0, 0, 0, 0)');
+      const inline = dimLine.querySelector<HTMLElement>('.cm-cairn-directive-inline')!;
+      expect(getComputedStyle(inline).backgroundColor).toBe('rgba(0, 0, 0, 0)');
+      const leaf = () => screen.container.querySelector<HTMLElement>('.cm-line.cm-cairn-directive-leaf')!;
+      expect(leaf().classList.contains('cm-cairn-focus-dim')).toBe(true);
+      expect(getComputedStyle(leaf()).backgroundColor).toBe('rgba(0, 0, 0, 0)');
+      // Caret into the leaf's paragraph: the chip background returns with the lit ink.
+      await userEvent.click(leaf());
+      await expect.poll(() => leaf().classList.contains('cm-cairn-focus-dim')).toBe(false);
+      expect(getComputedStyle(leaf()).backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
+    } finally {
+      unpin();
+    }
+  });
+
   it('keeps both writing modes off by default', async () => {
     const screen = render(MarkdownEditor, { value: 'alpha\n\nbeta', name: 'body' });
     await expect.poll(() => screen.container.querySelector('.cm-content')?.textContent ?? '').toContain('beta');

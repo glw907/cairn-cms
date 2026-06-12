@@ -27,6 +27,17 @@ export const previewDevices: PreviewDevice[] = [
   { id: 'small', label: 'Small phone', width: 320 },
 ];
 
+/** The table row for a device id. The id type makes a miss impossible; the fallback satisfies find. */
+export function previewDevice(id: PreviewDeviceId): PreviewDevice {
+  return previewDevices.find((d) => d.id === id) ?? previewDevices[0];
+}
+
+/** A device's user-facing text, shared by the toolbar's menu items and the frame caption: the
+ *  label with its width when one is fixed, so the value reaches assistive tech at pick time. */
+export function deviceLabel(d: PreviewDevice): string {
+  return d.width === null ? d.label : `${d.label} · ${d.width} px`;
+}
+
 /**
  * Build the preview iframe's srcdoc: a complete document linking the site's stylesheets around
  * the rendered entry html. The html comes from the site's floored render pipeline, which already

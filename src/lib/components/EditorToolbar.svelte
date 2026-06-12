@@ -11,7 +11,7 @@ house style (24x24 viewBox, `currentColor`, round caps).
 <script lang="ts">
   import type { Snippet } from 'svelte';
   import type { FormatKind } from './markdown-format.js';
-  import { previewDevices, type PreviewDeviceId } from './preview-doc.js';
+  import { deviceLabel, previewDevice, previewDevices, type PreviewDeviceId } from './preview-doc.js';
 
   interface Props {
     /** Apply a markdown transform to the editor's current selection. */
@@ -101,19 +101,13 @@ house style (24x24 viewBox, `currentColor`, round caps).
   // aria-expanded on the trigger (the More menu's pattern).
   let deviceMenu = $state<HTMLUListElement | null>(null);
   let deviceOpen = $state(false);
-  const activeDevice = $derived(previewDevices.find((d) => d.id === device) ?? previewDevices[0]);
+  const activeDevice = $derived(previewDevice(device));
   // Whether the device trigger renders as the capsule's third segment.
   const showDeviceTrigger = $derived(mode === 'preview' && !!onDevice);
 
   function pickDevice(id: PreviewDeviceId) {
     onDevice?.(id);
     if (deviceMenu?.matches(':popover-open')) deviceMenu.hidePopover();
-  }
-
-  // A device item names its width, so the value reaches assistive tech at pick time; the frame
-  // caption above the preview repeats the same form.
-  function deviceItemLabel(d: (typeof previewDevices)[number]): string {
-    return d.width === null ? d.label : `${d.label} · ${d.width} px`;
   }
 
   let toolbarEl = $state<HTMLDivElement | null>(null);
@@ -303,7 +297,7 @@ house style (24x24 viewBox, `currentColor`, round caps).
       {#each previewDevices as d (d.id)}
         <li>
           <button type="button" aria-pressed={device === d.id} onclick={() => pickDevice(d.id)}>
-            <span class="grow">{deviceItemLabel(d)}</span>
+            <span class="grow">{deviceLabel(d)}</span>
             {#if device === d.id}
               {@render strokeIcon(['M20 6 9 17l-5-5'])}
             {/if}

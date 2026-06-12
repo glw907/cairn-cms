@@ -29,7 +29,7 @@ transient flashes, and the editor card's footer holds the word count and the Mar
   import MarkdownHelpDialog from './MarkdownHelpDialog.svelte';
   import { cairnLinkCompletionSource } from './link-completion.js';
   import { unwrapCairnLink, type FormatKind } from './markdown-format.js';
-  import { buildPreviewDoc, previewDevices, type PreviewDeviceId } from './preview-doc.js';
+  import { buildPreviewDoc, deviceLabel, previewDevice, previewDevices, type PreviewDeviceId } from './preview-doc.js';
   import { directiveLineKind, findInlineDirectives } from './markdown-directives.js';
   import type { ComponentRegistry } from '../render/registry.js';
   import type { IconSet } from '../render/glyph.js';
@@ -178,7 +178,7 @@ transient flashes, and the editor card's footer holds the word count and the Mar
     device = id;
     localStorage.setItem(deviceStorageKey, id);
   }
-  const activeDevice = $derived(previewDevices.find((d) => d.id === device) ?? previewDevices[0]);
+  const activeDevice = $derived(previewDevice(device));
   // The iframe document around the rendered html: the site's stylesheets from the adapter's
   // preview knob, or a styleless document (behind the hint below) when the site sets none.
   const previewDoc = $derived(buildPreviewDoc(previewHtml, data.preview));
@@ -726,7 +726,7 @@ transient flashes, and the editor card's footer holds the word count and the Mar
           >
             {#if activeDevice.width !== null}
               <p class="mb-2 text-right text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">
-                {activeDevice.label} · {activeDevice.width} px
+                {deviceLabel(activeDevice)}
               </p>
             {/if}
             {#if !data.preview}

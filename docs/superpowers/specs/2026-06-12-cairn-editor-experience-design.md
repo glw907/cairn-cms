@@ -23,8 +23,16 @@ read against the installed packages turned the impression into specifics:
 
 ## Decisions (settled 2026-06-12)
 
-- **The surface stays monospace.** The feel comes from scale, measure, hierarchy, and color
-  discipline, not a new face. iA Writer Quattro and Duo were considered and declined.
+- **The surface stays monospace, and the specific face is a frontend-design mission.** The feel
+  comes from scale, measure, hierarchy, and color discipline; proportional writing faces (iA
+  Writer Quattro, Duo) were considered and declined. Within the pass, the frontend-design loop
+  evaluates candidate monospace faces for prose by rendering them in the showcase: criteria are
+  OFL-licensed self-hostable variable woff2 (the Bricolage precedent), prose texture in long
+  paragraphs (texture healing weighs here), a true italic for emphasis-in-place, a weight range
+  that can carry the heading hierarchy, and rendering quality at ~16px. Candidates to evaluate
+  include Monaspace, iA Writer Mono, Courier Prime, JetBrains Mono, Intel One Mono, and Atkinson
+  Hyperlegible Mono; `ui-monospace` stays the fallback stack either way, and "no new font" is an
+  acceptable verdict if nothing beats the system face on the showcase samples.
 - **Scope is the quiet surface plus the two iA modes** (focus mode, typewriter scroll).
   Obsidian-style marker hiding and live widgets are out: heaviest, caret edge cases, and
   redundant with the iframe Preview tab, which is cairn's design-accurate view.

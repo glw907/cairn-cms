@@ -2,7 +2,7 @@
 
 All notable changes to this project are recorded here, most recent first.
 
-## Unreleased
+## 0.51.0
 
 The `svelte` peer dependency floor rises from `^5.0.0` to `^5.56.3`, turning the 0.40.0 advisory
 into an enforced range: consumer sites compile the shipped `.svelte` sources, and svelte `5.56.1`

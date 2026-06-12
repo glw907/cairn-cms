@@ -1,6 +1,6 @@
 # Doctor DX and the iframed preview (0.51.0)
 
-**Status: in progress (started 2026-06-12).**
+**Status: LANDED on `main` and PUBLISHED 2026-06-12 as `0.51.0`. Post-mortem at the end.**
 
 ## Why
 
@@ -89,3 +89,66 @@ frontend-design skill with the preview UI work.
 
 The kit `checkOrigin` removal path (kit#15992) stays a ROADMAP item; this pass only raises its
 priority note. The render pipeline itself does not change; the iframe wraps its output.
+
+## Post-mortem (2026-06-12)
+
+**What shipped.** All eight tasks landed on `main` as commits `ca117e5..257d752`. The doctor arm
+gave `cairn-doctor` input self-derivation (`ca117e5`, the config-module facts through the manifest
+bin's Vite machinery plus the wrangler account id, with flag-then-env-then-derived precedence), the
+`--probe <url>` live sign-in check (`ec02a36`, with the probe returning the csrf field value
+directly in `497e8d7`), and dependency floors with teeth (`5b92507`, the svelte `^5.56.3` peer
+bump plus the lockfile-vs-peer-floors check). The condition registry grew to fifteen entries with
+the two new ids `config.dependency-floors-unmet` and `admin.login-probe-failed`, each with its
+checklist anchor, and `check:readiness` pins fifteen. The preview arm landed the adapter `preview`
+knob through `composeRuntime` (`5dc1287`), the sandboxed-iframe preview with the collapsing
+sidebar and the device-width menu (`97fd14c`), and the showcase wiring with its E2E proof
+(`940dedd`). The directive-highlighting arm fixed the opener matching (labeled and attributed
+openers, four-plus-colon fences) and added per-depth bands (`2283e1f`). The docs arm is `2d9f8de`.
+
+**The ecxc fidelity gate earned its keep.** Task 7 packed the engine into the ecxc-ski checkout,
+wired its `preview` knob, and compared each page's iframed preview against the production
+rendering. It proved the knob as designed could not express a site whose posts and pages wrap
+content differently, so one adapter-level pair previewed posts with page styling. The fix is the
+`byConcept` per-concept override, with `editLoad` shipping the entry's already-resolved flat shape
+as the new exported `ResolvedPreview` (`477fd90`). The site-side wiring is committed in the ecxc
+checkout (`47f82dc`) and held unpushed until this publish, per the publish-before-site-push rule.
+
+**The review gate.** The svelte and daisyui-a11y reviewers converged on twelve findings, all
+folded in as `32ade6b`. The one Critical was invisible keyboard focus in the new popover menus,
+where DaisyUI v5's `.menu` quiets `:focus-visible` from the utilities layer and so beats the
+components-layer brand ring; an unlayered scoped rule in `cairn-admin.css` restores a 2px primary
+outline, recorded in the design system as a deliberate layering exception. Several preview-frame
+correctness fixes in the same fold-in were real. An empty `sandbox` never made links inert (a
+sandboxed srcdoc context can navigate itself against the parent base URL), so `buildPreviewDoc`
+emits `<base target="_blank">` and the sandbox blocks the resulting popup, with a showcase E2E
+clicking a frame link to prove the admin stays put. Bumping `previewRun` in the render effect's
+cleanup means an in-flight render can no longer write entry A's html into entry B after a
+same-route hop. A capture-phase `invalid` listener flips Preview back to Write before the browser
+reports, so a hidden required sidebar field can no longer cancel a save silently, and the iframe
+takes `tabindex="0"`. A follow-up (`b7cf172`) leveled `.menu` button items to the anchor baseline
+with a scoped Preflight substitute, since the admin sheet ships without Preflight and DaisyUI's
+menu rules assume it.
+
+**Session note.** The authoring session crashed mid-release. The code was all committed, but the
+version bump and changelog header sat uncommitted in the working tree, the plan status line had
+been flipped to PUBLISHED prematurely, and no post-mortem, STATUS update, push, or release
+existed. The resume session trusted none of the prior session's claims and re-ran everything
+first-hand before completing the release.
+
+**Verification evidence (run first-hand at the tip, post-crash).** `npm run check` 902 files 0/0.
+`npm test` 156 files / 1369 tests exit 0. All five doc and readiness gates exit 0
+(`check:reference`, `check:package`, `check:docs`, `check:readiness`, `check:prose`). One flake
+observed and resolved: `MarkdownEditor.test.ts` hit a matcher timeout once while the doc gates ran
+beside the browser suite, then passed in isolation (15/15) and in the clean full run. The
+simplifier ran post-crash and made one consolidation, the shared `previewDevice`/`deviceLabel`
+helpers in `preview-doc.ts` replacing the duplicated lookup and label strings in `EditPage` and
+`EditorToolbar` (`257d752`), re-gated green.
+
+**Carry-forwards.**
+1. **ecxc's `^0.51.0` bump** ships right after this publish (the knob wiring already sits in its
+   checkout), and `npx cairn-doctor --probe https://ecxc.ski` against the deployed site is the
+   probe's first live proof.
+2. **907-life stays the last retrofit**, now crossing straight to `^0.51.0` and inheriting the
+   svelte `^5.56.3` floor action from this changelog.
+3. **The component suite can flake under parallel load** (browser-mode matcher timeouts). Keep
+   other heavy work off the box during the gate; revisit the matcher timeout if it recurs.

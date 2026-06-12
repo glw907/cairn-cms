@@ -11,7 +11,42 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-11, latest): the site retrofits to `0.50.0`
+## Immediate next action (2026-06-12, latest): publish `0.51.0`, then the two site bumps
+
+**The doctor-DX-and-preview pass LANDED on `main` 2026-06-12 as `0.51.0`.** Eight tasks, commits
+`ca117e5..257d752` plus the bump: `cairn-doctor` derives its missing inputs from the repo it runs
+in and gains the zero-side-effect `--probe <url>` live sign-in check; the svelte peer floor rises
+to `^5.56.3` with a lockfile-vs-floors doctor check (a `Consumers must:` line rides the
+changelog); the edit page's preview renders in a sandboxed iframe linking the site's own
+stylesheets through the new adapter `preview` knob (with `byConcept` per-concept wrappers, the
+collapsing sidebar, and the device-width menu); and the directive highlighting recognizes labeled,
+attributed, and four-plus-colon openers with per-depth bands. The condition registry holds fifteen
+entries (`config.dependency-floors-unmet` and `admin.login-probe-failed` are new) and
+`check:readiness` pins fifteen. The pass answers the DX gaps the ecxc `^0.50.0` crossing
+(2026-06-12, recorded in `ecxc-ski/docs/STATUS.md`) surfaced live.
+
+The authoring session crashed mid-release; the resume session re-verified the gate first-hand at
+the tip (`npm run check` 902 files 0/0, `npm test` 156 files / 1369 tests exit 0, all five
+doc/readiness gates exit 0, simplifier folded in as `257d752`). The ecxc fidelity proof (task 7)
+ran pre-crash and drove the `byConcept` override; its site-side wiring sits committed in the
+ecxc-ski checkout (`47f82dc`), held unpushed until the publish. The review fold-in (`32ade6b`,
+twelve findings, one Critical on invisible popover keyboard focus) and the `.menu` Preflight
+substitute (`b7cf172`) are in the window. The post-mortem with three carry-forwards is in the plan
+(`docs/superpowers/plans/2026-06-12-cairn-doctor-dx-and-preview.md`).
+
+**Next actions, in order:**
+1. **Publish `0.51.0`**: push `main`, then `gh release create v0.51.0 --target main` with the
+   0.51.0 changelog entry as the body (the svelte-floor `Consumers must:` line included); the
+   release fires the OIDC trusted-publishing workflow.
+2. **ecxc's one-line `^0.51.0` bump**: the preview-knob wiring is already committed in its
+   checkout; bump the pin, reinstall, push, and run `npx cairn-doctor --probe https://ecxc.ski`
+   against the deploy as the probe's first live proof.
+3. **907-life, the last retrofit**, crossing straight to `^0.51.0` (the single-mount migration
+   plus the svelte `^5.56.3` floor).
+4. **The queue resumes:** the gates-and-tooling pass, then the gallery brainstorm (git-vs-R2),
+   then P4.
+
+## Prior next action (2026-06-11): the site retrofits to `0.50.0`
 
 **The `0.41.0`+`0.50.0` window PUBLISHED 2026-06-11.** The `v0.50.0` GitHub Release fired the
 OIDC trusted-publishing workflow (run `27393207915` green), and `0.50.0` is the registry

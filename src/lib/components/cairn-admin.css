@@ -36,24 +36,27 @@
      lighten an ink without re-checking. */
   --cairn-directive-ink-2: oklch(50% 0.16 300);
   --cairn-directive-ink-3: oklch(48% 0.16 300);
-  /* The content rail is a 2px non-text cue, so its composited color must clear the 3:1 floor
-     against base-100 (WCAG 1.4.11). Locked margins (rail vs base-100): depth 1 = 75% (3.25:1),
-     depth 2 = 82% (3.71:1), depth 3 = 90% (4.34:1). Do not lower an alpha without re-checking. */
-  --cairn-directive-rail-1: 75%;
+  /* Each rail bar is a 2px non-text cue, so its composited color must clear the 3:1 floor
+     against base-100 (WCAG 1.4.11); 71% is the measured floor, which caps how far the ramp can
+     spread below the active 100%. Locked margins (rail vs base-100): depth 1 = 72% (3.08:1),
+     depth 2 = 82% (3.71:1), depth 3 = 92% (4.51:1). Do not lower an alpha without re-checking. */
+  --cairn-directive-rail-1: 72%;
   --cairn-directive-rail-2: 82%;
-  --cairn-directive-rail-3: 90%;
-  /* Cursor-aware emphasis: the container holding the caret steps up to a full-strength accent
-     rail and an ink one notch past depth 3. Locked pairs on base-100: rail = solid accent
-     (5.28:1, non-text floor 3:1), ink 46% (7.47:1). Do not lighten without re-checking. */
+  --cairn-directive-rail-3: 92%;
+  /* Cursor-aware emphasis: the caret container's own bar steps to a full-strength accent rail
+     (also 1px wider) and an ink one notch past depth 3. Locked pairs on base-100: rail = solid
+     accent (5.28:1, non-text floor 3:1), ink 46% (7.47:1). Do not lighten without re-checking. */
   --cairn-directive-rail-active: 100%;
   --cairn-directive-ink-active: oklch(46% 0.16 300);
   /* The editor's inline-code chip, a quiet tint beside base-200. Locked pair: base-content ink
      on the chip measures 13.2:1 (AA). Do not darken the chip without re-checking. */
   --cairn-code-chip: oklch(94.5% 0.008 75);
   /* Focus mode's dim ink for the lines outside the caret's paragraph. A color, not opacity, so
-     the contrast is checkable. Locked pair on base-100: 4.92:1 (AA as text), sitting lighter
-     than muted (48%) so the dim step reads. Do not lighten without re-checking. */
-  --cairn-focus-dim-ink: oklch(54% 0.01 75);
+     the contrast is checkable. Deliberately sub-AA: the dim is a transient writing state the
+     editor opts into, and an AA-grade dim (the old 54%, 4.92:1) sat so close to muted that the
+     mode read as nothing. Locked pair on base-100: 3.03:1, the transient-state floor. Do not
+     lighten without re-checking. */
+  --cairn-focus-dim-ink: oklch(66% 0.01 75);
   --color-neutral: oklch(32% 0.012 75);
   --color-neutral-content: oklch(96% 0.004 75);
 
@@ -122,23 +125,25 @@
      darken an ink without re-checking. */
   --cairn-directive-ink-2: oklch(74% 0.14 300);
   --cairn-directive-ink-3: oklch(78% 0.14 300);
-  /* The content rails hold the same 3:1 non-text floor on dark. Locked margins (rail vs
-     base-100): depth 1 = 65% (3.27:1), depth 2 = 75% (3.90:1), depth 3 = 85% (4.62:1). */
-  --cairn-directive-rail-1: 65%;
-  --cairn-directive-rail-2: 75%;
-  --cairn-directive-rail-3: 85%;
-  /* Cursor-aware emphasis on dark: the caret's container steps to a solid accent rail and an
-     ink one notch past depth 3. Locked pairs on base-100: rail = solid accent (5.86:1, non-text
-     floor 3:1), ink 82% (9.03:1). Do not darken without re-checking. */
+  /* The rail bars hold the same 3:1 non-text floor on dark; 61% is the measured floor, which
+     caps the ramp's spread. Locked margins (rail vs base-100): depth 1 = 62% (3.09:1),
+     depth 2 = 74% (3.83:1), depth 3 = 86% (4.69:1). */
+  --cairn-directive-rail-1: 62%;
+  --cairn-directive-rail-2: 74%;
+  --cairn-directive-rail-3: 86%;
+  /* Cursor-aware emphasis on dark: the caret container's own bar steps to a solid accent rail
+     (also 1px wider) and an ink one notch past depth 3. Locked pairs on base-100: rail = solid
+     accent (5.86:1, non-text floor 3:1), ink 82% (9.03:1). Do not darken without re-checking. */
   --cairn-directive-rail-active: 100%;
   --cairn-directive-ink-active: oklch(82% 0.14 300);
   /* The inline-code chip on dark sits one step above base-100 so it reads raised. Locked pair:
      base-content ink on the chip measures 11.3:1 (AA). Do not lighten the chip without
      re-checking. */
   --cairn-code-chip: oklch(29.5% 0.012 75);
-  /* Focus mode's dim ink on dark. Locked pair on base-100: 4.89:1 (AA as text), sitting darker
-     than muted (72%) so the dim step reads. Do not darken without re-checking. */
-  --cairn-focus-dim-ink: oklch(64% 0.01 75);
+  /* Focus mode's dim ink on dark, the same deliberate sub-AA transient-state call as light;
+     the proposed 50% measured 2.74:1, under the 3:1 floor, so it sits at 53%. Locked pair on
+     base-100: 3.12:1. Do not darken without re-checking. */
+  --cairn-focus-dim-ink: oklch(53% 0.01 75);
   --color-neutral: oklch(80% 0.01 75);
   --color-neutral-content: oklch(22% 0.008 75);
 

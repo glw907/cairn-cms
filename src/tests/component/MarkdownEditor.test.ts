@@ -159,12 +159,13 @@ describe('MarkdownEditor', () => {
     expect(screen.container.querySelectorAll('.cm-line.cm-cairn-directive-content.cm-cairn-depth-1')).toHaveLength(1);
   });
 
-  it('rails the fence rows without a band and steps the rail by depth', async () => {
+  it('rails the fence rows without a band and stacks the nested rails by depth', async () => {
     // The rail vars carry fallbacks in the theme, but their color-mix needs --color-accent to
-    // resolve or the whole declaration drops on the bare test page. The leading plain line
-    // parks the default caret outside the containers, so the rails read in their quiet state
-    // (the caret-block emphasis has its own test).
-    const unpin = pinThemeVars({ '--color-accent': 'rgb(100, 60, 200)' });
+    // resolve or the whole declaration drops on the bare test page; the spacer layers between
+    // stacked rails resolve --color-base-100 the same way. The leading plain line parks the
+    // default caret outside the containers, so the rails read in their quiet state (the
+    // caret-block emphasis has its own test).
+    const unpin = pinThemeVars({ '--color-accent': 'rgb(100, 60, 200)', '--color-base-100': 'rgb(255, 254, 250)' });
     try {
       const screen = render(MarkdownEditor, { value: `quiet prose\n${NESTED_DOC}`, name: 'body' });
       await expect
@@ -183,13 +184,17 @@ describe('MarkdownEditor', () => {
       expect(getComputedStyle(fence1).backgroundColor).toBe('rgba(0, 0, 0, 0)');
       expect(getComputedStyle(fence2).backgroundColor).toBe('rgba(0, 0, 0, 0)');
       // The rail: an inset box shadow shared with the content rows at the same depth, so a
-      // container reads as one bracketed region, and stepped between depths.
+      // container reads as one bracketed region.
       const rail1 = getComputedStyle(fence1).boxShadow;
       const rail2 = getComputedStyle(fence2).boxShadow;
       expect(rail1).toContain('inset');
       expect(rail2).toContain('inset');
       expect(rail2).toBe(getComputedStyle(content2).boxShadow);
       expect(rail1).not.toBe(rail2);
+      // Literal nested brackets: a depth-2 row carries BOTH rail layers, its enclosing depth-1
+      // bar verbatim plus a surface spacer and its own depth-2 bar stacked beside it.
+      expect(rail2).toContain(rail1);
+      expect(rail2.split('inset').length - 1).toBe(3);
     } finally {
       unpin();
     }
@@ -215,6 +220,9 @@ describe('MarkdownEditor', () => {
       // A depth-2 opener's name steps to the depth-2 label ink.
       const panel = lineWith(screen.container, 'hand-coins')!;
       expect(getComputedStyle(spanWith(panel, 'panel')!).color).toBe('rgb(80, 40, 160)');
+      // The label's [ ] brackets are machinery and recede with the colons, never the accent.
+      expect(getComputedStyle(spanWith(opener, '[')!).color).toBe('rgb(120, 110, 100)');
+      expect(getComputedStyle(spanWith(opener, ']')!).color).toBe('rgb(120, 110, 100)');
     } finally {
       unpin();
     }
@@ -380,6 +388,26 @@ describe('MarkdownEditor', () => {
       }
       const bold = spanWith(line(), 'b')!;
       expect(getComputedStyle(bold).color).toBe('rgb(20, 30, 40)');
+    } finally {
+      unpin();
+    }
+  });
+
+  it('inks quote text in content ink and italic, muting only the marker', async () => {
+    // Muted means machinery, never content: the > marker recedes while the quoted prose keeps
+    // the full content ink, so a focused blockquote still out-inks the focus-mode dim.
+    const unpin = pinThemeVars({
+      '--color-base-content': 'rgb(20, 30, 40)',
+      '--color-muted': 'rgb(120, 110, 100)',
+    });
+    try {
+      const screen = render(MarkdownEditor, { value: '> wise words', name: 'body' });
+      await expect.poll(() => spanWith(lineWith(screen.container, 'wise'), 'wise words')).toBeTruthy();
+      const line = lineWith(screen.container, 'wise')!;
+      const text = spanWith(line, 'wise words')!;
+      expect(getComputedStyle(text).color).toBe('rgb(20, 30, 40)');
+      expect(getComputedStyle(text).fontStyle).toBe('italic');
+      expect(getComputedStyle(spanWith(line, '>')!).color).toBe('rgb(120, 110, 100)');
     } finally {
       unpin();
     }

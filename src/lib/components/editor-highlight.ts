@@ -23,13 +23,15 @@ export function cairnHighlightStyle(): HighlightStyle {
   return HighlightStyle.define([
     { tag: tags.heading1, fontSize: '1.5em', fontWeight: '700', color: 'var(--color-base-content)' },
     { tag: tags.heading2, fontSize: '1.3em', fontWeight: '700', color: 'var(--color-base-content)' },
-    { tag: tags.heading3, fontSize: '1.12em', fontWeight: '700', color: 'var(--color-base-content)' },
+    { tag: tags.heading3, fontSize: '1.17em', fontWeight: '700', color: 'var(--color-base-content)' },
     // h4 and deeper share the weight only; body size keeps the low levels from outranking h3.
     { tag: tags.heading, fontWeight: '700', color: 'var(--color-base-content)' },
     { tag: tags.strong, fontWeight: '700' },
     { tag: tags.emphasis, fontStyle: 'italic' },
     { tag: tags.strikethrough, textDecoration: 'line-through' },
-    { tag: tags.quote, color: 'var(--color-muted)', fontStyle: 'italic' },
+    // Quote TEXT is content, so it keeps the full ink; muted means machinery, and only the >
+    // marker (QuoteMark, under processingInstruction below) recedes to it.
+    { tag: tags.quote, color: 'var(--color-base-content)', fontStyle: 'italic' },
     { tag: tags.list, color: 'var(--color-muted)' },
     { tag: tags.link, color: 'var(--color-accent)' },
     { tag: tags.url, color: 'var(--color-muted)' },

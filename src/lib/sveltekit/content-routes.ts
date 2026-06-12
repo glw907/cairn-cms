@@ -4,17 +4,16 @@
 // email `send` injection in auth-routes. A shim stays one line: `export const load = routes.editLoad`.
 import { redirect, error, fail } from '@sveltejs/kit';
 import { findConcept } from '../content/concepts.js';
-import { extractCairnLinks, formatCairnToken } from '../content/links.js';
+import { extractCairnLinks, formatCairnToken, rewriteCairnLink } from '../content/links.js';
 import { frontmatterFromForm, parseMarkdown, dateInputValue, serializeMarkdown } from '../content/frontmatter.js';
 import { isValidId, slugify, filenameFromId, composeDatedId, slugFromId, renameId } from '../content/ids.js';
-import { rewriteCairnLink } from '../components/markdown-format.js';
 import { appCredentials, type GithubKeyEnv } from '../github/credentials.js';
 import { listMarkdown, readRaw, commitFiles, type FileChange } from '../github/repo.js';
 import { branchHeadSha, createBranch, deleteBranch, listBranches } from '../github/branches.js';
 import { PENDING_PREFIX, pendingBranch, parsePendingBranch } from '../content/pending.js';
 import { cachedInstallationToken } from '../github/signing.js';
 import { emptyManifest, manifestEntryFromFile, parseManifest, serializeManifest, upsertEntry, removeEntry, inboundLinks, type Manifest, type LinkTarget, type InboundLink } from '../content/manifest.js';
-import { CommitConflictError } from '../github/types.js';
+import { isConflict } from '../github/types.js';
 import { log } from '../log/index.js';
 import { issueCsrfToken } from './csrf.js';
 import type { CookieJar } from './types.js';
@@ -446,11 +445,6 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       publishedFlash: event.url.searchParams.get('published') === '1',
       discardedFlash: event.url.searchParams.get('discarded') === '1',
     };
-  }
-
-  /** Match a commit conflict by class and by name (bundling can alias the class identity). */
-  function isConflict(err: unknown): boolean {
-    return err instanceof CommitConflictError || (err as { name?: string } | null)?.name === 'CommitConflictError';
   }
 
   /** Log a failed commit: a conflict is the expected last-writer-wins outcome, so it warns with a

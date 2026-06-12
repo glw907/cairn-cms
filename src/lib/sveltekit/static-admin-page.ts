@@ -2,15 +2,7 @@
 // self-contained document with inlined Warm Stone tokens for both colour schemes and the system
 // font stack, served raw before SvelteKit renders. The cairn glyph is the same public-domain
 // Temaki mark the admin chrome uses. See docs/internal/admin-design-system.md.
-
-/** Escape a string for safe interpolation into HTML text and double-quoted attributes. */
-export function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
+import { escapeHtml } from '../escape.js';
 
 // The cairn stone-stack glyph (Temaki, CC0), drawn in currentColor like CairnLogo.svelte.
 const CAIRN_GLYPH =

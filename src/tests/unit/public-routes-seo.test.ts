@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createPublicRoutes } from '../../lib/sveltekit/public-routes.js';
+import { createPublicRoutes } from '../../lib/delivery/public-routes.js';
 import { createContentIndex, fromGlob } from '../../lib/delivery/content-index.js';
 import { createSiteIndex } from '../../lib/delivery/site-index.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';

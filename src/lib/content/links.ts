@@ -6,6 +6,7 @@ import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkGfm from 'remark-gfm';
 import { visit } from 'unist-util-visit';
+import type { Link } from 'mdast';
 import { isValidId } from './ids.js';
 
 /** A resolved reference to a content entry by its concept and permanent id. */
@@ -58,4 +59,31 @@ export function extractCairnLinks(body: string): CairnRef[] {
     refs.push(ref);
   });
   return refs;
+}
+
+/**
+ * Rewrite every cairn: link whose href is exactly `oldHref` so its href becomes `newHref`, keeping
+ * the display text and any link title byte-for-byte. Rename calls this to repoint a renamed entry's
+ * inbound tokens. Parsed with the same remark pipeline as extractCairnLinks, so a token inside a code
+ * span is not a link node and is never touched. Each matching node's source span is rewritten from
+ * last to first, replacing only the `](oldHref` run so the label and title stay exact.
+ */
+export function rewriteCairnLink(doc: string, oldHref: string, newHref: string): string {
+  const tree = unified().use(remarkParse).use(remarkGfm).parse(doc);
+  const spans: { start: number; end: number }[] = [];
+  visit(tree, 'link', (node: Link) => {
+    if (node.url !== oldHref) return;
+    const start = node.position?.start?.offset;
+    const end = node.position?.end?.offset;
+    if (start == null || end == null) return;
+    spans.push({ start, end });
+  });
+  spans.sort((a, b) => b.start - a.start);
+  let out = doc;
+  for (const span of spans) {
+    const src = out.slice(span.start, span.end);
+    const rewritten = src.replace(`](${oldHref}`, `](${newHref}`);
+    out = out.slice(0, span.start) + rewritten + out.slice(span.end);
+  }
+  return out;
 }

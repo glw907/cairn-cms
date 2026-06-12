@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { applyMarkdownFormat, insertInlineLink, unwrapCairnLink, rewriteCairnLink, type FormatKind } from '../../lib/components/markdown-format.js';
+import { applyMarkdownFormat, insertInlineLink, unwrapCairnLink, type FormatKind } from '../../lib/components/markdown-format.js';
 
 describe('applyMarkdownFormat', () => {
   const wrap: { kind: FormatKind; doc: string; out: string; from: number; to: number }[] = [
@@ -149,32 +149,5 @@ describe('unwrapCairnLink', () => {
   });
   it('leaves an occurrence inside a code span untouched, unwrapping only the prose link', () => {
     expect(unwrapCairnLink('`[x](cairn:posts/x)` and [x](cairn:posts/x)', 'cairn:posts/x')).toBe('`[x](cairn:posts/x)` and x');
-  });
-});
-
-describe('rewriteCairnLink', () => {
-  it('rewrites the href, keeping the display text', () => {
-    const doc = 'see [the guide](cairn:posts/old) now';
-    expect(rewriteCairnLink(doc, 'cairn:posts/old', 'cairn:posts/new')).toBe('see [the guide](cairn:posts/new) now');
-  });
-  it('keeps an escaped-bracket label exactly', () => {
-    const doc = 'see [Notes \\[draft\\]](cairn:posts/old) end';
-    expect(rewriteCairnLink(doc, 'cairn:posts/old', 'cairn:posts/new')).toBe('see [Notes \\[draft\\]](cairn:posts/new) end');
-  });
-  it('keeps a link title', () => {
-    const doc = 'a [t](cairn:posts/old "a title") b';
-    expect(rewriteCairnLink(doc, 'cairn:posts/old', 'cairn:posts/new')).toBe('a [t](cairn:posts/new "a title") b');
-  });
-  it('rewrites every occurrence of that href', () => {
-    const doc = '[a](cairn:posts/old) and [b](cairn:posts/old)';
-    expect(rewriteCairnLink(doc, 'cairn:posts/old', 'cairn:posts/new')).toBe('[a](cairn:posts/new) and [b](cairn:posts/new)');
-  });
-  it('leaves a token inside a code span untouched', () => {
-    const doc = '`[x](cairn:posts/old)` and [x](cairn:posts/old)';
-    expect(rewriteCairnLink(doc, 'cairn:posts/old', 'cairn:posts/new')).toBe('`[x](cairn:posts/old)` and [x](cairn:posts/new)');
-  });
-  it('leaves a different url unchanged', () => {
-    const doc = '[keep](cairn:pages/home)';
-    expect(rewriteCairnLink(doc, 'cairn:posts/old', 'cairn:posts/new')).toBe('[keep](cairn:pages/home)');
   });
 });

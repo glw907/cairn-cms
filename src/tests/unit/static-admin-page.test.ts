@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { renderStaticAdminPage, escapeHtml } from '../../lib/sveltekit/static-admin-page.js';
+import { renderStaticAdminPage } from '../../lib/sveltekit/static-admin-page.js';
 
 describe('renderStaticAdminPage', () => {
   it('wraps inner html in a self-contained branded document', () => {
@@ -13,11 +13,5 @@ describe('renderStaticAdminPage', () => {
 
   it('escapes the title', () => {
     expect(renderStaticAdminPage({ title: '<x>', innerHtml: '' })).toContain('<title>&lt;x&gt;</title>');
-  });
-});
-
-describe('escapeHtml', () => {
-  it('escapes the four entities', () => {
-    expect(escapeHtml('&<>"')).toBe('&amp;&lt;&gt;&quot;');
   });
 });

@@ -4,12 +4,12 @@
 // and tag-index loaders stay concept-scoped, keyed by concept id. The index is built in site code
 // from globs, so it stays in the prerender graph and out of the runtime Worker.
 import { error } from '@sveltejs/kit';
-import type { ContentSummary, ContentEntry } from '../delivery/content-index.js';
-import type { SiteIndex } from '../delivery/site-index.js';
-import { buildSeoMeta } from '../delivery/seo.js';
-import type { SeoMeta } from '../delivery/seo.js';
-import { readSeoFields, resolveImageUrl } from '../delivery/seo-fields.js';
-import { buildLinkResolver } from '../delivery/manifest.js';
+import type { ContentSummary, ContentEntry } from './content-index.js';
+import type { SiteIndex } from './site-index.js';
+import { buildSeoMeta } from './seo.js';
+import type { SeoMeta } from './seo.js';
+import { readSeoFields, resolveImageUrl } from './seo-fields.js';
+import { buildLinkResolver } from './manifest.js';
 import type { LinkResolve } from '../content/links.js';
 
 /** Injected dependencies for the public loaders. */

@@ -43,3 +43,8 @@ export class CommitConflictError extends Error {
     this.name = 'CommitConflictError';
   }
 }
+
+/** Match a commit conflict by class and by name (bundling can alias the class identity). */
+export function isConflict(err: unknown): boolean {
+  return err instanceof CommitConflictError || (err as { name?: string } | null)?.name === 'CommitConflictError';
+}

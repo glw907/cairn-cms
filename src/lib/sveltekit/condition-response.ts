@@ -4,7 +4,8 @@
 import { brandedAdminPage } from './admin-response.js';
 import { httpsRequiredPage } from './https-required-page.js';
 import { csrfRequiredPage } from './csrf-required-page.js';
-import { escapeHtml, renderStaticAdminPage } from './static-admin-page.js';
+import { escapeHtml } from '../escape.js';
+import { renderStaticAdminPage } from './static-admin-page.js';
 import { condition, type CairnCondition } from '../diagnostics/index.js';
 
 /** The guard.rejected reasons, each mapped to its registered condition id. */

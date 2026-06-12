@@ -2,6 +2,7 @@
 // channel and a list of items, so they unit-test without a render or a network. The caller
 // (a template +server.ts shim) assembles items from the content index and passes absolute
 // URLs built from PUBLIC_ORIGIN.
+import { escapeXml } from './xml.js';
 
 /** Feed channel metadata. URLs are absolute. */
 export interface FeedChannel {
@@ -22,14 +23,6 @@ export interface FeedItem {
   summary: string;
   contentHtml?: string;
   tags?: string[];
-}
-
-function escapeXml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
 }
 
 /** Make a string safe inside a CDATA section by splitting any `]]>` across two sections. */

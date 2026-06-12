@@ -3,6 +3,7 @@
 // (Cloudflare Email Sending, arbitrary recipients).
 import type { AuthEnv } from './auth/types.js';
 import { CairnError } from './diagnostics/index.js';
+import { escapeHtml } from './escape.js';
 
 export type { AuthEnv };
 
@@ -26,16 +27,6 @@ export interface AuthBranding {
  *  text reaches the structured log (scrubbed and truncated), so a custom sender must not embed
  *  the message body or the magic link in what it throws. */
 export type SendMagicLink = (env: AuthEnv, message: MagicLinkMessage) => Promise<void>;
-
-/** Escape the five HTML-significant characters. */
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
-}
 
 /** Build the confirmation email. The link is the only action; the copy stays plain. */
 export function buildMagicLinkMessage(input: {

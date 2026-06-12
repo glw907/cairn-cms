@@ -1,13 +1,15 @@
 // The /delivery entry must not pull the server backend into a public bundle. The delivery
-// modules and the public-routes loader they re-export must import nothing from github, auth,
-// or email. This reads the source statically rather than introspecting a built graph.
+// modules (including the public-routes loader the barrel re-exports) must import nothing from
+// github, auth, or email. This reads the source statically rather than introspecting a built
+// graph. A second walk proves the docs/reference/delivery-data.md claim: nothing reachable
+// from the node-safe data barrel imports @sveltejs/kit or a .svelte component.
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 
-const files = [
-  ...readdirSync('src/lib/delivery').filter((f) => f.endsWith('.ts')).map((f) => `src/lib/delivery/${f}`),
-  'src/lib/sveltekit/public-routes.ts',
-];
+const files = readdirSync('src/lib/delivery')
+  .filter((f) => f.endsWith('.ts'))
+  .map((f) => `src/lib/delivery/${f}`);
 const forbidden = [/from '\.\.\/github/, /from '\.\.\/auth/, /from '\.\.\/email/, /from '\.\.\/\.\.\/lib\/(github|auth|email)/];
 
 describe('/delivery backend-free boundary', () => {
@@ -30,5 +32,27 @@ describe('/delivery backend-free boundary', () => {
         expect(src, `${file} must not import a backend module`).not.toMatch(pattern);
       }
     }
+  });
+
+  // delivery/index.ts and delivery/public-routes.ts import @sveltejs/kit by design; neither is
+  // reachable from data.ts, so the walk proves the kit-free claim without special-casing them.
+  it('keeps the /delivery/data graph free of @sveltejs/kit and .svelte imports', () => {
+    const seen = new Set<string>();
+    const queue = ['src/lib/delivery/data.ts'];
+    while (queue.length > 0) {
+      const file = queue.pop()!;
+      if (seen.has(file)) continue;
+      seen.add(file);
+      const src = readFileSync(file, 'utf8');
+      expect(src, `${file} must not import @sveltejs/kit`).not.toMatch(/from '@sveltejs\/kit'/);
+      for (const match of src.matchAll(/from '(\.[^']+)'/g)) {
+        const resolved = join(dirname(file), match[1]);
+        expect(resolved, `${file} must not import a .svelte component`).not.toMatch(/\.svelte$/);
+        queue.push(resolved.replace(/\.js$/, '.ts'));
+      }
+    }
+    // The walk must actually cross module boundaries, or a refactor that empties the
+    // barrel would pass vacuously.
+    expect(seen.size).toBeGreaterThan(10);
   });
 });

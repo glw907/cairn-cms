@@ -3,11 +3,11 @@
 // lives at ./delivery/head. Importing this pulls @sveltejs/kit through the route loaders, so a
 // plain-Node tool imports from ./delivery/data instead.
 export * from './data.js';
-export { createPublicRoutes } from '../sveltekit/public-routes.js';
+export { createPublicRoutes } from './public-routes.js';
 export type {
   PublicRoutesDeps,
   ListData,
   TagData,
   TagIndexData,
   EntryData,
-} from '../sveltekit/public-routes.js';
+} from './public-routes.js';

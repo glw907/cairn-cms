@@ -4,7 +4,8 @@
 // not match, so the editor would otherwise hit an opaque 403. This page names the problem, says why
 // https is needed, and gives the exact Cloudflare fix. The shared shell lives in
 // static-admin-page.ts. See guard.ts.
-import { escapeHtml, renderStaticAdminPage } from './static-admin-page.js';
+import { escapeHtml } from '../escape.js';
+import { renderStaticAdminPage } from './static-admin-page.js';
 
 /**
  * Render the full HTML document for the HTTPS-required page.

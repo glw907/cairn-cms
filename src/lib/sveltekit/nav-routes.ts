@@ -5,7 +5,7 @@ import { redirect, error } from '@sveltejs/kit';
 import { appCredentials, type GithubKeyEnv } from '../github/credentials.js';
 import { cachedInstallationToken } from '../github/signing.js';
 import { listMarkdown, readRaw, commitFile } from '../github/repo.js';
-import { CommitConflictError } from '../github/types.js';
+import { isConflict } from '../github/types.js';
 import { log } from '../log/index.js';
 import { parseSiteConfig, extractMenu, validateNavTree, setMenu, type NavNode } from '../nav/site-config.js';
 import type { CairnRuntime } from '../content/types.js';
@@ -39,11 +39,6 @@ function sessionOf(event: ContentEvent): Editor {
   const editor = event.locals.editor;
   if (!editor) throw redirect(303, '/admin/login');
   return editor;
-}
-
-/** Match a commit conflict by class and by name (bundling can alias the class identity). */
-function isConflict(err: unknown): boolean {
-  return err instanceof CommitConflictError || (err as { name?: string } | null)?.name === 'CommitConflictError';
 }
 
 export function createNavRoutes(runtime: CairnRuntime, deps: NavRoutesDeps = {}) {

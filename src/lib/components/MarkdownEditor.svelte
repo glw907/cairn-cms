@@ -114,7 +114,9 @@ through the adapter's render. Swapping the editor stays a one-file change.
         // text still lands in the editor and focuses it. The 70ch cap with auto margins holds
         // the manuscript to a readable measure, centered in whatever width the card gives it.
         '.cm-content': {
-          fontFamily: 'ui-monospace, monospace',
+          // The theme roots set --font-editor to the self-hosted iA Writer Mono; the inline
+          // fallback keeps the surface monospace outside an admin theme wrapper.
+          fontFamily: "var(--font-editor, ui-monospace, monospace)",
           padding: '0.875rem 1.25rem',
           lineHeight: '1.8',
           minHeight: '50vh',

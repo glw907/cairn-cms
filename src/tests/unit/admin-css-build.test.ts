@@ -35,6 +35,16 @@ describe('admin css build', () => {
     expect(css).toContain("url('./fonts/bricolage-grotesque.woff2')");
   });
 
+  it('self-hosts iA Writer Mono in four static faces for the editor surface', async () => {
+    const css = await buildAdminCss();
+    // The editor face is static, not variable: regular and bold, upright and italic, four files.
+    // Each declared the same way as the brand faces, output-relative and swap-displayed.
+    for (const face of ['400-normal', '700-normal', '400-italic', '700-italic']) {
+      expect(css, `missing ${face}`).toContain(`url('./fonts/ia-writer-mono-latin-${face}.woff2')`);
+    }
+    expect(css.match(/font-family:'iA Writer Mono'/g)).toHaveLength(4);
+  });
+
   it('carries the scoped Preflight substitute for .menu button items', async () => {
     const css = await buildAdminCss();
     // The sheet omits Preflight, and daisyUI's menu rules assume it: without the substitute a

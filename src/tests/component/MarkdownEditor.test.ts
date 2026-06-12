@@ -289,6 +289,21 @@ describe('MarkdownEditor', () => {
     expect(screen.container.querySelector('.cm-line.cm-cairn-directive-leaf')?.getAttribute('title')).toBe(expected);
   });
 
+  it('writes in iA Writer Mono, the self-hosted editor face', async () => {
+    // The test page loads no admin sheet, so the theme's --font-editor is pinned here, the same
+    // theme value cairn-admin.css sets on both roots. The woff2 never loads in the test browser;
+    // font-family computes from the declaration regardless, which is the seam under test.
+    const unpin = pinThemeVars({ '--font-editor': "'iA Writer Mono', ui-monospace, monospace" });
+    try {
+      const screen = render(MarkdownEditor, { value: 'manuscript', name: 'body' });
+      await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+      const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
+      expect(getComputedStyle(content).fontFamily).toMatch(/^['"]?iA Writer Mono['"]?/);
+    } finally {
+      unpin();
+    }
+  });
+
   it('gives the editing surface a generous minimum height', async () => {
     const screen = render(MarkdownEditor, { value: 'short', name: 'body' });
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();

@@ -31,9 +31,10 @@ looks identical on any host with no host CSS. DaisyUI v5, Tailwind v4, Svelte 5 
   (`> .drawer-toggle ~ .drawer-side` becoming `:where(scope) > .x`). Do not author nested combinator CSS
   expecting the scoper to handle it; the flatten step is what makes it work, and a test pins it.
 - **`@font-face` is added after compile, not in the partial.** The `@import` inlining rebases a `url()`
-  against the source tree, so the woff2 url would 404 for a consumer. The two `@font-face` rules are
-  appended in `build-admin-css.mjs` with an output-relative `./fonts/` url; the woff2 files ship in
-  `dist/components/fonts/`. A build test pins the url.
+  against the source tree, so the woff2 url would 404 for a consumer. The `@font-face` rules (the two
+  brand faces plus the four iA Writer Mono editor faces) are appended in `build-admin-css.mjs` with an
+  output-relative `./fonts/` url; the woff2 files ship in `dist/components/fonts/`. A build test pins
+  the urls.
 - **Borders and shadows are theme-adaptive vars.** Use `var(--cairn-card-border)` and
   `var(--cairn-shadow)`, never a fixed `base-300` border on a floating card. In light the border is a
   near-invisible hairline and the soft shadow carries the lift; in dark the border is defined because a
@@ -65,12 +66,15 @@ Defined per theme root in `cairn-admin.css`: `[data-theme='cairn-admin']` (light
 
 ## Type
 
-Two self-hosted variable fonts (SIL OFL, in `src/lib/components/fonts/`), wired through vars on the
-theme roots, with font-smoothing on.
+Three self-hosted fonts (SIL OFL, in `src/lib/components/fonts/`), wired through vars on the
+theme roots, with font-smoothing on. The brand pair is variable; the editor face is four static files.
 
 - Display: `var(--font-display)` = Bricolage Grotesque. Brand wordmark and page `h1` only, so it stays
   an accent and never overbears. Apply as `font-[family-name:var(--font-display)]`.
 - Body and UI: `var(--font-body)` = Figtree. The default everywhere else.
+- Editor writing surface: `var(--font-editor)` = iA Writer Mono, on the CodeMirror `.cm-content` only.
+  Chosen 2026-06-12 by the editor-experience pass's font trial over the Monaspace, Courier Prime,
+  JetBrains Mono, Intel One Mono, and Atkinson Hyperlegible Mono candidates.
 
 Recipes:
 

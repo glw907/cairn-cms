@@ -6,6 +6,10 @@ import type { ComponentDef, IconSet } from '@glw907/cairn-cms';
 import { h } from 'hastscript';
 import type { ElementContent } from 'hast';
 import siteYaml from './site.config.yaml?raw';
+// The ?url import resolves the public chrome's stylesheet to its served URL (the hashed asset in
+// a build), so the editor's preview frame can link the same sheet the (site) layout loads. The
+// sheet must stay ?url-only; see the header comment in site.css.
+import siteCss from './site.css?url';
 
 const icons: IconSet = {
   snowflake: 'M128 24v208M44 76l168 104M212 76L44 180',
@@ -97,6 +101,9 @@ export const cairn = defineAdapter({
   // Render through the engine so registered components (the callout) produce their markup.
   render: (md, opts) => renderMarkdown(md, opts),
   navMenu: { configPath: 'src/lib/site.config.yaml', menuName: 'primary', label: 'Navigation', maxDepth: 2 },
+  // The preview knob: the (site) layout renders entries inside <main class="site-main">, so the
+  // frame links site.css and reproduces that container for a design-accurate proof.
+  preview: { stylesheets: [siteCss], containerClass: 'site-main' },
   registry,
   icons,
 });

@@ -79,6 +79,20 @@ test('the redesigned editor: hoisted title, toolbar bold, preview round-trip, st
   await expect(page.locator('#cairn-pane-preview')).toBeVisible({ timeout: 2000 });
   const frame = page.frameLocator('#cairn-pane-preview iframe[title="Page preview"]');
   await expect(frame.locator('strong')).toHaveText('A line to embolden.');
+
+  // The adapter's preview knob is wired: the frame document links the site stylesheet (the build
+  // names the emitted asset after the chunk importing it, so pin only the .css href), the content
+  // sits inside the site's own container at its real measure (site.css caps .site-main at 48rem),
+  // and the no-knob hint never renders.
+  await expect(frame.locator('link[rel="stylesheet"]')).toHaveAttribute('href', /\.css/);
+  await expect(frame.locator('.site-main')).toHaveCSS('max-width', '768px');
+  await expect(page.getByText('Preview shows unstyled markup')).toHaveCount(0);
+
+  // The width menu sizes the frame: pick Phone and the frame column narrows to its 390px.
+  await page.getByRole('button', { name: /Preview width/ }).click();
+  await page.getByRole('menuitemradio', { name: 'Phone', exact: true }).click();
+  await expect(page.locator('.cairn-preview-frame')).toHaveCSS('width', '390px');
+
   await page.getByRole('tab', { name: 'Write' }).click();
   await expect(editor).toContainText('**A line to embolden.**');
 

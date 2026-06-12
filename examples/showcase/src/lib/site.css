@@ -1,7 +1,14 @@
-/* examples/showcase/src/routes/(site)/site.css
+/* examples/showcase/src/lib/site.css
    Plain CSS for the public chrome, no Tailwind and no DaisyUI. This is the point of the showcase: the
    admin renders fully styled on a site whose own pages use neither framework. The chrome lives in the
-   (site) group, so it never wraps /admin. */
+   (site) group, so it never wraps /admin.
+
+   The sheet is referenced only through Vite ?url imports: the (site) layout links the resolved URL,
+   and the adapter's preview knob hands the same URL to the editor's preview frame. A static
+   `import './site.css'` in the layout would fold the sheet into the layout's CSS chunk, whose
+   basename differs between the client and server builds, so the server-resolved ?url would 404 in
+   the browser. Referenced only as an asset, both builds emit site.<hash>.css under one content
+   hash, and the URL holds. */
 .site-header {
   padding: 1rem 1.5rem;
   border-bottom: 1px solid #e7e5e4;

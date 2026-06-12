@@ -6,6 +6,19 @@ import { cairnLinkCompletionSource } from '../../lib/components/link-completion.
 import type { FormatKind } from '../../lib/components/markdown-format.js';
 import type { LinkTarget } from '../../lib/content/manifest.js';
 
+// Reads the hidden form mirror so a test asserts what the form would submit.
+const hiddenValue = (container: Element) =>
+  container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '';
+
+// Clicks the surface into focus and moves the caret to the end of the document, where the
+// list-continuation behaviors act. Ctrl-End is cursorDocEnd in the default keymap.
+async function focusEditorEnd(container: Element) {
+  const content = container.querySelector<HTMLElement>('.cm-content')!;
+  await userEvent.click(content);
+  await expect.poll(() => document.activeElement).toBe(content);
+  await userEvent.keyboard('{Control>}{End}{/Control}');
+}
+
 describe('MarkdownEditor', () => {
   it('mirrors the bindable value into a hidden field named for the form', async () => {
     const screen = render(MarkdownEditor, { value: 'hello world', name: 'body' });
@@ -199,6 +212,39 @@ describe('MarkdownEditor', () => {
     } finally {
       document.documentElement.style.removeProperty('--color-primary');
     }
+  });
+
+  it('parses strikethrough under the GFM base and renders it struck', async () => {
+    // The commonmark default base has no Strikethrough node; only the GFM base does. The
+    // highlight style maps tags.strikethrough to line-through, and generated class names are
+    // not stable, so the computed style is the robust handle (the heading test's pattern).
+    const screen = render(MarkdownEditor, { value: 'a ~~struck~~ word', name: 'body' });
+    await expect.poll(() => screen.container.querySelector('.cm-content')?.textContent ?? '').toContain('struck');
+    const struckSpan = () =>
+      Array.from(screen.container.querySelectorAll<HTMLElement>('.cm-content span')).some(
+        (s) =>
+          (s.textContent ?? '').includes('struck') &&
+          getComputedStyle(s).textDecorationLine.includes('line-through'),
+      );
+    await expect.poll(struckSpan).toBe(true);
+  });
+
+  it('continues a list item on Enter through the markdown keymap', async () => {
+    const screen = render(MarkdownEditor, { value: '- first', name: 'body' });
+    await expect.poll(() => screen.container.querySelector('.cm-content')?.textContent ?? '').toContain('first');
+    await focusEditorEnd(screen.container);
+    await userEvent.keyboard('{Enter}second');
+    await expect.poll(() => hiddenValue(screen.container)).toBe('- first\n- second');
+  });
+
+  it('removes an empty list marker on Backspace through the markdown keymap', async () => {
+    const screen = render(MarkdownEditor, { value: '- first\n- ', name: 'body' });
+    await expect.poll(() => screen.container.querySelector('.cm-content')?.textContent ?? '').toContain('first');
+    await focusEditorEnd(screen.container);
+    // deleteMarkupBackward removes the whole marker in one keystroke, replacing it with blank
+    // indentation of the same width rather than chewing it one character at a time.
+    await userEvent.keyboard('{Backspace}');
+    await expect.poll(() => hiddenValue(screen.container)).toBe('- first\n  ');
   });
 
   it('offers and applies a cairn link through the [[ autocomplete', async () => {

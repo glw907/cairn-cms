@@ -121,7 +121,10 @@ through the adapter's render. Swapping the editor stays a one-file change.
         extensions: [
           commandsMod.history(),
           keymap.of([...autocompleteMod.completionKeymap, ...commandsMod.defaultKeymap, ...commandsMod.historyKeymap]),
-          markdownMod.markdown(),
+          // The GFM base (strikethrough, tables, task lists, autolink) over the commonmark
+          // default. markdown() also wires markdownKeymap (Enter continues a list, Backspace
+          // removes an empty marker) at high precedence through its addKeymap default.
+          markdownMod.markdown({ base: markdownMod.markdownLanguage }),
           ...(completionSources.length
             ? // interactionDelay 0: the popup opens only on an explicit `[[` trigger, so the default
               // accidental-accept guard adds no value and would swallow an immediate Enter into a newline.

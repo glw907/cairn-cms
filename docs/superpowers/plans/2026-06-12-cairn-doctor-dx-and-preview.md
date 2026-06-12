@@ -45,10 +45,12 @@ the site's CSS without re-polluting the admin, which means an iframe.
   is no worse than today and correctly sized.
 - Preview mode takes the full surface: the sidebar (Details/Visibility/Address) collapses while
   the Preview tab is active, so the document renders at a standard width.
-- A device toolbar sets the frame width: Desktop (100%), Tablet (768), Phone (390), Small phone
-  (320), with the frame centered and the choice persisted per the editor-preferences idiom the
-  page already uses. Accessible per the design system (the toolbar is a radiogroup or tablist,
-  whichever the a11y review of the existing toolbar idiom supports).
+- Device selection lives on the Preview tab itself (Geoff's direction, 2026-06-12): the tab
+  carries a dropdown with the four widths, Desktop (100%), Tablet (768), Phone (390), and
+  Small phone (320), the frame centered and the choice persisted per the editor-preferences
+  idiom the page already uses. The dropdown follows the design system's popover pattern, and
+  the UI work runs through the frontend-design skill with a critique pass (the 0.40.0 Task 10
+  precedent) before the fidelity gate.
 - The showcase wires `preview.stylesheets` with its plain `site.css`, proving the knob without
   Tailwind. Docs: the adapter reference, the editor guide section on preview accuracy, the
   design system page for the new toolbar recipe, changelog with a Consumers-should note.

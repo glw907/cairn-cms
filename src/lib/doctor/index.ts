@@ -15,15 +15,19 @@ import { githubApp } from './checks-github.js';
 export { runDoctor } from './run.js';
 export { formatReport } from './report.js';
 
-const USAGE = 'Usage: cairn-doctor [--from <address>] [--repo <owner/name>] [--send-test <address>]';
+const USAGE =
+	'Usage: cairn-doctor [--from <address>] [--repo <owner/name>] [--send-test <address>] [--probe [url]]';
 
 export interface DoctorArgs {
 	from?: string;
 	repo?: string;
 	sendTest?: string;
+	/** The live admin probe: a URL when --probe carried one, true for the bare flag (probe the
+	 *  PUBLIC_ORIGIN input), absent when the flag never appeared (the probe does not run). */
+	probe?: string | true;
 }
 
-const FLAGS: Record<string, keyof DoctorArgs> = {
+const FLAGS: Record<string, 'from' | 'repo' | 'sendTest'> = {
 	'--from': 'from',
 	'--repo': 'repo',
 	'--send-test': 'sendTest',
@@ -32,8 +36,16 @@ const FLAGS: Record<string, keyof DoctorArgs> = {
 /** Parse the bin's argv (long flags only). Throws with a usage line on anything unexpected. */
 export function parseArgs(argv: string[]): DoctorArgs {
 	const args: DoctorArgs = {};
-	for (let i = 0; i < argv.length; i += 2) {
+	for (let i = 0; i < argv.length; ) {
 		const flag = argv[i];
+		// --probe alone is meaningful (probe the PUBLIC_ORIGIN input), so its value is optional.
+		if (flag === '--probe') {
+			const value = argv[i + 1];
+			const bare = value === undefined || value.startsWith('--');
+			args.probe = bare ? true : value;
+			i += bare ? 1 : 2;
+			continue;
+		}
 		const key = FLAGS[flag];
 		if (!key) throw new Error(`unknown argument ${flag}\n${USAGE}`);
 		const value = argv[i + 1];
@@ -41,6 +53,7 @@ export function parseArgs(argv: string[]): DoctorArgs {
 			throw new Error(`${flag} needs a value\n${USAGE}`);
 		}
 		args[key] = value;
+		i += 2;
 	}
 	return args;
 }

@@ -7,6 +7,7 @@
 // before the process ends.
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { liveProbeCheck } from './check-probe.js';
 import { liveSendCheck } from './check-send.js';
 import { readWranglerConfig } from './wrangler-config.js';
 import {
@@ -55,6 +56,11 @@ async function main(): Promise<void> {
 
 	const checks = defaultChecks();
 	if (args.sendTest) checks.push(liveSendCheck(args.sendTest));
+	// The probe is an opt-in network POST against a live site, so it joins only on --probe;
+	// the bare flag hands the URL resolution (the PUBLIC_ORIGIN input) to the check itself.
+	if (args.probe !== undefined) {
+		checks.push(liveProbeCheck(args.probe === true ? undefined : args.probe));
+	}
 
 	const { results, failed } = await runDoctor(checks, ctx);
 	console.log(formatReport(results));

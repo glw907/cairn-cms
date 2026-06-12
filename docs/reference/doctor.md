@@ -32,6 +32,7 @@ yields a useful report.
 | `--from <address>` | `CAIRN_FROM` | The magic-link from-address. Its domain drives the email and zone checks. |
 | `--repo <owner/name>` | `GITHUB_REPO` | The site repository the GitHub App check reads. |
 | `--send-test <address>` | none | Opt in to one real test email to this address. |
+| `--probe [url]` | none | Opt in to the live admin sign-in probe. Bare `--probe` probes the `PUBLIC_ORIGIN` input. |
 
 The credential variables are the same values `wrangler` and the Worker use:
 
@@ -63,8 +64,9 @@ environment. They are never derived from the repo and never printed.
 
 ## The checks
 
-Ten checks run by default, and `--send-test` adds an eleventh. The condition id is the identity
-the report, the runtime errors, and the readiness checklist share.
+Ten checks run by default. Two opt-in flags add more: `--send-test` the live email send and
+`--probe` the live admin probe. The condition id is the identity the report, the runtime errors,
+and the readiness checklist share.
 
 | Check | Condition | What it verifies | Skips when |
 |---|---|---|---|
@@ -79,6 +81,7 @@ the report, the runtime errors, and the readiness checklist share.
 | `auth.store` | `auth.store-unreachable` | The `AUTH_DB` D1 database answers, the `editor`, `magic_token`, and `session` tables exist, and an owner row is present. | No API token or account id, or the wrangler config carries no `AUTH_DB` `database_id`. |
 | `github.app` | `github.app-unreachable` | The App key parses and signs, an installation token mints, and the repository answers a read. | The GitHub credential trio or the repo is missing. |
 | `email.live-send` | `email.send-failed` | One real message sends through the Email Sending REST API. Runs only with `--send-test`. | No API token, account id, or from-address. |
+| `admin.login-probe` | `admin.login-probe-failed` | The deployed `/admin/login` answers with a working sign-in envelope, and the request action accepts a POST. Runs only with `--probe`. | Bare `--probe` finds no URL in the wrangler vars or `PUBLIC_ORIGIN`. |
 
 The GitHub check walks the exact chain the Worker walks on a save, so a green check means the
 commit pipeline's credentials work, and a failure names which link broke. For the site config, the
@@ -101,6 +104,32 @@ A skip never fails the run, so the exit code reflects only what the doctor could
 the Email Sending REST API, with the fixed subject `cairn doctor test send`. Receiving it proves
 the sending path end to end, past what the onboarding check can see. It is a real delivery to a
 real inbox, so point it at your own address and leave it off in CI.
+
+## The opt-in live probe
+
+`--probe <url>` runs one live check against a deployed admin, the outside-in complement to the
+config and credential checks. Bare `--probe` resolves the URL from the `PUBLIC_ORIGIN` input: the
+wrangler config vars first, then the environment variable. The probe does not run at all without
+the flag, since it is a network POST against a production site.
+
+The probe asserts the envelope a working sign-in presents, in two steps:
+
+1. `GET <url>/admin/login` answers 200, sets the CSRF cookie (`__Host-cairn_csrf` on https, bare
+   `cairn_csrf` on local http), and serves a page carrying the `name="csrf"` hidden field with a
+   value and a form posting the `?/request` action.
+2. `POST <url>/admin/login?/request` with the cookie and field echoed answers the serialized
+   action result for a sent request. A `throttled` answer also passes, since a re-run inside a
+   real editor's cooldown window still proves the path; the detail line says so.
+
+The probe is side-effect free by construction. It submits a random non-editor address at the
+reserved `example.invalid` domain, and the engine's non-leak design answers a non-editor exactly
+like a successful send while sending no email and minting no token, so nothing lands in any inbox
+and nothing changes on the site. A `send_error` answer fails the check, which catches a deployed
+site whose send path is broken without spending a real delivery.
+
+Run it after the first deploy, after an edge or auth change, or whenever an editor reports a
+sign-in problem. A probe failure has many possible causes, so its detail line names the failed
+assertion and the remediation points back at the rest of the doctor and the deploy guide.
 
 ## CI wiring
 

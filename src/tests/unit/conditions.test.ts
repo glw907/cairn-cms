@@ -69,10 +69,20 @@ describe('condition registry', () => {
 		expect(c.docsAnchor).toBe('cloudflare-readiness.md#set-the-public-origin');
 	});
 
-	it('pins the registry at thirteen entries', () => {
-		// Twelve through 0.50.0, plus config.public-origin-invalid: the sanctioned unfreeze that
-		// lets requireOrigin join the condition model. Grow this count only with a registry change.
-		expect(allConditions()).toHaveLength(13);
+	it('resolves the login-probe condition (the doctor DX pass addition)', () => {
+		const c = condition('admin.login-probe-failed');
+		expect(c.severity).toBe('blocker');
+		expect(c.why).toMatch(/sign-in/i);
+		expect(c.remediation).toMatch(/doctor/i);
+		expect(c.docsAnchor).toBe('cloudflare-readiness.md#probe-the-deployed-admin');
+		expect(c.logEvent).toBeUndefined();
+	});
+
+	it('pins the registry at fourteen entries', () => {
+		// Thirteen through 0.50.0 (including config.public-origin-invalid), plus
+		// admin.login-probe-failed for the doctor's opt-in live probe of a deployed admin.
+		// Grow this count only with a registry change.
+		expect(allConditions()).toHaveLength(14);
 	});
 
 	it('carries no logEvent on the config and hsts entries', () => {

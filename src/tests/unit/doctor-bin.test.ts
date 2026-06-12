@@ -28,6 +28,20 @@ describe('parseArgs', () => {
 		).toEqual({ from: 'a@b.c', repo: 'o/r', sendTest: 'd@e.f' });
 	});
 
+	it('parses a valued --probe', () => {
+		expect(parseArgs(['--probe', 'https://site.example'])).toEqual({
+			probe: 'https://site.example',
+		});
+	});
+
+	it('parses a bare --probe as true, the PUBLIC_ORIGIN default', () => {
+		expect(parseArgs(['--probe'])).toEqual({ probe: true });
+	});
+
+	it('treats --probe followed by another flag as bare', () => {
+		expect(parseArgs(['--probe', '--from', 'a@b.c'])).toEqual({ probe: true, from: 'a@b.c' });
+	});
+
 	it('rejects a flag with a missing value, naming the flag and printing usage', () => {
 		expect(() => parseArgs(['--from'])).toThrowError(/--from/);
 		expect(() => parseArgs(['--from'])).toThrowError(/Usage: cairn-doctor/);
@@ -121,6 +135,10 @@ describe('defaultChecks', () => {
 
 	it('never carries the live-send check', () => {
 		expect(defaultChecks().some((c) => c.id === 'email.live-send')).toBe(false);
+	});
+
+	it('never carries the login-probe check', () => {
+		expect(defaultChecks().some((c) => c.id === 'admin.login-probe')).toBe(false);
 	});
 
 	it('returns a fresh array, so the bin appending live-send mutates nothing shared', () => {

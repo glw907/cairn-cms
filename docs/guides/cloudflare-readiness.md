@@ -139,7 +139,15 @@ GITHUB_APP_ID=... GITHUB_APP_INSTALLATION_ID=... GITHUB_APP_PRIVATE_KEY_B64=... 
 npx cairn-doctor --from editor@your-domain.com --repo you/your-site
 ```
 
-The doctor runs every check above, prints one line per check with PASS, FAIL, or SKIP, and follows each failure with the condition's why and remediation. A missing credential makes the affected checks skip with a line naming the flag or variable; a skip never fails the run. `--from` can also come from `CAIRN_FROM` and `--repo` from `GITHUB_REPO`, and `--send-test <address>` adds the opt-in live email send. The exit code is 0 when nothing failed and 1 otherwise, so the command slots into a deploy script as a gate.
+The doctor runs every check above, prints one line per check with PASS, FAIL, or SKIP, and follows each failure with the condition's why and remediation. A missing credential makes the affected checks skip with a line naming the flag or variable; a skip never fails the run. `--from` can also come from `CAIRN_FROM` and `--repo` from `GITHUB_REPO`, `--send-test <address>` adds the opt-in live email send, and `--probe` adds the live admin probe below. The exit code is 0 when nothing failed and 1 otherwise, so the command slots into a deploy script as a gate.
+
+## Probe the deployed admin
+
+Condition: `admin.login-probe-failed`.
+
+Every check above reads config and credentials; this one asks the running site. `cairn doctor --probe` (bare, using the `PUBLIC_ORIGIN` input, or with an explicit URL) fetches the deployed `/admin/login` page, asserts the sign-in envelope (a 200, the CSRF cookie and hidden field, the `?/request` form), and POSTs the request action with a random non-editor address. The engine answers a non-editor exactly like a successful send while sending no email and minting no token, so the probe is side-effect free; a `throttled` answer also passes, since a re-run inside a real cooldown window still proves the path. It is an opt-in network POST against production, so it never runs without the flag.
+
+A probe failure has many possible causes, from a missed deploy to a broken send path, and the detail line names the assertion that failed. Work back through the sections above; the rest of the doctor's report usually points at the culprit. The [doctor reference](../reference/doctor.md#the-opt-in-live-probe) details each assertion.
 
 ## See also
 

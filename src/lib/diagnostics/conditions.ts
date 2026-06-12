@@ -142,6 +142,14 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		docsAnchor: 'cloudflare-readiness.md#install-the-github-app',
 		logEvent: 'github.unreachable',
 	},
+	'admin.login-probe-failed': {
+		id: 'admin.login-probe-failed',
+		severity: 'blocker',
+		title: 'Live admin login probe failed',
+		why: 'A live request to the deployed admin did not answer with the working sign-in envelope (the login page, its CSRF cookie and hidden field, and the request action), so a real editor cannot sign in either. A probe failure has many possible causes; the detail line names the assertion that failed.',
+		remediation: 'Read the failed assertion in the detail line, run the full doctor against the same site, and work through the deploy guide; the other checks narrow the cause.',
+		docsAnchor: 'cloudflare-readiness.md#probe-the-deployed-admin',
+	},
 };
 
 // The registry is shared identity, never working state; freeze every entry and the map itself.

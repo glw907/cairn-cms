@@ -8,7 +8,15 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { liveSendCheck } from './check-send.js';
-import { contextFromEnv, defaultChecks, formatReport, parseArgs, runDoctor } from './index.js';
+import { readWranglerConfig } from './wrangler-config.js';
+import {
+	contextFromEnv,
+	defaultChecks,
+	deriveMissingInputs,
+	formatReport,
+	parseArgs,
+	runDoctor,
+} from './index.js';
 
 async function main(): Promise<void> {
 	let args: ReturnType<typeof parseArgs>;
@@ -21,17 +29,28 @@ async function main(): Promise<void> {
 	}
 
 	const cwd = process.cwd();
-	const ctx = {
-		...contextFromEnv(process.env, args, cwd),
-		fetch: globalThis.fetch,
-		readFile: async (relPath: string): Promise<string | null> => {
-			try {
-				return await readFile(resolve(cwd, relPath), 'utf8');
-			} catch (err) {
-				if ((err as NodeJS.ErrnoException).code === 'ENOENT') return null;
-				throw err;
-			}
+	const readFileUnderCwd = async (relPath: string): Promise<string | null> => {
+		try {
+			return await readFile(resolve(cwd, relPath), 'utf8');
+		} catch (err) {
+			if ((err as NodeJS.ErrnoException).code === 'ENOENT') return null;
+			throw err;
+		}
+	};
+	// Fill inputs the flags and env left missing from the repo itself: from and repo off the
+	// adapter (through the vite arm, which exists only on this bin path, never in a Worker)
+	// and the account id off the wrangler config. The API token stays env-only.
+	const derived = await deriveMissingInputs(contextFromEnv(process.env, args, cwd), {
+		adapterFacts: async () => {
+			const { readAdapterFacts } = await import('../vite/index.js');
+			return readAdapterFacts(cwd);
 		},
+		wranglerAccountId: async () => (await readWranglerConfig(readFileUnderCwd))?.accountId,
+	});
+	const ctx = {
+		...derived,
+		fetch: globalThis.fetch,
+		readFile: readFileUnderCwd,
 	};
 
 	const checks = defaultChecks();

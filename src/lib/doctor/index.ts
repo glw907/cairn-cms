@@ -75,6 +75,49 @@ export function contextFromEnv(
 	};
 }
 
+/** The lazy derivation sources the bin wires up: the adapter read through the consumer's own
+ *  Vite resolution and the wrangler config's account_id. Each runs only when an input it feeds
+ *  is still missing, so a doctor run with full flags touches neither. */
+export interface DerivationSources {
+	/** Returns { owner, repo, from } off the adapter, or null when nothing is derivable. */
+	adapterFacts: () => Promise<{ owner?: string; repo?: string; from?: string } | null>;
+	/** Returns the wrangler config's account_id, or undefined when none is declared. */
+	wranglerAccountId: () => Promise<string | undefined>;
+}
+
+/**
+ * Fill the context's missing inputs from the repo the doctor runs in: from and repo off the
+ * adapter, the account id off the wrangler config. An explicit flag or env value always wins
+ * (contextFromEnv already resolved those into ctx), each source runs lazily and only for
+ * inputs still missing, and a derivation failure leaves the input absent so its check skips
+ * with the usual remediation line instead of the doctor crashing. The API token is never
+ * derived; it stays env-only.
+ */
+export async function deriveMissingInputs(
+	ctx: Omit<DoctorContext, 'fetch' | 'readFile'>,
+	sources: DerivationSources
+): Promise<Omit<DoctorContext, 'fetch' | 'readFile'>> {
+	const out = { ...ctx };
+	if (out.from === undefined || out.repo === undefined) {
+		const facts = await sources.adapterFacts().catch(() => null);
+		if (out.from === undefined && typeof facts?.from === 'string') {
+			out.from = facts.from;
+		}
+		if (
+			out.repo === undefined &&
+			typeof facts?.owner === 'string' &&
+			typeof facts?.repo === 'string'
+		) {
+			out.repo = `${facts.owner}/${facts.repo}`;
+		}
+	}
+	if (out.cfAccountId === undefined) {
+		const accountId = await sources.wranglerAccountId().catch(() => undefined);
+		if (typeof accountId === 'string') out.cfAccountId = accountId;
+	}
+	return out;
+}
+
 /**
  * The default registry: the five local-config checks, the four Cloudflare checks, and the
  * GitHub App chain. The live send is opt-in (--send-test) and never sits here; the bin appends

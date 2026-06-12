@@ -18,10 +18,12 @@ npx cairn-doctor --from editor@your-site.com --repo you/your-site
 ```
 
 The command reads local config files from the working directory, so run it from the directory that
-holds `wrangler.jsonc` (or `wrangler.toml`), `svelte.config.js`, and `site.config.yaml`. The
-Cloudflare and GitHub checks need credentials from the environment. A check whose input is missing
-reports SKIP with a line naming the flag or variable to set, and a skip never fails the run, so a
-partial environment still yields a useful report.
+holds `wrangler.jsonc` (or `wrangler.toml`), `svelte.config.js`, and `site.config.yaml`. In a repo
+whose `vite.config.ts` wires the `cairnManifest` plugin, the flags are optional; the doctor reads
+them off the adapter, so `npx cairn-doctor` alone works. The Cloudflare and GitHub checks need
+credentials from the environment. A check whose input is missing reports SKIP with a line naming
+the sources that could supply it, and a skip never fails the run, so a partial environment still
+yields a useful report.
 
 ## Flags and environment
 
@@ -31,19 +33,33 @@ partial environment still yields a useful report.
 | `--repo <owner/name>` | `GITHUB_REPO` | The site repository the GitHub App check reads. |
 | `--send-test <address>` | none | Opt in to one real test email to this address. |
 
-A flag beats its environment variable. The from-address arrives as a flag because `branding.from`
-lives in the site's TypeScript adapter, which a CLI cannot evaluate.
-
 The credential variables are the same values `wrangler` and the Worker use:
 
 | Variable | Used by |
 |---|---|
-| `CLOUDFLARE_API_TOKEN` | The email, zone, and D1 checks. |
-| `CLOUDFLARE_ACCOUNT_ID` | The D1 check and the live send. |
+| `CLOUDFLARE_API_TOKEN` | The email, zone, and D1 checks. Env-only; never derived. |
+| `CLOUDFLARE_ACCOUNT_ID` | The D1 check and the live send. Falls back to the wrangler config's top-level `account_id`. |
 | `PUBLIC_ORIGIN` | The public-origin check, as a fallback when the wrangler vars carry none. |
 | `GITHUB_APP_ID` | The GitHub App check. |
 | `GITHUB_APP_INSTALLATION_ID` | The GitHub App check. |
 | `GITHUB_APP_PRIVATE_KEY_B64` | The GitHub App check. The PEM as a single-line base64 string. |
+
+## Where inputs come from
+
+Each input resolves from three places, in order: an explicit flag, the environment variable, and
+the repository the doctor runs in. The first source that yields a value wins, and derivation runs
+lazily, only for inputs the flags and environment left missing.
+
+When the site's Vite config wires the `cairnManifest` plugin, the doctor evaluates the configured
+adapter module through the site's own Vite resolution. It reads the from-address off
+`cairn.sender.from` and the repository off `cairn.backend.owner` and `cairn.backend.repo`. For the
+account id it falls back to the wrangler config's top-level `account_id`. A repo the doctor cannot
+read this way (no Vite config, no `cairnManifest` plugin, or an adapter that fails to load)
+degrades cleanly; the affected checks skip and their detail lines name the flag, the variable, and
+the plugin wiring.
+
+Secrets (`CLOUDFLARE_API_TOKEN` and the GitHub App credential trio) come only from the
+environment. They are never derived from the repo and never printed.
 
 ## The checks
 

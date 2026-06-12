@@ -109,3 +109,29 @@ function stripCairnManifest(plugins: PluginOption | PluginOption[]): PluginOptio
 Flatten the consumer's `plugins` option and drop the `cairnManifest` plugin at any nesting depth, so
 the nested verify server can never re-enter its own `buildStart`. The verify path uses this when it
 spins up a nested Vite server from the consumer's config.
+
+### `readAdapterFacts`
+
+```ts
+function readAdapterFacts(cwd?: string): Promise<AdapterFacts | null>;
+```
+
+Read the owner, repo, and from-address off the consumer's adapter by evaluating a tiny virtual
+module through the consumer's own Vite resolution, the same machinery `writeManifest` uses. The
+[`cairn-doctor`](./doctor.md) CLI calls this to derive inputs the operator did not pass. It is
+best-effort by design: when the directory has no Vite config, the config wires no `cairnManifest`
+plugin, or the adapter module fails to load, it returns `null` instead of throwing. It runs only
+on the CLI path, never in a Worker.
+
+### `AdapterFacts`
+
+```ts
+interface AdapterFacts {
+  owner?: string;
+  repo?: string;
+  from?: string;
+}
+```
+
+What `readAdapterFacts` returns: `cairn.backend.owner`, `cairn.backend.repo`, and
+`cairn.sender.from`, each present only when the adapter declares it as a string.

@@ -67,11 +67,12 @@ describe('github.app', () => {
 		expect(result.detail).toContain('GITHUB_APP_PRIVATE_KEY_B64');
 	});
 
-	it('skips naming --repo and GITHUB_REPO when ctx.repo is absent', async () => {
+	it('skips naming --repo, GITHUB_REPO, and the adapter derivation when ctx.repo is absent', async () => {
 		const result = await githubApp.run(ctx({ github: GITHUB }));
 		expect(result.status).toBe('skip');
 		expect(result.detail).toContain('--repo');
 		expect(result.detail).toContain('GITHUB_REPO');
+		expect(result.detail).toContain('cairnManifest');
 	});
 
 	it('fails on a key that does not parse, before any network call', async () => {
@@ -143,13 +144,14 @@ describe('email.live-send', () => {
 		expect(result.detail).toContain('CLOUDFLARE_ACCOUNT_ID');
 	});
 
-	it('skips naming --from and CAIRN_FROM when the from-address is absent', async () => {
+	it('skips naming --from, CAIRN_FROM, and the adapter derivation when the from-address is absent', async () => {
 		const result = await liveSendCheck('geoff@example.com').run(
 			ctx({ cfToken: 'tok', cfAccountId: 'acct' })
 		);
 		expect(result.status).toBe('skip');
 		expect(result.detail).toContain('--from');
 		expect(result.detail).toContain('CAIRN_FROM');
+		expect(result.detail).toContain('cairnManifest');
 	});
 
 	it('posts the verified send payload and passes on an ok response', async () => {

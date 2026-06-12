@@ -61,21 +61,17 @@ export const result = ${resultExpr};
 `;
 }
 
-/** Evaluate the virtual module in the given mode inside the consumer's own Vite resolution, then
- *  return the module's `result`. It reuses the consumer's loaded config (so `$lib`, the config
- *  module, `import.meta.glob`, and `?raw` resolve exactly as the build does) and strips the
- *  cairnManifest plugin from the nested server's plugin list, so its buildStart never recurses.
- *  This runs at build time and in the bin, never in the request lifecycle. */
-async function evalVirtual(
-  opts: CairnManifestOptions,
-  mode: 'verify' | 'write',
-  root: string,
-): Promise<string> {
+/** Evaluate a virtual module source inside the consumer's own Vite resolution, then return the
+ *  module's `result`. It reuses the consumer's loaded config (so `$lib`, the config module,
+ *  `import.meta.glob`, and `?raw` resolve exactly as the build does) and strips the cairnManifest
+ *  plugin from the nested server's plugin list, so its buildStart never recurses. This runs at
+ *  build time and in the bins, never in the request lifecycle. */
+async function evalVirtual(source: string, root: string): Promise<string> {
   const { createServer, loadConfigFromFile } = await import('vite');
   // Load the consumer's real Vite config so the nested server inherits SvelteKit's resolution
   // (the $lib alias, the app root, the ?raw and import.meta.glob handling). Drop cairnManifest from
   // it so the nested server's buildStart does not recurse, and add a plugin that serves only the
-  // virtual module in the requested mode.
+  // given virtual module source.
   const loaded = await loadConfigFromFile({ command: 'build', mode: 'production' }, undefined, root);
   const inlineConfig = loaded?.config ?? {};
   const server = await createServer({
@@ -84,7 +80,7 @@ async function evalVirtual(
     configFile: false,
     logLevel: 'silent',
     server: { middlewareMode: true, hmr: false, watch: null },
-    plugins: [...stripCairnManifest(inlineConfig.plugins ?? []), cairnVirtualOnly(opts, mode)],
+    plugins: [...stripCairnManifest(inlineConfig.plugins ?? []), cairnVirtualOnly(source)],
   });
   try {
     const mod = (await server.ssrLoadModule(VIRTUAL_ID)) as { result: string };
@@ -115,13 +111,13 @@ export function stripCairnManifest(plugins: PluginOption | PluginOption[]): Plug
 /** Verify the committed manifest against the corpus from a Vite context, throwing on drift. The bin
  *  and the plugin share this; the spike proved it runs cleanly inside the consumer's config. */
 export async function verifyManifestFromVite(opts: CairnManifestOptions, root: string): Promise<void> {
-  await evalVirtual(opts, 'verify', root);
+  await evalVirtual(virtualSource(opts, 'verify'), root);
 }
 
 /** Regenerate the serialized manifest from the corpus in a Vite context, sharing the build's
  *  resolution. The cairn-manifest bin (a later task) will call this and write the result. */
 export async function buildManifestFromVite(opts: CairnManifestOptions, root: string): Promise<string> {
-  return evalVirtual(opts, 'write', root);
+  return evalVirtual(virtualSource(opts, 'write'), root);
 }
 
 /** The cairnManifest plugin. It serves the verify virtual module to the app graph and, in
@@ -198,16 +194,74 @@ function findCairnOptions(plugins: unknown): CairnManifestOptions | null {
   return null;
 }
 
-/** A minimal plugin that serves only the virtual module in one mode, for the nested SSR load. It
+/** A minimal plugin that serves only the given virtual module source, for the nested SSR load. It
  *  carries no buildStart, so the nested server never recurses into the verify. */
-function cairnVirtualOnly(opts: CairnManifestOptions, mode: 'verify' | 'write'): Plugin {
+function cairnVirtualOnly(source: string): Plugin {
   return {
     name: 'cairn-manifest-virtual',
     resolveId(id) {
       if (id === VIRTUAL_ID) return RESOLVED_ID;
     },
     load(id) {
-      if (id === RESOLVED_ID) return virtualSource(opts, mode);
+      if (id === RESOLVED_ID) return source;
     },
   };
+}
+
+/** The repo and sender facts cairn-doctor derives off the consumer's adapter. */
+export interface AdapterFacts {
+  /** `cairn.backend.owner`. */
+  owner?: string;
+  /** `cairn.backend.repo`. */
+  repo?: string;
+  /** `cairn.sender.from`. */
+  from?: string;
+}
+
+/** Build the virtual module that reads only the adapter facts the doctor derives. It imports the
+ *  configured config module and exports the string-typed `owner`, `repo`, and `from` as JSON, so
+ *  nothing else of the adapter (least of all a secret) crosses the boundary. */
+function adapterFactsSource(opts: CairnManifestOptions): string {
+  return `
+import { cairn } from ${JSON.stringify(opts.configModule)};
+const backend = cairn?.backend ?? {};
+const sender = cairn?.sender ?? {};
+const facts = {};
+if (typeof backend.owner === 'string') facts.owner = backend.owner;
+if (typeof backend.repo === 'string') facts.repo = backend.repo;
+if (typeof sender.from === 'string') facts.from = sender.from;
+export const result = JSON.stringify(facts);
+`;
+}
+
+/** Read `{ owner, repo, from }` off the consumer's adapter by evaluating a tiny virtual module
+ *  through the consumer's own Vite resolution, the same machinery the cairn-manifest bin uses.
+ *  cairn-doctor calls this to fill inputs the operator did not pass. Derivation is best-effort:
+ *  any failure (no Vite config, no cairnManifest plugin, a config module that throws) returns
+ *  null, so the doctor degrades to flags instead of crashing. This runs only on the bin path,
+ *  never in a Worker. */
+export async function readAdapterFacts(cwd: string = process.cwd()): Promise<AdapterFacts | null> {
+  try {
+    const { loadConfigFromFile } = await import('vite');
+    const loaded = await loadConfigFromFile(
+      { command: 'build', mode: 'production' },
+      undefined,
+      cwd,
+      'silent',
+    );
+    if (!loaded) return null;
+    const opts = findCairnOptions(loaded.config.plugins);
+    if (!opts) return null;
+    const parsed = JSON.parse(await evalVirtual(adapterFactsSource(opts), cwd)) as Record<
+      string,
+      unknown
+    >;
+    const facts: AdapterFacts = {};
+    if (typeof parsed.owner === 'string') facts.owner = parsed.owner;
+    if (typeof parsed.repo === 'string') facts.repo = parsed.repo;
+    if (typeof parsed.from === 'string') facts.from = parsed.from;
+    return facts;
+  } catch {
+    return null;
+  }
 }

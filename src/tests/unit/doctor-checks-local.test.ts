@@ -13,6 +13,7 @@ import type { DoctorContext } from '../../lib/doctor/types.js';
 const GOOD_JSONC = `{
 	// the worker name
 	"name": "site",
+	"account_id": "cf-acct-1",
 	/* bindings the engine needs */
 	"send_email": [
 		{ "name": "EMAIL" },
@@ -25,6 +26,7 @@ const GOOD_JSONC = `{
 }`;
 
 const GOOD_TOML = `name = "site"
+account_id = "cf-acct-2"
 
 [[send_email]]
 name = "EMAIL"
@@ -80,6 +82,7 @@ describe('readWranglerConfig', () => {
 			authDbId: 'abc-123',
 			observabilityEnabled: true,
 			publicOrigin: 'https://example.com',
+			accountId: 'cf-acct-1',
 		});
 	});
 
@@ -91,6 +94,7 @@ describe('readWranglerConfig', () => {
 			authDbId: 'toml-456',
 			observabilityEnabled: true,
 			publicOrigin: 'https://example.org',
+			accountId: 'cf-acct-2',
 		});
 	});
 
@@ -99,6 +103,15 @@ describe('readWranglerConfig', () => {
 			ctx({ 'wrangler.jsonc': '{ "send_email": [{ "name": "EMAIL" }] }' }).readFile
 		);
 		expect(facts?.publicOrigin).toBeUndefined();
+	});
+
+	it('leaves accountId undefined when the config declares none', async () => {
+		const jsonc = await readWranglerConfig(
+			ctx({ 'wrangler.jsonc': '{ "name": "site" }' }).readFile
+		);
+		expect(jsonc?.accountId).toBeUndefined();
+		const toml = await readWranglerConfig(ctx({ 'wrangler.toml': 'name = "site"\n' }).readFile);
+		expect(toml?.accountId).toBeUndefined();
 	});
 
 	it('prefers jsonc when both files exist', async () => {

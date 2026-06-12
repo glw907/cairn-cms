@@ -14,6 +14,8 @@ export interface WranglerFacts {
 	observabilityEnabled: boolean;
 	/** vars.PUBLIC_ORIGIN, when declared; the public-origin check validates it. */
 	publicOrigin?: string;
+	/** The top-level account_id, when declared; a fallback for CLOUDFLARE_ACCOUNT_ID. */
+	accountId?: string;
 }
 
 export async function readWranglerConfig(
@@ -95,6 +97,7 @@ function factsFromJsonc(text: string): WranglerFacts {
 	if (typeof authDb?.database_id === 'string') facts.authDbId = authDb.database_id;
 	const vars = config.vars as { PUBLIC_ORIGIN?: unknown } | undefined;
 	if (typeof vars?.PUBLIC_ORIGIN === 'string') facts.publicOrigin = vars.PUBLIC_ORIGIN;
+	if (typeof config.account_id === 'string') facts.accountId = config.account_id;
 	return facts;
 }
 
@@ -141,6 +144,8 @@ function factsFromToml(text: string): WranglerFacts {
 			facts.observabilityEnabled = true;
 		} else if (section === '[vars]' && key === 'PUBLIC_ORIGIN' && str !== undefined) {
 			facts.publicOrigin = str;
+		} else if (section === '' && key === 'account_id' && str !== undefined) {
+			facts.accountId = str;
 		}
 	}
 	flushD1();

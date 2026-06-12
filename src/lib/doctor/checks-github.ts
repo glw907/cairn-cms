@@ -22,7 +22,9 @@ export const githubApp: DoctorCheck = {
 			);
 		}
 		if (!ctx.repo) {
-			return skip('pass --repo or set GITHUB_REPO to run this check');
+			return skip(
+				'pass --repo, set GITHUB_REPO, or configure the cairnManifest plugin so the doctor can read the adapter'
+			);
 		}
 		const creds = appCredentials(
 			{ appId: ctx.github.appId, installationId: ctx.github.installationId },

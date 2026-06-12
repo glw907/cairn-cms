@@ -67,11 +67,12 @@ describe('email.sender-onboarded', () => {
 		expect(result.detail).toContain('CLOUDFLARE_API_TOKEN');
 	});
 
-	it('skips naming --from and CAIRN_FROM when the from-address is absent', async () => {
+	it('skips naming --from, CAIRN_FROM, and the adapter derivation when the from-address is absent', async () => {
 		const result = await emailSenderOnboarded.run(ctx({ cfToken: 'tok', cfAccountId: 'acct' }));
 		expect(result.status).toBe('skip');
 		expect(result.detail).toContain('--from');
 		expect(result.detail).toContain('CAIRN_FROM');
+		expect(result.detail).toContain('cairnManifest');
 	});
 
 	it('passes when the from-domain has an enabled sending subdomain', async () => {
@@ -270,11 +271,12 @@ describe('auth.store', () => {
 		});
 	}
 
-	it('skips naming both credential vars when they are absent', async () => {
+	it('skips naming both credential vars and the wrangler fallback when they are absent', async () => {
 		const result = await authStore.run(ctx({ from: 'a@ecxc.ski' }));
 		expect(result.status).toBe('skip');
 		expect(result.detail).toContain('CLOUDFLARE_API_TOKEN');
 		expect(result.detail).toContain('CLOUDFLARE_ACCOUNT_ID');
+		expect(result.detail).toContain('account_id');
 	});
 
 	it('skips naming the wrangler config when no AUTH_DB database_id is declared', async () => {

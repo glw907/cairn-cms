@@ -2,6 +2,47 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.50.0
+
+The admin now mounts as one catch-all route. A new `createCairnAdmin(runtime, deps)` facade
+serves every admin view through a single `load` and a single `actions` record, the new
+`CairnAdmin` component switches the views on the discriminated `AdminData`, and `parseAdminPath`
+is the one path authority behind both. A site's whole `/admin` surface is now three files (the
+`$lib/cairn.server.ts` composer plus the `/admin/[...path]` route pair) instead of a per-route
+tree of shims whose action names coupled to engine components by bare string. The admin URLs are
+unchanged. The per-surface factories (`createContentRoutes` and friends) stay public as the
+advanced seam.
+
+Consumers must: delete the admin route tree and replace it with the two-file mount plus the
+composer; the exact files are in
+[the canonical admin mount](docs/reference/admin-routes.md) and the migration is the `0.50.0`
+section of [the upgrade guide](docs/guides/upgrade-cairn.md). The engine's auth and shell forms
+now post named actions (`?/request`, `?/confirm`, `?/logout`, `?/publishAll`), so a site that
+mounts `LoginPage`, `ConfirmPage`, or `AdminLayout` directly must register those names, and the
+`/admin/auth/logout` server route leaves the contract.
+
+Consumers must: rename `createSiteIndex` to `createSiteResolver` and `SiteIndex` to
+`SiteResolver` where imported from `/delivery/data`; the `paginate` helper is deleted.
+
+Consumers must: read `form.error` where they read `form.renameError`. Every action failure now
+carries `error: string` as its one-line summary; the structured extras (`brokenLinks`,
+`inboundLinks`) keep their keys beside it.
+
+Consumers must: replace the hand-written `App.Locals` block in `src/app.d.ts` with
+`import '@glw907/cairn-cms/ambient';`, the new type-only subpath that ships the
+`App.Locals.editor` augmentation.
+
+The diagnostics registry reaches its remaining runtime sites: a missing `AUTH_DB`, a missing
+email binding, missing GitHub App credentials, and an invalid site config now render branded
+condition pages with their registered ids instead of a bare 500 or a silent redirect.
+`deps.mintToken` widens to accept a plain string return. The concept list reads published rows
+from the committed manifest in one call, falling back to the per-file crawl only on a repo with
+no manifest yet. Internal layering rides along (one home each for the link rewriter, the escape
+helpers, and the conflict check) with no consumer surface change.
+
+This release publishes together with `0.41.0`, so a site crossing from `0.40.0` takes both
+windows in one upgrade.
+
 ## 0.41.0
 
 `cairn-doctor` ships as a second bin: a setup preflight that runs nine checks over the local config

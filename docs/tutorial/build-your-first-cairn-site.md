@@ -6,7 +6,7 @@ The tutorial teaches each piece once, in build order, so follow it top to bottom
 
 ## Milestone 0: What you will build, and prerequisites
 
-By the end you will have `Field Notes` running locally. It is a blog with two posts and one page, a custom callout component authored in markdown, an internal link from one post to another that survives a rename, RSS and JSON feeds, a sitemap, and a working admin editor where you log in, edit a post, and save. The content stays small on purpose. Each milestone adds one real shipped feature, so the breadth comes from the build rather than from the writing.
+By the end you will have `Field Notes` running locally. It is a blog with two posts and one page, a custom callout component authored in markdown, an internal link from one post to another that survives a rename, RSS and JSON feeds, a sitemap, and a working admin editor where you log in, edit a post, save, and publish. The content stays small on purpose. Each milestone adds one real shipped feature, so the breadth comes from the build rather than from the writing.
 
 You need a few things before you start:
 
@@ -34,7 +34,7 @@ Install cairn from npm:
 npm install @glw907/cairn-cms
 ```
 
-cairn is design-agnostic, and the showcase styles its admin and its public pages with Tailwind and DaisyUI, so add them next. DaisyUI is a host peer dependency, which means your site supplies it rather than the engine:
+cairn is design-agnostic, and the admin styles itself, so your site's CSS choices are entirely your own. The showcase makes that point deliberately: its public pages use plain handwritten CSS and load neither Tailwind nor DaisyUI, and the admin still renders fully styled. `Field Notes` will style its public pages with Tailwind and DaisyUI, the stack cairn's own sites use, so add them next:
 
 ```bash
 npm install -D tailwindcss @tailwindcss/vite
@@ -79,7 +79,7 @@ Import that stylesheet once from your root layout, `src/routes/+layout.svelte`:
 
 Notice how bare the root layout stays. That matters later, because the root layout wraps `/admin` too, so a
 real site keeps its nav, footer, and `app.css` out of the root and in a `(site)` route group instead.
-Milestone 8 covers the rule, and [the admin route structure](../reference/admin-routes.md) has the full
+Milestone 8 covers the rule, and [the canonical admin mount](../reference/admin-routes.md) has the full
 pattern.
 
 Two small project setup steps remain. The admin signs an editor in by setting `event.locals.editor`, so declare that field's type once in `src/app.d.ts`. The package ships the declaration; one import applies it:
@@ -572,131 +572,56 @@ You do not hand-edit this YAML for every change. The admin carries a nav tree ed
 
 ## Milestone 8: Run the admin locally with the dev backend
 
-The public site is complete. Now you bring up the admin, the editor where an author logs in, edits a post, inserts a component, adds an internal link, and saves a commit. The admin needs two things a real deployment supplies, an authenticated editor and a GitHub App that commits the save, and you have neither on your machine yet. The backend guides set up the real ones, and milestone 10 points you at them. To run the loop locally first, you install a dev backend, a copy-paste fixture that stands in for both.
+The public site is complete. Now you bring up the admin, the editor where an author logs in, edits a post, inserts a component, adds an internal link, saves, and publishes. The admin needs two things a real deployment supplies, an authenticated editor and a GitHub App that commits the save, and you have neither on your machine yet. The backend guides set up the real ones, and milestone 10 points you at them. To run the loop locally first, you install a dev backend that stands in for both, copied from the showcase.
 
 A loud warning before you copy anything. The dev backend is for local development only. It installs an authentication bypass that signs you in as a fixed editor with no email check, and it installs a fake GitHub that records commits in memory instead of pushing them to a real repository. Never set the `CAIRN_DEV_BACKEND` flag in a deployed environment. With the flag unset, both fixtures are inert, so they are safe to keep in the repository, and the flag itself is the live wire. The deploy guide replaces this fixture with the real GitHub App and D1 auth and drops the flag entirely.
 
 ### Copy the dev backend fixture
 
-The first file is the fake GitHub. It intercepts `fetch` calls to `api.github.com` and answers them from an in-memory file map, so a save reaches a fake repo and the engine never touches the network. A save commits the content file and the manifest in one commit through the Git Data API, so the double answers the ref, commit, tree, and refs endpoints as well as the Contents API reads. It seeds the two posts and the build manifest, so the editor's link picker can resolve a `cairn:` link to an existing post. Create `src/lib/dev-github.ts`:
+The first file is the fake GitHub, and you copy it rather than write it. The cairn repository carries a complete double at [`examples/showcase/src/lib/fake-github.ts`](../../examples/showcase/src/lib/fake-github.ts); copy that file into your project as `src/lib/fake-github.ts`. The double intercepts `fetch` calls to `api.github.com` and answers them from an in-memory, branch-aware repo. It covers everything the engine asks of GitHub: the Contents API reads behind the editor, the Git Data atomic-commit sequence behind a save (the ref, commit, tree, and refs endpoints), the branch create, list, and delete calls behind the pending-branch publish flow, and the installation token exchange. Each fake branch holds its own file tree, so a save lands on the entry's `cairn/<concept>/<id>` branch, Publish copies the held content to `main`, and Discard deletes the branch, the same lifecycle a real deployment runs. The double also records the last commit it lands, which the showcase's own E2E suite asserts against.
+
+The copied file seeds its fake repo with one showcase post. Replace that seed with the `Field Notes` content, so the admin lists your posts, the link picker can resolve them, and the nav editor can read your menu. In your copy, delete the `SEED_POST` constant along with its comment, and replace the `branches` initialization with this one:
 
 ```ts
-// DEV ONLY. A fake GitHub that intercepts api.github.com and answers from memory, so the admin
-// can save without a real repository or App key. Installed only when CAIRN_DEV_BACKEND=1.
-// Never enable this in production: it fakes every commit and records nothing to a real repo.
-//
-// A save commits through the Git Data API atomic-commit path, so the double answers the ref,
-// commit, tree, and refs endpoints as well as the Contents API reads and the token exchange.
-
-let installed = false;
-
-const seededFiles = new Map<string, string>([
+const branches = new Map<string, Tree>([
   [
-    'src/content/posts/2026-05-01-first-trail.md',
-    '---\ntitle: First trail on the ridge\ndate: 2026-05-01\ndescription: A short walk up the ridge to open the season.\n---\nThe snow was gone by the first week of May.\n',
-  ],
-  [
-    'src/content/posts/2026-05-15-packing-list.md',
-    '---\ntitle: A weekend packing list\ndate: 2026-05-15\ndescription: What goes in the pack for an overnight on the ridge.\n---\nA weekend on the ridge needs less than you think.\n',
-  ],
-  // The manifest the build commits. Seeded so the link picker can resolve a cairn: link to an
-  // existing post; without it a save guard would treat the target as a broken link.
-  [
-    'src/content/.cairn/index.json',
-    JSON.stringify({
-      version: 1,
-      entries: [
-        { id: '2026-05-01-first-trail', concept: 'posts', title: 'First trail on the ridge', date: '2026-05-01', permalink: '/2026/05/01/first-trail', draft: false, links: [] },
-        { id: '2026-05-15-packing-list', concept: 'posts', title: 'A weekend packing list', date: '2026-05-15', permalink: '/2026/05/15/packing-list', draft: false, links: [] },
+    'main',
+    new Map([
+      [
+        'src/content/posts/2026-05-01-first-trail.md',
+        '---\ntitle: First trail on the ridge\ndate: 2026-05-01\ndescription: A short walk up the ridge to open the season.\n---\nThe snow was gone by the first week of May.\n',
       ],
-    }),
+      [
+        'src/content/posts/2026-05-15-packing-list.md',
+        '---\ntitle: A weekend packing list\ndate: 2026-05-15\ndescription: What goes in the pack for an overnight on the ridge.\n---\nA weekend on the ridge needs less than you think.\n',
+      ],
+      [
+        'src/content/pages/about.md',
+        '---\ntitle: About Field Notes\ndescription: A small blog about walks on the ridge.\n---\nField Notes is a small blog about walks on the ridge above town.\n',
+      ],
+      // The committed site config from milestone 7, so the nav editor has a menu to read.
+      [
+        'src/lib/site.config.yaml',
+        'siteName: Field Notes\nmenus:\n  primary:\n    - label: Home\n      url: /\n    - label: About\n      url: /about\ncontent:\n  posts:\n    permalink: /:year/:month/:day/:slug\n    datePrefix: day\n  pages:\n    permalink: /:slug\n',
+      ],
+      // The committed manifest, so the link picker can resolve a cairn: link to an existing post.
+      [
+        'src/content/.cairn/index.json',
+        JSON.stringify({
+          version: 1,
+          entries: [
+            { id: '2026-05-01-first-trail', concept: 'posts', title: 'First trail on the ridge', date: '2026-05-01', permalink: '/2026/05/01/first-trail', draft: false, links: [] },
+            { id: '2026-05-15-packing-list', concept: 'posts', title: 'A weekend packing list', date: '2026-05-15', permalink: '/2026/05/15/packing-list', draft: false, links: [] },
+            { id: 'about', concept: 'pages', title: 'About Field Notes', permalink: '/about', draft: false, links: [] },
+          ],
+        }),
+      ],
+    ]),
   ],
 ]);
-
-// A staged tree the engine builds with POST /git/trees, keyed by a fake sha. PATCH /git/refs
-// promotes one staged tree's file map into the live seededFiles map, modelling a commit.
-const stagedTrees = new Map<string, Map<string, string>>();
-let counter = 0;
-const nextSha = (prefix: string) => `${prefix}-${++counter}`;
-
-export function installDevGitHub(): void {
-  if (installed) return;
-  installed = true;
-  const real = globalThis.fetch;
-
-  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-    const url =
-      typeof input === 'string' ? input : input instanceof URL ? input.href : (input as Request).url;
-    if (!url.includes('api.github.com')) return real(input, init);
-
-    const method = (init?.method ?? 'GET').toUpperCase();
-    const headers = (init?.headers ?? {}) as Record<string, string>;
-    const accept = headers['Accept'] ?? headers['accept'] ?? '';
-
-    // The installation token exchange the App would normally answer.
-    if (url.includes('/access_tokens')) return Response.json({ token: 'dev-token' }, { status: 201 });
-
-    // List every blob so the engine can filter a concept's directory.
-    if (url.includes('/git/trees/') && method === 'GET') {
-      const tree = [...seededFiles.keys()].map((path) => ({ path, type: 'blob' }));
-      return Response.json({ tree, truncated: false });
-    }
-
-    // The branch head ref and its commit report a stable base, since the double commits by
-    // promoting a staged tree rather than tracking a real commit graph.
-    if (url.includes('/git/ref/heads/')) return Response.json({ object: { sha: 'dev-head' } });
-    if (url.match(/\/git\/commits\/[^/]+$/) && method === 'GET') {
-      return Response.json({ tree: { sha: 'dev-base-tree' } });
-    }
-
-    // POST /git/trees: stage the file changes against the current file map under a fresh sha.
-    if (url.endsWith('/git/trees') && method === 'POST') {
-      const body = JSON.parse(String(init?.body ?? '{}')) as {
-        tree: Array<{ path: string; content?: string; sha?: null }>;
-      };
-      const next = new Map(seededFiles);
-      for (const entry of body.tree) {
-        if (entry.sha === null) next.delete(entry.path);
-        else if (typeof entry.content === 'string') next.set(entry.path, entry.content);
-      }
-      const sha = nextSha('tree');
-      stagedTrees.set(sha, next);
-      return Response.json({ sha });
-    }
-
-    // POST /git/commits: bind the staged tree to a commit sha.
-    if (url.endsWith('/git/commits') && method === 'POST') {
-      const body = JSON.parse(String(init?.body ?? '{}')) as { tree: string };
-      const sha = nextSha('commit');
-      const staged = stagedTrees.get(body.tree);
-      if (staged) stagedTrees.set(sha, staged);
-      return Response.json({ sha });
-    }
-
-    // PATCH /git/refs/heads/<branch>: promote the staged tree, modelling the commit landing.
-    if (url.includes('/git/refs/heads/') && method === 'PATCH') {
-      const body = JSON.parse(String(init?.body ?? '{}')) as { sha: string };
-      const staged = stagedTrees.get(body.sha);
-      if (staged) {
-        seededFiles.clear();
-        for (const [p, c] of staged) seededFiles.set(p, c);
-        console.log('[dev-github] committed', body.sha);
-      }
-      return Response.json({ object: { sha: body.sha } });
-    }
-
-    const path = decodeURIComponent(url).match(/\/contents\/([^?]+)/)?.[1] ?? '';
-
-    // A read: raw body for the editor, JSON metadata for the file sha.
-    if (path && seededFiles.has(path)) {
-      if (accept.includes('raw')) return new Response(seededFiles.get(path), { status: 200 });
-      return Response.json({ sha: 'old-sha', name: path.split('/').pop() });
-    }
-
-    return new Response('Not Found', { status: 404 });
-  }) as typeof fetch;
-}
 ```
+
+The seeded files mirror what milestones 3 through 7 put on disk, plus the manifest the build pipeline maintains. The admin reads through the GitHub API rather than from disk, so what the fake repo holds is what the editor shows.
 
 The second file is the auth bypass. It installs the fake GitHub once and, on any `/admin` request, sets `event.locals.editor` to a fixed editor so the engine treats you as signed in. With the flag unset it runs the engine's `createAuthGuard`, which resolves a real session and gates the admin. Create `src/hooks.server.ts`:
 
@@ -706,19 +631,19 @@ The second file is the auth bypass. It installs the fake GitHub once and, on any
 // requires a real session. Never set the flag in production: it bypasses authentication.
 import type { Handle } from '@sveltejs/kit';
 import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
-import { installDevGitHub } from '$lib/dev-github.js';
+import { installFakeGitHub } from '$lib/fake-github.js';
 
 const DEV_BACKEND = process.env.CAIRN_DEV_BACKEND === '1';
 
 if (DEV_BACKEND) {
-  installDevGitHub();
+  installFakeGitHub();
 }
 
 const guard = createAuthGuard();
 
 export const handle: Handle = async ({ event, resolve }) => {
   if (DEV_BACKEND) {
-    if (event.url.pathname.startsWith('/admin')) {
+    if (event.url.pathname === '/admin' || event.url.pathname.startsWith('/admin/')) {
       // The locked dev editor identity. A real session carries the same shape. The engine guard is
       // bypassed in dev, so the per-load session check reads this editor straight from locals.
       event.locals.editor = { email: 'you@example.com', displayName: 'You', role: 'owner' };
@@ -729,23 +654,52 @@ export const handle: Handle = async ({ event, resolve }) => {
 };
 ```
 
-In dev the hook signs you in and skips the guard, since the guard would resolve a session from a database you have not set up yet and redirect to a login page that does not exist. In production the flag is unset, so the hook is the engine's `createAuthGuard`, which gates every `/admin/**` path. For the guard, see [the SvelteKit reference](../reference/sveltekit.md#createauthguard).
+In dev the hook signs you in and skips the guard, since the guard would resolve a session from a D1 database you have not set up yet. In production the flag is unset, so the hook is the engine's `createAuthGuard`, which gates every `/admin/**` path. For the guard, see [the SvelteKit reference](../reference/sveltekit.md#createauthguard).
 
-### Wire the admin routes
+### Mount the admin
 
-The admin mounts a small route tree that hands every page to the engine's loads and actions. One composer file builds the runtime and the handler groups once, so each route server is a one-line re-export. Create `src/lib/cairn.server.ts`:
+The whole admin mounts as one catch-all route pair plus a composer, three files in all. The composer builds the runtime once and hands it to `createCairnAdmin`, the facade that serves every admin view through one `load` and one `actions` record. Create `src/lib/cairn.server.ts`:
 
 ```ts
-// Composes the runtime once and builds the admin handler groups. mintToken stubs the GitHub App
-// token mint so the admin runs in dev without a real App key; the dev GitHub answers for it.
+// Composes the runtime once and builds the single-mount admin. mintToken stubs the GitHub App
+// token mint so the admin runs in dev without a real App key; the fake GitHub answers for it.
 import { composeRuntime } from '@glw907/cairn-cms';
-import { createContentRoutes, createNavRoutes } from '@glw907/cairn-cms/sveltekit';
+import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
 import { cairn, siteConfig } from './cairn.config.js';
 
 export const runtime = composeRuntime({ adapter: cairn, siteConfig });
-export const content = createContentRoutes(runtime, { mintToken: async () => 'dev-token' });
-export const nav = createNavRoutes(runtime, { mintToken: async () => 'dev-token' });
+export const admin = createCairnAdmin(runtime, { mintToken: async () => 'dev-token' });
 ```
+
+The catch-all route server re-exports the facade's load and actions. Create `src/routes/admin/[...path]/+page.server.ts`:
+
+```ts
+// The single-mount admin route: one catch-all serves every /admin view through the engine's
+// load and actions. The admin is session-gated and must never prerender.
+import { admin } from '$lib/cairn.server.js';
+
+export const prerender = false;
+
+export const load = admin.load;
+export const actions = admin.actions;
+```
+
+Its page mounts the engine's `CairnAdmin`, which reads the discriminated view data the load returned and renders the right screen for whatever admin URL was requested. The adapter's render, registry, and icons pass through, so the preview, the component palette, and the icon picker all work. Create `src/routes/admin/[...path]/+page.svelte`:
+
+```svelte
+<script lang="ts">
+  import { CairnAdmin } from '@glw907/cairn-cms/components';
+  import type { AdminData } from '@glw907/cairn-cms/sveltekit';
+  import { cairn } from '$lib/cairn.config.js';
+  import type { ActionData } from './$types';
+
+  let { data, form }: { data: AdminData; form: ActionData } = $props();
+</script>
+
+<CairnAdmin {data} {form} render={cairn.render} registry={cairn.registry} icons={cairn.icons} />
+```
+
+That is the entire admin surface. The one route serves the concept lists at `/admin/posts` and `/admin/pages`, the editor at `/admin/<concept>/<id>`, the nav editor at `/admin/nav`, the sign-in screens, and the owner's editor management at `/admin/editors`, and it answers every form action those views post. You restate no route table and no action names, so when a release adds an action, the version bump alone delivers it. [The canonical admin mount](../reference/admin-routes.md) documents the URL set and the action vocabulary, and [the SvelteKit reference](../reference/sveltekit.md#createcairnadmin) has the `createCairnAdmin` signature.
 
 ### Keep host chrome out of /admin
 
@@ -755,131 +709,7 @@ The admin self-styles and does not need the host's CSS, so keep the root layout 
 chrome plus `app.css` in a URL-transparent `(site)` group. The group folder does not change any public
 URL, and the admin, which sits outside the group, renders on its own. A dev-only guard in the admin logs
 a `console.error` when it detects host chrome wrapping it. See
-[the admin route structure](../reference/admin-routes.md) for the full tree and the reasoning.
-
-The route tree splits in two. Login and auth pages sit directly under `admin/`, and the authed shell sits in an `(app)` group whose layout requires a session. The group folder does not appear in the URL, so its pages still resolve under `/admin/*`, and only the group runs the session-requiring layout load, which is what keeps a sessionless visit from looping. For why the tree has this exact shape, read [the admin route structure](../reference/admin-routes.md).
-
-The bare admin layout switches prerendering off for the whole subtree and renders its children through. Create `src/routes/admin/+layout.server.ts`:
-
-```ts
-// /admin must never prerender. The authed shell load lives in the (app) group below, so login
-// and auth pages do not run it and cannot loop back to /admin/login.
-export const prerender = false;
-```
-
-Pair it with `src/routes/admin/+layout.svelte`:
-
-```svelte
-<script lang="ts">
-  let { children } = $props();
-</script>
-
-{@render children()}
-```
-
-The `(app)` group's layout server runs the authed shell load. Add `src/routes/admin/(app)/+layout.server.ts`:
-
-```ts
-// The authed shell load: site identity, the signed-in user, and the nav sidebar.
-import { content } from '$lib/cairn.server.js';
-
-export const load = content.layoutLoad;
-```
-
-Its layout renders the engine's `AdminLayout` shell around every authed page. Create `src/routes/admin/(app)/+layout.svelte`:
-
-```svelte
-<script lang="ts">
-  import type { Snippet } from 'svelte';
-  import { AdminLayout } from '@glw907/cairn-cms/components';
-  import type { LayoutData } from '@glw907/cairn-cms/sveltekit';
-
-  let { data, children }: { data: LayoutData; children: Snippet } = $props();
-</script>
-
-<AdminLayout {data}>
-  {@render children()}
-</AdminLayout>
-```
-
-Next, the group's index redirects to the first concept's list. Now create `src/routes/admin/(app)/+page.server.ts`:
-
-```ts
-// /admin redirects to the first concept's list.
-import { content } from '$lib/cairn.server.js';
-
-export const load = content.indexRedirect;
-```
-
-Each concept gets a list route that lists its entries and creates a new one. Create `src/routes/admin/(app)/[concept]/+page.server.ts`:
-
-```ts
-// Lists one concept's entries and handles the new-entry create action.
-import { content } from '$lib/cairn.server.js';
-
-export const load = content.listLoad;
-export const actions = { create: content.createAction };
-```
-
-Its page mounts the list component. Create `src/routes/admin/(app)/[concept]/+page.svelte`:
-
-```svelte
-<script lang="ts">
-  import { ConceptList } from '@glw907/cairn-cms/components';
-  import type { ListData } from '@glw907/cairn-cms/sveltekit';
-
-  let { data }: { data: ListData } = $props();
-</script>
-
-<ConceptList {data} />
-```
-
-Deeper in the tree, the editor loads one entry for editing and handles its save; the delete and rename actions live on the same route. It nests at `[concept]/[id]`, the path the list links to and every redirect targets, so `params.concept` and `params.id` arrive natively. Create `src/routes/admin/(app)/[concept]/[id]/+page.server.ts`:
-
-```ts
-// Loads one entry for editing and handles the save, delete, and rename actions.
-import { content } from '$lib/cairn.server.js';
-
-export const load = content.editLoad;
-export const actions = { save: content.saveAction, delete: content.deleteAction, rename: content.renameAction };
-```
-
-The edit page mounts the engine's `EditPage`, passing the adapter's render, registry, and icons so the preview, the component palette, and the icon picker all work. Put it at `src/routes/admin/(app)/[concept]/[id]/+page.svelte`:
-
-```svelte
-<script lang="ts">
-  import { EditPage } from '@glw907/cairn-cms/components';
-  import type { EditData } from '@glw907/cairn-cms/sveltekit';
-  import { cairn } from '$lib/cairn.config.js';
-
-  let { data }: { data: EditData } = $props();
-</script>
-
-<EditPage data={{ ...data, siteName: cairn.siteName }} render={cairn.render} registry={cairn.registry} icons={cairn.icons} />
-```
-
-Last in the group, the nav editor loads the menu tree and saves an edited one. Create `src/routes/admin/(app)/nav/+page.server.ts`:
-
-```ts
-// Loads the nav tree and the page options, and saves an edited tree to the site config.
-import { nav } from '$lib/cairn.server.js';
-
-export const load = nav.navLoad;
-export const actions = { default: nav.navSave };
-```
-
-Then create `src/routes/admin/(app)/nav/+page.svelte`:
-
-```svelte
-<script lang="ts">
-  import { NavTree } from '@glw907/cairn-cms/components';
-  import type { NavLoadData } from '@glw907/cairn-cms/sveltekit';
-
-  let { data }: { data: NavLoadData } = $props();
-</script>
-
-<NavTree {data} />
-```
+[the canonical admin mount](../reference/admin-routes.md) for the full pattern and the reasoning.
 
 One file is left, the health check. A deploy probe has to reach it without a session, so it lives at the site root rather than under `/admin`. Create `src/routes/healthz/+server.ts`:
 
@@ -896,7 +726,7 @@ export const prerender = false;
 export const GET: RequestHandler = async (event) => json(await healthLoad(event, runtime));
 ```
 
-For the loads and actions these route servers re-export, see [the SvelteKit reference](../reference/sveltekit.md). For the components the pages mount, see [the components reference](../reference/components.md).
+For the load and actions the catch-all re-exports, see [the SvelteKit reference](../reference/sveltekit.md). For `CairnAdmin` and the view components it switches between, see [the components reference](../reference/components.md).
 
 ### Walk the author loop
 
@@ -906,17 +736,21 @@ Start the dev server with the flag set:
 CAIRN_DEV_BACKEND=1 npm run dev
 ```
 
-Open `/admin` in the browser. The dev auth bypass signs you in as `You`, so you land on the posts list with no login step. Click the packing-list post to open the editor. The page shows the document title at the top, the markdown body with its formatting toolbar, the remaining frontmatter fields from your schema grouped in the sidebar, and a Preview tab on the toolbar that renders the page the way the site will.
+Open `/admin` in the browser. The dev auth bypass signs you in as `You`, so you land on the posts list with no login step, and both posts carry a Published badge, since the fake repo's `main` holds them and no pending branch exists yet. Click the packing-list post to open the editor. The page shows the document title at the top, the markdown body with its formatting toolbar, the remaining frontmatter fields from your schema grouped in the sidebar, and a Preview tab on the toolbar that renders the page the way the site will.
 
 Now author the callout through the component dialog instead of typing the directive by hand. Press Insert block in the toolbar, choose `Callout`, and fill its guided form. The form has a `Tone` select and an `Icon` field. The icon field renders a picker that lists your icon set, so choose `snowflake` from it, the one glyph you registered in milestone 5. Fill the title and the body, then insert. The dialog serializes the directive and drops it at the cursor, the same markup you wrote by hand earlier.
 
-Next add the internal link the packing-list post has been missing since milestone 3. Press Link to page in the toolbar, search for the first-trail post by its title, and choose it. The picker inserts a `cairn:posts/2026-05-01-first-trail` link at the cursor, the rot-proof token that survives a later rename of the target. Save the post. The save runs through the engine, the dev GitHub records the commit in memory, and you see a `[dev-github] committed` line in the terminal. The save also exercises the nav editor's sibling route, so open `/admin/nav` to see the `primary` menu you set in milestone 7 rendered as a reorderable tree.
+Next add the internal link the packing-list post has been missing since milestone 3. Press Link to page in the toolbar, search for the first-trail post by its title, and choose it. The picker inserts a `cairn:posts/2026-05-01-first-trail` link at the cursor, the rot-proof token that survives a later rename of the target. Now save the post. The save commits to the entry's pending branch, `cairn/posts/2026-05-15-packing-list`, in the fake repo, and the header's save-state indicator flips to Saved. Nothing reaches `main` yet; back on the posts list, the row's badge reads Edited to say the live version and the held edits differ.
 
-You now have the full author loop running on your machine: log in, edit, insert a component, add an internal link, and save a commit. The commit is fake. To make it real, you set up the production backend. [Set up the GitHub App](../guides/set-up-the-github-app.md) creates the App that commits to your repository. [Configure auth and D1](../guides/configure-auth-and-d1.md) sets up the magic-link login store. [Deploy to Cloudflare](../guides/deploy-to-cloudflare.md) swaps the dev fixture for the real GitHub App and D1 auth and drops the `CAIRN_DEV_BACKEND` flag.
+Publishing is the deliberate second step. Return to the post and press Publish in the header. The engine copies the held markdown to `main`, updates the entry's manifest row in the same commit, and deletes the pending branch, so the badge returns to Published. On a deployed site that `main` commit is what triggers the rebuild and ships the change. The topbar also carries a "Publish site" button when entries are pending, which ships every held entry in one commit.
+
+Two more views are worth a visit. Open `/admin/nav` to see the `primary` menu you set in milestone 7 rendered as a reorderable tree, read from the site config you seeded into the fake repo. The editors view at `/admin/editors` manages the sign-in allowlist against the real D1 auth store, which the dev backend does not fake, so save that one for the deployed site.
+
+You now have the full author loop running on your machine: log in, edit, insert a component, add an internal link, save, and publish. The commits are fake. To make them real, you set up the production backend. [Set up the GitHub App](../guides/set-up-the-github-app.md) creates the App that commits to your repository. [Configure auth and D1](../guides/configure-auth-and-d1.md) sets up the magic-link login store. [Deploy to Cloudflare](../guides/deploy-to-cloudflare.md) swaps the dev fixture for the real GitHub App and D1 auth and drops the `CAIRN_DEV_BACKEND` flag.
 
 ## Milestone 9: Confirm the internal link and regenerate the manifest
 
-You added the `cairn:` link inside the running admin, which committed through the dev GitHub. The fake commit lives in memory, so the file on disk does not carry the link yet. To finish the tutorial against the public site, add the same link to the packing-list file on disk. Open `src/content/posts/2026-05-15-packing-list.md` and write the link in markdown:
+You added the `cairn:` link inside the running admin, which committed through the fake GitHub. The fake commits live in memory, so the file on disk does not carry the link yet. To finish the tutorial against the public site, add the same link to the packing-list file on disk. Open `src/content/posts/2026-05-15-packing-list.md` and write the link in markdown:
 
 ```markdown
 For more on the trail itself, see the [first trail on the ridge](cairn:posts/2026-05-01-first-trail).
@@ -924,7 +758,7 @@ For more on the trail itself, see the [first trail on the ridge](cairn:posts/202
 
 That `cairn:posts/2026-05-01-first-trail` href is the internal link token. The first part is the concept, the second is the target post's permanent id. The link names the file rather than the URL, so it survives a later change to the permalink shape or a rename of the target.
 
-A `cairn:` link resolves through the manifest, the build-verified projection of your content that you wired in milestone 6. The admin commit pipeline rewrites the manifest on every save, so a link added in the editor is already resolvable. You edited the file on disk this time, so regenerate the manifest by hand:
+A `cairn:` link resolves through the manifest, the build-verified projection of your content that you wired in milestone 6. The admin keeps the manifest in step for you, updating the entry's row in the same commit that publishes it. You edited the file on disk this time, so regenerate the manifest by hand:
 
 ```bash
 npm run cairn:manifest

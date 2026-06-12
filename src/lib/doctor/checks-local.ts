@@ -1,9 +1,10 @@
 // The doctor's local-config checks: the wrangler bindings, the observability sink, the
-// svelte.config CSRF handoff, and the site-config validation. Every read goes through the
-// injected ctx.readFile, so the tests pass fixtures and the bin passes node:fs.
+// svelte.config CSRF handoff, the site-config validation, and the public origin. Every read
+// goes through the injected ctx.readFile, so the tests pass fixtures and the bin passes node:fs.
 import { fail, pass, skip } from './types.js';
 import type { CheckResult, DoctorCheck, DoctorContext } from './types.js';
 import { readWranglerConfig } from './wrangler-config.js';
+import { requireOrigin } from '../env.js';
 import { parseSiteConfig, urlPolicyFrom } from '../nav/site-config.js';
 import { normalizeConcepts } from '../content/concepts.js';
 import { defineFields } from '../content/schema.js';
@@ -82,6 +83,31 @@ export const configCsrfDisable: DoctorCheck = {
 		return pass(
 			'checkOrigin: false found and the hooks file wires the cairn guard (heuristic text read)'
 		);
+	},
+};
+
+export const configPublicOrigin: DoctorCheck = {
+	id: 'config.public-origin',
+	conditionId: 'config.public-origin-invalid',
+	title: 'Public origin',
+	async run(ctx: DoctorContext): Promise<CheckResult> {
+		// The wrangler vars hold the value the deployed Worker reads, so they beat the local
+		// environment; the env fallback covers a dashboard-set var the file never carries.
+		const facts = await readWranglerConfig(ctx.readFile);
+		const fromVars = facts?.publicOrigin;
+		const origin = fromVars ?? ctx.publicOrigin;
+		if (facts === null && origin === undefined) {
+			return skip('no wrangler config found and PUBLIC_ORIGIN is not in the environment');
+		}
+		// requireOrigin is the runtime rule (unset, not a URL, http off localhost); reusing it
+		// keeps the doctor and the Worker on one judgment.
+		try {
+			requireOrigin({ PUBLIC_ORIGIN: origin });
+		} catch (err) {
+			return fail(err instanceof Error ? err.message : String(err));
+		}
+		const source = fromVars !== undefined ? 'wrangler vars' : 'environment';
+		return pass(`PUBLIC_ORIGIN is ${origin} (${source})`);
 	},
 };
 

@@ -27,6 +27,24 @@ describe('requireOrigin', () => {
   it('rejects a lookalike localhost host', () => {
     expect(() => requireOrigin({ PUBLIC_ORIGIN: 'http://localhost.evil.com' })).toThrow(/https/);
   });
+
+  it('names the public-origin condition on each of the three faults', () => {
+    const faults: { PUBLIC_ORIGIN?: string }[] = [
+      {},
+      { PUBLIC_ORIGIN: 'not a url' },
+      { PUBLIC_ORIGIN: 'http://ecnordic.ski' },
+    ];
+    for (const env of faults) {
+      let thrown: unknown;
+      try {
+        requireOrigin(env);
+      } catch (err) {
+        thrown = err;
+      }
+      expect(thrown, JSON.stringify(env)).toBeInstanceOf(CairnError);
+      expect((thrown as CairnError).conditionId).toBe('config.public-origin-invalid');
+    }
+  });
 });
 
 describe('requireDb', () => {

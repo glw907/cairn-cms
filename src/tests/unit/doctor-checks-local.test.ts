@@ -6,6 +6,7 @@ import {
 	configObservability,
 	configCsrfDisable,
 	configSiteConfig,
+	configPublicOrigin,
 } from '../../lib/doctor/checks-local.js';
 import type { DoctorContext } from '../../lib/doctor/types.js';
 
@@ -20,6 +21,7 @@ const GOOD_JSONC = `{
 		{ "binding": "AUTH_DB", "database_name": "auth", "database_id": "abc-123" },
 	],
 	"observability": { "enabled": true },
+	"vars": { "PUBLIC_ORIGIN": "https://example.com" },
 }`;
 
 const GOOD_TOML = `name = "site"
@@ -34,6 +36,9 @@ database_id = "toml-456"
 
 [observability]
 enabled = true
+
+[vars]
+PUBLIC_ORIGIN = "https://example.org"
 `;
 
 const CSRF_DISABLED = `const config = { kit: { csrf: { checkOrigin: false } } };
@@ -53,11 +58,12 @@ content:
     permalink: /posts/:year/:slug
 `;
 
-function ctx(files: Record<string, string>): DoctorContext {
+function ctx(files: Record<string, string>, extra: Partial<DoctorContext> = {}): DoctorContext {
 	return {
 		cwd: '/site',
 		fetch: globalThis.fetch,
 		readFile: async (relPath) => files[relPath] ?? null,
+		...extra,
 	};
 }
 
@@ -73,6 +79,7 @@ describe('readWranglerConfig', () => {
 			hasAuthDb: true,
 			authDbId: 'abc-123',
 			observabilityEnabled: true,
+			publicOrigin: 'https://example.com',
 		});
 	});
 
@@ -83,7 +90,15 @@ describe('readWranglerConfig', () => {
 			hasAuthDb: true,
 			authDbId: 'toml-456',
 			observabilityEnabled: true,
+			publicOrigin: 'https://example.org',
 		});
+	});
+
+	it('leaves publicOrigin undefined when the config declares no vars', async () => {
+		const facts = await readWranglerConfig(
+			ctx({ 'wrangler.jsonc': '{ "send_email": [{ "name": "EMAIL" }] }' }).readFile
+		);
+		expect(facts?.publicOrigin).toBeUndefined();
 	});
 
 	it('prefers jsonc when both files exist', async () => {
@@ -292,15 +307,92 @@ describe('config.site-config', () => {
 	});
 });
 
+describe('config.public-origin', () => {
+	it('passes on the https origin from the jsonc vars, naming the value and the source', async () => {
+		const result = await configPublicOrigin.run(ctx({ 'wrangler.jsonc': GOOD_JSONC }));
+		expect(result.status).toBe('pass');
+		expect(result.detail).toContain('https://example.com');
+		expect(result.detail).toContain('wrangler vars');
+	});
+
+	it('passes on the https origin from the toml vars', async () => {
+		const result = await configPublicOrigin.run(ctx({ 'wrangler.toml': GOOD_TOML }));
+		expect(result.status).toBe('pass');
+		expect(result.detail).toContain('https://example.org');
+	});
+
+	it('passes on an http localhost origin, matching the runtime dev allowance', async () => {
+		const result = await configPublicOrigin.run(
+			ctx({}, { publicOrigin: 'http://localhost:5173' })
+		);
+		expect(result.status).toBe('pass');
+		expect(result.detail).toContain('environment');
+	});
+
+	it('fails with the runtime message when the wrangler config carries no PUBLIC_ORIGIN', async () => {
+		const jsonc = '{ "send_email": [{ "name": "EMAIL" }] }';
+		const result = await configPublicOrigin.run(ctx({ 'wrangler.jsonc': jsonc }));
+		expect(result.status).toBe('fail');
+		expect(result.detail).toContain('PUBLIC_ORIGIN is not configured');
+	});
+
+	it('fails on a value that does not parse as a URL', async () => {
+		const result = await configPublicOrigin.run(ctx({}, { publicOrigin: 'not a url' }));
+		expect(result.status).toBe('fail');
+		expect(result.detail).toContain('not a valid URL');
+	});
+
+	it('fails on http for a non-local host, naming the https requirement', async () => {
+		const result = await configPublicOrigin.run(ctx({}, { publicOrigin: 'http://ecnordic.ski' }));
+		expect(result.status).toBe('fail');
+		expect(result.detail).toContain('https');
+	});
+
+	it('falls back to the environment when the config exists without the var', async () => {
+		const jsonc = '{ "send_email": [{ "name": "EMAIL" }] }';
+		const result = await configPublicOrigin.run(
+			ctx({ 'wrangler.jsonc': jsonc }, { publicOrigin: 'https://env.example.com' })
+		);
+		expect(result.status).toBe('pass');
+		expect(result.detail).toContain('https://env.example.com');
+		expect(result.detail).toContain('environment');
+	});
+
+	it('lets the wrangler var beat the environment, since the deployed Worker reads it', async () => {
+		const result = await configPublicOrigin.run(
+			ctx({ 'wrangler.jsonc': GOOD_JSONC }, { publicOrigin: 'https://env.example.com' })
+		);
+		expect(result.status).toBe('pass');
+		expect(result.detail).toContain('https://example.com');
+	});
+
+	it('skips when no wrangler config exists and the environment carries nothing', async () => {
+		const result = await configPublicOrigin.run(ctx({}));
+		expect(result.status).toBe('skip');
+		expect(result.detail).toContain('PUBLIC_ORIGIN');
+	});
+
+	it('ties to the config.public-origin-invalid condition', () => {
+		expect(configPublicOrigin.conditionId).toBe('config.public-origin-invalid');
+	});
+});
+
 describe('the full local set against one good site', () => {
-	it('passes all four checks', async () => {
+	it('passes all five checks', async () => {
 		const site = ctx({
 			'wrangler.jsonc': GOOD_JSONC,
 			'svelte.config.js': CSRF_DISABLED,
 			'src/hooks.server.ts': CAIRN_HOOKS,
 			'site.config.yaml': GOOD_SITE_CONFIG,
 		});
-		for (const check of [configBindings, configObservability, configCsrfDisable, configSiteConfig]) {
+		const checks = [
+			configBindings,
+			configObservability,
+			configCsrfDisable,
+			configSiteConfig,
+			configPublicOrigin,
+		];
+		for (const check of checks) {
 			const result = await check.run(site);
 			expect(result.status, check.id).toBe('pass');
 		}

@@ -46,6 +46,19 @@ cairn emits a structured JSON record for every operationally meaningful event, a
 
 [Read cairn's logs](./read-cairn-logs.md) covers querying the events once the sink is on.
 
+## Set the public origin
+
+Condition: `config.public-origin-invalid`.
+
+`PUBLIC_ORIGIN` is the site's canonical origin. The magic-link confirmation links and the absolute feed URLs derive from it, and it comes from config alone, never from a request header, so a forged `Host` header cannot redirect a link. Set it in the wrangler config vars and re-deploy:
+
+```toml
+[vars]
+PUBLIC_ORIGIN = "https://your-domain.com"
+```
+
+The value must parse as a URL and use https; `http` passes only on `localhost` or `127.0.0.1`, the local-dev override that belongs in `.dev.vars`. A missing or invalid value stops sign-in at the first step, since no usable link can be minted. The doctor reads the wrangler vars and falls back to a `PUBLIC_ORIGIN` environment variable when the config carries none.
+
 ## Force HTTPS at the edge
 
 Condition: `edge.https-not-forced`.

@@ -101,6 +101,14 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		remediation: "Set csrf: { checkOrigin: false } in svelte.config.js and wire createAuthGuard into src/hooks.server.ts; cairn's guard owns the Origin and double-submit token checks.",
 		docsAnchor: 'cloudflare-readiness.md#hand-cairn-the-csrf-authority',
 	},
+	'config.public-origin-invalid': {
+		id: 'config.public-origin-invalid',
+		severity: 'blocker',
+		title: 'PUBLIC_ORIGIN is missing or invalid',
+		why: 'PUBLIC_ORIGIN is unset, does not parse as a URL, or uses http on a non-local host. The magic-link confirmation links and the absolute feed URLs derive from it, config-only so a forged Host header cannot redirect a link, and sign-in cannot mint a usable link without it.',
+		remediation: "Set PUBLIC_ORIGIN to the site's canonical https origin in the wrangler config vars (with .dev.vars carrying the local http override), then re-deploy; http passes only on localhost or 127.0.0.1.",
+		docsAnchor: 'cloudflare-readiness.md#set-the-public-origin',
+	},
 	'config.site-config-invalid': {
 		id: 'config.site-config-invalid',
 		severity: 'blocker',

@@ -7,25 +7,30 @@ import { CairnError } from './diagnostics/index.js';
  * The origin is always config-derived, never read from a request header, so a
  * forged Host header cannot redirect a magic link (spec 7.1, risk H3).
  *
- * @throws Error when `PUBLIC_ORIGIN` is unset or empty.
+ * @throws CairnError (`config.public-origin-invalid`) when `PUBLIC_ORIGIN` is unset or
+ * empty, fails to parse as a URL, or uses http on a non-local host.
  */
 export function requireOrigin(env: { PUBLIC_ORIGIN?: string }): string {
   const origin = env.PUBLIC_ORIGIN;
   if (!origin) {
-    throw new Error('PUBLIC_ORIGIN is not configured');
+    throw new CairnError('config.public-origin-invalid', { message: 'PUBLIC_ORIGIN is not configured' });
   }
   let hostname: string;
   try {
     hostname = new URL(origin).hostname;
   } catch {
-    throw new Error(`PUBLIC_ORIGIN is not a valid URL, got ${origin}`);
+    throw new CairnError('config.public-origin-invalid', {
+      message: `PUBLIC_ORIGIN is not a valid URL, got ${origin}`,
+    });
   }
   // The magic-link origin must be https in production so the link and the __Host- cookie are
   // origin-bound. http is allowed only for local dev on localhost or 127.0.0.1, matched exactly so
   // a lookalike host like localhost.example.com cannot skip the https requirement.
   const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
   if (!origin.startsWith('https://') && !isLocal) {
-    throw new Error(`PUBLIC_ORIGIN must be https in production, got ${origin}`);
+    throw new CairnError('config.public-origin-invalid', {
+      message: `PUBLIC_ORIGIN must be https in production, got ${origin}`,
+    });
   }
   return origin;
 }

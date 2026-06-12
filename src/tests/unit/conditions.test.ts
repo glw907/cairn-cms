@@ -59,6 +59,22 @@ describe('condition registry', () => {
 		expect(condition('github.app-unreachable').severity).toBe('blocker');
 	});
 
+	it('resolves the public-origin condition (the deliberate post-0.50.0 unfreeze)', () => {
+		const c = condition('config.public-origin-invalid');
+		expect(c.severity).toBe('blocker');
+		expect(c.why).toMatch(/unset/i);
+		expect(c.why).toMatch(/url/i);
+		expect(c.remediation).toContain('PUBLIC_ORIGIN');
+		expect(c.remediation).toMatch(/https/);
+		expect(c.docsAnchor).toBe('cloudflare-readiness.md#set-the-public-origin');
+	});
+
+	it('pins the registry at thirteen entries', () => {
+		// Twelve through 0.50.0, plus config.public-origin-invalid: the sanctioned unfreeze that
+		// lets requireOrigin join the condition model. Grow this count only with a registry change.
+		expect(allConditions()).toHaveLength(13);
+	});
+
 	it('carries no logEvent on the config and hsts entries', () => {
 		// These conditions surface at deploy or doctor time, not through a runtime log record.
 		for (const id of [
@@ -66,6 +82,7 @@ describe('condition registry', () => {
 			'config.observability-off',
 			'config.csrf-disable-missing',
 			'config.site-config-invalid',
+			'config.public-origin-invalid',
 			'edge.hsts-off',
 		]) {
 			expect(condition(id).logEvent, id).toBeUndefined();

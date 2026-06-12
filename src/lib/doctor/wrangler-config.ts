@@ -12,6 +12,8 @@ export interface WranglerFacts {
 	authDbId?: string;
 	/** observability.enabled is true. */
 	observabilityEnabled: boolean;
+	/** vars.PUBLIC_ORIGIN, when declared; the public-origin check validates it. */
+	publicOrigin?: string;
 }
 
 export async function readWranglerConfig(
@@ -91,6 +93,8 @@ function factsFromJsonc(text: string): WranglerFacts {
 		observabilityEnabled: observability?.enabled === true,
 	};
 	if (typeof authDb?.database_id === 'string') facts.authDbId = authDb.database_id;
+	const vars = config.vars as { PUBLIC_ORIGIN?: unknown } | undefined;
+	if (typeof vars?.PUBLIC_ORIGIN === 'string') facts.publicOrigin = vars.PUBLIC_ORIGIN;
 	return facts;
 }
 
@@ -135,6 +139,8 @@ function factsFromToml(text: string): WranglerFacts {
 			if (key === 'database_id') d1Id = str;
 		} else if (section === '[observability]' && key === 'enabled' && value.startsWith('true')) {
 			facts.observabilityEnabled = true;
+		} else if (section === '[vars]' && key === 'PUBLIC_ORIGIN' && str !== undefined) {
+			facts.publicOrigin = str;
 		}
 	}
 	flushD1();

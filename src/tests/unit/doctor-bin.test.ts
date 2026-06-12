@@ -60,6 +60,11 @@ describe('contextFromEnv', () => {
 		expect(ctx.cfAccountId).toBe('acct');
 	});
 
+	it('carries PUBLIC_ORIGIN for the public-origin check', () => {
+		const ctx = contextFromEnv({ PUBLIC_ORIGIN: 'https://example.com' }, {}, '/srv/site');
+		expect(ctx.publicOrigin).toBe('https://example.com');
+	});
+
 	it('lets the flag beat the env for from and repo', () => {
 		const ctx = contextFromEnv(
 			{ CAIRN_FROM: 'env@example.com', GITHUB_REPO: 'env/repo' },
@@ -77,6 +82,7 @@ describe('contextFromEnv', () => {
 		expect(ctx.cfToken).toBeUndefined();
 		expect(ctx.cfAccountId).toBeUndefined();
 		expect(ctx.github).toBeUndefined();
+		expect(ctx.publicOrigin).toBeUndefined();
 	});
 
 	it('assembles github only when the whole trio is present', () => {
@@ -98,12 +104,13 @@ describe('contextFromEnv', () => {
 });
 
 describe('defaultChecks', () => {
-	it('returns the nine checks in registry order', () => {
+	it('returns the ten checks in registry order', () => {
 		expect(defaultChecks().map((c) => c.id)).toEqual([
 			'config.bindings',
 			'config.observability',
 			'config.csrf-disable',
 			'config.site-config',
+			'config.public-origin',
 			'email.sender-onboarded',
 			'edge.https-forced',
 			'edge.hsts',
@@ -119,7 +126,7 @@ describe('defaultChecks', () => {
 	it('returns a fresh array, so the bin appending live-send mutates nothing shared', () => {
 		const first = defaultChecks();
 		first.push({ id: 'x', conditionId: 'x', title: 'x', run: async () => ({ status: 'pass', detail: '' }) });
-		expect(defaultChecks()).toHaveLength(9);
+		expect(defaultChecks()).toHaveLength(10);
 	});
 });
 

@@ -40,14 +40,15 @@ The credential variables are the same values `wrangler` and the Worker use:
 |---|---|
 | `CLOUDFLARE_API_TOKEN` | The email, zone, and D1 checks. |
 | `CLOUDFLARE_ACCOUNT_ID` | The D1 check and the live send. |
+| `PUBLIC_ORIGIN` | The public-origin check, as a fallback when the wrangler vars carry none. |
 | `GITHUB_APP_ID` | The GitHub App check. |
 | `GITHUB_APP_INSTALLATION_ID` | The GitHub App check. |
 | `GITHUB_APP_PRIVATE_KEY_B64` | The GitHub App check. The PEM as a single-line base64 string. |
 
 ## The checks
 
-Nine checks run by default, and `--send-test` adds a tenth. The condition id is the identity the
-report, the runtime errors, and the readiness checklist share.
+Ten checks run by default, and `--send-test` adds an eleventh. The condition id is the identity
+the report, the runtime errors, and the readiness checklist share.
 
 | Check | Condition | What it verifies | Skips when |
 |---|---|---|---|
@@ -55,6 +56,7 @@ report, the runtime errors, and the readiness checklist share.
 | `config.observability` | `config.observability-off` | `observability.enabled` is `true`, so Workers Logs has a sink. | No wrangler config file exists. |
 | `config.csrf-disable` | `config.csrf-disable-missing` | `svelte.config.js` carries `checkOrigin: false` outside a comment, and `src/hooks.server.ts` (or `.js`) wires the cairn guard (a heuristic text read of both files). | `svelte.config.js` is absent. |
 | `config.site-config` | `config.site-config-invalid` | `site.config.yaml` parses and its URL policy validates. | `site.config.yaml` is absent. |
+| `config.public-origin` | `config.public-origin-invalid` | `PUBLIC_ORIGIN` (from the wrangler vars, or the environment as a fallback) parses as a URL and uses https, with http allowed only on `localhost` or `127.0.0.1`. The judgment is `requireOrigin`, the same rule the Worker applies. | No wrangler config file exists and `PUBLIC_ORIGIN` is not in the environment. |
 | `email.sender-onboarded` | `email.sender-not-onboarded` | The from-domain has an enabled Email Sending subdomain on its zone. | No API token, or no from-address. |
 | `edge.https-forced` | `edge.https-not-forced` | Always Use HTTPS is on for the zone. | No API token, or no from-address. |
 | `edge.hsts` | `edge.hsts-off` | HSTS is enabled with a max-age of at least 30 days. | No API token, or no from-address. |

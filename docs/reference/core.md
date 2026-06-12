@@ -464,7 +464,9 @@ declare function requireOrigin(env: { PUBLIC_ORIGIN?: string }): string;
 `frontmatterFromForm` decodes submitted form data into raw frontmatter, one rule per field type.
 `dateInputValue` coerces a frontmatter date to the `YYYY-MM-DD` an `<input type="date">` wants.
 `requireOrigin` returns the site's public origin from config, never a request header, so a forged
-Host header cannot redirect a magic link.
+Host header cannot redirect a magic link. Its throw carries a `conditionId` of
+`config.public-origin-invalid`, the registered diagnostic condition, for all three faults: the
+variable is unset, fails to parse as a URL, or uses http on a non-local host.
 
 ```ts
 const raw = frontmatterFromForm(descriptor.fields, formData);

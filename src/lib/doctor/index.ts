@@ -7,6 +7,7 @@ import {
 	configObservability,
 	configCsrfDisable,
 	configSiteConfig,
+	configPublicOrigin,
 } from './checks-local.js';
 import { emailSenderOnboarded, edgeHttpsForced, edgeHsts, authStore } from './checks-cloudflare.js';
 import { githubApp } from './checks-github.js';
@@ -62,6 +63,7 @@ export function contextFromEnv(
 		repo: args.repo ?? env.GITHUB_REPO,
 		cfToken: env.CLOUDFLARE_API_TOKEN,
 		cfAccountId: env.CLOUDFLARE_ACCOUNT_ID,
+		publicOrigin: env.PUBLIC_ORIGIN,
 		github:
 			GITHUB_APP_ID && GITHUB_APP_INSTALLATION_ID && GITHUB_APP_PRIVATE_KEY_B64
 				? {
@@ -74,7 +76,7 @@ export function contextFromEnv(
 }
 
 /**
- * The default registry: the four local-config checks, the four Cloudflare checks, and the
+ * The default registry: the five local-config checks, the four Cloudflare checks, and the
  * GitHub App chain. The live send is opt-in (--send-test) and never sits here; the bin appends
  * it. A fresh array per call, so that append mutates nothing shared.
  */
@@ -84,6 +86,7 @@ export function defaultChecks(): DoctorCheck[] {
 		configObservability,
 		configCsrfDisable,
 		configSiteConfig,
+		configPublicOrigin,
 		emailSenderOnboarded,
 		edgeHttpsForced,
 		edgeHsts,

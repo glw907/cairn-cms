@@ -229,6 +229,20 @@
     outline-offset: -1px;
   }
 
+  /* Menu items come as anchors or buttons, and the omitted Preflight is what made them match:
+     without it a button keeps the UA chrome (outset border, gray fill, centered system-font
+     text) while its anchor siblings render flat. This scoped substitute levels the buttons to
+     the anchor baseline. The components layer still beats the UA stylesheet, so daisyUI's
+     utilities-layer menu rules (the hover tint, the menu-sm sizing) and any text utility such
+     as text-error keep winning. A .btn inside a menu keeps its full DaisyUI chrome. */
+  :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .menu li > button:not(.btn) {
+    border: 0 solid;
+    background-color: transparent;
+    font: inherit;
+    color: inherit;
+    text-align: start;
+  }
+
   /* The admin topbar plus the edit page's sticky action header stack about 120px of veil over the
      top of the content column, and a control the browser scrolls into view could land hidden
      beneath them (WCAG 2.4.11 Focus Not Obscured). The scroll margin keeps any focus or fragment

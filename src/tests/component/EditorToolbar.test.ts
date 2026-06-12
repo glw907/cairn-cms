@@ -184,6 +184,35 @@ describe('EditorToolbar', () => {
   });
 });
 
+describe('menu item resting chrome', () => {
+  // The admin sheet ships without Preflight, so a .menu button item used to keep the UA button
+  // chrome (outset border, gray fill, centered system-font text) while its anchor siblings
+  // rendered flat. The scoped components-layer substitute in cairn-admin.css levels buttons to
+  // the anchor baseline; the component run loads the source partial, which carries that rule.
+  beforeAll(() => document.documentElement.setAttribute('data-theme', 'cairn-admin'));
+  afterAll(() => document.documentElement.removeAttribute('data-theme'));
+
+  it('renders a More-menu button item flat, with no UA button border or fill', async () => {
+    const screen = render(EditorToolbar, baseProps());
+    await screen.getByRole('button', { name: 'More formatting' }).click();
+    const item = screen.container.querySelector<HTMLButtonElement>('#cairn-more-formatting-menu li > button')!;
+    const computed = getComputedStyle(item);
+    expect(computed.borderTopStyle).toBe('solid');
+    expect(computed.borderTopWidth).toBe('0px');
+    expect(computed.backgroundColor).toBe('rgba(0, 0, 0, 0)');
+    expect(computed.textAlign).toBe('start');
+  });
+
+  it('renders a device-menu button item flat too', async () => {
+    const screen = render(EditorToolbar, baseProps({ mode: 'preview', onDevice: vi.fn() }));
+    await screen.getByRole('button', { name: /preview width/i }).click();
+    const item = screen.container.querySelector<HTMLButtonElement>('#cairn-preview-device-menu li > button')!;
+    const computed = getComputedStyle(item);
+    expect(computed.borderTopWidth).toBe('0px');
+    expect(computed.backgroundColor).toBe('rgba(0, 0, 0, 0)');
+  });
+});
+
 describe('popover menu focus visibility', () => {
   // DaisyUI v5's .menu quiets :focus-visible on its items (outline-style: none) from the compiled
   // sheet's utilities layer, where it beats the admin's components-layer focus ring: cascade

@@ -35,6 +35,14 @@ describe('admin css build', () => {
     expect(css).toContain("url('./fonts/bricolage-grotesque.woff2')");
   });
 
+  it('carries the scoped Preflight substitute for .menu button items', async () => {
+    const css = await buildAdminCss();
+    // The sheet omits Preflight, and daisyUI's menu rules assume it: without the substitute a
+    // .menu button item renders with the UA chrome (outset border, gray fill) while its anchor
+    // siblings render flat. The reset must reach the compiled sheet, scoped and excluding .btn.
+    expect(css).toContain('.menu li > button:not(.btn)');
+  });
+
   it('prepends the scope to a flat selector, never in front of a nested combinator', async () => {
     const css = await buildAdminCss();
     // Tailwind/DaisyUI emit native nesting; we flatten it before scoping. A selector that begins

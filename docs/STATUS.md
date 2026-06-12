@@ -11,7 +11,29 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-12, latest): publish `0.51.0`, then the two site bumps
+## Immediate next action (2026-06-12, latest): the 907-life retrofit to `^0.51.0`
+
+**`0.51.0` PUBLISHED 2026-06-12.** The `v0.51.0` GitHub Release fired the OIDC trusted-publishing
+workflow (run `27429523595` green), and `0.51.0` is the registry `latest`. The ecxc bump shipped
+the same hour: pin to `^0.51.0` (commit `827bc74` atop the held preview wiring `47f82dc`), gate
+green after the reinstall (check 509 files 0/0, 59 tests, vite build exit 0), deploy run
+`27429659432` green. The doctor's first live `--probe` run against `https://ecxc.ski` passed 11
+checks with 0 failures, including the new probe (sign-in envelope verified, the request action
+answered `sent` for a non-editor address) and the floors check against svelte 5.56.3. The one
+skip is the D1 auth-store check, the designed degrade: ecxc's `wrangler.toml` carries no
+`account_id` and `CLOUDFLARE_ACCOUNT_ID` was unset; adding the one-line `account_id` would let it
+run, a cheap site follow-up.
+
+**Next actions, in order:**
+1. **907-life, the last retrofit**, crossing straight to `^0.51.0`: delete the admin shim tree,
+   add the composer plus the two-file mount, swap `app.d.ts` for
+   `import '@glw907/cairn-cms/ambient'`, raise the svelte range to `^5.56.3` (and kit to `^2.12`),
+   wire the `preview` knob, run `cairn-doctor --probe`, and live-prove the publish workflow plus
+   the `send_error`/`throttled` states owed since `0.38.0`.
+2. **The queue resumes:** the gates-and-tooling pass, then the gallery brainstorm (git-vs-R2),
+   then P4.
+
+## Prior next action (2026-06-12): publish `0.51.0`, then the two site bumps
 
 **The doctor-DX-and-preview pass LANDED on `main` 2026-06-12 as `0.51.0`.** Eight tasks, commits
 `ca117e5..257d752` plus the bump: `cairn-doctor` derives its missing inputs from the repo it runs

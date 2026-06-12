@@ -96,6 +96,8 @@ house style (24x24 viewBox, `currentColor`, round caps).
   ];
 
   const ellipsisPaths = ['M5 12h.01', 'M12 12h.01', 'M19 12h.01'];
+  // The check glyph marking an active pick, shared by the More menu's toggles and the device list.
+  const checkPaths = ['M20 6 9 17l-5-5'];
 
   const moreItems: { kind: FormatKind; label: string }[] = [
     { kind: 'strike', label: 'Strikethrough' },
@@ -111,17 +113,21 @@ house style (24x24 viewBox, `currentColor`, round caps).
   let moreMenu = $state<HTMLUListElement | null>(null);
   let moreOpen = $state(false);
 
+  // Picking dismisses the menu; hiding returns focus to the trigger, keeping the roving order.
+  function hideMenu(menu: HTMLUListElement | null) {
+    if (menu?.matches(':popover-open')) menu.hidePopover();
+  }
+
   function pickMore(kind: FormatKind) {
     format(kind);
-    // Picking dismisses the menu; hiding returns focus to the trigger, keeping the roving order.
-    if (moreMenu?.matches(':popover-open')) moreMenu.hidePopover();
+    hideMenu(moreMenu);
   }
 
   // The writing-mode toggles follow pickMore: a flip dismisses the menu the same way a format
   // pick does, so the menu behaves one way throughout.
   function pickToggle(flip: () => void) {
     flip();
-    if (moreMenu?.matches(':popover-open')) moreMenu.hidePopover();
+    hideMenu(moreMenu);
   }
 
   // The device menu's popover element and its open state, mirrored from the toggle event into
@@ -134,7 +140,7 @@ house style (24x24 viewBox, `currentColor`, round caps).
 
   function pickDevice(id: PreviewDeviceId) {
     onDevice?.(id);
-    if (deviceMenu?.matches(':popover-open')) deviceMenu.hidePopover();
+    hideMenu(deviceMenu);
   }
 
   let toolbarEl = $state<HTMLDivElement | null>(null);
@@ -279,7 +285,7 @@ house style (24x24 viewBox, `currentColor`, round caps).
         >
           <span class="grow">Focus mode</span>
           {#if focusMode}
-            {@render strokeIcon(['M20 6 9 17l-5-5'])}
+            {@render strokeIcon(checkPaths)}
           {/if}
         </button>
       </li>
@@ -294,7 +300,7 @@ house style (24x24 viewBox, `currentColor`, round caps).
         >
           <span class="grow">Typewriter scrolling</span>
           {#if typewriter}
-            {@render strokeIcon(['M20 6 9 17l-5-5'])}
+            {@render strokeIcon(checkPaths)}
           {/if}
         </button>
       </li>
@@ -362,7 +368,7 @@ house style (24x24 viewBox, `currentColor`, round caps).
           <button type="button" aria-pressed={device === d.id} onclick={() => pickDevice(d.id)}>
             <span class="grow">{deviceLabel(d)}</span>
             {#if device === d.id}
-              {@render strokeIcon(['M20 6 9 17l-5-5'])}
+              {@render strokeIcon(checkPaths)}
             {/if}
           </button>
         </li>

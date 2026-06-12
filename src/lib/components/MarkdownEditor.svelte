@@ -106,6 +106,17 @@ through the adapter's render. Swapping the editor stays a one-file change.
       backgroundColor: 'color-mix(in oklab, var(--color-accent) 8%, transparent)',
       color: 'var(--color-accent)',
     };
+    // The rail rules, one quiet and one caret-active pair per visual depth step (deeper nesting
+    // shares the third step). Fence and content rows at a depth share a rule, so a fence and its
+    // body rail identically. The caret-active selector adds the caret-block class, so it outranks
+    // its quiet twin on any contested row and the caret's container reads one step stronger.
+    const railRules: Record<string, { boxShadow: string }> = {};
+    for (const depth of [1, 2, 3]) {
+      const row = (prefix: string) =>
+        `${prefix}.cm-cairn-directive-fence.cm-cairn-depth-${depth}, ${prefix}.cm-cairn-directive-content.cm-cairn-depth-${depth}`;
+      railRules[row('')] = { boxShadow: rails(depth) };
+      railRules[row('.cm-cairn-caret-block')] = { boxShadow: rails(depth, true) };
+    }
     const theme = EditorView.theme(
       {
         '&': { backgroundColor: 'var(--color-base-100)', color: 'var(--color-base-content)', fontSize: '1rem' },
@@ -137,29 +148,14 @@ through the adapter's render. Swapping the editor stays a one-file change.
         // The gutter: directive rows pad left so the text clears the deepest rail stack. It is
         // static structure (caret-independent), so caret movement shifts no layout.
         '.cm-cairn-directive-fence, .cm-cairn-directive-content': { paddingLeft: '1.25rem' },
-        '.cm-cairn-directive-fence.cm-cairn-depth-1, .cm-cairn-directive-content.cm-cairn-depth-1': {
-          boxShadow: rails(1),
-        },
-        '.cm-cairn-directive-fence.cm-cairn-depth-2, .cm-cairn-directive-content.cm-cairn-depth-2': {
-          boxShadow: rails(2),
-        },
-        '.cm-cairn-directive-fence.cm-cairn-depth-3, .cm-cairn-directive-content.cm-cairn-depth-3': {
-          boxShadow: rails(3),
-        },
+        ...railRules,
         '.cm-cairn-directive-mark': { color: 'var(--color-muted)' },
         '.cm-cairn-directive-label': { color: 'var(--color-accent)' },
         '.cm-cairn-directive-label.cm-cairn-depth-2': { color: 'var(--cairn-directive-ink-2, oklch(50% 0.16 300))' },
         '.cm-cairn-directive-label.cm-cairn-depth-3': { color: 'var(--cairn-directive-ink-3, oklch(48% 0.16 300))' },
-        // Cursor-aware emphasis: the container the caret sits inside strengthens one step, a
-        // full-strength, 1px-wider bar on its own depth segment and the strongest label ink,
-        // through the -active variable pair in cairn-admin.css. The extra caret-block class
-        // outranks the depth rules above, so these win on any contested row.
-        '.cm-cairn-caret-block.cm-cairn-directive-fence.cm-cairn-depth-1, .cm-cairn-caret-block.cm-cairn-directive-content.cm-cairn-depth-1':
-          { boxShadow: rails(1, true) },
-        '.cm-cairn-caret-block.cm-cairn-directive-fence.cm-cairn-depth-2, .cm-cairn-caret-block.cm-cairn-directive-content.cm-cairn-depth-2':
-          { boxShadow: rails(2, true) },
-        '.cm-cairn-caret-block.cm-cairn-directive-fence.cm-cairn-depth-3, .cm-cairn-caret-block.cm-cairn-directive-content.cm-cairn-depth-3':
-          { boxShadow: rails(3, true) },
+        // Cursor-aware emphasis for the label ink: the caret's container takes the strongest
+        // ink, through the -active variable in cairn-admin.css. This selector TIES the depth
+        // rules above at two classes, so its place after them breaks the tie in its favor.
         '.cm-cairn-caret-block .cm-cairn-directive-label': {
           color: 'var(--cairn-directive-ink-active, oklch(46% 0.16 300))',
         },

@@ -55,6 +55,14 @@ the site's CSS without re-polluting the admin, which means an iframe.
   Tailwind. Docs: the adapter reference, the editor guide section on preview accuracy, the
   design system page for the new toolbar recipe, changelog with a Consumers-should note.
 
+**Editor highlighting arm (added 2026-06-12 from Geoff's field report).** In the editor, only
+some `:::` rows highlight (it reads as only the end tags). The probable cause is the directive
+line matcher missing 4-plus-colon fences (`::::split[Costs & volunteers]`) and attributed or
+labeled openers, while bare closers match. Geoff's nested split/panel example is the regression
+fixture verbatim. With the fix, nesting gets a visual treatment: per-depth bands (darker and
+lighter, the bracket-pair-colorization idea from code editors), designed through the
+frontend-design skill with the preview UI work.
+
 ## Tasks
 
 1. Doctor input self-derivation (vite-arm helper + wrangler account id + precedence + skip-copy).

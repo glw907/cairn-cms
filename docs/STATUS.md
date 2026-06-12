@@ -11,7 +11,27 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-12, latest): publish `0.52.0`, then the queue
+## Immediate next action (2026-06-12, latest): the editor-takes-the-shell pass (spec awaiting Geoff)
+
+**The editor-as-home design session SHIPPED 2026-06-12 as `0.52.1` and `0.53.0`, both published
+(registry latest 0.53.0) and live on ecxc (`^0.53.0`, deploy green).** An iterative session with
+Geoff against a live showcase: 0.52.1 hugged the Write-mode card and spaced the nested rails;
+0.53.0 swapped the UI face to IBM Plex Sans (one superfamily with the editor's iA Writer Mono),
+added persisted Prose/Markup surface postures, made the card footer the writing-environment
+strip (count, postures, focus, typewriter, help), turned the insert actions into toolbar icons,
+narrowed both sidebars behind a wider gutter, quieted the details card, and pinned the topbar to
+the brand band's height (the seam fix). The review gate folded in an active-rail focus-dim gap
+and a WCAG 1.4.1 pressed-state fix (the check glyph as the non-color cue). Gates green at the
+tip (906 files 0/0, 1407 tests exit 0, five doc gates).
+
+**Next: the editor-takes-the-shell pass** (spec
+`docs/superpowers/specs/2026-06-12-cairn-editor-takes-the-shell-design.md`, direction approved
+in-session; Geoff reads the spec, then plan and execute as `0.54.0`). Four rungs, one idea (list
+pages are the office, the editor is the desk): one header band on edit routes, the nav recedes
+inside a document, details on demand as a slide-over, then zen. After it: the gates-and-tooling
+pass, the gallery brainstorm, P4. 907-life can pick up `^0.53.0` any time (additive).
+
+## Prior next action (2026-06-12): publish `0.52.0`, then the queue
 
 **The editor-experience pass LANDED on `main` 2026-06-12 as `0.52.0`.** Seven plan tasks plus a
 simplifier touch and a converged review fold-in, commits `98472bb..4c4b3b9` and the docs arm. The

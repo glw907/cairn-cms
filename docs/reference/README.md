@@ -10,6 +10,7 @@ the export-coverage gate checks every page against them.
 - [Delivery (`/delivery`)](./delivery.md): the public read-model route loaders, the response helpers, and `CairnHead`.
 - [Delivery data (`/delivery/data`)](./delivery-data.md): the node-safe pure projections.
 - [Vite (`/vite`)](./vite.md): the `cairnManifest()` build plugin.
+- [Ambient types (`/ambient`)](./ambient.md): the one-line `App.Locals.editor` augmentation for a site's `app.d.ts`.
 - [The `cairn-manifest` CLI](./cli-cairn-manifest.md): the manifest regenerate command.
 - [The `cairn-doctor` CLI](./doctor.md): the setup preflight that checks a site's local config, Cloudflare account, and GitHub App.
 - [Log events](./log-events.md): the structured diagnostic events cairn emits, and their fields.

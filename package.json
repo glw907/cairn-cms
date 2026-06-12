@@ -80,6 +80,10 @@
       "types": "./dist/vite/index.d.ts",
       "default": "./dist/vite/index.js"
     },
+    "./ambient": {
+      "types": "./dist/ambient.d.ts",
+      "default": "./dist/ambient.js"
+    },
     "./package.json": "./package.json"
   },
   "bin": {

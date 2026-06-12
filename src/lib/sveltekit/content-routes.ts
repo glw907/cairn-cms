@@ -16,7 +16,7 @@ import { emptyManifest, manifestEntryFromFile, parseManifest, serializeManifest,
 import { isConflict } from '../github/types.js';
 import { log } from '../log/index.js';
 import { issueCsrfToken } from './csrf.js';
-import type { CookieJar } from './types.js';
+import type { CookieJar, EventBase } from './types.js';
 import type { CairnRuntime, ConceptDescriptor, FrontmatterField } from '../content/types.js';
 import type { Editor, Role } from '../auth/types.js';
 
@@ -103,12 +103,8 @@ export interface EditData {
 }
 
 /** The structural event the content routes read; a real SvelteKit RequestEvent satisfies it. */
-export interface ContentEvent {
-  url: URL;
+export interface ContentEvent extends EventBase<GithubKeyEnv> {
   params: Record<string, string>;
-  request: Request;
-  locals: { editor?: Editor | null };
-  platform?: { env?: GithubKeyEnv };
   /** SvelteKit's cookie jar. The layout load reads the persisted admin theme and issues the CSRF
    *  token. Optional for non-route callers. */
   cookies?: CookieJar;

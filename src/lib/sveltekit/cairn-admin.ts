@@ -21,23 +21,15 @@ import type { AuthBranding, SendMagicLink } from '../email.js';
 import type { AuthEnv, Editor } from '../auth/types.js';
 import type { GithubKeyEnv } from '../github/credentials.js';
 import type { CairnRuntime } from '../content/types.js';
-import type { CookieJar } from './types.js';
+import type { CookieJar, EventBase } from './types.js';
 
 /**
  * The structural event the single-mount load reads: the union of what the wrapped loads need
  * (ContentEvent minus params, which the dispatcher synthesizes, plus RequestContext's cookies
  * and setHeaders). A real SvelteKit RequestEvent satisfies it.
  */
-export interface AdminEvent {
-  url: URL;
-  request: Request;
+export interface AdminEvent extends EventBase<GithubKeyEnv & AuthEnv> {
   cookies: CookieJar;
-  locals: { editor?: Editor | null };
-  platform?: {
-    env?: GithubKeyEnv & AuthEnv;
-    ctx?: { waitUntil(promise: Promise<unknown>): void };
-    context?: { waitUntil(promise: Promise<unknown>): void };
-  };
   setHeaders(headers: Record<string, string>): void;
 }
 

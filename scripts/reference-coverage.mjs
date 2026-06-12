@@ -53,6 +53,8 @@ const CONFIG = [
   { subpath: '/delivery/data', dts: 'dist/delivery/data.d.ts', page: 'docs/reference/delivery-data.md' },
   { subpath: '/delivery/head', dts: 'dist/delivery/head.d.ts', page: 'docs/reference/delivery.md' },
   { subpath: '/vite', dts: 'dist/vite/index.d.ts', page: 'docs/reference/vite.md' },
+  // Type-only: the module exports no names, so the entry asserts only that the page exists.
+  { subpath: '/ambient', dts: 'dist/ambient.d.ts', page: 'docs/reference/ambient.md' },
 ];
 
 /** @param {{ subpath: string, dts: string, page: string, excludeDts?: string }} entry */

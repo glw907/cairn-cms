@@ -82,20 +82,10 @@ real site keeps its nav, footer, and `app.css` out of the root and in a `(site)`
 Milestone 8 covers the rule, and [the admin route structure](../reference/admin-routes.md) has the full
 pattern.
 
-Two small project setup steps remain. The admin signs an editor in by setting `event.locals.editor`, so declare that field's type once in `src/app.d.ts`:
+Two small project setup steps remain. The admin signs an editor in by setting `event.locals.editor`, so declare that field's type once in `src/app.d.ts`. The package ships the declaration; one import applies it:
 
 ```ts
-import type { Editor } from '@glw907/cairn-cms';
-
-declare global {
-  namespace App {
-    interface Locals {
-      editor: Editor | null;
-    }
-  }
-}
-
-export {};
+import '@glw907/cairn-cms/ambient';
 ```
 
 You will add public feeds, a sitemap, and a robots file later, and nothing on the site links to them, so the prerender crawler never reaches them on its own. Tell SvelteKit to treat an uncrawled prerenderable route as a warning rather than a hard build error. Open `svelte.config.js` and add a `prerender` policy to the `kit` block:

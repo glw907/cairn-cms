@@ -101,7 +101,8 @@ and the login page renders without ever touching `layoutLoad`. No loop.
 
 The engine's auth guard (`createAuthGuard()`, wired in `hooks.server.ts`) gates the whole
 `/admin/*` subtree, so the group boundary is about which pages run the *layout load*, not about
-access control.
+access control. The guard sets `event.locals.editor`; one line in `src/app.d.ts` types it:
+`import '@glw907/cairn-cms/ambient';` (see the [ambient types reference](./ambient.md)).
 
 ## Why `/healthz` lives at the site root
 

@@ -2,7 +2,11 @@
 // styled distinctly so an editor can tell component scaffolding from prose). Pure functions; the
 // CodeMirror decoration plugin wraps them.
 
-const FENCE = /^\s{0,3}:::+\s*[\w-]*\s*(\{[^}]*\})?\s*$/;
+// A container fence: three or more colons, then an optional name, an optional [label], and
+// optional {attrs}, in remark-directive order. The name is captured so the depth scan below can
+// tell an opener (named) from a closer (bare colons). Matching is tolerant of stray whitespace,
+// the same posture as the leaf form: a slightly off fence should still read as machinery.
+const FENCE = /^\s{0,3}:{3,}\s*([\w-]*)\s*(\[[^\]]*\])?\s*(\{[^}]*\})?\s*$/;
 const LEAF = /^\s{0,3}::[\w-]+(\[[^\]]*\])?(\{[^}]*\})?\s*$/;
 const INLINE = /(?<![:\w]):[\w-]+\[[^\]]*\](\{[^}]*\})?/g;
 
@@ -11,6 +15,31 @@ export function directiveLineKind(line: string): 'fence' | 'leaf' | null {
   if (FENCE.test(line)) return 'fence';
   if (LEAF.test(line)) return 'leaf';
   return null;
+}
+
+/**
+ * The 1-based container depth each line sits at, or null outside any container. A named fence
+ * opens a container; a bare fence closes the most recent one (colon counts are not trusted for
+ * pairing, since authors vary them). An opener and its closer share the opener's depth, and a
+ * line between them carries the depth of its innermost container. Author errors are tolerated:
+ * an unmatched closer reads as depth 1 and the count never goes below zero.
+ */
+export function fenceDepths(lines: string[]): (number | null)[] {
+  const depths: (number | null)[] = [];
+  let open = 0;
+  for (const line of lines) {
+    const fence = FENCE.exec(line);
+    if (!fence) {
+      depths.push(open > 0 ? open : null);
+    } else if (fence[1]) {
+      open += 1;
+      depths.push(open);
+    } else {
+      depths.push(Math.max(open, 1));
+      if (open > 0) open -= 1;
+    }
+  }
+  return depths;
 }
 
 /** Inline directive ranges (`:name[...]{...}`) within a line of text. */

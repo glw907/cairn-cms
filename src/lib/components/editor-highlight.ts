@@ -5,7 +5,7 @@ import { HighlightStyle } from '@codemirror/language';
 import { tags } from '@lezer/highlight';
 import { Decoration, ViewPlugin, type DecorationSet, type EditorView, type ViewUpdate } from '@codemirror/view';
 import { RangeSetBuilder } from '@codemirror/state';
-import { directiveLineKind, findInlineDirectives } from './markdown-directives.js';
+import { directiveLineKind, fenceDepths, findInlineDirectives } from './markdown-directives.js';
 
 /** Markdown token colors over the admin theme variables. */
 export function cairnHighlightStyle(): HighlightStyle {
@@ -27,19 +27,35 @@ export function cairnHighlightStyle(): HighlightStyle {
 // learns what the line is without leaving the page.
 const MACHINERY_HINT = 'Layout marker. Edit the text between these lines and leave this line as it is.';
 
-const fenceLine = Decoration.line({ class: 'cm-cairn-directive-fence', attributes: { title: MACHINERY_HINT } });
+// Nesting deeper than three steps shares the third visual step; the depth model itself is unbounded.
+const DEPTH_STEPS = [1, 2, 3];
+
+const fenceLines = DEPTH_STEPS.map((d) =>
+  Decoration.line({ class: `cm-cairn-directive-fence cm-cairn-depth-${d}`, attributes: { title: MACHINERY_HINT } }),
+);
+const contentLines = DEPTH_STEPS.map((d) => Decoration.line({ class: `cm-cairn-directive-content cm-cairn-depth-${d}` }));
 const leafLine = Decoration.line({ class: 'cm-cairn-directive-leaf', attributes: { title: MACHINERY_HINT } });
 const inlineMark = Decoration.mark({ class: 'cm-cairn-directive-inline' });
 
 function buildDirectiveDecorations(view: EditorView): DecorationSet {
+  // Depth needs the whole document, since a visible line's containers can open above the viewport.
+  // The full scan is one regex pass per line, linear in the document; at admin entry sizes (tens of
+  // kilobytes) that is well under a millisecond, so it runs on every change without batching.
+  const doc = view.state.doc;
+  const lines: string[] = [];
+  for (let n = 1; n <= doc.lines; n++) lines.push(doc.line(n).text);
+  const depths = fenceDepths(lines);
+
   const builder = new RangeSetBuilder<Decoration>();
   for (const { from, to } of view.visibleRanges) {
     for (let pos = from; pos <= to; ) {
       const line = view.state.doc.lineAt(pos);
       const kind = directiveLineKind(line.text);
-      if (kind === 'fence') builder.add(line.from, line.from, fenceLine);
+      const depth = Math.min(depths[line.number - 1] ?? 0, DEPTH_STEPS.length);
+      if (kind === 'fence') builder.add(line.from, line.from, fenceLines[depth - 1]);
       else if (kind === 'leaf') builder.add(line.from, line.from, leafLine);
       else {
+        if (depth > 0) builder.add(line.from, line.from, contentLines[depth - 1]);
         for (const r of findInlineDirectives(line.text)) {
           builder.add(line.from + r.from, line.from + r.to, inlineMark);
         }

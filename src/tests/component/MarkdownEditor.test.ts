@@ -96,6 +96,34 @@ describe('MarkdownEditor', () => {
     expect(screen.container.querySelector('.cm-cairn-directive-inline')).not.toBeNull();
   });
 
+  it('decorates every fence of a nested labeled document and steps the classes by depth', async () => {
+    // The field-report regression: a labeled opener (::::split[...]) must read as machinery, not
+    // prose, and the depth model must step the bands and rails as the stack pairs the fences.
+    const doc = [
+      '::::split[Costs & volunteers]',
+      ':::panel{icon="hand-coins"}',
+      "**Cost.** Training and camp are free, and money never decides who joins. Families who want to give can; donations buy gas, campground nights, and shared gear, and outfit athletes who need skis or a ride. If cost is in the way of anything, tell a coach. We won't ask about your finances.",
+      ':::',
+      '',
+      ':::panel{icon="handshake" role="secondary"}',
+      "**Volunteers.** Adults make this work, drivers most of all, since practice moves between trailheads. The [Volunteers page](/volunteers) has this summer's coaches and the jobs we need filled. You don't need a coaching certificate or a ski background.",
+      ':::',
+      '::::',
+    ].join('\n');
+    const screen = render(MarkdownEditor, { value: doc, name: 'body' });
+    await expect
+      .poll(() => screen.container.querySelectorAll('.cm-line.cm-cairn-directive-fence').length)
+      .toBe(6);
+    const fences = [...screen.container.querySelectorAll('.cm-line.cm-cairn-directive-fence')];
+    expect(fences.some((el) => el.textContent?.includes('::::split'))).toBe(true);
+    // The split opener and its :::: closer delimit depth 1; the four panel fences delimit depth 2.
+    expect(fences.filter((el) => el.classList.contains('cm-cairn-depth-1'))).toHaveLength(2);
+    expect(fences.filter((el) => el.classList.contains('cm-cairn-depth-2'))).toHaveLength(4);
+    // The panel prose rails at depth 2; the blank line between the panels rails at depth 1.
+    expect(screen.container.querySelectorAll('.cm-line.cm-cairn-directive-content.cm-cairn-depth-2')).toHaveLength(2);
+    expect(screen.container.querySelectorAll('.cm-line.cm-cairn-directive-content.cm-cairn-depth-1')).toHaveLength(1);
+  });
+
   it('explains the directive machinery lines through a title tooltip', async () => {
     const doc = [':::gallery', 'inside', ':::', '::hr'].join('\n');
     const screen = render(MarkdownEditor, { value: doc, name: 'body' });

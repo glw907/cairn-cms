@@ -61,9 +61,16 @@ through the adapter's render. Swapping the editor stays a one-file change.
     // Mirror the admin theme into CodeMirror's own dark flag, so its base chrome (the autocomplete
     // tooltip above all) renders dark-on-dark instead of light-on-dark.
     const isDark = host.closest('[data-theme]')?.getAttribute('data-theme')?.includes('dark') ?? false;
-    // The directive machinery ink, one rule for the fence, leaf, and inline decorations.
+    // The directive machinery treatment. The fence bands and content rails step their alpha by
+    // nesting depth through the per-theme vars in cairn-admin.css; the fallbacks are the light
+    // values, so the editor still renders sensibly outside an admin theme wrapper. The deeper
+    // bands swap in a darker ink (--cairn-directive-ink-N) to hold AA on their own tint.
+    const band = (depth: number, fallback: string) =>
+      `color-mix(in oklab, var(--color-accent) var(--cairn-directive-band-${depth}, ${fallback}), transparent)`;
+    const rail = (depth: number, fallback: string) =>
+      `inset 2px 0 0 0 color-mix(in oklab, var(--color-accent) var(--cairn-directive-rail-${depth}, ${fallback}), transparent)`;
     const directiveInk = {
-      backgroundColor: 'color-mix(in oklab, var(--color-accent) 8%, transparent)',
+      backgroundColor: band(1, '8%'),
       color: 'var(--color-accent)',
     };
     const theme = EditorView.theme(
@@ -90,6 +97,17 @@ through the adapter's render. Swapping the editor stays a one-file change.
         },
         '.cm-line': { padding: '0' },
         '.cm-cairn-directive-fence': directiveInk,
+        '.cm-cairn-directive-fence.cm-cairn-depth-2': {
+          backgroundColor: band(2, '14%'),
+          color: 'var(--cairn-directive-ink-2, oklch(50% 0.16 300))',
+        },
+        '.cm-cairn-directive-fence.cm-cairn-depth-3': {
+          backgroundColor: band(3, '20%'),
+          color: 'var(--cairn-directive-ink-3, oklch(48% 0.16 300))',
+        },
+        '.cm-cairn-directive-content.cm-cairn-depth-1': { boxShadow: rail(1, '35%') },
+        '.cm-cairn-directive-content.cm-cairn-depth-2': { boxShadow: rail(2, '50%') },
+        '.cm-cairn-directive-content.cm-cairn-depth-3': { boxShadow: rail(3, '65%') },
         '.cm-cairn-directive-leaf': directiveInk,
         '.cm-cairn-directive-inline': directiveInk,
       },

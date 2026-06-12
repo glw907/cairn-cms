@@ -133,9 +133,16 @@ Recipes:
 - **Editor highlight palette (marginalia ink):** the CodeMirror theme in `editor-highlight.ts` maps
   headings to `--color-primary`, links to `--color-info`, code and directive machinery to
   `--color-accent`, syntax marks and quotes to `--color-muted`. Directive lines (`:::`, `::name`)
-  carry an 8% accent `color-mix` band plus a plain-language `title` tooltip. Light `--color-accent`
-  is a locked margin at `oklch(54% 0.16 300)`: it must hold AA both on `base-100` and on its own 8%
-  tint. The editor's focus indicator is a deliberate 1px 70%-alpha primary hairline, never a 2px
+  carry an accent `color-mix` band plus a plain-language `title` tooltip. Nested containers step
+  the treatment by depth, single hue, never a rainbow: the fence band's alpha steps through
+  `--cairn-directive-band-1/2/3` (light 8/14/20%, dark slightly stronger), content lines inside a
+  container carry a 2px inset accent rail stepped through `--cairn-directive-rail-1/2/3`, and the
+  depth 2 and 3 bands swap in `--cairn-directive-ink-2/3` (darker in light, lighter in dark) so
+  the ink holds AA on its own tint; the locked pairs are documented beside the vars in
+  `cairn-admin.css`. Depth comes from a stack scan in `markdown-directives.ts` (`fenceDepths`),
+  pairing a bare closer with the most recent named opener rather than trusting colon counts.
+  Light `--color-accent` is a locked margin at `oklch(54% 0.16 300)`: it must hold AA both on
+  `base-100` and on its own 8% tint. The editor's focus indicator is a deliberate 1px 70%-alpha primary hairline, never a 2px
   ring: a focused text surface sits in keyboard modality, so `:focus-visible` cannot quiet it. That
   70% mix is a locked floor: it clears the 3:1 non-text contrast minimum on both themes, where 45%
   measured near 2:1. A scoped `.cairn-doc-title:focus` rule in `cairn-admin.css` gives the document

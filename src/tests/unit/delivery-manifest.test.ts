@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { buildSiteManifest, buildLinkResolver } from '../../lib/delivery/manifest.js';
+import { buildSiteManifest } from '../../lib/delivery/manifest.js';
+import { buildLinkResolver } from '../../lib/delivery/site-resolver.js';
 import { createSiteIndexes } from '../../lib/delivery/site-indexes.js';
 import { defineAdapter } from '../../lib/content/adapter.js';
 import { defineFields } from '../../lib/content/schema.js';

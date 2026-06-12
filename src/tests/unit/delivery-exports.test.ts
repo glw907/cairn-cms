@@ -8,7 +8,7 @@ describe('delivery exports', () => {
       'permalink',
       'createContentIndex',
       'fromGlob',
-      'createSiteIndex',
+      'createSiteResolver',
       'deriveExcerpt',
       'wordCount',
       'buildRssFeed',
@@ -16,7 +16,6 @@ describe('delivery exports', () => {
       'buildSitemap',
       'buildRobots',
       'buildSeoMeta',
-      'paginate',
     ]) {
       expect(typeof (data as Record<string, unknown>)[name]).toBe('function');
     }
@@ -43,7 +42,7 @@ describe('delivery exports', () => {
     for (const name of [
       'permalink',
       'createContentIndex',
-      'createSiteIndex',
+      'createSiteResolver',
       'buildRssFeed',
       'rssResponse',
       'createPublicRoutes',

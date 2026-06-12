@@ -176,8 +176,8 @@ export interface CairnAdapter {
   backend: BackendConfig;
   sender: SenderConfig;
   /** The site's one renderer: the editor preview and every public page call it (design decision 4).
-   *  `resolve` rewrites cairn: links to live permalinks; the build passes a site-index resolver, the
-   *  preview a manifest one. */
+   *  `resolve` rewrites cairn: links to live permalinks; the build passes a site-resolver-backed
+   *  one, the preview a manifest one. */
   render(md: string, opts?: { stagger?: boolean; resolve?: LinkResolve }): string | Promise<string>;
   /** Repo-relative path to the committed content manifest. Defaults to src/content/.cairn/index.json
    *  in composeRuntime. It sits outside any concept directory, so content enumeration never globs it. */

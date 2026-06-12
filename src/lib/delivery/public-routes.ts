@@ -1,20 +1,20 @@
-// cairn-cms: public route loaders (dated-slug design). The factory closes over the site-level
-// index, the runtime render, and the origin. entryLoad and entries are site-wide: one catch-all
+// cairn-cms: public route loaders (dated-slug design). The factory closes over the site
+// resolver, the runtime render, and the origin. entryLoad and entries are site-wide: one catch-all
 // `[...path]` route resolves any concept by request path through `byPermalink`. The archive, tag,
-// and tag-index loaders stay concept-scoped, keyed by concept id. The index is built in site code
-// from globs, so it stays in the prerender graph and out of the runtime Worker.
+// and tag-index loaders stay concept-scoped, keyed by concept id. The resolver is built in site
+// code from globs, so it stays in the prerender graph and out of the runtime Worker.
 import { error } from '@sveltejs/kit';
 import type { ContentSummary, ContentEntry } from './content-index.js';
-import type { SiteIndex } from './site-index.js';
+import type { SiteResolver } from './site-resolver.js';
 import { buildSeoMeta } from './seo.js';
 import type { SeoMeta } from './seo.js';
 import { readSeoFields, resolveImageUrl } from './seo-fields.js';
-import { buildLinkResolver } from './manifest.js';
+import { buildLinkResolver } from './site-resolver.js';
 import type { LinkResolve } from '../content/links.js';
 
 /** Injected dependencies for the public loaders. */
 export interface PublicRoutesDeps {
-  site: SiteIndex;
+  site: SiteResolver;
   render: (md: string, opts?: { stagger?: boolean; resolve?: LinkResolve }) => string | Promise<string>;
   origin: string;
   /** Site name for og:site_name and the SEO head. */

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createPublicRoutes } from '../../lib/delivery/public-routes.js';
-import { createSiteIndex } from '../../lib/delivery/site-index.js';
+import { createSiteResolver } from '../../lib/delivery/site-resolver.js';
 import { createContentIndex } from '../../lib/delivery/content-index.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
 import { defineFields } from '../../lib/content/schema.js';
@@ -13,7 +13,7 @@ const [posts] = normalizeConcepts(
 );
 const [pages] = normalizeConcepts({ pages: { dir: 'g', schema: defineFields([]) } });
 
-const site = createSiteIndex([
+const site = createSiteResolver([
   { descriptor: posts, index: createContentIndex([
     { path: '/p/2026-02-01-a.md', raw: '---\ntitle: A\ndate: 2026-02-01\ntags: [x]\n---\n\nBody A.' },
     { path: '/p/2026-01-01-b.md', raw: '---\ntitle: B\ndate: 2026-01-01\ntags: [y]\n---\n\nBody B.' },
@@ -60,7 +60,7 @@ describe('createPublicRoutes', () => {
   it('entryLoad resolves cairn links and fails the build on a dangling token', async () => {
     const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
     function linkRoutes(body: string) {
-      const linkSite = createSiteIndex([
+      const linkSite = createSiteResolver([
         { descriptor: pages, index: createContentIndex([
           { path: '/g/home.md', raw: `---\ntitle: Home\n---\n\n${body}` },
           { path: '/g/about.md', raw: '---\ntitle: About\n---\n\nAbout body.' },

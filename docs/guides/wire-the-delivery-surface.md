@@ -41,7 +41,7 @@ This guide assumes a running cairn site whose content you want to deliver. The w
 
    For the signature and the `SiteGlobs` shape it expects, see [`createPublicRoutes` and the index builders](../reference/delivery.md).
 
-2. **Add the catch-all `[...path]` route.** One route resolves any public path against the site index and ships the entry with a full head. `createPublicRoutes` returns an `entries` generator for prerendering and an `entryLoad` for the page load, both keyed off the `site` resolver and the adapter's `render`. Your matching `+page.svelte` renders the resolved HTML and the SEO head.
+2. **Add the catch-all `[...path]` route.** One route resolves any public path against the site resolver and ships the entry with a full head. `createPublicRoutes` returns an `entries` generator for prerendering and an `entryLoad` for the page load, both keyed off the `site` resolver and the adapter's `render`. Your matching `+page.svelte` renders the resolved HTML and the SEO head.
 
    ```ts
    // examples/showcase/src/routes/[...path]/+page.server.ts

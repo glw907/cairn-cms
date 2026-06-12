@@ -3,8 +3,8 @@
 // the graph. The full ./delivery barrel re-exports this and adds the route loaders.
 export { createContentIndex, fromGlob } from './content-index.js';
 export type { RawFile, ContentSummary, ContentEntry, ContentIndex, ContentProblem } from './content-index.js';
-export { createSiteIndex } from './site-index.js';
-export type { SiteIndex, ConceptIndex } from './site-index.js';
+export { createSiteResolver, buildLinkResolver } from './site-resolver.js';
+export type { SiteResolver, ConceptIndex } from './site-resolver.js';
 export { createSiteIndexes } from './site-indexes.js';
 export type { SiteIndexes, SiteGlobs } from './site-indexes.js';
 export { siteDescriptors } from './site-descriptors.js';
@@ -18,9 +18,7 @@ export { buildSeoMeta } from './seo.js';
 export type { SeoInput, SeoMeta } from './seo.js';
 export { readSeoFields, resolveImageUrl } from './seo-fields.js';
 export type { SeoFields } from './seo-fields.js';
-export { paginate } from './paginate.js';
-export type { Page } from './paginate.js';
 export { rssResponse, jsonFeedResponse, sitemapResponse, robotsResponse } from './responses.js';
 export { jsonLdScript } from './json-ld.js';
 export { permalink } from '../content/permalink.js';
-export { buildSiteManifest, buildLinkResolver } from './manifest.js';
+export { buildSiteManifest } from './manifest.js';

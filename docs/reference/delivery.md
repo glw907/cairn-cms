@@ -41,7 +41,7 @@ function createPublicRoutes(deps: PublicRoutesDeps): {
 ```
 
 Build the public loaders for a site's unified index. Pass the [`PublicRoutesDeps`](#publicroutesdeps):
-the built site index, the render function, the origin, and the SEO defaults. The returned object
+the built site resolver, the render function, the origin, and the SEO defaults. The returned object
 carries one loader per public route plus `entries`, the prerender enumerator for the catch-all route.
 The showcase wires `entryLoad` and `entries` into its `[...path]` catch-all server.
 
@@ -79,7 +79,7 @@ the deps.
 
 ```ts
 interface PublicRoutesDeps {
-  site: SiteIndex;
+  site: SiteResolver;
   render: (md: string, opts?: { stagger?: boolean; resolve?: LinkResolve }) => string | Promise<string>;
   origin: string;
   siteName: string;

@@ -1,9 +1,11 @@
-// cairn-cms: the site-level content index (dated-slug design). It unions every concept's
-// per-concept index into one cross-concept resolver: a single byPermalink map a catch-all route
-// matches a request path against, one entries() list the prerenderer walks, and the per-concept
-// indexes for concept-scoped archive, tag, and feed loaders. A duplicate permalink throws at build.
+// cairn-cms: the cross-concept site resolver (dated-slug design). It unions every concept's
+// per-concept index into one resolver: a single byPermalink map a catch-all route matches a
+// request path against, one entries() list the prerenderer walks, and the per-concept indexes
+// for concept-scoped archive, tag, and feed loaders. A duplicate permalink throws at build.
+// buildLinkResolver lives here too, since it closes over the resolver.
 import type { ConceptDescriptor } from '../content/types.js';
 import type { ContentEntry, ContentIndex, ContentSummary } from './content-index.js';
+import type { LinkResolve } from '../content/links.js';
 
 /** One concept's descriptor paired with its built index. */
 export interface ConceptIndex {
@@ -12,7 +14,7 @@ export interface ConceptIndex {
 }
 
 /** The cross-concept query surface a catch-all route and the sitemap read. */
-export interface SiteIndex {
+export interface SiteResolver {
   /** Resolve a request path (with or without a trailing slash) to its entry, or undefined. */
   byPermalink(path: string): ContentEntry | undefined;
   /** Newer/older neighbors within the entry's own concept, for prev/next links. */
@@ -49,11 +51,11 @@ function siteProblems(concepts: ConceptIndex[]): string[] {
  * unless `validate` is `false`, on any non-draft entry whose frontmatter fails its concept's
  * validator, so malformed content fails the build instead of shipping.
  */
-export function createSiteIndex(concepts: ConceptIndex[], opts: { validate?: boolean } = {}): SiteIndex {
+export function createSiteResolver(concepts: ConceptIndex[], opts: { validate?: boolean } = {}): SiteResolver {
   if (opts.validate !== false) {
     const problems = siteProblems(concepts);
     if (problems.length > 0) {
-      throw new Error(`site index: ${problems.length} invalid frontmatter field(s):\n  ${problems.join('\n  ')}`);
+      throw new Error(`site resolver: ${problems.length} invalid frontmatter field(s):\n  ${problems.join('\n  ')}`);
     }
   }
   const byPath = new Map<string, { index: ContentIndex; id: string }>();
@@ -64,7 +66,7 @@ export function createSiteIndex(concepts: ConceptIndex[], opts: { validate?: boo
       const existing = byPath.get(summary.permalink);
       if (existing) {
         throw new Error(
-          `site index: "${existing.id}" and "${summary.id}" both resolve to "${summary.permalink}"`,
+          `site resolver: "${existing.id}" and "${summary.id}" both resolve to "${summary.permalink}"`,
         );
       }
       byPath.set(summary.permalink, { index, id: summary.id });
@@ -88,5 +90,15 @@ export function createSiteIndex(concepts: ConceptIndex[], opts: { validate?: boo
     all() {
       return concepts.flatMap(({ index }) => index.all());
     },
+  };
+}
+
+/** A resolver backed by the site resolver, for the build. A miss throws, so a dangling cairn: token
+ *  fails the prerender (the build backstop). The preview uses manifestLinkResolver, which marks. */
+export function buildLinkResolver(site: SiteResolver): LinkResolve {
+  return (ref) => {
+    const url = site.concept(ref.concept)?.byId(ref.id)?.permalink;
+    if (!url) throw new Error(`cairn link target not found: cairn:${ref.concept}/${ref.id}`);
+    return url;
   };
 }

@@ -1,15 +1,12 @@
-// cairn-cms: the build-side manifest builder and the build link resolver (content-graph design).
-// buildSiteManifest mirrors createSiteIndexes: it maps the site descriptors over the per-concept
-// globs and projects each file to a manifest row. buildLinkResolver reads the site index, which is
-// fresh from the files at build, and throws on a missing target so a dangling cairn: token fails
-// the build (the backstop). The admin preview uses manifestLinkResolver instead.
+// cairn-cms: the build-side manifest builder (content-graph design). buildSiteManifest mirrors
+// createSiteIndexes: it maps the site descriptors over the per-concept globs and projects each
+// file to a manifest row. The build-time cairn: link resolver lives beside the site resolver in
+// site-resolver.ts; the admin preview uses manifestLinkResolver instead.
 import { siteDescriptors } from './site-descriptors.js';
 import { fromGlob } from './content-index.js';
 import { parseMarkdown } from '../content/frontmatter.js';
 import { emptyManifest, manifestEntryFromFile } from '../content/manifest.js';
 import type { Manifest } from '../content/manifest.js';
-import type { LinkResolve } from '../content/links.js';
-import type { SiteIndex } from './site-index.js';
 import type { SiteConfig } from '../nav/site-config.js';
 import type { CairnAdapter } from '../content/types.js';
 import type { SiteGlobs } from './site-indexes.js';
@@ -22,7 +19,7 @@ export function buildSiteManifest<A extends CairnAdapter>(adapter: A, config: Si
   for (const descriptor of siteDescriptors(adapter, config)) {
     const record = globRecord[descriptor.id] ?? {};
     for (const file of fromGlob(record)) {
-      // Validate the same way createContentIndex does, so the manifest and the site index agree on
+      // Validate the same way createContentIndex does, so the manifest and the site resolver agree on
       // which entries exist. A validation failure is excluded from both; otherwise the preview would
       // resolve a link the build then rejects as a missing target.
       const { frontmatter, body } = parseMarkdown(file.raw);
@@ -31,14 +28,4 @@ export function buildSiteManifest<A extends CairnAdapter>(adapter: A, config: Si
     }
   }
   return manifest;
-}
-
-/** A resolver backed by the site index, for the build. A miss throws, so a dangling cairn: token
- *  fails the prerender (the build backstop). The preview uses manifestLinkResolver, which marks. */
-export function buildLinkResolver(site: SiteIndex): LinkResolve {
-  return (ref) => {
-    const url = site.concept(ref.concept)?.byId(ref.id)?.permalink;
-    if (!url) throw new Error(`cairn link target not found: cairn:${ref.concept}/${ref.id}`);
-    return url;
-  };
 }

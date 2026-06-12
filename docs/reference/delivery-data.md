@@ -60,26 +60,27 @@ export const site = indexes.site;
 export const posts = indexes.posts;
 ```
 
-### `createSiteIndex`
+### `createSiteResolver`
 
 ```ts
-function createSiteIndex(
+function createSiteResolver(
   concepts: ConceptIndex[],
   opts?: { validate?: boolean },
-): SiteIndex;
+): SiteResolver;
 ```
 
-Union a list of per-concept indexes into a site-level resolver. It throws on a duplicate permalink
-and, unless `validate` is `false`, on any non-draft entry whose frontmatter fails its concept's
-validator, so malformed content fails the build instead of shipping. `createSiteIndexes` calls this
-under the hood; reach for it when you assemble the `ConceptIndex` list yourself.
+Union a list of per-concept indexes into the cross-concept site resolver, the same `SiteResolver`
+that `createSiteIndexes` returns on its `site` key. It throws on a duplicate permalink and, unless
+`validate` is `false`, on any non-draft entry whose frontmatter fails its concept's validator, so
+malformed content fails the build instead of shipping. Reach for it when you assemble the
+`ConceptIndex` list yourself.
 
 ```ts
-import { createContentIndex, createSiteIndex, fromGlob } from '@glw907/cairn-cms/delivery/data';
+import { createContentIndex, createSiteResolver, fromGlob } from '@glw907/cairn-cms/delivery/data';
 import { siteDescriptors } from '@glw907/cairn-cms/delivery/data';
 
 const [postsDesc, pagesDesc] = siteDescriptors(cairn, siteConfig);
-const site = createSiteIndex([
+const site = createSiteResolver([
   { descriptor: postsDesc, index: createContentIndex(fromGlob(postsRaw), postsDesc) },
   { descriptor: pagesDesc, index: createContentIndex(fromGlob(pagesRaw), pagesDesc) },
 ]);
@@ -275,12 +276,13 @@ const manifest = buildSiteManifest(cairn, siteConfig, { posts: postsRaw, pages: 
 ### `buildLinkResolver`
 
 ```ts
-function buildLinkResolver(site: SiteIndex): LinkResolve;
+function buildLinkResolver(site: SiteResolver): LinkResolve;
 ```
 
-Build a `cairn:` link resolver backed by the site index, for the build. A miss throws, so a dangling
-`cairn:` token fails the prerender. The feed routes above use it to turn an internal link into an
-absolute URL.
+Build a `cairn:` link resolver backed by the site resolver, for the build. It lives beside
+`createSiteResolver` in the source, since it closes over the resolver rather than the manifest. A
+miss throws, so a dangling `cairn:` token fails the prerender. The feed routes above use it to turn
+an internal link into an absolute URL.
 
 ---
 
@@ -304,15 +306,6 @@ function wordCount(body: string): number;
 ```
 
 Count the words in the stripped markdown body.
-
-### `paginate`
-
-```ts
-function paginate<T>(items: T[], page: number, perPage: number): Page<T>;
-```
-
-Slice `items` into the 1-based `page` of size `perPage`, clamping the page into bounds, and return the
-page plus its navigation state.
 
 ### `permalink`
 
@@ -372,7 +365,7 @@ function siteDescriptors(adapter: CairnAdapter, siteConfig: SiteConfig): Concept
 ```
 
 Build the per-concept descriptors for a site from its adapter content and its parsed site config. The
-descriptors feed `createContentIndex` and `createSiteIndex` when you assemble the indexes by hand.
+descriptors feed `createContentIndex` and `createSiteResolver` when you assemble the indexes by hand.
 
 ---
 
@@ -385,14 +378,13 @@ descriptors feed `createContentIndex` and `createSiteIndex` when you assemble th
 | `ContentEntry` | `interface ContentEntry<F = Record<string, unknown>> extends ContentSummary { frontmatter: F; body: string }` | The detail view: a summary plus the typed frontmatter and the body to render. |
 | `ContentProblem` | `interface ContentProblem { id: string; draft: boolean; errors: Record<string, string> }` | One entry's validation failure, recorded at build for the site aggregator's gate. |
 | `ContentIndex` | `interface ContentIndex<F = Record<string, unknown>> { all; byId; byTag; allTags; adjacent; problems }` | The per-concept query surface that `createContentIndex` returns. |
-| `ConceptIndex` | `interface ConceptIndex { descriptor: ConceptDescriptor; index: ContentIndex }` | One concept's descriptor paired with its built index, the input to `createSiteIndex`. |
-| `SiteIndex` | `interface SiteIndex { byPermalink; adjacent; entries; concept; all }` | The cross-concept query surface a catch-all route and the sitemap read. |
+| `ConceptIndex` | `interface ConceptIndex { descriptor: ConceptDescriptor; index: ContentIndex }` | One concept's descriptor paired with its built index, the input to `createSiteResolver`. |
+| `SiteResolver` | `interface SiteResolver { byPermalink; adjacent; entries; concept; all }` | The cross-concept query surface a catch-all route and the sitemap read. |
 | `SiteGlobs` | `type SiteGlobs<A extends CairnAdapter> = { [K in keyof A['content']]?: Record<string, string> }` | A per-concept raw glob record keyed by concept id, from `import.meta.glob`. |
-| `SiteIndexes` | `type SiteIndexes<A> = { [K in keyof A['content']]: ContentIndex<...> } & { readonly site: SiteIndex }` | The typed per-concept indexes plus the cross-concept `site` resolver, the return of `createSiteIndexes`. |
+| `SiteIndexes` | `type SiteIndexes<A> = { [K in keyof A['content']]: ContentIndex<...> } & { readonly site: SiteResolver }` | The typed per-concept indexes plus the cross-concept `site` resolver, the return of `createSiteIndexes`. |
 | `FeedChannel` | `interface FeedChannel { title; description; siteUrl; feedUrl; language?; author? }` | Feed channel metadata, with absolute URLs. |
 | `FeedItem` | `interface FeedItem { title; url; date?; updated?; summary; contentHtml?; tags? }` | One feed entry; `contentHtml` carries the rendered body for a full-content feed. |
 | `SitemapUrl` | `interface SitemapUrl { loc: string; lastmod?: string }` | One sitemap URL; `lastmod` is a YYYY-MM-DD date. |
 | `SeoInput` | `interface SeoInput { title; description; canonicalUrl; siteName; type?; published?; modified?; feeds?; image?; robots?; author? }` | The inputs for the head builder, all URLs absolute. |
 | `SeoMeta` | `interface SeoMeta { title; meta; links; jsonLd }` | The plain-data head: a title, meta tags, link tags, and one JSON-LD object. |
 | `SeoFields` | `interface SeoFields { description?; image?; robots?; author? }` | The optional SEO head fields a concept can carry in frontmatter. |
-| `Page` | `interface Page<T> { items: T[]; page; perPage; total; totalPages; hasPrev; hasNext }` | A page of items plus its navigation state, the return of `paginate`. |

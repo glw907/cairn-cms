@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createPublicRoutes } from '../../lib/delivery/public-routes.js';
 import { createContentIndex, fromGlob } from '../../lib/delivery/content-index.js';
-import { createSiteIndex } from '../../lib/delivery/site-index.js';
+import { createSiteResolver } from '../../lib/delivery/site-resolver.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
 import { defineFields } from '../../lib/content/schema.js';
 
@@ -43,7 +43,7 @@ const pageIndex = createContentIndex(
   fromGlob({ '/src/content/pages/secret.md': '---\ntitle: Secret\nrobots: noindex\n---\nHidden.' }),
   pages,
 );
-const site = createSiteIndex([
+const site = createSiteResolver([
   { descriptor: posts, index },
   { descriptor: pages, index: pageIndex },
 ]);

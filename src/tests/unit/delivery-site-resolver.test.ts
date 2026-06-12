@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createSiteIndex } from '../../lib/delivery/site-index.js';
+import { createSiteResolver } from '../../lib/delivery/site-resolver.js';
 import { createContentIndex } from '../../lib/delivery/content-index.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
 import { defineFields } from '../../lib/content/schema.js';
@@ -11,13 +11,13 @@ const [posts] = normalizeConcepts(
 const [pages] = normalizeConcepts({ pages: { dir: 'g', schema: defineFields([]) } });
 
 function site() {
-  return createSiteIndex([
+  return createSiteResolver([
     { descriptor: posts, index: createContentIndex([{ path: '/p/2026-05-31-snowball.md', raw: '---\ntitle: S\ndate: 2026-05-31\n---\n\nPost body.' }], posts) },
     { descriptor: pages, index: createContentIndex([{ path: '/g/about.md', raw: '---\ntitle: About\n---\n\nPage body.' }], pages) },
   ]);
 }
 
-describe('createSiteIndex', () => {
+describe('createSiteResolver', () => {
   it('resolves a dated Posts URL and a flat Pages URL through one byPermalink', () => {
     const s = site();
     expect(s.byPermalink('/2026/05/31/snowball')?.body.trim()).toBe('Post body.');
@@ -56,7 +56,7 @@ describe('createSiteIndex', () => {
       { posts: { permalink: '/dup' } },
     );
     expect(() =>
-      createSiteIndex([
+      createSiteResolver([
         { descriptor: p2, index: createContentIndex([{ path: '/g/a.md', raw: '---\ntitle: A\n---\n' }], p2) },
         { descriptor: q2, index: createContentIndex([{ path: '/p/b.md', raw: '---\ntitle: B\ndate: 2026-01-01\n---\n' }], q2) },
       ]),

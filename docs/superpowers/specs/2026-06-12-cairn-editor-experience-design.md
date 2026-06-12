@@ -14,10 +14,12 @@ read against the installed packages turned the impression into specifics:
 - Color soup: purple headings, purple inline code, blue links with the full URL exposed at full
   strength, purple directive bands. Nothing recedes.
 - Syntax markers (`##`, `**`, `](https://…)`) render at the same weight as the words around them.
-- Two outright defects. The editor parses commonmark only (`markdown()` defaults to
+- One outright defect. The editor parses commonmark only (`markdown()` defaults to
   `commonmarkLanguage`), so the toolbar's own strikethrough button inserts syntax the editor
-  cannot parse, and tables and task lists get no styling either. And `markdownKeymap` is not
-  wired, so Enter does not continue a list or quote and Backspace is not markup-aware.
+  cannot parse, and tables and task lists get no styling either. (Correction, found red-first in
+  Task 1: the markdown keymap was already active through `markdown()`'s `addKeymap` default, so
+  Enter list-continuation and markup-aware Backspace worked all along; the pass pins both with
+  tests rather than adding a binding.)
 - The directive treatment is heavy: every fence row carries a solid tinted band, so a nested
   split/panel block reads as zebra striping.
 

@@ -25,7 +25,10 @@ browser) test projects.
 packages):
 
 - `markdown()` defaults `base` to `commonmarkLanguage`; `markdownLanguage` is the GFM variant
-  (strikethrough, tables, task lists, autolink).
+  (strikethrough, tables, task lists, autolink). (Task 1 correction: `markdown()` also wires
+  `markdownKeymap` at `Prec.high` through its `addKeymap` default, so the keymap was never
+  missing; Task 1 pins the behavior with tests instead of adding a redundant binding, and
+  `deleteMarkupBackward`'s real contract leaves marker-width indentation behind.)
 - `@lezer/markdown` styles `ATXHeading1/SetextHeading1` as `tags.heading1` (and so on per level),
   and `"HeaderMark HardBreak QuoteMark ListMark LinkMark EmphasisMark CodeMark"` as
   `tags.processingInstruction`. GFM adds `Strikethrough` with `tags.strikethrough` and a

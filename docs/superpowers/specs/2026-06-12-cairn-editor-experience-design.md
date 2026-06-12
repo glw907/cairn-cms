@@ -53,10 +53,32 @@ read against the installed packages turned the impression into specifics:
   background chip in the content color; strikethrough renders struck.
 - Color budget: content ink is base-content; one accent for links; the directive machinery is the
   only other tint on the page.
-- Directive machinery lightened: fence rows lose the full-width band in favor of the
-  depth-stepped left rail plus tinted fence text, so nesting still reads without the zebra. The
-  exact treatment lands through the frontend-design loop, holding the existing AA-checked
-  variable scheme in `cairn-admin.css`.
+
+**The directive treatment (a focus arm; Geoff's call 2026-06-12).** The machinery is critical to
+cairn (it is how a site's components reach the author) and it is the hardest UI problem on the
+surface, so it gets its own design attention rather than riding the general restyle. The field
+gives a grammar but no finished answer: Obsidian's callouts put block identity in a left rail
+plus a labeled head, never in painted rows, and reveal machinery by cursor position; HackMD has
+the literal `:::` syntax and does nothing with it in-editor. Direction, refined from that:
+
+- Rails, not bands. Fence rows lose the full-width tinted band; the depth-stepped left rail
+  (already shipped in 0.51) extends through the fence rows so a container reads as one bracketed
+  region from opener to closer, without the zebra.
+- Meaning over machinery on the fence line. In `::::split[Costs & volunteers]`, the name and
+  label carry the accent ink; the colons and attribute braces dim to marker-muted, the same level
+  as `##`. A bare closer is all machinery, so it sits fully muted at its rail.
+- Cursor-aware emphasis, not hiding. The block the caret sits inside strengthens its rail and
+  fence labels one step; the others sit quieter. No layout shift, no marker hiding, no caret
+  jank; composes with focus mode. Tracked per update from the cached depth scan, so the cost
+  model the 0.51 plugin set does not change.
+- The hover hint stays, and the existing per-theme AA-checked variable scheme in
+  `cairn-admin.css` keeps governing the tints; new depth/emphasis steps land in the same scheme.
+- The frontend-design loop runs a dedicated critique iteration on directive-heavy content
+  (Geoff's nested split/panel report is the fixture) in both themes, separate from the general
+  surface critique.
+- Later-pass pointer, out of scope here: in-place machinery affordances (change a block's type
+  or label without editing syntax, the Obsidian right-click lesson). The Insert block dialog
+  already covers creation.
 
 **The iA modes.** Two persisted toggles in the toolbar's overflow menu, following the
 editor-preferences idiom the page already uses (mode, device). Both default off, both
@@ -77,7 +99,10 @@ preview pane; the render pipeline; the title field.
   paragraph-range helper as a pure function.
 - Component (real browser, the existing MarkdownEditor/EditPage suites): heading size classes by
   level, marker-dimming styles, the focus-mode dim following the cursor, the typewriter and
-  focus toggles persisting through the prefs idiom.
+  focus toggles persisting through the prefs idiom. For the directive arm: the fence name/label
+  carries the accent class while the colon run carries the muted class, the rail classes span
+  fence rows, and the caret block's emphasis step follows the cursor across nested containers
+  (the split/panel fixture).
 - Visual: the frontend-design critique loop on the showcase in both themes; the
   `daisyui-a11y-reviewer` checks the dimmed markers and dim-state text against AA (muted on
   base-100 already passes; the focus-dim opacity must keep the dimmed text readable as text).

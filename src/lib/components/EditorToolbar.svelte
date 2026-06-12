@@ -3,12 +3,15 @@
 The editor card's instrument strip. Three button groups divided by hairlines (Text, Structure with a
 More overflow menu, then the host's Insert controls) and the Write/Preview segmented control pinned
 right. Format buttons ask the host to transform the editor's current selection; the host supplies the
-Insert group through the `insertControls` snippet so the strip stays free of picker wiring. The glyphs
-are stroke SVG icons in the admin's house style (24x24 viewBox, `currentColor`, round caps).
+Insert group through the `insertControls` snippet so the strip stays free of picker wiring. While
+Preview shows, a device trigger joins the segmented capsule and opens a popover menu of preview
+widths, reported to the host through `onDevice`. The glyphs are stroke SVG icons in the admin's
+house style (24x24 viewBox, `currentColor`, round caps).
 -->
 <script lang="ts">
   import type { Snippet } from 'svelte';
   import type { FormatKind } from './markdown-format.js';
+  import { previewDevices, type PreviewDeviceId } from './preview-doc.js';
 
   interface Props {
     /** Apply a markdown transform to the editor's current selection. */
@@ -17,11 +20,16 @@ are stroke SVG icons in the admin's house style (24x24 viewBox, `currentColor`, 
     mode: 'write' | 'preview';
     /** Ask the host to switch panes. */
     onMode: (m: 'write' | 'preview') => void;
+    /** The active preview-frame device, shown on the device trigger. Desktop when absent. */
+    device?: PreviewDeviceId;
+    /** Pick a preview-frame width. When set, a device trigger joins the Write/Preview capsule
+     *  while Preview shows. */
+    onDevice?: (id: PreviewDeviceId) => void;
     /** The host's Insert controls (link picker, component insert, image), rendered in the Insert group. */
     insertControls?: Snippet;
   }
 
-  let { format, mode, onMode, insertControls }: Props = $props();
+  let { format, mode, onMode, device = 'desktop', onDevice, insertControls }: Props = $props();
 
   // Each icon is a set of stroke `<path>` d-strings rendered into the shared 24x24 svg below, so the
   // markup stays declarative (no per-icon raw html). Paths follow the house outline style.
@@ -87,6 +95,17 @@ are stroke SVG icons in the admin's house style (24x24 viewBox, `currentColor`, 
     format(kind);
     // Picking dismisses the menu; hiding returns focus to the trigger, keeping the roving order.
     if (moreMenu?.matches(':popover-open')) moreMenu.hidePopover();
+  }
+
+  // The device menu's popover element and its open state, mirrored from the toggle event into
+  // aria-expanded on the trigger (the More menu's pattern).
+  let deviceMenu = $state<HTMLUListElement | null>(null);
+  let deviceOpen = $state(false);
+  const activeDevice = $derived(previewDevices.find((d) => d.id === device) ?? previewDevices[0]);
+
+  function pickDevice(id: PreviewDeviceId) {
+    onDevice?.(id);
+    if (deviceMenu?.matches(':popover-open')) deviceMenu.hidePopover();
   }
 
   let toolbarEl = $state<HTMLDivElement | null>(null);
@@ -230,9 +249,52 @@ are stroke SVG icons in the admin's house style (24x24 viewBox, `currentColor`, 
   {/if}
 
   <!-- The host renders the matching tabpanels (#cairn-pane-write and #cairn-pane-preview) below
-       the strip inside the same editor card. -->
+       the strip inside the same editor card. While Preview shows, the device trigger joins the
+       capsule as a third segment beside the Preview tab (never nested inside the tab button:
+       no nested interactive controls). daisyUI's join radii follow direct children, so the
+       trigger sits inside the tablist element; it is a plain menu button, not a tab. -->
   <div class="join ml-auto" role="tablist" aria-label="Editor view">
     {@render tab('write', 'Write')}
     {@render tab('preview', 'Preview')}
+    {#if mode === 'preview' && onDevice}
+      <button
+        type="button"
+        class="join-item btn btn-sm btn-ghost gap-1"
+        title="Preview width"
+        aria-haspopup="menu"
+        aria-expanded={deviceOpen}
+        popovertarget="cairn-preview-device-menu"
+        style="anchor-name:--cairn-preview-device"
+      >
+        <span class="sr-only">Preview width:</span>
+        {activeDevice.label}
+        {@render strokeIcon(['m6 9 6 6 6-6'])}
+      </button>
+    {/if}
   </div>
+  {#if mode === 'preview' && onDevice}
+    <!-- The device menu is the same DaisyUI v5 popover dropdown as the More menu; it mounts
+         outside the tablist so the menu items never read as tabs. -->
+    <ul
+      bind:this={deviceMenu}
+      popover="auto"
+      id="cairn-preview-device-menu"
+      style="position-anchor:--cairn-preview-device"
+      ontoggle={(e) => (deviceOpen = e.newState === 'open')}
+      role="menu"
+      aria-label="Preview width"
+      class="dropdown dropdown-end menu menu-sm bg-base-100 rounded-box w-44 border border-[var(--cairn-card-border)] p-1 shadow-[var(--cairn-shadow)]"
+    >
+      {#each previewDevices as d (d.id)}
+        <li role="none">
+          <button type="button" role="menuitemradio" aria-checked={device === d.id} onclick={() => pickDevice(d.id)}>
+            <span class="grow">{d.label}</span>
+            {#if device === d.id}
+              {@render strokeIcon(['M20 6 9 17l-5-5'])}
+            {/if}
+          </button>
+        </li>
+      {/each}
+    </ul>
+  {/if}
 </div>

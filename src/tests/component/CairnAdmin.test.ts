@@ -99,6 +99,7 @@ function editData(): AdminData {
       published: true,
       publishedFlash: false,
       discardedFlash: false,
+      preview: null,
     },
   };
 }

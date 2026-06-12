@@ -18,7 +18,7 @@ import { log } from '../log/index.js';
 import { issueCsrfToken } from './csrf.js';
 import { requireSession } from './guard.js';
 import type { CookieJar, EventBase } from './types.js';
-import type { CairnRuntime, ConceptDescriptor, FrontmatterField } from '../content/types.js';
+import type { CairnRuntime, ConceptDescriptor, FrontmatterField, PreviewConfig } from '../content/types.js';
 import type { Editor, Role } from '../auth/types.js';
 
 /** A sidebar concept entry: just enough to render the nav without shipping validators to the client. */
@@ -101,6 +101,9 @@ export interface EditData {
   publishedFlash: boolean;
   /** True after a discard redirect (`?discarded=1`), for the confirmation strip. */
   discardedFlash: boolean;
+  /** The adapter's preview knob for the styled preview frame; null when the site sets none,
+   *  which leaves the frame rendering unstyled markup behind a hint. */
+  preview: PreviewConfig | null;
 }
 
 /** The structural event the content routes read; a real SvelteKit RequestEvent satisfies it. */
@@ -434,6 +437,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       published,
       publishedFlash: event.url.searchParams.get('published') === '1',
       discardedFlash: event.url.searchParams.get('discarded') === '1',
+      preview: runtime.preview ?? null,
     };
   }
 

@@ -73,10 +73,12 @@ test('the redesigned editor: hoisted title, toolbar bold, preview round-trip, st
   // The header's save-state indicator notices the edit.
   await expect(page.locator('.cairn-save-state')).toContainText('Unsaved changes');
 
-  // Preview renders the bold wrap as real markup; switching back keeps the editor text.
+  // Preview renders the bold wrap as real markup inside the sandboxed iframe (the frame's own
+  // document carries the site styling); switching back keeps the editor text.
   await page.getByRole('tab', { name: 'Preview' }).click();
   await expect(page.locator('#cairn-pane-preview')).toBeVisible({ timeout: 2000 });
-  await expect(page.locator('#cairn-pane-preview strong')).toHaveText('A line to embolden.');
+  const frame = page.frameLocator('#cairn-pane-preview iframe[title="Page preview"]');
+  await expect(frame.locator('strong')).toHaveText('A line to embolden.');
   await page.getByRole('tab', { name: 'Write' }).click();
   await expect(editor).toContainText('**A line to embolden.**');
 

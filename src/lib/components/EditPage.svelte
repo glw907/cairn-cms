@@ -6,7 +6,10 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
 remaining fields group in the sidebar under Details, Visibility (the draft boolean as the Hidden
 toggle), and Address (the slug with the Change URL trigger). The toolbar's Write/Preview tabs
 swap the editing surface for the rendered preview inside the same card; every visit lands on
-Write. A sticky glass header carries the breadcrumb, the status badges, the save-state indicator,
+Write. Preview renders inside a sandboxed iframe that links the site's own stylesheets (the
+adapter's `preview` knob), takes the full content width (the sidebar hides until Write), and
+sizes to a persisted device width picked from the toolbar's capsule. A sticky glass header
+carries the breadcrumb, the status badges, the save-state indicator,
 and the lifecycle actions: Save, Publish (riding the same form via formaction while edits are
 pending), and an overflow menu for Discard and Delete. One feedback strip under the header carries the
 transient flashes, and the editor card's footer holds the word count and the Markdown help.
@@ -26,6 +29,7 @@ transient flashes, and the editor card's footer holds the word count and the Mar
   import MarkdownHelpDialog from './MarkdownHelpDialog.svelte';
   import { cairnLinkCompletionSource } from './link-completion.js';
   import { unwrapCairnLink, type FormatKind } from './markdown-format.js';
+  import { buildPreviewDoc, previewDevices, type PreviewDeviceId } from './preview-doc.js';
   import { directiveLineKind, findInlineDirectives } from './markdown-directives.js';
   import type { ComponentRegistry } from '../render/registry.js';
   import type { IconSet } from '../render/glyph.js';
@@ -150,6 +154,24 @@ transient flashes, and the editor card's footer holds the word count and the Mar
   let previewHtml = $state('');
   // True after a render call threw, so the preview pane can say so instead of going blank.
   let previewFailed = $state(false);
+  // The preview frame's device width, a per-browser preference under its own key (the legacy
+  // 'cairn-admin:preview' key from the removed split-pane preview stays untouched). Desktop is
+  // the default; the storage read sits in an effect so it never runs during SSR, and it tracks
+  // nothing reactive, so it runs once.
+  const deviceStorageKey = 'cairn-editor-preview-device';
+  let device = $state<PreviewDeviceId>('desktop');
+  $effect(() => {
+    const stored = localStorage.getItem(deviceStorageKey);
+    if (previewDevices.some((d) => d.id === stored)) device = stored as PreviewDeviceId;
+  });
+  function setDevice(id: PreviewDeviceId) {
+    device = id;
+    localStorage.setItem(deviceStorageKey, id);
+  }
+  const activeDevice = $derived(previewDevices.find((d) => d.id === device) ?? previewDevices[0]);
+  // The iframe document around the rendered html: the site's stylesheets from the adapter's
+  // preview knob, or a styleless document (behind the hint below) when the site sets none.
+  const previewDoc = $derived(buildPreviewDoc(previewHtml, data.preview));
   let insert = $state.raw<(text: string) => void>(() => {});
   let insertLink = $state.raw<(href: string, title: string) => void>(() => {});
   // The editor's current selection, registered by MarkdownEditor on mount; the web link dialog
@@ -575,7 +597,7 @@ transient flashes, and the editor card's footer holds the word count and the Mar
   bind:this={editForm}
   onsubmit={onEditSubmit}
   oninput={onFormInput}
-  class="lg:grid lg:grid-cols-[1fr_20rem] lg:gap-6"
+  class={mode === 'preview' ? '' : 'lg:grid lg:grid-cols-[1fr_20rem] lg:gap-6'}
 >
   <CsrfField />
   {#if data.isNew}<input type="hidden" name="new" value="1" />{/if}
@@ -602,7 +624,7 @@ transient flashes, and the editor card's footer holds the word count and the Mar
       role="group"
       aria-label="Editor"
     >
-      <EditorToolbar {format} {mode} onMode={setMode}>
+      <EditorToolbar {format} {mode} onMode={setMode} {device} onDevice={setDevice}>
         {#snippet insertControls()}
           <!-- Plain triggers only: the dialogs they open hold their own <form> elements, so the
                dialogs themselves mount outside the edit form at the bottom of this component. -->
@@ -668,16 +690,47 @@ transient flashes, and the editor card's footer holds the word count and the Mar
         />
       </div>
       {#if mode === 'preview'}
-        <!-- tabindex 0: the pane holds no focusable content, so it is itself a tab stop (the
-             tabpanel pattern's completeness requirement). -->
-        <div id="cairn-pane-preview" role="tabpanel" aria-labelledby="cairn-tab-preview" tabindex="0" class="prose max-w-none p-4">
-          {#if previewHtml}
-            {@html previewHtml}
-          {:else if previewFailed}
-            <p class="text-sm text-[var(--color-muted)]">The preview could not render this content.</p>
-          {:else}
-            <p class="text-sm text-[var(--color-muted)]">Nothing to preview yet.</p>
-          {/if}
+        <!-- The preview ground: recessed under the floating frame card so the page reads as a
+             sheet on the desk. tabindex 0 only while a message shows in place of the iframe;
+             with the iframe up the frame itself is the pane's focusable content (the tabpanel
+             pattern's completeness requirement). -->
+        <div
+          id="cairn-pane-preview"
+          role="tabpanel"
+          aria-labelledby="cairn-tab-preview"
+          tabindex={previewHtml && !previewFailed ? undefined : 0}
+          class="bg-base-200 px-4 py-6 lg:px-8"
+        >
+          <!-- The frame column: centered, sized by the picked device (capped at the pane), with
+               the width eased; the admin sheet's prefers-reduced-motion rule squashes the move. -->
+          <div
+            class="cairn-preview-frame mx-auto max-w-full transition-[width] duration-300"
+            style:width={activeDevice.width === null ? '100%' : `${activeDevice.width}px`}
+          >
+            {#if activeDevice.width !== null}
+              <p class="mb-2 text-right text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">
+                {activeDevice.label} · {activeDevice.width} px
+              </p>
+            {/if}
+            {#if !data.preview}
+              <p class="mb-2 text-xs text-[var(--color-muted)]">
+                Preview shows unstyled markup until the adapter's preview option names the site's stylesheets.
+              </p>
+            {/if}
+            <div class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 overflow-hidden shadow-[var(--cairn-shadow)]">
+              {#if previewFailed}
+                <p class="p-4 text-sm text-[var(--color-muted)]">The preview could not render this content.</p>
+              {:else if !previewHtml}
+                <p class="p-4 text-sm text-[var(--color-muted)]">Nothing to preview yet.</p>
+              {:else}
+                <!-- The site's render pipeline already sanitized the html (the floor strips
+                     scripts and handlers); the empty sandbox is belt and braces on top, and the
+                     same sandbox leaves links inside the frame inert, so a proofing click never
+                     navigates away from the edits. -->
+                <iframe sandbox="" title="Page preview" srcdoc={previewDoc} class="block h-[70vh] w-full"></iframe>
+              {/if}
+            </div>
+          </div>
         </div>
       {/if}
       <!-- The card footer, part of the same instrument frame. It stays up in Preview too, so the
@@ -696,7 +749,9 @@ transient flashes, and the editor card's footer holds the word count and the Mar
     </div>
   </div>
 
-  <aside class="lg:order-2 mt-4 lg:mt-0">
+  <!-- Preview takes the full surface: the sidebar hides (never unmounts, so the uncontrolled
+       field edits survive the round trip) and the editor column above spans the whole width. -->
+  <aside class="lg:order-2 mt-4 lg:mt-0" class:hidden={mode === 'preview'}>
     <!-- One sidebar card, three labeled groups. Each group is its own fieldset so its eyebrow is
          a real legend that screen readers announce with the fields it holds. -->
     <div class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 flex flex-col gap-5 p-4 shadow-[var(--cairn-shadow)]">

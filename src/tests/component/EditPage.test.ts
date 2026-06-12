@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
 import type { BeforeNavigate } from '@sveltejs/kit';
@@ -37,6 +37,7 @@ function postProps(over = {}) {
       published: true,
       publishedFlash: false,
       discardedFlash: false,
+      preview: null,
       siteName: 'Test Site',
       ...over,
     },
@@ -57,7 +58,15 @@ function pageProps() {
   };
 }
 
+/** The preview iframe's document, the surface the rendered html and site styles land on. */
+function previewSrcdoc(screen: { container: HTMLElement }) {
+  return screen.container.querySelector('iframe[title="Page preview"]')?.getAttribute('srcdoc') ?? '';
+}
+
 describe('EditPage', () => {
+  // The device choice persists per browser; clear it so each test starts from the Desktop default.
+  beforeEach(() => localStorage.removeItem('cairn-editor-preview-device'));
+
   it('renders the rich frontmatter fields for a post', async () => {
     const screen = render(EditPage, postProps());
     await expect.element(screen.getByLabelText(/title/i)).toHaveValue('Hello');
@@ -140,13 +149,32 @@ describe('EditPage', () => {
     expect(screen.container.querySelector('.alert-success')).not.toBeNull();
   });
 
-  it('renders preview HTML when the preview is shown', async () => {
+  it('renders the preview into a sandboxed iframe inside the pane', async () => {
     const props = { ...postProps({ body: 'Hello world' }), render: (md: string) => `<p>${md}</p>` };
     const screen = render(EditPage, props);
     await screen.getByRole('tab', { name: 'Preview' }).click();
-    await expect
-      .poll(() => screen.container.querySelector('#cairn-pane-preview')?.innerHTML ?? '')
-      .toContain('Hello world');
+    await expect.poll(() => previewSrcdoc(screen)).toContain('<p>Hello world</p>');
+    const frame = screen.container.querySelector('iframe[title="Page preview"]')!;
+    // The empty sandbox: no scripts, and links inside the frame stay inert.
+    expect(frame.getAttribute('sandbox')).toBe('');
+    expect(screen.container.querySelector('#cairn-pane-preview')!.contains(frame)).toBe(true);
+  });
+
+  it('links the adapter stylesheets and classes into the preview document', async () => {
+    const props = {
+      ...postProps({
+        body: 'Styled body',
+        preview: { stylesheets: ['/assets/site.css'], bodyClass: 'site-body', containerClass: 'prose' },
+      }),
+      render: (md: string) => `<p>${md}</p>`,
+    };
+    const screen = render(EditPage, props);
+    await screen.getByRole('tab', { name: 'Preview' }).click();
+    await expect.poll(() => previewSrcdoc(screen)).toContain('<p>Styled body</p>');
+    const doc = previewSrcdoc(screen);
+    expect(doc).toContain('<link rel="stylesheet" href="/assets/site.css">');
+    expect(doc).toContain('<body class="site-body">');
+    expect(doc).toContain('<div class="prose">');
   });
 
   it('the floored render pipeline strips a dangerous payload in the preview', async () => {
@@ -157,10 +185,8 @@ describe('EditPage', () => {
     };
     const screen = render(EditPage, props);
     await screen.getByRole('tab', { name: 'Preview' }).click();
-    await expect
-      .poll(() => screen.container.querySelector('#cairn-pane-preview')?.innerHTML ?? '')
-      .toContain('safe text');
-    expect(screen.container.querySelector('#cairn-pane-preview')!.innerHTML).not.toContain('onerror');
+    await expect.poll(() => previewSrcdoc(screen)).toContain('safe text');
+    expect(previewSrcdoc(screen)).not.toContain('onerror');
   });
 
   it('resolves cairn links in the preview, marking a missing target broken', async () => {
@@ -175,10 +201,69 @@ describe('EditPage', () => {
     };
     const screen = render(EditPage, props);
     await screen.getByRole('tab', { name: 'Preview' }).click();
+    await expect.poll(() => previewSrcdoc(screen)).toContain('href="/about"');
+    expect(previewSrcdoc(screen)).toContain('cairn-broken-link');
+  });
+
+  it('hides the sidebar while Preview shows and restores it on Write', async () => {
+    const screen = render(EditPage, postProps());
+    const aside = screen.container.querySelector('aside')!;
+    expect(aside.classList.contains('hidden')).toBe(false);
+    await screen.getByRole('tab', { name: 'Preview' }).click();
+    // Hidden, not unmounted: the uncontrolled field edits survive the round trip. The form
+    // drops its two-column grid, so the editor card takes the full content width.
+    expect(aside.classList.contains('hidden')).toBe(true);
+    const form = screen.container.querySelector('#cairn-edit-form')!;
+    expect(form.classList.contains('lg:grid')).toBe(false);
+    await screen.getByRole('tab', { name: 'Write' }).click();
+    expect(aside.classList.contains('hidden')).toBe(false);
+    expect(form.classList.contains('lg:grid')).toBe(true);
+  });
+
+  it('switches the frame width from the device menu and persists the choice', async () => {
+    const props = { ...postProps({ body: 'sized' }), render: (md: string) => `<p>${md}</p>` };
+    const screen = render(EditPage, props);
+    await screen.getByRole('tab', { name: 'Preview' }).click();
+    const frame = () => screen.container.querySelector<HTMLElement>('.cairn-preview-frame')!;
+    expect(frame().style.width).toBe('100%');
+    await screen.getByRole('button', { name: /preview width/i }).click();
+    await screen.getByRole('menuitemradio', { name: 'Tablet' }).click();
+    await expect.poll(() => frame().style.width).toBe('768px');
+    expect(localStorage.getItem('cairn-editor-preview-device')).toBe('tablet');
+  });
+
+  it('seeds the device from the persisted choice with a Desktop default', async () => {
+    localStorage.setItem('cairn-editor-preview-device', 'phone');
+    const screen = render(EditPage, postProps());
+    await screen.getByRole('tab', { name: 'Preview' }).click();
     await expect
-      .poll(() => screen.container.querySelector('#cairn-pane-preview')?.innerHTML ?? '')
-      .toContain('href="/about"');
-    expect(screen.container.querySelector('#cairn-pane-preview')!.innerHTML).toContain('cairn-broken-link');
+      .poll(() => screen.container.querySelector<HTMLElement>('.cairn-preview-frame')!.style.width)
+      .toBe('390px');
+  });
+
+  it('captions a non-desktop width above the frame and stays quiet on Desktop', async () => {
+    const screen = render(EditPage, postProps());
+    await screen.getByRole('tab', { name: 'Preview' }).click();
+    const pane = () => screen.container.querySelector('#cairn-pane-preview')!;
+    expect(pane().textContent ?? '').not.toContain('Desktop');
+    await screen.getByRole('button', { name: /preview width/i }).click();
+    await screen.getByRole('menuitemradio', { name: 'Small phone' }).click();
+    await expect.poll(() => pane().textContent ?? '').toContain('Small phone · 320 px');
+  });
+
+  const previewHint =
+    "Preview shows unstyled markup until the adapter's preview option names the site's stylesheets.";
+
+  it('hints at the missing preview knob when the adapter sets none', async () => {
+    const screen = render(EditPage, postProps());
+    await screen.getByRole('tab', { name: 'Preview' }).click();
+    expect(screen.container.querySelector('#cairn-pane-preview')!.textContent ?? '').toContain(previewHint);
+  });
+
+  it('drops the hint once the adapter names its stylesheets', async () => {
+    const screen = render(EditPage, postProps({ preview: { stylesheets: ['/site.css'] } }));
+    await screen.getByRole('tab', { name: 'Preview' }).click();
+    expect(screen.container.querySelector('#cairn-pane-preview')!.textContent ?? '').not.toContain(previewHint);
   });
 
   it('inserts a cairn link from the Link to page picker', async () => {
@@ -518,9 +603,7 @@ describe('EditPage', () => {
     const props = { ...postProps({ body: 'Tab body' }), render: (md: string) => `<p>${md}</p>` };
     const screen = render(EditPage, props);
     await screen.getByRole('tab', { name: 'Preview' }).click();
-    await expect
-      .poll(() => screen.container.querySelector('#cairn-pane-preview')?.innerHTML ?? '')
-      .toContain('Tab body');
+    await expect.poll(() => previewSrcdoc(screen)).toContain('Tab body');
     await expect.element(screen.getByRole('tab', { name: 'Preview' })).toHaveAttribute('aria-selected', 'true');
   });
 

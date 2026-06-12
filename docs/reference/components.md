@@ -150,7 +150,12 @@ with the word count and a Markdown help cheat sheet. When the adapter's schema d
 field, that field leaves the sidebar and renders above the card as a large borderless
 document-title input. The toolbar's Write/Preview segmented tabs swap the editing surface for the
 rendered preview inside the same card, and the formatting and insert controls disable while
-Preview shows.
+Preview shows. The preview renders inside a sandboxed iframe whose document links the site's own
+stylesheets from the adapter's `preview` knob (`data.preview`), so the entry proofs in the site's
+real styling without the site CSS touching the admin document; without the knob the frame renders
+unstyled markup behind a one-line hint. While Preview shows, the sidebar hides and the card takes
+the full content width, and a device trigger beside the Preview tab picks the frame width
+(Desktop, Tablet, Phone, or Small phone), persisted per browser.
 
 The sidebar groups the remaining fields under three headings: Details (every other field),
 Visibility (a boolean field named `draft` renders here as the Hidden toggle), and Address (the

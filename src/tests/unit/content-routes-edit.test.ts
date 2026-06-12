@@ -93,6 +93,19 @@ describe('editLoad', () => {
     await expect(routes.editLoad(editEvent('Bad Id!') as never)).rejects.toMatchObject({ status: 400 });
   });
 
+  it('ships the runtime preview knob, and null when the adapter sets none', async () => {
+    editFetch('---\ntitle: Hello\n---\nThe body.');
+    const bare = createContentRoutes(runtime(), deps);
+    const without = await bare.editLoad(editEvent('2026-05-hello') as never);
+    expect(without.preview).toBeNull();
+
+    editFetch('---\ntitle: Hello\n---\nThe body.');
+    const preview = { stylesheets: ['/assets/site.css'], bodyClass: 'site', containerClass: 'prose' };
+    const styled = createContentRoutes({ ...runtime(), preview }, deps);
+    const data = await styled.editLoad(editEvent('2026-05-hello') as never);
+    expect(data.preview).toEqual(preview);
+  });
+
   it('ships the manifest link targets, and an empty list when the manifest is missing', async () => {
     const manifest = serializeManifest({
       version: 1,

@@ -108,6 +108,51 @@ describe('EditorToolbar', () => {
     await expect.poll(() => document.activeElement).toBe(controls(screen.container)[2]);
   });
 
+  it('shows the device trigger only while Preview is active with a handler', async () => {
+    const onDevice = vi.fn();
+    const inWrite = render(EditorToolbar, baseProps({ onDevice }));
+    expect(inWrite.container.querySelector('[popovertarget="cairn-preview-device-menu"]')).toBeNull();
+    const withoutHandler = render(EditorToolbar, baseProps({ mode: 'preview' }));
+    expect(withoutHandler.container.querySelector('[popovertarget="cairn-preview-device-menu"]')).toBeNull();
+    const inPreview = render(EditorToolbar, baseProps({ mode: 'preview', onDevice }));
+    const trigger = inPreview.container.querySelector('[popovertarget="cairn-preview-device-menu"]')!;
+    // The trigger sits in the segmented capsule beside the Preview tab, never inside it.
+    expect(trigger.closest('.join')).not.toBeNull();
+    expect(trigger.closest('[role="tab"]')).toBeNull();
+    expect(trigger.textContent ?? '').toContain('Desktop');
+  });
+
+  it('lists the four widths in the device menu, checks the active one, and reports a pick', async () => {
+    const onDevice = vi.fn();
+    const screen = render(EditorToolbar, baseProps({ mode: 'preview', device: 'tablet', onDevice }));
+    await screen.getByRole('button', { name: /preview width/i }).click();
+    const items = Array.from(
+      screen.container.querySelectorAll('#cairn-preview-device-menu [role="menuitemradio"]'),
+    );
+    expect(items.map((el) => el.textContent?.trim())).toEqual(['Desktop', 'Tablet', 'Phone', 'Small phone']);
+    expect(items.map((el) => el.getAttribute('aria-checked'))).toEqual(['false', 'true', 'false', 'false']);
+    await screen.getByRole('menuitemradio', { name: 'Phone', exact: true }).click();
+    expect(onDevice).toHaveBeenCalledWith('phone');
+    // Picking dismisses the menu.
+    const menu = screen.container.querySelector('#cairn-preview-device-menu')!;
+    await expect.poll(() => menu.matches(':popover-open')).toBe(false);
+  });
+
+  it('drives the device menu as a popover with aria-expanded and Escape', async () => {
+    const screen = render(EditorToolbar, baseProps({ mode: 'preview', onDevice: vi.fn() }));
+    const trigger = screen.getByRole('button', { name: /preview width/i });
+    await expect.element(trigger).toHaveAttribute('aria-expanded', 'false');
+    await expect.element(trigger).toHaveAttribute('aria-haspopup', 'menu');
+    await trigger.click();
+    await expect.element(trigger).toHaveAttribute('aria-expanded', 'true');
+    const menu = screen.container.querySelector('#cairn-preview-device-menu')!;
+    expect(menu.matches(':popover-open')).toBe(true);
+    expect(menu.getAttribute('role')).toBe('menu');
+    await userEvent.keyboard('{Escape}');
+    await expect.element(trigger).toHaveAttribute('aria-expanded', 'false');
+    expect(menu.matches(':popover-open')).toBe(false);
+  });
+
   it('keeps one roving tab stop and moves it with the arrow keys', async () => {
     const screen = render(EditorToolbar, baseProps());
     await expect.poll(() => controls(screen.container).filter((el) => el.tabIndex === 0).length).toBe(1);

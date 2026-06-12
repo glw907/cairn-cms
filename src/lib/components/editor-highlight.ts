@@ -5,7 +5,7 @@ import { HighlightStyle } from '@codemirror/language';
 import { tags } from '@lezer/highlight';
 import { Decoration, ViewPlugin, type DecorationSet, type EditorView, type ViewUpdate } from '@codemirror/view';
 import { RangeSetBuilder } from '@codemirror/state';
-import { directiveLineKind, fenceDepths, findInlineDirectives } from './markdown-directives.js';
+import { directiveLineKind, fenceDepths, fenceTokens, findInlineDirectives } from './markdown-directives.js';
 
 /** Markdown token colors over the admin theme variables. */
 export function cairnHighlightStyle(): HighlightStyle {
@@ -51,6 +51,10 @@ const fenceLines = DEPTH_STEPS.map((d) =>
 const contentLines = DEPTH_STEPS.map((d) => Decoration.line({ class: `cm-cairn-directive-content cm-cairn-depth-${d}` }));
 const leafLine = Decoration.line({ class: 'cm-cairn-directive-leaf', attributes: { title: MACHINERY_HINT } });
 const inlineMark = Decoration.mark({ class: 'cm-cairn-directive-inline' });
+// Within a fence line, machinery (colons, brackets, braces) dims to the marker tone while the
+// directive name and label keep a depth-stepped ink: meaning over machinery.
+const fenceMark = Decoration.mark({ class: 'cm-cairn-directive-mark' });
+const fenceLabels = DEPTH_STEPS.map((d) => Decoration.mark({ class: `cm-cairn-directive-label cm-cairn-depth-${d}` }));
 
 // Depth needs the whole document, since a visible line's containers can open above the viewport.
 // One regex pass per line, linear in the document; at admin entry sizes (tens of kilobytes) that
@@ -72,8 +76,16 @@ function buildDirectiveDecorations(view: EditorView, depths: (number | null)[]):
       const depth = Math.min(depths[line.number - 1] ?? 0, DEPTH_STEPS.length);
       // A fence-shaped line at depth 0 is one the depth scan disowned (a documented example
       // inside a code block, outside any container); it gets no machinery treatment.
-      if (kind === 'fence' && depth > 0) builder.add(line.from, line.from, fenceLines[depth - 1]);
-      else if (kind === 'leaf') builder.add(line.from, line.from, leafLine);
+      if (kind === 'fence' && depth > 0) {
+        builder.add(line.from, line.from, fenceLines[depth - 1]);
+        for (const token of fenceTokens(line.text)) {
+          builder.add(
+            line.from + token.from,
+            line.from + token.to,
+            token.kind === 'mark' ? fenceMark : fenceLabels[depth - 1],
+          );
+        }
+      } else if (kind === 'leaf') builder.add(line.from, line.from, leafLine);
       else if (kind === null) {
         if (depth > 0) builder.add(line.from, line.from, contentLines[depth - 1]);
         for (const r of findInlineDirectives(line.text)) {

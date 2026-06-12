@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { directiveLineKind, fenceDepths, findInlineDirectives } from '../../lib/components/markdown-directives.js';
+import {
+  directiveLineKind,
+  fenceDepths,
+  fenceTokens,
+  findInlineDirectives,
+} from '../../lib/components/markdown-directives.js';
 
 // The field-report regression document, verbatim: a labeled four-colon container holding two
 // attributed panels. Every fence line here must classify, and the depth model must pair them.
@@ -82,6 +87,35 @@ describe('fenceDepths', () => {
     expect(fenceDepths(['```', '~~~', ':::note', '~~~', '```', 'after'])).toEqual([
       null, null, null, null, null, null,
     ]);
+  });
+});
+
+describe('fenceTokens', () => {
+  it('splits a labeled opener into machinery and meaning', () => {
+    expect(fenceTokens('::::split[Costs & volunteers]')).toEqual([
+      { from: 0, to: 4, kind: 'mark' },
+      { from: 4, to: 9, kind: 'label' },
+      { from: 9, to: 10, kind: 'mark' },
+      { from: 10, to: 28, kind: 'label' },
+      { from: 28, to: 29, kind: 'mark' },
+    ]);
+  });
+  it('marks the attribute braces as machinery and the name as meaning', () => {
+    expect(fenceTokens(':::panel{title="Day pass"}')).toEqual([
+      { from: 0, to: 3, kind: 'mark' },
+      { from: 3, to: 8, kind: 'label' },
+      { from: 8, to: 26, kind: 'mark' },
+    ]);
+  });
+  it('treats a bare closer as all machinery', () => {
+    expect(fenceTokens(':::')).toEqual([{ from: 0, to: 3, kind: 'mark' }]);
+  });
+  it('tolerates indent and trailing space', () => {
+    expect(fenceTokens('  ::: ')).toEqual([{ from: 2, to: 5, kind: 'mark' }]);
+  });
+  it('returns nothing for a non-fence line', () => {
+    expect(fenceTokens('plain prose')).toEqual([]);
+    expect(fenceTokens('::leaf[Label]')).toEqual([]);
   });
 });
 

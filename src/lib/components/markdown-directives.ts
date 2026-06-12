@@ -4,9 +4,11 @@
 
 // A container fence: three or more colons, then an optional name, an optional [label], and
 // optional {attrs}, in remark-directive order. The name is captured so the depth scan below can
-// tell an opener (named) from a closer (bare colons). Matching is tolerant of stray whitespace,
-// the same posture as the leaf form: a slightly off fence should still read as machinery.
-const FENCE = /^\s{0,3}:{3,}\s*([\w-]*)\s*(\[[^\]]*\])?\s*(\{[^}]*\})?\s*$/;
+// tell an opener (named) from a closer (bare colons), and the d flag records each group's span
+// so fenceTokens can split the line without re-parsing. Matching is tolerant of stray
+// whitespace, the same posture as the leaf form: a slightly off fence should still read as
+// machinery.
+const FENCE = /^\s{0,3}(:{3,})\s*([\w-]*)\s*(\[[^\]]*\])?\s*(\{[^}]*\})?\s*$/d;
 const LEAF = /^\s{0,3}::[\w-]+(\[[^\]]*\])?(\{[^}]*\})?\s*$/;
 const INLINE = /(?<![:\w]):[\w-]+\[[^\]]*\](\{[^}]*\})?/g;
 
@@ -52,7 +54,7 @@ export function fenceDepths(lines: string[]): (number | null)[] {
     const fence = FENCE.exec(line);
     if (!fence) {
       depths.push(open > 0 ? open : null);
-    } else if (fence[1]) {
+    } else if (fence[2]) {
       open += 1;
       depths.push(open);
     } else {
@@ -61,6 +63,45 @@ export function fenceDepths(lines: string[]): (number | null)[] {
     }
   }
   return depths;
+}
+
+/** One span of a fence line, in line-local offsets: machinery (`mark`) or meaning (`label`). */
+export interface FenceToken {
+  from: number;
+  to: number;
+  kind: 'mark' | 'label';
+}
+
+/**
+ * Split a fence line into machinery and meaning. The colon run, the label's brackets, and the
+ * whole {attrs} group are machinery; the directive name and the label text are meaning, the
+ * parts an editor reads. A bare closer is a single machinery span, and a non-fence line yields
+ * no spans at all.
+ */
+export function fenceTokens(line: string): FenceToken[] {
+  const m = FENCE.exec(line);
+  if (!m?.indices) return [];
+  // A group's span exists whenever the group matched: group 1 (the colons) always does on a
+  // fence, and the optional groups are read only behind their own m[n] guard.
+  const indices = m.indices;
+  const out: FenceToken[] = [];
+  const [colonFrom, colonTo] = indices[1]!;
+  out.push({ from: colonFrom, to: colonTo, kind: 'mark' });
+  if (m[2]) {
+    const [from, to] = indices[2]!;
+    out.push({ from, to, kind: 'label' });
+  }
+  if (m[3]) {
+    const [from, to] = indices[3]!;
+    out.push({ from, to: from + 1, kind: 'mark' });
+    if (to - from > 2) out.push({ from: from + 1, to: to - 1, kind: 'label' });
+    out.push({ from: to - 1, to, kind: 'mark' });
+  }
+  if (m[4]) {
+    const [from, to] = indices[4]!;
+    out.push({ from, to, kind: 'mark' });
+  }
+  return out;
 }
 
 /** Inline directive ranges (`:name[...]{...}`) within a line of text. */

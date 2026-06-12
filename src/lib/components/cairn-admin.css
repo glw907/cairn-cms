@@ -29,14 +29,11 @@
   --color-accent: oklch(54% 0.16 300);
   --color-accent-content: oklch(98% 0.012 300);
 
-  /* The editor's nested-directive depth scale: machinery bands step the accent tint by nesting
-     depth, content lines carry an accent rail at the same steps, and the deeper bands darken
-     their ink so it keeps AA on its own tint. Locked pairs (ink on band, computed against
-     base-100): depth 1 = 54% on 8% (4.75:1), depth 2 = 50% on 14% (5.20:1), depth 3 = 48% on
-     20% (5.21:1). Do not raise a band or lighten its ink without re-checking. */
-  --cairn-directive-band-1: 8%;
-  --cairn-directive-band-2: 14%;
-  --cairn-directive-band-3: 20%;
+  /* The editor's nested-directive depth scale: fence and content rows share a 2px inset accent
+     rail stepped by nesting depth, and a fence line's name and label take a depth-stepped ink
+     on plain base-100 (the tinted bands are gone). Locked pairs (label ink on base-100):
+     depth 1 = accent 54% (5.28:1), depth 2 = 50% (6.28:1), depth 3 = 48% (6.85:1). Do not
+     lighten an ink without re-checking. */
   --cairn-directive-ink-2: oklch(50% 0.16 300);
   --cairn-directive-ink-3: oklch(48% 0.16 300);
   /* The content rail is a 2px non-text cue, so its composited color must clear the 3:1 floor
@@ -110,14 +107,10 @@
   --color-accent: oklch(70% 0.14 300);
   --color-accent-content: oklch(20% 0.04 300);
 
-  /* The nested-directive depth scale on dark: slightly stronger bands (a tint reads quieter on a
-     dark base), with the deeper inks lightened to keep AA on their own tint. Locked pairs (ink on
-     band, computed against base-100): depth 1 = 70% on 10% (5.03:1), depth 2 = 74% on 16%
-     (5.27:1), depth 3 = 78% on 22% (5.42:1). Do not raise a band or darken its ink without
-     re-checking. */
-  --cairn-directive-band-1: 10%;
-  --cairn-directive-band-2: 16%;
-  --cairn-directive-band-3: 22%;
+  /* The nested-directive label inks on dark lighten with depth so a deeper fence's name reads
+     stronger on base-100 (the tinted bands are gone). Locked pairs (label ink on base-100):
+     depth 1 = accent 70% (5.86:1), depth 2 = 74% (6.81:1), depth 3 = 78% (7.82:1). Do not
+     darken an ink without re-checking. */
   --cairn-directive-ink-2: oklch(74% 0.14 300);
   --cairn-directive-ink-3: oklch(78% 0.14 300);
   /* The content rails hold the same 3:1 non-text floor on dark. Locked margins (rail vs

@@ -61,16 +61,16 @@ through the adapter's render. Swapping the editor stays a one-file change.
     // Mirror the admin theme into CodeMirror's own dark flag, so its base chrome (the autocomplete
     // tooltip above all) renders dark-on-dark instead of light-on-dark.
     const isDark = host.closest('[data-theme]')?.getAttribute('data-theme')?.includes('dark') ?? false;
-    // The directive machinery treatment. The fence bands and content rails step their alpha by
-    // nesting depth through the per-theme vars in cairn-admin.css; the fallbacks are the light
-    // values, so the editor still renders sensibly outside an admin theme wrapper. The deeper
-    // bands swap in a darker ink (--cairn-directive-ink-N) to hold AA on their own tint.
-    const band = (depth: number, fallback: string) =>
-      `color-mix(in oklab, var(--color-accent) var(--cairn-directive-band-${depth}, ${fallback}), transparent)`;
+    // The directive machinery treatment: rails, not bands. Fence and content rows share a 2px
+    // inset accent rail stepped by nesting depth through the per-theme vars in cairn-admin.css;
+    // the fallbacks are the light values, so the editor still renders sensibly outside an admin
+    // theme wrapper. On a fence line the colon runs, brackets, and {attrs} braces dim to the
+    // marker tone while the name and label keep a depth-stepped ink. Leaf and inline directives
+    // keep a fixed 8% accent chip; the accent ink holds AA on it (4.75:1 light, 5.20:1 dark).
     const rail = (depth: number, fallback: string) =>
       `inset 2px 0 0 0 color-mix(in oklab, var(--color-accent) var(--cairn-directive-rail-${depth}, ${fallback}), transparent)`;
     const directiveInk = {
-      backgroundColor: band(1, '8%'),
+      backgroundColor: 'color-mix(in oklab, var(--color-accent) 8%, transparent)',
       color: 'var(--color-accent)',
     };
     const theme = EditorView.theme(
@@ -99,18 +99,19 @@ through the adapter's render. Swapping the editor stays a one-file change.
           outlineOffset: '-1px',
         },
         '.cm-line': { padding: '0' },
-        '.cm-cairn-directive-fence': directiveInk,
-        '.cm-cairn-directive-fence.cm-cairn-depth-2': {
-          backgroundColor: band(2, '14%'),
-          color: 'var(--cairn-directive-ink-2, oklch(50% 0.16 300))',
+        '.cm-cairn-directive-fence.cm-cairn-depth-1, .cm-cairn-directive-content.cm-cairn-depth-1': {
+          boxShadow: rail(1, '75%'),
         },
-        '.cm-cairn-directive-fence.cm-cairn-depth-3': {
-          backgroundColor: band(3, '20%'),
-          color: 'var(--cairn-directive-ink-3, oklch(48% 0.16 300))',
+        '.cm-cairn-directive-fence.cm-cairn-depth-2, .cm-cairn-directive-content.cm-cairn-depth-2': {
+          boxShadow: rail(2, '82%'),
         },
-        '.cm-cairn-directive-content.cm-cairn-depth-1': { boxShadow: rail(1, '75%') },
-        '.cm-cairn-directive-content.cm-cairn-depth-2': { boxShadow: rail(2, '82%') },
-        '.cm-cairn-directive-content.cm-cairn-depth-3': { boxShadow: rail(3, '90%') },
+        '.cm-cairn-directive-fence.cm-cairn-depth-3, .cm-cairn-directive-content.cm-cairn-depth-3': {
+          boxShadow: rail(3, '90%'),
+        },
+        '.cm-cairn-directive-mark': { color: 'var(--color-muted)' },
+        '.cm-cairn-directive-label': { color: 'var(--color-accent)' },
+        '.cm-cairn-directive-label.cm-cairn-depth-2': { color: 'var(--cairn-directive-ink-2, oklch(50% 0.16 300))' },
+        '.cm-cairn-directive-label.cm-cairn-depth-3': { color: 'var(--cairn-directive-ink-3, oklch(48% 0.16 300))' },
         '.cm-cairn-directive-leaf': directiveInk,
         '.cm-cairn-directive-inline': directiveInk,
       },

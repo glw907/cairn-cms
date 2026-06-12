@@ -28,6 +28,21 @@ const spanWith = (line: HTMLElement | undefined, text: string) =>
     ? Array.from(line.querySelectorAll<HTMLElement>('span')).find((s) => (s.textContent ?? '').trim() === text)
     : undefined;
 
+// The field-report regression document, verbatim: a labeled four-colon container holding two
+// attributed panels. The directive tests share it so the depth model and the fence-line token
+// treatment are proven on the same real nesting.
+const NESTED_DOC = [
+  '::::split[Costs & volunteers]',
+  ':::panel{icon="hand-coins"}',
+  "**Cost.** Training and camp are free, and money never decides who joins. Families who want to give can; donations buy gas, campground nights, and shared gear, and outfit athletes who need skis or a ride. If cost is in the way of anything, tell a coach. We won't ask about your finances.",
+  ':::',
+  '',
+  ':::panel{icon="handshake" role="secondary"}',
+  "**Volunteers.** Adults make this work, drivers most of all, since practice moves between trailheads. The [Volunteers page](/volunteers) has this summer's coaches and the jobs we need filled. You don't need a coaching certificate or a ski background.",
+  ':::',
+  '::::',
+].join('\n');
+
 // Clicks the surface into focus and moves the caret to the end of the document, where the
 // list-continuation behaviors act. Ctrl-End is cursorDocEnd in the default keymap.
 async function focusEditorEnd(container: Element) {
@@ -129,19 +144,8 @@ describe('MarkdownEditor', () => {
 
   it('decorates every fence of a nested labeled document and steps the classes by depth', async () => {
     // The field-report regression: a labeled opener (::::split[...]) must read as machinery, not
-    // prose, and the depth model must step the bands and rails as the stack pairs the fences.
-    const doc = [
-      '::::split[Costs & volunteers]',
-      ':::panel{icon="hand-coins"}',
-      "**Cost.** Training and camp are free, and money never decides who joins. Families who want to give can; donations buy gas, campground nights, and shared gear, and outfit athletes who need skis or a ride. If cost is in the way of anything, tell a coach. We won't ask about your finances.",
-      ':::',
-      '',
-      ':::panel{icon="handshake" role="secondary"}',
-      "**Volunteers.** Adults make this work, drivers most of all, since practice moves between trailheads. The [Volunteers page](/volunteers) has this summer's coaches and the jobs we need filled. You don't need a coaching certificate or a ski background.",
-      ':::',
-      '::::',
-    ].join('\n');
-    const screen = render(MarkdownEditor, { value: doc, name: 'body' });
+    // prose, and the depth model must step the rails and label inks as the stack pairs the fences.
+    const screen = render(MarkdownEditor, { value: NESTED_DOC, name: 'body' });
     await expect
       .poll(() => screen.container.querySelectorAll('.cm-line.cm-cairn-directive-fence').length)
       .toBe(6);
@@ -153,6 +157,87 @@ describe('MarkdownEditor', () => {
     // The panel prose rails at depth 2; the blank line between the panels rails at depth 1.
     expect(screen.container.querySelectorAll('.cm-line.cm-cairn-directive-content.cm-cairn-depth-2')).toHaveLength(2);
     expect(screen.container.querySelectorAll('.cm-line.cm-cairn-directive-content.cm-cairn-depth-1')).toHaveLength(1);
+  });
+
+  it('rails the fence rows without a band and steps the rail by depth', async () => {
+    // The rail vars carry fallbacks in the theme, but their color-mix needs --color-accent to
+    // resolve or the whole declaration drops on the bare test page.
+    const unpin = pinThemeVars({ '--color-accent': 'rgb(100, 60, 200)' });
+    try {
+      const screen = render(MarkdownEditor, { value: NESTED_DOC, name: 'body' });
+      await expect
+        .poll(() => screen.container.querySelectorAll('.cm-line.cm-cairn-directive-fence').length)
+        .toBe(6);
+      const fence1 = screen.container.querySelector<HTMLElement>(
+        '.cm-line.cm-cairn-directive-fence.cm-cairn-depth-1',
+      )!;
+      const fence2 = screen.container.querySelector<HTMLElement>(
+        '.cm-line.cm-cairn-directive-fence.cm-cairn-depth-2',
+      )!;
+      const content2 = screen.container.querySelector<HTMLElement>(
+        '.cm-line.cm-cairn-directive-content.cm-cairn-depth-2',
+      )!;
+      // No full-width band: the fence rows keep a transparent background.
+      expect(getComputedStyle(fence1).backgroundColor).toBe('rgba(0, 0, 0, 0)');
+      expect(getComputedStyle(fence2).backgroundColor).toBe('rgba(0, 0, 0, 0)');
+      // The rail: an inset box shadow shared with the content rows at the same depth, so a
+      // container reads as one bracketed region, and stepped between depths.
+      const rail1 = getComputedStyle(fence1).boxShadow;
+      const rail2 = getComputedStyle(fence2).boxShadow;
+      expect(rail1).toContain('inset');
+      expect(rail2).toContain('inset');
+      expect(rail2).toBe(getComputedStyle(content2).boxShadow);
+      expect(rail1).not.toBe(rail2);
+    } finally {
+      unpin();
+    }
+  });
+
+  it('dims the fence machinery and inks the name and label on an opener row', async () => {
+    const unpin = pinThemeVars({
+      '--color-accent': 'rgb(100, 60, 200)',
+      '--color-muted': 'rgb(120, 110, 100)',
+      '--cairn-directive-ink-2': 'rgb(80, 40, 160)',
+    });
+    try {
+      const screen = render(MarkdownEditor, { value: NESTED_DOC, name: 'body' });
+      await expect.poll(() => spanWith(lineWith(screen.container, '::::split'), '::::')).toBeTruthy();
+      const opener = lineWith(screen.container, '::::split')!;
+      // The colon run is machinery and recedes to the marker-muted tone.
+      expect(getComputedStyle(spanWith(opener, '::::')!).color).toBe('rgb(120, 110, 100)');
+      // The name and the label text are meaning and carry the accent ink (depth 1).
+      expect(getComputedStyle(spanWith(opener, 'split')!).color).toBe('rgb(100, 60, 200)');
+      expect(getComputedStyle(spanWith(opener, 'Costs & volunteers')!).color).toBe('rgb(100, 60, 200)');
+      // A depth-2 opener's name steps to the depth-2 label ink.
+      const panel = lineWith(screen.container, 'hand-coins')!;
+      expect(getComputedStyle(spanWith(panel, 'panel')!).color).toBe('rgb(80, 40, 160)');
+    } finally {
+      unpin();
+    }
+  });
+
+  it('mutes a bare closer row entirely', async () => {
+    const unpin = pinThemeVars({
+      '--color-accent': 'rgb(100, 60, 200)',
+      '--color-muted': 'rgb(120, 110, 100)',
+    });
+    try {
+      const screen = render(MarkdownEditor, { value: NESTED_DOC, name: 'body' });
+      await expect
+        .poll(() => screen.container.querySelectorAll('.cm-line.cm-cairn-directive-fence').length)
+        .toBe(6);
+      // The final ::::, found by exact text since the opener contains the same colon run.
+      const closer = Array.from(screen.container.querySelectorAll<HTMLElement>('.cm-line')).find(
+        (l) => l.textContent === '::::',
+      )!;
+      const spans = Array.from(closer.querySelectorAll<HTMLElement>('span'));
+      expect(spans.length).toBeGreaterThan(0);
+      for (const span of spans) {
+        expect(getComputedStyle(span).color).toBe('rgb(120, 110, 100)');
+      }
+    } finally {
+      unpin();
+    }
   });
 
   it('explains the directive machinery lines through a title tooltip', async () => {

@@ -22,7 +22,9 @@ looks identical on any host with no host CSS. DaisyUI v5, Tailwind v4, Svelte 5 
   utilities. An unlayered rule beats every utility (cascade layers resolve before specificity), which
   silently kills hover and link utilities. The anchor reset, the `<summary>`/caret rules, `::selection`,
   `:focus-visible`, and the `.btn-primary` lift all live in the `@layer components` block in
-  `cairn-admin.css`.
+  `cairn-admin.css`. One deliberate exception: the `.menu` focus override is unlayered on purpose,
+  because DaisyUI's own utilities-layer rule quiets `:focus-visible` on menu items and only an
+  unlayered rule outranks it. Do not add another unlayered rule without the same forcing reason.
 - **The build flattens CSS nesting before scoping.** `build-admin-css.mjs` runs lightningcss with
   `Features.Nesting` between the Tailwind compile and `postcss-prefix-selector`, because the prefixer
   prepends the scope to the front of every rule and would sever a nested combinator selector
@@ -123,17 +125,22 @@ Recipes:
 - **Editor instrument strip:** one card frame holds the toolbar, the editing surface, and a slim
   footer (word count left, Markdown help right). Ghost `btn-sm btn-square` glyph buttons in groups
   divided by `w-px self-stretch bg-[var(--cairn-card-border)]` hairlines, a More popover menu for the
-  low-frequency formats, the host's insert controls through a snippet, and the Write/Preview
-  segmented `join` pinned right with `role="tablist"`. Roving tabindex carries keyboard traversal.
-  Formatting and insert controls disable while Preview shows.
+  low-frequency formats, the host's insert controls through a snippet, and the Write/Preview capsule
+  pinned right. The `role="tablist"` wrapper holds only the two tabs (ARIA required children), and
+  the capsule is drawn with manual corner rounding (`rounded-r-none`, `rounded-l-none -ml-px`)
+  rather than daisyUI's `.join`, so the device trigger can sit beside the tablist instead of inside
+  it. Roving tabindex carries keyboard traversal. Formatting and insert controls disable while
+  Preview shows.
 - **Preview frame:** the Preview tabpanel is a recessed ground (`bg-base-200 px-4 py-6 lg:px-8`)
   holding a centered frame column whose width follows the picked device, eased with
   `transition-[width]` under the reduced-motion guard. Inside the column, the standard floating
   card wraps the sandboxed iframe, and a right-aligned eyebrow caption names the device and its
-  width for any non-desktop pick. A device trigger joins the Write/Preview `join` capsule as a
-  third segment (a plain menu button, never a tab; daisyUI join radii need direct children) and
-  opens the standard popover menu of widths; the pick persists under `cairn-editor-preview-device`.
-  While Preview shows, the sidebar hides so the document proofs at the full content width.
+  width for any non-desktop pick. A device trigger reads as the capsule's third segment but sits
+  after the tablist wrapper (a plain button, never a tab). It opens the standard popover list of
+  widths: plain buttons carrying `aria-pressed` and the check glyph, each naming its width
+  ("Tablet · 768 px"), never the ARIA menu pattern. The pick persists under
+  `cairn-editor-preview-device`. While Preview shows, the sidebar hides so the document proofs at
+  the full content width.
 - **Document title input:** when the adapter defines a `title` field it renders above the editor
   card as `cairn-doc-title`: `text-3xl font-bold tracking-tight` in the display face, borderless on
   the recessed background. This input is the page's visible h1 (the header h1 is `sr-only`), which

@@ -15,7 +15,7 @@ pending), and an overflow menu for Discard and Delete. One feedback strip under 
 transient flashes, and the editor card's footer holds the word count and the Markdown help.
 -->
 <script lang="ts">
-  import { untrack } from 'svelte';
+  import { flushSync, untrack } from 'svelte';
   import { beforeNavigate } from '$app/navigation';
   import { page } from '$app/state';
   import CsrfField from './CsrfField.svelte';
@@ -100,6 +100,16 @@ transient flashes, and the editor card's footer holds the word count and the Mar
 
   // The edit form element, for the Ctrl/Cmd+S shortcut's requestSubmit.
   let editForm = $state<HTMLFormElement | null>(null);
+
+  // A required sidebar field hidden by Preview cannot take the browser's validation report: an
+  // invisible control is unfocusable, so the browser cancels the save silently with no message.
+  // This capture-phase invalid listener flips back to Write first, and flushSync forces the pane
+  // swap inside the event, so the report that follows the invalid events lands on a visible
+  // control and the author sees what blocked the save.
+  function onFormInvalid() {
+    if (mode === 'write') return;
+    flushSync(() => (mode = 'write'));
+  }
 
   // The SvelteKit half of the leave guard. Registered at component init (beforeNavigate wraps
   // onMount, so it must run synchronously here) and auto-unregistered on destroy. A submit's own
@@ -410,7 +420,13 @@ transient flashes, and the editor card's footer holds the word count and the Mar
         }
       }
     }, 150);
-    return () => clearTimeout(handle);
+    return () => {
+      clearTimeout(handle);
+      // Every re-run and the final teardown invalidate the in-flight render. The entry-key reset
+      // above cannot reach this counter, so without the bump a slow render for entry A could
+      // resolve after a same-route hop and write A's html into entry B's pane.
+      previewRun++;
+    };
   });
 
   // Coerce a frontmatter value to a string for text/date/textarea inputs.
@@ -597,6 +613,7 @@ transient flashes, and the editor card's footer holds the word count and the Mar
   bind:this={editForm}
   onsubmit={onEditSubmit}
   oninput={onFormInput}
+  oninvalidcapture={onFormInvalid}
   class={mode === 'preview' ? '' : 'lg:grid lg:grid-cols-[1fr_20rem] lg:gap-6'}
 >
   <CsrfField />
@@ -724,10 +741,16 @@ transient flashes, and the editor card's footer holds the word count and the Mar
                 <p class="p-4 text-sm text-[var(--color-muted)]">Nothing to preview yet.</p>
               {:else}
                 <!-- The site's render pipeline already sanitized the html (the floor strips
-                     scripts and handlers); the empty sandbox is belt and braces on top, and the
-                     same sandbox leaves links inside the frame inert, so a proofing click never
-                     navigates away from the edits. -->
-                <iframe sandbox="" title="Page preview" srcdoc={previewDoc} class="block h-[70vh] w-full"></iframe>
+                     scripts and handlers); the empty sandbox is belt and braces on top. The
+                     frame document's base tag targets every link at a new tab, which the
+                     sandbox (no allow-popups) blocks, so a proofing click never navigates the
+                     admin or the frame itself. tabindex 0 keeps the scrollable preview
+                     keyboard-reachable (an iframe is not a sequential tab stop by itself); on
+                     a link-heavy page that one inert Tab stop is a deliberate tradeoff. The
+                     a11y rule reads any tabindex on a non-interactive element as a smell, but
+                     a scrollable region is the recognized exception. -->
+                <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+                <iframe sandbox="" tabindex="0" title="Page preview" srcdoc={previewDoc} class="block h-[70vh] w-full"></iframe>
               {/if}
             </div>
           </div>

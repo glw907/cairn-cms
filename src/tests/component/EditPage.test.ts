@@ -155,8 +155,12 @@ describe('EditPage', () => {
     await screen.getByRole('tab', { name: 'Preview' }).click();
     await expect.poll(() => previewSrcdoc(screen)).toContain('<p>Hello world</p>');
     const frame = screen.container.querySelector('iframe[title="Page preview"]')!;
-    // The empty sandbox: no scripts, and links inside the frame stay inert.
+    // The empty sandbox: no scripts, and a link click becomes a popup (the frame document's base
+    // target) the sandbox blocks, so proofing a link never navigates the admin or the frame.
     expect(frame.getAttribute('sandbox')).toBe('');
+    // The scrollable preview document stays keyboard-reachable: an iframe is not a sequential
+    // tab stop by itself.
+    expect(frame.getAttribute('tabindex')).toBe('0');
     expect(screen.container.querySelector('#cairn-pane-preview')!.contains(frame)).toBe(true);
   });
 
@@ -227,7 +231,7 @@ describe('EditPage', () => {
     const frame = () => screen.container.querySelector<HTMLElement>('.cairn-preview-frame')!;
     expect(frame().style.width).toBe('100%');
     await screen.getByRole('button', { name: /preview width/i }).click();
-    await screen.getByRole('menuitemradio', { name: 'Tablet' }).click();
+    await screen.getByRole('button', { name: 'Tablet · 768 px', exact: true }).click();
     await expect.poll(() => frame().style.width).toBe('768px');
     expect(localStorage.getItem('cairn-editor-preview-device')).toBe('tablet');
   });
@@ -247,7 +251,7 @@ describe('EditPage', () => {
     const pane = () => screen.container.querySelector('#cairn-pane-preview')!;
     expect(pane().textContent ?? '').not.toContain('Desktop');
     await screen.getByRole('button', { name: /preview width/i }).click();
-    await screen.getByRole('menuitemradio', { name: 'Small phone' }).click();
+    await screen.getByRole('button', { name: 'Small phone · 320 px', exact: true }).click();
     await expect.poll(() => pane().textContent ?? '').toContain('Small phone · 320 px');
   });
 
@@ -1293,5 +1297,55 @@ describe('EditPage', () => {
     const screen = render(EditPage, props);
     await screen.getByRole('tab', { name: 'Preview' }).click();
     await expect.element(screen.getByText('The preview could not render this content.')).toBeInTheDocument();
+  });
+
+  it('discards an in-flight render across the entry remount, so entry B never shows entry A html', async () => {
+    // A controllable async render: each call parks until the test resolves it, standing in for a
+    // slow site pipeline.
+    const calls: { md: string; resolve: (html: string) => void }[] = [];
+    const slowRender = (md: string) => new Promise<string>((resolve) => calls.push({ md, resolve }));
+    const screen = render(EditPage, { ...postProps({ body: 'first body' }), render: slowRender });
+    await screen.getByRole('tab', { name: 'Preview' }).click();
+    await expect.poll(() => calls.length).toBe(1);
+    // Navigate to entry B while A's render is still in flight; the entry-key reset remounts the
+    // surface back on Write with an empty preview.
+    await screen.rerender({
+      ...postProps({ body: 'second body', id: '2026-06-other', slug: 'other' }),
+      render: slowRender,
+    });
+    // A's slow render resolves late. Its html must never land on entry B's pane.
+    calls[0].resolve('<p>entry A html</p>');
+    await new Promise((r) => setTimeout(r, 50));
+    await screen.getByRole('tab', { name: 'Preview' }).click();
+    await expect.element(screen.getByText('Nothing to preview yet.')).toBeInTheDocument();
+    expect(previewSrcdoc(screen)).not.toContain('entry A html');
+    // B's own render still lands once it resolves.
+    await expect.poll(() => calls.length).toBe(2);
+    expect(calls[1].md).toBe('second body');
+    calls[1].resolve('<p>entry B html</p>');
+    await expect.poll(() => previewSrcdoc(screen)).toContain('entry B html');
+  });
+
+  it('flips Preview back to Write when a hidden required field blocks the save', async () => {
+    const props = postProps({
+      isNew: true,
+      fields: [
+        { type: 'text', name: 'title', label: 'Title', required: true },
+        { type: 'text', name: 'subtitle', label: 'Subtitle', required: true },
+      ] satisfies FrontmatterField[],
+      frontmatter: { title: 'Hello', subtitle: '' },
+    });
+    const screen = render(EditPage, { ...props });
+    await screen.getByRole('tab', { name: 'Preview' }).click();
+    const aside = screen.container.querySelector('aside')!;
+    expect(aside.classList.contains('hidden')).toBe(true);
+    // Save with the empty required Subtitle hidden by Preview. The browser cannot focus an
+    // invisible invalid control, so without the invalid listener the save would cancel silently;
+    // instead the page flips to Write and the report lands on the visible field.
+    await screen.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect.poll(() => aside.classList.contains('hidden')).toBe(false);
+    const subtitle = screen.container.querySelector<HTMLInputElement>('input[name="subtitle"]')!;
+    expect(subtitle.validity.valueMissing).toBe(true);
+    await expect.poll(() => document.activeElement).toBe(subtitle);
   });
 });

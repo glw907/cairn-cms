@@ -37,24 +37,29 @@ const contentLines = DEPTH_STEPS.map((d) => Decoration.line({ class: `cm-cairn-d
 const leafLine = Decoration.line({ class: 'cm-cairn-directive-leaf', attributes: { title: MACHINERY_HINT } });
 const inlineMark = Decoration.mark({ class: 'cm-cairn-directive-inline' });
 
-function buildDirectiveDecorations(view: EditorView): DecorationSet {
-  // Depth needs the whole document, since a visible line's containers can open above the viewport.
-  // The full scan is one regex pass per line, linear in the document; at admin entry sizes (tens of
-  // kilobytes) that is well under a millisecond, so it runs on every change without batching.
+// Depth needs the whole document, since a visible line's containers can open above the viewport.
+// One regex pass per line, linear in the document; at admin entry sizes (tens of kilobytes) that
+// is well under a millisecond. The plugin caches the result, so the scan reruns only when the
+// document changes and a scroll rebuilds the viewport decorations from the cached array.
+function docDepths(view: EditorView): (number | null)[] {
   const doc = view.state.doc;
   const lines: string[] = [];
   for (let n = 1; n <= doc.lines; n++) lines.push(doc.line(n).text);
-  const depths = fenceDepths(lines);
+  return fenceDepths(lines);
+}
 
+function buildDirectiveDecorations(view: EditorView, depths: (number | null)[]): DecorationSet {
   const builder = new RangeSetBuilder<Decoration>();
   for (const { from, to } of view.visibleRanges) {
     for (let pos = from; pos <= to; ) {
       const line = view.state.doc.lineAt(pos);
       const kind = directiveLineKind(line.text);
       const depth = Math.min(depths[line.number - 1] ?? 0, DEPTH_STEPS.length);
-      if (kind === 'fence') builder.add(line.from, line.from, fenceLines[depth - 1]);
+      // A fence-shaped line at depth 0 is one the depth scan disowned (a documented example
+      // inside a code block, outside any container); it gets no machinery treatment.
+      if (kind === 'fence' && depth > 0) builder.add(line.from, line.from, fenceLines[depth - 1]);
       else if (kind === 'leaf') builder.add(line.from, line.from, leafLine);
-      else {
+      else if (kind === null) {
         if (depth > 0) builder.add(line.from, line.from, contentLines[depth - 1]);
         for (const r of findInlineDirectives(line.text)) {
           builder.add(line.from + r.from, line.from + r.to, inlineMark);
@@ -71,11 +76,15 @@ export function cairnDirectivePlugin() {
   return ViewPlugin.fromClass(
     class {
       decorations: DecorationSet;
+      depths: (number | null)[];
       constructor(view: EditorView) {
-        this.decorations = buildDirectiveDecorations(view);
+        this.depths = docDepths(view);
+        this.decorations = buildDirectiveDecorations(view, this.depths);
       }
       update(update: ViewUpdate) {
-        if (update.docChanged || update.viewportChanged) this.decorations = buildDirectiveDecorations(update.view);
+        if (update.docChanged) this.depths = docDepths(update.view);
+        if (update.docChanged || update.viewportChanged)
+          this.decorations = buildDirectiveDecorations(update.view, this.depths);
       }
     },
     { decorations: (v) => v.decorations },

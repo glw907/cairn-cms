@@ -88,9 +88,10 @@ test('the redesigned editor: hoisted title, toolbar bold, preview round-trip, st
   await expect(frame.locator('.site-main')).toHaveCSS('max-width', '768px');
   await expect(page.getByText('Preview shows unstyled markup')).toHaveCount(0);
 
-  // The width menu sizes the frame: pick Phone and the frame column narrows to its 390px.
+  // The width menu sizes the frame: pick Phone (each item names its width for assistive tech)
+  // and the frame column narrows to its 390px.
   await page.getByRole('button', { name: /Preview width/ }).click();
-  await page.getByRole('menuitemradio', { name: 'Phone', exact: true }).click();
+  await page.getByRole('button', { name: 'Phone · 390 px', exact: true }).click();
   await expect(page.locator('.cairn-preview-frame')).toHaveCSS('width', '390px');
 
   await page.getByRole('tab', { name: 'Write' }).click();
@@ -110,6 +111,36 @@ test('the redesigned editor: hoisted title, toolbar bold, preview round-trip, st
     page.locator('.alert', { hasText: 'Saved. Your site keeps showing the published version until you publish.' }),
   ).toBeVisible();
   await expect(page.locator('.cairn-save-state')).toHaveText('Saved');
+});
+
+test('a link inside the preview frame never navigates the admin away from the edits', async ({ page }) => {
+  await page.goto('/admin/posts');
+  await page.locator('a[href="/admin/posts/2026-06-hello"]').click();
+  await expect(page).toHaveURL(/\/admin\/posts\/2026-06-hello$/);
+
+  // Replace the body with prose carrying a root-relative link, the kind that would resolve
+  // against the admin origin inside the srcdoc frame.
+  const editor = page.locator('.cm-content');
+  await expect(editor).toBeVisible();
+  await editor.click();
+  await page.keyboard.press('ControlOrMeta+A');
+  await page.keyboard.type('Visit the [home page](/) for more.');
+  await expect(page.locator('input[name="body"]')).toHaveValue('Visit the [home page](/) for more.', {
+    timeout: 2000,
+  });
+
+  await page.getByRole('tab', { name: 'Preview' }).click();
+  const frame = page.frameLocator('#cairn-pane-preview iframe[title="Page preview"]');
+  const link = frame.locator('a', { hasText: 'home page' });
+  await expect(link).toBeVisible();
+
+  // The frame document's base tag turns the click into a popup, which the empty sandbox blocks:
+  // the admin URL holds, and the frame still shows the preview (it did not navigate itself to
+  // the site, let alone render the admin login inside the frame).
+  await link.click();
+  await expect(page).toHaveURL(/\/admin\/posts\/2026-06-hello$/);
+  await expect(link).toBeVisible();
+  await expect(page.locator('.cairn-preview-frame')).toBeVisible();
 });
 
 test('the publish workflow round-trips: create, save, New, publish, edit, Edited, discard', async ({ page, request }) => {

@@ -5,7 +5,7 @@
 // carries the device table the frame's width control offers.
 
 import { escapeHtml } from '../escape.js';
-import type { PreviewConfig } from '../content/types.js';
+import type { ResolvedPreview } from '../content/types.js';
 
 /** One width the preview frame can take. */
 export interface PreviewDevice {
@@ -31,10 +31,11 @@ export const previewDevices: PreviewDevice[] = [
  * Build the preview iframe's srcdoc: a complete document linking the site's stylesheets around
  * the rendered entry html. The html comes from the site's floored render pipeline, which already
  * stripped scripts and event handlers, so it embeds unescaped; the frame's empty `sandbox` is
- * belt and braces over that floor, and the same sandbox leaves links inside the frame inert.
+ * belt and braces over that floor. The parameter is the flat `ResolvedPreview` shape `editLoad`
+ * ships, so the per-concept map can never reach the frame document by construction.
  * `preview` null (a site without the adapter knob) yields a styleless but complete document.
  */
-export function buildPreviewDoc(html: string, preview: PreviewConfig | null): string {
+export function buildPreviewDoc(html: string, preview: ResolvedPreview | null): string {
   const links = (preview?.stylesheets ?? [])
     .map((href) => `<link rel="stylesheet" href="${escapeHtml(href)}">`)
     .join('\n');
@@ -44,12 +45,19 @@ export function buildPreviewDoc(html: string, preview: PreviewConfig | null): st
     : html;
   // The reset sits BEFORE the site links so the site's CSS wins every collision: it only clears
   // the default body margin and pins a white ground for sheets that assume one.
+  //
+  // The base tag is what makes links inert. The empty sandbox alone does not: a sandboxed
+  // context may still navigate itself, and a srcdoc document resolves relative hrefs against the
+  // parent's base URL, so a clicked fragment or root link could render the admin login inside
+  // the frame. Targeting every link at a new tab turns each click into a popup, and the sandbox
+  // (which grants no allow-popups) blocks it, so a proofing click goes nowhere.
   return [
     '<!doctype html>',
     '<html>',
     '<head>',
     '<meta charset="utf-8">',
     '<meta name="viewport" content="width=device-width, initial-scale=1">',
+    '<base target="_blank">',
     '<style>body{margin:0;background:#fff}</style>',
     links,
     '</head>',

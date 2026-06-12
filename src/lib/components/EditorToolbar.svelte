@@ -102,10 +102,18 @@ house style (24x24 viewBox, `currentColor`, round caps).
   let deviceMenu = $state<HTMLUListElement | null>(null);
   let deviceOpen = $state(false);
   const activeDevice = $derived(previewDevices.find((d) => d.id === device) ?? previewDevices[0]);
+  // Whether the device trigger renders as the capsule's third segment.
+  const showDeviceTrigger = $derived(mode === 'preview' && !!onDevice);
 
   function pickDevice(id: PreviewDeviceId) {
     onDevice?.(id);
     if (deviceMenu?.matches(':popover-open')) deviceMenu.hidePopover();
+  }
+
+  // A device item names its width, so the value reaches assistive tech at pick time; the frame
+  // caption above the preview repeats the same form.
+  function deviceItemLabel(d: (typeof previewDevices)[number]): string {
+    return d.width === null ? d.label : `${d.label} · ${d.width} px`;
   }
 
   let toolbarEl = $state<HTMLDivElement | null>(null);
@@ -175,13 +183,20 @@ house style (24x24 viewBox, `currentColor`, round caps).
 {/snippet}
 
 {#snippet tab(m: 'write' | 'preview', label: string)}
+  <!-- The capsule look is manual rounding, not daisyUI's .join: join radii follow direct
+       children, and the device trigger must sit outside the tablist (ARIA required children),
+       so the segments square their shared edges themselves. Preview squares its right edge only
+       while the trigger extends the capsule. -->
   <button
     type="button"
     role="tab"
     id={`cairn-tab-${m}`}
     aria-selected={mode === m}
     aria-controls={`cairn-pane-${m}`}
-    class="join-item btn btn-sm {mode === m ? 'btn-active' : 'btn-ghost'}"
+    class="btn btn-sm {mode === m ? 'btn-active' : 'btn-ghost'}"
+    class:rounded-r-none={m === 'write' || showDeviceTrigger}
+    class:rounded-l-none={m === 'preview'}
+    class:-ml-px={m === 'preview'}
     onclick={() => onMode(m)}
   >
     {label}
@@ -249,19 +264,20 @@ house style (24x24 viewBox, `currentColor`, round caps).
   {/if}
 
   <!-- The host renders the matching tabpanels (#cairn-pane-write and #cairn-pane-preview) below
-       the strip inside the same editor card. While Preview shows, the device trigger joins the
-       capsule as a third segment beside the Preview tab (never nested inside the tab button:
-       no nested interactive controls). daisyUI's join radii follow direct children, so the
-       trigger sits inside the tablist element; it is a plain menu button, not a tab. -->
-  <div class="join ml-auto" role="tablist" aria-label="Editor view">
-    {@render tab('write', 'Write')}
-    {@render tab('preview', 'Preview')}
-    {#if mode === 'preview' && onDevice}
+       the strip inside the same editor card. The tablist wrapper holds ONLY the two tabs (ARIA
+       required children: anything else in a tablist makes assistive tech miscount the tabs).
+       While Preview shows, the device trigger reads as the capsule's third segment from the
+       flex row right after the wrapper; it is a plain button, not a tab. -->
+  <div class="ml-auto flex items-center">
+    <div role="tablist" aria-label="Editor view" class="flex items-center">
+      {@render tab('write', 'Write')}
+      {@render tab('preview', 'Preview')}
+    </div>
+    {#if showDeviceTrigger}
       <button
         type="button"
-        class="join-item btn btn-sm btn-ghost gap-1"
+        class="btn btn-sm btn-ghost gap-1 rounded-l-none -ml-px"
         title="Preview width"
-        aria-haspopup="menu"
         aria-expanded={deviceOpen}
         popovertarget="cairn-preview-device-menu"
         style="anchor-name:--cairn-preview-device"
@@ -272,23 +288,22 @@ house style (24x24 viewBox, `currentColor`, round caps).
       </button>
     {/if}
   </div>
-  {#if mode === 'preview' && onDevice}
-    <!-- The device menu is the same DaisyUI v5 popover dropdown as the More menu; it mounts
-         outside the tablist so the menu items never read as tabs. -->
+  {#if showDeviceTrigger}
+    <!-- The device list mirrors the More menu exactly: a DaisyUI v5 popover dropdown of plain
+         buttons, with the active pick carried by aria-pressed and the check glyph. Deliberately
+         NOT the ARIA menu pattern: menu roles promise interactions this list does not have. -->
     <ul
       bind:this={deviceMenu}
       popover="auto"
       id="cairn-preview-device-menu"
       style="position-anchor:--cairn-preview-device"
       ontoggle={(e) => (deviceOpen = e.newState === 'open')}
-      role="menu"
-      aria-label="Preview width"
       class="dropdown dropdown-end menu menu-sm bg-base-100 rounded-box w-44 border border-[var(--cairn-card-border)] p-1 shadow-[var(--cairn-shadow)]"
     >
       {#each previewDevices as d (d.id)}
-        <li role="none">
-          <button type="button" role="menuitemradio" aria-checked={device === d.id} onclick={() => pickDevice(d.id)}>
-            <span class="grow">{d.label}</span>
+        <li>
+          <button type="button" aria-pressed={device === d.id} onclick={() => pickDevice(d.id)}>
+            <span class="grow">{deviceItemLabel(d)}</span>
             {#if device === d.id}
               {@render strokeIcon(['M20 6 9 17l-5-5'])}
             {/if}

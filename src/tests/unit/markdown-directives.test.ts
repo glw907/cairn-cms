@@ -67,6 +67,22 @@ describe('fenceDepths', () => {
     expect(fenceDepths([':::'])).toEqual([1]);
     expect(fenceDepths([':::aside', ':::', ':::', 'after'])).toEqual([1, 1, 1, null]);
   });
+  it('ignores directive fences inside code blocks, so a documented example opens nothing', () => {
+    expect(fenceDepths(['```', ':::note', '```', 'after'])).toEqual([null, null, null, null]);
+    expect(fenceDepths(['~~~md', ':::note', '~~~', 'after'])).toEqual([null, null, null, null]);
+  });
+  it('keeps the surrounding container depth across a code block and pairs the real closer', () => {
+    expect(fenceDepths([':::aside', '```', ':::', '```', 'inside', ':::', 'after'])).toEqual([
+      1, 1, 1, 1, 1, 1, null,
+    ]);
+  });
+  it('only the marker that opened a code block closes it', () => {
+    // The tildes inside the backtick block are literal text; without marker tracking they would
+    // end the block and let the directive example open a phantom container to end of document.
+    expect(fenceDepths(['```', '~~~', ':::note', '~~~', '```', 'after'])).toEqual([
+      null, null, null, null, null, null,
+    ]);
+  });
 });
 
 describe('findInlineDirectives', () => {

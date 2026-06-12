@@ -1,7 +1,10 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
 import EditorToolbar from '../../lib/components/EditorToolbar.svelte';
+// The source admin sheet (the variables partial plus the scoped component rules), so the
+// unlayered menu focus override is present for the focus-visibility tests below.
+import '../../lib/components/cairn-admin.css';
 
 function baseProps(over: Record<string, unknown> = {}) {
   return { format: vi.fn(), mode: 'write' as const, onMode: vi.fn(), ...over };
@@ -116,22 +119,31 @@ describe('EditorToolbar', () => {
     expect(withoutHandler.container.querySelector('[popovertarget="cairn-preview-device-menu"]')).toBeNull();
     const inPreview = render(EditorToolbar, baseProps({ mode: 'preview', onDevice }));
     const trigger = inPreview.container.querySelector('[popovertarget="cairn-preview-device-menu"]')!;
-    // The trigger sits in the segmented capsule beside the Preview tab, never inside it.
-    expect(trigger.closest('.join')).not.toBeNull();
-    expect(trigger.closest('[role="tab"]')).toBeNull();
+    // ARIA required children: the tablist holds only the two tabs, and the trigger reads as the
+    // capsule's third segment from the flex row right after the tablist wrapper, never inside it.
+    const tablist = inPreview.container.querySelector('[role="tablist"]')!;
+    expect(Array.from(tablist.children).every((el) => el.getAttribute('role') === 'tab')).toBe(true);
+    expect(tablist.contains(trigger)).toBe(false);
+    expect(tablist.nextElementSibling).toBe(trigger);
     expect(trigger.textContent ?? '').toContain('Desktop');
   });
 
-  it('lists the four widths in the device menu, checks the active one, and reports a pick', async () => {
+  it('lists the four widths with their pixel values, presses the active one, and reports a pick', async () => {
     const onDevice = vi.fn();
     const screen = render(EditorToolbar, baseProps({ mode: 'preview', device: 'tablet', onDevice }));
     await screen.getByRole('button', { name: /preview width/i }).click();
     const items = Array.from(
-      screen.container.querySelectorAll('#cairn-preview-device-menu [role="menuitemradio"]'),
+      screen.container.querySelectorAll<HTMLButtonElement>('#cairn-preview-device-menu button'),
     );
-    expect(items.map((el) => el.textContent?.trim())).toEqual(['Desktop', 'Tablet', 'Phone', 'Small phone']);
-    expect(items.map((el) => el.getAttribute('aria-checked'))).toEqual(['false', 'true', 'false', 'false']);
-    await screen.getByRole('menuitemradio', { name: 'Phone', exact: true }).click();
+    // Each item names its width, so the value reaches assistive tech at pick time.
+    expect(items.map((el) => el.textContent?.trim())).toEqual([
+      'Desktop',
+      'Tablet · 768 px',
+      'Phone · 390 px',
+      'Small phone · 320 px',
+    ]);
+    expect(items.map((el) => el.getAttribute('aria-pressed'))).toEqual(['false', 'true', 'false', 'false']);
+    await screen.getByRole('button', { name: 'Phone · 390 px', exact: true }).click();
     expect(onDevice).toHaveBeenCalledWith('phone');
     // Picking dismisses the menu.
     const menu = screen.container.querySelector('#cairn-preview-device-menu')!;
@@ -142,12 +154,16 @@ describe('EditorToolbar', () => {
     const screen = render(EditorToolbar, baseProps({ mode: 'preview', onDevice: vi.fn() }));
     const trigger = screen.getByRole('button', { name: /preview width/i });
     await expect.element(trigger).toHaveAttribute('aria-expanded', 'false');
-    await expect.element(trigger).toHaveAttribute('aria-haspopup', 'menu');
     await trigger.click();
     await expect.element(trigger).toHaveAttribute('aria-expanded', 'true');
     const menu = screen.container.querySelector('#cairn-preview-device-menu')!;
     expect(menu.matches(':popover-open')).toBe(true);
-    expect(menu.getAttribute('role')).toBe('menu');
+    // The device list mirrors the More menu: plain buttons in a popover list with aria-pressed,
+    // never the ARIA menu pattern, whose roles promise interactions this list does not have.
+    expect(menu.getAttribute('role')).toBeNull();
+    expect(menu.querySelector('[role="menu"], [role="menuitemradio"]')).toBeNull();
+    const triggerEl = screen.container.querySelector('[popovertarget="cairn-preview-device-menu"]')!;
+    expect(triggerEl.getAttribute('aria-haspopup')).toBeNull();
     await userEvent.keyboard('{Escape}');
     await expect.element(trigger).toHaveAttribute('aria-expanded', 'false');
     expect(menu.matches(':popover-open')).toBe(false);
@@ -165,5 +181,53 @@ describe('EditorToolbar', () => {
     expect(controls(screen.container)[1].tabIndex).toBe(0);
     await userEvent.keyboard('{ArrowLeft}');
     await expect.poll(() => document.activeElement).toBe(controls(screen.container)[0]);
+  });
+});
+
+describe('popover menu focus visibility', () => {
+  // DaisyUI v5's .menu quiets :focus-visible on its items (outline-style: none) from the compiled
+  // sheet's utilities layer, where it beats the admin's components-layer focus ring: cascade
+  // layers resolve before specificity and utilities is the last layer. The component run loads
+  // only the source partial, so reproduce that daisyUI rule here; these tests then hold only if
+  // the admin sheet's deliberately unlayered override outranks it, the way it must in the
+  // compiled sheet.
+  let daisyMenuQuiet: HTMLStyleElement;
+  beforeAll(() => {
+    document.documentElement.setAttribute('data-theme', 'cairn-admin');
+    daisyMenuQuiet = document.createElement('style');
+    daisyMenuQuiet.textContent = `
+      @layer properties, theme, components, utilities;
+      @layer utilities {
+        :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .menu :where(li:not(.menu-title, .disabled) > :not(ul, details, .menu-title)):not(.menu-active, :active, .btn):focus-visible {
+          outline-style: none;
+        }
+      }`;
+    document.head.appendChild(daisyMenuQuiet);
+  });
+  afterAll(() => {
+    document.documentElement.removeAttribute('data-theme');
+    daisyMenuQuiet.remove();
+  });
+
+  it('keeps a visible focus outline on a More-menu item', async () => {
+    const screen = render(EditorToolbar, baseProps());
+    await screen.getByRole('button', { name: 'More formatting' }).click();
+    // Tab moves keyboard focus from the trigger into the open popover's first item, so
+    // :focus-visible applies the way it does for a keyboard user.
+    await userEvent.tab();
+    const item = document.activeElement as HTMLElement;
+    expect(item.textContent?.trim()).toBe('Strikethrough');
+    const computed = getComputedStyle(item);
+    expect(computed.outlineStyle).toBe('solid');
+    expect(computed.outlineWidth).toBe('2px');
+  });
+
+  it('keeps a visible focus outline on a device-menu item', async () => {
+    const screen = render(EditorToolbar, baseProps({ mode: 'preview', onDevice: vi.fn() }));
+    await screen.getByRole('button', { name: /preview width/i }).click();
+    await userEvent.tab();
+    const item = document.activeElement as HTMLElement;
+    expect(item.closest('#cairn-preview-device-menu')).not.toBeNull();
+    expect(getComputedStyle(item).outlineStyle).toBe('solid');
   });
 });

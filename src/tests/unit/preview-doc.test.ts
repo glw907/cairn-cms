@@ -32,6 +32,19 @@ describe('buildPreviewDoc', () => {
     expect(doc).toContain('<meta name="viewport" content="width=device-width, initial-scale=1">');
   });
 
+  it('retargets every link at a new tab through a head base tag, which the sandbox then blocks', () => {
+    // An empty sandbox does NOT make links inert: a sandboxed context may navigate itself, and a
+    // srcdoc document resolves relative hrefs against the parent base URL. The base tag turns
+    // every link click into a popup the sandbox refuses, which is the promised inertness.
+    const doc = buildPreviewDoc('<p>hi</p>', preview);
+    const base = doc.indexOf('<base target="_blank">');
+    const head = doc.indexOf('</head>');
+    expect(base).toBeGreaterThan(-1);
+    expect(base).toBeLessThan(head);
+    // The styleless document carries it too.
+    expect(buildPreviewDoc('<p>hi</p>', null)).toContain('<base target="_blank">');
+  });
+
   it('applies bodyClass to the body and wraps the html in the container class', () => {
     const doc = buildPreviewDoc('<p>hi</p>', preview);
     expect(doc).toContain('<body class="site-body">');

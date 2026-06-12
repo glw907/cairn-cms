@@ -39,9 +39,12 @@
   --cairn-directive-band-3: 20%;
   --cairn-directive-ink-2: oklch(50% 0.16 300);
   --cairn-directive-ink-3: oklch(48% 0.16 300);
-  --cairn-directive-rail-1: 35%;
-  --cairn-directive-rail-2: 50%;
-  --cairn-directive-rail-3: 65%;
+  /* The content rail is a 2px non-text cue, so its composited color must clear the 3:1 floor
+     against base-100 (WCAG 1.4.11). Locked margins (rail vs base-100): depth 1 = 75% (3.25:1),
+     depth 2 = 82% (3.71:1), depth 3 = 90% (4.34:1). Do not lower an alpha without re-checking. */
+  --cairn-directive-rail-1: 75%;
+  --cairn-directive-rail-2: 82%;
+  --cairn-directive-rail-3: 90%;
   --color-neutral: oklch(32% 0.012 75);
   --color-neutral-content: oklch(96% 0.004 75);
 
@@ -114,9 +117,11 @@
   --cairn-directive-band-3: 22%;
   --cairn-directive-ink-2: oklch(74% 0.14 300);
   --cairn-directive-ink-3: oklch(78% 0.14 300);
-  --cairn-directive-rail-1: 40%;
-  --cairn-directive-rail-2: 55%;
-  --cairn-directive-rail-3: 70%;
+  /* The content rails hold the same 3:1 non-text floor on dark. Locked margins (rail vs
+     base-100): depth 1 = 65% (3.27:1), depth 2 = 75% (3.90:1), depth 3 = 85% (4.62:1). */
+  --cairn-directive-rail-1: 65%;
+  --cairn-directive-rail-2: 75%;
+  --cairn-directive-rail-3: 85%;
   --color-neutral: oklch(80% 0.01 75);
   --color-neutral-content: oklch(22% 0.008 75);
 
@@ -231,6 +236,18 @@
   :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) :is(a, button, input, textarea, select, summary, [tabindex]) {
     scroll-margin-top: 8.5rem;
   }
+}
+
+/* DaisyUI v5's .menu quiets keyboard focus on its items (`outline-style: none` on
+   :focus-visible), and the compiled sheet carries that rule in the utilities layer, where it
+   beats the components-layer focus ring above: cascade layers resolve before specificity, and
+   utilities is the last layer. This override is deliberately UNLAYERED (the same mechanism that
+   lets the theme blocks win), because no layered rule can outrank a later layer; it restores a
+   visible focus indicator on the popover and nav menu items. The negative offset draws the ring
+   inside the item, clear of the menu panel's clipped corners. */
+:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .menu li > :is(button, a):focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
 }
 
 /* Respect a reduced-motion preference inside the admin. DaisyUI's modal, drawer, and the admin's

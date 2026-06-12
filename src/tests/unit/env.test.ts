@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { D1Database } from '@cloudflare/workers-types';
 import { requireOrigin, requireDb } from '../../lib/env.js';
+import { CairnError } from '../../lib/diagnostics/index.js';
 
 describe('requireOrigin', () => {
   it('returns the configured origin', () => {
@@ -36,5 +37,16 @@ describe('requireDb', () => {
 
   it('throws when the binding is missing', () => {
     expect(() => requireDb({})).toThrow(/AUTH_DB/);
+  });
+
+  it('names the registered bindings condition on the missing-binding throw', () => {
+    let thrown: unknown;
+    try {
+      requireDb({});
+    } catch (err) {
+      thrown = err;
+    }
+    expect(thrown).toBeInstanceOf(CairnError);
+    expect((thrown as CairnError).conditionId).toBe('config.bindings-missing');
   });
 });

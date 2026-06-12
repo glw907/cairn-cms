@@ -54,7 +54,9 @@ export function buildMagicLinkMessage(input: {
 
 /** The production send: Cloudflare Email Sending through the EMAIL binding. */
 export const cloudflareSend: SendMagicLink = async (env, message) => {
-  if (!env.EMAIL) throw new Error('EMAIL binding is not configured');
+  if (!env.EMAIL) {
+    throw new CairnError('config.bindings-missing', { message: 'EMAIL binding is not configured' });
+  }
   await env.EMAIL.send(message);
 };
 

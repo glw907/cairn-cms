@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { buildMagicLinkMessage, cloudflareSend, type AuthEnv } from '../../lib/email.js';
+import { CairnError } from '../../lib/diagnostics/index.js';
 
 describe('buildMagicLinkMessage', () => {
   it('addresses the editor and embeds the link in both parts', () => {
@@ -44,5 +45,14 @@ describe('cloudflareSend', () => {
     await expect(
       cloudflareSend({}, { to: 'a', from: 'b', subject: 's', html: 'h', text: 't' }),
     ).rejects.toThrow(/EMAIL/);
+  });
+
+  it('names the registered bindings condition on the missing-binding throw', async () => {
+    const thrown: unknown = await cloudflareSend(
+      {},
+      { to: 'a', from: 'b', subject: 's', html: 'h', text: 't' },
+    ).catch((err: unknown) => err);
+    expect(thrown).toBeInstanceOf(CairnError);
+    expect((thrown as CairnError).conditionId).toBe('config.bindings-missing');
   });
 });

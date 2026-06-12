@@ -8,6 +8,7 @@ import {
   setMenu,
   urlPolicyFrom,
 } from '../../lib/nav/site-config.js';
+import { condition } from '../../lib/diagnostics/index.js';
 
 describe('validateNavTree', () => {
   it('normalizes a nested tree and keeps only known keys', () => {
@@ -89,6 +90,15 @@ describe('parseSiteConfig', () => {
 
   it('throws when siteName is missing', () => {
     expect(() => parseSiteConfig('description: x\n')).toThrow(/needs a siteName/);
+  });
+});
+
+describe('SiteConfigError', () => {
+  it('carries the registered site-config condition id', () => {
+    const err = new SiteConfigError('bad');
+    expect(err).toBeInstanceOf(Error);
+    expect(err.name).toBe('SiteConfigError');
+    expect(condition(err.conditionId).id).toBe('config.site-config-invalid');
   });
 });
 

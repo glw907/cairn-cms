@@ -27,6 +27,16 @@ describe('renderConditionResponse', () => {
     expect(await res.text()).toBe('Cross-site POST form submissions are forbidden');
   });
 
+  it('renders the branded operator-fault page for the bindings condition', async () => {
+    const res = renderConditionResponse('config.bindings-missing');
+    expect(res.status).toBe(500);
+    expect(res.headers.get('content-type')).toMatch(/text\/html/);
+    expect(res.headers.get('X-Frame-Options')).toBe('DENY');
+    const body = await res.text();
+    expect(body).toContain('Wrangler bindings are missing');
+    expect(body).toContain('AUTH_DB');
+  });
+
   it('throws for an id with no renderer', () => {
     expect(() => renderConditionResponse('nope.not-real')).toThrow();
   });

@@ -80,12 +80,25 @@ export function createNavRoutes(runtime: CairnRuntime, deps: NavRoutesDeps = {})
     }
 
     let tree: NavNode[] = [];
+    let raw: string | null = null;
     try {
-      const raw = await readRaw(runtime.backend, config.configPath, token);
-      if (raw !== null) tree = extractMenu(parseSiteConfig(raw), config.menuName, maxDepth);
+      raw = await readRaw(runtime.backend, config.configPath, token);
     } catch {
-      // A malformed or unreadable config degrades to an empty tree; the first save writes a clean menu.
-      tree = [];
+      // An unreadable config degrades to an empty tree; the first save writes a clean menu.
+      raw = null;
+    }
+    if (raw !== null) {
+      try {
+        tree = extractMenu(parseSiteConfig(raw), config.menuName, maxDepth);
+      } catch (err) {
+        // A malformed config keeps the same degrade (the nav page failing closed would be worse
+        // for the editor), but the swallow names the operator fault in the log.
+        log.error('config.invalid', {
+          conditionId: 'config.site-config-invalid',
+          error: String(err),
+        });
+        tree = [];
+      }
     }
 
     return {

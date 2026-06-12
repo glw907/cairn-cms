@@ -6,7 +6,7 @@ import { resolveSession } from '../auth/store.js';
 import { sessionCookieName } from '../auth/crypto.js';
 import { isUnsafeFormRequest, originMatches, validateCsrfToken } from './csrf.js';
 import { applySecurityHeaders } from './admin-response.js';
-import { renderConditionResponse } from './condition-response.js';
+import { renderConditionResponse, REASON_CONDITION } from './condition-response.js';
 import { log } from '../log/index.js';
 import type { Editor } from '../auth/types.js';
 import type { HandleInput, RequestContext } from './types.js';
@@ -69,8 +69,19 @@ export function createAuthGuard() {
 
     if (!isPublicAdminPath(pathname)) {
       const env = event.platform?.env ?? {};
+      if (!env.AUTH_DB) {
+        // No auth store binding means no session can ever resolve. That is an operator fault,
+        // not a sign-in problem, so name the condition instead of bouncing the editor to a
+        // login that cannot work either.
+        log.error('guard.rejected', {
+          reason: 'bindings',
+          conditionId: REASON_CONDITION.bindings,
+          path: pathname,
+        });
+        return renderConditionResponse(REASON_CONDITION.bindings);
+      }
       const id = event.cookies.get(sessionCookieName(event.url.protocol === 'https:'));
-      const editor = id && env.AUTH_DB ? await resolveSession(env.AUTH_DB, id, Date.now()) : null;
+      const editor = id ? await resolveSession(env.AUTH_DB, id, Date.now()) : null;
       if (!editor) throw redirect(303, '/admin/login');
       event.locals.editor = editor;
     }

@@ -20,11 +20,12 @@ redaction stance.
 | `auth.session.destroyed` | info | A session is deleted at logout. | none |
 | `commit.succeeded` | info | A content or nav commit lands. | `concept`, `id`, `editor`, `branch` on a save |
 | `commit.failed` | warn or error | A commit fails. `warn` with `reason: "conflict"` on a 409, `error` with `error` otherwise. | `concept`, `id`, `editor`, `reason` or `error`, `branch` on a save |
+| `config.invalid` | error | The nav editor's load reads a site config that does not parse or validate, and degrades to an empty tree. | `conditionId`, `error` |
 | `entry.published` | info | A pending entry's edits land on the default branch. | `concept`, `id`, `editor`, `batch` |
 | `entry.discarded` | info | A pending branch is deleted: a discard, or the delete of a never-published entry. | `concept`, `id`, `editor` |
 | `publish.failed` | warn or error | A publish commit fails, with the `commit.failed` shape. | `concept`, `id`, `editor`, `reason` or `error` |
 | `github.unreachable` | warn | The admin layout's pending-entries read fails because GitHub does not answer. | `scope` (`layout`), `error` |
-| `guard.rejected` | warn | The admin guard refuses a request before `resolve()`. | `reason` (`csrf`, `origin`, or `https`), `path` |
+| `guard.rejected` | warn or error | The admin guard refuses a request before `resolve()`. `error` with `reason: "bindings"` when a gated admin request finds no `AUTH_DB` binding; `warn` otherwise. | `reason` (`csrf`, `origin`, `https`, or `bindings`), `path`, `conditionId` on `bindings` |
 
 Saves land on the entry's pending branch, so `commit.succeeded` and `commit.failed` carry a
 `branch` field (`cairn/<concept>/<id>`) on the save path. Deletes, renames, and nav saves commit to
@@ -32,6 +33,14 @@ the default branch and omit the field, which is how a held save and a direct com
 in a query. On `entry.published`, `batch` is `true` when the entry shipped through a publish-all
 and `false` for a single publish. A failed publish-all logs one `publish.failed` record per entry
 in the batch, so the log names everything that did not go live.
+
+`config.invalid` fires when the nav editor opens against a `site.config.yaml` that fails to parse
+or fails the menu validation. The page still opens with an empty tree so the editor is not locked
+out, which makes this record the only sign of the fault; its `conditionId` is always
+`config.site-config-invalid`, and `error` carries the parse or validation message. On
+`guard.rejected` with `reason: "bindings"`, the Worker deployed without an `AUTH_DB` binding, so
+the guard serves the branded condition page instead of a login redirect that could never succeed;
+the `conditionId` field is `config.bindings-missing`.
 
 `github.unreachable` fires when the admin layout cannot read the pending-entries state, usually a
 revoked installation, a bad credential, or a GitHub outage. The shell degrades rather than fails:

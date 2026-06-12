@@ -85,6 +85,9 @@ export interface SiteConfig {
 }
 
 export class SiteConfigError extends Error {
+  /** The registered diagnostic condition a malformed site config maps to (mirrors CairnError). */
+  readonly conditionId = 'config.site-config-invalid';
+
   constructor(message: string) {
     super(message);
     this.name = 'SiteConfigError';

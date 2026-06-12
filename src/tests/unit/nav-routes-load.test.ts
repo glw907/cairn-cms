@@ -64,6 +64,7 @@ describe('navLoad', () => {
   });
 
   it('degrades to an empty tree when the config is unparsable', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.stubGlobal('fetch', vi.fn(async (url: string) => {
       if (url.includes('site.config.yaml')) return new Response(': not valid yaml :\n', { status: 200 });
       if (url.includes('/git/trees/')) return new Response(JSON.stringify({ tree: [], truncated: false }), { status: 200 });
@@ -72,6 +73,36 @@ describe('navLoad', () => {
     const routes = createNavRoutes(runtime(NAV), deps);
     const data = await routes.navLoad(loadEvent() as never);
     expect(data.tree).toEqual([]);
+  });
+
+  it('logs the site-config condition at error level when the swallow hides a malformed config', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (url.includes('site.config.yaml')) return new Response(': not valid yaml :\n', { status: 200 });
+      if (url.includes('/git/trees/')) return new Response(JSON.stringify({ tree: [], truncated: false }), { status: 200 });
+      return new Response('Not Found', { status: 404 });
+    }));
+    const routes = createNavRoutes(runtime(NAV), deps);
+    await routes.navLoad(loadEvent() as never);
+    const records = errorSpy.mock.calls.map(
+      (c) => c[0] as { event?: string; conditionId?: string; error?: string },
+    );
+    expect(
+      records.some(
+        (r) => r.event === 'config.invalid' && r.conditionId === 'config.site-config-invalid' && !!r.error,
+      ),
+    ).toBe(true);
+  });
+
+  it('stays silent when the config is merely absent (the empty tree is the expected state)', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (url.includes('/git/trees/')) return new Response(JSON.stringify({ tree: [], truncated: false }), { status: 200 });
+      return new Response('Not Found', { status: 404 });
+    }));
+    const routes = createNavRoutes(runtime(NAV), deps);
+    await routes.navLoad(loadEvent() as never);
+    expect(errorSpy).not.toHaveBeenCalled();
   });
 
   it('reads the saved flag from the query', async () => {

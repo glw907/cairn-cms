@@ -99,7 +99,7 @@ meaningful event through one internal chokepoint, `src/lib/log/`. Each record ca
 (`auth.link.requested`, `auth.token.minted`, `auth.link.send_failed`, `auth.token.confirmed`,
 `auth.session.created`, `auth.session.destroyed`), the commit pipeline (`commit.succeeded`,
 `commit.failed`), and the admin guard's pre-resolve refusals (`guard.rejected` with a `reason` of
-`csrf`, `origin`, or `https`). The full table, with each event's trigger and fields, is
+`csrf`, `origin`, `https`, or `bindings`). The full table, with each event's trigger and fields, is
 [`docs/reference/log-events.md`](docs/reference/log-events.md).
 
 Map the symptom to its event. An admin who cannot sign in points at `auth.link.send_failed` or a

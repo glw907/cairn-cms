@@ -213,6 +213,62 @@ describe('CSRF (cairn owns it)', () => {
   });
 });
 
+describe('missing AUTH_DB binding (operator fault)', () => {
+  function unboundEvent(pathname: string): RequestContext {
+    const url = `https://test.dev${pathname}`;
+    return {
+      url: new URL(url),
+      request: new Request(url),
+      cookies: makeCookies(),
+      locals: {},
+      platform: { env: { PUBLIC_ORIGIN: 'https://test.dev' } },
+      setHeaders: () => {},
+    };
+  }
+
+  it('serves the bindings condition page for a gated request and never resolves', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    let resolved = false;
+    const res = await handle({
+      event: unboundEvent('/admin'),
+      resolve: async () => {
+        resolved = true;
+        return OK;
+      },
+    });
+    expect(resolved).toBe(false);
+    expect(res.status).toBe(500);
+    expect(res.headers.get('content-type')).toMatch(/text\/html/);
+    const body = await res.text();
+    expect(body).toContain('Wrangler bindings are missing');
+    expect(body).toContain('AUTH_DB');
+    vi.restoreAllMocks();
+  });
+
+  it('logs guard.rejected at error level with reason=bindings and the condition id', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    await handle({ event: unboundEvent('/admin'), resolve: async () => OK });
+    const records = errorSpy.mock.calls.map(
+      (c) => c[0] as { event?: string; reason?: string; conditionId?: string; path?: string },
+    );
+    expect(
+      records.some(
+        (r) =>
+          r.event === 'guard.rejected' &&
+          r.reason === 'bindings' &&
+          r.conditionId === 'config.bindings-missing' &&
+          r.path === '/admin',
+      ),
+    ).toBe(true);
+    vi.restoreAllMocks();
+  });
+
+  it('still lets the public login page through without the binding', async () => {
+    const res = await handle({ event: unboundEvent('/admin/login'), resolve: async () => OK });
+    expect(res).toBe(OK);
+  });
+});
+
 describe('guard rejection logging', () => {
   it('logs guard.rejected reason=origin for a non-admin cross-origin form POST', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});

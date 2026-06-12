@@ -434,13 +434,16 @@ declare class CommitConflictError extends Error {
   readonly path: string;
   constructor(path: string);
 }
-declare class SiteConfigError extends Error {}
+declare class SiteConfigError extends Error {
+  readonly conditionId: 'config.site-config-invalid';
+}
 declare class NavValidationError extends Error {}
 ```
 
 `CommitConflictError` signals a lost SHA race on a commit, so the save fails safe. `SiteConfigError`
-is thrown by `parseSiteConfig` on a malformed root. `NavValidationError` is thrown by
-`validateNavTree` on an invalid tree. `MAX_NAV_NODES` is the total node cap the validator enforces.
+is thrown by `parseSiteConfig` on a malformed root, and its `conditionId` names the registered
+diagnostic condition the fault maps to. `NavValidationError` is thrown by `validateNavTree` on an
+invalid tree. `MAX_NAV_NODES` is the total node cap the validator enforces.
 
 ```ts
 declare const MAX_NAV_NODES: 200;

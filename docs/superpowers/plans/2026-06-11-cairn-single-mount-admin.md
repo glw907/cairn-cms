@@ -169,6 +169,11 @@ since the old ~115-line fixture predated the publish flow.
    showcase touch could stub it or hide the nav entry without a binding.
 6. The per-surface factories stay public as the advanced seam; once both production sites cross
    to the mount, measure whether anything still uses them and consider narrowing.
+   **RESOLVED 2026-06-11: keep them public.** Both sites consume the admin factories only in the
+   composer the 0.50.0 retrofit replaces (verified by grep; `createPublicRoutes` is the delivery
+   surface and unaffected). The factories cost nothing to keep, since the mount consumes them
+   internally and they stay tested, and they remain the one escape hatch for a custom admin route
+   until the `CairnExtension` seam lands. Revisit when that seam exists.
 7. The site retrofits (ecxc-ski, 907-life) cross straight to `0.50.0`: delete the shim tree, add
    the two-file mount plus the composer, swap `app.d.ts` for the ambient import, run
    `cairn-doctor`, and live-prove the publish workflow and the send-failure states that have been

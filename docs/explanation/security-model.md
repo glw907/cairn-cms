@@ -32,6 +32,13 @@ alternative here: its reads are eventually consistent, so two confirmations of t
 both read the token as live before either delete lands, and the single-use guarantee would not
 hold.
 
+POST-confirm is defense in depth, not a guarantee. The confirm page carries the raw token from the
+URL into its hidden field, so a security appliance that renders the page and submits the one form
+consumes the token the same way an editor would. Such a consumed link fails closed (the editor
+sees the expired-link message and requests a fresh one), and the session lands inside the
+appliance rather than with an attacker, so the residual is an availability nuisance, not an
+account compromise. OWASP's guidance for one-time links accepts this bound, and cairn does too.
+
 A valid confirmation creates an opaque session row in D1 and sets a cookie holding the random
 session id. On https the cookie carries the `__Host-` prefix, which binds it to the exact origin:
 the browser enforces `Secure`, `Path=/`, and no `Domain`. On local http dev the prefix drops
@@ -56,6 +63,16 @@ The records carry an editor's email for attribution, so you can answer who did w
 the secrets: no magic-link token, no session id in the clear, and no magic-link contents ever enter
 a record. A standing redaction test drives the token-confirm and logout handlers and asserts the
 raw secret never appears in any emitted record, so a later change cannot widen a field to leak one.
+
+One disclosure here is deliberate. When a deploy is missing its `AUTH_DB` binding, every `/admin`
+request gets a branded page that names the missing binding and its fix, and that page serves
+before any session exists, so an anonymous visitor sees it too. A scanner that finds it learns the
+site runs cairn on Workers and is momentarily misconfigured. Nothing secret is on the page (the
+copy is this package's published registry text), and the alternative, a generic 500 with the
+detail confined to logs, would cost the operator the named fix at the moment a broken deploy is
+most confusing. cairn chooses the diagnosable failure. The window is also short by construction:
+a deploy in this state has a completely unusable admin, which `cairn doctor` and the readiness
+checklist catch before traffic does.
 
 ## Commit trust
 

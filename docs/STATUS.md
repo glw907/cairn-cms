@@ -11,7 +11,29 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-11, latest): publish the `0.41.0`+`0.50.0` window, then the site retrofits
+## Immediate next action (2026-06-11, latest): the site retrofits to `0.50.0`
+
+**The `0.41.0`+`0.50.0` window PUBLISHED 2026-06-11.** The `v0.50.0` GitHub Release fired the
+OIDC trusted-publishing workflow (run `27393207915` green), and `0.50.0` is the registry
+`latest`. The post-mortem's carry-forwards 1 through 6 were then handled the same day, commits
+`8d2acc7..` plus a docs batch: the thirteenth registry condition
+(`config.public-origin-invalid`) with `requireOrigin` on `CairnError`, a tenth doctor check, and
+the checklist anchor (`check:readiness` now pins 13); `requireSession` widened as the one
+session helper; the showcase's `/admin/editors` now works against an in-memory AUTH_DB double
+with an E2E case (6/6); the confirm-token residual and the bindings-page disclosure recorded as
+deliberate postures in `docs/explanation/security-model.md`; and the factories-stay-public call
+resolved in the plan. Only carry-forward 7 remains: the retrofits below.
+
+**Next actions, in order:**
+1. **Site retrofits, one per site** (ecxc-ski, then 907-life), each crossing straight to
+   `^0.50.0`: delete the admin shim tree, add the composer plus the two-file mount, swap
+   `app.d.ts` for `import '@glw907/cairn-cms/ambient'`, pick up the `createSiteResolver` rename
+   where used, run `cairn-doctor` (now ten checks), and live-prove the publish workflow plus the
+   `send_error`/`throttled` states owed since `0.38.0`.
+2. **The queue resumes:** the gates-and-tooling pass, then the gallery brainstorm (git-vs-R2),
+   then P4.
+
+## Prior next action (2026-06-11): publish the `0.41.0`+`0.50.0` window, then the site retrofits
 
 **The single-mount admin pass LANDED on `main` 2026-06-11 as `0.50.0`, opening the 0.50.x
 series.** Thirteen plan tasks plus a simplifier touch, a converged review fold-in, and two

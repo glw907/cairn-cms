@@ -2,6 +2,19 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## Unreleased
+
+The `svelte` peer dependency floor rises from `^5.0.0` to `^5.56.3`, turning the 0.40.0 advisory
+into an enforced range: consumer sites compile the shipped `.svelte` sources, and svelte `5.56.1`
+miscompiles parenthesized boolean groupings. `cairn-doctor` gains a `config.dependency-floors`
+check in its default set, which compares the lockfile's resolved `svelte` and `@sveltejs/kit`
+versions against the peer ranges the installed engine declares.
+
+Consumers must: raise the `svelte` devDependency range to at least `^5.56.3` (and `@sveltejs/kit`
+to `^2.12` where it sits lower) and reinstall so the lockfile re-resolves. A site pinning svelte
+below the floor now draws an npm peer warning or resolution failure on install, and the doctor
+reports the below-floor version as a blocker.
+
 ## 0.50.0
 
 The admin now mounts as one catch-all route. A new `createCairnAdmin(runtime, deps)` facade

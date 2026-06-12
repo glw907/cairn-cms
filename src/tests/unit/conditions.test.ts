@@ -78,11 +78,20 @@ describe('condition registry', () => {
 		expect(c.logEvent).toBeUndefined();
 	});
 
-	it('pins the registry at fourteen entries', () => {
-		// Thirteen through 0.50.0 (including config.public-origin-invalid), plus
-		// admin.login-probe-failed for the doctor's opt-in live probe of a deployed admin.
+	it('resolves the dependency-floors condition (the lockfile floor gains teeth)', () => {
+		const c = condition('config.dependency-floors-unmet');
+		expect(c.severity).toBe('blocker');
+		expect(c.why).toMatch(/5\.56\.1/);
+		expect(c.remediation).toMatch(/reinstall/i);
+		expect(c.docsAnchor).toBe('cloudflare-readiness.md#meet-the-dependency-floors');
+		expect(c.logEvent).toBeUndefined();
+	});
+
+	it('pins the registry at fifteen entries', () => {
+		// Fourteen through the doctor DX pass's probe addition, plus
+		// config.dependency-floors-unmet for the lockfile floor the 5.56.1 miscompile forced.
 		// Grow this count only with a registry change.
-		expect(allConditions()).toHaveLength(14);
+		expect(allConditions()).toHaveLength(15);
 	});
 
 	it('carries no logEvent on the config and hsts entries', () => {
@@ -93,6 +102,7 @@ describe('condition registry', () => {
 			'config.csrf-disable-missing',
 			'config.site-config-invalid',
 			'config.public-origin-invalid',
+			'config.dependency-floors-unmet',
 			'edge.hsts-off',
 		]) {
 			expect(condition(id).logEvent, id).toBeUndefined();

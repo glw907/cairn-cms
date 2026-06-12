@@ -118,13 +118,14 @@ describe('contextFromEnv', () => {
 });
 
 describe('defaultChecks', () => {
-	it('returns the ten checks in registry order', () => {
+	it('returns the eleven checks in registry order', () => {
 		expect(defaultChecks().map((c) => c.id)).toEqual([
 			'config.bindings',
 			'config.observability',
 			'config.csrf-disable',
 			'config.site-config',
 			'config.public-origin',
+			'config.dependency-floors',
 			'email.sender-onboarded',
 			'edge.https-forced',
 			'edge.hsts',
@@ -144,7 +145,7 @@ describe('defaultChecks', () => {
 	it('returns a fresh array, so the bin appending live-send mutates nothing shared', () => {
 		const first = defaultChecks();
 		first.push({ id: 'x', conditionId: 'x', title: 'x', run: async () => ({ status: 'pass', detail: '' }) });
-		expect(defaultChecks()).toHaveLength(10);
+		expect(defaultChecks()).toHaveLength(11);
 	});
 });
 

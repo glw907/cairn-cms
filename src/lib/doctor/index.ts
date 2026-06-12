@@ -9,6 +9,7 @@ import {
 	configSiteConfig,
 	configPublicOrigin,
 } from './checks-local.js';
+import { configDependencyFloors } from './check-floors.js';
 import { emailSenderOnboarded, edgeHttpsForced, edgeHsts, authStore } from './checks-cloudflare.js';
 import { githubApp } from './checks-github.js';
 
@@ -132,9 +133,9 @@ export async function deriveMissingInputs(
 }
 
 /**
- * The default registry: the five local-config checks, the four Cloudflare checks, and the
- * GitHub App chain. The live send is opt-in (--send-test) and never sits here; the bin appends
- * it. A fresh array per call, so that append mutates nothing shared.
+ * The default registry: the six local checks, the four Cloudflare checks, and the GitHub App
+ * chain. The live send is opt-in (--send-test) and never sits here; the bin appends it. A
+ * fresh array per call, so that append mutates nothing shared.
  */
 export function defaultChecks(): DoctorCheck[] {
 	return [
@@ -143,6 +144,7 @@ export function defaultChecks(): DoctorCheck[] {
 		configCsrfDisable,
 		configSiteConfig,
 		configPublicOrigin,
+		configDependencyFloors,
 		emailSenderOnboarded,
 		edgeHttpsForced,
 		edgeHsts,

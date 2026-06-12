@@ -97,7 +97,7 @@
   ],
   "peerDependencies": {
     "@sveltejs/kit": "^2.12",
-    "svelte": "^5.0.0"
+    "svelte": "^5.56.3"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.2",

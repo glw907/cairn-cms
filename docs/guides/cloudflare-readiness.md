@@ -16,6 +16,18 @@ This is a setup step; the doctor does not probe it.
 
 Email Sending requires the [Workers Paid plan](https://developers.cloudflare.com/workers/platform/pricing/), and without it the magic-link sign-in cannot send at all. The paid plan's higher subrequest limit also matters on its own: an admin list page makes one GitHub read per entry, which outgrows the free cap around 45 entries.
 
+## Meet the dependency floors
+
+Condition: `config.dependency-floors-unmet`.
+
+Consumer sites compile the engine's shipped `.svelte` sources with their own `svelte` and `@sveltejs/kit`, so the engine declares both as peer dependencies with real floors. The floors carry correctness weight. svelte `5.56.1` miscompiles parenthesized boolean groupings, the kind of bug a below-floor compiler ships silently, which is why the `svelte` peer floors at `^5.56.3`. A lockfile can pin below the floor even while `package.json` looks fine, and the lockfile is what the doctor reads: it compares the resolved versions in `package-lock.json` against the peer ranges the installed engine declares, so the floors live in one place and rise with the package. A pnpm or yarn site has no `package-lock.json`, and the check skips with a line saying so.
+
+The fix is to raise the ranges in the site's `package.json` and reinstall so the lockfile re-resolves:
+
+```bash
+npm install --save-dev svelte@^5.56.3 @sveltejs/kit@^2.12
+```
+
 ## Deploy the Worker with its bindings
 
 Condition: `config.bindings-missing`.

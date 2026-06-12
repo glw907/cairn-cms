@@ -18,7 +18,8 @@ npx cairn-doctor --from editor@your-site.com --repo you/your-site
 ```
 
 The command reads local config files from the working directory, so run it from the directory that
-holds `wrangler.jsonc` (or `wrangler.toml`), `svelte.config.js`, and `site.config.yaml`. In a repo
+holds `wrangler.jsonc` (or `wrangler.toml`), `svelte.config.js`, `site.config.yaml`, and
+`package-lock.json`. In a repo
 whose `vite.config.ts` wires the `cairnManifest` plugin, the flags are optional; the doctor reads
 them off the adapter, so `npx cairn-doctor` alone works. The Cloudflare and GitHub checks need
 credentials from the environment. A check whose input is missing reports SKIP with a line naming
@@ -64,7 +65,7 @@ environment. They are never derived from the repo and never printed.
 
 ## The checks
 
-Ten checks run by default. Two opt-in flags add more: `--send-test` the live email send and
+Eleven checks run by default. Two opt-in flags add more: `--send-test` the live email send and
 `--probe` the live admin probe. The condition id is the identity the report, the runtime errors,
 and the readiness checklist share.
 
@@ -75,6 +76,7 @@ and the readiness checklist share.
 | `config.csrf-disable` | `config.csrf-disable-missing` | `svelte.config.js` carries `checkOrigin: false` outside a comment, and `src/hooks.server.ts` (or `.js`) wires the cairn guard (a heuristic text read of both files). | `svelte.config.js` is absent. |
 | `config.site-config` | `config.site-config-invalid` | `site.config.yaml` parses and its URL policy validates. | `site.config.yaml` is absent. |
 | `config.public-origin` | `config.public-origin-invalid` | `PUBLIC_ORIGIN` (from the wrangler vars, or the environment as a fallback) parses as a URL and uses https, with http allowed only on `localhost` or `127.0.0.1`. The judgment is `requireOrigin`, the same rule the Worker applies. | No wrangler config file exists and `PUBLIC_ORIGIN` is not in the environment. |
+| `config.dependency-floors` | `config.dependency-floors-unmet` | The lockfile's resolved `svelte` and `@sveltejs/kit` versions satisfy the engine's declared peer ranges, read from the installed `@glw907/cairn-cms/package.json` so the floors are declared once. | No `package-lock.json` exists (a pnpm or yarn lockfile is not read), or the lockfile carries no entry for a dependency. |
 | `email.sender-onboarded` | `email.sender-not-onboarded` | The from-domain has an enabled Email Sending subdomain on its zone. | No API token, or no from-address. |
 | `edge.https-forced` | `edge.https-not-forced` | Always Use HTTPS is on for the zone. | No API token, or no from-address. |
 | `edge.hsts` | `edge.hsts-off` | HSTS is enabled with a max-age of at least 30 days. | No API token, or no from-address. |

@@ -32,9 +32,10 @@ Consumers must: replace the hand-written `App.Locals` block in `src/app.d.ts` wi
 `import '@glw907/cairn-cms/ambient';`, the new type-only subpath that ships the
 `App.Locals.editor` augmentation.
 
-The diagnostics registry reaches its remaining runtime sites: a missing `AUTH_DB`, a missing
-email binding, missing GitHub App credentials, and an invalid site config now render branded
-condition pages with their registered ids instead of a bare 500 or a silent redirect.
+The diagnostics registry reaches its remaining runtime sites. A missing `AUTH_DB` on a gated
+admin request renders a branded condition page instead of a silent login redirect, and a missing
+email binding, missing GitHub App credentials, and an invalid site config now carry their
+registered condition ids through the error chain and the logs.
 `deps.mintToken` widens to accept a plain string return. The concept list reads published rows
 from the committed manifest in one call, falling back to the per-file crawl only on a repo with
 no manifest yet. Internal layering rides along (one home each for the link rewriter, the escape

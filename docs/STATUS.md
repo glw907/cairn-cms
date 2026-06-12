@@ -23,12 +23,15 @@ swallowed), and doctor self-derivation silently depends on the `cairnManifest` V
 Live proofs all green: doctor 12/12 with flags, `sent` then `throttled` on back-to-back POSTs,
 the `auth.link.requested` trail in Workers Logs.
 
-**Next: the editor-experience pass (Geoff's direction, 2026-06-12).** The in-editor writing
-experience is the target ("a bit of a mess"; the top and bottom bars are fine). Aim: an IA
-Writer-plus-Remarked feel, complete but lean and refined. Research what makes a great web
-markdown editor first, fix the obvious issues, then a `frontend-design` polish pass. Brainstorm
-and plan in the cairn repo. After it: the gates-and-tooling pass, the gallery brainstorm
-(git-vs-R2), then P4.
+**Next: execute the editor-experience plan
+(`docs/superpowers/plans/2026-06-12-cairn-editor-experience.md`, spec approved by Geoff
+2026-06-12).** Seven tasks toward `0.52.0`: GFM base + markdown keymap (the two defects), the
+quiet surface (hierarchy, marker discipline, 70ch measure), the directive treatment as a focus
+arm (rails not bands, meaning-over-machinery fences, cursor-aware emphasis), focus mode +
+typewriter scroll as persisted toggles, then the frontend-design loop (general, directive-heavy,
+and the monospace-face mission) and the standard pass end. Method: one `cairn-implementer` per
+task on `main`, test-first, full gate between dispatches; Task 6 runs in the main loop. After
+it: the gates-and-tooling pass, the gallery brainstorm (git-vs-R2), then P4.
 
 **`0.51.0` PUBLISHED 2026-06-12.** The `v0.51.0` GitHub Release fired the OIDC trusted-publishing
 workflow (run `27429523595` green), and `0.51.0` is the registry `latest`. The ecxc bump shipped

@@ -20,9 +20,10 @@ export type AdminView =
 /**
  * Fixed first segments that never resolve as concepts. The engine only allows posts and pages
  * today, so no collision is possible, but the parser does not depend on that: a reserved
- * segment wins before concept lookup.
+ * segment wins before concept lookup. `settings` has no view yet; AdminLayout already links
+ * the sidebar to /admin/settings, so the URL is spoken for.
  */
-const RESERVED_SEGMENTS = new Set(['login', 'auth', 'editors', 'nav']);
+const RESERVED_SEGMENTS = new Set(['login', 'auth', 'editors', 'nav', 'settings']);
 
 /**
  * Parse a raw `URL.pathname` (the caller passes `event.url.pathname`, never a SvelteKit rest

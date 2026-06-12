@@ -263,9 +263,24 @@ describe('missing AUTH_DB binding (operator fault)', () => {
     vi.restoreAllMocks();
   });
 
-  it('still lets the public login page through without the binding', async () => {
-    const res = await handle({ event: unboundEvent('/admin/login'), resolve: async () => OK });
-    expect(res).toBe(OK);
+  it('serves the bindings condition page on the public login path too', async () => {
+    // A login form on a misbound deploy can never work: the request action has no store to
+    // mint a token into. The branded condition page is the honest answer for every admin path.
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    let resolved = false;
+    const res = await handle({
+      event: unboundEvent('/admin/login'),
+      resolve: async () => {
+        resolved = true;
+        return OK;
+      },
+    });
+    expect(resolved).toBe(false);
+    expect(res.status).toBe(500);
+    const body = await res.text();
+    expect(body).toContain('Wrangler bindings are missing');
+    expect(body).toContain('AUTH_DB');
+    vi.restoreAllMocks();
   });
 });
 

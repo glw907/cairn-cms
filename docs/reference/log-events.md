@@ -25,7 +25,7 @@ redaction stance.
 | `entry.discarded` | info | A pending branch is deleted: a discard, or the delete of a never-published entry. | `concept`, `id`, `editor` |
 | `publish.failed` | warn or error | A publish commit fails, with the `commit.failed` shape. | `concept`, `id`, `editor`, `reason` or `error` |
 | `github.unreachable` | warn | The admin layout's pending-entries read fails because GitHub does not answer. | `scope` (`layout`), `error` |
-| `guard.rejected` | warn or error | The admin guard refuses a request before `resolve()`. `error` with `reason: "bindings"` when a gated admin request finds no `AUTH_DB` binding; `warn` otherwise. | `reason` (`csrf`, `origin`, `https`, or `bindings`), `path`, `conditionId` on `bindings` |
+| `guard.rejected` | warn or error | The admin guard refuses a request before `resolve()`. `error` with `reason: "bindings"` when any admin request, the public login and auth paths included, finds no `AUTH_DB` binding; `warn` otherwise. | `reason` (`csrf`, `origin`, `https`, or `bindings`), `path`, `conditionId` on `bindings` |
 
 Saves land on the entry's pending branch, so `commit.succeeded` and `commit.failed` carry a
 `branch` field (`cairn/<concept>/<id>`) on the save path. Deletes, renames, and nav saves commit to
@@ -39,8 +39,8 @@ or fails the menu validation. The page still opens with an empty tree so the edi
 out, which makes this record the only sign of the fault; its `conditionId` is always
 `config.site-config-invalid`, and `error` carries the parse or validation message. On
 `guard.rejected` with `reason: "bindings"`, the Worker deployed without an `AUTH_DB` binding, so
-the guard serves the branded condition page instead of a login redirect that could never succeed;
-the `conditionId` field is `config.bindings-missing`.
+the guard serves the branded condition page on every admin path, the login page included, instead
+of a sign-in flow that could never succeed; the `conditionId` field is `config.bindings-missing`.
 
 `github.unreachable` fires when the admin layout cannot read the pending-entries state, usually a
 revoked installation, a bad credential, or a GitHub outage. The shell degrades rather than fails:

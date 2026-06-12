@@ -213,8 +213,8 @@ const editors = createEditorRoutes();
 
 export const load = editors.editorsLoad;
 export const actions = {
-  add: editors.addEditorAction,
-  remove: editors.removeEditorAction,
+  addEditor: editors.addEditorAction,
+  removeEditor: editors.removeEditorAction,
   setRole: editors.setRoleAction,
 };
 ```

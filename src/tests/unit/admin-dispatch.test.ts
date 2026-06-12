@@ -44,6 +44,14 @@ describe('parseAdminPath', () => {
     });
   });
 
+  it('reserves /admin/settings, even against a concept claiming the segment', () => {
+    expect(parseAdminPath('/admin/settings', concepts)).toBeNull();
+    // AdminLayout links the sidebar to /admin/settings, so a future concept named settings
+    // must never claim the URL.
+    const withSettings = [...concepts, { ...posts, id: 'settings', label: 'Settings' }];
+    expect(parseAdminPath('/admin/settings', withSettings)).toBeNull();
+  });
+
   it('decodes each segment individually before matching', () => {
     expect(parseAdminPath('/admin/%70osts/%61bout', concepts)).toEqual({
       view: 'edit',

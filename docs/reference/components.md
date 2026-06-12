@@ -241,9 +241,10 @@ let { data, form }: {
 
 The owner-only editors screen: the allowlist and the add and remove actions. `data.editors` is the
 current allowlist and `data.self` is the acting owner's email, which the anti-lockout guard uses.
-`form` carries the last action's result. Its forms post the named `?/add`, `?/remove`, and
-`?/setRole` actions. On the per-route mounting it lives at
-`src/routes/admin/(app)/editors/+page.svelte` against the editors load and actions.
+`form` carries the last action's result. Its forms post the named `?/addEditor`, `?/removeEditor`,
+and `?/setRole` actions, the names `createCairnAdmin`'s actions record defines. On the per-route
+mounting it lives at `src/routes/admin/(app)/editors/+page.svelte` against the editors load and
+actions, registered under the same names.
 
 ```svelte
 <script lang="ts">

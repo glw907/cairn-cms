@@ -50,7 +50,12 @@ mount inside `AdminLayout`. No styling or wrapper elements of its own.
 {:else}
   <AdminLayout data={data.layout}>
     {#if data.view === 'list'}
-      <ConceptList data={data.page} {form} />
+      <!-- The single mount reuses this component across /admin/posts -> /admin/pages, so the
+           concept id keys the list: crossing concepts remounts it and drops the old query,
+           sort, page, and dialog state. -->
+      {#key data.page.conceptId}
+        <ConceptList data={data.page} {form} />
+      {/key}
     {:else if data.view === 'edit'}
       <EditPage data={{ ...data.page, siteName: data.layout.siteName }} {render} {registry} {icons} {form} />
     {:else if data.view === 'editors'}

@@ -3,7 +3,8 @@
 The owner-gated editor management surface: a table of editors with role-flip and remove actions,
 and an add-editor form. The acting owner's own row disables its destructive controls; the
 last-owner anti-lockout rule itself is enforced server-side (editors-routes). Actions post to the
-named `?/setRole`, `?/remove`, and `?/add` actions.
+named `?/setRole`, `?/removeEditor`, and `?/addEditor` actions, the names the single-mount
+dispatcher defines.
 -->
 <script lang="ts">
   import CsrfField from './CsrfField.svelte';
@@ -53,7 +54,7 @@ named `?/setRole`, `?/remove`, and `?/add` actions.
                 {editor.role === 'owner' ? 'Make editor' : 'Make owner'}
               </button>
             </form>
-            <form method="POST" action="?/remove">
+            <form method="POST" action="?/removeEditor">
               <CsrfField />
               <input type="hidden" name="email" value={editor.email} />
               <button type="submit" class="btn btn-ghost btn-xs text-error" disabled={isSelf} aria-label={`Remove ${editor.displayName}`}>
@@ -67,7 +68,7 @@ named `?/setRole`, `?/remove`, and `?/add` actions.
   </table>
 </div>
 
-<form method="POST" action="?/add" class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 grid gap-3 p-4 shadow-[var(--cairn-shadow)] sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
+<form method="POST" action="?/addEditor" class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 grid gap-3 p-4 shadow-[var(--cairn-shadow)] sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
   <CsrfField />
   <label class="flex flex-col gap-1">
     <span class="text-sm font-medium">Name</span>

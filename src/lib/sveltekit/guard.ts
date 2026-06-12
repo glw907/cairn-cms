@@ -60,6 +60,20 @@ export function createAuthGuard() {
       return renderConditionResponse('edge.https-not-forced', { url: event.url });
     }
 
+    // No auth store binding means no admin path can work: the gated views cannot resolve a
+    // session, and a login or confirm POST would die in its action with a raw 500. That is an
+    // operator fault, not a sign-in problem, so name the condition on every admin path, the
+    // public ones included, instead of rendering a login form that can never succeed.
+    const env = event.platform?.env ?? {};
+    if (!env.AUTH_DB) {
+      log.error('guard.rejected', {
+        reason: 'bindings',
+        conditionId: REASON_CONDITION.bindings,
+        path: pathname,
+      });
+      return renderConditionResponse(REASON_CONDITION.bindings);
+    }
+
     // Rule 1 - admin: every unsafe form POST carries a valid double-submit token, else the branded
     // 403 before resolve() runs. This covers the public login/auth posts too.
     if (isUnsafeFormRequest(event.request) && !(await validateCsrfToken(event))) {
@@ -68,18 +82,6 @@ export function createAuthGuard() {
     }
 
     if (!isPublicAdminPath(pathname)) {
-      const env = event.platform?.env ?? {};
-      if (!env.AUTH_DB) {
-        // No auth store binding means no session can ever resolve. That is an operator fault,
-        // not a sign-in problem, so name the condition instead of bouncing the editor to a
-        // login that cannot work either.
-        log.error('guard.rejected', {
-          reason: 'bindings',
-          conditionId: REASON_CONDITION.bindings,
-          path: pathname,
-        });
-        return renderConditionResponse(REASON_CONDITION.bindings);
-      }
       const id = event.cookies.get(sessionCookieName(event.url.protocol === 'https:'));
       const editor = id ? await resolveSession(env.AUTH_DB, id, Date.now()) : null;
       if (!editor) throw redirect(303, '/admin/login');

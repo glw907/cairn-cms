@@ -11,7 +11,24 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-12, latest): the 907-life retrofit to `^0.51.0`
+## Immediate next action (2026-06-12, latest): the editor-experience pass, then the queue
+
+**The 907-life retrofit LANDED and DEPLOYED 2026-06-12 (Pass 16.2 in `907-life/docs/STATUS.md`),
+closing the single-mount initiative: both consumer sites now run `^0.51.0` on the three-file
+seam.** The crossing covered the whole `0.36.0..0.51.0` window in one pass (shim tree deleted,
+composer + catch-all mount, ambient types, floors, preview knob). Its review gate found two
+engine-relevant DX issues, logged in the friction log: `AuthEnv` is not exported from the
+`/sveltekit` subpath (both sites had copied a subpath import that `skipLibCheck` silently
+swallowed), and doctor self-derivation silently depends on the `cairnManifest` Vite plugin.
+Live proofs all green: doctor 12/12 with flags, `sent` then `throttled` on back-to-back POSTs,
+the `auth.link.requested` trail in Workers Logs.
+
+**Next: the editor-experience pass (Geoff's direction, 2026-06-12).** The in-editor writing
+experience is the target ("a bit of a mess"; the top and bottom bars are fine). Aim: an IA
+Writer-plus-Remarked feel, complete but lean and refined. Research what makes a great web
+markdown editor first, fix the obvious issues, then a `frontend-design` polish pass. Brainstorm
+and plan in the cairn repo. After it: the gates-and-tooling pass, the gallery brainstorm
+(git-vs-R2), then P4.
 
 **`0.51.0` PUBLISHED 2026-06-12.** The `v0.51.0` GitHub Release fired the OIDC trusted-publishing
 workflow (run `27429523595` green), and `0.51.0` is the registry `latest`. The ecxc bump shipped

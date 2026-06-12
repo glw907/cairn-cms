@@ -300,8 +300,10 @@ read `form.renameError` in its own markup must read `form.error` instead.
 
 ## 0.50.0: diagnostics conditions and a wider `mintToken`, additive
 
-Two additions need no migration. A missing runtime binding (the D1 auth store, the email sender,
-the GitHub App credentials) and an invalid site config now surface as branded condition pages
-with their registered condition ids, in place of a bare 500 or a silent redirect. And
+Two additions need no migration. The runtime faults the readiness checklist already names now
+carry their registered condition ids: a missing `AUTH_DB` on a gated admin request renders a
+branded condition page instead of silently redirecting to a login that could never work, and a
+missing email binding, missing GitHub App credentials, or an invalid site config carry their ids
+through the error chain and the logs, where `cairn-doctor` and Workers Logs can name the fix. And
 `deps.mintToken` accepts a plain string return as well as a promise, so a test stub no longer
 needs an `async` wrapper.

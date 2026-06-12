@@ -78,8 +78,7 @@ function setCookieValue(lines: string[], name: string): string | undefined {
 function csrfFieldValue(html: string): string | undefined {
 	const input = (html.match(/<input[^>]*>/g) ?? []).find((tag) => /name="csrf"/.test(tag));
 	if (input === undefined) return undefined;
-	const value = /value="([^"]+)"/.exec(input)?.[1];
-	return value;
+	return /value="([^"]+)"/.exec(input)?.[1];
 }
 
 /**

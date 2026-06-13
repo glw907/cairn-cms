@@ -28,6 +28,30 @@ Goal: deploy the site Worker to Cloudflare so editor publishes commit to GitHub 
 
    The `EMAIL` binding serves both Cloudflare email products through the one declaration. The engine calls it as `env.EMAIL.send({ to, from, subject, html, text })`, which is the Email Sending shape that reaches arbitrary recipients.
 
+   Type those bindings for the build with an `app.d.ts` that imports the engine's ambient `App.Locals` augmentation and points `platform.env` at the `AuthEnv` shape plus the GitHub App secrets. Copy this block verbatim:
+
+   ```ts
+   // src/app.d.ts
+   import '@glw907/cairn-cms/ambient';
+   import type { AuthEnv } from '@glw907/cairn-cms/sveltekit';
+
+   declare global {
+     namespace App {
+       interface Platform {
+         env: AuthEnv & {
+           GITHUB_APP_ID: string;
+           GITHUB_APP_INSTALLATION_ID: string;
+           GITHUB_APP_PRIVATE_KEY_B64: string;
+         };
+       }
+     }
+   }
+
+   export {};
+   ```
+
+   Import `AuthEnv` from `/sveltekit`, not the package root. The auth and content helpers a site mounts are typed on that subpath, and `skipLibCheck` does not warn when the import is wrong, so a mistyped binding degrades to an error type in silence (the gap two site retrofits hit).
+
 3. **Onboard your sending domain.** The `EMAIL` binding can only send from a domain the zone has onboarded as a sender, and the magic-link email rides on that send, so an un-onboarded domain locks every editor out. Onboard the domain of your adapter's `branding.from` address:
 
    ```bash

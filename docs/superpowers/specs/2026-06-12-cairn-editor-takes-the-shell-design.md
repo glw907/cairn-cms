@@ -81,6 +81,31 @@ minimally (the WordPress/Ghost rule: an exit affordance and the save state never
 slim floating indicator carrying both stays). Escape restores. Zen composes with the postures
 and modes; it is the completion of Prose, not a separate system.
 
+## Editor ergonomics (added 2026-06-12 from the mockup crit)
+
+- **The rail pitch widens one step.** The caret-active bar is 3px, so the shipped 4px gap falls
+  under the two-bar-weights separation floor and the pair muddies at a glance (Geoff caught it
+  on the mockup; the pixel scan confirmed the geometry was to spec and the spec was wrong).
+  New geometry: 2px bars on an 8px pitch (bars at 0-2, 8-10, 16-18; 6px gaps; the active bar
+  keeps 2x clearance), with the directive gutter stepping to 1.75rem so depth-3 text keeps its
+  air. The `rails()` helper's edge formula and the component tests update together.
+- **Intelligent indentation.** Wrapped quote and list lines continue under their content, not
+  under the marker: a hanging indent (`padding-left` plus negative `text-indent`) applied per
+  line from the measured marker prefix (`> `, `- `, `1. `), the Obsidian/HyperMD wrap idiom. It
+  rides the existing decoration pass; ordered-list markers measure wider than 2ch, so the
+  decoration computes the prefix rather than assuming it.
+- **Keyboard ergonomics and discoverability.** The format vocabulary completes (inline code,
+  quote, both lists, both headings join Bold/Italic/Web link), and the page-level actions get
+  keys (Publish, the Details panel, Write/Preview, Focus mode, Zen). Discoverability is three
+  layered surfaces: the tooltips already on every strip button, a shortcuts sheet on `Ctrl+/`
+  (mocked as screen 5), and a shortcuts section in the Markdown help dialog. Exact bindings
+  settle at plan time against browser and OS conflicts; the principle stays that typing markdown
+  always works and keys are conveniences, never requirements.
+- **No H4 button.** The document title is the page's visible H1, so in-document structure runs
+  H2/H3 at this content scale, and the strip stays lean. `####` still types, gains a real size
+  step in the highlight (about 1.05em, between H3 and body) so a hand-typed H4 reads as a
+  heading, and the help sheet documents it. Revisit only if a real site asks.
+
 ## Constraints and cautions
 
 - **Focus and a11y carry the risk.** Chrome that hides needs focus management: the Details

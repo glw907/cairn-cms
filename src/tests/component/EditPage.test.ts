@@ -315,19 +315,17 @@ describe('EditPage', () => {
     expect(previewSrcdoc(screen)).toContain('cairn-broken-link');
   });
 
-  it('hides the sidebar while Preview shows and restores it on Write', async () => {
+  it('centers the editor column with no two-column grid in either posture', async () => {
     const screen = render(EditPage, postProps());
-    const aside = screen.container.querySelector('aside')!;
-    expect(aside.classList.contains('hidden')).toBe(false);
-    await screen.getByRole('tab', { name: 'Preview' }).click();
-    // Hidden, not unmounted: the uncontrolled field edits survive the round trip. The form
-    // drops its two-column grid, so the editor card takes the full content width.
-    expect(aside.classList.contains('hidden')).toBe(true);
+    // The details column moved behind a slide-over, so the form is no longer a two-column grid.
+    // The editor column centers truly in both Write postures and in Preview.
     const form = screen.container.querySelector('#cairn-edit-form')!;
     expect(form.classList.contains('lg:grid')).toBe(false);
-    await screen.getByRole('tab', { name: 'Write' }).click();
-    expect(aside.classList.contains('hidden')).toBe(false);
-    expect(form.classList.contains('lg:grid')).toBe(true);
+    const column = screen.container.querySelector('form#cairn-edit-form > div')!;
+    expect(column.classList.contains('mx-auto')).toBe(true);
+    await screen.getByRole('button', { name: 'Markup', exact: true }).click();
+    expect(form.classList.contains('lg:grid')).toBe(false);
+    expect(column.classList.contains('mx-auto')).toBe(true);
   });
 
   it('switches the frame width from the device menu and persists the choice', async () => {
@@ -434,6 +432,8 @@ describe('EditPage', () => {
 
   it('renders the change-url control', async () => {
     const screen = render(EditPage, postProps());
+    // The Address group lives in the details slide-over; open it to reach the control.
+    await screen.getByRole('button', { name: 'Details' }).click();
     await expect.element(screen.getByRole('button', { name: /change url/i })).toBeInTheDocument();
   });
 
@@ -1253,14 +1253,86 @@ describe('EditPage', () => {
     expect(band.compareDocumentPosition(flash) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it('keeps the Details trigger inert until Task 8 wires the panel', async () => {
+  it('opens the details slide-over from the band trigger as a labeled region', async () => {
     const screen = render(EditPage, postProps());
-    const details = screen.getByRole('button', { name: 'Details' });
-    // The trigger lands in the band now; clicking it does not open the details aside (Task 8 owns
-    // the slide-over). The aside stays as it is, visible in Write mode.
-    await details.click();
     const aside = screen.container.querySelector('aside')!;
-    expect(aside.classList.contains('hidden')).toBe(false);
+    // Closed by default: the hidden attribute keeps the panel out of the a11y tree and tab order.
+    expect(aside.hasAttribute('hidden')).toBe(true);
+    expect(aside.getAttribute('role')).toBe('region');
+    expect(aside.getAttribute('aria-label')).toBe('Entry details');
+    await screen.getByRole('button', { name: 'Details' }).click();
+    expect(aside.hasAttribute('hidden')).toBe(false);
+    // A labeled region with its own close button.
+    expect(screen.getByRole('button', { name: 'Close details' })).toBeTruthy();
+  });
+
+  it('moves focus to the close button on open and back to the trigger on close', async () => {
+    const screen = render(EditPage, postProps());
+    const trigger = screen.getByRole('button', { name: 'Details' });
+    await trigger.click();
+    const close = screen.getByRole('button', { name: 'Close details' });
+    await expect.poll(() => document.activeElement).toBe(await close.element());
+    await close.click();
+    await expect.poll(() => document.activeElement).toBe(await trigger.element());
+  });
+
+  it('closes the details slide-over on Escape', async () => {
+    const screen = render(EditPage, postProps());
+    const aside = screen.container.querySelector('aside')!;
+    await screen.getByRole('button', { name: 'Details' }).click();
+    expect(aside.hasAttribute('hidden')).toBe(false);
+    const event = new KeyboardEvent('keydown', { key: 'Escape', cancelable: true });
+    window.dispatchEvent(event);
+    await expect.poll(() => aside.hasAttribute('hidden')).toBe(true);
+  });
+
+  it('toggles the details slide-over on Ctrl+.', async () => {
+    const screen = render(EditPage, postProps());
+    const aside = screen.container.querySelector('aside')!;
+    expect(aside.hasAttribute('hidden')).toBe(true);
+    const open = new KeyboardEvent('keydown', { key: '.', ctrlKey: true, cancelable: true });
+    window.dispatchEvent(open);
+    expect(open.defaultPrevented).toBe(true);
+    await expect.poll(() => aside.hasAttribute('hidden')).toBe(false);
+    const close = new KeyboardEvent('keydown', { key: '.', ctrlKey: true, cancelable: true });
+    window.dispatchEvent(close);
+    await expect.poll(() => aside.hasAttribute('hidden')).toBe(true);
+  });
+
+  it('submits a detail field edited while the panel is closed and hidden', async () => {
+    const screen = render(EditPage, postProps());
+    const aside = screen.container.querySelector('aside')!;
+    // Edit a detail field through the open panel, then close it.
+    await screen.getByRole('button', { name: 'Details' }).click();
+    const date = screen.container.querySelector<HTMLInputElement>('aside input[name="date"]')!;
+    date.value = '2026-07-04';
+    date.dispatchEvent(new Event('input', { bubbles: true }));
+    await screen.getByRole('button', { name: 'Close details' }).click();
+    expect(aside.hasAttribute('hidden')).toBe(true);
+    // A display:none field still submits: the posted FormData carries the closed-panel edit.
+    const form = screen.container.querySelector<HTMLFormElement>('#cairn-edit-form')!;
+    const posted = new FormData(form);
+    expect(posted.get('date')).toBe('2026-07-04');
+  });
+
+  it('opens the details panel when a hidden required detail field blocks the save', async () => {
+    const props = postProps({
+      isNew: true,
+      fields: [
+        { type: 'text', name: 'title', label: 'Title', required: true },
+        { type: 'text', name: 'author', label: 'Author', required: true },
+      ] satisfies FrontmatterField[],
+      frontmatter: { title: 'Hello', author: '' },
+    });
+    const screen = render(EditPage, { ...props });
+    const aside = screen.container.querySelector('aside')!;
+    // The required Author field lives in the closed (hidden) panel; the browser cannot report on
+    // an invisible control, so the capture-phase invalid handler opens the panel first.
+    expect(aside.hasAttribute('hidden')).toBe(true);
+    await screen.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect.poll(() => aside.hasAttribute('hidden')).toBe(false);
+    const author = screen.container.querySelector<HTMLInputElement>('input[name="author"]')!;
+    expect(author.validity.valueMissing).toBe(true);
   });
 
   it('adds Discard changes to the overflow menu while pending', async () => {
@@ -1295,11 +1367,17 @@ describe('EditPage', () => {
     expect(menu.matches(':popover-open')).toBe(false);
   });
 
-  it('keeps the sidebar to the one Change URL action', async () => {
+  it('keeps the sidebar groups to the one Change URL action', async () => {
     const screen = render(EditPage, postProps({ pending: true }));
-    const buttons = screen.container.querySelectorAll('aside button');
-    expect(buttons.length).toBe(1);
-    expect(buttons[0].textContent ?? '').toContain('Change URL');
+    // The panel header adds a Close button; the field groups themselves still carry only the one
+    // Change URL action.
+    const close = screen.container.querySelector('aside button[aria-label="Close details"]');
+    expect(close).not.toBeNull();
+    const groupButtons = Array.from(screen.container.querySelectorAll('aside button')).filter(
+      (b) => b.getAttribute('aria-label') !== 'Close details',
+    );
+    expect(groupButtons.length).toBe(1);
+    expect(groupButtons[0].textContent ?? '').toContain('Change URL');
   });
 
   it('hoists the title input above the editor card inside the form', async () => {
@@ -1358,6 +1436,8 @@ describe('EditPage', () => {
     const screen = render(EditPage, postProps());
     const aside = screen.container.querySelector('aside')!;
     expect(aside.querySelector('code')?.textContent).toBe('/hello');
+    // Open the slide-over so the Address group's Change URL control is in the a11y tree.
+    await screen.getByRole('button', { name: 'Details' }).click();
     await screen.getByRole('button', { name: /change url/i }).click();
     const dialog = screen.container.querySelector<HTMLDialogElement>(
       'dialog[aria-labelledby="cairn-rename-dialog-title"]',
@@ -1659,26 +1739,19 @@ describe('EditPage', () => {
     await expect.poll(() => previewSrcdoc(screen)).toContain('entry B html');
   });
 
-  it('flips Preview back to Write when a hidden required field blocks the save', async () => {
-    const props = postProps({
-      isNew: true,
-      fields: [
-        { type: 'text', name: 'title', label: 'Title', required: true },
-        { type: 'text', name: 'subtitle', label: 'Subtitle', required: true },
-      ] satisfies FrontmatterField[],
-      frontmatter: { title: 'Hello', subtitle: '' },
-    });
-    const screen = render(EditPage, { ...props });
+  it('flips Preview back to Write when an invalid control sits in the write pane', async () => {
+    // The write pane hides under Preview, so a required control there cannot take the browser's
+    // validation report. The capture-phase invalid handler flips back to Write so the report
+    // lands on a visible control. The body textarea stands in for that write-pane control: firing
+    // a capture-phase invalid from inside #cairn-pane-write must flip the pane.
+    const screen = render(EditPage, postProps());
+    await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
     await screen.getByRole('tab', { name: 'Preview' }).click();
-    const aside = screen.container.querySelector('aside')!;
-    expect(aside.classList.contains('hidden')).toBe(true);
-    // Save with the empty required Subtitle hidden by Preview. The browser cannot focus an
-    // invisible invalid control, so without the invalid listener the save would cancel silently;
-    // instead the page flips to Write and the report lands on the visible field.
-    await screen.getByRole('button', { name: 'Save', exact: true }).click();
-    await expect.poll(() => aside.classList.contains('hidden')).toBe(false);
-    const subtitle = screen.container.querySelector<HTMLInputElement>('input[name="subtitle"]')!;
-    expect(subtitle.validity.valueMissing).toBe(true);
-    await expect.poll(() => document.activeElement).toBe(subtitle);
+    await expect.poll(() => screen.container.querySelector('#cairn-pane-preview')).not.toBeNull();
+    const body = screen.container.querySelector<HTMLInputElement>('#cairn-pane-write input[name="body"]')!;
+    body.dispatchEvent(new Event('invalid', { bubbles: true, cancelable: true }));
+    // The aside (the details panel) stays closed; the write-pane arm flips the pane, not the panel.
+    await expect.poll(() => screen.container.querySelector('#cairn-pane-preview')).toBeNull();
+    expect(screen.container.querySelector('aside')!.hasAttribute('hidden')).toBe(true);
   });
 });

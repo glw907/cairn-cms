@@ -3,7 +3,8 @@
 The differentiated editor: the per-concept frontmatter form (from `data.fields`) beside the
 markdown editor and a live, design-accurate preview. The whole surface is one form posting to the
 `?/save` action. The title field is hoisted above the editor card as the document title; the
-remaining fields group in the sidebar under Details, Visibility (the draft boolean as the Hidden
+remaining fields group behind the Details slide-over (a fixed panel below the band, toggled from
+the band's Details trigger or Ctrl+.) under Details, Visibility (the draft boolean as the Hidden
 toggle), and Address (the slug with the Change URL trigger). The toolbar's Write/Preview tabs
 swap the editing surface for the rendered preview inside the same card; every visit lands on
 Write. Preview renders inside a sandboxed iframe that links the site's own stylesheets (the
@@ -125,12 +126,18 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   // exists only while data.pending, so the shortcut no-ops when there is nothing to publish.
   let publishButton = $state<HTMLButtonElement | null>(null);
 
-  // A required sidebar field hidden by Preview cannot take the browser's validation report: an
-  // invisible control is unfocusable, so the browser cancels the save silently with no message.
-  // This capture-phase invalid listener flips back to Write first, and flushSync forces the pane
-  // swap inside the event, so the report that follows the invalid events lands on a visible
-  // control and the author sees what blocked the save.
-  function onFormInvalid() {
+  // A required field hidden from the browser's validation report cannot take it: an invisible
+  // control is unfocusable, so the browser cancels the save silently with no message. Two surfaces
+  // can hide a required field, so this capture-phase invalid listener reveals whichever holds the
+  // invalid control before the report that follows fires. A field in the write pane needs Preview
+  // flipped back to Write; a field in the details slide-over needs the panel opened. flushSync
+  // forces the reveal inside the event, so the report lands on a now-visible control.
+  function onFormInvalid(e: Event) {
+    const target = e.target as Element | null;
+    if (target?.closest('aside')) {
+      if (!detailsOpen) flushSync(() => (detailsOpen = true));
+      return;
+    }
     if (mode === 'write') return;
     flushSync(() => (mode = 'write'));
   }
@@ -161,6 +168,15 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     // Guard-clause style on purpose: svelte 5.56.1 misprints `(a || b) && c` by dropping the
     // parentheses, and consumers compile this source with their own svelte.
     const onWindowKeydown = (e: KeyboardEvent) => {
+      // Escape closes the details slide-over (it is a region, not a dialog, so it has no native
+      // light-dismiss). An open dialog claims Escape first, so only act when none is up.
+      if (e.key === 'Escape' && detailsOpen) {
+        const inDialog = !!(e.target as Element | null)?.closest?.('dialog');
+        if (inDialog) return;
+        e.preventDefault();
+        closeDetails();
+        return;
+      }
       if (!(e.ctrlKey || e.metaKey)) return;
       const key = e.key.toLowerCase();
       // The page-wide chords never act on a surface the author cannot see: a save, publish, mode
@@ -185,6 +201,14 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
         e.preventDefault();
         if (inDialog) return;
         setFocusMode(!focusMode);
+        return;
+      }
+      // Ctrl+. toggles the details slide-over (the bindings' panel key); the period reads off
+      // e.key with no shift or alt.
+      if (!e.shiftKey && !e.altKey && e.key === '.') {
+        e.preventDefault();
+        if (inDialog) return;
+        toggleDetails();
         return;
       }
       if (e.shiftKey || e.altKey) return;
@@ -316,13 +340,28 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   let actionsMenu = $state<HTMLUListElement | null>(null);
   let actionsOpen = $state(false);
 
-  // The Details trigger lands in the band now but stays inert: Task 8 owns the slide-over panel
-  // and the real open/close wiring. The trigger carries the panel icon and a no-op handler so the
-  // cluster reads complete; the existing details aside below is untouched.
+  // The details slide-over. The aside below carries the frontmatter groups; it stays physically
+  // inside the edit form (so the uncontrolled fields submit) but presents as a fixed panel under
+  // the band, hidden when closed so it leaves the a11y tree and the tab order while its
+  // display:none fields still post. Focus moves into the panel on open and returns to the trigger
+  // on close, the region-with-focus-management pattern (the a11y reviewer adjudicates region vs
+  // dialog at the pass gate).
   let detailsOpen = $state(false);
+  let detailsTrigger = $state<HTMLButtonElement | null>(null);
+  let detailsClose = $state<HTMLButtonElement | null>(null);
+  function openDetails() {
+    // flushSync removes the panel's `hidden` attribute synchronously; a hidden element cannot
+    // take focus, so the close button must be visible before we move focus to it.
+    flushSync(() => (detailsOpen = true));
+    detailsClose?.focus();
+  }
+  function closeDetails() {
+    detailsOpen = false;
+    detailsTrigger?.focus();
+  }
   function toggleDetails() {
-    // Task 8 wires the slide-over panel; this is a placeholder so the band's quiet pair is whole.
-    detailsOpen = !detailsOpen;
+    if (detailsOpen) closeDetails();
+    else openDetails();
   }
 
   // An overflow-menu pick runs its action, then dismisses the popover menu. Opening a modal
@@ -380,6 +419,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
       leaving = false;
       fieldsDirty = false;
       mode = 'write';
+      detailsOpen = false;
       previewHtml = '';
       previewFailed = false;
       removedLinks = [];
@@ -615,8 +655,10 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
         Save
       </button>
 
-      <!-- The quiet pair: the Details panel trigger (inert until Task 8) and the overflow menu. -->
+      <!-- The quiet pair: the Details panel trigger and the overflow menu. The trigger toggles
+           the slide-over; aria-expanded mirrors its state and focus returns here on close. -->
       <button
+        bind:this={detailsTrigger}
         type="button"
         class="btn btn-ghost btn-sm btn-square"
         aria-label="Details"
@@ -744,7 +786,6 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   onsubmit={onEditSubmit}
   oninput={onFormInput}
   oninvalidcapture={onFormInvalid}
-  class={mode === 'preview' ? '' : 'lg:grid lg:grid-cols-[1fr_17rem] lg:gap-10'}
 >
   <CsrfField />
   {#if data.isNew}<input type="hidden" name="new" value="1" />{/if}
@@ -755,7 +796,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
        measure (49rem covers it at the prose type step), markup puts the ceiling near 89ch of
        the base face for tables, attributed directives, and long URLs. The toggle lives in the
        card footer with the other writing preferences. -->
-  <div class={mode === 'preview' ? 'lg:order-1' : `lg:order-1 mx-auto w-full ${surface === 'prose' ? 'max-w-[49rem]' : 'max-w-[56rem]'}`}>
+  <div class={mode === 'preview' ? '' : `mx-auto w-full ${surface === 'prose' ? 'max-w-[49rem]' : 'max-w-[56rem]'}`}>
     <!-- The page's accessible name. The visible title is a borderless input, so a real heading
          lives here for assistive tech (the band no longer carries one). -->
     <h1 class="sr-only">{data.title}</h1>
@@ -981,14 +1022,35 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     </div>
   </div>
 
-  <!-- Preview takes the full surface: the sidebar hides (never unmounts, so the uncontrolled
-       field edits survive the round trip) and the editor column above spans the whole width. -->
-  <aside class="lg:order-2 mt-4 lg:mt-0" class:hidden={mode === 'preview'}>
-    <!-- One sidebar card, three labeled groups. Each group is its own fieldset so its eyebrow is
-         a real legend that screen readers announce with the fields it holds. -->
-    <!-- Quieter than the editor card on purpose (hairline, no shadow): the editor is the one
-         floating object on the page, and the details read as margin furniture beside it. -->
-    <div class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 flex flex-col gap-6 p-4">
+  <!-- The details slide-over: a fixed panel below the band, the frontmatter groups behind a
+       Details/close header. It stays physically inside the edit form so its uncontrolled fields
+       submit; `hidden` when closed takes it out of the a11y tree and the tab order while its
+       display:none fields still post. role="region" with aria-label names it for assistive tech;
+       focus moves to the close button on open and back to the trigger on close (the
+       region-with-focus-management pattern). -->
+  <aside
+    role="region"
+    aria-label="Entry details"
+    hidden={!detailsOpen}
+    class="fixed right-0 top-16 bottom-0 z-30 w-[19rem] overflow-y-auto border-l border-[var(--cairn-card-border)] bg-base-100 p-4 shadow-[var(--cairn-shadow)]"
+  >
+    <!-- The panel header: the Details eyebrow and the close button. The eyebrow is a plain span
+         (not a legend), so the three group legends below still read as the only sidebar legends. -->
+    <div class="mb-3.5 flex items-center justify-between">
+      <span class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">Details</span>
+      <button
+        bind:this={detailsClose}
+        type="button"
+        class="btn btn-ghost btn-xs btn-square"
+        aria-label="Close details"
+        onclick={closeDetails}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg>
+      </button>
+    </div>
+    <!-- Three labeled groups. Each group is its own fieldset so its eyebrow is a real legend that
+         screen readers announce with the fields it holds. -->
+    <div class="flex flex-col gap-6">
       {#if detailFields.length}
       <fieldset class="m-0 flex min-w-0 flex-col gap-3 border-0 p-0">
       <legend class={eyebrowClass}>Details</legend>

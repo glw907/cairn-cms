@@ -66,10 +66,23 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
     hidden: data.entries.filter((e) => e.draft).length,
   });
 
+  // The three publish-state segments, in display order. Each names its partition value, its label,
+  // and the count axis it shows; the markup loops this so the segments share one block.
+  const segments: { value: Partition; label: string; count: () => number }[] = [
+    { value: 'all', label: 'All', count: () => counts.all },
+    { value: 'pending', label: 'Pending edits', count: () => counts.pending },
+    { value: 'published', label: 'Published', count: () => counts.published },
+  ];
+
   function matchesPartition(entry: EntrySummary): boolean {
-    if (partition === 'pending') return entry.status !== 'published';
-    if (partition === 'published') return entry.status === 'published';
-    return true;
+    switch (partition) {
+      case 'pending':
+        return entry.status !== 'published';
+      case 'published':
+        return entry.status === 'published';
+      default:
+        return true;
+    }
   }
 
   // Compose the partition and the Hidden axis with the search query; sort and paging run
@@ -112,6 +125,14 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
   function hiddenToggleClass(pressed: boolean): string {
     return `inline-flex items-center gap-1.5 rounded-lg px-3 py-1 text-[0.8125rem] font-normal hover:bg-base-content/[0.06] ${pressed ? 'bg-primary/10 text-primary font-medium' : 'text-[var(--color-muted)]'}`;
   }
+  // A triage count dims to muted when zero, so a sparse list never jumps.
+  function countClass(count: number): string {
+    return count === 0 ? 'opacity-45' : '';
+  }
+
+  // Hidden is a row treatment: a draft row de-emphasizes its title and summary. The dim level lives
+  // here once rather than inline on each element.
+  const draftDim = 'opacity-[0.62]';
 
   // Sort key for one entry: the lowercased title, or the ISO date string (lexical order is
   // chronological). A null date sorts as the empty string.
@@ -237,23 +258,17 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
        count dims to muted when zero, so a sparse list never jumps. -->
   <div class="mb-4 flex flex-wrap items-center gap-3">
     <div role="group" aria-label="Filter by publish state" class="bg-base-100 inline-flex items-center overflow-hidden rounded-lg border border-[var(--cairn-card-border)]">
-      <button type="button" class={segButtonClass(partition === 'all')} aria-pressed={partition === 'all'} onclick={() => setPartition('all')}>
-        {#if partition === 'all'}{@render check()}{/if}
-        All<span class="tabular-nums {counts.all === 0 ? 'opacity-45' : ''}">{counts.all}</span>
-      </button>
-      <button type="button" class="{segButtonClass(partition === 'pending')} border-l border-[var(--cairn-card-border)]" aria-pressed={partition === 'pending'} onclick={() => setPartition('pending')}>
-        {#if partition === 'pending'}{@render check()}{/if}
-        Pending edits<span class="tabular-nums {counts.pending === 0 ? 'opacity-45' : ''}">{counts.pending}</span>
-      </button>
-      <button type="button" class="{segButtonClass(partition === 'published')} border-l border-[var(--cairn-card-border)]" aria-pressed={partition === 'published'} onclick={() => setPartition('published')}>
-        {#if partition === 'published'}{@render check()}{/if}
-        Published<span class="tabular-nums {counts.published === 0 ? 'opacity-45' : ''}">{counts.published}</span>
-      </button>
+      {#each segments as seg, i (seg.value)}
+        <button type="button" class="{segButtonClass(partition === seg.value)} {i > 0 ? 'border-l border-[var(--cairn-card-border)]' : ''}" aria-pressed={partition === seg.value} onclick={() => setPartition(seg.value)}>
+          {#if partition === seg.value}{@render check()}{/if}
+          {seg.label}<span class="tabular-nums {countClass(seg.count())}">{seg.count()}</span>
+        </button>
+      {/each}
     </div>
     <span class="h-5 w-px bg-[var(--cairn-card-border)]" aria-hidden="true"></span>
     <button type="button" class={hiddenToggleClass(hiddenOnly)} aria-pressed={hiddenOnly} onclick={toggleHidden}>
       {#if hiddenOnly}{@render check()}{/if}
-      Hidden<span class="tabular-nums {counts.hidden === 0 ? 'opacity-45' : ''}">{counts.hidden}</span>
+      Hidden<span class="tabular-nums {countClass(counts.hidden)}">{counts.hidden}</span>
     </button>
   </div>
 {/if}
@@ -315,7 +330,7 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
           {#each pageRows as entry (entry.id)}
             <tr class="transition-colors hover:bg-base-200/60">
               <td class="max-w-0">
-                <a class="block truncate font-semibold hover:text-primary hover:underline {entry.draft ? 'opacity-[0.62]' : ''}" href={`/admin/${data.conceptId}/${entry.id}`}>{entry.title}</a>
+                <a class="block truncate font-semibold hover:text-primary hover:underline {entry.draft ? draftDim : ''}" href={`/admin/${data.conceptId}/${entry.id}`}>{entry.title}</a>
                 {#if entry.draft}
                   <!-- Hidden is a row treatment, not a status badge: the row de-emphasizes and an
                        eye-off tag sits by the title, leaving the Status cell to its publish badge. -->
@@ -324,7 +339,7 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
                   </span>
                 {/if}
                 {#if entry.summary}
-                  <div data-summary class="mt-0.5 truncate text-[0.8125rem] text-[var(--color-muted)] {entry.draft ? 'opacity-[0.62]' : ''}">{entry.summary}</div>
+                  <div data-summary class="mt-0.5 truncate text-[0.8125rem] text-[var(--color-muted)] {entry.draft ? draftDim : ''}">{entry.summary}</div>
                 {/if}
               </td>
               {#if data.dated}<td class="hidden w-28 text-sm tabular-nums text-[var(--color-muted)] sm:table-cell">{formatDate(entry.date)}</td>{/if}

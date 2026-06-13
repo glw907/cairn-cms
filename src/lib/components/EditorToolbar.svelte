@@ -101,10 +101,12 @@ are stroke SVG icons in the admin's house style (24x24 viewBox, `currentColor`, 
   const checkPaths = ['M20 6 9 17l-5-5'];
 
   // The trimmed overflow: the block formats that stay rare. A divider splits the code block from
-  // the task list, keeping the mockup's rhythm.
+  // the rest (the spec keeps "code block and the rest" behind the ellipsis once inline code,
+  // strikethrough, and table promote into the strip).
   const moreItems: { kind: FormatKind; label: string; divideBefore?: boolean }[] = [
     { kind: 'codeblock', label: 'Code block' },
-    { kind: 'task', label: 'Task list', divideBefore: true },
+    { kind: 'hr', label: 'Horizontal rule', divideBefore: true },
+    { kind: 'task', label: 'Task list' },
   ];
 
   // The More menu's popover element and its open state, mirrored from the toggle event into

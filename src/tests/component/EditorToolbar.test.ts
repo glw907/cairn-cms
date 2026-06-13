@@ -56,15 +56,15 @@ describe('EditorToolbar', () => {
     ]);
   });
 
-  it('keeps exactly code block, a divider, and task list in the trimmed More menu', async () => {
+  it('keeps code block, horizontal rule, and task list behind the ellipsis', async () => {
     const screen = render(EditorToolbar, baseProps());
     await screen.getByRole('button', { name: 'More formatting' }).click();
     const menu = screen.container.querySelector('#cairn-more-formatting-menu')!;
     const itemLabels = Array.from(menu.querySelectorAll<HTMLButtonElement>('li > button')).map((el) =>
       el.textContent?.trim(),
     );
-    expect(itemLabels).toEqual(['Code block', 'Task list']);
-    // Exactly one divider sits between the two rows.
+    expect(itemLabels).toEqual(['Code block', 'Horizontal rule', 'Task list']);
+    // Exactly one divider splits the code block from the rest.
     expect(menu.querySelectorAll('li.menu-divider, .divider, [role="separator"]').length).toBe(1);
   });
 
@@ -93,7 +93,7 @@ describe('EditorToolbar', () => {
     const screen = render(EditorToolbar, baseProps({ format }));
     // The menu is a popover, hidden until the trigger opens it.
     await screen.getByRole('button', { name: 'More formatting' }).click();
-    for (const label of ['Code block', 'Task list']) {
+    for (const label of ['Code block', 'Horizontal rule', 'Task list']) {
       await expect.element(screen.getByRole('button', { name: label })).toBeInTheDocument();
     }
     await screen.getByRole('button', { name: 'Code block' }).click();

@@ -25,7 +25,9 @@ export function cairnHighlightStyle(): HighlightStyle {
     { tag: tags.heading1, fontSize: '1.5em', fontWeight: '700', color: 'var(--color-base-content)' },
     { tag: tags.heading2, fontSize: '1.3em', fontWeight: '700', color: 'var(--color-base-content)' },
     { tag: tags.heading3, fontSize: '1.17em', fontWeight: '700', color: 'var(--color-base-content)' },
-    // h4 and deeper share the weight only; body size keeps the low levels from outranking h3.
+    // A real step for h4, between h3 and body, so a hand-typed #### reads as a heading.
+    { tag: tags.heading4, fontSize: '1.05em', fontWeight: '700', color: 'var(--color-base-content)' },
+    // h5 and deeper share the weight only; body size keeps the low levels from outranking h4.
     { tag: tags.heading, fontWeight: '700', color: 'var(--color-base-content)' },
     { tag: tags.strong, fontWeight: '700' },
     { tag: tags.emphasis, fontStyle: 'italic' },

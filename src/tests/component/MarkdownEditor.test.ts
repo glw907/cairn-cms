@@ -19,6 +19,12 @@ function pinThemeVars(vars: Record<string, string>): () => void {
   };
 }
 
+// Extracts each box-shadow layer's x offset. A layer's lengths serialize as a run of px values
+// after its resolved color, and the oklab colors carry no px, so the first length of each run is
+// the layer's inset offset.
+const barOffsets = (shadow: string) =>
+  [...shadow.matchAll(/(-?\d+(?:\.\d+)?)px(?: -?\d+(?:\.\d+)?px){2,3}/g)].map((m) => Number(m[1]));
+
 // Finds the rendered line and token spans by text; generated highlight class names are not
 // stable, so text plus computed style is the robust handle.
 const lineWith = (container: Element, text: string) =>
@@ -159,7 +165,7 @@ describe('MarkdownEditor', () => {
     expect(screen.container.querySelectorAll('.cm-line.cm-cairn-directive-content.cm-cairn-depth-1')).toHaveLength(1);
   });
 
-  it('rails the fence rows without a band and stacks the nested rails by depth', async () => {
+  it('rails the fence rows on the 8px pitch and stacks the nested rails by depth', async () => {
     // The rail vars carry fallbacks in the theme, but their color-mix needs --color-accent to
     // resolve or the whole declaration drops on the bare test page; the spacer layers between
     // stacked rails resolve --color-base-100 the same way. The leading plain line parks the
@@ -195,9 +201,47 @@ describe('MarkdownEditor', () => {
       // bar verbatim plus a surface spacer and its own depth-2 bar stacked beside it.
       expect(rail2).toContain(rail1);
       expect(rail2.split('inset').length - 1).toBe(3);
+      // The 8px pitch: bars at 0-2 and 8-10 with a 6px gap. A depth-1 row paints one bar to 2;
+      // a depth-2 row adds the base-100 spacer to 8 and its own bar to 10.
+      expect(barOffsets(rail1)).toEqual([2]);
+      expect(barOffsets(rail2)).toEqual([2, 8, 10]);
     } finally {
       unpin();
     }
+  });
+
+  it('keeps active and quiet rail segments at equal bar widths', async () => {
+    // Strength-only caret emphasis: a rail column carrying both an active and a quiet segment
+    // (the two sibling panels at depth 2) must read as one line of one weight, so the rows share
+    // every inset offset and only the color-mix strength differs.
+    const unpin = pinThemeVars({ '--color-accent': 'rgb(100, 60, 200)', '--color-base-100': 'rgb(255, 254, 250)' });
+    try {
+      const screen = render(MarkdownEditor, { value: `quiet prose\n${NESTED_DOC}`, name: 'body' });
+      await expect
+        .poll(() => screen.container.querySelectorAll('.cm-line.cm-cairn-directive-fence').length)
+        .toBe(6);
+      await userEvent.click(lineWith(screen.container, 'Cost.')!);
+      await expect.poll(() => screen.container.querySelectorAll('.cm-line.cm-cairn-caret-block').length).toBe(3);
+      const active = lineWith(screen.container, 'hand-coins')!;
+      const quiet = lineWith(screen.container, 'handshake')!;
+      expect(active.classList.contains('cm-cairn-caret-block')).toBe(true);
+      expect(quiet.classList.contains('cm-cairn-caret-block')).toBe(false);
+      const activeShadow = getComputedStyle(active).boxShadow;
+      const quietShadow = getComputedStyle(quiet).boxShadow;
+      expect(barOffsets(activeShadow)).toEqual(barOffsets(quietShadow));
+      // The emphasis survives as strength: the active row's own bar mixes at the -active alpha.
+      expect(activeShadow).not.toBe(quietShadow);
+    } finally {
+      unpin();
+    }
+  });
+
+  it('pads the directive gutter clear of the depth-3 bar', async () => {
+    const screen = render(MarkdownEditor, { value: NESTED_DOC, name: 'body' });
+    await expect.poll(() => screen.container.querySelector('.cm-line.cm-cairn-directive-fence')).not.toBeNull();
+    const fence = screen.container.querySelector<HTMLElement>('.cm-line.cm-cairn-directive-fence')!;
+    // 1.75rem = 28px: the depth-3 bar ends at 18px, so the text keeps 10px of air beyond it.
+    expect(getComputedStyle(fence).paddingLeft).toBe('28px');
   });
 
   it('dims the fence machinery and inks the name and label on an opener row', async () => {
@@ -377,6 +421,20 @@ describe('MarkdownEditor', () => {
     } finally {
       unpin();
     }
+  });
+
+  it('sizes a hand-typed #### as a heading between h3 and body', async () => {
+    // Pinned in markup posture, where the body sits at the 16px base step. Sizing needs no theme
+    // vars; the step itself is the discriminator from CodeMirror's default, which never sizes.
+    const screen = render(MarkdownEditor, { value: '### C\n#### D\nplain body', name: 'body', surface: 'markup' });
+    await expect.poll(() => spanWith(lineWith(screen.container, '#### D'), 'D')).toBeTruthy();
+    const h3 = spanWith(lineWith(screen.container, '### C'), 'C')!;
+    const h4 = spanWith(lineWith(screen.container, '#### D'), 'D')!;
+    const body = lineWith(screen.container, 'plain body')!;
+    const h4Size = parseFloat(getComputedStyle(h4).fontSize);
+    expect(h4Size).toBeGreaterThan(parseFloat(getComputedStyle(body).fontSize));
+    expect(h4Size).toBeLessThan(parseFloat(getComputedStyle(h3).fontSize));
+    expect(getComputedStyle(h4).fontWeight).toBe('700');
   });
 
   it('renders heading and emphasis markers muted, distinct from their content', async () => {

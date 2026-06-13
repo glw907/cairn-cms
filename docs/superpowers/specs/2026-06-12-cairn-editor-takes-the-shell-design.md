@@ -34,6 +34,14 @@ the Details trigger (rung 3) beside them. The feedback strip stays directly unde
 duplicate breadcrumb dies, and the manuscript starts roughly 80px higher. List pages keep the
 topbar as is.
 
+The format strip also breathes (Geoff, 2026-06-12): the icon conversion of the insert actions
+freed real width, so the most commonly used items promote out of the More overflow into the
+strip, ordered by everyday frequency: inline code first, then strikethrough, then table, with
+the tail (code block and the rest) staying behind the ellipsis. The exact promoted set is
+whatever holds the single row at the prose card cap in both postures; verify the fit at plan
+time the way the 47rem/48rem wrap threshold was verified, and keep every promoted button to the
+strip's icon grammar.
+
 Mechanics: the topbar's edit-route contents come from the edit page rather than a parallel
 header. Two shapes are plausible at plan time: `AdminLayout` exposes a header-actions snippet
 that `EditPage` fills, or the layout reads typed page data; pick whichever survives contact with

@@ -135,6 +135,20 @@ and modes; it is the completion of Prose, not a separate system.
   step in the highlight (about 1.05em, between H3 and body) so a hand-typed H4 reads as a
   heading, and the help sheet documents it. Revisit only if a real site asks.
 
+## The gold-standard sweep (Geoff, 2026-06-12)
+
+The approved mockup (`docs/internal/design/2026-06-12-editor-shell-gold-standard.html`) is the
+cairn UI gold standard, and this release carries its grade of polish across the ENTIRE admin,
+not only the desk. Concretely, every surface gets the same treatment the desk got: the office
+(list pages, the create dialog, the topbar there), the auth pages (login, confirm), the editors
+and nav screens, the dialogs and pickers, and the command palette. The method is the one that
+produced the standard: cluster rhythm over uniform rows, controls dressed as what they are
+(segmented switches, toggles with non-color state cues, plain links for references), measured
+fresh-eyes critiques per surface in both themes, and the frontend-design loop with captures
+before the review gate. The sweep is a dimension of the pass, not a follow-up; a surface the
+pass touches structurally (the office topbar, the details panel) lands at standard in the same
+task, and the remaining surfaces get a dedicated polish task before the gate.
+
 ## Constraints and cautions
 
 - **Focus and a11y carry the risk.** Chrome that hides needs focus management: the Details

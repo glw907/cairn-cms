@@ -1,6 +1,9 @@
 # Cairn admin design system (agent reference)
 
-Read this before any work on the `/admin` interface (`src/lib/components/*.svelte` and
+The approved reference for the admin's polish grade is
+`docs/internal/design/2026-06-12-editor-shell-gold-standard.html` (see the README beside it);
+when a judgment call here feels ambiguous, match that artifact. Read this before any work on the
+`/admin` interface (`src/lib/components/*.svelte` and
 `src/lib/components/cairn-admin.css`). It is the convention set that keeps the admin consistent. It is
 written for an implementing agent, so it leads with the rules that are easy to break and not visible in
 the markup, then the tokens, the type system, and the component recipes. Match these; do not reinvent

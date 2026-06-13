@@ -548,3 +548,102 @@ spec's testing section.
 The list pages' own design beyond the sweep's dressing check; the preview pane; the render
 pipeline; mobile-specific rework beyond keeping the drawer behavior sane; in-place directive
 affordances; heading/list folding, fold-all, fold persistence, any fold affordance in Preview.
+
+---
+
+## Post-mortem (LANDED on `main` 2026-06-13 as `0.54.0`, unpublished)
+
+All thirteen tasks plus the simplifier and the review fold-in landed on `main`. The work spans
+commits `7e2aedb..46d55c5` (the plan and STATUS pre-bake at `0fc1bbe`). Gate green at the tip, run
+first-hand: `npm run check` 915 files 0/0, `npm test` 157 files / 1483 tests exit 0, the five
+doc/readiness gates clean, and the showcase E2E 8/8 in a real browser (the golden path plus the new
+zen round trip).
+
+### What was built
+
+The four shell rungs: the edit page's sticky header dissolves into the single 64px topbar through a
+new context portal (`topbar-context.ts`: `AdminLayout` holds a `$state` holder, `EditPage` registers
+a `desk` snippet into it in an `$effect` and clears it on teardown, so `CairnAdmin`'s view switch
+reverts the band with no route plumbing); the nav drawer opens closed on a desk route, resolved at
+SSR via a conditional `lg:drawer-open` so it never flashes; the frontmatter fields move to a right
+slide-over panel (`role="region"`, focus-managed, `hidden`-toggled so closed fields still submit);
+and zen fades the chrome through the holder's `zen` flag, leaving the manuscript and a floating chip
+that keeps the save state and the way out.
+
+The editor ergonomics set: the directive rail pitch widened to 8px with a strength-only caret rail
+(the `+1px` width step gone); hanging indents on wrapped quote and list lines via a new
+`markerPrefix` helper feeding a line decoration; container folding from the rail band
+(`editor-folding.ts` on `@codemirror/language`, ranges only from `fenceScan`'s paired `containerRanges`,
+the safety invariant in one `transactionExtender`, the chevron-replaces-innermost-bar affordance, the
+square accent wash and the focusable `N lines` pill); the completed format keymap plus the page-level
+keys, the `Ctrl+/` sheet, and the `####` heading step; the strip promotion (inline code, strikethrough,
+table, with horizontal rule kept behind the ellipsis after a plan-wording correction); and the footer
+controls dressed as a segmented control, check-and-tint toggles, and a plain help link.
+
+### Decisions locked
+
+- **The topbar context portal** over typed page data: the band renders EditPage-owned live state
+  (`dirty`/`busy`/`status`/save-state), so a snippet carrying its defining component's reactive scope
+  is the clean seam. Both reviewers confirmed the cross-component snippet reactivity and the teardown.
+- **Folding on `@codemirror/language`** with a pure `containerRanges` pairing helper, never a custom
+  fold store; the safety invariant (any edit or selection touching a folded range unfolds it in the
+  same transaction) lives in one `transactionExtender`, verified against CM's own `foldState` idiom.
+- **Write/Preview moved off `Ctrl+Shift+P`** (Firefox reserves it at the browser level) to
+  `Ctrl+Alt+P`; the rest of the bindings follow mockup screen 5.
+- **The details panel is a region, not a dialog** (a11y verdict): the fields must stay in the one edit
+  form, so a modal `<dialog>` is off the table, and the panel is non-modal by design (the editor stays
+  live behind it), which `aria-modal` would misreport.
+
+### The gold-standard sweep found a systemic defect
+
+The sweep's headline find was not cosmetic. The chrome-isolated admin sheet ships no global Preflight
+(so it can't reset the host site's elements), so every bare-utility `<button>` (the footer toggles,
+the list's sort-column headers, the zen chip's exit) kept the UA outset border and gray fill while
+DaisyUI `.btn` buttons reset themselves. One scoped rule (`button:not(.btn)` in `cairn-admin.css`,
+generalizing the existing menu-button reset) levels them all; verified by computed-style probe that
+`.btn` buttons keep their chrome and bare buttons flatten. This had been a latent blemish since the
+self-styling work. The sweep also deduped the details panel's doubled "Details" label.
+
+### Review gate
+
+`svelte-reviewer` and `daisyui-a11y-reviewer` (both Opus). Svelte: no Critical or Important, three
+Minor documentation notes. a11y: both adjudications resolved in favor of the built patterns
+(region-with-focus-management for Details, zen exit always reachable), with one Important folded in
+(`46d55c5`): entering zen via `Ctrl+Shift+.` while focus sat on a band action or the hoisted title
+stranded focus on the detached node (WCAG 2.4.3), because the relocation guard only covered the editor
+card. Widened to relocate whenever focus sits outside the surviving `.cm-editor`, with a title-focus
+regression test.
+
+### Live admin smoke: judged not proportionate
+
+This is a presentation-only pass: no server, auth, session, action, or SSR code changed (both reviewers
+confirmed the load/action contract is untouched). The desk and zen flows are proven in a real browser
+by the showcase E2E (8/8, the golden path plus the zen round trip) and by first-hand showcase captures
+of the office, desk, details panel, zen, and login in both themes (kept under `/tmp/cairn-shots/` for
+the session). The live `wrangler dev` + D1-session smoke would only re-verify the unchanged server path,
+so it was not run, the documented precedent for a behavior-preserving presentation pass.
+
+### A test-infra fix the pass forced
+
+The component file grew from 38 to 50 CodeMirror mounts, which tipped the documented first-mount
+cold-start timeout from intermittent to deterministic under the full tri-project run (the component
+project alone stayed green). Fixed at the source (`716794c`): a 20s poll on the first mount absorbs the
+one-time dynamic-import cold start, after which the cached modules serve the rest.
+
+### Carry-forwards
+
+1. The a11y reviewer's Minors, all non-blocking: the posture segmented control could move to
+   `role="radiogroup"` for a closer mental model (the `aria-pressed` toggle-group passes as built); the
+   Details trigger could gain `aria-controls` (4.1.2 supporting); the breadcrumb hides below `sm` on a
+   desk route (the drawer toggle is the small-screen way back, worth documenting or a compact affordance);
+   the fold pill's 30% accent border is sub-3:1 but the full-ink `N lines` text is the real identifier;
+   the fold chevron band is pointer-only (keyboard parity via `Ctrl+Shift+[`/`]` and the focusable pill).
+2. The svelte reviewer's Minors: a one-line note that `proseTheme`/`markupTheme` are deliberately
+   non-reactive `let` assigned once in `onMount`; a note at `AdminLayout` that the office-route band
+   visibility rests on EditPage's teardown resetting `topbar.zen`; the fold pill line-count derives from
+   char positions, so a future `foldCharRange` boundary change could drift it.
+3. The body-line hover-reveal tracker for fold chevrons was scoped to CSS on the opener band rather than
+   a `scrollDOM` pointer tracker (Task 3 deviation 3); the caret and folded chevron states the mockup
+   shows are implemented. Revisit if the hover affordance wants the fuller behavior.
+4. The strip-fit test imports the compiled `dist` admin sheet to measure real button widths, coupling
+   that one component test to a fresh `dist` build (a candidate for the gates-and-tooling pass).

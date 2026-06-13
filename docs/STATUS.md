@@ -11,17 +11,48 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-12, latest): execute the editor-takes-the-shell plan (0.54.0)
+## Immediate next action (2026-06-13, latest): publish `0.54.0`, then the queue
 
-**The plan is written and executing:**
-`docs/superpowers/plans/2026-06-12-cairn-editor-takes-the-shell.md`, thirteen tasks from the
-approved spec (`docs/superpowers/specs/2026-06-12-cairn-editor-takes-the-shell-design.md`).
-Method: one `cairn-implementer` per task on `main`, test-first, full gate between dispatches;
-Task 3 (container folding) is the one Opus upshift; Task 11 (the gold-standard sweep) runs in
-the main loop as the frontend-design loop. The plan's "Plan-time decisions" section locks the
-topbar context-portal seam, the promoted strip set, the key bindings (Write/Preview moved off
-Firefox-reserved Ctrl+Shift+P to Ctrl+Alt+P), and the CodeMirror fold architecture. After the
-pass: the gates-and-tooling pass, the gallery brainstorm, P4.
+**The editor-takes-the-shell pass LANDED on `main` 2026-06-13 as `0.54.0`, unpublished.** Thirteen
+plan tasks plus a simplifier touch and the review fold-in, commits `7e2aedb..46d55c5` (plan and
+STATUS pre-bake at `0fc1bbe`), the bump at the tip. An open document now takes the shell: the edit
+page's sticky header dissolves into the single topbar through a new context portal
+(`topbar-context.ts`), the nav drawer opens closed on a desk route (SSR-resolved, no flash), the
+frontmatter fields move to a focus-managed right slide-over region, and zen fades the chrome to the
+manuscript with a floating chip that keeps the save state and the way out. The editor ergonomics
+round out: an 8px directive rail pitch with a strength-only caret rail, hanging indents on wrapped
+quote/list lines, container folding from the rail band (`editor-folding.ts`, safety invariant in one
+`transactionExtender`), the completed format keymap plus page-level keys and the `Ctrl+/` sheet, the
+`####` heading step, the strip promotion, and the footer redress. The gold-standard sweep's headline
+find was systemic: one scoped `button:not(.btn)` reset in `cairn-admin.css` levels every bare admin
+button (the footer toggles, the list sort headers, the zen chip) that had silently kept UA chrome
+since the self-styling work.
+
+Gate green at the tip, run first-hand: `npm run check` 915 files 0/0, `npm test` 157 files / 1483
+tests exit 0, the five doc/readiness gates clean, showcase E2E 8/8 in a real browser (golden path
+plus the new zen round trip). Reviewers (`svelte-reviewer`, `daisyui-a11y-reviewer`, both Opus): no
+Critical or Important from Svelte; the a11y review resolved both adjudications in favor of the built
+patterns (region-with-focus-management for Details, zen exit always reachable) and folded in one
+Important (zen could strand focus when entered from a band control, WCAG 2.4.3, fixed at `46d55c5`).
+The live `wrangler dev` smoke was judged not proportionate (presentation-only, no server/auth/action/
+SSR change; the showcase E2E and first-hand both-theme captures cover the flows). Post-mortem with
+four carry-forwards in the plan
+(`docs/superpowers/plans/2026-06-12-cairn-editor-takes-the-shell.md`).
+
+**Next actions, in order:**
+1. **Publish `0.54.0`** (needs the push, so it is Geoff's call): push `main`, then
+   `gh release create v0.54.0 --target main` with the `0.54.0` changelog entry as the body
+   (additive, no consumer action); the release fires the OIDC trusted-publishing workflow.
+2. **The queue resumes:** the gates-and-tooling pass, then the gallery brainstorm (git-vs-R2),
+   then P4. Both sites pick up `^0.54.0` whenever convenient (additive; the editor and the new
+   chrome upgrade in place).
+
+**Session note (2026-06-12/13):** Anthropic suspended Claude Fable 5 and Mythos 5 access mid-session
+(status.claude.com incident, ~Jun 13 00:50 UTC), and Opus 4.8 had elevated errors. The pass was
+orchestrated on Opus 4.8 with every implementer dispatch pinned to an explicit `model` (sonnet, with
+Task 3 on opus), which sidesteps the `CLAUDE_CODE_SUBAGENT_MODEL=inherit` resolution that fails when
+the main loop is on a suspended model. The `inherit` env var is unchanged; explicit per-dispatch
+models are the durable workaround.
 
 ## Prior next action (2026-06-12): the editor-takes-the-shell pass (spec then unread)
 

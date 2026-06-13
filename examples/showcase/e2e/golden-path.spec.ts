@@ -70,8 +70,8 @@ test('the redesigned editor: hoisted title, toolbar bold, preview round-trip, st
   await page.getByRole('button', { name: 'Bold (Ctrl+B)' }).click();
   await expect(hiddenBody).toHaveValue('**A line to embolden.**', { timeout: 2000 });
 
-  // The header's save-state indicator notices the edit.
-  await expect(page.locator('.cairn-save-state')).toContainText('Unsaved changes');
+  // The band's save-state indicator notices the edit.
+  await expect(page.locator('.navbar .cairn-save-state')).toContainText('Unsaved changes');
 
   // Preview renders the bold wrap as real markup inside the sandboxed iframe (the frame's own
   // document carries the site styling); switching back keeps the editor text.
@@ -97,12 +97,12 @@ test('the redesigned editor: hoisted title, toolbar bold, preview round-trip, st
   await page.getByRole('tab', { name: 'Write' }).click();
   await expect(editor).toContainText('**A line to embolden.**');
 
-  // The header is sticky: after scrolling to the bottom, Save is still in the viewport.
+  // The band is sticky: after scrolling to the bottom, Save (now in the topbar) is still in the viewport.
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  const save = page.getByRole('button', { name: 'Save', exact: true });
+  const save = page.locator('.navbar').getByRole('button', { name: 'Save', exact: true });
   await expect(save).toBeInViewport();
 
-  // Save from the header. The redirect carries saved=1, the flash explains the publish model, and
+  // Save from the band. The redirect carries saved=1, the flash explains the publish model, and
   // the indicator settles to Saved. The flash also lands in the sr-only live region, so target
   // the visible alert.
   await save.click();
@@ -110,7 +110,7 @@ test('the redesigned editor: hoisted title, toolbar bold, preview round-trip, st
   await expect(
     page.locator('.alert', { hasText: 'Saved. Your site keeps showing the published version until you publish.' }),
   ).toBeVisible();
-  await expect(page.locator('.cairn-save-state')).toHaveText('Saved');
+  await expect(page.locator('.navbar .cairn-save-state')).toHaveText('Saved');
 });
 
 test('a link inside the preview frame never navigates the admin away from the edits', async ({ page }) => {
@@ -169,7 +169,7 @@ test('the publish workflow round-trips: create, save, New, publish, edit, Edited
   await editor.click();
   await page.keyboard.type('The first body.');
   await expect(page.locator('input[name="body"]')).toHaveValue('The first body.', { timeout: 2000 });
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await page.locator('.navbar').getByRole('button', { name: 'Save', exact: true }).click();
   await expect(page).toHaveURL(/saved=1/, { timeout: 10_000 });
   const savedCommit = await (await request.get('/test/last-commit')).json();
   expect(savedCommit.branch).toBe(`cairn/posts/${id}`);
@@ -179,12 +179,12 @@ test('the publish workflow round-trips: create, save, New, publish, edit, Edited
   const row = page.locator('tr', { has: page.locator(`a[href="/admin/posts/${id}"]`) });
   await expect(row.getByText('New', { exact: true })).toBeVisible();
 
-  // Publish from the edit page: the header's status badge names the never-published state (the
+  // Publish from the edit page: the band's status badge names the never-published state (the
   // redesign replaced the standing banner), the publish flash confirms, and the fake repo's main
   // now holds the file (the recorded commit landed on main).
   await row.locator(`a[href="/admin/posts/${id}"]`).click();
-  await expect(page.locator('header').getByText('New', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Publish', exact: true }).click();
+  await expect(page.locator('.navbar').getByText('New', { exact: true })).toBeVisible();
+  await page.locator('.navbar').getByRole('button', { name: 'Publish', exact: true }).click();
   await expect(page).toHaveURL(/published=1/, { timeout: 10_000 });
   // The flash text also lands in the sr-only live region, so target the visible alert.
   await expect(page.locator('.alert', { hasText: 'Published. The live site is rebuilding.' })).toBeVisible();
@@ -203,16 +203,16 @@ test('the publish workflow round-trips: create, save, New, publish, edit, Edited
   await page.keyboard.press('ControlOrMeta+A');
   await page.keyboard.type('A second body line.');
   await expect(page.locator('input[name="body"]')).toHaveValue('A second body line.', { timeout: 2000 });
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await page.locator('.navbar').getByRole('button', { name: 'Save', exact: true }).click();
   await expect(page).toHaveURL(/saved=1/, { timeout: 10_000 });
   await page.goto('/admin/posts');
   await expect(row.getByText('Edited', { exact: true })).toBeVisible();
 
-  // Discard the pending edits: the action lives in the header's More actions menu since the
+  // Discard the pending edits: the action lives in the band's More actions menu since the
   // redesign, then the confirm dialog, the flash, and the editor shows the published body again
   // (main's copy, the branch is gone).
   await row.locator(`a[href="/admin/posts/${id}"]`).click();
-  await page.getByRole('button', { name: 'More actions' }).click();
+  await page.locator('.navbar').getByRole('button', { name: 'More actions' }).click();
   await page.getByRole('button', { name: 'Discard changes' }).click();
   const discardDialog = page.locator('dialog[aria-labelledby="cairn-discard-dialog-title"]');
   await expect(discardDialog).toBeVisible();
@@ -222,6 +222,48 @@ test('the publish workflow round-trips: create, save, New, publish, edit, Edited
   await expect(page.locator('.cm-content')).toContainText('The first body.');
   await page.goto('/admin/posts');
   await expect(row.getByText('Published', { exact: true })).toBeVisible();
+});
+
+test('zen round trip: the footer toggle hides the band, the chip carries the way out, Escape restores', async ({ page }) => {
+  // Open the seeded entry from the list, the same path the golden-path test takes.
+  await page.goto('/admin/posts');
+  await page.locator('a[href="/admin/posts/2026-06-hello"]').click();
+  await expect(page).toHaveURL(/\/admin\/posts\/2026-06-hello$/);
+
+  // The band is present before zen, with its Save control.
+  const band = page.locator('.navbar');
+  await expect(band.getByRole('button', { name: 'Save', exact: true })).toBeVisible();
+
+  // Enter zen from the footer "Zen" toggle. AdminLayout reads the zen flag through the topbar
+  // context holder and drops the whole band element; the document title, the toolbar strip, and
+  // the footer go with it. The floating chip is the one affordance that stays.
+  await page.getByRole('button', { name: 'Zen' }).click();
+  await expect(page.locator('.navbar')).toHaveCount(0);
+
+  // The chip carries the two things the WordPress/Ghost rule keeps under zen: the live save state
+  // and the way out.
+  const chip = page.locator('.cairn-zen-chip');
+  await expect(chip).toBeVisible();
+  await expect(chip.locator('.cairn-save-state')).toContainText('Saved');
+  await expect(chip.getByRole('button', { name: /Exit zen/ })).toBeVisible();
+
+  // The manuscript stays: typing into the editor still flows through to the hidden body input, and
+  // the chip's save state flips live as the edit lands.
+  const editor = page.locator('.cm-content');
+  await editor.click();
+  await page.keyboard.press('ControlOrMeta+A');
+  await page.keyboard.type('A line written under zen.');
+  await expect(page.locator('input[name="body"]')).toHaveValue('A line written under zen.', { timeout: 2000 });
+  await expect(chip.locator('.cairn-save-state')).toContainText('Unsaved changes');
+
+  // Escape exits zen and the band returns.
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.cairn-zen-chip')).toHaveCount(0);
+  await expect(page.locator('.navbar')).toBeVisible();
+
+  // Save from the restored band; the edit written under zen commits.
+  await page.locator('.navbar').getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page).toHaveURL(/saved=1/, { timeout: 10_000 });
 });
 
 test('the editors view runs against the dev AUTH_DB double: list the seeds, add one', async ({ page }) => {

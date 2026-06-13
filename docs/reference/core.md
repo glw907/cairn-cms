@@ -110,6 +110,11 @@ URL from a `<svelte:head>`. A layout that also imports the same file statically 
 layout's CSS chunk, and that chunk's basename differs between the client and server builds, so the
 URL the server-rendered edit page hands the frame names a file the client build never serves.
 
+Even done right, the `?url` import in the layout and the one in the adapter resolve through the
+client and the server build pipelines separately, so two hashed copies of the same sheet ship: the
+page links the client copy, the preview frame links the server copy. That is by design, not a defect,
+so do not be alarmed to find both in the build output.
+
 ```ts
 // src/lib/cairn.config.ts
 import appCssUrl from './app.css?url';

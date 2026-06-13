@@ -11,6 +11,10 @@ Report privately through GitHub's private vulnerability reporting. Open the repo
 **Security** tab and choose **Report a vulnerability**. That opens a private advisory the
 maintainer can see. Please do not file a public issue for a suspected vulnerability.
 
+While the repository stays private, GitHub does not offer private vulnerability reporting, so the
+Security-tab flow above is not yet available. Until the repository goes public and that flow turns
+on, report privately by email to the maintainer at geoff-login@907.life with the same details.
+
 Include the affected version, a description, and a reproduction if you have one. Expect an
 acknowledgement within a few days.
 

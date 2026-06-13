@@ -119,7 +119,7 @@ After the deploy:
 - A plain-http request to the site redirects to https at the edge, so the magic-link form always posts over https.
 - An editor's Publish commits the held content to `main` and the push-triggered build redeploys with it. Saves hold on a pending branch and deploy nothing.
 - `/healthz` returns `ok:true`, which confirms the GitHub App signing self-test passes with the live key.
-- `npx cairn-doctor --from <address> --repo <owner/name>` reports every check green, covering this list and the zone settings in one pass.
+- `npx cairn-doctor` reports every check green, covering this list and the zone settings in one pass. A repo that wires the [`cairnManifest`](../reference/vite.md) Vite plugin lets the doctor read the from-address and the repository off your adapter, so the bare command works; without the plugin, pass `--from <address> --repo <owner/name>` so those inputs are not skipped.
 
 ## See also
 

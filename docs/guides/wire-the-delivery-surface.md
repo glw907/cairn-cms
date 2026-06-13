@@ -132,6 +132,8 @@ This guide assumes a running cairn site whose content you want to deliver. The w
    };
    ```
 
+   Each of these routes sets `export const prerender = true`, so SvelteKit builds them as prerender entries even though no page links to them; you do not need to list them in `config.kit.prerender.entries`. Leave `config.kit.prerender.handleHttpError` at its strict default rather than setting `'warn'`: a dangling `cairn:` link or a route that errors during prerender then fails the build loudly, which is what you want, instead of shipping a broken link.
+
 4. **Wire the manifest with the `cairnManifest()` Vite plugin.** A manifest is a build-verified projection of the content files, and the plugin owns its verify. Add the plugin to your `vite.config.ts` with the config module, the per-concept content globs, and the manifest path. The verify runs outside the prerender lifecycle, so a stale manifest fails the build red regardless of any `handleHttpError` policy.
 
    ```ts

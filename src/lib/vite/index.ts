@@ -7,7 +7,7 @@
 // the cairn-manifest bin uses to regenerate. See the design spec, locked decision 1.
 import type { Plugin, PluginOption } from 'vite';
 import { writeFile, mkdir } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { dirname, isAbsolute, join, resolve } from 'node:path';
 
 /** The key the cairnManifest plugin stashes its options under, so the write path can read them off the
  *  plugin instance in the consumer's loaded config without re-parsing the config file. */
@@ -151,11 +151,34 @@ export function cairnManifest(opts: CairnManifestOptions): Plugin {
   return plugin;
 }
 
+/** The shape of `loadConfigFromFile`'s result that the root derivation reads: the config file's own
+ *  path and its `root` field. Typed structurally so the helper is testable without a real load. */
+interface LoadedViteConfig {
+  /** The resolved path of the config file Vite loaded. */
+  path: string;
+  /** The user config, of which only `root` is read here. */
+  config: { root?: string };
+}
+
+/** The authoritative Vite root for the manifest bin, derived from the loaded config the way Vite
+ *  resolves a relative `root`: against the config file's own directory, not cwd. An absolute `root`
+ *  stands as given, and no `root` falls back to `cwd` (the directory the bin was run from). This
+ *  separates the config-search dir (cwd) from the Vite root, so a non-root cwd or a config that
+ *  sets `root` reads and writes the manifest under the real app root. */
+export function resolveViteRoot(loaded: LoadedViteConfig, cwd: string): string {
+  const root = loaded.config.root;
+  if (!root) return cwd;
+  if (isAbsolute(root)) return root;
+  return resolve(dirname(loaded.path), root);
+}
+
 /** Regenerate the committed manifest from the consumer's corpus and write it to the configured
- *  manifestPath. It loads the consumer's Vite config from `cwd`, reads the cairnManifest plugin's
- *  options off the instance, evaluates the write-mode virtual module through the build's own
- *  resolution, and writes the serialized manifest. The cairn-manifest bin calls this; it is exported
- *  so the write logic is testable apart from the CLI shell. */
+ *  manifestPath. It searches for the consumer's Vite config from `cwd`, derives the authoritative
+ *  Vite root from the loaded config (so a configured `root` or a non-root cwd resolves correctly),
+ *  reads the cairnManifest plugin's options off the instance, evaluates the write-mode virtual
+ *  module through the build's own resolution, and writes the serialized manifest under the Vite
+ *  root. The cairn-manifest bin calls this; it is exported so the write logic is testable apart
+ *  from the CLI shell. */
 export async function writeManifest(cwd: string = process.cwd()): Promise<void> {
   const { loadConfigFromFile } = await import('vite');
   const loaded = await loadConfigFromFile({ command: 'build', mode: 'production' }, undefined, cwd);
@@ -168,11 +191,12 @@ export async function writeManifest(cwd: string = process.cwd()): Promise<void> 
       'cairn-manifest: the Vite config has no cairnManifest() plugin. Add it so the bin shares the build options.',
     );
   }
-  const serialized = await buildManifestFromVite(opts, cwd);
+  const root = resolveViteRoot(loaded, cwd);
+  const serialized = await buildManifestFromVite(opts, root);
   const manifestPath = opts.manifestPath ?? DEFAULT_MANIFEST_PATH;
   // The manifest path is app-root-absolute (a leading slash relative to the project), so resolve it
-  // against cwd, not the filesystem root.
-  const outPath = join(cwd, manifestPath.replace(/^\//, ''));
+  // against the Vite root, not the filesystem root or the config-search cwd.
+  const outPath = join(root, manifestPath.replace(/^\//, ''));
   await mkdir(dirname(outPath), { recursive: true });
   await writeFile(outPath, serialized);
 }

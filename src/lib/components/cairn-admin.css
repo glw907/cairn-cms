@@ -299,6 +299,19 @@
     text-align: start;
   }
 
+  /* The same leveling for every bare admin button, not only menu items: a button styled with
+     utilities (the footer's posture segments and mode toggles, a list's sort-column headers, the
+     zen chip's exit) otherwise keeps the UA outset border and gray fill, since the admin omits
+     global Preflight. A .btn keeps its full DaisyUI chrome, and a utility (a bg-*, a border-l for
+     a segment divider) still wins from the utilities layer, so a control opts back into a border
+     or fill by naming it. */
+  :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) button:not(.btn) {
+    border: 0 solid;
+    background-color: transparent;
+    font: inherit;
+    color: inherit;
+  }
+
   /* The one header band is the 4rem topbar, and a control the browser scrolls into view could land
      hidden beneath it (WCAG 2.4.11 Focus Not Obscured). The scroll margin keeps any focus or
      fragment scroll clear of the sticky band, with a little slack. */

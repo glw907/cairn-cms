@@ -337,11 +337,14 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   //
   // A segment of the bordered posture control (the mockup's .seg). The pick-one semantics ride the
   // shared border, so the segments themselves carry no border; the active one tints and bolds.
+  // A segment of the bordered posture control (the mockup's .seg). The shared group border carries
+  // the pick-one semantics, so a segment stays borderless; the active one tints and bolds. The
+  // admin's scoped button reset (cairn-admin.css) already strips the UA border and fill.
   function segButtonClass(pressed: boolean): string {
     return `inline-flex items-center gap-1 px-2.5 py-1 text-xs font-normal ${pressed ? 'bg-primary/10 text-primary font-medium' : 'text-[var(--color-muted)]'}`;
   }
-  // A standalone writing-mode toggle (the mockup's .ftr-toggle): rounded, no border, check-and-tint
-  // when pressed.
+  // A standalone writing-mode toggle (the mockup's .ftr-toggle): rounded, transparent until hover,
+  // check-and-tint when pressed.
   function ftrToggleClass(pressed: boolean): string {
     return `ftr-toggle inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-normal hover:bg-base-content/[0.06] ${pressed ? 'bg-primary/10 text-primary font-medium' : 'text-[var(--color-muted)]'}`;
   }
@@ -1121,7 +1124,9 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     <div class="flex flex-col gap-6">
       {#if detailFields.length}
       <fieldset class="m-0 flex min-w-0 flex-col gap-3 border-0 p-0">
-      <legend class={eyebrowClass}>Details</legend>
+      <!-- The panel header already shows the "Details" eyebrow, so this group's legend stays for
+           the screen-reader grouping but hides visually, the way the mockup carries it once. -->
+      <legend class="sr-only">Details</legend>
       {#each detailFields as field (field.name)}
         {#if field.type === 'textarea'}
           {@const f = field as TextareaField}

@@ -112,17 +112,24 @@ function placeholderDOM(view: EditorView, onclick: (event: Event) => void, lines
   return pill;
 }
 
-// Fold one container end-of-opener-line to end-of-closer-line (the bare closer never dangles), or
-// unfold it if already folded. The range comes from containerRanges, so a half-typed fence can
-// never fold. A no-op when the opener and closer share a line (nothing to hide).
+// The char range a container folds: end-of-opener-line to end-of-closer-line, so the bare closer
+// never dangles. Null when the opener and closer share a line (nothing to hide). The one place
+// that turns a line range into the fold range, shared by the toggle, the keymap, and the
+// decoration build.
+function foldCharRange(state: EditorState, range: ContainerRange): { from: number; to: number } | null {
+  const opener = state.doc.line(range.fromLine + 1);
+  const closer = state.doc.line(range.toLine + 1);
+  if (closer.to <= opener.to) return null;
+  return { from: opener.to, to: closer.to };
+}
+
+// Fold one container, or unfold it if already folded. The range comes from containerRanges, so a
+// half-typed fence can never fold. A no-op when the container has nothing to hide.
 function toggleFold(view: EditorView, range: ContainerRange): void {
-  const opener = view.state.doc.line(range.fromLine + 1);
-  const closer = view.state.doc.line(range.toLine + 1);
-  if (closer.to <= opener.to) return;
-  const from = opener.to;
-  const to = closer.to;
-  const already = foldExists(view.state, from, to);
-  view.dispatch({ effects: (already ? unfoldEffect : foldEffect).of({ from, to }) });
+  const span = foldCharRange(view.state, range);
+  if (!span) return;
+  const effect = foldExists(view.state, span.from, span.to) ? unfoldEffect : foldEffect;
+  view.dispatch({ effects: effect.of(span) });
 }
 
 function foldExists(state: EditorState, from: number, to: number): boolean {
@@ -164,11 +171,9 @@ const foldKeymap = Prec.high(
     key: 'Mod-Shift-[',
     run: (view) => {
       const range = caretFoldRange(view);
-      if (!range) return false;
-      const opener = view.state.doc.line(range.fromLine + 1);
-      const closer = view.state.doc.line(range.toLine + 1);
-      if (closer.to <= opener.to || foldExists(view.state, opener.to, closer.to)) return false;
-      view.dispatch({ effects: foldEffect.of({ from: opener.to, to: closer.to }) });
+      const span = range && foldCharRange(view.state, range);
+      if (!span || foldExists(view.state, span.from, span.to)) return false;
+      view.dispatch({ effects: foldEffect.of(span) });
       return true;
     },
   },
@@ -176,11 +181,9 @@ const foldKeymap = Prec.high(
     key: 'Mod-Shift-]',
     run: (view) => {
       const range = caretFoldRange(view);
-      if (!range) return false;
-      const opener = view.state.doc.line(range.fromLine + 1);
-      const closer = view.state.doc.line(range.toLine + 1);
-      if (!foldExists(view.state, opener.to, closer.to)) return false;
-      view.dispatch({ effects: unfoldEffect.of({ from: opener.to, to: closer.to }) });
+      const span = range && foldCharRange(view.state, range);
+      if (!span || !foldExists(view.state, span.from, span.to)) return false;
+      view.dispatch({ effects: unfoldEffect.of(span) });
       return true;
     },
   },
@@ -269,10 +272,10 @@ function foldDecorations(view: EditorView, scan: ReturnType<typeof fenceScan>, r
   // positions; equal openers cannot happen (one open per line).
   const byOpener = [...ranges].sort((a, b) => a.fromLine - b.fromLine);
   for (const range of byOpener) {
+    const span = foldCharRange(view.state, range);
+    if (!span) continue;
     const opener = view.state.doc.line(range.fromLine + 1);
-    const closer = view.state.doc.line(range.toLine + 1);
-    if (closer.to <= opener.to) continue;
-    const folded = foldExists(view.state, opener.to, closer.to);
+    const folded = foldExists(view.state, span.from, span.to);
     // The folded opener row carries the wash; a line decoration so the rails (box-shadows on the
     // same element) run through it unbroken.
     if (folded) builder.add(opener.from, opener.from, washLine);

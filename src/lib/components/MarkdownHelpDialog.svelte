@@ -6,7 +6,7 @@ Built on a native <dialog>, the DeleteDialog recipe; the host drives it through 
 open(), so the component renders no trigger of its own.
 -->
 <script lang="ts">
-  import { editorShortcuts } from './editor-shortcuts.js';
+  import ShortcutsGrid from './ShortcutsGrid.svelte';
 
   let dialog = $state<HTMLDialogElement | null>(null);
 
@@ -51,14 +51,7 @@ open(), so the component renders no trigger of its own.
       </tbody>
     </table>
     <h3 class="mt-4 mb-2 text-sm font-semibold">Keyboard shortcuts</h3>
-    <div class="grid grid-cols-1 gap-x-8 gap-y-1 text-sm sm:grid-cols-2">
-      {#each editorShortcuts as row (row.label)}
-        <div class="flex items-baseline justify-between gap-4">
-          <span>{row.label}</span>
-          <span class="font-mono text-[0.75rem] text-[var(--color-muted)]">{row.keys}</span>
-        </div>
-      {/each}
-    </div>
+    <ShortcutsGrid />
     <p class="mt-3 text-sm">
       Lines starting with <code>:::</code> are layout blocks. Edit the text inside them and leave
       the <code>:::</code> lines alone.

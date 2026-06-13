@@ -335,8 +335,6 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   // Tailwind class string: the admin CSS build's @source scan reads this file as raw text, so the
   // utilities must appear whole, never assembled from fragments.
   //
-  // A segment of the bordered posture control (the mockup's .seg). The pick-one semantics ride the
-  // shared border, so the segments themselves carry no border; the active one tints and bolds.
   // A segment of the bordered posture control (the mockup's .seg). The shared group border carries
   // the pick-one semantics, so a segment stays borderless; the active one tints and bolds. The
   // admin's scoped button reset (cairn-admin.css) already strips the UA border and fill.

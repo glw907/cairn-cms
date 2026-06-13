@@ -8,7 +8,8 @@ it on Ctrl+/, so the component renders no trigger of its own. Esc dismisses thro
 native behavior.
 -->
 <script lang="ts">
-  import { editorShortcuts, shortcutsClosingLine } from './editor-shortcuts.js';
+  import { shortcutsClosingLine } from './editor-shortcuts.js';
+  import ShortcutsGrid from './ShortcutsGrid.svelte';
 
   let dialog = $state<HTMLDialogElement | null>(null);
 
@@ -27,14 +28,7 @@ native behavior.
       <h2 id="cairn-shortcuts-title" class="text-base font-semibold">Keyboard shortcuts</h2>
       <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={close}>✕</button>
     </div>
-    <div class="grid grid-cols-1 gap-x-8 gap-y-1 text-sm sm:grid-cols-2">
-      {#each editorShortcuts as row (row.label)}
-        <div class="flex items-baseline justify-between gap-4">
-          <span>{row.label}</span>
-          <span class="font-mono text-[0.75rem] text-[var(--color-muted)]">{row.keys}</span>
-        </div>
-      {/each}
-    </div>
+    <ShortcutsGrid />
     <p class="mt-3 text-xs text-[var(--color-muted)]">{shortcutsClosingLine}</p>
   </div>
   <form method="dialog" class="modal-backdrop">

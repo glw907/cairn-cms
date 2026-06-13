@@ -1,9 +1,11 @@
 <!--
 @component
-One concept's list view as a DaisyUI data-table: a search filter, a result count, sortable Title and
-Date headers, a status badge, a formatted date, and client-side pagination with a page-size control.
-Filtering, sorting, and paging run over the loaded entries in component state, which suits typical
-content sizes. The header New button opens a dialog holding the create form.
+One concept's list view, dressed to the office gold standard. A triage bar partitions by publish
+state (a bordered segmented control with live counts) beside an orthogonal Hidden toggle. The list
+is an enriched sortable table: each row carries a title with a muted summary sub-line, the date, the
+publish-state badge, and a delete action. A draft row de-emphasizes and carries an eye-off Hidden
+tag by the title. A trailing New row at the foot of the card opens the same create dialog as the
+header button. Filtering, sorting, and paging run over the loaded entries in component state.
 -->
 <script lang="ts">
   import { slugify } from '../content/ids.js';
@@ -12,6 +14,7 @@ content sizes. The header New button opens a dialog holding the create form.
   import DeleteDialog from './DeleteDialog.svelte';
   import CairnLogo from './CairnLogo.svelte';
   import { SearchIcon, ArrowUpIcon, ArrowDownIcon, ChevronsUpDownIcon, ChevronLeftIcon, ChevronRightIcon, PlusIcon, Trash2Icon } from './admin-icons.js';
+  import EyeOffIcon from '@lucide/svelte/icons/eye-off';
 
   interface Props {
     /** The list load's data: the concept, its entries, and any inline or form errors. */
@@ -90,6 +93,26 @@ content sizes. The header New button opens a dialog holding the create form.
     page = 1;
   }
 
+  function clearSearch() {
+    query = '';
+    page = 1;
+  }
+
+  // The triage controls dress to the established footer grammar (the design system's segmented /
+  // check-and-tint recipe). Each helper returns a verbatim Tailwind string so the admin CSS
+  // build's @source scan reads the utilities whole. The scoped button reset (cairn-admin.css)
+  // already strips UA chrome from these bare buttons.
+  //
+  // A segment of the bordered publish-state control: the shared group border carries the pick-one
+  // semantics, so a segment stays borderless; the active one tints and bolds.
+  function segButtonClass(pressed: boolean): string {
+    return `inline-flex items-center gap-1.5 px-3 py-1 text-[0.8125rem] font-normal ${pressed ? 'bg-primary/10 text-primary font-medium' : 'text-[var(--color-muted)]'}`;
+  }
+  // The standalone Hidden toggle: rounded, transparent until hover, check-and-tint when pressed.
+  function hiddenToggleClass(pressed: boolean): string {
+    return `inline-flex items-center gap-1.5 rounded-lg px-3 py-1 text-[0.8125rem] font-normal hover:bg-base-content/[0.06] ${pressed ? 'bg-primary/10 text-primary font-medium' : 'text-[var(--color-muted)]'}`;
+  }
+
   // Sort key for one entry: the lowercased title, or the ISO date string (lexical order is
   // chronological). A null date sorts as the empty string.
   function sortValue(entry: EntrySummary): string {
@@ -157,6 +180,12 @@ content sizes. The header New button opens a dialog holding the create form.
   );
 </script>
 
+<!-- The non-color selected cue for the triage controls (WCAG 1.4.1): a small check glyph that
+     renders only inside the active segment or toggle, so hue never carries the state alone. -->
+{#snippet check()}
+  <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+{/snippet}
+
 <header class="mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
   <h1 class="text-2xl font-bold tracking-tight font-[family-name:var(--font-display)]">{data.label}</h1>
   <div class="flex items-center gap-3 sm:flex-1 sm:flex-wrap sm:justify-end">
@@ -201,94 +230,136 @@ content sizes. The header New button opens a dialog holding the create form.
 {/if}
 
 {#if data.entries.length > 0}
-  <!-- The triage filters on two independent axes. Rendered plainly for now; Task 7 dresses them
-       to the segmented / check-and-tint grammar. Each carries its count and aria-pressed so the
-       state is more than color. The three partition buttons pick one publish state; the separate
-       Hidden toggle composes with whichever partition is active. -->
-  <div class="mb-4 flex flex-wrap gap-2">
-    <button type="button" aria-pressed={partition === 'all'} onclick={() => setPartition('all')}>All ({counts.all})</button>
-    <button type="button" aria-pressed={partition === 'pending'} onclick={() => setPartition('pending')}>Pending edits ({counts.pending})</button>
-    <button type="button" aria-pressed={partition === 'published'} onclick={() => setPartition('published')}>Published ({counts.published})</button>
-    <button type="button" aria-pressed={hiddenOnly} onclick={toggleHidden}>Hidden ({counts.hidden})</button>
+  <!-- The triage filters on two independent axes, dressed to the footer grammar. The publish-state
+       partition is one bordered segmented control: the shared border carries the pick-one semantics
+       and the active segment tints with a check (the non-color cue, WCAG 1.4.1). The Hidden toggle
+       is a separate standalone check-and-tint toggle that composes with the active partition. Each
+       count dims to muted when zero, so a sparse list never jumps. -->
+  <div class="mb-4 flex flex-wrap items-center gap-3">
+    <div role="group" aria-label="Filter by publish state" class="bg-base-100 inline-flex items-center overflow-hidden rounded-lg border border-[var(--cairn-card-border)]">
+      <button type="button" class={segButtonClass(partition === 'all')} aria-pressed={partition === 'all'} onclick={() => setPartition('all')}>
+        {#if partition === 'all'}{@render check()}{/if}
+        All<span class="tabular-nums {counts.all === 0 ? 'opacity-45' : ''}">{counts.all}</span>
+      </button>
+      <button type="button" class="{segButtonClass(partition === 'pending')} border-l border-[var(--cairn-card-border)]" aria-pressed={partition === 'pending'} onclick={() => setPartition('pending')}>
+        {#if partition === 'pending'}{@render check()}{/if}
+        Pending edits<span class="tabular-nums {counts.pending === 0 ? 'opacity-45' : ''}">{counts.pending}</span>
+      </button>
+      <button type="button" class="{segButtonClass(partition === 'published')} border-l border-[var(--cairn-card-border)]" aria-pressed={partition === 'published'} onclick={() => setPartition('published')}>
+        {#if partition === 'published'}{@render check()}{/if}
+        Published<span class="tabular-nums {counts.published === 0 ? 'opacity-45' : ''}">{counts.published}</span>
+      </button>
+    </div>
+    <span class="h-5 w-px bg-[var(--cairn-card-border)]" aria-hidden="true"></span>
+    <button type="button" class={hiddenToggleClass(hiddenOnly)} aria-pressed={hiddenOnly} onclick={toggleHidden}>
+      {#if hiddenOnly}{@render check()}{/if}
+      Hidden<span class="tabular-nums {counts.hidden === 0 ? 'opacity-45' : ''}">{counts.hidden}</span>
+    </button>
   </div>
 {/if}
 
-<div class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 mb-4 overflow-x-auto shadow-[var(--cairn-shadow)]">
-  {#if data.entries.length === 0}
-    <div class="flex flex-col items-center gap-4 px-6 py-16 text-center">
-      <CairnLogo class="h-12 w-12 text-primary opacity-30" />
-      <div class="space-y-1">
-        <p class="font-semibold text-base-content">No {data.label.toLowerCase()} yet</p>
-        <p class="text-sm text-[var(--color-muted)]">Stack your first one and it will show up here.</p>
+{#if data.entries.length === 0}
+  <!-- The empty state owns the content area (no card): the cairn mark, concept-named copy, and the
+       create CTA centered on a tall fill, so a first-run office reads as composed. -->
+  <div class="flex min-h-[56vh] flex-col items-center justify-center gap-4 px-6 py-16 text-center">
+    <CairnLogo class="h-12 w-12 text-primary opacity-30" />
+    <div class="space-y-1">
+      <p class="font-semibold text-base-content">No {data.label.toLowerCase()} yet</p>
+      <p class="text-sm text-[var(--color-muted)]">Stack your first one and it will show up here.</p>
+    </div>
+    <button type="button" class="btn btn-primary btn-sm" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
+      <PlusIcon class="h-4 w-4" /> New {data.label}
+    </button>
+  </div>
+{:else}
+  <div class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 mb-4 overflow-x-auto shadow-[var(--cairn-shadow)]">
+    {#if sorted.length === 0}
+      <!-- A filter or a search narrowed the list to zero; the entries exist, none match. Offer the
+           way back: a search query clears, a filter is named in the copy. -->
+      <div role="status" class="flex flex-col items-center gap-3 px-6 py-14 text-center">
+        <SearchIcon class="h-8 w-8 text-[var(--color-subtle)] opacity-40" aria-hidden="true" />
+        {#if query.trim()}
+          <p class="text-sm text-[var(--color-muted)]">No {data.label.toLowerCase()} match <span class="font-medium text-base-content">"{query}"</span>.</p>
+          <button type="button" class="text-[0.8125rem] font-medium text-primary underline [text-underline-offset:2px]" onclick={clearSearch}>Clear search</button>
+        {:else}
+          <p class="text-sm text-[var(--color-muted)]">No {data.label.toLowerCase()} match this filter.</p>
+        {/if}
       </div>
-      <button type="button" class="btn btn-primary btn-sm" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
-        <PlusIcon class="h-4 w-4" /> New {data.label}
-      </button>
-    </div>
-  {:else if sorted.length === 0}
-    <div role="status" class="flex flex-col items-center gap-3 px-6 py-14 text-center">
-      <SearchIcon class="h-8 w-8 text-[var(--color-subtle)] opacity-40" aria-hidden="true" />
-      <p class="text-sm text-[var(--color-muted)]">No {data.label.toLowerCase()} match <span class="font-medium text-base-content">"{query}"</span>.</p>
-    </div>
-  {:else}
-    <table class="table">
-      <thead>
-        <tr class="border-base-300">
-          <th aria-sort={sortKey === 'title' ? (sortAsc ? 'ascending' : 'descending') : 'none'}>
-            <button type="button" class={sortButton} aria-label="Sort by title" onclick={() => toggleSort('title')}>
-              Title
-              {#if sortKey === 'title'}
-                {#if sortAsc}<ArrowUpIcon class="h-3 w-3" aria-hidden="true" />{:else}<ArrowDownIcon class="h-3 w-3" aria-hidden="true" />{/if}
-              {:else}<ChevronsUpDownIcon class="h-3 w-3 opacity-40" aria-hidden="true" />{/if}
-            </button>
-          </th>
-          {#if data.dated}
-            <th class="hidden sm:table-cell" aria-sort={sortKey === 'date' ? (sortAsc ? 'ascending' : 'descending') : 'none'}>
-              <button type="button" class={sortButton} aria-label="Sort by date" onclick={() => toggleSort('date')}>
-                Date
-                {#if sortKey === 'date'}
+    {:else}
+      <table class="table">
+        <thead>
+          <tr class="border-base-300">
+            <th aria-sort={sortKey === 'title' ? (sortAsc ? 'ascending' : 'descending') : 'none'}>
+              <button type="button" class={sortButton} aria-label="Sort by title" onclick={() => toggleSort('title')}>
+                Title
+                {#if sortKey === 'title'}
                   {#if sortAsc}<ArrowUpIcon class="h-3 w-3" aria-hidden="true" />{:else}<ArrowDownIcon class="h-3 w-3" aria-hidden="true" />{/if}
                 {:else}<ChevronsUpDownIcon class="h-3 w-3 opacity-40" aria-hidden="true" />{/if}
               </button>
             </th>
-          {/if}
-          <th class={headerLabel}>Status</th>
-          <th class="text-right"><span class="sr-only">Actions</span></th>
-        </tr>
-      </thead>
-      <tbody>
-        {#each pageRows as entry (entry.id)}
-          <tr class="transition-colors hover:bg-base-200/60">
-            <td><a class="font-medium hover:text-primary hover:underline" href={`/admin/${data.conceptId}/${entry.id}`}>{entry.title}</a></td>
-            {#if data.dated}<td class="hidden text-sm text-[var(--color-muted)] sm:table-cell">{formatDate(entry.date)}</td>{/if}
-            <td>
-              <div class="flex flex-wrap items-center gap-1">
-                {#if entry.status === 'new'}<span class="badge badge-info badge-sm font-medium">New</span>
-                {:else if entry.status === 'edited'}<span class="badge badge-warning badge-sm font-medium">Edited</span>
-                {:else}<span class="badge badge-ghost badge-sm font-medium">Published</span>{/if}
-                {#if entry.draft}<span class="badge badge-neutral badge-sm font-medium">Hidden</span>{/if}
-              </div>
-            </td>
-            <td class="text-right">
-              {#if deleteRefused?.id === entry.id}
-                <!-- A prior delete was refused: DeleteDialog names the blockers and offers no confirm. -->
-                <DeleteDialog conceptId={data.conceptId} id={entry.id} label={data.label} inboundLinks={deleteRefused.inboundLinks} pending={entry.status !== 'published'} />
-              {:else}
-                <form method="POST" action="?/delete">
-                  <CsrfField />
-                  <input type="hidden" name="id" value={entry.id} />
-                  <button type="submit" class="btn btn-ghost btn-sm" aria-label="Delete {entry.title}">
-                    <Trash2Icon class="h-4 w-4 text-error" />
-                  </button>
-                </form>
-              {/if}
-            </td>
+            {#if data.dated}
+              <th class="hidden w-28 sm:table-cell" aria-sort={sortKey === 'date' ? (sortAsc ? 'ascending' : 'descending') : 'none'}>
+                <button type="button" class={sortButton} aria-label="Sort by date" onclick={() => toggleSort('date')}>
+                  Date
+                  {#if sortKey === 'date'}
+                    {#if sortAsc}<ArrowUpIcon class="h-3 w-3" aria-hidden="true" />{:else}<ArrowDownIcon class="h-3 w-3" aria-hidden="true" />{/if}
+                  {:else}<ChevronsUpDownIcon class="h-3 w-3 opacity-40" aria-hidden="true" />{/if}
+                </button>
+              </th>
+            {/if}
+            <th class="{headerLabel} w-28">Status</th>
+            <th class="w-12 text-right"><span class="sr-only">Actions</span></th>
           </tr>
-        {/each}
-      </tbody>
-    </table>
-  {/if}
-</div>
+        </thead>
+        <tbody>
+          {#each pageRows as entry (entry.id)}
+            <tr class="transition-colors hover:bg-base-200/60">
+              <td class="max-w-0">
+                <a class="block truncate font-semibold hover:text-primary hover:underline {entry.draft ? 'opacity-[0.62]' : ''}" href={`/admin/${data.conceptId}/${entry.id}`}>{entry.title}</a>
+                {#if entry.draft}
+                  <!-- Hidden is a row treatment, not a status badge: the row de-emphasizes and an
+                       eye-off tag sits by the title, leaving the Status cell to its publish badge. -->
+                  <span class="mt-0.5 inline-flex items-center gap-1 text-[0.6875rem] font-semibold uppercase tracking-[0.02em] text-[var(--color-muted)]">
+                    <EyeOffIcon class="h-3 w-3" aria-hidden="true" />Hidden
+                  </span>
+                {/if}
+                {#if entry.summary}
+                  <div data-summary class="mt-0.5 truncate text-[0.8125rem] text-[var(--color-muted)] {entry.draft ? 'opacity-[0.62]' : ''}">{entry.summary}</div>
+                {/if}
+              </td>
+              {#if data.dated}<td class="hidden w-28 text-sm tabular-nums text-[var(--color-muted)] sm:table-cell">{formatDate(entry.date)}</td>{/if}
+              <td class="w-28">
+                {#if entry.status === 'new'}<span class="badge badge-info badge-sm font-medium">New</span>
+                {:else if entry.status === 'edited'}<span class="badge badge-sm border-transparent bg-primary/10 font-medium text-primary">Edited</span>
+                {:else}<span class="badge badge-ghost badge-sm font-medium">Published</span>{/if}
+              </td>
+              <td class="w-12 text-right">
+                {#if deleteRefused?.id === entry.id}
+                  <!-- A prior delete was refused: DeleteDialog names the blockers and offers no confirm. -->
+                  <DeleteDialog conceptId={data.conceptId} id={entry.id} label={data.label} inboundLinks={deleteRefused.inboundLinks} pending={entry.status !== 'published'} />
+                {:else}
+                  <form method="POST" action="?/delete">
+                    <CsrfField />
+                    <input type="hidden" name="id" value={entry.id} />
+                    <button type="submit" class="btn btn-ghost btn-sm" aria-label="Delete {entry.title}">
+                      <Trash2Icon class="h-4 w-4 text-error" />
+                    </button>
+                  </form>
+                {/if}
+              </td>
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+      <!-- The create affordance baked into the list body: a full-width borderless foot row so a
+           short list always shows its next step rather than just stopping. Same action as the
+           header New button. -->
+      <button type="button" class="flex w-full items-center gap-2 border-t border-[var(--cairn-card-border)] px-6 py-3 text-sm font-medium text-primary hover:bg-primary/[0.06]" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
+        <PlusIcon class="h-4 w-4" /> New {data.label}
+      </button>
+    {/if}
+  </div>
+{/if}
 
 {#if data.entries.length > 0}
   <div class="mb-6 flex flex-wrap items-center justify-between gap-2 text-sm">

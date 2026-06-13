@@ -31,12 +31,12 @@ describe('ConceptList', () => {
     expect(csrfFields.length).toBe(postForms.length);
   });
 
-  it('flags a draft row with a Hidden badge', async () => {
+  it('flags a draft row with a Hidden tag by the title', async () => {
     const screen = render(ConceptList, { data: data() });
     await expect.element(screen.getByText('Hidden', { exact: true })).toBeInTheDocument();
   });
 
-  it('renders the status vocabulary: New, Edited, and Published badges', async () => {
+  it('renders the status vocabulary: New (info), Edited (primary tint), and Published (ghost)', async () => {
     const entries = [
       { id: 'alpha', title: 'Alpha', date: '2026-05-03', draft: false, status: 'new' as const, summary: null },
       { id: 'beta', title: 'Beta', date: '2026-05-02', draft: false, status: 'edited' as const, summary: null },
@@ -49,21 +49,10 @@ describe('ConceptList', () => {
       );
     await expect.element(screen.getByText('New', { exact: true })).toBeInTheDocument();
     expect(badge('New')?.classList.contains('badge-info')).toBe(true);
-    expect(badge('Edited')?.classList.contains('badge-warning')).toBe(true);
+    // Edited is the action signal: it tints primary (the check-and-tint grammar), not amber warning.
+    expect(badge('Edited')?.classList.contains('badge-warning')).toBe(false);
+    expect(badge('Edited')?.classList.contains('text-primary')).toBe(true);
     expect(badge('Published')?.classList.contains('badge-ghost')).toBe(true);
-  });
-
-  it('stacks a Hidden badge beside the status badge for a hidden edited entry', async () => {
-    const entries = [
-      { id: 'alpha', title: 'Alpha', date: '2026-05-03', draft: true, status: 'edited' as const, summary: null },
-    ];
-    const screen = render(ConceptList, { data: data({ entries }) });
-    const row = screen.container.querySelector('tbody tr')!;
-    const badges = Array.from(row.querySelectorAll('.badge')).map((el) => el.textContent?.trim());
-    expect(badges).toContain('Edited');
-    expect(badges).toContain('Hidden');
-    const hidden = Array.from(row.querySelectorAll('.badge')).find((el) => el.textContent?.trim() === 'Hidden');
-    expect(hidden?.classList.contains('badge-neutral')).toBe(true);
   });
 
   it('announces a publish-all flash through a persistent polite region beside the alert', async () => {
@@ -243,5 +232,71 @@ describe('ConceptList', () => {
     const alert = screen.getByRole('alert', { name: /could not be deleted/i });
     await expect.element(alert).toBeInTheDocument();
     await expect.element(alert.getByRole('link', { name: 'Post 03' })).toBeInTheDocument();
+  });
+
+  // Task 7: the self-describing row and the gold-standard dressing.
+  it('a row shows the summary under the title', async () => {
+    const entries = [
+      { id: 'alpha', title: 'Alpha', date: '2026-05-03', draft: false, status: 'published' as const, summary: 'A short blurb.' },
+    ];
+    const screen = render(ConceptList, { data: data({ entries }) });
+    await expect.element(screen.getByText('A short blurb.')).toBeInTheDocument();
+  });
+
+  it('a row without a summary renders no summary line', async () => {
+    const entries = [
+      { id: 'alpha', title: 'Alpha', date: '2026-05-03', draft: false, status: 'published' as const, summary: null },
+    ];
+    const screen = render(ConceptList, { data: data({ entries }) });
+    const row = screen.container.querySelector('tbody tr')!;
+    expect(row.querySelector('[data-summary]')).toBeNull();
+  });
+
+  it('marks the active filter by more than color', async () => {
+    const screen = render(ConceptList, { data: data({ entries: triageEntries() }) });
+    const published = screen.getByRole('button', { name: /^published/i });
+    await published.click();
+    // The non-color cue: aria-pressed plus a check glyph inside the active segment.
+    await expect.element(published).toHaveAttribute('aria-pressed', 'true');
+    expect(published.element().querySelector('svg')).not.toBeNull();
+    // An inactive segment carries no check glyph (its state is not color alone, it has no svg).
+    const all = screen.getByRole('button', { name: /^all/i });
+    expect(all.element().querySelector('svg')).toBeNull();
+  });
+
+  it('a hidden entry carries the Hidden tag, not a Hidden badge in the status cell', async () => {
+    const entries = [
+      { id: 'hidden-1', title: 'Hidden One', date: '2026-05-06', draft: true, status: 'edited' as const, summary: null },
+    ];
+    const screen = render(ConceptList, { data: data({ entries }) });
+    const row = screen.container.querySelector('tbody tr')!;
+    // The status cell holds only the publish-state badge: Edited, no second Hidden pill.
+    const badges = Array.from(row.querySelectorAll('.badge')).map((el) => el.textContent?.trim());
+    expect(badges).toContain('Edited');
+    expect(badges).not.toContain('Hidden');
+    // The eye-off Hidden tag sits by the title, outside the badge set.
+    await expect.element(screen.getByText('Hidden', { exact: true })).toBeInTheDocument();
+  });
+
+  it('opens the create dialog from the trailing New row', async () => {
+    const entries = [
+      { id: 'alpha', title: 'Alpha', date: '2026-05-03', draft: false, status: 'published' as const, summary: null },
+    ];
+    const screen = render(ConceptList, { data: data({ entries }) });
+    // Two "New Posts" affordances exist (the header button and the trailing row); the foot row is last.
+    const news = screen.getByRole('button', { name: /new posts/i });
+    await news.last().click();
+    await expect.element(screen.getByLabelText('Title', { exact: true })).toBeVisible();
+  });
+
+  it('clears the search from the no-match state', async () => {
+    const screen = render(ConceptList, { data: data() });
+    const search = screen.getByRole('searchbox', { name: /search/i });
+    await search.fill('no such title');
+    await expect.element(screen.getByText(/no posts match/i)).toBeInTheDocument();
+    await screen.getByRole('button', { name: /clear search/i }).click();
+    // The query clears, so every row returns.
+    await expect.element(screen.getByRole('link', { name: 'Post 12' })).toBeInTheDocument();
+    await expect.element(search).toHaveValue('');
   });
 });

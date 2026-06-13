@@ -3,6 +3,15 @@
 One page per package export subpath. The TypeScript types in `src/lib` are the source of truth, and
 the export-coverage gate checks every page against them.
 
+Two gates back these pages. `check:reference` verifies a page documents every export of its subpath.
+`check:reference:signatures` goes further for function and const-function exports: it renders each
+export's real type through the TypeScript compiler and compares it against the declared `ts`-block
+signature on the page, so a signature that drifts from the code fails the build. Copy a declared
+signature from the real export type rather than hand-writing it. A page that deliberately summarizes
+a large signature (an actions record shown as `Record<string, ...>`, say) names itself in the
+`ALLOWLIST` at the top of `scripts/check-reference-signatures.mjs`, keyed `${subpath}#${name}` with a
+reason.
+
 - [Core (`@glw907/cairn-cms`)](./core.md): the engine, the adapter and schema contract, render, and the runtime.
 - [SvelteKit (`/sveltekit`)](./sveltekit.md): the single-mount `createCairnAdmin` facade, the auth guard, and the per-route factories.
 - [The canonical admin mount](./admin-routes.md): the two-file catch-all mount and the composer a site copies.

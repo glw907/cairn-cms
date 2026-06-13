@@ -163,7 +163,7 @@ type RequestResult =
 declare function createAuthRoutes(config: AuthRoutesConfig): {
   loginLoad: (event: RequestContext) => { siteName: string; error: string | null; csrf: string };
   requestAction: (event: RequestContext) => Promise<RequestResult>;
-  confirmLoad: (event: RequestContext) => { token: string; siteName: string; error: string | null };
+  confirmLoad: (event: RequestContext) => { token: string; siteName: string; error: string | null; csrf: string };
   confirmAction: (event: RequestContext) => Promise<never>;
   logoutAction: (event: RequestContext) => Promise<never>;
 };
@@ -229,13 +229,13 @@ declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutes
   listLoad: (event: ContentEvent) => Promise<ListData>;
   createAction: (event: ContentEvent) => Promise<never>;
   editLoad: (event: ContentEvent) => Promise<EditData>;
-  saveAction: (event: ContentEvent) => Promise<ReturnType<typeof fail> | never>;
-  publishAction: (event: ContentEvent) => Promise<ReturnType<typeof fail> | never>;
+  saveAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
+  publishAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
   publishAllAction: (event: ContentEvent) => Promise<never>;
   discardAction: (event: ContentEvent) => Promise<never>;
-  deleteAction: (event: ContentEvent) => Promise<ReturnType<typeof fail> | never>;
-  listDeleteAction: (event: ContentEvent) => Promise<ReturnType<typeof fail> | never>;
-  renameAction: (event: ContentEvent) => Promise<ReturnType<typeof fail> | never>;
+  deleteAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
+  listDeleteAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
+  renameAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
   mintToken: (env: GithubKeyEnv) => string | Promise<string>;
 };
 ```

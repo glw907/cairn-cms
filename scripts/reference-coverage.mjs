@@ -44,7 +44,7 @@ export function missingNames(names, pageText) {
 // documented on its own page: /delivery re-exports all of /delivery/data, so the delivery page
 // documents only its own additions. The /delivery/head entry points at the same delivery.md page,
 // so the folded-in CairnHead is covered there.
-const CONFIG = [
+export const CONFIG = [
   { subpath: '.', dts: 'dist/index.d.ts', page: 'docs/reference/core.md' },
   { subpath: '/sveltekit', dts: 'dist/sveltekit/index.d.ts', page: 'docs/reference/sveltekit.md' },
   { subpath: '/components', dts: 'dist/components/index.d.ts', page: 'docs/reference/components.md' },

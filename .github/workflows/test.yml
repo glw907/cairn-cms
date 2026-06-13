@@ -22,6 +22,7 @@ jobs:
       - run: npm test
       - run: npm run check:package
       - run: npm run check:reference
+      - run: npm run check:reference:signatures
       - run: npm run check:readiness
       - run: npm run check:docs
       - run: npm run check:prose

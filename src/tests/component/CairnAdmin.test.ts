@@ -30,7 +30,7 @@ function listData(layoutOver = {}, pageOver = {}): AdminData {
       label: 'Posts',
       dated: true,
       entries: [
-        { id: '2026-05-01-hello', title: 'Hello', date: '2026-05-01', draft: false, status: 'published' as const },
+        { id: '2026-05-01-hello', title: 'Hello', date: '2026-05-01', draft: false, status: 'published' as const, summary: null },
       ],
       error: null,
       formError: null,

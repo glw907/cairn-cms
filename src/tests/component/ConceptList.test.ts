@@ -11,6 +11,7 @@ function data(over = {}) {
     date: `2026-05-${String(i + 1).padStart(2, '0')}`,
     draft: i === 11,
     status: 'published' as const,
+    summary: null,
   }));
   return { conceptId: 'posts', label: 'Posts', dated: true, entries, error: null, formError: null, publishedAll: null, ...over };
 }
@@ -37,9 +38,9 @@ describe('ConceptList', () => {
 
   it('renders the status vocabulary: New, Edited, and Published badges', async () => {
     const entries = [
-      { id: 'alpha', title: 'Alpha', date: '2026-05-03', draft: false, status: 'new' as const },
-      { id: 'beta', title: 'Beta', date: '2026-05-02', draft: false, status: 'edited' as const },
-      { id: 'gamma', title: 'Gamma', date: '2026-05-01', draft: false, status: 'published' as const },
+      { id: 'alpha', title: 'Alpha', date: '2026-05-03', draft: false, status: 'new' as const, summary: null },
+      { id: 'beta', title: 'Beta', date: '2026-05-02', draft: false, status: 'edited' as const, summary: null },
+      { id: 'gamma', title: 'Gamma', date: '2026-05-01', draft: false, status: 'published' as const, summary: null },
     ];
     const screen = render(ConceptList, { data: data({ entries }) });
     const badge = (text: string) =>
@@ -54,7 +55,7 @@ describe('ConceptList', () => {
 
   it('stacks a Hidden badge beside the status badge for a hidden edited entry', async () => {
     const entries = [
-      { id: 'alpha', title: 'Alpha', date: '2026-05-03', draft: true, status: 'edited' as const },
+      { id: 'alpha', title: 'Alpha', date: '2026-05-03', draft: true, status: 'edited' as const, summary: null },
     ];
     const screen = render(ConceptList, { data: data({ entries }) });
     const row = screen.container.querySelector('tbody tr')!;

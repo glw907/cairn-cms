@@ -22,7 +22,7 @@ const deps = { mintToken: () => Promise.resolve('test-token') };
 const MANIFEST_PATH = 'src/content/.cairn/index.json';
 
 /** Serialize a manifest fixture; entries default the fields listLoad does not read. */
-function manifestRaw(entries: Partial<{ id: string; concept: string; title: string; date: string; draft: boolean }>[]): string {
+function manifestRaw(entries: Partial<{ id: string; concept: string; title: string; date: string; draft: boolean; summary: string }>[]): string {
   return JSON.stringify({
     version: 1,
     entries: entries.map((e) => ({ concept: 'posts', permalink: `/posts/${e.id}`, draft: false, links: [], ...e })),
@@ -145,12 +145,60 @@ describe('listLoad', () => {
     expect(data.dated).toBe(true);
     // Newest id first, the same order the old crawl produced.
     expect(data.entries).toEqual([
-      { id: '2026-05-hello', title: 'Hello', date: '2026-05-01', draft: true, status: 'published' },
-      { id: '2026-04-older', title: 'Older', date: '2026-04-01', draft: false, status: 'published' },
+      { id: '2026-05-hello', title: 'Hello', date: '2026-05-01', draft: true, status: 'published', summary: null },
+      { id: '2026-04-older', title: 'Older', date: '2026-04-01', draft: false, status: 'published', summary: null },
     ]);
     expect(data.error).toBeNull();
     // One contents read total: the manifest itself.
     expect(contentsReads(gh)).toEqual([expect.stringContaining('.cairn/index.json')]);
+  });
+
+  it('fills a published row summary from the manifest, falling back to null', async () => {
+    const gh = new GithubDouble({
+      main: {
+        [MANIFEST_PATH]: manifestRaw([
+          { id: '2026-05-hello', title: 'Hello', date: '2026-05-01', summary: 'Indexed blurb.' },
+          { id: '2026-04-older', title: 'Older', date: '2026-04-01' }, // no summary in the manifest row
+        ]),
+      },
+    });
+    gh.install();
+    const routes = createContentRoutes(runtime(), deps);
+    const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
+    const indexed = data.entries.find((e) => e.id === '2026-05-hello');
+    const bare = data.entries.find((e) => e.id === '2026-04-older');
+    expect(indexed?.status).toBe('published');
+    expect(indexed?.summary).toBe('Indexed blurb.');
+    expect(bare?.summary).toBeNull();
+  });
+
+  it('derives a pending row summary from the branch frontmatter, else the body', async () => {
+    const gh = new GithubDouble({
+      main: {
+        [MANIFEST_PATH]: manifestRaw([
+          { id: '2026-05-hello', title: 'Hello', date: '2026-05-01' },
+        ]),
+      },
+      // An edited entry whose branch carries a description: the summary reads that description.
+      'cairn/posts/2026-05-hello': {
+        'src/content/posts/2026-05-hello.md':
+          '---\ntitle: Hello\ndate: 2026-05-01\ndescription: Branch blurb.\n---\nBody we ignore.',
+      },
+      // A branch-only entry with no description: the summary is the body excerpt.
+      'cairn/posts/2026-06-fresh': {
+        'src/content/posts/2026-06-fresh.md':
+          '---\ntitle: Fresh\ndate: 2026-06-01\n---\nThe body becomes the excerpt.',
+      },
+    });
+    gh.install();
+    const routes = createContentRoutes(runtime(), deps);
+    const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
+    const edited = data.entries.find((e) => e.id === '2026-05-hello');
+    const fresh = data.entries.find((e) => e.id === '2026-06-fresh');
+    expect(edited?.status).toBe('edited');
+    expect(edited?.summary).toBe('Branch blurb.');
+    expect(fresh?.status).toBe('new');
+    expect(fresh?.summary).toBe('The body becomes the excerpt.');
   });
 
   it('trusts a manifest that parses but is empty, without crawling the tree', async () => {
@@ -224,8 +272,8 @@ describe('listLoad with pending branches', () => {
     const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
     // The edited row carries the branch's title and draft flag, not the manifest's.
     expect(data.entries).toEqual([
-      { id: '2026-05-hello', title: 'Pending title', date: '2026-05-01', draft: true, status: 'edited' },
-      { id: '2026-04-older', title: 'Older', date: '2026-04-01', draft: false, status: 'published' },
+      { id: '2026-05-hello', title: 'Pending title', date: '2026-05-01', draft: true, status: 'edited', summary: 'x' },
+      { id: '2026-04-older', title: 'Older', date: '2026-04-01', draft: false, status: 'published', summary: null },
     ]);
     expect(data.error).toBeNull();
     // Two contents reads: the manifest plus the one pending entry's branch file.
@@ -245,8 +293,8 @@ describe('listLoad with pending branches', () => {
     // Ordering parity with the old crawl: new rows append after the published set even when
     // their ids would sort first.
     expect(data.entries).toEqual([
-      { id: '2026-04-older', title: 'Older', date: '2026-04-01', draft: false, status: 'published' },
-      { id: '2026-06-fresh', title: 'Brand New', date: '2026-06-01', draft: false, status: 'new' },
+      { id: '2026-04-older', title: 'Older', date: '2026-04-01', draft: false, status: 'published', summary: null },
+      { id: '2026-06-fresh', title: 'Brand New', date: '2026-06-01', draft: false, status: 'new', summary: 'x' },
     ]);
   });
 
@@ -259,7 +307,7 @@ describe('listLoad with pending branches', () => {
     const routes = createContentRoutes(runtime(), deps);
     const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
     expect(data.entries).toEqual([
-      { id: '2026-05-hello', title: 'Hello', date: '2026-05-01', draft: false, status: 'published' },
+      { id: '2026-05-hello', title: 'Hello', date: '2026-05-01', draft: false, status: 'published', summary: null },
     ]);
   });
 
@@ -273,7 +321,7 @@ describe('listLoad with pending branches', () => {
     const routes = createContentRoutes(runtime(), deps);
     const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
     expect(data.entries).toEqual([
-      { id: '2026-06-ghost', title: '2026-06-ghost', date: null, draft: false, status: 'new' },
+      { id: '2026-06-ghost', title: '2026-06-ghost', date: null, draft: false, status: 'new', summary: null },
     ]);
   });
 });
@@ -290,8 +338,8 @@ describe('listLoad without a manifest (fallback crawl)', () => {
     const routes = createContentRoutes(runtime(), deps);
     const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
     expect(data.entries).toEqual([
-      { id: '2026-05-hello', title: 'Hello', date: '2026-05-01', draft: true, status: 'published' },
-      { id: '2026-04-older', title: 'Older', date: '2026-04-01', draft: false, status: 'published' },
+      { id: '2026-05-hello', title: 'Hello', date: '2026-05-01', draft: true, status: 'published', summary: 'x' },
+      { id: '2026-04-older', title: 'Older', date: '2026-04-01', draft: false, status: 'published', summary: 'x' },
     ]);
     expect(data.error).toBeNull();
     expect(gh.calls.some((c) => c.method === 'GET' && c.url.includes('/git/trees/'))).toBe(true);
@@ -311,8 +359,8 @@ describe('listLoad without a manifest (fallback crawl)', () => {
     const routes = createContentRoutes(runtime(), deps);
     const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
     expect(data.entries).toEqual([
-      { id: '2026-05-hello', title: 'Pending title', date: '2026-05-01', draft: true, status: 'edited' },
-      { id: '2026-04-older', title: 'Older', date: '2026-04-01', draft: false, status: 'published' },
+      { id: '2026-05-hello', title: 'Pending title', date: '2026-05-01', draft: true, status: 'edited', summary: 'x' },
+      { id: '2026-04-older', title: 'Older', date: '2026-04-01', draft: false, status: 'published', summary: 'x' },
     ]);
   });
 
@@ -327,8 +375,8 @@ describe('listLoad without a manifest (fallback crawl)', () => {
     const routes = createContentRoutes(runtime(), deps);
     const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
     expect(data.entries).toEqual([
-      { id: '2026-04-older', title: 'Older', date: '2026-04-01', draft: false, status: 'published' },
-      { id: '2026-06-fresh', title: 'Brand New', date: '2026-06-01', draft: false, status: 'new' },
+      { id: '2026-04-older', title: 'Older', date: '2026-04-01', draft: false, status: 'published', summary: 'x' },
+      { id: '2026-06-fresh', title: 'Brand New', date: '2026-06-01', draft: false, status: 'new', summary: 'x' },
     ]);
   });
 });

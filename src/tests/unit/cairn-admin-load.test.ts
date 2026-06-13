@@ -96,7 +96,7 @@ describe('authed views', () => {
     // The synthesized `concept` param reached the wrapped listLoad.
     expect(data.page.conceptId).toBe('posts');
     expect(data.page.entries).toEqual([
-      { id: '2026-05-hello', title: 'Hello', date: '2026-05-01', draft: false, status: 'published' },
+      { id: '2026-05-hello', title: 'Hello', date: '2026-05-01', draft: false, status: 'published', summary: 'x' },
     ]);
   });
 

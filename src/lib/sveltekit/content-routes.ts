@@ -6,6 +6,8 @@ import { redirect, error, fail } from '@sveltejs/kit';
 import { findConcept } from '../content/concepts.js';
 import { extractCairnLinks, formatCairnToken, rewriteCairnLink } from '../content/links.js';
 import { frontmatterFromForm, parseMarkdown, dateInputValue, serializeMarkdown } from '../content/frontmatter.js';
+import { deriveExcerpt } from '../content/excerpt.js';
+import { asString } from '../content/identity.js';
 import { isValidId, slugify, filenameFromId, composeDatedId, slugFromId, renameId } from '../content/ids.js';
 import { appCredentials, type GithubKeyEnv } from '../github/credentials.js';
 import { listMarkdown, readRaw, commitFiles, type FileChange } from '../github/repo.js';
@@ -56,6 +58,9 @@ export interface EntrySummary {
   draft: boolean;
   /** Publish state derived from the ref set: live as-is, live with pending edits, or branch-only. */
   status: 'published' | 'edited' | 'new';
+  /** The row's one-line summary: the manifest's indexed excerpt for a published row, the branch
+   *  frontmatter/body excerpt for a pending one, and null when neither yields text. */
+  summary: string | null;
 }
 
 /** The concept list view's data. */
@@ -251,13 +256,14 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
   ): Promise<EntrySummary> {
     try {
       const raw = await readRaw(repo, file.path, token);
-      if (raw === null) return { id: file.id, title: file.id, date: null, draft: false, status };
-      const { frontmatter } = parseMarkdown(raw);
+      if (raw === null) return { id: file.id, title: file.id, date: null, draft: false, status, summary: null };
+      const { frontmatter, body } = parseMarkdown(raw);
       const title = typeof frontmatter.title === 'string' && frontmatter.title.trim() ? frontmatter.title : file.id;
       const date = dateInputValue(frontmatter.date) || null;
-      return { id: file.id, title, date, draft: frontmatter.draft === true, status };
+      const summary = deriveExcerpt(body, { description: asString(frontmatter.description) });
+      return { id: file.id, title, date, draft: frontmatter.draft === true, status, summary };
     } catch {
-      return { id: file.id, title: file.id, date: null, draft: false, status };
+      return { id: file.id, title: file.id, date: null, draft: false, status, summary: null };
     }
   }
 
@@ -329,7 +335,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
         rows.map((e) =>
           pendingIds.has(e.id)
             ? pendingRow(concept, e.id, 'edited', token)
-            : { id: e.id, title: e.title, date: e.date ?? null, draft: e.draft, status: 'published' as const },
+            : { id: e.id, title: e.title, date: e.date ?? null, draft: e.draft, status: 'published' as const, summary: e.summary ?? null },
         ),
       );
       const listed = new Set(rows.map((e) => e.id));

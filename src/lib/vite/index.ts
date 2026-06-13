@@ -7,7 +7,7 @@
 // the cairn-manifest bin uses to regenerate. See the design spec, locked decision 1.
 import type { Plugin, PluginOption } from 'vite';
 import { writeFile, mkdir } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join } from 'node:path';
 import { resolveViteRoot } from './resolve-root.js';
 
 /** The key the cairnManifest plugin stashes its options under, so the write path can read them off the

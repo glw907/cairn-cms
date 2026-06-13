@@ -10,7 +10,7 @@ import ts from 'typescript';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CONFIG, enumerateExports } from './reference-coverage.mjs';
+import { CONFIG, enumerateExports, moduleExports } from './reference-coverage.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -183,18 +183,9 @@ function matchDeclaration(block, head) {
 // covers the callable surface first.
 /** @param {string} dtsPath */
 function realSignatures(dtsPath) {
-  const program = ts.createProgram([dtsPath], {
-    noEmit: true,
-    skipLibCheck: true,
-    moduleResolution: ts.ModuleResolutionKind.Bundler,
-  });
-  const checker = program.getTypeChecker();
-  const source = program.getSourceFile(dtsPath);
-  if (!source) throw new Error(`cannot load ${dtsPath}`);
-  const moduleSymbol = checker.getSymbolAtLocation(source);
-  if (!moduleSymbol) throw new Error(`no module symbol for ${dtsPath}`);
+  const { checker, symbols } = moduleExports(dtsPath);
   const out = /** @type {Map<string, string>} */ (new Map());
-  for (const sym of checker.getExportsOfModule(moduleSymbol)) {
+  for (const sym of symbols) {
     const decl = sym.valueDeclaration ?? sym.declarations?.[0];
     if (!decl) continue;
     const type = checker.getTypeOfSymbolAtLocation(sym, sym.valueDeclaration ?? decl);

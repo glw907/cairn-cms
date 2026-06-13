@@ -9,9 +9,11 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
-// Enumerate the exported names of a .d.ts module. Resolves re-exports and `export *`.
+// Load a .d.ts module through the compiler API and return its type checker plus its export
+// symbols (re-exports and `export *` resolved). The two reference gates share this so they
+// enumerate the same surface; the signature gate keeps the checker to render each export's type.
 /** @param {string} dtsPath */
-export function enumerateExports(dtsPath) {
+export function moduleExports(dtsPath) {
   const program = ts.createProgram([dtsPath], {
     noEmit: true,
     skipLibCheck: true,
@@ -22,9 +24,14 @@ export function enumerateExports(dtsPath) {
   if (!source) throw new Error(`cannot load ${dtsPath}`);
   const moduleSymbol = checker.getSymbolAtLocation(source);
   if (!moduleSymbol) throw new Error(`no module symbol for ${dtsPath}`);
-  return checker
-    .getExportsOfModule(moduleSymbol)
-    .map((s) => s.name)
+  return { checker, symbols: checker.getExportsOfModule(moduleSymbol) };
+}
+
+// Enumerate the exported names of a .d.ts module. Resolves re-exports and `export *`.
+/** @param {string} dtsPath */
+export function enumerateExports(dtsPath) {
+  return moduleExports(dtsPath)
+    .symbols.map((s) => s.name)
     .sort();
 }
 

@@ -101,6 +101,13 @@ and modes; it is the completion of Prose, not a separate system.
   (mocked as screen 5), and a shortcuts section in the Markdown help dialog. Exact bindings
   settle at plan time against browser and OS conflicts; the principle stays that typing markdown
   always works and keys are conveniences, never requirements.
+- **Containers fold.** A directive container folds from its opener to its closer through
+  CodeMirror's fold system, driven by the same cached `fenceScan` ranges the rails use. The
+  affordance is a chevron in the existing gutter on the opener row (visible on hover or while
+  the caret is inside; the folded state shows it always, plus a quiet "N lines" pill after the
+  label). Folding is visual only (the document and saves are untouched), state is session-local
+  and never persisted, and a fold opens automatically when a search hit, the caret, or a
+  validation report lands inside it.
 - **No H4 button.** The document title is the page's visible H1, so in-document structure runs
   H2/H3 at this content scale, and the strip stays lean. `####` still types, gains a real size
   step in the highlight (about 1.05em, between H3 and body) so a hand-typed H4 reads as a

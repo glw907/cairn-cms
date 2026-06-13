@@ -11,7 +11,33 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-13, latest): publish `0.54.0`, then the queue
+## Immediate next action (2026-06-13, latest): execute the office-list plan (0.55.0), mockup-first
+
+**`0.54.0` PUBLISHED 2026-06-13, and both consumer sites are on it.** The `v0.54.0` release fired the
+OIDC trusted-publishing workflow (run `27472879535` green), `0.54.0` is the registry `latest`, and
+both sites crossed and verified live the same day: ecxc-ski `^0.53.0 → ^0.54.0` (deploy `27473025539`
+green, `cairn-doctor --probe` 11/0/1), 907-life `^0.51.0 → ^0.54.0` (deploy green, doctor 8/0/4, then
+wired the `cairnManifest` plugin so its doctor self-derives to 12/0/0). The editor-takes-the-shell
+post-mortem is in `docs/superpowers/plans/2026-06-12-cairn-editor-takes-the-shell.md`.
+
+**Next: the office-list pass as `0.55.0`** (the post/pages list rises to the gold standard). Spec
+`docs/superpowers/specs/2026-06-13-cairn-office-list-design.md` (Direction B, approved after a
+Ghost/WordPress/Sveltia precedent survey); plan
+`docs/superpowers/plans/2026-06-13-cairn-office-list.md`. The list gains a triage filter layer driven
+by publish state (All / Pending edits / Published / Hidden, with counts, client-side) and
+self-describing rows with a summary line, the office finally extending the editor/desk gold standard.
+One data-layer change: the manifest and `EntrySummary` gain a `summary` string fed by the existing
+`deriveExcerpt` helper (moved down to `content/`); because the manifest verification is whole-string,
+`0.55.0` carries one `Consumers must: regenerate the content manifest` line. **The plan is
+mockup-first: Task 1 is an adversarial design review (the competitors' case, add Contentful/Sanity),
+Task 2 produces the office-list gold-standard mockup extending
+`docs/internal/design/2026-06-12-editor-shell-gold-standard.html` and STOPS for Geoff's approval
+before any implementation** (the desk precedent). Then the data-layer (Tasks 3-5), the triage and
+rows (6-7), E2E (8), the post-build critique (9), docs (10). Method: main loop for 1/2/9,
+`cairn-implementer` (explicit `model`) for the rest, full gate between dispatches. After it: the
+gates-and-tooling pass, the gallery brainstorm, P4.
+
+## Prior next action (2026-06-13): publish `0.54.0`, then the queue (DONE)
 
 **The editor-takes-the-shell pass LANDED on `main` 2026-06-13 as `0.54.0`, unpublished.** Thirteen
 plan tasks plus a simplifier touch and the review fold-in, commits `7e2aedb..46d55c5` (plan and

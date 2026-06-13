@@ -6,6 +6,7 @@ import {
   fenceScan,
   fenceTokens,
   findInlineDirectives,
+  markerPrefix,
 } from '../../lib/components/markdown-directives.js';
 
 // The field-report regression document, verbatim: a labeled four-colon container holding two
@@ -160,6 +161,22 @@ describe('caretContainerRange', () => {
     const scan = fenceScan([':::aside', 'before', '```', ':::note', ':::', '```', 'after', ':::']);
     expect(caretContainerRange(scan, 1)).toEqual({ fromLine: 0, toLine: 7, depth: 1 });
     expect(caretContainerRange(scan, 6)).toEqual({ fromLine: 0, toLine: 7, depth: 1 });
+  });
+});
+
+describe('markerPrefix', () => {
+  it('measures the marker prefix of a quote, list, ordered, and task line', () => {
+    expect(markerPrefix('> quoted text')).toBe('> ');
+    expect(markerPrefix('- item')).toBe('- ');
+    // Ordered markers are wider than 2ch; the width comes from the match, never assumed.
+    expect(markerPrefix('12. item')).toBe('12. ');
+    expect(markerPrefix('- [ ] task')).toBe('- [ ] ');
+  });
+  it('counts leading indentation toward the hang', () => {
+    expect(markerPrefix('  - nested item')).toBe('  - ');
+  });
+  it('returns null for a line with no marker', () => {
+    expect(markerPrefix('plain text')).toBeNull();
   });
 });
 

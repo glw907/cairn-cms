@@ -236,6 +236,38 @@ describe('MarkdownEditor', () => {
     }
   });
 
+  it('hangs wrapped quote and list lines under their content', async () => {
+    // The Obsidian/HyperMD wrap idiom: a line decoration sets padding-left to the marker width
+    // and a negative text-indent of the same magnitude, so the marker sits in the indent and a
+    // wrapped continuation line resumes under the content. The surface is fixed-pitch, so the two
+    // computed values must cancel exactly; magnitude grows with the marker.
+    const screen = render(MarkdownEditor, { value: '> a quote here\n12. an ordered item', name: 'body' });
+    await expect.poll(() => lineWith(screen.container, 'a quote here')).toBeTruthy();
+    const quote = getComputedStyle(lineWith(screen.container, 'a quote here')!);
+    const ordered = getComputedStyle(lineWith(screen.container, 'an ordered item')!);
+    // padding-left and text-indent are equal in magnitude and opposite in sign on each line.
+    expect(parseFloat(quote.paddingLeft)).toBeGreaterThan(0);
+    expect(parseFloat(quote.paddingLeft)).toBeCloseTo(-parseFloat(quote.textIndent), 2);
+    expect(parseFloat(ordered.paddingLeft)).toBeGreaterThan(0);
+    expect(parseFloat(ordered.paddingLeft)).toBeCloseTo(-parseFloat(ordered.textIndent), 2);
+    // '12. ' is wider than '> ', so the ordered hang is the deeper one.
+    expect(parseFloat(ordered.paddingLeft)).toBeGreaterThan(parseFloat(quote.paddingLeft));
+  });
+
+  it('composes the hang with the directive gutter inside a container', async () => {
+    // Inside a directive container the gutter padding (clearing the rails) and the marker hang
+    // add together; the line still carries the equal-and-opposite text-indent so its wrap lands
+    // under the content, and the padding sits beyond the gutter.
+    const doc = [':::panel', '- nested item', ':::'].join('\n');
+    const screen = render(MarkdownEditor, { value: doc, name: 'body' });
+    await expect.poll(() => lineWith(screen.container, 'nested item')).toBeTruthy();
+    const item = lineWith(screen.container, 'nested item')!;
+    const style = getComputedStyle(item);
+    // The container gutter is 28px; the '- ' hang adds 2ch beyond it.
+    expect(parseFloat(style.paddingLeft)).toBeGreaterThan(28);
+    expect(parseFloat(style.textIndent)).toBeLessThan(0);
+  });
+
   it('pads the directive gutter clear of the depth-3 bar', async () => {
     const screen = render(MarkdownEditor, { value: NESTED_DOC, name: 'body' });
     await expect.poll(() => screen.container.querySelector('.cm-line.cm-cairn-directive-fence')).not.toBeNull();

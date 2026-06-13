@@ -163,6 +163,22 @@ export function fenceTokens(line: string): FenceToken[] {
   return out;
 }
 
+// The marker prefix of a quote or list line: leading indentation, the marker itself, and the one
+// space after it. A task checkbox (`[ ]`/`[x]`) extends a bullet's marker. Ordered markers vary in
+// width (a two-digit number is wider than a bullet), so the width is read from the match, never
+// assumed. The anchored alternatives mirror the markers the highlight pass styles.
+const MARKER = /^(\s*)(?:[-*+](?: \[[ xX]\])?|\d+[.)]|>) /;
+
+/**
+ * The marker prefix of a line (indentation plus marker plus its trailing space), or null when the
+ * line carries no quote or list marker. The hanging-indent decoration uses the prefix length, in
+ * fixed-pitch chars, to wrap continuation lines under the content rather than under the marker.
+ */
+export function markerPrefix(line: string): string | null {
+  const m = MARKER.exec(line);
+  return m ? m[0] : null;
+}
+
 /** Inline directive ranges (`:name[...]{...}`) within a line of text. */
 export function findInlineDirectives(text: string): { from: number; to: number }[] {
   const out: { from: number; to: number }[] = [];

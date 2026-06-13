@@ -11,6 +11,7 @@ import {
   fenceScan,
   fenceTokens,
   findInlineDirectives,
+  markerPrefix,
   type FenceScan,
 } from './markdown-directives.js';
 
@@ -71,6 +72,26 @@ const fenceLabels = DEPTH_STEPS.map((d) => Decoration.mark({ class: `cm-cairn-di
 // label ink up one notch while the other containers sit quieter.
 const caretBlockLine = Decoration.line({ class: 'cm-cairn-caret-block' });
 
+// The hanging-indent line decoration for a quote or list line, keyed by the marker's character
+// width. The width rides a --cairn-hang custom property so the theme's padding-left rule adds it
+// to the directive gutter rather than replacing it (an inline padding-left would win the cascade
+// and erase the gutter). The equal negative text-indent pulls the first line back by the marker
+// width, so the marker sits in the indent and a wrapped continuation resumes under the content
+// (the Obsidian/HyperMD idiom). The surface is iA Writer Mono, fixed pitch, so n chars is exactly
+// n ch. Built lazily and memoized; marker widths repeat.
+const hangLines = new Map<number, Decoration>();
+function hangLine(width: number): Decoration {
+  let deco = hangLines.get(width);
+  if (!deco) {
+    deco = Decoration.line({
+      class: 'cm-cairn-hang',
+      attributes: { style: `--cairn-hang:${width}ch;text-indent:-${width}ch` },
+    });
+    hangLines.set(width, deco);
+  }
+  return deco;
+}
+
 // Depth needs the whole document, since a visible line's containers can open above the viewport.
 // One regex pass per line, linear in the document; at admin entry sizes (tens of kilobytes) that
 // is well under a millisecond. The plugin caches the fence scan, so it reruns only when the
@@ -103,6 +124,23 @@ function buildDirectiveDecorations(view: EditorView, scan: FenceScan): Decoratio
       // inside a code block, outside any container); it gets no machinery treatment.
       if (kind === 'fence' && depth > 0) {
         builder.add(line.from, line.from, fenceLines[depth - 1]);
+      } else if (kind === 'leaf') {
+        builder.add(line.from, line.from, leafLine);
+      } else if (kind === null && depth > 0) {
+        builder.add(line.from, line.from, contentLines[depth - 1]);
+      }
+      // A quote or list line hangs its wrapped continuation under the content. The decoration is
+      // a line decoration too, so it enters at line.from after the depth and caret-block lines
+      // and before any mark decoration on the same row; inside a container it composes with the
+      // gutter padding. A fence or leaf machinery line is never a quote or list, so this only
+      // fires on prose and content rows.
+      if (kind === null) {
+        const prefix = markerPrefix(line.text);
+        if (prefix) builder.add(line.from, line.from, hangLine(prefix.length));
+      }
+      // Mark decorations start at offsets past line.from, so they enter after every line
+      // decoration on the row.
+      if (kind === 'fence' && depth > 0) {
         for (const token of fenceTokens(line.text)) {
           builder.add(
             line.from + token.from,
@@ -110,9 +148,7 @@ function buildDirectiveDecorations(view: EditorView, scan: FenceScan): Decoratio
             token.kind === 'mark' ? fenceMark : fenceLabels[depth - 1],
           );
         }
-      } else if (kind === 'leaf') builder.add(line.from, line.from, leafLine);
-      else if (kind === null) {
-        if (depth > 0) builder.add(line.from, line.from, contentLines[depth - 1]);
+      } else if (kind === null) {
         for (const r of findInlineDirectives(line.text)) {
           builder.add(line.from + r.from, line.from + r.to, inlineMark);
         }

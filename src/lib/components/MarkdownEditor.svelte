@@ -159,10 +159,19 @@ through the adapter's render. Swapping the editor stays a one-file change.
           outlineOffset: '-1px',
         },
         '.cm-line': { padding: '0' },
+        // A quote or list line hangs its wrapped continuation under the content: padding-left
+        // holds the marker width (the --cairn-hang the decoration sets) and the line's own
+        // negative text-indent (set inline) pulls the first line back, so the marker sits in the
+        // indent. This rule sits before the gutter rule so a container content line, which
+        // carries both classes, takes the gutter-plus-hang rule below.
+        '.cm-cairn-hang': { paddingLeft: 'var(--cairn-hang, 0ch)' },
         // The gutter: directive rows pad left so the text clears the deepest rail stack (the
         // depth-3 bar ends at 18px; 1.75rem keeps 10px of air beyond it). Static structure
-        // (caret-independent), so caret movement shifts no layout.
-        '.cm-cairn-directive-fence, .cm-cairn-directive-content': { paddingLeft: '1.75rem' },
+        // (caret-independent), so caret movement shifts no layout. The --cairn-hang term composes
+        // a quote/list marker's hang on top of the gutter; it defaults to 0 on rows without one.
+        '.cm-cairn-directive-fence, .cm-cairn-directive-content': {
+          paddingLeft: 'calc(1.75rem + var(--cairn-hang, 0ch))',
+        },
         ...railRules,
         '.cm-cairn-directive-mark': { color: 'var(--color-muted)' },
         '.cm-cairn-directive-label': { color: 'var(--color-accent)' },

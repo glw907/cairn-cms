@@ -292,6 +292,26 @@ describe('AdminLayout', () => {
     expect(listToggleWrap.classList.contains('lg:hidden')).toBe(true);
   });
 
+  it('lays out the shell as nested drawer regions, not merely styled parts', async () => {
+    // The visual proof of the shell confirms only "styled", not "laid out": a DaisyUI nested-scoping
+    // bug once shipped a non-rendering (display:block) drawer whose classes were all present. This
+    // guards the structure itself, the drawer regions present and correctly nested. data(true) is an
+    // owner on the default /admin/posts list route (the persistent office shell). The first arg of
+    // data(...) selects owner vs editor; the pathname stays /admin/posts, a list route.
+    const screen = render(AdminLayout, { data: data(true), children: child });
+    const drawer = screen.container.querySelector('.drawer')!;
+    expect(drawer).not.toBeNull();
+    // :scope > so a regression that flattens or detaches a region (the display:block failure mode)
+    // fails, rather than matching a descendant anywhere in the subtree.
+    const content = drawer.querySelector(':scope > .drawer-content');
+    const side = drawer.querySelector(':scope > .drawer-side');
+    expect(content).not.toBeNull();
+    expect(side).not.toBeNull();
+    // The topbar lives inside the content region, the sidebar nav inside the side region.
+    expect(content!.querySelector('.navbar')).not.toBeNull();
+    expect(side!.querySelector('nav[aria-label="Site content"]')).not.toBeNull();
+  });
+
   it('toggles the drawer with Ctrl+B', async () => {
     const screen = render(AdminLayout, { data: data(true), children: child });
     const toggle = () => screen.container.querySelector('#cairn-drawer') as HTMLInputElement;

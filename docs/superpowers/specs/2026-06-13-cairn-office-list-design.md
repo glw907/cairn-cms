@@ -153,6 +153,31 @@ and whether cairn has left real value on the table or wrongly kept something out
 into the mockup and the spec before the implementation tasks run. This is a candidate for a Workflow
 find-and-verify sweep at execution time, on Geoff's opt-in.
 
+## Adversarial UI review fold-ins (2026-06-13)
+
+The mockup ran the adversarial UI review against a live render (Ghost, WordPress, and Sveltia, plus
+Contentful and Sanity for the record-school view). The accepted findings, now in the approved mockup:
+
+- **Edited is the action signal, so it tints primary, not amber.** The pending-edit badge mirrors the
+  violet "Publish site (N)" button it feeds, and amber read as an error. New stays info, Published stays
+  ghost. Contentful colors its "Changed" state as an accent for the same reason.
+- **Hidden moves out of the status cell into a row treatment.** Visibility is orthogonal to publish
+  state, so a hidden entry de-emphasizes its whole row and carries a small eye-off "Hidden" tag by the
+  title, and the status cell shows only the publish-state badge. One cell never holds two competing pills.
+- **The list always shows its next step.** A quiet "New {concept}" ghost row sits at the foot of the
+  list card, so a short list never just stops into emptiness. This is the move that makes the few-entry
+  office read as intentional (Notion's trailing create row).
+- **The empty state owns the canvas.** A concept with no entries drops the card and centers the cairn
+  mark, copy, and CTA in the content area, rather than a small box hugging the top of a tall page. The
+  no-match state keeps its card and gains a "Clear search" action.
+- **The row commits to the table.** Summaries truncate at the column edge (uniform, not ragged), and
+  the date and status columns tighten so the title and summary carry the width they earn.
+
+Rejected, with the defense: relative dates (the date column is the entry's canonical frontmatter date,
+not a modified time, so relative would misread it); a grid or card view (cairn content has no guaranteed
+image field, and Sveltia itself hides grid view without one); more sortable columns and a glyph in every
+badge (the triage already partitions, and the text labels plus the Edited tint carry scannability).
+
 ## Constraints and cautions
 
 - No load or action contract change. The triage and the filter run client-side over the already

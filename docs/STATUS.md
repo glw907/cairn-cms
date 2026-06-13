@@ -29,13 +29,13 @@ self-describing rows with a summary line, the office finally extending the edito
 One data-layer change: the manifest and `EntrySummary` gain a `summary` string fed by the existing
 `deriveExcerpt` helper (moved down to `content/`); because the manifest verification is whole-string,
 `0.55.0` carries one `Consumers must: regenerate the content manifest` line. **The plan is
-mockup-first: Task 1 is an adversarial design review (the competitors' case, add Contentful/Sanity),
-Task 2 produces the office-list gold-standard mockup extending
-`docs/internal/design/2026-06-12-editor-shell-gold-standard.html` and STOPS for Geoff's approval
-before any implementation** (the desk precedent). Then the data-layer (Tasks 3-5), the triage and
-rows (6-7), E2E (8), the post-build critique (9), docs (10). Method: main loop for 1/2/9,
-`cairn-implementer` (explicit `model`) for the rest, full gate between dispatches. After it: the
-gates-and-tooling pass, the gallery brainstorm, P4.
+mockup-first: Task 1 builds the office-list gold-standard mockup extending
+`docs/internal/design/2026-06-12-editor-shell-gold-standard.html`, Task 2 runs an adversarial UI
+review of that mockup (the competition's list views, add Contentful/Sanity) and refines it, then the
+implementation follows straight on (no approval stop, per Geoff 2026-06-13).** Then the data-layer
+(Tasks 3-5), the triage and rows (6-7), E2E (8), the post-build critique (9), docs (10). Method:
+main loop for 1/2/9, `cairn-implementer` (explicit `model`) for the rest, full gate between
+dispatches. After it: the gates-and-tooling pass, the gallery brainstorm, P4.
 
 ## Prior next action (2026-06-13): publish `0.54.0`, then the queue (DONE)
 

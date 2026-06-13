@@ -2,8 +2,9 @@
 
 > **For agentic workers:** execute task-by-task with `cairn-implementer` (the repo default); the
 > main loop reviews each diff and verifies the full gate between dispatches. Tasks 1, 2, and 9 run
-> in the main loop (design and critique, not implementation). Task 2 ends on a HUMAN APPROVAL GATE:
-> do not start the implementation tasks until Geoff approves the mockup. Steps use checkbox syntax.
+> in the main loop (design and critique, not implementation). Task 1 builds the office-list mockup,
+> Task 2 critiques it against the competition's list views and refines it, and the implementation
+> (Tasks 3 onward) follows straight on. Steps use checkbox syntax.
 
 **Goal:** make the post/pages list (`ConceptList`) extend the editor/desk gold standard, per the
 approved spec (`docs/superpowers/specs/2026-06-13-cairn-office-list-design.md`): a triage filter
@@ -79,23 +80,10 @@ Every implementation task ends on the full gate: targeted test green, `npm run c
 
 ---
 
-### Task 1: the adversarial design review (main loop, informs the mockup)
+### Task 1: the office-list gold-standard mockup (main loop, frontend-design)
 
-Run before the mockup so its findings shape the design. This is a critique, not code.
-
-- [ ] Dispatch an independent review (a general-purpose agent, or a Workflow find-and-verify sweep
-  if Geoff opts in) that argues the competition's case against the spec's Direction B. Give it the
-  spec (`docs/superpowers/specs/2026-06-13-cairn-office-list-design.md`), the precedent findings
-  (Ghost, Sveltia, WordPress in the brainstorm), and a mandate to add Contentful and Sanity (the
-  record-school CMSs). The question: what do these tools do better on content browsing that B
-  misses, and is anything on the spec's out-of-scope list actually load-bearing for a non-technical
-  author? Demand concrete, cited findings, not affirmation.
-- [ ] Triage the findings in the main loop. Fold the accepted ones into the spec (amend it) and
-  carry them into the mockup brief. Record the rejected ones with a one-line reason, so the
-  out-of-scope list is defended, not just inherited.
-- [ ] No commit yet (the spec amendment, if any, commits with Task 2's mockup).
-
-### Task 2: the office-list gold-standard mockup, then the approval gate (main loop, frontend-design)
+A UI critique needs a concrete UI to judge, so the mockup comes first and the adversarial review
+(Task 2) runs against it. This task is design, not code.
 
 **Files:**
 - Modify: `docs/internal/design/2026-06-12-editor-shell-gold-standard.html` (add office-list screens)
@@ -112,12 +100,28 @@ Run before the mockup so its findings shape the design. This is a critique, not 
   empty state; and the active-filter state (a filter selected, the count shown). Decide the central
   visual question in the mockup: the rich row as a sortable table with a title sub-line, or a taller
   row-list.
-- [ ] Serve and eyeball the mockup (the file's documented port-4180 recipe), fold the Task 1
-  findings in, and refine to the desk's grade.
-- [ ] Commit the mockup (and the spec amendment if Task 1 produced one):
-  `Mock the office list at the gold standard`.
-- [ ] **STOP. Present the mockup to Geoff for approval, the desk precedent. Do not start Task 3
-  until he approves.** Record his approval (and any change requests, folded in) before proceeding.
+- [ ] Serve and eyeball the mockup (the file's documented port-4180 recipe), and refine to the
+  desk's grade. No commit yet; the mockup commits at the end of Task 2 after the review fold-in.
+
+### Task 2: the adversarial UI review, then refine (main loop)
+
+Run against the actual mockup from Task 1. This is a critique of the **visual design**, not the
+feature set: how the competition presents a content list, judged against the mockup we built.
+
+- [ ] Dispatch an independent review (a general-purpose agent, or a Workflow find-and-verify sweep
+  if Geoff opts in) that argues the competition's UI case against the Task 1 mockup. Give it the
+  rendered mockup (screenshots of both themes, all four screens) and the spec
+  (`docs/superpowers/specs/2026-06-13-cairn-office-list-design.md`), and a mandate to study how the
+  record-school and blog CMSs present their content lists: Ghost, Sveltia, WordPress, and added for
+  this review Contentful and Sanity. The question is about UI, not features: what do these tools'
+  list views do better on visual hierarchy, density, scannability, the row treatment, the status
+  signalling, and the triage chrome that the mockup misses? Demand concrete, cited findings (a named
+  UI pattern with the tool that does it), not affirmation.
+- [ ] Triage the findings in the main loop. Fold the accepted ones back into the mockup (refine it
+  to the desk's grade) and amend the spec where a finding changes a decision. Record the rejected
+  ones with a one-line reason, so the design is defended, not just inherited.
+- [ ] Commit the refined mockup (and the spec amendment if the review produced one):
+  `Mock the office list at the gold standard`. Then proceed straight to Task 3.
 
 ### Task 3: move `deriveExcerpt` into the content layer
 
@@ -318,19 +322,40 @@ test('a row without a summary renders no summary line', async () => {
 test('the active filter is marked by more than color', async () => {
   // the active filter button has aria-pressed true (and the check/selected affordance), not color alone
 });
+
+// a hidden entry is shown by row treatment, not a competing status badge
+test('a hidden entry carries the Hidden tag, not a Hidden badge in the status cell', async () => {
+  // entry with draft true: the row carries the eye-off "Hidden" tag by the title; the status cell
+  // holds only its publish-state badge (no second pill)
+});
+
+// the trailing create row opens the create dialog
+test('the trailing New row opens the create dialog', async () => {
+  // clicking the foot "New {label}" row shows the same create dialog as the header button
+});
 ```
 
 - [ ] **Run; expect failures.**
-- [ ] **Implement** against the approved mockup (Task 2):
-  - Add the summary line to each row (the muted secondary line under the title), rendered only when
-    `entry.summary` is non-empty.
-  - Dress the triage controls to the mockup's segmented-control / check-and-tint grammar (the
-    footer's vocabulary): `aria-pressed` on each, the count, the non-color selected cue. Reuse the
-    admin's scoped button reset (no bare-button UA chrome).
-  - Apply the mockup's row form (table-with-sub-line or row-list, whichever the mockup fixed),
-    keeping the sortable Title/Date affordance if the table shape survives (preserve `aria-sort`),
-    and keeping the always-visible delete action.
-  - Refresh the empty and few-entry states to the mockup.
+- [ ] **Implement** against the approved mockup (Task 2). The mockup fixed the row form as an enriched
+  sortable **table**: the title with a muted summary sub-line beneath it, then Date, the status badge,
+  and the delete action. The specifics, carried by the Task 2 adversarial-review fold-in:
+  - Add the summary line under the title, rendered only when `entry.summary` is non-empty (a title-only
+    entry shows no summary line). Truncate at the column edge (single-line `text-overflow: ellipsis`),
+    not at a fixed character cap.
+  - Keep the sortable Title/Date headers with `aria-sort`; the always-visible delete action stays.
+    Tighten the Date and Status columns so the title and summary carry the width.
+  - **The Edited badge tints primary** (`bg-primary/10 text-primary`, the check-and-tint grammar), not
+    amber `warning`: it is the action signal that mirrors "Publish site (N)". New stays `badge-info`,
+    Published stays `badge-ghost`.
+  - **Hidden is a row treatment, not a badge.** A `draft` entry de-emphasizes its row (~0.62 opacity on
+    the title and summary) and carries a small eye-off "Hidden" tag beside the title; the status cell
+    then shows only the publish-state badge.
+  - **A trailing "New {label}" ghost row** sits at the foot of the list card and opens the create dialog
+    (the same action as the header button), so a short list always shows its next step.
+  - Dress the triage controls to the segmented-control / check-and-tint grammar with `aria-pressed`, the
+    count, and the non-color selected cue; reuse the scoped button reset (no bare-button UA chrome).
+  - Refresh the empty state to own the content area (drop the card, center the mark/copy/CTA), and add a
+    "Clear search" action to the no-match state.
 - [ ] **Run; expect green.** Full gate. Eyeball on the showcase (`npm run package` first; the
   showcase manifest is regenerated in Task 8, so summaries appear after that).
 - [ ] **Commit:** `Dress the concept list to the office gold standard`
@@ -400,5 +425,5 @@ test('the active filter is marked by more than color', async () => {
 ## Out of scope (the spec's list, binding unless the adversarial review overturns it)
 
 Bulk actions, inline quick-edit, saved views, a grid/card view, author and comment columns,
-analytics in the row, and grouping by field (deferred). Task 1 is the check on whether any of these
-earned a place; absent an accepted finding, they stay out.
+analytics in the row, and grouping by field (deferred). Task 2's adversarial UI review is the check
+on whether any of these is load-bearing for the list's UI; absent an accepted finding, they stay out.

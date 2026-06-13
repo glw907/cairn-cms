@@ -467,5 +467,618 @@ one place to see them all. Exact bindings settle at plan time against browser co
 </div>
 </div>
 
+<!-- ============================================================
+     OFFICE LIST (0.55.0) — the post/pages list rises to the gold standard
+     Triage filter layer (publish state + counts) and self-describing rows
+     (a summary line), in the established admin vocabulary. Office chrome =
+     persistent sidebar + full topbar (per the design system).
+     ============================================================ -->
+<style>
+  /* office shell */
+  .shell { display: flex; min-height: 90vh; background: var(--color-base-200); }
+  .side { width: 14rem; flex: none; background: var(--color-base-100); border-right: 1px solid var(--cairn-card-border); display: flex; flex-direction: column; }
+  .side-brand { display: flex; align-items: center; gap: 10px; height: 64px; padding: 0 16px; border-bottom: 1px solid var(--cairn-card-border); }
+  .brand-tile { height: 32px; width: 32px; border-radius: .75rem; background: var(--color-primary); color: var(--color-primary-content); display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,.14); }
+  .brand-word { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; letter-spacing: -.01em; }
+  .side-nav { padding: 6px 10px; display: flex; flex-direction: column; gap: 1px; }
+  .nav-grp { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); padding: 16px 8px 5px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: .5rem; font-size: .875rem; font-weight: 500; color: var(--color-subtle); text-decoration: none; cursor: pointer; }
+  .nav-item:hover { background: color-mix(in oklab, var(--color-base-content) 5%, transparent); }
+  .nav-item.active { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); font-weight: 600; }
+  .nav-ico { width: 16px; height: 16px; flex: none; }
+
+  .main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+  .top { display: flex; align-items: center; height: 64px; background: var(--color-base-100); border-bottom: 1px solid var(--cairn-card-border); padding: 0 20px; gap: 12px; }
+  .palette { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; min-width: 17rem; border: 1px solid var(--cairn-card-border); border-radius: .625rem; background: var(--color-base-200); color: var(--color-muted); font: 400 .8125rem/1 var(--font-body); cursor: pointer; }
+  .palette svg { width: 15px; height: 15px; }
+  .palette .kbd-hint { margin-left: auto; }
+
+  .content { padding: 2rem 2.5rem; }
+  .office-col { max-width: 60rem; margin: 0 auto; width: 100%; }
+
+  /* page header */
+  .ofc-head { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+  .ofc-h1 { font-family: var(--font-display); font-size: 1.875rem; font-weight: 700; letter-spacing: -.025em; }
+
+  /* triage bar */
+  .triage { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+  .triage .seg button { padding: 5px 12px; font-size: .8125rem; }
+  .tcount { margin-left: 7px; font-variant-numeric: tabular-nums; color: var(--color-muted); font-weight: 500; }
+  .seg button[aria-pressed="true"] .tcount { color: var(--color-primary); }
+  .tcount-zero { opacity: .45; }
+  .triage-div { width: 1px; height: 22px; background: var(--cairn-card-border); }
+  .triage .ftr-toggle { padding: 5px 11px; font-size: .8125rem; }
+  .triage .ftr-toggle .tcount { margin-left: 6px; }
+  .triage .ftr-toggle[aria-pressed="true"] .tcount { color: var(--color-primary); }
+
+  /* the list card */
+  .list-card { background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: 1rem; box-shadow: var(--cairn-shadow); overflow: hidden; }
+  .list-head { display: grid; grid-template-columns: 1fr 7rem 7rem 2.5rem; gap: 14px; align-items: center; padding: 11px 18px; border-bottom: 1px solid var(--cairn-card-border); background: color-mix(in oklab, var(--color-base-content) 1.5%, transparent); }
+  .list-head-pages { grid-template-columns: 1fr 7rem 2.5rem; }
+  .col-sort { display: inline-flex; align-items: center; gap: 5px; font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); background: none; border: 0; cursor: pointer; padding: 0; }
+  .col-sort:hover { color: var(--color-base-content); }
+  .col-sort svg { width: 12px; height: 12px; }
+  .col-sort .arr { color: var(--color-base-content); }
+  .col-sort .quiet { opacity: .4; }
+  .col-lbl { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); }
+
+  .row { display: grid; grid-template-columns: 1fr 7rem 7rem 2.5rem; gap: 14px; align-items: center; padding: 13px 18px; border-bottom: 1px solid color-mix(in oklab, var(--cairn-card-border) 65%, transparent); }
+  .row-pages { grid-template-columns: 1fr 7rem 2.5rem; }
+  .list-card .row:last-child { border-bottom: 0; }
+  .row:hover { background: color-mix(in oklab, var(--color-base-content) 3%, transparent); }
+  .row-main { min-width: 0; }
+  .row-title { font-size: .9375rem; font-weight: 600; color: var(--color-base-content); text-decoration: none; }
+  .row-title:hover { color: var(--color-primary); text-decoration: underline; }
+  .row-sum { margin-top: 3px; font-size: .8125rem; color: var(--color-muted); line-height: 1.45; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row-date { font-size: .8125rem; color: var(--color-muted); font-variant-numeric: tabular-nums; }
+  .row-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  /* status: Edited is the action signal (it mirrors the violet Publish CTA), so it tints
+     primary instead of amber, the one lit badge in the column; not an error color */
+  .badge-edited { background: color-mix(in oklab, var(--color-primary) 12%, transparent); color: var(--color-primary); border-color: transparent; }
+  /* hidden is orthogonal to publish state: de-emphasize the whole row and label it by the
+     title (an eye-off glyph), leaving the Status cell to carry only the publish-state badge */
+  .row-hidden .row-title, .row-hidden .row-sum { opacity: .62; }
+  .row-hidden-tag { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; font-size: .6875rem; font-weight: 600; letter-spacing: .02em; color: var(--color-muted); vertical-align: 1px; }
+  .row-hidden-tag svg { width: 12px; height: 12px; }
+  /* the trailing create row: the list always shows its next step, so a short list never
+     just stops into emptiness (the move that makes the few-entry office read as intentional) */
+  .row-add { display: flex; align-items: center; gap: 8px; width: 100%; padding: 12px 18px; border: 0; border-top: 1px solid color-mix(in oklab, var(--cairn-card-border) 65%, transparent); background: none; font: 500 .875rem/1 var(--font-body); color: var(--color-primary); cursor: pointer; }
+  .row-add:hover { background: color-mix(in oklab, var(--color-primary) 6%, transparent); }
+  .row-add svg { width: 16px; height: 16px; }
+  .row-act { display: flex; justify-content: flex-end; }
+  .row-del { background: none; border: 0; cursor: pointer; padding: 6px; border-radius: .5rem; color: var(--color-error); display: inline-flex; opacity: .65; }
+  .row-del:hover { opacity: 1; background: color-mix(in oklab, var(--color-error) 12%, transparent); }
+  .row-del svg { width: 16px; height: 16px; }
+
+  /* list footer (count + pager) */
+  .ofc-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; font-size: .8125rem; color: var(--color-muted); }
+  .pager { display: flex; align-items: center; gap: 8px; }
+  .pg-btn { background: none; border: 1px solid var(--cairn-card-border); border-radius: .5rem; padding: 5px; color: var(--color-base-content); cursor: pointer; display: inline-flex; }
+  .pg-btn:disabled { opacity: .4; cursor: default; }
+  .pg-btn svg { width: 15px; height: 15px; }
+
+  /* empty / no-match states */
+  .state-pad { display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; padding: 64px 24px; }
+  .state-pad-sm { padding: 52px 24px; gap: 12px; }
+  /* the empty state owns the canvas (no card), centered, so a first-run office reads as
+     composed rather than a small box hugging the top of a tall page */
+  .state-fill { min-height: 56vh; justify-content: center; }
+  .state-h { font-weight: 600; color: var(--color-base-content); }
+  .state-sub { font-size: .875rem; color: var(--color-muted); }
+  .state-mark { color: var(--color-primary); opacity: .3; }
+  .state-clear { background: none; border: 0; padding: 0; color: var(--color-primary); font: 500 .8125rem/1 var(--font-body); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+</style>
+
+<div class="mock-label">Screen 6 · The office: posts at a realistic fill (light)</div>
+<div class="mock-note">The everyday office. The persistent sidebar and full topbar (the desk recedes
+them; the office keeps them). Above the list, the triage bar in the footer's grammar: a segmented
+control partitioning by publish state with live counts, then a hairline and the orthogonal Hidden
+toggle. Each row describes itself with a summary line under the title. The central call: the rich row
+is a sortable table with a title sub-line, comfortable height, so a sparse list still reads as content.</div>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="shell">
+    <aside class="side">
+      <div class="side-brand">
+        <span class="brand-tile"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><ellipse cx="12" cy="18.2" rx="7" ry="2.5"/><ellipse cx="12" cy="13" rx="5.2" ry="2.1"/><ellipse cx="12" cy="8.6" rx="3.7" ry="1.7"/><ellipse cx="12" cy="5" rx="2" ry="1.2"/></svg></span>
+        <span class="brand-word">cairn</span>
+      </div>
+      <nav class="side-nav" aria-label="Sections">
+        <div class="nav-grp">Content</div>
+        <a class="nav-item active" aria-current="page"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>Posts</a>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>Pages</a>
+        <div class="nav-grp">Site</div>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 13v8"/><path d="M12 3v3"/><path d="M18 6H8.5a1 1 0 0 0-.7.3l-2.3 2.4a1 1 0 0 0 0 1.4l2.3 2.4a1 1 0 0 0 .7.3H18a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1Z"/></svg>Navigation</a>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>Settings</a>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Editors</a>
+      </nav>
+    </aside>
+    <div class="main">
+      <div class="top">
+        <button class="palette"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search and commands<span class="kbd-hint">Ctrl K</span></button>
+        <div class="grow"></div>
+        <button class="ftr-link">View site</button>
+        <button class="btn btn-primary btn-sm">Publish site (3)</button>
+      </div>
+      <main class="content">
+        <div class="office-col">
+          <div class="ofc-head">
+            <h1 class="ofc-h1">Posts</h1>
+            <div class="grow"></div>
+            <label class="input input-sm"><svg class="h-4 w-4 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input type="search" placeholder="Search posts" /></label>
+            <button class="btn btn-primary btn-sm"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>New post</button>
+          </div>
+
+          <div class="triage">
+            <span class="seg" role="group" aria-label="Filter by publish state">
+              <button aria-pressed="true"><svg class="chk" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>All<span class="tcount">12</span></button>
+              <button aria-pressed="false">Pending edits<span class="tcount">3</span></button>
+              <button aria-pressed="false">Published<span class="tcount">9</span></button>
+            </span>
+            <span class="triage-div" aria-hidden="true"></span>
+            <button class="ftr-toggle" aria-pressed="false">Hidden<span class="tcount">1</span></button>
+          </div>
+
+          <div class="list-card">
+            <div class="list-head">
+              <button class="col-sort" aria-label="Sort by title">Title <svg class="quiet" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg></button>
+              <button class="col-sort" aria-label="Sort by date, descending">Date <svg class="arr" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg></button>
+              <span class="col-lbl">Status</span>
+              <span></span>
+            </div>
+
+            <div class="row"><div class="row-main"><a class="row-title">Getting ready for spring</a><div class="row-sum">Trail report and what to bring for the first weeks of spring skiing.</div></div><div class="row-date">Jun 1, 2026</div><div class="row-badges"><span class="badge badge-sm badge-edited font-medium">Edited</span></div><div class="row-act"><button class="row-del" aria-label="Delete Getting ready for spring"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></div>
+            <div class="row"><div class="row-main"><a class="row-title">Trail conditions: the week of May 25</a><div class="row-sum">Fresh corduroy on the lake loop, soft afternoons, and where the early melt is showing through.</div></div><div class="row-date">May 25, 2026</div><div class="row-badges"><span class="badge badge-ghost badge-sm font-medium">Published</span></div><div class="row-act"><button class="row-del" aria-label="Delete Trail conditions"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></div>
+            <div class="row"><div class="row-main"><a class="row-title">A new groomer joins the fleet</a><div class="row-sum">We added a second winch cat, so the steep pitch on the back side finally gets a proper nightly set before dawn.</div></div><div class="row-date">May 20, 2026</div><div class="row-badges"><span class="badge badge-info badge-sm font-medium">New</span></div><div class="row-act"><button class="row-del" aria-label="Delete A new groomer joins the fleet"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></div>
+            <div class="row"><div class="row-main"><a class="row-title">Spring volunteer day recap</a><div class="row-sum">Forty of you turned out to pull brush and re-stake the corners. Here is how it went.</div></div><div class="row-date">May 12, 2026</div><div class="row-badges"><span class="badge badge-ghost badge-sm font-medium">Published</span></div><div class="row-act"><button class="row-del" aria-label="Delete Spring volunteer day recap"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></div>
+            <div class="row"><div class="row-main"><a class="row-title">Setting the classic track</a><div class="row-sum">A short walk through how the crew lays the classic tracks and why they drift by afternoon.</div></div><div class="row-date">Apr 28, 2026</div><div class="row-badges"><span class="badge badge-ghost badge-sm font-medium">Published</span></div><div class="row-act"><button class="row-del" aria-label="Delete Setting the classic track"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></div>
+            <div class="row"><div class="row-main"><a class="row-title">Waxing for warm afternoons</a><div class="row-sum">Klister is back. A plain-language guide to picking a wax when the snow turns to corn.</div></div><div class="row-date">Apr 15, 2026</div><div class="row-badges"><span class="badge badge-sm badge-edited font-medium">Edited</span></div><div class="row-act"><button class="row-del" aria-label="Delete Waxing for warm afternoons"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></div>
+            <div class="row"><div class="row-main"><a class="row-title">Night skiing returns on Fridays</a><div class="row-sum">The lights are on again. Loop hours, the warming hut schedule, and a note on headlamps.</div></div><div class="row-date">Apr 2, 2026</div><div class="row-badges"><span class="badge badge-ghost badge-sm font-medium">Published</span></div><div class="row-act"><button class="row-del" aria-label="Delete Night skiing returns on Fridays"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></div>
+            <div class="row row-hidden"><div class="row-main"><a class="row-title">Meet the trail crew</a><span class="row-hidden-tag"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.5 13.5 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><path d="m2 2 20 20"/></svg>Hidden</span><div class="row-sum">The volunteers and staff who set the track before dawn all winter long.</div></div><div class="row-date">Mar 28, 2026</div><div class="row-badges"><span class="badge badge-ghost badge-sm font-medium">Published</span></div><div class="row-act"><button class="row-del" aria-label="Delete Meet the trail crew"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></div>
+            <div class="row"><div class="row-main"><a class="row-title">Early season base report</a><div class="row-sum">Where the base is deep enough to ski and where the rocks are still close to the surface.</div></div><div class="row-date">Mar 15, 2026</div><div class="row-badges"><span class="badge badge-ghost badge-sm font-medium">Published</span></div><div class="row-act"><button class="row-del" aria-label="Delete Early season base report"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></div>
+            <div class="row"><div class="row-main"><a class="row-title">Season pass details for 2026</a><div class="row-sum">Pass prices, the family rate, and the dates the trailhead kiosk is staffed.</div></div><div class="row-date">Mar 1, 2026</div><div class="row-badges"><span class="badge badge-ghost badge-sm font-medium">Published</span></div><div class="row-act"><button class="row-del" aria-label="Delete Season pass details for 2026"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></div>
+            <button class="row-add" type="button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>New post</button>
+          </div>
+
+          <div class="ofc-foot">
+            <span>12 of 12</span>
+            <div class="pager">
+              <select class="select select-sm" aria-label="Rows per page"><option>10</option><option>25</option><option>50</option></select>
+              <button class="pg-btn" disabled aria-label="Previous page"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+              <span>Page 1 of 2</span>
+              <button class="pg-btn" aria-label="Next page"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</div></div>
+
+<div class="mock-label">Screen 7 · The office: posts at a realistic fill (dark)</div>
+<div class="mock-note">The same office through the dark tokens; everything resolves from the theme variables.</div>
+<div class="screen"><div data-theme="cairn-admin-dark">
+  <div class="shell">
+    <aside class="side">
+      <div class="side-brand">
+        <span class="brand-tile"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><ellipse cx="12" cy="18.2" rx="7" ry="2.5"/><ellipse cx="12" cy="13" rx="5.2" ry="2.1"/><ellipse cx="12" cy="8.6" rx="3.7" ry="1.7"/><ellipse cx="12" cy="5" rx="2" ry="1.2"/></svg></span>
+        <span class="brand-word">cairn</span>
+      </div>
+      <nav class="side-nav" aria-label="Sections">
+        <div class="nav-grp">Content</div>
+        <a class="nav-item active" aria-current="page"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>Posts</a>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>Pages</a>
+        <div class="nav-grp">Site</div>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 13v8"/><path d="M12 3v3"/><path d="M18 6H8.5a1 1 0 0 0-.7.3l-2.3 2.4a1 1 0 0 0 0 1.4l2.3 2.4a1 1 0 0 0 .7.3H18a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1Z"/></svg>Navigation</a>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>Settings</a>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Editors</a>
+      </nav>
+    </aside>
+    <div class="main">
+      <div class="top">
+        <button class="palette"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search and commands<span class="kbd-hint">Ctrl K</span></button>
+        <div class="grow"></div>
+        <button class="ftr-link">View site</button>
+        <button class="btn btn-primary btn-sm">Publish site (3)</button>
+      </div>
+      <main class="content">
+        <div class="office-col">
+          <div class="ofc-head">
+            <h1 class="ofc-h1">Posts</h1>
+            <div class="grow"></div>
+            <label class="input input-sm"><svg class="h-4 w-4 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input type="search" placeholder="Search posts" /></label>
+            <button class="btn btn-primary btn-sm"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>New post</button>
+          </div>
+
+          <div class="triage">
+            <span class="seg" role="group" aria-label="Filter by publish state">
+              <button aria-pressed="true"><svg class="chk" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>All<span class="tcount">12</span></button>
+              <button aria-pressed="false">Pending edits<span class="tcount">3</span></button>
+              <button aria-pressed="false">Published<span class="tcount">9</span></button>
+            </span>
+            <span class="triage-div" aria-hidden="true"></span>
+            <button class="ftr-toggle" aria-pressed="false">Hidden<span class="tcount">1</span></button>
+          </div>
+
+          <div class="list-card">
+            <div class="list-head">
+              <button class="col-sort" aria-label="Sort by title">Title <svg class="quiet" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg></button>
+              <button class="col-sort" aria-label="Sort by date, descending">Date <svg class="arr" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg></button>
+              <span class="col-lbl">Status</span>
+              <span></span>
+            </div>
+            <div class="row"><div class="row-main"><a class="row-title">Getting ready for spring</a><div class="row-sum">Trail report and what to bring for the first weeks of spring skiing.</div></div><div class="row-date">Jun 1, 2026</div><div class="row-badges"><span class="badge badge-sm badge-edited font-medium">Edited</span></div><div class="row-act"><button class="row-del" aria-label="Delete Getting ready for spring"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></div>
+            <div class="row"><div class="row-main"><a class="row-title">Trail conditions: the week of May 25</a><div class="row-sum">Fresh corduroy on the lake loop, soft afternoons, and where the early melt is showing through.</div></div><div class="row-date">May 25, 2026</div><div class="row-badges"><span class="badge badge-ghost badge-sm font-medium">Published</span></div><div class="row-act"><button class="row-del" aria-label="Delete Trail conditions"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></div>
+            <div class="row"><div class="row-main"><a class="row-title">A new groomer joins the fleet</a><div class="row-sum">We added a second winch cat, so the steep pitch on the back side finally gets a proper nightly set before dawn.</div></div><div class="row-date">May 20, 2026</div><div class="row-badges"><span class="badge badge-info badge-sm font-medium">New</span></div><div class="row-act"><button class="row-del" aria-label="Delete A new groomer joins the fleet"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></div>
+            <div class="row"><div class="row-main"><a class="row-title">Spring volunteer day recap</a><div class="row-sum">Forty of you turned out to pull brush and re-stake the corners. Here is how it went.</div></div><div class="row-date">May 12, 2026</div><div class="row-badges"><span class="badge badge-ghost badge-sm font-medium">Published</span></div><div class="row-act"><button class="row-del" aria-label="Delete Spring volunteer day recap"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></div>
+            <div class="row"><div class="row-main"><a class="row-title">Setting the classic track</a><div class="row-sum">A short walk through how the crew lays the classic tracks and why they drift by afternoon.</div></div><div class="row-date">Apr 28, 2026</div><div class="row-badges"><span class="badge badge-ghost badge-sm font-medium">Published</span></div><div class="row-act"><button class="row-del" aria-label="Delete Setting the classic track"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></div>
+            <div class="row"><div class="row-main"><a class="row-title">Night skiing returns on Fridays</a><div class="row-sum">The lights are on again. Loop hours, the warming hut schedule, and a note on headlamps.</div></div><div class="row-date">Apr 2, 2026</div><div class="row-badges"><span class="badge badge-ghost badge-sm font-medium">Published</span></div><div class="row-act"><button class="row-del" aria-label="Delete Night skiing returns on Fridays"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></div>
+            <button class="row-add" type="button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>New post</button>
+          </div>
+
+          <div class="ofc-foot">
+            <span>12 of 12</span>
+            <div class="pager">
+              <select class="select select-sm" aria-label="Rows per page"><option>10</option><option>25</option><option>50</option></select>
+              <button class="pg-btn" disabled aria-label="Previous page"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+              <span>Page 1 of 2</span>
+              <button class="pg-btn" aria-label="Next page"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</div></div>
+
+<div class="mock-label">Screen 8 · Active filter: Published selected (light)</div>
+<div class="mock-note">A filter chosen: the Published segment tints and shows the check (the non-color cue,
+WCAG 1.4.1); the list narrows to the live-and-clean entries and the count reads "9 of 12". Search and
+the Hidden toggle compose with the active partition. Selecting a filter resets to page one.</div>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="shell">
+    <aside class="side">
+      <div class="side-brand">
+        <span class="brand-tile"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><ellipse cx="12" cy="18.2" rx="7" ry="2.5"/><ellipse cx="12" cy="13" rx="5.2" ry="2.1"/><ellipse cx="12" cy="8.6" rx="3.7" ry="1.7"/><ellipse cx="12" cy="5" rx="2" ry="1.2"/></svg></span>
+        <span class="brand-word">cairn</span>
+      </div>
+      <nav class="side-nav" aria-label="Sections">
+        <div class="nav-grp">Content</div>
+        <a class="nav-item active" aria-current="page"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>Posts</a>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>Pages</a>
+        <div class="nav-grp">Site</div>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 13v8"/><path d="M12 3v3"/><path d="M18 6H8.5a1 1 0 0 0-.7.3l-2.3 2.4a1 1 0 0 0 0 1.4l2.3 2.4a1 1 0 0 0 .7.3H18a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1Z"/></svg>Navigation</a>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>Settings</a>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Editors</a>
+      </nav>
+    </aside>
+    <div class="main">
+      <div class="top">
+        <button class="palette"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search and commands<span class="kbd-hint">Ctrl K</span></button>
+        <div class="grow"></div>
+        <button class="ftr-link">View site</button>
+        <button class="btn btn-primary btn-sm">Publish site (3)</button>
+      </div>
+      <main class="content">
+        <div class="office-col">
+          <div class="ofc-head">
+            <h1 class="ofc-h1">Posts</h1>
+            <div class="grow"></div>
+            <label class="input input-sm"><svg class="h-4 w-4 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input type="search" placeholder="Search posts" /></label>
+            <button class="btn btn-primary btn-sm"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>New post</button>
+          </div>
+
+          <div class="triage">
+            <span class="seg" role="group" aria-label="Filter by publish state">
+              <button aria-pressed="false">All<span class="tcount">12</span></button>
+              <button aria-pressed="false">Pending edits<span class="tcount">3</span></button>
+              <button aria-pressed="true"><svg class="chk" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Published<span class="tcount">9</span></button>
+            </span>
+            <span class="triage-div" aria-hidden="true"></span>
+            <button class="ftr-toggle" aria-pressed="false">Hidden<span class="tcount">1</span></button>
+          </div>
+
+          <div class="list-card">
+            <div class="list-head">
+              <button class="col-sort" aria-label="Sort by title">Title <svg class="quiet" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg></button>
+              <button class="col-sort" aria-label="Sort by date, descending">Date <svg class="arr" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg></button>
+              <span class="col-lbl">Status</span>
+              <span></span>
+            </div>
+            <div class="row"><div class="row-main"><a class="row-title">Trail conditions: the week of May 25</a><div class="row-sum">Fresh corduroy on the lake loop, soft afternoons, and where the early melt is showing through.</div></div><div class="row-date">May 25, 2026</div><div class="row-badges"><span class="badge badge-ghost badge-sm font-medium">Published</span></div><div class="row-act"><button class="row-del" aria-label="Delete Trail conditions"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></div>
+            <div class="row"><div class="row-main"><a class="row-title">Spring volunteer day recap</a><div class="row-sum">Forty of you turned out to pull brush and re-stake the corners. Here is how it went.</div></div><div class="row-date">May 12, 2026</div><div class="row-badges"><span class="badge badge-ghost badge-sm font-medium">Published</span></div><div class="row-act"><button class="row-del" aria-label="Delete Spring volunteer day recap"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></div>
+            <div class="row"><div class="row-main"><a class="row-title">Setting the classic track</a><div class="row-sum">A short walk through how the crew lays the classic tracks and why they drift by afternoon.</div></div><div class="row-date">Apr 28, 2026</div><div class="row-badges"><span class="badge badge-ghost badge-sm font-medium">Published</span></div><div class="row-act"><button class="row-del" aria-label="Delete Setting the classic track"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></div>
+            <div class="row"><div class="row-main"><a class="row-title">Night skiing returns on Fridays</a><div class="row-sum">The lights are on again. Loop hours, the warming hut schedule, and a note on headlamps.</div></div><div class="row-date">Apr 2, 2026</div><div class="row-badges"><span class="badge badge-ghost badge-sm font-medium">Published</span></div><div class="row-act"><button class="row-del" aria-label="Delete Night skiing returns on Fridays"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></div>
+            <div class="row row-hidden"><div class="row-main"><a class="row-title">Meet the trail crew</a><span class="row-hidden-tag"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.5 13.5 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><path d="m2 2 20 20"/></svg>Hidden</span><div class="row-sum">The volunteers and staff who set the track before dawn all winter long.</div></div><div class="row-date">Mar 28, 2026</div><div class="row-badges"><span class="badge badge-ghost badge-sm font-medium">Published</span></div><div class="row-act"><button class="row-del" aria-label="Delete Meet the trail crew"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></div>
+            <div class="row"><div class="row-main"><a class="row-title">Early season base report</a><div class="row-sum">Where the base is deep enough to ski and where the rocks are still close to the surface.</div></div><div class="row-date">Mar 15, 2026</div><div class="row-badges"><span class="badge badge-ghost badge-sm font-medium">Published</span></div><div class="row-act"><button class="row-del" aria-label="Delete Early season base report"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></div>
+            <button class="row-add" type="button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>New post</button>
+          </div>
+
+          <div class="ofc-foot">
+            <span>9 of 12</span>
+            <div class="pager">
+              <select class="select select-sm" aria-label="Rows per page"><option>10</option><option>25</option><option>50</option></select>
+              <button class="pg-btn" disabled aria-label="Previous page"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+              <span>Page 1 of 1</span>
+              <button class="pg-btn" disabled aria-label="Next page"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</div></div>
+
+<div class="mock-label">Screen 9 · The few-entry office: pages (light)</div>
+<div class="mock-note">The sparseness that triggered this pass, treated as a designed state. An undated
+concept (Pages: no date column or sort), three entries. Tall self-describing rows plus the triage bar
+keep the office reading as content, not whitespace. The last row (Contact) is title-only, so it has no
+summary and renders no summary line. The zero-count filters dim but stay, so the layout never jumps.</div>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="shell">
+    <aside class="side">
+      <div class="side-brand">
+        <span class="brand-tile"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><ellipse cx="12" cy="18.2" rx="7" ry="2.5"/><ellipse cx="12" cy="13" rx="5.2" ry="2.1"/><ellipse cx="12" cy="8.6" rx="3.7" ry="1.7"/><ellipse cx="12" cy="5" rx="2" ry="1.2"/></svg></span>
+        <span class="brand-word">cairn</span>
+      </div>
+      <nav class="side-nav" aria-label="Sections">
+        <div class="nav-grp">Content</div>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>Posts</a>
+        <a class="nav-item active" aria-current="page"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>Pages</a>
+        <div class="nav-grp">Site</div>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 13v8"/><path d="M12 3v3"/><path d="M18 6H8.5a1 1 0 0 0-.7.3l-2.3 2.4a1 1 0 0 0 0 1.4l2.3 2.4a1 1 0 0 0 .7.3H18a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1Z"/></svg>Navigation</a>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>Settings</a>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Editors</a>
+      </nav>
+    </aside>
+    <div class="main">
+      <div class="top">
+        <button class="palette"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search and commands<span class="kbd-hint">Ctrl K</span></button>
+        <div class="grow"></div>
+        <button class="ftr-link">View site</button>
+        <button class="btn btn-primary btn-sm">Publish site (3)</button>
+      </div>
+      <main class="content">
+        <div class="office-col">
+          <div class="ofc-head">
+            <h1 class="ofc-h1">Pages</h1>
+            <div class="grow"></div>
+            <label class="input input-sm"><svg class="h-4 w-4 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input type="search" placeholder="Search pages" /></label>
+            <button class="btn btn-primary btn-sm"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>New page</button>
+          </div>
+
+          <div class="triage">
+            <span class="seg" role="group" aria-label="Filter by publish state">
+              <button aria-pressed="true"><svg class="chk" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>All<span class="tcount">3</span></button>
+              <button aria-pressed="false">Pending edits<span class="tcount tcount-zero">0</span></button>
+              <button aria-pressed="false">Published<span class="tcount">3</span></button>
+            </span>
+            <span class="triage-div" aria-hidden="true"></span>
+            <button class="ftr-toggle" aria-pressed="false">Hidden<span class="tcount tcount-zero">0</span></button>
+          </div>
+
+          <div class="list-card">
+            <div class="list-head list-head-pages">
+              <button class="col-sort" aria-label="Sort by title">Title <svg class="arr" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg></button>
+              <span class="col-lbl">Status</span>
+              <span></span>
+            </div>
+            <div class="row row-pages"><div class="row-main"><a class="row-title">About the club</a><div class="row-sum">Who we are, where we ski, and how the trails came to be.</div></div><div class="row-badges"><span class="badge badge-ghost badge-sm font-medium">Published</span></div><div class="row-act"><button class="row-del" aria-label="Delete About the club"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></div>
+            <div class="row row-pages"><div class="row-main"><a class="row-title">Membership</a><div class="row-sum">Season passes, day rates, and what your membership pays for.</div></div><div class="row-badges"><span class="badge badge-ghost badge-sm font-medium">Published</span></div><div class="row-act"><button class="row-del" aria-label="Delete Membership"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></div>
+            <div class="row row-pages"><div class="row-main"><a class="row-title">Contact</a></div><div class="row-badges"><span class="badge badge-ghost badge-sm font-medium">Published</span></div><div class="row-act"><button class="row-del" aria-label="Delete Contact"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></div>
+            <button class="row-add" type="button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>New page</button>
+          </div>
+
+          <div class="ofc-foot">
+            <span>3 of 3</span>
+            <div class="pager">
+              <select class="select select-sm" aria-label="Rows per page"><option>10</option><option>25</option><option>50</option></select>
+              <button class="pg-btn" disabled aria-label="Previous page"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+              <span>Page 1 of 1</span>
+              <button class="pg-btn" disabled aria-label="Next page"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</div></div>
+
+<div class="mock-label">Screen 10 · The few-entry office: pages (dark)</div>
+<div class="mock-note">The same sparse state through the dark tokens.</div>
+<div class="screen"><div data-theme="cairn-admin-dark">
+  <div class="shell">
+    <aside class="side">
+      <div class="side-brand">
+        <span class="brand-tile"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><ellipse cx="12" cy="18.2" rx="7" ry="2.5"/><ellipse cx="12" cy="13" rx="5.2" ry="2.1"/><ellipse cx="12" cy="8.6" rx="3.7" ry="1.7"/><ellipse cx="12" cy="5" rx="2" ry="1.2"/></svg></span>
+        <span class="brand-word">cairn</span>
+      </div>
+      <nav class="side-nav" aria-label="Sections">
+        <div class="nav-grp">Content</div>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>Posts</a>
+        <a class="nav-item active" aria-current="page"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>Pages</a>
+        <div class="nav-grp">Site</div>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 13v8"/><path d="M12 3v3"/><path d="M18 6H8.5a1 1 0 0 0-.7.3l-2.3 2.4a1 1 0 0 0 0 1.4l2.3 2.4a1 1 0 0 0 .7.3H18a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1Z"/></svg>Navigation</a>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>Settings</a>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Editors</a>
+      </nav>
+    </aside>
+    <div class="main">
+      <div class="top">
+        <button class="palette"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search and commands<span class="kbd-hint">Ctrl K</span></button>
+        <div class="grow"></div>
+        <button class="ftr-link">View site</button>
+        <button class="btn btn-primary btn-sm">Publish site (3)</button>
+      </div>
+      <main class="content">
+        <div class="office-col">
+          <div class="ofc-head">
+            <h1 class="ofc-h1">Pages</h1>
+            <div class="grow"></div>
+            <label class="input input-sm"><svg class="h-4 w-4 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input type="search" placeholder="Search pages" /></label>
+            <button class="btn btn-primary btn-sm"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>New page</button>
+          </div>
+
+          <div class="triage">
+            <span class="seg" role="group" aria-label="Filter by publish state">
+              <button aria-pressed="true"><svg class="chk" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>All<span class="tcount">3</span></button>
+              <button aria-pressed="false">Pending edits<span class="tcount tcount-zero">0</span></button>
+              <button aria-pressed="false">Published<span class="tcount">3</span></button>
+            </span>
+            <span class="triage-div" aria-hidden="true"></span>
+            <button class="ftr-toggle" aria-pressed="false">Hidden<span class="tcount tcount-zero">0</span></button>
+          </div>
+
+          <div class="list-card">
+            <div class="list-head list-head-pages">
+              <button class="col-sort" aria-label="Sort by title">Title <svg class="arr" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg></button>
+              <span class="col-lbl">Status</span>
+              <span></span>
+            </div>
+            <div class="row row-pages"><div class="row-main"><a class="row-title">About the club</a><div class="row-sum">Who we are, where we ski, and how the trails came to be.</div></div><div class="row-badges"><span class="badge badge-ghost badge-sm font-medium">Published</span></div><div class="row-act"><button class="row-del" aria-label="Delete About the club"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></div>
+            <div class="row row-pages"><div class="row-main"><a class="row-title">Membership</a><div class="row-sum">Season passes, day rates, and what your membership pays for.</div></div><div class="row-badges"><span class="badge badge-ghost badge-sm font-medium">Published</span></div><div class="row-act"><button class="row-del" aria-label="Delete Membership"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></div>
+            <div class="row row-pages"><div class="row-main"><a class="row-title">Contact</a></div><div class="row-badges"><span class="badge badge-ghost badge-sm font-medium">Published</span></div><div class="row-act"><button class="row-del" aria-label="Delete Contact"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></div>
+            <button class="row-add" type="button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>New page</button>
+          </div>
+
+          <div class="ofc-foot">
+            <span>3 of 3</span>
+            <div class="pager">
+              <select class="select select-sm" aria-label="Rows per page"><option>10</option><option>25</option><option>50</option></select>
+              <button class="pg-btn" disabled aria-label="Previous page"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+              <span>Page 1 of 1</span>
+              <button class="pg-btn" disabled aria-label="Next page"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</div></div>
+
+<div class="mock-label">Screen 11 · The empty office (light) and the no-match state</div>
+<div class="mock-note">Left: a concept with no entries at all keeps the brand-tile empty-state recipe (the
+cairn mark, concept-named copy, the create CTA); no triage bar, since there is nothing to triage. Right:
+a search with no hit keeps the triage bar (entries exist, none match) and shows the no-match notice.</div>
+<div class="screen" style="display:flex; gap:0;">
+  <div data-theme="cairn-admin" style="flex:1; border-right:1px solid #aaa;">
+    <div class="shell" style="min-height:0;">
+      <div class="main">
+        <div class="top">
+          <button class="palette" style="min-width:12rem;"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search<span class="kbd-hint">Ctrl K</span></button>
+          <div class="grow"></div>
+          <button class="btn btn-primary btn-sm">Publish site (0)</button>
+        </div>
+        <main class="content">
+          <div class="office-col">
+            <div class="ofc-head"><h1 class="ofc-h1">Posts</h1></div>
+            <div class="state-pad state-fill">
+              <svg class="state-mark" viewBox="0 0 24 24" width="48" height="48" fill="currentColor" aria-hidden="true"><ellipse cx="12" cy="18.2" rx="7" ry="2.5"/><ellipse cx="12" cy="13" rx="5.2" ry="2.1"/><ellipse cx="12" cy="8.6" rx="3.7" ry="1.7"/><ellipse cx="12" cy="5" rx="2" ry="1.2"/></svg>
+              <div>
+                <p class="state-h">No posts yet</p>
+                <p class="state-sub">Stack your first one and it will show up here.</p>
+              </div>
+              <button class="btn btn-primary btn-sm"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>New post</button>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </div>
+  <div data-theme="cairn-admin" style="flex:1;">
+    <div class="shell" style="min-height:0;">
+      <div class="main">
+        <div class="top">
+          <button class="palette" style="min-width:12rem;"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search<span class="kbd-hint">Ctrl K</span></button>
+          <div class="grow"></div>
+          <button class="btn btn-primary btn-sm">Publish site (3)</button>
+        </div>
+        <main class="content">
+          <div class="office-col">
+            <div class="ofc-head">
+              <h1 class="ofc-h1">Posts</h1>
+              <div class="grow"></div>
+              <label class="input input-sm"><svg class="h-4 w-4 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input type="search" value="powder" /></label>
+            </div>
+            <div class="triage">
+              <span class="seg" role="group" aria-label="Filter by publish state">
+                <button aria-pressed="true"><svg class="chk" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>All<span class="tcount">12</span></button>
+                <button aria-pressed="false">Pending edits<span class="tcount">3</span></button>
+                <button aria-pressed="false">Published<span class="tcount">9</span></button>
+              </span>
+              <span class="triage-div" aria-hidden="true"></span>
+              <button class="ftr-toggle" aria-pressed="false">Hidden<span class="tcount">1</span></button>
+            </div>
+            <div class="list-card">
+              <div class="state-pad state-pad-sm" role="status">
+                <svg style="opacity:.4; color: var(--color-subtle);" fill="none" viewBox="0 0 24 24" width="30" height="30" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <p class="state-sub">No posts match <span style="font-weight:600; color: var(--color-base-content);">"powder"</span>.</p>
+                <button class="state-clear" type="button">Clear search</button>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mock-label">Triage states: the two axes, including the combined state</div>
+<div class="mock-note">The partition (All / Pending edits / Published) and the orthogonal Hidden toggle are
+independent. The fourth panel is the combined state no screen above shows: a partition and Hidden both
+lit at once. Each uses the check-and-tint active grammar, where the check is the non-color cue (WCAG 1.4.1).</div>
+<div class="screen" style="background:#d8d4cf; padding:18px 16px;">
+  <div data-theme="cairn-admin" style="display:grid; grid-template-columns:1fr 1fr; gap:20px 18px;">
+    <div>
+      <div style="font: 600 11px system-ui; letter-spacing:.06em; text-transform:uppercase; color:#777; margin-bottom:8px;">Resting · All (default)</div>
+      <div class="triage" style="margin:0;">
+        <span class="seg" role="group" aria-label="Filter by publish state">
+          <button aria-pressed="true"><svg class="chk" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>All<span class="tcount">12</span></button>
+          <button aria-pressed="false">Pending edits<span class="tcount">3</span></button>
+          <button aria-pressed="false">Published<span class="tcount">9</span></button>
+        </span>
+        <span class="triage-div" aria-hidden="true"></span>
+        <button class="ftr-toggle" aria-pressed="false">Hidden<span class="tcount">1</span></button>
+      </div>
+    </div>
+    <div>
+      <div style="font: 600 11px system-ui; letter-spacing:.06em; text-transform:uppercase; color:#777; margin-bottom:8px;">Partition · Published</div>
+      <div class="triage" style="margin:0;">
+        <span class="seg" role="group" aria-label="Filter by publish state">
+          <button aria-pressed="false">All<span class="tcount">12</span></button>
+          <button aria-pressed="false">Pending edits<span class="tcount">3</span></button>
+          <button aria-pressed="true"><svg class="chk" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Published<span class="tcount">9</span></button>
+        </span>
+        <span class="triage-div" aria-hidden="true"></span>
+        <button class="ftr-toggle" aria-pressed="false">Hidden<span class="tcount">1</span></button>
+      </div>
+    </div>
+    <div>
+      <div style="font: 600 11px system-ui; letter-spacing:.06em; text-transform:uppercase; color:#777; margin-bottom:8px;">Hidden on · within All</div>
+      <div class="triage" style="margin:0;">
+        <span class="seg" role="group" aria-label="Filter by publish state">
+          <button aria-pressed="true"><svg class="chk" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>All<span class="tcount">12</span></button>
+          <button aria-pressed="false">Pending edits<span class="tcount">3</span></button>
+          <button aria-pressed="false">Published<span class="tcount">9</span></button>
+        </span>
+        <span class="triage-div" aria-hidden="true"></span>
+        <button class="ftr-toggle" aria-pressed="true"><svg class="chk" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Hidden<span class="tcount">1</span></button>
+      </div>
+    </div>
+    <div>
+      <div style="font: 600 11px system-ui; letter-spacing:.06em; text-transform:uppercase; color:#777; margin-bottom:8px;">Combined · Published + Hidden</div>
+      <div class="triage" style="margin:0;">
+        <span class="seg" role="group" aria-label="Filter by publish state">
+          <button aria-pressed="false">All<span class="tcount">12</span></button>
+          <button aria-pressed="false">Pending edits<span class="tcount">3</span></button>
+          <button aria-pressed="true"><svg class="chk" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Published<span class="tcount">9</span></button>
+        </span>
+        <span class="triage-div" aria-hidden="true"></span>
+        <button class="ftr-toggle" aria-pressed="true"><svg class="chk" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Hidden<span class="tcount">1</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

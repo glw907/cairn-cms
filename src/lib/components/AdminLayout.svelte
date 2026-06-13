@@ -11,6 +11,7 @@ identical on every host regardless of the site's own theme.
   import type { LayoutData } from '../sveltekit/content-routes.js';
   import CsrfField from './CsrfField.svelte';
   import { CSRF_CONTEXT_KEY } from './csrf-context.js';
+  import { provideTopbar, type TopbarHolder } from './topbar-context.js';
   import { MenuIcon, LogOutIcon, SunIcon, MoonIcon, ChevronRightIcon, SearchIcon } from './admin-icons.js';
   import CairnLogo from './CairnLogo.svelte';
   import { cairnFaviconHref } from './cairn-favicon.js';
@@ -225,6 +226,16 @@ identical on every host regardless of the site's own theme.
 
   // The browser-tab title: the deepest breadcrumb (the active concept or entry), then the brand.
   const pageTitle = $derived(crumbs.length ? crumbs[crumbs.length - 1].label : 'Admin');
+
+  // A desk route is an open document (/admin/<concept>/<id>): the third path segment is the entry.
+  // The band has one job there, so the topbar drops the palette trigger and the site-wide Publish
+  // button and renders the document's own desk controls instead.
+  const isDeskRoute = $derived(data.pathname.split('/').filter(Boolean).length > 2);
+
+  // The topbar context portal: a reactive holder a descendant document fills with its desk snippet.
+  // EditPage registers on mount and nulls it on teardown; the office routes leave it null.
+  let topbar = $state<TopbarHolder>({ desk: null });
+  provideTopbar(topbar);
 </script>
 
 <svelte:head>
@@ -268,25 +279,32 @@ identical on every host regardless of the site's own theme.
             <span class="font-semibold tracking-tight">{data.siteName}</span>
           {/if}
         </div>
-        <!-- The command-palette trigger fills the center: a quick jump-to over the admin, opened here
-             or with Cmd/Ctrl+K. -->
-        <div class="flex min-w-0 flex-1 justify-center">
-          <button
-            type="button"
-            onclick={openPalette}
-            class="flex w-full max-w-md items-center gap-2 rounded-field border border-[var(--cairn-card-border)] bg-base-200/70 px-3 py-1.5 text-sm text-[var(--color-muted)] transition-colors hover:bg-base-200 hover:text-base-content"
-          >
-            <SearchIcon class="h-4 w-4 shrink-0" aria-hidden="true" />
-            <span class="truncate">Search or jump to&hellip;</span>
-            <kbd class="ml-auto hidden rounded border border-[var(--cairn-card-border)] px-1.5 text-[0.6875rem] font-medium sm:inline">&#8984;K</kbd>
-          </button>
-        </div>
-        {#if pendingCount > 0}
-          <div class="flex-none">
-            <button type="button" class="btn btn-primary btn-sm" aria-haspopup="dialog" onclick={() => publishAllDialog?.showModal()}>
-              Publish site ({pendingCount})
+        {#if isDeskRoute}
+          <!-- An open document takes the band: the registered desk snippet (the status and action
+               clusters) fills the row to the right of the breadcrumb. The palette trigger and the
+               site-wide Publish button stand down so the band has one job here. -->
+          {@render topbar.desk?.()}
+        {:else}
+          <!-- The command-palette trigger fills the center: a quick jump-to over the admin, opened
+               here or with Cmd/Ctrl+K. -->
+          <div class="flex min-w-0 flex-1 justify-center">
+            <button
+              type="button"
+              onclick={openPalette}
+              class="flex w-full max-w-md items-center gap-2 rounded-field border border-[var(--cairn-card-border)] bg-base-200/70 px-3 py-1.5 text-sm text-[var(--color-muted)] transition-colors hover:bg-base-200 hover:text-base-content"
+            >
+              <SearchIcon class="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span class="truncate">Search or jump to&hellip;</span>
+              <kbd class="ml-auto hidden rounded border border-[var(--cairn-card-border)] px-1.5 text-[0.6875rem] font-medium sm:inline">&#8984;K</kbd>
             </button>
           </div>
+          {#if pendingCount > 0}
+            <div class="flex-none">
+              <button type="button" class="btn btn-primary btn-sm" aria-haspopup="dialog" onclick={() => publishAllDialog?.showModal()}>
+                Publish site ({pendingCount})
+              </button>
+            </div>
+          {/if}
         {/if}
         <div class="flex-none">
           <button type="button" class="btn btn-square btn-ghost" aria-label="Toggle theme" onclick={toggleTheme}>

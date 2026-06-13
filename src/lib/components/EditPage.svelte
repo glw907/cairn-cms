@@ -22,6 +22,8 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   import BlocksIcon from '@lucide/svelte/icons/blocks';
   import LinkIcon from '@lucide/svelte/icons/link';
   import FileSymlinkIcon from '@lucide/svelte/icons/file-symlink';
+  import PanelRightIcon from '@lucide/svelte/icons/panel-right';
+  import { useTopbar } from './topbar-context.js';
   import CsrfField from './CsrfField.svelte';
   import MarkdownEditor from './MarkdownEditor.svelte';
   import EditorToolbar from './EditorToolbar.svelte';
@@ -57,6 +59,20 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   }
 
   let { data, registry, render, icons, form }: Props = $props();
+
+  // The topbar context portal (AdminLayout owns the holder). The desk snippet below carries the
+  // document's status and action clusters; this effect registers it into the band on mount and
+  // nulls it on teardown, so CairnAdmin's view switch (which unmounts EditPage) clears the band.
+  // The holder is absent only when EditPage renders outside AdminLayout (it always renders inside
+  // it in the app); the optional chaining keeps that case inert.
+  const topbar = useTopbar();
+  $effect(() => {
+    if (!topbar) return;
+    topbar.desk = desk;
+    return () => {
+      topbar.desk = null;
+    };
+  });
 
   // `body` is local editor state seeded once; it diverges as the user types. A blocked save returns
   // the author's edited markdown as form.body, so seed from that when present to keep the edits and
@@ -295,10 +311,19 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     return 'badge-ghost';
   });
 
-  // The header overflow menu's popover element and its open state, mirrored from the toggle
+  // The band overflow menu's popover element and its open state, mirrored from the toggle
   // event into aria-expanded on the trigger.
   let actionsMenu = $state<HTMLUListElement | null>(null);
   let actionsOpen = $state(false);
+
+  // The Details trigger lands in the band now but stays inert: Task 8 owns the slide-over panel
+  // and the real open/close wiring. The trigger carries the panel icon and a no-op handler so the
+  // cluster reads complete; the existing details aside below is untouched.
+  let detailsOpen = $state(false);
+  function toggleDetails() {
+    // Task 8 wires the slide-over panel; this is a placeholder so the band's quiet pair is whole.
+    detailsOpen = !detailsOpen;
+  }
 
   // An overflow-menu pick runs its action, then dismisses the popover menu. Opening a modal
   // dialog already closes an auto popover, so the explicit hide fires only when the menu is
@@ -546,48 +571,15 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   const detailFields = $derived(data.fields.filter((f) => f !== titleField && f !== draftField));
 </script>
 
-<!-- The whole edit surface remounts when navigation lands on another entry (see the entryKey
-     reset above); script-level state and the beforeNavigate registration sit outside the block,
-     so only the template rebuilds. -->
-{#key entryKey}
-<!-- The form's default button. The header's Publish (while pending) and Save submit the edit form
-     from outside it, and the default button for implicit submission (Enter in a single-line
-     field) is the FIRST form-owned submit button in tree order, which the header's Publish would
-     otherwise be: Enter in the title would publish a half-finished edit. This sr-only button sits
-     before the header, carries no formaction (so an implicit submit posts ?/save), and mirrors
-     Save's disabled state, so Enter on a clean page submits nothing. -->
-<button
-  type="submit"
-  form="cairn-edit-form"
-  class="sr-only"
-  tabindex="-1"
-  aria-hidden="true"
-  disabled={busy || (!dirty && !data.isNew)}
->
-  Save
-</button>
-
-<!-- The sticky action header, a glass ruler: a translucent base-200 veil with backdrop blur the
-     page scrolls beneath, never a second opaque band (the admin topbar keeps that role). It sticks
-     under the h-16 topbar and bleeds across AdminLayout's content padding (p-4, lg:p-8) with
-     matching negative margins, so the veil spans the whole content column. -->
-<header
-  class="sticky top-16 z-10 -mx-4 mb-6 border-b border-[var(--cairn-card-border)] bg-base-200/90 px-4 py-3 backdrop-blur lg:-mx-8 lg:px-8"
->
-  <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
-    <div class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
-      <a
-        href={`/admin/${data.conceptId}`}
-        class="flex shrink-0 items-center gap-0.5 text-sm text-[var(--color-muted)] transition-colors hover:text-base-content"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m15 18-6-6 6-6" />
-        </svg>
-        {data.label}
-      </a>
-      <!-- The manuscript heading below is the visible title; repeating it here read as
-           duplication, so the header keeps the h1 for assistive tech only. -->
-      <h1 class="sr-only">{data.title}</h1>
+<!-- The desk controls live in the one header band: AdminLayout renders this snippet through the
+     topbar context portal, to the right of the breadcrumb (the way back). Two clusters: the
+     document status behind a hairline (status badge, save-state) and the actions split by a
+     second hairline into the quiet pair (Details, overflow) and the lifecycle pair
+     (Publish, Save). The breadcrumb itself stays in AdminLayout, so the duplicate is gone. -->
+{#snippet desk()}
+  <div class="ml-2 flex min-w-0 flex-1 items-center gap-3">
+    <!-- The document status, fenced off by a hairline on its left. -->
+    <div class="flex min-w-0 items-center gap-2.5 border-l border-[var(--cairn-card-border)] pl-3">
       <span class="badge badge-sm font-medium {statusBadge}">{status}</span>
       {#if data.frontmatter.draft === true}
         <span class="badge badge-neutral badge-sm font-medium">Hidden</span>
@@ -603,7 +595,37 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
         {saveState}
       </span>
     </div>
-    <div class="ml-auto flex items-center gap-2">
+
+    <div class="ml-auto flex items-center gap-2 border-l border-[var(--cairn-card-border)] pl-3">
+      <!-- The form's default button, FIRST in the actions cluster (and so first among the form's
+           submit buttons in tree order, since the band precedes the form). The default button for
+           implicit submission (Enter in a single-line field) is the first form-owned submit button
+           in tree order; without this the Publish button would claim it and Enter in the title
+           would publish a half-finished edit. This sr-only button carries no formaction (so an
+           implicit submit posts ?/save) and mirrors Save's disabled state, so Enter on a clean
+           page submits nothing. -->
+      <button
+        type="submit"
+        form="cairn-edit-form"
+        class="sr-only"
+        tabindex="-1"
+        aria-hidden="true"
+        disabled={busy || (!dirty && !data.isNew)}
+      >
+        Save
+      </button>
+
+      <!-- The quiet pair: the Details panel trigger (inert until Task 8) and the overflow menu. -->
+      <button
+        type="button"
+        class="btn btn-ghost btn-sm btn-square"
+        aria-label="Details"
+        title="Details"
+        aria-expanded={detailsOpen}
+        onclick={toggleDetails}
+      >
+        <PanelRightIcon class="h-4 w-4" aria-hidden="true" />
+      </button>
       <!-- The overflow menu is a DaisyUI v5 popover dropdown: click to open (never
            focus-in-transit), Escape and light dismiss from the Popover API, and the
            anchor-name/position-anchor pair places the panel under its trigger. -->
@@ -643,26 +665,34 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
           </button>
         </li>
       </ul>
-      {#if data.pending}
-        <!-- Outline keeps Save the single solid primary action; Publish reads as its peer. -->
-        <button bind:this={publishButton} type="submit" form="cairn-edit-form" formaction="?/publish" class="btn btn-outline btn-primary btn-sm" disabled={busy}>
-          {#if publishing}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Publishing…{:else}Publish{/if}
+
+      <!-- The lifecycle pair, fenced off by their own hairline. -->
+      <div class="flex items-center gap-2 border-l border-[var(--cairn-card-border)] pl-3">
+        {#if data.pending}
+          <!-- Outline keeps Save the single solid primary action; Publish reads as its peer. -->
+          <button bind:this={publishButton} type="submit" form="cairn-edit-form" formaction="?/publish" class="btn btn-outline btn-primary btn-sm" disabled={busy}>
+            {#if publishing}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Publishing…{:else}Publish{/if}
+          </button>
+        {/if}
+        <!-- Save sleeps while the page is clean, agreeing with the band indicator; a new entry
+             stays saveable so it can be created as loaded. -->
+        <button type="submit" form="cairn-edit-form" class="btn btn-primary btn-sm" disabled={busy || (!dirty && !data.isNew)}>
+          {#if saving}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Saving…{:else}Save{/if}
         </button>
-      {/if}
-      <!-- Save sleeps while the page is clean, agreeing with the header indicator; a new entry
-           stays saveable so it can be created as loaded. -->
-      <button type="submit" form="cairn-edit-form" class="btn btn-primary btn-sm" disabled={busy || (!dirty && !data.isNew)}>
-        {#if saving}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Saving…{:else}Save{/if}
-      </button>
+      </div>
     </div>
   </div>
-</header>
+{/snippet}
 
+<!-- The whole edit surface remounts when navigation lands on another entry (see the entryKey
+     reset above); script-level state and the beforeNavigate registration sit outside the block,
+     so only the template rebuilds. -->
+{#key entryKey}
 <div class="sr-only" aria-live="polite">{politeMessage}</div>
 <div class="sr-only" aria-live="assertive">{assertiveMessage}</div>
 
-<!-- The feedback strip slides in just under the header: @starting-style drives the entry, so the
-     motion is pure CSS and the admin sheet's prefers-reduced-motion rule squashes it. -->
+<!-- The feedback strip slides in directly under the one header band: @starting-style drives the
+     entry, so the motion is pure CSS and the admin sheet's prefers-reduced-motion rule squashes it. -->
 {#if flash}
   <div class="cairn-feedback alert alert-success mb-4 text-sm transition-all duration-300 starting:-translate-y-2 starting:opacity-0">
     {flash}
@@ -726,6 +756,9 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
        the base face for tables, attributed directives, and long URLs. The toggle lives in the
        card footer with the other writing preferences. -->
   <div class={mode === 'preview' ? 'lg:order-1' : `lg:order-1 mx-auto w-full ${surface === 'prose' ? 'max-w-[49rem]' : 'max-w-[56rem]'}`}>
+    <!-- The page's accessible name. The visible title is a borderless input, so a real heading
+         lives here for assistive tech (the band no longer carries one). -->
+    <h1 class="sr-only">{data.title}</h1>
     {#if titleField}
       <!-- The hoisted document title: large, borderless, in the display face, so the manuscript
            reads as the protagonist. It submits as name="title", the same field as before. The

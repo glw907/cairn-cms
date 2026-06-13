@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { createRawSnippet } from 'svelte';
 import AdminLayout from '../../lib/components/AdminLayout.svelte';
+// AdminLayout joined to a descendant that fills the topbar holder, the way EditPage does.
+import AdminLayoutDeskHarness from './AdminLayoutDeskHarness.svelte';
 
 const child = createRawSnippet(() => ({ render: () => '<p>page body</p>' }));
 
@@ -108,6 +110,36 @@ describe('AdminLayout', () => {
     const screen = render(AdminLayout, { data: data(true, null, '/admin/posts/2026-05-hello'), children: child });
     await expect.element(screen.getByRole('navigation', { name: /breadcrumb/i })).toBeInTheDocument();
     await expect.element(screen.getByText('2026-05-hello')).toBeInTheDocument();
+  });
+
+  it('renders the registered desk snippet in the band on a desk route', async () => {
+    // A descendant document fills the topbar holder; AdminLayout renders it after the breadcrumb on
+    // a desk route (/admin/<concept>/<id>). DeskChild stands in for EditPage's registration.
+    const screen = render(AdminLayoutDeskHarness, {
+      data: data(true, null, '/admin/posts/2026-05-hello'),
+    });
+    await expect.element(screen.getByTestId('desk-control')).toBeInTheDocument();
+  });
+
+  it('stands down the palette trigger and the site Publish button on a desk route', async () => {
+    const pending = [{ concept: 'posts', id: '2026-05-hello' }];
+    const screen = render(AdminLayoutDeskHarness, {
+      data: { ...data(true, null, '/admin/posts/2026-05-hello'), pendingEntries: pending },
+    });
+    // The band has one job on a desk route: no command-palette trigger, no site-wide Publish in
+    // the topbar (the navbar). The publish-all confirm dialog still exists in the DOM, so scope the
+    // check to the navbar rather than the whole container.
+    await expect.element(screen.getByTestId('desk-control')).toBeInTheDocument();
+    const navbar = screen.container.querySelector('.navbar')!;
+    expect(navbar.textContent ?? '').not.toContain('Search or jump to');
+    expect(navbar.textContent ?? '').not.toContain('Publish site');
+  });
+
+  it('keeps the palette trigger and band as is on a list route (the office is unchanged)', async () => {
+    const screen = render(AdminLayoutDeskHarness, { data: data(true) });
+    // On the office routes the desk snippet never renders, and the palette trigger stays.
+    expect(screen.container.textContent ?? '').toContain('Search or jump to');
+    expect(screen.container.querySelector('[data-testid="desk-control"]')).toBeNull();
   });
 
   it('toggles the theme on the admin root and persists it to a cookie', async () => {

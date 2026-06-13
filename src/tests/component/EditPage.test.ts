@@ -2,7 +2,11 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
 import type { BeforeNavigate } from '@sveltejs/kit';
-import EditPage from '../../lib/components/EditPage.svelte';
+// EditPage's lifecycle controls (Save, Publish, the status badge, the overflow) render into the
+// one header band through the topbar context portal, not in a header of their own. This harness
+// mounts EditPage joined to that band the way CairnAdmin/AdminLayout do, so a standalone render
+// still exercises the desk controls. The band carries data-testid="cairn-band".
+import EditPage from './EditPageDesk.svelte';
 import type { FrontmatterField } from '../../lib/content/types.js';
 import type { LinkTarget } from '../../lib/content/manifest.js';
 import { createRenderer } from '../../lib/render/pipeline.js';
@@ -544,19 +548,19 @@ describe('EditPage', () => {
 
   it('shows the Edited badge in the header when the live site lags the edits', async () => {
     const screen = render(EditPage, postProps({ pending: true, published: true }));
-    const badge = screen.container.querySelector('header .badge-warning');
+    const badge = screen.container.querySelector('[data-testid="cairn-band"] .badge-warning');
     expect(badge?.textContent?.trim()).toBe('Edited');
   });
 
   it('shows the New badge in the header for a pending new entry', async () => {
     const screen = render(EditPage, postProps({ pending: true, published: false }));
-    const badge = screen.container.querySelector('header .badge-info');
+    const badge = screen.container.querySelector('[data-testid="cairn-band"] .badge-info');
     expect(badge?.textContent?.trim()).toBe('New');
   });
 
   it('shows the Published badge when the live site matches', async () => {
     const screen = render(EditPage, postProps());
-    const badge = screen.container.querySelector('header .badge-ghost');
+    const badge = screen.container.querySelector('[data-testid="cairn-band"] .badge-ghost');
     expect(badge?.textContent?.trim()).toBe('Published');
   });
 
@@ -635,7 +639,7 @@ describe('EditPage', () => {
         screen.container.querySelector<HTMLButtonElement>('button[formaction="?/publish"]')!;
       const save = () =>
         screen.container.querySelector<HTMLButtonElement>(
-          'header button[type="submit"][form="cairn-edit-form"]:not([formaction])',
+          '[data-testid="cairn-band"] button[type="submit"][form="cairn-edit-form"]:not([formaction]):not(.sr-only)',
         )!;
       await expect.poll(() => publish().textContent ?? '').toContain('Publishing');
       expect(save().textContent ?? '').not.toContain('Saving');
@@ -658,7 +662,7 @@ describe('EditPage', () => {
         screen.container.querySelector<HTMLButtonElement>('button[formaction="?/publish"]')!;
       const save = () =>
         screen.container.querySelector<HTMLButtonElement>(
-          'header button[type="submit"][form="cairn-edit-form"]:not([formaction])',
+          '[data-testid="cairn-band"] button[type="submit"][form="cairn-edit-form"]:not([formaction]):not(.sr-only)',
         )!;
       await expect.poll(() => save().textContent ?? '').toContain('Saving');
       expect(publish().textContent ?? '').not.toContain('Publishing');
@@ -675,7 +679,7 @@ describe('EditPage', () => {
     expect(publish.classList.contains('btn-outline')).toBe(true);
     expect(publish.classList.contains('btn-primary')).toBe(true);
     const save = screen.container.querySelector(
-      'header button[type="submit"][form="cairn-edit-form"]:not([formaction])',
+      '[data-testid="cairn-band"] button[type="submit"][form="cairn-edit-form"]:not([formaction]):not(.sr-only)',
     )!;
     expect(save.classList.contains('btn-outline')).toBe(false);
   });
@@ -737,7 +741,7 @@ describe('EditPage', () => {
     expect(insert).not.toBeNull();
     expect(toolbar.contains(link)).toBe(true);
     expect(toolbar.contains(insert)).toBe(true);
-    const header = screen.container.querySelector('header')!;
+    const header = screen.container.querySelector('[data-testid="cairn-band"]')!;
     expect(header.querySelector('button[aria-label="Link to page"]')).toBeNull();
     expect(header.querySelector('button[aria-label="Insert block"]')).toBeNull();
   });
@@ -781,7 +785,7 @@ describe('EditPage', () => {
     const screen = render(EditPage, postProps({ body: 'plain prose' }));
     const save = () =>
       screen.container.querySelector<HTMLButtonElement>(
-        'header button[type="submit"][form="cairn-edit-form"]:not([formaction])',
+        '[data-testid="cairn-band"] button[type="submit"][form="cairn-edit-form"]:not([formaction]):not(.sr-only)',
       )!;
     expect(save().disabled).toBe(true);
     await makeDirty(screen);
@@ -791,7 +795,7 @@ describe('EditPage', () => {
   it('keeps Save enabled for a new entry before any edit', async () => {
     const screen = render(EditPage, postProps({ isNew: true }));
     const save = screen.container.querySelector<HTMLButtonElement>(
-      'header button[type="submit"][form="cairn-edit-form"]:not([formaction])',
+      '[data-testid="cairn-band"] button[type="submit"][form="cairn-edit-form"]:not([formaction]):not(.sr-only)',
     )!;
     expect(save.disabled).toBe(false);
   });
@@ -1171,18 +1175,19 @@ describe('EditPage', () => {
     expect(write.disabled).toBe(false);
   });
 
-  it('links back to the concept list from a header breadcrumb', async () => {
+  it('carries no second breadcrumb in the page body (the band owns the way back)', async () => {
+    // The breadcrumb is AdminLayout's, rendered once in the topbar. EditPage's body must not
+    // render its own back link or a second breadcrumb under the one band.
     const screen = render(EditPage, postProps());
-    const crumb = screen.container.querySelector('header a[href="/admin/posts"]');
-    expect(crumb).not.toBeNull();
-    expect(crumb!.textContent ?? '').toContain('Posts');
+    expect(screen.container.querySelector('main a[href="/admin/posts"]')).toBeNull();
+    expect(screen.container.querySelector('main nav[aria-label="Breadcrumb"]')).toBeNull();
   });
 
-  it('shows the title in the header and drops the id sub-line', async () => {
+  it('keeps the page accessible name as the manuscript h1 and drops the id sub-line', async () => {
     const screen = render(EditPage, postProps());
-    const header = screen.container.querySelector('header')!;
-    expect(header.querySelector('h1')?.textContent).toBe('Hello');
-    expect(header.textContent ?? '').not.toContain('2026-05-hello');
+    expect(screen.container.querySelector('main h1')?.textContent).toBe('Hello');
+    const band = screen.container.querySelector('[data-testid="cairn-band"]')!;
+    expect(band.textContent ?? '').not.toContain('2026-05-hello');
   });
 
   it('stacks the Hidden badge beside the status badge for a hidden entry', async () => {
@@ -1190,20 +1195,20 @@ describe('EditPage', () => {
       EditPage,
       postProps({ frontmatter: { title: 'Hello', date: '2026-05-01', draft: true } }),
     );
-    const header = screen.container.querySelector('header')!;
+    const header = screen.container.querySelector('[data-testid="cairn-band"]')!;
     expect(header.querySelector('.badge-neutral')?.textContent?.trim()).toBe('Hidden');
     expect(header.querySelector('.badge-ghost')?.textContent?.trim()).toBe('Published');
   });
 
   it('hosts the save-state indicator inside the header', async () => {
     const screen = render(EditPage, postProps());
-    expect(screen.container.querySelector('header .cairn-save-state')).not.toBeNull();
+    expect(screen.container.querySelector('[data-testid="cairn-band"] .cairn-save-state')).not.toBeNull();
   });
 
   it('wires the header Save and Publish to the edit form by id', async () => {
     const screen = render(EditPage, postProps({ pending: true }));
     expect(screen.container.querySelector('form[action="?/save"]')?.id).toBe('cairn-edit-form');
-    const header = screen.container.querySelector('header')!;
+    const header = screen.container.querySelector('[data-testid="cairn-band"]')!;
     expect(header.querySelector('button[type="submit"][form="cairn-edit-form"]:not([formaction])')).not.toBeNull();
     expect(header.querySelector('button[formaction="?/publish"][form="cairn-edit-form"]')).not.toBeNull();
   });
@@ -1213,6 +1218,49 @@ describe('EditPage', () => {
     const menu = screen.container.querySelector('#cairn-edit-actions-menu')!;
     expect(menu.textContent ?? '').toContain('Delete');
     expect(menu.textContent ?? '').not.toContain('Discard changes');
+  });
+
+  // Task 6: the desk controls live in the one header band, fed through the topbar context portal.
+  it('renders the desk controls inside the one header band', async () => {
+    const screen = render(EditPage, postProps({ pending: true }));
+    const band = screen.container.querySelector('[data-testid="cairn-band"]')!;
+    // Save and Publish ride the edit form from the band.
+    expect(band.querySelector('button[type="submit"][form="cairn-edit-form"]:not([formaction]):not(.sr-only)')).not.toBeNull();
+    expect(band.querySelector('button[formaction="?/publish"][form="cairn-edit-form"]')).not.toBeNull();
+    // The status badge, the save-state indicator, the Details trigger, and the overflow menu.
+    expect(band.querySelector('.badge')).not.toBeNull();
+    expect(band.querySelector('.cairn-save-state')).not.toBeNull();
+    expect(band.querySelector('button[aria-label="Details"]')).not.toBeNull();
+    expect(band.querySelector('button[aria-label="More actions"]')).not.toBeNull();
+  });
+
+  it('renders no second header band in the page body', async () => {
+    const screen = render(EditPage, postProps({ pending: true }));
+    // The sticky glass header is gone: the page body (EditPage's own render) carries no <header>
+    // and no second copy of the lifecycle controls.
+    const main = screen.container.querySelector('main')!;
+    expect(main.querySelector('header')).toBeNull();
+    expect(main.querySelector('button[formaction="?/publish"]')).toBeNull();
+  });
+
+  it('renders the feedback strip directly under the band', async () => {
+    const screen = render(EditPage, postProps({ saved: true }));
+    const band = screen.container.querySelector('[data-testid="cairn-band"]')!;
+    const flash = screen.container.querySelector('.cairn-feedback')!;
+    expect(flash).not.toBeNull();
+    // The band precedes the feedback strip in document order, with nothing between but the
+    // sr-only live regions.
+    expect(band.compareDocumentPosition(flash) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('keeps the Details trigger inert until Task 8 wires the panel', async () => {
+    const screen = render(EditPage, postProps());
+    const details = screen.getByRole('button', { name: 'Details' });
+    // The trigger lands in the band now; clicking it does not open the details aside (Task 8 owns
+    // the slide-over). The aside stays as it is, visible in Write mode.
+    await details.click();
+    const aside = screen.container.querySelector('aside')!;
+    expect(aside.classList.contains('hidden')).toBe(false);
   });
 
   it('adds Discard changes to the overflow menu while pending', async () => {
@@ -1455,6 +1503,28 @@ describe('EditPage', () => {
     expect(fallback.disabled).toBe(true);
     await makeDirty(screen);
     await expect.poll(() => fallback.disabled).toBe(false);
+  });
+
+  it('submits ?/save not ?/publish on Enter in a text field while pending', async () => {
+    // Enter in a single-line field triggers the form's implicit submission, which the browser
+    // routes through the first associated submit button in tree order. The band precedes the form,
+    // so the sr-only default Save submitter (no formaction) is that button, never Publish. A real
+    // Enter keypress (not requestSubmit) is the only way to exercise the default-button choice.
+    const screen = render(EditPage, postProps({ pending: true, isNew: true }));
+    let formaction: string | null = 'unset';
+    const stop = (e: SubmitEvent) => {
+      e.preventDefault();
+      formaction = (e.submitter as HTMLButtonElement | null)?.getAttribute('formaction') ?? null;
+    };
+    document.addEventListener('submit', stop, true);
+    try {
+      const titleInput = screen.container.querySelector<HTMLInputElement>('input[name="title"]')!;
+      titleInput.focus();
+      await userEvent.keyboard('{Enter}');
+      await expect.poll(() => formaction).toBeNull();
+    } finally {
+      document.removeEventListener('submit', stop, true);
+    }
   });
 
   it('mounts the toolbar dialogs outside the edit form so no form nests', async () => {

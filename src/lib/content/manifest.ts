@@ -4,6 +4,7 @@
 // it; the save path patches one entry and commits it with the content in one commit. Each entry
 // carries its identity and its outbound cairn: edges, so the manifest is the link graph.
 import { parseMarkdown } from './frontmatter.js';
+import { deriveExcerpt } from './excerpt.js';
 import { entryIdentity, asString } from './identity.js';
 import { extractCairnLinks, type CairnRef, type LinkResolve } from './links.js';
 import type { ConceptDescriptor } from './types.js';
@@ -15,6 +16,7 @@ export interface ManifestEntry {
   title: string;
   date?: string;
   permalink: string;
+  summary?: string;
   draft: boolean;
   links: CairnRef[];
 }
@@ -47,6 +49,7 @@ export function manifestEntryFromFile(descriptor: ConceptDescriptor, file: { pat
     title: asString(frontmatter.title) ?? id,
     date,
     permalink,
+    summary: deriveExcerpt(body, { description: asString(frontmatter.description) }),
     draft: frontmatter.draft === true,
     links: extractCairnLinks(body),
   };
@@ -70,6 +73,7 @@ export function serializeManifest(manifest: Manifest): string {
     title: e.title,
     ...(e.date ? { date: e.date } : {}),
     permalink: e.permalink,
+    ...(e.summary ? { summary: e.summary } : {}),
     draft: e.draft,
     links: [...e.links].sort(compareRef).map((r) => ({ concept: r.concept, id: r.id })),
   }));
@@ -102,6 +106,7 @@ export function parseManifest(raw: string): Manifest {
       typeof e.permalink === 'string' &&
       typeof e.draft === 'boolean' &&
       (e.date === undefined || typeof e.date === 'string') &&
+      (e.summary === undefined || typeof e.summary === 'string') &&
       Array.isArray(e.links);
     if (!ok) {
       throw new Error(`content manifest: malformed entry ${JSON.stringify(e)}`);

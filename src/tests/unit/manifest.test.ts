@@ -28,6 +28,7 @@ describe('manifestEntryFromFile', () => {
       title: 'Waxing Guide',
       date: '2026-01-04',
       permalink: '/2026/01/waxing-guide',
+      summary: 'See about.',
       draft: false,
       links: [{ concept: 'pages', id: 'about' }],
     });
@@ -40,6 +41,31 @@ describe('manifestEntryFromFile', () => {
     expect(row.title).toBe('2026-02-02-untitled');
     expect(row.draft).toBe(true);
     expect(row.links).toEqual([]);
+  });
+  it('derives a summary from the description, else the body', () => {
+    // A non-dated descriptor, so the slug permalink resolves from the file stem alone.
+    const pages: ConceptDescriptor = {
+      id: 'pages',
+      label: 'Pages',
+      dir: 'src/content/pages',
+      routing: { routable: true, dated: false, inFeeds: false },
+      permalink: '/:slug',
+      datePrefix: 'day',
+      fields: [],
+      summaryFields: [],
+      validate: () => ({ ok: true, data: {} }),
+    };
+    const withDesc = manifestEntryFromFile(pages, {
+      path: 'src/content/pages/a.md',
+      raw: '---\ntitle: A\ndescription: A short blurb.\n---\nBody text here.',
+    });
+    expect(withDesc.summary).toBe('A short blurb.');
+
+    const noDesc = manifestEntryFromFile(pages, {
+      path: 'src/content/pages/b.md',
+      raw: '---\ntitle: B\n---\nThe body becomes the excerpt when there is no description.',
+    });
+    expect(noDesc.summary).toBe('The body becomes the excerpt when there is no description.');
   });
 });
 
@@ -65,6 +91,17 @@ describe('serializeManifest / parseManifest', () => {
   });
   it('emptyManifest round-trips', () => {
     expect(parseManifest(serializeManifest(emptyManifest()))).toEqual({ version: 1, entries: [] });
+  });
+  it('omits an empty summary (no churn) and round-trips a present one', () => {
+    const present = parseManifest(serializeManifest({ version: 1, entries: [
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], summary: 'Blurb.' },
+    ] }));
+    expect(present.entries[0].summary).toBe('Blurb.');
+
+    const emptyRaw = serializeManifest({ version: 1, entries: [
+      { id: 'b', concept: 'posts', title: 'B', permalink: '/b', draft: false, links: [], summary: '' },
+    ] });
+    expect(emptyRaw).not.toContain('summary');
   });
 });
 
@@ -103,6 +140,12 @@ describe('parseManifest hardening', () => {
     expect(parsed.entries[0].date).toBe('2026-01-04');
     expect(parsed.entries[0].links).toEqual([{ concept: 'pages', id: 'home' }]);
   });
+  it('still accepts an older entry with no summary key', () => {
+    const old = parseManifest(JSON.stringify({ version: 1, entries: [
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [] },
+    ] }));
+    expect(old.entries[0].summary).toBeUndefined();
+  });
 });
 
 const entryA: ManifestEntry = { id: 'a', concept: 'pages', title: 'A', permalink: '/a', draft: false, links: [] };
@@ -117,6 +160,15 @@ describe('verifyManifest', () => {
     const built = { version: 1 as const, entries: [entryA, entryB] };
     const stale = serializeManifest({ version: 1, entries: [entryA] });
     expect(() => verifyManifest(built, stale)).toThrow(/stale|regenerate/i);
+  });
+  it('fails a committed manifest that lacks a now-built summary', () => {
+    const built = { version: 1 as const, entries: [
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], summary: 'Blurb.' },
+    ] };
+    const staleCommitted = serializeManifest({ version: 1, entries: [
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [] },
+    ] });
+    expect(() => verifyManifest(built, staleCommitted)).toThrow(/stale/);
   });
 });
 

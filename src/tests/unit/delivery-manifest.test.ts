@@ -49,6 +49,13 @@ describe('buildSiteManifest', () => {
     expect(guide?.links).toEqual([{ concept: 'pages', id: 'about' }]);
   });
 
+  it('carries a summary on each built entry', () => {
+    const manifest = buildSiteManifest(adapter, config, globs);
+    const about = manifest.entries.find((e) => e.id === 'about');
+    // No description, so the summary is the body excerpt.
+    expect(about?.summary).toBe('Hi.');
+  });
+
   it('excludes a file whose frontmatter fails validation', () => {
     const manifest = buildSiteManifest(requiredTitleAdapter, config, {
       posts: {

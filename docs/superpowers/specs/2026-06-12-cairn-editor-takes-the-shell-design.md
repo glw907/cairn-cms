@@ -83,12 +83,16 @@ and modes; it is the completion of Prose, not a separate system.
 
 ## Editor ergonomics (added 2026-06-12 from the mockup crit)
 
-- **The rail pitch widens one step.** The caret-active bar is 3px, so the shipped 4px gap falls
-  under the two-bar-weights separation floor and the pair muddies at a glance (Geoff caught it
-  on the mockup; the pixel scan confirmed the geometry was to spec and the spec was wrong).
-  New geometry: 2px bars on an 8px pitch (bars at 0-2, 8-10, 16-18; 6px gaps; the active bar
-  keeps 2x clearance), with the directive gutter stepping to 1.75rem so depth-3 text keeps its
-  air. The `rails()` helper's edge formula and the component tests update together.
+- **The rail pitch widens one step, and the active step loses its width change.** Two findings
+  from the mockup crit (Geoff, 2026-06-12). First, the pitch: 2px bars on an 8px pitch (bars at
+  0-2, 8-10, 16-18; 6px gaps), gutter at 1.75rem, so nested bars separate cleanly. Second, the
+  caret-active emphasis: the shipped +1px width step makes a rail column carrying both an active
+  and a quiet segment (two sibling containers at one depth) read as a rendering glitch, a line
+  whose top is heavier than its bottom. The active step becomes strength only (the -active alpha
+  at the same 2px width), and the fold chevron, which shows while the caret is inside a block,
+  takes over the positional cue with the stepped label inks. The `rails()` helper and the
+  component tests update together, and the caret-block test asserts equal widths across
+  active/quiet segments.
 - **Intelligent indentation.** Wrapped quote and list lines continue under their content, not
   under the marker: a hanging indent (`padding-left` plus negative `text-indent`) applied per
   line from the measured marker prefix (`> `, `- `, `1. `), the Obsidian/HyperMD wrap idiom. It
@@ -101,13 +105,26 @@ and modes; it is the completion of Prose, not a separate system.
   (mocked as screen 5), and a shortcuts section in the Markdown help dialog. Exact bindings
   settle at plan time against browser and OS conflicts; the principle stays that typing markdown
   always works and keys are conveniences, never requirements.
-- **Containers fold.** A directive container folds from its opener to its closer through
-  CodeMirror's fold system, driven by the same cached `fenceScan` ranges the rails use. The
-  affordance is a chevron in the existing gutter on the opener row (visible on hover or while
-  the caret is inside; the folded state shows it always, plus a quiet "N lines" pill after the
-  label). Folding is visual only (the document and saves are untouched), state is session-local
-  and never persisted, and a fold opens automatically when a search hit, the caret, or a
-  validation report lands inside it.
+- **Containers fold** (interaction adjudicated by a design critique against VS Code/Zed/Obsidian
+  conventions, 2026-06-12). A container folds end-of-opener-line to end-of-closer-line (the bare
+  closer never dangles), through CodeMirror's fold system driven by `fenceScan`'s paired ranges
+  only, so a half-typed fence can never swallow the document. The affordance: one chevron that
+  REPLACES the container's own innermost rail bar on its opener row (depth 1 at x0, depth 2 at
+  x8, depth 3 at x16, so indentation telegraphs nesting and depth 3 never collides), in the
+  container's stepped label ink; down while the caret is inside, right while folded
+  (always visible), fading in on rail-band hover elsewhere. The whole 28px gutter band on the
+  opener row is the click target; clicking the opener TEXT never folds (authors edit `{attrs}`
+  there). Folded presentation: the opener text plus an "N lines" pill, a real focusable button
+  (`aria-label="Show N hidden lines"`); unfold via chevron, pill, or keys, with a one-time
+  low-alpha flash on the revealed lines. Keyboard: `Ctrl+Shift+[` / `]` fold/unfold the
+  innermost container at the caret, one row in the Ctrl+/ sheet, nothing else (no fold-all, no
+  chords). The safety invariant: an author never edits, deletes, or fails to see hidden text.
+  Any edit or selection touching a folded range unfolds it in the same transaction; vertical
+  arrows skip a fold atomically while programmatic placements (search hits, diagnostic jumps)
+  open it; a deliberately refolded erroring container keeps its fold and tints the pill warning
+  instead of fighting the author; fold state lives outside document history (undo moves text
+  only) and is session-local, never persisted; folds dim like machinery under focus mode. Out:
+  heading/list folding, fold-all, persistence, any fold affordance in Preview.
 - **No H4 button.** The document title is the page's visible H1, so in-document structure runs
   H2/H3 at this content scale, and the strip stays lean. `####` still types, gains a real size
   step in the highlight (about 1.05em, between H3 and body) so a hand-typed H4 reads as a

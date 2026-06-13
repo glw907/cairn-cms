@@ -125,13 +125,10 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
   function hiddenToggleClass(pressed: boolean): string {
     return `inline-flex items-center gap-1.5 rounded-lg px-3 py-1 text-[0.8125rem] font-normal hover:bg-base-content/[0.06] ${pressed ? 'bg-primary/10 text-primary font-medium' : 'text-[var(--color-muted)]'}`;
   }
-  // A triage count dims to muted when zero, so a sparse list never jumps.
-  function countClass(count: number): string {
-    return count === 0 ? 'opacity-45' : '';
-  }
-
-  // Hidden is a row treatment: a draft row de-emphasizes its title and summary. The dim level lives
-  // here once rather than inline on each element.
+  // Hidden is a row treatment: a draft row de-emphasizes its TITLE by opacity (the title is
+  // high-contrast base-content, so it stays above the AA text floor when dimmed). The already-muted
+  // summary line is left at full strength: stacking opacity on muted text drops it below 4.5:1 in
+  // the light theme, so the dimmed title plus the eye-off tag carry the "hidden" read instead.
   const draftDim = 'opacity-[0.62]';
 
   // Sort key for one entry: the lowercased title, or the ISO date string (lexical order is
@@ -261,14 +258,14 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
       {#each segments as seg, i (seg.value)}
         <button type="button" class="{segButtonClass(partition === seg.value)} {i > 0 ? 'border-l border-[var(--cairn-card-border)]' : ''}" aria-pressed={partition === seg.value} onclick={() => setPartition(seg.value)}>
           {#if partition === seg.value}{@render check()}{/if}
-          {seg.label}<span class="tabular-nums {countClass(seg.count())}">{seg.count()}</span>
+          {seg.label}<span class="tabular-nums">{seg.count()}</span>
         </button>
       {/each}
     </div>
     <span class="h-5 w-px bg-[var(--cairn-card-border)]" aria-hidden="true"></span>
     <button type="button" class={hiddenToggleClass(hiddenOnly)} aria-pressed={hiddenOnly} onclick={toggleHidden}>
       {#if hiddenOnly}{@render check()}{/if}
-      Hidden<span class="tabular-nums {countClass(counts.hidden)}">{counts.hidden}</span>
+      Hidden<span class="tabular-nums">{counts.hidden}</span>
     </button>
   </div>
 {/if}
@@ -339,7 +336,7 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
                   </span>
                 {/if}
                 {#if entry.summary}
-                  <div data-summary class="mt-0.5 truncate text-[0.8125rem] text-[var(--color-muted)] {entry.draft ? draftDim : ''}">{entry.summary}</div>
+                  <div data-summary class="mt-0.5 truncate text-[0.8125rem] text-[var(--color-muted)]">{entry.summary}</div>
                 {/if}
               </td>
               {#if data.dated}<td class="hidden w-28 text-sm tabular-nums text-[var(--color-muted)] sm:table-cell">{formatDate(entry.date)}</td>{/if}

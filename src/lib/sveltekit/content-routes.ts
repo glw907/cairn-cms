@@ -260,7 +260,9 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       const { frontmatter, body } = parseMarkdown(raw);
       const title = typeof frontmatter.title === 'string' && frontmatter.title.trim() ? frontmatter.title : file.id;
       const date = dateInputValue(frontmatter.date) || null;
-      const summary = deriveExcerpt(body, { description: asString(frontmatter.description) });
+      // Normalize an empty excerpt to null, so a pending row matches EntrySummary's `string | null`
+      // contract (the published builder already coalesces with `?? null`).
+      const summary = deriveExcerpt(body, { description: asString(frontmatter.description) }) || null;
       return { id: file.id, title, date, draft: frontmatter.draft === true, status, summary };
     } catch {
       return { id: file.id, title: file.id, date: null, draft: false, status, summary: null };

@@ -49,7 +49,9 @@ export function manifestEntryFromFile(descriptor: ConceptDescriptor, file: { pat
     title: asString(frontmatter.title) ?? id,
     date,
     permalink,
-    summary: deriveExcerpt(body, { description: asString(frontmatter.description) }),
+    // Coalesce an empty excerpt to undefined, so an empty-body entry carries no summary key at all
+    // (matching serialize's optional-spread) and the in-memory and serialized shapes agree.
+    summary: deriveExcerpt(body, { description: asString(frontmatter.description) }) || undefined,
     draft: frontmatter.draft === true,
     links: extractCairnLinks(body),
   };

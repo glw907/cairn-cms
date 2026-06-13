@@ -2,6 +2,30 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.54.0
+
+The editor takes the shell. On an edit route the page is now one context, the desk: the edit page's
+sticky header dissolves into the single topbar (one band in three clusters, the way back and the
+status and the lifecycle actions), the nav drawer opens closed and the breadcrumb is the way out,
+the frontmatter fields move behind a right slide-over panel, and a zen toggle (and `Ctrl+Shift+.`)
+fades the remaining chrome to leave the manuscript alone, with a floating chip carrying the save
+state and the way out. List and settings pages keep the office chrome unchanged.
+
+The editor ergonomics round out alongside it: the directive rail pitch widens to 8px and the
+caret-active rail reads by strength alone (no width step), wrapped quote and list lines hang under
+their content, directive containers fold from the rail band (a chevron on the opener row, a folded
+row with an `N lines` pill, the safety invariant that an edit or selection never hides text), the
+format keymap completes (inline code, quote, both lists, the heading pair) and the page-level
+actions get keys, a `Ctrl+/` sheet lists every shortcut, and `####` gains a real heading size step.
+The everyday formats (inline code, strikethrough, table) promote onto the strip, and the footer
+controls dress as what they are: a segmented posture control, check-and-tint mode toggles, and a
+plain Markdown-help link. The whole admin picks up the same grade of polish, including a scoped
+reset so every bare admin button sheds its native chrome.
+
+Consumers may: nothing is required, the new chrome and the editor behaviors apply in place. A site
+that embeds `MarkdownEditor` directly gets the rail, hang, fold, and keymap changes automatically;
+the editor's public props are unchanged.
+
 ## 0.53.0
 
 An iterative design session on the editor-as-home direction, shipped as one window.

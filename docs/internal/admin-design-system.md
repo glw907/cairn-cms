@@ -49,6 +49,39 @@ looks identical on any host with no host CSS. DaisyUI v5, Tailwind v4, Svelte 5 
   source `cairn-admin.css` (the variables-only partial), not the compiled dist sheet, so DaisyUI
   component styling is absent there. Preview with `examples/showcase` (`npm run package` then the
   showcase build/preview). The showcase mounts the authed shell at `/admin/posts`.
+- **A bare button needs the scoped reset, or it shows UA chrome.** The admin omits global Preflight
+  (it would reset the host site's elements), so a `<button>` styled with utilities instead of DaisyUI's
+  `.btn` keeps the native outset border and gray fill. One scoped rule in `cairn-admin.css`
+  (`:where([data-theme...]) button:not(.btn)`) levels every bare admin button to a flat baseline;
+  a utility (a `bg-*`, a `border-l` divider) still opts a control back into a fill or border. Use
+  `.btn` for a real button, or rely on the reset and add only the utilities the control needs. This
+  was a real shipped blemish on the footer toggles and the list's sort headers.
+
+## The context model: office and desk
+
+The admin runs two contexts, and each gets the chrome that serves it. **List and settings pages are
+the office**: the persistent sidebar and the full topbar, for moving between content and managing it.
+**An open document is the desk**: the editor takes the shell, and the surrounding chrome recedes so
+the manuscript is the page. A route is a desk route when its path has three segments
+(`/admin/<concept>/<id>`); `AdminLayout` derives this as `isDeskRoute`.
+
+Three rules carry the model:
+
+- **One header band on a desk route.** A desk route renders exactly one header band, the 64px topbar.
+  The edit page owns no header of its own; it feeds its controls (status, save-state, Details,
+  overflow, Publish, Save) up into the topbar through a context portal (`topbar-context.ts`:
+  `AdminLayout` holds a `$state` holder, `EditPage` registers a `desk` snippet into it in an `$effect`
+  and clears it on teardown). The band reads as three clusters, not a uniform row: the way back (drawer
+  toggle, breadcrumb), the document status behind a hairline, and the actions split by a second
+  hairline into the quiet pair (Details, overflow) and the lifecycle pair (Publish, Save).
+- **The chrome recedes, the way out stays.** On a desk route the nav drawer opens closed (the
+  `lg:drawer-open` class is conditional on `!isDeskRoute`, resolved at SSR so it never flashes), the
+  details fields move behind a slide-over panel, and zen fades the band entirely. Through all of it the
+  way back and the save state never disappear: the breadcrumb is the exit, and zen keeps a floating
+  chip carrying the save state and an Exit control. This is the one rule WordPress and Ghost both hold
+  even at their most minimal.
+- **Presentation only.** The context model is layout. The same one form, the same actions, the same
+  loads; `CairnAdmin`'s view switching is untouched. A consumer site sees only the new chrome.
 
 ## Tokens (Warm Stone)
 
@@ -122,17 +155,46 @@ Recipes:
   dismiss come from the Popover API. A pick runs its action, then `hidePopover()` if still open.
 - **Command palette:** `<dialog>` opened by the topbar trigger or Cmd/Ctrl+K; commands are the nav
   destinations plus View-site and theme, filtered as you type. Built in `AdminLayout.svelte`.
-- **Sticky edit header (the glass ruler):** `sticky top-16 z-10 bg-base-200/90 backdrop-blur` with an
-  always-on `border-b border-[var(--cairn-card-border)]` hairline, bled to the content edges with
-  negative margins that mirror the main padding (`-mx-4 lg:-mx-8` against `p-4 lg:p-8`). It is a
-  translucent veil the page scrolls beneath, never a second opaque topbar. Left: breadcrumb, an
-  `sr-only` h1, the status badges, and the save-state indicator (a small `bg-warning` dot plus
-  muted text, fading via `transition-opacity`). Right: the overflow popover menu, then the outline
-  Publish, then solid Save, both tied to the form by `form="cairn-edit-form"`. An `sr-only` default
-  submit button precedes the header (first form-owned submit in tree order), so Enter in a
-  single-line field saves rather than firing the Publish formaction.
-- **Editor instrument strip:** one card frame holds the toolbar, the editing surface, and a slim
-  footer (word count left, Markdown help right). Ghost `btn-sm btn-square` glyph buttons in groups
+- **The desk band (the edit route's one header):** the edit page has no header of its own; it fills the
+  topbar through the context portal (see the context model above). The `desk` snippet supplies the
+  status cluster (the status badge, a `Hidden` badge when `draft`, the save-state with a `bg-warning`
+  dot fading via `transition-opacity`) and the actions cluster (an `sr-only` default submit button
+  FIRST, then Details, the overflow popover, a hairline, outline Publish, solid Save), all tied to the
+  form by `form="cairn-edit-form"`. The `sr-only` default submit must stay first in the actions cluster:
+  the band precedes the form, so it is the first form-owned submit in tree order, which keeps Enter in a
+  single-line field saving rather than firing the Publish formaction. On a desk route `AdminLayout`
+  drops its own palette trigger and the site-wide Publish, so the band has one job.
+- **The details slide-over panel:** the frontmatter fields live in a right slide-over (`role="region"`,
+  `aria-label="Entry details"`), opened by the band's Details trigger and `Ctrl+.`. It stays physically
+  inside the edit form and toggles with the `hidden` attribute, so a closed panel is out of the a11y
+  tree and tab order while its `display:none` fields still submit (the uncontrolled-field guarantee).
+  Focus moves to the close button on open and returns to the trigger on close; Escape closes it. The
+  panel header carries the `Details` eyebrow; the first fieldset's legend is `sr-only` so the eyebrow
+  shows once. The capture-phase `invalid` handler opens the panel when an invalid control lives in it.
+- **Zen:** a footer toggle (and `Ctrl+Shift+.`) fades the chrome to leave the manuscript alone on the
+  recessed ground. It is a `localStorage` preference (`cairn-editor-zen`), and it composes with focus
+  mode and the postures. The band disappears through the context holder's `zen` flag (`AdminLayout`
+  drops the whole topbar), and a floating `.cairn-zen-chip` keeps the two things that never vanish: the
+  live save state and an Exit control with the `Esc` hint. Escape exits zen, after closing the details
+  panel if it is open. Entering zen moves focus into the editor if the focused control hid.
+- **Segmented control and check-and-tint toggle:** a pick-one control is one bordered group (the shared
+  border carries the semantics) whose segments are borderless and whose active segment tints
+  (`bg-primary/10 text-primary`) and shows a check glyph; the check is the non-color state cue (WCAG
+  1.4.1). A standalone on/off toggle (focus mode, typewriter, zen) is borderless and transparent until
+  hover, tinting and check-marking when `aria-pressed`. A reference link (Markdown help) is a borderless
+  underlined button, not a control. The editor footer uses all three; no group labels (the segmented
+  border carries pick-one).
+- **Container fold affordance:** a directive container folds from the rail band. One chevron replaces
+  the container's innermost rail bar on the opener row (down while the caret is inside, right while
+  folded, fading in on rail-band hover), and the whole 28px gutter band on that row is the click target;
+  the opener text never folds. A folded row carries a square full-row accent wash (~7%) and a focusable
+  `N lines` pill (`aria-label="Show N hidden lines"`). Ranges come only from `fenceScan`'s paired
+  containers, so a half-typed fence never folds; any edit or selection touching a folded range unfolds
+  it in the same transaction. Fold state is session-local, never persisted. Driven by
+  `@codemirror/language` folding in `editor-folding.ts`.
+- **Editor instrument strip:** one card frame holds the toolbar, the editing surface, and the footer
+  environment strip (word count left; the posture segmented control, the focus/typewriter/zen toggles,
+  and the Markdown help link right). Ghost `btn-sm btn-square` glyph buttons in groups
   divided by `w-px self-stretch bg-[var(--cairn-card-border)]` hairlines, a More popover menu for the
   low-frequency formats, the host's insert controls through a snippet, and the Write/Preview capsule
   pinned right. The `role="tablist"` wrapper holds only the two tabs (ARIA required children), and
@@ -202,10 +264,10 @@ Recipes:
 - The sidebar and topbar form one flat header strip: both `h-16` (the topbar PINNED with
   `h-16 min-h-16 py-0`, since a content-driven navbar drifts with font metrics and the two
   border-bottoms stop meeting at the seam), `bg-base-100`, the same hairline border-bottom, no
-  shadow, so they read as one band across the sidebar seam. The nav sidebar is `w-56`; the
-  chrome cedes width to the editor (the edit page's details column is `17rem` behind a `gap-10`
-  gutter, its card hairline-only with no shadow, so the editor is the page's one floating
-  object). The content area is
+  shadow, so they read as one band across the sidebar seam. The nav sidebar is `w-56` on office
+  routes and recedes on desk routes. On the desk the chrome cedes all width to the editor: the
+  details fields move to a ~19rem right slide-over, so the editor card (hairline-only, no shadow)
+  centers as the page's one floating object in both postures. The content area is
   `bg-base-200`; panels are `bg-base-100`.
 - Align the brand mark, the group eyebrows, and the nav-item icons on one left edge. Keep consistent
   vertical rhythm between groups. The list table drops its Date column below `sm` and stacks its header.

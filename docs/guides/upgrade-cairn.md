@@ -384,3 +384,13 @@ toggles move from the toolbar overflow into that footer, the insert actions beco
 and the admin chrome narrows around a more central editor. No consumer action. A site embedding
 `MarkdownEditor` directly may pass the new optional `surface` prop, documented in
 [the components reference](../reference/components.md#markdowneditor).
+
+## 0.54.0: the editor takes the shell, additive
+
+An open document becomes its own context. The edit page's sticky header dissolves into the single
+topbar, the nav drawer opens closed with the breadcrumb as the way out, the frontmatter fields move
+to a right slide-over panel, and a zen toggle fades the chrome to the manuscript alone. The editor
+ergonomics round out: an 8px directive rail pitch with a strength-only caret rail, hanging indents
+on wrapped quote and list lines, container folding from the rail band, the completed format keymap
+plus page-level shortcuts and a `Ctrl+/` sheet, and the everyday formats promoted onto the strip.
+No consumer action; the changes apply in place, and `MarkdownEditor`'s public props are unchanged.

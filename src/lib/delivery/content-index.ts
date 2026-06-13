@@ -4,7 +4,7 @@
 // every operation reads the descriptor and its routing rule, never a hardcoded concept id.
 import { parseMarkdown } from '../content/frontmatter.js';
 import { entryId, entryIdentity, asDate, asString, asTags } from '../content/identity.js';
-import { deriveExcerpt, wordCount } from './excerpt.js';
+import { deriveExcerpt, wordCount } from '../content/excerpt.js';
 import type { ConceptDescriptor } from '../content/types.js';
 
 /** A raw content file before parsing: the glob key and the file's full markdown text. */

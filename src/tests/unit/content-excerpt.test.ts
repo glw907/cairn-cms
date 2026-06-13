@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { deriveExcerpt, wordCount } from '../../lib/delivery/excerpt.js';
+import { deriveExcerpt, wordCount } from '../../lib/content/excerpt.js';
 
 describe('deriveExcerpt', () => {
   it('prefers a frontmatter description', () => {

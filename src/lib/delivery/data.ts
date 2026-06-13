@@ -8,7 +8,7 @@ export type { SiteResolver, ConceptIndex } from './site-resolver.js';
 export { createSiteIndexes } from './site-indexes.js';
 export type { SiteIndexes, SiteGlobs } from './site-indexes.js';
 export { siteDescriptors } from './site-descriptors.js';
-export { deriveExcerpt, wordCount } from './excerpt.js';
+export { deriveExcerpt, wordCount } from '../content/excerpt.js';
 export { buildRssFeed, buildJsonFeed } from './feeds.js';
 export type { FeedChannel, FeedItem } from './feeds.js';
 export { buildSitemap } from './sitemap.js';

@@ -11,7 +11,19 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-12, latest): the editor-takes-the-shell pass (spec awaiting Geoff)
+## Immediate next action (2026-06-12, latest): execute the editor-takes-the-shell plan (0.54.0)
+
+**The plan is written and executing:**
+`docs/superpowers/plans/2026-06-12-cairn-editor-takes-the-shell.md`, thirteen tasks from the
+approved spec (`docs/superpowers/specs/2026-06-12-cairn-editor-takes-the-shell-design.md`).
+Method: one `cairn-implementer` per task on `main`, test-first, full gate between dispatches;
+Task 3 (container folding) is the one Opus upshift; Task 11 (the gold-standard sweep) runs in
+the main loop as the frontend-design loop. The plan's "Plan-time decisions" section locks the
+topbar context-portal seam, the promoted strip set, the key bindings (Write/Preview moved off
+Firefox-reserved Ctrl+Shift+P to Ctrl+Alt+P), and the CodeMirror fold architecture. After the
+pass: the gates-and-tooling pass, the gallery brainstorm, P4.
+
+## Prior next action (2026-06-12): the editor-takes-the-shell pass (spec then unread)
 
 **The editor-as-home design session SHIPPED 2026-06-12 as `0.52.1` and `0.53.0`, both published
 (registry latest 0.53.0) and live on ecxc (`^0.53.0`, deploy green).** An iterative session with

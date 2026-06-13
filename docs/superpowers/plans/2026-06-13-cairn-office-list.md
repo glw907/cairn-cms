@@ -443,3 +443,63 @@ test('the trailing New row opens the create dialog', async () => {
 Bulk actions, inline quick-edit, saved views, a grid/card view, author and comment columns,
 analytics in the row, and grouping by field (deferred). Task 2's adversarial UI review is the check
 on whether any of these is load-bearing for the list's UI; absent an accepted finding, they stay out.
+
+---
+
+## Post-mortem (2026-06-13)
+
+**Landed on `main` as `0.55.0`, unpublished.** The office list now extends the editor/desk gold
+standard: a publish-state triage filter and self-describing rows, fed by one additive data-layer
+change. Commits `c0bd097..cba576e` (mockup and plan reorder at `c0bd097`, the bump and tracking in
+this commit's window).
+
+**What was built, in order.** The pass ran mockup-first, then the review, then the implementation,
+per Geoff's reorder (the adversarial review is a UI critique, so it judged a concrete UI; the
+approval stop was dropped). Task 1 extended the gold-standard mockup with eight office screens (a
+realistic fill, an active filter, the few-entry Pages state, empty, no-match, both themes, and a
+triage-states strip). Task 2 ran an Opus adversarial UI review against the rendered mockup (Ghost,
+WordPress, Sveltia, Contentful, Sanity); the accepted findings folded into the mockup and the spec
+(the Edited primary tint, the Hidden row treatment, the trailing create row, the empty-owns-canvas
+state, column-edge truncation), the rejected ones recorded with their defense. Tasks 3-5 moved
+`deriveExcerpt` into `content/` and threaded an additive `summary` through the manifest and both list
+rows. Tasks 6-7 built the triage (an orthogonal two-axis model) and dressed the list to the mockup.
+Task 8 regenerated the showcase manifest and covered the triage in the E2E. Task 9's post-build
+critique captured the real showcase office (both themes) and confirmed fidelity. Task 10 documented
+it.
+
+**Verified (evidence).** Gate green at the tip (`cba576e`), run first-hand: `npm run check` 916
+files 0/0; `npm test` 157 files / 1500 tests exit 0; the five doc/readiness gates exit 0; the
+showcase E2E 9 passed in a real browser (including the new triage assertions). The post-build
+captures showed the real component matching the mockup grade in both themes, including the
+serendipitous true empty state (the showcase Pages concept has no entries) and the filter-aware
+no-match copy. The live `wrangler dev` smoke was judged not proportionate (no server/auth/action/SSR
+change; additive `summary` plus client-side filtering), the precedent from the 0.52-0.54 presentation
+passes.
+
+**Decisions locked.** (1) Hidden is **orthogonal** to the publish partition: a published-but-hidden
+entry counts in both Published and Hidden, and the Hidden toggle composes with whichever partition is
+active (a two-axis model: a `partition` enum plus a `hiddenOnly` boolean, not a four-value enum). The
+plan's original Task 6 test number encoded a mutually-exclusive reading and was corrected. (2) The
+row form is an **enriched sortable table** with a title sub-line (not a row-list), preserving
+`aria-sort` and self-describing each row. (3) The Edited badge tints **primary** (the action signal
+that mirrors "Publish site (N)"), not amber. (4) Hidden is a **row treatment** (dimmed title plus an
+eye-off tag), not a competing badge, so the status cell holds one publish-state badge.
+
+**Review gate.** `svelte-reviewer` and `daisyui-a11y-reviewer` (both Opus). The a11y review found one
+Critical (the draft-row summary stacked opacity on muted text, 2.09:1 in light, WCAG 1.4.3) and an
+Important (the zero-count opacity dim, 1.61:1 light); both fixed in `cba576e` by dimming only the
+high-contrast title and dropping the zero-count dim. The svelte review found two Minor `'' `-vs-`null`
+contract drifts in the `summary` shape, also folded in (`|| null` in the pending row, `|| undefined`
+in the manifest builder). The Edited primary-tint badge passes by the repo's locked
+`text-primary on primary/10` basis.
+
+**Carry-forwards.** (1) The create affordances read `New {label}` (plural: "New Posts"), where the
+mockup idealized the singular; needs an optional `singular` on the concept descriptor (logged in the
+friction log, a ROADMAP candidate). The mockup stays aspirational on that one string until it lands.
+(2) The plan asserted `ConceptList.test.ts` did not exist ("create it"); it already existed, so Task 6
+extended it. A planning-accuracy note, not a defect.
+
+**Consumer action.** One: regenerate the content manifest (`npm run cairn:manifest` or
+`npx cairn-manifest`, then commit). The `cairnManifest` build fails closed until the regenerated
+manifest with the new `summary` keys is committed. Both sites have the plugin wired, so the build
+fails loudly rather than drifting.

@@ -192,3 +192,11 @@ inherit a clean list rather than one prose note.
   the derivation rides the manifest bin's Vite machinery. The skip copy says "configure the
   cairnManifest plugin" but no doc states that the plugin is what powers doctor derivation.
   Candidate: a line in the doctor reference and the deploy guide tying derivation to the plugin.
+- **editor** (concept label number, from the 0.55.0 office-list pass, 2026-06-13): the create
+  affordances read `New {concept.label}`, which renders "New Posts" / "New Pages" (plural), and the
+  office pass made it more prominent by adding a second create control (the trailing foot row). The
+  gold-standard mockup idealized the singular "New post". A concept descriptor carries only the
+  plural label, so there is no singular form to use. Candidate: an optional `singular` (or
+  `labelSingular`) on the concept descriptor, defaulting to the label, used by the create button, the
+  trailing row, and the create dialog title; until it lands the mockup stays aspirational on this one
+  string. Tracked as a STATUS carry-forward.

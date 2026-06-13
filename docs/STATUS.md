@@ -11,7 +11,50 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-13, latest): execute the office-list plan (0.55.0), mockup-first
+## Immediate next action (2026-06-13, latest): publish `0.55.0`, then the queue
+
+**The office-list pass LANDED on `main` 2026-06-13 as `0.55.0`, unpublished.** The post and page
+list now extends the editor/desk gold standard: a publish-state triage filter (All / Pending edits /
+Published, with live counts, plus an orthogonal Hidden toggle) and self-describing rows (a summary
+line under the title), fed by one additive data-layer change. The pass ran mockup-first, then the
+adversarial UI review, then implementation, with no approval stop (Geoff's reorder: the review is a
+UI critique, so it judged a concrete mockup). Commits `c0bd097..cba576e` (the bump and tracking at
+the tip). Locked decisions: Hidden is orthogonal to the partition (a published-but-hidden entry
+counts in both, the toggle composes; a two-axis `partition` + `hiddenOnly` model); the row is an
+enriched sortable table with a title sub-line; the Edited badge tints primary as the action signal;
+Hidden is a row treatment (dimmed title + eye-off tag), not a competing badge. The manifest and
+`EntrySummary` gain a `summary` string fed by `deriveExcerpt` (moved down to `content/`).
+
+Gate green at the tip, run first-hand: `npm run check` 916 files 0/0, `npm test` 157 files / 1500
+tests exit 0, the five doc/readiness gates exit 0, showcase E2E 9 passed in a real browser (the new
+triage assertions included). Reviewers (`svelte-reviewer`, `daisyui-a11y-reviewer`, both Opus): the
+a11y review found one Critical (a draft-row summary stacked opacity on muted text, 2.09:1 light,
+WCAG 1.4.3) and an Important (the zero-count dim), both fixed in `cba576e`; the svelte review's two
+Minor `''`-vs-`null` contract drifts also folded in. The live `wrangler dev` smoke was judged not
+proportionate (additive `summary` plus client-side filtering, no server/auth/action/SSR change; the
+E2E and both-theme captures cover it). Post-mortem with the carry-forwards in the plan
+(`docs/superpowers/plans/2026-06-13-cairn-office-list.md`).
+
+**Next actions, in order:**
+1. **Publish `0.55.0`** (needs the push, so it is Geoff's call): push `main`, then
+   `gh release create v0.55.0 --target main` with the `0.55.0` changelog entry as the body (carrying
+   the `Consumers must: regenerate the content manifest` line); the release fires the OIDC
+   trusted-publishing workflow.
+2. **Both sites pick up `^0.55.0`** when convenient, each with the one consumer action: regenerate
+   the content manifest (`npm run cairn:manifest` or `npx cairn-manifest`) and commit it. The
+   `cairnManifest` build fails closed until they do, the intended fail-on-drift posture (both sites
+   have the plugin wired).
+3. **The queue resumes:** the gates-and-tooling pass (draft its plan next session; scope in the
+   2026-06-11 single-mount entry below: E2E-in-CI, the admin DOM render check, the plain-Node
+   dist-spawn test, the manifest-bin `cwd`-vs-`config.root` fix), then the gallery brainstorm
+   (git-vs-R2), then P4.
+
+**Carry-forward (office-list):** the create affordances read `New {label}` (plural: "New Posts"),
+where the mockup idealized the singular; needs an optional `singular` on the concept descriptor
+(logged in the friction log, a ROADMAP candidate). The mockup stays aspirational on that one string
+until it lands.
+
+## Prior next action (2026-06-13): execute the office-list plan (0.55.0), mockup-first
 
 **`0.54.0` PUBLISHED 2026-06-13, and both consumer sites are on it.** The `v0.54.0` release fired the
 OIDC trusted-publishing workflow (run `27472879535` green), `0.54.0` is the registry `latest`, and

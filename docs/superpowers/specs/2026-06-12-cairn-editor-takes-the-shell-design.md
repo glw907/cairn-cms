@@ -34,6 +34,18 @@ the Details trigger (rung 3) beside them. The feedback strip stays directly unde
 duplicate breadcrumb dies, and the manuscript starts roughly 80px higher. List pages keep the
 topbar as is.
 
+The band reads as three clusters, not a uniform row (mocked and approved 2026-06-12): the way
+back (drawer toggle, then the breadcrumb trail with the entry title in content ink), the
+document status behind a hairline (the status badge plus the save-state with a small warning-dot
+indicator), and the actions split by a second hairline into the quiet pair (Details with its
+panel icon, the overflow) and the lifecycle pair (Publish, Save).
+
+The footer strip's controls dress as what they are (same mockup round): the posture pair is one
+bordered segmented control with the check glyph in the active segment, the writing modes are
+standalone check-and-tint toggles, and Markdown help is a plain underlined link rather than a
+button. Group labels were considered and declined; the segmented border carries the
+pick-one semantics without furniture.
+
 The format strip also breathes (Geoff, 2026-06-12): the icon conversion of the insert actions
 freed real width, so the most commonly used items promote out of the More overflow into the
 strip, ordered by everyday frequency: inline code first, then strikethrough, then table, with

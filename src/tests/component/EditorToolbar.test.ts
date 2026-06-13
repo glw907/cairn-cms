@@ -20,7 +20,16 @@ function controls(container: HTMLElement): HTMLElement[] {
 describe('EditorToolbar', () => {
   it('renders the primary controls with accessible names', async () => {
     const screen = render(EditorToolbar, baseProps());
-    const labels = ['Bold (Ctrl+B)', 'Italic (Ctrl+I)', 'Heading', 'Smaller heading', 'Bulleted list', 'Numbered list', 'Quote', 'More formatting'];
+    const labels = [
+      'Bold (Ctrl+B)',
+      'Italic (Ctrl+I)',
+      'Heading (Ctrl+Alt+2)',
+      'Smaller heading (Ctrl+Alt+3)',
+      'Bulleted list (Ctrl+Shift+8)',
+      'Numbered list (Ctrl+Shift+7)',
+      'Quote (Ctrl+Shift+9)',
+      'More formatting',
+    ];
     for (const label of labels) {
       await expect.element(screen.getByRole('button', { name: label, exact: true })).toBeInTheDocument();
     }
@@ -30,7 +39,7 @@ describe('EditorToolbar', () => {
     const format = vi.fn();
     const screen = render(EditorToolbar, baseProps({ format }));
     await screen.getByRole('button', { name: 'Bold (Ctrl+B)' }).click();
-    await screen.getByRole('button', { name: 'Numbered list' }).click();
+    await screen.getByRole('button', { name: 'Numbered list (Ctrl+Shift+7)' }).click();
     expect(format.mock.calls).toEqual([['bold'], ['ol']]);
   });
 
@@ -51,7 +60,7 @@ describe('EditorToolbar', () => {
     const screen = render(EditorToolbar, baseProps({ format }));
     // The menu is a popover, hidden until the trigger opens it.
     await screen.getByRole('button', { name: 'More formatting' }).click();
-    for (const label of ['Strikethrough', 'Inline code', 'Code block', 'Table', 'Horizontal rule', 'Task list']) {
+    for (const label of ['Strikethrough', 'Inline code (Ctrl+E)', 'Code block', 'Table', 'Horizontal rule', 'Task list']) {
       await expect.element(screen.getByRole('button', { name: label })).toBeInTheDocument();
     }
     await screen.getByRole('button', { name: 'Table' }).click();

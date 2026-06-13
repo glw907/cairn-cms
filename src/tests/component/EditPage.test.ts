@@ -947,6 +947,130 @@ describe('EditPage', () => {
     await expect.poll(() => document.activeElement === dialog.querySelector('input[type="url"]')).toBe(true);
   });
 
+  // The card-scoped format keys: each dispatches its format through the same registered seam the
+  // Ctrl+B test proves, so an empty-selection insert at the doc start leaves a recognizable marker
+  // in the hidden body input. The shifted-digit trio (Ctrl+Shift+9/8/7) arrives as '('/'*'/'&' for
+  // e.key on US layouts, so the handler matches on e.code; the tests dispatch the real code.
+  const cardFormatKeys: { name: string; init: KeyboardEventInit; marker: string }[] = [
+    { name: 'Ctrl+E inline code', init: { key: 'e', ctrlKey: true }, marker: '``' },
+    { name: 'Ctrl+Shift+9 quote', init: { key: '(', code: 'Digit9', ctrlKey: true, shiftKey: true }, marker: '> ' },
+    { name: 'Ctrl+Shift+8 bulleted list', init: { key: '*', code: 'Digit8', ctrlKey: true, shiftKey: true }, marker: '- ' },
+    { name: 'Ctrl+Shift+7 numbered list', init: { key: '&', code: 'Digit7', ctrlKey: true, shiftKey: true }, marker: '1. ' },
+    { name: 'Ctrl+Alt+2 h2', init: { key: '2', ctrlKey: true, altKey: true }, marker: '## ' },
+    { name: 'Ctrl+Alt+3 h3', init: { key: '3', ctrlKey: true, altKey: true }, marker: '### ' },
+  ];
+  for (const { name, init, marker } of cardFormatKeys) {
+    it(`dispatches its format on ${name} inside the editor card`, async () => {
+      const screen = render(EditPage, postProps({ body: 'plain prose' }));
+      await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+      const card = screen.container.querySelector('[role="toolbar"]')!.closest('.rounded-box')!;
+      const event = new KeyboardEvent('keydown', { ...init, bubbles: true, cancelable: true });
+      card.dispatchEvent(event);
+      expect(event.defaultPrevented).toBe(true);
+      await expect
+        .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
+        .toContain(marker);
+    });
+  }
+
+  it('requests the publish submit on Ctrl+Shift+S while pending', async () => {
+    const screen = render(EditPage, postProps({ pending: true }));
+    await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+    let formaction: string | null = 'unset';
+    const stop = (e: SubmitEvent) => {
+      e.preventDefault();
+      formaction = (e.submitter as HTMLButtonElement | null)?.getAttribute('formaction') ?? null;
+    };
+    document.addEventListener('submit', stop, true);
+    try {
+      const event = new KeyboardEvent('keydown', { key: 'S', code: 'KeyS', ctrlKey: true, shiftKey: true, cancelable: true });
+      window.dispatchEvent(event);
+      expect(event.defaultPrevented).toBe(true);
+      await expect.poll(() => formaction).toBe('?/publish');
+    } finally {
+      document.removeEventListener('submit', stop, true);
+    }
+  });
+
+  it('no-ops Ctrl+Shift+S when nothing is pending', async () => {
+    const screen = render(EditPage, postProps({ pending: false }));
+    await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+    let submitted = false;
+    const stop = (e: Event) => {
+      e.preventDefault();
+      submitted = true;
+    };
+    document.addEventListener('submit', stop, true);
+    try {
+      const event = new KeyboardEvent('keydown', { key: 'S', code: 'KeyS', ctrlKey: true, shiftKey: true, cancelable: true });
+      window.dispatchEvent(event);
+      expect(submitted).toBe(false);
+    } finally {
+      document.removeEventListener('submit', stop, true);
+    }
+  });
+
+  it('toggles Write/Preview on Ctrl+Alt+P', async () => {
+    const screen = render(EditPage, postProps());
+    await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+    expect(screen.container.querySelector('#cairn-pane-preview')).toBeNull();
+    const toPreview = new KeyboardEvent('keydown', { key: 'p', code: 'KeyP', ctrlKey: true, altKey: true, cancelable: true });
+    window.dispatchEvent(toPreview);
+    expect(toPreview.defaultPrevented).toBe(true);
+    await expect.poll(() => screen.container.querySelector('#cairn-pane-preview')).not.toBeNull();
+    const toWrite = new KeyboardEvent('keydown', { key: 'p', code: 'KeyP', ctrlKey: true, altKey: true, cancelable: true });
+    window.dispatchEvent(toWrite);
+    await expect.poll(() => screen.container.querySelector('#cairn-pane-preview')).toBeNull();
+  });
+
+  it('toggles focus mode on Ctrl+Shift+F', async () => {
+    const screen = render(EditPage, postProps({ body: 'one\n\ntwo' }));
+    await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+    const focusToggle = () => screen.getByRole('button', { name: 'Focus mode', exact: true });
+    await expect.element(focusToggle()).toHaveAttribute('aria-pressed', 'false');
+    const event = new KeyboardEvent('keydown', { key: 'F', code: 'KeyF', ctrlKey: true, shiftKey: true, cancelable: true });
+    window.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(true);
+    await expect.element(focusToggle()).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  // Every window-scoped key gates on an open dialog exactly the way Ctrl+S does.
+  const windowKeysGatingOnDialog: { name: string; init: KeyboardEventInit }[] = [
+    { name: 'Ctrl+Shift+S', init: { key: 'S', code: 'KeyS', ctrlKey: true, shiftKey: true } },
+    { name: 'Ctrl+Alt+P', init: { key: 'p', code: 'KeyP', ctrlKey: true, altKey: true } },
+    { name: 'Ctrl+Shift+F', init: { key: 'F', code: 'KeyF', ctrlKey: true, shiftKey: true } },
+  ];
+  for (const { name, init } of windowKeysGatingOnDialog) {
+    it(`ignores ${name} from inside an open dialog`, async () => {
+      const screen = render(EditPage, postProps({ pending: true, body: 'one\n\ntwo' }));
+      await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+      await screen.getByRole('button', { name: /web link/i }).click();
+      const dialog = screen.container.querySelector<HTMLDialogElement>(
+        'dialog[aria-labelledby="cairn-web-link-dialog-title"]',
+      )!;
+      await expect.poll(() => dialog.open).toBe(true);
+      const previewBefore = screen.container.querySelector('#cairn-pane-preview');
+      const focusBefore = screen.getByRole('button', { name: 'Focus mode', exact: true });
+      const pressedBefore = (await focusBefore.element()).getAttribute('aria-pressed');
+      let submitted = false;
+      const stop = (e: Event) => {
+        e.preventDefault();
+        submitted = true;
+      };
+      document.addEventListener('submit', stop, true);
+      try {
+        const input = dialog.querySelector<HTMLInputElement>('input[type="url"]')!;
+        input.dispatchEvent(new KeyboardEvent('keydown', { ...init, bubbles: true, cancelable: true }));
+        // No submit (Ctrl+Shift+S), no pane flip (Ctrl+Alt+P), no focus-mode flip (Ctrl+Shift+F).
+        expect(submitted).toBe(false);
+        expect(screen.container.querySelector('#cairn-pane-preview')).toBe(previewBefore);
+        expect((await focusBefore.element()).getAttribute('aria-pressed')).toBe(pressedBefore);
+      } finally {
+        document.removeEventListener('submit', stop, true);
+      }
+    });
+  }
+
   it('inserts a web link from the toolbar dialog', async () => {
     const screen = render(EditPage, postProps({ body: '' }));
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();

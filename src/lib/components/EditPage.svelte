@@ -104,6 +104,10 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
 
   // The edit form element, for the Ctrl/Cmd+S shortcut's requestSubmit.
   let editForm = $state<HTMLFormElement | null>(null);
+  // The header's Publish submitter, for the Ctrl/Cmd+Shift+S shortcut: requesting submit through it
+  // carries the ?/publish formaction and trips the busy flags down the existing submit path. It
+  // exists only while data.pending, so the shortcut no-ops when there is nothing to publish.
+  let publishButton = $state<HTMLButtonElement | null>(null);
 
   // A required sidebar field hidden by Preview cannot take the browser's validation report: an
   // invisible control is unfocusable, so the browser cancels the save silently with no message.
@@ -142,7 +146,33 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     // parentheses, and consumers compile this source with their own svelte.
     const onWindowKeydown = (e: KeyboardEvent) => {
       if (!(e.ctrlKey || e.metaKey)) return;
-      if (e.key.toLowerCase() !== 's') return;
+      const key = e.key.toLowerCase();
+      // The page-wide chords never act on a surface the author cannot see: a save, publish, mode
+      // flip, or focus toggle from inside an open modal is suppressed the same way.
+      const inDialog = !!(e.target as Element | null)?.closest?.('dialog');
+      if (e.shiftKey && key === 's') {
+        // Publish rides the header's Publish submitter so the ?/publish formaction and the busy
+        // flags follow the existing submit path; it exists only while pending, so this no-ops
+        // otherwise.
+        e.preventDefault();
+        if (busy || inDialog || !data.pending) return;
+        editForm?.requestSubmit(publishButton);
+        return;
+      }
+      if (e.altKey && key === 'p') {
+        e.preventDefault();
+        if (inDialog) return;
+        setMode(mode === 'write' ? 'preview' : 'write');
+        return;
+      }
+      if (e.shiftKey && key === 'f') {
+        e.preventDefault();
+        if (inDialog) return;
+        setFocusMode(!focusMode);
+        return;
+      }
+      if (e.shiftKey || e.altKey) return;
+      if (key !== 's') return;
       // Always claim the shortcut so the browser's save-page dialog never opens over the admin.
       e.preventDefault();
       // Gate the submit itself: an in-flight POST must not race a second one, a clean page has
@@ -150,7 +180,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
       // an open modal would act on a surface the author cannot see.
       if (busy) return;
       if (!dirty && !data.isNew) return;
-      if ((e.target as Element | null)?.closest?.('dialog')) return;
+      if (inDialog) return;
       editForm?.requestSubmit();
     };
     window.addEventListener('beforeunload', onBeforeUnload);
@@ -421,7 +451,13 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   function onEditorKeydown(e: KeyboardEvent) {
     if (!(e.ctrlKey || e.metaKey)) return;
     const key = e.key.toLowerCase();
-    if (key === 'b') {
+    // The shifted-digit list trio (Ctrl+Shift+9/8/7) arrives as '('/'*'/'&' for e.key on US
+    // layouts, so the digit identity comes from e.code; the heading pair rides Ctrl+Alt+2/3.
+    const fmt = formatForKeydown(e);
+    if (fmt) {
+      e.preventDefault();
+      format(fmt);
+    } else if (key === 'b') {
       e.preventDefault();
       format('bold');
     } else if (key === 'i') {
@@ -431,6 +467,24 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
       e.preventDefault();
       webLinkDialog?.open();
     }
+  }
+  // Maps the format-key chords to their FormatKind. Inline code is the plain Ctrl+E; quote and the
+  // two lists are Ctrl+Shift with the digit read from e.code (the shifted key glyph is layout
+  // dependent); the headings are the Ctrl+Alt+2/3 Google Docs idiom.
+  function formatForKeydown(e: KeyboardEvent): FormatKind | null {
+    if (e.altKey) {
+      if (e.key === '2') return 'h2';
+      if (e.key === '3') return 'h3';
+      return null;
+    }
+    if (e.shiftKey) {
+      if (e.code === 'Digit9') return 'quote';
+      if (e.code === 'Digit8') return 'ul';
+      if (e.code === 'Digit7') return 'ol';
+      return null;
+    }
+    if (e.key.toLowerCase() === 'e') return 'code';
+    return null;
   }
 
   // Render the design-accurate preview as the body changes, debounced. The site's render is the
@@ -582,7 +636,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
       </ul>
       {#if data.pending}
         <!-- Outline keeps Save the single solid primary action; Publish reads as its peer. -->
-        <button type="submit" form="cairn-edit-form" formaction="?/publish" class="btn btn-outline btn-primary btn-sm" disabled={busy}>
+        <button bind:this={publishButton} type="submit" form="cairn-edit-form" formaction="?/publish" class="btn btn-outline btn-primary btn-sm" disabled={busy}>
           {#if publishing}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Publishing…{:else}Publish{/if}
         </button>
       {/if}

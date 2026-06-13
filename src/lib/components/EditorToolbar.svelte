@@ -53,12 +53,12 @@ are stroke SVG icons in the admin's house style (24x24 viewBox, `currentColor`, 
   const structureButtons: ToolButton[] = [
     {
       kind: 'h2',
-      label: 'Heading',
+      label: 'Heading (Ctrl+Alt+2)',
       paths: ['M4 12h8', 'M4 18V6', 'M12 18V6', 'M21 18h-4c0-4 4-3 4-6 0-1.5-2-2.5-4-1'],
     },
     {
       kind: 'h3',
-      label: 'Smaller heading',
+      label: 'Smaller heading (Ctrl+Alt+3)',
       paths: [
         'M4 12h8',
         'M4 18V6',
@@ -67,15 +67,15 @@ are stroke SVG icons in the admin's house style (24x24 viewBox, `currentColor`, 
         'M17 17.5c2 1.5 4 .3 4-1.5a2 2 0 0 0-2-2',
       ],
     },
-    { kind: 'ul', label: 'Bulleted list', paths: ['M8 6h13', 'M8 12h13', 'M8 18h13', 'M3 6h.01', 'M3 12h.01', 'M3 18h.01'] },
+    { kind: 'ul', label: 'Bulleted list (Ctrl+Shift+8)', paths: ['M8 6h13', 'M8 12h13', 'M8 18h13', 'M3 6h.01', 'M3 12h.01', 'M3 18h.01'] },
     {
       kind: 'ol',
-      label: 'Numbered list',
+      label: 'Numbered list (Ctrl+Shift+7)',
       paths: ['M10 12h11', 'M10 18h11', 'M10 6h11', 'M4 10h2', 'M4 6h1v4', 'M6 18H4c0-1 2-2 2-3s-1-1.5-2-1'],
     },
     {
       kind: 'quote',
-      label: 'Quote',
+      label: 'Quote (Ctrl+Shift+9)',
       paths: [
         'M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1 1 1 0 0 0 1 1 4 4 0 0 0 4-4V5a2 2 0 0 0-2-2z',
         'M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1 1 1 0 0 0 1 1 4 4 0 0 0 4-4V5a2 2 0 0 0-2-2z',
@@ -89,7 +89,7 @@ are stroke SVG icons in the admin's house style (24x24 viewBox, `currentColor`, 
 
   const moreItems: { kind: FormatKind; label: string }[] = [
     { kind: 'strike', label: 'Strikethrough' },
-    { kind: 'code', label: 'Inline code' },
+    { kind: 'code', label: 'Inline code (Ctrl+E)' },
     { kind: 'codeblock', label: 'Code block' },
     { kind: 'table', label: 'Table' },
     { kind: 'hr', label: 'Horizontal rule' },

@@ -81,19 +81,30 @@ are stroke SVG icons in the admin's house style (24x24 viewBox, `currentColor`, 
         'M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1 1 1 0 0 0 1 1 4 4 0 0 0 4-4V5a2 2 0 0 0-2-2z',
       ],
     },
+    // The everyday formats promoted out of the More menu onto the strip (after Quote, before
+    // More), per mockup screen 1. They keep the strip's glyph grammar.
+    { kind: 'code', label: 'Inline code (Ctrl+E)', paths: ['m9 8-4 4 4 4', 'm15 8 4 4-4 4'] },
+    {
+      kind: 'strike',
+      label: 'Strikethrough',
+      paths: ['M14 12a4 4 0 0 1 0 8H8', 'M16 4H9.5a3.5 3.5 0 0 0-1.4 6.7', 'M4 12h16'],
+    },
+    {
+      kind: 'table',
+      label: 'Table',
+      paths: ['M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z', 'M3 10h18', 'M10 3v18'],
+    },
   ];
 
   const ellipsisPaths = ['M5 12h.01', 'M12 12h.01', 'M19 12h.01'];
   // The check glyph marking an active pick, shared by the More menu's toggles and the device list.
   const checkPaths = ['M20 6 9 17l-5-5'];
 
-  const moreItems: { kind: FormatKind; label: string }[] = [
-    { kind: 'strike', label: 'Strikethrough' },
-    { kind: 'code', label: 'Inline code (Ctrl+E)' },
+  // The trimmed overflow: the block formats that stay rare. A divider splits the code block from
+  // the task list, keeping the mockup's rhythm.
+  const moreItems: { kind: FormatKind; label: string; divideBefore?: boolean }[] = [
     { kind: 'codeblock', label: 'Code block' },
-    { kind: 'table', label: 'Table' },
-    { kind: 'hr', label: 'Horizontal rule' },
-    { kind: 'task', label: 'Task list' },
+    { kind: 'task', label: 'Task list', divideBefore: true },
   ];
 
   // The More menu's popover element and its open state, mirrored from the toggle event into
@@ -254,6 +265,9 @@ are stroke SVG icons in the admin's house style (24x24 viewBox, `currentColor`, 
     class="dropdown menu menu-sm bg-base-100 rounded-box w-44 border border-[var(--cairn-card-border)] p-1 shadow-[var(--cairn-shadow)]"
   >
     {#each moreItems as item (item.kind)}
+      {#if item.divideBefore}
+        <li class="menu-divider my-1 h-px bg-[var(--cairn-card-border)]" role="separator" aria-hidden="true"></li>
+      {/if}
       <li><button type="button" onclick={() => pickMore(item.kind)}>{item.label}</button></li>
     {/each}
   </ul>

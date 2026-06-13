@@ -5,6 +5,10 @@ import EditorToolbar from '../../lib/components/EditorToolbar.svelte';
 // The source admin sheet (the variables partial plus the scoped component rules), so the
 // unlayered menu focus override is present for the focus-visibility tests below.
 import '../../lib/components/cairn-admin.css';
+// The compiled sheet's text (daisyUI's real .btn/.btn-sm/.btn-square sizing), injected only for
+// the strip fit test below so its measurements reflect production button footprints, never the
+// UA-default widths the source partial alone leaves.
+import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
 
 function baseProps(over: Record<string, unknown> = {}) {
   return { format: vi.fn(), mode: 'write' as const, onMode: vi.fn(), ...over };
@@ -28,11 +32,40 @@ describe('EditorToolbar', () => {
       'Bulleted list (Ctrl+Shift+8)',
       'Numbered list (Ctrl+Shift+7)',
       'Quote (Ctrl+Shift+9)',
+      'Inline code (Ctrl+E)',
+      'Strikethrough',
+      'Table',
       'More formatting',
     ];
     for (const label of labels) {
       await expect.element(screen.getByRole('button', { name: label, exact: true })).toBeInTheDocument();
     }
+  });
+
+  it('promotes inline code, strikethrough, and table onto the strip after Quote and before More', async () => {
+    const screen = render(EditorToolbar, baseProps());
+    const labels = controls(screen.container)
+      .map((el) => el.getAttribute('aria-label') ?? '')
+      .filter((l) => ['Quote (Ctrl+Shift+9)', 'Inline code (Ctrl+E)', 'Strikethrough', 'Table', 'More formatting'].includes(l));
+    expect(labels).toEqual([
+      'Quote (Ctrl+Shift+9)',
+      'Inline code (Ctrl+E)',
+      'Strikethrough',
+      'Table',
+      'More formatting',
+    ]);
+  });
+
+  it('keeps exactly code block, a divider, and task list in the trimmed More menu', async () => {
+    const screen = render(EditorToolbar, baseProps());
+    await screen.getByRole('button', { name: 'More formatting' }).click();
+    const menu = screen.container.querySelector('#cairn-more-formatting-menu')!;
+    const itemLabels = Array.from(menu.querySelectorAll<HTMLButtonElement>('li > button')).map((el) =>
+      el.textContent?.trim(),
+    );
+    expect(itemLabels).toEqual(['Code block', 'Task list']);
+    // Exactly one divider sits between the two rows.
+    expect(menu.querySelectorAll('li.menu-divider, .divider, [role="separator"]').length).toBe(1);
   });
 
   it('asks the host to apply a format on a primary click', async () => {
@@ -55,19 +88,63 @@ describe('EditorToolbar', () => {
     await expect.poll(() => controls(screen.container).filter((el) => el.tabIndex === 0).length).toBe(1);
   });
 
-  it('lists the six secondary formats in the More menu and applies one', async () => {
+  it('lists the overflow formats in the More menu and applies one', async () => {
     const format = vi.fn();
     const screen = render(EditorToolbar, baseProps({ format }));
     // The menu is a popover, hidden until the trigger opens it.
     await screen.getByRole('button', { name: 'More formatting' }).click();
-    for (const label of ['Strikethrough', 'Inline code (Ctrl+E)', 'Code block', 'Table', 'Horizontal rule', 'Task list']) {
+    for (const label of ['Code block', 'Task list']) {
       await expect.element(screen.getByRole('button', { name: label })).toBeInTheDocument();
     }
-    await screen.getByRole('button', { name: 'Table' }).click();
-    expect(format).toHaveBeenCalledWith('table');
+    await screen.getByRole('button', { name: 'Code block' }).click();
+    expect(format).toHaveBeenCalledWith('codeblock');
     // Picking a format closes the menu.
     const menu = screen.container.querySelector('#cairn-more-formatting-menu')!;
     await expect.poll(() => menu.matches(':popover-open')).toBe(false);
+  });
+
+  it('applies a promoted strip format on a direct click', async () => {
+    const format = vi.fn();
+    const screen = render(EditorToolbar, baseProps({ format }));
+    await screen.getByRole('button', { name: 'Table', exact: true }).click();
+    await screen.getByRole('button', { name: 'Inline code (Ctrl+E)' }).click();
+    await screen.getByRole('button', { name: 'Strikethrough', exact: true }).click();
+    expect(format.mock.calls).toEqual([['table'], ['code'], ['strike']]);
+  });
+
+  describe('strip fit at the posture caps', () => {
+    // The editor card spans the column; the strip must not wrap at either posture's cap (the
+    // 49rem prose measure or the 56rem markup ceiling). The compiled sheet carries daisyUI's real
+    // button sizing, scoped to the theme, so this run sets data-theme and injects it; render
+    // mounts its container into the width-constrained baseElement, so the strip lays out against
+    // the real cap with production button footprints.
+    let sheet: HTMLStyleElement;
+    beforeAll(() => {
+      document.documentElement.setAttribute('data-theme', 'cairn-admin');
+      sheet = document.createElement('style');
+      sheet.textContent = compiledAdminCss;
+      document.head.appendChild(sheet);
+    });
+    afterAll(() => {
+      document.documentElement.removeAttribute('data-theme');
+      sheet.remove();
+    });
+
+    it('fits every strip control on one row at the prose and markup caps', async () => {
+      for (const width of ['49rem', '56rem']) {
+        const host = document.createElement('div');
+        host.style.width = width;
+        document.body.appendChild(host);
+        const screen = render(EditorToolbar, baseProps(), { baseElement: host });
+        const items = controls(screen.container);
+        expect(items.length).toBeGreaterThan(0);
+        const first = items[0].offsetTop;
+        for (const el of items) {
+          expect(el.offsetTop, `${el.getAttribute('aria-label') ?? el.textContent} wraps at ${width}`).toBe(first);
+        }
+        host.remove();
+      }
+    });
   });
 
   it('drives the More menu as a popover with aria-expanded and Escape', async () => {
@@ -254,7 +331,7 @@ describe('popover menu focus visibility', () => {
     // :focus-visible applies the way it does for a keyboard user.
     await userEvent.tab();
     const item = document.activeElement as HTMLElement;
-    expect(item.textContent?.trim()).toBe('Strikethrough');
+    expect(item.textContent?.trim()).toBe('Code block');
     const computed = getComputedStyle(item);
     expect(computed.outlineStyle).toBe('solid');
     expect(computed.outlineWidth).toBe('2px');

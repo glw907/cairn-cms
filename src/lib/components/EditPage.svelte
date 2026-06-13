@@ -240,10 +240,19 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     surface = posture;
     localStorage.setItem(surfaceStorageKey, posture);
   }
-  // One source for the footer toggles' pressed/idle styling. The class names must stay verbatim
-  // string literals: the admin CSS build's @source scan reads this file as raw text.
-  function footerToggleClass(pressed: boolean): string {
-    return `btn btn-ghost btn-xs font-normal ${pressed ? 'bg-primary/10 text-primary' : 'text-[var(--color-muted)]'}`;
+  // The footer controls dress as what they are (the spec's rule). Each helper returns a verbatim
+  // Tailwind class string: the admin CSS build's @source scan reads this file as raw text, so the
+  // utilities must appear whole, never assembled from fragments.
+  //
+  // A segment of the bordered posture control (the mockup's .seg). The pick-one semantics ride the
+  // shared border, so the segments themselves carry no border; the active one tints and bolds.
+  function segButtonClass(pressed: boolean): string {
+    return `inline-flex items-center gap-1 px-2.5 py-1 text-xs font-normal ${pressed ? 'bg-primary/10 text-primary font-medium' : 'text-[var(--color-muted)]'}`;
+  }
+  // A standalone writing-mode toggle (the mockup's .ftr-toggle): rounded, no border, check-and-tint
+  // when pressed.
+  function ftrToggleClass(pressed: boolean): string {
+    return `ftr-toggle inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-normal hover:bg-base-content/[0.06] ${pressed ? 'bg-primary/10 text-primary font-medium' : 'text-[var(--color-muted)]'}`;
   }
   const activeDevice = $derived(previewDevice(device));
   // The iframe document around the rendered html: the site's stylesheets from the adapter's
@@ -874,13 +883,19 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
            an overflow menu. -->
       <div class="flex items-center justify-between border-t border-[var(--cairn-card-border)] px-3 py-1 text-xs text-[var(--color-muted)]">
         <span>{wordLabel}</span>
-        <div class="flex items-center gap-1">
-          <!-- The pressed check is the non-color state cue (WCAG 1.4.1): pressed and idle
-               toggles share weight and size, so hue alone must not carry the state. -->
-          <div role="group" aria-label="Editing surface" class="flex items-center gap-1">
+        <div class="flex items-center gap-3.5">
+          <!-- The posture pair is one bordered segmented control: the shared border carries the
+               pick-one semantics, so no group label is needed (the spec considered and declined
+               them). The pressed check is the non-color state cue (WCAG 1.4.1): the segments share
+               weight outside the active one, so hue alone never carries the state. -->
+          <div
+            role="group"
+            aria-label="Editing surface"
+            class="bg-base-100 inline-flex items-center overflow-hidden rounded-lg border border-[var(--cairn-card-border)]"
+          >
             <button
               type="button"
-              class={footerToggleClass(surface === 'prose')}
+              class={segButtonClass(surface === 'prose')}
               aria-pressed={surface === 'prose'}
               onclick={() => setSurface('prose')}
             >
@@ -889,7 +904,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
             </button>
             <button
               type="button"
-              class={footerToggleClass(surface === 'markup')}
+              class="{segButtonClass(surface === 'markup')} border-l border-[var(--cairn-card-border)]"
               aria-pressed={surface === 'markup'}
               onclick={() => setSurface('markup')}
             >
@@ -897,29 +912,32 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
               Markup
             </button>
           </div>
-          <div class="mx-1 h-4 w-px bg-[var(--cairn-card-border)]" aria-hidden="true"></div>
+          <!-- Focus mode and Typewriter are standalone check-and-tint toggles, no border. -->
+          <div class="flex items-center gap-0.5">
+            <button
+              type="button"
+              class={ftrToggleClass(focusMode)}
+              aria-pressed={focusMode}
+              onclick={() => setFocusMode(!focusMode)}
+            >
+              {#if focusMode}<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>{/if}
+              Focus mode
+            </button>
+            <button
+              type="button"
+              class={ftrToggleClass(typewriter)}
+              aria-pressed={typewriter}
+              onclick={() => setTypewriter(!typewriter)}
+            >
+              {#if typewriter}<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>{/if}
+              Typewriter
+            </button>
+          </div>
+          <!-- Markdown help is a plain underlined link-styled button (a reference, not a control),
+               no border, no fill. -->
           <button
             type="button"
-            class={footerToggleClass(focusMode)}
-            aria-pressed={focusMode}
-            onclick={() => setFocusMode(!focusMode)}
-          >
-            {#if focusMode}<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>{/if}
-            Focus mode
-          </button>
-          <button
-            type="button"
-            class={footerToggleClass(typewriter)}
-            aria-pressed={typewriter}
-            onclick={() => setTypewriter(!typewriter)}
-          >
-            {#if typewriter}<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>{/if}
-            Typewriter
-          </button>
-          <div class="mx-1 h-4 w-px bg-[var(--cairn-card-border)]" aria-hidden="true"></div>
-          <button
-            type="button"
-            class="btn btn-ghost btn-xs font-normal text-[var(--color-muted)]"
+            class="ftr-link cursor-pointer text-[var(--color-muted)] underline [text-decoration-color:color-mix(in_oklab,currentColor_40%,transparent)] [text-underline-offset:2px] hover:text-[var(--color-primary)]"
             aria-haspopup="dialog"
             onclick={() => helpDialog?.open()}
           >

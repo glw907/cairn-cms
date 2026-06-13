@@ -144,6 +144,64 @@ describe('EditPage', () => {
       .toHaveAttribute('aria-pressed', 'false');
   });
 
+  it('dresses the posture pair as one bordered segmented control with the active check glyph', async () => {
+    localStorage.removeItem('cairn-editor-surface');
+    const screen = render(EditPage, postProps());
+    const group = screen.container.querySelector<HTMLElement>('[role="group"][aria-label="Editing surface"]')!;
+    // One bordered segmented control: a single border carries the pick-one semantics, so the
+    // wrapper is bordered and rounded and the two postures are its only buttons (no group label).
+    expect(group.className).toContain('border');
+    expect(group.className).toContain('border-[var(--cairn-card-border)]');
+    const segButtons = Array.from(group.querySelectorAll<HTMLButtonElement>('button'));
+    expect(segButtons.map((b) => b.textContent?.trim())).toEqual(['Prose', 'Markup']);
+    // The check glyph rides inside the active segment only (the non-color cue, WCAG 1.4.1).
+    const prose = screen.getByRole('button', { name: 'Prose', exact: true });
+    const markup = screen.getByRole('button', { name: 'Markup', exact: true });
+    await expect.element(prose).toHaveAttribute('aria-pressed', 'true');
+    expect(segButtons.find((b) => b.textContent?.trim() === 'Prose')!.querySelector('svg')).not.toBeNull();
+    expect(segButtons.find((b) => b.textContent?.trim() === 'Markup')!.querySelector('svg')).toBeNull();
+    await markup.click();
+    await expect.element(markup).toHaveAttribute('aria-pressed', 'true');
+    expect(segButtons.find((b) => b.textContent?.trim() === 'Markup')!.querySelector('svg')).not.toBeNull();
+    expect(segButtons.find((b) => b.textContent?.trim() === 'Prose')!.querySelector('svg')).toBeNull();
+  });
+
+  it('dresses Focus mode and Typewriter as standalone check-and-tint toggles', async () => {
+    const screen = render(EditPage, postProps());
+    for (const name of ['Focus mode', 'Typewriter']) {
+      const toggle = screen.getByRole('button', { name, exact: true });
+      const el = Array.from(screen.container.querySelectorAll<HTMLButtonElement>('button')).find(
+        (b) => b.textContent?.trim() === name,
+      )!;
+      // Standalone toggles, outside the segmented border, carrying their state on aria-pressed
+      // with the check glyph as the non-color cue and a tint when pressed.
+      await expect.element(toggle).toHaveAttribute('aria-pressed', 'false');
+      expect(el.closest('[role="group"][aria-label="Editing surface"]')).toBeNull();
+      expect(el.querySelector('svg')).toBeNull();
+      // Idle wears no tint; pressed picks up the primary tint.
+      expect(el.className).not.toContain('text-primary');
+      await toggle.click();
+      await expect.element(toggle).toHaveAttribute('aria-pressed', 'true');
+      expect(el.querySelector('svg')).not.toBeNull();
+      expect(el.className).toContain('text-primary');
+    }
+  });
+
+  it('dresses Markdown help as a borderless underlined link button', async () => {
+    const screen = render(EditPage, postProps());
+    const help = screen.getByRole('button', { name: 'Markdown help', exact: true });
+    const el = Array.from(screen.container.querySelectorAll<HTMLButtonElement>('button')).find(
+      (b) => b.textContent?.trim() === 'Markdown help',
+    )!;
+    // A link-styled reference: underlined, no border, no button fill, never aria-pressed (it
+    // opens a dialog, it is not a state toggle).
+    expect(el.className).toContain('underline');
+    expect(el.className).not.toContain('border');
+    expect(el.className).not.toContain('btn');
+    expect(el.hasAttribute('aria-pressed')).toBe(false);
+    expect(el.getAttribute('aria-haspopup')).toBe('dialog');
+  });
+
   it('keeps the editor mounted but hidden in preview and restores it intact on Write', async () => {
     const screen = render(EditPage, postProps({ body: 'Round trip body' }));
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();

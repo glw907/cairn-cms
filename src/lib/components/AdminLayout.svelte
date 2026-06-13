@@ -234,7 +234,7 @@ identical on every host regardless of the site's own theme.
 
   // The topbar context portal: a reactive holder a descendant document fills with its desk snippet.
   // EditPage registers on mount and nulls it on teardown; the office routes leave it null.
-  let topbar = $state<TopbarHolder>({ desk: null });
+  let topbar = $state<TopbarHolder>({ desk: null, zen: false });
   provideTopbar(topbar);
 </script>
 
@@ -259,6 +259,12 @@ identical on every host regardless of the site's own theme.
     <input id="cairn-drawer" type="checkbox" class="drawer-toggle" bind:checked={drawerOpen} />
 
     <div class="drawer-content flex flex-col">
+      <!-- Zen (rung 4) drops the whole topbar element, not just its contents: a desk document
+           registers zen through the topbar holder and the band slides away entirely. The desk's
+           three clusters include AdminLayout-owned chrome (the drawer toggle, the breadcrumb), so
+           emptying the band would leave that chrome behind; the band must be GONE. The manuscript
+           and EditPage's own floating zen chip carry on below. -->
+      {#if !topbar.zen}
       <!-- The topbar is a flat, opaque continuation of the sidebar's brand band: same surface and the
            same hairline, no shadow, so the two form one clean header strip across the sidebar seam.
            The height is pinned to the brand band's h-16 (a content-driven navbar drifts with font
@@ -320,6 +326,7 @@ identical on every host regardless of the site's own theme.
           </button>
         </div>
       </div>
+      {/if}
 
       <main class="flex-1 p-4 lg:px-10 lg:py-8">
         {@render children()}

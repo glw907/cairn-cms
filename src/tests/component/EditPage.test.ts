@@ -1754,4 +1754,148 @@ describe('EditPage', () => {
     await expect.poll(() => screen.container.querySelector('#cairn-pane-preview')).toBeNull();
     expect(screen.container.querySelector('aside')!.hasAttribute('hidden')).toBe(true);
   });
+
+  // Task 9: zen (rung 4). The manuscript alone on the recessed ground. The footer Zen toggle and
+  // Ctrl+Shift+. enter and exit; the band, the document title, the toolbar strip, and the footer
+  // hide; a floating chip keeps the save state and the way out (the WordPress/Ghost rule).
+  describe('zen', () => {
+    beforeEach(() => {
+      localStorage.removeItem('cairn-editor-zen');
+    });
+
+    it('hides the band, title, strip, and footer behind the chip when the footer Zen toggle enters', async () => {
+      const screen = render(EditPage, postProps());
+      await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+      // Out of zen: the band, the document title, the toolbar strip, and the footer are all up,
+      // and there is no chip.
+      expect(screen.container.querySelector('[data-testid="cairn-band"]')).not.toBeNull();
+      expect(screen.container.querySelector('input.cairn-doc-title')).not.toBeNull();
+      expect(screen.container.querySelector('[role="toolbar"]')).not.toBeNull();
+      expect(screen.container.querySelector('.cairn-zen-chip')).toBeNull();
+      // Enter zen from the footer toggle.
+      await screen.getByRole('button', { name: 'Zen', exact: true }).click();
+      // The band element is gone (the harness mirrors AdminLayout's drop, not just an empty band).
+      await expect.poll(() => screen.container.querySelector('[data-testid="cairn-band"]')).toBeNull();
+      // The document title wrap, the toolbar strip, and the footer strip are hidden; the manuscript
+      // (the editing surface) stays.
+      expect(screen.container.querySelector('input.cairn-doc-title')).toBeNull();
+      expect(screen.container.querySelector('[role="toolbar"]')).toBeNull();
+      expect(screen.container.querySelector('.cm-content')).not.toBeNull();
+      // The chip carries the save state and an Exit control with the Esc hint.
+      const chip = screen.container.querySelector('.cairn-zen-chip')!;
+      expect(chip.querySelector('.cairn-save-state')).not.toBeNull();
+      const exit = screen.getByRole('button', { name: /exit zen/i });
+      await expect.element(exit).toBeInTheDocument();
+      expect((await exit.element()).textContent ?? '').toContain('Esc');
+    });
+
+    it('enters and exits zen on Ctrl+Shift+.', async () => {
+      const screen = render(EditPage, postProps());
+      const enter = new KeyboardEvent('keydown', { key: '.', ctrlKey: true, shiftKey: true, cancelable: true });
+      window.dispatchEvent(enter);
+      expect(enter.defaultPrevented).toBe(true);
+      await expect.poll(() => screen.container.querySelector('.cairn-zen-chip')).not.toBeNull();
+      expect(screen.container.querySelector('[data-testid="cairn-band"]')).toBeNull();
+      const exit = new KeyboardEvent('keydown', { key: '.', ctrlKey: true, shiftKey: true, cancelable: true });
+      window.dispatchEvent(exit);
+      expect(exit.defaultPrevented).toBe(true);
+      await expect.poll(() => screen.container.querySelector('.cairn-zen-chip')).toBeNull();
+      expect(screen.container.querySelector('[data-testid="cairn-band"]')).not.toBeNull();
+    });
+
+    it('exits zen on Escape and restores the chrome', async () => {
+      const screen = render(EditPage, postProps());
+      await screen.getByRole('button', { name: 'Zen', exact: true }).click();
+      await expect.poll(() => screen.container.querySelector('.cairn-zen-chip')).not.toBeNull();
+      const esc = new KeyboardEvent('keydown', { key: 'Escape', cancelable: true });
+      window.dispatchEvent(esc);
+      await expect.poll(() => screen.container.querySelector('.cairn-zen-chip')).toBeNull();
+      // Everything is back: the band, the title, the toolbar strip.
+      expect(screen.container.querySelector('[data-testid="cairn-band"]')).not.toBeNull();
+      expect(screen.container.querySelector('input.cairn-doc-title')).not.toBeNull();
+      expect(screen.container.querySelector('[role="toolbar"]')).not.toBeNull();
+    });
+
+    it('exits zen from the chip Exit control', async () => {
+      const screen = render(EditPage, postProps());
+      await screen.getByRole('button', { name: 'Zen', exact: true }).click();
+      await expect.poll(() => screen.container.querySelector('.cairn-zen-chip')).not.toBeNull();
+      await screen.getByRole('button', { name: /exit zen/i }).click();
+      await expect.poll(() => screen.container.querySelector('.cairn-zen-chip')).toBeNull();
+      expect(screen.container.querySelector('[data-testid="cairn-band"]')).not.toBeNull();
+    });
+
+    it('closes an open details panel before exiting zen (Escape precedence)', async () => {
+      const screen = render(EditPage, postProps());
+      // Enter zen, then open the details panel; Escape must close the panel first, not exit zen.
+      await screen.getByRole('button', { name: 'Zen', exact: true }).click();
+      await expect.poll(() => screen.container.querySelector('.cairn-zen-chip')).not.toBeNull();
+      const aside = screen.container.querySelector('aside')!;
+      // Ctrl+. opens the panel even under zen (the panel works inside zen).
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: '.', ctrlKey: true, cancelable: true }));
+      await expect.poll(() => aside.hasAttribute('hidden')).toBe(false);
+      // First Escape closes the panel; zen stays.
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true }));
+      await expect.poll(() => aside.hasAttribute('hidden')).toBe(true);
+      expect(screen.container.querySelector('.cairn-zen-chip')).not.toBeNull();
+      // Second Escape exits zen.
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true }));
+      await expect.poll(() => screen.container.querySelector('.cairn-zen-chip')).toBeNull();
+    });
+
+    it('moves focus into the editor when entering zen hides the focused control', async () => {
+      const screen = render(EditPage, postProps());
+      await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+      // Focus the footer Markdown help link (a control that hides under zen), then enter zen via
+      // the keyboard so focus is on a hiding control at the moment of entry.
+      const zen = screen.getByRole('button', { name: 'Zen', exact: true });
+      (await zen.element() as HTMLElement).focus();
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: '.', ctrlKey: true, shiftKey: true, cancelable: true }));
+      await expect.poll(() => screen.container.querySelector('.cairn-zen-chip')).not.toBeNull();
+      // Focus is not stranded on a removed node: it lands in the editing surface.
+      const content = screen.container.querySelector('.cm-content')!;
+      await expect.poll(() => content.contains(document.activeElement)).toBe(true);
+    });
+
+    it('persists the zen preference and re-applies it on mount', async () => {
+      const screen = render(EditPage, postProps());
+      await screen.getByRole('button', { name: 'Zen', exact: true }).click();
+      expect(localStorage.getItem('cairn-editor-zen')).toBe('true');
+      await screen.getByRole('button', { name: /exit zen/i }).click();
+      expect(localStorage.getItem('cairn-editor-zen')).toBe('false');
+      // A fresh mount with the stored choice arrives in zen.
+      localStorage.setItem('cairn-editor-zen', 'true');
+      const reborn = render(EditPage, postProps());
+      await expect.poll(() => reborn.container.querySelector('.cairn-zen-chip')).not.toBeNull();
+      expect(reborn.container.querySelector('[data-testid="cairn-band"]')).toBeNull();
+    });
+
+    it('composes with focus mode: both on means chrome gone and machinery dimmed', async () => {
+      localStorage.setItem('cairn-editor-focus-mode', 'true');
+      const screen = render(EditPage, postProps({ body: 'one\n\ntwo' }));
+      await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+      // Focus mode is on: a paragraph away from the mount caret dims.
+      await expect.poll(() => screen.container.querySelector('.cm-line.cm-cairn-focus-dim')).not.toBeNull();
+      // Enter zen without resetting focus mode: the chrome goes and the dim stays.
+      await screen.getByRole('button', { name: 'Zen', exact: true }).click();
+      await expect.poll(() => screen.container.querySelector('.cairn-zen-chip')).not.toBeNull();
+      expect(screen.container.querySelector('[data-testid="cairn-band"]')).toBeNull();
+      expect(screen.container.querySelector('.cm-line.cm-cairn-focus-dim')).not.toBeNull();
+    });
+
+    it('keeps the chip save-state live: dirtying the body flips the dot', async () => {
+      const screen = render(EditPage, postProps());
+      await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+      await screen.getByRole('button', { name: 'Zen', exact: true }).click();
+      const chip = () => screen.container.querySelector('.cairn-zen-chip')!;
+      await expect.poll(() => chip()).not.toBeNull();
+      // Clean: the unsaved warning dot is absent from the chip.
+      expect(chip().querySelector('.cairn-save-state .bg-warning')).toBeNull();
+      // Type into the editor to dirty the body; the chip's dot appears (the chip reads live dirty).
+      const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
+      content.focus();
+      await userEvent.keyboard('x');
+      await expect.poll(() => chip().querySelector('.cairn-save-state .bg-warning')).not.toBeNull();
+    });
+  });
 });

@@ -70,8 +70,13 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   $effect(() => {
     if (!topbar) return;
     topbar.desk = desk;
+    // Zen drops the band: AdminLayout reads this flag to remove the whole topbar element, so the
+    // desk's clusters and AdminLayout's own chrome (the drawer toggle, the breadcrumb) all slide
+    // away together. The effect tracks `zen`, so a toggle reaches the band live.
+    topbar.zen = zen;
     return () => {
       topbar.desk = null;
+      topbar.zen = false;
     };
   });
 
@@ -168,13 +173,17 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     // Guard-clause style on purpose: svelte 5.56.1 misprints `(a || b) && c` by dropping the
     // parentheses, and consumers compile this source with their own svelte.
     const onWindowKeydown = (e: KeyboardEvent) => {
-      // Escape closes the details slide-over (it is a region, not a dialog, so it has no native
-      // light-dismiss). An open dialog claims Escape first, so only act when none is up.
-      if (e.key === 'Escape' && detailsOpen) {
+      // Escape precedence, top to bottom: an open dialog claims Escape natively, so step aside
+      // when one is up. Otherwise the details slide-over closes first (Task 8: it is a region, not
+      // a dialog, so it has no native light-dismiss), and only when no panel is open does Escape
+      // exit zen. So under zen with the panel open, the first Escape closes the panel and the
+      // second exits zen, which keeps the two affordances independent.
+      if (e.key === 'Escape' && (detailsOpen || zen)) {
         const inDialog = !!(e.target as Element | null)?.closest?.('dialog');
         if (inDialog) return;
         e.preventDefault();
-        closeDetails();
+        if (detailsOpen) closeDetails();
+        else setZen(false);
         return;
       }
       if (!(e.ctrlKey || e.metaKey)) return;
@@ -201,6 +210,14 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
         e.preventDefault();
         if (inDialog) return;
         setFocusMode(!focusMode);
+        return;
+      }
+      // Ctrl+Shift+. toggles zen (the bindings' zen key); the period reads off e.key. This sits
+      // before the Ctrl+. panel block so the shifted chord is not mistaken for the panel toggle.
+      if (e.shiftKey && !e.altKey && e.key === '.') {
+        e.preventDefault();
+        if (inDialog) return;
+        setZen(!zen);
         return;
       }
       // Ctrl+. toggles the details slide-over (the bindings' panel key); the period reads off
@@ -258,14 +275,21 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   const focusStorageKey = 'cairn-editor-focus-mode';
   const typewriterStorageKey = 'cairn-editor-typewriter';
   const surfaceStorageKey = 'cairn-editor-surface';
+  const zenStorageKey = 'cairn-editor-zen';
   let focusMode = $state(false);
   let typewriter = $state(false);
+  // Zen: the manuscript alone on the recessed ground. The band, the document title, the toolbar
+  // strip, and the footer go; the editing surface stays. It joins the editor-preference family on
+  // the same pattern (a localStorage key, read once below, written by the setter), and composes
+  // with focus mode and the postures rather than resetting them.
+  let zen = $state(false);
   // The surface posture: prose (the writing instrument) by default; markup is the dense
   // working surface.
   let surface = $state<'prose' | 'markup'>('prose');
   $effect(() => {
     focusMode = localStorage.getItem(focusStorageKey) === 'true';
     typewriter = localStorage.getItem(typewriterStorageKey) === 'true';
+    zen = localStorage.getItem(zenStorageKey) === 'true';
     if (localStorage.getItem(surfaceStorageKey) === 'markup') surface = 'markup';
   });
   function setFocusMode(on: boolean) {
@@ -279,6 +303,22 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   function setSurface(posture: 'prose' | 'markup') {
     surface = posture;
     localStorage.setItem(surfaceStorageKey, posture);
+  }
+  function setZen(on: boolean) {
+    // Entering zen hides the band, the document title, the toolbar strip, and the footer. If focus
+    // sits on one of those (a strip button, a footer toggle, the Zen toggle itself), removing it
+    // would strand focus on a detached node, so move focus into the editing surface first. The
+    // exit chip and the editor remain reachable; reading activeElement before the DOM updates is
+    // what lets us tell a hiding control from one that survives.
+    const focusHides = on && !!editorCard?.contains(document.activeElement);
+    zen = on;
+    localStorage.setItem(zenStorageKey, String(on));
+    if (focusHides) {
+      // flushSync applies the zen layout (the strip and footer leave the DOM) before we reach for
+      // the surface, so the focus call lands on the now-sole interactive region.
+      flushSync();
+      (editorCard?.querySelector('.cm-content') as HTMLElement | null)?.focus();
+    }
   }
   // The footer controls dress as what they are (the spec's rule). Each helper returns a verbatim
   // Tailwind class string: the admin CSS build's @source scan reads this file as raw text, so the
@@ -800,7 +840,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     <!-- The page's accessible name. The visible title is a borderless input, so a real heading
          lives here for assistive tech (the band no longer carries one). -->
     <h1 class="sr-only">{data.title}</h1>
-    {#if titleField}
+    {#if titleField && !zen}
       <!-- The hoisted document title: large, borderless, in the display face, so the manuscript
            reads as the protagonist. It submits as name="title", the same field as before. The
            admin sheet gives it the editor's quiet focus hairline (see .cairn-doc-title there).
@@ -828,6 +868,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
       role="group"
       aria-label="Editor"
     >
+      {#if !zen}
       <EditorToolbar {format} {mode} onMode={setMode} {device} onDevice={setDevice}>
         {#snippet insertControls()}
           <!-- Plain triggers only: the dialogs they open hold their own <form> elements, so the
@@ -884,6 +925,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
           </button>
         {/snippet}
       </EditorToolbar>
+      {/if}
       <!-- The Write pane stays mounted while Preview shows, so CodeMirror keeps its caret, scroll
            position, and undo history across the tab switch. -->
       <div id="cairn-pane-write" role="tabpanel" aria-labelledby="cairn-tab-write" class:hidden={mode === 'preview'}>
@@ -955,6 +997,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
            carries the writing environment (the count, the persisted writing modes, help) while
            the top toolbar acts on the text; the toggles live here visible rather than buried in
            an overflow menu. -->
+      {#if !zen}
       <div class="flex items-center justify-between border-t border-[var(--cairn-card-border)] px-3 py-1 text-xs text-[var(--color-muted)]">
         <span>{wordLabel}</span>
         <div class="flex items-center gap-3.5">
@@ -1006,6 +1049,17 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
               {#if typewriter}<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>{/if}
               Typewriter
             </button>
+            <!-- Zen enters from the footer (and Ctrl+Shift+.); it reads as a peer writing-mode
+                 toggle here, but once on it hides the whole footer, so the chip carries the way out. -->
+            <button
+              type="button"
+              class={ftrToggleClass(zen)}
+              aria-pressed={zen}
+              onclick={() => setZen(!zen)}
+            >
+              {#if zen}<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>{/if}
+              Zen
+            </button>
           </div>
           <!-- Markdown help is a plain underlined link-styled button (a reference, not a control),
                no border, no fill. -->
@@ -1019,6 +1073,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
           </button>
         </div>
       </div>
+      {/if}
     </div>
   </div>
 
@@ -1140,6 +1195,27 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     </div>
   </aside>
 </form>
+
+<!-- The floating zen chip (the mockup's .zen-chip): fixed top-right, it carries the two things the
+     WordPress/Ghost rule says never disappear under zen, the live save state and the way out. The
+     save-state span mirrors the band's, so the warning dot flips with `dirty` live; the Exit button
+     restores the chrome, with the Esc hint as the secondary cue. It renders only under zen. -->
+{#if zen}
+  <div class="cairn-zen-chip fixed right-[1.125rem] top-[0.875rem] z-40 flex items-center gap-2 rounded-xl border border-[var(--cairn-card-border)] bg-base-100 px-2.5 py-[5px] text-xs text-[var(--color-muted)] shadow-[var(--cairn-shadow)]">
+    <span class="cairn-save-state flex items-center gap-1.5" aria-live="off">
+      {#if dirty}<span class="h-1.5 w-1.5 shrink-0 rounded-full bg-warning" aria-hidden="true"></span>{:else}<span class="h-1.5 w-1.5 shrink-0 rounded-full bg-success" aria-hidden="true"></span>{/if}
+      {dirty ? 'Unsaved changes' : 'Saved'}
+    </span>
+    <span class="opacity-50" aria-hidden="true">·</span>
+    <button
+      type="button"
+      class="ftr-link inline-flex items-center cursor-pointer text-[var(--color-muted)] underline [text-decoration-color:color-mix(in_oklab,currentColor_40%,transparent)] [text-underline-offset:2px] hover:text-[var(--color-primary)]"
+      onclick={() => setZen(false)}
+    >
+      Exit zen<kbd class="ml-1.5 inline-block rounded border border-[var(--cairn-card-border)] px-1 text-[0.625rem] no-underline" aria-hidden="true">Esc</kbd>
+    </button>
+  </div>
+{/if}
 
 <!-- The toolbar's insert dialogs, mounted headless outside the edit form: each holds its own
      <form>, and a form nested in a form is invalid HTML the parser repairs by dropping the outer

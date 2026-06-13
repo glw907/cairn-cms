@@ -12,6 +12,10 @@ const TOPBAR_CONTEXT_KEY = Symbol('cairn-topbar');
 /** The shared holder: the desk snippet a document registers, or null on the office routes. */
 export interface TopbarHolder {
   desk: Snippet | null;
+  /** True while the document is in zen: AdminLayout drops the whole topbar element so the band
+   *  slides away (the desk's three clusters include AdminLayout-owned chrome, the drawer toggle and
+   *  breadcrumb, that must vanish with it). EditPage sets this; the office routes leave it false. */
+  zen: boolean;
 }
 
 /** Called by AdminLayout once: creates the holder, provides it on context, returns it to render. */

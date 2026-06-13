@@ -14,13 +14,17 @@ and focused on EditPage's own behavior.
 
   let props: ComponentProps<typeof EditPage> = $props();
 
-  let holder = $state<TopbarHolder>({ desk: null });
+  let holder = $state<TopbarHolder>({ desk: null, zen: false });
   provideTopbar(holder);
 </script>
 
+<!-- Mirror AdminLayout's zen lever: the whole band element drops when the document registers zen,
+     so a zen test sees the band gone (not merely emptied), the way the running admin does. -->
+{#if !holder.zen}
 <div data-testid="cairn-band" class="navbar">
   {@render holder.desk?.()}
 </div>
+{/if}
 <main>
   <EditPage {...props} />
 </main>

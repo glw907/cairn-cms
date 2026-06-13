@@ -6,6 +6,7 @@
       "concept": "pages",
       "title": "About",
       "permalink": "/about",
+      "summary": "The cairn showcase is a minimal site proving the engine surfaces.",
       "draft": false,
       "links": []
     },
@@ -15,6 +16,7 @@
       "title": "Hello, cairn",
       "date": "2026-01-15",
       "permalink": "/posts/hello",
+      "summary": "The first showcase post.",
       "draft": false,
       "links": [
         {
@@ -29,6 +31,7 @@
       "title": "A second post",
       "date": "2026-02-20",
       "permalink": "/posts/second",
+      "summary": "Proving the archive and feed list more than one entry.",
       "draft": false,
       "links": []
     },
@@ -38,6 +41,7 @@
       "title": "A post with a callout",
       "date": "2026-03-10",
       "permalink": "/posts/callout",
+      "summary": "Proving the component slot render path in the real build.",
       "draft": false,
       "links": []
     }

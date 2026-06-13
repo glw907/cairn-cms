@@ -224,6 +224,69 @@ test('the publish workflow round-trips: create, save, New, publish, edit, Edited
   await expect(row.getByText('Published', { exact: true })).toBeVisible();
 });
 
+test('the office triage: the publish-state filters carry counts, Pending edits narrows, and a row shows its summary', async ({ page }) => {
+  // The list reads through the GitHub double's main tree. The seeded post (2026-06-hello) is on
+  // main and carries a body, so deriveExcerpt fills its row summary line. A prior test may have
+  // left it on a pending branch (status edited), so this test keeps its assertions partition-
+  // agnostic for the seed and self-contained around its own freshly created entry.
+  await page.goto('/admin/posts');
+  await expect(page).toHaveURL(/\/admin\/posts$/);
+
+  // The triage control is present: the three publish-state filters, each with its live count.
+  const triage = page.getByRole('group', { name: 'Filter by publish state' });
+  await expect(triage).toBeVisible();
+  const allFilter = triage.getByRole('button', { name: /^All/ });
+  const pendingFilter = triage.getByRole('button', { name: /^Pending edits/ });
+  const publishedFilter = triage.getByRole('button', { name: /^Published/ });
+  // Each filter names a numeric count (the exact totals shift with prior tests, so match the shape,
+  // not a brittle literal). All defaults pressed.
+  await expect(allFilter).toHaveText(/All\s*\d+/);
+  await expect(pendingFilter).toHaveText(/Pending edits\s*\d+/);
+  await expect(publishedFilter).toHaveText(/Published\s*\d+/);
+  await expect(allFilter).toHaveAttribute('aria-pressed', 'true');
+
+  // The seeded post's row carries a summary line under its title (deriveExcerpt over its body).
+  // A prior test may have re-saved its body, so assert the line is present and non-empty rather
+  // than pinning the exact text.
+  const seedRow = page.locator('tr', { has: page.locator('a[href="/admin/posts/2026-06-hello"]') });
+  await expect(seedRow.locator('[data-summary]')).toBeVisible();
+  await expect(seedRow.locator('[data-summary]')).not.toBeEmpty();
+
+  // Create a fresh, never-published entry so the pending partition has a stable member to assert.
+  const slug = `triage-draft-${Date.now()}`;
+  await page.locator('header').getByRole('button', { name: 'New Posts' }).click();
+  const createDialog = page.locator('dialog[aria-labelledby="cairn-create-dialog-title"]');
+  await expect(createDialog).toBeVisible();
+  await createDialog.locator('input[name="title"]').fill('Triage Draft');
+  await createDialog.locator('input[name="slug"]').fill(slug);
+  await createDialog.getByRole('button', { name: 'Create' }).click();
+  await expect(page).toHaveURL(/new=1/, { timeout: 10_000 });
+  const id = new URL(page.url()).pathname.split('/').pop() ?? '';
+
+  // Save a body so the entry's pending row derives a summary, and the save lands the branch.
+  await page.locator('input[name="title"]').fill('Triage Draft');
+  const editor = page.locator('.cm-content');
+  await editor.click();
+  await page.keyboard.type('A pending draft body for the triage.');
+  await expect(page.locator('input[name="body"]')).toHaveValue('A pending draft body for the triage.', { timeout: 2000 });
+  await page.locator('.navbar').getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page).toHaveURL(/saved=1/, { timeout: 10_000 });
+
+  // Back on the list, Pending edits narrows to the unpublished entries: the new draft shows, and
+  // its New badge confirms it sits in the pending partition.
+  await page.goto('/admin/posts');
+  const draftRow = page.locator('tr', { has: page.locator(`a[href="/admin/posts/${id}"]`) });
+  await page.getByRole('button', { name: /^Pending edits/ }).click();
+  await expect(draftRow).toBeVisible();
+  await expect(draftRow.getByText('New', { exact: true })).toBeVisible();
+  await expect(draftRow.locator('[data-summary]')).toHaveText('A pending draft body for the triage.');
+
+  // Switching to Published drops the never-published draft (it is not on main), proving the
+  // partition narrows rather than just toggling chrome.
+  await page.getByRole('button', { name: /^Published/ }).click();
+  await expect(draftRow).toHaveCount(0);
+});
+
 test('zen round trip: the footer toggle hides the band, the chip carries the way out, Escape restores', async ({ page }) => {
   // Open the seeded entry from the list, the same path the golden-path test takes.
   await page.goto('/admin/posts');

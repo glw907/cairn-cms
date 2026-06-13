@@ -24,12 +24,17 @@ the brand band's height (the seam fix). The review gate folded in an active-rail
 and a WCAG 1.4.1 pressed-state fix (the check glyph as the non-color cue). Gates green at the
 tip (906 files 0/0, 1407 tests exit 0, five doc gates).
 
-**Next: the editor-takes-the-shell pass** (spec
-`docs/superpowers/specs/2026-06-12-cairn-editor-takes-the-shell-design.md`, direction approved
-in-session; Geoff reads the spec, then plan and execute as `0.54.0`). Four rungs, one idea (list
-pages are the office, the editor is the desk): one header band on edit routes, the nav recedes
-inside a document, details on demand as a slide-over, then zen. After it: the gates-and-tooling
-pass, the gallery brainstorm, P4. 907-life can pick up `^0.53.0` any time (additive).
+**Next: plan and execute the editor-takes-the-shell pass as `0.54.0`** (spec
+`docs/superpowers/specs/2026-06-12-cairn-editor-takes-the-shell-design.md`, APPROVED 2026-06-12
+after a full mockup design session; the approved mockup is committed as
+`docs/internal/design/2026-06-12-editor-shell-gold-standard.html` and is the declared cairn UI
+gold standard, with the folding fine grain in the companion notes beside it). The pass: the four
+shell rungs (one header band, receding nav, details slide-over, zen), the editor ergonomics set
+(rail pitch 8px with strength-only active, hanging indents, the keyboard system with the Ctrl+/
+sheet, adjudicated container folding), and the gold-standard sweep across the entire admin.
+Write the plan from the spec, then execute task-by-task with `cairn-implementer`, full gate
+between dispatches. After it: the gates-and-tooling pass, the gallery brainstorm, P4. 907-life
+can pick up `^0.53.0` any time (additive).
 
 ## Prior next action (2026-06-12): publish `0.52.0`, then the queue
 

@@ -102,8 +102,12 @@ describe('MarkdownEditor', () => {
 
   it('mounts a CodeMirror surface seeded with the value', async () => {
     const screen = render(MarkdownEditor, { value: 'mountain weather', name: 'body' });
+    // The first CodeMirror mount in the file pays the one-time cold-start of the editor's dynamic
+    // imports. Under the full tri-project run the transform contention pushes that past the default
+    // 1s poll, though it loads well within it once warm (the component project alone is green). A
+    // generous timeout absorbs the cold-start; later mounts reuse the cached modules.
     await expect
-      .poll(() => screen.container.querySelector('.cm-editor')?.textContent ?? '')
+      .poll(() => screen.container.querySelector('.cm-editor')?.textContent ?? '', { timeout: 20000 })
       .toContain('mountain weather');
   });
 

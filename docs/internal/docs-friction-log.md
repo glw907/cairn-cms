@@ -9,6 +9,41 @@ Record each finding with its perspective, the doc that surfaced it, and a short 
 perspective is `developer` (the integrator building and deploying a site) or `editor` (the
 non-technical author working in `/admin`).
 
+## Triage (2026-06-13)
+
+A sweep against the working tree found most of this log already addressed. It is append-only and was
+never pruned, so it reads heavier than the live backlog. Status of every finding:
+
+**Resolved (verified in the tree).** The public-surface narrowing keystone: the root `.` is now a
+deliberate export list (the leaked internal helpers like `signingSelfTest`/`readRaw`/`fileSha` and
+the delivery re-exports are gone), and `/sveltekit` no longer duplicates the public route-data types
+or needs the `PublicListData` alias. Also resolved: the `App.Locals.editor` ambient type (the
+`/ambient` subpath); `mintToken` widened to `string | Promise<string>`; the published action-`fail`
+payload types (`SaveFailure`, `ContentFormFailure`, and siblings); the showcase composer alignment
+(`cairn.server.ts`, no inline `createContentRoutes`); the golden-path E2E wired into CI
+(`.github/workflows/e2e.yml`); the `PUBLIC_ORIGIN`/`requireOrigin` condition (registry entry
+`config.public-origin-invalid`); the URL-identity explanation home (`docs/explanation/content-model.md`
+plus the internal `entryIdentity` consolidation); the `CHANGELOG`/`homepage` in the published tarball;
+the render-sink escalation question (answered: it stays site-developer-controlled, narrow blast
+radius); and the golden-path E2E selector/double rot (fixed in `ba25359`).
+
+**Live, assigned to the gates/tooling/DX-hardening pass (the ROADMAP "Now").**
+- Gates/CI: an automated admin-render DOM check; a signature-currency check for the reference pages;
+  the plain-Node dist-spawn test for `/delivery/data`; the manifest bin's `cwd`-vs-`config.root` fix;
+  the editor link-picker narrowing.
+- Engine DX (additive): re-export `AuthEnv` from `/sveltekit`; an optional concept `singular` label
+  for the create affordances; render attribute-sink hardening (defence-in-depth, security-reviewed).
+- Docs: the preview dual-emission note; doctor self-derivation tied to the `cairnManifest` plugin; the
+  `app.d.ts` Platform block verbatim; the `prerender.handleHttpError` flag in the delivery docs; an
+  interim `SECURITY.md` contact; steer manifest regeneration to the `cairn-manifest` bin (907's
+  hand-rolled loader broke under Node 24).
+
+**Live, deferred to the P4 scaffolder (its own output).** The fenced local dev backend; the
+project-setup emission (`@types/node`, omit the skeleton `robots.txt`, the prerender policy); the
+robots-collision warn.
+
+Each live item is re-verified at plan time, since this sweep showed how stale the log had grown.
+
 ## Findings
 
 Phase 1 seeds this file. Later phases append as they write.

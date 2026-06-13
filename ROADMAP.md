@@ -10,26 +10,34 @@ needs. Items move up from lower tiers as the core fills in.
 
 ## Now
 
-- **Publish the `0.41.0`+`0.50.0` window, then the site retrofits.** The 2026-06-11 foundation
-  review led to the single-mount admin (`0.50.0`, opening the 0.50.x series): a site's `/admin`
-  surface is now the composer plus one catch-all route pair, and an action-adding release no
-  longer touches consumer files. Each retrofit crosses straight to `0.50.0` (delete the shim
-  tree, add the two-file mount, swap `app.d.ts` for the `/ambient` import, kit `^2.12`), runs
-  `cairn-doctor`, and serves as the live proof of the held-save workflow, the send-failure
-  feedback, and the redesigned editor.
+- **Gates, tooling, and DX-hardening pass (`0.56.0`).** One pass clears the live friction-log
+  backlog that is not the scaffolder's own output (the full triage is in
+  `docs/internal/docs-friction-log.md`). A 2026-06-13 sweep found most of the log already addressed,
+  including the public-surface narrowing it had treated as the release-gating keystone: the root `.`
+  is now a deliberate export list, the leaked internal helpers and the delivery re-exports are gone,
+  and `/sveltekit` no longer duplicates the public route-data types. The `0.50.0` window absorbed the
+  composer alignment, the `mintToken` widening, the published `fail` payload types, the
+  `App.Locals.editor` ambient type, and the `PUBLIC_ORIGIN` condition; the golden-path E2E is already
+  wired into CI. What remains is robustness and polish, mostly small and independent:
+  - **Gates/CI:** an automated DOM check for the admin render (the drawer-scoping regression that
+    shipped on a glance); a signature-currency check that compares each reference page's declared
+    types against the real exports; the plain-Node dist-spawn test that rot-proofs the
+    `/delivery/data` node-safety guarantee; the manifest bin's `cwd`-versus-`config.root` fix; the
+    editor link-picker narrowing to real content targets.
+  - **Engine DX (additive):** re-export `AuthEnv` from `/sveltekit` (it is consumed there, and
+    `skipLibCheck` hid the missing member through two retrofits); an optional `singular` on a concept
+    descriptor for the create affordances ("New post", not "New Posts"); render attribute-sink
+    hardening so a component `build()` cannot route a value into an `href`/`src`/`style` sink
+    unsanitized (defence-in-depth, site-developer-controlled today, gated by the security reviewer).
+  - **Docs:** the preview frame's dual client/server emission; doctor self-derivation tied to the
+    `cairnManifest` plugin; the `app.d.ts` Platform block verbatim; the `prerender.handleHttpError`
+    flag where the delivery docs introduce the feeds; an interim security contact in `SECURITY.md`
+    while the repo stays private; steering manifest regeneration to the `cairn-manifest` bin.
+
+  The tasks are mostly independent, so this pass is a good candidate for the Workflow tool on opt-in.
+  Each item is re-verified at plan time, since the friction-log sweep showed how stale the log had grown.
 
 ## Next
-
-- **Gates and tooling pass.** One pass replaces the former DX-sweep Passes B and C, and the
-  `0.50.0` window absorbed several of its items (the showcase composer alignment, the `mintToken`
-  widening, the published `fail` payload types, and the `App.Locals.editor` ambient type all
-  landed there). What remains: wire the golden-path E2E into CI so the gate pins the documented
-  pattern, add an automated DOM check for the admin render, add the plain-Node dist-spawn test
-  that rot-proofs the `/delivery/data` node-safety guarantee, fix the manifest bin's
-  `cwd`-versus-Vite-`config.root` handling, and narrow the editor link picker to real content
-  targets. Candidates from the `0.50.0` review ride along: a signature-currency check for the
-  reference pages, and a registry entry for `PUBLIC_ORIGIN` faults so `requireOrigin` joins the
-  condition model.
 - **Image and gallery management.** Let a non-technical author add and place images from
   `/admin`. The open fork is storage: versioned in git next to content, or in Cloudflare R2.
   Needs a brainstorm before a plan. Sequenced ahead of the scaffolder so the capstone template

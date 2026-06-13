@@ -58,6 +58,40 @@ async function focusEditorEnd(container: Element) {
   await userEvent.keyboard('{Control>}{End}{/Control}');
 }
 
+// A single foldable container: one opener with a name and attributes, two body lines, and a bare
+// closer. The leading plain line parks the default caret outside, so the fold tests drive the
+// caret and the fold deliberately.
+const FOLD_DOC = ['intro line', ':::panel{title="Day pass"}', 'body one', 'body two', ':::'].join('\n');
+
+// The number of visible editor lines; CodeMirror removes the lines a fold hides from the DOM.
+const lineCount = (container: Element) => container.querySelectorAll('.cm-line').length;
+
+// The fold band sits on the opener row and carries the click target; its chevron telegraphs the
+// state. Found by class, the plugin's stable handle.
+const foldBand = (container: Element) => container.querySelector<HTMLElement>('.cm-cairn-fold-band');
+const foldPill = (container: Element) => container.querySelector<HTMLButtonElement>('.cm-cairn-fold-pill');
+
+// The fold/unfold keystrokes (Ctrl+Shift+[ and Ctrl+Shift+]). A real browser reports the shifted
+// bracket key as its shifted character ('{' / '}') with the bracket keyCode, which is how
+// CodeMirror resolves Mod-Shift-[ past the default Ctrl-[ indentLess on the same physical key.
+// userEvent.keyboard cannot synthesize the shifted-character form, so the test dispatches the
+// real-browser-shaped keydown directly onto the focused editing surface.
+function pressFoldKey(container: Element, kind: 'fold' | 'unfold') {
+  const content = container.querySelector<HTMLElement>('.cm-content')!;
+  const open = kind === 'fold';
+  content.dispatchEvent(
+    new KeyboardEvent('keydown', {
+      key: open ? '{' : '}',
+      code: open ? 'BracketLeft' : 'BracketRight',
+      keyCode: open ? 219 : 221,
+      shiftKey: true,
+      ctrlKey: true,
+      bubbles: true,
+      cancelable: true,
+    }),
+  );
+}
+
 describe('MarkdownEditor', () => {
   it('mirrors the bindable value into a hidden field named for the form', async () => {
     const screen = render(MarkdownEditor, { value: 'hello world', name: 'body' });
@@ -177,11 +211,13 @@ describe('MarkdownEditor', () => {
       await expect
         .poll(() => screen.container.querySelectorAll('.cm-line.cm-cairn-directive-fence').length)
         .toBe(6);
+      // The closer rows carry the full rail; a paired opener row drops its own innermost bar for
+      // the fold chevron (its own test), so the rail-stepping geometry reads on the closers.
       const fence1 = screen.container.querySelector<HTMLElement>(
-        '.cm-line.cm-cairn-directive-fence.cm-cairn-depth-1',
+        '.cm-line.cm-cairn-directive-fence.cm-cairn-depth-1:not(.cm-cairn-directive-opener)',
       )!;
       const fence2 = screen.container.querySelector<HTMLElement>(
-        '.cm-line.cm-cairn-directive-fence.cm-cairn-depth-2',
+        '.cm-line.cm-cairn-directive-fence.cm-cairn-depth-2:not(.cm-cairn-directive-opener)',
       )!;
       const content2 = screen.container.querySelector<HTMLElement>(
         '.cm-line.cm-cairn-directive-content.cm-cairn-depth-2',
@@ -222,8 +258,10 @@ describe('MarkdownEditor', () => {
         .toBe(6);
       await userEvent.click(lineWith(screen.container, 'Cost.')!);
       await expect.poll(() => screen.container.querySelectorAll('.cm-line.cm-cairn-caret-block').length).toBe(3);
-      const active = lineWith(screen.container, 'hand-coins')!;
-      const quiet = lineWith(screen.container, 'handshake')!;
+      // The panel body content rows (not the opener rows, which trade their innermost bar for the
+      // fold chevron): the first panel's prose is active, the second panel's prose is quiet.
+      const active = lineWith(screen.container, 'Cost.')!;
+      const quiet = lineWith(screen.container, 'Volunteers.')!;
       expect(active.classList.contains('cm-cairn-caret-block')).toBe(true);
       expect(quiet.classList.contains('cm-cairn-caret-block')).toBe(false);
       const activeShadow = getComputedStyle(active).boxShadow;
@@ -723,6 +761,163 @@ describe('MarkdownEditor', () => {
     await focusEditorEnd(screen.container);
     await userEvent.keyboard(' more');
     await expect.poll(() => hiddenValue(screen.container)).toBe('line more');
+  });
+
+  it('folds and unfolds a container from the opener-row gutter band', async () => {
+    const screen = render(MarkdownEditor, { value: FOLD_DOC, name: 'body' });
+    await expect.poll(() => lineWith(screen.container, 'body one')).toBeTruthy();
+    const visible = lineCount(screen.container);
+    // The opener row carries the fold band; clicking it hides the body and the closer.
+    await expect.poll(() => foldBand(screen.container)).toBeTruthy();
+    await userEvent.click(foldBand(screen.container)!);
+    await expect.poll(() => lineWith(screen.container, 'body one')).toBeFalsy();
+    expect(lineCount(screen.container)).toBeLessThan(visible);
+    // The folded row shows the real focusable pill counting the hidden lines (body one, body two,
+    // and the closer: three).
+    await expect.poll(() => foldPill(screen.container)).toBeTruthy();
+    const pill = foldPill(screen.container)!;
+    expect(pill.tagName).toBe('BUTTON');
+    expect(pill.getAttribute('aria-label')).toBe('Show 3 hidden lines');
+    expect(pill.textContent).toContain('3 lines');
+    // Clicking the pill restores the hidden lines and the body text still mirrors to the form.
+    await userEvent.click(pill);
+    await expect.poll(() => lineWith(screen.container, 'body one')).toBeTruthy();
+    expect(hiddenValue(screen.container)).toBe(FOLD_DOC);
+  });
+
+  it('folds and unfolds the caret container with Ctrl+Shift+[ and ]', async () => {
+    const screen = render(MarkdownEditor, { value: FOLD_DOC, name: 'body' });
+    await expect.poll(() => lineWith(screen.container, 'body one')).toBeTruthy();
+    await userEvent.click(lineWith(screen.container, 'body one')!);
+    await expect.poll(() => document.activeElement).toBe(screen.container.querySelector('.cm-content'));
+    // Ctrl+Shift+[ folds the innermost container at the caret.
+    pressFoldKey(screen.container, 'fold');
+    await expect.poll(() => lineWith(screen.container, 'body two')).toBeFalsy();
+    // Ctrl+Shift+] unfolds it again. The caret sits on the opener row after the fold.
+    pressFoldKey(screen.container, 'unfold');
+    await expect.poll(() => lineWith(screen.container, 'body two')).toBeTruthy();
+  });
+
+  it('unfolds in the same transaction when an edit touches the folded range', async () => {
+    const screen = render(MarkdownEditor, { value: FOLD_DOC, name: 'body' });
+    await expect.poll(() => foldBand(screen.container)).toBeTruthy();
+    await userEvent.click(foldBand(screen.container)!);
+    await expect.poll(() => lineWith(screen.container, 'body one')).toBeFalsy();
+    // Type at the end of the opener row (the fold's left boundary). The safety invariant unfolds
+    // the range in the same transaction, so the author never edits hidden text blind.
+    await userEvent.click(lineWith(screen.container, ':::panel')!);
+    await userEvent.keyboard('{End} ');
+    await expect.poll(() => lineWith(screen.container, 'body one')).toBeTruthy();
+  });
+
+  it('unfolds when a selection extends across the folded range', async () => {
+    const screen = render(MarkdownEditor, { value: FOLD_DOC, name: 'body' });
+    await expect.poll(() => foldBand(screen.container)).toBeTruthy();
+    await userEvent.click(foldBand(screen.container)!);
+    await expect.poll(() => lineWith(screen.container, 'body one')).toBeFalsy();
+    // Select all: the selection now spans the hidden lines. An author never holds a selection
+    // across hidden text (copy semantics must stay trivial), so the fold springs open on entry.
+    await userEvent.click(lineWith(screen.container, 'intro line')!);
+    await expect.poll(() => document.activeElement).toBe(screen.container.querySelector('.cm-content'));
+    await userEvent.keyboard('{Control>}a{/Control}');
+    await expect.poll(() => lineWith(screen.container, 'body one')).toBeTruthy();
+  });
+
+  it('keeps the fold across an undo, which moves text only', async () => {
+    const screen = render(MarkdownEditor, { value: FOLD_DOC, name: 'body' });
+    await expect.poll(() => lineWith(screen.container, 'body one')).toBeTruthy();
+    // Make an edit on the opener row so history has something to undo, then fold.
+    await focusEditorEnd(screen.container);
+    await userEvent.click(lineWith(screen.container, 'intro line')!);
+    await userEvent.keyboard('{End}X');
+    await expect.poll(() => hiddenValue(screen.container)).toContain('intro lineX');
+    await userEvent.click(foldBand(screen.container)!);
+    await expect.poll(() => lineWith(screen.container, 'body one')).toBeFalsy();
+    // Undo removes the typed character; the fold lives outside history, so it survives.
+    await userEvent.keyboard('{Control>}z{/Control}');
+    await expect.poll(() => hiddenValue(screen.container)).not.toContain('intro lineX');
+    expect(lineWith(screen.container, 'body one')).toBeFalsy();
+  });
+
+  it('skips a fold atomically when an arrow steps down from the opener', async () => {
+    const screen = render(MarkdownEditor, { value: FOLD_DOC, name: 'body' });
+    await expect.poll(() => foldBand(screen.container)).toBeTruthy();
+    await userEvent.click(foldBand(screen.container)!);
+    await expect.poll(() => lineWith(screen.container, 'body one')).toBeFalsy();
+    // ArrowDown from the opener row lands on the row after the closer (the next intro-level line is
+    // absent here, so it lands at document end), never inside the hidden range, and the fold holds.
+    await userEvent.click(lineWith(screen.container, ':::panel')!);
+    await userEvent.keyboard('{ArrowDown}');
+    expect(lineWith(screen.container, 'body one')).toBeFalsy();
+  });
+
+  it('replaces the opener-row innermost rail bar with the chevron and keeps it clickable', async () => {
+    const unpin = pinThemeVars({ '--color-accent': 'rgb(100, 60, 200)', '--color-base-100': 'rgb(255, 254, 250)' });
+    try {
+      // A depth-2 opener so the depth-1 bar stays and only the innermost (depth-2) bar drops.
+      const doc = ['intro', '::::split', ':::panel', 'inside', ':::', '::::'].join('\n');
+      const screen = render(MarkdownEditor, { value: doc, name: 'body' });
+      await expect.poll(() => lineWith(screen.container, ':::panel')).toBeTruthy();
+      const opener = lineWith(screen.container, ':::panel')!;
+      // The opener carries the fold band (the chevron lives in it).
+      await expect.poll(() => opener.querySelector('.cm-cairn-fold-band')).toBeTruthy();
+      // The innermost (depth-2) bar at offset 10 is gone; the outer depth-1 bar at 2 and its
+      // spacer at 8 remain. A depth-2 content row inside still paints all three.
+      const openerOffsets = barOffsets(getComputedStyle(opener).boxShadow);
+      const inside = lineWith(screen.container, 'inside')!;
+      expect(barOffsets(getComputedStyle(inside).boxShadow)).toEqual([2, 8, 10]);
+      expect(openerOffsets).not.toContain(10);
+      expect(openerOffsets).toContain(2);
+    } finally {
+      unpin();
+    }
+  });
+
+  it('places the caret without folding when the opener text is clicked', async () => {
+    const screen = render(MarkdownEditor, { value: FOLD_DOC, name: 'body' });
+    await expect.poll(() => lineWith(screen.container, ':::panel')).toBeTruthy();
+    // Click the opener's name text, past the gutter band; the caret lands and the block stays open.
+    await userEvent.click(spanWith(lineWith(screen.container, ':::panel'), 'panel')!);
+    await expect.poll(() => document.activeElement).toBe(screen.container.querySelector('.cm-content'));
+    expect(lineWith(screen.container, 'body one')).toBeTruthy();
+    expect(foldPill(screen.container)).toBeNull();
+  });
+
+  it('washes the folded opener row in a square full-row accent tint with the rails intact', async () => {
+    const unpin = pinThemeVars({ '--color-accent': 'rgb(100, 60, 200)', '--color-base-100': 'rgb(255, 254, 250)' });
+    try {
+      // A depth-2 panel inside a depth-1 split, so the outer depth-1 bar persists through the wash
+      // while the panel's own innermost bar is the one the chevron replaces.
+      const doc = ['intro', '::::split', ':::panel', 'inside', ':::', '::::'].join('\n');
+      const screen = render(MarkdownEditor, { value: doc, name: 'body' });
+      await expect.poll(() => lineWith(screen.container, 'inside')).toBeTruthy();
+      const band = lineWith(screen.container, ':::panel')!.querySelector<HTMLElement>('.cm-cairn-fold-band')!;
+      await userEvent.click(band);
+      await expect.poll(() => foldPill(screen.container)).toBeTruthy();
+      const folded = lineWith(screen.container, ':::panel')!;
+      const style = getComputedStyle(folded);
+      // The wash is a real accent-tinted background, not transparent, and square (no radius).
+      expect(style.backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
+      expect(parseFloat(style.borderTopLeftRadius)).toBe(0);
+      // The outer rail box-shadow runs through the wash unbroken (the depth-1 bar at offset 2).
+      expect(style.boxShadow).toContain('inset');
+      expect(barOffsets(style.boxShadow)).toContain(2);
+    } finally {
+      unpin();
+    }
+  });
+
+  it('gives an unbalanced opener no chevron and no foldable range', async () => {
+    const screen = render(MarkdownEditor, { value: ['intro', ':::panel', 'orphan body'].join('\n'), name: 'body' });
+    await expect.poll(() => lineWith(screen.container, 'orphan body')).toBeTruthy();
+    // The opener never closes, so it carries no fold band and the keys cannot fold it.
+    expect(foldBand(screen.container)).toBeNull();
+    await userEvent.click(lineWith(screen.container, ':::panel')!);
+    await expect.poll(() => document.activeElement).toBe(screen.container.querySelector('.cm-content'));
+    pressFoldKey(screen.container, 'fold');
+    // Nothing hides; the orphan body stays visible.
+    expect(lineWith(screen.container, 'orphan body')).toBeTruthy();
+    expect(foldPill(screen.container)).toBeNull();
   });
 
   it('offers and applies a cairn link through the [[ autocomplete', async () => {

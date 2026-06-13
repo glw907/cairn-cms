@@ -77,6 +77,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
     const autocompleteMod = await import('@codemirror/autocomplete');
     const highlightMod = await import('./editor-highlight.js');
     const modesMod = await import('./editor-modes.js');
+    const foldingMod = await import('./editor-folding.js');
 
     if (!host) return;
 
@@ -100,17 +101,22 @@ through the adapter's render. Swapping the editor stays a one-file change.
     // With `active`, the row's own (deepest) bar takes the full-strength -active mix at the same
     // 2px width. The emphasis is strength only: a rail column carrying both an active and a
     // quiet segment (two sibling containers at one depth) keeps one weight top to bottom.
-    const rails = (depth: number, active = false): string => {
+    // With `dropInnermost`, the row's own deepest bar is omitted: a fold chevron replaces it on a
+    // paired opener row, so the bar would double the chevron's positional cue. The outer bars and
+    // their spacers stay, so the nesting still reads.
+    const rails = (depth: number, active = false, dropInnermost = false): string => {
       const layers: string[] = [];
       for (let d = 1; d <= depth; d++) {
         const edge = 8 * d - 6;
         if (d > 1) layers.push(`inset ${edge - 2}px 0 0 0 var(--color-base-100, oklch(99% 0.004 75))`);
+        if (dropInnermost && d === depth) continue;
         const own = active && d === depth;
         layers.push(
           `inset ${edge}px 0 0 0 ${own ? railColor('active', '100%') : railColor(d, railFallbacks[d - 1] ?? '92%')}`,
         );
       }
-      return layers.join(', ');
+      // A depth-1 opener drops its only bar, so the row paints no rail at all.
+      return layers.length ? layers.join(', ') : 'none';
     };
     const directiveInk = {
       backgroundColor: 'color-mix(in oklab, var(--color-accent) 8%, transparent)',
@@ -126,6 +132,14 @@ through the adapter's render. Swapping the editor stays a one-file change.
         `${prefix}.cm-cairn-directive-fence.cm-cairn-depth-${depth}, ${prefix}.cm-cairn-directive-content.cm-cairn-depth-${depth}`;
       railRules[row('')] = { boxShadow: rails(depth) };
       railRules[row('.cm-cairn-caret-block')] = { boxShadow: rails(depth, true) };
+      // A paired opener row drops its own innermost bar (the fold chevron stands in its place),
+      // both quiet and caret-active. The extra opener class outranks the base fence rule above.
+      railRules[`.cm-cairn-directive-fence.cm-cairn-directive-opener.cm-cairn-depth-${depth}`] = {
+        boxShadow: rails(depth, false, true),
+      };
+      railRules[`.cm-cairn-caret-block.cm-cairn-directive-opener.cm-cairn-depth-${depth}`] = {
+        boxShadow: rails(depth, true, true),
+      };
     }
     const theme = EditorView.theme(
       {
@@ -185,6 +199,68 @@ through the adapter's render. Swapping the editor stays a one-file change.
         },
         '.cm-cairn-directive-leaf': directiveInk,
         '.cm-cairn-directive-inline': directiveInk,
+        // Container folding. The fold band is the 28px gutter click target on an opener row; the
+        // line is the positioning context so the chevron sits over the container's own bar x. The
+        // band is laid over the gutter (a zero-width inline widget at line start, expanded by the
+        // absolute children), so only the gutter shows the pointer cursor, never the opener text.
+        '.cm-line:has(.cm-cairn-fold-band)': { position: 'relative' },
+        '.cm-cairn-fold-band': {
+          position: 'absolute',
+          left: '0',
+          top: '0',
+          width: '28px',
+          height: '100%',
+          cursor: 'pointer',
+          zIndex: '1',
+        },
+        '.cm-cairn-fold-band svg': {
+          position: 'absolute',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          width: '11px',
+          height: '11px',
+          // The chevron fades in on rail-band hover; folded and caret-inside states force it on.
+          opacity: '0',
+          transition: 'opacity 120ms ease',
+          color: 'var(--cairn-directive-ink-2, oklch(50% 0.16 300))',
+        },
+        '.cm-cairn-fold-band:hover svg, .cm-cairn-fold-folded svg, .cm-cairn-fold-active svg': {
+          opacity: '1',
+        },
+        // The chevron steps its ink with the container's depth, matching the label inks; the
+        // caret-inside state takes the strongest ink.
+        '.cm-cairn-fold-depth-1 svg': { color: 'var(--color-accent)' },
+        '.cm-cairn-fold-depth-3 svg': { color: 'var(--cairn-directive-ink-3, oklch(48% 0.16 300))' },
+        '.cm-cairn-fold-active svg': { color: 'var(--cairn-directive-ink-active, oklch(46% 0.16 300))' },
+        // The folded-row wash: a soft accent tint, square and full-row, returning as a STATE signal
+        // so folded spots read in a scan. The rails are inset box-shadows on the same line element
+        // and render above this background, so the rail column runs through the wash unbroken.
+        '.cm-cairn-folded-row': {
+          backgroundColor: 'color-mix(in oklab, var(--color-accent) 7%, transparent)',
+        },
+        // The fold pill: the placeholder widget and the screen-reader story, a real focusable
+        // button counting the hidden lines in accent ink. The 30% accent border lifts on hover.
+        '.cm-cairn-fold-pill': {
+          fontFamily: 'var(--font-body, ui-sans-serif, sans-serif)',
+          fontSize: '0.6875rem',
+          color: 'var(--color-accent)',
+          border: '1px solid color-mix(in oklab, var(--color-accent) 30%, transparent)',
+          borderRadius: '0.375rem',
+          padding: '1px 7px',
+          marginLeft: '10px',
+          verticalAlign: '1px',
+          backgroundColor: 'var(--color-base-100)',
+          cursor: 'pointer',
+        },
+        '.cm-cairn-fold-pill:hover': {
+          borderColor: 'color-mix(in oklab, var(--color-accent) 60%, transparent)',
+        },
+        // The one-time unfold flash: a low-alpha accent background on the revealed lines, removed
+        // after the animation. The transition runs as the field clears the class.
+        '.cm-cairn-fold-flash': {
+          backgroundColor: 'color-mix(in oklab, var(--color-accent) 12%, transparent)',
+          transition: 'background-color 400ms ease',
+        },
         // Focus mode's dim ink, on the lines editor-modes marks outside the caret's paragraph.
         // Last on purpose: a dimmed line's spans (markers, tokens, directive labels) all drop to
         // the dim tone, and spec order breaks the specificity ties with the label rules above.
@@ -198,6 +274,12 @@ through the adapter's render. Swapping the editor stays a one-file change.
           color: 'var(--cairn-focus-dim-ink, oklch(66% 0.01 75))',
           backgroundColor: 'transparent',
         },
+        // The fold machinery dims with its row: a folded opener row under focus mode drops its
+        // chevron, pill, and wash to the dim tone like any other machinery line.
+        '.cm-cairn-focus-dim .cm-cairn-fold-band svg, .cm-cairn-focus-dim .cm-cairn-fold-pill': {
+          color: 'var(--cairn-focus-dim-ink, oklch(66% 0.01 75))',
+        },
+        '.cm-cairn-focus-dim.cm-cairn-folded-row': { backgroundColor: 'transparent' },
         // The rails dim with their text: the rail color-mix reads --cairn-directive-rail-N per
         // element, so overriding the percentages on dimmed lines re-resolves every bar in place.
         // Without this the directive block keeps full-strength bars and becomes the one
@@ -255,6 +337,10 @@ through the adapter's render. Swapping the editor stays a one-file change.
           EditorView.lineWrapping,
           languageMod.syntaxHighlighting(highlightMod.cairnHighlightStyle()),
           highlightMod.cairnDirectivePlugin(),
+          // Container folding: the fold system, the chevron and wash affordance, and the safety
+          // invariant. Placed after the directive plugin so its chevron widget on an opener row
+          // composes with the row's rail and gutter; its keymap is internal to the extension.
+          foldingMod.cairnFolding(),
           EditorView.contentAttributes.of({ spellcheck: 'true', autocorrect: 'on', autocapitalize: 'sentences' }),
           theme,
           surfaceCompartment.of(surface === 'prose' ? proseTheme : markupTheme),

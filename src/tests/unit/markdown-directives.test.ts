@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   caretContainerRange,
+  containerRanges,
   directiveLineKind,
   fenceDepths,
   fenceScan,
@@ -161,6 +162,52 @@ describe('caretContainerRange', () => {
     const scan = fenceScan([':::aside', 'before', '```', ':::note', ':::', '```', 'after', ':::']);
     expect(caretContainerRange(scan, 1)).toEqual({ fromLine: 0, toLine: 7, depth: 1 });
     expect(caretContainerRange(scan, 6)).toEqual({ fromLine: 0, toLine: 7, depth: 1 });
+  });
+});
+
+describe('containerRanges', () => {
+  it('pairs every container of the nested fixture, openers and closers sharing a depth', () => {
+    // The outer split spans the whole fixture (depth 1); each panel pairs its own opener and
+    // closer (depth 2). Every paired range is returned, the fold system's only source of ranges.
+    expect(containerRanges(fenceScan(NESTED_FIXTURE))).toEqual([
+      { fromLine: 1, toLine: 3, depth: 2 },
+      { fromLine: 5, toLine: 7, depth: 2 },
+      { fromLine: 0, toLine: 8, depth: 1 },
+    ]);
+  });
+  it('pairs a simple single container', () => {
+    expect(containerRanges(fenceScan(['before', ':::aside', 'inside', ':::', 'after']))).toEqual([
+      { fromLine: 1, toLine: 3, depth: 1 },
+    ]);
+  });
+  it('pairs by recency, deepest container closing first', () => {
+    expect(containerRanges(fenceScan([':::outer', '::::inner', '::::', 'body', ':::']))).toEqual([
+      { fromLine: 1, toLine: 2, depth: 2 },
+      { fromLine: 0, toLine: 4, depth: 1 },
+    ]);
+  });
+  it('yields no range for an unbalanced opener, so it earns no chevron', () => {
+    // An opener that never closes can never fold: the safety invariant forbids a half-typed fence
+    // swallowing the document, so the unpaired opener is simply absent from the ranges.
+    expect(containerRanges(fenceScan([':::aside', 'one', 'two']))).toEqual([]);
+    // A closed inner inside an unclosed outer: the inner pairs, the outer does not.
+    expect(containerRanges(fenceScan([':::outer', ':::inner', 'body', ':::']))).toEqual([
+      { fromLine: 1, toLine: 3, depth: 2 },
+    ]);
+  });
+  it('ignores fence-shaped lines inside a code block, which never pair', () => {
+    // The scan disowns the documented ::: example inside the code block (role null), so it can
+    // neither open nor close a foldable range; only the real aside pairs.
+    const scan = fenceScan([':::aside', 'before', '```', ':::note', ':::', '```', 'after', ':::']);
+    expect(containerRanges(scan)).toEqual([{ fromLine: 0, toLine: 7, depth: 1 }]);
+  });
+  it('drops a stray closer with no matching opener', () => {
+    // A bare closer with nothing open reads as depth 1 in the scan but pairs with no opener, so it
+    // produces no range and never throws.
+    expect(containerRanges(fenceScan([':::']))).toEqual([]);
+    expect(containerRanges(fenceScan([':::aside', ':::', ':::', 'after']))).toEqual([
+      { fromLine: 0, toLine: 1, depth: 1 },
+    ]);
   });
 });
 

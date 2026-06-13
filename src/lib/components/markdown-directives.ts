@@ -124,6 +124,32 @@ export function caretContainerRange(scan: FenceScan, caretLine: number): Contain
   return { fromLine, toLine, depth };
 }
 
+/**
+ * Every paired directive container in the document, as inclusive line ranges. Walks the scan's
+ * roles with a stack: an opener pushes its line, a closer pops the nearest open one and emits the
+ * pair at the opener's depth. The ranges come back in close order, so an inner container precedes
+ * the outer that holds it, which is exactly the order a fold consumer wants (folding the innermost
+ * first). An unbalanced opener is left on the stack and never emitted (a half-typed fence earns no
+ * fold range, the safety invariant), and a stray closer with nothing open is dropped. The scan
+ * already disowns a fence-shaped line inside a code block (its role is null), so a documented
+ * example can neither open nor close a range. This is the sole source of fold ranges.
+ */
+export function containerRanges(scan: FenceScan): ContainerRange[] {
+  const { depths, roles } = scan;
+  const out: ContainerRange[] = [];
+  const stack: number[] = [];
+  for (let i = 0; i < roles.length; i++) {
+    if (roles[i] === 'opener') {
+      stack.push(i);
+    } else if (roles[i] === 'closer') {
+      const fromLine = stack.pop();
+      if (fromLine === undefined) continue;
+      out.push({ fromLine, toLine: i, depth: depths[fromLine] ?? 1 });
+    }
+  }
+  return out;
+}
+
 /** One span of a fence line, in line-local offsets: machinery (`mark`) or meaning (`label`). */
 export interface FenceToken {
   from: number;

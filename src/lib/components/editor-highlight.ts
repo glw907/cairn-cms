@@ -7,6 +7,7 @@ import { Decoration, ViewPlugin, type DecorationSet, type EditorView, type ViewU
 import { RangeSetBuilder } from '@codemirror/state';
 import {
   caretContainerRange,
+  containerRanges,
   directiveLineKind,
   fenceScan,
   fenceTokens,
@@ -62,6 +63,11 @@ const fenceLines = DEPTH_STEPS.map((d) =>
 );
 const contentLines = DEPTH_STEPS.map((d) => Decoration.line({ class: `cm-cairn-directive-content cm-cairn-depth-${d}` }));
 const leafLine = Decoration.line({ class: 'cm-cairn-directive-leaf', attributes: { title: MACHINERY_HINT } });
+// A paired container's opener row, where the fold chevron replaces the container's own innermost
+// rail bar. The class is additive over the fence depth class, so the theme drops only the deepest
+// bar on this row while the outer bars stay; an unbalanced opener never gets it (no chevron, bar
+// intact). Added just after the fence depth line decoration so the row carries both classes.
+const openerLine = Decoration.line({ class: 'cm-cairn-directive-opener' });
 const inlineMark = Decoration.mark({ class: 'cm-cairn-directive-inline' });
 // Within a fence line, machinery (colons, brackets, braces) dims to the marker tone while the
 // directive name and label keep a depth-stepped ink: meaning over machinery.
@@ -112,6 +118,9 @@ function buildDirectiveDecorations(view: EditorView, scan: FenceScan): Decoratio
   // as its own line decoration just ahead of the row's depth decoration.
   const caretLine = view.state.doc.lineAt(view.state.selection.main.head).number - 1;
   const caret = caretContainerRange(scan, caretLine);
+  // The opener rows that carry a fold chevron, so the rail rule drops their innermost bar. Only
+  // paired containers fold, so an unbalanced opener is absent here and keeps its full rail.
+  const openerLines = new Set(containerRanges(scan).map((r) => r.fromLine));
   for (const { from, to } of view.visibleRanges) {
     for (let pos = from; pos <= to; ) {
       const line = view.state.doc.lineAt(pos);
@@ -124,6 +133,9 @@ function buildDirectiveDecorations(view: EditorView, scan: FenceScan): Decoratio
       // inside a code block, outside any container); it gets no machinery treatment.
       if (kind === 'fence' && depth > 0) {
         builder.add(line.from, line.from, fenceLines[depth - 1]);
+        // A paired opener row gets the opener class just after its fence depth class, so the rail
+        // rule below drops the innermost bar where the chevron renders.
+        if (openerLines.has(line.number - 1)) builder.add(line.from, line.from, openerLine);
       } else if (kind === 'leaf') {
         builder.add(line.from, line.from, leafLine);
       } else if (kind === null && depth > 0) {

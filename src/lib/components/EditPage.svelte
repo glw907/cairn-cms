@@ -34,6 +34,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   import DeleteDialog from './DeleteDialog.svelte';
   import RenameDialog from './RenameDialog.svelte';
   import MarkdownHelpDialog from './MarkdownHelpDialog.svelte';
+  import ShortcutsDialog from './ShortcutsDialog.svelte';
   import { cairnLinkCompletionSource } from './link-completion.js';
   import { unwrapCairnLink, type FormatKind } from './markdown-format.js';
   import { buildPreviewDoc, deviceLabel, previewDevice, previewDevices, type PreviewDeviceId } from './preview-doc.js';
@@ -191,6 +192,16 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
       // The page-wide chords never act on a surface the author cannot see: a save, publish, mode
       // flip, or focus toggle from inside an open modal is suppressed the same way.
       const inDialog = !!(e.target as Element | null)?.closest?.('dialog');
+      // Ctrl+/ opens the shortcuts sheet, the third discoverability surface. It reads off e.key so
+      // it survives the shifted glyph differences across layouts, and it stays clear of dialogs the
+      // same way the other chords do (the sheet is itself a dialog, so opening from inside one would
+      // stack modals over a surface the author cannot see).
+      if (!e.shiftKey && !e.altKey && e.key === '/') {
+        e.preventDefault();
+        if (inDialog) return;
+        shortcutsDialog?.open();
+        return;
+      }
       if (e.shiftKey && key === 's') {
         // Publish rides the header's Publish submitter so the ?/publish formaction and the busy
         // flags follow the existing submit path; it exists only while pending, so this no-ops
@@ -358,6 +369,8 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   let renameDialog = $state<DialogHandle | null>(null);
   // The Markdown cheat sheet, opened from the editor card's footer.
   let helpDialog = $state<DialogHandle | null>(null);
+  // The keyboard shortcuts sheet, opened from anywhere on the desk by Ctrl+/.
+  let shortcutsDialog = $state<DialogHandle | null>(null);
 
   // Whether the registry offers anything insertable, the same condition the insert dialog lists
   // by, so the toolbar trigger and the dialog appear and disappear together.
@@ -1237,6 +1250,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   onsubmitting={() => (leaving = true)}
 />
 <MarkdownHelpDialog bind:this={helpDialog} />
+<ShortcutsDialog bind:this={shortcutsDialog} />
 <DeleteDialog
   bind:this={deleteDialog}
   trigger={false}

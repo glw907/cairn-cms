@@ -11,6 +11,7 @@ import type { FrontmatterField } from '../../lib/content/types.js';
 import type { LinkTarget } from '../../lib/content/manifest.js';
 import { createRenderer } from '../../lib/render/pipeline.js';
 import { defineRegistry, type ComponentDef } from '../../lib/render/registry.js';
+import { editorShortcuts } from '../../lib/components/editor-shortcuts.js';
 // The same module instance EditPage receives for $app/navigation via the project alias.
 import { beforeNavigateCallbacks } from './app-navigation.js';
 // The same module instance EditPage receives for $app/state via the project alias.
@@ -1562,6 +1563,61 @@ describe('EditPage', () => {
     expect(text).toContain('~~text~~');
     expect(text).toContain('- [ ] item');
     expect(text).toContain('layout blocks');
+  });
+
+  it('opens the shortcuts sheet on Ctrl+/ and lists every binding', async () => {
+    const screen = render(EditPage, postProps());
+    const event = new KeyboardEvent('keydown', { key: '/', ctrlKey: true, cancelable: true });
+    window.dispatchEvent(event);
+    const dialog = screen.container.querySelector<HTMLDialogElement>(
+      'dialog[aria-labelledby="cairn-shortcuts-title"]',
+    )!;
+    await expect.poll(() => dialog.open).toBe(true);
+    const text = dialog.textContent ?? '';
+    // Spot-check the bindings the task names, plus the closing reassurance and the global palette
+    // row that reaches outside the editor.
+    expect(text).toContain('Save');
+    expect(text).toContain('Ctrl S');
+    expect(text).toContain('Publish');
+    expect(text).toContain('Ctrl Shift S');
+    expect(text).toContain('Fold / unfold');
+    expect(text).toContain('Zen');
+    expect(text).toContain('This sheet');
+    expect(text).toContain('Command palette');
+    expect(text).toContain('Ctrl K (global)');
+    expect(text).toContain('Typing markdown always works');
+    // The sheet renders the single source in full: every row from editor-shortcuts appears.
+    for (const row of editorShortcuts) expect(text).toContain(row.label);
+  });
+
+  it('dismisses the shortcuts sheet on Escape (native dialog behavior)', async () => {
+    const screen = render(EditPage, postProps());
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: '/', ctrlKey: true, cancelable: true }));
+    const dialog = screen.container.querySelector<HTMLDialogElement>(
+      'dialog[aria-labelledby="cairn-shortcuts-title"]',
+    )!;
+    await expect.poll(() => dialog.open).toBe(true);
+    // A native modal <dialog> closes on Escape on its own; the cancel event mirrors that path
+    // without depending on the headless harness routing key events into the dialog.
+    dialog.dispatchEvent(new Event('cancel', { cancelable: true }));
+    dialog.close();
+    expect(dialog.open).toBe(false);
+  });
+
+  it('lists the same shortcut rows in the Markdown help dialog and documents #### as an H4', async () => {
+    const screen = render(EditPage, postProps());
+    await screen.getByRole('button', { name: 'Markdown help' }).click();
+    const dialog = screen.container.querySelector<HTMLDialogElement>(
+      'dialog[aria-labelledby="cairn-markdown-help-title"]',
+    )!;
+    expect(dialog.open).toBe(true);
+    const text = dialog.textContent ?? '';
+    // The H4 syntax row Task 1 added.
+    expect(text).toContain('#### Heading');
+    expect(text).toContain('fourth-level heading');
+    // The same single-source shortcut rows render here as in the sheet.
+    expect(text).toContain('Keyboard shortcuts');
+    for (const row of editorShortcuts) expect(text).toContain(row.label);
   });
 
   it('makes a hidden save button the form default so Enter never publishes', async () => {

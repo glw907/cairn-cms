@@ -159,6 +159,62 @@ describe('ConceptList', () => {
     await expect.element(screen.getByRole('button', { name: /delete post 12/i })).toBeInTheDocument();
   });
 
+  // The triage layer: counts per state and the filter that narrows the rows. The filter logic is
+  // the contract here; Task 7 dresses the controls to the mockup.
+  function triageEntries() {
+    return [
+      { id: 'pub-1', title: 'Published One', date: '2026-05-10', draft: false, status: 'published' as const, summary: null },
+      { id: 'pub-2', title: 'Published Two', date: '2026-05-09', draft: false, status: 'published' as const, summary: null },
+      { id: 'edit-1', title: 'Edited One', date: '2026-05-08', draft: false, status: 'edited' as const, summary: null },
+      { id: 'new-1', title: 'New One', date: '2026-05-07', draft: false, status: 'new' as const, summary: null },
+      { id: 'hidden-1', title: 'Hidden One', date: '2026-05-06', draft: true, status: 'published' as const, summary: null },
+    ];
+  }
+
+  it('the triage shows exact counts per state', async () => {
+    const screen = render(ConceptList, { data: data({ entries: triageEntries() }) });
+    // 5 entries: 2 published, 1 edited, 1 new, 1 hidden draft (also published).
+    await expect.element(screen.getByRole('button', { name: /^all/i })).toHaveTextContent('5');
+    await expect.element(screen.getByRole('button', { name: /^pending edits/i })).toHaveTextContent('2');
+    await expect.element(screen.getByRole('button', { name: /^published/i })).toHaveTextContent('2');
+    await expect.element(screen.getByRole('button', { name: /^hidden/i })).toHaveTextContent('1');
+  });
+
+  it('Pending edits filters to new and edited rows', async () => {
+    const screen = render(ConceptList, { data: data({ entries: triageEntries() }) });
+    await screen.getByRole('button', { name: /^pending edits/i }).click();
+    await expect.element(screen.getByRole('link', { name: 'Edited One' })).toBeInTheDocument();
+    await expect.element(screen.getByRole('link', { name: 'New One' })).toBeInTheDocument();
+    await expect.element(screen.getByRole('link', { name: 'Published One' })).not.toBeInTheDocument();
+    await expect.element(screen.getByRole('link', { name: 'Published Two' })).not.toBeInTheDocument();
+  });
+
+  it('search narrows within the active filter', async () => {
+    const entries = [
+      { id: 'pub-1', title: 'Apple Published', date: '2026-05-10', draft: false, status: 'published' as const, summary: null },
+      { id: 'pub-2', title: 'Banana Published', date: '2026-05-09', draft: false, status: 'published' as const, summary: null },
+      { id: 'edit-1', title: 'Apple Edited', date: '2026-05-08', draft: false, status: 'edited' as const, summary: null },
+    ];
+    const screen = render(ConceptList, { data: data({ entries }) });
+    await screen.getByRole('button', { name: /^published/i }).click();
+    await screen.getByRole('searchbox', { name: /search/i }).fill('Apple');
+    await expect.element(screen.getByRole('link', { name: 'Apple Published' })).toBeInTheDocument();
+    // Filtered out by the publish state, even though it matches the query.
+    await expect.element(screen.getByRole('link', { name: 'Apple Edited' })).not.toBeInTheDocument();
+    // Filtered out by the query, even though it matches the publish state.
+    await expect.element(screen.getByRole('link', { name: 'Banana Published' })).not.toBeInTheDocument();
+  });
+
+  it('All is the default and shows every row', async () => {
+    const screen = render(ConceptList, { data: data({ entries: triageEntries() }) });
+    const all = screen.getByRole('button', { name: /^all/i });
+    await expect.element(all).toHaveAttribute('aria-pressed', 'true');
+    await expect.element(screen.getByRole('link', { name: 'Published One' })).toBeInTheDocument();
+    await expect.element(screen.getByRole('link', { name: 'Edited One' })).toBeInTheDocument();
+    await expect.element(screen.getByRole('link', { name: 'New One' })).toBeInTheDocument();
+    await expect.element(screen.getByRole('link', { name: 'Hidden One' })).toBeInTheDocument();
+  });
+
   it('surfaces a refused delete from the flat action result', async () => {
     const form = {
       error: 'Cannot delete 2026-05-01-post-1: 1 page links to it.',

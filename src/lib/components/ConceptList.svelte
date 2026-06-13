@@ -31,7 +31,12 @@ content sizes. The header New button opens a dialog holding the create form.
   );
 
   type SortKey = 'title' | 'date';
+  // The triage partition. `all` passes everything; `pending` is new + edited; `published` is
+  // live-as-is; `hidden` is the draft rows. The three live buckets and Hidden partition the set,
+  // so a hidden published row sits under Hidden, not Published (see the counts below).
+  type Filter = 'all' | 'pending' | 'published' | 'hidden';
   let query = $state('');
+  let filter = $state<Filter>('all');
   let sortKey = $state<SortKey>('date');
   // Newest first by default: a dated concept reads most-recent-on-top, the usual CMS convention.
   let sortAsc = $state(false);
@@ -45,9 +50,36 @@ content sizes. The header New button opens a dialog holding the create form.
     return Number.isNaN(parsed.getTime()) ? iso : dateFmt.format(parsed);
   }
 
+  // Triage counts over the full loaded set. The three publish buckets partition the live rows:
+  // Pending is new + edited (status !== 'published'), Published is live-as-is. Hidden pulls the
+  // draft rows out into their own bucket, so a hidden published entry counts under Hidden, not
+  // Published. All is the unconditional total.
+  const counts = $derived({
+    all: data.entries.length,
+    pending: data.entries.filter((e) => !e.draft && e.status !== 'published').length,
+    published: data.entries.filter((e) => !e.draft && e.status === 'published').length,
+    hidden: data.entries.filter((e) => e.draft).length,
+  });
+
+  function matchesFilter(entry: EntrySummary): boolean {
+    if (filter === 'pending') return !entry.draft && entry.status !== 'published';
+    if (filter === 'published') return !entry.draft && entry.status === 'published';
+    if (filter === 'hidden') return entry.draft;
+    return true;
+  }
+
+  // Compose the active partition with the search query; sort and paging run downstream.
   const filtered = $derived(
-    data.entries.filter((e) => e.title.toLowerCase().includes(query.trim().toLowerCase())),
+    data.entries.filter(
+      (e) => matchesFilter(e) && e.title.toLowerCase().includes(query.trim().toLowerCase()),
+    ),
   );
+
+  function setFilter(next: Filter) {
+    // The Hidden control toggles: a second click on the active Hidden returns to All.
+    filter = filter === next && next === 'hidden' ? 'all' : next;
+    page = 1;
+  }
 
   // Sort key for one entry: the lowercased title, or the ISO date string (lexical order is
   // chronological). A null date sorts as the empty string.
@@ -156,6 +188,18 @@ content sizes. The header New button opens a dialog holding the create form.
         </li>
       {/each}
     </ul>
+  </div>
+{/if}
+
+{#if data.entries.length > 0}
+  <!-- The triage filters. Rendered plainly for now; Task 7 dresses them to the segmented /
+       check-and-tint grammar. Each carries its count and aria-pressed so the state is more than
+       color. Hidden is a separate toggle that composes with the active partition. -->
+  <div class="mb-4 flex flex-wrap gap-2">
+    <button type="button" aria-pressed={filter === 'all'} onclick={() => setFilter('all')}>All ({counts.all})</button>
+    <button type="button" aria-pressed={filter === 'pending'} onclick={() => setFilter('pending')}>Pending edits ({counts.pending})</button>
+    <button type="button" aria-pressed={filter === 'published'} onclick={() => setFilter('published')}>Published ({counts.published})</button>
+    <button type="button" aria-pressed={filter === 'hidden'} onclick={() => setFilter('hidden')}>Hidden ({counts.hidden})</button>
   </div>
 {/if}
 

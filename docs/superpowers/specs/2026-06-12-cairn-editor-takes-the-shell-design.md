@@ -114,9 +114,12 @@ and modes; it is the completion of Prose, not a separate system.
   container's stepped label ink; down while the caret is inside, right while folded
   (always visible), fading in on rail-band hover elsewhere. The whole 28px gutter band on the
   opener row is the click target; clicking the opener TEXT never folds (authors edit `{attrs}`
-  there). Folded presentation: the opener text plus an "N lines" pill, a real focusable button
-  (`aria-label="Show N hidden lines"`); unfold via chevron, pill, or keys, with a one-time
-  low-alpha flash on the revealed lines. Keyboard: `Ctrl+Shift+[` / `]` fold/unfold the
+  there). Folded presentation: the row carries a soft accent wash (~7%, the one deliberate band in the
+  rail era, returning as a STATE signal so folded spots read in a scan; Geoff found the
+  chevron-and-pill alone too subtle), the opener text, and an "N lines" pill in accent ink, a
+  real focusable button (`aria-label="Show N hidden lines"`). The accent ink already holds AA
+  on the 8% tint (the locked leaf-chip pair); re-price at the final wash value. Unfold via
+  chevron, pill, or keys, with a one-time low-alpha flash on the revealed lines. Keyboard: `Ctrl+Shift+[` / `]` fold/unfold the
   innermost container at the caret, one row in the Ctrl+/ sheet, nothing else (no fold-all, no
   chords). The safety invariant: an author never edits, deletes, or fails to see hidden text.
   Any edit or selection touching a folded range unfolds it in the same transaction; vertical

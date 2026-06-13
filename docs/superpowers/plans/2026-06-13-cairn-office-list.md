@@ -264,15 +264,24 @@ Match the suite's existing list-load test harness (the fetch/GitHub double); wri
   contract; the chrome follows the mockup in Task 7.
 
 ```ts
-// counts are exact, from the loaded set
+// counts are exact, from the loaded set. Hidden is ORTHOGONAL to the partition: a
+// published-but-hidden entry counts in BOTH Published and Hidden (it is on main, just
+// hidden from the public site), matching the spec and the approved mockup.
 test('the triage shows exact counts per state', async () => {
   // render ConceptList with entries: 2 published, 1 edited, 1 new, 1 draft(published)
-  // expect All = 5, Pending edits = 2 (new + edited), Published = 2, Hidden = 1
+  // expect All = 5, Pending edits = 2 (new + edited), Published = 3 (the 3 published-status
+  // entries, including the hidden one), Hidden = 1
 });
 
 // selecting a filter narrows the rows
 test('Pending edits filters to new and edited rows', async () => {
   // click the Pending edits filter; only the new + edited rows remain
+});
+
+// the Hidden toggle composes with the active partition (it does not replace it)
+test('Hidden composes with the partition (Published + Hidden = published and hidden)', async () => {
+  // select Published, then toggle Hidden on; only the published-and-hidden rows remain,
+  // and the Published partition stays selected
 });
 
 // search composes with the active filter
@@ -285,16 +294,23 @@ test('All is the default and shows every row', async () => { /* ... */ });
 ```
 
 - [ ] **Run; expect failures.**
-- [ ] **Implement** the filter state and derived sets in `ConceptList.svelte`:
-  - A `filter` state: `'all' | 'pending' | 'published' | 'hidden'`, default `'all'`.
-  - Counts derived from `data.entries`: `pending = new + edited`, `published = published`,
-    `hidden = draft === true`, `all = entries.length`.
-  - The `filtered` derived (which currently filters by `query` only) gains the state predicate:
-    pending = `status !== 'published'`; published = `status === 'published'`; hidden = `draft`;
-    all = pass. Compose with the existing query filter and the existing sort/paging downstream.
-  - Reset `page = 1` when the filter changes.
-  - Render the filter controls as placeholder buttons for now (Task 7 dresses them to the mockup);
-    each shows its label and count and toggles `filter`.
+- [ ] **Implement** the filter state and derived sets in `ConceptList.svelte`. The triage has two
+  INDEPENDENT axes (the spec/mockup model): a pick-one publish-state partition and an orthogonal
+  Hidden toggle that composes with it. Do not model Hidden as a fourth partition value.
+  - A `partition` state: `'all' | 'pending' | 'published'`, default `'all'`, plus a separate
+    `hiddenOnly` boolean, default `false`.
+  - Counts derived from `data.entries`, each independent: `all = entries.length`,
+    `pending = count(status !== 'published')`, `published = count(status === 'published')`,
+    `hidden = count(draft === true)`. A published-but-hidden entry counts in BOTH `published` and
+    `hidden`.
+  - The `filtered` derived (currently query-only) gains both predicates, composed with the query:
+    the partition (`all` = pass; `pending` = `status !== 'published'`; `published` =
+    `status === 'published'`) AND (`!hiddenOnly || draft === true`). Feed the existing sort/paging
+    downstream.
+  - Reset `page = 1` when the partition changes or `hiddenOnly` toggles.
+  - Render the controls plainly for now (Task 7 dresses them to the mockup): the three partition
+    buttons (each its label + count, `aria-pressed`) and the separate Hidden toggle (its label +
+    count, `aria-pressed`), so the tests can target them.
 - [ ] **Run; expect green.** Full gate.
 - [ ] **Commit:** `Add the triage filter to the concept list`
 

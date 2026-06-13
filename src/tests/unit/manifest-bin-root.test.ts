@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resolveViteRoot } from '../../lib/vite/index.js';
+import { resolveViteRoot } from '../../lib/vite/resolve-root.js';
 
 // The cairn-manifest bin conflates three concerns: the config-search dir (cwd), the Vite app
 // root, and the manifest output base. resolveViteRoot pulls the authoritative root off the

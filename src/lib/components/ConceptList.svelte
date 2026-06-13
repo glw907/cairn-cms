@@ -183,6 +183,10 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
   });
   const derivedSlug = $derived(slugEdited ? slug : slugify(title));
   const slugPlaceholder = $derived(data.dated ? 'my-entry' : 'about-us');
+  // The create affordances name one new item, so they read in the singular ("New post"). The
+  // descriptor resolves `singular` (defaulting it to the label), so the fallback here only guards an
+  // older caller that ships no `singular` on its ListData.
+  const createNoun = $derived(data.singular ?? data.label);
 
   // Shared column-header typography: small uppercase muted labels. The sort buttons add their own
   // flex layout and a hover affordance on top of this.
@@ -212,7 +216,7 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
       <input type="search" aria-label="Search {data.label}" bind:value={query} placeholder="Search {data.label.toLowerCase()}" oninput={() => (page = 1)} />
     </label>
     <button type="button" class="btn btn-primary btn-sm shrink-0" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
-      <PlusIcon class="h-4 w-4" /> New {data.label}
+      <PlusIcon class="h-4 w-4" /> New {createNoun}
     </button>
   </div>
 </header>
@@ -280,7 +284,7 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
       <p class="text-sm text-[var(--color-muted)]">Stack your first one and it will show up here.</p>
     </div>
     <button type="button" class="btn btn-primary btn-sm" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
-      <PlusIcon class="h-4 w-4" /> New {data.label}
+      <PlusIcon class="h-4 w-4" /> New {createNoun}
     </button>
   </div>
 {:else}
@@ -367,7 +371,7 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
            short list always shows its next step rather than just stopping. Same action as the
            header New button. -->
       <button type="button" class="flex w-full items-center gap-2 border-t border-[var(--cairn-card-border)] px-6 py-3 text-sm font-medium text-primary hover:bg-primary/[0.06]" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
-        <PlusIcon class="h-4 w-4" /> New {data.label}
+        <PlusIcon class="h-4 w-4" /> New {createNoun}
       </button>
     {/if}
   </div>
@@ -399,7 +403,7 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
 <dialog class="modal" aria-labelledby="cairn-create-dialog-title" bind:this={createDialog}>
   <div class="modal-box">
     <div class="mb-3 flex items-center justify-between">
-      <h2 id="cairn-create-dialog-title" class="text-base font-semibold">New {data.label}</h2>
+      <h2 id="cairn-create-dialog-title" class="text-base font-semibold">New {createNoun}</h2>
       <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={() => createDialog?.close()}>✕</button>
     </div>
     <form method="POST" action="?/create" onsubmit={() => (creating = true)} class="flex flex-col gap-3">

@@ -108,6 +108,8 @@ export interface ConceptConfig<S extends ConceptSchema = ConceptSchema> {
   dir: string;
   /** Sidebar label; defaults from the concept id when omitted. */
   label?: string;
+  /** The singular noun for the create affordances ("New post"); defaults to `label` when omitted. */
+  singular?: string;
   /** The concept's schema: the form projection, the generated validator, and the inferred type. */
   schema: S;
   /** Frontmatter keys to surface on each `ContentSummary.fields`, so a list card reads an authored
@@ -241,6 +243,9 @@ export interface ConceptDescriptor {
   /** Concept id, the key under `content`, e.g. "posts". */
   id: string;
   label: string;
+  /** The singular noun for the create affordances ("New post"); resolved from `ConceptConfig.singular`,
+   *  defaulting to `label` when the config omits it. */
+  singular: string;
   dir: string;
   routing: RoutingRule;
   /** The resolved permalink pattern, defaulted by `normalizeConcepts`. */

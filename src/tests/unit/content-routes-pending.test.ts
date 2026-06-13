@@ -14,7 +14,7 @@ function runtime(): CairnRuntime {
     siteName: 'T',
     concepts: [
       {
-        id: 'posts', label: 'Posts', dir: 'src/content/posts',
+        id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts',
         routing: { routable: true, dated: true, inFeeds: true },
         permalink: '/posts/:slug',
         datePrefix: 'day',

@@ -8,6 +8,7 @@ function descriptor(over: Partial<ConceptDescriptor> = {}): ConceptDescriptor {
   return {
     id: 'posts',
     label: 'Posts',
+    singular: 'Posts',
     dir: 'src/content/posts',
     routing: { routable: true, dated: true, inFeeds: true },
     permalink: '/posts/:slug',

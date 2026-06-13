@@ -3,7 +3,7 @@ import { permalink } from '../../lib/content/permalink.js';
 import type { ConceptDescriptor } from '../../lib/content/types.js';
 
 const base: Omit<ConceptDescriptor, 'permalink'> = {
-  id: 'posts', label: 'Posts', dir: 'd', datePrefix: 'day',
+  id: 'posts', label: 'Posts', singular: 'Posts', dir: 'd', datePrefix: 'day',
   routing: { routable: true, dated: true, inFeeds: true },
   fields: [], summaryFields: [], validate: () => ({ ok: true, data: {} }),
 };

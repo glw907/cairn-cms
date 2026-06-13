@@ -28,6 +28,7 @@ function listData(layoutOver = {}, pageOver = {}): AdminData {
     page: {
       conceptId: 'posts',
       label: 'Posts',
+      singular: 'Posts',
       dated: true,
       entries: [
         { id: '2026-05-01-hello', title: 'Hello', date: '2026-05-01', draft: false, status: 'published' as const, summary: null },
@@ -196,8 +197,8 @@ describe('form-action contract', () => {
     return {
       siteName: 'Test Site',
       concepts: [
-        { id: 'posts', label: 'Posts', dir: 'src/content/posts', routing: { routable: true, dated: true, inFeeds: true }, permalink: '/posts/:slug', datePrefix: 'day', fields: [], summaryFields: [], validate: ok },
-        { id: 'pages', label: 'Pages', dir: 'src/content/pages', routing: { routable: true, dated: false, inFeeds: false }, permalink: '/:slug', datePrefix: 'day', fields: [], summaryFields: [], validate: ok },
+        { id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts', routing: { routable: true, dated: true, inFeeds: true }, permalink: '/posts/:slug', datePrefix: 'day', fields: [], summaryFields: [], validate: ok },
+        { id: 'pages', label: 'Pages', singular: 'Pages', dir: 'src/content/pages', routing: { routable: true, dated: false, inFeeds: false }, permalink: '/:slug', datePrefix: 'day', fields: [], summaryFields: [], validate: ok },
       ],
       backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
       sender: { from: 'cms@test' },

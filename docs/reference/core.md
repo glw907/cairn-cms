@@ -568,8 +568,8 @@ function signatures above reference these.
 | Name | Signature | Meaning |
 | --- | --- | --- |
 | `CairnAdapter` | `interface CairnAdapter` | The one seam the engine consumes, declared at `src/lib/cairn.config.ts`. |
-| `ConceptConfig` | `interface ConceptConfig<S>` | Per-site configuration for one content concept: dir, label, schema, summaryFields. |
-| `ConceptDescriptor` | `interface ConceptDescriptor` | The engine-internal, uniform view of one concept after normalization. |
+| `ConceptConfig` | `interface ConceptConfig<S>` | Per-site configuration for one content concept: dir, label, singular, schema, summaryFields. The optional `singular` names the create affordances ("New post") and defaults to `label`. |
+| `ConceptDescriptor` | `interface ConceptDescriptor` | The engine-internal, uniform view of one concept after normalization, including the resolved `singular` (defaulted to `label`). |
 | `ConceptUrlPolicy` | `interface ConceptUrlPolicy` | A concept's permalink pattern and date-prefix granularity, set in the YAML config. |
 | `RoutingRule` | `interface RoutingRule` | Concept-fixed routing: routable, dated, inFeeds. |
 | `BackendConfig` | `interface BackendConfig` | The GitHub App backend a site reads from and commits to. |

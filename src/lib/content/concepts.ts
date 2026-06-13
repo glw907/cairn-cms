@@ -100,9 +100,11 @@ export function normalizeConcepts(
     const conceptRouting = routing[id] ?? DEFAULT_ROUTING;
     const policy = urlPolicy[id] ?? {};
     validateUrlPolicy(id, policy, conceptRouting.dated);
+    const label = config.label ?? defaultLabel(id);
     descriptors.push({
       id,
-      label: config.label ?? defaultLabel(id),
+      label,
+      singular: config.singular ?? label,
       dir: config.dir,
       routing: conceptRouting,
       permalink: policy.permalink ?? defaultPermalink(id),

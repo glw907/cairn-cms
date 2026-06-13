@@ -67,6 +67,9 @@ export interface EntrySummary {
 export interface ListData {
   conceptId: string;
   label: string;
+  /** The singular noun for the create affordances ("New post"); from the descriptor, which defaults
+   *  it to `label`. */
+  singular: string;
   /** Posts carry a date in the new-entry form; pages do not (concept routing, spec §7.2). */
   dated: boolean;
   entries: EntrySummary[];
@@ -306,7 +309,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     const formError = event.url.searchParams.get('error');
     const publishedAllRaw = event.url.searchParams.get('publishedAll');
     const publishedAll = publishedAllRaw !== null && /^\d+$/.test(publishedAllRaw) ? Number(publishedAllRaw) : null;
-    const base = { conceptId: concept.id, label: concept.label, dated: concept.routing.dated, formError, publishedAll };
+    const base = { conceptId: concept.id, label: concept.label, singular: concept.singular, dated: concept.routing.dated, formError, publishedAll };
     let token: string;
     try {
       token = await mintToken(event.platform?.env ?? {});

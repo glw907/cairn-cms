@@ -6,6 +6,7 @@ import type { ConceptDescriptor } from '../../lib/content/types.js';
 const posts: ConceptDescriptor = {
   id: 'posts',
   label: 'Posts',
+  singular: 'Posts',
   dir: 'src/content/posts',
   routing: { routable: true, dated: true, inFeeds: true },
   permalink: '/:year/:month/:slug',
@@ -47,6 +48,7 @@ describe('manifestEntryFromFile', () => {
     const pages: ConceptDescriptor = {
       id: 'pages',
       label: 'Pages',
+      singular: 'Pages',
       dir: 'src/content/pages',
       routing: { routable: true, dated: false, inFeeds: false },
       permalink: '/:slug',

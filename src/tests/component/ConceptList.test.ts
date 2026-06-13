@@ -13,7 +13,11 @@ function data(over = {}) {
     status: 'published' as const,
     summary: null,
   }));
-  return { conceptId: 'posts', label: 'Posts', dated: true, entries, error: null, formError: null, publishedAll: null, ...over };
+  const base = { conceptId: 'posts', label: 'Posts', dated: true, entries, error: null, formError: null, publishedAll: null };
+  const merged = { ...base, ...over };
+  // The descriptor defaults `singular` to the label; mirror that here so an override of `label`
+  // alone (e.g. Pages) carries through to the create affordances, unless a test sets `singular`.
+  return { singular: merged.label, ...merged, ...over };
 }
 
 describe('ConceptList', () => {
@@ -287,6 +291,38 @@ describe('ConceptList', () => {
     const news = screen.getByRole('button', { name: /new posts/i });
     await news.last().click();
     await expect.element(screen.getByLabelText('Title', { exact: true })).toBeVisible();
+  });
+
+  // Task 3: the singular label dresses the create affordances ("New post"), so the act of making one
+  // new item reads in the singular while the collection-level copy stays plural.
+  it('uses the singular label at the three create affordances', async () => {
+    const entries = [
+      { id: 'alpha', title: 'Alpha', date: '2026-05-03', draft: false, status: 'published' as const, summary: null },
+    ];
+    const screen = render(ConceptList, { data: data({ entries, singular: 'post' }) });
+    // The header button and the trailing foot row both read "New post" (exact, so "New Posts"
+    // never matches). getByRole name matching is case-sensitive under exact.
+    const headerButton = screen.getByRole('button', { name: 'New post', exact: true }).first();
+    await expect.element(headerButton).toBeInTheDocument();
+    const trailingRow = screen.getByRole('button', { name: 'New post', exact: true }).last();
+    await expect.element(trailingRow).toBeInTheDocument();
+    // The create dialog title reads "New post" too.
+    await headerButton.click();
+    await expect.element(screen.getByRole('heading', { name: 'New post', exact: true })).toBeInTheDocument();
+    // The collection-level copy stays plural: the page heading is the label.
+    await expect.element(screen.getByRole('heading', { name: 'Posts', level: 1 })).toBeInTheDocument();
+  });
+
+  it('falls back to the plural label at the create affordances without a singular', async () => {
+    const entries = [
+      { id: 'alpha', title: 'Alpha', date: '2026-05-03', draft: false, status: 'published' as const, summary: null },
+    ];
+    // No `singular`: the create controls read "New Posts" from the label.
+    const screen = render(ConceptList, { data: data({ entries, singular: undefined }) });
+    await expect.element(screen.getByRole('button', { name: 'New Posts' }).first()).toBeInTheDocument();
+    await expect.element(screen.getByRole('button', { name: 'New Posts' }).last()).toBeInTheDocument();
+    await screen.getByRole('button', { name: 'New Posts' }).first().click();
+    await expect.element(screen.getByRole('heading', { name: 'New Posts' })).toBeInTheDocument();
   });
 
   it('clears the search from the no-match state', async () => {

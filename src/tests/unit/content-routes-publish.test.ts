@@ -18,7 +18,7 @@ function runtime(): CairnRuntime {
     siteName: 'T',
     concepts: [
       {
-        id: 'posts', label: 'Posts', dir: 'src/content/posts',
+        id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts',
         routing: { routable: true, dated: true, inFeeds: true },
         permalink: '/posts/:slug',
         datePrefix: 'day',
@@ -38,7 +38,7 @@ function runtime(): CairnRuntime {
 function multiRuntime(): CairnRuntime {
   const r = runtime();
   r.concepts.push({
-    id: 'pages', label: 'Pages', dir: 'src/content/pages',
+    id: 'pages', label: 'Pages', singular: 'Pages', dir: 'src/content/pages',
     routing: { routable: true, dated: false, inFeeds: false },
     permalink: '/:slug',
     datePrefix: 'day',

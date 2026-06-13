@@ -1913,6 +1913,21 @@ describe('EditPage', () => {
       await expect.poll(() => content.contains(document.activeElement)).toBe(true);
     });
 
+    it('relocates focus from a control outside the editor card (the title) into the editor', async () => {
+      // The title input is hoisted above the editor card and hides under zen, the same stranding
+      // class as a band action (Publish/Save), which lives outside the card too. Entering zen with
+      // focus there must move focus into the surface, not leave it on the detached title.
+      const screen = render(EditPage, postProps());
+      await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+      const title = screen.container.querySelector('input.cairn-doc-title') as HTMLInputElement;
+      title.focus();
+      expect(document.activeElement).toBe(title);
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: '.', ctrlKey: true, shiftKey: true, cancelable: true }));
+      await expect.poll(() => screen.container.querySelector('.cairn-zen-chip')).not.toBeNull();
+      const content = screen.container.querySelector('.cm-content')!;
+      await expect.poll(() => content.contains(document.activeElement)).toBe(true);
+    });
+
     it('persists the zen preference and re-applies it on mount', async () => {
       const screen = render(EditPage, postProps());
       await screen.getByRole('button', { name: 'Zen', exact: true }).click();

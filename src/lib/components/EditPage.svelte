@@ -316,12 +316,14 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     localStorage.setItem(surfaceStorageKey, posture);
   }
   function setZen(on: boolean) {
-    // Entering zen hides the band, the document title, the toolbar strip, and the footer. If focus
-    // sits on one of those (a strip button, a footer toggle, the Zen toggle itself), removing it
-    // would strand focus on a detached node, so move focus into the editing surface first. The
-    // exit chip and the editor remain reachable; reading activeElement before the DOM updates is
-    // what lets us tell a hiding control from one that survives.
-    const focusHides = on && !!editorCard?.contains(document.activeElement);
+    // Entering zen hides the band, the document title, the toolbar strip, and the footer. Focus on
+    // any of those (a band action like Publish, a strip button, the title input, a footer toggle)
+    // would strand on a detached node when its host leaves the DOM, so move focus into the editing
+    // surface first. The surface (.cm-editor) and the exit chip are all that survive, so any focus
+    // outside the surface is about to hide. Reading activeElement before the DOM updates is what
+    // tells a hiding control from the surviving one.
+    const surface = editorCard?.querySelector('.cm-editor');
+    const focusHides = on && !surface?.contains(document.activeElement);
     zen = on;
     localStorage.setItem(zenStorageKey, String(on));
     if (focusHides) {

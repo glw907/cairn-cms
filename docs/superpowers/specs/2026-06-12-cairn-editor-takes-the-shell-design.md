@@ -116,7 +116,9 @@ and modes; it is the completion of Prose, not a separate system.
   opener row is the click target; clicking the opener TEXT never folds (authors edit `{attrs}`
   there). Folded presentation: the row carries a soft accent wash (~7%, the one deliberate band in the
   rail era, returning as a STATE signal so folded spots read in a scan; Geoff found the
-  chevron-and-pill alone too subtle), the opener text, and an "N lines" pill in accent ink, a
+  chevron-and-pill alone too subtle). The wash is square and full-row, never rounded: a radius
+  nicks the rail column into disconnected bumps at the row's left edge, so the rails must run
+  through the wash unbroken. the opener text and an "N lines" pill in accent ink, a
   real focusable button (`aria-label="Show N hidden lines"`). The accent ink already holds AA
   on the 8% tint (the locked leaf-chip pair); re-price at the final wash value. Unfold via
   chevron, pill, or keys, with a one-time low-alpha flash on the revealed lines. Keyboard: `Ctrl+Shift+[` / `]` fold/unfold the

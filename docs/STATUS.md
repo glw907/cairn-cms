@@ -11,7 +11,28 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-13, latest): publish `0.55.0`, then the queue
+## Immediate next action (2026-06-13, latest): execute the gates/tooling/DX plan (0.56.0)
+
+**`0.55.0` is PUBLISHED and both sites run it.** The `v0.55.0` release fired OIDC trusted-publishing
+(run `27478706097` green, registry `latest`); ecxc-ski (`854cac4`) and 907-life (`97827da`) both
+crossed to `^0.55.0`, regenerated the manifest, and deployed green (907's broken hand-rolled
+`build-manifest.mjs` was swapped for the `cairn-manifest` bin).
+
+**Next: the gates, tooling, and DX-hardening pass (`0.56.0`).** Plan
+`docs/superpowers/plans/2026-06-13-cairn-gates-tooling-dx.md`. It clears the live, non-scaffolder
+friction-log backlog. A parallel verify sweep (2026-06-13) re-checked the whole log against the tree:
+most was already addressed (the public-surface narrowing keystone, the ambient type, `mintToken`,
+the `fail` types, the composer alignment, E2E-in-CI, the `PUBLIC_ORIGIN` condition, the render
+attribute-sink hardening via `rehypeSinkGuard`), leaving 11 live/partial tasks, mostly trivial/small
+with one medium. Eleven tasks: `AuthEnv` on `/sveltekit` + the deploy-guide block (1-2), the optional
+concept `singular` label (3), the manifest-bin root fix (4), the dist-spawn node-safety test (5), the
+admin-shell DOM check (6), the signature-currency reference gate (7), and a four-item docs sweep (8).
+Method: `cairn-implementer` (Sonnet) for the code/test tasks with the gate and a diff review between
+dispatches; the docs tasks in the main loop. Additive (`singular` is optional), so `0.56.0` carries
+no consumer action. The friction-log triage and the ROADMAP "Now" both point here. After it: the
+gallery brainstorm, then P4.
+
+## Prior next action (2026-06-13): publish `0.55.0`, then the queue (DONE)
 
 **The office-list pass LANDED on `main` 2026-06-13 as `0.55.0`, unpublished.** The post and page
 list now extends the editor/desk gold standard: a publish-state triage filter (All / Pending edits /

@@ -141,7 +141,26 @@ Recipes:
   ad-hoc shadow. Long-running submits (save, create) flip a local `$state` on `onsubmit` to show a
   `loading loading-spinner` and a working label.
 - **Empty state:** the cairn mark plus warm, concept-named copy ("No posts yet", "Stack your first one
-  and it will show up here") and the create CTA. Not a bare line of text.
+  and it will show up here") and the create CTA. Not a bare line of text. When a whole concept is empty
+  (the office list with no entries), the state drops the list card and centers on the content area so a
+  first-run office reads as composed, not as a small box hugging the top of a tall page.
+- **Office list (the concept list view):** `ConceptList` extends the desk's grade. Above the table a
+  triage bar filters by publish state in the segmented check-and-tint grammar (see that recipe below):
+  a pick-one partition (All, Pending edits, Published) and a separate orthogonal Hidden toggle, each
+  carrying a live count from the loaded set. The axes are independent, so a published-but-hidden entry
+  counts in both Published and Hidden, and the Hidden toggle composes with whichever partition is
+  active. Filtering, counts, and search all run client-side over the already-loaded entries. The rows
+  are an enriched sortable `<table>` (the title with a muted summary line beneath it, then the date,
+  the status badge, and the always-visible delete), so each row describes itself instead of being a
+  bare title. The summary line is `EntrySummary.summary` (from `deriveExcerpt`: the frontmatter
+  description, else a body excerpt), truncated at the column edge and omitted when null. The Edited
+  badge tints primary (`bg-primary/10 text-primary`) as the one state to act on, rhyming with the
+  topbar's "Publish site (N)"; New stays `badge-info`, Published `badge-ghost`. Hidden is a row
+  treatment, not a fourth badge: the row de-emphasizes (~0.62 opacity on title and summary) and carries
+  an eye-off "Hidden" tag by the title, leaving the status cell to one publish-state badge. A quiet
+  trailing "New {concept}" row at the foot of the card opens the create dialog, so a short list always
+  shows its next step. A filter or search that matches nothing keeps the card and offers a Clear action;
+  a concept with no entries at all uses the page-owning empty state above.
 - **Dialog:** a native `<dialog class="modal">` with a `modal-box`, an `aria-labelledby` title, a close
   button, and the `method="dialog"` backdrop. `showModal()` gives focus trap and Escape for free. A
   dialog that holds its own `<form>` must mount outside any page-level form: nested forms are invalid

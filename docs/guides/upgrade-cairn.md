@@ -394,3 +394,16 @@ ergonomics round out: an 8px directive rail pitch with a strength-only caret rai
 on wrapped quote and list lines, container folding from the rail band, the completed format keymap
 plus page-level shortcuts and a `Ctrl+/` sheet, and the everyday formats promoted onto the strip.
 No consumer action; the changes apply in place, and `MarkdownEditor`'s public props are unchanged.
+
+## 0.55.0: the office list gains triage and self-describing rows
+
+The post and page list rises to the same grade as the editor: a triage bar filters by publish state
+(All, Pending edits, Published, each with a live count, plus a Hidden toggle), and each row carries a
+summary line under its title. One data change feeds the rows: the content manifest now indexes a
+per-entry `summary`, built by the same excerpt helper the public delivery uses.
+
+Consumers must: regenerate the content manifest (`npm run cairn:manifest` or `npx cairn-manifest`,
+then commit). The manifest is verified whole-string, so the `cairnManifest` build fails closed until
+the regenerated manifest with the new `summary` keys is committed. That is the only action; the
+triage and the rows apply in place, and a site that renders its own list against `EntrySummary` gains
+the optional `summary` field.

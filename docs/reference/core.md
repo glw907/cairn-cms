@@ -602,7 +602,7 @@ function signatures above reference these.
 | `CairnRef` | `interface CairnRef` | A resolved reference to a content entry by its concept and permanent id. |
 | `LinkResolve` | `type LinkResolve` | Resolve a `CairnRef` to its live permalink, or undefined when missing. |
 | `Manifest` | `interface Manifest` | The whole corpus as one committed file, with a version guard. |
-| `ManifestEntry` | `interface ManifestEntry` | One entry's projection: identity, routing, draft flag, outbound edges. |
+| `ManifestEntry` | `interface ManifestEntry` | One entry's projection: identity, routing, draft flag, the `summary` excerpt, and outbound edges. |
 | `ManifestDiff` | `interface ManifestDiff` | The drift between a built and a committed manifest: added, removed, changed. |
 | `ManifestEntryDiff` | `interface ManifestEntryDiff` | A changed entry and the fields that differ between manifests. |
 | `LinkTarget` | `interface LinkTarget` | The minimal entry view the preview resolver and picker read. |

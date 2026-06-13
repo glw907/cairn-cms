@@ -2,6 +2,33 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.55.0
+
+The office list rises to the gold standard. The post and page list gains a triage filter layer and
+self-describing rows, so a concept with a handful of entries reads as content rather than a few bare
+titles.
+
+Above the list, a triage bar filters by publish state in the admin's segmented check-and-tint
+grammar: All, Pending edits (the entries on a `cairn/` branch, whether branch-only or live with held
+edits), and Published, each with a live count, plus an orthogonal Hidden toggle for the draft
+entries. The counts come from the loaded set, so they are exact, and the filtering runs client-side
+over the entries already in hand. Search composes with the active filter.
+
+Each row now describes itself. A summary line sits under the title, drawn from the entry's
+description or, lacking one, a short excerpt of its body. The Edited badge tints in the brand violet
+as the one state to act on, mirroring the "Publish site (N)" count; Hidden reads as a de-emphasized
+row with an eye-off tag rather than a competing badge; and the foot of the list carries a quiet
+"New" row so a short list always shows its next step. A concept with no entries centers its empty
+state on the page.
+
+One data change feeds the rows: the content manifest now indexes a per-entry `summary`, built by the
+same excerpt helper the public delivery already uses. Because the manifest is verified whole-string,
+a site's committed manifest is stale until it is regenerated once.
+
+Consumers must: regenerate the content manifest (`npm run cairn:manifest` or `npx cairn-manifest`,
+then commit). The `cairnManifest` build fails closed until the regenerated manifest with the new
+`summary` keys is committed.
+
 ## 0.54.0
 
 The editor takes the shell. On an edit route the page is now one context, the desk: the edit page's

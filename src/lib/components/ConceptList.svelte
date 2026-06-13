@@ -31,12 +31,14 @@ content sizes. The header New button opens a dialog holding the create form.
   );
 
   type SortKey = 'title' | 'date';
-  // The triage partition. `all` passes everything; `pending` is new + edited; `published` is
-  // live-as-is; `hidden` is the draft rows. The three live buckets and Hidden partition the set,
-  // so a hidden published row sits under Hidden, not Published (see the counts below).
-  type Filter = 'all' | 'pending' | 'published' | 'hidden';
+  // The triage runs on two independent axes. A pick-one publish-state partition (`all` passes
+  // everything, `pending` is new + edited, `published` is live-as-is) and a separate Hidden
+  // toggle that composes with it. They are orthogonal: a published-but-hidden entry is on main
+  // (so it counts as Published) and also hidden from the public site (so it counts as Hidden).
+  type Partition = 'all' | 'pending' | 'published';
   let query = $state('');
-  let filter = $state<Filter>('all');
+  let partition = $state<Partition>('all');
+  let hiddenOnly = $state(false);
   let sortKey = $state<SortKey>('date');
   // Newest first by default: a dated concept reads most-recent-on-top, the usual CMS convention.
   let sortAsc = $state(false);
@@ -50,34 +52,41 @@ content sizes. The header New button opens a dialog holding the create form.
     return Number.isNaN(parsed.getTime()) ? iso : dateFmt.format(parsed);
   }
 
-  // Triage counts over the full loaded set. The three publish buckets partition the live rows:
-  // Pending is new + edited (status !== 'published'), Published is live-as-is. Hidden pulls the
-  // draft rows out into their own bucket, so a hidden published entry counts under Hidden, not
-  // Published. All is the unconditional total.
+  // Triage counts over the full loaded set, each axis counted independently. Pending is new +
+  // edited (status !== 'published'); Published is live-as-is (status === 'published'); Hidden is
+  // the draft rows. The axes overlap: a published-but-hidden entry counts in BOTH Published and
+  // Hidden. All is the unconditional total.
   const counts = $derived({
     all: data.entries.length,
-    pending: data.entries.filter((e) => !e.draft && e.status !== 'published').length,
-    published: data.entries.filter((e) => !e.draft && e.status === 'published').length,
+    pending: data.entries.filter((e) => e.status !== 'published').length,
+    published: data.entries.filter((e) => e.status === 'published').length,
     hidden: data.entries.filter((e) => e.draft).length,
   });
 
-  function matchesFilter(entry: EntrySummary): boolean {
-    if (filter === 'pending') return !entry.draft && entry.status !== 'published';
-    if (filter === 'published') return !entry.draft && entry.status === 'published';
-    if (filter === 'hidden') return entry.draft;
+  function matchesPartition(entry: EntrySummary): boolean {
+    if (partition === 'pending') return entry.status !== 'published';
+    if (partition === 'published') return entry.status === 'published';
     return true;
   }
 
-  // Compose the active partition with the search query; sort and paging run downstream.
+  // Compose the partition and the Hidden axis with the search query; sort and paging run
+  // downstream. Hidden is orthogonal: when on, it narrows the partition to its draft rows.
   const filtered = $derived(
     data.entries.filter(
-      (e) => matchesFilter(e) && e.title.toLowerCase().includes(query.trim().toLowerCase()),
+      (e) =>
+        matchesPartition(e) &&
+        (!hiddenOnly || e.draft === true) &&
+        e.title.toLowerCase().includes(query.trim().toLowerCase()),
     ),
   );
 
-  function setFilter(next: Filter) {
-    // The Hidden control toggles: a second click on the active Hidden returns to All.
-    filter = filter === next && next === 'hidden' ? 'all' : next;
+  function setPartition(next: Partition) {
+    partition = next;
+    page = 1;
+  }
+
+  function toggleHidden() {
+    hiddenOnly = !hiddenOnly;
     page = 1;
   }
 
@@ -192,14 +201,15 @@ content sizes. The header New button opens a dialog holding the create form.
 {/if}
 
 {#if data.entries.length > 0}
-  <!-- The triage filters. Rendered plainly for now; Task 7 dresses them to the segmented /
-       check-and-tint grammar. Each carries its count and aria-pressed so the state is more than
-       color. Hidden is a separate toggle that composes with the active partition. -->
+  <!-- The triage filters on two independent axes. Rendered plainly for now; Task 7 dresses them
+       to the segmented / check-and-tint grammar. Each carries its count and aria-pressed so the
+       state is more than color. The three partition buttons pick one publish state; the separate
+       Hidden toggle composes with whichever partition is active. -->
   <div class="mb-4 flex flex-wrap gap-2">
-    <button type="button" aria-pressed={filter === 'all'} onclick={() => setFilter('all')}>All ({counts.all})</button>
-    <button type="button" aria-pressed={filter === 'pending'} onclick={() => setFilter('pending')}>Pending edits ({counts.pending})</button>
-    <button type="button" aria-pressed={filter === 'published'} onclick={() => setFilter('published')}>Published ({counts.published})</button>
-    <button type="button" aria-pressed={filter === 'hidden'} onclick={() => setFilter('hidden')}>Hidden ({counts.hidden})</button>
+    <button type="button" aria-pressed={partition === 'all'} onclick={() => setPartition('all')}>All ({counts.all})</button>
+    <button type="button" aria-pressed={partition === 'pending'} onclick={() => setPartition('pending')}>Pending edits ({counts.pending})</button>
+    <button type="button" aria-pressed={partition === 'published'} onclick={() => setPartition('published')}>Published ({counts.published})</button>
+    <button type="button" aria-pressed={hiddenOnly} onclick={toggleHidden}>Hidden ({counts.hidden})</button>
   </div>
 {/if}
 

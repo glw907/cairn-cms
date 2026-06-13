@@ -173,10 +173,11 @@ describe('ConceptList', () => {
 
   it('the triage shows exact counts per state', async () => {
     const screen = render(ConceptList, { data: data({ entries: triageEntries() }) });
-    // 5 entries: 2 published, 1 edited, 1 new, 1 hidden draft (also published).
+    // 5 entries: 2 published, 1 edited, 1 new, 1 hidden draft (also published-status).
+    // Hidden is orthogonal: the hidden-but-published row counts in BOTH Published and Hidden.
     await expect.element(screen.getByRole('button', { name: /^all/i })).toHaveTextContent('5');
     await expect.element(screen.getByRole('button', { name: /^pending edits/i })).toHaveTextContent('2');
-    await expect.element(screen.getByRole('button', { name: /^published/i })).toHaveTextContent('2');
+    await expect.element(screen.getByRole('button', { name: /^published/i })).toHaveTextContent('3');
     await expect.element(screen.getByRole('button', { name: /^hidden/i })).toHaveTextContent('1');
   });
 
@@ -187,6 +188,19 @@ describe('ConceptList', () => {
     await expect.element(screen.getByRole('link', { name: 'New One' })).toBeInTheDocument();
     await expect.element(screen.getByRole('link', { name: 'Published One' })).not.toBeInTheDocument();
     await expect.element(screen.getByRole('link', { name: 'Published Two' })).not.toBeInTheDocument();
+  });
+
+  it('Hidden composes with the partition (Published + Hidden = published and hidden)', async () => {
+    const screen = render(ConceptList, { data: data({ entries: triageEntries() }) });
+    const published = screen.getByRole('button', { name: /^published/i });
+    await published.click();
+    await screen.getByRole('button', { name: /^hidden/i }).click();
+    // Only the published-AND-hidden row survives both axes.
+    await expect.element(screen.getByRole('link', { name: 'Hidden One' })).toBeInTheDocument();
+    await expect.element(screen.getByRole('link', { name: 'Published One' })).not.toBeInTheDocument();
+    await expect.element(screen.getByRole('link', { name: 'Published Two' })).not.toBeInTheDocument();
+    // The Hidden toggle does not replace the partition: Published stays selected.
+    await expect.element(published).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('search narrows within the active filter', async () => {

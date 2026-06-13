@@ -250,7 +250,12 @@ identical on every host regardless of the site's own theme.
      itself never matches. Keeping the drawer and its base/utility classes one level in lets the
      scoped sheet style them. -->
 <div data-theme={theme} bind:this={rootEl}>
-  <div class="drawer lg:drawer-open min-h-screen bg-base-200 text-base-content">
+  <!-- The persistent desktop sidebar (lg:drawer-open) recedes inside an open document: a desk route
+       renders the drawer shell without it, so the nav starts closed at desktop width and the
+       manuscript takes the shell. This resolves at SSR from data.pathname (isDeskRoute), never in an
+       effect, so the chrome-free state does not flash. The checkbox still governs the overlay, so the
+       toggle (and Cmd/Ctrl+B) reopens the nav over the document on demand. -->
+  <div class="drawer min-h-screen bg-base-200 text-base-content" class:lg:drawer-open={!isDeskRoute}>
     <input id="cairn-drawer" type="checkbox" class="drawer-toggle" bind:checked={drawerOpen} />
 
     <div class="drawer-content flex flex-col">
@@ -259,7 +264,10 @@ identical on every host regardless of the site's own theme.
            The height is pinned to the brand band's h-16 (a content-driven navbar drifts with font
            metrics, and the two border-bottoms stop meeting at the seam). -->
       <div class="navbar bg-base-100 border-b border-[var(--cairn-card-border)] sticky top-0 z-30 h-16 min-h-16 gap-2 px-4 py-0 lg:px-8">
-        <div class="flex-none lg:hidden">
+        <!-- The drawer toggle is hidden at desktop width on the office routes (the persistent sidebar
+             stands in for it); on a desk route the sidebar is closed, so the toggle stays visible and
+             reopens the nav as an overlay. -->
+        <div class="flex-none" class:lg:hidden={!isDeskRoute}>
           <label for="cairn-drawer" aria-label="Open menu" class="btn btn-square btn-ghost">
             <MenuIcon class="h-5 w-5" />
           </label>

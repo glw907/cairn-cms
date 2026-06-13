@@ -261,6 +261,37 @@ describe('AdminLayout', () => {
     await expect.element(emptyScreen.getByRole('button', { name: /publish site/i })).not.toBeInTheDocument();
   });
 
+  it('drops the persistent nav drawer on a desk route (SSR markup, no flash)', async () => {
+    // An open document recedes the nav: the drawer shell omits lg:drawer-open so the sidebar starts
+    // closed at desktop width. The class is conditional in the rendered markup (no effect flips it),
+    // so the chrome-free state resolves at SSR and never flashes.
+    const screen = render(AdminLayoutDeskHarness, {
+      data: data(true, null, '/admin/posts/2026-05-hello'),
+    });
+    const drawer = screen.container.querySelector('.drawer')!;
+    expect(drawer.classList.contains('lg:drawer-open')).toBe(false);
+  });
+
+  it('keeps the persistent nav drawer on a list route', async () => {
+    const screen = render(AdminLayout, { data: data(true), children: child });
+    const drawer = screen.container.querySelector('.drawer')!;
+    expect(drawer.classList.contains('lg:drawer-open')).toBe(true);
+  });
+
+  it('shows the drawer toggle at desktop width on a desk route', async () => {
+    // On a desk route the toggle loses lg:hidden so it stays visible at desktop and reopens the nav
+    // as an overlay. On a list route the persistent sidebar is shown, so the toggle is lg:hidden.
+    const deskScreen = render(AdminLayoutDeskHarness, {
+      data: data(true, null, '/admin/posts/2026-05-hello'),
+    });
+    const deskToggleWrap = deskScreen.container.querySelector('label[for="cairn-drawer"]')!.parentElement!;
+    expect(deskToggleWrap.classList.contains('lg:hidden')).toBe(false);
+
+    const listScreen = render(AdminLayout, { data: data(true), children: child });
+    const listToggleWrap = listScreen.container.querySelector('label[for="cairn-drawer"]')!.parentElement!;
+    expect(listToggleWrap.classList.contains('lg:hidden')).toBe(true);
+  });
+
   it('toggles the drawer with Ctrl+B', async () => {
     const screen = render(AdminLayout, { data: data(true), children: child });
     const toggle = () => screen.container.querySelector('#cairn-drawer') as HTMLInputElement;

@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Proposed design: the component insert picker (rev. 2)</title>
+<link rel="stylesheet" href="./cairn-admin.css" />
+<!--
+  The component insert picker, redesigned around an honest live preview. Rev. 2 folds in an
+  adversarial UX critique (2026-06-15).
+
+  WHAT CHANGES. Today the dialog is one column: a list of components; picking one REPLACES the
+  list with a fill form; Back returns. You configure a component without seeing what it produces.
+  Every comparable system shares that blindness (Payload: "nobody knows what they do"; Sanity
+  renders "Untitled"). cairn already owns the render pipeline and a sandboxed preview iframe, so
+  it can render the configured component as you fill the form. That is the headline.
+
+  THE SHAPE (rev. 2). The preview pane is OPT-IN, not always-on. Browsing the catalog is one
+  column (the glyph + description + use already carry recognition; a second pane over a
+  three-component catalog is dead weight). The configure step splits to two panes ONLY when the
+  component declares a `preview`: the form on the left, the rendered result on the right. A
+  component with no `preview` keeps today's single-column form. One Back step returns to the
+  catalog. Below the breakpoint the preview stacks beneath the form.
+
+  THE PREVIEW IS REAL, AND IT SETTLES (not "live on every keystroke"). The right pane renders the
+  configured directive through the SITE's render() into a sandboxed <iframe srcdoc> linking the
+  site stylesheets, the same machinery EditPage already uses. That path is async and not free, so
+  it is DEBOUNCED with a latest-wins counter (EditPage's existing pattern, ~200ms), one persistent
+  iframe whose srcdoc is replaced. The pane has three honest states the mockup shows: settling,
+  render-failed (reusing EditPage's previewFailed surface), and incomplete (a required field is
+  empty, so the preview shows the skeleton with the empty region called out, never a fake
+  "Untitled" finished block).
+
+  CONTRACT ADDITIONS (all optional, additive; existing site defs compile unchanged):
+    icon?    a glyph from the site IconSet, shown beside the label
+    group?   a category heading; declaration order within a group, never alphabetical
+    preview? a STRUCTURED sample { attributes?, slots? } the picker seeds the form with and renders
+             through serializeComponent -> render (the same path as a real insert, so it is
+             provably faithful and check:reference can validate it). No raw-markdown form: one path.
+             Declaring preview is also what opts the component into the two-pane layout.
+    hidden?  a pure top-level-picker filter (applied after the actionable filter); exists for
+             nested/round-trip-only components. One predicate, one test.
+    AttributeField.pattern?   a RegExp source + message, the primary inline-validation case
+    AttributeField.validate?  the escape hatch: a pure, browser-safe (value, all) => string|null,
+                              wrapped in try/catch so an author throw never crashes the modal
+    SlotDef.itemLabel?        (item, i) => string for repeatable rows; falls back to `${label} ${i+1}`
+
+  DEFERRED (noted, not built here): a persistent slim catalog rail at the configure step
+  (master-detail) only earns its width past a large catalog; small catalogs use Back. Browse-time
+  preview-on-highlight is a large-catalog enhancement, not the core.
+
+  Panel 2 is live (debounced): edit the title or tone to watch the preview settle. Built on the
+  real compiled admin sheet and fonts.
+-->
+<style>
+  body { margin: 0; background: #d8d4cf; }
+  .mock-label { font: 600 13px/1.4 system-ui; letter-spacing: .08em; text-transform: uppercase; color: #444; padding: 24px 24px 6px; }
+  .mock-note { font: 400 13px/1.55 system-ui; color: #555; padding: 0 24px 14px; max-width: 86ch; }
+  .mock-note b { color: #222; } .mock-note code { font-family: var(--font-editor); background: #cfcac3; padding: 0 4px; border-radius: 3px; }
+  .screen { margin: 0 16px 40px; }
+
+  .stage { background: color-mix(in oklab, #000 38%, transparent); padding: 40px 24px; display: flex; justify-content: center; border: 1px solid #aaa; box-shadow: 0 2px 14px rgba(0,0,0,.08); }
+  .stage.tight { padding: 26px 16px; }
+
+  /* The real component is a native <dialog class="modal"> with a .modal-box; a div carries the
+     same recipe here so the mockup renders standalone. Width follows the layout: single-column
+     when browsing or when a component declares no preview, two-pane at configure with preview. */
+  .pk { font-family: var(--font-body); color: var(--color-base-content); -webkit-font-smoothing: antialiased; background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: var(--radius-box); box-shadow: 0 24px 60px -12px rgba(0,0,0,.45); width: 100%; overflow: hidden; }
+  .pk.one { max-width: 460px; }
+  .pk.two { max-width: 880px; }
+  .pk.narrow { max-width: 420px; }
+
+  .pk-head { display: flex; align-items: center; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--cairn-card-border); }
+  .pk-back { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: var(--radius-field); border: 0; background: transparent; color: var(--color-base-content); cursor: pointer; flex: none; }
+  .pk-back:hover { background: var(--color-base-200); }
+  .pk-titles { flex: 1 1 auto; min-width: 0; }
+  .pk-eyebrow { font-size: .6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--color-muted); }
+  .pk-title { font-family: var(--font-display); font-size: 1.0625rem; font-weight: 700; letter-spacing: -.01em; line-height: 1.2; }
+  .pk-x { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: var(--radius-field); border: 0; background: transparent; color: var(--color-muted); cursor: pointer; flex: none; }
+  .pk-x:hover { background: var(--color-base-200); color: var(--color-base-content); }
+
+  .pk-body { display: grid; grid-template-columns: 1fr; min-height: 300px; }
+  .pk.two .pk-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1.04fr); min-height: 392px; }
+  .pk.narrow .pk-body { grid-template-columns: 1fr; }
+  .pk-left { padding: 14px; overflow: auto; max-height: 64vh; }
+  .pk-right { background: var(--color-base-200); border-left: 1px solid var(--cairn-card-border); padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .pk.narrow .pk-right { border-left: 0; border-top: 1px solid var(--cairn-card-border); }
+
+  /* ---- CATALOG (single column) ---- */
+  .pk-search { display: flex; align-items: center; gap: 8px; border: 1px solid var(--cairn-card-border); border-radius: var(--radius-field); padding: 7px 10px; margin: 2px 2px 12px; color: var(--color-muted); background: var(--color-base-100); }
+  .pk-search input { border: 0; outline: 0; background: transparent; font: inherit; color: var(--color-base-content); width: 100%; }
+  .pk-group + .pk-group { margin-top: 12px; }
+  .pk-group-h { font-size: .6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--color-muted); padding: 0 8px 6px; }
+  .pk-row { display: flex; gap: 11px; width: 100%; text-align: left; align-items: flex-start; padding: 9px 10px; border: 0; background: transparent; border-radius: var(--radius-field); cursor: pointer; color: inherit; font: inherit; }
+  .pk-row:hover { background: var(--color-base-200); }
+  .pk-row:focus-visible { outline: 1px solid color-mix(in oklab, var(--color-primary) 70%, transparent); outline-offset: -1px; }
+  /* Active-row glyph is a tint, not a full primary fill, so it never reads as the brand-mark tile. */
+  .pk-glyph { flex: none; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 9px; background: var(--color-base-200); color: var(--color-base-content); }
+  .pk-row:hover .pk-glyph { background: color-mix(in oklab, var(--color-primary) 12%, var(--color-base-200)); color: var(--color-primary); }
+  .pk-glyph svg { width: 16px; height: 16px; }
+  .pk-row-main { min-width: 0; }
+  .pk-row-label { font-size: .9rem; font-weight: 500; }
+  .pk-row-desc { font-size: .75rem; color: var(--color-muted); line-height: 1.45; }
+  .pk-row-use { font-size: .75rem; color: var(--color-subtle); line-height: 1.45; }
+  .pk-row .pk-go { margin-left: auto; align-self: center; color: var(--color-muted); opacity: 0; transition: opacity 100ms; }
+  .pk-row:hover .pk-go, .pk-row:focus-visible .pk-go { opacity: 1; }
+
+  /* ---- FORM ---- */
+  .pk-form { display: flex; flex-direction: column; gap: 13px; padding: 4px 4px 2px; }
+  .pk-fld { display: flex; flex-direction: column; gap: 5px; }
+  .pk-lbl { font-size: .8125rem; font-weight: 500; }
+  .req { color: var(--color-error); margin-left: 2px; }
+  .pk-help { font-size: .72rem; color: var(--color-muted); }
+  .pk-in, .pk-sel, .pk-ta { font: inherit; font-size: .875rem; color: var(--color-base-content); background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: var(--radius-field); padding: 8px 10px; width: 100%; box-sizing: border-box; }
+  .pk-ta { resize: vertical; min-height: 64px; line-height: 1.5; }
+  .pk-in:focus, .pk-sel:focus, .pk-ta:focus { outline: 1px solid color-mix(in oklab, var(--color-primary) 70%, transparent); outline-offset: 0; border-color: color-mix(in oklab, var(--color-primary) 50%, var(--cairn-card-border)); }
+  .pk-in.invalid { border-color: var(--color-error); }
+  .pk-err { font-size: .72rem; color: var(--color-error); }
+  .pk-iconpick { display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; padding: 7px 11px; border: 1px solid var(--cairn-card-border); border-radius: var(--radius-field); background: var(--color-base-100); cursor: pointer; font: inherit; font-size: .8125rem; color: var(--color-base-content); }
+  .pk-iconpick svg { width: 15px; height: 15px; color: var(--color-accent); }
+  .pk-rep { border: 1px solid var(--cairn-card-border); border-radius: var(--radius-box); padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+  .pk-rep legend { font-size: .8125rem; font-weight: 500; padding: 0 4px; }
+  .pk-rep-row { display: flex; align-items: center; gap: 8px; }
+  .pk-rep-row .pk-tag { flex: none; font-size: .68rem; color: var(--color-muted); width: 58px; }
+  .pk-rep-row .pk-in { font-size: .82rem; padding: 6px 9px; }
+  .pk-rmv { flex: none; width: 28px; height: 28px; border: 0; border-radius: var(--radius-field); background: transparent; color: var(--color-muted); cursor: pointer; }
+  .pk-rmv:hover { background: var(--color-base-200); color: var(--color-error); }
+  .pk-add { align-self: flex-start; font: inherit; font-size: .8rem; font-weight: 500; color: var(--color-primary); background: transparent; border: 0; cursor: pointer; padding: 2px 4px; }
+
+  /* ---- PREVIEW (right pane; settles, has states) ---- */
+  .pk-pv-cap { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .pk-pv-eyebrow { font-size: .6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--color-muted); }
+  .pk-pv-state { display: inline-flex; align-items: center; gap: 5px; font-size: .68rem; color: var(--color-muted); }
+  .pk-pv-state.settling::before { content: ""; width: 9px; height: 9px; border: 1.5px solid color-mix(in oklab, var(--color-muted) 50%, transparent); border-top-color: var(--color-muted); border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .pk-pv-state.settling::before { animation: none; } }
+  .pk-pv-frame { flex: 1 1 auto; background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: var(--radius-box); box-shadow: var(--cairn-shadow); padding: 18px; overflow: auto; }
+  .pk-pv-empty { flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: var(--color-muted); text-align: center; border: 1px dashed var(--cairn-card-border); border-radius: var(--radius-box); padding: 24px; }
+  .pk-pv-empty svg { width: 26px; height: 26px; opacity: .65; }
+  .pk-pv-empty .t { font-size: .85rem; font-weight: 500; color: var(--color-base-content); }
+  .pk-pv-empty .s { font-size: .76rem; }
+  .pk-pv-failed { flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; text-align: center; border: 1px solid color-mix(in oklab, var(--color-error) 35%, var(--cairn-card-border)); border-radius: var(--radius-box); padding: 22px; color: var(--color-error); background: color-mix(in oklab, var(--color-error) 5%, transparent); }
+  .pk-pv-failed svg { width: 22px; height: 22px; }
+  .pk-pv-failed .s { font-size: .76rem; color: var(--color-muted); }
+  /* The incomplete state: the real skeleton with the empty required region called out. No fake title. */
+  .pk-skel-gap { display: inline-flex; align-items: center; gap: 6px; border: 1px dashed color-mix(in oklab, var(--color-error) 55%, var(--cairn-card-border)); border-radius: 6px; padding: 2px 8px; color: var(--color-error); font-size: .8rem; font-style: normal; font-weight: 500; }
+
+  /* ---- FOOTER ---- */
+  .pk-foot { display: flex; align-items: center; gap: 10px; padding: 13px 18px; border-top: 1px solid var(--cairn-card-border); }
+  .pk-foot .sp { flex: 1 1 auto; }
+  .pk-btn { font: inherit; font-size: .85rem; font-weight: 500; border-radius: var(--radius-field); padding: 8px 16px; cursor: pointer; border: 1px solid transparent; }
+  .pk-btn-ghost { background: transparent; color: var(--color-base-content); border-color: var(--cairn-card-border); }
+  .pk-btn-ghost:hover { background: var(--color-base-200); }
+  .pk-btn-primary { background: var(--color-primary); color: var(--color-primary-content); box-shadow: 0 2px 8px -2px color-mix(in oklab, var(--color-primary) 60%, transparent); }
+  .pk-btn-primary:hover { filter: brightness(1.05); }
+  .pk-btn[disabled] { opacity: .5; cursor: not-allowed; }
+  .pk-hint { font-size: .74rem; color: var(--color-muted); }
+
+  /* ---- RENDERED SAMPLE (stands in for the real iframe render of site output) ---- */
+  .smp { font-family: var(--font-body); line-height: 1.55; }
+  .smp-callout { border-left: 3px solid; border-radius: 8px; padding: 13px 15px; background: color-mix(in oklab, currentColor 6%, transparent); }
+  .smp-callout.tone-note { color: #2f6f57; }
+  .smp-callout.tone-warning { color: #9a6a18; }
+  .smp-callout .ttl { font-weight: 700; font-size: .95rem; display: flex; align-items: center; gap: 7px; color: color-mix(in oklab, currentColor 78%, #111); }
+  .smp-callout .ttl svg { width: 16px; height: 16px; }
+  .smp-callout .bd { margin: 6px 0 0; font-size: .86rem; color: #2a2a2a; }
+  .smp-callout ul { margin: 9px 0 0; padding-left: 18px; font-size: .84rem; color: #2a2a2a; }
+  .smp-callout li { margin: 2px 0; }
+  [data-theme='cairn-admin-dark'] .smp-callout .bd, [data-theme='cairn-admin-dark'] .smp-callout ul { color: #d6d2cc; }
+  [data-theme='cairn-admin-dark'] .smp-callout.tone-note { color: #6fcfa6; }
+  [data-theme='cairn-admin-dark'] .smp-callout.tone-warning { color: #e0b463; }
+  [data-theme='cairn-admin-dark'] .smp-callout .ttl { color: color-mix(in oklab, currentColor 86%, #fff); }
+  .smp-alert { border: 1px solid var(--cairn-card-border); border-radius: 10px; padding: 13px 15px; background: var(--color-base-100); }
+  .smp-alert .ttl { font-weight: 700; font-size: .92rem; display: flex; align-items: center; gap: 8px; }
+  .smp-alert .ttl svg { width: 16px; height: 16px; color: var(--color-accent); }
+  .smp-alert .bd { margin: 6px 0 0; font-size: .85rem; color: var(--color-muted); }
+
+  .pk-old { font-family: var(--font-body); color: var(--color-base-content); background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: var(--radius-box); box-shadow: var(--cairn-shadow); width: 100%; max-width: 420px; overflow: hidden; }
+  .cmp { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; }
+  .cmp h4 { font: 600 11px/1 system-ui; letter-spacing: .08em; text-transform: uppercase; color: #555; margin: 0 0 10px; }
+</style>
+</head>
+<body>
+
+<div class="mock-label">The component insert picker &mdash; 2026-06-15 (rev. 2, opt-in preview)</div>
+<div class="mock-note">
+  The preview pane is the differentiator, and it is now <b>opt-in and honest</b>. Browse in one
+  column. The configure step splits to a form plus a rendered preview only when a component declares
+  a <code>preview</code>; otherwise it keeps today's single-column form. The preview renders the real
+  directive through the site pipeline into a sandboxed iframe, the same as the editor, so it is
+  async and <b>debounced</b> (it settles, it does not pulse), and it has real states: settling,
+  render-failed, and incomplete. Panel 2 is live (debounced): edit Title or Tone to watch it settle.
+</div>
+
+<!-- ============ PANEL 1: CATALOG (single column) ============ -->
+<div class="mock-label" style="padding-top:6px">1 &middot; Browse the catalog (light) &mdash; one column, grouped, glyph + description + use</div>
+<div class="mock-note">
+  Components group under one-word headings (<code>group</code>) in declaration order, never
+  alphabetical. Each row carries its glyph (<code>icon</code>), label, description, and intended-use,
+  which is enough to recognize a block. No preview pane while browsing: over a handful of components
+  a second pane is dead weight. Search appears above the list only once a site declares more than a
+  named threshold (~8) of components.
+</div>
+<div class="screen"><div data-theme="cairn-admin">
+<div class="stage">
+  <div class="pk one">
+    <div class="pk-head">
+      <div class="pk-titles"><div class="pk-eyebrow">Insert</div><div class="pk-title">Insert a component</div></div>
+      <button class="pk-x" aria-label="Close">&#10005;</button>
+    </div>
+    <div class="pk-body">
+      <div class="pk-left">
+        <div class="pk-group">
+          <div class="pk-group-h">Callouts</div>
+          <button class="pk-row">
+            <span class="pk-glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></span>
+            <span class="pk-row-main"><span class="pk-row-label">Callout</span><span class="pk-row-desc">A highlighted note with an optional icon.</span><span class="pk-row-use">Draw the reader to one important idea.</span></span>
+            <span class="pk-go"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+          </button>
+          <button class="pk-row">
+            <span class="pk-glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
+            <span class="pk-row-main"><span class="pk-row-label">Alert</span><span class="pk-row-desc">A bordered note whose icon defaults from its role.</span><span class="pk-row-use">Flag a caution in the flow of a post.</span></span>
+            <span class="pk-go"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+          </button>
+        </div>
+        <div class="pk-group">
+          <div class="pk-group-h">Layout</div>
+          <button class="pk-row">
+            <span class="pk-glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>
+            <span class="pk-row-main"><span class="pk-row-label">Grid</span><span class="pk-row-desc">A responsive grid of small tiles.</span><span class="pk-row-use">Lay out features or links side by side.</span></span>
+            <span class="pk-go"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div></div>
+
+<!-- ============ PANEL 2: CONFIGURE WITH PREVIEW (light, live/debounced) ============ -->
+<div class="mock-label">2 &middot; Fill it in, with preview (light) &mdash; the component declares a <code style="text-transform:none">preview</code></div>
+<div class="mock-note">
+  Picking a component that declares a <code>preview</code> opens the two-pane configure step: the
+  form on the left, the rendered result on the right. The right pane runs the real site render
+  (debounced, latest-wins), so the chip reads <b>settling</b>, not a fake "live" pulse. Back returns
+  to the catalog (one step). Required fields carry an asterisk and block Insert with inline text;
+  repeatable rows show a derived label (<code>itemLabel</code>). <b>Edit Title or Tone</b> to watch
+  the preview settle.
+</div>
+<div class="screen"><div data-theme="cairn-admin">
+<div class="stage">
+  <div class="pk two">
+    <div class="pk-head">
+      <button class="pk-back" aria-label="Back to components"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+      <div class="pk-titles"><div class="pk-eyebrow">Insert &rsaquo; Callouts</div><div class="pk-title">Callout</div></div>
+      <button class="pk-x" aria-label="Close">&#10005;</button>
+    </div>
+    <div class="pk-body">
+      <div class="pk-left">
+        <div class="pk-form">
+          <div class="pk-fld">
+            <label class="pk-lbl" for="f-tone">Tone<span class="req" aria-hidden="true">*</span></label>
+            <select class="pk-sel" id="f-tone" onchange="cfg()"><option value="note" selected>note</option><option value="warning">warning</option></select>
+          </div>
+          <div class="pk-fld">
+            <span class="pk-lbl">Icon</span>
+            <button class="pk-iconpick" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 7v10l8 5 8-5V7z"/></svg> snowflake <span style="color:var(--color-muted)">&middot; change</span></button>
+          </div>
+          <div class="pk-fld">
+            <label class="pk-lbl" for="f-title">Title<span class="req" aria-hidden="true">*</span></label>
+            <input class="pk-in" id="f-title" value="Buy your day pass early" oninput="cfg()" />
+          </div>
+          <div class="pk-fld">
+            <label class="pk-lbl" for="f-body">Body</label>
+            <textarea class="pk-ta" id="f-body" oninput="cfg()">Weekends sell out. Grab one online before you drive up.</textarea>
+          </div>
+          <fieldset class="pk-rep">
+            <legend>Points</legend>
+            <div class="pk-rep-row"><span class="pk-tag">Adult&hellip;</span><input class="pk-in" value="Adult $18, youth $12" /><button class="pk-rmv" aria-label="Remove point: Adult $18, youth $12">&#10005;</button></div>
+            <div class="pk-rep-row"><span class="pk-tag">Cash&hellip;</span><input class="pk-in" value="Cash or card at the yurt" /><button class="pk-rmv" aria-label="Remove point: Cash or card at the yurt">&#10005;</button></div>
+            <button class="pk-add" type="button">+ Add point</button>
+          </fieldset>
+        </div>
+      </div>
+      <div class="pk-right">
+        <div class="pk-pv-cap"><span class="pk-pv-eyebrow">Preview</span><span class="pk-pv-state" id="cfg-state">Settles as you edit</span></div>
+        <div class="pk-pv-frame" id="cfg-frame"><!-- debounced render --></div>
+      </div>
+    </div>
+    <div class="pk-foot">
+      <span class="pk-hint">Inserted at your cursor as <code style="font-family:var(--font-editor)">:::callout</code>.</span>
+      <span class="sp"></span>
+      <button class="pk-btn pk-btn-ghost">Cancel</button>
+      <button class="pk-btn pk-btn-primary">Insert</button>
+    </div>
+  </div>
+</div>
+</div></div>
+
+<!-- ============ PANEL 3: CONFIGURE WITHOUT PREVIEW (single column fallback) ============ -->
+<div class="mock-label">3 &middot; Fill it in, no preview (light) &mdash; a component that declares no <code style="text-transform:none">preview</code></div>
+<div class="mock-note">
+  Not every component has a meaningful visual, and the smallest catalogs do not need a pane. A
+  component that declares no <code>preview</code> keeps today's single-column form, so the second
+  pane never becomes dead weight. This is the default; the two-pane layout is the opt-in.
+</div>
+<div class="screen"><div data-theme="cairn-admin">
+<div class="stage">
+  <div class="pk one">
+    <div class="pk-head"><button class="pk-back" aria-label="Back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button><div class="pk-titles"><div class="pk-eyebrow">Insert &rsaquo; Embeds</div><div class="pk-title">Newsletter signup</div></div><button class="pk-x" aria-label="Close">&#10005;</button></div>
+    <div class="pk-body"><div class="pk-left"><div class="pk-form">
+      <div class="pk-fld"><label class="pk-lbl">List<span class="req">*</span></label><select class="pk-sel"><option>Trail report</option><option>Events</option></select></div>
+      <div class="pk-fld"><label class="pk-lbl">Button label</label><input class="pk-in" value="Subscribe" /></div>
+      <div class="pk-fld"><label class="pk-lbl">Intro</label><textarea class="pk-ta">Get conditions in your inbox every Friday.</textarea></div>
+    </div></div></div>
+    <div class="pk-foot"><span class="pk-hint">Inserted as <code style="font-family:var(--font-editor)">:::signup</code>.</span><span class="sp"></span><button class="pk-btn pk-btn-ghost">Cancel</button><button class="pk-btn pk-btn-primary">Insert</button></div>
+  </div>
+</div>
+</div></div>
+
+<!-- ============ PANEL 4: PREVIEW STATES ============ -->
+<div class="mock-label">4 &middot; The honest preview states &mdash; incomplete, render-failed</div>
+<div class="mock-note">
+  The preview never lies. Left: a required field is empty, so Insert is disabled and the preview
+  shows the real skeleton with the empty region <b>called out</b>, never a fabricated "Untitled"
+  finished block (the trap the design set out to avoid). Right: the render threw, so the pane says
+  so and keeps the form intact, reusing the editor's existing render-failed surface.
+</div>
+<div class="screen"><div data-theme="cairn-admin">
+<div class="cmp" style="max-width:none">
+  <div class="stage tight">
+    <div class="pk two" style="max-width:none">
+      <div class="pk-head"><button class="pk-back" aria-label="Back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button><div class="pk-titles"><div class="pk-eyebrow">Insert &rsaquo; Callouts</div><div class="pk-title">Callout</div></div><button class="pk-x" aria-label="Close">&#10005;</button></div>
+      <div class="pk-body" style="min-height:280px">
+        <div class="pk-left"><div class="pk-form">
+          <div class="pk-fld"><label class="pk-lbl">Tone<span class="req">*</span></label><select class="pk-sel"><option>note</option></select></div>
+          <div class="pk-fld"><label class="pk-lbl" for="e-title">Title<span class="req">*</span></label><input class="pk-in invalid" id="e-title" value="" aria-invalid="true" aria-describedby="e-title-err" /><span class="pk-err" id="e-title-err" role="alert">Title is required.</span></div>
+          <div class="pk-fld"><label class="pk-lbl">Body</label><textarea class="pk-ta">Weekends sell out.</textarea></div>
+        </div></div>
+        <div class="pk-right">
+          <div class="pk-pv-cap"><span class="pk-pv-eyebrow">Preview</span><span class="pk-pv-state">Incomplete</span></div>
+          <div class="pk-pv-frame"><div class="smp"><div class="smp-callout tone-note"><div class="ttl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 7v10l8 5 8-5V7z"/></svg><span class="pk-skel-gap">Title needed</span></div><p class="bd">Weekends sell out.</p></div></div></div>
+        </div>
+      </div>
+      <div class="pk-foot"><span class="sp"></span><button class="pk-btn pk-btn-ghost">Cancel</button><button class="pk-btn pk-btn-primary" disabled>Insert</button></div>
+    </div>
+  </div>
+  <div class="stage tight">
+    <div class="pk two" style="max-width:none">
+      <div class="pk-head"><button class="pk-back" aria-label="Back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button><div class="pk-titles"><div class="pk-eyebrow">Insert &rsaquo; Layout</div><div class="pk-title">Grid</div></div><button class="pk-x" aria-label="Close">&#10005;</button></div>
+      <div class="pk-body" style="min-height:280px">
+        <div class="pk-left"><div class="pk-form">
+          <div class="pk-fld"><label class="pk-lbl">Columns<span class="req">*</span></label><select class="pk-sel"><option>2</option><option>3</option></select></div>
+          <div class="pk-fld"><label class="pk-lbl">Heading</label><input class="pk-in" value="What we offer" /></div>
+        </div></div>
+        <div class="pk-right">
+          <div class="pk-pv-cap"><span class="pk-pv-eyebrow">Preview</span><span class="pk-pv-state">Could not render</span></div>
+          <div class="pk-pv-failed">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+            <span style="font-size:.82rem;font-weight:600">Preview could not render</span>
+            <span class="s">Your settings are kept. You can still insert and check it on the page.</span>
+          </div>
+        </div>
+      </div>
+      <div class="pk-foot"><span class="sp"></span><button class="pk-btn pk-btn-ghost">Cancel</button><button class="pk-btn pk-btn-primary">Insert</button></div>
+    </div>
+  </div>
+</div>
+</div></div>
+
+<!-- ============ PANEL 5: DARK ============ -->
+<div class="mock-label">5 &middot; Dark &mdash; the configure step with preview</div>
+<div class="mock-note">The two panes and the settled preview carry to dark; the frame and the rendered sample both read on the dark card.</div>
+<div class="screen"><div data-theme="cairn-admin-dark">
+<div class="stage">
+  <div class="pk two">
+    <div class="pk-head"><button class="pk-back" aria-label="Back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button><div class="pk-titles"><div class="pk-eyebrow">Insert &rsaquo; Callouts</div><div class="pk-title">Alert</div></div><button class="pk-x" aria-label="Close">&#10005;</button></div>
+    <div class="pk-body">
+      <div class="pk-left"><div class="pk-form">
+        <div class="pk-fld"><label class="pk-lbl">Role<span class="req">*</span></label><select class="pk-sel"><option>caution</option><option>note</option></select></div>
+        <div class="pk-fld"><span class="pk-lbl">Icon</span><button class="pk-iconpick" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/></svg> leaf <span style="color:var(--color-muted)">&middot; default</span></button></div>
+        <div class="pk-fld"><label class="pk-lbl">Title<span class="req">*</span></label><input class="pk-in" value="Check conditions before you drive" /></div>
+        <div class="pk-fld"><label class="pk-lbl">Body</label><textarea class="pk-ta">The access road is not plowed after a storm until midday.</textarea></div>
+      </div></div>
+      <div class="pk-right">
+        <div class="pk-pv-cap"><span class="pk-pv-eyebrow">Preview</span><span class="pk-pv-state">Settles as you edit</span></div>
+        <div class="pk-pv-frame"><div class="smp"><div class="smp-alert"><div class="ttl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/></svg>Check conditions before you drive</div><p class="bd">The access road is not plowed after a storm until midday.</p></div></div></div>
+      </div>
+    </div>
+    <div class="pk-foot"><span class="sp"></span><button class="pk-btn pk-btn-ghost">Cancel</button><button class="pk-btn pk-btn-primary">Insert</button></div>
+  </div>
+</div>
+</div></div>
+
+<!-- ============ PANEL 6: NARROW / RESPONSIVE ============ -->
+<div class="mock-label">6 &middot; Narrow (phone) &mdash; the preview stacks beneath the form</div>
+<div class="mock-note">
+  Below the breakpoint the two-pane configure step is single-column: the form first, the settled
+  preview under it. The preview is added, never lost.
+</div>
+<div class="screen"><div data-theme="cairn-admin">
+<div class="stage">
+  <div class="pk narrow">
+    <div class="pk-head"><button class="pk-back" aria-label="Back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button><div class="pk-titles"><div class="pk-eyebrow">Insert &rsaquo; Callouts</div><div class="pk-title">Callout</div></div><button class="pk-x" aria-label="Close">&#10005;</button></div>
+    <div class="pk-body">
+      <div class="pk-left"><div class="pk-form">
+        <div class="pk-fld"><label class="pk-lbl">Tone<span class="req">*</span></label><select class="pk-sel"><option>note</option></select></div>
+        <div class="pk-fld"><label class="pk-lbl">Title<span class="req">*</span></label><input class="pk-in" value="Buy your day pass early" /></div>
+        <div class="pk-fld"><label class="pk-lbl">Body</label><textarea class="pk-ta">Weekends sell out. Grab one online.</textarea></div>
+      </div></div>
+      <div class="pk-right">
+        <div class="pk-pv-cap"><span class="pk-pv-eyebrow">Preview</span><span class="pk-pv-state">Settled</span></div>
+        <div class="pk-pv-frame"><div class="smp"><div class="smp-callout tone-note"><div class="ttl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 7v10l8 5 8-5V7z"/></svg>Buy your day pass early</div><p class="bd">Weekends sell out. Grab one online.</p></div></div></div>
+      </div>
+    </div>
+    <div class="pk-foot"><span class="sp"></span><button class="pk-btn pk-btn-primary">Insert</button></div>
+  </div>
+</div>
+</div></div>
+
+<!-- ============ PANEL 7: BEFORE / AFTER ============ -->
+<div class="mock-label">7 &middot; Before / after &mdash; why the pane earns its width</div>
+<div class="mock-note">
+  Left, today: one column, configure blind. Right, the proposal: when the component declares a
+  <code>preview</code>, the result is visible the whole time, settled, with honest states.
+</div>
+<div class="screen"><div data-theme="cairn-admin">
+<div class="stage" style="background:var(--color-base-200)">
+  <div class="cmp">
+    <div>
+      <h4>Before: single column, no preview</h4>
+      <div class="pk-old">
+        <div class="pk-head"><div class="pk-titles"><div class="pk-title" style="font-size:1rem">Callout</div></div><button class="pk-back" aria-label="Back"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+        <div style="padding:14px"><div class="pk-form">
+          <div class="pk-fld"><label class="pk-lbl">Tone</label><select class="pk-sel"><option>note</option></select></div>
+          <div class="pk-fld"><label class="pk-lbl">Title</label><input class="pk-in" value="Buy your day pass early" /></div>
+          <div class="pk-fld"><label class="pk-lbl">Body</label><textarea class="pk-ta">Weekends sell out.</textarea></div>
+          <button class="pk-btn pk-btn-primary" style="align-self:flex-start;margin-top:4px">Insert</button>
+        </div></div>
+      </div>
+    </div>
+    <div>
+      <h4>After: form + settled preview</h4>
+      <div class="pk two" style="max-width:none">
+        <div class="pk-head"><button class="pk-back" aria-label="Back"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="pk-titles"><div class="pk-title" style="font-size:1rem">Callout</div></div></div>
+        <div class="pk-body" style="min-height:0">
+          <div class="pk-left"><div class="pk-form">
+            <div class="pk-fld"><label class="pk-lbl">Tone</label><select class="pk-sel"><option>note</option></select></div>
+            <div class="pk-fld"><label class="pk-lbl">Title</label><input class="pk-in" value="Buy your day pass early" /></div>
+          </div></div>
+          <div class="pk-right" style="padding:12px">
+            <div class="pk-pv-cap"><span class="pk-pv-eyebrow">Preview</span></div>
+            <div class="pk-pv-frame" style="padding:12px"><div class="smp"><div class="smp-callout tone-note"><div class="ttl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 7v10l8 5 8-5V7z"/></svg>Buy your day pass early</div><p class="bd">Weekends sell out.</p></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div></div>
+
+<script>
+  // Panel 2: the form drives the preview, DEBOUNCED with a latest-wins guard, standing in for the
+  // async render() -> sandboxed iframe path. The chip shows "Settling" during the wait, then "Settled".
+  let seq = 0;
+  function render() {
+    const tone = document.querySelector('#f-tone').value;
+    const title = document.querySelector('#f-title').value.trim();
+    const body = document.querySelector('#f-body').value;
+    const icon = tone === 'warning'
+      ? '<path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3z"/><path d="M12 9v4"/><path d="M12 17h.01"/>'
+      : '<path d="M12 2 4 7v10l8 5 8-5V7z"/>';
+    const t = title
+      ? title
+      : '<span class="pk-skel-gap">Title needed</span>';
+    document.querySelector('#cfg-frame').innerHTML =
+      `<div class="smp"><div class="smp-callout tone-${tone}"><div class="ttl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon}</svg>${t}</div><p class="bd">${body.replace(/</g,'&lt;')}</p><ul><li>Adult $18, youth $12</li><li>Cash or card at the yurt</li></ul></div></div>`;
+    const chip = document.querySelector('#cfg-state');
+    chip.classList.remove('settling'); chip.textContent = 'Settled';
+  }
+  function cfg() {
+    const chip = document.querySelector('#cfg-state');
+    chip.classList.add('settling'); chip.textContent = 'Settling';
+    const mine = ++seq;
+    setTimeout(() => { if (mine === seq) render(); }, 220);
+  }
+  render();
+</script>
+
+</body>
+</html>

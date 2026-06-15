@@ -22,6 +22,12 @@ export interface AttributeField {
   options?: readonly string[];
   /** Helper text shown under the field. */
   help?: string;
+  /** A RegExp `source` to validate the value against, plus the message to show on a mismatch. */
+  pattern?: { source: string; message: string };
+  /** A pure, browser-safe cross-field validator. Returns an error string, or null when valid.
+   *  Receives the field's value and the full {@link ComponentValues} so a rule can read sibling
+   *  fields. The picker wraps the call in try/catch so an author's throw never crashes the form. */
+  validate?: (value: string | boolean, all: ComponentValues) => string | null;
 }
 
 export type SlotKind = 'markdown' | 'inline' | 'repeatable';
@@ -36,6 +42,9 @@ export interface SlotDef {
   help?: string;
   /** For `kind: 'repeatable'`: the fields composing each list item (v1 uses the first field). */
   itemFields?: AttributeField[];
+  /** For `kind: 'repeatable'`: derives a row's label from its item values and zero-based index.
+   *  When it returns nothing, the picker falls back to `${label} ${index + 1}`. */
+  itemLabel?: (item: Record<string, string | boolean>, index: number) => string;
 }
 
 /** The structured input a component's `build` receives. The engine stamps the component's
@@ -75,6 +84,18 @@ export interface ComponentDef {
   attributes?: AttributeField[];
   /** The named content regions this component accepts. */
   slots?: SlotDef[];
+  /** A glyph key from the site IconSet, shown beside the label in the picker. */
+  icon?: string;
+  /** A category heading for the picker. Components order by declaration within a group. */
+  group?: string;
+  /** Omit from the top-level picker (for a nested or round-trip-only component). */
+  hidden?: boolean;
+  /** A structured sample the picker seeds the form with and renders through the same path a real
+   *  insert takes. Declaring `preview` is what opts the component into the two-pane configure layout. */
+  preview?: {
+    attributes?: Record<string, string | boolean>;
+    slots?: Record<string, string | string[]>;
+  };
 }
 
 export interface ComponentRegistry {
@@ -144,4 +165,16 @@ export function emptyValues(def: ComponentDef): ComponentValues {
     slots[slot.name] = slot.kind === 'repeatable' ? [] : '';
   }
   return { attributes, slots };
+}
+
+/** Seed {@link ComponentValues} from a component's `preview` sample: the {@link emptyValues} base
+ *  with `def.preview.attributes` and `def.preview.slots` overlaid (a shallow merge per side). When
+ *  the def declares no `preview`, returns exactly the {@link emptyValues} output. */
+export function previewValues(def: ComponentDef): ComponentValues {
+  const base = emptyValues(def);
+  if (!def.preview) return base;
+  return {
+    attributes: { ...base.attributes, ...def.preview.attributes },
+    slots: { ...base.slots, ...def.preview.slots },
+  };
 }

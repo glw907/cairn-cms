@@ -56,10 +56,12 @@ needs. Items move up from lower tiers as the core fills in.
 
 ## Later
 
-- **Site component registry and guided insert.** One place per site to declare UI components
-  (attributes, named slots, build) that drives render, plus a guided insert form so a
-  non-technical editor places a component without writing directive syntax, and an `llms-full`
-  reference for the site's component vocabulary.
+- **Component authoring follow-ups.** The registry, the guided insert picker (with a live preview as
+  of `0.56.2`), and the `llms-full` component reference have shipped. What remains: round-trip editing
+  of a placed component (re-open a directive into the guided form, which the parser and a
+  serialize/parse identity test already position), a persistent master-detail catalog rail for a
+  large catalog, and an optional `/` slash-trigger that opens the same picker at the cursor. All three
+  were deferred from the `0.56.2` picker pass and are recorded in its spec's out-of-scope list.
 - **Content lifecycle ergonomics.** Follow-ups carried from the rename and delete passes,
   including a live region that re-announces a repeated error and a slug preview that matches the
   create form.

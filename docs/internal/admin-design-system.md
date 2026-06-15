@@ -166,6 +166,23 @@ Recipes:
   dialog that holds its own `<form>` must mount outside any page-level form: nested forms are invalid
   HTML the parser repairs by dropping the outer tag, which breaks SSR and hydration. `EditPage` mounts
   all its dialogs headless at the bottom and renders plain triggers where they belong.
+- **Component insert picker:** `ComponentInsertDialog` is a two-step dialog. Step one is the catalog:
+  a single-column list grouped under eyebrow headings by the component's `group`, in declaration
+  order, each row a glyph (the component's `icon`), the label, the description, and the intended-use
+  line. A search input appears above the list only past eight components, with focus on open, an
+  `aria-live` count, and a no-match state in the office voice. Step two is the configure form. It
+  opens two panes, the form left and a live preview right, only when the picked component declares a
+  `preview` and the host passes a `render`; otherwise it stays one column. The preview renders the
+  serialized directive through the adapter `render` into a sandboxed `<iframe srcdoc>` from
+  `buildPreviewDoc`, the same path the edit-page preview uses, debounced with a latest-wins counter so
+  it settles rather than re-rendering each keystroke. It carries three honest states and never
+  fabricates a finished block: a settle cue (a visual chip, never a live region, so it does not
+  announce on every edit), an incomplete skeleton that calls out each empty required region while
+  Insert stays disabled, and a render-failed surface that keeps the form. Required fields carry an
+  asterisk and `aria-required` and gate Insert with an inline `role="alert"` message; repeatable rows
+  take their label from the slot's `itemLabel`, falling back to `${label} ${i + 1}`. Back lives in the
+  dialog header beside the eyebrow breadcrumb, one step to the catalog; the modal collapses to one
+  column on a narrow screen.
 - **Popover menu:** the small action menus (the edit header's overflow, the toolbar's More formatting)
   are DaisyUI v5 popover dropdowns, never the focus-driven `.dropdown` wrapper, which opens on
   focus-in-transit and ignores Escape. The trigger is a `<button popovertarget="<id>">` with an

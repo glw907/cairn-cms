@@ -11,7 +11,41 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-14, latest): release 0.56.0 (gates/DX + fold-gutter, bundled)
+## Immediate next action (2026-06-15, latest): merge and release the component-picker refinement (0.56.2)
+
+**The component insert picker refinement LANDED on branch `feat/component-picker-live-preview`, ready
+to merge to `main` and release as `0.56.2` (a patch: additive, no consumer action).** It ran
+mockup-first (research the deficiencies for both editor and developer, a frontend-design mockup, an
+adversarial critique, a rev. 2, then implement), the methodology recorded in
+[[cairn-ui-design-pass-methodology]]. The picker gains a live preview: a one-column grouped catalog
+(glyph, description, intended-use; search past eight), and a configure step that opens two panes (the
+form plus the configured component rendered through the site pipeline into a sandboxed iframe,
+debounced, with honest settling/incomplete/render-failed states) when a component declares a
+`preview`. The `ComponentDef` contract gains optional `icon`, `group`, `hidden`, `preview`;
+`AttributeField` gains `pattern`/`validate`; `SlotDef` gains `itemLabel`. Spec
+`docs/superpowers/specs/2026-06-15-cairn-component-picker-design.md`, plan (with the post-mortem)
+`docs/superpowers/plans/2026-06-15-cairn-component-picker.md`, mockup
+`docs/internal/design/2026-06-15-component-picker-mockup.html` (rev. 2).
+
+Gate green at the branch tip, run first-hand: `npm run check` 923 files 0/0, `npm test` 162 files /
+1567 tests exit 0, the reference/signature/docs gates exit 0, `check:prose` clean, showcase E2E 10
+passed in a real browser (picker open, grouped catalog, callout two-pane preview, insert). Reviewers
+(`svelte-reviewer`, `daisyui-a11y-reviewer`, both Opus): no Critical; the fold-in routed a single
+`resetPreview()` through the close paths, tracked `formEl` in the focus effect, dropped the
+per-keystroke live-region churn on the settle chip, added ArrowDown-from-search, gated the glyph on a
+resolvable icon, and flexed the preview frame.
+
+**Next actions, in order:**
+1. **Merge the branch to `main` and release `0.56.2`** (Geoff: push, then `gh release create v0.56.2`
+   with the changelog entry as the body); additive, no consumer action.
+2. **Recommended next pass: round-trip editing of a placed component** (re-open a directive into the
+   same guided form), which the parser and the existing serialize/parse identity test already
+   position; it was the explicit deferral from this pass. The master-detail catalog rail and a `/`
+   slash-trigger are also deferred (noted in the spec's out-of-scope list).
+3. Then the **gallery** (mockup-first per the methodology, with the storage-fork spike and divergent
+   directions mandatory given its difficulty) and the **scaffolder**.
+
+## Prior next action (2026-06-14): release 0.56.0 (gates/DX + fold-gutter, bundled)
 
 Two passes land on `main` over the published `0.55.0`, bundled into `0.56.0`. The gates/tooling/DX
 pass (its own plan, below) and the editor fold-gutter pass both merged; `package.json` is `0.56.0` and

@@ -69,3 +69,28 @@ post-mortem, memory, commit).
 
 Round-trip editing of an existing block, the master-detail catalog rail, browse-time
 preview-on-highlight, and a `/` slash trigger. Each is recorded in the spec's out-of-scope list.
+
+## Post-mortem (2026-06-15)
+
+Landed on `feat/component-picker-live-preview` as `0.56.2`, seven task commits plus the review
+fold-in and the docs:
+
+- Task 1 `3aff923` (contract fields + `previewValues`), Task 2 `7521461` (pattern/validate in the
+  validator), Task 3 `43ee825` (catalog: grouping, icons, search-past-eight, hidden filter, keyboard),
+  Task 4 `3615a26` (configure step + the debounced sandboxed live preview, the three states, focus),
+  Task 5 `63dee25` (showcase declares icon/group/preview, E2E), the review fold-in `fab30d8`, and the
+  reference docs `3c9fbd8`. Design artifacts at `5e6cccd`.
+
+What went well: the deficiency-hunt research found the live preview as the one unsolved pain and the
+four cairn already beats; the adversarial critique caught the faked-preview and the "Untitled"
+placeholder before they shipped; the showcase E2E proves the preview renders through the real pipeline
+in a browser, not a fake.
+
+Carry-forwards: round-trip editing (the recommended next pass; the parser and the serialize/parse
+identity test position it), the master-detail catalog rail, browse-time preview-on-highlight, and the
+`/` slash-trigger. `previewValues` stays internal (not re-exported from the root barrel); surface it
+if a consumer ever needs it.
+
+Method note: I first sized this as a minor (`0.57.0`) on the strength of the new contract fields;
+Geoff corrected it to a patch (`0.56.2`) because additive optional fields serving a UI refinement stay
+patch-class. Calibration recorded in [[cairn-release-process-and-versioning]].

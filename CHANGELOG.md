@@ -2,6 +2,48 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.56.2
+
+The component insert picker is refined around a live preview, and the component contract grows the
+optional fields that make a good picker possible. The changes are additive, so it is a patch.
+
+How the design was reached. Two research arms ran first. One surveyed how comparable systems build
+their insert pickers (Gutenberg, Sanity, Wagtail, Payload, Contentful, Builder, and the git-backed and
+document tools). The other hunted documented complaints from both the editor and the developer, then
+paired each with a correction. Five pains recur across systems that share no code, and cairn already
+beats four of them by its existing architecture: a single `ComponentDef` co-locates render and schema
+(no schema-render drift), content is markdown in git (no database-migration tax), and the parser reads
+real directives (lossless re-edit stays reachable). The fifth pain, configuring a block without seeing
+the result, no system has solved. An adversarial critique of the first mockup then caught the preview
+faked with static HTML and an ironic "Untitled" placeholder, which the shipped design corrects.
+
+What an editor gets. The picker lists components in one column, grouped under headings, each row a
+glyph, a description, and a line on when to reach for it; a search box appears once a site declares
+more than eight. Picking a component that declares a `preview` opens a two-pane configure step: the
+fill form on the left, and on the right the configured component rendered through the site's own
+pipeline, the same machinery the edit page preview uses. This is the part no comparable CMS offers,
+and cairn can offer it because it already owns the render path. The preview settles on a debounce
+rather than re-rendering on every keystroke, and it stays honest: a still-empty required field shows
+the skeleton with the empty region called out rather than a fabricated result, and a render that
+throws shows a failed-to-render surface and keeps the form. A component that declares no `preview`
+keeps the single-column form. Required fields are marked and block Insert with inline messages, and
+the modal collapses to one column on a narrow screen.
+
+For consumers, the `ComponentDef` contract gains optional fields, so existing definitions compile
+unchanged with no action required:
+
+- `icon` shows a glyph from the site icon set beside the label in the picker.
+- `group` puts a component under a category heading, in declaration order.
+- `hidden` keeps a component out of the top-level picker (for a nested-only component).
+- `preview` is a structured sample (`attributes` and `slots`) the picker seeds the form with and
+  renders. Declaring it is what opts a component into the two-pane preview layout.
+- `pattern` and `validate` on an attribute field add inline validation, the regex case and a pure
+  cross-field escape hatch.
+- `itemLabel` on a repeatable slot derives a row's label, so a list of items is not a column of blanks.
+
+Round-trip editing of a placed component, a persistent catalog rail, and a slash-trigger are designed
+for but deferred to a later pass.
+
 ## 0.56.1
 
 Test and CI reliability only; the published library is unchanged from 0.56.0. The component test job

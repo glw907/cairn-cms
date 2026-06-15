@@ -12,7 +12,10 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
    *  noise over a list short enough to scan. */
   const SEARCH_THRESHOLD = 8;
 
-  function hasSchema(def: ComponentDef): boolean {
+  /** Whether a def carries a schema (any attribute or slot), so it opens the guided form rather
+   *  than inserting a bare template. Exported so a host deciding on its own guided-edit affordance
+   *  (the edit page's Edit-block control) reads the same notion the dialog lists and chooses by. */
+  export function hasSchema(def: ComponentDef): boolean {
     return (def.attributes?.length ?? 0) > 0 || (def.slots?.length ?? 0) > 0;
   }
   /** The registry's pickable components. A def is actionable when a schema opens the guided form or
@@ -302,6 +305,12 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
   }
 </script>
 
+<!-- The guided form, identical in either layout: the two-pane case wraps it in the left column, the
+     single-column case renders it bare. One snippet keeps the prop wiring in one place. -->
+{#snippet configureForm(def: ComponentDef)}
+  <ComponentForm {def} {icons} onInsert={onSubmit} initial={editValues ?? undefined} submitLabel={editing ? 'Update' : 'Insert'} bind:values={formValues} bind:incomplete={formIncomplete} />
+{/snippet}
+
 {#if trigger && defs.length > 0}
   <button type="button" class="btn btn-sm btn-ghost" aria-haspopup="dialog" aria-label="Insert block" {disabled} onclick={open}>Insert block</button>
 {/if}
@@ -336,7 +345,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
                  the preview stacks beneath the form. -->
             <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
               <div class="overflow-auto">
-                <ComponentForm def={picked} {icons} onInsert={onSubmit} initial={editValues ?? undefined} submitLabel={editing ? 'Update' : 'Insert'} bind:values={formValues} bind:incomplete={formIncomplete} />
+                {@render configureForm(picked)}
               </div>
               <div data-testid="cairn-pk-preview" class="flex flex-col gap-2 rounded-box border border-[var(--cairn-card-border)] bg-base-200 p-3">
                 <div class="flex items-baseline justify-between gap-2">
@@ -383,7 +392,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
               </div>
             </div>
           {:else}
-            <ComponentForm def={picked} {icons} onInsert={onSubmit} initial={editValues ?? undefined} submitLabel={editing ? 'Update' : 'Insert'} bind:values={formValues} bind:incomplete={formIncomplete} />
+            {@render configureForm(picked)}
           {/if}
         {/key}
       {:else}

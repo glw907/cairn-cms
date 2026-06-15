@@ -29,7 +29,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   import CsrfField from './CsrfField.svelte';
   import MarkdownEditor from './MarkdownEditor.svelte';
   import EditorToolbar from './EditorToolbar.svelte';
-  import ComponentInsertDialog, { insertableDefs } from './ComponentInsertDialog.svelte';
+  import ComponentInsertDialog, { insertableDefs, hasSchema } from './ComponentInsertDialog.svelte';
   import LinkPicker from './LinkPicker.svelte';
   import WebLinkDialog from './WebLinkDialog.svelte';
   import DeleteDialog from './DeleteDialog.svelte';
@@ -394,13 +394,13 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   type CaretComponent = { name: string | null; markdown: string; from: number; to: number };
   let caretComponent = $state<CaretComponent | null>(null);
   // A def is actionable for guided edit when it has a schema (the same notion the insert catalog
-  // lists by): a template-only def has no form to re-open into. Mirrors the dialog's hasSchema.
+  // lists by): a template-only def has no form to re-open into. Reuses the dialog's exported
+  // hasSchema so the two surfaces can never drift on what counts as editable.
   function editableDef(name: string | null): ComponentDef | undefined {
     if (!name) return undefined;
     const def = registry?.get(name);
     if (!def) return undefined;
-    const schema = (def.attributes?.length ?? 0) > 0 || (def.slots?.length ?? 0) > 0;
-    return schema ? def : undefined;
+    return hasSchema(def) ? def : undefined;
   }
   // The resolved editability: the def and the source range when the caret sits on a known,
   // schema-bearing component whose round-trip safety check passed for the CURRENT caret; null

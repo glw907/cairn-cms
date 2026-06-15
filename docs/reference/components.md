@@ -339,44 +339,67 @@ a plain-language hover hint, and native browser spell check.
 ### `ComponentInsertDialog`
 
 ```ts
-let { registry, insert, icons, disabled = false, trigger = true }: {
+let { registry, insert, icons, render, preview = null, disabled = false, trigger = true }: {
   registry?: ComponentRegistry;
   insert: (text: string) => void;
   icons?: IconSet;
+  render?: (md: string, opts?: { stagger?: boolean; resolve?: LinkResolve }) => string | Promise<string>;
+  preview?: ResolvedPreview | null;
   disabled?: boolean;
   trigger?: boolean;
 };
 ```
 
 The insert palette: an Insert block button that opens a dialog listing the site's registered
-components, then hands off to `ComponentForm` for the chosen one. `registry` is the site's
-component registry, `insert` inserts the serialized markdown at the editor cursor, and `icons`
-feeds icon fields. `disabled` greys the trigger. With `trigger={false}` the component renders only
-the dialog and the exported `open()` method shows it; `EditPage`'s toolbar drives it that way,
-keeping the dialog's own form outside the edit form. `EditPage` composes it.
+components, then hands off to `ComponentForm` for the chosen one. The catalog groups the rows by
+each def's `group` (groups in first-declared order, ungrouped rows in a leading default group), draws
+each def's `icon` beside its label when the icon set resolves it, and hides any def marked `hidden`.
+Past eight actionable components the catalog grows a search input that filters by label or
+description, with the arrow keys roaming the rows.
+
+`registry` is the site's component registry, `insert` inserts the serialized markdown at the editor
+cursor, and `icons` feeds icon fields. `render` is the site's design-accurate render pipeline and
+`preview` is the adapter's resolved preview knob: when both are present and the chosen component
+declares a `preview` sample, the configure step splits into two panes, the guided form on the left
+and a live preview on the right that renders the configured directive through `render` into a
+sandboxed iframe, the same path `EditPage`'s preview uses. A host that threads neither simply gets
+the single-column configure step. `disabled` greys the trigger. With `trigger={false}` the component
+renders only the dialog and the exported `open()` method shows it; `EditPage`'s toolbar drives it
+that way, keeping the dialog's own form outside the edit form. `EditPage` composes it.
 
 ```svelte
-<ComponentInsertDialog {registry} insert={insertAtCursor} {icons} />
+<ComponentInsertDialog
+  {registry}
+  insert={insertAtCursor}
+  {icons}
+  render={cairn.render}
+  preview={data.preview}
+/>
 ```
 
 ### `ComponentForm`
 
 ```ts
-let { def, icons, onInsert, onBack }: {
+let { def, icons, onInsert, values = $bindable(), incomplete = $bindable() }: {
   def: ComponentDef;
   icons?: IconSet;
   onInsert: (markdown: string) => void;
-  onBack: () => void;
+  values?: ComponentValues;
+  incomplete?: boolean;
 };
 ```
 
 The guided form for one component definition: a field per attribute and slot, validated and
 serialized to the component's markdown. `def` is the chosen `ComponentDef`, `icons` feeds icon
-fields, `onInsert` receives the serialized markdown when the form validates, and `onBack` returns to
-the picker. `ComponentInsertDialog` composes it.
+fields, and `onInsert` receives the serialized markdown when the form validates. The form seeds its
+working values from `previewValues(def)`, so a component's declared `preview` sample fills the
+fields on open. `values` binds out the live working values and `incomplete` binds out whether a
+required attribute or slot is still empty, so the dialog can render the preview pane from them and
+mirror the disabled Insert. Back lives in the dialog header now, not in the form, so the component
+takes no `onBack`. `ComponentInsertDialog` composes it.
 
 ```svelte
-<ComponentForm {def} {icons} onInsert={handleInsert} onBack={returnToPicker} />
+<ComponentForm {def} {icons} onInsert={handleInsert} bind:values bind:incomplete />
 ```
 
 ### `IconPicker`

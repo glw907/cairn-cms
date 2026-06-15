@@ -612,14 +612,14 @@ function signatures above reference these.
 | `ManifestEntryDiff` | `interface ManifestEntryDiff` | A changed entry and the fields that differ between manifests. |
 | `LinkTarget` | `interface LinkTarget` | The minimal entry view the preview resolver and picker read. |
 | `InboundLink` | `interface InboundLink` | One inbound linker: enough to name it and link to its edit page. |
-| `ComponentDef` | `interface ComponentDef` | A site component: how it inserts (editor) and how it renders (rehype). |
+| `ComponentDef` | `interface ComponentDef` | A site component: how it inserts (editor) and how it renders (rehype). The optional `icon` and `group` place its picker row, `hidden` keeps it off the top-level picker, and `preview` is a sample that seeds the guided form and opts the configure step into the two-pane live preview. |
 | `ComponentRegistry` | `interface ComponentRegistry` | The single source the render pipeline and the editor palette both read. |
 | `ComponentValues` | `interface ComponentValues` | Guided-form values for one component: attribute and slot values. |
 | `ComponentValidation` | `type ComponentValidation` | A validation verdict: ok, or field-keyed error messages. |
 | `ComponentInsert` | `type ComponentInsert` | The outcome of preparing a form for insertion: markdown, or field errors. |
-| `AttributeField` | `interface AttributeField` | One `{key="value"}` attribute on a directive, or one repeatable item field. |
+| `AttributeField` | `interface AttributeField` | One `{key="value"}` attribute on a directive, or one repeatable item field. The optional `pattern` checks the value against a RegExp source with a message, and `validate` is a pure cross-field validator returning an error string or null. |
 | `SlotKind` | `type SlotKind` | A component slot kind: markdown, inline, repeatable. |
-| `SlotDef` | `interface SlotDef` | One named content region of a component. |
+| `SlotDef` | `interface SlotDef` | One named content region of a component. For a repeatable slot, the optional `itemLabel` derives a row's label from its item values and index, falling back to the indexed label. |
 | `IconSet` | `type IconSet` | A glyph name to SVG path-data map the site owns. |
 | `MakeIcon` | `type MakeIcon` | A site's icon factory: turn a stamped name and role into a hast element. |
 | `RendererOptions` | `interface RendererOptions` | The render pipeline's stagger, sanitize, and anchor controls. |

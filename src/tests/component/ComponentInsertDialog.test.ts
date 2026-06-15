@@ -92,6 +92,19 @@ describe('ComponentInsertDialog catalog', () => {
     expect(path?.getAttribute('d')).toBe(icons.snowflake);
   });
 
+  it('renders no glyph tile when the declared icon is unresolvable', async () => {
+    const ghost: ComponentDef = {
+      ...base, name: 'ghost', label: 'Ghost', description: 'No glyph for this.',
+      icon: 'missing', insertTemplate: ':::ghost\n:::',
+    } as ComponentDef;
+    const reg = defineRegistry({ components: [ghost] });
+    const screen = render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons } as never);
+    await screen.getByRole('button', { name: /insert block/i }).click();
+    const row = document.querySelector('[data-testid="cairn-pk-row"]');
+    // The icon name resolves to nothing in the set, so no empty glyph box renders.
+    expect(row?.querySelector('svg.ec-glyph')).toBeNull();
+  });
+
   it('excludes a hidden def from the rendered catalog', async () => {
     const reg = defineRegistry({ components: [schemaDef, hiddenDef, templateDef] });
     const screen = render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons } as never);
@@ -207,6 +220,20 @@ describe('ComponentInsertDialog configure step', () => {
     await expect.element(screen.getByRole('button', { name: /^insert$/i })).toBeDisabled();
   });
 
+  it('keeps the settle chip a silent visual cue (no live region)', async () => {
+    const reg = defineRegistry({ components: [previewCallout] });
+    const renderFn = (md: string) => `<p>${md}</p>`;
+    const screen = render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons, render: renderFn } as never);
+    await screen.getByRole('button', { name: /insert block/i }).click();
+    await screen.getByRole('button', { name: /callout/i }).click();
+    // The chip text renders, but it is not announced: no aria-live, no role=status on it.
+    const pane = document.querySelector('[data-testid="cairn-pk-preview"]')!;
+    const chip = pane.querySelector('[data-testid="cairn-pk-settle"]')!;
+    expect(chip).not.toBeNull();
+    expect(chip.getAttribute('aria-live')).toBeNull();
+    expect(chip.getAttribute('role')).toBeNull();
+  });
+
   it('shows the render-failed surface when the adapter render throws, keeping the form', async () => {
     const reg = defineRegistry({ components: [previewCallout] });
     const renderFn = () => {
@@ -253,6 +280,28 @@ describe('ComponentInsertDialog configure step', () => {
 });
 
 describe('ComponentInsertDialog keyboard', () => {
+  it('ArrowDown from the search input moves focus to the first catalog row', async () => {
+    const screen = render(ComponentInsertDialog, { registry: manyRegistry(9), insert: () => {}, icons } as never);
+    await screen.getByRole('button', { name: /insert block/i }).click();
+    const box = screen.getByRole('searchbox');
+    await expect.element(box).toBeInTheDocument();
+    box.element().focus();
+    await userEvent.keyboard('{ArrowDown}');
+    const rows = document.querySelectorAll<HTMLButtonElement>('[data-testid="cairn-pk-row"]');
+    expect(document.activeElement).toBe(rows[0]);
+  });
+
+  it('ArrowUp from the search input moves focus to the last catalog row', async () => {
+    const screen = render(ComponentInsertDialog, { registry: manyRegistry(9), insert: () => {}, icons } as never);
+    await screen.getByRole('button', { name: /insert block/i }).click();
+    const box = screen.getByRole('searchbox');
+    await expect.element(box).toBeInTheDocument();
+    box.element().focus();
+    await userEvent.keyboard('{ArrowUp}');
+    const rows = document.querySelectorAll<HTMLButtonElement>('[data-testid="cairn-pk-row"]');
+    expect(document.activeElement).toBe(rows[rows.length - 1]);
+  });
+
   it('moves between rows with the arrow keys and chooses on Enter', async () => {
     const insert = vi.fn();
     const reg = defineRegistry({ components: [schemaDef, gridDef] });

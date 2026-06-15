@@ -173,10 +173,21 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
   });
   const groups = $derived(groupDefs(filtered));
 
+  /** Clear the four preview-coupled state cells so no stale preview HTML or settle state survives a
+   *  re-open, a step back, or a fresh pick. Called from every transition that leaves the configure
+   *  step or starts a new one. */
+  function resetPreview() {
+    formValues = undefined;
+    formIncomplete = false;
+    previewState = 'settled';
+    previewDoc = '';
+  }
+
   /** Open the picker. Exported so a trigger={false} host can drive the dialog itself. */
   export function open() {
     picked = null;
     query = '';
+    resetPreview();
     dialog?.showModal();
     // Focus the search box on open when it shows, so an editor with a large catalog types straight
     // into the filter. The dialog's own focus trap already lands focus on the first row otherwise.
@@ -186,17 +197,19 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
   }
   function back() {
     picked = null;
+    resetPreview();
   }
   function close() {
     picked = null;
     dialog?.close();
   }
+  function onClose() {
+    picked = null;
+    resetPreview();
+  }
   function choose(def: ComponentDef) {
     if (hasSchema(def)) {
-      formValues = undefined;
-      formIncomplete = false;
-      previewState = 'settled';
-      previewDoc = '';
+      resetPreview();
       picked = def;
       // ComponentForm focuses its own first field on mount.
     } else {
@@ -238,6 +251,19 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
     const next = (from + (isNext ? 1 : -1) + rows.length) % rows.length;
     rows[next].focus();
   }
+
+  // ArrowDown from the search input enters the list at the first row, ArrowUp at the last, so the
+  // keyboard model is whole: type to filter, then arrow into the results without reaching for the
+  // mouse. From a row, onRowKeydown takes over.
+  function onSearchKeydown(e: KeyboardEvent) {
+    const isNext = e.key === 'ArrowDown';
+    const isPrev = e.key === 'ArrowUp';
+    if (!isNext && !isPrev) return;
+    const rows = dialog?.querySelectorAll<HTMLButtonElement>('[data-testid="cairn-pk-row"]');
+    if (!rows || rows.length === 0) return;
+    e.preventDefault();
+    rows[isNext ? 0 : rows.length - 1].focus();
+  }
 </script>
 
 {#if trigger && defs.length > 0}
@@ -245,7 +271,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
 {/if}
 
 {#if defs.length > 0}
-  <dialog class="modal" aria-labelledby="cairn-insert-dialog-title" bind:this={dialog} onclose={() => (picked = null)} oncancel={onCancel}>
+  <dialog class="modal" aria-labelledby="cairn-insert-dialog-title" bind:this={dialog} onclose={onClose} oncancel={onCancel}>
     <div class="modal-box {twoPane ? 'max-w-3xl' : ''}">
       <!-- The shared header: at the configure step it carries the Back control and the
            "Insert > group" eyebrow breadcrumb above the component label; while browsing it is the
@@ -279,7 +305,11 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
               <div data-testid="cairn-pk-preview" class="flex flex-col gap-2 rounded-box border border-[var(--cairn-card-border)] bg-base-200 p-3">
                 <div class="flex items-baseline justify-between gap-2">
                   <span class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">Preview</span>
-                  <span class="inline-flex items-center gap-1.5 text-[0.7rem] text-[var(--color-muted)]" role="status" aria-live="polite">
+                  <!-- A silent visual cue, never an announcement: it re-rendered on every debounced
+                       keystroke, so a screen reader read "Settling"/"Settled" aloud on each edit. The
+                       incomplete and render-failed conditions reach assistive tech through the
+                       per-field role="alert" errors and the failed panel text, so nothing is lost. -->
+                  <span data-testid="cairn-pk-settle" class="inline-flex items-center gap-1.5 text-[0.7rem] text-[var(--color-muted)]">
                     {#if formIncomplete}
                       Incomplete
                     {:else if previewState === 'failed'}
@@ -296,7 +326,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
                   <!-- The skeleton: never a fabricated finished block. The empty required regions are
                        called out by name so the editor knows exactly what the preview still needs. -->
                   <div class="flex flex-1 flex-col items-center justify-center gap-2 rounded-box border border-dashed border-[var(--cairn-card-border)] p-6 text-center">
-                    <p class="text-sm font-medium">This preview needs more.</p>
+                    <p class="text-sm font-medium">Fill the required fields to preview this.</p>
                     <p class="flex flex-wrap justify-center gap-1.5 text-xs">
                       {#each emptyRequired as label (label)}
                         <span class="rounded border border-dashed border-[color-mix(in_oklab,var(--color-error)_55%,var(--cairn-card-border))] px-2 py-0.5 font-medium text-error">{label} needed</span>
@@ -310,8 +340,8 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
                     <p class="text-xs text-[var(--color-muted)]">Your settings are kept. You can still insert and check it on the page.</p>
                   </div>
                 {:else}
-                  <div class="flex-1 overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
-                    <iframe sandbox="" title="Component preview" srcdoc={previewDoc} class="block h-64 w-full"></iframe>
+                  <div class="flex min-h-64 flex-1 overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
+                    <iframe sandbox="" title="Component preview" srcdoc={previewDoc} class="block w-full flex-1"></iframe>
                   </div>
                 {/if}
               </div>
@@ -331,6 +361,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
               aria-label="Search components"
               bind:value={query}
               bind:this={searchInput}
+              onkeydown={onSearchKeydown}
             />
           </div>
           <p class="sr-only" role="status" aria-live="polite">
@@ -356,9 +387,9 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
                   {#each group.defs as def (def.name)}
                     <li>
                       <button type="button" data-testid="cairn-pk-row" class="flex items-start gap-3 py-2" onclick={() => choose(def)} onkeydown={onRowKeydown}>
-                        {#if def.icon}
+                        {#if def.icon && icons?.[def.icon]}
                           <span class="flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-base-200 text-base-content">
-                            <svg class="ec-glyph h-4 w-4" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d={icons?.[def.icon] ?? ''} /></svg>
+                            <svg class="ec-glyph h-4 w-4" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d={icons[def.icon]} /></svg>
                           </span>
                         {/if}
                         <span class="flex flex-col items-start gap-0.5">

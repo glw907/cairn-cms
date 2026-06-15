@@ -148,10 +148,11 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
     touched[key] = true;
   }
 
-  // The visible field errors: the live "{label} is required." for a touched-and-empty required
-  // field (the same message the validator emits), merged under the last submit's field errors so a
-  // pattern or validate message wins. Insert stays disabled while incompleteState holds, so a
-  // required-empty field never serializes; this surfaces the why next to the field meanwhile.
+  // The visible field errors. Only the required-empty message ("{label} is required.") shows live,
+  // for a touched-and-empty required field; pattern and validate errors surface on submit. Both are
+  // merged here, the submit errors last so a pattern or validate message wins. Insert stays disabled
+  // while incompleteState holds, so a required-empty field never serializes; this surfaces the why
+  // next to the field meanwhile.
   const errors = $derived.by(() => {
     const out: Record<string, string> = {};
     for (const field of attributes) {
@@ -168,14 +169,13 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
     return { ...out, ...submitErrors };
   });
 
-  // The form container. On mount, focus its first focusable control so the editor types straight
-  // into the form. untrack keeps the one-time focus from re-running as the values change.
+  // The form container. Once it is bound, focus its first focusable control so the editor types
+  // straight into the form. The effect tracks formEl so it runs when the node lands; the focus call
+  // is untracked so a later value change does not steal focus back to the first field.
   let formEl = $state<HTMLElement | null>(null);
   $effect(() => {
-    untrack(() => {
-      const first = formEl?.querySelector<HTMLElement>('input, select, textarea');
-      first?.focus();
-    });
+    if (!formEl) return;
+    untrack(() => formEl!.querySelector<HTMLElement>('input, select, textarea')?.focus());
   });
 
   // Serialize and validate through the pure helper. On success clear errors and emit the markdown;

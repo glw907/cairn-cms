@@ -194,8 +194,12 @@ through the adapter's render. Swapping the editor stays a one-file change.
         // caret is inside the container. One rotating chevron in the directive ink; the rails carry
         // depth, so the ink does not restep. The lone gutter's wrapper loses its default background
         // and border so the column blends into the quiet surface.
+        // Neutralize the gutter wrapper so the column blends in. This assumes the fold gutter is the
+        // only gutter (it is today: no lineNumbers or foldGutter in the build); a future line-number
+        // or lint gutter would need its own chrome and a narrower selector here.
         '.cm-gutters': { backgroundColor: 'transparent', border: '0', color: 'inherit' },
-        '.cm-cairn-fold-gutter': { width: '22px' },
+        // 24px wide so the cell clears the WCAG 2.5.8 target-size floor unconditionally.
+        '.cm-cairn-fold-gutter': { width: '24px' },
         '.cm-cairn-fold-gutter .cm-gutterElement': { display: 'flex', alignItems: 'stretch', padding: '0' },
         '.cm-cairn-fold-btn': {
           display: 'flex',
@@ -216,19 +220,35 @@ through the adapter's render. Swapping the editor stays a one-file change.
           opacity: '0',
           transition: 'opacity 120ms ease, transform 120ms ease',
         },
-        '.cm-cairn-fold-gutter .cm-gutterElement:hover .cm-cairn-fold-btn svg, .cm-cairn-fold-folded svg, .cm-cairn-fold-active svg':
+        // Reveal on gutter-cell hover, on the folded and caret-active states, and on keyboard focus
+        // so a focused control shows its glyph, not just the ring.
+        '.cm-cairn-fold-gutter .cm-gutterElement:hover .cm-cairn-fold-btn svg, .cm-cairn-fold-btn:focus-visible svg, .cm-cairn-fold-folded svg, .cm-cairn-fold-active svg':
           { opacity: '1' },
         // Folded rotates the single chevron to point right; caret-active takes the stronger ink.
         '.cm-cairn-fold-folded svg': { transform: 'rotate(-90deg)' },
         '.cm-cairn-fold-active': { color: 'var(--cairn-directive-ink-active, oklch(46% 0.16 300))' },
-        // A visible focus ring for keyboard users landing on the gutter button.
+        // A visible focus ring for keyboard users landing on the gutter button or the pill, reusing
+        // the surface hairline's 70% primary mix (3:1+ non-text contrast on both themes).
         '.cm-cairn-fold-btn:focus-visible': {
           outline: '2px solid color-mix(in oklab, var(--color-primary) 70%, transparent)',
           outlineOffset: '-2px',
           borderRadius: '4px',
         },
-        // No-hover pointers (touch) cannot reveal on hover, so the chevron is persistent and legible.
-        '@media (hover: none)': { '.cm-cairn-fold-btn svg': { opacity: '0.65' } },
+        '.cm-cairn-fold-pill:focus-visible': {
+          outline: '2px solid color-mix(in oklab, var(--color-primary) 70%, transparent)',
+          outlineOffset: '1px',
+        },
+        // No-hover pointers (touch) cannot reveal on hover, so the rest-state chevron is persistent
+        // and legible. Scoped to the rest state (not folded, not caret-active) so those forced-on
+        // states still read at full strength on touch rather than this rule clamping them to 0.65.
+        '@media (hover: none)': {
+          '.cm-cairn-fold-btn:not(.cm-cairn-fold-folded):not(.cm-cairn-fold-active) svg': { opacity: '0.65' },
+        },
+        // Respect a reduced-motion preference: drop the chevron fade/rotate and the unfold flash.
+        '@media (prefers-reduced-motion: reduce)': {
+          '.cm-cairn-fold-btn svg': { transition: 'none' },
+          '.cm-cairn-fold-flash': { transition: 'none' },
+        },
         // The folded-row wash: a soft accent tint, square and full-row, returning as a STATE signal
         // so folded spots read in a scan. The rails are inset box-shadows on the same line element
         // and render above this background, so the rail column runs through the wash unbroken.

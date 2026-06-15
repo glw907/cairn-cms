@@ -52,9 +52,10 @@ doesn't, cairn is the wrong tool and will not try to meet you halfway.
 
 ## Status
 
-cairn-cms runs the two production sites above. It is `0.x` and breaks between minor versions,
-so pin a caret range and read the [CHANGELOG](./CHANGELOG.md) before bumping; every breaking
-entry carries a "Consumers must" line. The author is still working through the core-feature
+cairn-cms runs the two production sites above. It is `0.x`, and the version position signals scale:
+a minor bump (`0.X.0`) carries a significant new feature and may break, while a patch (`0.X.Y`) is a
+safe fix, polish, or tooling change. Pin a caret range and read the [CHANGELOG](./CHANGELOG.md)
+before taking a minor; every breaking entry carries a "Consumers must" line. The author is still working through the core-feature
 [ROADMAP](./ROADMAP.md), and the project stays closely held until that core lands. A
 contributor who feels inspired is welcome to open an issue or a discussion; there is no
 formal contribution process yet, so this is not an open call for pull requests.

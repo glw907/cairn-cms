@@ -2,6 +2,15 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.56.1
+
+Test and CI reliability only; the published library is unchanged from 0.56.0. The component test job
+flaked in CI on the editor's heavier pages because the editor's per-browser preferences live in
+localStorage and nothing cleared it between tests, so a leaked zen preference could hide the toolbar a
+later test waited for. localStorage is now isolated before each component test, with a regression
+guard, plus a retry on the browser test project and steadier waits in the insert-dialog tests. No
+consumer action.
+
 ## 0.56.0
 
 Two passes ship together: the markdown editor's folding gets a proper home, and the engine's gates,

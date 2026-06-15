@@ -17,6 +17,17 @@ const INLINE = /(?<![:\w]):[\w-]+\[[^\]]*\](\{[^}]*\})?/g;
 // never opens a real container.
 const CODE_FENCE = /^\s{0,3}(`{3,}|~{3,})/;
 
+/**
+ * The directive name from a container opener line (`:::callout{...}` -> `callout`,
+ * `::::cta[Book]` -> `cta`), or null when the line is not a named container opener. Reads the
+ * same FENCE match the scan uses: group 2 is the name, empty on a bare closer, so a closer or a
+ * non-fence line returns null.
+ */
+export function directiveOpenerName(line: string): string | null {
+  const m = FENCE.exec(line);
+  return m && m[2] ? m[2] : null;
+}
+
 /** Classify a whole line as a container fence, a leaf directive, or neither. */
 export function directiveLineKind(line: string): 'fence' | 'leaf' | null {
   if (FENCE.test(line)) return 'fence';

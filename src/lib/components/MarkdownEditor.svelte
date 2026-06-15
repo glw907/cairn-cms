@@ -10,6 +10,16 @@ through the adapter's render. Swapping the editor stays a one-file change.
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import { applyMarkdownFormat, insertInlineLink, type FormatKind, type FormatResult } from './markdown-format.js';
+  import { fenceScan, caretContainerRange, directiveOpenerName } from './markdown-directives.js';
+
+  /** The directive container at the caret: the opener's name, the block's markdown, and the
+   *  document character offsets of its inclusive line range. */
+  interface ComponentAtCaret {
+    name: string | null;
+    markdown: string;
+    from: number;
+    to: number;
+  }
 
   interface Props {
     /** The markdown source; bindable so the parent reads edits back. */
@@ -24,6 +34,12 @@ through the adapter's render. Swapping the editor stays a one-file change.
     registerGetSelection?: (get: () => string) => void;
     /** Receives a `(kind) => void` that transforms the current selection; the host's toolbar calls it. */
     registerFormat?: (format: (kind: FormatKind) => void) => void;
+    /** Reports the directive container at the caret (or null when outside any container) whenever
+     *  the reported value changes; the host resolves it against the registry to offer Edit-block. */
+    onComponentAtCaret?: (info: ComponentAtCaret | null) => void;
+    /** Receives a `(from, to, text) => void` that overwrites a document span; the dialog's Update
+     *  calls it to write an edited block back over its original range. */
+    registerReplaceRange?: (replace: (from: number, to: number, text: string) => void) => void;
     /** Generic CodeMirror completion sources wired into the editor; the link autocomplete is one. The
      *  type is referenced inline so no static `@codemirror/*` import sits in this client-only file. */
     completionSources?: import('@codemirror/autocomplete').CompletionSource[];
@@ -43,6 +59,8 @@ through the adapter's render. Swapping the editor stays a one-file change.
     registerInsertLink,
     registerGetSelection,
     registerFormat,
+    onComponentAtCaret,
+    registerReplaceRange,
     completionSources = [],
     focusMode = false,
     typewriter = false,
@@ -365,6 +383,10 @@ through the adapter's render. Swapping the editor stays a one-file change.
           surfaceCompartment.of(surface === 'prose' ? proseTheme : markupTheme),
           EditorView.updateListener.of((update) => {
             if (update.docChanged) value = update.state.doc.toString();
+            // A doc edit can change the block's span and a caret move can change which block the
+            // caret sits in, so the reporter runs on either; the dedupe below absorbs the no-ops.
+            if (onComponentAtCaret && (update.docChanged || update.selectionSet))
+              reportComponentAtCaret(update.state);
           }),
         ],
       }),
@@ -374,6 +396,10 @@ through the adapter's render. Swapping the editor stays a one-file change.
     registerInsertLink?.(insertLink);
     registerGetSelection?.(selectedText);
     registerFormat?.(applyFormat);
+    registerReplaceRange?.(replaceRange);
+    // Report the caret's starting container once the editor exists, so a caret that mounts inside
+    // a block is known without waiting for the first move.
+    if (onComponentAtCaret) reportComponentAtCaret(view.state);
     mounted = true;
   });
 
@@ -405,6 +431,47 @@ through the adapter's render. Swapping the editor stays a one-file change.
       ],
     });
   });
+
+  // The last value handed to onComponentAtCaret, so the reporter fires only on a change. The
+  // identity compared is name + from + to (a caret move within one block leaves all three).
+  let lastCaretReport: ComponentAtCaret | null = null;
+
+  // Compute the directive container at the caret from a CodeMirror state and report it through
+  // onComponentAtCaret, deduped so a caret move within the same block does not refire. fenceScan
+  // lines are 0-based; doc.line(n) is 1-based, so the line range maps with a +1 on each bound.
+  function reportComponentAtCaret(state: import('@codemirror/state').EditorState) {
+    const doc = state.doc;
+    const lines: string[] = [];
+    for (let n = 1; n <= doc.lines; n++) lines.push(doc.line(n).text);
+    const caretLine = doc.lineAt(state.selection.main.head).number - 1;
+    const range = caretContainerRange(fenceScan(lines), caretLine);
+    let next: ComponentAtCaret | null = null;
+    if (range) {
+      const fromPos = doc.line(range.fromLine + 1).from;
+      const toPos = doc.line(range.toLine + 1).to;
+      next = {
+        name: directiveOpenerName(lines[range.fromLine] ?? ''),
+        markdown: doc.sliceString(fromPos, toPos),
+        from: fromPos,
+        to: toPos,
+      };
+    }
+    const prev = lastCaretReport;
+    const same =
+      prev === next ||
+      (prev !== null && next !== null && prev.name === next.name && prev.from === next.from && prev.to === next.to);
+    if (same) return;
+    lastCaretReport = next;
+    onComponentAtCaret?.(next);
+  }
+
+  // Overwrite a document span with new text and drop the caret after it, mirroring insertAtCursor's
+  // dispatch shape. A no-op before the editor mounts, the same guard the other seams carry.
+  function replaceRange(from: number, to: number, text: string) {
+    if (!view) return;
+    view.dispatch({ changes: { from, to, insert: text }, selection: { anchor: from + text.length } });
+    view.focus();
+  }
 
   function insertAtCursor(text: string) {
     if (!view) {

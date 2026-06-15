@@ -3,6 +3,7 @@ import {
   caretContainerRange,
   containerRanges,
   directiveLineKind,
+  directiveOpenerName,
   fenceDepths,
   fenceScan,
   fenceTokens,
@@ -59,6 +60,29 @@ describe('directiveLineKind', () => {
     expect(directiveLineKind('Plain prose line')).toBeNull();
     expect(directiveLineKind('a sentence with :colons: inside')).toBeNull();
     expect(directiveLineKind('https://example.com')).toBeNull();
+  });
+});
+
+describe('directiveOpenerName', () => {
+  it('reads the name from a three-colon container opener', () => {
+    expect(directiveOpenerName(':::callout{kind="note"}')).toBe('callout');
+  });
+  it('reads the name from a four-colon labeled opener', () => {
+    expect(directiveOpenerName('::::cta[Book]')).toBe('cta');
+  });
+  it('reads the name through a label and an attribute block together', () => {
+    expect(directiveOpenerName(':::note[A label]{kind="aside"}')).toBe('note');
+  });
+  it('tolerates leading indentation', () => {
+    expect(directiveOpenerName('  :::panel{icon="hand-coins"}')).toBe('panel');
+  });
+  it('returns null for a bare closer', () => {
+    expect(directiveOpenerName(':::')).toBeNull();
+    expect(directiveOpenerName('::::')).toBeNull();
+  });
+  it('returns null for a non-fence line', () => {
+    expect(directiveOpenerName('plain prose')).toBeNull();
+    expect(directiveOpenerName('::hr')).toBeNull();
   });
 });
 

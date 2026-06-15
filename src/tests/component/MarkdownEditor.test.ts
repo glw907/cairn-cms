@@ -950,6 +950,66 @@ describe('MarkdownEditor', () => {
     expect(foldPill(screen.container)).toBeNull();
   });
 
+  it('reports the component container at the caret and dedupes within a block', async () => {
+    // A leading plain line parks the default caret outside, then a labeled callout block. The
+    // reporter fires with the container's name, the block markdown, and the document character
+    // offsets of the inclusive line range.
+    const doc = ['intro', '::::callout[Heads up]', 'body line', '::::', 'outro'].join('\n');
+    const reports: ({ name: string | null; markdown: string; from: number; to: number } | null)[] = [];
+    const screen = render(MarkdownEditor, {
+      value: doc,
+      name: 'body',
+      onComponentAtCaret: (info) => {
+        reports.push(info);
+      },
+    });
+    await expect.poll(() => lineWith(screen.container, 'body line')).toBeTruthy();
+    // The block runs from the start of '::::callout[Heads up]' to the end of the closer '\n::::'.
+    const from = doc.indexOf('::::callout[Heads up]');
+    const to = doc.indexOf('\n::::\n') + '\n::::'.length;
+    const blockMarkdown = ['::::callout[Heads up]', 'body line', '::::'].join('\n');
+
+    // Caret into the block body: the reporter fires with the callout name and the right span.
+    await userEvent.click(lineWith(screen.container, 'body line')!);
+    await expect.poll(() => reports.at(-1)?.name).toBe('callout');
+    const inBlock = reports.at(-1)!;
+    expect(inBlock.from).toBe(from);
+    expect(inBlock.to).toBe(to);
+    expect(inBlock.markdown).toBe(blockMarkdown);
+
+    // Move the caret within the same block (onto the opener line): the value did not change, so
+    // the reporter does not refire. The last report still describes the same block.
+    const before = reports.length;
+    await userEvent.click(lineWith(screen.container, '::::callout')!);
+    // Give any extra updates a chance to land, then assert no new report was pushed.
+    await expect.poll(() => document.activeElement).toBe(screen.container.querySelector('.cm-content'));
+    expect(reports.length).toBe(before);
+
+    // Caret out to plain prose: the reporter fires once with null.
+    await userEvent.click(lineWith(screen.container, 'outro')!);
+    await expect.poll(() => reports.at(-1)).toBeNull();
+  });
+
+  it('replaces a document span through registerReplaceRange', async () => {
+    const doc = ['alpha', '::::callout[Old]', 'body', '::::', 'omega'].join('\n');
+    let replace: ((from: number, to: number, text: string) => void) | undefined;
+    const screen = render(MarkdownEditor, {
+      value: doc,
+      name: 'body',
+      registerReplaceRange: (fn) => {
+        replace = fn;
+      },
+    });
+    await expect.poll(() => typeof replace).toBe('function');
+    const from = doc.indexOf('::::callout[Old]');
+    const to = doc.indexOf('\n::::\n') + '\n::::'.length;
+    const next = ['::::callout[New]', 'fresh body', '::::'].join('\n');
+    replace!(from, to, next);
+    await expect
+      .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
+      .toBe(['alpha', '::::callout[New]', 'fresh body', '::::', 'omega'].join('\n'));
+  });
+
   it('offers and applies a cairn link through the [[ autocomplete', async () => {
     const targets: LinkTarget[] = [
       { concept: 'pages', id: 'about', permalink: '/about', title: 'About Us', draft: false },

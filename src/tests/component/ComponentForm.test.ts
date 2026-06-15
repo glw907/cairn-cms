@@ -133,7 +133,23 @@ describe('ComponentForm required-field marking and Insert gating', () => {
     await screen.getByRole('textbox', { name: /title/i }).fill('Heads up');
     await expect.element(insert).not.toBeDisabled();
   });
+
+  it('marks required slot inputs with aria-required', async () => {
+    const screen = render(ComponentForm, { def: requiredSlots, onInsert: () => {}, onBack: () => {} } as never);
+    // The required inline (text) slot and the required markdown (textarea) slot both expose
+    // requiredness programmatically, not only through the visible asterisk.
+    await expect.element(screen.getByRole('textbox', { name: /headline/i })).toHaveAttribute('aria-required', 'true');
+    await expect.element(screen.getByRole('textbox', { name: /summary/i })).toHaveAttribute('aria-required', 'true');
+  });
 });
+
+const requiredSlots: ComponentDef = {
+  ...base, name: 'feature', label: 'Feature',
+  slots: [
+    { name: 'headline', label: 'Headline', kind: 'inline', required: true },
+    { name: 'summary', label: 'Summary', kind: 'markdown', required: true },
+  ],
+} as ComponentDef;
 
 const repeatable: ComponentDef = {
   ...base, name: 'list', label: 'List',

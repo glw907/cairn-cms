@@ -433,7 +433,10 @@ through the adapter's render. Swapping the editor stays a one-file change.
   });
 
   // The last value handed to onComponentAtCaret, so the reporter fires only on a change. The
-  // identity compared is name + from + to (a caret move within one block leaves all three).
+  // identity compared is name + markdown + from + to. A pure caret move within one block leaves all
+  // four unchanged, so it does not refire; an edit inside the block changes the markdown even when
+  // it keeps the same length (an equal-length replacement leaves from and to unchanged), so the
+  // markdown must be part of the equality or such an edit would keep a stale report.
   let lastCaretReport: ComponentAtCaret | null = null;
 
   // Compute the directive container at the caret from a CodeMirror state and report it through
@@ -459,7 +462,12 @@ through the adapter's render. Swapping the editor stays a one-file change.
     const prev = lastCaretReport;
     const same =
       prev === next ||
-      (prev !== null && next !== null && prev.name === next.name && prev.from === next.from && prev.to === next.to);
+      (prev !== null &&
+        next !== null &&
+        prev.name === next.name &&
+        prev.markdown === next.markdown &&
+        prev.from === next.from &&
+        prev.to === next.to);
     if (same) return;
     lastCaretReport = next;
     onComponentAtCaret?.(next);

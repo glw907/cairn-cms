@@ -265,6 +265,10 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   // Which pane the editor card shows. The toolbar's tablist drives it; Write is always the
   // landing tab.
   let mode = $state<'write' | 'preview'>('write');
+  // Preview is read-only, so the insert controls the page renders into the toolbar disable with the
+  // strip's own format buttons. Declared here (above the Edit-block derivations that read it) so it
+  // is in scope before its first use.
+  const insertDisabled = $derived(mode === 'preview');
   let previewHtml = $state('');
   // True after a render call threw, so the preview pane can say so instead of going blank.
   let previewFailed = $state(false);
@@ -402,10 +406,12 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     if (!def) return undefined;
     return hasSchema(def) ? def : undefined;
   }
-  // The resolved editability: the def and the source range when the caret sits on a known,
-  // schema-bearing component whose round-trip safety check passed for the CURRENT caret; null
-  // otherwise. The Edit-block control enables only when this is set.
-  let editable = $state<{ def: ComponentDef; range: { from: number; to: number } } | null>(null);
+  // The resolved editability: the def, the source range, and the validated markdown when the caret
+  // sits on a known, schema-bearing component whose round-trip safety check passed for the CURRENT
+  // caret; null otherwise. The def, range, and markdown are captured from one caretComponent
+  // snapshot, so editBlock() never mixes a newer markdown with an older range. The Edit-block
+  // control enables only when this is set.
+  let editable = $state<{ def: ComponentDef; range: { from: number; to: number }; markdown: string } | null>(null);
   // Why edit is unavailable, distinguishing "not on a component" from "on an unsafe one" so the
   // disabled tooltip is honest. 'none' covers both no-caret-component and an unknown/template-only
   // one (no guided form either way); 'unsafe' is a known component the safety gate refused.
@@ -424,16 +430,24 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
       return;
     }
     let stale = false;
-    void componentRoundTripSafety(current.markdown, def).then((result) => {
-      if (stale || caretComponent !== current) return;
-      if (result.safe) {
-        editable = { def, range: { from: current.from, to: current.to } };
-        editReason = 'none';
-      } else {
+    void componentRoundTripSafety(current.markdown, def)
+      .then((result) => {
+        if (stale || caretComponent !== current) return;
+        if (result.safe) {
+          editable = { def, range: { from: current.from, to: current.to }, markdown: current.markdown };
+          editReason = 'none';
+        } else {
+          editable = null;
+          editReason = 'unsafe';
+        }
+      })
+      .catch(() => {
+        // A parse throw during the safety check must never leave a stale block enabled. Guarded by
+        // the same latest-wins identity, fall back to the safe default of no editable block.
+        if (stale || caretComponent !== current) return;
         editable = null;
-        editReason = 'unsafe';
-      }
-    });
+        editReason = 'none';
+      });
     return () => {
       stale = true;
     };
@@ -447,11 +461,18 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
         ? "This block can't be edited in the form. Edit it as markdown."
         : 'Place the cursor in a component to edit it',
   );
+  // Whether the Edit-block control is unavailable: either Preview hides the Write surface, or the
+  // caret is not on a safe, schema-bearing component. The control stays focusable and announced in
+  // this state (aria-disabled, not the native disabled attribute), so its reason reaches assistive
+  // technology; the dead click is made inert in editBlock().
+  const editBlockUnavailable = $derived(insertDisabled || !editable);
   // Activate edit: parse the block into form values, then open the dialog in edit mode over the
-  // stored source range. Guarded by editable, so the control is inert unless the gate passed.
+  // stored source range. Guarded by editable AND the preview-mode disable, so the control is inert
+  // unless the gate passed and the editor is on the Write tab. The def, range, and markdown all come
+  // from the one editable snapshot, so a newer caret markdown is never paired with an older range.
   async function editBlock() {
-    if (!editable || !caretComponent) return;
-    const values = await parseComponent(caretComponent.markdown, editable.def);
+    if (insertDisabled || !editable) return;
+    const values = await parseComponent(editable.markdown, editable.def);
     insertDialog?.editComponent(editable.def, values, editable.range);
   }
 
@@ -638,10 +659,6 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   function setMode(m: 'write' | 'preview') {
     mode = m;
   }
-
-  // Preview is read-only, so the insert controls the page renders into the toolbar disable with
-  // the strip's own format buttons.
-  const insertDisabled = $derived(mode === 'preview');
 
   // The editor card's keyboard shortcuts. Bound to the card so they fire wherever focus sits in the
   // strip or the surface, without claiming the keys page-wide. The listener attaches
@@ -979,16 +996,20 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
             >
               <BlocksIcon class="h-4 w-4" aria-hidden="true" />
             </button>
-            <!-- Edit block re-opens the component at the caret into the guided form. It disables
-                 while Preview shows (like the insert controls) and whenever the caret is not on a
-                 safe, schema-bearing component; the tooltip names the reason in each state. -->
+            <!-- Edit block re-opens the component at the caret into the guided form. It is
+                 unavailable while Preview shows (like the insert controls) and whenever the caret is
+                 not on a safe, schema-bearing component; the tooltip names the reason in each state.
+                 The unavailable state uses aria-disabled, not the native disabled attribute, so the
+                 control stays focusable and its reason reaches assistive technology; the disabled
+                 look rides a class and editBlock() early-returns so the dead click is inert. -->
             <button
               type="button"
               class="btn btn-sm btn-ghost btn-square"
+              class:btn-disabled={editBlockUnavailable}
               aria-haspopup="dialog"
               aria-label={editBlockLabel}
               title={editBlockLabel}
-              disabled={insertDisabled || !editable}
+              aria-disabled={editBlockUnavailable}
               onclick={editBlock}
             >
               <SquarePenIcon class="h-4 w-4" aria-hidden="true" />

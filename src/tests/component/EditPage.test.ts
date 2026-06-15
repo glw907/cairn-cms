@@ -2013,17 +2013,33 @@ describe('EditPage', () => {
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       await expect.poll(() => editControl(screen)).not.toBeNull();
       const control = editControl(screen)!;
-      // Default caret on the leading plain line: outside any container.
-      expect(control.disabled).toBe(true);
+      // Default caret on the leading plain line: outside any container. The control stays focusable
+      // and announces its reason through aria-disabled rather than the native disabled attribute, so
+      // an assistive-technology user can read why it is unavailable.
+      expect(control.getAttribute('aria-disabled')).toBe('true');
+      expect(control.disabled).toBe(false);
       expect(control.getAttribute('aria-label')).toBe('Place the cursor in a component to edit it');
       expect(control.getAttribute('title')).toBe('Place the cursor in a component to edit it');
+    });
+
+    it('keeps the unavailable Edit block focusable and announced through aria-disabled', async () => {
+      const screen = render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry } as never);
+      await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+      await expect.poll(() => editControl(screen)).not.toBeNull();
+      const control = editControl(screen)!;
+      // aria-disabled, not the native disabled attribute, so the reason reaches AT and the control
+      // is reachable by keyboard. It must take focus.
+      expect(control.getAttribute('aria-disabled')).toBe('true');
+      expect(control.disabled).toBe(false);
+      control.focus();
+      expect(document.activeElement).toBe(control);
     });
 
     it('enables Edit block when the caret sits in a safe component', async () => {
       const screen = render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry } as never);
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       await clickLine(screen, ':::callout[Heads up]');
-      await expect.poll(() => editControl(screen)?.disabled).toBe(false);
+      await expect.poll(() => editControl(screen)?.getAttribute('aria-disabled')).toBe('false');
       expect(editControl(screen)!.getAttribute('aria-label')).toBe('Edit the component at the cursor');
     });
 
@@ -2032,18 +2048,19 @@ describe('EditPage', () => {
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       await clickLine(screen, ':::callout[Heads up]');
       // The block carries an undeclared attribute key, so the gate refuses it. The control stays
-      // disabled and the tooltip points the editor at markdown.
+      // unavailable (aria-disabled) and the tooltip points the editor at markdown.
       await expect
         .poll(() => editControl(screen)?.getAttribute('aria-label'))
         .toBe("This block can't be edited in the form. Edit it as markdown.");
-      expect(editControl(screen)!.disabled).toBe(true);
+      expect(editControl(screen)!.getAttribute('aria-disabled')).toBe('true');
+      expect(editControl(screen)!.disabled).toBe(false);
     });
 
     it('opens the dialog in edit mode seeded from the parsed block when activated', async () => {
       const screen = render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry } as never);
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       await clickLine(screen, ':::callout[Heads up]');
-      await expect.poll(() => editControl(screen)?.disabled).toBe(false);
+      await expect.poll(() => editControl(screen)?.getAttribute('aria-disabled')).toBe('false');
       await editControl(screen)!.click();
       // The dialog opens straight to the guided form in edit mode: the primary button reads
       // Update (not Insert) and the Title field is seeded with the parsed label.

@@ -990,6 +990,42 @@ describe('MarkdownEditor', () => {
     await expect.poll(() => reports.at(-1)).toBeNull();
   });
 
+  it('refires the caret report on an equal-length edit inside the block', async () => {
+    // An equal-length replacement inside the block changes neither the offsets nor the name, so a
+    // dedupe on name+from+to alone would keep the stale markdown. Including the markdown in the
+    // dedupe equality makes any content change refire with the new source.
+    const doc = ['intro', '::::callout[Heads up]', 'body line', '::::', 'outro'].join('\n');
+    const reports: ({ name: string | null; markdown: string; from: number; to: number } | null)[] = [];
+    let replace: ((from: number, to: number, text: string) => void) | undefined;
+    const screen = render(MarkdownEditor, {
+      value: doc,
+      name: 'body',
+      onComponentAtCaret: (info) => {
+        reports.push(info);
+      },
+      registerReplaceRange: (fn) => {
+        replace = fn;
+      },
+    });
+    await expect.poll(() => lineWith(screen.container, 'body line')).toBeTruthy();
+    await expect.poll(() => typeof replace).toBe('function');
+
+    await userEvent.click(lineWith(screen.container, 'body line')!);
+    await expect.poll(() => reports.at(-1)?.name).toBe('callout');
+    const beforeSpan = reports.at(-1)!;
+    expect(beforeSpan.markdown).toContain('body line');
+
+    // Replace 'body line' with 'BODY LINE' (same length, so from/to/name are unchanged).
+    const from = doc.indexOf('body line');
+    replace!(from, from + 'body line'.length, 'BODY LINE');
+
+    await expect.poll(() => reports.at(-1)?.markdown.includes('BODY LINE')).toBe(true);
+    const afterSpan = reports.at(-1)!;
+    expect(afterSpan.from).toBe(beforeSpan.from);
+    expect(afterSpan.to).toBe(beforeSpan.to);
+    expect(afterSpan.name).toBe('callout');
+  });
+
   it('replaces a document span through registerReplaceRange', async () => {
     const doc = ['alpha', '::::callout[Old]', 'body', '::::', 'omega'].join('\n');
     let replace: ((from: number, to: number, text: string) => void) | undefined;

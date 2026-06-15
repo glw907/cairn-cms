@@ -79,6 +79,27 @@ describe('serializeComponent escaping', () => {
     expect(back.slots.body).not.toContain('* ');
   });
 
+  it('round-trips a title containing a link without truncating its markdown', async () => {
+    const values = { attributes: { icon: '' }, slots: { title: 'See [the docs](https://x.test)', body: 'x' } };
+    const md = serializeComponent(card, values);
+    await expect(parseComponent(md, card)).resolves.toEqual(values);
+    await expect(componentRoundTripSafety(md, card)).resolves.toEqual({ safe: true });
+  });
+
+  it('round-trips a title containing bold without truncating its markdown', async () => {
+    const values = { attributes: { icon: '' }, slots: { title: 'A **bold** word', body: 'x' } };
+    const md = serializeComponent(card, values);
+    await expect(parseComponent(md, card)).resolves.toEqual(values);
+    await expect(componentRoundTripSafety(md, card)).resolves.toEqual({ safe: true });
+  });
+
+  it('round-trips a body that holds an inline directive without throwing', async () => {
+    const values = { attributes: { icon: '' }, slots: { title: '', body: 'See :abbr[HTML] here.' } };
+    const md = serializeComponent(card, values);
+    const back = await parseComponent(md, card);
+    expect(back.slots.body).toContain(':abbr[HTML]');
+  });
+
   it('does not throw when a repeatable slot receives a string instead of an array', () => {
     const md = serializeComponent(cta, {
       attributes: { icon: '' },

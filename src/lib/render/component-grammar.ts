@@ -76,7 +76,7 @@ function isContainer(node: RootContent): node is RootContent & DirectiveNode {
 
 // Pin the bullet to `-` so a markdown body or slot that uses dash bullets round-trips unchanged
 // rather than drifting to remark-stringify's default `*`, which would silently mutate author content.
-const toMd = unified().use(remarkStringify, { bullet: '-' });
+const toMd = unified().use(remarkDirective).use(remarkStringify, { bullet: '-' });
 
 /** Render mdast children back to trimmed markdown text. */
 function childrenToText(children: RootContent[]): string {
@@ -220,8 +220,22 @@ function isDirectiveLabel(node: RootContent): boolean {
 
 function readLabel(root: DirectiveNode): string | undefined {
   for (const child of root.children) {
-    const p = child as { type: string; data?: { directiveLabel?: boolean }; children?: { value?: string }[] };
-    if (p.type === 'paragraph' && p.data?.directiveLabel) return (p.children ?? []).map((c) => c.value ?? '').join('');
+    const p = child as {
+      type: string;
+      data?: { directiveLabel?: boolean };
+      children?: RootContent[];
+    };
+    if (p.type !== 'paragraph' || !p.data?.directiveLabel) continue;
+    const kids = p.children ?? [];
+    // When every label child is a plain text node, join the raw `.value`s. That keeps the pure-text
+    // path identical to before, so a literal `[` or `]` in the title is not re-escaped by the
+    // stringifier (serializeComponent already escapes brackets, and remark un-escapes them on parse).
+    // When the label carries inline markdown (a link, bold, emphasis), the text-only join would drop
+    // the markup, so stringify the children to recover the full inline source losslessly.
+    if (kids.every((c) => (c as { type: string }).type === 'text')) {
+      return kids.map((c) => (c as { value?: string }).value ?? '').join('');
+    }
+    return childrenToText(kids);
   }
   return undefined;
 }

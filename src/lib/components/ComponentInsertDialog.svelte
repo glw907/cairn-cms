@@ -401,7 +401,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
             <svg class="ec-glyph h-4 w-4 text-[var(--color-muted)]" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M229.7 218.3 179.6 168.2A92.2 92.2 0 1 0 168.2 179.6l50.1 50.1a8 8 0 0 0 11.4-11.4ZM40 112a72 72 0 1 1 72 72 72.1 72.1 0 0 1-72-72Z" /></svg>
             <input
               type="search"
-              class="w-full border-0 bg-transparent p-0 text-sm outline-none placeholder:text-[var(--color-muted)] focus:outline-none"
+              class="w-full border-0 bg-transparent p-0 text-sm outline-hidden placeholder:text-[var(--color-muted)]"
               placeholder="Search components"
               aria-label="Search components"
               bind:value={query}

@@ -271,6 +271,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
         <span class="text-sm font-medium">{slot.label}{#if slot.required}<span data-testid="cairn-pk-req" class="text-error" aria-hidden="true">*</span>{/if}</span>
         <textarea
           class="textarea"
+          aria-required={slot.required ? 'true' : undefined}
           aria-invalid={Boolean(errors[slot.name])}
           aria-describedby={errors[slot.name] ? `err-${slot.name}` : undefined}
           rows={3}
@@ -287,6 +288,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
         <span class="text-sm font-medium">{slot.label}{#if slot.required}<span data-testid="cairn-pk-req" class="text-error" aria-hidden="true">*</span>{/if}</span>
         <input
           class="input"
+          aria-required={slot.required ? 'true' : undefined}
           aria-invalid={Boolean(errors[slot.name])}
           aria-describedby={errors[slot.name] ? `err-${slot.name}` : undefined}
           value={slotString(slot.name)}

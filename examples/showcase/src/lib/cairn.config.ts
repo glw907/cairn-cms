@@ -14,6 +14,9 @@ import siteCss from './site.css?url';
 const icons: IconSet = {
   snowflake: 'M128 24v208M44 76l168 104M212 76L44 180',
   leaf: 'M48 208c0-88 72-160 160-160 0 88-72 160-160 160Z',
+  // A speech glyph for the callout picker row and a triangle-bang for the alert row.
+  callout: 'M216 48H40a8 8 0 0 0-8 8v160l40-32h144a8 8 0 0 0 8-8V56a8 8 0 0 0-8-8Z',
+  alert: 'M128 24 8 224h240L128 24Zm0 72v56m0 32v8',
 };
 
 const callout: ComponentDef = {
@@ -21,6 +24,17 @@ const callout: ComponentDef = {
   label: 'Callout',
   description: 'A highlighted note with an optional icon.',
   use: 'Draw the reader to one important idea.',
+  group: 'Callouts',
+  icon: 'callout',
+  // A structured sample so the configure step opens two-pane with a live preview.
+  preview: {
+    attributes: { tone: 'note' },
+    slots: {
+      title: 'A worked example',
+      body: 'This is what the callout looks like while you fill it in.',
+      points: ['First takeaway', 'Second takeaway'],
+    },
+  },
   build: (ctx) =>
     h('aside', { className: ['callout', `callout-${String(ctx.attributes.tone ?? 'note')}`] }, [
       h('p', { className: ['callout-title'] }, ctx.slot('title')),
@@ -45,6 +59,8 @@ const alert: ComponentDef = {
   label: 'Alert',
   description: 'A bordered note whose icon defaults from its role.',
   use: 'Flag a caution in the flow of a post.',
+  group: 'Notices',
+  icon: 'alert',
   defaultIconByRole: { caution: 'leaf' },
   build: (ctx) => {
     const name = strAttr(ctx, 'icon');

@@ -351,6 +351,40 @@ test('the editors view runs against the dev AUTH_DB double: list the seeds, add 
   await expect(rows).toHaveCount(before + 1);
 });
 
+test('the component picker groups the catalog, opens the callout two-pane with its live preview, and inserts the directive', async ({ page }) => {
+  // Open the seeded entry from the list, the same path the golden-path test takes.
+  await page.goto('/admin/posts');
+  await page.locator('a[href="/admin/posts/2026-06-hello"]').click();
+  await expect(page).toHaveURL(/\/admin\/posts\/2026-06-hello$/);
+
+  // Open the Insert-component picker from the editor toolbar.
+  const editor = page.locator('.cm-content');
+  await expect(editor).toBeVisible();
+  await page.getByRole('button', { name: 'Insert block' }).click();
+  const dialog = page.locator('dialog[aria-labelledby="cairn-insert-dialog-title"]');
+  await expect(dialog).toBeVisible();
+
+  // The catalog groups by the config's `group` headings (Callouts, Notices), in declaration order.
+  const headings = dialog.locator('[data-testid="cairn-pk-group-heading"]');
+  await expect(headings).toHaveText(['Callouts', 'Notices']);
+
+  // Pick the callout. It declares a `preview`, so the configure step opens two-pane: the form on
+  // the left and the live preview frame on the right.
+  await dialog.locator('[data-testid="cairn-pk-row"]', { hasText: 'Callout' }).click();
+  await expect(dialog.locator('h2#cairn-insert-dialog-title')).toHaveText('Callout');
+  await expect(dialog.locator('[data-testid="cairn-pk-preview"]')).toBeVisible();
+  const previewFrame = page.frameLocator('[data-testid="cairn-pk-preview"] iframe[title="Component preview"]');
+  // The preview seeds from the sample, so the rendered frame carries the sample title through the
+  // site's own render() path.
+  await expect(previewFrame.locator('.callout-title')).toContainText('A worked example', { timeout: 5000 });
+
+  // Insert. The serialized directive lands at the editor cursor (callout has a nested slot, so the
+  // grammar opens it with a four-colon fence).
+  await dialog.getByRole('button', { name: 'Insert', exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(editor).toContainText('::::callout[A worked example]');
+});
+
 test('a non-cairn feature coexists with the admin (Mode 1)', async ({ page }) => {
   await page.goto('/calendar');
   await expect(page.getByRole('heading', { name: 'Calendar' })).toBeVisible();

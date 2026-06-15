@@ -32,6 +32,7 @@
     "check:reference:signatures": "npm run package && node scripts/check-reference-signatures.mjs",
     "check:readiness": "npm run package && node scripts/check-readiness.mjs",
     "check:docs": "node scripts/docs-links.mjs",
+    "check:version": "node scripts/check-version.mjs",
     "check:prose": "node scripts/check-admin-prose.mjs",
     "prepare": "npm run package",
     "check": "svelte-check --tsconfig ./tsconfig.json",

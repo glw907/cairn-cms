@@ -19,8 +19,9 @@ const data = {
 describe('EditPage guided insert', () => {
   it('exposes the Insert dialog driven by the registry', async () => {
     const screen = render(EditPage, { data, registry, icons: { snow: 'M1 1h2' } } as never);
-    await expect.element(screen.getByRole('button', { name: /insert/i })).toBeInTheDocument();
-    await screen.getByRole('button', { name: /insert/i }).click();
+    const openBtn = screen.getByRole('button', { name: /insert block/i });
+    await expect.element(openBtn).toBeInTheDocument();
+    await openBtn.click();
     await expect.element(screen.getByText(/call out an idea/i)).toBeInTheDocument();
   });
 });

@@ -20,7 +20,9 @@ const icons = { snowflake: 'M1 1h2' };
 describe('ComponentInsertDialog', () => {
   it('lists actionable components with descriptions and omits inert ones', async () => {
     const screen = render(ComponentInsertDialog, { registry, insert: () => {}, icons } as never);
-    await screen.getByRole('button', { name: /insert/i }).click();
+    const openBtn = screen.getByRole('button', { name: /insert block/i });
+    await expect.element(openBtn).toBeInTheDocument();
+    await openBtn.click();
     await expect.element(screen.getByText(/a highlighted note/i)).toBeInTheDocument();
     await expect.element(screen.getByText(/call out one idea/i)).toBeInTheDocument();
     await expect.element(screen.getByText(/^inert$/i)).not.toBeInTheDocument();
@@ -29,7 +31,9 @@ describe('ComponentInsertDialog', () => {
   it('inserts a template-only def directly', async () => {
     const insert = vi.fn();
     const screen = render(ComponentInsertDialog, { registry, insert, icons } as never);
-    await screen.getByRole('button', { name: /insert/i }).click();
+    const openBtn = screen.getByRole('button', { name: /insert block/i });
+    await expect.element(openBtn).toBeInTheDocument();
+    await openBtn.click();
     await screen.getByRole('button', { name: /rule/i }).click();
     expect(insert).toHaveBeenCalledWith(':::rule\n:::');
   });
@@ -37,7 +41,9 @@ describe('ComponentInsertDialog', () => {
   it('routes a schema def to the form and inserts the built markdown', async () => {
     const insert = vi.fn();
     const screen = render(ComponentInsertDialog, { registry, insert, icons } as never);
-    await screen.getByRole('button', { name: /insert/i }).click();
+    const openBtn = screen.getByRole('button', { name: /insert block/i });
+    await expect.element(openBtn).toBeInTheDocument();
+    await openBtn.click();
     await screen.getByRole('button', { name: /callout/i }).click();
     await screen.getByRole('combobox', { name: /tone/i }).selectOptions('warning');
     await screen.getByRole('textbox', { name: /title/i }).fill('Careful');

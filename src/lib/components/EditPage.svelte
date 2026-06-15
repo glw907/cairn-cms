@@ -1239,7 +1239,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
      <form>, and a form nested in a form is invalid HTML the parser repairs by dropping the outer
      tag, which breaks the SSR'd document and hydration. The toolbar snippet's triggers drive them
      through their exported open(). -->
-<ComponentInsertDialog bind:this={insertDialog} trigger={false} {registry} {insert} {icons} />
+<ComponentInsertDialog bind:this={insertDialog} trigger={false} {registry} {insert} {icons} {render} preview={data.preview} />
 <WebLinkDialog bind:this={webLinkDialog} trigger={false} insert={insertLink} selection={getSelection} />
 <LinkPicker bind:this={linkPicker} trigger={false} linkTargets={data.linkTargets} insert={insertLink} />
 

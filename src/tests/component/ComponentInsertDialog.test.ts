@@ -154,6 +154,104 @@ describe('ComponentInsertDialog search', () => {
   });
 });
 
+const previewCallout: ComponentDef = {
+  ...base, name: 'callout', label: 'Callout', description: 'A highlighted note.', use: 'Call out one idea.',
+  group: 'Callouts', icon: 'snowflake',
+  preview: { attributes: { tone: 'note' }, slots: { title: 'Sample', body: 'Body text' } },
+  attributes: [{ key: 'tone', label: 'Tone', type: 'select', required: true, options: ['note', 'warning'] }],
+  slots: [{ name: 'title', label: 'Title', kind: 'inline', required: true }],
+} as ComponentDef;
+const plainForm: ComponentDef = {
+  ...base, name: 'signup', label: 'Newsletter signup', description: 'An email capture.', use: 'Grow the list.',
+  attributes: [{ key: 'list', label: 'List', type: 'select', required: true, options: ['news'] }],
+} as ComponentDef;
+
+describe('ComponentInsertDialog configure step', () => {
+  it('shows two panes for a preview-declaring component', async () => {
+    const reg = defineRegistry({ components: [previewCallout] });
+    const renderFn = (md: string) => `<p>${md}</p>`;
+    const screen = render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons, render: renderFn } as never);
+    await screen.getByRole('button', { name: /insert block/i }).click();
+    await screen.getByRole('button', { name: /callout/i }).click();
+    // The preview pane mounts only in the two-pane case.
+    await expect.element(screen.getByText(/^preview$/i)).toBeInTheDocument();
+    expect(document.querySelector('[data-testid="cairn-pk-preview"]')).not.toBeNull();
+  });
+
+  it('stays single column for a component that declares no preview', async () => {
+    const reg = defineRegistry({ components: [plainForm] });
+    const renderFn = (md: string) => `<p>${md}</p>`;
+    const screen = render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons, render: renderFn } as never);
+    await screen.getByRole('button', { name: /insert block/i }).click();
+    await screen.getByRole('button', { name: /newsletter signup/i }).click();
+    expect(document.querySelector('[data-testid="cairn-pk-preview"]')).toBeNull();
+  });
+
+  it('shows no preview pane when no render function is threaded, even for a preview-declaring def', async () => {
+    const reg = defineRegistry({ components: [previewCallout] });
+    const screen = render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons } as never);
+    await screen.getByRole('button', { name: /insert block/i }).click();
+    await screen.getByRole('button', { name: /callout/i }).click();
+    expect(document.querySelector('[data-testid="cairn-pk-preview"]')).toBeNull();
+  });
+
+  it('shows the incomplete state and disables Insert when a required field is empty', async () => {
+    const reg = defineRegistry({ components: [previewCallout] });
+    const renderFn = (md: string) => `<p>${md}</p>`;
+    const screen = render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons, render: renderFn } as never);
+    await screen.getByRole('button', { name: /insert block/i }).click();
+    await screen.getByRole('button', { name: /callout/i }).click();
+    // Clear the seeded required title so a required region is empty.
+    await screen.getByRole('textbox', { name: /title/i }).fill('');
+    await expect.element(screen.getByText(/incomplete/i)).toBeInTheDocument();
+    await expect.element(screen.getByRole('button', { name: /^insert$/i })).toBeDisabled();
+  });
+
+  it('shows the render-failed surface when the adapter render throws, keeping the form', async () => {
+    const reg = defineRegistry({ components: [previewCallout] });
+    const renderFn = () => {
+      throw new Error('boom');
+    };
+    const screen = render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons, render: renderFn } as never);
+    await screen.getByRole('button', { name: /insert block/i }).click();
+    await screen.getByRole('button', { name: /callout/i }).click();
+    await expect.element(screen.getByTestId('cairn-pk-preview-failed')).toBeInTheDocument();
+    // The form survives, and Insert stays available (the seeded sample is valid).
+    await expect.element(screen.getByRole('textbox', { name: /title/i })).toBeInTheDocument();
+    await expect.element(screen.getByRole('button', { name: /^insert$/i })).not.toBeDisabled();
+  });
+
+  it('moves focus to the first form field on pick', async () => {
+    const reg = defineRegistry({ components: [previewCallout] });
+    const renderFn = (md: string) => `<p>${md}</p>`;
+    const screen = render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons, render: renderFn } as never);
+    await screen.getByRole('button', { name: /insert block/i }).click();
+    await screen.getByRole('button', { name: /callout/i }).click();
+    const tone = screen.getByRole('combobox', { name: /tone/i });
+    await expect.element(tone).toBeInTheDocument();
+    expect(document.activeElement).toBe(tone.element());
+  });
+
+  it('carries the Insert > group breadcrumb eyebrow and a Back control at the configure step', async () => {
+    const reg = defineRegistry({ components: [previewCallout] });
+    const screen = render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons } as never);
+    await screen.getByRole('button', { name: /insert block/i }).click();
+    await screen.getByRole('button', { name: /callout/i }).click();
+    await expect.element(screen.getByText(/insert\s*›\s*callouts/i)).toBeInTheDocument();
+    await expect.element(screen.getByRole('button', { name: /back/i })).toBeInTheDocument();
+  });
+
+  it('Back returns to the catalog from the configure step', async () => {
+    const reg = defineRegistry({ components: [previewCallout, gridDef] });
+    const screen = render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons } as never);
+    await screen.getByRole('button', { name: /insert block/i }).click();
+    await screen.getByRole('button', { name: /callout/i }).click();
+    await screen.getByRole('button', { name: /back/i }).click();
+    // The catalog rows are back.
+    await expect.element(screen.getByText(/lay tiles out/i)).toBeInTheDocument();
+  });
+});
+
 describe('ComponentInsertDialog keyboard', () => {
   it('moves between rows with the arrow keys and chooses on Enter', async () => {
     const insert = vi.fn();

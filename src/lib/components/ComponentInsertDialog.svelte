@@ -53,6 +53,11 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
 <script lang="ts">
   import { tick } from 'svelte';
   import type { IconSet } from '../render/glyph.js';
+  import type { ComponentValues } from '../render/registry.js';
+  import type { ResolvedPreview } from '../content/types.js';
+  import type { LinkResolve } from '../content/links.js';
+  import { serializeComponent } from '../render/component-grammar.js';
+  import { buildPreviewDoc } from './preview-doc.js';
   import ComponentForm from './ComponentForm.svelte';
 
   interface Props {
@@ -62,6 +67,14 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
     insert: (text: string) => void;
     /** The site's icon set, for icon fields. */
     icons?: IconSet;
+    /** The site's design-accurate render pipeline. When present and the picked component declares a
+     *  `preview`, the configure step splits to two panes and renders the configured directive
+     *  through this into a sandboxed iframe (the same path EditPage's preview uses). Optional: a
+     *  host that passes none simply gets no preview pane. */
+    render?: (md: string, opts?: { stagger?: boolean; resolve?: LinkResolve }) => string | Promise<string>;
+    /** The adapter's resolved preview knob (stylesheets and container class), threaded to
+     *  buildPreviewDoc so the preview frame links the site's own CSS, the same as EditPage. */
+    preview?: ResolvedPreview | null;
     /** Disable the trigger; the host sets it while Preview shows. */
     disabled?: boolean;
     /** Render the built-in Insert block trigger. False mounts only the dialog, for a host that
@@ -69,12 +82,81 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
     trigger?: boolean;
   }
 
-  let { registry, insert, icons, disabled = false, trigger = true }: Props = $props();
+  let { registry, insert, icons, render, preview = null, disabled = false, trigger = true }: Props = $props();
 
   let dialog = $state<HTMLDialogElement | null>(null);
   let picked = $state<ComponentDef | null>(null);
   let query = $state('');
   let searchInput = $state<HTMLInputElement | null>(null);
+
+  // The form's live values and its required-empty state, bound out of ComponentForm so the preview
+  // pane can render from them and mirror the incomplete state.
+  let formValues = $state<ComponentValues | undefined>(undefined);
+  let formIncomplete = $state(false);
+
+  // Two-pane configure is opt-in: it appears only when the picked component declares a `preview`
+  // AND a render function is threaded. Otherwise the configure step stays single column.
+  const twoPane = $derived(Boolean(picked?.preview) && Boolean(render));
+
+  // The preview pane's settle state, the honest chip the mockup names. The empty/incomplete state
+  // wins over settling so the pane never claims to settle a fabricated block.
+  type PreviewState = 'settling' | 'settled' | 'failed';
+  let previewState = $state<PreviewState>('settled');
+  let previewDoc = $state('');
+
+  // The required regions left empty, named for the incomplete-state callout. A boolean attribute is
+  // always met; a text/select/icon attribute or a slot is unmet when empty.
+  const emptyRequired = $derived.by(() => {
+    if (!picked || !formValues) return [] as string[];
+    const out: string[] = [];
+    for (const field of picked.attributes ?? []) {
+      if (!field.required || field.type === 'boolean') continue;
+      const v = formValues.attributes[field.key];
+      if (typeof v !== 'string' || v === '') out.push(field.label);
+    }
+    for (const slot of picked.slots ?? []) {
+      if (!slot.required) continue;
+      const v = formValues.slots[slot.name];
+      const filled = Array.isArray(v) ? v.some((i) => i !== '') : typeof v === 'string' && v !== '';
+      if (!filled) out.push(slot.label);
+    }
+    return out;
+  });
+
+  // The debounced, latest-wins preview render, the same shape EditPage's preview effect uses: a
+  // setTimeout debounce (~200ms) guarded by a plain counter so a slow earlier render that resolves
+  // after a newer one started is discarded, one persistent iframe whose srcdoc is replaced. The
+  // incomplete state short-circuits the render (the skeleton renders from the template, not the
+  // pipeline), so a required-empty block never reaches the site render as a fabricated finish.
+  let previewRun = 0;
+  $effect(() => {
+    if (!twoPane || !render || !picked || !formValues) return;
+    if (formIncomplete) {
+      previewState = 'settled';
+      previewRun++;
+      return;
+    }
+    const md = serializeComponent(picked, formValues);
+    const run = ++previewRun;
+    previewState = 'settling';
+    const handle = setTimeout(async () => {
+      try {
+        const html = await render(md);
+        if (run === previewRun) {
+          previewDoc = buildPreviewDoc(html, preview);
+          previewState = 'settled';
+        }
+      } catch {
+        if (run === previewRun) {
+          previewState = 'failed';
+        }
+      }
+    }, 200);
+    return () => {
+      clearTimeout(handle);
+      previewRun++;
+    };
+  });
 
   const defs = $derived(insertableDefs(registry));
   /** The catalog grows a search input only once the actionable count crosses the threshold. */
@@ -102,13 +184,21 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
       void tick().then(() => searchInput?.focus());
     }
   }
+  function back() {
+    picked = null;
+  }
   function close() {
     picked = null;
     dialog?.close();
   }
   function choose(def: ComponentDef) {
     if (hasSchema(def)) {
+      formValues = undefined;
+      formIncomplete = false;
+      previewState = 'settled';
+      previewDoc = '';
       picked = def;
+      // ComponentForm focuses its own first field on mount.
     } else {
       insert(def.insertTemplate ?? '');
       close();
@@ -117,6 +207,17 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
   function onInsert(markdown: string) {
     insert(markdown);
     close();
+  }
+
+  // The native <dialog> turns Escape into a close. At the configure step Escape should step back to
+  // the catalog instead (one level), matching the catalog's own Back control; from the catalog it
+  // closes. Handling cancel (the event the dialog fires on Escape) lets us preventDefault and
+  // intercept the first level.
+  function onCancel(e: Event) {
+    if (picked) {
+      e.preventDefault();
+      back();
+    }
   }
 
   // Arrow keys roam the rows: each row is a real <button>, so Enter chooses for free and Escape
@@ -144,16 +245,80 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
 {/if}
 
 {#if defs.length > 0}
-  <dialog class="modal" aria-labelledby="cairn-insert-dialog-title" bind:this={dialog} onclose={() => (picked = null)}>
-    <div class="modal-box">
-      <div class="mb-3 flex items-center justify-between">
-        <h2 id="cairn-insert-dialog-title" class="text-base font-semibold">Insert component</h2>
-        <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={close}>✕</button>
+  <dialog class="modal" aria-labelledby="cairn-insert-dialog-title" bind:this={dialog} onclose={() => (picked = null)} oncancel={onCancel}>
+    <div class="modal-box {twoPane ? 'max-w-3xl' : ''}">
+      <!-- The shared header: at the configure step it carries the Back control and the
+           "Insert > group" eyebrow breadcrumb above the component label; while browsing it is the
+           plain "Insert a component" title. -->
+      <div class="mb-3 flex items-center gap-3">
+        {#if picked}
+          <button type="button" class="btn btn-ghost btn-sm btn-square" aria-label="Back to components" onclick={back}>
+            <svg class="h-4 w-4" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M165.7 202.3a8 8 0 0 1-11.4 11.4l-80-80a8 8 0 0 1 0-11.4l80-80a8 8 0 0 1 11.4 11.4L91.3 128Z" /></svg>
+          </button>
+        {/if}
+        <div class="min-w-0 flex-1">
+          {#if picked}
+            <div class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">Insert{#if picked.group}&nbsp;&rsaquo;&nbsp;{picked.group}{/if}</div>
+            <h2 id="cairn-insert-dialog-title" class="font-[family-name:var(--font-display)] text-lg font-bold tracking-tight">{picked.label}</h2>
+          {:else}
+            <h2 id="cairn-insert-dialog-title" class="text-base font-semibold">Insert a component</h2>
+          {/if}
+        </div>
+        <button type="button" class="btn btn-ghost btn-sm btn-square" aria-label="Close" onclick={close}>✕</button>
       </div>
 
       {#if picked}
         {#key picked}
-          <ComponentForm def={picked} {icons} {onInsert} onBack={() => (picked = null)} />
+          {#if twoPane}
+            <!-- Two panes: the form on the left, the live preview on the right. Below the breakpoint
+                 the preview stacks beneath the form. -->
+            <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <div class="overflow-auto">
+                <ComponentForm def={picked} {icons} {onInsert} bind:values={formValues} bind:incomplete={formIncomplete} />
+              </div>
+              <div data-testid="cairn-pk-preview" class="flex flex-col gap-2 rounded-box border border-[var(--cairn-card-border)] bg-base-200 p-3">
+                <div class="flex items-baseline justify-between gap-2">
+                  <span class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">Preview</span>
+                  <span class="inline-flex items-center gap-1.5 text-[0.7rem] text-[var(--color-muted)]" role="status" aria-live="polite">
+                    {#if formIncomplete}
+                      Incomplete
+                    {:else if previewState === 'failed'}
+                      Could not render
+                    {:else if previewState === 'settling'}
+                      <span class="inline-block h-2.5 w-2.5 animate-spin rounded-full border-[1.5px] border-current border-t-transparent motion-reduce:animate-none" aria-hidden="true"></span>
+                      Settling
+                    {:else}
+                      Settled
+                    {/if}
+                  </span>
+                </div>
+                {#if formIncomplete}
+                  <!-- The skeleton: never a fabricated finished block. The empty required regions are
+                       called out by name so the editor knows exactly what the preview still needs. -->
+                  <div class="flex flex-1 flex-col items-center justify-center gap-2 rounded-box border border-dashed border-[var(--cairn-card-border)] p-6 text-center">
+                    <p class="text-sm font-medium">This preview needs more.</p>
+                    <p class="flex flex-wrap justify-center gap-1.5 text-xs">
+                      {#each emptyRequired as label (label)}
+                        <span class="rounded border border-dashed border-[color-mix(in_oklab,var(--color-error)_55%,var(--cairn-card-border))] px-2 py-0.5 font-medium text-error">{label} needed</span>
+                      {/each}
+                    </p>
+                  </div>
+                {:else if previewState === 'failed'}
+                  <!-- The render threw. Say so and keep the form intact; the editor can still insert. -->
+                  <div data-testid="cairn-pk-preview-failed" class="flex flex-1 flex-col items-center justify-center gap-1.5 rounded-box border border-[color-mix(in_oklab,var(--color-error)_35%,var(--cairn-card-border))] bg-[color-mix(in_oklab,var(--color-error)_5%,transparent)] p-5 text-center text-error">
+                    <p class="text-sm font-semibold">Preview could not render</p>
+                    <p class="text-xs text-[var(--color-muted)]">Your settings are kept. You can still insert and check it on the page.</p>
+                  </div>
+                {:else}
+                  <div class="flex-1 overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
+                    <iframe sandbox="" title="Component preview" srcdoc={previewDoc} class="block h-64 w-full"></iframe>
+                  </div>
+                {/if}
+              </div>
+            </div>
+          {:else}
+            <ComponentForm def={picked} {icons} {onInsert} bind:values={formValues} bind:incomplete={formIncomplete} />
+          {/if}
         {/key}
       {:else}
         {#if showSearch}

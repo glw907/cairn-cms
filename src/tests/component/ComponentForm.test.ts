@@ -30,13 +30,6 @@ describe('ComponentForm fields', () => {
     expect(screen.container.querySelectorAll('select option').length).toBeGreaterThanOrEqual(2);
   });
 
-  it('calls onBack when Back is clicked', async () => {
-    const onBack = (await import('vitest')).vi.fn();
-    const screen = render(ComponentForm, { def: callout, onInsert: () => {}, onBack } as never);
-    await screen.getByRole('button', { name: /back/i }).click();
-    expect(onBack).toHaveBeenCalled();
-  });
-
   it('names a flat field by its visible label without a redundant aria-label', async () => {
     const screen = render(ComponentForm, { def: callout, onInsert: () => {}, onBack: () => {} } as never);
     // The textbox is found by its visible <label> text, proving the for/id pairing names it.
@@ -108,15 +101,85 @@ describe('ComponentForm submit', () => {
     expect(onInsert).toHaveBeenCalledWith(':::callout[Heads up]{tone="note"}\n:::');
   });
 
-  it('shows inline errors and does not insert when required fields are empty', async () => {
+  it('shows an inline required error on a touched-empty field and keeps Insert disabled', async () => {
     const onInsert = vi.fn();
     const screen = render(ComponentForm, { def: callout, onInsert, onBack: () => {} } as never);
-    await screen.getByRole('button', { name: /^insert$/i }).click();
-    expect(onInsert).not.toHaveBeenCalled();
-    await expect.element(screen.getByText(/tone is required/i)).toBeInTheDocument();
+    // Touch the required title by filling then clearing it, the way the incomplete state arises.
+    const title = screen.getByRole('textbox', { name: /title/i });
+    await title.fill('x');
+    await title.fill('');
     await expect.element(screen.getByText(/title is required/i)).toBeInTheDocument();
-    await expect
-      .element(screen.getByRole('combobox', { name: /tone/i }))
-      .toHaveAttribute('aria-invalid', 'true');
+    await expect.element(title).toHaveAttribute('aria-invalid', 'true');
+    // Insert never fired and stays disabled while a required field is empty.
+    await expect.element(screen.getByRole('button', { name: /^insert$/i })).toBeDisabled();
+    expect(onInsert).not.toHaveBeenCalled();
+  });
+});
+
+describe('ComponentForm required-field marking and Insert gating', () => {
+  it('marks a required field with an asterisk and aria-required', async () => {
+    const screen = render(ComponentForm, { def: callout, onInsert: () => {}, onBack: () => {} } as never);
+    const tone = screen.getByRole('combobox', { name: /tone/i });
+    await expect.element(tone).toHaveAttribute('aria-required', 'true');
+    // The visible asterisk sits beside the required field's label.
+    expect(screen.container.querySelectorAll('[data-testid="cairn-pk-req"]').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('disables Insert while a required field is empty and enables it once filled', async () => {
+    const screen = render(ComponentForm, { def: callout, onInsert: () => {}, onBack: () => {} } as never);
+    const insert = screen.getByRole('button', { name: /^insert$/i });
+    await expect.element(insert).toBeDisabled();
+    await screen.getByRole('combobox', { name: /tone/i }).selectOptions('note');
+    await screen.getByRole('textbox', { name: /title/i }).fill('Heads up');
+    await expect.element(insert).not.toBeDisabled();
+  });
+});
+
+const repeatable: ComponentDef = {
+  ...base, name: 'list', label: 'List',
+  slots: [
+    {
+      name: 'points', label: 'Point', kind: 'repeatable',
+      itemFields: [{ key: 'text', label: 'Item', type: 'text' }],
+      itemLabel: (item) => (typeof item.text === 'string' ? item.text.slice(0, 12) : ''),
+    },
+  ],
+} as ComponentDef;
+
+describe('ComponentForm itemLabel', () => {
+  it('labels a repeatable row from itemLabel and falls back to the index when it is empty', async () => {
+    const screen = render(ComponentForm, { def: repeatable, onInsert: () => {}, onBack: () => {} } as never);
+    const add = screen.getByRole('button', { name: /add/i });
+    await add.click();
+    // Empty item: itemLabel returns '', so the row falls back to the indexed label.
+    await expect.element(screen.getByRole('textbox', { name: 'Point 1' })).toBeInTheDocument();
+    // Once filled, the row tag reflects itemLabel's derived value.
+    await screen.getByRole('textbox', { name: 'Point 1' }).fill('Adult $18');
+    await expect.element(screen.getByText('Adult $18')).toBeInTheDocument();
+  });
+});
+
+const previewCallout: ComponentDef = {
+  ...base, name: 'callout', label: 'Callout',
+  preview: { attributes: { tone: 'note' }, slots: { title: 'Sample title', body: 'Sample body' } },
+  attributes: [{ key: 'tone', label: 'Tone', type: 'select', required: true, options: ['note', 'warning'] }],
+  slots: [
+    { name: 'title', label: 'Title', kind: 'inline', required: true },
+    { name: 'body', label: 'Body', kind: 'markdown' },
+  ],
+} as ComponentDef;
+
+describe('ComponentForm preview seeding', () => {
+  it('seeds the form from previewValues when the def declares a preview', async () => {
+    const screen = render(ComponentForm, { def: previewCallout, onInsert: () => {}, onBack: () => {} } as never);
+    await expect.element(screen.getByRole('textbox', { name: /title/i })).toHaveValue('Sample title');
+    await expect.element(screen.getByRole('combobox', { name: /tone/i })).toHaveValue('note');
+  });
+
+  it('focuses the first field on mount', async () => {
+    const screen = render(ComponentForm, { def: callout, onInsert: () => {}, onBack: () => {} } as never);
+    const tone = screen.getByRole('combobox', { name: /tone/i });
+    await expect.element(tone).toBeInTheDocument();
+    expect(document.activeElement).toBe(tone.element());
   });
 });

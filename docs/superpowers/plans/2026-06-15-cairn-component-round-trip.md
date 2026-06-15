@@ -57,3 +57,26 @@ to `0.57.0` (round-trip is a new capability, so the bundle is a minor). Run `che
 Adversarially review the round-trip for data-loss paths the safety gate must catch. Fan out
 `svelte-reviewer` and `daisyui-a11y-reviewer`. Resolve Critical/Important. Confirm the full gate and
 the showcase E2E at the tip, then the pass-end ritual (STATUS, post-mortem, memory).
+
+## Post-mortem (2026-06-15)
+
+Landed on `feat/component-picker-live-preview`, bundled with the picker into `0.57.0`. Commits: RT1
+`2ece8a0` (safety check), RT2 `90b7992` (editor seam), RT3 `69dd656` (dialog edit mode), RT4
+`2d2ad44` (EditPage affordance + async gate), RT5 `beda263` (E2E), docs+version `07e7517`/`63e3ec1`,
+the simplifier `7a74826`, and the review fold-in `8a3f4b1`.
+
+What went well: the spike confirmed the substrate (the reversible grammar pair and `caretContainerRange`)
+before any UI, so the build was wiring, not invention. The safety gate made the data-loss posture
+explicit up front.
+
+What the review caught (the value of the adversarial gate): the safety gate proved parse-serialize-parse
+idempotency but was blind to the FIRST parse dropping content, so a markdown title silently truncated
+through `readLabel` and still read safe. The caret-reporter dedupe ignored `markdown`, so an
+equal-length edit went stale and Update reverted it. Both were CRITICAL data-loss paths a single
+builder missed; both now have regression tests. The durable lesson, recorded as a residual: the gate
+checks the form model's self-consistency, not fidelity to the author's markdown, so any future lossy
+slot reader needs its own test or an original-vs-reserialized comparison in the gate.
+
+Carry-forwards: the master-detail catalog rail and the `/` slash-trigger (still deferred); the
+original-vs-reserialized gate hardening as defense-in-depth for future slot readers; editing a nested
+component inside another (out of scope, `findComponentRoot` is top-level only).

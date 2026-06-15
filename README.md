@@ -52,10 +52,16 @@ doesn't, cairn is the wrong tool and will not try to meet you halfway.
 
 ## Status
 
-cairn-cms runs the two production sites above. It is `0.x`, and the version position signals scale:
-a minor bump (`0.X.0`) carries a significant new feature and may break, while a patch (`0.X.Y`) is a
-safe fix, polish, or tooling change. Pin a caret range and read the [CHANGELOG](./CHANGELOG.md)
-before taking a minor; every breaking entry carries a "Consumers must" line. The author is still working through the core-feature
+cairn-cms runs the two production sites above. It is `0.x`, and the version position signals scale.
+A minor bump (`0.X.0`) is reserved for a new subsystem or public surface that did not exist before,
+such as a new entry point, a new content concept, or the scaffolder, and it may break. Everything
+that refines, extends, or adds an affordance to a surface that already exists (the editor, the admin,
+auth, delivery) is a patch (`0.X.Y`), even when it gives an editor a new thing to do; a redesign, a
+round-trip edit on an existing surface, or a new optional config field is a patch. When the call is
+unclear, it is a patch. A minor release carries a `<!-- release-size: minor -->` marker in its
+CHANGELOG entry, which the `check:version` gate requires, so a minor is always a deliberate,
+documented choice. Pin a caret range and read the [CHANGELOG](./CHANGELOG.md) before taking a minor;
+every breaking entry carries a "Consumers must" line. The author is still working through the core-feature
 [ROADMAP](./ROADMAP.md), and the project stays closely held until that core lands. A
 contributor who feels inspired is welcome to open an issue or a discussion; there is no
 formal contribution process yet, so this is not an open call for pull requests.

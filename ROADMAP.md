@@ -58,7 +58,7 @@ needs. Items move up from lower tiers as the core fills in.
 
 - **Component authoring follow-ups.** The registry, the guided insert picker (with a live preview),
   round-trip editing of a placed component, and the `llms-full` component reference have all shipped
-  (round-trip and the live preview as of `0.57.0`). What remains: a persistent master-detail catalog
+  (round-trip and the live preview as of `0.56.2`). What remains: a persistent master-detail catalog
   rail for a large catalog, and an optional `/` slash-trigger that opens the picker at the cursor.
   Both are recorded in the picker spec's out-of-scope list.
 - **Content lifecycle ergonomics.** Follow-ups carried from the rename and delete passes,

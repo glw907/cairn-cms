@@ -2,11 +2,11 @@
 
 All notable changes to this project are recorded here, most recent first.
 
-## 0.57.0
+## 0.56.2
 
 The component insert picker gains a live preview and round-trip editing, and the component contract
-grows the optional fields that make a good picker possible. It is a minor because round-trip is a new
-capability an editor can use; the contract additions are all optional, so existing definitions compile
+grows the optional fields that make a good picker possible. These refine the existing
+component-editing surface and are all additive, so it is a patch; existing definitions compile
 unchanged with no action required.
 
 How the design was reached. Two research arms ran first. One surveyed how comparable systems build

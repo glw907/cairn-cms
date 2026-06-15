@@ -96,6 +96,7 @@ content is preserved; this is expected and documented.
 
 ## Release
 
-Bundled with the picker pass into one release. Round-trip is a new capability an editor can newly
-use, so the bundled release is a minor (`0.57.0`), not the picker's standalone patch. The changelog
-entry folds round-trip into the same release notes, carrying the same research framing.
+Bundled with the picker pass into one release, `0.56.2`. It is a patch: round-trip refines the
+existing component-editing surface (an editor already placed and hand-edited components), so it does
+not clear the new-subsystem bar a minor is reserved for. The changelog entry folds round-trip into the
+same release notes, carrying the same research framing.

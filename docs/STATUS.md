@@ -11,11 +11,11 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-15, latest): merge and release the picker + round-trip bundle (0.57.0)
+## Immediate next action (2026-06-15, latest): merge and release the picker + round-trip bundle (0.56.2)
 
 **The component insert picker live-preview and round-trip editing both LANDED on branch
-`feat/component-picker-live-preview`, ready to merge to `main` and release together as `0.57.0` (a
-minor: round-trip is a new editor capability; the contract additions are all optional, so existing
+`feat/component-picker-live-preview`, ready to merge to `main` and release together as `0.56.2` (a
+patch: both refine the existing component-editing surface and are additive, so existing
 defs compile unchanged with no consumer action).** Both ran mockup-first / spike-first per the
 methodology in [[cairn-ui-design-pass-methodology]].
 
@@ -48,7 +48,7 @@ async-snapshot mismatch and the unreachable disabled-button reason, all fixed wi
 `8a3f4b1`.
 
 **Next actions, in order:**
-1. **Merge the branch to `main` and release `0.57.0`** (Geoff: push, then `gh release create v0.57.0`
+1. **Merge the branch to `main` and release `0.56.2`** (Geoff: push, then `gh release create v0.56.2`
    with the changelog entry as the body); no consumer action.
 2. The next pass is the **gallery** (mockup-first per the methodology, with the storage-fork spike and
    divergent directions mandatory given its difficulty), then the **scaffolder**. The master-detail

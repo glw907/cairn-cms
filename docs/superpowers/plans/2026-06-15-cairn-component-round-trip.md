@@ -1,7 +1,7 @@
 # Plan: round-trip editing of a placed component
 
 Source spec: `docs/superpowers/specs/2026-06-15-cairn-component-round-trip-design.md`. Same branch as
-the picker pass (`feat/component-picker-live-preview`), bundled into one release (`0.57.0`).
+the picker pass (`feat/component-picker-live-preview`), bundled into one release (`0.56.2`).
 Execution: one `cairn-implementer` per task, test-first, main loop reviews each diff and clears the
 gate between dispatches.
 
@@ -48,8 +48,8 @@ showcase building against dist.
 
 Update the reference for the new editor seams and the dialog edit mode, and the admin design-system
 picker recipe for the Edit affordance. Rework the changelog: fold the picker and round-trip into one
-`0.57.0` entry (the picker's `0.56.2` heading becomes `0.57.0`, carrying both), and bump the version
-to `0.57.0` (round-trip is a new capability, so the bundle is a minor). Run `check:reference`,
+`0.56.2` changelog entry carrying both, and keep the version at `0.56.2` (a patch; round-trip refines
+the existing component-editing surface, it is not a new subsystem). Run `check:reference`,
 `check:reference:signatures`, `check:docs`.
 
 ## Task 7 (main loop): adversarial review, reviewers, gate, pass-end
@@ -60,7 +60,7 @@ the showcase E2E at the tip, then the pass-end ritual (STATUS, post-mortem, memo
 
 ## Post-mortem (2026-06-15)
 
-Landed on `feat/component-picker-live-preview`, bundled with the picker into `0.57.0`. Commits: RT1
+Landed on `feat/component-picker-live-preview`, bundled with the picker into `0.56.2`. Commits: RT1
 `2ece8a0` (safety check), RT2 `90b7992` (editor seam), RT3 `69dd656` (dialog edit mode), RT4
 `2d2ad44` (EditPage affordance + async gate), RT5 `beda263` (E2E), docs+version `07e7517`/`63e3ec1`,
 the simplifier `7a74826`, and the review fold-in `8a3f4b1`.

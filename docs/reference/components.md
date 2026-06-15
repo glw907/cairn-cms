@@ -148,9 +148,13 @@ existing entry is clean. Both buttons sit outside the form element and tie to it
 The editor column is one card holding the formatting toolbar, the CodeMirror surface, and a footer
 with the word count and a Markdown help cheat sheet. When the adapter's schema declares a `title`
 field, that field leaves the sidebar and renders above the card as a large borderless
-document-title input. The toolbar's Write/Preview segmented tabs swap the editing surface for the
-rendered preview inside the same card, and the formatting and insert controls disable while
-Preview shows. The preview renders inside a sandboxed iframe whose document links the site's own
+document-title input. The toolbar carries an Edit block control beside Insert
+block: it enables when the caret sits inside a registered component whose markdown round-trips
+through the guided form losslessly, and re-opens that block into the form for editing, writing the
+result back over its source span. It stays disabled with a plain reason when the caret is outside any
+component or the block cannot round-trip (edit that one as markdown). The toolbar's Write/Preview
+segmented tabs swap the editing surface for the rendered preview inside the same card, and the
+formatting and insert controls disable while Preview shows. The preview renders inside a sandboxed iframe whose document links the site's own
 stylesheets from the adapter's `preview` knob (`data.preview`), so the entry proofs in the site's
 real styling without the site CSS touching the admin document; without the knob the frame renders
 unstyled markup behind a one-line hint. While Preview shows, the sidebar hides and the card takes
@@ -295,13 +299,15 @@ seam. The snippets are minimal mounts with the real prop names.
 ### `MarkdownEditor`
 
 ```ts
-let { value = $bindable(), name, registerInsert, registerInsertLink, registerGetSelection, registerFormat, completionSources = [], focusMode = false, typewriter = false }: {
+let { value = $bindable(), name, registerInsert, registerInsertLink, registerGetSelection, registerFormat, onComponentAtCaret, registerReplaceRange, completionSources = [], focusMode = false, typewriter = false }: {
   value: string;
   name: string;
   registerInsert?: (insert: (text: string) => void) => void;
   registerInsertLink?: (insert: (href: string, title: string) => void) => void;
   registerGetSelection?: (get: () => string) => void;
   registerFormat?: (format: (kind: FormatKind) => void) => void;
+  onComponentAtCaret?: (info: { name: string | null; markdown: string; from: number; to: number } | null) => void;
+  registerReplaceRange?: (replace: (from: number, to: number, text: string) => void) => void;
   completionSources?: CompletionSource[];
   focusMode?: boolean;
   typewriter?: boolean;
@@ -315,7 +321,14 @@ parent reads edits back; `name` is the hidden field the value mirrors to for for
 inserts text at the cursor (the Insert block dialog calls it), `registerInsertLink` inserts an
 inline link (the pickers call it), `registerGetSelection` returns the selected text (the web-link
 dialog prefills from it), and `registerFormat` applies a named selection transform such as `bold`,
-`italic`, `h2`, `ol`, `codeblock`, or `table` (the toolbar calls it). `completionSources` wires
+`italic`, `h2`, `ol`, `codeblock`, or `table` (the toolbar calls it). `onComponentAtCaret` and
+`registerReplaceRange` are the round-trip editing seams. `onComponentAtCaret` reports the directive
+container under the caret whenever it changes: the opening directive's `name`, the block's
+`markdown`, and the document character offsets (`from`, `to`) of its inclusive line range, or `null`
+when the caret sits outside any container. The host resolves that block against the registry to
+offer an Edit-block control. `registerReplaceRange` hands the parent a `(from, to, text)` callback
+that overwrites a document span and drops the caret after it, which the Edit-block dialog's Update
+calls to write an edited block back over its original range. `completionSources` wires
 generic CodeMirror autocomplete, such as the internal-link source. `focusMode` fades every
 paragraph except the caret's, and `typewriter` keeps the caret line vertically centered while
 typing. `surface` picks the posture: `prose` (the default) sets a 72ch centered measure at a
@@ -339,9 +352,10 @@ a plain-language hover hint, and native browser spell check.
 ### `ComponentInsertDialog`
 
 ```ts
-let { registry, insert, icons, render, preview = null, disabled = false, trigger = true }: {
+let { registry, insert, update, icons, render, preview = null, disabled = false, trigger = true }: {
   registry?: ComponentRegistry;
   insert: (text: string) => void;
+  update?: (range: { from: number; to: number }, markdown: string) => void;
   icons?: IconSet;
   render?: (md: string, opts?: { stagger?: boolean; resolve?: LinkResolve }) => string | Promise<string>;
   preview?: ResolvedPreview | null;
@@ -363,9 +377,19 @@ cursor, and `icons` feeds icon fields. `render` is the site's design-accurate re
 declares a `preview` sample, the configure step splits into two panes, the guided form on the left
 and a live preview on the right that renders the configured directive through `render` into a
 sandboxed iframe, the same path `EditPage`'s preview uses. A host that threads neither simply gets
-the single-column configure step. `disabled` greys the trigger. With `trigger={false}` the component
-renders only the dialog and the exported `open()` method shows it; `EditPage`'s toolbar drives it
-that way, keeping the dialog's own form outside the edit form. `EditPage` composes it.
+the single-column configure step. `update` is the round-trip seam: a host that re-opens a placed
+component for editing passes a `(range, markdown)` callback, and the dialog routes the form's submit
+there (overwriting the stored source span) instead of through `insert`. A host that never opens edit
+mode passes none. `disabled` greys the trigger. With `trigger={false}` the component renders only the
+dialog and the exported `open()` method shows it; `EditPage`'s toolbar drives it that way, keeping
+the dialog's own form outside the edit form. `EditPage` composes it.
+
+The dialog also exports an `editComponent(def, values, range)` instance method that re-opens a
+placed component into the same guided form for editing. It skips the catalog, seeds the form from the
+parsed `values`, and stores the source `range` for the `update` callback. In this mode the header
+eyebrow reads "Edit" and the form's submit button reads "Update". `EditPage`'s Edit-block control
+calls it after resolving the block under the caret. The bare `open()` method drives the catalog
+insert flow as before.
 
 ```svelte
 <ComponentInsertDialog
@@ -380,12 +404,14 @@ that way, keeping the dialog's own form outside the edit form. `EditPage` compos
 ### `ComponentForm`
 
 ```ts
-let { def, icons, onInsert, values = $bindable(), incomplete = $bindable() }: {
+let { def, icons, onInsert, values = $bindable(), incomplete = $bindable(), initial, submitLabel = 'Insert' }: {
   def: ComponentDef;
   icons?: IconSet;
   onInsert: (markdown: string) => void;
   values?: ComponentValues;
   incomplete?: boolean;
+  initial?: ComponentValues;
+  submitLabel?: string;
 };
 ```
 
@@ -395,8 +421,11 @@ fields, and `onInsert` receives the serialized markdown when the form validates.
 working values from `previewValues(def)`, so a component's declared `preview` sample fills the
 fields on open. `values` binds out the live working values and `incomplete` binds out whether a
 required attribute or slot is still empty, so the dialog can render the preview pane from them and
-mirror the disabled Insert. Back lives in the dialog header now, not in the form, so the component
-takes no `onBack`. `ComponentInsertDialog` composes it.
+mirror the disabled Insert. `initial` seeds the working values for editing: the dialog passes the
+parsed values of a placed component so the form re-opens on its real content instead of the
+`previewValues` sample, and the catalog insert path leaves it unset. `submitLabel` names the submit
+button and defaults to "Insert"; the dialog passes "Update" in edit mode. Back lives in the dialog
+header now, not in the form, so the component takes no `onBack`. `ComponentInsertDialog` composes it.
 
 ```svelte
 <ComponentForm {def} {icons} onInsert={handleInsert} bind:values bind:incomplete />

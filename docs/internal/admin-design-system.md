@@ -290,6 +290,15 @@ Recipes:
   `bg-base-200`; panels are `bg-base-100`.
 - Align the brand mark, the group eyebrows, and the nav-item icons on one left edge. Keep consistent
   vertical rhythm between groups. The list table drops its Date column below `sm` and stacks its header.
+- The editor's fold gutter is a sanctioned exception to the otherwise gutter-free prose surface. The
+  markdown editor folds directive containers, and the fold control lives in a real CodeMirror
+  `gutter()` column (fixed-x, ~22px), not floating in the text. It stays quiet because it is empty at
+  rest and the chevron reveals only on gutter hover (the Obsidian precedent: a calm prose surface
+  keeps its fold gutter empty-until-hover). Do not move the chevron back into the text to "reclaim"
+  the column; the in-text band was the version this replaced. The gutter rules live in the
+  `EditorView.theme` in `MarkdownEditor.svelte`, with `.cm-gutters` neutralized to blend in. Design
+  detail and rationale: `docs/internal/design/2026-06-14-fold-gutter-mockup.html` and the spec
+  `docs/superpowers/specs/2026-06-14-fold-gutter-design.md`.
 
 ## Icons
 

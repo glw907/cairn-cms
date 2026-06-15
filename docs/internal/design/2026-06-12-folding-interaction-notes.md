@@ -1,5 +1,12 @@
 # Container folding: the full interaction prescription
 
+> **Superseded for the affordance (2026-06-14).** The fold engine below (ranges, the safety
+> invariant, the pill, the flash, the keymap) still holds, but the affordance moved out of the text
+> into a real gutter column. The in-text 28px band, the depth-shifting chevron x, and the
+> band-hover reveal are reversed: see `docs/superpowers/specs/2026-06-14-fold-gutter-design.md` and
+> the mockup `docs/internal/design/2026-06-14-fold-gutter-mockup.html`. Read this note for the
+> engine and the edge behaviors, not for the chevron's placement.
+
 The condensed rules live in the shell spec
 (`docs/superpowers/specs/2026-06-12-cairn-editor-takes-the-shell-design.md`, "Containers fold").
 This note preserves the fine grain from the 2026-06-12 design critique (benchmarked against VS

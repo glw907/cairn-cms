@@ -79,8 +79,10 @@
   Folding moves out of the text and into a fixed-x left gutter, the Obsidian / VS Code pattern.
   Every fold control sits in one column at the same x, at every nesting depth. At rest the gutter
   is empty: the best-editor consensus, and the choice that keeps the quiet surface quiet. The
-  panels are live: <b>hover a directive block</b> to reveal its chevron. Prose, headings, and list
-  rows have no control, so their gutter cell stays empty.
+  panels are live: <b>hover a directive block</b> to reveal its chevron. (In these flat-div panels
+  hover spans the whole line; in the real editor the gutter is a separate column, so the reveal
+  triggers on hovering the gutter cell, the VS Code / Zed / Obsidian standard.) Prose, headings, and
+  list rows have no control, so their gutter cell stays empty.
 </div>
 
 <!-- PANEL 1: the surface at rest, light, live hover, many blocks -->

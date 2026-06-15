@@ -46,51 +46,47 @@ gutter.
 
 The work is contained to the editor components. No package export changes, no new public API.
 
-### Fold ranges become a `foldService`
+### A custom gutter renders the control
 
 Today `editor-folding.ts` derives fold ranges from `containerRanges()` / `caretFoldRange()` and
-dispatches `foldEffect`/`unfoldEffect` by hand from the widget and keymap. Keep those helpers; add a
-`foldService` (registered via `@codemirror/language`'s `foldService` facet) that, given a line,
-returns the directive container fold range whose opener is that line, or null. This is the one new
-seam: `foldGutter` and the standard fold commands both query the foldService to learn which lines are
-foldable, so registering it is what lights up the gutter on opener rows and nothing else.
+dispatches `foldEffect`/`unfoldEffect` by hand from the in-text `FoldBandWidget` and the keymap. Keep
+those helpers and `foldCharRange()` (end-of-opener-line to end-of-closer-line). Remove
+`FoldBandWidget` and the widget arm of `foldPlugin`'s decoration build, and render the control in a
+real gutter instead.
 
-The fold char range stays `foldCharRange()` (end-of-opener-line to end-of-closer-line). The
-foldService returns null for a line that is not a paired opener, so an unbalanced opener never gets a
-gutter marker, preserving the safety invariant that a half-typed fence earns no fold.
+Use CodeMirror's lower-level `gutter()` (from `@codemirror/view`), not `foldGutter()`. The reason is
+the caret-inside reveal, which the current design has and we are keeping: the open container holding
+the caret shows its chevron (down, active ink). `foldGutter` re-renders its markers on fold changes
+but not on plain caret moves, so it cannot drive a caret-inside state. A custom `gutter()` takes a
+`lineMarkerChange` predicate that forces a marker recompute on any update we name, so recomputing on
+`selectionSet` (alongside `docChanged` and fold effects) gives the caret-inside reactivity for free.
+This is the fallback the earlier draft reserved; the caret-inside requirement makes it the primary.
 
-### The gutter replaces the widget
-
-Remove `FoldBandWidget` and the widget arm of `foldPlugin`'s decoration build. In their place:
-
-- `foldGutter({ markerDOM, domEventHandlers })`. `markerDOM(open)` returns the gutter control: a real
-  focusable `<button>` holding one rotating chevron SVG, `aria-hidden` on the SVG, an `aria-label`
-  on the button ("Fold this section" / "Unfold this section"), and a `title` tooltip carrying the
-  same plus the shortcut. The single chevron path rotates (down for open, `rotate(-90deg)` for
-  folded) rather than swapping two glyphs.
-- The three mandatory overrides of `foldGutter`'s defaults:
-  1. Suppress the always-on open marker. `foldGutter` renders an open marker on every foldable line
-     by default (the noisy-IDE look). The marker stays in the DOM for layout and a11y, but its
-     chevron is `opacity: 0` at rest and revealed by CSS on opener-line hover. This is the same
-     hover-reveal mechanism the current `.cm-cairn-fold-band:hover svg` rule already uses, ported
-     onto the gutter element.
-  2. The gutter cell fills the line height so the whole cell is the click/hover target, not just the
-     glyph. Gutter width about 20px; final width and the gutter-to-rail channel are pixel-tuned
-     against the live CM line box (see Visual).
-  3. Do not add CodeMirror's `foldKeymap`. The container-aware keymap already replaces it; keep that.
+The gutter's `lineMarker(view, line)` returns a marker only when `line.from` is the opener of a
+paired container (computed from the cached `fenceScan` / `containerRanges`, memoized per state to
+stay linear), and null otherwise, so an opener gets a control and a closer, prose line, or unbalanced
+opener gets nothing. The marker is a `GutterMarker` whose `toDOM` is a real focusable `<button>`
+holding one chevron SVG (`aria-hidden` on the SVG), with an `aria-label` ("Fold this section" /
+"Unfold this section"), a `title` tooltip carrying the same plus the shortcut, and a class set from
+the folded and caret-active state. The single chevron path rotates by CSS (down open, `rotate(-90deg)`
+folded) rather than swapping two glyphs. The button's `mousedown` calls `preventDefault` (keep the
+caret and focus where they are), and its `click` toggles the fold, so one handler serves both a mouse
+click and a keyboard activation (Enter/Space) with no double-toggle. The gutter's own width is a
+fixed ~20px from CSS, so the empty cells reserve the column without a spacer marker.
 
 Keep verbatim: `codeFolding({ preparePlaceholder, placeholderDOM })` (the pill), `flashField` and the
 unfold flash, `safetyExtender()`, the `washLine` folded-row decoration, and the `Mod-Shift-[` /
-`Mod-Shift-]` keymap. The wash decoration still rides the opener row; the plugin's decoration build
-keeps only the wash arm (the widget arm is gone).
+`Mod-Shift-]` keymap. The plugin's decoration build keeps only the wash arm; the widget arm is gone.
+Do not add CodeMirror's `foldKeymap` (the container-aware keymap still replaces it).
 
-### Caret-inside reveal
+### Restore the opener row's innermost rail bar
 
-The current design reveals the chevron when the caret is inside the container. Preserve it: the
-foldService/gutter does not know about the caret, so a small piece keeps the existing behavior. Mark
-the opener row's gutter element with a class when `caretContainerRange` names that container, and let
-CSS force the chevron visible (down, in the active ink). This reuses the selection-driven rebuild the
-plugin already runs.
+The current design drops the opener row's own innermost rail bar because the in-text chevron stood in
+its place (the `dropInnermost` rail variant in `MarkdownEditor.svelte` and the `cm-cairn-directive-opener`
+line decoration in `editor-highlight.ts`). With the chevron in the gutter, left of all rails, the
+opener row should paint its full rail like any other fence row. Remove the `openerLine` decoration and
+its application in `editor-highlight.ts`, and the `dropInnermost` rail rules (and the parameter) in
+`MarkdownEditor.svelte`, so a paired opener keeps every bar.
 
 ## Affordance specification
 
@@ -133,11 +129,12 @@ fold. The gutter closes this:
   wide channel. The fold gutter takes the place of most of the content's old left padding, so text x
   is roughly preserved. Pixel-check the chevron's vertical centering against the real CM line box
   (1.9 line-height), not the mockup's approximation rows.
-- The hover-reveal trigger is the full CodeMirror line box of the opener row, not just the rendered
-  text or the 20px gutter cell, so a short opener (`:::panel`) still reveals across the whole line
-  width. The gutter cell sits inside that hover region, so the pointer travelling from the line to
-  the chevron never crosses a gap that would dismiss it. Reveal fades in over 120ms; the fade-out on
-  mouse-leave matches at 120ms rather than snapping.
+- The hover-reveal trigger is the gutter cell, sized for a comfortable target (about 22px, full line
+  height), the way VS Code, Zed, and Obsidian reveal on gutter hover. Revealing on hover of the whole
+  opener line would read as a larger target, but a real CodeMirror gutter is a separate DOM column
+  from the text with no CSS relationship to the line, so a line-hover reveal needs a JS pointer
+  bridge; that is deferred as an enhancement, not built now. Reveal fades in over 120ms; the fade-out
+  on mouse-leave matches at 120ms rather than snapping.
 - Dark theme raises the revealed chevron's ink floor so the violet clears the dark card; at rest it
   is still nothing.
 - Touch and other no-hover pointers cannot reveal on hover, so under `@media (hover: none)` the
@@ -175,19 +172,26 @@ Two questions the second design critique raised land outside this pass but shoul
   proactive nudge (a one-time dismissible coachmark, or a single first-block chevron shown in a
   fresh document) is a candidate enhancement, not a ship blocker. Build it only if folding proves
   undiscovered in real use.
+- Whole-line hover reveal. Gutter-hover is the standard and ships here. A line-hover reveal (a larger
+  discovery target) needs a JS pointer bridge that tracks the opener line under the cursor and flags
+  its gutter marker. Worth it only if the gutter target proves too small in real use.
 
 ## Files
 
-- `src/lib/components/editor-folding.ts`: add the `foldService`; replace `FoldBandWidget` and the
-  widget arm of `foldPlugin` with `foldGutter({ markerDOM, domEventHandlers })`; keep `codeFolding`,
-  `flashField`, `safetyExtender`, the wash decoration, the pill, and the keymap. Add the
-  caret-inside gutter marking.
-- `src/lib/components/MarkdownEditor.svelte`: move the hover-reveal CSS from `.cm-cairn-fold-band`
-  onto the gutter element; set gutter width and full-height cell; drop the `:has(){position:
-  relative}` band workaround; add the dark-theme ink floor, the `@media (hover: none)` rule, the
-  focus-dim extension, and the focus-visible ring on the gutter button.
-- `src/lib/components/editor-shortcuts.ts` (and `ShortcutsGrid` if needed): add the fold/unfold
-  shortcuts under a Folding heading in the help sheet.
+- `src/lib/components/editor-folding.ts`: replace `FoldBandWidget` and the widget arm of `foldPlugin`
+  with a custom `gutter()` plus a `GutterMarker` button; add the per-state memo for the scan/ranges
+  and caret-inside check; keep `codeFolding`, `flashField`, `safetyExtender`, the wash decoration, the
+  pill, and the keymap.
+- `src/lib/components/MarkdownEditor.svelte`: replace the `.cm-cairn-fold-band` CSS with the gutter
+  rules (fixed ~20px width, full-height cell, hover-reveal on the opener line, folded and caret-active
+  forced states, the rotating chevron, the focus-visible ring); drop the `:has(){position: relative}`
+  band workaround; add the dark-theme ink floor, the `@media (hover: none)` rule, and the focus-dim
+  extension to the gutter button. Remove the `dropInnermost` rail rules and the parameter so the
+  opener row keeps its innermost bar.
+- `src/lib/components/editor-highlight.ts`: remove the `openerLine` (`cm-cairn-directive-opener`)
+  decoration and its application, so the opener row no longer drops its innermost rail bar.
+- The `Fold / unfold` row already exists in `src/lib/components/editor-shortcuts.ts`; verify it reads
+  `Ctrl Shift [ / ]` and leave it. No change needed.
 - `docs/internal/design/2026-06-12-folding-interaction-notes.md`: mark superseded by this design,
   with a pointer; the "Deliberately rejected" entries that this design reverses (fixed chevron x,
   hover-reveal location) are called out.

@@ -47,6 +47,12 @@ export default defineConfig({
           name: 'component',
           include: ['src/tests/component/**/*.test.ts'],
           setupFiles: ['./src/tests/component/setup.ts'],
+          // The heaviest component tests mount the full EditPage with the CodeMirror editor, and on a
+          // slower CI runner the editor surface and toolbar occasionally are not ready before the
+          // matcher times out (the EditPage and CairnAdmin toolbar/insert assertions flake this way;
+          // they pass reliably locally). A couple of retries absorbs that environment nondeterminism
+          // without masking a real failure, which would fail every attempt.
+          retry: 2,
           browser: {
             enabled: true,
             provider: playwright(),

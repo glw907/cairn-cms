@@ -11,6 +11,18 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
+## In flight (2026-06-14): the editor fold-gutter pass
+
+On branch `pass/editor-fold-gutter` off `main`. Geoff flagged the directive-container fold UI as
+poor; three UI/UX critiques (two with a headless render) traced every flaw to the in-text chevron and
+landed on the gutter. Spec `docs/superpowers/specs/2026-06-14-fold-gutter-design.md`, mockup
+`docs/internal/design/2026-06-14-fold-gutter-mockup.html`, plan
+`docs/superpowers/plans/2026-06-14-editor-fold-gutter.md` (6 tasks). The fold scope and engine are
+unchanged; only the affordance moves into a real CodeMirror `gutter()` column (nothing at rest,
+gutter-hover reveal, a focusable button for keyboard/SR parity, the opener rail bar restored). Next:
+execute the plan task-by-task (Tasks 1-2 main loop, 3-6 `cairn-implementer`), then the pass-end ritual
+and a version decision relative to the gates pass. Resumes from the plan if the session drops.
+
 ## Immediate next action (2026-06-13, latest): execute the gates/tooling/DX plan (0.56.0)
 
 **`0.55.0` is PUBLISHED and both sites run it.** The `v0.55.0` release fired OIDC trusted-publishing

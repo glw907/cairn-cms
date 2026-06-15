@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Proposed design: the fold gutter</title>
+<link rel="stylesheet" href="./cairn-admin.css" />
+<style>
+  body { margin: 0; background: #d8d4cf; }
+  .mock-label { font: 600 13px/1.4 system-ui; letter-spacing: .08em; text-transform: uppercase; color: #444; padding: 22px 24px 6px; }
+  .mock-note { font: 400 13px/1.55 system-ui; color: #555; padding: 0 24px 14px; max-width: 80ch; }
+  .mock-note b { color: #222; }
+  .screen { border: 1px solid #aaa; margin: 0 16px 40px; box-shadow: 0 2px 14px rgba(0,0,0,.08); }
+
+  /* The editor card, trimmed from the gold-standard shell to the writing surface. */
+  .ground { background: var(--color-base-200); font-family: var(--font-body); color: var(--color-base-content); -webkit-font-smoothing: antialiased; padding: 28px; }
+  .card-ed { background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: 1rem; box-shadow: var(--cairn-shadow); overflow: hidden; max-width: 760px; margin: 0 auto; }
+  /* The fold gutter takes the place of most of the content's old left padding, so text starts at
+     about the same x while the chevron binds to its block instead of floating in a wide channel. */
+  .ms { font-family: var(--font-editor); font-size: 1.0625rem; line-height: 1.9; padding: 1.5rem 1.25rem 2rem .25rem; }
+
+  /* One editor line is a flex row: a fixed gutter cell, then the line body. The gutter is the
+     fold column: a constant 20px at the far left, the same x on every row at every depth. The
+     line body keeps the rail box-shadows in its own left padding, to the RIGHT of the gutter. */
+  .row { display: flex; align-items: stretch; }
+  .gutter { flex: none; width: 20px; display: flex; align-items: stretch; }
+  .body { flex: 1 1 auto; min-width: 0; }
+
+  .h1 { font-size: 1.5em; font-weight: 700; }
+  .h2 { font-size: 1.3em; font-weight: 700; }
+  .mk { color: var(--color-muted); font-weight: 400; }
+  .lb { color: var(--color-accent); }
+  .lb2 { color: var(--cairn-directive-ink-2); }
+  .muted { color: var(--color-muted); }
+
+  /* The rails, lifted from the gold-standard mockup. */
+  .rail1 { box-shadow: inset 2px 0 0 0 color-mix(in oklab, var(--color-accent) var(--cairn-directive-rail-1), transparent); padding-left: 1.25rem; }
+  .rail2 { box-shadow: inset 2px 0 0 0 color-mix(in oklab, var(--color-accent) var(--cairn-directive-rail-1), transparent),
+                       inset 8px 0 0 0 var(--color-base-100),
+                       inset 10px 0 0 0 color-mix(in oklab, var(--color-accent) var(--cairn-directive-rail-2), transparent);
+           padding-left: 1.75rem; }
+
+  /* THE FOLD GUTTER CONTROL.
+     A real focusable button filling the gutter cell, holding one rotating chevron in a single
+     uniform directive ink (the rails own depth, so the chevron does not restep it). NOTHING at
+     rest: opacity 0, the best-editor consensus and the quiet-surface choice. Hovering the whole
+     line lifts it to full over 120ms. A folded row or the caret's own container forces it full.
+     Folded rotates the same glyph to point right. Non-opener rows carry no button, so the gutter
+     is empty whitespace down the rest of the surface. */
+  .chev-btn { display: flex; align-items: center; justify-content: center; width: 100%; padding: 0; background: transparent; border: 0; cursor: pointer; color: var(--cairn-directive-ink-2); }
+  .chev { width: 11px; height: 11px; opacity: 0; transition: opacity 120ms ease, transform 120ms ease; }
+  .row.foldable:hover .chev { opacity: 1; }
+  .row.is-folded .chev { opacity: 1; transform: rotate(-90deg); }
+  .row.is-caret .chev-btn { color: var(--cairn-directive-ink-active); }
+  .row.is-caret .chev { opacity: 1; }
+  .chev-btn:focus-visible { outline: 2px solid color-mix(in oklab, var(--color-primary) 70%, transparent); outline-offset: -2px; border-radius: 4px; }
+  /* No-hover devices (touch) cannot reveal on hover, so the chevron is persistent and legible. */
+  @media (hover: none) { .row.foldable .chev { opacity: .65; } }
+
+  /* Folded-state language, kept verbatim: the row wash and the line-count pill. */
+  .folded-row .body { background: color-mix(in oklab, var(--color-accent) 7%, transparent); }
+  .pill { font-family: var(--font-body); font-size: .6875rem; color: var(--color-accent); border: 1px solid color-mix(in oklab, var(--color-accent) 30%, transparent); border-radius: .375rem; padding: 1px 7px; margin-left: 10px; vertical-align: 1px; background: var(--color-base-100); cursor: pointer; }
+  .pill:hover { border-color: color-mix(in oklab, var(--color-accent) 60%, transparent); }
+
+  .force-hover .chev { opacity: 1 !important; }
+
+  /* ---- The "before" panel: the current in-text, depth-shifting chevron, for contrast only. ---- */
+  .before .bln { position: relative; }
+  .before .bchev { position: absolute; top: 50%; transform: translateY(-50%); width: 11px; height: 11px; color: var(--cairn-directive-ink-2); opacity: .5; }
+  .cmp { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+  .cmp-l { border-right: 1px solid var(--cairn-card-border); }
+  .cmp h4 { font: 600 11px/1 system-ui; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); margin: 0; padding: 14px 18px 0; }
+</style>
+</head>
+<body>
+
+<div class="mock-label">The fold gutter &mdash; 2026-06-14 (rev. nothing-at-rest)</div>
+<div class="mock-note">
+  Folding moves out of the text and into a fixed-x left gutter, the Obsidian / VS Code pattern.
+  Every fold control sits in one column at the same x, at every nesting depth. At rest the gutter
+  is empty: the best-editor consensus, and the choice that keeps the quiet surface quiet. The
+  panels are live: <b>hover a directive block</b> to reveal its chevron. Prose, headings, and list
+  rows have no control, so their gutter cell stays empty.
+</div>
+
+<!-- PANEL 1: the surface at rest, light, live hover, many blocks -->
+<div class="mock-label" style="padding-top:8px">1 &middot; At rest (light) &mdash; clean margin even with many blocks; hover to reveal</div>
+<div class="mock-note">
+  Nothing at rest, on any block, at any count. Discoverability rests on hover plus a tooltip, the
+  <code>Ctrl+Shift+[</code> shortcut in the help sheet, and the always-visible folded state below.
+  Hover any opener row to lift its chevron from zero to full.
+</div>
+<div class="screen"><div data-theme="cairn-admin">
+<div class="ground"><div class="card-ed"><div class="ms">
+
+  <div class="row"><span class="gutter"></span><span class="body h1"># Trail conditions</span></div>
+  <div class="row"><span class="gutter"></span><span class="body">&nbsp;</span></div>
+  <div class="row"><span class="gutter"></span><span class="body">Updated every morning by 6am. Check before you drive up.</span></div>
+  <div class="row"><span class="gutter"></span><span class="body">&nbsp;</span></div>
+
+  <div class="row foldable"><span class="gutter"><button class="chev-btn" title="Fold this block (Ctrl+Shift+[)" aria-label="Fold panel: Day pass"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></span><span class="body rail1"><span class="mk">:::</span><span class="lb">panel</span><span class="mk">{title="Day pass"}</span></span></div>
+  <div class="row"><span class="gutter"></span><span class="body rail1">Adult $18, youth $12. Cash or card at the yurt.</span></div>
+  <div class="row"><span class="gutter"></span><span class="body rail1"><span class="mk">:::</span></span></div>
+  <div class="row"><span class="gutter"></span><span class="body">&nbsp;</span></div>
+
+  <div class="row foldable"><span class="gutter"><button class="chev-btn" aria-label="Fold panel: Grooming"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></span><span class="body rail1"><span class="mk">:::</span><span class="lb">panel</span><span class="mk">{title="Grooming"}</span></span></div>
+  <div class="row"><span class="gutter"></span><span class="body rail1">Skate and classic both set as of this morning.</span></div>
+  <div class="row"><span class="gutter"></span><span class="body rail1"><span class="mk">:::</span></span></div>
+  <div class="row"><span class="gutter"></span><span class="body">&nbsp;</span></div>
+
+  <div class="row foldable"><span class="gutter"><button class="chev-btn" aria-label="Fold panel: Hours"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></span><span class="body rail1"><span class="mk">:::</span><span class="lb">panel</span><span class="mk">{title="Hours"}</span></span></div>
+  <div class="row"><span class="gutter"></span><span class="body rail1">Open Wednesday through Sunday, 9 to 4.</span></div>
+  <div class="row"><span class="gutter"></span><span class="body rail1"><span class="mk">:::</span></span></div>
+
+</div></div></div>
+</div></div>
+
+<!-- PANEL 2: folded states, light -->
+<div class="mock-label">2 &middot; Folded (light) &mdash; gutter chevron, row wash, line-count pill</div>
+<div class="mock-note">
+  The folded-state language is unchanged from the approved gold standard: the row wash and the
+  focusable "N lines" pill both stay. The chevron points right and is forced visible in the same
+  fixed column. The nested block shows the column holding its x while the rails step inward.
+</div>
+<div class="screen"><div data-theme="cairn-admin">
+<div class="ground"><div class="card-ed"><div class="ms">
+
+  <div class="row foldable is-folded folded-row"><span class="gutter"><button class="chev-btn" title="Show 2 hidden lines" aria-label="Unfold panel: Day pass"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></span><span class="body rail1"><span class="mk">:::</span><span class="lb">panel</span><span class="mk">{title="Day pass"}</span><span class="pill">2 lines</span></span></div>
+  <div class="row"><span class="gutter"></span><span class="body">&nbsp;</span></div>
+
+  <div class="row foldable"><span class="gutter"><button class="chev-btn" aria-label="Fold panel: grid"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></span><span class="body rail1"><span class="mk">:::</span><span class="lb">grid</span></span></div>
+  <div class="row foldable is-folded folded-row"><span class="gutter"><button class="chev-btn" aria-label="Unfold panel: Lessons"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></span><span class="body rail2"><span class="mk">:::</span><span class="lb2">panel</span><span class="mk">{title="Lessons"}</span><span class="pill">3 lines</span></span></div>
+  <div class="row"><span class="gutter"></span><span class="body rail1"><span class="mk">:::</span></span></div>
+
+</div></div></div>
+</div></div>
+
+<!-- PANEL 3: caret inside, light -->
+<div class="mock-label">3 &middot; Caret inside (light) &mdash; the open container's chevron is forced down</div>
+<div class="mock-note">
+  When the caret sits inside a container, that container's chevron is forced full and points down,
+  in the stronger active ink, so the author always sees which block they are editing. The rest of
+  the gutter stays empty.
+</div>
+<div class="screen"><div data-theme="cairn-admin">
+<div class="ground"><div class="card-ed"><div class="ms">
+
+  <div class="row foldable is-caret"><span class="gutter"><button class="chev-btn" aria-label="Fold panel: Day pass"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></span><span class="body rail1"><span class="mk">:::</span><span class="lb">panel</span><span class="mk">{title="Day pass"}</span></span></div>
+  <div class="row"><span class="gutter"></span><span class="body rail1">Adult $18, youth $12. Cash or card at the<span style="border-left:1.5px solid var(--color-primary); margin-left:1px"></span> yurt.</span></div>
+  <div class="row"><span class="gutter"></span><span class="body rail1">Buy at the yurt or online ahead of time.</span></div>
+  <div class="row"><span class="gutter"></span><span class="body rail1"><span class="mk">:::</span></span></div>
+
+</div></div></div>
+</div></div>
+
+<!-- PANEL 4: dark -->
+<div class="mock-label">4 &middot; Dark &mdash; at rest, hover, one folded</div>
+<div class="mock-note">
+  Dark raises the revealed chevron's ink so the violet clears the dark card. At rest still nothing;
+  the folded pill and wash carry the folded state.
+</div>
+<div class="screen"><div data-theme="cairn-admin-dark">
+<div class="ground"><div class="card-ed"><div class="ms">
+
+  <div class="row"><span class="gutter"></span><span class="body h2">## Trail report</span></div>
+  <div class="row"><span class="gutter"></span><span class="body">&nbsp;</span></div>
+  <div class="row foldable force-hover"><span class="gutter"><button class="chev-btn" aria-label="Fold panel: Grooming"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></span><span class="body rail1"><span class="mk">:::</span><span class="lb">panel</span><span class="mk">{title="Grooming"}</span></span></div>
+  <div class="row"><span class="gutter"></span><span class="body rail1">All trails groomed as of 6am. Skate and classic both set.</span></div>
+  <div class="row"><span class="gutter"></span><span class="body rail1"><span class="mk">:::</span></span></div>
+  <div class="row"><span class="gutter"></span><span class="body">&nbsp;</span></div>
+  <div class="row foldable is-folded folded-row"><span class="gutter"><button class="chev-btn" aria-label="Unfold panel: Hours"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></span><span class="body rail1"><span class="mk">:::</span><span class="lb">panel</span><span class="mk">{title="Hours"}</span><span class="pill">4 lines</span></span></div>
+
+</div></div></div>
+</div></div>
+
+<!-- PANEL 5: before / after -->
+<div class="mock-label">5 &middot; Before / after &mdash; why it reads better</div>
+<div class="mock-note">
+  Left, the current design: the chevron floats in the text and shifts x with depth (0, 8, 16px),
+  so there is no column to find and the control overlaps the opener glyph. Right, the gutter: one
+  column, one x. Both shown with chevrons revealed so the positions compare directly.
+</div>
+<div class="screen"><div data-theme="cairn-admin">
+<div class="ground"><div class="cmp">
+
+  <div class="cmp-l before">
+    <h4>Before: in-text, depth-shifting</h4>
+    <div class="card-ed" style="box-shadow:none; border:0; background:transparent"><div class="ms" style="padding-left:1.25rem">
+      <div class="bln rail1" style="padding-left:1.75rem"><svg class="bchev" style="left:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg><span class="mk">:::</span><span class="lb">panel</span></div>
+      <div class="bln rail1" style="padding-left:1.75rem">Content of the outer panel.</div>
+      <div class="bln rail2" style="padding-left:2.25rem"><svg class="bchev" style="left:8px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg><span class="mk">:::</span><span class="lb2">grid</span></div>
+      <div class="bln" style="box-shadow: inset 2px 0 0 0 color-mix(in oklab, var(--color-accent) var(--cairn-directive-rail-1), transparent), inset 8px 0 0 0 var(--color-base-100), inset 10px 0 0 0 color-mix(in oklab, var(--color-accent) var(--cairn-directive-rail-2), transparent), inset 16px 0 0 0 var(--color-base-100), inset 18px 0 0 0 color-mix(in oklab, var(--color-accent) var(--cairn-directive-rail-3, 92%), transparent); padding-left: 2.75rem"><svg class="bchev" style="left:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg><span class="mk">:::</span><span class="lb2">panel</span></div>
+    </div></div>
+  </div>
+
+  <div>
+    <h4>After: one fixed gutter column</h4>
+    <div class="card-ed" style="box-shadow:none; border:0; background:transparent"><div class="ms">
+      <div class="row foldable force-hover"><span class="gutter"><button class="chev-btn"><svg class="chev" style="transform:rotate(-90deg)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button></span><span class="body rail1"><span class="mk">:::</span><span class="lb">panel</span></span></div>
+      <div class="row"><span class="gutter"></span><span class="body rail1">Content of the outer panel.</span></div>
+      <div class="row foldable force-hover"><span class="gutter"><button class="chev-btn"><svg class="chev" style="transform:rotate(-90deg)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button></span><span class="body rail2"><span class="mk">:::</span><span class="lb2">grid</span></span></div>
+      <div class="row foldable force-hover"><span class="gutter"><button class="chev-btn"><svg class="chev" style="transform:rotate(-90deg)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button></span><span class="body" style="box-shadow: inset 2px 0 0 0 color-mix(in oklab, var(--color-accent) var(--cairn-directive-rail-1), transparent), inset 8px 0 0 0 var(--color-base-100), inset 10px 0 0 0 color-mix(in oklab, var(--color-accent) var(--cairn-directive-rail-2), transparent), inset 16px 0 0 0 var(--color-base-100), inset 18px 0 0 0 color-mix(in oklab, var(--color-accent) var(--cairn-directive-rail-3, 92%), transparent); padding-left: 2.25rem"><span class="mk">:::</span><span class="lb2">panel</span></span></div>
+    </div></div>
+  </div>
+
+</div></div>
+</div></div>
+
+</body>
+</html>

@@ -21,6 +21,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   import { beforeNavigate } from '$app/navigation';
   import { page } from '$app/state';
   import BlocksIcon from '@lucide/svelte/icons/blocks';
+  import SquarePenIcon from '@lucide/svelte/icons/square-pen';
   import LinkIcon from '@lucide/svelte/icons/link';
   import FileSymlinkIcon from '@lucide/svelte/icons/file-symlink';
   import PanelRightIcon from '@lucide/svelte/icons/panel-right';
@@ -39,7 +40,8 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   import { unwrapCairnLink, type FormatKind } from './markdown-format.js';
   import { buildPreviewDoc, deviceLabel, previewDevice, previewDevices, type PreviewDeviceId } from './preview-doc.js';
   import { directiveLineKind, findInlineDirectives } from './markdown-directives.js';
-  import type { ComponentRegistry } from '../render/registry.js';
+  import type { ComponentRegistry, ComponentDef } from '../render/registry.js';
+  import { parseComponent, componentRoundTripSafety } from '../render/component-grammar.js';
   import type { IconSet } from '../render/glyph.js';
   import type { ContentFormFailure, EditData } from '../sveltekit/content-routes.js';
   import type { TextareaField, TagsField, FreeTagsField } from '../content/types.js';
@@ -353,6 +355,9 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   // preview knob, or a styleless document (behind the hint below) when the site sets none.
   const previewDoc = $derived(buildPreviewDoc(previewHtml, data.preview));
   let insert = $state.raw<(text: string) => void>(() => {});
+  // The editor's range-replace seam, registered by MarkdownEditor on mount; the dialog's Update
+  // routes through it to overwrite an edited block's source span. A no-op until then.
+  let replaceRange = $state.raw<(from: number, to: number, text: string) => void>(() => {});
   let insertLink = $state.raw<(href: string, title: string) => void>(() => {});
   // The editor's current selection, registered by MarkdownEditor on mount; the web link dialog
   // reads it for the Text field's default.
@@ -366,7 +371,9 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   // breaks SSR and hydration); the toolbar snippet renders plain triggers that open them here.
   let webLinkDialog = $state<DialogHandle | null>(null);
   let linkPicker = $state<DialogHandle | null>(null);
-  let insertDialog = $state<DialogHandle | null>(null);
+  // The insert dialog binds the full instance, not the bare DialogHandle: the Edit-block control
+  // drives editComponent(def, values, range) on it, beyond the shared open().
+  let insertDialog = $state<ComponentInsertDialog | null>(null);
   // The lifecycle dialogs, opened from the header's overflow menu.
   let deleteDialog = $state<DialogHandle | null>(null);
   let renameDialog = $state<DialogHandle | null>(null);
@@ -378,6 +385,75 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   // Whether the registry offers anything insertable, the same condition the insert dialog lists
   // by, so the toolbar trigger and the dialog appear and disappear together.
   const hasComponents = $derived(insertableDefs(registry).length > 0);
+
+  // The directive container at the editor caret, reported by MarkdownEditor whenever it changes
+  // (null outside any container). The Edit-block control resolves it against the registry and the
+  // round-trip safety gate below; its identity is the key the async gate guards against a stale
+  // result. The reporter's name+markdown+from+to shape; declared locally because MarkdownEditor's
+  // matching interface is not exported.
+  type CaretComponent = { name: string | null; markdown: string; from: number; to: number };
+  let caretComponent = $state<CaretComponent | null>(null);
+  // A def is actionable for guided edit when it has a schema (the same notion the insert catalog
+  // lists by): a template-only def has no form to re-open into. Mirrors the dialog's hasSchema.
+  function editableDef(name: string | null): ComponentDef | undefined {
+    if (!name) return undefined;
+    const def = registry?.get(name);
+    if (!def) return undefined;
+    const schema = (def.attributes?.length ?? 0) > 0 || (def.slots?.length ?? 0) > 0;
+    return schema ? def : undefined;
+  }
+  // The resolved editability: the def and the source range when the caret sits on a known,
+  // schema-bearing component whose round-trip safety check passed for the CURRENT caret; null
+  // otherwise. The Edit-block control enables only when this is set.
+  let editable = $state<{ def: ComponentDef; range: { from: number; to: number } } | null>(null);
+  // Why edit is unavailable, distinguishing "not on a component" from "on an unsafe one" so the
+  // disabled tooltip is honest. 'none' covers both no-caret-component and an unknown/template-only
+  // one (no guided form either way); 'unsafe' is a known component the safety gate refused.
+  let editReason = $state<'none' | 'unsafe'>('none');
+  // Resolve editability when the caret-component changes, async-safe. componentRoundTripSafety is
+  // async, so a slow check could resolve after a newer caret move; guard latest-wins on the
+  // caretComponent identity (the EditPage preview-debounce pattern), only applying a result when
+  // the caret has not moved since the check started. A block whose check did not pass for the
+  // current caret never enables edit.
+  $effect(() => {
+    const current = caretComponent;
+    const def = editableDef(current?.name ?? null);
+    if (!current || !def) {
+      editable = null;
+      editReason = 'none';
+      return;
+    }
+    let stale = false;
+    void componentRoundTripSafety(current.markdown, def).then((result) => {
+      if (stale || caretComponent !== current) return;
+      if (result.safe) {
+        editable = { def, range: { from: current.from, to: current.to } };
+        editReason = 'none';
+      } else {
+        editable = null;
+        editReason = 'unsafe';
+      }
+    });
+    return () => {
+      stale = true;
+    };
+  });
+  // The Edit-block control's accessible label and tooltip: a plain reason in each state. Enabled
+  // names the action; the two disabled reasons are honest about why.
+  const editBlockLabel = $derived(
+    editable
+      ? 'Edit the component at the cursor'
+      : editReason === 'unsafe'
+        ? "This block can't be edited in the form. Edit it as markdown."
+        : 'Place the cursor in a component to edit it',
+  );
+  // Activate edit: parse the block into form values, then open the dialog in edit mode over the
+  // stored source range. Guarded by editable, so the control is inert unless the gate passed.
+  async function editBlock() {
+    if (!editable || !caretComponent) return;
+    const values = await parseComponent(caretComponent.markdown, editable.def);
+    insertDialog?.editComponent(editable.def, values, editable.range);
+  }
 
   // The header's status badge, in ConceptList's vocabulary: a pending entry reads Edited (or New
   // when it has never been published); otherwise the live site matches and it reads Published.
@@ -903,6 +979,20 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
             >
               <BlocksIcon class="h-4 w-4" aria-hidden="true" />
             </button>
+            <!-- Edit block re-opens the component at the caret into the guided form. It disables
+                 while Preview shows (like the insert controls) and whenever the caret is not on a
+                 safe, schema-bearing component; the tooltip names the reason in each state. -->
+            <button
+              type="button"
+              class="btn btn-sm btn-ghost btn-square"
+              aria-haspopup="dialog"
+              aria-label={editBlockLabel}
+              title={editBlockLabel}
+              disabled={insertDisabled || !editable}
+              onclick={editBlock}
+            >
+              <SquarePenIcon class="h-4 w-4" aria-hidden="true" />
+            </button>
           {/if}
           <button
             type="button"
@@ -950,6 +1040,8 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
           name="body"
           {surface}
           registerInsert={(fn) => (insert = fn)}
+          onComponentAtCaret={(info) => (caretComponent = info)}
+          registerReplaceRange={(fn) => (replaceRange = fn)}
           registerInsertLink={(fn) => (insertLink = fn)}
           registerGetSelection={(fn) => (getSelection = fn)}
           registerFormat={(fn) => (format = fn)}
@@ -1239,7 +1331,16 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
      <form>, and a form nested in a form is invalid HTML the parser repairs by dropping the outer
      tag, which breaks the SSR'd document and hydration. The toolbar snippet's triggers drive them
      through their exported open(). -->
-<ComponentInsertDialog bind:this={insertDialog} trigger={false} {registry} {insert} {icons} {render} preview={data.preview} />
+<ComponentInsertDialog
+  bind:this={insertDialog}
+  trigger={false}
+  {registry}
+  {insert}
+  update={(range, md) => replaceRange(range.from, range.to, md)}
+  {icons}
+  {render}
+  preview={data.preview}
+/>
 <WebLinkDialog bind:this={webLinkDialog} trigger={false} insert={insertLink} selection={getSelection} />
 <LinkPicker bind:this={linkPicker} trigger={false} linkTargets={data.linkTargets} insert={insertLink} />
 

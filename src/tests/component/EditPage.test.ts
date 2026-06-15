@@ -1969,4 +1969,94 @@ describe('EditPage', () => {
       await expect.poll(() => chip().querySelector('.cairn-save-state .bg-warning')).not.toBeNull();
     });
   });
+
+  describe('the Edit-block round-trip control', () => {
+    // A schema-bearing callout: an inline title slot and a required tone select. With no nested
+    // slot the grammar uses a three-colon fence. The blocks below are round-trip safe (tone is a
+    // declared key) or unsafe (a bogus undeclared attribute key).
+    const callout: ComponentDef = {
+      build: (n: unknown) => n,
+      name: 'callout',
+      label: 'Callout',
+      description: 'A note.',
+      attributes: [{ key: 'tone', label: 'Tone', type: 'select', required: true, options: ['note'] }],
+      slots: [{ name: 'title', label: 'Title', kind: 'inline', required: true }],
+    } as ComponentDef;
+    const calloutRegistry = defineRegistry({ components: [callout] });
+
+    const SAFE_BLOCK = [':::callout[Heads up]{tone="note"}', ':::'].join('\n');
+    const UNSAFE_BLOCK = [':::callout[Heads up]{tone="note" bogus="x"}', ':::'].join('\n');
+
+    // The caret reporter fires off the click target's line, so each fixture parks the default
+    // mount caret on a leading plain line outside any container.
+    function bodyWith(block: string) {
+      return ['plain prose', block, 'tail prose'].join('\n');
+    }
+
+    function editControl(screen: { container: HTMLElement }) {
+      // The Insert and Edit controls share the SquarePen/Blocks glyphs; the Edit control is the
+      // one whose aria-label speaks to editing (the label varies by state, so match the verb).
+      return screen.container.querySelector<HTMLButtonElement>(
+        'button[aria-label*="Edit the component"], button[aria-label*="cursor in a component"], button[aria-label*="edited in the form"]',
+      );
+    }
+
+    async function clickLine(screen: { container: HTMLElement }, text: string) {
+      const line = Array.from(screen.container.querySelectorAll<HTMLElement>('.cm-line')).find((l) =>
+        (l.textContent ?? '').includes(text),
+      );
+      await userEvent.click(line!);
+    }
+
+    it('disables Edit block with a plain reason when the caret is not on a component', async () => {
+      const screen = render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry } as never);
+      await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+      await expect.poll(() => editControl(screen)).not.toBeNull();
+      const control = editControl(screen)!;
+      // Default caret on the leading plain line: outside any container.
+      expect(control.disabled).toBe(true);
+      expect(control.getAttribute('aria-label')).toBe('Place the cursor in a component to edit it');
+      expect(control.getAttribute('title')).toBe('Place the cursor in a component to edit it');
+    });
+
+    it('enables Edit block when the caret sits in a safe component', async () => {
+      const screen = render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry } as never);
+      await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+      await clickLine(screen, ':::callout[Heads up]');
+      await expect.poll(() => editControl(screen)?.disabled).toBe(false);
+      expect(editControl(screen)!.getAttribute('aria-label')).toBe('Edit the component at the cursor');
+    });
+
+    it('disables Edit block with the unsafe reason on a component the safety check refuses', async () => {
+      const screen = render(EditPage, { ...postProps({ body: bodyWith(UNSAFE_BLOCK) }), registry: calloutRegistry } as never);
+      await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+      await clickLine(screen, ':::callout[Heads up]');
+      // The block carries an undeclared attribute key, so the gate refuses it. The control stays
+      // disabled and the tooltip points the editor at markdown.
+      await expect
+        .poll(() => editControl(screen)?.getAttribute('aria-label'))
+        .toBe("This block can't be edited in the form. Edit it as markdown.");
+      expect(editControl(screen)!.disabled).toBe(true);
+    });
+
+    it('opens the dialog in edit mode seeded from the parsed block when activated', async () => {
+      const screen = render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry } as never);
+      await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+      await clickLine(screen, ':::callout[Heads up]');
+      await expect.poll(() => editControl(screen)?.disabled).toBe(false);
+      await editControl(screen)!.click();
+      // The dialog opens straight to the guided form in edit mode: the primary button reads
+      // Update (not Insert) and the Title field is seeded with the parsed label.
+      await expect.element(screen.getByRole('button', { name: 'Update', exact: true })).toBeInTheDocument();
+      // The inline Title slot, scoped to the dialog (the frontmatter form has its own Title), is
+      // seeded with the block's parsed label.
+      const titleInput = () => {
+        const label = Array.from(
+          screen.container.querySelectorAll<HTMLLabelElement>('dialog.modal label'),
+        ).find((l) => (l.querySelector('span')?.textContent ?? '').trim().startsWith('Title'));
+        return label?.querySelector<HTMLInputElement>('input') ?? null;
+      };
+      await expect.poll(() => titleInput()?.value).toBe('Heads up');
+    });
+  });
 });

@@ -100,23 +100,20 @@ through the adapter's render. Swapping the editor stays a one-file change.
       `color-mix(in oklab, var(--color-accent) var(--cairn-directive-rail-${step}, ${fallback}), transparent)`;
     // With `active`, the row's own (deepest) bar takes the full-strength -active mix at the same
     // 2px width. The emphasis is strength only: a rail column carrying both an active and a
-    // quiet segment (two sibling containers at one depth) keeps one weight top to bottom.
-    // With `dropInnermost`, the row's own deepest bar is omitted: a fold chevron replaces it on a
-    // paired opener row, so the bar would double the chevron's positional cue. The outer bars and
-    // their spacers stay, so the nesting still reads.
-    const rails = (depth: number, active = false, dropInnermost = false): string => {
+    // quiet segment (two sibling containers at one depth) keeps one weight top to bottom. A paired
+    // opener row paints its full rail like any other fence row; the fold chevron lives in the gutter
+    // column left of the rails, so the opener no longer drops its innermost bar.
+    const rails = (depth: number, active = false): string => {
       const layers: string[] = [];
       for (let d = 1; d <= depth; d++) {
         const edge = 8 * d - 6;
         if (d > 1) layers.push(`inset ${edge - 2}px 0 0 0 var(--color-base-100, oklch(99% 0.004 75))`);
-        if (dropInnermost && d === depth) continue;
         const own = active && d === depth;
         layers.push(
           `inset ${edge}px 0 0 0 ${own ? railColor('active', '100%') : railColor(d, railFallbacks[d - 1] ?? '92%')}`,
         );
       }
-      // A depth-1 opener drops its only bar, so the row paints no rail at all.
-      return layers.length ? layers.join(', ') : 'none';
+      return layers.join(', ');
     };
     const directiveInk = {
       backgroundColor: 'color-mix(in oklab, var(--color-accent) 8%, transparent)',
@@ -132,14 +129,6 @@ through the adapter's render. Swapping the editor stays a one-file change.
         `${prefix}.cm-cairn-directive-fence.cm-cairn-depth-${depth}, ${prefix}.cm-cairn-directive-content.cm-cairn-depth-${depth}`;
       railRules[row('')] = { boxShadow: rails(depth) };
       railRules[row('.cm-cairn-caret-block')] = { boxShadow: rails(depth, true) };
-      // A paired opener row drops its own innermost bar (the fold chevron stands in its place),
-      // both quiet and caret-active. The extra opener class outranks the base fence rule above.
-      railRules[`.cm-cairn-directive-fence.cm-cairn-directive-opener.cm-cairn-depth-${depth}`] = {
-        boxShadow: rails(depth, false, true),
-      };
-      railRules[`.cm-cairn-caret-block.cm-cairn-directive-opener.cm-cairn-depth-${depth}`] = {
-        boxShadow: rails(depth, true, true),
-      };
     }
     const theme = EditorView.theme(
       {
@@ -199,39 +188,47 @@ through the adapter's render. Swapping the editor stays a one-file change.
         },
         '.cm-cairn-directive-leaf': directiveInk,
         '.cm-cairn-directive-inline': directiveInk,
-        // Container folding. The fold band is the 28px gutter click target on an opener row; the
-        // line is the positioning context so the chevron sits over the container's own bar x. The
-        // band is laid over the gutter (a zero-width inline widget at line start, expanded by the
-        // absolute children), so only the gutter shows the pointer cursor, never the opener text.
-        '.cm-line:has(.cm-cairn-fold-band)': { position: 'relative' },
-        '.cm-cairn-fold-band': {
-          position: 'absolute',
-          left: '0',
-          top: '0',
-          width: '28px',
-          height: '100%',
+        // Container folding lives in a real gutter column now, not an in-text band. The gutter is a
+        // fixed-x column left of the content; the chevron is empty at rest and reveals on hovering
+        // the gutter cell (the VS Code / Zed / Obsidian standard), forced on when folded or when the
+        // caret is inside the container. One rotating chevron in the directive ink; the rails carry
+        // depth, so the ink does not restep. The lone gutter's wrapper loses its default background
+        // and border so the column blends into the quiet surface.
+        '.cm-gutters': { backgroundColor: 'transparent', border: '0', color: 'inherit' },
+        '.cm-cairn-fold-gutter': { width: '22px' },
+        '.cm-cairn-fold-gutter .cm-gutterElement': { display: 'flex', alignItems: 'stretch', padding: '0' },
+        '.cm-cairn-fold-btn': {
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '100%',
+          padding: '0',
+          background: 'transparent',
+          border: '0',
           cursor: 'pointer',
-          zIndex: '1',
-        },
-        '.cm-cairn-fold-band svg': {
-          position: 'absolute',
-          top: '50%',
-          transform: 'translateY(-50%)',
-          width: '11px',
-          height: '11px',
-          // The chevron fades in on rail-band hover; folded and caret-inside states force it on.
-          opacity: '0',
-          transition: 'opacity 120ms ease',
           color: 'var(--cairn-directive-ink-2, oklch(50% 0.16 300))',
         },
-        '.cm-cairn-fold-band:hover svg, .cm-cairn-fold-folded svg, .cm-cairn-fold-active svg': {
-          opacity: '1',
+        '.cm-cairn-fold-btn svg': {
+          width: '11px',
+          height: '11px',
+          // Empty at rest; the gutter-cell hover, the folded state, and the caret-active state each
+          // force it on. A 120ms fade in and out, and a 120ms rotate for the folded turn.
+          opacity: '0',
+          transition: 'opacity 120ms ease, transform 120ms ease',
         },
-        // The chevron steps its ink with the container's depth, matching the label inks; the
-        // caret-inside state takes the strongest ink.
-        '.cm-cairn-fold-depth-1 svg': { color: 'var(--color-accent)' },
-        '.cm-cairn-fold-depth-3 svg': { color: 'var(--cairn-directive-ink-3, oklch(48% 0.16 300))' },
-        '.cm-cairn-fold-active svg': { color: 'var(--cairn-directive-ink-active, oklch(46% 0.16 300))' },
+        '.cm-cairn-fold-gutter .cm-gutterElement:hover .cm-cairn-fold-btn svg, .cm-cairn-fold-folded svg, .cm-cairn-fold-active svg':
+          { opacity: '1' },
+        // Folded rotates the single chevron to point right; caret-active takes the stronger ink.
+        '.cm-cairn-fold-folded svg': { transform: 'rotate(-90deg)' },
+        '.cm-cairn-fold-active': { color: 'var(--cairn-directive-ink-active, oklch(46% 0.16 300))' },
+        // A visible focus ring for keyboard users landing on the gutter button.
+        '.cm-cairn-fold-btn:focus-visible': {
+          outline: '2px solid color-mix(in oklab, var(--color-primary) 70%, transparent)',
+          outlineOffset: '-2px',
+          borderRadius: '4px',
+        },
+        // No-hover pointers (touch) cannot reveal on hover, so the chevron is persistent and legible.
+        '@media (hover: none)': { '.cm-cairn-fold-btn svg': { opacity: '0.65' } },
         // The folded-row wash: a soft accent tint, square and full-row, returning as a STATE signal
         // so folded spots read in a scan. The rails are inset box-shadows on the same line element
         // and render above this background, so the rail column runs through the wash unbroken.
@@ -274,9 +271,11 @@ through the adapter's render. Swapping the editor stays a one-file change.
           color: 'var(--cairn-focus-dim-ink, oklch(66% 0.01 75))',
           backgroundColor: 'transparent',
         },
-        // The fold machinery dims with its row: a folded opener row under focus mode drops its
-        // chevron, pill, and wash to the dim tone like any other machinery line.
-        '.cm-cairn-focus-dim .cm-cairn-fold-band svg, .cm-cairn-focus-dim .cm-cairn-fold-pill': {
+        // The fold pill dims with its folded opener row like any machinery line (the pill is a
+        // widget inside the line). The gutter chevron lives in a separate DOM column that focus-dim
+        // cannot reach by descendant selector, and it is already hidden at rest and forced visible
+        // only when folded or caret-active, so a folded chevron stays findable without a dim rule.
+        '.cm-cairn-focus-dim .cm-cairn-fold-pill': {
           color: 'var(--cairn-focus-dim-ink, oklch(66% 0.01 75))',
         },
         '.cm-cairn-focus-dim.cm-cairn-folded-row': { backgroundColor: 'transparent' },

@@ -2,6 +2,36 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.56.0
+
+Two passes ship together: the markdown editor's folding gets a proper home, and the engine's gates,
+tooling, and docs harden.
+
+The editor folds directive containers (`:::name` blocks), and the fold control now lives in a real
+gutter column to the left of the text rather than a chevron hidden in the line. At rest the gutter is
+empty; the chevron reveals when you hover the gutter cell, stays while a block is folded, and shows
+while the caret is inside a block. The control is a real button now, so folding is reachable by
+keyboard and screen reader, where before only unfolding was. The folded-row tint and the "N lines"
+pill carry over unchanged, and the fold scope is the same: directive containers only.
+
+For consumers, two additive surface touches from the tooling pass. A concept can now set an optional
+`singular` label, so the create affordances read "New post" instead of "New Posts"; it defaults to the
+concept's `label`, so a concept that sets nothing is unchanged. And `AuthEnv` is now exported from
+`@glw907/cairn-cms/sveltekit` as well as the root, so the `app.d.ts` Platform block can import it from
+the subpath the auth helpers live on (the deploy guide now shows that block verbatim).
+
+The rest hardens the engine's own gates and docs. A new `check:reference:signatures` gate compares
+each reference page's declared type signature against the export's real type, so a stale signature in
+an existing page is caught (it found and fixed two on its first run). A plain-Node dist-spawn test
+rot-proofs the `/delivery/data` node-safety guarantee, an admin-shell DOM check guards the drawer
+layout against a silent scoping regression, and the `cairn-manifest` bin now resolves the Vite root
+from the loaded config rather than the current directory. A docs sweep documents the preview frame's
+dual stylesheet emission, the `cairnManifest`-derived `cairn-doctor` inputs, the prerender policy for
+the feed routes, and an interim security contact.
+
+No consumer action: every change is additive, the `singular` field is optional, and the folding
+redesign is internal to the admin editor.
+
 ## 0.55.0
 
 The office list rises to the gold standard. The post and page list gains a triage filter layer and

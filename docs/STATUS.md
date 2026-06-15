@@ -11,19 +11,25 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## In flight (2026-06-14): the editor fold-gutter pass
+## Immediate next action (2026-06-14, latest): release 0.56.0 (gates/DX + fold-gutter, bundled)
 
-On branch `pass/editor-fold-gutter` off `main`. Geoff flagged the directive-container fold UI as
-poor; three UI/UX critiques (two with a headless render) traced every flaw to the in-text chevron and
-landed on the gutter. Spec `docs/superpowers/specs/2026-06-14-fold-gutter-design.md`, mockup
-`docs/internal/design/2026-06-14-fold-gutter-mockup.html`, plan
-`docs/superpowers/plans/2026-06-14-editor-fold-gutter.md` (6 tasks). The fold scope and engine are
-unchanged; only the affordance moves into a real CodeMirror `gutter()` column (nothing at rest,
-gutter-hover reveal, a focusable button for keyboard/SR parity, the opener rail bar restored). Next:
-execute the plan task-by-task (Tasks 1-2 main loop, 3-6 `cairn-implementer`), then the pass-end ritual
-and a version decision relative to the gates pass. Resumes from the plan if the session drops.
+Two passes land on `main` over the published `0.55.0`, bundled into `0.56.0`. The gates/tooling/DX
+pass (its own plan, below) and the editor fold-gutter pass both merged; `package.json` is `0.56.0` and
+the changelog covers both. Releasing via `gh release create v0.56.0`, which fires OIDC
+trusted-publishing.
 
-## Immediate next action (2026-06-13, latest): execute the gates/tooling/DX plan (0.56.0)
+The fold-gutter pass (spec `docs/superpowers/specs/2026-06-14-fold-gutter-design.md`, mockup
+`2026-06-14-fold-gutter-mockup.html`, plan `2026-06-14-editor-fold-gutter.md`) moved the
+directive-container fold control out of an in-text chevron band into a real CodeMirror `gutter()`
+column: nothing at rest, gutter-hover reveal, a focusable button so folding (not just unfolding) is
+keyboard- and SR-reachable, the opener rail bar restored, the pill/wash/flash/safety/keymap kept. The
+fold scope and engine are unchanged. Three UI/UX critiques (two rendered) plus the svelte and a11y
+reviewer gate cleared it; review fold-ins added the pill focus ring, reduced-motion gating, a 24px
+gutter, and the touch-state ordering fix. Watch items deferred in the spec: fold-all, a first-run
+discoverability nudge, whole-line-hover-via-JS. Next after the release: the two site bumps to
+`^0.56.0` if desired, then the gallery brainstorm, then P4.
+
+## Prior next action (2026-06-13): execute the gates/tooling/DX plan (now part of 0.56.0)
 
 **`0.55.0` is PUBLISHED and both sites run it.** The `v0.55.0` release fired OIDC trusted-publishing
 (run `27478706097` green, registry `latest`); ecxc-ski (`854cac4`) and 907-life (`97827da`) both

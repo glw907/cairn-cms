@@ -149,6 +149,48 @@ export function parseRawAttributeKeys(markdown: string, def: ComponentDef): stri
   return rawKeysFromRoot(findComponentRoot(markdown, def));
 }
 
+/** The result of {@link componentRoundTripSafety}: whether re-opening a placed block into the
+ *  guided form and re-serializing it is provably lossless. */
+export type RoundTripSafety =
+  | { safe: true }
+  | { safe: false; reason: 'unknown-attribute' | 'undeclared-child' | 'not-idempotent' | 'not-a-component' };
+
+/** Decide whether guided edit of this placed block is provably lossless. A block a person typed by
+ *  hand can carry more than the schema models (an attribute the def does not list, a child container
+ *  the def does not declare, slot content the form cannot represent stably), and parsing such a block
+ *  into the form then re-serializing would silently drop it. The edit affordance is offered only when
+ *  this returns `{ safe: true }`. Checks run in order and return the first failure:
+ *
+ *  1. `not-a-component`: the def's opening container is not present.
+ *  2. `unknown-attribute`: the block carries an attribute key the def does not declare.
+ *  3. `undeclared-child`: the root has a direct child container directive that is not a declared
+ *     nested slot. Such a child would otherwise fold into the body slot and move on re-serialize.
+ *  4. `not-idempotent`: `parse -> serialize -> parse` does not recover the same values. */
+export async function componentRoundTripSafety(markdown: string, def: ComponentDef): Promise<RoundTripSafety> {
+  const root = findComponentRoot(markdown, def);
+  if (!root) return { safe: false, reason: 'not-a-component' };
+
+  const declaredKeys = new Set((def.attributes ?? []).map((f) => f.key));
+  for (const key of parseRawAttributeKeys(markdown, def)) {
+    if (!declaredKeys.has(key)) return { safe: false, reason: 'unknown-attribute' };
+  }
+
+  const slotNames = new Set(nestedSlots(def).map((s) => s.name));
+  for (const child of root.children) {
+    if (isContainer(child) && !slotNames.has((child as DirectiveNode).name)) {
+      return { safe: false, reason: 'undeclared-child' };
+    }
+  }
+
+  // The values are plain strings, booleans, and string arrays in declared (object-key) order, so a
+  // stable JSON.stringify is a sufficient deep-equal.
+  const v1 = await parseComponent(markdown, def);
+  const v2 = await parseComponent(serializeComponent(def, v1), def);
+  if (JSON.stringify(v1) !== JSON.stringify(v2)) return { safe: false, reason: 'not-idempotent' };
+
+  return { safe: true };
+}
+
 /** Parse the component once and derive both the guided-form values and the raw attribute keys.
  *  Validation needs both, so this seam spares it the double parse that calling
  *  {@link parseComponent} and {@link parseRawAttributeKeys} separately would cost. */

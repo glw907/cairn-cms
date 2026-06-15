@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { serializeComponent, parseComponent } from '../../lib/render/component-grammar.js';
+import { serializeComponent, parseComponent, componentRoundTripSafety } from '../../lib/render/component-grammar.js';
 import type { ComponentDef } from '../../lib/render/registry.js';
 
 const base = { build: (n: unknown) => n, description: 'd', use: 'u' };
@@ -137,4 +137,55 @@ describe('parseComponent round-trips serializeComponent', () => {
       await expect(parseComponent(md, c.def)).resolves.toEqual(c.values);
     });
   }
+});
+
+describe('componentRoundTripSafety', () => {
+  it('is safe for a canonical serialized block', async () => {
+    const md = serializeComponent(cta, {
+      attributes: { icon: 'snowflake' },
+      slots: { title: 'Book', body: 'Soon.', actions: ['One', 'Two'] },
+    });
+    await expect(componentRoundTripSafety(md, cta)).resolves.toEqual({ safe: true });
+  });
+
+  it('is safe for an authored-but-equivalent block (different whitespace and formatting)', async () => {
+    // Same content as canonical, but hand-typed: extra blank lines, no attribute, a title, and a
+    // nested list authored without the canonical spacing. The values it parses to are stable.
+    const md = '::::cta[Book]\n\nSoon.\n\n:::actions\n\n- One\n- Two\n\n:::\n\n::::';
+    await expect(componentRoundTripSafety(md, cta)).resolves.toEqual({ safe: true });
+  });
+
+  it('fails unknown-attribute when the block carries an undeclared attribute key', async () => {
+    const md = '::::cta[Book]{icon="snowflake" rogue="x"}\nSoon.\n::::';
+    await expect(componentRoundTripSafety(md, cta)).resolves.toEqual({
+      safe: false,
+      reason: 'unknown-attribute',
+    });
+  });
+
+  it('fails undeclared-child when the root holds a child container the def does not declare', async () => {
+    const md = '::::cta[Book]\nSoon.\n\n:::note\nAn aside the schema never modeled.\n:::\n::::';
+    await expect(componentRoundTripSafety(md, cta)).resolves.toEqual({
+      safe: false,
+      reason: 'undeclared-child',
+    });
+  });
+
+  it('fails not-idempotent when slot content the form cannot represent stably is present', async () => {
+    // A repeatable item is a single string in the form. A multi-paragraph authored item parses to
+    // "a\n\nnested para", which re-serializes flat and re-parses to drop the second paragraph, so
+    // the round-trip is not idempotent.
+    const md = '::::cta[Book]\nSoon.\n\n:::actions\n- a\n\n  nested para\n:::\n::::';
+    await expect(componentRoundTripSafety(md, cta)).resolves.toEqual({
+      safe: false,
+      reason: 'not-idempotent',
+    });
+  });
+
+  it('fails not-a-component when no matching component is present', async () => {
+    await expect(componentRoundTripSafety('Just some prose.\n', cta)).resolves.toEqual({
+      safe: false,
+      reason: 'not-a-component',
+    });
+  });
 });

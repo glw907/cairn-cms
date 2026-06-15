@@ -2,7 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
 import ComponentInsertDialog, { insertableDefs } from '../../lib/components/ComponentInsertDialog.svelte';
-import { defineRegistry, type ComponentDef } from '../../lib/render/registry.js';
+import { defineRegistry, type ComponentDef, type ComponentValues } from '../../lib/render/registry.js';
+import { serializeComponent } from '../../lib/render/component-grammar.js';
 
 const base = { build: (n: unknown) => n };
 const schemaDef: ComponentDef = {
@@ -322,5 +323,61 @@ describe('ComponentInsertDialog keyboard', () => {
     await userEvent.keyboard('{ArrowDown}');
     await userEvent.keyboard('{Enter}');
     expect(insert).toHaveBeenCalledWith(':::grid\n:::');
+  });
+});
+
+describe('ComponentInsertDialog edit mode', () => {
+  const editValues: ComponentValues = {
+    attributes: { tone: 'warning' },
+    slots: { title: 'Existing title' },
+  };
+
+  it('opens the configure step with the fields pre-filled from the passed values', async () => {
+    const reg = defineRegistry({ components: [previewCallout] });
+    const screen = render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons } as never);
+    screen.component.editComponent(previewCallout, editValues, { from: 10, to: 40 });
+    await expect.element(screen.getByRole('textbox', { name: /title/i })).toHaveValue('Existing title');
+    await expect.element(screen.getByRole('combobox', { name: /tone/i })).toHaveValue('warning');
+    // No catalog row shows: edit mode skips the catalog straight to the form.
+    expect(document.querySelectorAll('[data-testid="cairn-pk-row"]').length).toBe(0);
+  });
+
+  it('shows the Edit breadcrumb eyebrow and an Update primary button', async () => {
+    const reg = defineRegistry({ components: [previewCallout] });
+    const screen = render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons } as never);
+    screen.component.editComponent(previewCallout, editValues, { from: 10, to: 40 });
+    await expect.element(screen.getByText(/edit\s*›\s*callouts/i)).toBeInTheDocument();
+    await expect.element(screen.getByRole('button', { name: /^update$/i })).toBeInTheDocument();
+    await expect.element(screen.getByRole('button', { name: /^insert$/i })).not.toBeInTheDocument();
+  });
+
+  it('routes submit to update with the stored range and serialized markdown, then closes', async () => {
+    const update = vi.fn();
+    const insert = vi.fn();
+    const reg = defineRegistry({ components: [previewCallout] });
+    const screen = render(ComponentInsertDialog, { registry: reg, insert, update, icons } as never);
+    const range = { from: 10, to: 40 };
+    screen.component.editComponent(previewCallout, editValues, range);
+    await screen.getByRole('button', { name: /^update$/i }).click();
+    expect(update).toHaveBeenCalledWith(range, serializeComponent(previewCallout, editValues));
+    expect(insert).not.toHaveBeenCalled();
+    // The dialog closed on update.
+    await expect.element(screen.getByRole('combobox', { name: /tone/i })).not.toBeInTheDocument();
+  });
+
+  it('reopening the catalog after an edit is a clean Insert flow', async () => {
+    const insert = vi.fn();
+    const reg = defineRegistry({ components: [schemaDef, gridDef] });
+    const screen = render(ComponentInsertDialog, { registry: reg, insert, icons } as never);
+    // Edit, close it, then open fresh for an Insert.
+    screen.component.editComponent(schemaDef, editValues, { from: 1, to: 5 });
+    await expect.element(screen.getByRole('button', { name: /^update$/i })).toBeInTheDocument();
+    await screen.component.open();
+    // The catalog is back and the configure flow inserts (not updates).
+    await screen.getByRole('button', { name: /callout/i }).click();
+    await screen.getByRole('combobox', { name: /tone/i }).selectOptions('warning');
+    await screen.getByRole('textbox', { name: /title/i }).fill('Fresh');
+    await screen.getByRole('button', { name: /^insert$/i }).click();
+    expect(insert).toHaveBeenCalledWith(':::callout[Fresh]{tone="warning"}\n:::');
   });
 });

@@ -183,3 +183,30 @@ describe('ComponentForm preview seeding', () => {
     expect(document.activeElement).toBe(tone.element());
   });
 });
+
+describe('ComponentForm initial values', () => {
+  it('seeds the form from initial when provided, overriding previewValues', async () => {
+    const initial = {
+      attributes: { tone: 'warning', pinned: true },
+      slots: { title: 'Edited title', body: 'Edited body' },
+    };
+    const screen = render(ComponentForm, {
+      def: previewCallout, onInsert: () => {}, initial,
+    } as never);
+    await expect.element(screen.getByRole('textbox', { name: /title/i })).toHaveValue('Edited title');
+    await expect.element(screen.getByRole('combobox', { name: /tone/i })).toHaveValue('warning');
+  });
+});
+
+describe('ComponentForm submit label', () => {
+  it('renders the submit button with the default Insert label', async () => {
+    const screen = render(ComponentForm, { def: callout, onInsert: () => {} } as never);
+    await expect.element(screen.getByRole('button', { name: /^insert$/i })).toBeInTheDocument();
+  });
+
+  it('renders the submit button with a custom submitLabel', async () => {
+    const screen = render(ComponentForm, { def: callout, onInsert: () => {}, submitLabel: 'Update' } as never);
+    await expect.element(screen.getByRole('button', { name: /^update$/i })).toBeInTheDocument();
+    await expect.element(screen.getByRole('button', { name: /^insert$/i })).not.toBeInTheDocument();
+  });
+});

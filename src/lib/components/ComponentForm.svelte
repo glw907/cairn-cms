@@ -26,6 +26,13 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
     /** True while a required attribute or slot is still empty, bound out so the host's preview can
      *  show the incomplete state and the host can mirror the disabled Insert. */
     incomplete?: boolean;
+    /** Seed the working values from these instead of the schema's preview sample. The dialog passes
+     *  it in edit mode to re-open a placed component into its own values; the catalog insert path
+     *  leaves it unset and keeps the previewValues seed. */
+    initial?: ComponentValues;
+    /** The submit button's label. The dialog passes 'Update' in edit mode; the insert path keeps
+     *  the default. */
+    submitLabel?: string;
   }
 
   let {
@@ -34,12 +41,15 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
     onInsert,
     values = $bindable(),
     incomplete = $bindable(),
+    initial,
+    submitLabel = 'Insert',
   }: Props = $props();
 
-  // Working values, seeded once from the schema and any declared preview sample. $state makes the
-  // nested records deeply reactive. untrack marks the seed as a deliberate one-time read of the
-  // initial def, not a reactive miss. previewValues falls back to emptyValues when no preview.
-  let working = $state(untrack(() => previewValues(def)));
+  // Working values, seeded once from `initial` in edit mode, otherwise from the schema and any
+  // declared preview sample. $state makes the nested records deeply reactive. untrack marks the
+  // seed as a deliberate one-time read, not a reactive miss. previewValues falls back to
+  // emptyValues when no preview.
+  let working = $state(untrack(() => initial ?? previewValues(def)));
   // Mirror the working values out to the bindable prop so the dialog's preview reads them live.
   $effect(() => {
     values = working;
@@ -314,5 +324,5 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
     </fieldset>
   {/each}
 
-  <button type="button" class="btn btn-primary btn-sm mt-2 self-start" disabled={incompleteState} onclick={submit}>Insert</button>
+  <button type="button" class="btn btn-primary btn-sm mt-2 self-start" disabled={incompleteState} onclick={submit}>{submitLabel}</button>
 </div>

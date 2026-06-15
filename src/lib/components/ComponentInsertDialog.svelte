@@ -65,6 +65,9 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
     registry?: ComponentRegistry;
     /** Insert markdown at the editor cursor. */
     insert: (text: string) => void;
+    /** Replace the placed component's source span with new markdown. Edit mode routes submit here
+     *  instead of insert. Optional: a host that never opens edit mode passes none. */
+    update?: (range: { from: number; to: number }, markdown: string) => void;
     /** The site's icon set, for icon fields. */
     icons?: IconSet;
     /** The site's design-accurate render pipeline. When present and the picked component declares a
@@ -82,12 +85,19 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
     trigger?: boolean;
   }
 
-  let { registry, insert, icons, render, preview = null, disabled = false, trigger = true }: Props = $props();
+  let { registry, insert, update, icons, render, preview = null, disabled = false, trigger = true }: Props = $props();
 
   let dialog = $state<HTMLDialogElement | null>(null);
   let picked = $state<ComponentDef | null>(null);
   let query = $state('');
   let searchInput = $state<HTMLInputElement | null>(null);
+
+  // Edit mode re-opens a placed component into the same guided form. editValues seeds the form from
+  // the parsed block (not the catalog pick path), and editRange is the source span Update replaces.
+  // Both are null in the catalog insert flow. resetPreview clears them so a fresh open is clean.
+  let editValues = $state<ComponentValues | null>(null);
+  let editRange = $state<{ from: number; to: number } | null>(null);
+  const editing = $derived(editValues !== null);
 
   // The form's live values and its required-empty state, bound out of ComponentForm so the preview
   // pane can render from them and mirror the incomplete state.
@@ -181,6 +191,8 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
     formIncomplete = false;
     previewState = 'settled';
     previewDoc = '';
+    editValues = null;
+    editRange = null;
   }
 
   /** Open the picker. Exported so a trigger={false} host can drive the dialog itself. */
@@ -195,6 +207,22 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
       void tick().then(() => searchInput?.focus());
     }
   }
+  /** Re-open a placed component into the same guided form. Skips the catalog: seeds the form from
+   *  the parsed values, stores the source range for Update, and shows the configure step straight
+   *  away. Exported so the host (the edit page's Edit-block control) drives it. */
+  export function editComponent(
+    def: ComponentDef,
+    values: ComponentValues,
+    range: { from: number; to: number },
+  ) {
+    resetPreview();
+    query = '';
+    editValues = values;
+    editRange = range;
+    picked = def;
+    dialog?.showModal();
+  }
+
   function back() {
     picked = null;
     resetPreview();
@@ -217,8 +245,14 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
       close();
     }
   }
-  function onInsert(markdown: string) {
-    insert(markdown);
+  // The form's submit routes here. In edit mode it replaces the stored source span through update;
+  // otherwise it inserts at the cursor. Either way the dialog closes.
+  function onSubmit(markdown: string) {
+    if (editing && editRange) {
+      update?.(editRange, markdown);
+    } else {
+      insert(markdown);
+    }
     close();
   }
 
@@ -227,7 +261,9 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
   // closes. Handling cancel (the event the dialog fires on Escape) lets us preventDefault and
   // intercept the first level.
   function onCancel(e: Event) {
-    if (picked) {
+    // In edit mode there is no catalog to step back to, so Escape closes (the default). At the
+    // configure step of the insert flow, intercept the first Escape and step back to the catalog.
+    if (picked && !editing) {
       e.preventDefault();
       back();
     }
@@ -277,14 +313,14 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
            "Insert > group" eyebrow breadcrumb above the component label; while browsing it is the
            plain "Insert a component" title. -->
       <div class="mb-3 flex items-center gap-3">
-        {#if picked}
+        {#if picked && !editing}
           <button type="button" class="btn btn-ghost btn-sm btn-square" aria-label="Back to components" onclick={back}>
             <svg class="h-4 w-4" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M165.7 202.3a8 8 0 0 1-11.4 11.4l-80-80a8 8 0 0 1 0-11.4l80-80a8 8 0 0 1 11.4 11.4L91.3 128Z" /></svg>
           </button>
         {/if}
         <div class="min-w-0 flex-1">
           {#if picked}
-            <div class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">Insert{#if picked.group}&nbsp;&rsaquo;&nbsp;{picked.group}{/if}</div>
+            <div class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">{editing ? 'Edit' : 'Insert'}{#if picked.group}&nbsp;&rsaquo;&nbsp;{picked.group}{/if}</div>
             <h2 id="cairn-insert-dialog-title" class="font-[family-name:var(--font-display)] text-lg font-bold tracking-tight">{picked.label}</h2>
           {:else}
             <h2 id="cairn-insert-dialog-title" class="text-base font-semibold">Insert a component</h2>
@@ -300,7 +336,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
                  the preview stacks beneath the form. -->
             <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
               <div class="overflow-auto">
-                <ComponentForm def={picked} {icons} {onInsert} bind:values={formValues} bind:incomplete={formIncomplete} />
+                <ComponentForm def={picked} {icons} onInsert={onSubmit} initial={editValues ?? undefined} submitLabel={editing ? 'Update' : 'Insert'} bind:values={formValues} bind:incomplete={formIncomplete} />
               </div>
               <div data-testid="cairn-pk-preview" class="flex flex-col gap-2 rounded-box border border-[var(--cairn-card-border)] bg-base-200 p-3">
                 <div class="flex items-baseline justify-between gap-2">
@@ -347,7 +383,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
               </div>
             </div>
           {:else}
-            <ComponentForm def={picked} {icons} {onInsert} bind:values={formValues} bind:incomplete={formIncomplete} />
+            <ComponentForm def={picked} {icons} onInsert={onSubmit} initial={editValues ?? undefined} submitLabel={editing ? 'Update' : 'Insert'} bind:values={formValues} bind:incomplete={formIncomplete} />
           {/if}
         {/key}
       {:else}

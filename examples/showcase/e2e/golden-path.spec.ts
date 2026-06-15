@@ -385,6 +385,70 @@ test('the component picker groups the catalog, opens the callout two-pane with i
   await expect(editor).toContainText('::::callout[A worked example]');
 });
 
+test('the component round-trips: place a callout, the caret enables Edit block, Update rewrites the same block in place', async ({ page }) => {
+  // Open the seeded entry from the list, the same path the picker case takes.
+  await page.goto('/admin/posts');
+  await page.locator('a[href="/admin/posts/2026-06-hello"]').click();
+  await expect(page).toHaveURL(/\/admin\/posts\/2026-06-hello$/);
+
+  // Author a deterministic body: a known prose line followed by a blank line, so a later click can
+  // land the caret on plain text (proving the disabled state) before it moves onto the component.
+  const editor = page.locator('.cm-content');
+  await expect(editor).toBeVisible();
+  await editor.click();
+  await page.keyboard.press('ControlOrMeta+A');
+  await page.keyboard.type('A plain prose line.\n\n');
+
+  // Reuse the insert flow to place a real callout below the prose. The directive lands at the
+  // caret, which sits on the trailing blank line.
+  await page.getByRole('button', { name: 'Insert block' }).click();
+  const insertDialog = page.locator('dialog[aria-labelledby="cairn-insert-dialog-title"]');
+  await expect(insertDialog).toBeVisible();
+  await insertDialog.locator('[data-testid="cairn-pk-row"]', { hasText: 'Callout' }).click();
+  await expect(insertDialog.locator('[data-testid="cairn-pk-preview"]')).toBeVisible();
+  await insertDialog.getByRole('button', { name: 'Insert', exact: true }).click();
+  await expect(insertDialog).not.toBeVisible();
+  // The placed block carries the sample title; the nested points slot opens a four-colon fence.
+  await expect(editor).toContainText('::::callout[A worked example]');
+
+  // With the caret on the plain prose line (not on any component), the Edit-block control carries
+  // its disabled label and is disabled.
+  await editor.locator('.cm-line', { hasText: 'A plain prose line.' }).click();
+  await expect(page.getByRole('button', { name: 'Place the cursor in a component to edit it' })).toBeDisabled();
+
+  // Put the text cursor inside the callout block by clicking its opener line.
+  await editor.locator('.cm-line', { hasText: '::::callout[A worked example]' }).click();
+
+  // The caret-on-component gate flips the control to enabled, with the active-state label.
+  const editEnabled = page.getByRole('button', { name: 'Edit the component at the cursor' });
+  await expect(editEnabled).toBeEnabled({ timeout: 5000 });
+
+  // Activate Edit block: the dialog opens straight into the configure step in edit mode. The header
+  // eyebrow reads Edit (not Insert), the primary button reads Update, and the form is pre-filled
+  // with the callout's current title.
+  await editEnabled.click();
+  const editDialog = page.locator('dialog[aria-labelledby="cairn-insert-dialog-title"]');
+  await expect(editDialog).toBeVisible();
+  // The header eyebrow breadcrumb reads "Edit > <group>" in edit mode (it reads "Insert" while
+  // browsing the catalog), proving the dialog opened in edit mode rather than the insert path.
+  await expect(editDialog.getByText(/^Edit\s*›\s*Callouts$/)).toBeVisible();
+  await expect(editDialog.getByRole('button', { name: 'Update', exact: true })).toBeVisible();
+  const titleField = editDialog.getByLabel('Title');
+  await expect(titleField).toHaveValue('A worked example');
+
+  // Change the title and Update. The dialog replaces the stored source range rather than inserting
+  // a second block.
+  await titleField.fill('A revised heading');
+  await editDialog.getByRole('button', { name: 'Update', exact: true }).click();
+  await expect(editDialog).not.toBeVisible();
+
+  // The editor source now carries the callout with the NEW title, and the old title is gone: one
+  // block, rewritten in place.
+  await expect(editor).toContainText('::::callout[A revised heading]');
+  await expect(editor).not.toContainText('A worked example');
+  await expect(editor.locator('.cm-line', { hasText: '::::callout[' })).toHaveCount(1);
+});
+
 test('a non-cairn feature coexists with the admin (Mode 1)', async ({ page }) => {
   await page.goto('/calendar');
   await expect(page.getByRole('heading', { name: 'Calendar' })).toBeVisible();

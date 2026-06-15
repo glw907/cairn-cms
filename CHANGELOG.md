@@ -2,10 +2,12 @@
 
 All notable changes to this project are recorded here, most recent first.
 
-## 0.56.2
+## 0.57.0
 
-The component insert picker is refined around a live preview, and the component contract grows the
-optional fields that make a good picker possible. The changes are additive, so it is a patch.
+The component insert picker gains a live preview and round-trip editing, and the component contract
+grows the optional fields that make a good picker possible. It is a minor because round-trip is a new
+capability an editor can use; the contract additions are all optional, so existing definitions compile
+unchanged with no action required.
 
 How the design was reached. Two research arms ran first. One surveyed how comparable systems build
 their insert pickers (Gutenberg, Sanity, Wagtail, Payload, Contentful, Builder, and the git-backed and
@@ -28,6 +30,14 @@ the skeleton with the empty region called out rather than a fabricated result, a
 throws shows a failed-to-render surface and keeps the form. A component that declares no `preview`
 keeps the single-column form. Required fields are marked and block Insert with inline messages, and
 the modal collapses to one column on a narrow screen.
+
+Round-trip editing closes the loop. With the cursor in a placed component, an Edit block control opens
+it back into the same guided form, pre-filled, and Update rewrites that block in place. It is offered
+only when the round-trip is provably lossless for that block: one that carries an attribute or a child
+the component does not declare is left for hand-editing rather than silently rewritten, the failure
+that corrupts content in the git-backed editors the research surveyed. A guided edit that does run
+preserves content and normalizes formatting to the canonical serialization. A consumer site that
+mounts `CairnAdmin` gets this with no change.
 
 For consumers, the `ComponentDef` contract gains optional fields, so existing definitions compile
 unchanged with no action required:

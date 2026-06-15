@@ -182,7 +182,12 @@ Recipes:
   asterisk and `aria-required` and gate Insert with an inline `role="alert"` message; repeatable rows
   take their label from the slot's `itemLabel`, falling back to `${label} ${i + 1}`. Back lives in the
   dialog header beside the eyebrow breadcrumb, one step to the catalog; the modal collapses to one
-  column on a narrow screen.
+  column on a narrow screen. The toolbar also carries an **Edit block** control beside Insert block:
+  it opens a component already placed in the document back into the same form (the header reads
+  "Edit", the button "Update"), enabled only when the caret sits in a component whose guided edit is
+  provably lossless (the `componentRoundTripSafety` gate); a block the form cannot round-trip is left
+  for hand-editing, never silently rewritten. Edit mode skips the catalog and has no Back; Update
+  replaces the block's source range in place.
 - **Popover menu:** the small action menus (the edit header's overflow, the toolbar's More formatting)
   are DaisyUI v5 popover dropdowns, never the focus-driven `.dropdown` wrapper, which opens on
   focus-in-transit and ignores Escape. The trigger is a `<button popovertarget="<id>">` with an

@@ -17,11 +17,19 @@ import { cachedInstallationToken } from '../github/signing.js';
 import { emptyManifest, manifestEntryFromFile, parseManifest, serializeManifest, upsertEntry, removeEntry, inboundLinks, type Manifest, type LinkTarget, type InboundLink } from '../content/manifest.js';
 import { isConflict } from '../github/types.js';
 import { log } from '../log/index.js';
-import { issueCsrfToken } from './csrf.js';
+import { issueCsrfToken, validateCsrfHeader } from './csrf.js';
 import { requireSession } from './guard.js';
+import { sniffMediaType, isDeniedUpload, extForMediaType } from '../media/sniff.js';
+import { hashBytes, shortHash, slugifyFilename, r2Key } from '../media/naming.js';
+import { mediaToken } from '../media/reference.js';
+import { r2Store } from '../media/store.js';
+import type { MediaEntry } from '../media/manifest.js';
 import type { CookieJar, EventBase } from './types.js';
 import type { CairnRuntime, ConceptDescriptor, FrontmatterField, PreviewConfig, ResolvedPreview } from '../content/types.js';
 import type { Editor, Role } from '../auth/types.js';
+// R2Bucket is named only inside uploadAction to cast the raw binding for r2Store. It is a type-only
+// import that never appears in an exported signature, so it does not reach the public `.d.ts`.
+import type { R2Bucket } from '@cloudflare/workers-types';
 
 /** A sidebar concept entry: just enough to render the nav without shipping validators to the client. */
 export interface NavConcept {
@@ -937,5 +945,170 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     throw redirect(303, `/admin/${concept.id}/${newId}?renamed=1`);
   }
 
-  return { layoutLoad, indexRedirect, listLoad, createAction, editLoad, saveAction, publishAction, publishAllAction, discardAction, deleteAction, listDeleteAction, renameAction, mintToken };
+  /** The successful upload's response. The server-owned `record` rides the editor's optimistic
+   *  client state and commits with the entry at Save (the upload itself commits nothing). `reused`
+   *  is true when identical bytes were already stored, so the second upload did no second put;
+   *  `mismatch` flags an existing object whose stored content type differs from this sniff. */
+  interface UploadResult {
+    reference: string;
+    record: MediaEntry;
+    reused: boolean;
+    mismatch: boolean;
+  }
+
+  /**
+   * Ingest an uploaded image: the JSON/fetch endpoint with the untrusted-input contract (spec piece
+   * 2, decisions 1 to 3). The body is the raw file bytes, read once; the human metadata travels in
+   * percent-encoded `X-Cairn-*` request headers. The server owns every committed field and trusts no
+   * client value: it sniffs the real type, screens the engine deny-list, re-hashes, re-derives the
+   * ext and slug, caps and sanitizes the human fields, and clamps the advisory dimensions. It stores
+   * put-first to R2 with content-addressed dedup (no second put for identical bytes, no
+   * compensating delete) and commits nothing to git. Every non-success path returns `fail(status,
+   * data)` (an HTTP error a `fetch` caller reads as JSON) and logs `media.upload_failed`; success
+   * returns an HTTP 200 plain object and logs `media.uploaded`.
+   */
+  async function uploadAction(event: ContentEvent): Promise<ReturnType<typeof fail> | UploadResult> {
+    // Read the editor up front for log attribution; the gate at step 4 enforces its presence. The
+    // pre-session gates (1 to 3) may log with an undefined editor email, which is fine.
+    const editor = event.locals.editor ?? null;
+    const refuse = (status: number, reason: string): ReturnType<typeof fail> => {
+      log.warn('media.upload_failed', { editor: editor?.email, reason });
+      return fail(status, { error: reason });
+    };
+
+    // 1. Media on.
+    const resolved = runtime.resolvedAssets;
+    if (!resolved.enabled) return refuse(503, 'media-disabled');
+
+    // 2. Content-Length before the body is read: an absent or non-positive-integer length is a 411,
+    //    an oversize length is a 413. Both refuse before the bytes are buffered.
+    const lengthHeader = event.request.headers.get('content-length');
+    const length = lengthHeader === null ? NaN : Number(lengthHeader);
+    if (!Number.isInteger(length) || length <= 0) return refuse(411, 'length-required');
+    if (length > resolved.maxUploadBytes) return refuse(413, 'too-large');
+
+    // 3. CSRF from the X-Cairn-CSRF header (no body clone): the action is the CSRF authority for the
+    //    raw-body upload, since the guard runs its form-CSRF only on form content types.
+    if (!event.cookies || !validateCsrfHeader({ url: event.url, request: event.request, cookies: event.cookies })) {
+      return refuse(403, 'csrf');
+    }
+
+    // 4. JSON-aware session: read the resolved editor directly. requireSession throws a 303 a fetch
+    //    caller silently follows, so an expired session must surface as a 401 JSON instead.
+    if (!editor) return refuse(401, 'session-expired');
+
+    // 5. Read the body once. Content-Length is client-advisory, so a lying client could send more
+    //    than it declared; recheck the real size against the cap after the read.
+    const bytes = new Uint8Array(await event.request.arrayBuffer());
+    if (bytes.length > resolved.maxUploadBytes) return refuse(413, 'too-large');
+
+    // 6. Server re-derivation: trust nothing the client declared.
+    const declaredType = event.request.headers.get('content-type') ?? undefined;
+    const sniffed = sniffMediaType(bytes);
+    if (isDeniedUpload(bytes, declaredType) || sniffed === null || !resolved.allowedTypes.includes(sniffed)) {
+      return refuse(415, 'unsupported-type');
+    }
+    const ext = extForMediaType(sniffed);
+    if (ext === null) return refuse(415, 'unsupported-type');
+
+    const full = await hashBytes(bytes);
+    const hash = shortHash(full);
+
+    const decodedFilename = safeDecode(event.request.headers.get('x-cairn-filename'));
+    const slug = slugifyFilename(decodedFilename);
+    const originalFilename = sanitizeField(basename(decodedFilename), MAX_ORIGINAL_FILENAME);
+    const alt = sanitizeField(safeDecode(event.request.headers.get('x-cairn-alt')), MAX_ALT);
+    const displayNameRaw = sanitizeField(safeDecode(event.request.headers.get('x-cairn-display-name')), MAX_DISPLAY_NAME);
+    const displayName = displayNameRaw || slug;
+    const width = clampDimension(event.request.headers.get('x-cairn-width'));
+    const height = clampDimension(event.request.headers.get('x-cairn-height'));
+
+    // 7. Store put-first with R2-head dedup, commit nothing. The raw bucket binding lives on
+    //    platform.env, which the engine reads through a structural cast (the engine does not declare
+    //    App.Platform). r2Store wraps it as the narrow MediaStore seam; R2Bucket is named only for
+    //    this cast and never in an exported signature.
+    const platformEnv = (event.platform as { env?: Record<string, unknown> } | undefined)?.env ?? {};
+    const rawBucket = platformEnv[resolved.bucketBinding];
+    if (!rawBucket) return refuse(503, 'binding-missing');
+    const store = r2Store(rawBucket as R2Bucket);
+
+    const key = r2Key(hash, ext);
+    const existing = await store.head(key);
+    let reused: boolean;
+    let mismatch = false;
+    if (existing !== null) {
+      // Identical bytes are already stored: skip the put. A second upload does no second put, so a
+      // concurrent dedup-reuse is never clobbered. Flag a stored type that disagrees with this sniff.
+      reused = true;
+      mismatch = existing.httpMetadata?.contentType !== undefined && existing.httpMetadata.contentType !== sniffed;
+    } else {
+      await store.put(key, bytes, { contentType: sniffed, cacheControl: 'public, max-age=31536000, immutable' });
+      reused = false;
+    }
+
+    const record: MediaEntry = {
+      hash,
+      sha256: full,
+      slug,
+      displayName,
+      originalFilename,
+      alt,
+      ext,
+      contentType: sniffed,
+      bytes: bytes.length,
+      width,
+      height,
+      createdAt: new Date().toISOString(),
+    };
+    const reference = mediaToken({ slug, hash });
+
+    log.info('media.uploaded', { editor: editor.email, hash, bytes: bytes.length, contentType: sniffed, reused });
+    return { reference, record, reused, mismatch };
+  }
+
+  return { layoutLoad, indexRedirect, listLoad, createAction, editLoad, saveAction, publishAction, publishAllAction, discardAction, deleteAction, listDeleteAction, renameAction, uploadAction, mintToken };
+}
+
+/** The cap, in characters, on the stored alt text. The human fields are display copy, not content,
+ *  so a generous cap rejects only abuse-scale input. */
+const MAX_ALT = 160;
+/** The cap, in characters, on the stored display name. */
+const MAX_DISPLAY_NAME = 120;
+/** The cap, in characters, on the stored original filename. */
+const MAX_ORIGINAL_FILENAME = 120;
+/** The largest pixel dimension kept; anything larger is treated as bogus and clamped to null. */
+const MAX_DIMENSION = 60000;
+
+/** Decode a percent-encoded header value, yielding `''` on a malformed sequence or an absent header,
+ *  so a hostile `X-Cairn-*` value cannot throw past the gate. */
+function safeDecode(value: string | null): string {
+  if (value === null) return '';
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return '';
+  }
+}
+
+/** The basename of a decoded filename: the final path segment after any `/` or `\`. A client value
+ *  of `../../evil.png` yields `evil.png`, so no path component reaches the stored record. */
+function basename(name: string): string {
+  const parts = name.split(/[/\\]/);
+  return parts[parts.length - 1];
+}
+
+/** Strip control characters from a human field and cap it at `max` characters. Control characters
+ *  (C0 and DEL) never belong in display copy and could corrupt a log line or a committed JSON. */
+function sanitizeField(value: string, max: number): string {
+  // eslint-disable-next-line no-control-regex
+  return value.replace(/[\u0000-\u001f\u007f]/g, '').slice(0, max);
+}
+
+/** Parse an advisory pixel dimension header. A valid integer in `[1, MAX_DIMENSION]` is kept; an
+ *  absent, non-numeric, or out-of-range value becomes null (MediaEntry dimensions are `number | null`). */
+function clampDimension(value: string | null): number | null {
+  if (value === null) return null;
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 1 || n > MAX_DIMENSION) return null;
+  return n;
 }

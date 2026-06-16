@@ -159,6 +159,7 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
       if (!nav) throw error(404, 'Not found');
       return nav.navSave(contentEvent(event, {}));
     }),
+    upload: viewAction(['edit'], (event, view) => content.uploadAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     publish: viewAction(['edit'], (event, view) => content.publishAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     discard: viewAction(['edit'], (event, view) => content.discardAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     rename: viewAction(['edit'], (event, view) => content.renameAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),

@@ -77,6 +77,23 @@ export function sniffMediaType(bytes: Uint8Array): string | null {
   return null;
 }
 
+/** The bare file extension (no dot) for each sniffed media type the upload path stores. The ext is
+ *  derived from the server-sniffed type, never the client filename, so the stored key and the
+ *  delivery extension allow-list always agree. An unmappable type returns null (the upload 415s). */
+const EXT_BY_TYPE: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/gif': 'gif',
+  'image/webp': 'webp',
+  'image/avif': 'avif',
+};
+
+/** The storage extension for a sniffed media type, or null for a type the upload path does not store
+ *  (HEIC, an unknown type). Driven by the sniffed type, so the key's ext is server-owned. */
+export function extForMediaType(type: string): string | null {
+  return EXT_BY_TYPE[type] ?? null;
+}
+
 /**
  * The engine-level upload deny predicate. Returns true (reject) when the upload is markup a site can
  * never override: a declared type of image/svg+xml, image/svg, text/html, or application/xml, OR a

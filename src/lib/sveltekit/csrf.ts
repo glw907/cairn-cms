@@ -46,6 +46,20 @@ export function issueCsrfToken(event: { url: URL; cookies: CookieJar }): string 
   return token;
 }
 
+/**
+ * Validate the double-submit token on a raw-body upload POST, reading the submitted token from the
+ * `X-Cairn-CSRF` request header rather than a form field. The upload's file bytes are the request
+ * body and are read once, so the form-field path (which clones the body to read `formData`) does not
+ * apply; the action carries the CSRF authority for uploads instead. Compares the header against the
+ * csrf cookie the loads issue, constant-time.
+ */
+export function validateCsrfHeader(event: { url: URL; request: Request; cookies: CookieJar }): boolean {
+  const cookie = event.cookies.get(csrfCookieName(event.url.protocol === 'https:'));
+  if (!cookie) return false;
+  const submitted = event.request.headers.get('x-cairn-csrf') ?? '';
+  return tokensMatch(submitted, cookie);
+}
+
 /** Validate the double-submit token on an admin form POST, reading the field from a body clone. */
 export async function validateCsrfToken(event: RequestContext): Promise<boolean> {
   const cookie = event.cookies.get(csrfCookieName(event.url.protocol === 'https:'));

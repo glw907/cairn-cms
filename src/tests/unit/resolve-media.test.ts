@@ -71,4 +71,12 @@ describe('cairn media resolution', () => {
     expect(html).not.toContain('/media/');
     expect(html).not.toContain('cairn-broken-media');
   });
+  it('threads a custom publicBase from the resolved config into the delivery path', async () => {
+    const customBase = normalizeAssets({ bucketBinding: 'MEDIA_BUCKET', publicBase: '/assets' });
+    const resolveMedia = makeMediaResolver(manifest, customBase);
+    const html = await renderMarkdown('![shoes](media:blue-running-shoes.a1b2c3d4e5f6a7b8)', {
+      resolveMedia,
+    });
+    expect(html).toContain('src="/assets/blue-running-shoes.a1b2c3d4e5f6a7b8.webp"');
+  });
 });

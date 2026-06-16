@@ -26,7 +26,7 @@ export type MediaManifest = Record<string, MediaEntry>;
  *  an empty manifest, so a first ingest into a site with no manifest file reads a clean {}. A valid
  *  object is returned as the manifest. */
 export function parseMediaManifest(json: unknown): MediaManifest {
-  if (!json || typeof json !== 'object') return {};
+  if (!json || typeof json !== 'object' || Array.isArray(json)) return {};
   return json as MediaManifest;
 }
 

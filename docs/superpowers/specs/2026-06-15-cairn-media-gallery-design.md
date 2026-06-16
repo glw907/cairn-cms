@@ -280,9 +280,11 @@ change.
 Transforming images stored outside Images (the R2 case) is on the Images Free plan, which includes
 5,000 unique transformations per month at no charge. A unique transformation is one
 source-plus-options combination, cached long-term once served; past 5,000 a new transform returns
-`9422` and the cache keeps serving, with no overage charge on Free. Both production sites are small and
-the four named presets bound the option-sets, so the monthly unique-transform count sits far below the
-ceiling. R2 adds little (zero egress, storage at a fraction of a cent per gigabyte-month, a few class-A
+`9422` and the cache keeps serving, with no overage charge on Free. Past the cap a brand-new variant returns a
+`9422` error; the `onerror=redirect` option can soften that to serving the original full-size image.
+Either way the cap's failure mode is a degraded image, not a charge, so the delivery-route phase should
+account for it. Both production sites are small and the four named presets bound the option-sets, so the
+monthly unique-transform count sits far below the ceiling. R2 adds little (zero egress, storage at a fraction of a cent per gigabyte-month, a few class-A
 writes per upload), and delivery rides the site's existing Worker. The running cost is effectively zero
 for both sites, which confirms the research call to lean on Cloudflare Images rather than hand-roll a
 transform.

@@ -33,7 +33,7 @@ export function makeMediaResolver(
     if (!resolved.enabled) return undefined;
     const entry = findByHash(manifest, ref.hash);
     if (!entry) return undefined;
-    const path = publicPath(entry.slug, entry.hash, entry.ext, resolved.urlForm);
+    const path = publicPath(entry.slug, entry.hash, entry.ext, resolved.urlForm, resolved.publicBase);
     return opts?.preset ? presetUrl(path, opts.preset, resolved.variants) : path;
   };
 }

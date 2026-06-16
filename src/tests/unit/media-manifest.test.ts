@@ -44,11 +44,12 @@ describe('parseMediaManifest', () => {
   it('returns {} for an empty object', () => {
     expect(parseMediaManifest({})).toEqual({});
   });
-  it('returns {} for undefined, null, and a non-object', () => {
+  it('returns {} for undefined, null, a non-object, and an array', () => {
     expect(parseMediaManifest(undefined)).toEqual({});
     expect(parseMediaManifest(null)).toEqual({});
     expect(parseMediaManifest('not an object')).toEqual({});
     expect(parseMediaManifest(42)).toEqual({});
+    expect(parseMediaManifest([ENTRY_A, ENTRY_B])).toEqual({});
   });
 });
 

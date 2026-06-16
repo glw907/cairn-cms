@@ -92,19 +92,21 @@ export function r2Key(shortHash: string, ext: string): string {
   return `media/${shortHash.slice(0, 2)}/${shortHash}.${ext}`;
 }
 
-/** The public delivery URL path, with a leading slash. The `slug` form is human-readable
- *  (`/media/<slug>.<shortHash>.<ext>`, or `/media/<shortHash>.<ext>` when the slug is null); the
- *  `opaque` form mirrors the R2 fan-out (`/media/<aa>/<shortHash>.<ext>`) and ignores the slug. */
+/** The public delivery URL path, with a leading slash, under the delivery base (`publicBase`,
+ *  default `/media`). The `slug` form is human-readable (`<base>/<slug>.<shortHash>.<ext>`, or
+ *  `<base>/<shortHash>.<ext>` when the slug is null); the `opaque` form mirrors the R2 fan-out
+ *  (`<base>/<aa>/<shortHash>.<ext>`) and ignores the slug. */
 export function publicPath(
   slug: string | null,
   shortHash: string,
   ext: string,
   urlForm: 'slug' | 'opaque',
+  publicBase = '/media',
 ): string {
   if (urlForm === 'opaque') {
-    return `/media/${shortHash.slice(0, 2)}/${shortHash}.${ext}`;
+    return `${publicBase}/${shortHash.slice(0, 2)}/${shortHash}.${ext}`;
   }
   return slug === null
-    ? `/media/${shortHash}.${ext}`
-    : `/media/${slug}.${shortHash}.${ext}`;
+    ? `${publicBase}/${shortHash}.${ext}`
+    : `${publicBase}/${slug}.${shortHash}.${ext}`;
 }

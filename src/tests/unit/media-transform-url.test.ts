@@ -34,6 +34,12 @@ describe('variantUrl', () => {
     const out = variantUrl(PUBLIC_PATH, { width: 800 });
     expect(out.endsWith(PUBLIC_PATH)).toBe(true);
   });
+
+  it('adds a leading slash when the source path lacks one', () => {
+    expect(variantUrl('media/x.a1b2c3d4e5f6a7b8.webp', { width: 800 })).toBe(
+      '/cdn-cgi/image/width=800,format=auto,gravity=auto/media/x.a1b2c3d4e5f6a7b8.webp',
+    );
+  });
 });
 
 describe('presetUrl', () => {

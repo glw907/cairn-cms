@@ -75,4 +75,12 @@ describe('publicPath', () => {
       '/media/a1/a1b2c3d4e5f6a7b8.webp',
     );
   });
+  it('uses a custom publicBase in both forms when given', () => {
+    expect(publicPath('blue-running-shoes', 'a1b2c3d4e5f6a7b8', 'webp', 'slug', '/assets')).toBe(
+      '/assets/blue-running-shoes.a1b2c3d4e5f6a7b8.webp',
+    );
+    expect(publicPath('blue-running-shoes', 'a1b2c3d4e5f6a7b8', 'webp', 'opaque', '/assets')).toBe(
+      '/assets/a1/a1b2c3d4e5f6a7b8.webp',
+    );
+  });
 });

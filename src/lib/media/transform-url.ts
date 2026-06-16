@@ -35,7 +35,11 @@ export function variantUrl(publicPath: string, spec: VariantSpec): string {
   if (spec.fit !== undefined) options.push(`fit=${spec.fit}`);
   options.push(`format=${spec.format ?? 'auto'}`);
   options.push(`gravity=${spec.gravity ?? 'auto'}`);
-  return `/cdn-cgi/image/${options.join(',')}${publicPath}`;
+  // The source must be its own path segment after the options, so it needs a leading slash;
+  // Cloudflare reads a slashless join as a malformed options list. publicPath carries one, but this
+  // guards a caller that passes a relative path from fusing the options and the source.
+  const source = publicPath.startsWith('/') ? publicPath : `/${publicPath}`;
+  return `/cdn-cgi/image/${options.join(',')}${source}`;
 }
 
 /** Build a variant URL from a named preset. Looks up presetName in variants and builds its spec with

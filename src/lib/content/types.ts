@@ -199,7 +199,7 @@ export interface AssetConfig {
   maxUploadBytes?: number;
   /** The accepted upload MIME types. Defaults to the common web image types. */
   allowedTypes?: string[];
-  /** Named transform presets, merged over the built-in thumb/inline/hero/card presets. */
+  /** Named transform presets, merged over the built-in thumb/inline/card/hero presets. */
   variants?: Record<string, VariantSpec>;
 }
 

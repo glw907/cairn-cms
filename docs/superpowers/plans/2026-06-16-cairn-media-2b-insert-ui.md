@@ -13,55 +13,35 @@ stays markdown-first, not WYSIWYG: the guided forms write markdown, the preview 
 
 ## Execution
 
-Mockup-first per [[cairn-ui-design-pass-methodology]]: Task 1 builds the insert-experience gold-standard
-mockup and Task 2 runs an adversarial UI critique of it, then the implementation follows straight on (no
-approval stop after the critique, the office-list ordering). The mockup itself (Task 1) is the one point
-that gates on Geoff's approval, since 2b is the differentiating UI and the class-A visual bar is his
-call.
+This pass skips the dedicated mockup-first design loop, a deliberate departure from
+[[cairn-ui-design-pass-methodology]] that the settled direction earns. The five-lens adversarial design
+review already did the hard design thinking and the best-in-class benchmarking (it removed the contested
+`:::image` directive and the alignment controls, and made paste-first ingest and alt-as-debt
+first-class), and
+the umbrella design pass already produced the rev.2 insert mockup
+(`docs/internal/design/2026-06-15-media-gallery-mockup.html`). What remains composes mostly from
+established patterns: the component-picker combobox-over-listbox (the 0.56.2 pass), the dialog chrome,
+the editor's directive treatment, and the toolbar Insert group. So the build targets the existing rev.2
+mockup and those precedents rather than a fresh mockup. The two new visual elements (the `media:` source
+decoration and the optimistic placeholder, both CodeMirror decorations with no precedent) get a focused
+`frontend-design` treatment inside their build tasks, designed against the real editor rather than a
+low-fidelity static mockup. The class-A visual bar is held at the end by the `frontend-design` polish
+pass over the real rendered components in both themes (Task 10) and the adversarial review-gate workflow
+(Task 11).
 
 Implementation is the standard loop: one `cairn-implementer` per task, test-first, on this feature
 worktree, the main loop reviewing each diff and clearing the full gate (`npm run check` 0/0, `npm test`
 exit 0, the reference, signature, package, docs, readiness, and version gates) between dispatches.
-Effort: high. The high-blast-radius tasks (Task 5 the editor paste/drop seam and source decoration, Task
-8 the popover and the optimistic loop) get a careful main-loop review and may be upshifted. Tasks 1, 2,
-and 12 run in the main loop (design and critique). It ships behind the `transformations: false` default
-and a `Consumers must:` line on the bundled release that carries the whole media stack.
+Effort: high. The high-blast-radius tasks (Task 3 the editor paste/drop seam and source decoration, Task
+6 the popover and the optimistic loop) get a careful main-loop review and may be upshifted. Tasks 10 and
+11 run in the main loop (the polish and the pass-end). It ships behind the `transformations: false`
+default and a `Consumers must:` line on the bundled release that carries the whole media stack.
 
-Build-dependency order: Task 1 before 2; Task 3 (the library projection) before 4 and 7; Task 5 (the
-editor seam) before 8 and 9; Tasks 6 and 7 (the card and picker) before 8 (the popover composes them);
-Task 8 before 11 (the E2E). Tasks 6, 7, and 8 should follow the approved mockup (Tasks 1-2).
+Build-dependency order: Task 1 (the library projection) before 2 and 5; Task 3 (the editor seam) before
+6 and 7; Tasks 4 and 5 (the card and picker) before 6 (the popover composes them); Task 6 before 9 (the
+E2E).
 
-## Task 1 (main loop, mockup-first): the insert-experience gold-standard mockup
-
-Spec: the whole "The pieces" section, the "Image states to design and test" list, and the not-WYSIWYG
-principle. Build a static mockup (`docs/internal/design/2026-06-16-media-insert-mockup.html`) of the
-insert experience against the editor-shell gold standard
-(`docs/internal/design/2026-06-12-editor-shell-gold-standard.html`), in both the Warm Stone light and
-dark themes, held to a class-A bar on both the interaction and the visual. Render every load-bearing
-state: the at-caret popover opened by the button (upload-first, the combobox below), the same popover
-opened by paste or drag (straight to the capture card), the combobox picker rows (thumbnail, name,
-needs-alt flag), the capture card (file, slug-proposed name, the required-or-decorative alt radiogroup
-with insert enabled), the optimistic placeholder with determinate progress, the dedup "reused existing"
-collapse, each typed failure card with a retry, the HEIC converting state, the empty-library first run,
-a large library with search, and the `media:` source decoration (the thumbnail-and-name token with the
-needs-alt marker). Benchmark the interaction against the best non-WYSIWYG markdown editors (the insert
-gesture, the paste-first ingest, the picker), routing the visual and taste decisions through the
-`frontend-design` skill with the class-A criteria and the not-WYSIWYG constraint stated up front. Get
-Geoff's approval on the rendered mockup before the implementation tasks.
-
-Exit: the mockup committed, both themes, every state rendered, Geoff approved.
-
-## Task 2 (main loop): the adversarial UI critique of the mockup
-
-Spec: the "Accessibility" and "Image states" sections. Run an adversarial UI critique of the Task 1
-mockup with fresh agents (the author-experience, accessibility, and competitive lenses, each pairing a
-failure probe with a better-pattern counter-example from a best-in-class non-WYSIWYG editor, the
-not-WYSIWYG principle a hard constraint). Fold the findings into a rev.2 mockup. No approval stop after
-this (per the office-list ordering); the implementation builds against the rev.2 mockup.
-
-Exit: rev.2 mockup committed with the critique findings folded in.
-
-## Task 3: the library projection on editLoad
+## Task 1: the library projection on editLoad
 
 Spec: "Engine and contract changes," the library projection. In `editLoad`
 (`src/lib/sveltekit/content-routes.ts`), extend the gated media read so it carries the picker's human
@@ -78,7 +58,7 @@ Tests (`src/tests/unit/content-routes-edit.test.ts`): `editLoad` with media enab
 empty; the projection carries the human layer (displayName, alt, dimensions), not just the resolver
 triple. Update the `EditData` reference entry in `docs/reference/sveltekit.md`.
 
-## Task 4: the preview media resolver and the render prop wiring
+## Task 2: the preview media resolver and the render prop wiring
 
 Spec: "The render wiring" and "Engine and contract changes." Add a manifest-style media resolver helper
 (the analog of `manifestLinkResolver` in `src/lib/content/manifest.ts`), e.g. `manifestMediaResolver`
@@ -96,7 +76,7 @@ to undefined; an `EditPage` component test renders a `media:` reference in the p
 typechecks with the added opt. Confirm `check:reference:signatures` green after the prop-type change and
 update the affected reference pages.
 
-## Task 5 (main loop reviews carefully): the editor paste/drop seam and the media: source decoration
+## Task 3 (main loop reviews carefully): the editor paste/drop seam and the media: source decoration
 
 Spec: "Paste and drag ingest" and "Inline placement and the source decoration," locked decisions 2 and
 6. In `MarkdownEditor.svelte`, add CodeMirror `EditorView.domEventHandlers` for `paste`, `dragover`, and
@@ -108,7 +88,9 @@ no image falls through to CodeMirror's default. Add a CodeMirror decoration exte
 selects/replaces the whole reference rather than corrupting a hex digit), with a persistent needs-alt
 marker when the placement's alt is empty. Add a pure `insertImage(doc, from, to, alt, ref)` transform to
 `src/lib/components/markdown-format.ts` producing `![alt](media:slug.hash)`, and a `registerInsertImage`
-seam on the editor that dispatches it at the caret (mirroring `registerInsertLink`).
+seam on the editor that dispatches it at the caret (mirroring `registerInsertLink`). The decoration is
+the first new visual element: design it against the real editor with the `frontend-design` eye, reusing
+the directive-treatment visual language (rails, the token highlight), in both themes.
 
 Tests: unit tests for `insertImage` (produces the right `![alt](media:ref)`, escapes a bracket in alt);
 unit tests for the paste/drop routing decision (an image DataTransfer routes to ingest, a text paste
@@ -116,7 +98,7 @@ falls through); a component test that a dropped image file triggers the ingest c
 decoration renders the display name and the needs-alt marker for a fixture token. The browser-coupled
 decoration is proven in a component test; keep the pure routing/transform logic unit-tested.
 
-## Task 6: the capture card component
+## Task 4: the capture card component
 
 Spec: "The capture card," locked decision 3. Add `MediaCaptureCard.svelte` (under
 `src/lib/components/`): one step taking the file, a slug-proposed editable display name (from the 2a
@@ -131,7 +113,7 @@ generic stem; the radiogroup is keyboard-operable with `aria-required` and group
 never disabled; choosing decorative yields `alt=""`; submitting without alt emits the record flagged
 needs-alt. Follow the existing dialog/component-test harness (`ComponentForm`/`WebLinkDialog` tests).
 
-## Task 7: the combobox picker component
+## Task 5: the combobox picker component
 
 Spec: "The combobox picker," locked decision 5. Add `MediaPicker.svelte` (under `src/lib/components/`):
 a combobox over a listbox, focus held in the search input, `aria-activedescendant` moving through real
@@ -146,7 +128,7 @@ search narrows by name and alt; a row carries the thumbnail, name, and needs-alt
 the reference and the prefilled alt; the type facet stays hidden with one stored type. Match the
 component-picker combobox a11y pattern.
 
-## Task 8 (main loop reviews carefully): the insert popover and the optimistic upload loop
+## Task 6 (main loop reviews carefully): the insert popover and the optimistic upload loop
 
 Spec: "The insert popover" and "The optimistic upload loop," locked decisions 2 and 4, open risks 1 and
 2. Add `MediaInsertPopover.svelte` (under `src/lib/components/`): an at-caret popover anchored to the
@@ -158,11 +140,12 @@ sheet below the narrow breakpoint. Drive the optimistic loop: on insert, land an
 at the caret (a CodeMirror decoration from a local object URL, with determinate progress), run
 `ingestFile` then `buildUploadRequest` then `sendUpload` (the 2a helper, reading the CSRF token from the
 `cairn:csrf` context getter), and on the success envelope swap the placeholder for the real
-`![alt](media:slug.hash)` (via `registerInsertImage`/`registerReplaceRange`); a dedup result collapses
-to "reused existing" pointing at the existing reference; a typed failure (decode-unsupported,
+`![alt](media:slug.hash)` (via `registerInsertImage`/`registerReplaceRange` from Task 3); a dedup result
+collapses to "reused existing" pointing at the existing reference; a typed failure (decode-unsupported,
 transcode-failed, too-large, network) shows the card with a retry; an opaque or status-0 response is
 treated as session-expired. The placeholder never leaves a half-written token in the source on failure
-(open risk 2).
+(open risk 2). The optimistic placeholder is the second new visual element: give it the
+`frontend-design` eye in both themes.
 
 Tests (component + unit): the popover routes a button-open to the chooser and a paste/drag-open to the
 capture card; focus traps and restores on Escape; the optimistic placeholder appears then resolves to
@@ -171,13 +154,13 @@ envelope shows the typed card and leaves the source unchanged; a status-0 respon
 session-expired. The pure envelope-handling and placeholder-swap logic is unit-tested; the popover and
 focus behavior in a component test.
 
-## Task 9: inline placement and the needs-alt surface
+## Task 7: inline placement and the needs-alt surface
 
 Spec: "Inline placement and the source decoration," "The needs-alt surface." Wire the committed inline
-placement (the `registerInsertImage` path from Task 5) into the popover's success path so a picked or
+placement (the `registerInsertImage` path from Task 3) into the popover's success path so a picked or
 uploaded image lands as `![alt](media:slug.hash)` at the caret. Add the needs-alt detection: a pure
 helper that scans a markdown body for media images with empty alt (`![](media:...)`), surfaced as the
-source-decoration marker (Task 5) and the picker-row flag (Task 7), and a non-blocking publish-time
+source-decoration marker (Task 3) and the picker-row flag (Task 5), and a non-blocking publish-time
 count on the edit page (a "N images need alt text" notice with jump-to-each, modeled on the broken-link
 list but a warning, not a block). The publish path itself is unchanged (alt is a11y debt, not a render
 failure).
@@ -186,7 +169,7 @@ Tests (unit + component): the needs-alt scanner finds empty-alt media images and
 alt-bearing ones and non-media images; the edit page surfaces the count when placements lack alt and
 clears it when filled; placement inserts the right `![alt](media:ref)` at the caret.
 
-## Task 10: the toolbar Insert-media entry
+## Task 8: the toolbar Insert-media entry
 
 Spec: "The toolbar integration," locked decision 8. In `EditPage.svelte`, replace the disabled "Image
 (coming soon)" button in the `insertControls` snippet with the real Insert-media control that opens
@@ -197,10 +180,10 @@ at the bottom beside the other dialogs.
 Tests (component): the toolbar shows an enabled Insert-media control in Write mode and disabled in
 Preview; clicking it opens the popover. Extend the existing toolbar/EditPage component tests.
 
-## Task 11: the showcase vertical slice and the E2E
+## Task 9: the showcase vertical slice and the E2E
 
 Spec: "Verification." Wire the insert UI into the showcase edit page (the components compose through
-`CairnAdmin`/`EditPage`, so the wiring is the render-resolver and the editor projections from Tasks 3-5
+`CairnAdmin`/`EditPage`, so the wiring is the render-resolver and the editor projections from Tasks 1-3
 reaching the showcase). Add a showcase E2E (`examples/showcase/e2e/media-insert.spec.ts`, behind
 `SHOWCASE_FAKE_BACKEND=1`, using the 2a fake R2 and fake GitHub): an editor opens a post, chooses or
 pastes an image, the optimistic placeholder lands, the upload resolves to a `media:` reference that
@@ -209,14 +192,14 @@ paths in the fake-github commit). Reuse the 2a media-slice fixtures.
 
 Tests: the E2E green in a real browser; the standing gate green.
 
-## Task 12 (main loop): the frontend-design polish pass
+## Task 10 (main loop): the frontend-design polish pass
 
 Spec: locked decision 9 (umbrella), the "Verification" frontend-design note. With the components
 rendering in the showcase in both themes, run the `frontend-design` polish pass against the editor-shell
 gold standard: the popover, the picker rows, the capture card, the optimistic and failure states, and
 the source decoration, to the class-A visual bar. Fold the refinements in.
 
-## Task 13 (main loop): pass-end ritual
+## Task 11 (main loop): pass-end ritual
 
 Simplify (code-simplifier over the pass's changed code), the review gate (the adversarial review-gate
 workflow Geoff opts into, plus `svelte-reviewer`, `daisyui-a11y-reviewer`, and the

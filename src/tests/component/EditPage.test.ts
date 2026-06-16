@@ -575,6 +575,48 @@ describe('EditPage', () => {
       .not.toContain('cairn:pages/gone');
   });
 
+  it('surfaces the needs-alt count when a placed image lacks alt text', async () => {
+    const hash = '0123456789abcdef';
+    const screen = render(EditPage, postProps({ body: `![](media:cat.${hash}) and ![A dog](media:dog.${hash})` }));
+    const notice = Array.from(screen.container.querySelectorAll('.alert')).find((el) =>
+      (el.textContent ?? '').includes('alt text'),
+    );
+    expect(notice).toBeTruthy();
+    // One image lacks alt; the other carries it, so the count is one, not two.
+    expect(notice!.textContent ?? '').toContain('1 image needs alt text');
+    expect(notice!.classList.contains('alert-warning')).toBe(true);
+    // The warning carries a glyph, never hue alone.
+    expect(notice!.querySelector('svg')).toBeTruthy();
+  });
+
+  it('shows no needs-alt notice when every placed image carries alt text', async () => {
+    const hash = '0123456789abcdef';
+    const screen = render(EditPage, postProps({ body: `![A cat](media:cat.${hash})` }));
+    await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+    expect(screen.container.textContent ?? '').not.toContain('alt text');
+  });
+
+  it('jumps to the image lacking alt and clears the notice once alt is typed', async () => {
+    const hash = '0123456789abcdef';
+    const screen = render(EditPage, postProps({ body: `![](media:cat.${hash})` }));
+    await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+    const notice = Array.from(screen.container.querySelectorAll('.alert')).find((el) =>
+      (el.textContent ?? '').includes('alt text'),
+    );
+    expect(notice!.textContent ?? '').toContain('1 image needs alt text');
+    // The jump control selects the whole image span in the editor and focuses the surface, landing
+    // the author on it. Typing the same image with alt over the selection drops the count to zero,
+    // so the notice clears. The select-range seam is what places the selection that typing replaces.
+    await screen.getByRole('button', { name: /add alt text/i }).click();
+    await expect.poll(() => document.activeElement).toBe(screen.container.querySelector('.cm-content'));
+    // userEvent.keyboard treats [ as a descriptor opener, so a literal [ is doubled; ] is literal.
+    await userEvent.keyboard(`![[A cat](media:cat.${hash})`);
+    await expect
+      .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
+      .toBe(`![A cat](media:cat.${hash})`);
+    await expect.poll(() => screen.container.textContent ?? '').not.toContain('image needs alt text');
+  });
+
   it('shows the Edited badge in the header when the live site lags the edits', async () => {
     const screen = render(EditPage, postProps({ pending: true, published: true }));
     const badge = screen.container.querySelector('[data-testid="cairn-band"] .badge-warning');

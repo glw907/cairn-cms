@@ -1046,6 +1046,29 @@ describe('MarkdownEditor', () => {
       .toBe(['alpha', '::::callout[New]', 'fresh body', '::::', 'omega'].join('\n'));
   });
 
+  it('selects a document span, focuses the surface, through registerSelectRange', async () => {
+    const doc = 'before ![](media:cat.0123456789abcdef) after';
+    let select: ((from: number, to: number) => void) | undefined;
+    let getSelection: (() => string) | undefined;
+    const screen = render(MarkdownEditor, {
+      value: doc,
+      name: 'body',
+      registerSelectRange: (fn: (from: number, to: number) => void) => {
+        select = fn;
+      },
+      registerGetSelection: (fn: () => string) => {
+        getSelection = fn;
+      },
+    });
+    await expect.poll(() => typeof select).toBe('function');
+    await expect.poll(() => typeof getSelection).toBe('function');
+    const from = doc.indexOf('![');
+    const to = from + '![](media:cat.0123456789abcdef)'.length;
+    select!(from, to);
+    await expect.poll(() => document.activeElement).toBe(screen.container.querySelector('.cm-content'));
+    expect(getSelection!()).toBe('![](media:cat.0123456789abcdef)');
+  });
+
   it('offers and applies a cairn link through the [[ autocomplete', async () => {
     const targets: LinkTarget[] = [
       { concept: 'pages', id: 'about', permalink: '/about', title: 'About Us', draft: false },

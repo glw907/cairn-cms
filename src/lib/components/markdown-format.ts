@@ -7,8 +7,9 @@ import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkGfm from 'remark-gfm';
 import { visit } from 'unist-util-visit';
-import type { Link } from 'mdast';
+import type { Image, Link } from 'mdast';
 import { escapeLinkText } from '../content/links.js';
+import { parseMediaToken } from '../media/reference.js';
 
 export type FormatKind =
   | 'bold'
@@ -175,6 +176,41 @@ export function insertImage(doc: string, from: number, to: number, alt: string, 
   const inserted = `![${escapeLinkText(alt)}](${ref})`;
   const end = from + inserted.length;
   return { doc: doc.slice(0, from) + inserted + doc.slice(to), from: end, to: end };
+}
+
+/** One media image whose alt is empty, located by its source offsets and parsed to its ref parts. */
+export interface MediaImageNeedingAlt {
+  from: number;
+  to: number;
+  ref: string;
+  slug: string;
+  hash: string;
+}
+
+/**
+ * Scan a markdown body for media images that carry no alt text, the publish-time accessibility debt
+ * the edit page counts. The document is parsed with the same remark pipeline unwrapCairnLink uses,
+ * so the two agree on what an image is. Each `image` node whose url is a valid `media:` reference and
+ * whose alt is empty or whitespace-only is returned with its source offsets and parsed slug and hash.
+ * Parsing (not a raw regex) means a `![](media:x)` written inside a code span or fence is not an
+ * image node and is correctly ignored, as is an alt-bearing media image and any non-media image (an
+ * http or cairn: url). Pure and node-safe, so the edit page derives the live count without a browser.
+ * The bare `media:<hash>` form yields an empty slug.
+ */
+export function findMediaImagesNeedingAlt(doc: string): MediaImageNeedingAlt[] {
+  const tree = unified().use(remarkParse).use(remarkGfm).parse(doc);
+  const hits: MediaImageNeedingAlt[] = [];
+  visit(tree, 'image', (node: Image) => {
+    const ref = parseMediaToken(node.url);
+    if (!ref) return;
+    if ((node.alt ?? '').trim() !== '') return;
+    const from = node.position?.start?.offset;
+    const to = node.position?.end?.offset;
+    if (from == null || to == null) return;
+    hits.push({ from, to, ref: node.url, slug: ref.slug ?? '', hash: ref.hash });
+  });
+  hits.sort((a, b) => a.from - b.from);
+  return hits;
 }
 
 /** Concatenate a link node's text-child values. The parser has already unescaped them, so a source

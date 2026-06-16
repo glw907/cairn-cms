@@ -78,6 +78,10 @@ through the adapter's render. Swapping the editor stays a one-file change.
     /** Receives a `(from, to, text) => void` that overwrites a document span; the dialog's Update
      *  calls it to write an edited block back over its original range. */
     registerReplaceRange?: (replace: (from: number, to: number, text: string) => void) => void;
+    /** Receives a `(from, to) => void` that selects a document span, focuses the editor, and scrolls
+     *  the range into view; the needs-alt notice's jump control calls it to land the author on an
+     *  image that lacks alt text. */
+    registerSelectRange?: (select: (from: number, to: number) => void) => void;
     /** Generic CodeMirror completion sources wired into the editor; the link autocomplete is one. The
      *  type is referenced inline so no static `@codemirror/*` import sits in this client-only file. */
     completionSources?: import('@codemirror/autocomplete').CompletionSource[];
@@ -105,6 +109,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
     registerFormat,
     onComponentAtCaret,
     registerReplaceRange,
+    registerSelectRange,
     completionSources = [],
     focusMode = false,
     typewriter = false,
@@ -587,6 +592,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
     registerGetSelection?.(selectedText);
     registerFormat?.(applyFormat);
     registerReplaceRange?.(replaceRange);
+    registerSelectRange?.(selectRange);
     // Report the caret's starting container once the editor exists, so a caret that mounts inside
     // a block is known without waiting for the first move.
     if (onComponentAtCaret) reportComponentAtCaret(view.state);
@@ -677,6 +683,15 @@ through the adapter's render. Swapping the editor stays a one-file change.
   function replaceRange(from: number, to: number, text: string) {
     if (!view) return;
     view.dispatch({ changes: { from, to, insert: text }, selection: { anchor: from + text.length } });
+    view.focus();
+  }
+
+  // Select a document span, focus the surface, and scroll the range into view. The needs-alt notice's
+  // jump control calls it to land the author on an image that lacks alt text. A no-op before the
+  // editor mounts, the same guard the other seams carry.
+  function selectRange(from: number, to: number) {
+    if (!view) return;
+    view.dispatch({ selection: { anchor: from, head: to }, scrollIntoView: true });
     view.focus();
   }
 

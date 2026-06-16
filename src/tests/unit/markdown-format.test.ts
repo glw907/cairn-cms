@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { applyMarkdownFormat, insertImage, insertInlineLink, unwrapCairnLink, type FormatKind } from '../../lib/components/markdown-format.js';
+import {
+  applyMarkdownFormat,
+  findMediaImagesNeedingAlt,
+  insertImage,
+  insertInlineLink,
+  unwrapCairnLink,
+  type FormatKind,
+} from '../../lib/components/markdown-format.js';
 
 describe('applyMarkdownFormat', () => {
   const wrap: { kind: FormatKind; doc: string; out: string; from: number; to: number }[] = [
@@ -184,5 +191,58 @@ describe('unwrapCairnLink', () => {
   });
   it('leaves an occurrence inside a code span untouched, unwrapping only the prose link', () => {
     expect(unwrapCairnLink('`[x](cairn:posts/x)` and [x](cairn:posts/x)', 'cairn:posts/x')).toBe('`[x](cairn:posts/x)` and x');
+  });
+});
+
+describe('findMediaImagesNeedingAlt', () => {
+  const hash = '0123456789abcdef';
+  it('finds a media image with an empty alt and returns its slug, hash, and offsets', () => {
+    const doc = `before ![](media:cat.${hash}) after`;
+    const hits = findMediaImagesNeedingAlt(doc);
+    expect(hits).toHaveLength(1);
+    expect(hits[0].ref).toBe(`media:cat.${hash}`);
+    expect(hits[0].slug).toBe('cat');
+    expect(hits[0].hash).toBe(hash);
+    const from = doc.indexOf('![');
+    expect(hits[0].from).toBe(from);
+    expect(doc.slice(hits[0].from, hits[0].to)).toBe(`![](media:cat.${hash})`);
+  });
+  it('finds a media image whose alt is whitespace only', () => {
+    const doc = `![   ](media:cat.${hash})`;
+    const hits = findMediaImagesNeedingAlt(doc);
+    expect(hits).toHaveLength(1);
+    expect(hits[0].slug).toBe('cat');
+  });
+  it('returns the bare media: form with an empty slug', () => {
+    const doc = `![](media:${hash})`;
+    const hits = findMediaImagesNeedingAlt(doc);
+    expect(hits).toHaveLength(1);
+    expect(hits[0].slug).toBe('');
+    expect(hits[0].hash).toBe(hash);
+  });
+  it('ignores a media image that already carries alt text', () => {
+    const doc = `![A cat](media:cat.${hash})`;
+    expect(findMediaImagesNeedingAlt(doc)).toEqual([]);
+  });
+  it('ignores a non-media image with an http url', () => {
+    expect(findMediaImagesNeedingAlt('![](https://example.com/a.png)')).toEqual([]);
+  });
+  it('ignores a non-media image with a cairn: url', () => {
+    expect(findMediaImagesNeedingAlt('![](cairn:posts/x)')).toEqual([]);
+  });
+  it('ignores a malformed media token', () => {
+    expect(findMediaImagesNeedingAlt('![](media:not-a-hash)')).toEqual([]);
+  });
+  it('ignores a media image inside a fenced code block', () => {
+    const doc = `\`\`\`\n![](media:cat.${hash})\n\`\`\``;
+    expect(findMediaImagesNeedingAlt(doc)).toEqual([]);
+  });
+  it('finds several empty-alt media images and orders them by source position', () => {
+    const doc = `![](media:a.${hash}) text ![](media:b.${hash})`;
+    const hits = findMediaImagesNeedingAlt(doc);
+    expect(hits).toHaveLength(2);
+    expect(hits[0].slug).toBe('a');
+    expect(hits[1].slug).toBe('b');
+    expect(hits[0].from).toBeLessThan(hits[1].from);
   });
 });

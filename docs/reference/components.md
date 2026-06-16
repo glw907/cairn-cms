@@ -299,7 +299,7 @@ seam. The snippets are minimal mounts with the real prop names.
 ### `MarkdownEditor`
 
 ```ts
-let { value = $bindable(), name, registerInsert, registerInsertLink, registerInsertImage, onImageIngest, mediaLibrary = {}, registerCaretCoords, registerFocusEditor, registerImagePlaceholders, registerGetSelection, registerFormat, onComponentAtCaret, registerReplaceRange, completionSources = [], focusMode = false, typewriter = false }: {
+let { value = $bindable(), name, registerInsert, registerInsertLink, registerInsertImage, onImageIngest, mediaLibrary = {}, registerCaretCoords, registerFocusEditor, registerImagePlaceholders, registerGetSelection, registerFormat, onComponentAtCaret, registerReplaceRange, registerSelectRange, completionSources = [], focusMode = false, typewriter = false }: {
   value: string;
   name: string;
   registerInsert?: (insert: (text: string) => void) => void;
@@ -314,6 +314,7 @@ let { value = $bindable(), name, registerInsert, registerInsertLink, registerIns
   registerFormat?: (format: (kind: FormatKind) => void) => void;
   onComponentAtCaret?: (info: { name: string | null; markdown: string; from: number; to: number } | null) => void;
   registerReplaceRange?: (replace: (from: number, to: number, text: string) => void) => void;
+  registerSelectRange?: (select: (from: number, to: number) => void) => void;
   completionSources?: CompletionSource[];
   focusMode?: boolean;
   typewriter?: boolean;
@@ -334,7 +335,10 @@ container under the caret whenever it changes: the opening directive's `name`, t
 when the caret sits outside any container. The host resolves that block against the registry to
 offer an Edit-block control. `registerReplaceRange` hands the parent a `(from, to, text)` callback
 that overwrites a document span and drops the caret after it, which the Edit-block dialog's Update
-calls to write an edited block back over its original range. The media seams support the insert
+calls to write an edited block back over its original range. `registerSelectRange` hands the parent a
+`(from, to)` callback that selects a document span, focuses the surface, and scrolls the range into
+view, which the publish-time needs-alt notice's jump control calls to land the author on an image
+that lacks alt text. The media seams support the insert
 popover: `registerInsertImage` inserts an inline `![alt](media:slug.hash)` image at the caret (the
 picker and the capture card call it), `onImageIngest` fires with the first image file of a paste or
 drop onto the surface (the host opens the capture card with the bytes), and `mediaLibrary` is the

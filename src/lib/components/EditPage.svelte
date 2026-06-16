@@ -37,7 +37,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   import MarkdownHelpDialog from './MarkdownHelpDialog.svelte';
   import ShortcutsDialog from './ShortcutsDialog.svelte';
   import { cairnLinkCompletionSource } from './link-completion.js';
-  import { unwrapCairnLink, type FormatKind } from './markdown-format.js';
+  import { findMediaImagesNeedingAlt, unwrapCairnLink, type FormatKind } from './markdown-format.js';
   import { buildPreviewDoc, deviceLabel, previewDevice, previewDevices, type PreviewDeviceId } from './preview-doc.js';
   import { directiveLineKind, findInlineDirectives } from './markdown-directives.js';
   import type { ComponentRegistry, ComponentDef } from '../render/registry.js';
@@ -367,6 +367,9 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   // The editor's range-replace seam, registered by MarkdownEditor on mount; the dialog's Update
   // routes through it to overwrite an edited block's source span. A no-op until then.
   let replaceRange = $state.raw<(from: number, to: number, text: string) => void>(() => {});
+  // The editor's select-range seam, registered by MarkdownEditor on mount; the needs-alt notice's
+  // jump control routes through it to land the author on an image that lacks alt. A no-op until then.
+  let selectRange = $state.raw<(from: number, to: number) => void>(() => {});
   let insertLink = $state.raw<(href: string, title: string) => void>(() => {});
   // The editor's current selection, registered by MarkdownEditor on mount; the web link dialog
   // reads it for the Text field's default.
@@ -545,6 +548,11 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
       removedLinks = [...removedLinks, href];
     }
   }
+
+  // The media images in the live body that carry no alt text, recomputed as the author types. Alt is
+  // accessibility debt, never a render or publish failure, so this drives a non-blocking warning the
+  // author can act on or leave; the count drops and the notice clears as each alt is filled.
+  const needsAlt = $derived(findMediaImagesNeedingAlt(body));
 
   // The delete guard's inbound linkers, from a refused delete (fail 409). Empty when the delete was
   // not refused. When set, a delete was blocked by a link that appeared since the page loaded.
@@ -931,6 +939,31 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     </ul>
   </div>
 {/if}
+{#if needsAlt.length}
+  <!-- The publish-time needs-alt notice: a non-blocking warning, never a block. Alt text is
+       accessibility debt, so the author can add it now or save without it; the count drops live as
+       each alt is filled and the notice clears at zero. The leading glyph carries the state alongside
+       the count, so the caution reads without relying on hue. Each row's jump control selects the
+       image in the source through the editor's select-range seam, landing the author on it to type
+       the alt. -->
+  <div class="alert alert-warning mb-4 flex-col items-start text-sm" role="status">
+    <p class="flex items-center gap-2 font-medium">
+      <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+      </svg>
+      <span>{needsAlt.length} {needsAlt.length === 1 ? 'image needs' : 'images need'} alt text</span>
+    </p>
+    <p>Alt text describes an image for readers who cannot see it. Add it now, or save and come back to it.</p>
+    <ul class="mt-1 w-full">
+      {#each needsAlt as item (item.from)}
+        <li class="flex items-center justify-between gap-2">
+          <code class="text-xs">{item.ref}</code>
+          <button type="button" class="btn btn-xs" onclick={() => selectRange(item.from, item.to)}>Add alt text</button>
+        </li>
+      {/each}
+    </ul>
+  </div>
+{/if}
 {#if draftWarning}
   <div class="alert alert-warning mb-4 text-sm">
     Saved. Note: this page links to unpublished {draftWarning.includes(',') ? 'pages' : 'a page'} ({draftWarning}), which will 404 until published.
@@ -1073,6 +1106,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
           registerInsert={(fn) => (insert = fn)}
           onComponentAtCaret={(info) => (caretComponent = info)}
           registerReplaceRange={(fn) => (replaceRange = fn)}
+          registerSelectRange={(fn) => (selectRange = fn)}
           registerInsertLink={(fn) => (insertLink = fn)}
           registerGetSelection={(fn) => (getSelection = fn)}
           registerFormat={(fn) => (format = fn)}

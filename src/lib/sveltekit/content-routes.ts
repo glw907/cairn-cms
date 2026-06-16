@@ -23,6 +23,7 @@ import { sniffMediaType, isDeniedUpload, extForMediaType } from '../media/sniff.
 import { hashBytes, shortHash, slugifyFilename, r2Key } from '../media/naming.js';
 import { mediaToken } from '../media/reference.js';
 import { r2Store } from '../media/store.js';
+import { parseMediaEntries, parseMediaManifest, upsertMediaEntry, serializeMediaManifest } from '../media/manifest.js';
 import type { MediaEntry } from '../media/manifest.js';
 import type { CookieJar, EventBase } from './types.js';
 import type { CairnRuntime, ConceptDescriptor, FrontmatterField, PreviewConfig, ResolvedPreview } from '../content/types.js';
@@ -169,6 +170,17 @@ export interface RenameFailure {
  *  keys identify which guard refused. */
 export type ContentFormFailure = Partial<SaveFailure & DeleteRefusal & RenameFailure>;
 
+/** The successful upload's response (`uploadAction`). The server-owned `record` rides the editor's
+ *  optimistic client state and commits with the entry at Save (the upload itself commits nothing).
+ *  `reused` is true when identical bytes were already stored, so the second upload did no second put;
+ *  `mismatch` flags an existing object whose stored content type differs from this sniff. */
+export interface UploadResult {
+  reference: string;
+  record: MediaEntry;
+  reused: boolean;
+  mismatch: boolean;
+}
+
 /** Resolve the effective preview for one concept: its `byConcept` override wins per key, with
  *  nullish coalescing so an override key that is present but undefined keeps the top-level value.
  *  Stylesheets are always shared, and the `byConcept` map never reaches the client. */
@@ -198,6 +210,18 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
   async function readManifest(token: string): Promise<Manifest> {
     const raw = await readRaw(runtime.backend, runtime.manifestPath, token);
     return raw === null ? emptyManifest() : parseManifest(raw);
+  }
+
+  /** Parse a committed media.json body to a plain value for parseMediaManifest, degrading a missing
+   *  or corrupt file to null (an empty manifest). The committed file is always our own serialization,
+   *  so the catch only guards a hand-edited or truncated file rather than a normal path. */
+  function parseMediaJson(raw: string | null): unknown {
+    if (raw === null) return null;
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
   }
 
   /** The pending entry a `cairn/` ref names, or null for a ref the engine must ignore: a
@@ -520,6 +544,11 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     /** The draft-target tokens the body links to, for save's warning query. */
     draftLinks: string[];
     token: string;
+    /** The merged media.json change this save committed to the branch, when media is on and the
+     *  post carried records. Publish reuses it verbatim so the main commit promotes the exact same
+     *  merged content (decision 1: the default-branch base is read once, here, not re-merged at
+     *  publish). Absent when media is off or no records were posted. */
+    mediaChange?: FileChange;
   }
 
   /** The shared core of save and publish: parse the posted form, validate the frontmatter,
@@ -547,6 +576,25 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
 
     const markdown = serializeMarkdown(result.data, body);
     const token = await mintToken(event.platform?.env ?? {});
+
+    // Merge the editor's optimistic media records into the media manifest, gated on media being on
+    // and at least one valid record posted. The base is read from the default branch (never the
+    // pending branch), so each save's union starts from main's committed rows, and decision 1's
+    // last-writer-wins-by-hash race is the accepted trade. The merged file rides the branch commit
+    // below and, carried on SaveHold, the publish commit, so both reuse the same content with no
+    // second read. When media is off or no records arrive, nothing touches media.json.
+    let mediaChange: FileChange | undefined;
+    if (runtime.resolvedAssets.enabled) {
+      const records = parseMediaEntries(form.get('media'));
+      if (records.length > 0) {
+        const baseRaw = await readRaw(runtime.backend, runtime.mediaManifestPath, token);
+        let mediaManifest = parseMediaManifest(parseMediaJson(baseRaw));
+        for (const record of records) {
+          mediaManifest = upsertMediaEntry(mediaManifest, record);
+        }
+        mediaChange = { path: runtime.mediaManifestPath, content: serializeMediaManifest(mediaManifest) };
+      }
+    }
 
     // Upsert this entry's row into main's manifest in memory, for the link guard here and for
     // the publish commit. The save commits no manifest change; publish lands the upsert on main.
@@ -594,7 +642,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     try {
       branchSha = await commitFiles(
         { ...runtime.backend, branch },
-        [{ path, content: markdown }],
+        mediaChange ? [{ path, content: markdown }, mediaChange] : [{ path, content: markdown }],
         { message: `Update ${concept.label.toLowerCase()}: ${id}`, author: { name: editor.displayName, email: editor.email } },
         token,
       );
@@ -603,7 +651,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       commitFailure(commitFields, err, `/admin/${concept.id}/${id}`,
         'This file changed since you opened it. Reload and reapply your edits.', { query: suffix });
     }
-    return { path, markdown, branch, branchSha, manifest: upserted, draftLinks, token };
+    return { path, markdown, branch, branchSha, manifest: upserted, draftLinks, token, mediaChange };
   }
 
   /** Save an edit: validate, then commit to the entry's pending branch with the session editor
@@ -636,16 +684,22 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     if (!isValidId(id)) throw error(400, 'Invalid entry id');
     const held = await saveToBranch(event, editor, concept, id);
     if (!('branchSha' in held)) return held;
-    const { path, markdown, branch, branchSha, manifest, token } = held;
+    const { path, markdown, branch, branchSha, manifest, token, mediaChange } = held;
+
+    // The publish commit reuses the exact merged media.json saveToBranch already built (decision 1:
+    // no re-read or re-merge here). Promote it to main alongside the body and the content manifest
+    // in one atomic commit, or commit those two alone when the save touched no media.
+    const changes: FileChange[] = [
+      { path, content: markdown },
+      { path: runtime.manifestPath, content: serializeManifest(manifest) },
+    ];
+    if (mediaChange) changes.push(mediaChange);
 
     const commitFields = { concept: concept.id, id, editor: editor.email };
     try {
       await commitFiles(
         runtime.backend,
-        [
-          { path, content: markdown },
-          { path: runtime.manifestPath, content: serializeManifest(manifest) },
-        ],
+        changes,
         { message: `Publish ${concept.label.toLowerCase()}: ${id}`, author: { name: editor.displayName, email: editor.email } },
         token,
       );
@@ -943,17 +997,6 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
         'This file changed since you opened it. Reload and try again.');
     }
     throw redirect(303, `/admin/${concept.id}/${newId}?renamed=1`);
-  }
-
-  /** The successful upload's response. The server-owned `record` rides the editor's optimistic
-   *  client state and commits with the entry at Save (the upload itself commits nothing). `reused`
-   *  is true when identical bytes were already stored, so the second upload did no second put;
-   *  `mismatch` flags an existing object whose stored content type differs from this sniff. */
-  interface UploadResult {
-    reference: string;
-    record: MediaEntry;
-    reused: boolean;
-    mismatch: boolean;
   }
 
   /**

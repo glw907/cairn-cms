@@ -34,6 +34,63 @@ export function parseMediaManifest(json: unknown): MediaManifest {
   return json as MediaManifest;
 }
 
+/** Validate one posted value as a MediaEntry, returning it narrowed or undefined. The trust boundary
+ *  for an optimistic record the client re-posts: the upload action server-owned each field at
+ *  creation, but a re-post is untrusted, so every field is re-checked. A `hash` must be the 16-hex
+ *  content-hash prefix; the string fields must be strings; `bytes` must be finite; `width`/`height`
+ *  must each be a number or null; `createdAt` must be a string. */
+function validateMediaEntry(value: unknown): MediaEntry | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const e = value as Record<string, unknown>;
+  const isString = (v: unknown): v is string => typeof v === 'string';
+  const isNumOrNull = (v: unknown): v is number | null => v === null || typeof v === 'number';
+  if (typeof e.hash !== 'string' || !/^[0-9a-f]{16}$/.test(e.hash)) return undefined;
+  if (!isString(e.sha256)) return undefined;
+  if (!isString(e.slug) || !isString(e.displayName) || !isString(e.originalFilename)) return undefined;
+  if (!isString(e.alt) || !isString(e.ext) || !isString(e.contentType)) return undefined;
+  if (typeof e.bytes !== 'number' || !Number.isFinite(e.bytes)) return undefined;
+  if (!isNumOrNull(e.width) || !isNumOrNull(e.height)) return undefined;
+  if (!isString(e.createdAt)) return undefined;
+  return {
+    hash: e.hash,
+    sha256: e.sha256,
+    slug: e.slug,
+    displayName: e.displayName,
+    originalFilename: e.originalFilename,
+    alt: e.alt,
+    ext: e.ext,
+    contentType: e.contentType,
+    bytes: e.bytes,
+    width: e.width,
+    height: e.height,
+    createdAt: e.createdAt,
+  };
+}
+
+/** Parse the posted `media` field into a validated list of MediaEntry rows. The field arrives as a
+ *  JSON string (the usual form-post shape), an already-parsed array, or junk. A string is JSON-parsed
+ *  inside a try/catch that yields `[]` on a parse failure; a non-string array is taken directly;
+ *  anything else yields `[]`. Each element is validated and a failing element is dropped, so a partly
+ *  malformed post still lands its good rows. This is the trust boundary for the client's optimistic
+ *  records. */
+export function parseMediaEntries(value: unknown): MediaEntry[] {
+  let raw: unknown = value;
+  if (typeof value === 'string') {
+    try {
+      raw = JSON.parse(value);
+    } catch {
+      return [];
+    }
+  }
+  if (!Array.isArray(raw)) return [];
+  const entries: MediaEntry[] = [];
+  for (const item of raw) {
+    const entry = validateMediaEntry(item);
+    if (entry) entries.push(entry);
+  }
+  return entries;
+}
+
 /** The dedup lookup: the entry stored under the content-hash prefix, or undefined when no bytes with
  *  that hash are stored yet. */
 export function findByHash(manifest: MediaManifest, hash: string): MediaEntry | undefined {

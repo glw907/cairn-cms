@@ -236,6 +236,7 @@ declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutes
   deleteAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
   listDeleteAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
   renameAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
+  uploadAction: (event: ContentEvent) => Promise<ActionFailure<unknown> | UploadResult>;
   mintToken: (env: GithubKeyEnv) => string | Promise<string>;
 };
 ```
@@ -244,8 +245,11 @@ The core of the admin surface. It takes the composed runtime and returns the loa
 the authed admin shell, the concept list, and the entry editor. `layoutLoad` backs the authed
 shell, `listLoad` with the `create`, `delete` (`listDeleteAction`), and `publishAll`
 actions back a concept's list view, and `editLoad` with the `save`, `publish`, `discard`,
-`delete`, and `rename` actions back the entry editor. The optional `deps.mintToken` stubs the
-GitHub App token mint, which is how the showcase runs in dev without a real key.
+`delete`, and `rename` actions back the entry editor. `uploadAction` ingests an image for a
+media-enabled site: a raw-body JSON endpoint that stores the bytes in R2, returns a `UploadResult`
+(the `media:` reference and the server-owned record), and commits nothing until the entry is saved.
+The optional `deps.mintToken` stubs the GitHub App token mint, which is how the showcase runs in dev
+without a real key.
 
 A save holds the edit on the entry's pending branch (`cairn/<concept>/<id>`) and does not touch
 the default branch, so the live site stays as it was. `publishAction` publishes what the author
@@ -276,6 +280,31 @@ const routes = createContentRoutes(composeRuntime({ adapter: cairn, siteConfig }
 
 export const load = routes.listLoad;
 export const actions = { create: routes.createAction, delete: routes.listDeleteAction, publishAll: routes.publishAllAction };
+```
+
+### `createMediaRoute`
+
+```ts
+declare function createMediaRoute(resolved: ResolvedAssetConfig): RequestHandler;
+```
+
+The media delivery route, a SvelteKit `RequestHandler` a media-enabled site mounts at
+`/media/[...path]`. It streams content-addressed bytes from the site's R2 bucket, validating the
+hash and extension before any R2 read and deriving the object key from the validated values alone.
+Every served response carries the load-bearing security headers (`X-Content-Type-Options: nosniff`,
+`Content-Disposition: inline`, a `default-src 'none'; sandbox` CSP, and a one-year immutable cache),
+which are the XSS control for the served bytes since the route sits outside `/admin`. It forwards
+`If-None-Match` and `Range` for 304 and 206 responses, short-circuits the Cloudflare Images
+self-loop, returns 503 on a missing bucket binding, and 404s a media-off site or a bad path. Pass it
+the runtime's `resolvedAssets`.
+
+```ts
+// src/routes/media/[...path]/+server.ts
+import { cairn, siteConfig } from '$lib/cairn.config.js';
+import { composeRuntime } from '@glw907/cairn-cms';
+import { createMediaRoute } from '@glw907/cairn-cms/sveltekit';
+
+export const GET = createMediaRoute(composeRuntime({ adapter: cairn, siteConfig }).resolvedAssets);
 ```
 
 ### `createNavRoutes`

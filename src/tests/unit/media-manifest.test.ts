@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   parseMediaManifest,
+  parseMediaEntries,
   findByHash,
   upsertMediaEntry,
   serializeMediaManifest,
@@ -52,6 +53,42 @@ describe('parseMediaManifest', () => {
     expect(parseMediaManifest('not an object')).toEqual({});
     expect(parseMediaManifest(42)).toEqual({});
     expect(parseMediaManifest([ENTRY_A, ENTRY_B])).toEqual({});
+  });
+});
+
+describe('parseMediaEntries', () => {
+  it('parses a JSON-string array of valid entries', () => {
+    const list = parseMediaEntries(JSON.stringify([ENTRY_A, ENTRY_B]));
+    expect(list).toEqual([ENTRY_A, ENTRY_B]);
+  });
+  it('accepts an already-parsed array directly', () => {
+    expect(parseMediaEntries([ENTRY_A])).toEqual([ENTRY_A]);
+  });
+  it('returns [] for malformed JSON', () => {
+    expect(parseMediaEntries('not json {{{')).toEqual([]);
+  });
+  it('returns [] for a non-array, null, undefined, or a bare object', () => {
+    expect(parseMediaEntries(undefined)).toEqual([]);
+    expect(parseMediaEntries(null)).toEqual([]);
+    expect(parseMediaEntries(42)).toEqual([]);
+    expect(parseMediaEntries(JSON.stringify({ ...ENTRY_A }))).toEqual([]);
+  });
+  it('drops elements that fail validation, keeping the valid ones', () => {
+    const list = parseMediaEntries([
+      ENTRY_A,
+      { ...ENTRY_B, hash: 'TOOSHORT' }, // bad hash
+      { ...ENTRY_A, bytes: 'lots' }, // non-number bytes
+      { ...ENTRY_B, width: undefined }, // width not number|null
+      ENTRY_B,
+    ]);
+    expect(list).toEqual([ENTRY_A, ENTRY_B]);
+  });
+  it('keeps a null width and height (a dimensionless entry is valid)', () => {
+    const dimensionless: MediaEntry = { ...ENTRY_A, width: null, height: null };
+    expect(parseMediaEntries([dimensionless])).toEqual([dimensionless]);
+  });
+  it('rejects a non-finite bytes value', () => {
+    expect(parseMediaEntries([{ ...ENTRY_A, bytes: Infinity }])).toEqual([]);
   });
 });
 

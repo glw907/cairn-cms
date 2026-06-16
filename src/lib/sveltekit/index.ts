@@ -17,6 +17,7 @@ export type {
   DeleteRefusal,
   RenameFailure,
   ContentFormFailure,
+  UploadResult,
 } from './content-routes.js';
 export { createNavRoutes } from './nav-routes.js';
 export type { NavLoadData, NavPageOption, NavRoutesDeps } from './nav-routes.js';

@@ -61,17 +61,22 @@ site cutover. Post-mortem with the spike findings and carry-forwards in the plan
    wiring. **Alt is a debt, not a hard block** (insert proceeds; missing alt is a persistent flag plus a
    non-blocking publish-time count). Per-image presentation (captions via the standard image title,
    alignment as theme-resolved intent classes) moves to Phase 3 "placements" with a layer charter
-   (directives carry identity/decorative-wrapping, never presentation parameters). **The IMMEDIATE next
-   action is executing the 2b plan, MOCKUP-FIRST:** Task 1 builds the insert-experience gold-standard
-   mockup (`frontend-design`, both themes, class-A function+visual, benchmarked against the best
-   non-WYSIWYG markdown editors), which gates on Geoff's approval before the implementation tasks; Task 2
-   the adversarial UI critique; then the build (one `cairn-implementer` per task, full gate between
-   dispatches), the `frontend-design` polish, and the adversarial review-gate workflow. cairn stays
-   markdown-first, not WYSIWYG (see [[cairn-not-wysiwyg-best-markdown]]). **2b constraints carried from
-   2a:** the client parses the 200 JSON envelope (`{ type, status, data }`), not `Response.status`, and
-   treats an opaque/status-0 response as session-expired; no multi-select drag-drop until a
-   batch-coalesced ingest is designed (open risk 5). Then Phase 3 (placements), Phase 4 (management, the
-   branch-spanning usage index, safe-delete), Phase 5 (embeds and icon routing).
+   (directives carry identity/decorative-wrapping, never presentation parameters). **The plan skips the
+   upfront mockup-first loop** (Geoff's call, 2026-06-16): the adversarial review settled the direction
+   onto existing patterns (the component-picker combobox, the dialog chrome, the directive treatment) and
+   the umbrella rev.2 insert mockup already exists, so a fresh mockup earns nothing; the two novel
+   CodeMirror decorations (the `media:` source token, the optimistic placeholder) get a focused
+   `frontend-design` treatment in their build tasks, and the end-of-pass `frontend-design` polish plus the
+   adversarial review-gate hold the class-A bar. **The IMMEDIATE next action is executing the 11-task 2b
+   plan:** one `cairn-implementer` per task, test-first, full gate between dispatches; Tasks 1-2 are the
+   library projection and the preview render wiring, Task 3 (high-blast-radius) the editor paste/drop seam
+   and `media:` source decoration, Tasks 4-6 the capture card / picker / popover with the optimistic loop,
+   Tasks 7-9 inline placement + needs-alt + the toolbar entry + the showcase E2E, Task 10 the polish, Task
+   11 the pass-end. cairn stays markdown-first, not WYSIWYG (see [[cairn-not-wysiwyg-best-markdown]]).
+   **2b constraints carried from 2a:** the client parses the 200 JSON envelope (`{ type, status, data }`),
+   not `Response.status`, and treats an opaque/status-0 response as session-expired; no multi-select
+   drag-drop until a batch-coalesced ingest is designed (open risk 5). Then Phase 3 (placements), Phase 4
+   (management, the branch-spanning usage index, safe-delete), Phase 5 (embeds and icon routing).
 
 ## Prior next action (2026-06-15): Phase 2a media ingest+delivery DESIGNED, ready to build (build deferred to a fresh session)
 

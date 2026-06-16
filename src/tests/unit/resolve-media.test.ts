@@ -14,6 +14,7 @@ const manifest: MediaManifest = {
     originalFilename: 'IMG_4821.HEIC',
     alt: 'A pair of blue running shoes',
     ext: 'webp',
+    contentType: 'image/webp',
     bytes: 184320,
     width: 1600,
     height: 1200,

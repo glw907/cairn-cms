@@ -3,7 +3,14 @@
 // operations it needs (store, probe, read, remove a content-addressed object) are typed and testable
 // against an in-memory double, and a later storage-backend swap touches this one factory. The bytes
 // are content-addressed, so a put under an existing key is a harmless rewrite of identical bytes.
-import type { R2Bucket, R2Object, R2ObjectBody, R2HTTPMetadata } from '@cloudflare/workers-types';
+import type {
+  R2Bucket,
+  R2Conditional,
+  R2HTTPMetadata,
+  R2Object,
+  R2ObjectBody,
+  R2Range,
+} from '@cloudflare/workers-types';
 
 /** The narrow R2 surface the media pipeline uses. The engine depends on this, not on R2Bucket, so the
  *  multipart, list, and conditional-read surface R2 also carries never leaks into the media code. */
@@ -12,8 +19,14 @@ export interface MediaStore {
   put(key: string, bytes: ArrayBuffer | Uint8Array, httpMetadata?: R2HTTPMetadata): Promise<void>;
   /** The object's metadata, or null when no object lives at the key (the dedup probe). */
   head(key: string): Promise<R2Object | null>;
-  /** The object body for streaming to a delivery response, or null when the key is absent. */
-  get(key: string): Promise<R2ObjectBody | null>;
+  /** The object body for streaming to a delivery response, or null when the key is absent. The
+   *  delivery route passes `onlyIf` and `range` through for conditional and partial reads: an
+   *  `onlyIf` etag match returns a body-less R2Object (the 304 shape), so the return widens to
+   *  `R2Object` alongside `R2ObjectBody`. */
+  get(
+    key: string,
+    opts?: { range?: R2Range; onlyIf?: R2Conditional },
+  ): Promise<R2ObjectBody | R2Object | null>;
   /** Remove the object at the key. A delete of an absent key is a no-op, the R2 contract. */
   delete(key: string): Promise<void>;
 }
@@ -26,7 +39,7 @@ export function r2Store(bucket: R2Bucket): MediaStore {
       await bucket.put(key, bytes, httpMetadata ? { httpMetadata } : undefined);
     },
     head: (key) => bucket.head(key),
-    get: (key) => bucket.get(key),
+    get: (key, opts) => bucket.get(key, opts),
     delete: (key) => bucket.delete(key),
   };
 }

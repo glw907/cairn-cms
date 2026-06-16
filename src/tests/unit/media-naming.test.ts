@@ -51,11 +51,29 @@ describe('slugifyFilename', () => {
   it('falls back to the literal file for a punctuation-only name', () => {
     expect(slugifyFilename('!!!.png')).toBe('file');
   });
+  it('appends -img when the slug would be a bare 16-hex hash', () => {
+    const slug = slugifyFilename('0123456789abcdef.png');
+    expect(slug).toBe('0123456789abcdef-img');
+    expect(slug).not.toMatch(/^[0-9a-f]{16}$/);
+    expect(slug).toMatch(SLUG_RE);
+  });
 });
 
 describe('r2Key', () => {
   it('fans out on the first two hex chars with no leading slash', () => {
     expect(r2Key('a1b2c3d4e5f6a7b8', 'webp')).toBe('media/a1/a1b2c3d4e5f6a7b8.webp');
+  });
+  it('throws on a non-hex hash', () => {
+    expect(() => r2Key('ZZZZZZZZZZZZZZZZ', 'webp')).toThrow(/hash/i);
+  });
+  it('throws on a hash of the wrong length', () => {
+    expect(() => r2Key('a1b2c3', 'webp')).toThrow(/hash/i);
+  });
+  it('throws on a non-alphanumeric ext', () => {
+    expect(() => r2Key('a1b2c3d4e5f6a7b8', 'we-bp')).toThrow(/ext/i);
+  });
+  it('throws on an over-long ext', () => {
+    expect(() => r2Key('a1b2c3d4e5f6a7b8', 'jpeg2000')).toThrow(/ext/i);
   });
 });
 

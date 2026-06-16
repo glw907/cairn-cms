@@ -42,6 +42,13 @@ const RESERVED = new Set([
 /** The maximum slug length, applied before the reserved-name and empty fallbacks. */
 const MAX_SLUG = 80;
 
+/** A 16-character lowercase hex content-hash prefix, the bare-hash reference form. A slug that
+ *  matches this shape would collide with `media:<hash>`, so slugifyFilename screens it. */
+const HASH_RE = /^[0-9a-f]{16}$/;
+
+/** A short alphanumeric extension (no dot), the only shape r2Key accepts, for example `webp`. */
+const R2_EXT_RE = /^[a-z0-9]{1,5}$/;
+
 // A Uint8Array's generic buffer type no longer satisfies Web Crypto's BufferSource under strict lib
 // types, since the backing buffer may be a SharedArrayBuffer; slice the bytes into a plain
 // ArrayBuffer to hand digest. Mirrors the buf helper in ../github/signing.ts.
@@ -82,13 +89,24 @@ export function slugifyFilename(name: string): string {
   }
 
   if (RESERVED.has(slug)) return `${slug}-file`;
-  return slug === '' ? 'file' : slug;
+  if (slug === '') return 'file';
+  // A slug shaped like a bare 16-hex hash would collide with the `media:<hash>` reference form, so
+  // append -img (mirroring the reserved-name -file fallback) to keep the slug and bare-hash forms
+  // disjoint.
+  if (HASH_RE.test(slug)) return `${slug}-img`;
+  return slug;
 }
 
 /** The content-addressed R2 object key `media/<aa>/<shortHash>.<ext>`, fanned out on the first two
  *  hex chars of the short hash. No leading slash: this is an object key, not a URL. `ext` is bare
  *  (no dot), for example `webp`. */
 export function r2Key(shortHash: string, ext: string): string {
+  if (!HASH_RE.test(shortHash)) {
+    throw new Error(`r2Key: hash must be 16 lowercase hex chars, got "${shortHash}"`);
+  }
+  if (!R2_EXT_RE.test(ext)) {
+    throw new Error(`r2Key: ext must be 1 to 5 lowercase alphanumerics, got "${ext}"`);
+  }
   return `media/${shortHash.slice(0, 2)}/${shortHash}.${ext}`;
 }
 

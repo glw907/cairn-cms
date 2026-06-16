@@ -4,7 +4,10 @@
 // are never stored twice. It mirrors the content manifest in ../content/manifest.ts, keyed by the
 // 16-hex content-hash prefix rather than concept and id.
 
-/** One stored asset's row: its content hash, its human layer, and its byte and pixel facts. */
+/** One stored asset's row: its content hash, its human layer, and its byte and pixel facts. The
+ *  `contentType` is the stored MIME type, so the delivery route serves it verbatim rather than
+ *  guessing from the extension. `width` and `height` are null when no dimensions are known (the
+ *  client is the only dimension source and a Worker cannot re-derive them). */
 export interface MediaEntry {
   hash: string;
   sha256: string;
@@ -13,9 +16,10 @@ export interface MediaEntry {
   originalFilename: string;
   alt: string;
   ext: string;
+  contentType: string;
   bytes: number;
-  width: number;
-  height: number;
+  width: number | null;
+  height: number | null;
   createdAt: string;
 }
 

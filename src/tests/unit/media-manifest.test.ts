@@ -16,6 +16,7 @@ const ENTRY_A: MediaEntry = {
   originalFilename: 'Blue Running Shoes.png',
   alt: 'A pair of blue running shoes',
   ext: 'webp',
+  contentType: 'image/webp',
   bytes: 24680,
   width: 1200,
   height: 800,
@@ -30,6 +31,7 @@ const ENTRY_B: MediaEntry = {
   originalFilename: 'studio-portrait.jpg',
   alt: '',
   ext: 'webp',
+  contentType: 'image/webp',
   bytes: 51200,
   width: 900,
   height: 1350,
@@ -108,5 +110,20 @@ describe('serializeMediaManifest', () => {
       parseMediaManifest(JSON.parse(serializeMediaManifest(manifest))),
     );
     expect(twice).toBe(once);
+  });
+  it('round-trips the contentType field through serialize and parse', () => {
+    const manifest: MediaManifest = { [ENTRY_A.hash]: ENTRY_A };
+    const parsed = parseMediaManifest(JSON.parse(serializeMediaManifest(manifest)));
+    expect(parsed[ENTRY_A.hash].contentType).toBe('image/webp');
+  });
+  it('serializes a null width and height, round-tripping them', () => {
+    const dimensionless: MediaEntry = { ...ENTRY_A, width: null, height: null };
+    const manifest: MediaManifest = { [dimensionless.hash]: dimensionless };
+    const json = serializeMediaManifest(manifest);
+    expect(json).toContain('"width": null');
+    expect(json).toContain('"height": null');
+    const parsed = parseMediaManifest(JSON.parse(json));
+    expect(parsed[dimensionless.hash].width).toBeNull();
+    expect(parsed[dimensionless.hash].height).toBeNull();
   });
 });

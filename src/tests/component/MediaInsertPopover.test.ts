@@ -267,6 +267,38 @@ describe('MediaInsertPopover optimistic loop', () => {
     await expect.element(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
   });
 
+  it('shows the generic failed card and cancels (never resolves) on a non-envelope body', async () => {
+    stubIngest();
+    // An unexpected server error (a worker crash, OOM, or an edge timeout) returns an HTML error
+    // page, not a devalue-encoded action result, so deserialize throws. The catch must route it
+    // through the same fail() path: cancel the placeholder, show a generic card with a Retry, and
+    // never insert into the source.
+    stubSend('<!doctype html><html><body>500 Internal Server Error</body></html>', 'default', 500);
+    const { api, calls } = fakePlaceholders();
+    const onuploaded = vi.fn();
+    const editor = fakeEditor(api);
+    const screen = render(MediaInsertPopover, {
+      conceptId: 'posts',
+      id: 'hello',
+      library: {},
+      editor,
+      onuploaded,
+    } as never);
+    (screen.component as unknown as { open: (s: string, f?: File) => void }).open(
+      'capture',
+      fileNamed('blue-shoes.png'),
+    );
+    await tick();
+    await screen.getByRole('button', { name: /insert image/i }).click();
+    await expect.element(screen.getByText(/could not be completed/i)).toBeInTheDocument();
+    expect(calls.some((c) => c.op === 'cancel')).toBe(true);
+    expect(calls.some((c) => c.op === 'resolveTo')).toBe(false);
+    expect(editor.insertImage).not.toHaveBeenCalled();
+    expect(onuploaded).not.toHaveBeenCalled();
+    // A Retry control is offered.
+    await expect.element(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
+  });
+
   it('surfaces session-expired on a status-0 response and cancels the placeholder', async () => {
     stubIngest();
     stubSend('', 'opaqueredirect', 0);

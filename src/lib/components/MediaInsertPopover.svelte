@@ -235,7 +235,16 @@ rule). The CSRF token is read from the admin context.
     // deserialize returns the generic ActionResult; the upload action's success data is an
     // UploadResult and its failure data carries an error string, so the result matches UploadEnvelope.
     // The cast names that known shape for the pure mapper (the redirect/status-0 case is handled above).
-    const outcome = uploadOutcome(deserialize(await res.text()) as UploadEnvelope);
+    // An unexpected server response (a 500/502/504 from a worker crash, OOM, or an edge timeout) is an
+    // HTML error page, not a devalue-encoded result, so deserialize throws. Catch it and route the
+    // throw through fail() with the generic card, so the placeholder cancels and a Retry is offered.
+    let outcome: ReturnType<typeof uploadOutcome>;
+    try {
+      outcome = uploadOutcome(deserialize(await res.text()) as UploadEnvelope);
+    } catch {
+      fail({ status: 'failed', kind: 'generic', message: GENERIC_FAILURE_MESSAGE });
+      return;
+    }
     if (outcome.kind === 'session-expired') {
       editor.placeholders.cancel(pid);
       URL.revokeObjectURL(objectUrl);

@@ -20,6 +20,9 @@ export type ResolvedAssetConfig =
       maxUploadBytes: number;
       allowedTypes: string[];
       variants: Record<string, VariantSpec>;
+      /** Whether Cloudflare Image Transformations are enabled for the zone. With it false, the media
+       *  resolver serves the bare full-size delivery path and ignores any preset. */
+      transformations: boolean;
     };
 
 /** The default delivery base path when the AssetConfig omits one. */
@@ -95,5 +98,6 @@ export function normalizeAssets(assets: AssetConfig | undefined): ResolvedAssetC
     maxUploadBytes: assets.maxUploadBytes ?? DEFAULT_MAX_UPLOAD_BYTES,
     allowedTypes: assets.allowedTypes ?? DEFAULT_ALLOWED_TYPES,
     variants: { ...BUILT_IN_PRESETS, ...(assets.variants ?? {}) },
+    transformations: assets.transformations ?? false,
   };
 }

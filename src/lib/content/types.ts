@@ -201,6 +201,11 @@ export interface AssetConfig {
   allowedTypes?: string[];
   /** Named transform presets, merged over the built-in thumb/inline/card/hero presets. */
   variants?: Record<string, VariantSpec>;
+  /** Whether Cloudflare Image Transformations are enabled for the zone (default false). The feature
+   *  is a per-zone setting that the dashboard or API turns on; it cannot be flipped from a Worker. With
+   *  it off, the media resolver serves the bare full-size delivery path and ignores any preset, so
+   *  thumbnails stay correct (full-size-but-correct) rather than pointing at a dead /cdn-cgi/image URL. */
+  transformations?: boolean;
 }
 
 /** The single seam the engine consumes. A site implements this at `src/lib/cairn.config.ts`. */
@@ -218,11 +223,22 @@ export interface CairnAdapter {
   sender: SenderConfig;
   /** The site's one renderer: the editor preview and every public page call it (design decision 4).
    *  `resolve` rewrites cairn: links to live permalinks; the build passes a site-resolver-backed
-   *  one, the preview a manifest one. */
-  render(md: string, opts?: { stagger?: boolean; resolve?: LinkResolve }): string | Promise<string>;
+   *  one, the preview a manifest one. The trailing `resolveMedia` is additive and optional: the build
+   *  passes a site-resolver-backed media resolver, the preview a manifest-backed one. */
+  render(
+    md: string,
+    opts?: {
+      stagger?: boolean;
+      resolve?: LinkResolve;
+      resolveMedia?: import('../render/resolve-media.js').MediaResolve;
+    },
+  ): string | Promise<string>;
   /** Repo-relative path to the committed content manifest. Defaults to src/content/.cairn/index.json
    *  in composeRuntime. It sits outside any concept directory, so content enumeration never globs it. */
   manifestPath?: string;
+  /** Repo-relative path to the committed media manifest. Defaults to src/content/.cairn/media.json,
+   *  applied in composeRuntime. Sits outside any concept directory, like the content manifest. */
+  mediaManifestPath?: string;
   /** Directive component registry; the renderer and the future palette derive from it (seam 3). */
   registry?: ComponentRegistry;
   /** The site's glyph name to SVG path-data map, for the admin icon picker and the renderer. */
@@ -325,9 +341,23 @@ export interface CairnRuntime {
   concepts: ConceptDescriptor[];
   backend: BackendConfig;
   sender: SenderConfig;
-  /** The site's one renderer: the editor preview and every public page call it (design decision 4). */
-  render(md: string, opts?: { stagger?: boolean; resolve?: LinkResolve }): string | Promise<string>;
+  /** The site's one renderer: the editor preview and every public page call it (design decision 4).
+   *  The trailing `resolveMedia` is additive and optional: the build passes a site-resolver-backed
+   *  media resolver, the preview a manifest-backed one. */
+  render(
+    md: string,
+    opts?: {
+      stagger?: boolean;
+      resolve?: LinkResolve;
+      resolveMedia?: import('../render/resolve-media.js').MediaResolve;
+    },
+  ): string | Promise<string>;
   manifestPath: string;
+  /** The repo-relative path to the committed media manifest, defaulted in composeRuntime. */
+  mediaManifestPath: string;
+  /** The adapter's asset config resolved once at compose: `{ enabled: false }` for a no-media site,
+   *  otherwise the filled config the upload, storage, delivery, and resolver paths read. */
+  resolvedAssets: import('../media/config.js').ResolvedAssetConfig;
   registry?: ComponentRegistry;
   /** The site's glyph name to SVG path-data map, for the admin icon picker and the renderer. */
   icons?: IconSet;

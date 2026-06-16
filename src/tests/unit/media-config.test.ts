@@ -15,6 +15,13 @@ describe('normalizeAssets', () => {
     expect(resolved.maxUploadBytes).toBe(25 * 1024 * 1024);
     expect(resolved.allowedTypes).toEqual(DEFAULT_TYPES);
     expect(Object.keys(resolved.variants).sort()).toEqual(['card', 'hero', 'inline', 'thumb']);
+    expect(resolved.transformations).toBe(false);
+  });
+
+  it('carries an explicit transformations flag', () => {
+    const resolved = normalizeAssets({ bucketBinding: 'X', transformations: true });
+    if (!resolved.enabled) throw new Error('expected enabled');
+    expect(resolved.transformations).toBe(true);
   });
 
   it('lets a caller variant override a built-in preset while the rest stay built-in', () => {

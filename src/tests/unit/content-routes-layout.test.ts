@@ -15,6 +15,8 @@ function runtime(): CairnRuntime {
     sender: { from: 'cms@test' },
     render: (md) => md,
     manifestPath: 'src/content/.cairn/index.json',
+    mediaManifestPath: 'src/content/.cairn/media.json',
+    resolvedAssets: { enabled: false },
   };
 }
 

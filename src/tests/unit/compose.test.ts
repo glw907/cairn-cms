@@ -60,3 +60,32 @@ describe('composeRuntime manifestPath', () => {
     expect(composeRuntime({ adapter: { ...adapter(), manifestPath: 'content/.cairn/idx.json' }, siteConfig: testSiteConfig }).manifestPath).toBe('content/.cairn/idx.json');
   });
 });
+
+describe('composeRuntime resolvedAssets', () => {
+  it('resolves to disabled media when the adapter declares no assets', () => {
+    const runtime = composeRuntime({ adapter: adapter(), siteConfig: testSiteConfig });
+    expect(runtime.resolvedAssets).toEqual({ enabled: false });
+  });
+  it('resolves a declared assets block into a filled config', () => {
+    const withAssets: CairnAdapter = { ...adapter(), assets: { bucketBinding: 'MEDIA_BUCKET' } };
+    const runtime = composeRuntime({ adapter: withAssets, siteConfig: testSiteConfig });
+    expect(runtime.resolvedAssets.enabled).toBe(true);
+    if (!runtime.resolvedAssets.enabled) throw new Error('expected enabled');
+    expect(runtime.resolvedAssets.bucketBinding).toBe('MEDIA_BUCKET');
+    expect(runtime.resolvedAssets.publicBase).toBe('/media');
+    expect(runtime.resolvedAssets.transformations).toBe(false);
+  });
+});
+
+describe('composeRuntime mediaManifestPath', () => {
+  it('defaults the media manifest path', () => {
+    expect(composeRuntime({ adapter: adapter(), siteConfig: testSiteConfig }).mediaManifestPath).toBe('src/content/.cairn/media.json');
+  });
+  it('honors an adapter override', () => {
+    const runtime = composeRuntime({
+      adapter: { ...adapter(), mediaManifestPath: 'content/.cairn/m.json' },
+      siteConfig: testSiteConfig,
+    });
+    expect(runtime.mediaManifestPath).toBe('content/.cairn/m.json');
+  });
+});

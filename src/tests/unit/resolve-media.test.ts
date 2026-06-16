@@ -40,8 +40,19 @@ describe('cairn media resolution', () => {
     const html = await renderMarkdown('![shoes](media:a1b2c3d4e5f6a7b8)', { resolveMedia });
     expect(html).toContain('src="/media/blue-running-shoes.a1b2c3d4e5f6a7b8.webp"');
   });
-  it('applies a named preset to the delivery path', async () => {
+  it('serves the bare full-size path and ignores the preset when transformations are off', async () => {
+    // The default resolved config has transformations: false, so a fresh zone without Image
+    // Transformations serves the full-size delivery path rather than a dead /cdn-cgi/image URL.
     const resolveMedia = makeMediaResolver(manifest, resolved, { preset: 'inline' });
+    const html = await renderMarkdown('![shoes](media:blue-running-shoes.a1b2c3d4e5f6a7b8)', {
+      resolveMedia,
+    });
+    expect(html).toContain('src="/media/blue-running-shoes.a1b2c3d4e5f6a7b8.webp"');
+    expect(html).not.toContain('/cdn-cgi/image');
+  });
+  it('applies a named preset to the delivery path when transformations are on', async () => {
+    const transformsOn = normalizeAssets({ bucketBinding: 'MEDIA_BUCKET', transformations: true });
+    const resolveMedia = makeMediaResolver(manifest, transformsOn, { preset: 'inline' });
     const html = await renderMarkdown('![shoes](media:blue-running-shoes.a1b2c3d4e5f6a7b8)', {
       resolveMedia,
     });

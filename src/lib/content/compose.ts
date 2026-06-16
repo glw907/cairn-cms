@@ -5,6 +5,7 @@
 // is additive later.
 import type { AdminPanel, CairnAdapter, CairnExtension, CairnRuntime, ConceptConfig, FieldTypeDef } from './types.js';
 import { resolveConcepts } from './concepts.js';
+import { normalizeAssets } from '../media/config.js';
 import type { SiteConfig } from '../nav/site-config.js';
 
 /** The input to {@link composeRuntime}. `siteConfig` is required so the per-concept URL policy is
@@ -46,6 +47,8 @@ export function composeRuntime({ adapter, siteConfig, extensions = [] }: Compose
     navMenu: adapter.navMenu,
     preview: adapter.preview,
     assets: adapter.assets,
+    resolvedAssets: normalizeAssets(adapter.assets),
+    mediaManifestPath: adapter.mediaManifestPath ?? 'src/content/.cairn/media.json',
     adminPanels,
     fieldTypes,
   };

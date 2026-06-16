@@ -22,7 +22,9 @@ export type MediaResolve = (ref: MediaRef) => string | undefined;
 /** Build the per-call media resolver, closing over the manifest and the resolved config. The
  *  returned resolver looks a ref's content hash up in the manifest and builds the canonical delivery
  *  path from the manifest entry's slug and ext, not the token's, so a rename never breaks the
- *  reference. With a preset it returns the variant URL; without one, the bare path. It returns
+ *  reference. With a preset and zone transformations on it returns the variant URL; without a preset,
+ *  or when transformations are off, it returns the bare full-size path so a fresh zone with Image
+ *  Transformations disabled serves correct thumbnails rather than dead /cdn-cgi/image URLs. It returns
  *  undefined when media is off or no entry carries the hash (the preview-miss backstop). */
 export function makeMediaResolver(
   manifest: MediaManifest,
@@ -34,7 +36,10 @@ export function makeMediaResolver(
     const entry = findByHash(manifest, ref.hash);
     if (!entry) return undefined;
     const path = publicPath(entry.slug, entry.hash, entry.ext, resolved.urlForm, resolved.publicBase);
-    return opts?.preset ? presetUrl(path, opts.preset, resolved.variants) : path;
+    if (opts?.preset && resolved.transformations) {
+      return presetUrl(path, opts.preset, resolved.variants);
+    }
+    return path;
   };
 }
 

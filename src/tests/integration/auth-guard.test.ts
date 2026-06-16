@@ -40,13 +40,14 @@ function httpEvent(pathname: string, host = 'test.dev', cookies = makeCookies())
 
 function formEvent(
   pathname: string,
-  opts: { csrfCookie?: string; csrfField?: string; origin?: string } = {},
+  opts: { csrfCookie?: string; csrfField?: string; csrfHeader?: string; origin?: string } = {},
 ): RequestContext {
   const url = `https://test.dev${pathname}`;
   const body = new URLSearchParams();
   if (opts.csrfField !== undefined) body.set('csrf', opts.csrfField);
   const headers: Record<string, string> = { 'content-type': 'application/x-www-form-urlencoded' };
   if (opts.origin !== undefined) headers.origin = opts.origin;
+  if (opts.csrfHeader !== undefined) headers['x-cairn-csrf'] = opts.csrfHeader;
   const cookieMap: Record<string, string> = {};
   if (opts.csrfCookie) cookieMap[csrfCookieName(true)] = opts.csrfCookie;
   return {
@@ -210,6 +211,37 @@ describe('CSRF (cairn owns it)', () => {
     const res = await handle({ event: ev, resolve: async () => OK });
     expect(res).toBe(OK);
     expect(ev.locals.editor?.email).toBe('own@x.dev');
+  });
+
+  it('passes an admin POST whose X-Cairn-CSRF header matches, with no form field (the upload path)', async () => {
+    const cookies = await seedSession('own@x.dev');
+    cookies.jar.set(csrfCookieName(true), 'TOK');
+    const url = 'https://test.dev/admin/posts/p1';
+    const ev: RequestContext = {
+      url: new URL(url),
+      // A text/plain raw-body upload with the token in the header and no csrf form field.
+      request: new Request(url, {
+        method: 'POST',
+        headers: { 'content-type': 'text/plain', 'x-cairn-csrf': 'TOK' },
+        body: new Uint8Array([0xff, 0xd8, 0xff]),
+      }),
+      cookies,
+      locals: {},
+      platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: 'https://test.dev' } },
+      setHeaders: () => {},
+    };
+    const res = await handle({ event: ev, resolve: async () => OK });
+    expect(res).toBe(OK);
+    expect(ev.locals.editor?.email).toBe('own@x.dev');
+  });
+
+  it('rejects an admin POST whose X-Cairn-CSRF header does not match the cookie', async () => {
+    const res = await handle({
+      event: formEvent('/admin/posts/p1', { csrfCookie: 'TOK', csrfHeader: 'WRONG' }),
+      resolve: async () => OK,
+    });
+    expect(res).not.toBe(OK);
+    expect(res.status).toBe(403);
   });
 });
 

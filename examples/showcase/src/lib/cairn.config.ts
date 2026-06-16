@@ -2,7 +2,10 @@
 // a render that runs the engine pipeline, and a backend the dev GitHub double answers for.
 import { createRenderer, defineRegistry, defineFields, defineAdapter, glyph, parseSiteConfig } from '@glw907/cairn-cms';
 import { cardShell, headRow, iconSpan, strAttr } from '@glw907/cairn-cms/render';
+import { normalizeAssets, makeMediaResolver } from '@glw907/cairn-cms/media';
 import type { ComponentDef, IconSet } from '@glw907/cairn-cms';
+// The committed media manifest the public render resolver reads. A bare {} until an editor uploads.
+import mediaManifest from '../content/.cairn/media.json';
 import { h } from 'hastscript';
 import type { ElementContent } from 'hast';
 import siteYaml from './site.config.yaml?raw';
@@ -86,6 +89,14 @@ const registry = defineRegistry({ components: [callout, alert] });
 // The real render path: parse markdown through the engine so registered components render.
 const { renderMarkdown } = createRenderer(registry);
 
+// The default public media resolver, backing the public build over the committed manifest. The
+// preview path injects its own resolveMedia from the edit page's mediaTargets; this default keeps a
+// published `media:` reference from throwing when no per-call resolver is supplied.
+const publicMediaResolver = makeMediaResolver(
+  mediaManifest,
+  normalizeAssets({ bucketBinding: 'MEDIA_BUCKET' }),
+);
+
 export const cairn = defineAdapter({
   siteName: 'Cairn Showcase',
   content: {
@@ -114,8 +125,12 @@ export const cairn = defineAdapter({
   },
   backend: { owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' },
   sender: { from: 'cms@showcase.test' },
-  // Render through the engine so registered components (the callout) produce their markup.
-  render: (md, opts) => renderMarkdown(md, opts),
+  // The media R2 binding. The fake R2 double rides platform.env in dev; a real site binds it in
+  // wrangler.jsonc and mounts the /media delivery route.
+  assets: { bucketBinding: 'MEDIA_BUCKET' },
+  // Render through the engine so registered components (the callout) produce their markup. The
+  // default media resolver backs the public build; the preview path injects its own resolveMedia.
+  render: (md, opts) => renderMarkdown(md, { ...opts, resolveMedia: opts?.resolveMedia ?? publicMediaResolver }),
   navMenu: { configPath: 'src/lib/site.config.yaml', menuName: 'primary', label: 'Navigation', maxDepth: 2 },
   // The preview knob: the (site) layout renders entries inside <main class="site-main">, so the
   // frame links site.css and reproduces that container for a design-accurate proof.

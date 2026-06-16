@@ -205,9 +205,14 @@ export interface UploadRequestOpts {
  */
 export function buildUploadRequest(opts: UploadRequestOpts): { url: string; init: RequestInit } {
   const url = `/admin/${opts.conceptId}/${opts.id}?/upload`;
+  // The body rides as text/plain, not the image's real type. The upload is a SvelteKit form action
+  // (?/upload), and SvelteKit 415s a POST whose content type is not form-encoded before the action
+  // runs; text/plain is the one form content type that carries raw bytes without field encoding. The
+  // server ignores this label and sniffs the real type from the bytes. The CSRF token rides the
+  // X-Cairn-CSRF header so the guard clears the request without cloning the body.
   const headers: Record<string, string> = {
     'X-Cairn-CSRF': opts.csrf,
-    'Content-Type': opts.contentType,
+    'Content-Type': 'text/plain',
     'X-Cairn-Filename': encodeURIComponent(opts.filename),
   };
   if (opts.alt !== undefined && opts.alt !== '') headers['X-Cairn-Alt'] = encodeURIComponent(opts.alt);

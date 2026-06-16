@@ -85,6 +85,13 @@ export function lastRecordedCommit(): RecordedCommit | null {
   return lastCommit;
 }
 
+/** Read one file's content off a branch's in-memory tree, or null when absent. The media slice's
+ *  E2E reads the committed `media.json` this way: the last-commit recorder captures only the `.md`
+ *  entry, so the manifest committed in the same atomic commit needs its own read. */
+export function committedFile(branch: string, path: string): string | null {
+  return branches.get(branch)?.get(path) ?? null;
+}
+
 export function installFakeGitHub(): void {
   if (installed) return;
   installed = true;

@@ -5,6 +5,7 @@
 import type { Handle } from '@sveltejs/kit';
 import { installFakeGitHub } from '$lib/fake-github.js';
 import { createFakeAuthDb } from '$lib/fake-auth-db.js';
+import { createFakeR2 } from '$lib/fake-r2.js';
 
 const FAKE = process.env.SHOWCASE_FAKE_BACKEND === '1';
 
@@ -16,18 +17,32 @@ if (FAKE) {
 // added through /admin/editors persist across requests.
 const fakeAuthDb = FAKE ? createFakeAuthDb() : null;
 
+// One MEDIA_BUCKET double for the server's lifetime, so an asset uploaded through /admin streams
+// back from the /media delivery route in the same dev session.
+const fakeR2 = FAKE ? createFakeR2() : null;
+
 export const handle: Handle = async ({ event, resolve }) => {
-  if (FAKE && (event.url.pathname === '/admin' || event.url.pathname.startsWith('/admin/'))) {
-    // Editor shape: { email, displayName, role } - see src/lib/auth/types.ts.
-    event.locals.editor = {
-      email: 'editor@showcase.test',
-      displayName: 'Demo Editor',
-      role: 'owner',
-    };
-    // The AUTH_DB double rides platform.env the way the Cloudflare adapter would supply the real
-    // binding, so /admin/editors works in dev. App.Platform is the bare default under
-    // adapter-node, hence the cast; the engine reads the env structurally at runtime.
-    event.platform = { env: { AUTH_DB: fakeAuthDb } } as App.Platform;
+  if (FAKE) {
+    const path = event.url.pathname;
+    const isAdmin = path === '/admin' || path.startsWith('/admin/');
+    const isMedia = path === '/media' || path.startsWith('/media/');
+    if (isAdmin || isMedia) {
+      // The binding doubles ride platform.env the way the Cloudflare adapter would supply the real
+      // ones. App.Platform is the bare default under adapter-node, hence the cast; the engine reads
+      // the env structurally at runtime. AUTH_DB is admin-only; MEDIA_BUCKET serves both the upload
+      // action under /admin and the delivery route under /media.
+      event.platform = {
+        env: { ...(isAdmin ? { AUTH_DB: fakeAuthDb } : {}), MEDIA_BUCKET: fakeR2 },
+      } as App.Platform;
+    }
+    if (isAdmin) {
+      // Editor shape: { email, displayName, role } - see src/lib/auth/types.ts.
+      event.locals.editor = {
+        email: 'editor@showcase.test',
+        displayName: 'Demo Editor',
+        role: 'owner',
+      };
+    }
   }
   return resolve(event);
 };

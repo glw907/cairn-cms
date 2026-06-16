@@ -173,7 +173,9 @@ describe('buildUploadRequest', () => {
     expect(init.redirect).toBe('manual');
     const headers = new Headers(init.headers);
     expect(headers.get('x-cairn-csrf')).toBe('tok-123');
-    expect(headers.get('content-type')).toBe('image/webp');
+    // The body rides as text/plain so the SvelteKit form action accepts it; the server sniffs the
+    // real type from the bytes, not this label.
+    expect(headers.get('content-type')).toBe('text/plain');
     // The alt is percent-encoded so a unicode value survives a header transport.
     expect(headers.get('x-cairn-alt')).toBe(encodeURIComponent('café au lait'));
     expect(headers.get('x-cairn-filename')).toBe(encodeURIComponent('our-trip.webp'));

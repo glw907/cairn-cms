@@ -4,7 +4,7 @@
 import { redirect, error } from '@sveltejs/kit';
 import { resolveSession } from '../auth/store.js';
 import { sessionCookieName } from '../auth/crypto.js';
-import { isUnsafeFormRequest, originMatches, validateCsrfToken } from './csrf.js';
+import { isUnsafeFormRequest, originMatches, validateCsrfToken, validateCsrfHeader } from './csrf.js';
 import { applySecurityHeaders } from './admin-response.js';
 import { renderConditionResponse, REASON_CONDITION } from './condition-response.js';
 import { log } from '../log/index.js';
@@ -75,8 +75,17 @@ export function createAuthGuard() {
     }
 
     // Rule 1 - admin: every unsafe form POST carries a valid double-submit token, else the branded
-    // 403 before resolve() runs. This covers the public login/auth posts too.
-    if (isUnsafeFormRequest(event.request) && !(await validateCsrfToken(event))) {
+    // 403 before resolve() runs. This covers the public login/auth posts too. The header witness is
+    // tried first: a valid X-Cairn-CSRF header clears the request without cloning the body, which is
+    // how the raw-body media upload (a text/plain POST) passes CSRF. A custom header cannot be set
+    // cross-origin without a CORS preflight, so it is as strong a token witness as the form field.
+    // Only with no valid header does the form-field path run and clone the body to read the token,
+    // the unchanged path for every ordinary admin form post.
+    if (
+      isUnsafeFormRequest(event.request) &&
+      !validateCsrfHeader(event) &&
+      !(await validateCsrfToken(event))
+    ) {
       log.warn('guard.rejected', { reason: 'csrf', path: pathname });
       return renderConditionResponse('auth.csrf-token-invalid');
     }

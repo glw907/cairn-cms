@@ -38,6 +38,7 @@ function postProps(over = {}) {
       slug: 'hello',
       linkTargets: [] as LinkTarget[],
       mediaTargets: {},
+      mediaLibrary: {},
       inboundLinks: [],
       pending: false,
       published: true,

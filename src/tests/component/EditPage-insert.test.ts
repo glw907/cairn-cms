@@ -13,7 +13,7 @@ const registry = defineRegistry({ components: [callout] });
 
 const data = {
   conceptId: 'posts', id: 'hello', label: 'Post', fields: [], frontmatter: {}, body: 'Start.',
-  title: 'Hello', isNew: false, saved: false, error: null, linkTargets: [], mediaTargets: {}, inboundLinks: [], siteName: 'Demo',
+  title: 'Hello', isNew: false, saved: false, error: null, linkTargets: [], mediaTargets: {}, mediaLibrary: {}, inboundLinks: [], siteName: 'Demo',
 };
 
 describe('EditPage guided insert', () => {

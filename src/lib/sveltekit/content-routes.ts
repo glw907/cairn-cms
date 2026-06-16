@@ -111,6 +111,24 @@ export interface EditData {
   /** The minimal media-resolver input the edit page builds its preview `resolveMedia` from, keyed by
    *  the 16-hex content hash and parallel to `linkTargets`. Empty when media is off or the read fails. */
   mediaTargets: Record<string, { slug: string; ext: string; contentType: string }>;
+  /** The picker's human layer for each stored asset, keyed by the 16-hex content hash and projected
+   *  from the same committed media manifest read that populates `mediaTargets`. The `hash` field
+   *  duplicates the key, so the picker can iterate `Object.values`. Empty when media is off or the
+   *  read fails (the same degradation path as `mediaTargets`). */
+  mediaLibrary: Record<
+    string,
+    {
+      hash: string;
+      slug: string;
+      ext: string;
+      contentType: string;
+      displayName: string;
+      alt: string;
+      width: number | null;
+      height: number | null;
+      bytes: number;
+    }
+  >;
   /** The entries that link to this one, for the delete guard. Empty when nothing links here. */
   inboundLinks: InboundLink[];
   /** True when the entry has a pending branch, so the body above came from that branch. */
@@ -484,11 +502,24 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       inbound = inboundLinks(manifest, concept.id, id);
     }
 
-    // Project the committed media manifest to the minimal resolver input: only the three fields the
-    // preview resolver needs, keyed by hash. A corrupt committed file degrades to empty, not a throw.
+    // Project the one committed media manifest read two ways: the minimal resolver triple the preview
+    // needs (`mediaTargets`) and the picker's full human layer (`mediaLibrary`), both keyed by hash.
+    // A corrupt committed file degrades both to empty, not a throw.
     const mediaTargets: EditData['mediaTargets'] = {};
+    const mediaLibrary: EditData['mediaLibrary'] = {};
     for (const [hash, e] of Object.entries(parseMediaManifest(parseMediaJson(mediaRaw)))) {
       mediaTargets[hash] = { slug: e.slug, ext: e.ext, contentType: e.contentType };
+      mediaLibrary[hash] = {
+        hash,
+        slug: e.slug,
+        ext: e.ext,
+        contentType: e.contentType,
+        displayName: e.displayName,
+        alt: e.alt,
+        width: e.width,
+        height: e.height,
+        bytes: e.bytes,
+      };
     }
 
     return {
@@ -506,6 +537,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       slug: slugFromId(id, datePrefix),
       linkTargets,
       mediaTargets,
+      mediaLibrary,
       inboundLinks: inbound,
       pending,
       published,

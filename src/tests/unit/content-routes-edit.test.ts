@@ -344,6 +344,54 @@ describe('editLoad media targets', () => {
     expect(data.mediaTargets.a1b2c3d4e5f60718).not.toHaveProperty('hash');
   });
 
+  it('projects the full human layer to mediaLibrary from the same read', async () => {
+    const media = serializeMediaManifest({
+      a1b2c3d4e5f60718: mediaEntry('a1b2c3d4e5f60718', 'sunset'),
+    });
+    const gh = new GithubDouble({
+      main: { [ENTRY_PATH]: '---\ntitle: Hello\n---\nx', [MEDIA_PATH]: media },
+    });
+    gh.install();
+    const routes = createContentRoutes(mediaRuntime(MEDIA_ON), deps);
+    const data = await routes.editLoad(editEvent('2026-05-hello') as never);
+
+    // One read serves both projections.
+    expect(readsOf(gh, MEDIA_PATH)).toBe(1);
+    // The picker's human layer rides keyed by hash, the hash duplicated into the value.
+    expect(data.mediaLibrary).toEqual({
+      a1b2c3d4e5f60718: {
+        hash: 'a1b2c3d4e5f60718',
+        slug: 'sunset',
+        ext: 'jpg',
+        contentType: 'image/jpeg',
+        displayName: 'sunset',
+        alt: 'some alt',
+        width: 800,
+        height: 600,
+        bytes: 1234,
+      },
+    });
+  });
+
+  it('carries the human layer in mediaLibrary, not just the resolver triple', async () => {
+    const media = serializeMediaManifest({
+      a1b2c3d4e5f60718: mediaEntry('a1b2c3d4e5f60718', 'sunset'),
+    });
+    const gh = new GithubDouble({
+      main: { [ENTRY_PATH]: '---\ntitle: Hello\n---\nx', [MEDIA_PATH]: media },
+    });
+    gh.install();
+    const routes = createContentRoutes(mediaRuntime(MEDIA_ON), deps);
+    const data = await routes.editLoad(editEvent('2026-05-hello') as never);
+
+    const row = data.mediaLibrary.a1b2c3d4e5f60718;
+    expect(row.displayName).toBe('sunset');
+    expect(row.alt).toBe('some alt');
+    expect(row.width).toBe(800);
+    expect(row.height).toBe(600);
+    expect(row.bytes).toBe(1234);
+  });
+
   it('degrades a thrown media read to an empty projection without throwing the edit', async () => {
     const gh = new GithubDouble({ main: { [ENTRY_PATH]: '---\ntitle: Hello\n---\nx' } });
     gh.install();
@@ -361,6 +409,7 @@ describe('editLoad media targets', () => {
     const routes = createContentRoutes(mediaRuntime(MEDIA_ON), deps);
     const data = await routes.editLoad(editEvent('2026-05-hello') as never);
     expect(data.mediaTargets).toEqual({});
+    expect(data.mediaLibrary).toEqual({});
     expect(data.body).toBe('x');
   });
 
@@ -373,5 +422,6 @@ describe('editLoad media targets', () => {
     const data = await routes.editLoad(editEvent('2026-05-hello') as never);
     expect(readsOf(gh, MEDIA_PATH)).toBe(0);
     expect(data.mediaTargets).toEqual({});
+    expect(data.mediaLibrary).toEqual({});
   });
 });

@@ -96,6 +96,7 @@ function editData(): AdminData {
       slug: 'hello',
       linkTargets: [] as LinkTarget[],
       mediaTargets: {},
+      mediaLibrary: {},
       inboundLinks: [],
       pending: false,
       published: true,

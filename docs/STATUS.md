@@ -48,17 +48,30 @@ site cutover. Post-mortem with the spike findings and carry-forwards in the plan
    substrate, so no release is cut for it on its own; the bundled release that carries the whole media
    stack rides Phase 2b, when media becomes author-usable. The `feat/media-foundation` Phase 1 merge and
    the `0.56.2` picker/round-trip release stay their own separate pending calls.
-2. **Phase 2b, the insert UI**, is the next pass, MOCKUP-FIRST per [[cairn-ui-design-pass-methodology]]
-   against the rev.2 target (`docs/internal/design/2026-06-15-media-gallery-mockup.html`): the at-caret
-   popover, the combobox picker, the capture card (name and alt), the optimistic upload loop and dedup
-   sequencing, inline placement, drag and paste, and the mobile sheet, with a `frontend-design` polish
-   and an adversarial review-gate workflow. It needs a brainstorm and a just-in-time plan; the 2a
-   substrate is ready under it. **2b constraints carried from 2a:** the 2b client consumes the upload
-   result by parsing the 200 JSON envelope (`{ type, status, data }`), not `Response.status`, and treats
-   an opaque/status-0 response as session-expired; it must not offer multi-select drag-drop until a
-   batch-coalesced ingest (many R2 puts, one save commit) is designed (open risk 5). Then Phase 3
-   (placements), Phase 4 (management, the branch-spanning usage index, and safe-delete), Phase 5 (embeds
-   and icon routing).
+2. **Phase 2b, the insert UI, is DESIGNED, PLANNED, and ready to execute** (2026-06-16). Spec
+   `docs/superpowers/specs/2026-06-16-cairn-media-2b-insert-ui-design.md`, plan (13 tasks)
+   `docs/superpowers/plans/2026-06-16-cairn-media-2b-insert-ui.md`, both committed on `feat/media-2a`. A
+   five-lens adversarial design review (run pre-spec at Geoff's request) reshaped it: the `:::image`
+   figure directive for per-image alignment was DROPPED (three independent lenses converged: it breaks
+   the `media:` resolver since the ref is a directive attribute not an image node, it bakes presentation
+   into content against cairn's class-driven render, and the caret-driven contextual toolbar is an a11y
+   anti-pattern). 2b now ships the plain `![alt](media:hash)` inline insert done to a class-A bar: the
+   at-caret popover, the combobox picker, the capture card, **paste and drag as primary ingest**, the
+   optimistic loop and dedup, inline placement, the `media:` source decoration, and the preview render
+   wiring. **Alt is a debt, not a hard block** (insert proceeds; missing alt is a persistent flag plus a
+   non-blocking publish-time count). Per-image presentation (captions via the standard image title,
+   alignment as theme-resolved intent classes) moves to Phase 3 "placements" with a layer charter
+   (directives carry identity/decorative-wrapping, never presentation parameters). **The IMMEDIATE next
+   action is executing the 2b plan, MOCKUP-FIRST:** Task 1 builds the insert-experience gold-standard
+   mockup (`frontend-design`, both themes, class-A function+visual, benchmarked against the best
+   non-WYSIWYG markdown editors), which gates on Geoff's approval before the implementation tasks; Task 2
+   the adversarial UI critique; then the build (one `cairn-implementer` per task, full gate between
+   dispatches), the `frontend-design` polish, and the adversarial review-gate workflow. cairn stays
+   markdown-first, not WYSIWYG (see [[cairn-not-wysiwyg-best-markdown]]). **2b constraints carried from
+   2a:** the client parses the 200 JSON envelope (`{ type, status, data }`), not `Response.status`, and
+   treats an opaque/status-0 response as session-expired; no multi-select drag-drop until a
+   batch-coalesced ingest is designed (open risk 5). Then Phase 3 (placements), Phase 4 (management, the
+   branch-spanning usage index, safe-delete), Phase 5 (embeds and icon routing).
 
 ## Prior next action (2026-06-15): Phase 2a media ingest+delivery DESIGNED, ready to build (build deferred to a fresh session)
 

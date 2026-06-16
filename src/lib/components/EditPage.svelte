@@ -32,6 +32,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   import ComponentInsertDialog, { insertableDefs, hasSchema } from './ComponentInsertDialog.svelte';
   import LinkPicker from './LinkPicker.svelte';
   import WebLinkDialog from './WebLinkDialog.svelte';
+  import MediaInsertPopover from './MediaInsertPopover.svelte';
   import DeleteDialog from './DeleteDialog.svelte';
   import RenameDialog from './RenameDialog.svelte';
   import MarkdownHelpDialog from './MarkdownHelpDialog.svelte';
@@ -49,6 +50,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   import { manifestLinkResolver } from '../content/manifest.js';
   import type { MediaResolve } from '../render/resolve-media.js';
   import { manifestMediaResolver } from '../render/resolve-media.js';
+  import type { MediaEntry } from '../media/manifest.js';
 
   interface Props {
     /** The edit load's data, plus the site name for the heading. */
@@ -376,6 +378,44 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   let getSelection = $state.raw<() => string>(() => '');
   // The editor's selection transform, registered by MarkdownEditor on mount; a no-op until then.
   let format = $state.raw<(kind: FormatKind) => void>(() => {});
+
+  // The media insert seams, registered by MarkdownEditor on mount, mirroring the range holders
+  // above. The popover drives the optimistic upload loop through them: the caret anchor, the focus
+  // restore, the placeholder api, and the direct-insert path for a picked image. The placeholder
+  // api type is referenced inline (import('...').Type), never a static `import type ... from`, so
+  // no static edge to the dynamically-imported editor-placeholder module sits in this component
+  // (the editor-boundary test bars that edge by a textual `from` scan).
+  let caretCoords = $state.raw<() => { left: number; right: number; top: number; bottom: number } | null>(
+    () => null,
+  );
+  let focusEditor = $state.raw<() => void>(() => {});
+  let placeholders = $state.raw<import('./editor-placeholder.js').ImagePlaceholderApi | null>(null);
+  let insertImageFn = $state.raw<(alt: string, ref: string) => void>(() => {});
+
+  // A no-op placeholder api so the editor object handed to the popover is never null before the
+  // editor registers its real one on mount.
+  const noopPlaceholders: import('./editor-placeholder.js').ImagePlaceholderApi = {
+    begin: () => 0,
+    progress: () => {},
+    resolveTo: () => {},
+    cancel: () => {},
+  };
+
+  // The editor object the popover drives, delegating through the holders so the latest registered
+  // function is always used (the holders start as no-ops and are replaced on mount).
+  const editorApi = $derived({
+    caretCoords: () => caretCoords(),
+    focusEditor: () => focusEditor(),
+    placeholders: placeholders ?? noopPlaceholders,
+    insertImage: (alt: string, ref: string) => insertImageFn(alt, ref),
+  });
+
+  // The headless media insert popover, opened from the toolbar control, paste, or drop.
+  let mediaPopover = $state<MediaInsertPopover | null>(null);
+
+  // The server-owned records from each successful upload this session. They ride the save form as
+  // the hidden `media` field, so the save action merges them into media.json.
+  let uploadedRecords = $state<MediaEntry[]>([]);
   // A headless dialog instance, typed structurally over its exported open() (the linkPicker idiom).
   type DialogHandle = { open: () => void };
   // The toolbar's insert dialogs. Each holds its own <form>, so they mount outside the edit form
@@ -669,6 +709,30 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   // The media analog: it turns a media: reference into its /media delivery path in the preview, and
   // returns undefined for a missing target so the render step marks it cairn-broken-media.
   const resolveMedia = $derived(manifestMediaResolver(data.mediaTargets));
+
+  // The picker's library, the committed projection merged with this session's uploaded records,
+  // keyed by content hash. An uploaded record overrides a committed entry on a hash match (the same
+  // hash is the same bytes, so the override is harmless). This is what the editor decorates with, so
+  // a just-uploaded image carries its source chip before the next save commits it.
+  const mediaLibrary = $derived({
+    ...data.mediaLibrary,
+    ...Object.fromEntries(
+      uploadedRecords.map((r) => [
+        r.hash,
+        {
+          hash: r.hash,
+          slug: r.slug,
+          ext: r.ext,
+          contentType: r.contentType,
+          displayName: r.displayName,
+          alt: r.alt,
+          width: r.width,
+          height: r.height,
+          bytes: r.bytes,
+        },
+      ]),
+    ),
+  });
 
   // The [[ autocomplete source over the same link targets, handed to the editor's generic seam.
   const completionSources = $derived([cairnLinkCompletionSource(data.linkTargets)]);
@@ -1083,9 +1147,10 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
           <button
             type="button"
             class="btn btn-ghost btn-sm btn-square"
-            disabled
-            aria-label="Image (coming soon)"
-            title="Image (coming soon)"
+            disabled={insertDisabled}
+            aria-label="Insert image"
+            title="Insert image"
+            onclick={() => mediaPopover?.open('chooser')}
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
@@ -1110,11 +1175,19 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
           registerInsertLink={(fn) => (insertLink = fn)}
           registerGetSelection={(fn) => (getSelection = fn)}
           registerFormat={(fn) => (format = fn)}
+          registerCaretCoords={(fn) => (caretCoords = fn)}
+          registerFocusEditor={(fn) => (focusEditor = fn)}
+          registerImagePlaceholders={(api) => (placeholders = api)}
+          registerInsertImage={(fn) => (insertImageFn = fn)}
+          onImageIngest={(file) => mediaPopover?.open('capture', file)}
           {completionSources}
-          mediaLibrary={data.mediaLibrary}
+          {mediaLibrary}
           {focusMode}
           {typewriter}
         />
+        <!-- The accumulated uploaded records ride the save form alongside the body. The save action
+             reads `media` and merges these records into media.json (publish submits the same form). -->
+        <input type="hidden" name="media" value={JSON.stringify(uploadedRecords)} />
       </div>
       {#if mode === 'preview'}
         <!-- The preview ground: recessed under the floating frame card so the page reads as a
@@ -1409,6 +1482,19 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
 />
 <WebLinkDialog bind:this={webLinkDialog} trigger={false} insert={insertLink} selection={getSelection} />
 <LinkPicker bind:this={linkPicker} trigger={false} linkTargets={data.linkTargets} insert={insertLink} />
+
+<!-- The media insert popover, mounted headless: the toolbar control, a paste, or a drop drives it
+     through its exported open(). On a successful upload it hands the server-owned record up; the
+     record joins uploadedRecords (the hidden save field) and the merged library (the source chip). -->
+<MediaInsertPopover
+  bind:this={mediaPopover}
+  trigger={false}
+  conceptId={data.conceptId}
+  id={data.id}
+  library={mediaLibrary}
+  editor={editorApi}
+  onuploaded={(record) => (uploadedRecords = [...uploadedRecords, record])}
+/>
 
 <!-- The lifecycle dialogs, mounted headless: the header's overflow menu drives them through their
      exported open(). Their POST forms flip the leaving flag so the leave guard stands down. -->

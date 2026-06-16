@@ -784,12 +784,36 @@ describe('EditPage', () => {
     expect(card!.querySelector('input[name="body"]')).not.toBeNull();
   });
 
-  it('offers a disabled Image placeholder in the toolbar', async () => {
+  it('offers an enabled Insert-media control in the toolbar in Write mode', async () => {
     const screen = render(EditPage, postProps());
-    const image = screen.container.querySelector<HTMLButtonElement>('button[aria-label="Image (coming soon)"]');
+    const image = screen.container.querySelector<HTMLButtonElement>('button[aria-label="Insert image"]');
+    expect(image).not.toBeNull();
+    expect(image!.disabled).toBe(false);
+    expect(image!.closest('[role="toolbar"]')).not.toBeNull();
+  });
+
+  it('disables the Insert-media control in Preview mode', async () => {
+    const screen = render(EditPage, postProps());
+    await screen.getByRole('tab', { name: 'Preview' }).click();
+    const image = screen.container.querySelector<HTMLButtonElement>('button[aria-label="Insert image"]');
     expect(image).not.toBeNull();
     expect(image!.disabled).toBe(true);
-    expect(image!.closest('[role="toolbar"]')).not.toBeNull();
+  });
+
+  it('opens the media popover when the Insert-media control is clicked', async () => {
+    const screen = render(EditPage, postProps());
+    const image = screen.container.querySelector<HTMLButtonElement>('button[aria-label="Insert image"]');
+    image!.click();
+    await expect.element(screen.getByRole('dialog', { name: 'Insert image' })).toBeInTheDocument();
+  });
+
+  it('serializes the empty uploaded-records set in the hidden media field', async () => {
+    const screen = render(EditPage, postProps());
+    const field = screen.container.querySelector<HTMLInputElement>(
+      'form#cairn-edit-form input[name="media"]',
+    );
+    expect(field).not.toBeNull();
+    expect(field!.value).toBe('[]');
   });
 
   it('moves the link and component-insert triggers into the toolbar', async () => {

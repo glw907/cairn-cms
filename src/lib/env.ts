@@ -1,5 +1,6 @@
 import type { D1Database } from '@cloudflare/workers-types';
 import { CairnError } from './diagnostics/index.js';
+import type { DeliveryBucket } from './media/delivery-bucket.js';
 
 /**
  * Returns the site's public origin from configuration.
@@ -48,4 +49,26 @@ export function requireDb(env: { AUTH_DB?: D1Database }): D1Database {
     throw new CairnError('config.bindings-missing', { message: 'AUTH_DB binding is not configured' });
   }
   return env.AUTH_DB;
+}
+
+/**
+ * Returns the media R2 bucket named by `bindingName`, or throws a clear error when a site has not
+ * wired it. The binding name is config-derived (the adapter's `bucketBinding`), so it is read off
+ * `env` dynamically rather than as a fixed key.
+ *
+ * The return type is the narrow structural `DeliveryBucket` seam, never the `@cloudflare/workers-types`
+ * `R2Bucket`, so no workers-types name reaches the public `.d.ts` (the delivery route is a public
+ * export and that package is only a devDependency). The cast through `unknown` is sound because the
+ * seam models a subset of the real R2 bucket API.
+ *
+ * @throws CairnError (`config.bindings-missing`) when the named binding is absent.
+ */
+export function requireBucket(env: Record<string, unknown>, bindingName: string): DeliveryBucket {
+  const bucket = env[bindingName];
+  if (!bucket) {
+    throw new CairnError('config.bindings-missing', {
+      message: `${bindingName} binding is not configured`,
+    });
+  }
+  return bucket as unknown as DeliveryBucket;
 }

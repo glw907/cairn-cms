@@ -18,5 +18,6 @@ export type CairnLogEvent =
   | 'guard.rejected'
   | 'media.uploaded'
   | 'media.upload_failed'
+  | 'media.delivery_failed'
   | 'media.deleted'
   | 'media.delete_blocked';

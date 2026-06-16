@@ -12,6 +12,7 @@ declare global {
   namespace Cloudflare {
     interface Env {
       AUTH_DB: D1Database;
+      MEDIA_BUCKET: R2Bucket;
       TEST_MIGRATIONS: D1Migration[];
     }
   }

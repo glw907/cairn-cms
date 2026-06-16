@@ -4,6 +4,7 @@ export { createAuthGuard, requireSession, requireOwner } from './guard.js';
 export { createAuthRoutes, type AuthRoutesConfig, type RequestResult } from './auth-routes.js';
 export { createEditorRoutes } from './editors-routes.js';
 export { createContentRoutes } from './content-routes.js';
+export { createMediaRoute } from './media-route.js';
 export type {
   NavConcept,
   LayoutData,

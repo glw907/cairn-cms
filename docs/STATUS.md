@@ -11,7 +11,58 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-16, latest): Phase 2a media ingest+delivery LANDED on `feat/media-2a`
+## Immediate next action (2026-06-16, latest): media is author-usable; Phase 2b insert UI LANDED on `feat/media-2b`, the whole media stack is release-ready as `0.57.0`
+
+**Phase 2b of the media gallery (the insert UI) LANDED on `feat/media-2b`** (branched off `main` at
+`a4c1aaf`, which already carried the Phase 1 foundation and the Phase 2a infra, so this branch is the whole
+media stack). Eleven plan tasks, a Task 6 hardening, a frontend-design polish, the code-simplifier pass, the
+three-reviewer fold-in, and the docs arm. Commits `60b6cfb..6ed533d`. **The version bumps `0.56.2 -> 0.57.0`
+and the whole stack (foundation + ingest/delivery + insert UI) ships as one bundled release**, additive to
+the public API with one per-site consumer action.
+
+An editor now pastes, drags, or clicks Insert image and it lands in the post as `![alt](media:slug.hash)`,
+rendering a thumbnail in the live preview and committing with the entry on Publish. Built: the `mediaLibrary`
+projection on `editLoad`; the preview `manifestMediaResolver` and the `resolveMedia` render-prop wiring; the
+paste/drop editor seam and the atomic `media:` source chip; the one-step capture card (alt as debt, never a
+block); the WAI-ARIA combobox picker; the at-caret insert popover with the optimistic upload loop (dedup,
+typed failures, session-expired) and the widget-only optimistic placeholder; the needs-alt scanner plus the
+non-blocking publish-time notice; the toolbar entry and the EditPage integration (merged library, editor
+seams, the hidden `media` save field); and the showcase UI-driven E2E.
+
+Gate green at the tip `6ed533d`, run first-hand: `npm run check` 968 files 0/0, `npm test` 182 files / 1863
+tests exit 0, the showcase Playwright E2E 13 passed in a real browser (the new `media-insert.spec.ts` drives
+toolbar -> popover -> capture card -> optimistic placeholder -> preview thumbnail -> save commits body +
+`media.json`), the reference, signature, package, docs, readiness, prose, and version gates green, the
+editor-boundary test green (the two new CodeMirror modules stay dynamically-imported-only). Two new CodeMirror
+decorations (the atomic source chip, the widget-only placeholder), open risk 2 held (a failed or expired
+upload leaves the source byte-for-byte unchanged). Three reviewers: the a11y review found one Critical (the
+needs-alt warning ink at ~2.2:1 in light, fixed with a new `--cairn-warning-ink` token at 5.98:1) plus three
+Important live-region/focus gaps; the svelte review found the `createObjectURL`-in-`$derived` anti-pattern;
+the security review was clean with one defense-in-depth fold-in (the client re-derives the `media:` reference
+from the validated record). All folded in at `dabbf9e`. The E2E surfaced a real engine gap (the preview
+resolver ignored in-session uploads), fixed at `85b3315a`. The live admin smoke rides the first site cutover
+(no site carries the media binding yet; the flow is proven by the E2E and the 2a workerd integration suite),
+matching the 2a deferral. Post-mortem with the carry-forwards in the plan
+(`docs/superpowers/plans/2026-06-16-cairn-media-2b-insert-ui.md`).
+
+**Next actions, in order:**
+1. **Merge `feat/media-2b` to `main`** (needs the push, so it is Geoff's call). The branch is the whole media
+   stack on main, release-ready at `0.57.0`. The Phase 1 (`feat/media-foundation`) and Phase 2a
+   (`feat/media-2a`) merges fold into this one if not already on local main.
+2. **Cut the bundled `0.57.0` release** (Geoff's separate call): push `main`, then
+   `gh release create v0.57.0 --target main` with the `0.57.0` changelog entry as the body (it carries the
+   `Consumers must:` line). The release fires the OIDC trusted-publishing workflow. The `0.56.2`
+   picker/round-trip release, if not yet cut, folds into this window.
+3. **Per-site cutover** (each a site-pass, the live proof of the whole media stack): bind a `MEDIA_BUCKET` R2
+   bucket (`r2_buckets` in `wrangler.jsonc`), mount the `/media` delivery route (`createMediaRoute`) at
+   `src/routes/media/[...path]/+server.ts`, bump to `^0.57.0`, and run the real guard + upload + delivery
+   live smoke (the deferred proof). Media stays behind `transformations: false` until a site opts in.
+4. Then **Phase 3 (placements)**: captions via the CommonMark image title, alignment/sizing as theme-resolved
+   intent classes under the layer charter, the hero frontmatter field, the gallery component. Then Phase 4
+   (management: the Media screen, the branch-spanning usage index, safe-delete) and Phase 5 (embeds + icons +
+   the unified insert entry point and slash trigger). See [[cairn-image-gallery-initiative-placement]].
+
+## Prior next action (2026-06-16): Phase 2a media ingest+delivery LANDED on `feat/media-2a`
 
 **Phase 2a of the media gallery (the ingest and delivery infrastructure under the insert UI) LANDED on
 the feature worktree `feat/media-2a` (branched off `main` at `cdc011d`), ready to merge to `main`.** Ten

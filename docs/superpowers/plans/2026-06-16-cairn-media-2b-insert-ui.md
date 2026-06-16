@@ -226,3 +226,81 @@ main, the gallery memory). The bundled release that ships the whole media stack 
 - The Obsidian-style source-writeback badge (a value rendered at the token that opens the guided form
   and writes the source) as a class-A refinement for the Phase 3 alignment control, if the editor can
   host a non-WYSIWYG affordance without becoming an editing canvas.
+
+## Post-mortem (2026-06-16)
+
+Phase 2b LANDED on `feat/media-2b` (branched off `main` at `a4c1aaf`, which already carried the Phase 1
+foundation and the Phase 2a infra). The eleven tasks ran one `cairn-implementer` per task, test-first,
+the main loop reviewing each diff and clearing the full gate between dispatches. The two high-blast tasks
+(3 and 6) ran on Opus; the rest on Sonnet. With media author-usable for the first time, the version bumps
+`0.56.2 -> 0.57.0` and the whole media stack (foundation + infra + insert UI) ships as one bundled entry.
+
+**What was built.** The library projection on `editLoad` (`mediaLibrary`, the picker's human layer beside
+the lean `mediaTargets`, one gated read); the preview media resolver (`manifestMediaResolver`) and the
+`resolveMedia` render-prop wiring; the editor paste/drop seam and the atomic `media:` source chip
+decoration; the one-step capture card (name + alt radiogroup, never blocking on alt); the WAI-ARIA
+combobox picker over the committed library; the at-caret insert popover with the optimistic upload loop
+(ingest, dedup, typed failures, session-expired) and the widget-only optimistic placeholder; the
+needs-alt scanner and the non-blocking publish-time notice; the toolbar Insert-media entry and the
+EditPage integration (merged library, the editor seams, the hidden `media` save field); and the showcase
+vertical slice with a UI-driven E2E.
+
+**Verified, with evidence (run first-hand at the tip).** `npm run check` 968 files 0/0; `npm test` 182
+files / 1863 tests exit 0; the showcase Playwright E2E suite 13 passed in a real browser (the new
+`media-insert.spec.ts` drives the toolbar -> popover -> capture card -> optimistic placeholder -> preview
+thumbnail -> save-commits-body-plus-media.json flow); the reference, signature, package, docs, readiness,
+prose, and version gates all green; the editor-boundary test green (the two new CodeMirror modules stay
+dynamically-imported-only, no `@codemirror` leak into a server bundle).
+
+**Two new CodeMirror decorations, both novel, both holding their invariants.** The `media:` source chip
+is a replace-widget over the reference token paired with an `atomicRanges` set built from the same matches,
+so a stray keystroke selects the whole reference rather than corrupting a hex digit; it reads a reactive
+`mediaLibrary` fed through a compartment, so a just-uploaded image decorates at once. The optimistic
+placeholder is a widget-only `StateField` decoration that never writes document text: `resolveTo` inserts
+the committed `![alt](media:ref)` and removes the placeholder in one transaction, `cancel` removes only,
+and positions map across concurrent edits. Open risk 2 (never leave a half-written token on failure or
+expiry) holds across every terminal path, confirmed by the security review and a dedicated test.
+
+**The review gate earned its keep.** Three reviewers (svelte, daisyui-a11y, web-auth-security) ran in
+parallel over the post-simplify code. The a11y review found one Critical: the needs-alt marker rendered
+`--color-warning` (a fill color) as small text at ~2.2:1 in the light theme. The fix added a dedicated
+`--cairn-warning-ink` token (light `oklch(50% 0.13 70)` at 5.98:1 on base-100 / 5.59:1 on the chip tint;
+dark passing) for the three needs-alt text spots. Three Important a11y gaps folded in too: the popover's
+async failure/expired states now carry `role="alert"` and move focus to their primary control; the
+needs-alt notice's `role="status"` region renders unconditionally so the count announces; and the
+placeholder drops a live-region claim it could not honor for a labeled `<progress>`. The svelte review
+caught a real anti-pattern (`createObjectURL` inside a `$derived`), moved into a matched `$effect`. The
+security review was clean (no Critical/Important), with one defense-in-depth fold-in: the client now
+re-derives the `media:` reference from the validated record's slug/hash via `mediaToken` rather than
+trusting the loose server string. All Critical and Important findings landed in one fold-in commit
+(`dabbf9e`); the code-simplifier first consolidated the four-way-duplicated `MediaLibraryEntry` into one
+node-safe shared module (`446f211`).
+
+**The E2E paid for itself.** Driving the real UI surfaced an engine gap a fetch-level test could not: the
+edit-page preview built `resolveMedia` from the committed `mediaTargets` alone, so an image uploaded
+in-session rendered as a broken reference in the live preview until the next save. Fixed by merging the
+session's `uploadedRecords` into the resolver targets (`85b3315a`), mirroring the picker-library merge,
+with a regression test that fails without it.
+
+**Decisions locked.** Paste and drag are the primary ingest gestures, the toolbar button the discoverable
+fallback (no `:::image` directive; per-image presentation is Phase 3). Alt is debt, not a block: insert
+proceeds, missing alt is a persistent source-chip marker, a picker-row flag, and a non-blocking
+publish-time count. The optimistic placeholder is a widget, never doc text. The picker is a real combobox
+(focus held in the input, `aria-activedescendant`), not the component-picker's roving-focus pattern. The
+upload posts `text/plain` with the CSRF token in the `X-Cairn-CSRF` header and reads the 200 JSON action
+envelope (an opaque/status-0 response is session-expired), all inherited from the 2a transport contract.
+
+**Live admin smoke: deferred to the first site cutover (recorded, not skipped).** The ritual's real-Worker
+smoke needs a Worker with the `MEDIA_BUCKET` R2 binding, the `/media` route, and the GitHub App creds, but
+no site carries the media binding yet (it rides this bundled release, Geoff's call), and the showcase is
+adapter-node with a fake R2 double. The upload flow is proven in a real browser (the E2E) and in workerd
+against real miniflare R2 and D1 (the 2a integration suite). The real guard + upload + delivery live proof
+rides the first site cutover, matching the 2a deferral of the same proof.
+
+**Carry-forwards (deferred review minors and notes, none blocking).** Debounce the `findMediaImagesNeedingAlt`
+parse off a debounced body for very large entries; memoize the `media` hidden field's `JSON.stringify` if a
+batch path grows the records array; the editor's media compartment reconfigures once redundantly on mount
+(idempotent); add `inert` to the app root while the popover is open to match `aria-modal` (the Tab trap and
+backdrop already cover most of it); percent-encode the `X-Cairn-Width`/`Height` headers for transport
+consistency (numeric today, server re-clamps). Reconsider `aria-required` on the alt radiogroup against the
+insert-without-alt model. The Phase 3+ carry-forwards above stand.

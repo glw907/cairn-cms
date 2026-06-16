@@ -11,7 +11,47 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-15, latest): the media gallery design landed; the foundation plan is ready
+## Immediate next action (2026-06-15, latest): Phase 1 media foundation LANDED on `feat/media-foundation`
+
+**Phase 1 of the media gallery (the engine substrate, no admin UI) LANDED on the feature worktree
+`feat/media-foundation` (branched off `main` at `df7ed21`), ready to merge to `main`.** Nine plan tasks
+plus the review fold-in, commits `a58847a..cb8c890`. It is unreleased substrate (the version stays
+`0.56.2`, no CHANGELOG entry) with no consumer action: `AssetConfig` grew from its reserved, unused
+seam. The whole subsystem is under `src/lib/media/` plus the one render hook
+`src/lib/render/resolve-media.ts`.
+
+Built: the `media:<slug>.<hash>` reference codec, content-hash and slug naming, the git-committed media
+manifest, the Cloudflare Images transform-URL builder, the grown `AssetConfig` plus `normalizeAssets`
+(with the built-in `thumb/inline/card/hero` presets), the render-time `media:` resolution wired into the
+shared pipeline, the R2 store wrapper, and the four `media.*` log events. All engine-internal (nothing
+added to `src/lib/index.ts`); `AssetConfig` references `VariantSpec` via an inline `import type`, so the
+public surface adds no new export name.
+
+Gate green at the tip `cb8c890`, run first-hand: `npm run check` 940 files 0/0, `npm test` 170 files /
+1666 tests exit 0, the reference, signature, package, docs, readiness, and version gates all green. The
+spike (task 8) ran live against the `glw907` account: an R2 put/get round-trip proven byte-identical
+against a throwaway bucket (provisioned and removed via the Cloudflare MCP); the delivery route decided
+as a Worker route that resolves the hash and streams from R2 (recorded in the spec's "Foundation spike:
+findings"); cost within the Cloudflare Images Free tier for both sites. Three reviewers
+(cloudflare-workers, svelte/render, an adversarial correctness pass), no Critical or Important; five
+fold-ins in `cb8c890` (the load-bearing one threaded the ignored `publicBase` through `publicPath`).
+Post-mortem with the carry-forwards in the plan
+(`docs/superpowers/plans/2026-06-15-cairn-media-foundation.md`).
+
+**Next actions, in order:**
+1. **Merge `feat/media-foundation` to `main`** (needs the push, so it is Geoff's call). It is unreleased
+   substrate, so no release is cut for it on its own; the next release that carries it is whenever a
+   later phase makes media author-usable, or a bundled release. The `0.56.2` picker/round-trip release
+   stays its own separate action.
+2. **Phase 2, the insert experience**, is the next pass, MOCKUP-FIRST per the
+   [[cairn-ui-design-pass-methodology]] against the rev.2 design target
+   (`docs/internal/design/2026-06-15-media-gallery-mockup.html`): the at-caret popover, the combobox
+   picker, the capture card (name and alt model), the upload admin action, the optimistic upload loop,
+   dedup, and inline placement. It needs a brainstorm and a just-in-time plan; the engine substrate is
+   ready under it. Then Phase 3 (placements), Phase 4 (management plus the branch-spanning usage index
+   and safe-delete), Phase 5 (embeds and icon routing).
+
+## Prior next action (2026-06-15): the media gallery design landed; the foundation plan is ready
 
 The media/gallery initiative (ROADMAP "Next") ran its full design pass and is ready to build. The
 research, the unified strategy, and the direction verdict are in

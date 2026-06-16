@@ -175,3 +175,63 @@ land with the phase that first needs a site to wire them, noted as a carry-forwa
   focal-point control (deferred; Cloudflare Images smart crop is the default until then).
 - The `frontend-design` polish pass on each phase that lands admin UI, against the editor-shell gold
   standard, in both themes.
+
+## Post-mortem (2026-06-15)
+
+Phase 1 landed on `feat/media-foundation` (a worktree off `main` at `df7ed21`), nine tasks plus the
+review fold-in, commits `a58847a..cb8c890`. The whole new subsystem lives under `src/lib/media/` with
+the one render hook in `src/lib/render/resolve-media.ts`. It is unreleased substrate (the version stays
+`0.56.2`, no CHANGELOG entry) and carries no consumer action: `AssetConfig` grew from a reserved,
+unused seam.
+
+**Built.** The `media:<slug>.<hash>` reference codec (`reference.ts`, mirroring the `cairn:` codec);
+content-hash and slug naming (`naming.ts`: `hashBytes` sha256 over the bytes, the strict
+`slugifyFilename` ingest transform, `r2Key`, `publicPath`); the git-committed media manifest
+(`manifest.ts`); the Cloudflare Images transform-URL builder (`transform-url.ts`); the grown
+`AssetConfig` plus `normalizeAssets` with the `enabled` discriminant and the built-in
+`thumb/inline/card/hero` presets (`config.ts` + `content/types.ts`); the render-time resolution of
+`media:` image nodes (`resolve-media.ts` wired into `pipeline.ts`); the R2 store wrapper (`store.ts`);
+and the four `media.*` log events.
+
+**Verified, with evidence.** Gate green at the tip `cb8c890`, run first-hand: `npm run check` 940 files
+0/0, `npm test` 170 files / 1666 tests exit 0, the reference, signature, package, docs (60 files),
+readiness, and version gates all green. The svelte reviewer verified the render-safety design through
+the live sanitize floor (a `javascript:`/`data:` resolver result is stripped, an attribute-break
+payload is URL-encoded, and the broken-media marker plus a resolved `/media` or `/cdn-cgi/image` src
+survive). The adversarial reviewer fuzzed `slugifyFilename` 200k times with zero slug-grammar
+violations.
+
+**The spike (task 8).** Run live against the `glw907` account. R2 storage proven: a content-addressed
+put under `media/<aa>/<hash>.<ext>` and a get round-tripped byte-identical against a throwaway bucket,
+provisioned and removed through the Cloudflare MCP. Delivery decided: a Worker route that resolves the
+hash and streams from R2, the only shape that decouples the cosmetic public path from the
+content-addressed key; variants run as `/cdn-cgi/image` URL transforms over it. Cost: within the
+Cloudflare Images Free tier (5,000 unique transforms per month) for both small sites. The full
+transform proof rides the first site wiring, since per-zone Transformations are not yet enabled
+(`907.life` returns 404 on a `/cdn-cgi/image` path today). All recorded in the spec's "Foundation
+spike: findings" section.
+
+**Review gate.** Three reviewers (cloudflare-workers, svelte/render, an adversarial correctness pass),
+no Critical or Important. Five fold-ins in `cb8c890`: the load-bearing one was `publicBase` being
+resolved but ignored (`publicPath` hardcoded `/media`), now threaded through `publicPath` and the
+resolver; plus the `variantUrl` leading-slash guard, the `parseMediaManifest` array rejection, the
+preset-order comment, and the past-cap failure-mode note in the spec.
+
+**Decisions locked.** The media module stays engine-internal (nothing added to `src/lib/index.ts`);
+`AssetConfig` references `VariantSpec` via an inline `import type`, so the public surface adds no new
+export name and the package and reference gates stay green. The delivery route is a Worker route. The
+public URL carries the slug by default, with the hash as the lookup truth.
+
+**Carry-forwards.**
+- The plan specified co-located test paths (`src/lib/media/*.test.ts`); the repo's vitest config only
+  runs `src/tests/{unit,integration,component}/`, so every test landed in `src/tests/unit/`. Future
+  phase plans should name `src/tests/unit/` paths.
+- Deferred review findings: transform option-emission minimization (negligible for fixed presets); the
+  preset-typo render policy (degrade-to-marker versus hard-fail, decided when the insert UI wires
+  presets); gravity-coordinate and width/height/quality range validation (with the focal-point pass);
+  the `r2Key`/`publicPath` hash-shape preconditions (with the upload path).
+- `cairn-doctor` gains R2-binding and per-zone-Transformations readiness checks at the first site
+  wiring.
+- The `media:` scheme is author-facing syntax but not a public export, so it has no natural home in the
+  export-keyed reference; it landed in the `assets` adapter-member prose. A future content-authoring
+  syntax section could cover `cairn:` and `media:` together.

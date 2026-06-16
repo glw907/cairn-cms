@@ -235,3 +235,14 @@ inherit a clean list rather than one prose note.
   `labelSingular`) on the concept descriptor, defaulting to the label, used by the create button, the
   trailing row, and the create dialog title; until it lands the mockup stays aspirational on this one
   string. Tracked as a STATUS carry-forward.
+- **developer** (media: scheme reference home, from the media foundation pass, 2026-06-15): the
+  `media:<slug>.<hash>` reference is author-facing syntax, like `cairn:` links, but its codec is
+  engine-internal (not a public export), so it has no natural home in the export-keyed reference. It
+  landed as prose in the `assets` adapter-member section of `core.md`. The `cairn:` scheme has the same
+  shape but is documented under its public `parseCairnToken` helper. Candidate: a content-authoring
+  syntax reference section covering `cairn:` and `media:` together, independent of the export pages.
+- **developer** (plan test-path convention, from the media foundation pass, 2026-06-15): the foundation
+  plan named co-located test paths (`src/lib/media/*.test.ts`), but the repo's vitest config only runs
+  `src/tests/{unit,integration,component}/`, so a co-located test is silently never run. Every test
+  landed in `src/tests/unit/` instead. Candidate: a one-line note in the contributor or plan-authoring
+  guidance that tests live under `src/tests/`, so a future plan does not specify a path the suite skips.

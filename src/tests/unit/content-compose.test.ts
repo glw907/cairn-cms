@@ -25,14 +25,14 @@ describe('composeRuntime', () => {
     expect(runtime.concepts.map((c) => c.id)).toEqual(['posts', 'pages', 'fragments']);
   });
 
-  // Seam 4 contract: the reserved asset slot passes through untouched.
-  it('passes the reserved asset slot through, and omits it when absent', () => {
+  // Seam 4 contract: the asset slot passes through untouched.
+  it('passes the asset slot through, and omits it when absent', () => {
     expect(composeRuntime({ adapter: testAdapter, siteConfig: testSiteConfig }).assets).toBeUndefined();
     const withAssets: CairnAdapter = {
       ...testAdapter,
-      assets: { roots: ['static/images'], publicBase: '/images' },
+      assets: { bucketBinding: 'MEDIA_BUCKET', publicBase: '/media' },
     };
-    expect(composeRuntime({ adapter: withAssets, siteConfig: testSiteConfig }).assets).toEqual({ roots: ['static/images'], publicBase: '/images' });
+    expect(composeRuntime({ adapter: withAssets, siteConfig: testSiteConfig }).assets).toEqual({ bucketBinding: 'MEDIA_BUCKET', publicBase: '/media' });
   });
 });
 

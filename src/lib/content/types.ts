@@ -12,6 +12,7 @@ import type { IconSet } from '../render/glyph.js';
 import type { DatePrefix } from './ids.js';
 import type { ConceptSchema } from './schema.js';
 import type { LinkResolve } from './links.js';
+import type { VariantSpec } from '../media/transform-url.js';
 
 /** Common to every frontmatter field: the frontmatter key, the form label, and whether it is required. */
 interface FieldBase {
@@ -183,12 +184,23 @@ export interface PreviewConfig {
  *  values with the entry's concept override applied, and no `byConcept` map. */
 export type ResolvedPreview = Omit<PreviewConfig, 'byConcept'>;
 
-/** Reserved asset slot (seam 4). Typed and unused in the rebuild; R7/R9 read it later with no contract change. */
+/** A site's media configuration (seam 4). A site sets this to turn on R2-backed media: uploads,
+ *  content-addressed storage, and Cloudflare Images variants. Omitting it leaves media off. The
+ *  engine normalizes this into a `ResolvedAssetConfig` and merges the named variants over the
+ *  built-in thumb, inline, card, and hero presets. */
 export interface AssetConfig {
-  /** Repo-relative asset roots, e.g. ["static/images"]. */
-  roots: string[];
-  /** Public URL base, e.g. "/images". */
-  publicBase: string;
+  /** The R2 bucket binding name on the Worker, e.g. "MEDIA_BUCKET". Required when a site declares media. */
+  bucketBinding: string;
+  /** The delivery base path. Defaults to "/media". */
+  publicBase?: string;
+  /** Whether the public URL carries the slug ("slug") or stays opaque ("opaque"). Defaults to "slug". */
+  urlForm?: 'slug' | 'opaque';
+  /** The maximum accepted upload size in bytes. Defaults to 25 MB. */
+  maxUploadBytes?: number;
+  /** The accepted upload MIME types. Defaults to the common web image types. */
+  allowedTypes?: string[];
+  /** Named transform presets, merged over the built-in thumb/inline/hero/card presets. */
+  variants?: Record<string, VariantSpec>;
 }
 
 /** The single seam the engine consumes. A site implements this at `src/lib/cairn.config.ts`. */

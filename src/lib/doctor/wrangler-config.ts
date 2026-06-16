@@ -16,6 +16,9 @@ export interface WranglerFacts {
 	publicOrigin?: string;
 	/** The top-level account_id, when declared; a fallback for CLOUDFLARE_ACCOUNT_ID. */
 	accountId?: string;
+	/** The declared r2_buckets binding names; the conditional media check matches the adapter's
+	 *  bucketBinding against this. Not part of the hard config.bindings check (decision 9). */
+	r2Buckets: string[];
 }
 
 export async function readWranglerConfig(
@@ -89,10 +92,19 @@ function factsFromJsonc(text: string): WranglerFacts {
 			typeof entry === 'object' && entry !== null && (entry as { binding?: unknown }).binding === 'AUTH_DB'
 	);
 	const observability = config.observability as { enabled?: unknown } | undefined;
+	const r2 = Array.isArray(config.r2_buckets) ? config.r2_buckets : [];
+	const r2Buckets = r2
+		.map((entry) =>
+			typeof entry === 'object' && entry !== null && typeof (entry as { binding?: unknown }).binding === 'string'
+				? (entry as { binding: string }).binding
+				: undefined
+		)
+		.filter((binding): binding is string => binding !== undefined);
 	const facts: WranglerFacts = {
 		hasEmailBinding,
 		hasAuthDb: authDb !== undefined,
 		observabilityEnabled: observability?.enabled === true,
+		r2Buckets,
 	};
 	if (typeof authDb?.database_id === 'string') facts.authDbId = authDb.database_id;
 	const vars = config.vars as { PUBLIC_ORIGIN?: unknown } | undefined;
@@ -110,10 +122,12 @@ function factsFromToml(text: string): WranglerFacts {
 		hasEmailBinding: false,
 		hasAuthDb: false,
 		observabilityEnabled: false,
+		r2Buckets: [],
 	};
 	let section = '';
 	let d1Binding: string | undefined;
 	let d1Id: string | undefined;
+	let r2Binding: string | undefined;
 
 	const flushD1 = () => {
 		if (d1Binding === 'AUTH_DB') {
@@ -124,10 +138,16 @@ function factsFromToml(text: string): WranglerFacts {
 		d1Id = undefined;
 	};
 
+	const flushR2 = () => {
+		if (r2Binding !== undefined) facts.r2Buckets.push(r2Binding);
+		r2Binding = undefined;
+	};
+
 	for (const line of text.split('\n')) {
 		const header = line.match(/^\s*(\[\[?[\w.]+\]?\])\s*(?:#.*)?$/);
 		if (header) {
 			flushD1();
+			flushR2();
 			section = header[1];
 			continue;
 		}
@@ -140,6 +160,8 @@ function factsFromToml(text: string): WranglerFacts {
 		} else if (section === '[[d1_databases]]') {
 			if (key === 'binding') d1Binding = str;
 			if (key === 'database_id') d1Id = str;
+		} else if (section === '[[r2_buckets]]') {
+			if (key === 'binding' && str !== undefined) r2Binding = str;
 		} else if (section === '[observability]' && key === 'enabled' && value.startsWith('true')) {
 			facts.observabilityEnabled = true;
 		} else if (section === '[vars]' && key === 'PUBLIC_ORIGIN' && str !== undefined) {
@@ -149,5 +171,6 @@ function factsFromToml(text: string): WranglerFacts {
 		}
 	}
 	flushD1();
+	flushR2();
 	return facts;
 }

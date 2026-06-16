@@ -4,6 +4,7 @@
 import type { DoctorCheck, DoctorContext } from './types.js';
 import {
 	configBindings,
+	configMediaBucket,
 	configObservability,
 	configCsrfDisable,
 	configSiteConfig,
@@ -93,8 +94,14 @@ export function contextFromEnv(
  *  Vite resolution and the wrangler config's account_id. Each runs only when an input it feeds
  *  is still missing, so a doctor run with full flags touches neither. */
 export interface DerivationSources {
-	/** Returns { owner, repo, from } off the adapter, or null when nothing is derivable. */
-	adapterFacts: () => Promise<{ owner?: string; repo?: string; from?: string } | null>;
+	/** Returns { owner, repo, from, mediaBucketBinding } off the adapter, or null when nothing is
+	 *  derivable. */
+	adapterFacts: () => Promise<{
+		owner?: string;
+		repo?: string;
+		from?: string;
+		mediaBucketBinding?: string;
+	} | null>;
 	/** Returns the wrangler config's account_id, or undefined when none is declared. */
 	wranglerAccountId: () => Promise<string | undefined>;
 }
@@ -112,7 +119,14 @@ export async function deriveMissingInputs(
 	sources: DerivationSources
 ): Promise<Omit<DoctorContext, 'fetch' | 'readFile'>> {
 	const out = { ...ctx };
-	if (out.from === undefined || out.repo === undefined) {
+	// The adapter read also carries the media bucket binding, which has no env source, so it runs
+	// when from, repo, or the media binding is still missing. A failure leaves each input absent so
+	// its check skips with the usual remediation rather than the doctor crashing.
+	if (
+		out.from === undefined ||
+		out.repo === undefined ||
+		out.mediaBucketBinding === undefined
+	) {
 		const facts = await sources.adapterFacts().catch(() => null);
 		if (out.from === undefined && typeof facts?.from === 'string') {
 			out.from = facts.from;
@@ -123,6 +137,9 @@ export async function deriveMissingInputs(
 			typeof facts?.repo === 'string'
 		) {
 			out.repo = `${facts.owner}/${facts.repo}`;
+		}
+		if (out.mediaBucketBinding === undefined && typeof facts?.mediaBucketBinding === 'string') {
+			out.mediaBucketBinding = facts.mediaBucketBinding;
 		}
 	}
 	if (out.cfAccountId === undefined) {
@@ -140,6 +157,7 @@ export async function deriveMissingInputs(
 export function defaultChecks(): DoctorCheck[] {
 	return [
 		configBindings,
+		configMediaBucket,
 		configObservability,
 		configCsrfDisable,
 		configSiteConfig,

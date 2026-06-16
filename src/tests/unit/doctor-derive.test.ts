@@ -6,7 +6,12 @@ import { deriveMissingInputs } from '../../lib/doctor/index.js';
 import type { DerivationSources } from '../../lib/doctor/index.js';
 import { readAdapterFacts } from '../../lib/vite/index.js';
 
-const ADAPTER = { owner: 'acme', repo: 'site', from: 'adapter@example.com' };
+const ADAPTER = {
+	owner: 'acme',
+	repo: 'site',
+	from: 'adapter@example.com',
+	mediaBucketBinding: 'MEDIA_BUCKET',
+};
 
 function sources(overrides: Partial<DerivationSources> = {}): DerivationSources {
 	return {
@@ -43,10 +48,10 @@ describe('deriveMissingInputs', () => {
 		expect(out).toMatchObject(expected);
 	});
 
-	it('never reads the adapter when from and repo are both provided', async () => {
+	it('never reads the adapter when from, repo, and the media binding are all provided', async () => {
 		const adapterFacts = vi.fn(async () => ADAPTER);
 		await deriveMissingInputs(
-			{ cwd: '/site', from: 'a@b.c', repo: 'o/r' },
+			{ cwd: '/site', from: 'a@b.c', repo: 'o/r', mediaBucketBinding: 'MEDIA_BUCKET' },
 			sources({ adapterFacts })
 		);
 		expect(adapterFacts).not.toHaveBeenCalled();
@@ -56,6 +61,17 @@ describe('deriveMissingInputs', () => {
 		const adapterFacts = vi.fn(async () => ADAPTER);
 		await deriveMissingInputs({ cwd: '/site' }, sources({ adapterFacts }));
 		expect(adapterFacts).toHaveBeenCalledTimes(1);
+	});
+
+	it('reads the adapter for the media binding even when from and repo are provided', async () => {
+		// The media bucket binding has no env source, so it always needs the adapter read.
+		const adapterFacts = vi.fn(async () => ADAPTER);
+		const out = await deriveMissingInputs(
+			{ cwd: '/site', from: 'a@b.c', repo: 'o/r' },
+			sources({ adapterFacts })
+		);
+		expect(adapterFacts).toHaveBeenCalledTimes(1);
+		expect(out.mediaBucketBinding).toBe('MEDIA_BUCKET');
 	});
 
 	it('never reads the wrangler config when the account id is provided', async () => {
@@ -172,6 +188,25 @@ export const siteConfig = {};
 			owner: 'acme',
 			repo: 'site',
 			from: 'cms@acme.test',
+		});
+	}, 30000);
+
+	it('reads the media bucketBinding off the adapter assets block', async () => {
+		const dir = tempProject({
+			'vite.config.ts': PLUGIN_CONFIG,
+			'src/lib/cairn.config.ts': `export const cairn = {
+	backend: { owner: 'acme', repo: 'site', branch: 'main' },
+	sender: { from: 'cms@acme.test' },
+	assets: { bucketBinding: 'MEDIA_BUCKET' },
+};
+export const siteConfig = {};
+`,
+		});
+		expect(await readAdapterFacts(dir)).toEqual({
+			owner: 'acme',
+			repo: 'site',
+			from: 'cms@acme.test',
+			mediaBucketBinding: 'MEDIA_BUCKET',
 		});
 	}, 30000);
 

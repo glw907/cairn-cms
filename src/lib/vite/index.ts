@@ -220,20 +220,26 @@ export interface AdapterFacts {
   repo?: string;
   /** `cairn.sender.from`. */
   from?: string;
+  /** `cairn.assets.bucketBinding`, the media R2 binding name; undefined when the adapter declares no
+   *  assets. The doctor's conditional media-bucket check reads it. */
+  mediaBucketBinding?: string;
 }
 
 /** Build the virtual module that reads only the adapter facts the doctor derives. It imports the
- *  configured config module and exports the string-typed `owner`, `repo`, and `from` as JSON, so
- *  nothing else of the adapter (least of all a secret) crosses the boundary. */
+ *  configured config module and exports the string-typed `owner`, `repo`, `from`, and the media
+ *  `bucketBinding` as JSON, so nothing else of the adapter (least of all a secret) crosses the
+ *  boundary. */
 function adapterFactsSource(opts: CairnManifestOptions): string {
   return `
 import { cairn } from ${JSON.stringify(opts.configModule)};
 const backend = cairn?.backend ?? {};
 const sender = cairn?.sender ?? {};
+const assets = cairn?.assets ?? {};
 const facts = {};
 if (typeof backend.owner === 'string') facts.owner = backend.owner;
 if (typeof backend.repo === 'string') facts.repo = backend.repo;
 if (typeof sender.from === 'string') facts.from = sender.from;
+if (typeof assets.bucketBinding === 'string') facts.mediaBucketBinding = assets.bucketBinding;
 export const result = JSON.stringify(facts);
 `;
 }
@@ -264,6 +270,7 @@ export async function readAdapterFacts(cwd: string = process.cwd()): Promise<Ada
     if (typeof parsed.owner === 'string') facts.owner = parsed.owner;
     if (typeof parsed.repo === 'string') facts.repo = parsed.repo;
     if (typeof parsed.from === 'string') facts.from = parsed.from;
+    if (typeof parsed.mediaBucketBinding === 'string') facts.mediaBucketBinding = parsed.mediaBucketBinding;
     return facts;
   } catch {
     return null;

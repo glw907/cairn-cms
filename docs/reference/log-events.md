@@ -28,6 +28,9 @@ redaction stance.
 | `guard.rejected` | warn or error | The admin guard refuses a request before `resolve()`. `error` with `reason: "bindings"` when any admin request, the public login and auth paths included, finds no `AUTH_DB` binding; `warn` otherwise. | `reason` (`csrf`, `origin`, `https`, or `bindings`), `path`, `conditionId` on `bindings` |
 | `media.uploaded` | info | New bytes are stored to R2 and the manifest row is written. | `editor`, `hash`, `bytes`, `ext` |
 | `media.upload_failed` | warn or error | An upload fails: oversize, the wrong type, a network error, or a missing binding. | `editor`, `reason`, `code` (optional) |
+| `media.delivery_failed` | warn | The delivery route cannot serve the bytes because the Worker has no media bucket bound. | `reason`, `binding` |
+| `media.orphan_reconcile` | info | The reconcile read finishes, comparing stored R2 keys against the manifest hashes. | `orphaned`, `missing` |
+| `media.resolve_missing` | warn | A `media:` reference resolves against the manifest and finds no entry for its hash. | `hash` |
 | `media.deleted` | info | An asset's bytes and manifest row are removed. | `editor`, `hash` |
 | `media.delete_blocked` | warn | A delete is refused because the asset is still referenced. | `editor`, `hash`, `foundIn` (the count of referencing entries) |
 
@@ -60,10 +63,17 @@ not-verified code and `email.send-failed` for everything else.
 The `media.*` family covers the asset pipeline. An upload that lands logs `media.uploaded` with
 the content `hash`, the stored byte count, and the file `ext`. A rejected upload logs
 `media.upload_failed`, where `reason` names the cause and `code` carries the Cloudflare error code
-when one is present. A delete logs `media.deleted` once the bytes and the manifest row are gone.
-When the asset is still referenced, the delete is refused and logs `media.delete_blocked` instead,
-with `foundIn` set to how many entries still point at it. The `hash` is the asset's content hash,
-which is its stable identity across these records.
+when one is present. The delivery route logs `media.delivery_failed` when it cannot serve the bytes
+because the Worker has no media bucket bound: `reason` is `binding-missing`, `binding` names the
+expected bucket binding, and the route drains a 503. The reconcile read logs
+`media.orphan_reconcile` once it has compared the stored R2 keys against the manifest hashes; its two
+counts, `orphaned` and `missing`, size each orphan direction, and it carries no key list or byte
+count. A `media:` reference that resolves to no manifest entry logs `media.resolve_missing` with the
+unresolved `hash`, which is how a broken reference surfaces in a build or a preview. A delete logs
+`media.deleted` once the bytes and the manifest row are gone. When the asset is still referenced, the
+delete is refused and logs `media.delete_blocked` instead, with `foundIn` set to how many entries
+still point at it. The `hash` is the asset's content hash, which is its stable identity across these
+records.
 
 The `email` on `auth.link.requested` is the raw submitted address, logged before the allowlist
 check, so it is unvalidated request input. cairn lowercases it, trims it, and caps the logged value

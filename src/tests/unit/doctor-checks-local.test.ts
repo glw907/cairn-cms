@@ -3,6 +3,7 @@ import { readWranglerConfig } from '../../lib/doctor/wrangler-config.js';
 import { runDoctor } from '../../lib/doctor/run.js';
 import {
 	configBindings,
+	configMediaBucket,
 	configObservability,
 	configCsrfDisable,
 	configSiteConfig,
@@ -21,6 +22,9 @@ const GOOD_JSONC = `{
 	"d1_databases": [
 		{ "binding": "AUTH_DB", "database_name": "auth", "database_id": "abc-123" },
 	],
+	"r2_buckets": [
+		{ "binding": "MEDIA_BUCKET", "bucket_name": "site-media" },
+	],
 	"observability": { "enabled": true },
 	"vars": { "PUBLIC_ORIGIN": "https://example.com" },
 }`;
@@ -35,6 +39,10 @@ name = "EMAIL"
 binding = "AUTH_DB"
 database_name = "auth"
 database_id = "toml-456"
+
+[[r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "site-media"
 
 [observability]
 enabled = true
@@ -83,6 +91,7 @@ describe('readWranglerConfig', () => {
 			observabilityEnabled: true,
 			publicOrigin: 'https://example.com',
 			accountId: 'cf-acct-1',
+			r2Buckets: ['MEDIA_BUCKET'],
 		});
 	});
 
@@ -95,6 +104,7 @@ describe('readWranglerConfig', () => {
 			observabilityEnabled: true,
 			publicOrigin: 'https://example.org',
 			accountId: 'cf-acct-2',
+			r2Buckets: ['MEDIA_BUCKET'],
 		});
 	});
 
@@ -126,6 +136,30 @@ describe('readWranglerConfig', () => {
 		const facts = await readWranglerConfig(ctx({ 'wrangler.toml': toml }).readFile);
 		expect(facts?.hasAuthDb).toBe(false);
 		expect(facts?.authDbId).toBeUndefined();
+	});
+
+	it('parses the r2_buckets binding names from jsonc', async () => {
+		const jsonc = `{
+			"r2_buckets": [
+				{ "binding": "MEDIA_BUCKET", "bucket_name": "m" },
+				{ "binding": "OTHER", "bucket_name": "o" },
+			],
+		}`;
+		const facts = await readWranglerConfig(ctx({ 'wrangler.jsonc': jsonc }).readFile);
+		expect(facts?.r2Buckets).toEqual(['MEDIA_BUCKET', 'OTHER']);
+	});
+
+	it('parses the r2_buckets binding names from toml', async () => {
+		const toml = `[[r2_buckets]]\nbinding = "MEDIA_BUCKET"\nbucket_name = "m"\n\n[[r2_buckets]]\nbinding = "OTHER"\nbucket_name = "o"\n`;
+		const facts = await readWranglerConfig(ctx({ 'wrangler.toml': toml }).readFile);
+		expect(facts?.r2Buckets).toEqual(['MEDIA_BUCKET', 'OTHER']);
+	});
+
+	it('leaves r2Buckets an empty array when the config declares no r2_buckets', async () => {
+		const jsonc = await readWranglerConfig(ctx({ 'wrangler.jsonc': '{ "name": "site" }' }).readFile);
+		expect(jsonc?.r2Buckets).toEqual([]);
+		const toml = await readWranglerConfig(ctx({ 'wrangler.toml': 'name = "site"\n' }).readFile);
+		expect(toml?.r2Buckets).toEqual([]);
 	});
 
 	it('throws a clean error on malformed jsonc, echoing none of the content', async () => {
@@ -181,6 +215,66 @@ describe('config.bindings', () => {
 
 	it('ties to the config.bindings-missing condition', () => {
 		expect(configBindings.conditionId).toBe('config.bindings-missing');
+	});
+
+	it('passes on EMAIL and AUTH_DB alone and never demands an r2 binding', async () => {
+		// The hard bindings check must not regress a no-media site: a config with EMAIL and AUTH_DB
+		// but no r2_buckets still passes (decision 9).
+		const jsonc = `{
+			"send_email": [{ "name": "EMAIL" }],
+			"d1_databases": [{ "binding": "AUTH_DB", "database_id": "x" }]
+		}`;
+		const result = await configBindings.run(ctx({ 'wrangler.jsonc': jsonc }));
+		expect(result.status).toBe('pass');
+		expect(result.detail).not.toContain('r2');
+		expect(result.detail).not.toContain('MEDIA');
+	});
+});
+
+describe('config.media-bucket', () => {
+	const MEDIA_JSONC = `{
+		"r2_buckets": [{ "binding": "MEDIA_BUCKET", "bucket_name": "m" }]
+	}`;
+
+	it('skips when the adapter declares no media binding', async () => {
+		const result = await configMediaBucket.run(ctx({ 'wrangler.jsonc': MEDIA_JSONC }));
+		expect(result.status).toBe('skip');
+		expect(result.detail).toContain('no media assets');
+	});
+
+	it('skips with the no-wrangler message when a media binding is declared but no config exists', async () => {
+		const result = await configMediaBucket.run(ctx({}, { mediaBucketBinding: 'MEDIA_BUCKET' }));
+		expect(result.status).toBe('skip');
+		expect(result.detail).toContain('wrangler.jsonc');
+	});
+
+	it('passes when the adapter binding is present in wrangler r2_buckets', async () => {
+		const result = await configMediaBucket.run(
+			ctx({ 'wrangler.jsonc': MEDIA_JSONC }, { mediaBucketBinding: 'MEDIA_BUCKET' })
+		);
+		expect(result.status).toBe('pass');
+		expect(result.detail).toContain('MEDIA_BUCKET');
+	});
+
+	it('passes against a toml r2_buckets binding', async () => {
+		const toml = `[[r2_buckets]]\nbinding = "MEDIA_BUCKET"\nbucket_name = "m"\n`;
+		const result = await configMediaBucket.run(
+			ctx({ 'wrangler.toml': toml }, { mediaBucketBinding: 'MEDIA_BUCKET' })
+		);
+		expect(result.status).toBe('pass');
+	});
+
+	it('fails when the adapter binding is absent from wrangler r2_buckets', async () => {
+		const result = await configMediaBucket.run(
+			ctx({ 'wrangler.jsonc': MEDIA_JSONC }, { mediaBucketBinding: 'OTHER_BUCKET' })
+		);
+		expect(result.status).toBe('fail');
+		expect(result.detail).toContain('OTHER_BUCKET');
+		expect(result.detail).toContain('r2_buckets');
+	});
+
+	it('reuses the config.bindings-missing condition (no new registry entry)', () => {
+		expect(configMediaBucket.conditionId).toBe('config.bindings-missing');
 	});
 });
 

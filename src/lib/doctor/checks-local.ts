@@ -27,6 +27,28 @@ export const configBindings: DoctorCheck = {
 	},
 };
 
+// The R2 media bucket is never added to the hard config.bindings check, so a no-media site never
+// fails on a missing media binding (decision 9). This conditional runs only when the adapter
+// declares assets, matching the adapter's bucketBinding against wrangler's r2_buckets. It reuses the
+// config.bindings-missing condition rather than registering a new one, so the readiness count holds.
+export const configMediaBucket: DoctorCheck = {
+	id: 'config.media-bucket',
+	conditionId: 'config.bindings-missing',
+	title: 'Media bucket binding',
+	async run(ctx: DoctorContext): Promise<CheckResult> {
+		const binding = ctx.mediaBucketBinding;
+		if (binding === undefined) return skip('no media assets configured');
+		const facts = await readWranglerConfig(ctx.readFile);
+		if (facts === null) return NO_WRANGLER;
+		if (!facts.r2Buckets.includes(binding)) {
+			return fail(
+				`adapter declares media bucket ${binding} but no matching r2_buckets binding is in wrangler`
+			);
+		}
+		return pass(`media bucket ${binding} is declared`);
+	},
+};
+
 export const configObservability: DoctorCheck = {
 	id: 'config.observability',
 	conditionId: 'config.observability-off',

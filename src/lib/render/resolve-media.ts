@@ -10,6 +10,7 @@ import { findByHash, type MediaManifest } from '../media/manifest.js';
 import { publicPath } from '../media/naming.js';
 import { presetUrl } from '../media/transform-url.js';
 import type { ResolvedAssetConfig } from '../media/config.js';
+import { log } from '../log/index.js';
 
 /** The VFile data key the renderer sets the per-call media resolver under. */
 export const MEDIA_RESOLVE = 'mediaResolve';
@@ -34,7 +35,12 @@ export function makeMediaResolver(
   return (ref: MediaRef): string | undefined => {
     if (!resolved.enabled) return undefined;
     const entry = findByHash(manifest, ref.hash);
-    if (!entry) return undefined;
+    if (!entry) {
+      // A real miss: media is on but the hash has no manifest row, the broken-reference case. The
+      // media-off path above stays silent, since an unresolved token there is expected, not a fault.
+      log.warn('media.resolve_missing', { hash: ref.hash });
+      return undefined;
+    }
     const path = publicPath(entry.slug, entry.hash, entry.ext, resolved.urlForm, resolved.publicBase);
     if (opts?.preset && resolved.transformations) {
       return presetUrl(path, opts.preset, resolved.variants);

@@ -45,6 +45,9 @@ export interface DoctorContext {
 	cfAccountId?: string;
 	/** PUBLIC_ORIGIN, the env fallback when the wrangler vars carry none. */
 	publicOrigin?: string;
+	/** The adapter's media bucket binding (cairn.assets.bucketBinding), derived off the adapter.
+	 *  Undefined when the site declares no media assets; the media-bucket check skips in that case. */
+	mediaBucketBinding?: string;
 	/** GITHUB_APP_ID / GITHUB_APP_INSTALLATION_ID / GITHUB_APP_PRIVATE_KEY_B64. */
 	github?: { appId: string; installationId: string; privateKeyB64: string };
 	/** Injected fetch for tests; defaults to global fetch. */

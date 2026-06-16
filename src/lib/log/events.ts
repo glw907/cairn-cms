@@ -19,5 +19,7 @@ export type CairnLogEvent =
   | 'media.uploaded'
   | 'media.upload_failed'
   | 'media.delivery_failed'
+  | 'media.orphan_reconcile'
+  | 'media.resolve_missing'
   | 'media.deleted'
   | 'media.delete_blocked';

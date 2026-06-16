@@ -12,3 +12,6 @@ dist/
 # vitest browser-mode artifacts
 .vitest-attachments/
 **/__screenshots__/
+
+# machine-local Claude Code agent scratch memory (never a project deliverable)
+.claude/agent-memory/

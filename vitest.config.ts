@@ -41,6 +41,10 @@ export default defineConfig({
           alias: {
             '$app/navigation': path.resolve('./src/tests/component/app-navigation.ts'),
             '$app/state': path.resolve('./src/tests/component/app-state.ts'),
+            // MediaInsertPopover imports deserialize from $app/forms to read the upload action
+            // envelope; the real module exists only inside a kit app, so the component project
+            // resolves it to a stub that runs the same JSON-then-devalue parse.
+            '$app/forms': path.resolve('./src/tests/component/app-forms.ts'),
           },
         },
         test: {

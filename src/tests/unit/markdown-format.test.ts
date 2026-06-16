@@ -154,6 +154,14 @@ describe('insertImage', () => {
   it('composes a pre-mount fallback image as inline markdown', () => {
     expect(insertImage('', 0, 0, 'Alt', 'media:x.0123456789abcdef').doc).toBe('![Alt](media:x.0123456789abcdef)');
   });
+
+  it('builds the placeholder-swap token the resolveTo path inserts at a position', () => {
+    // The optimistic placeholder resolves by inserting the bare token at its mapped position. The
+    // editor-placeholder seam computes that token with insertImage over an empty doc, so the swap
+    // text is exactly the committed reference with the alt escaped.
+    const token = insertImage('', 0, 0, 'A trail map', 'media:trail-map.0123456789abcdef').doc;
+    expect(token).toBe('![A trail map](media:trail-map.0123456789abcdef)');
+  });
 });
 
 describe('unwrapCairnLink', () => {

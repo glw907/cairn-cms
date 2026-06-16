@@ -54,6 +54,20 @@ through the adapter's render. Swapping the editor stays a one-file change.
         bytes: number;
       }
     >;
+    /** Receives a `() => { left; right; top; bottom } | null` returning the caret's viewport
+     *  coordinates; the insert popover anchors itself to the cursor from this. Null before mount or
+     *  when the caret has no measurable position. */
+    registerCaretCoords?: (
+      get: () => { left: number; right: number; top: number; bottom: number } | null,
+    ) => void;
+    /** Receives a `() => void` that returns focus to the editor; the insert popover calls it on close
+     *  or Escape. The selection is preserved automatically, since opening the popover only blurs the
+     *  editor and never edits the doc. */
+    registerFocusEditor?: (focus: () => void) => void;
+    /** Receives the optimistic-placeholder api; the insert popover drives the upload loop through it
+     *  (begin lands a placeholder at the caret, progress moves its bar, resolveTo swaps it for the
+     *  committed image text, cancel removes it leaving the source untouched). */
+    registerImagePlaceholders?: (api: import('./editor-placeholder.js').ImagePlaceholderApi) => void;
     /** Receives a `() => string` returning the selected text; the web link dialog reads it. */
     registerGetSelection?: (get: () => string) => void;
     /** Receives a `(kind) => void` that transforms the current selection; the host's toolbar calls it. */
@@ -84,6 +98,9 @@ through the adapter's render. Swapping the editor stays a one-file change.
     registerInsertImage,
     onImageIngest,
     mediaLibrary = {},
+    registerCaretCoords,
+    registerFocusEditor,
+    registerImagePlaceholders,
     registerGetSelection,
     registerFormat,
     onComponentAtCaret,
@@ -128,6 +145,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
     const highlightMod = await import('./editor-highlight.js');
     const modesMod = await import('./editor-modes.js');
     const foldingMod = await import('./editor-folding.js');
+    const placeholderMod = await import('./editor-placeholder.js');
     mediaMod = await import('./editor-media.js');
 
     if (!host) return;
@@ -288,6 +306,52 @@ through the adapter's render. Swapping the editor stays a one-file change.
           letterSpacing: '0.02em',
         },
         '.cm-cairn-media-needs-alt-glyph': { fontSize: '0.85em', lineHeight: '1' },
+        // The optimistic upload placeholder: an inline pill in the accent language, carrying a small
+        // thumbnail of the image the author is placing and a determinate progress bar beneath it. It
+        // stands in for the committed image text only while the upload runs; on resolve the seam
+        // swaps it for the real reference, and on failure the seam removes it (the source untouched).
+        // The accent tint matches the media chip so the two read as one visual family.
+        '.cm-cairn-media-placeholder': {
+          display: 'inline-flex',
+          flexDirection: 'column',
+          gap: '0.2em',
+          verticalAlign: 'baseline',
+          padding: '0.2em 0.35em',
+          borderRadius: '0.375rem',
+          backgroundColor: 'color-mix(in oklab, var(--color-accent) 8%, transparent)',
+          border: '1px solid color-mix(in oklab, var(--color-accent) 20%, transparent)',
+        },
+        '.cm-cairn-media-placeholder-thumb': {
+          width: '2.4em',
+          height: '2.4em',
+          objectFit: 'cover',
+          borderRadius: '0.25rem',
+          // A gentle pulse marks the placeholder as in-flight; reduced-motion drops it below.
+          opacity: '0.85',
+        },
+        // The determinate bar: native <progress> restyled to the accent ink so the fill reads as the
+        // upload's progress. Sized to the thumbnail width so the pill stays compact.
+        '.cm-cairn-media-placeholder-bar': {
+          width: '2.4em',
+          height: '0.3em',
+          appearance: 'none',
+          border: '0',
+          borderRadius: '0.15em',
+          backgroundColor: 'color-mix(in oklab, var(--color-accent) 18%, transparent)',
+          overflow: 'hidden',
+        },
+        '.cm-cairn-media-placeholder-bar::-webkit-progress-bar': {
+          backgroundColor: 'transparent',
+        },
+        '.cm-cairn-media-placeholder-bar::-webkit-progress-value': {
+          backgroundColor: 'var(--color-accent)',
+          borderRadius: '0.15em',
+          transition: 'width 200ms ease',
+        },
+        '.cm-cairn-media-placeholder-bar::-moz-progress-bar': {
+          backgroundColor: 'var(--color-accent)',
+          borderRadius: '0.15em',
+        },
         // Container folding lives in a real gutter column now, not an in-text band. The gutter is a
         // fixed-x column left of the content; the chevron is empty at rest and reveals on hovering
         // the gutter cell (the VS Code / Zed / Obsidian standard), forced on when folded or when the
@@ -348,6 +412,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
         '@media (prefers-reduced-motion: reduce)': {
           '.cm-cairn-fold-btn svg': { transition: 'none' },
           '.cm-cairn-fold-flash': { transition: 'none' },
+          '.cm-cairn-media-placeholder-bar::-webkit-progress-value': { transition: 'none' },
         },
         // The folded-row wash: a soft accent tint, square and full-row, returning as a STATE signal
         // so folded spots read in a scan. The rails are inset box-shadows on the same line element
@@ -461,6 +526,11 @@ through the adapter's render. Swapping the editor stays a one-file change.
           // invariant. Placed after the directive plugin so its chevron widget on an opener row
           // composes with the row's rail and gutter; its keymap is internal to the extension.
           foldingMod.cairnFolding(),
+          // The optimistic image placeholder field: a widget-only decoration the insert popover
+          // drives through the registerImagePlaceholders api. It never writes doc text, so a failed
+          // upload leaves the source untouched (open risk 2). Placed after folding so a placeholder
+          // landing inside a directive composes with the rails.
+          placeholderMod.cairnImagePlaceholders(),
           // The media: source decoration, in its own compartment so a mediaLibrary prop change
           // reconfigures it without rebuilding the editor. The chip and the atomic ranges read the
           // library; an empty library decorates nothing.
@@ -511,6 +581,9 @@ through the adapter's render. Swapping the editor stays a one-file change.
     registerInsert?.(insertAtCursor);
     registerInsertLink?.(insertLink);
     registerInsertImage?.(insertImage);
+    registerCaretCoords?.(caretCoords);
+    registerFocusEditor?.(focusEditor);
+    registerImagePlaceholders?.(placeholderMod.imagePlaceholderApi(view));
     registerGetSelection?.(selectedText);
     registerFormat?.(applyFormat);
     registerReplaceRange?.(replaceRange);
@@ -659,6 +732,20 @@ through the adapter's render. Swapping the editor stays a one-file change.
     if (!view) return '';
     const { from, to } = view.state.selection.main;
     return view.state.sliceDoc(from, to);
+  }
+
+  // The caret's viewport coordinates, for the insert popover to anchor itself to the cursor. Null
+  // before the editor mounts or when the caret has no measurable position (an unrendered line).
+  function caretCoords(): { left: number; right: number; top: number; bottom: number } | null {
+    if (!view) return null;
+    const rect = view.coordsAtPos(view.state.selection.main.head);
+    return rect ? { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom } : null;
+  }
+
+  // Return focus to the editor surface; the popover calls it on close or Escape. The selection is
+  // intact because opening the popover only blurred the editor, it never edited the doc.
+  function focusEditor() {
+    view?.focus();
   }
 
   function applyFormat(kind: FormatKind) {

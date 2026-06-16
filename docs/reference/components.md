@@ -299,11 +299,17 @@ seam. The snippets are minimal mounts with the real prop names.
 ### `MarkdownEditor`
 
 ```ts
-let { value = $bindable(), name, registerInsert, registerInsertLink, registerGetSelection, registerFormat, onComponentAtCaret, registerReplaceRange, completionSources = [], focusMode = false, typewriter = false }: {
+let { value = $bindable(), name, registerInsert, registerInsertLink, registerInsertImage, onImageIngest, mediaLibrary = {}, registerCaretCoords, registerFocusEditor, registerImagePlaceholders, registerGetSelection, registerFormat, onComponentAtCaret, registerReplaceRange, completionSources = [], focusMode = false, typewriter = false }: {
   value: string;
   name: string;
   registerInsert?: (insert: (text: string) => void) => void;
   registerInsertLink?: (insert: (href: string, title: string) => void) => void;
+  registerInsertImage?: (insert: (alt: string, ref: string) => void) => void;
+  onImageIngest?: (file: File) => void;
+  mediaLibrary?: Record<string, MediaLibraryEntry>;
+  registerCaretCoords?: (get: () => { left: number; right: number; top: number; bottom: number } | null) => void;
+  registerFocusEditor?: (focus: () => void) => void;
+  registerImagePlaceholders?: (api: ImagePlaceholderApi) => void;
   registerGetSelection?: (get: () => string) => void;
   registerFormat?: (format: (kind: FormatKind) => void) => void;
   onComponentAtCaret?: (info: { name: string | null; markdown: string; from: number; to: number } | null) => void;
@@ -328,7 +334,16 @@ container under the caret whenever it changes: the opening directive's `name`, t
 when the caret sits outside any container. The host resolves that block against the registry to
 offer an Edit-block control. `registerReplaceRange` hands the parent a `(from, to, text)` callback
 that overwrites a document span and drops the caret after it, which the Edit-block dialog's Update
-calls to write an edited block back over its original range. `completionSources` wires
+calls to write an edited block back over its original range. The media seams support the insert
+popover: `registerInsertImage` inserts an inline `![alt](media:slug.hash)` image at the caret (the
+picker and the capture card call it), `onImageIngest` fires with the first image file of a paste or
+drop onto the surface (the host opens the capture card with the bytes), and `mediaLibrary` is the
+per-asset projection the source decoration reads to render a `media:` token as a thumbnail chip.
+`registerCaretCoords` returns the caret's viewport coordinates so the popover anchors to the cursor,
+`registerFocusEditor` returns focus to the surface on close, and `registerImagePlaceholders` hands
+the host the optimistic-placeholder api (`begin`, `progress`, `resolveTo`, `cancel`) that drives the
+upload loop's in-flight thumbnail and determinate progress without ever writing doc text until the
+upload resolves. `completionSources` wires
 generic CodeMirror autocomplete, such as the internal-link source. `focusMode` fades every
 paragraph except the caret's, and `typewriter` keeps the caret line vertically centered while
 typing. `surface` picks the posture: `prose` (the default) sets a 72ch centered measure at a

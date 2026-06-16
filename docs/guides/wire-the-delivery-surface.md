@@ -172,6 +172,32 @@ This guide assumes a running cairn site whose content you want to deliver. The w
    import { buildSiteManifest } from '@glw907/cairn-cms/delivery/data';
    ```
 
+6. **Mount the media delivery route (when your site uses images).** A media-enabled site serves its
+   stored images from a `/media` route that streams content-addressed bytes from an R2 bucket. Bind
+   the bucket in `wrangler.jsonc` and mount the route; the route is off until the adapter declares an
+   `assets` block, so a text-only site can skip this step.
+
+   ```jsonc
+   // wrangler.jsonc
+   "r2_buckets": [
+     { "binding": "MEDIA_BUCKET", "bucket_name": "your-site-media" }
+   ]
+   ```
+
+   ```ts
+   // src/routes/media/[...path]/+server.ts
+   import { createMediaRoute } from '@glw907/cairn-cms/sveltekit';
+   import { runtime } from '$lib/cairn.server.js';
+
+   export const GET = createMediaRoute(runtime.resolvedAssets);
+   ```
+
+   The route validates the hash and extension before any R2 read, derives the object key from the
+   validated values alone, and carries its own security headers, since it sits outside `/admin`. For
+   the adapter `assets` block that turns media on, see [the media reference](../reference/media.md);
+   for the route handler, see
+   [`createMediaRoute`](../reference/sveltekit.md#createmediaroute).
+
 ## Verify
 
 Run `npm run build` in `examples/showcase`. The production build exits 0, the prerendered home lists the post summaries through `routes/(site)/+page.server.ts` and `routes/(site)/+page.svelte`, and a post permalink resolves through `routes/(site)/[...path]/+page.server.ts`. The `(site)` group folder is URL-transparent; it exists to keep the public chrome off `/admin`, and it changes no public path. When you compare against your own site, the working reference routes are `examples/showcase/src/routes/(site)/[...path]/` for the permalink page, `routes/feed.xml/+server.ts` and `routes/feed.json/+server.ts` for the feeds, and `routes/sitemap.xml/+server.ts` for the sitemap. A stale `src/content/.cairn/index.json` fails that build, which proves the manifest verify is wired.

@@ -99,6 +99,12 @@ Defined per theme root in `cairn-admin.css`: `[data-theme='cairn-admin']` (light
   hairline). Both are set per theme root.
 - The dark active-nav pair (`text-primary` on `bg-primary/10`) sits at ~4.5:1, near the floor. Do not
   lower dark `--color-primary` lightness or the `/10` opacity without re-checking contrast.
+- `--cairn-warning-ink` is the on-surface warning TEXT ink, distinct from `--color-warning`, which is
+  a FILL tone. The fill tone fails 4.5:1 as small text on a light surface (about 2.2:1), so a warning
+  word or glyph drawn on `base-100` uses this token instead. Light is `oklch(50% 0.13 70)` (5.98:1 on
+  base-100, 5.59:1 on the 8% accent chip tint); dark is `oklch(80% 0.14 70)` (8.61:1 and 6.20:1). The
+  needs-alt markers use it: the picker's needs-alt label and the `.cm-cairn-media-needs-alt` rule in
+  the editor's media chip. Reference it as `text-[var(--cairn-warning-ink)]`.
 
 ## Type
 
@@ -308,6 +314,44 @@ Recipes:
   70% mix is a locked floor: it clears the 3:1 non-text contrast minimum on both themes, where 45%
   measured near 2:1. A scoped `.cairn-doc-title:focus` rule in `cairn-admin.css` gives the document
   title input the same hairline.
+- **Media: the at-caret insert popover (`MediaInsertPopover`).** This is the one sanctioned exception
+  to the Dialog recipe. Where every other modal is a centered `<dialog>`, the image insert surface is
+  an anchored popover positioned at the CodeMirror caret, so an editor names and describes an image
+  without leaving the line they are on. It is still a real modal in the a11y sense: a
+  `role="dialog" aria-modal="true"` container with a manual Tab focus trap (no native `<dialog>` to
+  give it for free), Escape and a backdrop click that dismiss it and restore focus to the editor, and
+  `var(--cairn-shadow)` for the lift. The modal-sizing rule still binds it, so below the narrow
+  breakpoint it drops the caret anchor and becomes a full-height bottom sheet. It routes by the signal
+  that opened it: a paste or a drag opens straight on the capture card with the dropped file, while
+  the toolbar button opens the chooser (upload first, the picker below it).
+- **Media: the source chip and the optimistic placeholder (editor decorations).** Like the directive
+  rails and the fold gutter, these live in the `MarkdownEditor` `EditorView.theme`, not in the
+  document text. A resolved `media:` reference token renders as an atomic accent chip carrying the
+  thumbnail, the display name, and a needs-alt marker (the `.cm-cairn-media-needs-alt` rule, in
+  `--cairn-warning-ink`) when the alt text is still missing. An upload still in flight shows a
+  widget-only placeholder, a thumbnail beside a determinate `<progress>`, that never writes any text
+  into the document until the upload resolves. The doc only ever holds the final `media:` token, so a
+  failed or abandoned upload leaves no orphaned text behind.
+- **Media: the combobox picker (`MediaPicker`).** The reuse surface is a WAI-ARIA combobox over a
+  listbox. Focus stays in the text input and `aria-activedescendant` tracks the highlighted option;
+  the listbox is always rendered (never built on first keystroke) so the relationship is stable for
+  AT. Two separate live regions carry the result count and the selection announcement, since one
+  region cannot voice both without clobbering itself. A type-facet seam filters by media type but
+  stays hidden while a site has only one type, so it does not show an empty control. The needs-alt
+  label on a result uses `text-[var(--cairn-warning-ink)]`.
+- **Media: the capture card (`MediaCaptureCard`).** The card where an editor names and describes a
+  newly added image. Its submit is never disabled: alt text is treated as debt, not a gate, so an
+  editor can insert now and add the description later (the needs-alt notice tracks the gap). The alt
+  choice is a radiogroup (describe it, or mark it decorative), and the name pre-fills from the
+  filename. Because an async insert can unmount the focused submit and drop focus to `<body>`, focus
+  moves deliberately to the next state's primary control through an `$effect` keyed on the status
+  discriminant plus `tick()`.
+- **Media: the needs-alt publish notice (EditPage).** A non-blocking notice that surfaces images
+  inserted without alt text. It is an always-present `role="status"` region (rendered unconditionally
+  so it can announce when it fills, the live-region rule), holding a warning glyph, a count, and a
+  jump-to-each control. It is modeled on the broken-link banner but is a warning, never a block: it
+  never stops a save or a Publish. It tells the editor about the gap and helps them close it, and
+  leaves the decision with them.
 
 ## Chrome and spacing
 

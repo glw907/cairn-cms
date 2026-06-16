@@ -2,6 +2,56 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.57.0
+
+Images become first-class. An editor can paste, drag, or insert an image straight into a post, and
+cairn stores it, names it by its content, commits it with the entry, and serves it from the site's
+own R2 bucket. This is the whole media stack landing together: the foundation that models a stored
+image, the infrastructure that ingests and delivers the bytes, and the insert UI that puts it in an
+editor's hands. It is additive to the public API, but it needs per-site wiring, so it is a minor.
+
+The foundation models an image as a logical reference, not a path. Content commits a `media:` token
+keyed to the first 16 hex characters of the bytes' sha256, so the same image resolves no matter where
+it is stored or what it is named, and identical bytes always land at one key. A small git-committed
+manifest (`media.json`) carries the human layer the bytes cannot: the display name, the alt text, the
+original filename, and the pixel facts. A render-time resolver reads that manifest and rewrites each
+`media:` token to its delivery URL, optionally through a Cloudflare Images transform URL when a site
+turns transforms on. The adapter's `AssetConfig` grew to declare the R2 bucket binding, the URL form,
+the upload limits, and the named variants.
+
+The infrastructure ingests and serves the bytes. A locked-down `/media` delivery route, built from
+`createMediaRoute`, streams content-addressed bytes from R2: it validates the hash and extension
+before any read, derives the object key from the validated values alone, carries the load-bearing
+security headers (nosniff, inline disposition, a `default-src 'none'; sandbox` CSP, a one-year
+immutable cache), and forwards `If-None-Match` and `Range` for 304 and 206 responses. An admin
+`uploadAction` takes the editor's bytes, hashes them, dedups against the manifest with a put-first
+head check, and rejects a hash collision with a 409. A client ingest helper normalizes a HEIC to a
+web format before upload. A save merges the editor's optimistic records into `media.json` at commit
+time, and the edit load hands the admin preview a lean `mediaTargets` projection so an in-session
+image renders before it is committed.
+
+The insert UI puts it in an editor's hands. Three gestures start an insert: paste from the clipboard,
+drag a file onto the editor, or the toolbar's Insert image button. A paste or drag opens an at-caret
+popover on the capture card with the dropped file; the button opens a chooser with upload first and a
+combobox picker below it for reusing an image already on the site. The capture card pre-fills the name
+from the filename and never blocks on alt text, so an editor can insert now and describe later. The
+inserted reference renders in the editor as an atomic chip (thumbnail, name, and a needs-alt marker),
+and an upload still in flight shows a widget-only placeholder with a determinate progress bar that
+writes no document text until it resolves. A non-blocking needs-alt notice on the edit page counts the
+images still waiting for a description and jumps to each one, never blocking a save or a Publish. The
+edit-page preview renders inserted images through the same resolver the live site uses.
+
+Consumers must: bind an R2 bucket and mount the delivery route before media works. Add an
+`r2_buckets` binding named `MEDIA_BUCKET` in `wrangler.jsonc`, and mount the delivery route at
+`src/routes/media/[...path]/+server.ts` with `createMediaRoute(runtime.resolvedAssets)`. Declare the
+adapter's `assets` block naming that binding, and regenerate nothing else; media stays off until the
+`assets` block is present. Cloudflare Images transforms stay behind the `transformations: false`
+default, so a site serves full-size bytes until it opts in. The wiring steps are in
+[the upgrade guide](docs/guides/upgrade-cairn.md) and the
+[wire the delivery surface guide](docs/guides/wire-the-delivery-surface.md); the surface is documented
+in [the media reference](docs/reference/media.md) and
+[the sveltekit reference](docs/reference/sveltekit.md).
+
 ## 0.56.2
 
 The component insert picker gains a live preview and round-trip editing, and the component contract

@@ -395,6 +395,43 @@ on wrapped quote and list lines, container folding from the rail band, the compl
 plus page-level shortcuts and a `Ctrl+/` sheet, and the everyday formats promoted onto the strip.
 No consumer action; the changes apply in place, and `MarkdownEditor`'s public props are unchanged.
 
+## 0.57.0: media, with per-site wiring
+
+cairn gains images end to end. An editor pastes, drags, or inserts an image in the editor, and the
+engine stores it in R2, names it by its content hash, commits it with the entry, and serves it from a
+locked-down `/media` route. The full surface is in [the media reference](../reference/media.md) and
+[the sveltekit reference](../reference/sveltekit.md).
+
+Media is off until a site wires it, so this is additive with two setup steps. Consumers must:
+
+1. **Bind the R2 bucket.** Add an `r2_buckets` entry named `MEDIA_BUCKET` to `wrangler.jsonc`:
+
+   ```jsonc
+   "r2_buckets": [
+     { "binding": "MEDIA_BUCKET", "bucket_name": "your-site-media" }
+   ]
+   ```
+
+2. **Mount the delivery route.** Create `src/routes/media/[...path]/+server.ts` and export the
+   handler from `createMediaRoute`, passing the runtime's `resolvedAssets`:
+
+   ```ts
+   // src/routes/media/[...path]/+server.ts
+   import { createMediaRoute } from '@glw907/cairn-cms/sveltekit';
+   import { runtime } from '$lib/cairn.server.js';
+
+   export const GET = createMediaRoute(runtime.resolvedAssets);
+   ```
+
+3. **Declare the `assets` block.** Add an `assets` block to the adapter naming that bucket binding,
+   so `normalizeAssets` turns media on. See [the media reference](../reference/media.md#config) for
+   the field shape. Without the block, media stays off and the route 404s.
+
+Cloudflare Images transforms stay behind the `transformations: false` default. A site serves
+full-size bytes until it sets `transformations: true`, which needs the zone's Image Resizing turned
+on. The route mount is also covered in
+[the wire the delivery surface guide](wire-the-delivery-surface.md).
+
 ## 0.55.0: the office list gains triage and self-describing rows
 
 The post and page list rises to the same grade as the editor: a triage bar filters by publish state

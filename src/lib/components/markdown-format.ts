@@ -163,6 +163,20 @@ export function insertInlineLink(doc: string, from: number, to: number, href: st
   return { doc: doc.slice(0, from) + inserted + doc.slice(to), from: end, to: end };
 }
 
+/**
+ * Insert an inline markdown image at the selection. The committed form is `![alt](ref)` where `ref`
+ * is the full `media:slug.hash` token. The alt is escaped the way an inline link's title is (the `[`
+ * and `]` an author types must not break the image syntax); a selection is replaced rather than
+ * wrapped, since an image carries no display text to wrap. The cursor collapses just after the
+ * inserted text, and no surrounding blank lines are added, since an image is inline. Pure, so the
+ * editor dispatches the result.
+ */
+export function insertImage(doc: string, from: number, to: number, alt: string, ref: string): FormatResult {
+  const inserted = `![${escapeLinkText(alt)}](${ref})`;
+  const end = from + inserted.length;
+  return { doc: doc.slice(0, from) + inserted + doc.slice(to), from: end, to: end };
+}
+
 /** Concatenate a link node's text-child values. The parser has already unescaped them, so a source
  *  `Notes \[draft\]` yields `Notes [draft]`. Used instead of mdast-util-to-string, which is not a
  *  direct dependency. Non-text children (a nested emphasis, say) contribute no value, which is fine

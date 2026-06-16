@@ -3,6 +3,7 @@ import {
   detectHeic,
   gifDimensions,
   proposedNameFor,
+  firstImageFile,
   normalizeDataTransfer,
   budgetForDimensions,
   failureCard,
@@ -113,6 +114,28 @@ describe('normalizeDataTransfer', () => {
   it('is empty when no image file is present', () => {
     const files = [fakeFile('notes.txt', 'text/plain')];
     expect(normalizeDataTransfer({ files })).toEqual([]);
+  });
+});
+
+describe('firstImageFile', () => {
+  it('routes an image-bearing transfer to the first image file', () => {
+    const files = [
+      fakeFile('notes.txt', 'text/plain'),
+      fakeFile('shot.png', 'image/png'),
+      fakeFile('also.jpg', 'image/jpeg'),
+    ];
+    // The 2b ingest is single-file per gesture (open risk 3): the routing decision yields the first
+    // image and never the rest.
+    expect(firstImageFile({ files })?.name).toBe('shot.png');
+  });
+
+  it('falls through (null) for a text-only paste so CodeMirror handles it', () => {
+    const files = [fakeFile('notes.txt', 'text/plain')];
+    expect(firstImageFile({ files })).toBeNull();
+  });
+
+  it('is null when the transfer carries no files at all', () => {
+    expect(firstImageFile({})).toBeNull();
   });
 });
 

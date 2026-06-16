@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { applyMarkdownFormat, insertInlineLink, unwrapCairnLink, type FormatKind } from '../../lib/components/markdown-format.js';
+import { applyMarkdownFormat, insertImage, insertInlineLink, unwrapCairnLink, type FormatKind } from '../../lib/components/markdown-format.js';
 
 describe('applyMarkdownFormat', () => {
   const wrap: { kind: FormatKind; doc: string; out: string; from: number; to: number }[] = [
@@ -126,6 +126,33 @@ describe('insertInlineLink', () => {
   it('composes a pre-mount fallback link as inline markdown', () => {
     // The MarkdownEditor pre-mount fallback appends insertInlineLink('', 0, 0, href, title).doc.
     expect(insertInlineLink('', 0, 0, 'cairn:pages/about', 'About').doc).toBe('[About](cairn:pages/about)');
+  });
+});
+
+describe('insertImage', () => {
+  it('inserts an image at the cursor with the alt and the media reference', () => {
+    const doc = 'see  here';
+    const at = 4; // between the two spaces
+    const res = insertImage(doc, at, at, 'A trail map', 'media:trail-map.0123456789abcdef');
+    expect(res.doc).toBe('see ![A trail map](media:trail-map.0123456789abcdef) here');
+    // the cursor collapses just after the inserted image
+    expect(res.from).toBe(res.to);
+    expect(res.doc.slice(0, res.from)).toBe('see ![A trail map](media:trail-map.0123456789abcdef)');
+  });
+
+  it('replaces a selection with the image rather than wrapping it', () => {
+    const res = insertImage('see keep here', 4, 8, 'Alt', 'media:x.0123456789abcdef');
+    expect(res.doc).toBe('see ![Alt](media:x.0123456789abcdef) here');
+    expect(res.from).toBe(res.to);
+  });
+
+  it('escapes a bracket in the alt text', () => {
+    const res = insertImage('', 0, 0, 'A [B] C', 'media:x.0123456789abcdef');
+    expect(res.doc).toBe('![A \\[B\\] C](media:x.0123456789abcdef)');
+  });
+
+  it('composes a pre-mount fallback image as inline markdown', () => {
+    expect(insertImage('', 0, 0, 'Alt', 'media:x.0123456789abcdef').doc).toBe('![Alt](media:x.0123456789abcdef)');
   });
 });
 

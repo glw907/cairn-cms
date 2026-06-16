@@ -103,6 +103,21 @@ export function normalizeDataTransfer(dt: {
   return out;
 }
 
+/**
+ * The paste/drop routing decision as a pure call: the first image File a DataTransfer-shaped object
+ * carries, or null when it carries none. The editor's paste and drop handlers route on this, handing
+ * the file to ingest when it is non-null and falling through to CodeMirror's default when it is null
+ * (a plain-text or markdown paste). 2b is single-file per gesture (open risk 3), so this returns one
+ * file, never the rest. A thin wrapper over normalizeDataTransfer, kept pure so the decision is unit
+ * tested without a real DataTransfer.
+ */
+export function firstImageFile(dt: {
+  files?: ArrayLike<File>;
+  items?: ArrayLike<DataTransferItem>;
+}): File | null {
+  return normalizeDataTransfer(dt)[0] ?? null;
+}
+
 /** The conservative canvas area budget, about 16.7M px (4096 x 4096). A source over this is scaled
  *  down before any `drawImage`, never clipped. */
 export const MAX_AREA = 16_777_216;

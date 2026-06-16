@@ -9,8 +9,9 @@ through the adapter's render. Swapping the editor stays a one-file change.
 -->
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { applyMarkdownFormat, insertInlineLink, type FormatKind, type FormatResult } from './markdown-format.js';
+  import { applyMarkdownFormat, insertImage as insertImageFormat, insertInlineLink, type FormatKind, type FormatResult } from './markdown-format.js';
   import { fenceScan, caretContainerRange, directiveOpenerName } from './markdown-directives.js';
+  import { firstImageFile, guardDropTarget } from './client-ingest.js';
 
   /** The directive container at the caret: the opener's name, the block's markdown, and the
    *  document character offsets of its inclusive line range. */
@@ -30,6 +31,29 @@ through the adapter's render. Swapping the editor stays a one-file change.
     registerInsert?: (insert: (text: string) => void) => void;
     /** Receives a `(href, title) => void` that inserts an inline link; the link picker calls it. */
     registerInsertLink?: (insert: (href: string, title: string) => void) => void;
+    /** Receives an `(alt, ref) => void` that inserts an inline image at the caret; the media picker
+     *  and the capture card call it with the chosen alt and the full `media:slug.hash` reference. */
+    registerInsertImage?: (insert: (alt: string, ref: string) => void) => void;
+    /** Called with the first image File of a paste or drop onto the surface; the host opens the
+     *  capture card with the bytes. A paste or drop carrying no image falls through untouched. */
+    onImageIngest?: (file: File) => void;
+    /** The picker's human layer per stored asset, keyed by the 16-hex content hash (EditData's
+     *  `mediaLibrary`). The source decoration reads it to render a `media:` token as a thumbnail chip;
+     *  reactive, so a just-uploaded image decorates once it joins the library. Empty by default. */
+    mediaLibrary?: Record<
+      string,
+      {
+        hash: string;
+        slug: string;
+        ext: string;
+        contentType: string;
+        displayName: string;
+        alt: string;
+        width: number | null;
+        height: number | null;
+        bytes: number;
+      }
+    >;
     /** Receives a `() => string` returning the selected text; the web link dialog reads it. */
     registerGetSelection?: (get: () => string) => void;
     /** Receives a `(kind) => void` that transforms the current selection; the host's toolbar calls it. */
@@ -57,6 +81,9 @@ through the adapter's render. Swapping the editor stays a one-file change.
     name,
     registerInsert,
     registerInsertLink,
+    registerInsertImage,
+    onImageIngest,
+    mediaLibrary = {},
     registerGetSelection,
     registerFormat,
     onComponentAtCaret,
@@ -80,6 +107,11 @@ through the adapter's render. Swapping the editor stays a one-file change.
   let focusCompartment: import('@codemirror/state').Compartment | null = null;
   let typewriterCompartment: import('@codemirror/state').Compartment | null = null;
   let surfaceCompartment: import('@codemirror/state').Compartment | null = null;
+  // The media: source decoration lives in its own compartment, reconfigured when the mediaLibrary
+  // prop changes so a just-uploaded image decorates the moment it joins the library. The media
+  // module loads with the other dynamic editor modules in onMount.
+  let mediaCompartment: import('@codemirror/state').Compartment | null = null;
+  let mediaMod: typeof import('./editor-media.js') | null = null;
   // The posture themes, swapped through the surface compartment. Each owns its type step and
   // leading (the base theme deliberately sets neither on the content node, so the postures never
   // contest it on adoption order). Built in onMount beside the base theme.
@@ -96,6 +128,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
     const highlightMod = await import('./editor-highlight.js');
     const modesMod = await import('./editor-modes.js');
     const foldingMod = await import('./editor-folding.js');
+    mediaMod = await import('./editor-media.js');
 
     if (!host) return;
 
@@ -206,6 +239,55 @@ through the adapter's render. Swapping the editor stays a one-file change.
         },
         '.cm-cairn-directive-leaf': directiveInk,
         '.cm-cairn-directive-inline': directiveInk,
+        // The media: source chip: the inline widget that stands in for a media reference token, in the
+        // directive accent language (the 8% accent chip, the accent ink that holds AA on it). An
+        // inline-flex pill carrying a small thumbnail and the asset's display name, so a reference
+        // reads as the image it points at without leaving the source view.
+        '.cm-cairn-media-chip': {
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '0.3em',
+          verticalAlign: 'baseline',
+          padding: '0.05em 0.4em 0.05em 0.25em',
+          borderRadius: '0.375rem',
+          backgroundColor: 'color-mix(in oklab, var(--color-accent) 8%, transparent)',
+          color: 'var(--color-accent)',
+          fontFamily: 'var(--font-body, ui-sans-serif, sans-serif)',
+          fontSize: '0.8125rem',
+          lineHeight: '1.4',
+        },
+        // The thumbnail: a small square crop, rounded to match the chip. object-fit keeps a
+        // non-square source from distorting. A faint border lifts a light image off the chip tint.
+        '.cm-cairn-media-thumb': {
+          width: '1.4em',
+          height: '1.4em',
+          objectFit: 'cover',
+          borderRadius: '0.25rem',
+          border: '1px solid color-mix(in oklab, var(--color-accent) 20%, transparent)',
+          flex: '0 0 auto',
+        },
+        '.cm-cairn-media-name': {
+          fontWeight: '500',
+          // Keep a long name from stretching the line; the title and the picker carry the full text.
+          maxWidth: '18ch',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        },
+        // The needs-alt marker: a glyph plus a label, never hue alone (the spec accessibility rule).
+        // It rides the warning tone so it reads as a caution, with the label spelling out the state.
+        // The warning ink holds AA on the chip's light tint and stands apart from the accent name.
+        '.cm-cairn-media-needs-alt': {
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '0.2em',
+          color: 'var(--color-warning, oklch(56% 0.13 75))',
+          fontSize: '0.6875rem',
+          fontWeight: '600',
+          textTransform: 'uppercase',
+          letterSpacing: '0.02em',
+        },
+        '.cm-cairn-media-needs-alt-glyph': { fontSize: '0.85em', lineHeight: '1' },
         // Container folding lives in a real gutter column now, not an in-text band. The gutter is a
         // fixed-x column left of the content; the chevron is empty at rest and reveals on hovering
         // the gutter cell (the VS Code / Zed / Obsidian standard), forced on when folded or when the
@@ -352,6 +434,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
     focusCompartment = new stateMod.Compartment();
     typewriterCompartment = new stateMod.Compartment();
     surfaceCompartment = new stateMod.Compartment();
+    mediaCompartment = new stateMod.Compartment();
 
     view = new EditorView({
       parent: host,
@@ -378,6 +461,39 @@ through the adapter's render. Swapping the editor stays a one-file change.
           // invariant. Placed after the directive plugin so its chevron widget on an opener row
           // composes with the row's rail and gutter; its keymap is internal to the extension.
           foldingMod.cairnFolding(),
+          // The media: source decoration, in its own compartment so a mediaLibrary prop change
+          // reconfigures it without rebuilding the editor. The chip and the atomic ranges read the
+          // library; an empty library decorates nothing.
+          mediaCompartment.of(mediaMod.cairnMediaDecorations(mediaLibrary)),
+          // Paste and drop ingest: an image carried by either gesture is preventDefault'd and handed
+          // to onImageIngest (the host opens the capture card with the bytes); a gesture carrying no
+          // image falls through to CodeMirror's default. 2b is single-file per gesture (open risk 3),
+          // so only the first image routes.
+          EditorView.domEventHandlers({
+            dragover(event) {
+              // Allow the drop only when the drag carries image files; otherwise let it pass so a
+              // non-image drag (text, a link) keeps its native behavior.
+              if (event.dataTransfer && firstImageFile(event.dataTransfer)) {
+                guardDropTarget(event);
+                return true;
+              }
+              return false;
+            },
+            drop(event) {
+              const file = event.dataTransfer ? firstImageFile(event.dataTransfer) : null;
+              if (!file) return false;
+              guardDropTarget(event);
+              onImageIngest?.(file);
+              return true;
+            },
+            paste(event) {
+              const file = event.clipboardData ? firstImageFile(event.clipboardData) : null;
+              if (!file) return false; // a text or markdown paste falls through untouched
+              event.preventDefault();
+              onImageIngest?.(file);
+              return true;
+            },
+          }),
           EditorView.contentAttributes.of({ spellcheck: 'true', autocorrect: 'on', autocapitalize: 'sentences' }),
           theme,
           surfaceCompartment.of(surface === 'prose' ? proseTheme : markupTheme),
@@ -394,6 +510,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
 
     registerInsert?.(insertAtCursor);
     registerInsertLink?.(insertLink);
+    registerInsertImage?.(insertImage);
     registerGetSelection?.(selectedText);
     registerFormat?.(applyFormat);
     registerReplaceRange?.(replaceRange);
@@ -430,6 +547,15 @@ through the adapter's render. Swapping the editor stays a one-file change.
         surfaceCompartment.reconfigure((posture === 'prose' ? proseTheme : markupTheme) ?? []),
       ],
     });
+  });
+
+  // Reconfigure the media decoration when the mediaLibrary prop changes, so a just-uploaded image
+  // (added to the library by the host) decorates without rebuilding the editor. Reading the prop
+  // tracks it; the guard waits for the mounted editor and its media module.
+  $effect(() => {
+    const library = mediaLibrary;
+    if (!mounted || !view || !mediaMod || !mediaCompartment) return;
+    view.dispatch({ effects: mediaCompartment.reconfigure(mediaMod.cairnMediaDecorations(library)) });
   });
 
   // The last value handed to onComponentAtCaret, so the reporter fires only on a change. The
@@ -516,6 +642,17 @@ through the adapter's render. Swapping the editor stays a one-file change.
       return;
     }
     transformSelection((doc, from, to) => insertInlineLink(doc, from, to, href, title));
+  }
+
+  function insertImage(alt: string, ref: string) {
+    if (!view) {
+      // The editor has not mounted yet; append the image to the raw value so a pick is never lost,
+      // mirroring insertLink's pre-mount fallback.
+      const image = insertImageFormat('', 0, 0, alt, ref).doc;
+      value = value ? `${value} ${image}` : image;
+      return;
+    }
+    transformSelection((doc, from, to) => insertImageFormat(doc, from, to, alt, ref));
   }
 
   function selectedText(): string {

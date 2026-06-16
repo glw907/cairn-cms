@@ -62,7 +62,7 @@ describe('CodeMirror stays off the server', () => {
 
   // The component modules MarkdownEditor reaches only through dynamic imports; they alone
   // may import @codemirror/* statically.
-  const DYNAMIC_ONLY = ['editor-highlight.ts', 'editor-modes.ts', 'editor-folding.ts'];
+  const DYNAMIC_ONLY = ['editor-highlight.ts', 'editor-modes.ts', 'editor-folding.ts', 'editor-media.ts'];
 
   it('only the dynamically-imported editor modules statically import an editor package', () => {
     // EditPage imports the component .ts helpers statically and a consumer's server bundle

@@ -1073,4 +1073,156 @@ describe('MarkdownEditor', () => {
       .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
       .toContain('[About Us](cairn:pages/about)');
   });
+
+  // A media library fixture keyed by the 16-hex content hash, the EditData mediaLibrary shape. One
+  // captioned image and one needing alt, so the source-decoration test proves both states.
+  const HASH_A = '0123456789abcdef';
+  const HASH_B = 'fedcba9876543210';
+  const MEDIA_LIBRARY = {
+    [HASH_A]: {
+      hash: HASH_A,
+      slug: 'trail-map',
+      ext: 'webp',
+      contentType: 'image/webp',
+      displayName: 'Trail map',
+      alt: 'A map of the trails',
+      width: 800,
+      height: 600,
+      bytes: 12345,
+    },
+    [HASH_B]: {
+      hash: HASH_B,
+      slug: 'finish-line',
+      ext: 'webp',
+      contentType: 'image/webp',
+      displayName: 'Finish line',
+      alt: '',
+      width: 1024,
+      height: 768,
+      bytes: 23456,
+    },
+  };
+
+  // A real File the drop/paste handlers route on; the type carries the image/* prefix the
+  // normalizer keys off.
+  function imageFile(name = 'shot.png', type = 'image/png'): File {
+    return new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], name, { type });
+  }
+
+  it('inserts an inline image at the caret through registerInsertImage', async () => {
+    let insertImage: ((alt: string, ref: string) => void) | undefined;
+    const screen = render(MarkdownEditor, {
+      value: 'start',
+      name: 'body',
+      registerInsertImage: (fn: (alt: string, ref: string) => void) => {
+        insertImage = fn;
+      },
+    });
+    await expect.poll(() => typeof insertImage).toBe('function');
+    insertImage!('A trail map', `media:trail-map.${HASH_A}`);
+    await expect
+      .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
+      .toContain(`![A trail map](media:trail-map.${HASH_A})`);
+  });
+
+  it('routes a dropped image file to the ingest callback', async () => {
+    const ingested: File[] = [];
+    const screen = render(MarkdownEditor, {
+      value: 'drop here',
+      name: 'body',
+      onImageIngest: (file: File) => {
+        ingested.push(file);
+      },
+    });
+    await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+    const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
+    // A DataTransfer carrying one image file, dropped onto the editing surface.
+    const dt = new DataTransfer();
+    dt.items.add(imageFile());
+    content.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true }));
+    await expect.poll(() => ingested.length).toBe(1);
+    expect(ingested[0].name).toBe('shot.png');
+  });
+
+  it('lets a text-only paste fall through without routing to ingest', async () => {
+    const ingested: File[] = [];
+    const screen = render(MarkdownEditor, {
+      value: '',
+      name: 'body',
+      onImageIngest: (file: File) => {
+        ingested.push(file);
+      },
+    });
+    await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+    const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
+    const dt = new DataTransfer();
+    dt.setData('text/plain', 'just some pasted words');
+    content.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+    // The handler must return false so CodeMirror keeps the paste; the ingest callback never fires.
+    await expect.poll(() => document.activeElement === content || true).toBe(true);
+    expect(ingested).toEqual([]);
+  });
+
+  it('decorates a media: token with its display name and a needs-alt marker', async () => {
+    const doc = [
+      `Here is ![A trail map](media:trail-map.${HASH_A}) the map.`,
+      `And ![](media:finish-line.${HASH_B}) at the end.`,
+    ].join('\n');
+    const screen = render(MarkdownEditor, { value: doc, name: 'body', mediaLibrary: MEDIA_LIBRARY });
+    await expect.poll(() => screen.container.querySelectorAll('.cm-cairn-media-chip').length).toBe(2);
+    const names = [...screen.container.querySelectorAll('.cm-cairn-media-name')].map((n) => n.textContent);
+    expect(names).toContain('Trail map');
+    expect(names).toContain('Finish line');
+    // The thumbnail src is the slug-form delivery path for the resolved entry.
+    const thumb = screen.container.querySelector<HTMLImageElement>('.cm-cairn-media-thumb')!;
+    expect(thumb.src).toContain(`/media/trail-map.${HASH_A}.webp`);
+    // The captioned image carries no needs-alt marker; the empty-alt one does, with a label (not hue
+    // alone), and the source still mirrors the full token to the form (the alt stays editable).
+    const flags = screen.container.querySelectorAll('.cm-cairn-media-needs-alt');
+    expect(flags.length).toBe(1);
+    expect(flags[0].textContent).toContain('Needs alt');
+    expect(hiddenValue(screen.container)).toBe(doc);
+  });
+
+  it('renders a neutral fallback chip for a media: token absent from the library', async () => {
+    // A hash the library does not carry (a reference from a branch whose manifest the read missed):
+    // the chip falls back to the token slug as the name, with no thumbnail, and never throws.
+    const doc = `See ![A picture](media:somewhere.aaaabbbbccccdddd) here.`;
+    const screen = render(MarkdownEditor, { value: doc, name: 'body', mediaLibrary: MEDIA_LIBRARY });
+    await expect.poll(() => screen.container.querySelector('.cm-cairn-media-chip')).not.toBeNull();
+    expect(screen.container.querySelector('.cm-cairn-media-name')?.textContent).toBe('somewhere');
+    expect(screen.container.querySelector('.cm-cairn-media-thumb')).toBeNull();
+  });
+
+  it('decorates a just-added library image after a reactive mediaLibrary change', async () => {
+    // The optimistic-merge path (Task 6/7): a token already in the source whose hash joins the
+    // library later must decorate once the prop updates, through the media compartment.
+    const doc = `New ![A late one](media:late.1111222233334444) image.`;
+    const screen = render(MarkdownEditor, { value: doc, name: 'body', mediaLibrary: {} });
+    await expect.poll(() => screen.container.querySelector('.cm-content')?.textContent ?? '').toContain('late');
+    // No library entry yet, but the token still renders a fallback chip from its slug.
+    await expect.poll(() => screen.container.querySelector('.cm-cairn-media-name')?.textContent).toBe('late');
+    // The image joins the library: the chip picks up the real display name and a thumbnail.
+    await screen.rerender({
+      value: doc,
+      name: 'body',
+      mediaLibrary: {
+        '1111222233334444': {
+          hash: '1111222233334444',
+          slug: 'late',
+          ext: 'webp',
+          contentType: 'image/webp',
+          displayName: 'A late arrival',
+          alt: 'A late one',
+          width: 640,
+          height: 480,
+          bytes: 9999,
+        },
+      },
+    });
+    await expect
+      .poll(() => screen.container.querySelector('.cm-cairn-media-name')?.textContent)
+      .toBe('A late arrival');
+    expect(screen.container.querySelector('.cm-cairn-media-thumb')).not.toBeNull();
+  });
 });

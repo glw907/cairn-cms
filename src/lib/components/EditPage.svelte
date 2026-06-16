@@ -1077,6 +1077,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
           registerGetSelection={(fn) => (getSelection = fn)}
           registerFormat={(fn) => (format = fn)}
           {completionSources}
+          mediaLibrary={data.mediaLibrary}
           {focusMode}
           {typewriter}
         />

@@ -42,3 +42,66 @@ describe('log', () => {
     expect(record).toMatchObject({ level: 'info', event: 'auth.session.destroyed' });
   });
 });
+
+describe('media events', () => {
+  it('emits media.uploaded at info with the asset fields', () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    log.info('media.uploaded', { editor: 'a@b.test', hash: 'abc123', bytes: 4096, ext: 'png' });
+    const record = spy.mock.calls[0][0] as Record<string, unknown>;
+    expect(record).toMatchObject({
+      level: 'info',
+      event: 'media.uploaded',
+      editor: 'a@b.test',
+      hash: 'abc123',
+      bytes: 4096,
+      ext: 'png',
+    });
+  });
+
+  it('emits media.upload_failed at warn with reason and code', () => {
+    const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    log.warn('media.upload_failed', { editor: 'a@b.test', reason: 'oversize', code: 'E_TOO_LARGE' });
+    const record = spy.mock.calls[0][0] as Record<string, unknown>;
+    expect(record).toMatchObject({
+      level: 'warn',
+      event: 'media.upload_failed',
+      editor: 'a@b.test',
+      reason: 'oversize',
+      code: 'E_TOO_LARGE',
+    });
+  });
+
+  it('emits media.upload_failed without the optional code', () => {
+    const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    log.warn('media.upload_failed', { editor: 'a@b.test', reason: 'wrong-type' });
+    const record = spy.mock.calls[0][0] as Record<string, unknown>;
+    expect(record).toMatchObject({ level: 'warn', event: 'media.upload_failed', reason: 'wrong-type' });
+    expect(record).not.toHaveProperty('code');
+  });
+
+  it('emits media.deleted at info with editor and hash', () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    log.info('media.deleted', { editor: 'a@b.test', hash: 'abc123' });
+    const record = spy.mock.calls[0][0] as Record<string, unknown>;
+    expect(record).toMatchObject({
+      level: 'info',
+      event: 'media.deleted',
+      editor: 'a@b.test',
+      hash: 'abc123',
+    });
+  });
+
+  it('emits media.delete_blocked at warn with foundIn as a count', () => {
+    const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    log.warn('media.delete_blocked', { editor: 'a@b.test', hash: 'abc123', foundIn: 3 });
+    const record = spy.mock.calls[0][0] as Record<string, unknown>;
+    expect(record).toMatchObject({
+      level: 'warn',
+      event: 'media.delete_blocked',
+      editor: 'a@b.test',
+      hash: 'abc123',
+      foundIn: 3,
+    });
+    expect(typeof record.foundIn).toBe('number');
+  });
+});

@@ -15,4 +15,8 @@ export type CairnLogEvent =
   | 'entry.discarded'
   | 'publish.failed'
   | 'github.unreachable'
-  | 'guard.rejected';
+  | 'guard.rejected'
+  | 'media.uploaded'
+  | 'media.upload_failed'
+  | 'media.deleted'
+  | 'media.delete_blocked';

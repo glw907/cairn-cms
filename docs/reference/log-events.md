@@ -26,6 +26,10 @@ redaction stance.
 | `publish.failed` | warn or error | A publish commit fails, with the `commit.failed` shape. | `concept`, `id`, `editor`, `reason` or `error` |
 | `github.unreachable` | warn | The admin layout's pending-entries read fails because GitHub does not answer. | `scope` (`layout`), `error` |
 | `guard.rejected` | warn or error | The admin guard refuses a request before `resolve()`. `error` with `reason: "bindings"` when any admin request, the public login and auth paths included, finds no `AUTH_DB` binding; `warn` otherwise. | `reason` (`csrf`, `origin`, `https`, or `bindings`), `path`, `conditionId` on `bindings` |
+| `media.uploaded` | info | New bytes are stored to R2 and the manifest row is written. | `editor`, `hash`, `bytes`, `ext` |
+| `media.upload_failed` | warn or error | An upload fails: oversize, the wrong type, a network error, or a missing binding. | `editor`, `reason`, `code` (optional) |
+| `media.deleted` | info | An asset's bytes and manifest row are removed. | `editor`, `hash` |
+| `media.delete_blocked` | warn | A delete is refused because the asset is still referenced. | `editor`, `hash`, `foundIn` (the count of referencing entries) |
 
 Saves land on the entry's pending branch, so `commit.succeeded` and `commit.failed` carry a
 `branch` field (`cairn/<concept>/<id>`) on the save path. Deletes, renames, and nav saves commit to
@@ -52,6 +56,14 @@ On `auth.link.send_failed`, `code` is the Cloudflare binding error code (`E_SEND
 and the rest of the `E_*` set; absent when a custom sender throws a plain `Error`), and
 `conditionId` is the mapped diagnostic condition, `email.sender-not-onboarded` for the
 not-verified code and `email.send-failed` for everything else.
+
+The `media.*` family covers the asset pipeline. An upload that lands logs `media.uploaded` with
+the content `hash`, the stored byte count, and the file `ext`. A rejected upload logs
+`media.upload_failed`, where `reason` names the cause and `code` carries the Cloudflare error code
+when one is present. A delete logs `media.deleted` once the bytes and the manifest row are gone.
+When the asset is still referenced, the delete is refused and logs `media.delete_blocked` instead,
+with `foundIn` set to how many entries still point at it. The `hash` is the asset's content hash,
+which is its stable identity across these records.
 
 The `email` on `auth.link.requested` is the raw submitted address, logged before the allowlist
 check, so it is unvalidated request input. cairn lowercases it, trims it, and caps the logged value

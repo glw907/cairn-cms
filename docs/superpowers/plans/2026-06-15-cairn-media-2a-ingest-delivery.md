@@ -210,3 +210,70 @@ showcase. Full standing gate green.
 - The live `/cdn-cgi/image` transform proof on the first site cutover (open risk 4), and the per-zone
   Transformations enable.
 - The destructive reconcile (safe-delete collection) and the full branch-spanning usage index (Phase 4).
+
+## Post-mortem (2026-06-16)
+
+All ten tasks landed on `feat/media-2a` (branched off `main` at `cdc011d`), commits
+`12b28ac..82272ea`: one `cairn-implementer` per task test-first, the main loop reviewing each diff
+and clearing the full gate between dispatches. Tasks 4 and 5 ran on an upshifted Opus dispatch (the
+delivery route's XSS-control surface and the upload action's untrusted-input contract); the rest on
+Sonnet. Task 8's WASM HEIC spike ran in the main loop.
+
+**Built.** The locked-down `/media` delivery route (`createMediaRoute`, on `/sveltekit`): it streams
+content-addressed bytes from R2, validates the hash and ext before any R2 read, derives the key from
+the validated values, guards the `Via: image-resizing` self-loop, and sets the load-bearing security
+headers (`nosniff`, `Content-Disposition: inline`, the `default-src 'none'; sandbox` CSP, the immutable
+cache) on every served response, with 304/206/200. The upload admin action (`uploadAction`, a raw-body
+form action wired through `createCairnAdmin`): the gate order (media-on, Content-Length before read,
+`X-Cairn-CSRF` header, JSON-aware session), the server owning every committed field (sniff, deny SVG/HTML
+engine-level, re-hash, re-derive ext and slug, cap and sanitize the human fields, clamp dimensions),
+put-first R2-head dedup with full-sha256 collision refusal, and commit-nothing. The save-time
+manifest merge (`saveToBranch`/`publishAction` commit `media.json` in the same change set, branch at
+Save, main at Publish). The `editLoad` projection (`mediaTargets`). The client ingest helper
+(`client-ingest.ts`: ftyp detection, the three-tier route, the canvas budget, the DataTransfer
+normalizer, the failure taxonomy, the upload request builder). The reconcile read, the conditional
+doctor check, and the `media.*` events. The node-safe `@glw907/cairn-cms/media` subpath plus its
+reference page, and the showcase vertical slice (a fake R2, the mounted route, the render resolver, an
+E2E proving upload → reference → render → save-commits-`media.json`).
+
+**Two design corrections the build forced.** (1) The upload transport: the spec's raw-body-with-image-
+MIME is incompatible with the SvelteKit form-action namespace, which 415s any non-form content type
+before the action runs. The fix keeps the single-mount form action: the client posts `text/plain` (the
+one form content type that carries raw bytes), and the guard's CSRF rule now clears a valid
+`X-Cairn-CSRF` header before the body-cloning form-field check (a custom header cannot be set
+cross-origin without a CORS preflight, so it is as strong a witness, and it realizes the spec's
+"never clone the body" intent). (2) The result contract: a form action delivers `fail(status)` inside a
+200 JSON envelope `{ type, status, data }`, not as the HTTP status; the docstrings now state this so the
+2b client parses the envelope, and the guard (not the action) is the production session authority.
+
+**Spike (Task 8).** Chose `heic-to` (libheif 1.22.2 WASM wrapper, v1.5.2, actively maintained, ships
+`isHeic` and ESM/web-worker/CSP builds), lazy-loaded via dynamic `import('heic-to')` so the ~1.5MB WASM
+code-splits off the critical path until an author drops a HEIC. Rejected the hand-rolled embedded-JPEG
+extractor (iPhone HEICs embed a low-res thumbnail, not full-res). libheif is browser-agnostic, so the
+live Chrome/Firefox/Edge decode proof on real iPhone bytes rides the 2b/site integration.
+
+**Gate at the tip `82272ea`, run first-hand.** `npm run check` 955 files 0/0; `npm test` 178 files /
+1788 tests exit 0; `check:reference` (including `/media`), `:signatures`, `check:package` (no
+workers-types in any public `.d.ts`), `check:docs`, `check:readiness` (15 conditions unchanged),
+`check:version` all green; the showcase Playwright E2E 12 passed including the media slice. The delivery
+route and upload action are proven in workerd against real miniflare R2; the guard's header-CSRF path is
+proven in workerd against real D1.
+
+**Review gate.** Three reviewers (cloudflare-workers, web-auth-security, svelte), no Critical runtime
+bug. Folded in: `requireBucket` rejects a wrong-type binding (503, not an uncaught 500); the delivery
+route defaults `Content-Type` so `nosniff` is never ambiguous; the upload stores the full sha256 in R2
+custom metadata and refuses a 16-hex short-hash collision with 409; the misleading result/session
+docstrings corrected; new tests for each, plus a guard test proving the header-CSRF path leaves the body
+intact for the action to read. Residuals documented, not built: the GIF/polyglot re-encode and strict
+416-vs-206 (both bounded by the delivery headers and the image-only allow-list).
+
+**Live admin smoke: judged not proportionate.** The new admin write path (upload) and the guard CSRF
+change are both proven in workerd (real miniflare R2 and real D1) by the integration suite, and the
+slice is proven in a real browser by the showcase E2E. No auth-store or session code changed. The real
+guard+upload+delivery proof against a deployed Worker rides the first site cutover (2b), alongside the
+deferred `/cdn-cgi/image` transform proof.
+
+**Unreleased substrate.** No version bump and no `CHANGELOG` entry (Phase 1 precedent); the bundled
+release and its `Consumers must:` line (wire the `MEDIA_BUCKET` r2_buckets binding and mount the
+`/media` route, plus the additive render-signature note) ride the release that makes media
+author-usable, which is Phase 2b.

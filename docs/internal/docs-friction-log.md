@@ -246,3 +246,15 @@ inherit a clean list rather than one prose note.
   `src/tests/{unit,integration,component}/`, so a co-located test is silently never run. Every test
   landed in `src/tests/unit/` instead. Candidate: a one-line note in the contributor or plan-authoring
   guidance that tests live under `src/tests/`, so a future plan does not specify a path the suite skips.
+- **developer** (upload transport: form action vs raw body, from the media 2a pass, 2026-06-16): the 2a
+  spec specified a raw-body upload with the image's real `Content-Type` and CSRF in an `X-Cairn-CSRF`
+  header, wired through `createCairnAdmin` as a form action (`?/upload`). Two SvelteKit realities the
+  design did not account for surfaced only when the showcase slice exercised the real wire: a form
+  action 415s any POST whose content type is not form-encoded before the action runs, and the result of
+  a form action rides a 200 JSON envelope (`{ type, status, data }`), so `fail(413)` is not an HTTP 413.
+  The build reconciled both without leaving the single-mount admin: the client posts `text/plain` (the
+  one form content type that carries raw bytes), the guard clears a valid `X-Cairn-CSRF` header before
+  the body-cloning form-field check, and the docstrings now state the envelope contract. Candidate: a
+  short "writing an admin fetch action" note in the SvelteKit reference or a guide, so the 2b client and
+  any future fetch-style admin action build against the envelope-and-text/plain transport from the start
+  rather than rediscovering the 415 and the envelope. Tracked as a 2b carry-forward in STATUS.

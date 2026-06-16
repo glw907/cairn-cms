@@ -11,7 +11,56 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-15, latest): Phase 2a media ingest+delivery DESIGNED, ready to build (build deferred to a fresh session)
+## Immediate next action (2026-06-16, latest): Phase 2a media ingest+delivery LANDED on `feat/media-2a`
+
+**Phase 2a of the media gallery (the ingest and delivery infrastructure under the insert UI) LANDED on
+the feature worktree `feat/media-2a` (branched off `main` at `cdc011d`), ready to merge to `main`.** Ten
+plan tasks plus a simplifier touch and the review fold-in, commits `12b28ac..82272ea`. It is unreleased
+engine substrate: the version stays `0.56.2`, no `CHANGELOG` entry, and the only consumer action (wire
+the `MEDIA_BUCKET` r2_buckets binding and mount the `/media` route) rides the bundled release at 2b.
+
+Built: the locked-down `/media` delivery route (`createMediaRoute` on `/sveltekit`: validate-before-R2,
+304/206/200, the security headers as the served-bytes XSS control, the `Via: image-resizing` self-loop
+guard, a drained 503 on a missing binding); the upload admin action (`uploadAction`, a raw-body
+`text/plain` form action: the gate order, the server owning every committed field, put-first R2-head
+dedup with full-sha256 collision refusal, commit-nothing); the save-time `media.json` merge into the
+branch and Publish commits; the `editLoad` `mediaTargets` projection; the client ingest helper
+(`heic-to` lazy-loaded for HEIC); the reconcile read, the conditional doctor check, and the `media.*`
+events; the node-safe `@glw907/cairn-cms/media` subpath plus its reference page; and the showcase
+vertical slice with an E2E. Two design corrections the build forced: the upload posts `text/plain`
+(SvelteKit form actions 415 a non-form content type) with CSRF in the `X-Cairn-CSRF` header (the guard
+now clears a valid header before the body-cloning form-field check), and a form action delivers
+`fail(status)` inside a 200 JSON envelope, not as the HTTP status.
+
+Gate green at the tip `82272ea`, run first-hand: `npm run check` 955 files 0/0, `npm test` 178 files /
+1788 tests exit 0, the reference (with `/media`), signature, package, docs, readiness, and version gates
+green, the showcase Playwright E2E 12 passed including the media slice. Three reviewers
+(cloudflare-workers, web-auth-security, svelte), no Critical; five fold-ins in `82272ea` (the wrong-type
+binding 503, the default `Content-Type`, the short-hash-collision 409, the corrected result/session
+docstrings, and the guard body-intact test). The live admin smoke was judged not proportionate (the
+upload and the guard CSRF change are proven in workerd against real miniflare R2 and real D1, the slice
+in a real browser; no auth-store change), so the real guard+upload+delivery live proof rides the first
+site cutover. Post-mortem with the spike findings and carry-forwards in the plan
+(`docs/superpowers/plans/2026-06-15-cairn-media-2a-ingest-delivery.md`).
+
+**Next actions, in order:**
+1. **Merge `feat/media-2a` to `main`** (needs the push, so it is Geoff's call). It is unreleased
+   substrate, so no release is cut for it on its own; the bundled release that carries the whole media
+   stack rides Phase 2b, when media becomes author-usable. The `feat/media-foundation` Phase 1 merge and
+   the `0.56.2` picker/round-trip release stay their own separate pending calls.
+2. **Phase 2b, the insert UI**, is the next pass, MOCKUP-FIRST per [[cairn-ui-design-pass-methodology]]
+   against the rev.2 target (`docs/internal/design/2026-06-15-media-gallery-mockup.html`): the at-caret
+   popover, the combobox picker, the capture card (name and alt), the optimistic upload loop and dedup
+   sequencing, inline placement, drag and paste, and the mobile sheet, with a `frontend-design` polish
+   and an adversarial review-gate workflow. It needs a brainstorm and a just-in-time plan; the 2a
+   substrate is ready under it. **2b constraints carried from 2a:** the 2b client consumes the upload
+   result by parsing the 200 JSON envelope (`{ type, status, data }`), not `Response.status`, and treats
+   an opaque/status-0 response as session-expired; it must not offer multi-select drag-drop until a
+   batch-coalesced ingest (many R2 puts, one save commit) is designed (open risk 5). Then Phase 3
+   (placements), Phase 4 (management, the branch-spanning usage index, and safe-delete), Phase 5 (embeds
+   and icon routing).
+
+## Prior next action (2026-06-15): Phase 2a media ingest+delivery DESIGNED, ready to build (build deferred to a fresh session)
 
 **Phase 2a of the media gallery (the ingest and delivery infrastructure under the insert UI) is DESIGNED
 and APPROVED, ready to build on a feature worktree off `main`.** The design ran long (an adversarial

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createRenderer } from '../../lib/render/pipeline.js';
 import { defineRegistry } from '../../lib/render/registry.js';
-import { makeMediaResolver } from '../../lib/render/resolve-media.js';
+import { makeMediaResolver, manifestMediaResolver } from '../../lib/render/resolve-media.js';
 import { normalizeAssets } from '../../lib/media/config.js';
 import type { MediaManifest } from '../../lib/media/manifest.js';
 
@@ -90,5 +90,22 @@ describe('cairn media resolution', () => {
       resolveMedia,
     });
     expect(html).toContain('src="/assets/blue-running-shoes.a1b2c3d4e5f6a7b8.webp"');
+  });
+});
+
+describe('manifestMediaResolver', () => {
+  it('resolves a known hash to its delivery path and returns undefined for a miss', () => {
+    const resolve = manifestMediaResolver({
+      a1b2c3d4e5f6a7b8: { slug: 'blue-running-shoes', ext: 'webp', contentType: 'image/webp' },
+    });
+    expect(resolve({ slug: 'blue-running-shoes', hash: 'a1b2c3d4e5f6a7b8' })).toBe(
+      '/media/blue-running-shoes.a1b2c3d4e5f6a7b8.webp',
+    );
+    // The token slug is cosmetic: the resolver builds the path from the projection's slug, so even
+    // a bare-hash ref resolves to the canonical delivery path.
+    expect(resolve({ slug: null, hash: 'a1b2c3d4e5f6a7b8' })).toBe(
+      '/media/blue-running-shoes.a1b2c3d4e5f6a7b8.webp',
+    );
+    expect(resolve({ slug: null, hash: 'ffffffffffffffff' })).toBeUndefined();
   });
 });

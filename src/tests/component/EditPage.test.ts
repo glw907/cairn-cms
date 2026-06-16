@@ -318,6 +318,32 @@ describe('EditPage', () => {
     expect(previewSrcdoc(screen)).toContain('cairn-broken-link');
   });
 
+  it('resolves a media reference in the preview to its delivery path', async () => {
+    const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+    const props = {
+      ...postProps({
+        body: '![shoes](media:blue-running-shoes.a1b2c3d4e5f6a7b8)',
+        mediaTargets: {
+          a1b2c3d4e5f6a7b8: { slug: 'blue-running-shoes', ext: 'webp', contentType: 'image/webp' },
+        },
+      }),
+      // The stub threads resolveMedia into the real renderMarkdown, so the assertion exercises the
+      // live resolve path the way EditPage wires it.
+      render: (
+        md: string,
+        opts?: {
+          resolve?: (ref: { concept: string; id: string }) => string | undefined;
+          resolveMedia?: (ref: { slug: string | null; hash: string }) => string | undefined;
+        },
+      ) => renderMarkdown(md, opts),
+    };
+    const screen = render(EditPage, props);
+    await screen.getByRole('tab', { name: 'Preview' }).click();
+    await expect
+      .poll(() => previewSrcdoc(screen))
+      .toContain('src="/media/blue-running-shoes.a1b2c3d4e5f6a7b8.webp"');
+  });
+
   it('centers the editor column with no two-column grid in either posture', async () => {
     const screen = render(EditPage, postProps());
     // The details column moved behind a slide-over, so the form is no longer a two-column grid.

@@ -18,4 +18,4 @@ export {
 export { hashBytes, shortHash, slugifyFilename, r2Key, publicPath } from './naming.js';
 export { presetUrl, variantUrl, type VariantSpec } from './transform-url.js';
 export { parseMediaToken, mediaToken, type MediaRef } from './reference.js';
-export { makeMediaResolver, type MediaResolve } from '../render/resolve-media.js';
+export { makeMediaResolver, manifestMediaResolver, type MediaResolve } from '../render/resolve-media.js';

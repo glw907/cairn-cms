@@ -18,6 +18,7 @@ mount inside `AdminLayout`. No styling or wrapper elements of its own.
   import type { ComponentRegistry } from '../render/registry.js';
   import type { IconSet } from '../render/glyph.js';
   import type { LinkResolve } from '../content/links.js';
+  import type { MediaResolve } from '../render/resolve-media.js';
 
   interface Props {
     /** The discriminated view data from `createCairnAdmin`'s load. */
@@ -33,7 +34,10 @@ mount inside `AdminLayout`. No styling or wrapper elements of its own.
         })
       | null;
     /** The site's design-accurate render pipeline, for the edit view's preview pane. */
-    render?: (md: string, opts?: { stagger?: boolean; resolve?: LinkResolve }) => string | Promise<string>;
+    render?: (
+      md: string,
+      opts?: { stagger?: boolean; resolve?: LinkResolve; resolveMedia?: MediaResolve },
+    ) => string | Promise<string>;
     /** The site's component registry, for the edit view's insert palette. */
     registry?: ComponentRegistry;
     /** The site's icon set, for the edit view's guided form fields. */

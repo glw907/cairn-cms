@@ -47,6 +47,8 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   import type { TextareaField, TagsField, FreeTagsField } from '../content/types.js';
   import type { LinkResolve } from '../content/links.js';
   import { manifestLinkResolver } from '../content/manifest.js';
+  import type { MediaResolve } from '../render/resolve-media.js';
+  import { manifestMediaResolver } from '../render/resolve-media.js';
 
   interface Props {
     /** The edit load's data, plus the site name for the heading. */
@@ -54,7 +56,10 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     /** The site's component registry, for the insert palette. */
     registry?: ComponentRegistry;
     /** The site's design-accurate render pipeline; the preview pane renders its output, which the floored pipeline already sanitized. */
-    render?: (md: string, opts?: { stagger?: boolean; resolve?: LinkResolve }) => string | Promise<string>;
+    render?: (
+      md: string,
+      opts?: { stagger?: boolean; resolve?: LinkResolve; resolveMedia?: MediaResolve },
+    ) => string | Promise<string>;
     /** The site's icon set, for the guided form's icon fields. */
     icons?: IconSet;
     /** The last content action's failure: the save guard's broken links, the delete guard's
@@ -653,6 +658,10 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   // returns undefined for a missing target so the render step marks it cairn-broken-link.
   const resolveLink = $derived(manifestLinkResolver(data.linkTargets));
 
+  // The media analog: it turns a media: reference into its /media delivery path in the preview, and
+  // returns undefined for a missing target so the render step marks it cairn-broken-media.
+  const resolveMedia = $derived(manifestMediaResolver(data.mediaTargets));
+
   // The [[ autocomplete source over the same link targets, handed to the editor's generic seam.
   const completionSources = $derived([cairnLinkCompletionSource(data.linkTargets)]);
 
@@ -719,10 +728,11 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     if (mode !== 'preview' || !render) return;
     const md = body;
     const resolve = resolveLink; // tracked read in the effect body
+    const resolveMediaRef = resolveMedia; // tracked read in the effect body
     const run = ++previewRun;
     const handle = setTimeout(async () => {
       try {
-        const html = await render(md, { resolve });
+        const html = await render(md, { resolve, resolveMedia: resolveMediaRef });
         if (run === previewRun) {
           previewHtml = html;
           previewFailed = false;

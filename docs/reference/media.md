@@ -230,6 +230,21 @@ preset and zone transformations on it returns the variant URL; otherwise it retu
 full-size path. It returns `undefined` when media is off or no entry carries the hash, the
 preview-miss backstop. A site threads the resolver through `render` via the `resolveMedia` option.
 
+### `manifestMediaResolver`
+
+```ts
+declare function manifestMediaResolver(
+  targets: Record<string, { slug: string; ext: string; contentType: string }>,
+): MediaResolve;
+```
+
+Build a media resolver from the lean `mediaTargets` projection the edit load hands the admin
+preview, keyed by the 16-hex content hash. A hash present in the projection builds the slug delivery
+path (`/media/<slug>.<hash>.<ext>`); a miss returns `undefined`, so the render step marks the image
+broken rather than throwing. It is the media analog of the content `manifestLinkResolver`: pure over
+the projection, with no manifest and no config, so the edit page reaches it with the data it has.
+The engine wires this for its own preview pane; a site does not call it directly.
+
 ---
 
 ## Types

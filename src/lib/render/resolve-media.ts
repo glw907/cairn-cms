@@ -49,6 +49,21 @@ export function makeMediaResolver(
   };
 }
 
+/** A resolver backed by the lean `mediaTargets` projection, for the admin preview. It mirrors
+ *  manifestLinkResolver: a hash present in the projection builds the slug delivery path
+ *  (`/media/<slug>.<hash>.<ext>`); a miss returns undefined, so the render step marks the image
+ *  broken rather than throwing. Pure over the projection, with no manifest and no config, so the
+ *  edit page reaches it with the data it actually has. */
+export function manifestMediaResolver(
+  targets: Record<string, { slug: string; ext: string; contentType: string }>,
+): MediaResolve {
+  return (ref: MediaRef): string | undefined => {
+    const entry = targets[ref.hash];
+    if (!entry) return undefined;
+    return publicPath(entry.slug, ref.hash, entry.ext, 'slug');
+  };
+}
+
 interface ImageNode {
   url: string;
   data?: { hProperties?: Record<string, unknown> };

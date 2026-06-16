@@ -12,6 +12,7 @@ import { VFile } from 'vfile';
 import { buildSanitizeSchema, rehypeAnchorRel, rehypeSinkGuard } from './sanitize-schema.js';
 import { remarkDirectiveStamp } from './remark-directives.js';
 import { remarkResolveCairnLinks, CAIRN_RESOLVE } from './resolve-links.js';
+import { remarkResolveMedia, MEDIA_RESOLVE, type MediaResolve } from './resolve-media.js';
 import { rehypeDispatch } from './rehype-dispatch.js';
 import { defineRegistry, type ComponentRegistry } from './registry.js';
 import type { LinkResolve } from '../content/links.js';
@@ -43,7 +44,12 @@ export function createRenderer(
   registry: ComponentRegistry = defineRegistry({ components: [] }),
   options: RendererOptions = {},
 ) {
-  const remarkPlugins: PluggableList = [remarkDirective, [remarkDirectiveStamp, registry], remarkResolveCairnLinks];
+  const remarkPlugins: PluggableList = [
+    remarkDirective,
+    [remarkDirectiveStamp, registry],
+    remarkResolveCairnLinks,
+    remarkResolveMedia,
+  ];
   // The sanitize floor runs after rehype-raw (so author raw HTML is parsed, then cleaned) and
   // before the dispatch (so the site's trusted build() output and its inline SVG icons are never
   // sanitized). The anchor-rel hardening runs last so it also covers component-built anchors.
@@ -71,8 +77,14 @@ export function createRenderer(
   return {
     remarkPlugins,
     rehypePlugins,
-    renderMarkdown: async (content: string, opts: { resolve?: LinkResolve } = {}): Promise<string> => {
-      const file = new VFile({ value: content, data: { [CAIRN_RESOLVE]: opts.resolve } });
+    renderMarkdown: async (
+      content: string,
+      opts: { resolve?: LinkResolve; resolveMedia?: MediaResolve } = {},
+    ): Promise<string> => {
+      const file = new VFile({
+        value: content,
+        data: { [CAIRN_RESOLVE]: opts.resolve, [MEDIA_RESOLVE]: opts.resolveMedia },
+      });
       return String(await processor.process(file));
     },
   };

@@ -224,7 +224,7 @@ declare function createRenderer(
 ): {
   remarkPlugins: PluggableList;
   rehypePlugins: PluggableList;
-  renderMarkdown: (content: string, opts?: { resolve?: LinkResolve }) => Promise<string>;
+  renderMarkdown: (content: string, opts?: { resolve?: LinkResolve; resolveMedia?: MediaResolve }) => Promise<string>;
 };
 ```
 

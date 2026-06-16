@@ -12,6 +12,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
   import { applyMarkdownFormat, insertImage as insertImageFormat, insertInlineLink, type FormatKind, type FormatResult } from './markdown-format.js';
   import { fenceScan, caretContainerRange, directiveOpenerName } from './markdown-directives.js';
   import { firstImageFile, guardDropTarget } from './client-ingest.js';
+  import type { MediaLibrary } from '../media/library-entry.js';
 
   /** The directive container at the caret: the opener's name, the block's markdown, and the
    *  document character offsets of its inclusive line range. */
@@ -40,20 +41,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
     /** The picker's human layer per stored asset, keyed by the 16-hex content hash (EditData's
      *  `mediaLibrary`). The source decoration reads it to render a `media:` token as a thumbnail chip;
      *  reactive, so a just-uploaded image decorates once it joins the library. Empty by default. */
-    mediaLibrary?: Record<
-      string,
-      {
-        hash: string;
-        slug: string;
-        ext: string;
-        contentType: string;
-        displayName: string;
-        alt: string;
-        width: number | null;
-        height: number | null;
-        bytes: number;
-      }
-    >;
+    mediaLibrary?: MediaLibrary;
     /** Receives a `() => { left; right; top; bottom } | null` returning the caret's viewport
      *  coordinates; the insert popover anchors itself to the cursor from this. Null before mount or
      *  when the caret has no measurable position. */

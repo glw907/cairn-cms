@@ -87,12 +87,16 @@ rule). The CSRF token is read from the admin context.
   let view = $state<View | null>(null);
   let captureFile = $state<File | null>(null);
 
+  // The card a failed loop surfaces: an ingest-taxonomy card (its own message) or the envelope-only
+  // generic card. The two share the failed-card shape, so one alias names both.
+  type FailureCard = IngestFailureCard | { status: 'failed'; kind: UploadFailureKind; message: string };
+
   // The transient status of the in-flight or failed loop, surfaced under the active view. 'reused'
   // briefly notes a dedup collapse; the failure and expired states carry a message and a retry.
   type Status =
     | { kind: 'idle' }
     | { kind: 'reused' }
-    | { kind: 'failed'; card: IngestFailureCard | { status: 'failed'; kind: UploadFailureKind; message: string }; retry: () => void }
+    | { kind: 'failed'; card: FailureCard; retry: () => void }
     | { kind: 'expired' };
   let status = $state<Status>({ kind: 'idle' });
 
@@ -181,13 +185,23 @@ rule). The CSRF token is read from the admin context.
     view = null;
     captureFile = null;
 
-    const fail = (
-      card: IngestFailureCard | { status: 'failed'; kind: UploadFailureKind; message: string },
-    ) => {
+    // Drop the in-flight placeholder, leaving the source exactly as it was, and free the object URL.
+    // Both unsuccessful paths (a typed failure, an expired session) end here before setting status.
+    const discardPlaceholder = () => {
       editor.placeholders.cancel(pid);
       URL.revokeObjectURL(objectUrl);
+    };
+    const fail = (card: FailureCard) => {
+      discardPlaceholder();
       status = { kind: 'failed', card, retry: () => void runUpload(record) };
     };
+    const expire = () => {
+      discardPlaceholder();
+      status = { kind: 'expired' };
+    };
+    // The author-facing card for an envelope-only generic refusal (a deserialize throw or an
+    // operational reason with no author-actionable specifics).
+    const genericCard = () => fail({ status: 'failed', kind: 'generic', message: GENERIC_FAILURE_MESSAGE });
 
     // Stage progress, not real byte counts: fetch cannot report upload bytes, so the bar reads the
     // ingest/upload LIFECYCLE (begin ~0.1 set by the field, ingesting ~0.4, uploading ~0.85, resolve
@@ -226,9 +240,7 @@ rule). The CSRF token is read from the admin context.
     // The guard's expired-session 303 under redirect: 'manual' surfaces as an opaque, status-0
     // response; treat it as session-expired before parsing a body that is not there.
     if (res.type === 'opaqueredirect' || res.status === 0) {
-      editor.placeholders.cancel(pid);
-      URL.revokeObjectURL(objectUrl);
-      status = { kind: 'expired' };
+      expire();
       return;
     }
 
@@ -242,23 +254,18 @@ rule). The CSRF token is read from the admin context.
     try {
       outcome = uploadOutcome(deserialize(await res.text()) as UploadEnvelope);
     } catch {
-      fail({ status: 'failed', kind: 'generic', message: GENERIC_FAILURE_MESSAGE });
+      genericCard();
       return;
     }
     if (outcome.kind === 'session-expired') {
-      editor.placeholders.cancel(pid);
-      URL.revokeObjectURL(objectUrl);
-      status = { kind: 'expired' };
+      expire();
       return;
     }
     if (outcome.kind === 'failed') {
       // An ingest-taxonomy kind reuses failureCard's own message; the envelope-only `generic` kind
       // carries its own plain message. Either way the card shows the message with a Retry.
-      fail(
-        outcome.failure === 'generic'
-          ? { status: 'failed', kind: 'generic', message: GENERIC_FAILURE_MESSAGE }
-          : failureCard(outcome.failure),
-      );
+      if (outcome.failure === 'generic') genericCard();
+      else fail(failureCard(outcome.failure));
       return;
     }
 

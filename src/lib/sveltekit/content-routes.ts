@@ -25,6 +25,7 @@ import { mediaToken } from '../media/reference.js';
 import { r2Store } from '../media/store.js';
 import { parseMediaEntries, parseMediaManifest, upsertMediaEntry, serializeMediaManifest } from '../media/manifest.js';
 import type { MediaEntry } from '../media/manifest.js';
+import type { MediaLibrary } from '../media/library-entry.js';
 import type { CookieJar, EventBase } from './types.js';
 import type { CairnRuntime, ConceptDescriptor, FrontmatterField, PreviewConfig, ResolvedPreview } from '../content/types.js';
 import type { Editor, Role } from '../auth/types.js';
@@ -115,20 +116,7 @@ export interface EditData {
    *  from the same committed media manifest read that populates `mediaTargets`. The `hash` field
    *  duplicates the key, so the picker can iterate `Object.values`. Empty when media is off or the
    *  read fails (the same degradation path as `mediaTargets`). */
-  mediaLibrary: Record<
-    string,
-    {
-      hash: string;
-      slug: string;
-      ext: string;
-      contentType: string;
-      displayName: string;
-      alt: string;
-      width: number | null;
-      height: number | null;
-      bytes: number;
-    }
-  >;
+  mediaLibrary: MediaLibrary;
   /** The entries that link to this one, for the delete guard. Empty when nothing links here. */
   inboundLinks: InboundLink[];
   /** True when the entry has a pending branch, so the body above came from that branch. */

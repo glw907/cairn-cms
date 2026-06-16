@@ -20,30 +20,11 @@ holds more than one distinct top-level content type, so the structure is present
 while a site stores images only.
 -->
 <script module lang="ts">
-  /** One stored asset in the picker's projected library, the shape EditData.mediaLibrary carries per
-   *  hash. Declared here rather than imported from editor-media.ts so this component never pulls the
-   *  CodeMirror-coupled editor module into a bundle (the editor-boundary test bars that edge). It
-   *  matches editor-media.ts's MediaLibraryEntry field for field. */
-  export interface MediaLibraryEntry {
-    /** The 16-hex content-hash prefix that names the bytes. */
-    hash: string;
-    /** The cosmetic display slug in the media: token and the delivery path. */
-    slug: string;
-    /** The bare file extension (no dot), for example `webp`. */
-    ext: string;
-    /** The stored MIME type, for example `image/webp`; its top-level part drives the type facet. */
-    contentType: string;
-    /** The editable human name shown on the row. */
-    displayName: string;
-    /** The manifest alt, prefilled into a new placement; empty is the needs-alt signal. */
-    alt: string;
-    /** The pixel width, or null when the manifest carries none. */
-    width: number | null;
-    /** The pixel height, or null when the manifest carries none. */
-    height: number | null;
-    /** The stored byte size. */
-    bytes: number;
-  }
+  // The picker's library entry is the shared node-safe projection (../media/library-entry), not a
+  // type from editor-media.ts: importing that module would pull CodeMirror into a bundle, which the
+  // editor-boundary test bars. Re-exported so the insert popover keeps importing it from here.
+  import type { MediaLibraryEntry } from '../media/library-entry.js';
+  export type { MediaLibraryEntry };
 
   /** The picked asset the picker emits to its host: the library entry, its media: reference token,
    *  and the manifest alt to prefill the placement. */

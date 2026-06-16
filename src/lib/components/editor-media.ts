@@ -23,24 +23,9 @@ import {
 import { RangeSetBuilder, type Extension, type Range } from '@codemirror/state';
 import { parseMediaToken } from '../media/reference.js';
 import { publicPath } from '../media/naming.js';
-
-/** The picker's human layer for one stored asset, the shape EditData carries on `mediaLibrary`. The
- *  decoration reads it for the thumbnail path, the display name, and the alt-empty test. Declared
- *  here (not imported from the server-only content-routes) so this client module stays node-free. */
-export interface MediaLibraryEntry {
-  hash: string;
-  slug: string;
-  ext: string;
-  contentType: string;
-  displayName: string;
-  alt: string;
-  width: number | null;
-  height: number | null;
-  bytes: number;
-}
-
-/** The projected library keyed by the 16-hex content hash, exactly EditData's `mediaLibrary`. */
-export type MediaLibrary = Record<string, MediaLibraryEntry>;
+// The decoration reads MediaLibrary/MediaLibraryEntry (the shared node-safe projection) for the
+// thumbnail path, the display name, and the alt-empty test.
+import type { MediaLibrary, MediaLibraryEntry } from '../media/library-entry.js';
 
 // Markdown image tokens whose URL is a media: reference. The capture groups split the alt (group 1,
 // author content that stays editable) from the URL token (group 2, the media: reference that becomes

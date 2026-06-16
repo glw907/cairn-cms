@@ -8,8 +8,9 @@
 // by single internal hyphens, no leading or trailing hyphen), or is the literal `file`.
 
 /** Combining marks (Unicode block U+0300 to U+036F), left over after an NFD decompose, stripped to
- *  fold an accented letter down to its ASCII base. */
-const COMBINING_MARKS = /[̀-ͯ]/g;
+ *  fold an accented letter down to its ASCII base. Written as escapes because the literal marks are
+ *  invisible in source. */
+const COMBINING_MARKS = /[\u0300-\u036f]/g;
 
 /** Windows reserved device names. A bare match (case-insensitive) cannot survive as the slug, since
  *  it names a device rather than a file on that platform. */

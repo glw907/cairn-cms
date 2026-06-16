@@ -11,7 +11,55 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-15, latest): Phase 1 media foundation LANDED on `feat/media-foundation`
+## Immediate next action (2026-06-15, latest): Phase 2a media ingest+delivery DESIGNED, ready to build (build deferred to a fresh session)
+
+**Phase 2a of the media gallery (the ingest and delivery infrastructure under the insert UI) is DESIGNED
+and APPROVED, ready to build on a feature worktree off `main`.** The design ran long (an adversarial
+design-hardening workflow plus the context exploration), so the build was deliberately deferred to a
+fresh session per the context-handoff discipline; this section is the pre-baked brief.
+
+Spec: `docs/superpowers/specs/2026-06-15-cairn-media-2a-ingest-delivery-design.md`. Plan (ten tasks):
+`docs/superpowers/plans/2026-06-15-cairn-media-2a-ingest-delivery.md`. Both committed on `main`.
+
+The Phase 2 insert experience is cut into **2a (this infrastructure)** and **2b (the insert UI)**, two
+verification surfaces (Geoff's call). 2a delivers the locked-down `/media` delivery route (streams
+content-addressed bytes from R2 with the security headers, 304/206 support, the `Via: image-resizing`
+self-loop guard), the upload admin action (a JSON/fetch endpoint: Content-Length-before-read,
+CSRF-from-header, JSON-aware 401, the server owns every committed field, SVG/HTML denied engine-level),
+the client-side ingest helper (three-tier: web-native passthrough, HEIC via a lazy WASM decoder, a typed
+failure card), the cross-cutting render-resolver wiring (the additive trailing `resolveMedia` opt), the
+node-safe `/media` export subpath split from the kit-coupled `/sveltekit` route factory, and a reconcile
+read. **An adversarial find-and-verify workflow hardened the design: five lenses, 51 findings, 14
+blockers**, which rejected a commit-to-main-per-upload draft for the branch-scoped pipeline (the upload
+stores bytes and returns the record; the record commits WITH the entry on the per-entry branch at Save,
+promoted to main at Publish, folded into the existing `commitFiles` change set). Two product decisions
+settled with Geoff: media is public-by-hash with gating kept addable (the logical-reference design keeps
+the door open via a future `visibility` field plus a signed-URL route variant); transform-abuse
+hardening is documented as the scale path, not built (both sites sit under the 5,000/month free cap).
+
+**Immediate next action: execute the 2a plan.** Method: invoke `cairn-pass`, create a feature worktree
+off `main` (one worktree per pass), one `cairn-implementer` per task test-first, the main loop reviews
+each diff and clears the full gate between dispatches, at HIGH effort. Tasks 3, 4, 5, and 10 are
+high-blast-radius (careful main-loop review, upshift if needed); Task 8 carries a short WASM-HEIC-decoder
+library spike that runs in the main loop. It is unreleased engine substrate plus one per-site consumer
+action (wire the R2 bucket and the `/media` route), shipped behind the `transformations: false` default;
+the bundled release happens when Phase 2b makes media author-usable.
+
+**Resume prompt (fresh session, launched in `~/Projects/cairn-cms` so its hooks and memory load):**
+"Execute Phase 2a of the cairn media gallery: the ingest and delivery infrastructure plan at
+`docs/superpowers/plans/2026-06-15-cairn-media-2a-ingest-delivery.md` (spec:
+`docs/superpowers/specs/2026-06-15-cairn-media-2a-ingest-delivery-design.md`). Invoke the `cairn-pass`
+skill, create a feature worktree off `main` for the pass, then run the ten tasks test-first: one
+`cairn-implementer` (Sonnet) per task, review each diff, and clear the full gate between dispatches.
+Task 8 carries the WASM HEIC decoder library spike; run that in the main loop. It is unreleased engine
+substrate with one per-site consumer action. Then Phase 2b (the insert UI) follows, mockup-first with a
+frontend-design polish and an adversarial review-gate workflow."
+
+**Phase 1 status:** the foundation merged to `main` (a local fast-forward to `1d46e49`, unpushed). The
+`0.56.2` picker/round-trip release and the push remain Geoff's separate pending call; the media substrate
+is unreleased and rides a later bundled release.
+
+## Prior next action (2026-06-15): Phase 1 media foundation LANDED on `feat/media-foundation`
 
 **Phase 1 of the media gallery (the engine substrate, no admin UI) LANDED on the feature worktree
 `feat/media-foundation` (branched off `main` at `df7ed21`), ready to merge to `main`.** Nine plan tasks

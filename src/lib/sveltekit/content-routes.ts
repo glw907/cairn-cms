@@ -108,6 +108,9 @@ export interface EditData {
   slug: string;
   /** The site's link targets, for the preview resolver and the link picker; from the committed manifest. */
   linkTargets: LinkTarget[];
+  /** The minimal media-resolver input the edit page builds its preview `resolveMedia` from, keyed by
+   *  the 16-hex content hash and parallel to `linkTargets`. Empty when media is off or the read fails. */
+  mediaTargets: Record<string, { slug: string; ext: string; contentType: string }>;
   /** The entries that link to this one, for the delete guard. Empty when nothing links here. */
   inboundLinks: InboundLink[];
   /** True when the entry has a pending branch, so the body above came from that branch. */
@@ -447,10 +450,16 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     // only when the probe found a branch, with the stage-1 main read serving as the published
     // signal either way.
     const branch = pendingBranch(concept.id, id);
-    const [headSha, mainRaw, manifestRaw] = await Promise.all([
+    // The media manifest joins the concurrent batch only when media is on, read from the default
+    // branch (pending branches carry no copy). A rejected media read degrades to null so the edit
+    // never throws on a missing or unreadable media.json; the projection below treats null as empty.
+    const [headSha, mainRaw, manifestRaw, mediaRaw] = await Promise.all([
       branchHeadSha(runtime.backend, branch, token),
       readRaw(runtime.backend, path, token),
       readRaw(runtime.backend, runtime.manifestPath, token),
+      runtime.resolvedAssets.enabled
+        ? readRaw(runtime.backend, runtime.mediaManifestPath, token).catch(() => null)
+        : Promise.resolve(null),
     ]);
     const pending = headSha !== null;
     const raw = pending ? await readRaw({ ...runtime.backend, branch }, path, token) : mainRaw;
@@ -475,6 +484,21 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       inbound = inboundLinks(manifest, concept.id, id);
     }
 
+    // Project the committed media manifest to the minimal resolver input: only the three fields the
+    // preview resolver needs, keyed by hash. A corrupt committed file degrades to empty, not a throw.
+    const mediaTargets: EditData['mediaTargets'] = {};
+    if (mediaRaw !== null) {
+      let mediaJson: unknown;
+      try {
+        mediaJson = JSON.parse(mediaRaw);
+      } catch {
+        mediaJson = null;
+      }
+      for (const [hash, e] of Object.entries(parseMediaManifest(mediaJson))) {
+        mediaTargets[hash] = { slug: e.slug, ext: e.ext, contentType: e.contentType };
+      }
+    }
+
     return {
       conceptId: concept.id,
       id,
@@ -489,6 +513,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       error: event.url.searchParams.get('error'),
       slug: slugFromId(id, datePrefix),
       linkTargets,
+      mediaTargets,
       inboundLinks: inbound,
       pending,
       published,

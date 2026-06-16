@@ -2,9 +2,12 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { serializeManifest } from '../../lib/content/manifest.js';
+import { serializeMediaManifest, type MediaEntry } from '../../lib/media/manifest.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
+import type { ResolvedAssetConfig } from '../../lib/media/config.js';
 
 const MANIFEST_PATH = 'src/content/.cairn/index.json';
+const MEDIA_PATH = 'src/content/.cairn/media.json';
 
 function runtime(): CairnRuntime {
   const ok = () => ({ ok: true as const, data: {} });
@@ -30,6 +33,40 @@ function runtime(): CairnRuntime {
     manifestPath: MANIFEST_PATH,
     mediaManifestPath: 'src/content/.cairn/media.json',
     resolvedAssets: { enabled: false },
+  };
+}
+
+const MEDIA_ON: ResolvedAssetConfig = {
+  enabled: true,
+  bucketBinding: 'MEDIA_BUCKET',
+  publicBase: '/media',
+  urlForm: 'slug',
+  maxUploadBytes: 25 * 1024 * 1024,
+  allowedTypes: ['image/jpeg'],
+  variants: {},
+  transformations: false,
+};
+
+/** A runtime with media enabled (or off), for the media-targets projection cases. */
+function mediaRuntime(assets: ResolvedAssetConfig): CairnRuntime {
+  return { ...runtime(), mediaManifestPath: MEDIA_PATH, resolvedAssets: assets };
+}
+
+/** A stored-asset row, the media.json value shape; only slug/ext/contentType reach EditData. */
+function mediaEntry(hash: string, slug: string): MediaEntry {
+  return {
+    hash,
+    sha256: `${hash}-full-sha`,
+    slug,
+    displayName: slug,
+    originalFilename: `${slug}.jpg`,
+    alt: 'some alt',
+    ext: 'jpg',
+    contentType: 'image/jpeg',
+    bytes: 1234,
+    width: 800,
+    height: 600,
+    createdAt: '2026-06-15T00:00:00.000Z',
   };
 }
 
@@ -276,5 +313,65 @@ describe('editLoad with a pending branch', () => {
     expect(data.published).toBe(false);
     expect(data.body).toBe('New body.');
     expect(data.title).toBe('Fresh');
+  });
+});
+
+describe('editLoad media targets', () => {
+  const ENTRY_PATH = 'src/content/posts/2026-05-hello.md';
+
+  function readsOf(gh: GithubDouble, path: string): number {
+    return gh.calls.filter((c) => c.method === 'GET' && c.url.includes(`/contents/${path}`)).length;
+  }
+
+  it('reads the media manifest and projects it to slug/ext/contentType per hash', async () => {
+    const media = serializeMediaManifest({
+      a1b2c3d4e5f60718: mediaEntry('a1b2c3d4e5f60718', 'sunset'),
+    });
+    const gh = new GithubDouble({
+      main: { [ENTRY_PATH]: '---\ntitle: Hello\n---\nx', [MEDIA_PATH]: media },
+    });
+    gh.install();
+    const routes = createContentRoutes(mediaRuntime(MEDIA_ON), deps);
+    const data = await routes.editLoad(editEvent('2026-05-hello') as never);
+
+    // The default-branch media.json was read.
+    expect(readsOf(gh, MEDIA_PATH)).toBe(1);
+    // Only the three resolver fields ride; no other MediaEntry key leaks.
+    expect(data.mediaTargets).toEqual({
+      a1b2c3d4e5f60718: { slug: 'sunset', ext: 'jpg', contentType: 'image/jpeg' },
+    });
+    expect(data.mediaTargets.a1b2c3d4e5f60718).not.toHaveProperty('alt');
+    expect(data.mediaTargets.a1b2c3d4e5f60718).not.toHaveProperty('hash');
+  });
+
+  it('degrades a thrown media read to an empty projection without throwing the edit', async () => {
+    const gh = new GithubDouble({ main: { [ENTRY_PATH]: '---\ntitle: Hello\n---\nx' } });
+    gh.install();
+    // Reject the media-path read; the other reads stay as the double serves them.
+    const handle = globalThis.fetch as unknown as { getMockImplementation(): (i: string) => Promise<Response> };
+    const inner = handle.getMockImplementation();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: string | URL | Request, init?: RequestInit) => {
+        const url = String(input instanceof Request ? input.url : input);
+        if (url.includes(`/contents/${MEDIA_PATH}`)) return Promise.reject(new Error('media read boom'));
+        return inner(url as never);
+      }),
+    );
+    const routes = createContentRoutes(mediaRuntime(MEDIA_ON), deps);
+    const data = await routes.editLoad(editEvent('2026-05-hello') as never);
+    expect(data.mediaTargets).toEqual({});
+    expect(data.body).toBe('x');
+  });
+
+  it('issues no media read and projects empty when media is disabled', async () => {
+    const gh = new GithubDouble({
+      main: { [ENTRY_PATH]: '---\ntitle: Hello\n---\nx', [MEDIA_PATH]: serializeMediaManifest({}) },
+    });
+    gh.install();
+    const routes = createContentRoutes(mediaRuntime({ enabled: false }), deps);
+    const data = await routes.editLoad(editEvent('2026-05-hello') as never);
+    expect(readsOf(gh, MEDIA_PATH)).toBe(0);
+    expect(data.mediaTargets).toEqual({});
   });
 });

@@ -37,6 +37,7 @@ function postProps(over = {}) {
       error: null,
       slug: 'hello',
       linkTargets: [] as LinkTarget[],
+      mediaTargets: {},
       inboundLinks: [],
       pending: false,
       published: true,

@@ -57,10 +57,23 @@ matching the 2a deferral. Post-mortem with the carry-forwards in the plan
    bucket (`r2_buckets` in `wrangler.jsonc`), mount the `/media` delivery route (`createMediaRoute`) at
    `src/routes/media/[...path]/+server.ts`, bump to `^0.57.0`, and run the real guard + upload + delivery
    live smoke (the deferred proof). Media stays behind `transformations: false` until a site opts in.
-4. Then **Phase 3 (placements)**: captions via the CommonMark image title, alignment/sizing as theme-resolved
-   intent classes under the layer charter, the hero frontmatter field, the gallery component. Then Phase 4
-   (management: the Media screen, the branch-spanning usage index, safe-delete) and Phase 5 (embeds + icons +
-   the unified insert entry point and slash trigger). See [[cairn-image-gallery-initiative-placement]].
+4. Then **Phase 3, placements, cut into 3a/3b/3c, with 3a DESIGNED + PLANNED 2026-06-16 and ready to
+   execute** (after the bundled release, on a fresh worktree off `main`). **Phase 3a (the inline figure):
+   captions and placement for an inline body image through a cairn-reserved `:::figure` container directive
+   that wraps the image as a child node** (so the `media:` resolver resolves it untouched), the caption as
+   the directive's body text rendered to `<figcaption>`, and a closed role set (`center`/`wide`/`full` plus
+   the measure default) riding the directive's class. A five-lens-style adversarial critique REVERSED the
+   first carrier (it empirically broke caption-in-title on a literal `"` and showed the `{.token}` brace is
+   a fragile sibling-text parser that degrades to junk in other tools); the figure directive dodges all of
+   it. Spec `docs/superpowers/specs/2026-06-16-cairn-media-3a-inline-figure-design.md`, plan (9 tasks)
+   `docs/superpowers/plans/2026-06-16-cairn-media-3a-inline-figure.md`. Method: one `cairn-implementer` per
+   task, test-first, full gate between dispatches; Task 1 (the `remarkFigure` render step) and Task 5 (the
+   editor figure control) are high-blast (review closely, upshift if needed); Tasks 3 (the mockup), 8 (the
+   polish), 9 (the pass-end) run in the main loop. The layer charter is owned as a bounded, theme-owned
+   exception. **Then 3b** (the hero frontmatter image field) and **3c** (the gallery component), reusing the
+   caption+alt+role model 3a designs once. Then Phase 4 (management: the Media screen, the branch-spanning
+   usage index, safe-delete) and Phase 5 (embeds + icons + the unified insert entry point and slash
+   trigger). See [[cairn-image-gallery-initiative-placement]].
 
 ## Prior next action (2026-06-16): Phase 2a media ingest+delivery LANDED on `feat/media-2a`
 

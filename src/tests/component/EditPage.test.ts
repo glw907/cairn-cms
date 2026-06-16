@@ -1,7 +1,20 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
 import type { BeforeNavigate } from '@sveltejs/kit';
+import { stringify as devalueStringify } from 'devalue';
+import * as ingest from '../../lib/components/client-ingest.js';
+import type { MediaEntry } from '../../lib/media/manifest.js';
+
+// The optimistic upload loop touches createImageBitmap (ingestFile) and a real fetch (sendUpload);
+// mock those two so the in-session-upload-renders-in-preview test reaches the success swap
+// deterministically, while the pure request builder and failure mappers stay real.
+vi.mock('../../lib/components/client-ingest.js', async () => {
+  const actual = await vi.importActual<typeof import('../../lib/components/client-ingest.js')>(
+    '../../lib/components/client-ingest.js',
+  );
+  return { ...actual, ingestFile: vi.fn(), sendUpload: vi.fn() };
+});
 // EditPage's lifecycle controls (Save, Publish, the status badge, the overflow) render into the
 // one header band through the topbar context portal, not in a header of their own. This harness
 // mounts EditPage joined to that band the way CairnAdmin/AdminLayout do, so a standalone render
@@ -342,6 +355,79 @@ describe('EditPage', () => {
     await expect
       .poll(() => previewSrcdoc(screen))
       .toContain('src="/media/blue-running-shoes.a1b2c3d4e5f6a7b8.webp"');
+  });
+
+  it('resolves an in-session uploaded image in the preview before the next save commits it', async () => {
+    // The preview resolver merges this session's uploaded records over the committed mediaTargets, so
+    // a just-uploaded image renders its thumbnail in the live preview rather than reading as a broken
+    // reference. mediaTargets starts empty here: only the optimistic upload feeds the resolver.
+    const uploaded: MediaEntry = {
+      hash: 'a1b2c3d4e5f6a7b8',
+      sha256: 'f'.repeat(64),
+      slug: 'seaside',
+      displayName: 'Seaside',
+      originalFilename: 'seaside.png',
+      alt: 'A quiet shore',
+      ext: 'png',
+      contentType: 'image/png',
+      bytes: 256,
+      width: 8,
+      height: 8,
+      createdAt: '2026-06-16T00:00:00.000Z',
+    };
+    vi.mocked(ingest.ingestFile).mockResolvedValue({
+      blob: new Blob([new Uint8Array([1])], { type: 'image/png' }),
+      contentType: 'image/png',
+      width: 8,
+      height: 8,
+    });
+    vi.mocked(ingest.sendUpload).mockResolvedValue({
+      type: 'basic',
+      status: 200,
+      text: async () =>
+        JSON.stringify({
+          type: 'success',
+          status: 200,
+          data: devalueStringify({
+            reference: `media:${uploaded.slug}.${uploaded.hash}`,
+            record: uploaded,
+            reused: false,
+            mismatch: false,
+          }),
+        }),
+    } as unknown as Response);
+
+    const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+    const props = {
+      ...postProps({ body: '', mediaTargets: {} }),
+      render: (
+        md: string,
+        opts?: {
+          resolve?: (ref: { concept: string; id: string }) => string | undefined;
+          resolveMedia?: (ref: { slug: string | null; hash: string }) => string | undefined;
+        },
+      ) => renderMarkdown(md, opts),
+    };
+    const screen = render(EditPage, props);
+
+    // Drive the real insert UI: open the popover, choose a file, describe it, and insert. The capture
+    // card's submit and the toolbar trigger share the "Insert image" name, so the card submit is
+    // scoped to the popover dialog where only the submit lives.
+    await screen.getByRole('button', { name: 'Insert image' }).first().click();
+    const file = new File([new Uint8Array([1])], 'seaside.png', { type: 'image/png' });
+    const fileInput = screen.container.querySelector('input[type="file"]') as HTMLInputElement;
+    await userEvent.upload(fileInput, file);
+    await screen.getByRole('radio', { name: /describ|write/i }).click();
+    await screen.getByRole('textbox', { name: /alt|description/i }).fill('A quiet shore');
+    const dialog = screen.container.querySelector('[role="dialog"]') as HTMLElement;
+    (dialog.querySelector('button[type="submit"]') as HTMLButtonElement).click();
+
+    // The optimistic loop resolves to the committed reference; the preview then resolves that
+    // reference to its delivery path from the merged uploaded record (not from mediaTargets).
+    await screen.getByRole('tab', { name: 'Preview' }).click();
+    await expect
+      .poll(() => previewSrcdoc(screen))
+      .toContain('src="/media/seaside.a1b2c3d4e5f6a7b8.png"');
   });
 
   it('centers the editor column with no two-column grid in either posture', async () => {

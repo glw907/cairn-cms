@@ -707,8 +707,17 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   const resolveLink = $derived(manifestLinkResolver(data.linkTargets));
 
   // The media analog: it turns a media: reference into its /media delivery path in the preview, and
-  // returns undefined for a missing target so the render step marks it cairn-broken-media.
-  const resolveMedia = $derived(manifestMediaResolver(data.mediaTargets));
+  // returns undefined for a missing target so the render step marks it cairn-broken-media. The
+  // committed mediaTargets projection is merged with this session's uploaded records (the same
+  // override the picker's library does), so a just-uploaded image renders its thumbnail in the live
+  // preview before the next save commits it, rather than reading as a broken reference.
+  const resolveMediaTargets = $derived({
+    ...data.mediaTargets,
+    ...Object.fromEntries(
+      uploadedRecords.map((r) => [r.hash, { slug: r.slug, ext: r.ext, contentType: r.contentType }]),
+    ),
+  });
+  const resolveMedia = $derived(manifestMediaResolver(resolveMediaTargets));
 
   // The picker's library, the committed projection merged with this session's uploaded records,
   // keyed by content hash. An uploaded record overrides a committed entry on a hash match (the same

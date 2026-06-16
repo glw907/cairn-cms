@@ -1,0 +1,1348 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Proposed design: media, the insert-first direction</title>
+<link rel="stylesheet" href="./cairn-admin.css" />
+<!--
+  MEDIA MANAGEMENT — direction A, INSERT-FIRST (inline).
+
+  One of three divergent mockups for the media/gallery pass. The center of gravity here is the
+  in-editor flow: the author is writing, and media arrives in place by drop, paste, or slash,
+  through a compact AT-CURSOR picker popover (not a full-screen modal). The full library is a
+  SECONDARY management view reached from the nav, for cleanup, usage audit, and bulk ops. The
+  whole bet: keep the writer in the manuscript, keep the live preview visible, and never make
+  "insert a picture" mean "leave the page."
+
+  This honors the unified model from the design reference: media has three lifecycles, and the
+  author meets ONE insert entry point that routes by intent — stored files (R2-backed, the build
+  target), referenced external media (paste a URL, oEmbed, a directive, nothing stored), and
+  design-system tokens (icons, picked never uploaded). The at-cursor chooser is the single door.
+
+  AESTHETIC is locked to Warm Stone. Creativity goes into composition and interaction, not a new
+  visual language. The shell, tokens, type, and recipes are the gold standard's
+  (2026-06-12-editor-shell-gold-standard.html); the at-cursor picker reuses the component-picker
+  grammar (2026-06-15-component-picker-mockup.html) — labeled state panels, a picker with a live
+  preview, honest states.
+
+  Correct in the light theme. Dark-theme intent is noted where it matters; every value resolves
+  from the theme variables, so dark inherits for free (one dark panel proves it).
+
+  Panel 2 is interactive: the at-cursor stored-files picker filters live (type chips + search) and
+  the asset detail follows the focused tile. Panel 4a runs the optimistic upload (placeholder ->
+  determinate progress -> committed) on a button so the no-dead-interval loop is visible in motion.
+-->
+<style>
+  /* ---- mockup scaffold (outside the themed wrappers; system font on purpose) ---- */
+  body { margin: 0; background: #d8d4cf; }
+  .mock-h { font: 700 15px/1.3 system-ui; letter-spacing: .02em; color: #2a2a2a; padding: 30px 24px 4px; }
+  .mock-label { font: 600 12px/1.4 system-ui; letter-spacing: .09em; text-transform: uppercase; color: #555; padding: 22px 24px 6px; }
+  .mock-note { font: 400 13px/1.55 system-ui; color: #555; padding: 0 24px 12px; max-width: 88ch; }
+  .mock-note b { color: #222; }
+  .mock-note code { font-family: var(--font-editor); background: #cfcac3; padding: 0 4px; border-radius: 3px; font-size: .92em; }
+  .screen { border: 1px solid #aaa; margin: 0 16px 44px; box-shadow: 0 2px 14px rgba(0,0,0,.08); }
+  .stage { background: color-mix(in oklab, #000 36%, transparent); padding: 40px 24px; display: flex; justify-content: center; border: 1px solid #aaa; box-shadow: 0 2px 14px rgba(0,0,0,.08); margin: 0 16px 44px; }
+  .stage.tight { padding: 26px 18px; }
+  .grow { flex: 1 1 auto; }
+  hr.sectionrule { border: 0; border-top: 2px solid #b7b2ac; margin: 30px 24px 0; }
+
+  /* ============================================================= */
+  /* SHELL (lifted from the gold standard so this renders identically) */
+  /* ============================================================= */
+  .ground { background: var(--color-base-200); min-height: 88vh; font-family: var(--font-body); color: var(--color-base-content); -webkit-font-smoothing: antialiased; position: relative; }
+
+  /* the desk band: three clusters */
+  .band { display: flex; align-items: center; height: 64px; background: var(--color-base-100); border-bottom: 1px solid var(--cairn-card-border); padding: 0 20px 0 14px; }
+  .bnd-cluster { display: flex; align-items: center; gap: 4px; }
+  .bnd-sq { display: inline-flex; align-items: center; justify-content: center; height: 32px; width: 32px; border: 0; background: transparent; border-radius: .5rem; color: var(--color-subtle); cursor: pointer; }
+  .bnd-sq:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .bnd-btn { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border: 0; background: transparent; border-radius: .5rem; color: var(--color-subtle); font: 500 .875rem/1 var(--font-body); cursor: pointer; }
+  .bnd-btn:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .crumb { display: flex; align-items: center; gap: 7px; font-size: .875rem; margin-left: 4px; }
+  .crumb a { color: var(--color-muted); text-decoration: none; cursor: pointer; }
+  .crumb a:hover { color: var(--color-primary); }
+  .crumb-sep { color: var(--color-muted); opacity: .45; }
+  .crumb-here { font-weight: 550; }
+  .bnd-status { display: flex; align-items: center; gap: 12px; margin-left: 18px; padding-left: 18px; border-left: 1px solid var(--cairn-card-border); }
+  .savestate { display: inline-flex; align-items: center; gap: 6px; font-size: .75rem; color: var(--color-muted); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-warning); }
+  .bnd-div { width: 1px; height: 18px; background: var(--cairn-card-border); margin: 0 8px; }
+
+  .page { padding: 2rem 2.5rem; }
+  .col { max-width: 49rem; margin: 0 auto; width: 100%; }
+  .ttl-wrap { font-family: var(--font-editor); font-size: 1.0625rem; max-width: 72ch; margin: 0 auto 16px; padding: 0 1.25rem; }
+  .ttl { font-family: var(--font-display); font-size: 1.875rem; font-weight: 700; letter-spacing: -.025em; }
+
+  .card-ed { background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: 1rem; box-shadow: var(--cairn-shadow); overflow: visible; position: relative; }
+
+  .strip { display: flex; align-items: center; gap: 2px; padding: 6px 8px; border-bottom: 1px solid var(--cairn-card-border); }
+  .tb { display: inline-flex; align-items: center; justify-content: center; height: 30px; width: 30px; border: 0; background: transparent; border-radius: .5rem; color: var(--color-subtle); cursor: pointer; }
+  .tb:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .tb-active { background: color-mix(in oklab, var(--color-primary) 12%, transparent); color: var(--color-primary); }
+  .tdiv { width: 1px; height: 18px; background: var(--cairn-card-border); margin: 0 6px; flex: none; }
+
+  .seg { display: inline-flex; border: 1px solid var(--cairn-card-border); border-radius: .5rem; overflow: hidden; background: var(--color-base-100); }
+  .seg button { font: 400 .75rem/1 var(--font-body); border: 0; background: transparent; color: var(--color-muted); padding: 4px 10px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--cairn-card-border); }
+  .seg button[aria-pressed="true"] { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); font-weight: 500; }
+  .seg-tabs button { font-size: .8125rem; padding: 5px 12px; }
+
+  .ms { font-family: var(--font-editor); font-size: 1.0625rem; line-height: 1.9; max-width: 72ch; margin: 0 auto; padding: 2rem 1.25rem 2.5rem; min-height: 30vh; position: relative; }
+  .ln { min-height: 1.9em; }
+  .gap { min-height: 1.9em; }
+  .h2 { font-size: 1.5em; font-weight: 700; }
+  .h3 { font-size: 1.17em; font-weight: 700; }
+  .mk { color: var(--color-muted); font-weight: 400; }
+  .lk { color: var(--color-accent); }
+  .chip { background: var(--cairn-code-chip); border-radius: .25rem; padding: .05em .3em; }
+  .hang2 { padding-left: 2ch; text-indent: -2ch; }
+  /* the caret marker in the manuscript */
+  .caret { display: inline-block; width: 2px; height: 1.15em; background: var(--color-primary); vertical-align: text-bottom; margin: 0 -1px; animation: blink 1.1s steps(2,start) infinite; }
+  @keyframes blink { 0%,50% { opacity: 1; } 50.01%,100% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .caret { animation: none; } }
+
+  .ftr { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--cairn-card-border); padding: 5px 12px; font-size: .75rem; color: var(--color-muted); }
+  .ftr-right { display: flex; align-items: center; gap: 14px; }
+  .ftr-modes { display: flex; align-items: center; gap: 2px; }
+  .ftr-toggle { font: 400 .75rem/1 var(--font-body); border: 0; background: transparent; color: var(--color-muted); padding: 4px 8px; border-radius: .5rem; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+  .ftr-toggle:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .ftr-link { color: var(--color-muted); text-decoration: underline; text-underline-offset: 2px; text-decoration-color: color-mix(in oklab, currentColor 40%, transparent); background: none; border: 0; font: inherit; cursor: pointer; }
+  .chk { width: 11px; height: 11px; }
+
+  /* ============================================================= */
+  /* THE AT-CURSOR POPOVER (the heart of this direction)            */
+  /* A compact panel anchored at the caret, not a full-screen modal */
+  /* ============================================================= */
+  .anchor { position: relative; display: inline-block; }
+  /* the small connector line + dot that ties a popover to the caret */
+  .pop { position: absolute; z-index: 30; font-family: var(--font-body); color: var(--color-base-content); background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: var(--radius-box); box-shadow: 0 20px 50px -16px rgba(0,0,0,.42), var(--cairn-shadow); overflow: hidden; }
+  .pop::before { content: ""; position: absolute; left: 22px; top: -7px; width: 12px; height: 12px; background: var(--color-base-100); border-left: 1px solid var(--cairn-card-border); border-top: 1px solid var(--cairn-card-border); transform: rotate(45deg); }
+
+  /* ---- the CHOOSER: routes by intent ---- */
+  .chooser { width: 320px; padding: 7px; }
+  .chooser-hd { display: flex; align-items: center; gap: 7px; padding: 6px 8px 9px; }
+  .chooser-eye { font-size: .6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--color-muted); }
+  .chooser-slash { margin-left: auto; font-family: var(--font-editor); font-size: .68rem; color: var(--color-muted); border: 1px solid var(--cairn-card-border); border-radius: .25rem; padding: 1px 6px; background: color-mix(in oklab, var(--color-base-content) 3%, transparent); }
+  .ch-row { display: flex; gap: 11px; width: 100%; text-align: left; align-items: flex-start; padding: 9px 10px; border: 0; background: transparent; border-radius: var(--radius-field); cursor: pointer; color: inherit; font: inherit; }
+  .ch-row:hover, .ch-row.sel { background: var(--color-base-200); }
+  .ch-row.sel { outline: 1px solid color-mix(in oklab, var(--color-primary) 70%, transparent); outline-offset: -1px; }
+  .ch-glyph { flex: none; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 9px; background: var(--color-base-200); color: var(--color-base-content); }
+  .ch-row:hover .ch-glyph, .ch-row.sel .ch-glyph { background: color-mix(in oklab, var(--color-primary) 12%, var(--color-base-200)); color: var(--color-primary); }
+  .ch-glyph svg { width: 17px; height: 17px; }
+  .ch-main { min-width: 0; }
+  .ch-label { font-size: .9rem; font-weight: 500; display: flex; align-items: center; gap: 7px; }
+  .ch-desc { font-size: .75rem; color: var(--color-muted); line-height: 1.45; margin-top: 1px; }
+  .ch-kbd { margin-left: auto; align-self: center; font-family: var(--font-editor); font-size: .66rem; color: var(--color-muted); border: 1px solid var(--cairn-card-border); border-radius: .25rem; padding: 0 5px; }
+  .ch-foot { padding: 8px 10px 4px; font-size: .72rem; color: var(--color-subtle); border-top: 1px solid color-mix(in oklab, var(--cairn-card-border) 60%, transparent); margin-top: 5px; }
+
+  /* ---- the STORED-FILES picker popover (search + grid + detail) ---- */
+  .libpop { width: 660px; }
+  .libpop-hd { display: flex; align-items: center; gap: 10px; padding: 11px 13px; border-bottom: 1px solid var(--cairn-card-border); }
+  .libpop-back { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: var(--radius-field); border: 0; background: transparent; color: var(--color-base-content); cursor: pointer; flex: none; }
+  .libpop-back:hover { background: var(--color-base-200); }
+  .libpop-eye { font-size: .6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--color-muted); }
+  .libpop-title { font-family: var(--font-display); font-size: 1rem; font-weight: 700; letter-spacing: -.01em; line-height: 1.15; }
+  .libpop-x { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: var(--radius-field); border: 0; background: transparent; color: var(--color-muted); cursor: pointer; }
+  .libpop-x:hover { background: var(--color-base-200); color: var(--color-base-content); }
+  .libpop-body { display: grid; grid-template-columns: minmax(0,1fr) 218px; }
+  .libpop-left { padding: 12px 13px; min-width: 0; }
+  .libpop-right { background: var(--color-base-200); border-left: 1px solid var(--cairn-card-border); padding: 14px; }
+
+  .search { display: flex; align-items: center; gap: 8px; border: 1px solid var(--cairn-card-border); border-radius: var(--radius-field); padding: 7px 10px; color: var(--color-muted); background: var(--color-base-100); margin-bottom: 10px; }
+  .search input { border: 0; outline: 0; background: transparent; font: inherit; font-size: .875rem; color: var(--color-base-content); width: 100%; }
+  .search svg { width: 15px; height: 15px; flex: none; }
+
+  .filters { display: flex; align-items: center; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .fchip { font: 500 .75rem/1 var(--font-body); border: 1px solid var(--cairn-card-border); background: var(--color-base-100); color: var(--color-muted); border-radius: 999px; padding: 5px 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+  .fchip:hover { background: var(--color-base-200); }
+  .fchip[aria-pressed="true"] { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); border-color: color-mix(in oklab, var(--color-primary) 40%, var(--cairn-card-border)); }
+  .fchip .ct { font-size: .68rem; opacity: .8; }
+  .fchip .chk { width: 11px; height: 11px; }
+
+  /* the asset grid */
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; }
+  .grid.lib { grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  .tile { position: relative; border: 1px solid var(--cairn-card-border); border-radius: var(--radius-field); overflow: hidden; background: var(--color-base-100); cursor: pointer; padding: 0; text-align: left; font: inherit; color: inherit; display: block; }
+  .tile:hover { border-color: color-mix(in oklab, var(--color-primary) 35%, var(--cairn-card-border)); }
+  .tile.sel { outline: 2px solid var(--color-primary); outline-offset: -1px; border-color: transparent; }
+  .tile:focus-visible { outline: 2px solid color-mix(in oklab, var(--color-primary) 75%, transparent); outline-offset: 1px; }
+  .thumb { aspect-ratio: 4 / 3; display: block; position: relative; }
+  /* the "photo" stand-ins are CSS gradients so the mockup needs no binary assets */
+  .ph-shoes  { background: linear-gradient(135deg,#3b6fb0 0%,#2b4f86 55%,#1f3a63 100%); }
+  .ph-hero   { background: linear-gradient(160deg,#cdd9e6 0%,#9fb6cf 45%,#6f8aa8 100%); }
+  .ph-trail  { background: repeating-linear-gradient(45deg,#e7e1d6,#e7e1d6 7px,#d8cfbf 7px,#d8cfbf 14px); }
+  .ph-screen { background: linear-gradient(180deg,#f3efe9 0,#f3efe9 22%,#e2dccf 22%,#e2dccf 100%); }
+  .ph-img    { background: linear-gradient(135deg,#d7b7c9 0%,#b98aa8 100%); }
+  .ph-yurt   { background: linear-gradient(160deg,#caa57a 0%,#a87c4f 100%); }
+  .ph-grid1  { background: linear-gradient(135deg,#9bbf9b 0%,#6f9a72 100%); }
+  .ph-grid2  { background: linear-gradient(135deg,#bfae8f 0%,#8f7d5c 100%); }
+  .ph-map    { background: linear-gradient(135deg,#a9c4d6 0%,#7aa0b8 100%); }
+  /* a file (non-image) thumb */
+  .filethumb { aspect-ratio: 4/3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; background: color-mix(in oklab, var(--color-base-content) 4%, var(--color-base-100)); color: var(--color-muted); }
+  .filethumb svg { width: 26px; height: 26px; }
+  .filethumb .ext { font: 600 .62rem/1 var(--font-body); letter-spacing: .06em; text-transform: uppercase; }
+  .tile-meta { padding: 6px 8px; }
+  .tile-name { font-size: .72rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tile-sub { font-size: .66rem; color: var(--color-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* tile corner badges */
+  .badge-corner { position: absolute; top: 5px; font: 600 .6rem/1 var(--font-body); padding: 2px 6px; border-radius: 999px; display: inline-flex; align-items: center; gap: 3px; backdrop-filter: blur(2px); }
+  .bc-used { left: 5px; background: color-mix(in oklab, var(--color-primary) 88%, transparent); color: var(--color-primary-content); }
+  .bc-orphan { left: 5px; background: color-mix(in oklab, var(--color-warning) 90%, transparent); color: var(--color-warning-content); }
+  .badge-corner svg { width: 9px; height: 9px; }
+
+  /* hide tiles filtered out */
+  .tile[hidden] { display: none; }
+
+  /* the asset detail rail */
+  .detail-pv { border: 1px solid var(--cairn-card-border); border-radius: var(--radius-field); overflow: hidden; margin-bottom: 11px; }
+  .detail-pv .thumb { aspect-ratio: 4/3; }
+  .detail-name { font-size: .82rem; font-weight: 600; word-break: break-word; line-height: 1.3; }
+  .detail-grid { margin-top: 9px; display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; font-size: .72rem; }
+  .detail-grid dt { color: var(--color-muted); }
+  .detail-grid dd { margin: 0; text-align: right; }
+  .detail-used { display: inline-flex; align-items: center; gap: 5px; margin-top: 11px; font-size: .74rem; color: var(--color-primary); font-weight: 500; }
+  .detail-used svg { width: 13px; height: 13px; }
+  .detail-empty { color: var(--color-muted); font-size: .76rem; line-height: 1.5; text-align: center; padding: 30px 6px; }
+
+  .libpop-foot { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-top: 1px solid var(--cairn-card-border); }
+  .pager { display: inline-flex; align-items: center; gap: 2px; }
+  .pager button { width: 26px; height: 26px; border: 1px solid var(--cairn-card-border); background: var(--color-base-100); border-radius: var(--radius-field); color: var(--color-muted); cursor: pointer; font: inherit; font-size: .78rem; display: inline-flex; align-items: center; justify-content: center; }
+  .pager button[aria-current="true"] { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); border-color: color-mix(in oklab, var(--color-primary) 40%, var(--cairn-card-border)); font-weight: 600; }
+  .pager span { font-size: .72rem; color: var(--color-muted); padding: 0 4px; }
+
+  .btn-x { font: inherit; font-size: .82rem; font-weight: 500; border-radius: var(--radius-field); padding: 7px 15px; cursor: pointer; border: 1px solid transparent; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-ghost { background: transparent; color: var(--color-base-content); border-color: var(--cairn-card-border); }
+  .btn-ghost:hover { background: var(--color-base-200); }
+  .btn-pri { background: var(--color-primary); color: var(--color-primary-content); box-shadow: 0 2px 8px -2px color-mix(in oklab, var(--color-primary) 60%, transparent); }
+  .btn-pri:hover { filter: brightness(1.05); }
+  .btn-pri[disabled] { opacity: .5; cursor: not-allowed; box-shadow: none; }
+  .btn-x svg { width: 14px; height: 14px; }
+  .btn-upload { color: var(--color-primary); border-color: color-mix(in oklab, var(--color-primary) 40%, var(--cairn-card-border)); background: transparent; }
+  .btn-upload:hover { background: color-mix(in oklab, var(--color-primary) 8%, transparent); }
+
+  /* ============================================================= */
+  /* THE AT-INSERT CAPTURE CARD (file + name + alt, one step)       */
+  /* ============================================================= */
+  .capture { width: 560px; }
+  .cap-hd { display: flex; align-items: center; gap: 10px; padding: 13px 16px; border-bottom: 1px solid var(--cairn-card-border); }
+  .cap-eye { font-size: .6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--color-muted); }
+  .cap-title { font-family: var(--font-display); font-size: 1.0625rem; font-weight: 700; letter-spacing: -.01em; }
+  .cap-body { display: grid; grid-template-columns: 168px minmax(0,1fr); gap: 16px; padding: 16px; }
+  .cap-figure { border: 1px solid var(--cairn-card-border); border-radius: var(--radius-field); overflow: hidden; }
+  .cap-figure .thumb { aspect-ratio: 4/3; }
+  .cap-figcap { font-size: .66rem; color: var(--color-muted); padding: 6px 8px; border-top: 1px solid var(--cairn-card-border); display: flex; justify-content: space-between; }
+  .fld { display: flex; flex-direction: column; gap: 5px; margin-bottom: 13px; }
+  .lbl { font-size: .8125rem; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+  .req { color: var(--color-error); }
+  .help { font-size: .72rem; color: var(--color-muted); line-height: 1.45; }
+  .inp { font: inherit; font-size: .875rem; color: var(--color-base-content); background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: var(--radius-field); padding: 8px 10px; width: 100%; box-sizing: border-box; }
+  .inp:focus { outline: 1px solid color-mix(in oklab, var(--color-primary) 70%, transparent); border-color: color-mix(in oklab, var(--color-primary) 50%, var(--cairn-card-border)); }
+  .inp.mono { font-family: var(--font-editor); font-size: .8rem; }
+  .name-row { display: flex; align-items: center; gap: 7px; }
+  .name-row .inp { flex: 1; }
+  .name-tag { font-size: .66rem; color: var(--color-primary); background: color-mix(in oklab, var(--color-primary) 10%, transparent); border-radius: 999px; padding: 2px 8px; font-weight: 600; white-space: nowrap; }
+  .alt-row { display: flex; align-items: center; gap: 8px; }
+  .alt-row .inp { flex: 1; }
+  .deco { display: inline-flex; align-items: center; gap: 6px; font-size: .78rem; color: var(--color-base-content); border: 1px solid var(--cairn-card-border); border-radius: var(--radius-field); padding: 7px 11px; cursor: pointer; white-space: nowrap; background: var(--color-base-100); }
+  .deco input { accent-color: var(--color-primary); }
+  .cap-foot { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-top: 1px solid var(--cairn-card-border); }
+  .cap-hint { font-size: .73rem; color: var(--color-muted); }
+  .cap-hint code { font-family: var(--font-editor); }
+
+  /* ============================================================= */
+  /* DIFFERENTIATOR DEMOS                                           */
+  /* ============================================================= */
+  /* the optimistic placeholder rendered inline in the manuscript / preview */
+  .opt-card { border: 1px dashed color-mix(in oklab, var(--color-primary) 45%, var(--cairn-card-border)); border-radius: var(--radius-box); padding: 14px; display: flex; gap: 13px; align-items: center; background: color-mix(in oklab, var(--color-primary) 4%, var(--color-base-100)); font-family: var(--font-body); }
+  .opt-thumb { width: 84px; height: 63px; border-radius: var(--radius-field); flex: none; position: relative; overflow: hidden; }
+  .opt-thumb .sheen { position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.45) 50%, transparent 70%); transform: translateX(-100%); animation: sheen 1.3s ease-in-out infinite; }
+  @keyframes sheen { to { transform: translateX(100%); } }
+  @media (prefers-reduced-motion: reduce) { .opt-thumb .sheen { animation: none; } }
+  .opt-main { flex: 1; min-width: 0; }
+  .opt-name { font-size: .8rem; font-weight: 500; }
+  .opt-sub { font-size: .72rem; color: var(--color-muted); margin-top: 1px; }
+  .pbar { height: 5px; border-radius: 999px; background: color-mix(in oklab, var(--color-base-content) 10%, transparent); margin-top: 8px; overflow: hidden; }
+  .pbar > i { display: block; height: 100%; border-radius: 999px; background: var(--color-primary); transition: width .25s ease; }
+  .opt-pct { font-size: .7rem; color: var(--color-primary); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  /* the failure card */
+  .fail-card { border: 1px solid color-mix(in oklab, var(--color-error) 40%, var(--cairn-card-border)); border-radius: var(--radius-box); padding: 14px; display: flex; gap: 13px; align-items: center; background: color-mix(in oklab, var(--color-error) 5%, var(--color-base-100)); font-family: var(--font-body); }
+  .fail-icon { width: 38px; height: 38px; border-radius: 10px; flex: none; display: flex; align-items: center; justify-content: center; background: color-mix(in oklab, var(--color-error) 14%, transparent); color: var(--color-error); }
+  .fail-icon svg { width: 19px; height: 19px; }
+  .fail-title { font-size: .82rem; font-weight: 600; color: var(--color-error); }
+  .fail-sub { font-size: .74rem; color: var(--color-muted); margin-top: 1px; }
+  .retry { font: inherit; font-size: .78rem; font-weight: 600; border: 1px solid color-mix(in oklab, var(--color-error) 45%, var(--cairn-card-border)); color: var(--color-error); background: transparent; border-radius: var(--radius-field); padding: 6px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+  .retry:hover { background: color-mix(in oklab, var(--color-error) 8%, transparent); }
+  .retry svg { width: 13px; height: 13px; }
+
+  /* a small toast (dedup) */
+  .toast { display: inline-flex; align-items: center; gap: 10px; background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: var(--radius-box); box-shadow: var(--cairn-shadow); padding: 11px 14px; font-family: var(--font-body); max-width: 380px; }
+  .toast-ic { width: 30px; height: 30px; border-radius: 8px; flex: none; display: flex; align-items: center; justify-content: center; background: color-mix(in oklab, var(--color-success) 16%, transparent); color: var(--color-success); }
+  .toast-ic svg { width: 16px; height: 16px; }
+  .toast-t { font-size: .8rem; font-weight: 600; }
+  .toast-s { font-size: .72rem; color: var(--color-muted); margin-top: 1px; }
+  .toast-link { font-size: .72rem; color: var(--color-primary); font-weight: 600; background: none; border: 0; cursor: pointer; padding: 0; }
+
+  /* the safe-delete confirm dialog */
+  .confirm { width: 440px; font-family: var(--font-body); background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: var(--radius-box); box-shadow: 0 24px 60px -12px rgba(0,0,0,.45); overflow: hidden; }
+  .confirm-hd { padding: 16px 18px 4px; display: flex; gap: 11px; align-items: flex-start; }
+  .confirm-ic { width: 36px; height: 36px; border-radius: 10px; flex: none; display: flex; align-items: center; justify-content: center; background: color-mix(in oklab, var(--color-warning) 16%, transparent); color: var(--color-warning-content); }
+  .confirm-ic svg { width: 19px; height: 19px; color: color-mix(in oklab, var(--color-warning) 80%, #000); }
+  .confirm-title { font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; }
+  .confirm-body { padding: 4px 18px 14px 65px; }
+  .confirm-body p { font-size: .82rem; color: var(--color-base-content); line-height: 1.5; margin: 0 0 10px; }
+  .uselist { list-style: none; margin: 0 0 4px; padding: 0; border: 1px solid var(--cairn-card-border); border-radius: var(--radius-field); overflow: hidden; }
+  .uselist li { display: flex; align-items: center; gap: 8px; padding: 8px 11px; font-size: .79rem; }
+  .uselist li + li { border-top: 1px solid color-mix(in oklab, var(--cairn-card-border) 60%, transparent); }
+  .uselist li svg { width: 14px; height: 14px; color: var(--color-muted); flex: none; }
+  .uselist a { color: var(--color-primary); text-decoration: none; }
+  .uselist a:hover { text-decoration: underline; }
+  .confirm-foot { display: flex; align-items: center; gap: 9px; padding: 12px 18px; border-top: 1px solid var(--cairn-card-border); }
+  .btn-danger { background: var(--color-error); color: var(--color-error-content); border-color: transparent; }
+  .btn-danger:hover { filter: brightness(1.05); }
+  .btn-danger[disabled] { opacity: .45; cursor: not-allowed; }
+
+  /* the replace-in-place strip */
+  .replace { width: 460px; font-family: var(--font-body); background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: var(--radius-box); box-shadow: var(--cairn-shadow); padding: 15px; }
+  .replace-hd { font-size: .8125rem; font-weight: 600; margin-bottom: 12px; }
+  .replace-flow { display: flex; align-items: center; gap: 13px; }
+  .replace-side { flex: 1; text-align: center; }
+  .replace-side .thumb { aspect-ratio: 4/3; border-radius: var(--radius-field); overflow: hidden; border: 1px solid var(--cairn-card-border); }
+  .replace-cap { font-size: .68rem; color: var(--color-muted); margin-top: 5px; }
+  .replace-arrow { color: var(--color-primary); flex: none; }
+  .replace-arrow svg { width: 22px; height: 22px; }
+  .replace-note { font-size: .73rem; color: var(--color-muted); margin-top: 12px; line-height: 1.5; }
+  .replace-note code { font-family: var(--font-editor); background: var(--cairn-code-chip); padding: 0 4px; border-radius: 3px; }
+
+  /* ============================================================= */
+  /* THE DETAILS SLIDE-OVER (hero placement)                        */
+  /* ============================================================= */
+  .panel-demo { width: 19rem; background: var(--color-base-100); border-left: 1px solid var(--cairn-card-border); box-shadow: var(--cairn-shadow); padding: 16px; font-family: var(--font-body); border-radius: 0; }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .eyebrow { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); }
+  .fset { border: 0; padding: 0; margin: 0 0 16px; }
+  .fset legend { font-size: .8125rem; font-weight: 600; margin-bottom: 8px; padding: 0; }
+  .hero-slot { border: 1px solid var(--cairn-card-border); border-radius: var(--radius-field); overflow: hidden; }
+  .hero-slot .thumb { aspect-ratio: 16/9; }
+  .hero-actions { display: flex; gap: 6px; padding: 8px; border-top: 1px solid var(--cairn-card-border); }
+  .mini-btn { font: 500 .73rem/1 var(--font-body); border: 1px solid var(--cairn-card-border); background: var(--color-base-100); color: var(--color-base-content); border-radius: var(--radius-field); padding: 6px 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+  .mini-btn:hover { background: var(--color-base-200); }
+  .mini-btn svg { width: 13px; height: 13px; }
+  .mini-btn.danger { color: var(--color-error); margin-left: auto; }
+
+  /* ============================================================= */
+  /* THE GALLERY COMPONENT (ordered tiles, per-image caption + alt) */
+  /* ============================================================= */
+  .gallery-cfg { width: 720px; }
+  .gtiles { display: flex; flex-direction: column; gap: 9px; }
+  .gtile { display: grid; grid-template-columns: 26px 92px minmax(0,1fr); gap: 12px; align-items: center; border: 1px solid var(--cairn-card-border); border-radius: var(--radius-field); padding: 9px; background: var(--color-base-100); }
+  .gtile-handle { display: flex; flex-direction: column; align-items: center; color: var(--color-muted); cursor: grab; }
+  .gtile-handle svg { width: 16px; height: 16px; }
+  .gtile-num { font-size: .64rem; font-weight: 600; color: var(--color-muted); }
+  .gtile-thumb { aspect-ratio: 4/3; border-radius: 7px; overflow: hidden; border: 1px solid var(--cairn-card-border); }
+  .gtile-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; min-width: 0; }
+  .gtile-fields .fwrap { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .gtile-fields .flab { font-size: .64rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--color-muted); display: flex; align-items: center; gap: 4px; }
+  .gtile-fields .inp { font-size: .8rem; padding: 6px 8px; }
+  .gtile-rmv { grid-column: 1 / -1; }
+  .gtile-add { align-self: flex-start; display: inline-flex; align-items: center; gap: 7px; border: 1px dashed var(--cairn-card-border); background: transparent; color: var(--color-primary); border-radius: var(--radius-field); padding: 10px 14px; cursor: pointer; font: 500 .8rem/1 var(--font-body); margin-top: 2px; }
+  .gtile-add:hover { background: color-mix(in oklab, var(--color-primary) 6%, transparent); }
+  .gtile-add svg { width: 15px; height: 15px; }
+
+  /* ============================================================= */
+  /* THE SECONDARY LIBRARY (office shell)                           */
+  /* ============================================================= */
+  .office { display: grid; grid-template-columns: 14rem 1fr; min-height: 86vh; font-family: var(--font-body); color: var(--color-base-content); background: var(--color-base-200); -webkit-font-smoothing: antialiased; }
+  .side { background: var(--color-base-100); border-right: 1px solid var(--cairn-card-border); padding: 0 12px; }
+  .side-brand { display: flex; align-items: center; gap: 10px; height: 64px; padding: 0 6px; border-bottom: 1px solid var(--cairn-card-border); margin: 0 -12px 10px; padding-left: 18px; }
+  .brand-tile { height: 32px; width: 32px; border-radius: 12px; background: var(--color-primary); color: var(--color-primary-content); display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+  .brand-tile svg { width: 19px; height: 19px; }
+  .brand-word { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; letter-spacing: -.01em; }
+  .nav-eye { font-size: .6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--color-muted); padding: 12px 10px 5px; }
+  .nav-i { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: var(--radius-field); font-size: .875rem; font-weight: 500; color: var(--color-subtle); text-decoration: none; cursor: pointer; }
+  .nav-i:hover { background: var(--color-base-200); }
+  .nav-i.active { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); font-weight: 600; }
+  .nav-i svg { width: 17px; height: 17px; }
+  .nav-i .badge-n { margin-left: auto; font-size: .68rem; color: var(--color-muted); }
+
+  .office-main { display: flex; flex-direction: column; min-width: 0; }
+  .topbar { display: flex; align-items: center; gap: 12px; height: 64px; padding: 0 22px; background: var(--color-base-100); border-bottom: 1px solid var(--cairn-card-border); }
+  .topbar h1 { font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; letter-spacing: -.01em; margin: 0; }
+  .topbar .sub { font-size: .78rem; color: var(--color-muted); }
+  .content { padding: 22px; min-width: 0; }
+  .lib-toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+  .lib-toolbar .search { margin-bottom: 0; flex: 1; min-width: 220px; max-width: 360px; }
+
+  .lib-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 70px 24px; gap: 4px; }
+  .lib-empty .mark { height: 56px; width: 56px; border-radius: 18px; background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
+  .lib-empty .mark svg { width: 28px; height: 28px; }
+  .lib-empty h2 { font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; margin: 0; }
+  .lib-empty p { font-size: .87rem; color: var(--color-muted); max-width: 42ch; margin: 2px 0 16px; line-height: 1.55; }
+
+  /* the focal point control */
+  .focal { width: 720px; }
+  .focal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; padding: 16px; }
+  .focal-stage { position: relative; border-radius: var(--radius-box); overflow: hidden; border: 1px solid var(--cairn-card-border); aspect-ratio: 4/3; }
+  .focal-dot { position: absolute; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 2px rgba(0,0,0,.35), 0 2px 6px rgba(0,0,0,.4); background: color-mix(in oklab, var(--color-primary) 70%, transparent); cursor: grab; transform: translate(-50%,-50%); display: flex; align-items: center; justify-content: center; }
+  .focal-dot::after { content: ""; width: 5px; height: 5px; border-radius: 50%; background: #fff; }
+  .focal-cross { position: absolute; inset: 0; pointer-events: none; }
+  .focal-cross::before, .focal-cross::after { content: ""; position: absolute; background: rgba(255,255,255,.4); }
+  .focal-label { font-size: .72rem; color: var(--color-muted); margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+  .crop-row { display: flex; gap: 12px; }
+  .crop-box { flex: 1; }
+  .crop-frame { border-radius: var(--radius-field); overflow: hidden; border: 1px solid var(--cairn-card-border); position: relative; }
+  .crop-square { aspect-ratio: 1/1; }
+  .crop-wide { aspect-ratio: 16/9; }
+  .crop-tall { aspect-ratio: 3/4; }
+  /* the cropped preview shows the SAME focal region — the photo is shifted so the dot stays in frame */
+  .crop-frame .shot { position: absolute; inset: 0; background-size: cover; background-position: 62% 38%; }
+  .crop-cap { font-size: .68rem; color: var(--color-muted); margin-top: 5px; text-align: center; }
+  .focal-note { font-size: .74rem; color: var(--color-muted); line-height: 1.55; margin-top: 4px; }
+  .focal-note b { color: var(--color-base-content); }
+
+  /* ============================================================= */
+  /* THE A11Y PANEL                                                 */
+  /* ============================================================= */
+  .a11y { font-family: var(--font-body); color: var(--color-base-content); background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: var(--radius-box); box-shadow: var(--cairn-shadow); padding: 22px 24px; max-width: 980px; margin: 0 16px 44px; }
+  .a11y h3 { font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; margin: 0 0 4px; }
+  .a11y h4 { font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--color-primary); margin: 22px 0 9px; }
+  .a11y p { font-size: .85rem; line-height: 1.6; color: var(--color-base-content); margin: 0 0 10px; max-width: 80ch; }
+  .a11y ol, .a11y ul { font-size: .85rem; line-height: 1.6; margin: 0 0 4px; padding-left: 22px; }
+  .a11y li { margin: 3px 0; }
+  .a11y code { font-family: var(--font-editor); font-size: .82em; background: var(--cairn-code-chip); padding: 1px 5px; border-radius: 4px; }
+  .keymap { border-collapse: collapse; width: 100%; font-size: .82rem; margin: 2px 0 6px; }
+  .keymap th { text-align: left; font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; color: var(--color-muted); padding: 6px 10px; border-bottom: 1px solid var(--cairn-card-border); }
+  .keymap td { padding: 7px 10px; border-bottom: 1px solid color-mix(in oklab, var(--cairn-card-border) 55%, transparent); vertical-align: top; }
+  .keymap td:first-child { white-space: nowrap; }
+  .kk { font-family: var(--font-editor); font-size: .75rem; border: 1px solid var(--cairn-card-border); border-radius: 5px; padding: 1px 7px; background: color-mix(in oklab, var(--color-base-content) 3%, transparent); }
+  .sr-quote { border-left: 3px solid color-mix(in oklab, var(--color-primary) 55%, transparent); background: color-mix(in oklab, var(--color-primary) 4%, transparent); padding: 11px 15px; border-radius: 0 8px 8px 0; font-size: .84rem; line-height: 1.6; margin: 8px 0 12px; }
+  .sr-quote em { color: var(--color-primary); font-style: normal; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="mock-h">Media management — direction A: insert-first (inline)</div>
+<div class="mock-note">
+  The author lives in the editor. Media arrives in place by drop, paste, or slash, through a compact
+  <b>at-cursor picker popover</b>, never a full-screen modal. The full library is a secondary
+  management view in the nav, for cleanup and audit. One insert entry point routes by intent to the
+  three lifecycles: <b>stored files</b> (R2-backed, the build target), <b>referenced media</b> (paste
+  a URL, oEmbed, a directive, nothing stored), and <b>design-system tokens</b> (icons, picked never
+  uploaded). Shared scenario: a posts-and-pages ski site, a 14-asset library with clean and messy
+  names. Light theme is canonical; one dark panel proves the tokens carry.
+</div>
+
+<hr class="sectionrule" />
+
+<!-- ============================================================================================ -->
+<!-- PANEL 1 — THE PRIMARY SURFACE: the desk, with the insert chooser open at the caret            -->
+<!-- ============================================================================================ -->
+<div class="mock-label">1 · The primary surface — the desk, insert chooser open at the caret</div>
+<div class="mock-note">
+  The everyday state. The author typed <code>/</code> on an empty line (or clicked the toolbar insert
+  glyph, highlighted), and the chooser opened <b>anchored to the caret</b>, not over the page. Three
+  routes by intent. The live preview tab stays one click away; the manuscript never leaves the screen.
+  This is the door for all three lifecycles: "A photo or file" is the stored library, "Video or embed"
+  pastes a URL, "An icon" opens the token picker. Drop and paste reach the same place without the menu.
+</div>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="ground">
+    <div class="band">
+      <div class="bnd-cluster">
+        <button class="bnd-sq" aria-label="Open menu"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
+        <nav aria-label="Breadcrumb" class="crumb"><a>Posts</a><span class="crumb-sep">/</span><span class="crumb-here">Getting ready for spring</span></nav>
+      </div>
+      <div class="bnd-status">
+        <span class="badge badge-ghost badge-sm">Edited</span>
+        <span class="savestate"><span class="dot"></span>Unsaved changes</span>
+      </div>
+      <div class="grow"></div>
+      <div class="bnd-cluster" style="gap:6px;">
+        <button class="bnd-btn"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M15 3v18"/></svg>Details</button>
+        <div class="bnd-div" aria-hidden="true"></div>
+        <button class="btn btn-outline btn-sm">Publish</button>
+        <button class="btn btn-primary btn-sm">Save</button>
+      </div>
+    </div>
+    <main class="page">
+      <div class="col">
+        <div class="ttl-wrap"><div class="ttl">Getting ready for spring</div></div>
+        <div class="card-ed">
+          <div class="strip">
+            <button class="tb" aria-label="Bold (Ctrl+B)" title="Bold (Ctrl+B)"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8"/></svg></button>
+            <button class="tb" aria-label="Italic (Ctrl+I)" title="Italic (Ctrl+I)"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 4h-9"/><path d="M14 20H5"/><path d="M15 4 9 20"/></svg></button>
+            <div class="tdiv" aria-hidden="true"></div>
+            <button class="tb" aria-label="Heading" title="Heading"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h8"/><path d="M4 18V6"/><path d="M12 18V6"/><path d="M21 18h-4c0-4 4-3 4-6 0-1.5-2-2.5-4-1"/></svg></button>
+            <button class="tb" aria-label="Bulleted list" title="Bulleted list"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg></button>
+            <button class="tb" aria-label="Quote" title="Quote"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1 1 1 0 0 0 1 1 4 4 0 0 0 4-4V5a2 2 0 0 0-2-2z"/><path d="M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1 1 1 0 0 0 1 1 4 4 0 0 0 4-4V5a2 2 0 0 0-2-2z"/></svg></button>
+            <div class="tdiv" aria-hidden="true"></div>
+            <button class="tb" aria-label="Insert block" title="Insert block"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 22V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1zM14 2v20M14 7h7a1 1 0 0 1 0 0v5h-7M14 12h8v9a1 1 0 0 1-1 1h-7"/></svg></button>
+            <button class="tb" aria-label="Web link (Ctrl+K)" title="Web link (Ctrl+K)"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
+            <button class="tb tb-active" aria-label="Insert media" aria-expanded="true" title="Insert media (Ctrl+Shift+M)"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg></button>
+            <div class="grow"></div>
+            <span class="seg seg-tabs"><button aria-pressed="true">Write</button><button aria-pressed="false">Preview</button></span>
+          </div>
+          <div class="ms">
+            <div class="ln"><span class="h2"><span class="mk">##</span> Getting ready for spring</span></div>
+            <div class="ln gap"></div>
+            <div class="ln">The first melt is here, and the <span class="mk">**</span><b>trail crew</b><span class="mk">**</span> is already out. Read the</div>
+            <div class="ln"><span class="mk">[</span><span class="lk">grooming report</span><span class="mk">](https://example.com/report)</span> before you go.</div>
+            <div class="ln gap"></div>
+            <!-- the caret sits on an empty line; the chooser hangs off it -->
+            <div class="ln anchor">
+              <span class="caret" aria-hidden="true"></span>
+              <div class="pop chooser" role="menu" aria-label="Insert media">
+                <div class="chooser-hd">
+                  <span class="chooser-eye">Insert</span>
+                  <span class="chooser-slash">/media</span>
+                </div>
+                <button class="ch-row sel" role="menuitem">
+                  <span class="ch-glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg></span>
+                  <span class="ch-main"><span class="ch-label">A photo or file</span><span class="ch-desc">Upload, or reuse one from your library.</span></span>
+                  <span class="ch-kbd">↵</span>
+                </button>
+                <button class="ch-row" role="menuitem">
+                  <span class="ch-glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10 8 6 4-6 4z"/><rect x="2" y="3" width="20" height="18" rx="2"/></svg></span>
+                  <span class="ch-main"><span class="ch-label">Video or embed</span><span class="ch-desc">Paste a YouTube, Vimeo, or map link.</span></span>
+                </button>
+                <button class="ch-row" role="menuitem">
+                  <span class="ch-glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0z"/></svg></span>
+                  <span class="ch-main"><span class="ch-label">An icon</span><span class="ch-desc">Pick a glyph from the site's icon set.</span></span>
+                </button>
+                <div class="ch-foot">Or drop a file anywhere, or paste a screenshot.</div>
+              </div>
+            </div>
+            <div class="ln gap"></div>
+            <div class="ln"><span class="h3"><span class="mk">###</span> What to bring</span></div>
+          </div>
+          <div class="ftr">
+            <span>148 words</span>
+            <span class="ftr-right">
+              <span class="seg" role="group" aria-label="Editing surface">
+                <button aria-pressed="true"><svg xmlns="http://www.w3.org/2000/svg" class="chk" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Prose</button><button aria-pressed="false">Markup</button>
+              </span>
+              <span class="ftr-modes">
+                <button class="ftr-toggle" aria-pressed="false">Focus mode</button>
+                <button class="ftr-toggle" aria-pressed="false">Typewriter</button>
+              </span>
+              <button class="ftr-link">Markdown help</button>
+            </span>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div></div>
+
+<!-- ============================================================================================ -->
+<!-- PANEL 2 — THE STORED-FILES PICKER POPOVER (the heart): search + grid + detail, reuse by pick  -->
+<!-- ============================================================================================ -->
+<div class="mock-label">2 · The stored-files picker — at the cursor, reuse without leaving the editor (interactive)</div>
+<div class="mock-note">
+  Choosing "A photo or file" expands the same popover in place. This is the management view's grid,
+  shrunk to the writing flow: <b>search across filename, alt, and caption</b>; a type filter; the
+  asset grid; an asset detail rail showing dimensions, size, who and when, and <b>"used in N
+  entries"</b>; and an Upload button for a new file. Picking a tile inserts <code>![alt](media:…)</code>
+  at the caret and closes. <b>Try it</b>: filter by type or search, and watch the detail rail follow
+  the focused tile. The library is paginated, so a large library opens fast.
+</div>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="ground" style="min-height:0; padding-bottom:40px;">
+    <div class="band">
+      <div class="bnd-cluster">
+        <button class="bnd-sq" aria-label="Open menu"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
+        <nav aria-label="Breadcrumb" class="crumb"><a>Posts</a><span class="crumb-sep">/</span><span class="crumb-here">Getting ready for spring</span></nav>
+      </div>
+      <div class="grow"></div>
+      <div class="bnd-cluster" style="gap:6px;">
+        <button class="btn btn-outline btn-sm">Publish</button>
+        <button class="btn btn-primary btn-sm">Save</button>
+      </div>
+    </div>
+    <main class="page">
+      <div class="col">
+        <div class="card-ed">
+          <div class="ms" style="min-height:0; padding-bottom:14px;">
+            <div class="ln">The first melt is here. The trail crew is already out grooming.</div>
+            <div class="ln gap"></div>
+            <div class="ln anchor">
+              <span class="caret" aria-hidden="true"></span>
+              <!-- the stored-files picker, anchored at the caret -->
+              <div class="pop libpop" role="dialog" aria-label="Insert a photo or file" aria-modal="false">
+                <div class="libpop-hd">
+                  <button class="libpop-back" aria-label="Back to insert menu"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+                  <div><div class="libpop-eye">Insert › Photo or file</div><div class="libpop-title">Your library</div></div>
+                  <div class="grow"></div>
+                  <button class="btn-x btn-upload" id="m2-upload"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>Upload</button>
+                  <button class="libpop-x" aria-label="Close">&#10005;</button>
+                </div>
+                <div class="libpop-body">
+                  <div class="libpop-left">
+                    <label class="search">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                      <input id="m2-search" type="search" placeholder="Search name, alt, or caption" aria-label="Search the library" />
+                    </label>
+                    <div class="filters" role="group" aria-label="Filter by type">
+                      <button class="fchip" aria-pressed="true" data-type="all">All <span class="ct">(14)</span></button>
+                      <button class="fchip" aria-pressed="false" data-type="image">Images <span class="ct">(11)</span></button>
+                      <button class="fchip" aria-pressed="false" data-type="doc">Documents <span class="ct">(2)</span></button>
+                      <button class="fchip" aria-pressed="false" data-type="video">Video <span class="ct">(1)</span></button>
+                    </div>
+                    <div class="grid" id="m2-grid">
+                      <!-- 1: blue-running-shoes (used in 3), selected -->
+                      <button class="tile sel" data-type="image" data-name="blue-running-shoes.jpg" data-alt="Blue trail running shoes on gravel" data-cap="" data-dim="2400 × 1600" data-size="612 KB" data-by="Maya" data-when="Mar 2" data-used="3" aria-pressed="true">
+                        <span class="thumb ph-shoes"></span><span class="badge-corner bc-used"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>3</span>
+                        <span class="tile-meta"><span class="tile-name">blue-running-shoes.jpg</span><span class="tile-sub">2400 × 1600 · 612 KB</span></span>
+                      </button>
+                      <!-- 2: hero-winter (orphan) -->
+                      <button class="tile" data-type="image" data-name="hero-winter.jpg" data-alt="Snow-covered lake loop at dawn" data-cap="" data-dim="3000 × 1688" data-size="884 KB" data-by="Geoff" data-when="Jan 18" data-used="0">
+                        <span class="thumb ph-hero"></span><span class="badge-corner bc-orphan">Unused</span>
+                        <span class="tile-meta"><span class="tile-name">hero-winter.jpg</span><span class="tile-sub">3000 × 1688 · 884 KB</span></span>
+                      </button>
+                      <!-- 3: trail-map.pdf -->
+                      <button class="tile" data-type="doc" data-name="trail-map.pdf" data-alt="" data-cap="Winter trail map, 2026" data-dim="—" data-size="1.4 MB" data-by="Maya" data-when="Dec 4" data-used="2">
+                        <span class="filethumb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg><span class="ext">PDF</span></span>
+                        <span class="badge-corner bc-used" style="background:color-mix(in oklab, var(--color-primary) 88%, transparent);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>2</span>
+                        <span class="tile-meta"><span class="tile-name">trail-map.pdf</span><span class="tile-sub">PDF · 1.4 MB</span></span>
+                      </button>
+                      <!-- 4: IMG_4521 (renamed on ingest from HEIC) -->
+                      <button class="tile" data-type="image" data-name="snowy-summit-view.jpg" data-alt="" data-cap="" data-dim="4032 × 3024" data-size="2.1 MB" data-by="Maya" data-when="Mar 9" data-used="1">
+                        <span class="thumb ph-grid1"></span>
+                        <span class="tile-meta"><span class="tile-name">snowy-summit-view.jpg</span><span class="tile-sub">4032 × 3024 · 2.1 MB</span></span>
+                      </button>
+                      <!-- 5: screenshot -->
+                      <button class="tile" data-type="image" data-name="trailhead-kiosk-hours.png" data-alt="" data-cap="" data-dim="1290 × 844" data-size="240 KB" data-by="Geoff" data-when="Mar 12" data-used="1">
+                        <span class="thumb ph-screen"></span>
+                        <span class="tile-meta"><span class="tile-name">trailhead-kiosk-hours.png</span><span class="tile-sub">1290 × 844 · 240 KB</span></span>
+                      </button>
+                      <!-- 6: yurt -->
+                      <button class="tile" data-type="image" data-name="warming-yurt.jpg" data-alt="The warming yurt at dusk" data-cap="" data-dim="1800 × 1200" data-size="430 KB" data-by="Maya" data-when="Feb 20" data-used="2">
+                        <span class="thumb ph-yurt"></span>
+                        <span class="tile-meta"><span class="tile-name">warming-yurt.jpg</span><span class="tile-sub">1800 × 1200 · 430 KB</span></span>
+                      </button>
+                      <!-- 7: image.png (messy) -->
+                      <button class="tile" data-type="image" data-name="image.png" data-alt="" data-cap="" data-dim="900 × 600" data-size="120 KB" data-by="Geoff" data-when="Feb 28" data-used="0">
+                        <span class="thumb ph-img"></span><span class="badge-corner bc-orphan">Unused</span>
+                        <span class="tile-meta"><span class="tile-name">image.png</span><span class="tile-sub">900 × 600 · 120 KB</span></span>
+                      </button>
+                      <!-- 8: wax bench -->
+                      <button class="tile" data-type="image" data-name="wax-bench.jpg" data-alt="Ski wax bench in the shop" data-cap="" data-dim="2000 × 1333" data-size="520 KB" data-by="Maya" data-when="Feb 11" data-used="1">
+                        <span class="thumb ph-grid2"></span>
+                        <span class="tile-meta"><span class="tile-name">wax-bench.jpg</span><span class="tile-sub">2000 × 1333 · 520 KB</span></span>
+                      </button>
+                    </div>
+                    <p id="m2-count" class="help" style="margin-top:10px;" aria-live="polite">14 in your library · page 1 of 2</p>
+                  </div>
+                  <aside class="libpop-right" aria-label="Asset detail">
+                    <div id="m2-detail">
+                      <div class="detail-pv"><span class="thumb ph-shoes"></span></div>
+                      <div class="detail-name" id="m2-d-name">blue-running-shoes.jpg</div>
+                      <dl class="detail-grid">
+                        <dt>Dimensions</dt><dd id="m2-d-dim">2400 × 1600</dd>
+                        <dt>Size</dt><dd id="m2-d-size">612 KB</dd>
+                        <dt>Added by</dt><dd id="m2-d-by">Maya</dd>
+                        <dt>When</dt><dd id="m2-d-when">Mar 2</dd>
+                      </dl>
+                      <a class="detail-used" id="m2-d-used" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17H7A5 5 0 0 1 7 7h2"/><path d="M15 7h2a5 5 0 0 1 0 10h-2"/><path d="M8 12h8"/></svg>Used in 3 entries</a>
+                    </div>
+                  </aside>
+                </div>
+                <div class="libpop-foot">
+                  <div class="pager" role="navigation" aria-label="Library pages">
+                    <button aria-label="Previous page" disabled>‹</button>
+                    <button aria-current="true" aria-label="Page 1">1</button>
+                    <button aria-label="Page 2">2</button>
+                    <button aria-label="Next page">›</button>
+                  </div>
+                  <div class="grow"></div>
+                  <span class="cap-hint" style="margin-right:4px;">Inserts <code>![alt](media:…)</code> at your cursor.</span>
+                  <button class="btn-x btn-pri" id="m2-insert">Insert blue-running-shoes.jpg</button>
+                </div>
+              </div>
+            </div>
+            <div class="ln gap" style="min-height:7em;"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div></div>
+
+<!-- ============================================================================================ -->
+<!-- PANEL 3 — THE AT-INSERT CAPTURE: file + readable name + alt (or decorative), ONE step          -->
+<!-- ============================================================================================ -->
+<div class="mock-label">3 · One step captures the file, a readable name, and the alt text (differentiators b + c)</div>
+<div class="mock-note">
+  After Upload, or after a paste, the popover holds <b>one card</b> that does naming and alt in the
+  same step as the file. A pasted screenshot never lands as <code>image.png</code>: cairn proposes a
+  readable name from the post slug (<code>getting-ready-for-spring-1</code>), shown in an editable
+  one-field rename with a "Suggested" tag. Alt text is captured here, <b>required or an explicit
+  Decorative choice</b>, so it is hard to skip and travels with the asset. The byte identity is the
+  content hash; the name is just a label, so a rename never breaks a link.
+</div>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="stage" style="margin:0;border:0;box-shadow:none;">
+    <div class="pop capture" style="position:static;">
+      <div class="cap-hd">
+        <div><div class="cap-eye">Insert › Photo or file</div><div class="cap-title">Name it and describe it</div></div>
+        <div class="grow"></div>
+        <button class="libpop-x" aria-label="Close">&#10005;</button>
+      </div>
+      <div class="cap-body">
+        <figure class="cap-figure" style="margin:0;">
+          <span class="thumb ph-screen" style="aspect-ratio:4/3;display:block;"></span>
+          <figcaption class="cap-figcap"><span>Pasted just now</span><span>1290 × 844 · 240 KB</span></figcaption>
+        </figure>
+        <div>
+          <div class="fld">
+            <label class="lbl" for="c-name">File name</label>
+            <div class="name-row">
+              <input class="inp mono" id="c-name" value="getting-ready-for-spring-1.png" />
+              <span class="name-tag">Suggested</span>
+            </div>
+            <span class="help">Built from this post's slug. Edit it to anything readable. It is a label, not the identity, so renaming later never breaks a link.</span>
+          </div>
+          <div class="fld">
+            <label class="lbl" for="c-alt">Alt text <span class="req" aria-hidden="true">*</span></label>
+            <div class="alt-row">
+              <input class="inp" id="c-alt" placeholder="Describe the image for a screen reader" aria-required="true" />
+              <label class="deco"><input type="checkbox" /> Decorative</label>
+            </div>
+            <span class="help">Required, or mark it Decorative if it adds nothing for a reader. This travels with the asset and is reused wherever you place it. You can override it per placement.</span>
+          </div>
+        </div>
+      </div>
+      <div class="cap-foot">
+        <span class="cap-hint">Stored once in your library. Identical bytes reuse the existing file.</span>
+        <div class="grow"></div>
+        <button class="btn-x btn-ghost">Cancel</button>
+        <button class="btn-x btn-pri" disabled title="Add alt text or mark it decorative to continue">Insert</button>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- ============================================================================================ -->
+<!-- PANEL 4 — THE FIVE DIFFERENTIATOR MOMENTS (the ones not already shown)                         -->
+<!-- ============================================================================================ -->
+<div class="mock-label">4 · The differentiator moments — no dead interval, failure + retry, dedup, safe delete</div>
+<div class="mock-note">
+  These are how cairn beats the field. <b>4a</b> the upload has no dead interval: an optimistic
+  placeholder lands at the caret the instant you drop, with determinate progress, then swaps to the
+  committed reference (the button runs it). <b>4b</b> a failed upload shows an inline error with a
+  retry, never a silent drop. <b>4c</b> dedup on upload: identical bytes resolve to the existing
+  asset, made visible. <b>4d</b> "where is this used" plus safe delete: an in-use asset's delete is
+  hard-confirmed and lists the entries. Reuse and replace-in-place are panel 2 and panel 6.
+</div>
+
+<div class="screen"><div data-theme="cairn-admin">
+<div class="stage" style="margin:0;border:0;box-shadow:none;flex-wrap:wrap;gap:26px;align-items:flex-start;background:color-mix(in oklab,#000 30%,transparent);">
+
+  <!-- 4a — optimistic placeholder + determinate progress (rendered as it appears in the manuscript) -->
+  <div style="width:430px;">
+    <div class="mock-label" style="padding:0 0 8px;color:#eee;">4a · No dead interval (live)</div>
+    <div data-theme="cairn-admin"><div style="background:var(--color-base-100);border:1px solid var(--cairn-card-border);border-radius:var(--radius-box);padding:16px;">
+      <div style="font-family:var(--font-editor);font-size:.95rem;color:var(--color-base-content);margin-bottom:12px;line-height:1.8;">
+        The lake loop is the season's best hour.
+      </div>
+      <div id="m4a-slot">
+        <div class="opt-card" id="m4a-card">
+          <div class="opt-thumb ph-hero"><span class="sheen"></span></div>
+          <div class="opt-main">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+              <span class="opt-name" id="m4a-name">hero-winter.jpg</span>
+              <span class="opt-pct" id="m4a-pct">12%</span>
+            </div>
+            <div class="opt-sub">Uploading to your library…</div>
+            <div class="pbar"><i id="m4a-bar" style="width:12%"></i></div>
+          </div>
+        </div>
+      </div>
+      <button class="btn-x btn-pri" id="m4a-run" style="margin-top:13px;">Replay the upload</button>
+      <p class="help" style="margin-top:8px;">The placeholder appears at the caret on drop; the markdown reference is committed only when the bytes land.</p>
+    </div></div>
+  </div>
+
+  <!-- 4b — failure + retry -->
+  <div style="width:430px;">
+    <div class="mock-label" style="padding:0 0 8px;color:#eee;">4b · Failure with retry (never silent)</div>
+    <div data-theme="cairn-admin"><div style="background:var(--color-base-100);border:1px solid var(--cairn-card-border);border-radius:var(--radius-box);padding:16px;">
+      <div class="fail-card" role="alert">
+        <div class="fail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></div>
+        <div class="opt-main">
+          <div class="fail-title">That image is too large</div>
+          <div class="fail-sub">IMG_4521.HEIC is 11 MB. The limit is 8 MB. Try a smaller export.</div>
+        </div>
+        <button class="retry"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Retry</button>
+      </div>
+      <p class="help" style="margin-top:10px;">Maps to a <code style="font-family:var(--font-editor)">media.upload_failed</code> log record. Wrong type, network, and a missing R2 binding each get their own clear line.</p>
+    </div></div>
+  </div>
+
+  <!-- 4c — dedup toast -->
+  <div style="width:430px;">
+    <div class="mock-label" style="padding:0 0 8px;color:#eee;">4c · Dedup on upload (made visible)</div>
+    <div data-theme="cairn-admin"><div style="background:var(--color-base-200);border:1px solid var(--cairn-card-border);border-radius:var(--radius-box);padding:24px;display:flex;justify-content:center;">
+      <div class="toast" role="status">
+        <div class="toast-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+        <div>
+          <div class="toast-t">You already have this image</div>
+          <div class="toast-s">Same bytes as <b>blue-running-shoes.jpg</b>. Reusing it, so nothing is duplicated. <button class="toast-link">Use it here</button></div>
+        </div>
+      </div>
+    </div></div>
+    <p class="help" style="padding:8px 0 0;color:#ddd;">The content hash is the identity, so a re-upload collapses to the existing asset.</p>
+  </div>
+
+  <!-- 4d — safe delete -->
+  <div style="width:460px;">
+    <div class="mock-label" style="padding:0 0 8px;color:#eee;">4d · "Used in N" + safe delete (hard-confirmed)</div>
+    <div class="confirm" role="alertdialog" aria-labelledby="del-t" aria-describedby="del-d">
+      <div class="confirm-hd">
+        <div class="confirm-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></div>
+        <div><div class="confirm-title" id="del-t">Delete blue-running-shoes.jpg?</div></div>
+      </div>
+      <div class="confirm-body" id="del-d">
+        <p>It is used in <b>3 published entries</b>. Deleting it will break the image on each one.</p>
+        <ul class="uselist">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><a href="#">Getting ready for spring</a></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><a href="#">Gear we love this season</a></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><a href="#">Trail conditions, week of Mar 9</a></li>
+        </ul>
+        <p style="font-size:.74rem;color:var(--color-muted);margin:8px 0 0;">Replace it everywhere first, or remove it from these entries. Git keeps the file in history, so a delete is recoverable.</p>
+      </div>
+      <div class="confirm-foot">
+        <button class="btn-x btn-pri" style="background:var(--color-base-100);color:var(--color-base-content);border:1px solid var(--cairn-card-border);box-shadow:none;">Replace everywhere instead</button>
+        <div class="grow"></div>
+        <button class="btn-x btn-ghost">Cancel</button>
+        <button class="btn-x btn-danger" disabled title="Resolve the 3 uses first">Delete</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div></div>
+
+<!-- ============================================================================================ -->
+<!-- PANEL 5 — THE THREE PLACEMENTS                                                                 -->
+<!-- ============================================================================================ -->
+<div class="mock-label">5 · The three placements — one asset, three doors</div>
+<div class="mock-note">
+  A stored image gets used three ways. These are three affordances on one asset, not three kinds of
+  media. <b>5a</b> inline body image, written as <code>![alt](media:…)</code> in the manuscript, with
+  a Write/Preview pair so the rendered image is one click away. <b>5b</b> a hero field in the Details
+  slide-over, with its own alt and a small preview. <b>5c</b> a gallery component, ordered tiles, with
+  per-image <b>caption AND alt as separate fields</b>.
+</div>
+
+<!-- 5a — inline -->
+<div class="mock-note" style="padding-top:2px;"><b>5a · Inline body image.</b> The markdown reference in Write, the rendered result in Preview.</div>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="stage" style="margin:0;border:0;box-shadow:none;gap:18px;align-items:stretch;flex-wrap:wrap;background:color-mix(in oklab,#000 28%,transparent);">
+    <div style="flex:1;min-width:330px;">
+      <div class="mock-label" style="padding:0 0 8px;color:#eee;">Write</div>
+      <div data-theme="cairn-admin"><div class="card-ed" style="box-shadow:none;">
+        <div class="ms" style="min-height:0;padding:1.25rem;font-size:1rem;line-height:1.85;">
+          <div class="ln">The first melt is here. Read the grooming report before you go.</div>
+          <div class="ln gap"></div>
+          <div class="ln"><span class="mk">![</span><span class="lk">Blue trail running shoes on gravel</span><span class="mk">](</span><span class="lk">media:blue-running-shoes.jpg</span><span class="mk">)</span></div>
+          <div class="ln gap"></div>
+          <div class="ln">Skate or classic, waxed for the morning cold.</div>
+        </div>
+      </div></div>
+    </div>
+    <div style="flex:1;min-width:330px;">
+      <div class="mock-label" style="padding:0 0 8px;color:#eee;">Preview</div>
+      <div data-theme="cairn-admin"><div class="card-ed" style="box-shadow:none;background:var(--color-base-200);">
+        <div style="padding:1.5rem;font-family:var(--font-body);">
+          <p style="font-size:.95rem;line-height:1.6;margin:0 0 14px;color:var(--color-base-content);">The first melt is here. Read the grooming report before you go.</p>
+          <figure style="margin:0 0 14px;border-radius:var(--radius-box);overflow:hidden;border:1px solid var(--cairn-card-border);box-shadow:var(--cairn-shadow);">
+            <span class="thumb ph-shoes" style="aspect-ratio:16/9;display:block;"></span>
+          </figure>
+          <p style="font-size:.95rem;line-height:1.6;margin:0;color:var(--color-base-content);">Skate or classic, waxed for the morning cold.</p>
+        </div>
+      </div></div>
+    </div>
+  </div>
+</div></div>
+
+<!-- 5b + 5c side by side -->
+<div class="mock-note" style="padding-top:14px;"><b>5b · Hero in the Details slide-over</b> (its own alt + preview). &nbsp;&nbsp;<b>5c · Gallery component</b> (ordered tiles, caption and alt separate).</div>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="stage" style="margin:0;border:0;box-shadow:none;gap:24px;align-items:flex-start;flex-wrap:wrap;">
+
+    <!-- 5b hero slide-over -->
+    <div class="panel-demo" style="border:1px solid var(--cairn-card-border);border-radius:var(--radius-box);">
+      <div class="panel-head"><span class="eyebrow">Entry details</span><button class="libpop-x" aria-label="Close details">&#10005;</button></div>
+      <fieldset class="fset">
+        <legend>Hero image</legend>
+        <div class="hero-slot">
+          <span class="thumb ph-hero" style="aspect-ratio:16/9;display:block;"></span>
+          <div class="hero-actions">
+            <button class="mini-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Replace</button>
+            <button class="mini-btn danger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Remove</button>
+          </div>
+        </div>
+      </fieldset>
+      <div class="fld" style="margin-bottom:0;">
+        <label class="lbl" for="h-alt">Hero alt text <span class="req" aria-hidden="true">*</span></label>
+        <input class="inp" id="h-alt" value="Snow-covered lake loop at dawn" />
+        <span class="help">Defaults from the asset's alt. Override it for this hero if you like.</span>
+      </div>
+    </div>
+
+    <!-- 5c gallery -->
+    <div class="pop gallery-cfg" style="position:static;flex:1;min-width:420px;">
+      <div class="cap-hd"><div><div class="cap-eye">Insert › Layout</div><div class="cap-title">Gallery</div></div><div class="grow"></div><button class="libpop-x" aria-label="Close">&#10005;</button></div>
+      <div style="padding:16px;">
+        <div class="gtiles">
+          <div class="gtile">
+            <div class="gtile-handle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg><span class="gtile-num">1</span></div>
+            <span class="gtile-thumb thumb ph-grid1" style="display:block;"></span>
+            <div class="gtile-fields">
+              <div class="fwrap"><span class="flab">Caption</span><input class="inp" value="Summit, looking east" /></div>
+              <div class="fwrap"><span class="flab">Alt <span class="req" aria-hidden="true">*</span></span><input class="inp" value="Skiers cresting the summit at sunrise" /></div>
+            </div>
+          </div>
+          <div class="gtile">
+            <div class="gtile-handle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg><span class="gtile-num">2</span></div>
+            <span class="gtile-thumb thumb ph-yurt" style="display:block;"></span>
+            <div class="gtile-fields">
+              <div class="fwrap"><span class="flab">Caption</span><input class="inp" value="The warming yurt" /></div>
+              <div class="fwrap"><span class="flab">Alt <span class="req" aria-hidden="true">*</span></span><input class="inp" value="The warming yurt lit at dusk" /></div>
+            </div>
+          </div>
+          <div class="gtile">
+            <div class="gtile-handle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg><span class="gtile-num">3</span></div>
+            <span class="gtile-thumb thumb ph-grid2" style="display:block;"></span>
+            <div class="gtile-fields">
+              <div class="fwrap"><span class="flab">Caption</span><input class="inp" placeholder="Optional caption" /></div>
+              <div class="fwrap"><span class="flab">Alt <span class="req" aria-hidden="true">*</span></span><input class="inp" value="Wax bench in the trailside shop" /></div>
+            </div>
+          </div>
+          <button class="gtile-add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Add images from your library</button>
+        </div>
+      </div>
+      <div class="cap-foot"><span class="cap-hint">Drag a tile to reorder. Inserts <code>:::gallery</code>.</span><div class="grow"></div><button class="btn-x btn-ghost">Cancel</button><button class="btn-x btn-pri">Insert gallery</button></div>
+    </div>
+
+  </div>
+</div></div>
+
+<!-- ============================================================================================ -->
+<!-- PANEL 6 — REPLACE-IN-PLACE                                                                     -->
+<!-- ============================================================================================ -->
+<div class="mock-label">6 · Replace-in-place — swap the bytes, keep every reference</div>
+<div class="mock-note">
+  The single most-praised capability in the field is Webflow's replace-an-asset-and-it-updates-
+  everywhere. Because the reference is a stable <code>media:</code> handle, replacing the bytes updates
+  every placement at once. New bytes mean a new hash, so the cache busts on its own; the reference in
+  the content never changes.
+</div>
+<div class="stage tight">
+  <div data-theme="cairn-admin"><div class="replace">
+    <div class="replace-hd">Replace blue-running-shoes.jpg</div>
+    <div class="replace-flow">
+      <div class="replace-side"><span class="thumb ph-shoes" style="display:block;"></span><div class="replace-cap">Current · 612 KB</div></div>
+      <div class="replace-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></div>
+      <div class="replace-side"><span class="thumb ph-grid1" style="display:block;"></span><div class="replace-cap">New · drop to swap</div></div>
+    </div>
+    <p class="replace-note">Updates all <b>3 entries</b> that use it. The reference <code>media:blue-running-shoes.jpg</code> stays the same; the new hash busts the cache. The alt text carries over, and you can edit it after.</p>
+    <div style="display:flex;gap:9px;margin-top:14px;"><div class="grow"></div><button class="btn-x btn-ghost">Cancel</button><button class="btn-x btn-pri">Replace everywhere</button></div>
+  </div></div>
+</div>
+
+<!-- ============================================================================================ -->
+<!-- PANEL 7 — THE SECONDARY LIBRARY (office shell): large + empty states                           -->
+<!-- ============================================================================================ -->
+<div class="mock-label">7 · The secondary management view — the full library in the office shell</div>
+<div class="mock-note">
+  The full library is the secondary door, reached from the nav, for cleanup, usage audit, and bulk
+  ops. Same office shell as the concept lists. The grid, search across name + alt + caption, the type
+  filter, and pagination scale to a large library; selecting a tile opens the asset detail with "used
+  in N entries" and the lifecycle actions. The orphaned <code>hero-winter.jpg</code> and the messy
+  <code>image.png</code> surface their Unused tag here, where bulk clean lives.
+</div>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="office">
+    <aside class="side">
+      <div class="side-brand">
+        <span class="brand-tile"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 9 9l3-1 3 1-3-6zM7 11l-3 5 4-1 2-3-3-1zm10 0-3 1 2 3 4 1-3-5zm-5 2-3 1-2 4h10l-2-4-3-1z"/></svg></span>
+        <span class="brand-word">cairn</span>
+      </div>
+      <div class="nav-eye">Content</div>
+      <a class="nav-i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v6h6"/></svg>Posts <span class="badge-n">8</span></a>
+      <a class="nav-i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 9h16"/><path d="M9 21V9"/></svg>Pages <span class="badge-n">5</span></a>
+      <a class="nav-i active" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>Media <span class="badge-n">14</span></a>
+      <div class="nav-eye">Manage</div>
+      <a class="nav-i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>Settings</a>
+    </aside>
+    <div class="office-main">
+      <div class="topbar">
+        <div><h1>Media</h1></div>
+        <div class="sub">14 files · 8.9 MB · 2 unused</div>
+        <div class="grow"></div>
+        <button class="btn-x btn-ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>Clean up unused…</button>
+        <button class="btn-x btn-pri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>Upload</button>
+      </div>
+      <div class="content">
+        <div class="lib-toolbar">
+          <label class="search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="search" placeholder="Search name, alt, or caption" aria-label="Search the library" />
+          </label>
+          <div class="filters" role="group" aria-label="Filter by type" style="margin:0;">
+            <button class="fchip" aria-pressed="true">All <span class="ct">(14)</span></button>
+            <button class="fchip" aria-pressed="false">Images <span class="ct">(11)</span></button>
+            <button class="fchip" aria-pressed="false">Documents <span class="ct">(2)</span></button>
+            <button class="fchip" aria-pressed="false">Video <span class="ct">(1)</span></button>
+            <button class="fchip" aria-pressed="false"><svg class="chk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M20 6 9 17l-5-5"/></svg>Unused <span class="ct">(2)</span></button>
+          </div>
+          <div class="grow"></div>
+          <span class="seg" role="group" aria-label="Sort">
+            <button aria-pressed="true">Recent</button><button aria-pressed="false">Name</button><button aria-pressed="false">Size</button>
+          </span>
+        </div>
+        <div class="grid lib">
+          <button class="tile sel" aria-pressed="true"><span class="thumb ph-shoes"></span><span class="badge-corner bc-used"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>3</span><span class="tile-meta"><span class="tile-name">blue-running-shoes.jpg</span><span class="tile-sub">2400 × 1600 · 612 KB</span></span></button>
+          <button class="tile"><span class="thumb ph-hero"></span><span class="badge-corner bc-orphan">Unused</span><span class="tile-meta"><span class="tile-name">hero-winter.jpg</span><span class="tile-sub">3000 × 1688 · 884 KB</span></span></button>
+          <button class="tile"><span class="filethumb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg><span class="ext">PDF</span></span><span class="badge-corner bc-used"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>2</span><span class="tile-meta"><span class="tile-name">trail-map.pdf</span><span class="tile-sub">PDF · 1.4 MB</span></span></button>
+          <button class="tile"><span class="thumb ph-grid1"></span><span class="tile-meta"><span class="tile-name">snowy-summit-view.jpg</span><span class="tile-sub">4032 × 3024 · 2.1 MB</span></span></button>
+          <button class="tile"><span class="thumb ph-screen"></span><span class="tile-meta"><span class="tile-name">trailhead-kiosk-hours.png</span><span class="tile-sub">1290 × 844 · 240 KB</span></span></button>
+          <button class="tile"><span class="thumb ph-yurt"></span><span class="badge-corner bc-used"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>2</span><span class="tile-meta"><span class="tile-name">warming-yurt.jpg</span><span class="tile-sub">1800 × 1200 · 430 KB</span></span></button>
+          <button class="tile"><span class="thumb ph-img"></span><span class="badge-corner bc-orphan">Unused</span><span class="tile-meta"><span class="tile-name">image.png</span><span class="tile-sub">900 × 600 · 120 KB</span></span></button>
+          <button class="tile"><span class="thumb ph-grid2"></span><span class="badge-corner bc-used"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>1</span><span class="tile-meta"><span class="tile-name">wax-bench.jpg</span><span class="tile-sub">2000 × 1333 · 520 KB</span></span></button>
+          <button class="tile"><span class="thumb" style="background:#1c1c1c;display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m10 8 6 4-6 4z"/><rect x="2" y="3" width="20" height="18" rx="2"/></svg></span><span class="badge-corner" style="left:5px;background:color-mix(in oklab,var(--color-base-content) 80%,transparent);color:var(--color-base-100);">Embed</span><span class="tile-meta"><span class="tile-name">Spring grooming (YouTube)</span><span class="tile-sub">Referenced · not stored</span></span></button>
+          <button class="tile"><span class="thumb ph-map"></span><span class="badge-corner bc-used"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>1</span><span class="tile-meta"><span class="tile-name">elevation-profile.png</span><span class="tile-sub">1600 × 700 · 180 KB</span></span></button>
+        </div>
+        <div style="display:flex;align-items:center;margin-top:18px;">
+          <span class="help">Showing 10 of 14</span>
+          <div class="grow"></div>
+          <div class="pager" role="navigation" aria-label="Library pages">
+            <button aria-label="Previous page" disabled>‹</button>
+            <button aria-current="true">1</button>
+            <button>2</button>
+            <button aria-label="Next page">›</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- 7b — empty / first-run -->
+<div class="mock-note" style="padding-top:2px;"><b>7b · Empty library, first run.</b> The page-owning empty state teaches the upload path, in the office voice.</div>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="office">
+    <aside class="side">
+      <div class="side-brand">
+        <span class="brand-tile"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 9 9l3-1 3 1-3-6zM7 11l-3 5 4-1 2-3-3-1zm10 0-3 1 2 3 4 1-3-5zm-5 2-3 1-2 4h10l-2-4-3-1z"/></svg></span>
+        <span class="brand-word">cairn</span>
+      </div>
+      <div class="nav-eye">Content</div>
+      <a class="nav-i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v6h6"/></svg>Posts</a>
+      <a class="nav-i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 9h16"/><path d="M9 21V9"/></svg>Pages</a>
+      <a class="nav-i active" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>Media</a>
+    </aside>
+    <div class="office-main">
+      <div class="topbar"><h1>Media</h1></div>
+      <div class="content">
+        <div class="lib-empty">
+          <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg></span>
+          <h2>No files yet</h2>
+          <p>Your images and documents stack up here as you add them. The fastest way to start is from a post: drop or paste a picture right where you are writing.</p>
+          <div style="display:flex;gap:9px;">
+            <button class="btn-x btn-ghost">Open a post</button>
+            <button class="btn-x btn-pri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>Upload a file</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- ============================================================================================ -->
+<!-- PANEL 8 — FOCAL POINT / CROP (preview matches the rendered crop)                               -->
+<!-- ============================================================================================ -->
+<div class="mock-label">8 · Focal point — set a point once, every crop respects it</div>
+<div class="mock-note">
+  The marquee editor-facing capability. The author drags one point on the image; every aspect ratio
+  the site renders keeps that point in frame. The cautionary lesson from Sanity is the one this design
+  holds: <b>the editor's preview matches the rendered crop</b>. Cloudflare Images applies it at the
+  edge through <code>gravity</code>, so cairn ships the control, not a pipeline.
+</div>
+<div class="stage tight">
+  <div data-theme="cairn-admin"><div class="pop focal" style="position:static;">
+    <div class="cap-hd"><div><div class="cap-eye">blue-running-shoes.jpg</div><div class="cap-title">Focal point</div></div><div class="grow"></div><button class="libpop-x" aria-label="Close">&#10005;</button></div>
+    <div class="focal-grid">
+      <div>
+        <div class="focal-label">Drag the point</div>
+        <div class="focal-stage ph-shoes">
+          <div class="focal-cross"></div>
+          <div class="focal-dot" style="left:62%;top:38%;" role="slider" tabindex="0" aria-label="Focal point" aria-valuetext="62% from left, 38% from top"></div>
+        </div>
+        <p class="focal-note" style="margin-top:10px;"><b>Focus: 62% / 38%.</b> Drag, or nudge with the arrow keys when the point is focused.</p>
+      </div>
+      <div>
+        <div class="focal-label">Renders as</div>
+        <div class="crop-row">
+          <div class="crop-box">
+            <div class="crop-frame crop-square"><div class="shot" style="background-image:linear-gradient(135deg,#3b6fb0 0%,#2b4f86 55%,#1f3a63 100%);"></div></div>
+            <div class="crop-cap">Square · thumb</div>
+          </div>
+          <div class="crop-box">
+            <div class="crop-frame crop-wide"><div class="shot" style="background-image:linear-gradient(135deg,#3b6fb0 0%,#2b4f86 55%,#1f3a63 100%);"></div></div>
+            <div class="crop-cap">16 : 9 · hero</div>
+          </div>
+          <div class="crop-box">
+            <div class="crop-frame crop-tall"><div class="shot" style="background-image:linear-gradient(135deg,#3b6fb0 0%,#2b4f86 55%,#1f3a63 100%);"></div></div>
+            <div class="crop-cap">3 : 4 · card</div>
+          </div>
+        </div>
+        <p class="focal-note">Each frame keeps the focal point in view. What you see here is what the site renders.</p>
+      </div>
+    </div>
+    <div class="cap-foot"><span class="cap-hint">Applied at the edge through Cloudflare Images. No copies are stored.</span><div class="grow"></div><button class="btn-x btn-ghost">Cancel</button><button class="btn-x btn-pri">Save focal point</button></div>
+  </div></div>
+</div>
+
+<!-- ============================================================================================ -->
+<!-- PANEL 9 — DARK PARITY                                                                          -->
+<!-- ============================================================================================ -->
+<div class="mock-label">9 · Dark parity — the at-cursor picker through the dark tokens</div>
+<div class="mock-note">Every value resolves from the theme variables, so dark inherits. One proof: the stored-files picker on the dark card.</div>
+<div class="screen"><div data-theme="cairn-admin-dark">
+  <div class="stage" style="margin:0;border:0;box-shadow:none;background:color-mix(in oklab,#000 50%,transparent);">
+    <div class="pop libpop" style="position:static;">
+      <div class="libpop-hd">
+        <button class="libpop-back" aria-label="Back to insert menu"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+        <div><div class="libpop-eye">Insert › Photo or file</div><div class="libpop-title">Your library</div></div>
+        <div class="grow"></div>
+        <button class="btn-x btn-upload"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>Upload</button>
+        <button class="libpop-x" aria-label="Close">&#10005;</button>
+      </div>
+      <div class="libpop-body">
+        <div class="libpop-left">
+          <label class="search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="search" placeholder="Search name, alt, or caption" aria-label="Search the library" />
+          </label>
+          <div class="filters" role="group" aria-label="Filter by type">
+            <button class="fchip" aria-pressed="true">All <span class="ct">(14)</span></button>
+            <button class="fchip" aria-pressed="false">Images <span class="ct">(11)</span></button>
+            <button class="fchip" aria-pressed="false">Documents <span class="ct">(2)</span></button>
+            <button class="fchip" aria-pressed="false">Video <span class="ct">(1)</span></button>
+          </div>
+          <div class="grid">
+            <button class="tile sel" aria-pressed="true"><span class="thumb ph-shoes"></span><span class="badge-corner bc-used"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>3</span><span class="tile-meta"><span class="tile-name">blue-running-shoes.jpg</span><span class="tile-sub">2400 × 1600 · 612 KB</span></span></button>
+            <button class="tile"><span class="thumb ph-hero"></span><span class="badge-corner bc-orphan">Unused</span><span class="tile-meta"><span class="tile-name">hero-winter.jpg</span><span class="tile-sub">3000 × 1688 · 884 KB</span></span></button>
+            <button class="tile"><span class="filethumb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg><span class="ext">PDF</span></span><span class="tile-meta"><span class="tile-name">trail-map.pdf</span><span class="tile-sub">PDF · 1.4 MB</span></span></button>
+            <button class="tile"><span class="thumb ph-yurt"></span><span class="tile-meta"><span class="tile-name">warming-yurt.jpg</span><span class="tile-sub">1800 × 1200 · 430 KB</span></span></button>
+          </div>
+        </div>
+        <aside class="libpop-right" aria-label="Asset detail">
+          <div class="detail-pv"><span class="thumb ph-shoes"></span></div>
+          <div class="detail-name">blue-running-shoes.jpg</div>
+          <dl class="detail-grid">
+            <dt>Dimensions</dt><dd>2400 × 1600</dd>
+            <dt>Size</dt><dd>612 KB</dd>
+            <dt>Added by</dt><dd>Maya</dd>
+            <dt>When</dt><dd>Mar 2</dd>
+          </dl>
+          <a class="detail-used" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17H7A5 5 0 0 1 7 7h2"/><path d="M15 7h2a5 5 0 0 1 0 10h-2"/><path d="M8 12h8"/></svg>Used in 3 entries</a>
+        </aside>
+      </div>
+      <div class="libpop-foot">
+        <div class="pager"><button disabled>‹</button><button aria-current="true">1</button><button>2</button><button>›</button></div>
+        <div class="grow"></div>
+        <button class="btn-x btn-pri">Insert blue-running-shoes.jpg</button>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- ============================================================================================ -->
+<!-- PANEL 10 — ACCESSIBILITY                                                                       -->
+<!-- ============================================================================================ -->
+<div class="mock-label">10 · Accessibility — focus order, keyboard map, screen-reader narration</div>
+<div data-theme="cairn-admin"><div class="a11y">
+  <h3>Designed-in accessibility for the insert flow</h3>
+  <p>
+    The primary flow is keyboard- and screen-reader-reachable end to end: open the chooser, route to
+    the library, pick or upload, then capture alt. The mouse path (drop, paste) and the keyboard path
+    (slash, the insert glyph, <span class="kk">Ctrl+Shift+M</span>) converge on the same surfaces, so
+    nothing is mouse-only. Contrast holds the design-system floors; muted text is never stacked on
+    opacity, and every state has a non-color cue (a check glyph, a labeled badge, an icon).
+  </p>
+
+  <h4>Focus order — the at-cursor flow</h4>
+  <ol>
+    <li><b>Open.</b> The insert glyph carries <code>aria-haspopup="menu"</code> and
+      <code>aria-expanded</code>. Slash and <span class="kk">Ctrl+Shift+M</span> open the same chooser.</li>
+    <li><b>Chooser.</b> A <code>role="menu"</code>; arrow keys move between the three routes,
+      <span class="kk">Enter</span> activates, <span class="kk">Esc</span> closes and returns the caret
+      to the document where it was.</li>
+    <li><b>Library popover.</b> Focus lands on the search field. Tab order: search → type-filter chips
+      → grid → asset detail link → pager → Upload → Insert → Close. The grid is one composite widget
+      (a roving tabindex; the arrow keys move between tiles, so the grid is one tab stop, not 14).</li>
+    <li><b>Capture card.</b> On upload or paste, focus moves to the file-name field, then alt, then the
+      Decorative checkbox, then Cancel and Insert. Insert is disabled until alt is filled or Decorative
+      is checked, and the disabled button names why.</li>
+    <li><b>Return.</b> On insert or close, focus returns to the editor at the caret, and the new
+      reference is selected so the next keystroke is in context.</li>
+  </ol>
+  <p>
+    The popover is a non-modal anchored surface, so focus is not trapped: <span class="kk">Esc</span>
+    or a click outside dismisses it and restores the caret. The capture card and the safe-delete
+    dialog are modal (<code>role="dialog"</code> / <code>role="alertdialog"</code>), so they trap
+    focus and restore it on close, the design-system dialog recipe.
+  </p>
+
+  <h4>Keyboard map</h4>
+  <table class="keymap">
+    <thead><tr><th>Key</th><th>Where</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td><span class="kk">/</span></td><td>Editor, empty line</td><td>Open the insert chooser at the caret.</td></tr>
+      <tr><td><span class="kk">Ctrl</span> <span class="kk">Shift</span> <span class="kk">M</span></td><td>Editor</td><td>Open the insert chooser from anywhere.</td></tr>
+      <tr><td><span class="kk">↑</span> <span class="kk">↓</span></td><td>Chooser</td><td>Move between the three routes.</td></tr>
+      <tr><td><span class="kk">←</span> <span class="kk">→</span> <span class="kk">↑</span> <span class="kk">↓</span></td><td>Library grid</td><td>Move between tiles (roving tabindex). The detail rail follows.</td></tr>
+      <tr><td><span class="kk">Enter</span></td><td>A focused tile</td><td>Insert it at the caret and close.</td></tr>
+      <tr><td><span class="kk">Space</span></td><td>A focused tile</td><td>Select without inserting (updates the detail rail and the Insert label).</td></tr>
+      <tr><td><span class="kk">/</span> then type</td><td>Library</td><td>Search is focused on open; type to filter across name, alt, and caption.</td></tr>
+      <tr><td><span class="kk">Esc</span></td><td>Any media surface</td><td>Step back one level (capture → library → chooser → editor).</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Screen-reader narration — the primary flow</h4>
+  <div class="sr-quote">
+    <em>"Insert media, menu button, collapsed."</em> Activate.<br>
+    <em>"Insert media, menu. A photo or file, menu item, one of three."</em> Down arrow twice, Enter on it.<br>
+    <em>"Your library, dialog. Search name, alt, or caption, search field."</em> Type "shoes".<br>
+    <em>"Showing 1 of 14"</em> (the count is an <code>aria-live="polite"</code> region). Arrow into the grid.<br>
+    <em>"blue-running-shoes.jpg, 2400 by 1600, 612 kilobytes, used in 3 entries, 1 of 1."</em> Enter.<br>
+    <em>"Inserted blue-running-shoes.jpg. Editing."</em> Focus is back in the manuscript.
+  </div>
+  <p style="margin-bottom:0;">
+    Each tile's accessible name carries the full picture, name, dimensions, size, and usage, so a
+    non-sighted author hears what a sighted one sees on the detail rail. The upload's progress is an
+    <code>aria-live</code> region that announces start, a coarse percentage, and the committed result,
+    so the no-dead-interval promise reaches a screen reader too. A failure is a
+    <code>role="alert"</code>. Alt capture is a labeled required field with the Decorative escape
+    hatch as a real checkbox, so the one accessibility-critical field is never a silent skip.
+  </p>
+</div></div>
+
+<div style="height:30px;"></div>
+
+<script>
+  // ---- Panel 2: the at-cursor library picker is interactive ----
+  (function () {
+    var grid = document.getElementById('m2-grid');
+    if (!grid) return;
+    var tiles = Array.prototype.slice.call(grid.querySelectorAll('.tile'));
+    var search = document.getElementById('m2-search');
+    var chips = document.querySelectorAll('#m2-grid')[0].closest('.libpop-left').querySelectorAll('.fchip');
+    var count = document.getElementById('m2-count');
+    var insertBtn = document.getElementById('m2-insert');
+    var activeType = 'all';
+
+    function setDetail(t) {
+      var thumb = t.querySelector('.thumb, .filethumb');
+      var pv = document.querySelector('#m2-detail .detail-pv');
+      pv.innerHTML = '';
+      pv.appendChild(thumb.cloneNode(true));
+      document.getElementById('m2-d-name').textContent = t.dataset.name;
+      document.getElementById('m2-d-dim').textContent = t.dataset.dim;
+      document.getElementById('m2-d-size').textContent = t.dataset.size;
+      document.getElementById('m2-d-by').textContent = t.dataset.by;
+      document.getElementById('m2-d-when').textContent = t.dataset.when;
+      var used = parseInt(t.dataset.used, 10);
+      var usedEl = document.getElementById('m2-d-used');
+      usedEl.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17H7A5 5 0 0 1 7 7h2"/><path d="M15 7h2a5 5 0 0 1 0 10h-2"/><path d="M8 12h8"/></svg>' +
+        (used === 0 ? 'Not used yet' : 'Used in ' + used + (used === 1 ? ' entry' : ' entries'));
+      usedEl.style.color = used === 0 ? 'var(--color-muted)' : 'var(--color-primary)';
+      insertBtn.textContent = 'Insert ' + t.dataset.name;
+    }
+    function select(t) {
+      tiles.forEach(function (x) { x.classList.remove('sel'); x.setAttribute('aria-pressed', 'false'); });
+      t.classList.add('sel'); t.setAttribute('aria-pressed', 'true');
+      setDetail(t);
+    }
+    function apply() {
+      var q = (search.value || '').trim().toLowerCase();
+      var shown = 0;
+      tiles.forEach(function (t) {
+        var hay = (t.dataset.name + ' ' + t.dataset.alt + ' ' + t.dataset.cap).toLowerCase();
+        var okType = activeType === 'all' || t.dataset.type === activeType;
+        var okText = !q || hay.indexOf(q) !== -1;
+        var vis = okType && okText;
+        t.hidden = !vis;
+        if (vis) shown++;
+      });
+      count.textContent = (q || activeType !== 'all')
+        ? shown + ' match' + (shown === 1 ? '' : 'es')
+        : '14 in your library · page 1 of 2';
+    }
+    tiles.forEach(function (t) {
+      t.addEventListener('click', function () { select(t); });
+      t.addEventListener('focus', function () { select(t); });
+    });
+    chips.forEach(function (c) {
+      c.addEventListener('click', function () {
+        chips.forEach(function (x) { x.setAttribute('aria-pressed', 'false'); });
+        c.setAttribute('aria-pressed', 'true');
+        activeType = c.dataset.type || 'all';
+        apply();
+      });
+    });
+    search.addEventListener('input', apply);
+  })();
+
+  // ---- Panel 4a: the optimistic upload loop (no dead interval) ----
+  (function () {
+    var run = document.getElementById('m4a-run');
+    if (!run) return;
+    var bar = document.getElementById('m4a-bar');
+    var pct = document.getElementById('m4a-pct');
+    var slot = document.getElementById('m4a-slot');
+    var timer = null;
+
+    var committedHTML =
+      '<figure style="margin:0;border-radius:var(--radius-box);overflow:hidden;border:1px solid var(--cairn-card-border);box-shadow:var(--cairn-shadow);">' +
+        '<span class="thumb ph-hero" style="aspect-ratio:16/9;display:block;"></span>' +
+      '</figure>' +
+      '<div style="font-family:var(--font-editor);font-size:.78rem;color:var(--color-muted);margin-top:7px;">![Snow-covered lake loop at dawn](media:hero-winter.jpg)</div>';
+
+    var placeholderHTML = slot.innerHTML;
+
+    function reset() {
+      slot.innerHTML = placeholderHTML;
+    }
+    function start() {
+      if (timer) { clearInterval(timer); timer = null; }
+      reset();
+      var b = document.getElementById('m4a-bar');
+      var p = document.getElementById('m4a-pct');
+      var n = 6;
+      b.style.width = n + '%'; p.textContent = n + '%';
+      timer = setInterval(function () {
+        n += Math.round(8 + Math.random() * 16);
+        if (n >= 100) {
+          n = 100;
+          b.style.width = '100%'; p.textContent = '100%';
+          clearInterval(timer); timer = null;
+          setTimeout(function () { slot.innerHTML = committedHTML; }, 360);
+        } else {
+          b.style.width = n + '%'; p.textContent = n + '%';
+        }
+      }, 230);
+    }
+    run.addEventListener('click', start);
+    // kick it once on load so the panel is alive
+    setTimeout(start, 500);
+  })();
+</script>
+
+</body>
+</html>

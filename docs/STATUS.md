@@ -11,7 +11,39 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-15, latest): merge and release the picker + round-trip bundle (0.56.2)
+## Immediate next action (2026-06-15, latest): the media gallery design landed; the foundation plan is ready
+
+The media/gallery initiative (ROADMAP "Next") ran its full design pass and is ready to build. The
+research, the unified strategy, and the direction verdict are in
+`docs/internal/design/2026-06-15-media-management-design-reference.md`; the approved design target is
+the rev.2 synthesized mockup `docs/internal/design/2026-06-15-media-gallery-mockup.html` (the three
+divergent direction mockups sit beside it as history). The spec is
+`docs/superpowers/specs/2026-06-15-cairn-media-gallery-design.md`; the first plan is
+`docs/superpowers/plans/2026-06-15-cairn-media-foundation.md`.
+
+The model splits media by lifecycle: stored files (images, documents, the gallery, the build target),
+referenced external media (video and embeds, the existing directive system), and design-system tokens
+(icons, the existing picker), all reached through one insert entry point. Locked architecture: bytes in
+R2, a logical `media:` reference committed to git (the `cairn:` link pattern), Cloudflare Images
+transforms on demand, content-hash identity with a slug display name, and a usage index that spans the
+open `cairn/*` edit branches so safe-delete never breaks an unpublished edit. Focal point is deferred
+(Cloudflare Images smart crop is the default); usage tracking and safe-delete stay in the first surface;
+the build carries a `frontend-design` polish pass against the gold standard.
+
+The series ships in phases, each its own just-in-time plan. Phase 1 (the foundation: the `media:` codec,
+content-hash naming, the media manifest, the Cloudflare Images URL builder, the grown `AssetConfig`, the
+render-time resolver, and the `media.*` log events, no admin UI) is planned and ready. Execute it on a
+feature worktree off `main` (one worktree per pass), `cairn-implementer` per task with the full gate
+between dispatches, Tasks 8 and 9 in the main loop. It is unreleased substrate with no consumer action.
+Sequence it after the `0.56.2` release below.
+
+Two component-picker follow-ups were filed to ROADMAP the same day from a live look: the picker dialog
+fills the viewport height (it should inset over a backdrop with a capped max-height, a full-height sheet
+only on a narrow viewport; the rule now lives in `admin-design-system.md`), and the `ComponentDef.icon`
+developer spec should require a logically representative icon (re-choosing ecxc's icons is a separate
+site-pass).
+
+## Immediate next action (2026-06-15): merge and release the picker + round-trip bundle (0.56.2)
 
 **The component insert picker live-preview and round-trip editing both LANDED on branch
 `feat/component-picker-live-preview`, ready to merge to `main` and release together as `0.56.2` (a

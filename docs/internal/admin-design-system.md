@@ -166,6 +166,15 @@ Recipes:
   dialog that holds its own `<form>` must mount outside any page-level form: nested forms are invalid
   HTML the parser repairs by dropping the outer tag, which breaks SSR and hydration. `EditPage` mounts
   all its dialogs headless at the bottom and renders plain triggers where they belong.
+- **Dialog sizing (governs every modal, the picker and palette included):** a modal never fills the
+  viewport on a normal screen. The `modal-box` sizes to its content under a cap
+  (`max-height: min(content, 85vh)`, with a `max-width` on the content scale) so the backdrop frames it
+  above and below and the surface reads as an overlay over the author's work, not a page takeover. The
+  box is the scroll container: its own header and footer hold while the body scrolls, never the page
+  behind it. Filling the height is correct in exactly one place, the small viewport: below the narrow
+  breakpoint a dialog may become a full-height or bottom sheet. Light dismiss on the backdrop is for a
+  non-destructive dialog; a destructive `alertdialog` keeps an explicit confirm and does not
+  light-dismiss.
 - **Component insert picker:** `ComponentInsertDialog` is a two-step dialog. Step one is the catalog:
   a single-column list grouped under eyebrow headings by the component's `group`, in declaration
   order, each row a glyph (the component's `icon`), the label, the description, and the intended-use

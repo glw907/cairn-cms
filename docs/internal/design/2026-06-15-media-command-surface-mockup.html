@@ -1,0 +1,1433 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Proposed design: media as a unified command surface</title>
+<link rel="stylesheet" href="./cairn-admin.css" />
+<!--
+  MEDIA, DIRECTION B: the unified command surface.
+
+  One insert entry point routes by intent. The center of gravity is a keyboard-first command
+  surface (a combobox over a listbox) opened three ways that all land on the SAME surface:
+    - slash (/) at the caret in the editor,
+    - a shortcut (Cmd/Ctrl+K opens the existing command palette, which carries an "Insert media"
+      command; the dedicated media shortcut is the slash, plus the palette route),
+    - a VISIBLE toolbar "Insert" button (the non-technical-author fallback; a hidden affordance
+      costs 20%+ task completion per NN/g, so the button shadows every keyboard path).
+  You filter ACROSS three panes by typing: Stored files (R2-backed library), Embed (paste a URL,
+  oEmbed), and Icon (curated design tokens). The author never names the bucket; intent routes it.
+
+  AESTHETIC is locked to Warm Stone (see docs/internal/admin-design-system.md). This mockup reuses
+  the gold standard's shell and the component picker's dialog recipe. data-theme sits on a BARE
+  wrapper around each screen, never on a styled element (the load-bearing rule). Built light;
+  dark-theme intent noted where it differs. Two screens are LIVE (typing filters; arrow/Enter
+  move the listbox) so the combobox interaction is real, not a static picture.
+
+  WHAT IS FAKED vs REAL: the asset thumbnails are CSS gradient stand-ins (no real bytes in a
+  mockup), the "render" of inserted markdown is a styled sample, and upload progress is a scripted
+  loop. The combobox keyboard model, the filtering, the ARIA wiring, the focus order, and every
+  string are real and portable to the Svelte build.
+-->
+<style>
+  /* ---- mock scaffold (outside the themed wrappers; system-ui on purpose) ---- */
+  body { margin: 0; background: #d8d4cf; }
+  .mock-label { font: 600 13px/1.4 system-ui; letter-spacing: .08em; text-transform: uppercase; color: #444; padding: 26px 24px 6px; }
+  .mock-note { font: 400 13px/1.55 system-ui; color: #555; padding: 0 24px 14px; max-width: 90ch; }
+  .mock-note b { color: #222; }
+  .mock-note code { font-family: var(--font-editor); background: #cfcac3; padding: 0 4px; border-radius: 3px; }
+  .mock-toc { font: 400 13px/1.7 system-ui; color: #444; padding: 4px 24px 18px; max-width: 90ch; }
+  .mock-toc a { color: #5b3fa0; }
+  .screen { margin: 0 16px 40px; }
+  .grow { flex: 1 1 auto; }
+
+  /* A dark stage to float a modal over, matching the component-picker mockup. */
+  .stage { background: color-mix(in oklab, #000 40%, transparent); padding: 44px 24px; display: flex; justify-content: center; border: 1px solid #aaa; box-shadow: 0 2px 14px rgba(0,0,0,.08); }
+  .stage.tall { align-items: flex-start; }
+  .stage.tight { padding: 26px 18px; }
+  .two-up { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; }
+
+  /* ============================================================= */
+  /* THE EDITOR SHELL (trimmed from the gold standard, for context) */
+  /* ============================================================= */
+  .ground { background: var(--color-base-200); font-family: var(--font-body); color: var(--color-base-content); -webkit-font-smoothing: antialiased; position: relative; }
+  .band { display: flex; align-items: center; height: 64px; background: var(--color-base-100); border-bottom: 1px solid var(--cairn-card-border); padding: 0 20px 0 14px; }
+  .bnd-cluster { display: flex; align-items: center; gap: 4px; }
+  .bnd-sq { display: inline-flex; align-items: center; justify-content: center; height: 32px; width: 32px; border: 0; background: transparent; border-radius: .5rem; color: var(--color-subtle); cursor: pointer; }
+  .bnd-sq:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .bnd-btn { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border: 0; background: transparent; border-radius: .5rem; color: var(--color-subtle); font: 500 .875rem/1 var(--font-body); cursor: pointer; }
+  .bnd-btn:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .crumb { display: flex; align-items: center; gap: 7px; font-size: .875rem; margin-left: 4px; }
+  .crumb a { color: var(--color-muted); text-decoration: none; cursor: pointer; }
+  .crumb-sep { color: var(--color-muted); opacity: .45; }
+  .crumb-here { font-weight: 550; }
+  .bnd-status { display: flex; align-items: center; gap: 12px; margin-left: 18px; padding-left: 18px; border-left: 1px solid var(--cairn-card-border); }
+  .savestate { display: inline-flex; align-items: center; gap: 6px; font-size: .75rem; color: var(--color-muted); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-warning); }
+  .bnd-div { width: 1px; height: 18px; background: var(--cairn-card-border); margin: 0 8px; }
+
+  .page { padding: 1.75rem 2.5rem 2.25rem; }
+  .col { max-width: 49rem; margin: 0 auto; width: 100%; }
+  .ttl-wrap { font-family: var(--font-editor); font-size: 1.0625rem; max-width: 72ch; margin: 0 auto 16px; padding: 0 1.25rem; }
+  .ttl { font-family: var(--font-display); font-size: 1.875rem; font-weight: 700; letter-spacing: -.025em; }
+  .card-ed { background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: 1rem; box-shadow: var(--cairn-shadow); overflow: hidden; }
+  .strip { display: flex; align-items: center; gap: 2px; padding: 6px 8px; border-bottom: 1px solid var(--cairn-card-border); }
+  .tb { display: inline-flex; align-items: center; justify-content: center; height: 30px; width: 30px; border: 0; background: transparent; border-radius: .5rem; color: var(--color-subtle); cursor: pointer; }
+  .tb:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  /* The VISIBLE Insert affordance: a labeled button, not a bare glyph, so a novice always sees it. */
+  .tb-insert { width: auto; gap: 6px; padding: 0 11px 0 9px; font: 600 .8125rem/1 var(--font-body); color: var(--color-primary); background: color-mix(in oklab, var(--color-primary) 9%, transparent); }
+  .tb-insert:hover { background: color-mix(in oklab, var(--color-primary) 15%, transparent); }
+  .tb-insert .kcue { font-family: var(--font-editor); font-size: .625rem; color: var(--color-muted); border: 1px solid var(--cairn-card-border); border-radius: .25rem; padding: 0 4px; line-height: 1.5; background: var(--color-base-100); }
+  .tdiv { width: 1px; height: 18px; background: var(--cairn-card-border); margin: 0 6px; flex: none; }
+  .seg { display: inline-flex; border: 1px solid var(--cairn-card-border); border-radius: .5rem; overflow: hidden; background: var(--color-base-100); }
+  .seg button { font: 400 .8125rem/1 var(--font-body); border: 0; background: transparent; color: var(--color-muted); padding: 5px 12px; cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--cairn-card-border); }
+  .seg button[aria-pressed="true"] { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); font-weight: 500; }
+  .ms { font-family: var(--font-editor); font-size: 1.0625rem; line-height: 1.9; max-width: 72ch; margin: 0 auto; padding: 1.75rem 1.25rem 2rem; min-height: 12rem; position: relative; }
+  .ln { min-height: 1.9em; }
+  .gap { min-height: 1.9em; }
+  .h2 { font-size: 1.5em; font-weight: 700; }
+  .mk { color: var(--color-muted); font-weight: 400; }
+  .lk { color: var(--color-accent); }
+  .caret { display: inline-block; width: 2px; height: 1.15em; background: var(--color-primary); vertical-align: text-bottom; animation: blink 1.1s steps(1) infinite; margin: 0 1px; }
+  @keyframes blink { 50% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .caret { animation: none; } }
+  .slashcue { color: var(--color-primary); background: color-mix(in oklab, var(--color-primary) 12%, transparent); border-radius: .25rem; padding: 0 .15em; }
+
+  /* the optimistic upload placeholder, inline in the manuscript */
+  .ph { display: inline-flex; align-items: center; gap: 10px; font-family: var(--font-body); font-size: .8rem; border: 1px dashed color-mix(in oklab, var(--color-primary) 45%, var(--cairn-card-border)); border-radius: .625rem; padding: 7px 11px; background: color-mix(in oklab, var(--color-primary) 5%, var(--color-base-100)); color: var(--color-muted); max-width: 30rem; }
+  .ph-thumb { width: 34px; height: 34px; border-radius: .375rem; flex: none; background: linear-gradient(135deg, #9fb4c9, #6b8caf); position: relative; overflow: hidden; }
+  .ph-shimmer::after { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.45) 50%, transparent 70%); animation: shimmer 1.2s linear infinite; }
+  @keyframes shimmer { to { transform: translateX(100%); } }
+  @media (prefers-reduced-motion: reduce) { .ph-shimmer::after { animation: none; } }
+  .ph-bar { width: 8rem; height: 5px; border-radius: 3px; background: color-mix(in oklab, var(--color-base-content) 12%, transparent); overflow: hidden; }
+  .ph-bar > i { display: block; height: 100%; background: var(--color-primary); border-radius: 3px; }
+  .ph.err { border-color: color-mix(in oklab, var(--color-error) 55%, var(--cairn-card-border)); background: color-mix(in oklab, var(--color-error) 6%, var(--color-base-100)); color: var(--color-error); }
+  .ph.err .ph-thumb { background: color-mix(in oklab, var(--color-error) 18%, #b9b3ac); filter: grayscale(.4); }
+  .ph-retry { font: 600 .72rem/1 var(--font-body); color: var(--color-error); background: transparent; border: 1px solid color-mix(in oklab, var(--color-error) 50%, transparent); border-radius: .375rem; padding: 3px 8px; cursor: pointer; }
+  .ph-retry:hover { background: color-mix(in oklab, var(--color-error) 10%, transparent); }
+  .ph.done { border-style: solid; border-color: color-mix(in oklab, var(--color-success) 45%, var(--cairn-card-border)); background: color-mix(in oklab, var(--color-success) 6%, var(--color-base-100)); color: color-mix(in oklab, var(--color-success) 70%, var(--color-base-content)); }
+  .ph.done .ph-thumb { background: linear-gradient(135deg, #d08a6a, #b05f3a); filter: none; }
+
+  /* ============================================================= */
+  /* THE COMMAND SURFACE (the star) — combobox over a listbox        */
+  /* ============================================================= */
+  .cs { font-family: var(--font-body); color: var(--color-base-content); -webkit-font-smoothing: antialiased; background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: var(--radius-box); box-shadow: 0 28px 70px -14px rgba(0,0,0,.5); width: 100%; max-width: 720px; overflow: hidden; display: flex; flex-direction: column; }
+  .cs.wide { max-width: 860px; }
+
+  /* the combobox input row */
+  .cs-input { display: flex; align-items: center; gap: 11px; padding: 15px 18px; border-bottom: 1px solid var(--cairn-card-border); }
+  .cs-input .lead { color: var(--color-primary); flex: none; display: inline-flex; }
+  .cs-input input { flex: 1 1 auto; border: 0; outline: 0; background: transparent; font: 400 1.0625rem/1.3 var(--font-body); color: var(--color-base-content); min-width: 0; }
+  .cs-input input::placeholder { color: var(--color-muted); }
+  .cs-esc { font-family: var(--font-editor); font-size: .6875rem; color: var(--color-muted); border: 1px solid var(--cairn-card-border); border-radius: .25rem; padding: 2px 7px; flex: none; background: var(--color-base-200); }
+
+  /* the pane scope: which lifecycle the typed query targets. A radio-group of tabs. */
+  .cs-scopes { display: flex; align-items: center; gap: 4px; padding: 9px 14px; border-bottom: 1px solid var(--cairn-card-border); background: color-mix(in oklab, var(--color-base-content) 1.5%, var(--color-base-100)); }
+  .cs-scope { display: inline-flex; align-items: center; gap: 7px; border: 0; background: transparent; border-radius: var(--radius-field); padding: 5px 11px; font: 500 .8125rem/1 var(--font-body); color: var(--color-muted); cursor: pointer; }
+  .cs-scope:hover { background: color-mix(in oklab, var(--color-base-content) 5%, transparent); }
+  .cs-scope[aria-selected="true"] { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); font-weight: 600; }
+  .cs-scope svg { width: 15px; height: 15px; }
+  .cs-scope .ct { font-size: .6875rem; color: var(--color-muted); font-weight: 500; }
+  .cs-scope[aria-selected="true"] .ct { color: color-mix(in oklab, var(--color-primary) 80%, transparent); }
+  .cs-scope .skey { font-family: var(--font-editor); font-size: .625rem; opacity: .75; }
+  .cs-scope-all { margin-left: auto; }
+
+  /* the listbox / results region */
+  .cs-results { overflow: auto; max-height: 50vh; min-height: 220px; padding: 8px; }
+  .cs-sect { font-size: .6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--color-muted); padding: 10px 10px 6px; display: flex; align-items: center; justify-content: space-between; }
+  .cs-sect .more { font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--color-subtle); }
+
+  /* a stored-file option row */
+  .opt { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: var(--radius-field); cursor: pointer; border: 1px solid transparent; }
+  .opt:hover { background: color-mix(in oklab, var(--color-base-content) 4%, transparent); }
+  .opt[aria-selected="true"] { background: color-mix(in oklab, var(--color-primary) 10%, transparent); border-color: color-mix(in oklab, var(--color-primary) 30%, transparent); }
+  .opt-thumb { width: 42px; height: 42px; border-radius: .5rem; flex: none; overflow: hidden; position: relative; background: var(--color-base-200); }
+  .opt-thumb .badge-type { position: absolute; right: 2px; bottom: 2px; font: 700 .55rem/1 var(--font-body); text-transform: uppercase; letter-spacing: .03em; padding: 1px 3px; border-radius: 3px; background: rgba(0,0,0,.62); color: #fff; }
+  .opt-main { min-width: 0; flex: 1 1 auto; }
+  .opt-name { font-size: .9rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .opt-meta { font-size: .72rem; color: var(--color-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; gap: 8px; }
+  .opt-meta .sep { opacity: .4; }
+  .opt-use { font: 500 .68rem/1 var(--font-body); color: var(--color-accent); background: color-mix(in oklab, var(--color-accent) 9%, transparent); border-radius: .375rem; padding: 3px 7px; flex: none; }
+  .opt-orphan { color: var(--color-muted); background: color-mix(in oklab, var(--color-base-content) 5%, transparent); }
+  .opt-noalt { color: var(--color-warning); background: color-mix(in oklab, var(--color-warning) 12%, transparent); flex: none; font: 600 .62rem/1 var(--font-body); border-radius: .375rem; padding: 3px 6px; text-transform: uppercase; letter-spacing: .03em; }
+  .opt-go { color: var(--color-muted); opacity: 0; flex: none; }
+  .opt[aria-selected="true"] .opt-go, .opt:hover .opt-go { opacity: 1; }
+
+  /* the upload affordance, always first in the Stored pane (the visible backbone) */
+  .opt-upload { border: 1px dashed color-mix(in oklab, var(--color-primary) 40%, var(--cairn-card-border)); background: color-mix(in oklab, var(--color-primary) 4%, transparent); }
+  .opt-upload .opt-thumb { background: color-mix(in oklab, var(--color-primary) 14%, var(--color-base-200)); color: var(--color-primary); display: flex; align-items: center; justify-content: center; }
+  .opt-upload[aria-selected="true"] { background: color-mix(in oklab, var(--color-primary) 11%, transparent); }
+
+  /* an embed result and an icon result share the option frame, smaller leading glyph */
+  .opt-glyph { width: 42px; height: 42px; border-radius: .5rem; flex: none; display: inline-flex; align-items: center; justify-content: center; background: var(--color-base-200); color: var(--color-base-content); }
+  .opt-glyph svg { width: 19px; height: 19px; }
+  .opt[aria-selected="true"] .opt-glyph, .opt:hover .opt-glyph { background: color-mix(in oklab, var(--color-primary) 13%, var(--color-base-200)); color: var(--color-primary); }
+  .icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 6px; padding: 4px 6px 6px; }
+  .icon-cell { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 11px 6px; border-radius: var(--radius-field); border: 1px solid transparent; cursor: pointer; color: var(--color-base-content); }
+  .icon-cell:hover { background: color-mix(in oklab, var(--color-base-content) 4%, transparent); }
+  .icon-cell[aria-selected="true"] { background: color-mix(in oklab, var(--color-primary) 10%, transparent); border-color: color-mix(in oklab, var(--color-primary) 30%, transparent); color: var(--color-primary); }
+  .icon-cell svg { width: 21px; height: 21px; }
+  .icon-cell span { font-size: .68rem; color: var(--color-muted); }
+  .icon-cell[aria-selected="true"] span { color: color-mix(in oklab, var(--color-primary) 80%, transparent); }
+
+  /* the live narration + the footer keymap legend */
+  .cs-foot { display: flex; align-items: center; gap: 14px; padding: 9px 16px; border-top: 1px solid var(--cairn-card-border); font-size: .72rem; color: var(--color-muted); background: color-mix(in oklab, var(--color-base-content) 1.5%, var(--color-base-100)); }
+  .cs-foot .legend { display: inline-flex; align-items: center; gap: 5px; }
+  .cs-foot kbd, .keycap { font-family: var(--font-editor); font-size: .625rem; line-height: 1.5; color: var(--color-base-content); border: 1px solid var(--cairn-card-border); border-bottom-width: 2px; border-radius: .3rem; padding: 1px 5px; background: var(--color-base-100); }
+  .cs-live { margin-left: auto; font-style: normal; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+  /* a peek detail strip for the selected stored asset (rendered under the active row's section) */
+  .cs-empty-pane { padding: 30px 22px; text-align: center; color: var(--color-muted); }
+
+  /* ============================================================= */
+  /* THE INSERT-DETAIL STEP: alt + name captured at insert           */
+  /* ============================================================= */
+  .id2 { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); }
+  .id2-form { padding: 18px 18px 4px; display: flex; flex-direction: column; gap: 14px; }
+  .id2-prev { background: var(--color-base-200); border-left: 1px solid var(--cairn-card-border); padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .id-eyebrow { font-size: .6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--color-muted); }
+  .id-fld { display: flex; flex-direction: column; gap: 5px; }
+  .id-lbl { font-size: .8125rem; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+  .req { color: var(--color-error); }
+  .id-in { font: inherit; font-size: .875rem; color: var(--color-base-content); background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: var(--radius-field); padding: 8px 10px; width: 100%; box-sizing: border-box; }
+  .id-in:focus { outline: 1px solid color-mix(in oklab, var(--color-primary) 70%, transparent); border-color: color-mix(in oklab, var(--color-primary) 50%, var(--cairn-card-border)); }
+  .id-help { font-size: .72rem; color: var(--color-muted); }
+  .id-name-row { display: flex; gap: 8px; align-items: center; }
+  .id-name-row .id-in { font-family: var(--font-editor); font-size: .8rem; }
+  .id-ext { font-family: var(--font-editor); font-size: .8rem; color: var(--color-muted); flex: none; }
+  /* alt requirement: a radio pair, "Describe it" vs "Decorative" */
+  .id-altchoice { display: flex; gap: 8px; }
+  .id-altopt { flex: 1 1 0; display: flex; gap: 8px; align-items: flex-start; border: 1px solid var(--cairn-card-border); border-radius: var(--radius-field); padding: 9px 11px; cursor: pointer; font-size: .8rem; }
+  .id-altopt[data-on="true"] { border-color: color-mix(in oklab, var(--color-primary) 55%, transparent); background: color-mix(in oklab, var(--color-primary) 7%, transparent); }
+  .id-altopt input { margin-top: 2px; accent-color: var(--color-primary); }
+  .id-altopt .t { font-weight: 600; }
+  .id-altopt .s { color: var(--color-muted); font-size: .72rem; }
+  .id-prev-frame { flex: 1 1 auto; background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: var(--radius-box); box-shadow: var(--cairn-shadow); padding: 14px; display: flex; flex-direction: column; gap: 10px; align-items: center; justify-content: center; }
+  .id-prev-img { width: 100%; max-width: 260px; aspect-ratio: 16/10; border-radius: .5rem; background: linear-gradient(135deg, #d08a6a, #9c4f2e); }
+  .id-prev-cap { font-family: var(--font-editor); font-size: .72rem; color: var(--color-muted); text-align: center; }
+  .id-prev-cap b { color: var(--color-base-content); }
+  .id-dupe { display: flex; gap: 9px; align-items: flex-start; border: 1px solid color-mix(in oklab, var(--color-success) 40%, var(--cairn-card-border)); background: color-mix(in oklab, var(--color-success) 6%, transparent); border-radius: var(--radius-field); padding: 10px 12px; font-size: .78rem; }
+  .id-dupe svg { color: color-mix(in oklab, var(--color-success) 70%, var(--color-base-content)); flex: none; width: 17px; height: 17px; margin-top: 1px; }
+  .id-dupe b { color: color-mix(in oklab, var(--color-success) 72%, var(--color-base-content)); }
+
+  /* modal footer reused across steps */
+  .cs-actions { display: flex; align-items: center; gap: 10px; padding: 13px 18px; border-top: 1px solid var(--cairn-card-border); }
+  .cs-actions .sp { flex: 1 1 auto; }
+  .cs-hint { font-size: .74rem; color: var(--color-muted); }
+  .cs-hint code { font-family: var(--font-editor); }
+  .btnp { font: inherit; font-size: .85rem; font-weight: 500; border-radius: var(--radius-field); padding: 8px 16px; cursor: pointer; border: 1px solid transparent; background: var(--color-primary); color: var(--color-primary-content); box-shadow: 0 2px 8px -2px color-mix(in oklab, var(--color-primary) 60%, transparent); }
+  .btnp:hover { filter: brightness(1.05); }
+  .btnp[disabled] { opacity: .5; cursor: not-allowed; }
+  .btng { font: inherit; font-size: .85rem; font-weight: 500; border-radius: var(--radius-field); padding: 8px 16px; cursor: pointer; border: 1px solid var(--cairn-card-border); background: transparent; color: var(--color-base-content); }
+  .btng:hover { background: var(--color-base-200); }
+
+  /* ============================================================= */
+  /* THE LIBRARY / ASSET DETAIL (full-page office view)              */
+  /* ============================================================= */
+  .lib { font-family: var(--font-body); color: var(--color-base-content); -webkit-font-smoothing: antialiased; background: var(--color-base-200); padding: 22px; }
+  .lib-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 4px; }
+  .lib-h1 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; letter-spacing: -.02em; }
+  .lib-sub { font-size: .8125rem; color: var(--color-muted); }
+  .lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; margin-top: 16px; }
+  .asset { border: 1px solid var(--cairn-card-border); border-radius: var(--radius-box); background: var(--color-base-100); overflow: hidden; box-shadow: var(--cairn-shadow); }
+  .asset-img { aspect-ratio: 4/3; position: relative; }
+  .asset-img .badge-type { position: absolute; right: 6px; bottom: 6px; font: 700 .58rem/1 var(--font-body); text-transform: uppercase; padding: 2px 5px; border-radius: 4px; background: rgba(0,0,0,.62); color: #fff; }
+  .asset-img .usepin { position: absolute; left: 6px; top: 6px; font: 600 .6rem/1 var(--font-body); padding: 3px 6px; border-radius: 5px; background: color-mix(in oklab, var(--color-accent) 90%, #000); color: #fff; }
+  .asset-img .usepin.orphan { background: rgba(60,55,50,.78); }
+  .asset-body { padding: 9px 11px 11px; }
+  .asset-name { font-size: .78rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-editor); }
+  .asset-meta { font-size: .68rem; color: var(--color-muted); margin-top: 2px; }
+  .asset-flag { font: 600 .6rem/1 var(--font-body); color: var(--color-warning); margin-top: 5px; text-transform: uppercase; letter-spacing: .03em; }
+
+  /* the asset detail slide-over / where-used */
+  .detail { width: 100%; max-width: 460px; background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: var(--radius-box); box-shadow: var(--cairn-shadow); overflow: hidden; font-family: var(--font-body); color: var(--color-base-content); }
+  .detail-img { aspect-ratio: 16/9; position: relative; }
+  .detail-body { padding: 16px 18px 18px; }
+  .detail-name { font-family: var(--font-editor); font-size: .95rem; font-weight: 500; }
+  .detail-tbl { margin: 12px 0; border-top: 1px solid color-mix(in oklab, var(--cairn-card-border) 70%, transparent); }
+  .detail-tbl .r { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid color-mix(in oklab, var(--cairn-card-border) 70%, transparent); font-size: .8rem; }
+  .detail-tbl .r dt { color: var(--color-muted); }
+  .detail-tbl .r dd { margin: 0; font-weight: 500; text-align: right; }
+  .detail-used { background: color-mix(in oklab, var(--color-accent) 6%, transparent); border: 1px solid color-mix(in oklab, var(--color-accent) 30%, transparent); border-radius: var(--radius-field); padding: 11px 13px; margin-top: 4px; }
+  .detail-used .h { font-size: .78rem; font-weight: 600; color: color-mix(in oklab, var(--color-accent) 78%, var(--color-base-content)); margin-bottom: 7px; }
+  .detail-used a { display: flex; align-items: center; gap: 7px; font-size: .8rem; color: var(--color-base-content); text-decoration: none; padding: 3px 0; }
+  .detail-used a:hover { color: var(--color-primary); }
+  .detail-used a svg { width: 14px; height: 14px; color: var(--color-muted); flex: none; }
+  .detail-acts { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+  .det-btn { font: 500 .8rem/1 var(--font-body); border-radius: var(--radius-field); padding: 8px 12px; cursor: pointer; border: 1px solid var(--cairn-card-border); background: transparent; color: var(--color-base-content); display: inline-flex; align-items: center; gap: 6px; }
+  .det-btn:hover { background: var(--color-base-200); }
+  .det-btn svg { width: 14px; height: 14px; }
+  .det-btn.danger { color: var(--color-error); border-color: color-mix(in oklab, var(--color-error) 40%, var(--cairn-card-border)); }
+  .det-btn.danger:hover { background: color-mix(in oklab, var(--color-error) 8%, transparent); }
+  .det-btn.danger[disabled] { opacity: .5; cursor: not-allowed; }
+
+  /* delete confirm */
+  .confirm { width: 100%; max-width: 440px; background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: var(--radius-box); box-shadow: 0 24px 60px -12px rgba(0,0,0,.45); overflow: hidden; font-family: var(--font-body); color: var(--color-base-content); }
+  .confirm-head { display: flex; gap: 12px; align-items: flex-start; padding: 18px 18px 8px; }
+  .confirm-ico { width: 38px; height: 38px; border-radius: 50%; flex: none; display: inline-flex; align-items: center; justify-content: center; background: color-mix(in oklab, var(--color-error) 13%, transparent); color: var(--color-error); }
+  .confirm-ico svg { width: 19px; height: 19px; }
+  .confirm-title { font-family: var(--font-display); font-size: 1.0625rem; font-weight: 700; }
+  .confirm-sub { font-size: .82rem; color: var(--color-muted); margin-top: 3px; line-height: 1.5; }
+  .confirm-body { padding: 4px 18px 8px 68px; }
+  .confirm-list { list-style: none; margin: 8px 0 0; padding: 0; border: 1px solid var(--cairn-card-border); border-radius: var(--radius-field); overflow: hidden; }
+  .confirm-list li { display: flex; align-items: center; gap: 8px; font-size: .8rem; padding: 8px 11px; border-bottom: 1px solid color-mix(in oklab, var(--cairn-card-border) 70%, transparent); }
+  .confirm-list li:last-child { border-bottom: 0; }
+  .confirm-list svg { width: 14px; height: 14px; color: var(--color-muted); flex: none; }
+  .confirm-gate { font-size: .8rem; margin: 12px 0 2px; display: flex; flex-direction: column; gap: 5px; }
+  .confirm-gate code { font-family: var(--font-editor); font-weight: 600; color: var(--color-error); }
+  .confirm-foot { display: flex; gap: 10px; padding: 13px 18px; border-top: 1px solid var(--cairn-card-border); }
+  .confirm-foot .sp { flex: 1 1 auto; }
+  .btn-danger { font: inherit; font-size: .85rem; font-weight: 500; border-radius: var(--radius-field); padding: 8px 16px; cursor: pointer; border: 1px solid transparent; background: var(--color-error); color: #fff; }
+  .btn-danger[disabled] { opacity: .45; cursor: not-allowed; }
+
+  /* ============================================================= */
+  /* HERO FIELD (side panel) + GALLERY component                     */
+  /* ============================================================= */
+  .sidepanel { width: 100%; max-width: 340px; background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: var(--radius-box); box-shadow: var(--cairn-shadow); padding: 16px; font-family: var(--font-body); color: var(--color-base-content); }
+  .sp-eyebrow { font-size: .6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--color-muted); margin-bottom: 12px; }
+  .sp-fld { margin-bottom: 14px; }
+  .sp-fld > .lbl { font-size: .8rem; font-weight: 500; display: block; margin-bottom: 5px; }
+  .hero-slot { border: 1px solid var(--cairn-card-border); border-radius: var(--radius-field); overflow: hidden; }
+  .hero-img { aspect-ratio: 16/9; position: relative; background: linear-gradient(135deg, #b9cfe0, #6f96b8); }
+  .hero-img .swap { position: absolute; right: 7px; top: 7px; font: 600 .68rem/1 var(--font-body); background: rgba(255,255,255,.92); color: #333; border: 0; border-radius: .375rem; padding: 5px 8px; cursor: pointer; display: inline-flex; gap: 5px; align-items: center; }
+  .hero-img .swap svg { width: 12px; height: 12px; }
+  .hero-cap { padding: 8px 10px; font-size: .72rem; color: var(--color-muted); font-family: var(--font-editor); display: flex; justify-content: space-between; gap: 8px; }
+  .hero-empty { aspect-ratio: 16/9; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: var(--color-muted); cursor: pointer; background: color-mix(in oklab, var(--color-primary) 3%, var(--color-base-200)); }
+  .hero-empty svg { width: 26px; height: 26px; opacity: .7; }
+  .hero-empty .t { font-size: .8rem; font-weight: 500; color: var(--color-base-content); }
+  .id-in.sm { padding: 7px 9px; font-size: .82rem; }
+
+  .gallery-card { width: 100%; max-width: 720px; background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: var(--radius-box); box-shadow: var(--cairn-shadow); overflow: hidden; font-family: var(--font-body); color: var(--color-base-content); }
+  .gc-head { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--cairn-card-border); }
+  .gc-head .pk-eyebrow { font-size: .6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--color-muted); }
+  .gc-head .pk-title { font-family: var(--font-display); font-size: 1.0625rem; font-weight: 700; }
+  .gc-tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; padding: 16px 18px; }
+  .gtile { border: 1px solid var(--cairn-card-border); border-radius: var(--radius-field); overflow: hidden; background: var(--color-base-100); }
+  .gtile-img { aspect-ratio: 16/10; position: relative; }
+  .gtile-img .handle { position: absolute; left: 7px; top: 7px; width: 24px; height: 24px; border-radius: 6px; background: rgba(255,255,255,.9); display: inline-flex; align-items: center; justify-content: center; color: #555; cursor: grab; }
+  .gtile-img .handle svg { width: 13px; height: 13px; }
+  .gtile-img .ord { position: absolute; right: 7px; top: 7px; font: 700 .62rem/1 var(--font-body); background: rgba(0,0,0,.6); color: #fff; border-radius: 5px; padding: 3px 6px; }
+  .gtile-fields { padding: 9px 10px; display: flex; flex-direction: column; gap: 7px; }
+  .gtile-fields .mini-lbl { font-size: .64rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--color-muted); margin-bottom: 2px; display: block; }
+  .gtile-fields .id-in { font-size: .78rem; padding: 6px 8px; }
+  .gtile-fields .id-in.alt { font-family: var(--font-body); }
+  .gtile-fields .field-noalt { border-color: color-mix(in oklab, var(--color-warning) 55%, var(--cairn-card-border)); }
+  .gtile-add { border: 1px dashed color-mix(in oklab, var(--color-primary) 40%, var(--cairn-card-border)); border-radius: var(--radius-field); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: var(--color-primary); cursor: pointer; min-height: 130px; background: color-mix(in oklab, var(--color-primary) 4%, transparent); }
+  .gtile-add svg { width: 24px; height: 24px; }
+  .gtile-add span { font-size: .78rem; font-weight: 500; }
+
+  /* ============================================================= */
+  /* FOCAL POINT / CROP                                              */
+  /* ============================================================= */
+  .focal { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+  .focal-stage { position: relative; border-radius: var(--radius-box); overflow: hidden; aspect-ratio: 3/2; background: linear-gradient(135deg, #c98f57 0%, #7a4a2a 55%, #3f2a1a 100%); cursor: crosshair; }
+  .focal-stage .subject { position: absolute; left: 64%; top: 34%; width: 56px; height: 56px; border-radius: 50%; transform: translate(-50%,-50%); background: radial-gradient(circle at 40% 35%, #f2d9b8, #c98f57 70%); box-shadow: 0 2px 14px rgba(0,0,0,.3); }
+  .focal-dot { position: absolute; left: 64%; top: 34%; width: 26px; height: 26px; transform: translate(-50%,-50%); border-radius: 50%; border: 2.5px solid #fff; box-shadow: 0 0 0 2px rgba(0,0,0,.35), 0 2px 8px rgba(0,0,0,.4); cursor: grab; }
+  .focal-dot::after { content: ""; position: absolute; inset: 9px; border-radius: 50%; background: #fff; }
+  .focal-grid-line { position: absolute; background: rgba(255,255,255,.28); }
+  .focal-cap { font-size: .74rem; color: var(--color-muted); margin-top: 8px; }
+  .crop-previews { display: flex; flex-direction: column; gap: 12px; }
+  .crop-row { display: flex; align-items: center; gap: 12px; }
+  .crop-frame { border-radius: .5rem; overflow: hidden; flex: none; border: 1px solid var(--cairn-card-border); position: relative; }
+  .crop-frame .inner { position: absolute; inset: 0; background-image: linear-gradient(135deg, #c98f57 0%, #7a4a2a 55%, #3f2a1a 100%); background-size: 240% 240%; }
+  .crop-label { font-size: .78rem; }
+  .crop-label b { font-weight: 600; }
+  .crop-label .d { color: var(--color-muted); font-size: .72rem; }
+
+  /* ============================================================= */
+  /* A11Y panel                                                     */
+  /* ============================================================= */
+  .a11y { font-family: var(--font-body); color: var(--color-base-content); background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: var(--radius-box); box-shadow: var(--cairn-shadow); padding: 22px 24px; max-width: 880px; }
+  .a11y h3 { font-family: var(--font-display); font-size: 1.15rem; margin: 0 0 4px; }
+  .a11y h4 { font-size: .82rem; text-transform: uppercase; letter-spacing: .06em; color: var(--color-muted); margin: 18px 0 8px; }
+  .a11y p { font-size: .85rem; line-height: 1.6; color: var(--color-base-content); margin: 0 0 8px; max-width: 70ch; }
+  .a11y .keymap { width: 100%; border-collapse: collapse; font-size: .82rem; }
+  .a11y .keymap td { padding: 6px 10px; border-bottom: 1px solid color-mix(in oklab, var(--cairn-card-border) 70%, transparent); vertical-align: top; }
+  .a11y .keymap td:first-child { white-space: nowrap; width: 1%; }
+  .a11y .keymap kbd { font-family: var(--font-editor); font-size: .7rem; border: 1px solid var(--cairn-card-border); border-bottom-width: 2px; border-radius: .3rem; padding: 1px 6px; background: var(--color-base-200); }
+  .a11y ol { font-size: .85rem; line-height: 1.7; padding-left: 20px; margin: 0; max-width: 74ch; }
+  .a11y ol code, .a11y p code { font-family: var(--font-editor); font-size: .8rem; background: var(--color-base-200); padding: 0 4px; border-radius: 3px; }
+  .a11y .narr { border-left: 3px solid color-mix(in oklab, var(--color-primary) 55%, transparent); background: color-mix(in oklab, var(--color-primary) 5%, transparent); border-radius: 0 .5rem .5rem 0; padding: 11px 14px; font-size: .82rem; line-height: 1.6; margin: 0 0 8px; }
+  .a11y .narr b { color: var(--color-primary); }
+</style>
+</head>
+<body>
+
+<div class="mock-label" style="font-size:15px;padding-top:30px">Media management &mdash; Direction B: the unified command surface</div>
+<div class="mock-note">
+  One insert entry point, routed by intent. The author types into a <b>command surface</b> (a
+  combobox over a listbox) that filters across three lifecycle panes at once: <b>Stored files</b>
+  (the R2-backed library), <b>Embed</b> (paste a URL, oEmbed), and <b>Icon</b> (curated design
+  tokens). It opens three ways that all land on the same surface: <b>slash</b> at the caret, the
+  <b>Cmd/Ctrl+K palette</b>, and a <b>visible toolbar Insert button</b>. The button is the rule
+  that keeps a keyboard-first surface reachable: a hidden affordance strands the non-technical
+  author, so the palette only ever shadows something visible. Locked to Warm Stone; built light,
+  with dark intent noted. Screens 2 and 9 are live.
+</div>
+<div class="mock-toc">
+  1 &middot; <a href="#s1">The three doors into one surface</a> &nbsp;&bull;&nbsp;
+  2 &middot; <a href="#s2">The command surface (live)</a> &nbsp;&bull;&nbsp;
+  3 &middot; <a href="#s3">Insert detail: alt + name at insert</a> &nbsp;&bull;&nbsp;
+  4 &middot; <a href="#s4">Upload with no dead interval</a> &nbsp;&bull;&nbsp;
+  5 &middot; <a href="#s5">Dedup on upload</a> &nbsp;&bull;&nbsp;
+  6 &middot; <a href="#s6">Embed + Icon panes</a> &nbsp;&bull;&nbsp;
+  7 &middot; <a href="#s7">Hero field + gallery</a> &nbsp;&bull;&nbsp;
+  8 &middot; <a href="#s8">Library, where-used, safe delete</a> &nbsp;&bull;&nbsp;
+  9 &middot; <a href="#s9">Focal point / crop (live)</a> &nbsp;&bull;&nbsp;
+  10 &middot; <a href="#s10">Empty + large library</a> &nbsp;&bull;&nbsp;
+  11 &middot; <a href="#s11">Accessibility</a> &nbsp;&bull;&nbsp;
+  12 &middot; <a href="#s12">Dark</a>
+</div>
+
+<!-- ============================================================ -->
+<!-- SCREEN 1: THE THREE DOORS                                     -->
+<!-- ============================================================ -->
+<div class="mock-label" id="s1">1 &middot; Three doors, one surface &mdash; the fluent path and the visible fallback</div>
+<div class="mock-note">
+  The differentiator <b>(5e, reuse)</b> begins here: there is one place to insert anything. The
+  editor toolbar carries a real, labeled <b>Insert</b> button (with its <code>/</code> cue), so a
+  novice never has to know the shortcut. The same surface opens from a slash typed at the caret and
+  from the Cmd/Ctrl+K command palette's "Insert media" command. The author picks by intent; the
+  system routes to stored, embed, or icon.
+</div>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="ground">
+    <div class="band">
+      <div class="bnd-cluster">
+        <button class="bnd-sq" aria-label="Open menu"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
+        <nav aria-label="Breadcrumb" class="crumb"><a>Posts</a><span class="crumb-sep">/</span><span class="crumb-here">First melt on the lake loop</span></nav>
+      </div>
+      <div class="bnd-status">
+        <span class="badge badge-ghost badge-sm">Edited</span>
+        <span class="savestate"><span class="dot"></span>Unsaved changes</span>
+      </div>
+      <div class="grow"></div>
+      <div class="bnd-cluster" style="gap:6px">
+        <button class="bnd-btn"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M15 3v18"/></svg>Details</button>
+        <div class="bnd-div" aria-hidden="true"></div>
+        <button class="btn btn-outline btn-sm">Publish</button>
+        <button class="btn btn-primary btn-sm">Save</button>
+      </div>
+    </div>
+    <main class="page">
+      <div class="col">
+        <div class="ttl-wrap"><div class="ttl">First melt on the lake loop</div></div>
+        <div class="card-ed">
+          <div class="strip">
+            <button class="tb" aria-label="Bold (Ctrl+B)" title="Bold (Ctrl+B)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8"/></svg></button>
+            <button class="tb" aria-label="Italic (Ctrl+I)" title="Italic (Ctrl+I)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 4h-9"/><path d="M14 20H5"/><path d="M15 4 9 20"/></svg></button>
+            <div class="tdiv" aria-hidden="true"></div>
+            <button class="tb" aria-label="Bulleted list" title="Bulleted list"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg></button>
+            <button class="tb" aria-label="Quote" title="Quote"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1 1 1 0 0 0 1 1 4 4 0 0 0 4-4V5a2 2 0 0 0-2-2z"/><path d="M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1 1 1 0 0 0 1 1 4 4 0 0 0 4-4V5a2 2 0 0 0-2-2z"/></svg></button>
+            <div class="tdiv" aria-hidden="true"></div>
+            <!-- THE VISIBLE INSERT BUTTON: labeled, primary-tinted, with the slash cue. This is the
+                 non-technical-author fallback that the keyboard surface shadows. -->
+            <button class="tb tb-insert" aria-haspopup="dialog" aria-label="Insert media or a component">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+              Insert <span class="kcue" aria-hidden="true">/</span>
+            </button>
+            <button class="tb" aria-label="Web link (Ctrl+K)" title="Web link (Ctrl+K)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
+            <div class="grow"></div>
+            <span class="seg"><button aria-pressed="true">Write</button><button aria-pressed="false">Preview</button></span>
+          </div>
+          <div class="ms">
+            <div class="ln"><span class="h2"><span class="mk">##</span> First melt on the lake loop</span></div>
+            <div class="ln gap"></div>
+            <div class="ln">The access road opened this morning. Here is what the south shore looked like</div>
+            <div class="ln">at golden hour, with the new snow still holding on the far ridge.</div>
+            <div class="ln gap"></div>
+            <!-- the caret, and a freshly typed slash, mid-line: the fluent path -->
+            <div class="ln"><span class="slashcue">/</span><span class="caret" aria-hidden="true"></span> &nbsp;<span class="mk" style="font-style:italic;font-size:.82rem">type to insert a photo, a video, or an icon</span></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div></div>
+<div class="mock-note" style="padding-top:2px">
+  Three entry points, written once in the build: the toolbar button's click handler, the editor's
+  <code>/</code>-at-line-start keymap, and the palette command all call <code>openInsertSurface()</code>.
+  The slash that opened it is consumed (deleted) when the surface commits, so the markdown is never
+  littered with a stray <code>/</code>.
+</div>
+
+<!-- ============================================================ -->
+<!-- SCREEN 2: THE COMMAND SURFACE (LIVE)                          -->
+<!-- ============================================================ -->
+<div class="mock-label" id="s2">2 &middot; The command surface &mdash; type to filter across panes (live)</div>
+<div class="mock-note">
+  The heart of the direction. One combobox; the typed query filters every pane at once and the
+  result list groups by lifecycle. <b>Stored</b> leads with the upload affordance (the visible
+  backbone) and then matching assets; search runs over <b>filename, alt, and caption</b>. The scope
+  chips above narrow to one pane (or stay on All). This panel is real: <b>type in the box</b>
+  ("shoe", "trail", "winter", "youtube", "snow"), and use <b>&uarr; &darr;</b> then <b>Enter</b> to
+  move and choose. The selected row is announced through the live region. <b>5d (where-used)</b> shows
+  inline as a "used in N" pill; <b>5b (alt)</b> shows as a "needs alt" flag right in the list.
+</div>
+<div class="screen"><div data-theme="cairn-admin">
+<div class="stage tall">
+  <div class="cs" role="dialog" aria-modal="true" aria-label="Insert media or a component" id="cs2-root">
+    <!-- COMBOBOX: input owns aria-expanded, aria-controls, aria-activedescendant -->
+    <div class="cs-input">
+      <span class="lead" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
+      <input id="cs2-q" type="text" role="combobox"
+             aria-expanded="true" aria-controls="cs2-listbox" aria-autocomplete="list"
+             aria-activedescendant="" aria-describedby="cs2-hint"
+             placeholder="Insert a photo, paste a video link, or pick an icon&hellip;" autocomplete="off" />
+      <span class="cs-esc" aria-hidden="true">Esc</span>
+    </div>
+    <!-- SCOPE TABS: a tablist that scopes the same query to one lifecycle. Keyboard: Ctrl+1/2/3. -->
+    <div class="cs-scopes" role="tablist" aria-label="Filter by kind">
+      <button class="cs-scope" role="tab" id="cs2-sc-all" aria-selected="true" data-scope="all" onclick="cs2.setScope('all')">All <span class="skey" aria-hidden="true">&middot;</span></button>
+      <button class="cs-scope" role="tab" aria-selected="false" data-scope="stored" onclick="cs2.setScope('stored')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg> Stored <span class="ct" id="cs2-ct-stored">12</span> <span class="skey" aria-hidden="true">1</span></button>
+      <button class="cs-scope" role="tab" aria-selected="false" data-scope="embed" onclick="cs2.setScope('embed')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10 8 6 4-6 4Z"/><rect x="2" y="4" width="20" height="16" rx="3"/></svg> Embed <span class="skey" aria-hidden="true">2</span></button>
+      <button class="cs-scope" role="tab" aria-selected="false" data-scope="icon" onclick="cs2.setScope('icon')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 7v10l8 5 8-5V7z"/></svg> Icon <span class="ct" id="cs2-ct-icon">6</span> <span class="skey" aria-hidden="true">3</span></button>
+    </div>
+    <!-- LISTBOX: built live by script. Sections are presentational; options carry role=option. -->
+    <div class="cs-results" id="cs2-listbox" role="listbox" aria-label="Results"></div>
+    <div class="cs-foot">
+      <span class="legend"><kbd>&uarr;</kbd><kbd>&darr;</kbd> move</span>
+      <span class="legend"><kbd>&#8629;</kbd> insert</span>
+      <span class="legend"><kbd>Tab</kbd> name &amp; alt</span>
+      <span class="legend"><kbd>Esc</kbd> close</span>
+      <span class="cs-live" id="cs2-hint">Type to filter. Photos, links, and icons together.</span>
+    </div>
+    <!-- the polite live region that narrates result counts and the active option -->
+    <div class="sr-only" role="status" aria-live="polite" id="cs2-live"></div>
+  </div>
+</div>
+</div></div>
+<div class="mock-note" style="padding-top:2px">
+  The combobox is the WAI-ARIA editable-combobox-with-listbox pattern. Focus never leaves the input;
+  <code>aria-activedescendant</code> points at the highlighted option, so a screen reader announces
+  the moved-to row without a focus jump. The icon scope swaps the listbox for a roving-grid of cells
+  (a <code>grid</code>), since a flat list of glyphs reads poorly; arrows move in two dimensions
+  there. Counts update an <code>aria-live="polite"</code> status, never an interruption.
+</div>
+
+<!-- ============================================================ -->
+<!-- SCREEN 3: INSERT DETAIL — ALT + NAME AT INSERT                -->
+<!-- ============================================================ -->
+<div class="mock-label" id="s3">3 &middot; The insert step &mdash; alt text and name captured at insert <span style="text-transform:none;font-weight:400;color:#666">(differentiators 5b, 5c)</span></div>
+<div class="mock-note">
+  Picking a stored file (or finishing an upload) lands on one compact step <b>inside the same
+  surface</b>, reached by <kbd style="font:inherit">Enter</kbd> or <kbd style="font:inherit">Tab</kbd>.
+  This is where the keyboard-first flow meets the two hardest-to-skip fields. <b>(5b)</b> Alt text is
+  required, with an explicit <b>Decorative</b> escape hatch: you cannot insert until you choose one.
+  <b>(5c)</b> A pasted screenshot is proposed a readable name from the post slug, with one rename
+  field, so a bare <code>image.png</code> never lands. The preview matches what will render.
+</div>
+<div class="screen"><div data-theme="cairn-admin">
+<div class="stage">
+  <div class="cs wide" role="dialog" aria-modal="true" aria-label="Insert image: blue running shoes">
+    <div class="cs-input" style="border-bottom:1px solid var(--cairn-card-border)">
+      <button class="bnd-sq" aria-label="Back to results" style="margin:-4px 0 -4px -6px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+      <div style="flex:1 1 auto"><div class="id-eyebrow">Insert &rsaquo; Stored image</div><div style="font-family:var(--font-display);font-size:1.0625rem;font-weight:700;line-height:1.2">Place this image</div></div>
+      <span class="cs-esc" aria-hidden="true">Esc</span>
+    </div>
+    <div class="id2">
+      <div class="id2-form">
+        <!-- NAME: proposed from the post slug, one rename field. Pasted as "image.png", now readable. -->
+        <div class="id-fld">
+          <label class="id-lbl" for="id-name">Name <span class="id-help" style="font-weight:400">&middot; proposed from this post</span></label>
+          <div class="id-name-row">
+            <input class="id-in" id="id-name" value="first-melt-lake-loop-shore" />
+            <span class="id-ext">.webp</span>
+          </div>
+          <span class="id-help">Pasted as <code style="font-family:var(--font-editor)">image.png</code>. We named it from the post so the library stays readable.</span>
+        </div>
+        <!-- ALT: required OR decorative, an explicit choice. Insert is gated until one is picked. -->
+        <div class="id-fld">
+          <span class="id-lbl">Alt text <span class="req" aria-hidden="true">*</span></span>
+          <div class="id-altchoice" role="radiogroup" aria-label="Alt text">
+            <label class="id-altopt" data-on="true"><input type="radio" name="alt3" checked /><span><span class="t">Describe it</span><br><span class="s">Read aloud to people using a screen reader.</span></span></label>
+            <label class="id-altopt"><input type="radio" name="alt3" /><span><span class="t">Decorative</span><br><span class="s">Purely visual. Skipped by screen readers.</span></span></label>
+          </div>
+          <input class="id-in" style="margin-top:8px" value="The south shore of the lake at golden hour, new snow on the far ridge" aria-label="Alt text description" />
+          <span class="id-help">Travels with the asset and fills in every place you use it. You can override it per use.</span>
+        </div>
+        <div class="id-fld">
+          <label class="id-lbl" for="id-cap">Caption <span class="id-help" style="font-weight:400">&middot; optional, shown under the image</span></label>
+          <input class="id-in" id="id-cap" placeholder="Add a caption&hellip;" />
+        </div>
+      </div>
+      <div class="id2-prev">
+        <div class="id-eyebrow">Preview</div>
+        <div class="id-prev-frame">
+          <div class="id-prev-img" role="img" aria-label="Preview of the image being inserted"></div>
+          <div class="id-prev-cap">Inserts as<br><b>![&hellip;](media:first-melt-lake-loop-shore.a1b2c3d4)</b></div>
+        </div>
+        <p class="id-help" style="margin:0">The alt you write goes inside the brackets. Empty brackets would mean "decorative"; we never leave them blank by accident.</p>
+      </div>
+    </div>
+    <div class="cs-actions">
+      <span class="cs-hint">Stored in your library, referenced by <code>media:</code>. One original, sized on the fly.</span>
+      <span class="sp"></span>
+      <button class="btng">Cancel</button>
+      <button class="btnp">Insert image</button>
+    </div>
+  </div>
+</div>
+</div></div>
+
+<!-- ============================================================ -->
+<!-- SCREEN 4: UPLOAD WITH NO DEAD INTERVAL                        -->
+<!-- ============================================================ -->
+<div class="mock-label" id="s4">4 &middot; Upload with no dead interval <span style="text-transform:none;font-weight:400;color:#666">(differentiator 5a)</span></div>
+<div class="mock-note">
+  Drop, paste, or choose a file and an <b>optimistic placeholder lands at the caret immediately</b>,
+  with determinate progress. No silent gap between the gesture and a visible result. On failure the
+  same placeholder turns into an inline error with a <b>Retry</b>, never a silent drop. Three states,
+  in the manuscript where the image will live.
+</div>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="ground">
+    <main class="page" style="padding-top:1.25rem">
+      <div class="col">
+        <div class="card-ed">
+          <div class="strip">
+            <button class="tb tb-insert" aria-label="Insert media or a component"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg> Insert <span class="kcue" aria-hidden="true">/</span></button>
+            <div class="grow"></div>
+            <span class="seg"><button aria-pressed="true">Write</button><button aria-pressed="false">Preview</button></span>
+          </div>
+          <div class="ms" style="min-height:auto;padding-bottom:1.5rem">
+            <div class="ln">Here is the shot from this morning.</div>
+            <div class="ln gap"></div>
+            <!-- STATE A: uploading, determinate -->
+            <div class="ln" style="min-height:auto;margin:4px 0">
+              <span class="ph" role="status" aria-live="polite">
+                <span class="ph-thumb ph-shimmer" aria-hidden="true"></span>
+                <span style="display:flex;flex-direction:column;gap:5px">
+                  <span><b style="color:var(--color-base-content);font-weight:600">first-melt-lake-loop-shore.webp</b> &middot; uploading 68%</span>
+                  <span class="ph-bar" aria-hidden="true"><i style="width:68%"></i></span>
+                </span>
+              </span>
+            </div>
+            <div class="ln gap"></div>
+            <div class="ln" style="color:var(--color-muted);font-style:italic;font-size:.85rem">&hellip; and the trail map for anyone driving up:</div>
+            <div class="ln gap"></div>
+            <!-- STATE B: failed, inline retry -->
+            <div class="ln" style="min-height:auto;margin:4px 0">
+              <span class="ph err" role="alert">
+                <span class="ph-thumb" aria-hidden="true"></span>
+                <span style="display:flex;flex-direction:column;gap:3px">
+                  <span><b style="font-weight:600">trail-map.pdf</b> &middot; couldn't upload</span>
+                  <span style="font-size:.72rem">The file is 24 MB. The limit is 20 MB.</span>
+                </span>
+                <button class="ph-retry" type="button" style="margin-left:6px">Retry</button>
+                <button class="ph-retry" type="button" style="border-color:transparent;color:var(--color-muted)">Remove</button>
+              </span>
+            </div>
+            <div class="ln gap"></div>
+            <!-- STATE C: committed -->
+            <div class="ln" style="min-height:auto;margin:4px 0">
+              <span class="ph done" role="status">
+                <span class="ph-thumb" aria-hidden="true"></span>
+                <span><b style="font-weight:600">hero-winter.jpg</b> &middot; added to your library</span>
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-left:4px"><path d="M20 6 9 17l-5-5"/></svg>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div></div>
+<div class="mock-note" style="padding-top:2px">
+  The placeholder is a real decoration widget at the caret offset, swapped for the committed
+  <code>![alt](media:&hellip;)</code> on success. Each state maps to a log event
+  (<code>media.uploaded</code>, <code>media.upload_failed</code> with a reason), so "my image didn't
+  save" is greppable. The uploading row is an <code>aria-live="polite"</code> status; the failure is
+  <code>role="alert"</code> so it interrupts. Progress percentages update the text, throttled, not on
+  every frame.
+</div>
+
+<!-- ============================================================ -->
+<!-- SCREEN 5: DEDUP ON UPLOAD                                     -->
+<!-- ============================================================ -->
+<div class="mock-label" id="s5">5 &middot; Dedup on upload &mdash; identical bytes resolve to the existing asset <span style="text-transform:none;font-weight:400;color:#666">(differentiator 5e)</span></div>
+<div class="mock-note">
+  Upload a file whose bytes already exist and cairn does not make a duplicate. The content hash
+  matches, so the surface resolves to the <b>existing</b> asset and says so. The author still gets the
+  alt and caption step, now pre-filled from the asset they are reusing. This is the good silence the
+  research calls for: no <code>photo-2.jpg</code> sprawl, no silent overwrite of different bytes.
+</div>
+<div class="screen"><div data-theme="cairn-admin">
+<div class="stage">
+  <div class="cs" role="dialog" aria-modal="true" aria-label="Reuse existing image" style="max-width:560px">
+    <div class="cs-input" style="border-bottom:1px solid var(--cairn-card-border)">
+      <span class="lead" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.2-8.5"/><path d="M21 3v6h-6"/></svg></span>
+      <div style="flex:1 1 auto"><div class="id-eyebrow">Already in your library</div><div style="font-family:var(--font-display);font-size:1.0625rem;font-weight:700;line-height:1.2">This is the same image</div></div>
+      <span class="cs-esc" aria-hidden="true">Esc</span>
+    </div>
+    <div style="padding:16px 18px">
+      <div class="id-dupe">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        <div>You uploaded <b>shoes-final-FINAL.jpg</b>. Its contents match
+          <b>blue-running-shoes.jpg</b>, already in your library and used in 3 entries. We will reuse
+          that one instead of making a copy.</div>
+      </div>
+      <div class="opt" aria-selected="true" style="margin-top:14px;cursor:default">
+        <span class="opt-thumb" aria-hidden="true" style="background:linear-gradient(135deg,#6f9fd0,#3f6da8)"><span class="badge-type">JPG</span></span>
+        <span class="opt-main">
+          <span class="opt-name">blue-running-shoes.jpg</span>
+          <span class="opt-meta"><span>1600&times;1067</span><span class="sep">&middot;</span><span>248 KB</span><span class="sep">&middot;</span><span>by Mara, Apr 2</span></span>
+        </span>
+        <span class="opt-use">Used in 3</span>
+      </div>
+    </div>
+    <div class="cs-actions">
+      <span class="cs-hint">Reusing keeps one asset. Replace-in-place updates all 3 entries at once.</span>
+      <span class="sp"></span>
+      <button class="btng">Upload as new anyway</button>
+      <button class="btnp">Reuse this image</button>
+    </div>
+  </div>
+</div>
+</div></div>
+
+<!-- ============================================================ -->
+<!-- SCREEN 6: EMBED + ICON PANES                                  -->
+<!-- ============================================================ -->
+<div class="mock-label" id="s6">6 &middot; The other two panes &mdash; Embed (paste a URL) and Icon (pick a token)</div>
+<div class="mock-note">
+  The same surface, scoped. <b>Embed</b>: paste a video or post URL; oEmbed resolves the provider and
+  shows a confirm card; nothing is stored, the content holds a directive. <b>Icon</b>: the curated
+  design-token set, as a roving grid; never an upload. Both sit one keystroke from the photo flow, so
+  "insert a video" lives beside "insert a photo" without the author naming a bucket.
+</div>
+<div class="screen"><div data-theme="cairn-admin">
+<div class="two-up">
+  <!-- EMBED -->
+  <div class="stage tight">
+    <div class="cs" role="dialog" aria-modal="true" aria-label="Insert an embed" style="max-width:none">
+      <div class="cs-input">
+        <span class="lead" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10 8 6 4-6 4Z"/><rect x="2" y="4" width="20" height="16" rx="3"/></svg></span>
+        <input type="text" role="combobox" aria-expanded="true" aria-controls="cs6-emb" aria-label="Paste a link to embed" value="youtube.com/watch?v=trail-cam-2026" />
+        <span class="cs-esc" aria-hidden="true">Esc</span>
+      </div>
+      <div class="cs-scopes" role="tablist" aria-label="Filter by kind">
+        <button class="cs-scope" role="tab" aria-selected="false">All</button>
+        <button class="cs-scope" role="tab" aria-selected="false">Stored</button>
+        <button class="cs-scope" role="tab" aria-selected="true">Embed</button>
+        <button class="cs-scope" role="tab" aria-selected="false">Icon</button>
+      </div>
+      <div class="cs-results" id="cs6-emb" role="listbox" aria-label="Embed result" style="min-height:auto">
+        <div class="cs-sect">Resolved <span class="more">YouTube</span></div>
+        <div class="opt" role="option" aria-selected="true">
+          <span class="opt-thumb" aria-hidden="true" style="background:linear-gradient(135deg,#8a8f96,#43484f)"><span class="badge-type" style="background:#c4302b">▶</span></span>
+          <span class="opt-main">
+            <span class="opt-name">Trail cam: the first melt</span>
+            <span class="opt-meta"><span>YouTube</span><span class="sep">&middot;</span><span>4:12</span><span class="sep">&middot;</span><span>resolved via oEmbed</span></span>
+          </span>
+          <span class="opt-go" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+        </div>
+        <div style="padding:10px 12px;font-size:.74rem;color:var(--color-muted)">
+          Inserts as <code style="font-family:var(--font-editor)">:::embed{provider=youtube id=trail-cam-2026}</code>. Stored as a reference, not a file.
+        </div>
+      </div>
+      <div class="cs-actions" style="padding:11px 16px">
+        <span class="cs-hint">No oEmbed match falls back to a link card.</span>
+        <span class="sp"></span><button class="btnp">Insert embed</button>
+      </div>
+    </div>
+  </div>
+  <!-- ICON -->
+  <div class="stage tight">
+    <div class="cs" role="dialog" aria-modal="true" aria-label="Insert an icon" style="max-width:none">
+      <div class="cs-input">
+        <span class="lead" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
+        <input type="text" role="combobox" aria-expanded="true" aria-controls="cs6-ico" aria-label="Search icons" value="snow" />
+        <span class="cs-esc" aria-hidden="true">Esc</span>
+      </div>
+      <div class="cs-scopes" role="tablist" aria-label="Filter by kind">
+        <button class="cs-scope" role="tab" aria-selected="false">All</button>
+        <button class="cs-scope" role="tab" aria-selected="false">Stored</button>
+        <button class="cs-scope" role="tab" aria-selected="false">Embed</button>
+        <button class="cs-scope" role="tab" aria-selected="true">Icon</button>
+      </div>
+      <div class="cs-results" style="min-height:auto">
+        <div class="cs-sect">Design-system icons <span class="more">curated set</span></div>
+        <!-- a roving 2-D grid; one cell is the active descendant -->
+        <div class="icon-grid" role="grid" aria-label="Icons matching snow">
+          <div class="icon-cell" role="gridcell" aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20m-3.5-6.5L5.5 18.5m13-0L5.5 5.5"/></svg><span>snowflake</span></div>
+          <div class="icon-cell" role="gridcell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 17.6A5 5 0 0 0 18 8h-1.3A8 8 0 1 0 4 16.2"/><path d="M8 19v2M8 13v2M16 19v2M16 13v2M12 21v2M12 15v2"/></svg><span>snow</span></div>
+          <div class="icon-cell" role="gridcell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 2 1.9 5.8a2 2 0 0 0 1.3 1.3L17 11l-5.8 1.9a2 2 0 0 0-1.3 1.3L8 20l-1.9-5.8a2 2 0 0 0-1.3-1.3L-1 11l5.8-1.9a2 2 0 0 0 1.3-1.3z" transform="translate(4 1)"/></svg><span>sparkle</span></div>
+          <div class="icon-cell" role="gridcell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h2m16 0h2M12 2v2m0 16v2M5 5l1.5 1.5M17.5 17.5 19 19"/><circle cx="12" cy="12" r="4"/></svg><span>cold</span></div>
+        </div>
+        <div style="padding:8px 12px;font-size:.74rem;color:var(--color-muted)">
+          Inserts as <code style="font-family:var(--font-editor)">:icon[snowflake]</code>. A design token, recolored by the theme, never a file.
+        </div>
+      </div>
+      <div class="cs-actions" style="padding:11px 16px">
+        <span class="cs-hint">Custom brand icons live in the site's design system, not here.</span>
+        <span class="sp"></span><button class="btnp">Insert icon</button>
+      </div>
+    </div>
+  </div>
+</div>
+</div></div>
+
+<!-- ============================================================ -->
+<!-- SCREEN 7: HERO FIELD + GALLERY                                -->
+<!-- ============================================================ -->
+<div class="mock-label" id="s7">7 &middot; The other two placements &mdash; the hero field and the gallery component</div>
+<div class="mock-note">
+  One asset, three doors. The inline <code>![alt](media:&hellip;)</code> is screens 3 and 4. Here are
+  the other two. The <b>hero</b> is a frontmatter field in the Details side panel, with its own alt
+  and a live preview. The <b>gallery</b> is a component whose ordered tiles each keep <b>caption and
+  alt as separate fields</b>. Both open the same command surface to add or swap an image.
+</div>
+<div class="screen"><div data-theme="cairn-admin">
+<div class="stage tall" style="gap:22px;flex-wrap:wrap;align-items:flex-start">
+  <!-- HERO FIELD -->
+  <div class="sidepanel">
+    <div class="sp-eyebrow">Entry details</div>
+    <div class="sp-fld">
+      <span class="lbl">Hero image</span>
+      <div class="hero-slot">
+        <div class="hero-img" role="img" aria-label="Hero: ski tracks across fresh snow at dawn">
+          <button class="swap" type="button" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.2-8.5"/><path d="M21 3v6h-6"/></svg> Replace</button>
+        </div>
+        <div class="hero-cap"><span>hero-winter.jpg</span><span>1920&times;1080</span></div>
+      </div>
+    </div>
+    <div class="sp-fld">
+      <label class="lbl" for="hero-alt">Hero alt text <span class="req" aria-hidden="true">*</span></label>
+      <input class="id-in sm" id="hero-alt" value="Ski tracks across fresh snow at dawn" />
+      <span class="id-help" style="margin-top:4px;display:block">Defaults from the asset. Edit it for this page.</span>
+    </div>
+    <div class="sp-fld" style="margin-bottom:0">
+      <span class="lbl">Show date</span>
+      <label style="display:flex;gap:8px;align-items:center;font-size:.82rem;color:var(--color-base-content)"><input type="checkbox" checked style="accent-color:var(--color-primary)"> Display the published date</label>
+    </div>
+  </div>
+
+  <!-- GALLERY COMPONENT -->
+  <div class="gallery-card">
+    <div class="gc-head">
+      <div style="flex:1 1 auto"><div class="pk-eyebrow">Insert &rsaquo; Layout</div><div class="pk-title">Gallery</div></div>
+      <span class="badge badge-ghost badge-sm">3 images</span>
+    </div>
+    <div class="gc-tiles">
+      <!-- tile 1: caption + alt separate -->
+      <div class="gtile">
+        <div class="gtile-img" style="background:linear-gradient(135deg,#cf9a6a,#8a5430)"><span class="handle" aria-label="Reorder, image 1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg></span><span class="ord">1</span></div>
+        <div class="gtile-fields">
+          <div><span class="mini-lbl">Caption</span><input class="id-in" value="The south shore at golden hour" /></div>
+          <div><span class="mini-lbl">Alt text <span class="req" aria-hidden="true">*</span></span><input class="id-in alt" value="Low sun over the frozen south shore" /></div>
+        </div>
+      </div>
+      <!-- tile 2: alt empty, flagged -->
+      <div class="gtile">
+        <div class="gtile-img" style="background:linear-gradient(135deg,#9fbcd6,#5a82a8)"><span class="handle" aria-label="Reorder, image 2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg></span><span class="ord">2</span></div>
+        <div class="gtile-fields">
+          <div><span class="mini-lbl">Caption</span><input class="id-in" value="New snow on the far ridge" /></div>
+          <div><span class="mini-lbl" style="color:var(--color-warning)">Alt text needed <span class="req" aria-hidden="true">*</span></span><input class="id-in alt field-noalt" placeholder="Describe this image&hellip;" aria-invalid="true" /></div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:0 18px 18px"><div class="gtile-add" role="button" tabindex="0" aria-haspopup="dialog" style="min-height:64px;flex-direction:row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg><span>Add image &middot; opens the command surface</span></div></div>
+  </div>
+</div>
+</div></div>
+
+<!-- ============================================================ -->
+<!-- SCREEN 8: LIBRARY + WHERE-USED + SAFE DELETE                  -->
+<!-- ============================================================ -->
+<div class="mock-label" id="s8">8 &middot; The library, where-used, and safe delete <span style="text-transform:none;font-weight:400;color:#666">(differentiator 5d)</span></div>
+<div class="mock-note">
+  The full-page office view of stored files (the same assets the command surface searches). Each card
+  shows its usage pin: <b>used in N</b>, or <b>unused</b> for the orphan. Opening an asset shows the
+  detail with the exact entries that reference it (greppable from markdown-in-git). Deleting an
+  <b>in-use</b> asset is hard-confirmed and lists every entry; the author must type the name to
+  proceed. An unused asset deletes with a light confirm.
+</div>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="lib">
+    <div class="lib-head">
+      <div class="lib-h1">Media</div>
+      <div class="lib-sub">14 files &middot; 11.2 MB &middot; 1 unused</div>
+      <div class="grow"></div>
+      <button class="btnp" style="font-size:.8rem;padding:7px 13px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><path d="M12 5v14"/><path d="M5 12h14"/></svg>Upload</button>
+    </div>
+    <div class="lib-grid">
+      <div class="asset"><div class="asset-img" style="background:linear-gradient(135deg,#6f9fd0,#3f6da8)"><span class="usepin">Used in 3</span><span class="badge-type">JPG</span></div><div class="asset-body"><div class="asset-name">blue-running-shoes.jpg</div><div class="asset-meta">1600&times;1067 &middot; 248 KB</div></div></div>
+      <div class="asset"><div class="asset-img" style="background:linear-gradient(135deg,#cf9a6a,#8a5430)"><span class="usepin">Used in 2</span><span class="badge-type">JPG</span></div><div class="asset-body"><div class="asset-name">hero-winter.jpg</div><div class="asset-meta">1920&times;1080 &middot; 512 KB</div></div></div>
+      <div class="asset"><div class="asset-img" style="background:linear-gradient(135deg,#b6bcc4,#7a8089)"><span class="usepin orphan">Unused</span><span class="badge-type">PNG</span></div><div class="asset-body"><div class="asset-name" title="Screenshot 2026-06-15 at 14.02.png">Screenshot 2026-06-15 at 14.02.png</div><div class="asset-meta">1284&times;892 &middot; 410 KB</div><div class="asset-flag">No alt text</div></div></div>
+      <div class="asset"><div class="asset-img" style="background:linear-gradient(135deg,#a9876b,#5f4330);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v5h5"/></svg><span class="usepin">Used in 1</span><span class="badge-type">PDF</span></div><div class="asset-body"><div class="asset-name">trail-map.pdf</div><div class="asset-meta">PDF &middot; 1.1 MB</div></div></div>
+      <div class="asset"><div class="asset-img" style="background:linear-gradient(135deg,#c2a98f,#7c6147)"><span class="usepin orphan">Unused</span><span class="badge-type">HEIC</span></div><div class="asset-body"><div class="asset-name">IMG_4521.HEIC</div><div class="asset-meta">4032&times;3024 &middot; 3.8 MB</div><div class="asset-flag">No alt text</div></div></div>
+      <div class="asset"><div class="asset-img" style="background:linear-gradient(135deg,#9bbf9e,#5a8a64)"><span class="usepin">Used in 1</span><span class="badge-type">PNG</span></div><div class="asset-body"><div class="asset-name">image.png</div><div class="asset-meta">800&times;600 &middot; 92 KB</div></div></div>
+    </div>
+  </div>
+</div></div>
+
+<div class="mock-label" style="padding-top:6px">8b &middot; Asset detail &mdash; where it is used, and the lifecycle actions</div>
+<div class="screen"><div data-theme="cairn-admin">
+<div class="two-up" style="align-items:start">
+  <!-- detail / where-used -->
+  <div class="stage tight"><div class="detail">
+    <div class="detail-img" style="background:linear-gradient(135deg,#6f9fd0,#3f6da8)" role="img" aria-label="blue-running-shoes.jpg"></div>
+    <div class="detail-body">
+      <div class="detail-name">blue-running-shoes.jpg</div>
+      <dl class="detail-tbl">
+        <div class="r"><dt>Dimensions</dt><dd>1600 &times; 1067</dd></div>
+        <div class="r"><dt>Size</dt><dd>248 KB &middot; JPG</dd></div>
+        <div class="r"><dt>Alt text</dt><dd style="max-width:60%">Blue trail running shoes on a rock</dd></div>
+        <div class="r"><dt>Added</dt><dd>by Mara &middot; Apr 2, 2026</dd></div>
+        <div class="r"><dt>Reference</dt><dd style="font-family:var(--font-editor);font-size:.74rem">media:blue-running-shoes.a1b2c3d4</dd></div>
+      </dl>
+      <div class="detail-used">
+        <div class="h">Used in 3 entries</div>
+        <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> Best trail shoes for spring <span style="margin-left:auto;color:var(--color-muted);font-size:.72rem">Post</span></a>
+        <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> Gear we actually use <span style="margin-left:auto;color:var(--color-muted);font-size:.72rem">Post</span></a>
+        <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> About the shop <span style="margin-left:auto;color:var(--color-muted);font-size:.72rem">Page</span></a>
+      </div>
+      <div class="detail-acts">
+        <button class="det-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.2-8.5"/><path d="M21 3v6h-6"/></svg> Replace in place</button>
+        <button class="det-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Edit alt</button>
+        <button class="det-btn danger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg> Delete</button>
+      </div>
+      <p class="id-help" style="margin:10px 0 0">Replace-in-place swaps the bytes and updates all 3 entries at once. Editing alt here updates the default everywhere it is not overridden.</p>
+    </div>
+  </div></div>
+
+  <!-- delete confirm: in-use, hard gate -->
+  <div class="stage tight"><div class="confirm">
+    <div class="confirm-head">
+      <span class="confirm-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
+      <div><div class="confirm-title">This image is used in 3 entries</div><div class="confirm-sub">Deleting it will break the image in every entry below. git keeps the file in history, so this is recoverable, but the live pages break now.</div></div>
+    </div>
+    <div class="confirm-body">
+      <ul class="confirm-list">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> Best trail shoes for spring</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> Gear we actually use</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> About the shop</li>
+      </ul>
+      <label class="confirm-gate">Type <code>blue-running-shoes.jpg</code> to confirm<input class="id-in" placeholder="blue-running-shoes.jpg" aria-label="Type the filename to confirm deletion" /></label>
+    </div>
+    <div class="confirm-foot">
+      <button class="btng">Keep it</button>
+      <span class="sp"></span>
+      <button class="btn-danger" disabled>Delete anyway</button>
+    </div>
+  </div></div>
+</div>
+</div></div>
+<div class="mock-note" style="padding-top:2px">
+  The orphan (<code>hero-winter.jpg</code> in the brief, here also the unused screenshot and HEIC)
+  deletes with a one-line confirm because nothing references it. The where-used list and the orphan
+  flag both come from the same reverse index over committed markdown, built at publish time, not an
+  O(n&sup2;) live scan. Raw-HTML references are undetectable, so the confirm says "we found no uses",
+  not "this is definitely unused".
+</div>
+
+<!-- ============================================================ -->
+<!-- SCREEN 9: FOCAL POINT / CROP (LIVE)                           -->
+<!-- ============================================================ -->
+<div class="mock-label" id="s9">9 &middot; Focal point &mdash; the preview matches the rendered crop (live)</div>
+<div class="mock-note">
+  Set one point on the image; every crop respects it. The cautionary lesson from the research is that
+  the editor's preview must match what renders, so the crop frames here are driven by the <b>same
+  focal coordinates</b> as the dot. <b>Drag the dot</b> (or use arrow keys when it is focused) and the
+  three crop previews reframe live. The point persists on the asset and feeds Cloudflare Images at
+  delivery.
+</div>
+<div class="screen"><div data-theme="cairn-admin">
+<div class="stage">
+  <div class="cs" role="dialog" aria-modal="true" aria-label="Set the focal point" style="max-width:760px">
+    <div class="cs-input" style="border-bottom:1px solid var(--cairn-card-border)">
+      <div style="flex:1 1 auto"><div class="id-eyebrow">Stored image</div><div style="font-family:var(--font-display);font-size:1.0625rem;font-weight:700;line-height:1.2">Focal point</div></div>
+      <span class="cs-esc" aria-hidden="true">Esc</span>
+    </div>
+    <div style="padding:18px">
+      <div class="focal">
+        <div>
+          <div class="focal-stage" id="focal-stage" tabindex="0" role="application" aria-label="Drag to set the focal point. Arrow keys nudge.">
+            <div class="focal-grid-line" style="left:33.33%;top:0;width:1px;height:100%"></div>
+            <div class="focal-grid-line" style="left:66.66%;top:0;width:1px;height:100%"></div>
+            <div class="focal-grid-line" style="top:33.33%;left:0;height:1px;width:100%"></div>
+            <div class="focal-grid-line" style="top:66.66%;left:0;height:1px;width:100%"></div>
+            <div class="subject" id="focal-subject" aria-hidden="true"></div>
+            <div class="focal-dot" id="focal-dot" role="slider" aria-label="Focal point" aria-valuetext="64% from left, 34% from top" tabindex="0"></div>
+          </div>
+          <div class="focal-cap" id="focal-cap">Focal point: <b>64%</b> left, <b>34%</b> top. Delivered as <code style="font-family:var(--font-editor)">gravity=0.64x0.34</code>.</div>
+        </div>
+        <div class="crop-previews">
+          <div class="id-eyebrow" style="margin-bottom:2px">Crops follow the point</div>
+          <div class="crop-row">
+            <div class="crop-frame" id="cf-sq" style="width:74px;height:74px"><div class="inner" id="ci-sq"></div></div>
+            <div class="crop-label"><b>Square</b> &middot; 1:1 <span class="d">thumbnail, gallery tile</span></div>
+          </div>
+          <div class="crop-row">
+            <div class="crop-frame" id="cf-wide" style="width:128px;height:54px"><div class="inner" id="ci-wide"></div></div>
+            <div class="crop-label"><b>Wide</b> &middot; 21:9 <span class="d">hero banner</span></div>
+          </div>
+          <div class="crop-row">
+            <div class="crop-frame" id="cf-port" style="width:60px;height:80px"><div class="inner" id="ci-port"></div></div>
+            <div class="crop-label"><b>Portrait</b> &middot; 3:4 <span class="d">card, phone</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cs-actions">
+      <span class="cs-hint">One original, cropped on the fly. <code>gravity=auto</code> can find the subject for you.</span>
+      <span class="sp"></span>
+      <button class="btng">Use auto</button>
+      <button class="btnp">Save focal point</button>
+    </div>
+  </div>
+</div>
+</div></div>
+
+<!-- ============================================================ -->
+<!-- SCREEN 10: EMPTY + LARGE LIBRARY                              -->
+<!-- ============================================================ -->
+<div class="mock-label" id="s10">10 &middot; First-run (empty) and the large library (inside the surface)</div>
+<div class="mock-note">
+  Two ends of scale. <b>Empty</b>: the Stored pane teaches the upload path in the cairn voice, with
+  the visible affordance front and center. <b>Large</b>: the listbox paginates inside the surface
+  ("Load more", or it virtualizes), the type filter trims the set, and search stays instant over
+  filename, alt, and caption.
+</div>
+<div class="screen"><div data-theme="cairn-admin">
+<div class="two-up" style="align-items:start">
+  <!-- EMPTY -->
+  <div class="stage tight"><div class="cs" role="dialog" aria-modal="true" aria-label="Insert media" style="max-width:none">
+    <div class="cs-input"><span class="lead" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span><input type="text" role="combobox" aria-expanded="true" aria-controls="cs10-e" aria-label="Insert media" placeholder="Insert a photo, paste a video link, or pick an icon&hellip;" /><span class="cs-esc" aria-hidden="true">Esc</span></div>
+    <div class="cs-scopes" role="tablist" aria-label="Filter by kind"><button class="cs-scope" role="tab" aria-selected="true">All</button><button class="cs-scope" role="tab" aria-selected="false">Stored <span class="ct">0</span></button><button class="cs-scope" role="tab" aria-selected="false">Embed</button><button class="cs-scope" role="tab" aria-selected="false">Icon <span class="ct">6</span></button></div>
+    <div class="cs-results" id="cs10-e" role="listbox" aria-label="Results" style="min-height:230px">
+      <div class="cs-sect">Stored files</div>
+      <!-- upload affordance still first, even when empty -->
+      <div class="opt opt-upload" role="option" aria-selected="true">
+        <span class="opt-thumb" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 8 5-5 5 5"/><path d="M5 21h14"/></svg></span>
+        <span class="opt-main"><span class="opt-name">Upload your first image</span><span class="opt-meta">Drag a file here, paste a screenshot, or click to choose</span></span>
+      </div>
+      <div class="cs-empty-pane">
+        <div style="font-family:var(--font-display);font-weight:700;font-size:1rem;color:var(--color-base-content);margin-bottom:4px">No files yet</div>
+        <div style="font-size:.82rem">Add your first image and it will show up here. Photos and PDFs live in one library.</div>
+      </div>
+    </div>
+    <div class="cs-foot"><span class="legend"><kbd>&#8629;</kbd> upload</span><span class="cs-live">Paste a link above to embed a video instead.</span></div>
+  </div></div>
+
+  <!-- LARGE -->
+  <div class="stage tight"><div class="cs" role="dialog" aria-modal="true" aria-label="Insert media" style="max-width:none">
+    <div class="cs-input"><span class="lead" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span><input type="text" role="combobox" aria-expanded="true" aria-controls="cs10-l" aria-label="Insert media" value="trail" /><span class="cs-esc" aria-hidden="true">Esc</span></div>
+    <div class="cs-scopes" role="tablist" aria-label="Filter by kind"><button class="cs-scope" role="tab" aria-selected="false">All</button><button class="cs-scope" role="tab" aria-selected="true">Stored <span class="ct">1,240</span></button><button class="cs-scope" role="tab" aria-selected="false">Embed</button><button class="cs-scope" role="tab" aria-selected="false">Icon</button>
+      <!-- a small type filter rides at the right of the scope row in the Stored pane -->
+      <select aria-label="File type" style="margin-left:auto;font:inherit;font-size:.78rem;border:1px solid var(--cairn-card-border);border-radius:var(--radius-field);padding:4px 8px;background:var(--color-base-100);color:var(--color-base-content)"><option>All types</option><option>Images</option><option>PDFs</option></select>
+    </div>
+    <div class="cs-results" id="cs10-l" role="listbox" aria-label="Results" style="min-height:230px">
+      <div class="cs-sect">Stored files <span class="more">38 match &ldquo;trail&rdquo;</span></div>
+      <div class="opt" role="option" aria-selected="true"><span class="opt-thumb" aria-hidden="true" style="background:linear-gradient(135deg,#a9876b,#5f4330);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="1.6"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/></svg><span class="badge-type">PDF</span></span><span class="opt-main"><span class="opt-name">trail-map.pdf</span><span class="opt-meta"><span>PDF</span><span class="sep">&middot;</span><span>1.1 MB</span></span></span><span class="opt-use">Used in 1</span></div>
+      <div class="opt" role="option" aria-selected="false"><span class="opt-thumb" aria-hidden="true" style="background:linear-gradient(135deg,#9bbf9e,#5a8a64)"><span class="badge-type">JPG</span></span><span class="opt-main"><span class="opt-name">trail-crew-2026.jpg</span><span class="opt-meta"><span>2048&times;1365</span><span class="sep">&middot;</span><span>620 KB</span></span></span><span class="opt-use">Used in 2</span></div>
+      <div class="opt" role="option" aria-selected="false"><span class="opt-thumb" aria-hidden="true" style="background:linear-gradient(135deg,#c4a06a,#7c5a2e)"><span class="badge-type">JPG</span></span><span class="opt-main"><span class="opt-name">trailhead-sign.jpg</span><span class="opt-meta"><span>1600&times;1200</span><span class="sep">&middot;</span><span>305 KB</span></span></span><span class="opt-noalt">Needs alt</span></div>
+      <div class="opt" role="option" aria-selected="false"><span class="opt-thumb" aria-hidden="true" style="background:linear-gradient(135deg,#7fa6c9,#41648a)"><span class="badge-type">PNG</span></span><span class="opt-main"><span class="opt-name">trail-elevation.png</span><span class="opt-meta"><span>1400&times;700</span><span class="sep">&middot;</span><span>88 KB</span></span></span><span class="opt-use">Used in 1</span></div>
+      <div style="text-align:center;padding:10px"><button class="btng" style="font-size:.78rem;padding:6px 14px">Load 34 more</button></div>
+    </div>
+    <div class="cs-foot"><span class="legend"><kbd>&uarr;</kbd><kbd>&darr;</kbd> move</span><span class="legend"><kbd>&#8629;</kbd> insert</span><span class="cs-live" role="status" aria-live="polite">38 stored files match. Showing 4.</span></div>
+  </div></div>
+</div>
+</div></div>
+
+<!-- ============================================================ -->
+<!-- SCREEN 11: ACCESSIBILITY                                      -->
+<!-- ============================================================ -->
+<div class="mock-label" id="s11">11 &middot; Accessibility &mdash; the focus order, the keymap, the narration, the visible fallback</div>
+<div class="mock-note">
+  A command-first surface is highest-risk for accessibility, so it is designed here, not bolted on.
+  This panel is the spec the Svelte build implements.
+</div>
+<div class="screen"><div data-theme="cairn-admin">
+<div class="a11y">
+  <h3>The command surface is a combobox over a listbox</h3>
+  <p>
+    It follows the WAI-ARIA editable-combobox-with-listbox pattern. The text input owns
+    <code>role="combobox"</code>, <code>aria-expanded</code>, <code>aria-controls</code> pointing at
+    the results, and <code>aria-activedescendant</code> pointing at the highlighted option. Focus
+    stays in the input the whole time; the arrow keys move the active option without moving focus, so
+    a screen reader announces each row as it becomes active. The results container is the
+    <code>listbox</code> and each row is an <code>option</code>. The icon pane is a two-dimensional
+    <code>grid</code> of <code>gridcell</code>s, where arrows move in both axes.
+  </p>
+
+  <h4>The visible, non-keyboard fallback (the load-bearing rule)</h4>
+  <p>
+    Every action the keyboard reaches has a visible affordance a mouse or touch user reaches without
+    a shortcut. The toolbar <b>Insert</b> button opens the surface (it is labeled, not a bare glyph).
+    Inside, every option is a click target with a hover-revealed chevron, the scope chips are real
+    buttons, and the insert step's fields are standard inputs with a visible <b>Insert</b> button.
+    The slash and Cmd/Ctrl+K are accelerators layered on top, never the only door. A non-technical
+    author who never learns a shortcut can do everything by pointing.
+  </p>
+
+  <h4>Keyboard map</h4>
+  <table class="keymap">
+    <tr><td><kbd>/</kbd> at line start, or <kbd>Cmd/Ctrl</kbd>+<kbd>K</kbd>, or click <b>Insert</b></td><td>Open the command surface. Focus lands in the input.</td></tr>
+    <tr><td><kbd>&uarr;</kbd> <kbd>&darr;</kbd></td><td>Move the active option in the listbox. Wraps at the ends. In the icon grid, <kbd>&larr;</kbd> <kbd>&rarr;</kbd> move too.</td></tr>
+    <tr><td><kbd>Ctrl</kbd>+<kbd>1</kbd> / <kbd>2</kbd> / <kbd>3</kbd></td><td>Jump the scope to Stored, Embed, or Icon. The query is kept.</td></tr>
+    <tr><td><kbd>Enter</kbd></td><td>Choose the active option. A stored file or upload goes to the name-and-alt step; an icon or resolved embed inserts.</td></tr>
+    <tr><td><kbd>Tab</kbd></td><td>From the input, move into the name-and-alt step for the active stored file (the same as Enter for that pane).</td></tr>
+    <tr><td><kbd>Esc</kbd></td><td>Close the surface and return focus to the caret (or to the Insert button if that opened it). The slash that opened it is removed.</td></tr>
+    <tr><td><kbd>Enter</kbd> on the focal dot, then <kbd>&larr;</kbd><kbd>&uarr;</kbd><kbd>&darr;</kbd><kbd>&rarr;</kbd></td><td>Nudge the focal point 1% per press; <kbd>Shift</kbd> nudges 10%. The dot is a <code>slider</code> with <code>aria-valuetext</code>.</td></tr>
+  </table>
+
+  <h4>Screen-reader narration (what gets announced)</h4>
+  <div class="narr"><b>On open:</b> "Insert media or a component, dialog. Insert a photo, paste a video link, or pick an icon, combobox, expanded. 12 stored files, 6 icons."</div>
+  <div class="narr"><b>On typing "trail":</b> a polite <code>status</code> says "38 results"; then arrowing announces the active option: "trail-map.pdf, PDF, 1.1 megabytes, used in 1 entry, option 1 of 38."</div>
+  <div class="narr"><b>On an option that needs alt:</b> the row's accessible name includes "needs alt text", so the gap is heard, not only seen as a yellow chip.</div>
+  <div class="narr"><b>On upload:</b> the optimistic row is a polite status ("first-melt-lake-loop-shore.webp, uploading, 68 percent"); a failure is an <code>alert</code> ("trail-map.pdf could not upload. The file is 24 megabytes. The limit is 20 megabytes. Retry button.").</div>
+  <div class="narr"><b>On the delete gate:</b> "This image is used in 3 entries, dialog. Type blue-running-shoes.jpg to confirm. Delete anyway button, dimmed." The button enables only when the typed name matches.</div>
+
+  <h4>Contrast and motion</h4>
+  <p>
+    Muted text is the Warm Stone <code>--color-muted</code> token on the panel surface, never opacity
+    stacked on muted (the design-system rule). The active option uses the primary 10% tint plus a
+    30% primary border, so selection is carried by border and background together, not color alone.
+    Required-alt is flagged with the warning token plus the word "needs alt", so it does not rely on
+    hue. The upload shimmer, the spinner, and width transitions are all behind
+    <code>prefers-reduced-motion</code>. Determinate progress is text plus a bar, so it is legible
+    without color.
+  </p>
+</div>
+</div></div>
+
+<!-- ============================================================ -->
+<!-- SCREEN 12: DARK                                               -->
+<!-- ============================================================ -->
+<div class="mock-label" id="s12">12 &middot; Dark &mdash; the command surface carries over</div>
+<div class="mock-note">
+  The same tokens flip to the dark theme root. The selection tint, the type badges, the usage pills,
+  and the gradient thumbnails all hold on the dark card. Dark intent: the floating surface keeps the
+  defined hairline border (a shadow barely shows in dark), and the active-option border stays at the
+  primary-30% mix so selection is legible.
+</div>
+<div class="screen"><div data-theme="cairn-admin-dark">
+<div class="stage tall">
+  <div class="cs" role="dialog" aria-modal="true" aria-label="Insert media or a component" style="max-width:680px">
+    <div class="cs-input">
+      <span class="lead" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
+      <input type="text" role="combobox" aria-expanded="true" aria-controls="cs12" aria-label="Insert media" value="shoe" />
+      <span class="cs-esc" aria-hidden="true">Esc</span>
+    </div>
+    <div class="cs-scopes" role="tablist" aria-label="Filter by kind">
+      <button class="cs-scope" role="tab" aria-selected="true">All</button>
+      <button class="cs-scope" role="tab" aria-selected="false">Stored <span class="ct">12</span></button>
+      <button class="cs-scope" role="tab" aria-selected="false">Embed</button>
+      <button class="cs-scope" role="tab" aria-selected="false">Icon <span class="ct">6</span></button>
+    </div>
+    <div class="cs-results" id="cs12" role="listbox" aria-label="Results" style="min-height:auto">
+      <div class="cs-sect">Stored files <span class="more">1 match</span></div>
+      <div class="opt" role="option" aria-selected="true">
+        <span class="opt-thumb" aria-hidden="true" style="background:linear-gradient(135deg,#6f9fd0,#3f6da8)"><span class="badge-type">JPG</span></span>
+        <span class="opt-main"><span class="opt-name">blue-running-shoes.jpg</span><span class="opt-meta"><span>1600&times;1067</span><span class="sep">&middot;</span><span>248 KB</span><span class="sep">&middot;</span><span>by Mara</span></span></span>
+        <span class="opt-use">Used in 3</span>
+        <span class="opt-go" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+      </div>
+      <div class="cs-sect" style="margin-top:6px">Upload</div>
+      <div class="opt opt-upload" role="option" aria-selected="false">
+        <span class="opt-thumb" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 8 5-5 5 5"/><path d="M5 21h14"/></svg></span>
+        <span class="opt-main"><span class="opt-name">Upload a new file</span><span class="opt-meta">Drag here, paste, or choose</span></span>
+      </div>
+    </div>
+    <div class="cs-foot"><span class="legend"><kbd>&uarr;</kbd><kbd>&darr;</kbd> move</span><span class="legend"><kbd>&#8629;</kbd> insert</span><span class="cs-live">1 stored file matches "shoe".</span></div>
+  </div>
+</div>
+</div></div>
+
+<div style="height:40px"></div>
+
+<script>
+/* =================================================================
+   SCREEN 2: the live command surface. A real combobox over a listbox.
+   The dataset is the shared scenario. Typing filters across panes;
+   arrows + Enter move/choose; the live region narrates.
+   ================================================================= */
+(function () {
+  var root = document.getElementById('cs2-root');
+  if (!root) return;
+  var input = document.getElementById('cs2-q');
+  var listbox = document.getElementById('cs2-listbox');
+  var live = document.getElementById('cs2-live');
+
+  // shared-scenario stored assets (the messy + clean mix from the brief)
+  var STORED = [
+    { name: 'blue-running-shoes.jpg', type: 'JPG', dim: '1600×1067', size: '248 KB', who: 'by Mara', alt: 'Blue trail running shoes on a rock', cap: '', use: 3, grad: '135deg,#6f9fd0,#3f6da8' },
+    { name: 'hero-winter.jpg', type: 'JPG', dim: '1920×1080', size: '512 KB', who: 'by Devin', alt: 'Ski tracks across fresh snow at dawn', cap: 'Dawn on the lake loop', use: 2, grad: '135deg,#b9cfe0,#5a82a8' },
+    { name: 'trail-map.pdf', type: 'PDF', dim: 'PDF', size: '1.1 MB', who: 'by Mara', alt: 'Trail map of the lake loop', cap: '', use: 1, grad: '135deg,#a9876b,#5f4330', doc: true },
+    { name: 'trail-crew-2026.jpg', type: 'JPG', dim: '2048×1365', size: '620 KB', who: 'by Devin', alt: 'The volunteer trail crew at the trailhead', cap: '', use: 2, grad: '135deg,#9bbf9e,#5a8a64' },
+    { name: 'IMG_4521.HEIC', type: 'HEIC', dim: '4032×3024', size: '3.8 MB', who: 'by Mara', alt: '', cap: '', use: 0, grad: '135deg,#c2a98f,#7c6147' },
+    { name: 'Screenshot 2026-06-15 at 14.02.png', type: 'PNG', dim: '1284×892', size: '410 KB', who: 'by Mara', alt: '', cap: '', use: 0, grad: '135deg,#b6bcc4,#7a8089' },
+    { name: 'image.png', type: 'PNG', dim: '800×600', size: '92 KB', who: 'by Devin', alt: 'Wax kit on a bench', cap: '', use: 1, grad: '135deg,#9bbf9e,#5a8a64' },
+    { name: 'south-shore-golden.jpg', type: 'JPG', dim: '2400×1600', size: '740 KB', who: 'by Devin', alt: 'The south shore at golden hour', cap: '', use: 1, grad: '135deg,#cf9a6a,#8a5430' }
+  ];
+  var EMBED = [
+    { name: 'Trail cam: the first melt', provider: 'YouTube', meta: '4:12 · paste a link to embed', q: 'youtube video trail cam melt' }
+  ];
+  var ICONS = [
+    { name: 'snowflake', q: 'snow snowflake cold winter', path: '<path d="M12 2v20M2 12h20m-3.5-6.5L5.5 18.5m13 0L5.5 5.5"/>' },
+    { name: 'mountain', q: 'mountain peak trail hill', path: '<path d="m8 3 4 8 5-5 5 11H2L8 3z"/>' },
+    { name: 'map-pin', q: 'map pin location trailhead place', path: '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/>' },
+    { name: 'sun', q: 'sun golden hour warm light', path: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5M17.5 17.5 19 19M19 5l-1.5 1.5M6.5 17.5 5 19"/>' },
+    { name: 'tree-pine', q: 'tree pine forest evergreen', path: '<path d="m17 14 3 3.3a1 1 0 0 1-.7 1.7H4.7a1 1 0 0 1-.7-1.7L7 14h-.3a1 1 0 0 1-.7-1.7L9 9h-.2a1 1 0 0 1-.8-1.7L12 3l4 4.3a1 1 0 0 1-.8 1.7H15l3 3.3a1 1 0 0 1-.7 1.7H17z"/><path d="M12 22v-3"/>' },
+    { name: 'footprints', q: 'footprints trail hike walk', path: '<path d="M4 16v-2.4a3 3 0 0 1 3-3h0a3 3 0 0 1 3 3V16M4 16h6M14 13v-2.4a3 3 0 0 1 3-3h0a3 3 0 0 1 3 3V13M14 13h6"/>' }
+  ];
+
+  var SCOPE = 'all';
+  var options = [];   // flat list of selectable nodes in DOM order
+  var active = 0;
+
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  function matches(q, hay) { return hay.toLowerCase().indexOf(q) !== -1; }
+
+  function render() {
+    var q = input.value.trim().toLowerCase();
+    var showStored = SCOPE === 'all' || SCOPE === 'stored';
+    var showEmbed = SCOPE === 'all' || SCOPE === 'embed';
+    var showIcon = SCOPE === 'all' || SCOPE === 'icon';
+
+    var stored = STORED.filter(function (a) { return !q || matches(q, a.name) || matches(q, a.alt) || matches(q, a.cap); });
+    var icons = ICONS.filter(function (i) { return !q || matches(q, i.q); });
+    var embeds = EMBED.filter(function (e) { return !q || matches(q, e.q) || /^https?:|\.com|youtu/.test(q); });
+    // a URL-shaped query reveals the embed confirm even without a keyword
+    var looksUrl = /https?:\/\/|youtu|vimeo|\.com\//.test(q);
+
+    var html = '';
+    var idx = 0;
+    var oid = function () { return 'cs2-o' + (idx++); };
+
+    if (showStored) {
+      html += '<div class="cs-sect">Stored files' + (q ? ' <span class="more">' + stored.length + ' match</span>' : ' <span class="more">' + STORED.length + ' files</span>') + '</div>';
+      // upload affordance is always first in Stored
+      html += '<div class="opt opt-upload" role="option" id="' + oid() + '" data-act="upload">' +
+        '<span class="opt-thumb" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 8 5-5 5 5"/><path d="M5 21h14"/></svg></span>' +
+        '<span class="opt-main"><span class="opt-name">Upload a new file' + (q ? ' named &ldquo;' + esc(input.value.trim()) + '&rdquo;' : '') + '</span><span class="opt-meta">Drag here, paste a screenshot, or choose a file</span></span></div>';
+      if (stored.length === 0 && q) {
+        html += '<div class="cs-empty-pane" style="padding:18px"><div style="font-size:.82rem">No stored file matches &ldquo;' + esc(input.value.trim()) + '&rdquo;. Upload one above, or try the Embed or Icon pane.</div></div>';
+      }
+      stored.forEach(function (a) {
+        var thumb = a.doc
+          ? '<span class="opt-thumb" aria-hidden="true" style="background:linear-gradient(' + a.grad + ');display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="1.6"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/></svg><span class="badge-type">' + a.type + '</span></span>'
+          : '<span class="opt-thumb" aria-hidden="true" style="background:linear-gradient(' + a.grad + ')"><span class="badge-type">' + a.type + '</span></span>';
+        var usePill = a.use > 0
+          ? '<span class="opt-use">Used in ' + a.use + '</span>'
+          : '<span class="opt-use opt-orphan">Unused</span>';
+        var altFlag = a.alt ? '' : '<span class="opt-noalt" title="No alt text yet">Needs alt</span>';
+        // accessible name carries the gap so SR hears it
+        var aname = a.name + ', ' + a.type + ', ' + a.dim + ', ' + a.size + (a.use > 0 ? ', used in ' + a.use + ' entr' + (a.use === 1 ? 'y' : 'ies') : ', unused') + (a.alt ? '' : ', needs alt text');
+        html += '<div class="opt" role="option" id="' + oid() + '" data-act="pick" aria-label="' + esc(aname) + '">' +
+          thumb +
+          '<span class="opt-main"><span class="opt-name">' + esc(a.name) + '</span>' +
+          '<span class="opt-meta"><span>' + a.dim + '</span><span class="sep">·</span><span>' + a.size + '</span><span class="sep">·</span><span>' + a.who + '</span></span></span>' +
+          altFlag + usePill +
+          '<span class="opt-go" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span></div>';
+      });
+    }
+
+    if (showEmbed && (embeds.length || looksUrl)) {
+      html += '<div class="cs-sect" style="margin-top:6px">Embed' + (looksUrl ? ' <span class="more">resolved via oEmbed</span>' : '') + '</div>';
+      if (looksUrl) {
+        html += '<div class="opt" role="option" id="' + oid() + '" data-act="embed" aria-label="Trail cam, the first melt, YouTube, resolved via oEmbed">' +
+          '<span class="opt-thumb" aria-hidden="true" style="background:linear-gradient(135deg,#8a8f96,#43484f)"><span class="badge-type" style="background:#c4302b">▶</span></span>' +
+          '<span class="opt-main"><span class="opt-name">Trail cam: the first melt</span><span class="opt-meta"><span>YouTube</span><span class="sep">·</span><span>4:12</span><span class="sep">·</span><span>nothing stored</span></span></span>' +
+          '<span class="opt-go" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span></div>';
+      } else {
+        html += '<div class="cs-empty-pane" style="padding:14px"><div style="font-size:.8rem">Paste a video or post link to embed it. Nothing is stored.</div></div>';
+      }
+    }
+
+    if (showIcon && icons.length) {
+      html += '<div class="cs-sect" style="margin-top:6px">Icons <span class="more">design tokens</span></div>';
+      html += '<div class="icon-grid" role="grid" aria-label="Icons">';
+      icons.forEach(function (i) {
+        html += '<div class="icon-cell" role="gridcell" id="' + oid() + '" data-act="icon" aria-label="' + i.name + ' icon">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + i.path + '</svg><span>' + i.name + '</span></div>';
+      });
+      html += '</div>';
+    }
+
+    if (!html) {
+      html = '<div class="cs-empty-pane"><div style="font-family:var(--font-display);font-weight:700;color:var(--color-base-content);margin-bottom:4px">Nothing matches</div><div style="font-size:.82rem">Try fewer letters, or paste a link to embed a video.</div></div>';
+    }
+
+    listbox.innerHTML = html;
+    options = Array.prototype.slice.call(listbox.querySelectorAll('[role="option"],[role="gridcell"]'));
+    if (active >= options.length) active = options.length ? options.length - 1 : 0;
+    paint();
+
+    // counts in the scope chips
+    document.getElementById('cs2-ct-stored').textContent = stored.length;
+    document.getElementById('cs2-ct-icon').textContent = icons.length;
+
+    // polite count announce
+    var total = (showStored ? stored.length : 0) + (showEmbed && looksUrl ? 1 : 0) + (showIcon ? icons.length : 0);
+    live.textContent = total + (total === 1 ? ' result' : ' results') + (q ? ' for “' + input.value.trim() + '”' : '') + '.';
+  }
+
+  function paint() {
+    options.forEach(function (o, i) {
+      var on = i === active;
+      o.setAttribute('aria-selected', on ? 'true' : 'false');
+      if (on) {
+        input.setAttribute('aria-activedescendant', o.id);
+        o.scrollIntoView({ block: 'nearest' });
+        announceActive(o, active, options.length);
+      }
+    });
+    if (!options.length) input.setAttribute('aria-activedescendant', '');
+  }
+
+  function announceActive(o, i, n) {
+    // append position; the row already carries a rich aria-label
+    var label = o.getAttribute('aria-label') || o.textContent.trim();
+    live.textContent = label + ', ' + (i + 1) + ' of ' + n + '.';
+  }
+
+  input.addEventListener('input', function () { active = 0; render(); });
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowDown') { e.preventDefault(); if (options.length) { active = (active + 1) % options.length; paint(); } }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); if (options.length) { active = (active - 1 + options.length) % options.length; paint(); } }
+    else if (e.key === 'Enter') { e.preventDefault(); choose(); }
+    else if (e.ctrlKey && (e.key === '1' || e.key === '2' || e.key === '3')) {
+      e.preventDefault(); cs2.setScope({ '1': 'stored', '2': 'embed', '3': 'icon' }[e.key]);
+    }
+  });
+
+  function choose() {
+    var o = options[active];
+    if (!o) return;
+    var act = o.getAttribute('data-act');
+    var name = (o.querySelector('.opt-name') || o.querySelector('span:last-child') || o).textContent.trim();
+    if (act === 'upload') live.textContent = 'Opening the file chooser. The upload will land at your cursor.';
+    else if (act === 'pick') live.textContent = 'Chose ' + name + '. Next: name and alt text.';
+    else if (act === 'embed') live.textContent = 'Inserting the YouTube embed as a reference.';
+    else if (act === 'icon') live.textContent = 'Inserting the ' + name + ' icon token.';
+    // flash the chosen row so the click is visible in the mockup
+    o.style.outline = '2px solid var(--color-primary)';
+    setTimeout(function () { o.style.outline = ''; }, 450);
+  }
+
+  // delegate clicks/hover so the mouse path is real too
+  listbox.addEventListener('click', function (e) {
+    var o = e.target.closest('[role="option"],[role="gridcell"]');
+    if (!o) return;
+    active = options.indexOf(o); paint(); choose();
+  });
+  listbox.addEventListener('mousemove', function (e) {
+    var o = e.target.closest('[role="option"],[role="gridcell"]');
+    if (!o) return;
+    var i = options.indexOf(o);
+    if (i !== active) { active = i; paint(); }
+  });
+
+  // expose scope setter
+  window.cs2 = {
+    setScope: function (s) {
+      SCOPE = s;
+      Array.prototype.forEach.call(root.querySelectorAll('.cs-scope'), function (b) {
+        b.setAttribute('aria-selected', b.getAttribute('data-scope') === s ? 'true' : 'false');
+      });
+      active = 0; render(); input.focus();
+    }
+  };
+
+  render();
+})();
+
+/* =================================================================
+   SCREEN 9: the live focal point. Dragging the dot (or arrowing it)
+   moves the crop previews to the SAME coordinates, so the preview
+   matches the rendered crop.
+   ================================================================= */
+(function () {
+  var stage = document.getElementById('focal-stage');
+  if (!stage) return;
+  var dot = document.getElementById('focal-dot');
+  var subj = document.getElementById('focal-subject');
+  var cap = document.getElementById('focal-cap');
+  var fx = 0.64, fy = 0.34;
+
+  var crops = [
+    { frame: 'cf-sq', inner: 'ci-sq', w: 74, h: 74 },
+    { frame: 'cf-wide', inner: 'ci-wide', w: 128, h: 54 },
+    { frame: 'cf-port', inner: 'ci-port', w: 60, h: 80 }
+  ];
+  // the source gradient is painted on a 3:2 box; each crop shows a window of it,
+  // positioned so the focal point sits centered (clamped to the edges).
+  var SRC_W = 3, SRC_H = 2; // aspect units
+
+  function apply() {
+    dot.style.left = (fx * 100) + '%';
+    dot.style.top = (fy * 100) + '%';
+    dot.setAttribute('aria-valuetext', Math.round(fx * 100) + '% from left, ' + Math.round(fy * 100) + '% from top');
+    cap.innerHTML = 'Focal point: <b>' + Math.round(fx * 100) + '%</b> left, <b>' + Math.round(fy * 100) + '%</b> top. Delivered as <code style="font-family:var(--font-editor)">gravity=' + fx.toFixed(2) + 'x' + fy.toFixed(2) + '</code>.';
+
+    crops.forEach(function (c) {
+      var inner = document.getElementById(c.inner);
+      // crop aspect
+      var ca = c.w / c.h;
+      var sa = SRC_W / SRC_H;
+      // scale the source so it covers the crop, then translate to center the focal point
+      var scale, bgW, bgH;
+      if (ca > sa) {
+        // crop is wider than source: match width, overflow height
+        bgW = c.w; bgH = c.w / sa;
+      } else {
+        bgH = c.h; bgW = c.h * sa;
+      }
+      inner.style.width = bgW + 'px';
+      inner.style.height = bgH + 'px';
+      inner.style.backgroundSize = bgW + 'px ' + bgH + 'px';
+      // desired: focal point of the source sits at the crop center
+      var tx = c.w / 2 - fx * bgW;
+      var ty = c.h / 2 - fy * bgH;
+      // clamp so we never show past the edges
+      tx = Math.min(0, Math.max(c.w - bgW, tx));
+      ty = Math.min(0, Math.max(c.h - bgH, ty));
+      inner.style.left = tx + 'px';
+      inner.style.top = ty + 'px';
+      inner.style.position = 'absolute';
+    });
+  }
+
+  function setFromEvent(clientX, clientY) {
+    var r = stage.getBoundingClientRect();
+    fx = Math.min(1, Math.max(0, (clientX - r.left) / r.width));
+    fy = Math.min(1, Math.max(0, (clientY - r.top) / r.height));
+    subj.style.left = (fx * 100) + '%';
+    subj.style.top = (fy * 100) + '%';
+    apply();
+  }
+
+  var dragging = false;
+  function down(e) { dragging = true; dot.style.cursor = 'grabbing'; move(e); e.preventDefault(); }
+  function move(e) { if (!dragging) return; var p = e.touches ? e.touches[0] : e; setFromEvent(p.clientX, p.clientY); }
+  function up() { dragging = false; dot.style.cursor = 'grab'; }
+  stage.addEventListener('mousedown', down);
+  window.addEventListener('mousemove', move);
+  window.addEventListener('mouseup', up);
+  stage.addEventListener('touchstart', down, { passive: false });
+  window.addEventListener('touchmove', move, { passive: false });
+  window.addEventListener('touchend', up);
+
+  dot.addEventListener('keydown', function (e) {
+    var step = e.shiftKey ? 0.1 : 0.01;
+    if (e.key === 'ArrowLeft') { fx = Math.max(0, fx - step); }
+    else if (e.key === 'ArrowRight') { fx = Math.min(1, fx + step); }
+    else if (e.key === 'ArrowUp') { fy = Math.max(0, fy - step); }
+    else if (e.key === 'ArrowDown') { fy = Math.min(1, fy + step); }
+    else return;
+    e.preventDefault();
+    subj.style.left = (fx * 100) + '%'; subj.style.top = (fy * 100) + '%';
+    apply();
+  });
+
+  apply();
+})();
+</script>
+
+</body>
+</html>

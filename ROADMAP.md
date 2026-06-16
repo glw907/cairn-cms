@@ -59,8 +59,19 @@ needs. Items move up from lower tiers as the core fills in.
 - **Component authoring follow-ups.** The registry, the guided insert picker (with a live preview),
   round-trip editing of a placed component, and the `llms-full` component reference have all shipped
   (round-trip and the live preview as of `0.56.2`). What remains: a persistent master-detail catalog
-  rail for a large catalog, and an optional `/` slash-trigger that opens the picker at the cursor.
-  Both are recorded in the picker spec's out-of-scope list.
+  rail for a large catalog, and an optional `/` slash-trigger that opens the picker at the cursor
+  (both recorded in the picker spec's out-of-scope list). Two issues filed 2026-06-15 from a live
+  look at the picker:
+  - **Picker dialog sizing.** The component-choosing dialog fills the full viewport height. On
+    desktop it should inset from the top and bottom over a visible backdrop (a capped max-height,
+    content scrolling within), reading as an overlay rather than a page takeover; a full-height sheet
+    stays correct only on a narrow viewport.
+  - **`ComponentDef.icon` guidance.** The developer spec should require an icon that logically
+    represents the component, not a decorative or arbitrary glyph. Prefer distinct icons across the
+    registry, but accept a duplicate over an illogical choice. Fix the picker spec, the engine's
+    `defaultIconByRole` defaults, and the component-authoring docs. The matching site-side cleanup,
+    re-choosing ecxc's component icons against that guidance, is a separate ecxc site-pass, not engine
+    work.
 - **Content lifecycle ergonomics.** Follow-ups carried from the rename and delete passes,
   including a live region that re-announces a repeated error and a slug preview that matches the
   create form.

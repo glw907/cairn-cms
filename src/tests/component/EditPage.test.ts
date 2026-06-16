@@ -682,6 +682,18 @@ describe('EditPage', () => {
     expect(screen.container.textContent ?? '').not.toContain('alt text');
   });
 
+  it('keeps the needs-alt role="status" live region mounted (empty) when the count is zero', async () => {
+    const hash = '0123456789abcdef';
+    const screen = render(EditPage, postProps({ body: `![A cat](media:cat.${hash})` }));
+    await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+    // The live region is present at load even with no debt, so a later first debt announces (WCAG
+    // 4.1.3). It carries no visible notice while empty.
+    const region = screen.container.querySelector('div[role="status"]');
+    expect(region).not.toBeNull();
+    expect(region!.querySelector('.alert-warning')).toBeNull();
+    expect(region!.textContent ?? '').not.toContain('alt text');
+  });
+
   it('jumps to the image lacking alt and clears the notice once alt is typed', async () => {
     const hash = '0123456789abcdef';
     const screen = render(EditPage, postProps({ body: `![](media:cat.${hash})` }));

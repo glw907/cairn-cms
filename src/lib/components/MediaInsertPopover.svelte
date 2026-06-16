@@ -105,6 +105,26 @@ rule). The CSRF token is read from the admin context.
   let anchor = $state<{ left: number; right: number; top: number; bottom: number } | null>(null);
   let panel = $state<HTMLDivElement | null>(null);
   let fileInput = $state<HTMLInputElement | null>(null);
+  // The primary control of each terminal status block, bound so focus lands on the action when the
+  // block renders (the focused capture-card submit unmounts when the loop starts, so focus would
+  // otherwise drop to <body>).
+  let retryButton = $state<HTMLButtonElement | null>(null);
+  let expiredCloseButton = $state<HTMLButtonElement | null>(null);
+  let reusedDoneButton = $state<HTMLButtonElement | null>(null);
+
+  // When the loop settles into a terminal state, move focus to that state's primary control (Retry,
+  // Close, or Done) so the keyboard/screen-reader user lands on the action and the Tab trap plus
+  // Escape stay in play. The message blocks carry role="alert"/role="status" so the transition is
+  // also announced (WCAG 4.1.3, 2.4.3). Keyed on status.kind, after the block renders.
+  $effect(() => {
+    const kind = status.kind;
+    if (kind !== 'failed' && kind !== 'expired' && kind !== 'reused') return;
+    void tick().then(() => {
+      if (kind === 'failed') retryButton?.focus();
+      else if (kind === 'expired') expiredCloseButton?.focus();
+      else reusedDoneButton?.focus();
+    });
+  });
 
   /**
    * Open the popover. 'capture' with a file goes straight to the capture card (paste/drag); 'chooser'
@@ -335,25 +355,30 @@ rule). The CSRF token is read from the admin context.
     </div>
 
     {#if status.kind === 'expired'}
-      <div class="flex flex-col gap-2" data-testid="cairn-media-expired">
+      <!-- role="alert" (assertive): the upload failed mid-flight after the capture card unmounted, so
+           the state transition must announce. Focus moves to Close (the $effect above). -->
+      <div class="flex flex-col gap-2" data-testid="cairn-media-expired" role="alert">
         <p class="text-sm">Your session has expired. Please sign in again to add an image.</p>
         <div class="flex justify-end">
-          <button type="button" class="btn btn-sm" onclick={close}>Close</button>
+          <button bind:this={expiredCloseButton} type="button" class="btn btn-sm" onclick={close}>Close</button>
         </div>
       </div>
     {:else if status.kind === 'failed'}
-      <div class="flex flex-col gap-2" data-testid="cairn-media-failed">
+      <!-- role="alert" (assertive): a failure must interrupt. Focus moves to Retry (the $effect). -->
+      <div class="flex flex-col gap-2" data-testid="cairn-media-failed" role="alert">
         <p class="text-sm">{status.card.message}</p>
         <div class="flex justify-end gap-2">
           <button type="button" class="btn btn-ghost btn-sm" onclick={close}>Cancel</button>
-          <button type="button" class="btn btn-primary btn-sm" onclick={status.retry}>Retry</button>
+          <button bind:this={retryButton} type="button" class="btn btn-primary btn-sm" onclick={status.retry}>Retry</button>
         </div>
       </div>
     {:else if status.kind === 'reused'}
-      <div class="flex flex-col gap-2" data-testid="cairn-media-reused">
+      <!-- role="status" (polite): a reuse is a success note, not an interruption. Focus moves to
+           Done so the keyboard user lands on the one action. -->
+      <div class="flex flex-col gap-2" data-testid="cairn-media-reused" role="status">
         <p class="text-sm">Reused an existing image.</p>
         <div class="flex justify-end">
-          <button type="button" class="btn btn-primary btn-sm" onclick={close}>Done</button>
+          <button bind:this={reusedDoneButton} type="button" class="btn btn-primary btn-sm" onclick={close}>Done</button>
         </div>
       </div>
     {:else if view === 'capture' && captureFile}

@@ -112,6 +112,24 @@ describe('MediaPicker search', () => {
   });
 });
 
+describe('MediaPicker empty results', () => {
+  it('keeps the listbox (with its id) rendered so aria-controls resolves on a no-match query', async () => {
+    const screen = render(MediaPicker, { library: IMAGES_ONLY, onselect: () => {} } as never);
+    const input = screen.container.querySelector('input[role="combobox"]') as HTMLInputElement;
+    await screen.getByRole('combobox').fill('nothingmatchesthisquery');
+    // No option rows, but the listbox container still exists and aria-controls still resolves to it.
+    expect(screen.container.querySelectorAll('[role="option"]').length).toBe(0);
+    const listboxId = input.getAttribute('aria-controls');
+    expect(listboxId).toBeTruthy();
+    const listbox = screen.container.querySelector(`#${listboxId}`);
+    expect(listbox).not.toBeNull();
+    expect(listbox?.getAttribute('role')).toBe('listbox');
+    // The no-match copy is reachable, and aria-expanded drops to false (no popup to navigate).
+    expect(listbox?.textContent ?? '').toMatch(/nothing matches/i);
+    expect(input.getAttribute('aria-expanded')).toBe('false');
+  });
+});
+
 describe('MediaPicker rows', () => {
   it('carries a thumbnail with the delivery-path src, the name, and a needs-alt flag for an alt-empty asset', async () => {
     const screen = render(MediaPicker, { library: IMAGES_ONLY, onselect: () => {} } as never);

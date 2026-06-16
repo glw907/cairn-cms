@@ -1012,31 +1012,37 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     </ul>
   </div>
 {/if}
-{#if needsAlt.length}
-  <!-- The publish-time needs-alt notice: a non-blocking warning, never a block. Alt text is
-       accessibility debt, so the author can add it now or save without it; the count drops live as
-       each alt is filled and the notice clears at zero. The leading glyph carries the state alongside
-       the count, so the caution reads without relying on hue. Each row's jump control selects the
-       image in the source through the editor's select-range seam, landing the author on it to type
-       the alt. -->
-  <div class="alert alert-warning mb-4 flex-col items-start text-sm" role="status">
-    <p class="flex items-center gap-2 font-medium">
-      <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-      </svg>
-      <span>{needsAlt.length} {needsAlt.length === 1 ? 'image needs' : 'images need'} alt text</span>
-    </p>
-    <p>Alt text describes an image for readers who cannot see it. Add it now, or save and come back to it.</p>
-    <ul class="mt-1 w-full">
-      {#each needsAlt as item (item.from)}
-        <li class="flex items-center justify-between gap-2">
-          <code class="text-xs">{item.ref}</code>
-          <button type="button" class="btn btn-xs" onclick={() => selectRange(item.from, item.to)}>Add alt text</button>
-        </li>
-      {/each}
-    </ul>
-  </div>
-{/if}
+<!-- The publish-time needs-alt notice: a non-blocking warning, never a block. Alt text is
+     accessibility debt, so the author can add it now or save without it; the count drops live as
+     each alt is filled and the notice clears at zero. The leading glyph carries the state alongside
+     the count, so the caution reads without relying on hue. Each row's jump control selects the
+     image in the source through the editor's select-range seam, landing the author on it to type
+     the alt. The role="status" live region renders unconditionally (present and empty at load), so
+     when the first debt appears its count change announces; a region conditionally mounted with its
+     first content may not be observed by assistive tech (WCAG 4.1.3). The visible alert chrome and
+     content gate on the count, so an empty region shows nothing. A plain wrapper (not display:contents)
+     carries the role, since some assistive tech drops a role off a display:contents box. -->
+<div role="status">
+  {#if needsAlt.length}
+    <div class="alert alert-warning mb-4 flex-col items-start text-sm">
+      <p class="flex items-center gap-2 font-medium">
+        <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+        </svg>
+        <span>{needsAlt.length} {needsAlt.length === 1 ? 'image needs' : 'images need'} alt text</span>
+      </p>
+      <p>Alt text describes an image for readers who cannot see it. Add it now, or save and come back to it.</p>
+      <ul class="mt-1 w-full">
+        {#each needsAlt as item (item.from)}
+          <li class="flex items-center justify-between gap-2">
+            <code class="text-xs">{item.ref}</code>
+            <button type="button" class="btn btn-xs" onclick={() => selectRange(item.from, item.to)}>Add alt text</button>
+          </li>
+        {/each}
+      </ul>
+    </div>
+  {/if}
+</div>
 {#if draftWarning}
   <div class="alert alert-warning mb-4 text-sm">
     Saved. Note: this page links to unpublished {draftWarning.includes(',') ? 'pages' : 'a page'} ({draftWarning}), which will 404 until published.

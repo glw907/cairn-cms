@@ -56,10 +56,14 @@ left-blank cases, and a separate decorative flag distinguishes them for the host
   let altMode = $state<'describe' | 'decorative' | null>(null);
   let altText = $state('');
 
-  // A local object URL for the preview, revoked on destroy so the blob does not leak.
-  const previewUrl = $derived(URL.createObjectURL(file));
+  // A local object URL for the preview. Allocation and revoke live in ONE $effect keyed on the file,
+  // never in a $derived: a derivation that calls createObjectURL allocates a resource as a side
+  // effect, which can desync from the revoke (a re-derive leaks the prior URL). The matched effect
+  // revokes on teardown and on any file change, so the blob never leaks.
+  let previewUrl = $state('');
   $effect(() => {
-    const url = previewUrl;
+    const url = URL.createObjectURL(file);
+    previewUrl = url;
     return () => URL.revokeObjectURL(url);
   });
 

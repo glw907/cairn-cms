@@ -40,9 +40,10 @@ const setProgress = StateEffect.define<{ id: number; fraction: number }>();
 const removePlaceholder = StateEffect.define<{ id: number }>();
 
 // The widget: a small thumbnail from the local object URL plus a determinate progress bar, in the
-// editor's accent visual language (the same accent tint the media chip uses). aria-live polite so a
-// screen reader hears the upload progress without being interrupted. The bar is a real <progress> so
-// the determinate value is conveyed natively.
+// editor's accent visual language (the same accent tint the media chip uses). The wrapper carries no
+// live region: the widget is recreated on every progress tick (CodeMirror replaces the decoration),
+// so a live region on it could not reliably announce a change. The bar is a real <progress> with an
+// accessible name, so assistive tech exposes it as a determinate progressbar with its current value.
 class PlaceholderWidget extends WidgetType {
   constructor(readonly data: PlaceholderData) {
     super();
@@ -60,10 +61,6 @@ class PlaceholderWidget extends WidgetType {
   toDOM(): HTMLElement {
     const wrap = document.createElement('span');
     wrap.className = 'cm-cairn-media-placeholder';
-    wrap.setAttribute('role', 'status');
-    wrap.setAttribute('aria-live', 'polite');
-    const percent = Math.round(this.data.fraction * 100);
-    wrap.setAttribute('aria-label', `Uploading image, ${percent} percent`);
 
     const img = document.createElement('img');
     img.className = 'cm-cairn-media-placeholder-thumb';
@@ -72,8 +69,12 @@ class PlaceholderWidget extends WidgetType {
     img.setAttribute('aria-hidden', 'true');
     wrap.appendChild(img);
 
+    // A real <progress> with an accessible name: assistive tech reports it as a progressbar with its
+    // determinate value, the honest indicator. No live region on the wrapper, since the widget is
+    // recreated each tick and could not host one reliably.
     const bar = document.createElement('progress');
     bar.className = 'cm-cairn-media-placeholder-bar';
+    bar.setAttribute('aria-label', 'Image upload progress');
     bar.max = 1;
     bar.value = this.data.fraction;
     wrap.appendChild(bar);

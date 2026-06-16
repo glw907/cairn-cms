@@ -287,12 +287,14 @@ through the adapter's render. Swapping the editor stays a one-file change.
         },
         // The needs-alt marker: a glyph plus a label, never hue alone (the spec accessibility rule).
         // It rides the warning tone so it reads as a caution, with the label spelling out the state.
-        // The warning ink holds AA on the chip's light tint and stands apart from the accent name.
+        // The text uses --cairn-warning-ink, the on-surface warning text token, not --color-warning
+        // (a fill tone that fails small-text contrast on the light chip tint, WCAG 1.4.3). The ink
+        // holds AA on the chip's tint on both themes and stands apart from the accent name.
         '.cm-cairn-media-needs-alt': {
           display: 'inline-flex',
           alignItems: 'center',
           gap: '0.2em',
-          color: 'var(--color-warning, oklch(56% 0.13 75))',
+          color: 'var(--cairn-warning-ink, oklch(50% 0.13 70))',
           fontSize: '0.6875rem',
           fontWeight: '600',
           textTransform: 'uppercase',

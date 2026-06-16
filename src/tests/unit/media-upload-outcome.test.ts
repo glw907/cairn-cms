@@ -5,6 +5,7 @@ import {
 } from '../../lib/components/media-upload-outcome.js';
 import type { MediaEntry } from '../../lib/media/manifest.js';
 import type { UploadResult } from '../../lib/sveltekit/content-routes.js';
+import { mediaToken } from '../../lib/media/reference.js';
 
 function record(overrides: Partial<MediaEntry> = {}): MediaEntry {
   return {
@@ -46,6 +47,24 @@ describe('uploadOutcome from a success envelope', () => {
     expect(out.reference).toBe('media:blue-shoes.0123456789abcdef');
     expect(out.record.hash).toBe('0123456789abcdef');
     expect(out.reused).toBe(false);
+  });
+
+  it('re-derives the reference from the record slug and hash, not the loose server string', () => {
+    // Defense in depth: the server sends a `reference` field, but the outcome must rebuild the token
+    // from the validated record fields so the insert depends only on grammar-constrained values. A
+    // server reference that diverges from the record is ignored in favor of the derived token.
+    const out = uploadOutcome({
+      type: 'success',
+      status: 200,
+      data: result({
+        reference: 'media:tampered.deadbeefdeadbeef',
+        record: record({ slug: 'blue-shoes', hash: '0123456789abcdef' }),
+      }),
+    });
+    expect(out.kind).toBe('inserted');
+    if (out.kind !== 'inserted') throw new Error('expected inserted');
+    expect(out.reference).toBe(mediaToken({ slug: 'blue-shoes', hash: '0123456789abcdef' }));
+    expect(out.reference).toBe('media:blue-shoes.0123456789abcdef');
   });
 
   it('flags a dedup reuse with reused true', () => {

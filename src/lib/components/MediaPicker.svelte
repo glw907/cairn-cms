@@ -55,7 +55,11 @@ while a site stores images only.
   let { library, onselect }: Props = $props();
 
   // A stable id base so the listbox and each option carry unique ids the combobox can point at.
-  const idBase = `cairn-mp-${Math.random().toString(36).slice(2, 9)}`;
+  // $props.id() is Svelte's deterministic, hydration-stable id source (the same value SSR and the
+  // client), unlike a Math.random() base that would mismatch across hydration. It must initialize a
+  // top-level variable directly, so the prefix is composed in a second declaration.
+  const uid = $props.id();
+  const idBase = `cairn-mp-${uid}`;
   const listboxId = `${idBase}-listbox`;
 
   let query = $state('');
@@ -183,7 +187,7 @@ while a site stores images only.
       class="w-full border-0 bg-transparent p-0 text-sm outline-hidden placeholder:text-[var(--color-muted)]"
       placeholder="Search the media library"
       aria-label="Search the media library"
-      aria-expanded="true"
+      aria-expanded={filtered.length > 0}
       aria-controls={listboxId}
       aria-activedescendant={activeDescendant}
       autocomplete="off"
@@ -198,20 +202,23 @@ while a site stores images only.
   <!-- The active-row narration, its own polite region. -->
   <p class="sr-only" aria-live="polite">{activeNarration}</p>
 
-  {#if filtered.length === 0}
-    <div class="flex flex-col items-center gap-2 px-6 py-10 text-center">
-      <p class="text-sm text-[var(--color-muted)]">
-        {#if entries.length === 0}
-          No images in the library yet.
-        {:else}
-          Nothing matches <span class="font-medium text-base-content">"{query.trim()}"</span>.
-        {/if}
-      </p>
-    </div>
-  {:else}
-    <!-- The listbox: real role="option" children, the active one aria-selected. The whole listbox is
-         the input's owned popup, so a click on a row selects without moving focus out of the input. -->
-    <ul id={listboxId} role="listbox" aria-label="Media library" class="flex max-h-72 flex-col gap-0.5 overflow-auto p-0">
+  <!-- The listbox always renders, even with no matches, so the combobox's aria-controls always
+       resolves to a real element (WCAG 1.3.1, 4.1.2): an aria-controls pointing at a node that does
+       not exist is a broken relationship. The no-match copy lives inside the listbox; the rows render
+       only when there are matches. The whole listbox is the input's owned popup, so a click on a row
+       selects without moving focus out of the input. -->
+  <ul id={listboxId} role="listbox" aria-label="Media library" class="flex max-h-72 flex-col gap-0.5 overflow-auto p-0">
+    {#if filtered.length === 0}
+      <li class="flex flex-col items-center gap-2 px-6 py-10 text-center">
+        <p class="text-sm text-[var(--color-muted)]">
+          {#if entries.length === 0}
+            No images in the library yet.
+          {:else}
+            Nothing matches <span class="font-medium text-base-content">"{query.trim()}"</span>.
+          {/if}
+        </p>
+      </li>
+    {:else}
       {#each filtered as entry, i (entry.hash)}
         <!-- A listbox option carries no keyboard handler of its own: in the ARIA combobox pattern the
              keyboard model lives on the input (arrows move aria-activedescendant, Enter selects), and
@@ -237,7 +244,7 @@ while a site stores images only.
             {#if entry.alt.trim() === ''}
               <!-- The needs-alt flag: a glyph plus a label, never hue alone (the spec a11y rule),
                    matching the Task 3 source-chip treatment. -->
-              <span class="inline-flex items-center gap-1 text-xs font-medium text-warning">
+              <span class="inline-flex items-center gap-1 text-xs font-medium text-[var(--cairn-warning-ink)]">
                 <span aria-hidden="true">&#9888;</span>
                 <span>Needs alt</span>
               </span>
@@ -245,6 +252,6 @@ while a site stores images only.
           </span>
         </li>
       {/each}
-    </ul>
-  {/if}
+    {/if}
+  </ul>
 </div>

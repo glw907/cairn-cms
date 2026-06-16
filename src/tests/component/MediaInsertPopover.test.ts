@@ -265,6 +265,14 @@ describe('MediaInsertPopover optimistic loop', () => {
     expect(calls.some((c) => c.op === 'resolveTo')).toBe(false);
     // A Retry control is offered.
     await expect.element(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
+    // The failure message is an assertive live region, so the transition announces (the capture-card
+    // submit unmounted when the loop started).
+    const failed = screen.container.querySelector('[data-testid="cairn-media-failed"]');
+    expect(failed?.getAttribute('role')).toBe('alert');
+    // Focus moves to the Retry button so the keyboard/SR user lands on the primary action.
+    await vi.waitFor(() =>
+      expect(document.activeElement).toBe(screen.container.querySelector('[data-testid="cairn-media-failed"] .btn-primary')),
+    );
   });
 
   it('shows the generic failed card and cancels (never resolves) on a non-envelope body', async () => {

@@ -83,6 +83,13 @@
   --color-success-content: oklch(98% 0.012 150);
   --color-warning: oklch(75% 0.15 70);
   --color-warning-content: oklch(26% 0.05 70);
+  /* The on-surface warning INK, for small warning TEXT (the needs-alt label and the editor chip's
+     needs-alt marker). --color-warning is tuned as a FILL behind dark content, so as small text on a
+     light surface it sits near 2.2:1, well under the 4.5:1 AA floor (WCAG 1.4.3). This darker ink is
+     the readable text counterpart, mirroring how --color-accent is locked for on-surface text.
+     Locked pair: on base-100 measures 5.98:1, on the 8% accent chip tint the source chip uses 5.59:1.
+     Do not lighten without re-checking both. */
+  --cairn-warning-ink: oklch(50% 0.13 70);
   --color-error: oklch(56% 0.2 25);
   --color-error-content: oklch(98% 0.012 25);
 
@@ -180,6 +187,11 @@
   --color-success-content: oklch(20% 0.04 150);
   --color-warning: oklch(80% 0.14 70);
   --color-warning-content: oklch(24% 0.05 70);
+  /* The on-surface warning INK on dark, for small warning TEXT (the needs-alt label and the editor
+     chip's marker). The dark warning fill already reads on its dark surfaces, so this ink keeps a
+     value near it. Locked pair: on dark base-100 measures 8.61:1, on the 8% accent chip tint 6.20:1.
+     Do not darken without re-checking both. */
+  --cairn-warning-ink: oklch(80% 0.14 70);
   --color-error: oklch(70% 0.18 25);
   --color-error-content: oklch(20% 0.04 25);
 

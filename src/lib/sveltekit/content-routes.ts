@@ -487,16 +487,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     // Project the committed media manifest to the minimal resolver input: only the three fields the
     // preview resolver needs, keyed by hash. A corrupt committed file degrades to empty, not a throw.
     const mediaTargets: EditData['mediaTargets'] = {};
-    if (mediaRaw !== null) {
-      let mediaJson: unknown;
-      try {
-        mediaJson = JSON.parse(mediaRaw);
-      } catch {
-        mediaJson = null;
-      }
-      for (const [hash, e] of Object.entries(parseMediaManifest(mediaJson))) {
-        mediaTargets[hash] = { slug: e.slug, ext: e.ext, contentType: e.contentType };
-      }
+    for (const [hash, e] of Object.entries(parseMediaManifest(parseMediaJson(mediaRaw)))) {
+      mediaTargets[hash] = { slug: e.slug, ext: e.ext, contentType: e.contentType };
     }
 
     return {

@@ -1023,9 +1023,19 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
    * client value: it sniffs the real type, screens the engine deny-list, re-hashes, re-derives the
    * ext and slug, caps and sanitizes the human fields, and clamps the advisory dimensions. It stores
    * put-first to R2 with content-addressed dedup (no second put for identical bytes, no
-   * compensating delete) and commits nothing to git. Every non-success path returns `fail(status,
-   * data)` (an HTTP error a `fetch` caller reads as JSON) and logs `media.upload_failed`; success
-   * returns an HTTP 200 plain object and logs `media.uploaded`.
+   * compensating delete) and commits nothing to git.
+   *
+   * Wire contract: this is a SvelteKit form action, so for a JSON request SvelteKit serializes the
+   * result into a 200 JSON envelope `{ type, status, data }`. A `fail(status, ...)` rides the
+   * envelope's `status` field, NOT the HTTP response status (the HTTP status stays 200); a client
+   * parses `type`/`status` from the body, never `Response.status`. Success returns a plain
+   * `UploadResult` (also a 200 envelope). The action logs `media.upload_failed` on a refusal and
+   * `media.uploaded` on success.
+   *
+   * Session authority: behind `createAuthGuard` the guard is the production session gate. An
+   * unauthenticated admin POST is redirected 303 by the guard before this action runs (an opaque,
+   * status-0 response under the client's `redirect: 'manual'`), so the `fail(401, 'session-expired')`
+   * below is a belt-and-suspenders for a direct or un-guarded call, not the primary path.
    */
   async function uploadAction(event: ContentEvent): Promise<ReturnType<typeof fail> | UploadResult> {
     // Read the editor up front for log attribution; the gate at step 4 enforces its presence. The
@@ -1041,7 +1051,9 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     if (!resolved.enabled) return refuse(503, 'media-disabled');
 
     // 2. Content-Length before the body is read: an absent or non-positive-integer length is a 411,
-    //    an oversize length is a 413. Both refuse before the bytes are buffered.
+    //    an oversize length is a 413. Both refuse before the bytes are buffered. The header is
+    //    client-advisory, so the real DoS bound is the Worker request-size limit, not maxUploadBytes:
+    //    a lying client still buffers up to the platform ceiling before the post-read recheck (step 5).
     const lengthHeader = event.request.headers.get('content-length');
     const length = lengthHeader === null ? NaN : Number(lengthHeader);
     if (!Number.isInteger(length) || length <= 0) return refuse(411, 'length-required');
@@ -1053,8 +1065,9 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       return refuse(403, 'csrf');
     }
 
-    // 4. JSON-aware session: read the resolved editor directly. requireSession throws a 303 a fetch
-    //    caller silently follows, so an expired session must surface as a 401 JSON instead.
+    // 4. JSON-aware session (belt-and-suspenders; see the docstring): behind the guard an
+    //    unauthenticated POST is already 303'd before this runs. For a direct or un-guarded call,
+    //    read the resolved editor directly and refuse with a 401 envelope rather than a 303 redirect.
     if (!editor) return refuse(401, 'session-expired');
 
     // 5. Read the body once. Content-Length is client-advisory, so a lying client could send more
@@ -1097,12 +1110,24 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     let reused: boolean;
     let mismatch = false;
     if (existing !== null) {
+      // The key derives from the 16-hex short hash (64 bits), so a distinct file could in principle
+      // collide on it. The put stores the full sha256 as custom metadata; verify it here. A stored
+      // sha256 that differs from this upload's full hash is a genuine short-hash collision: refuse,
+      // never serve the first file's bytes under the second's reference. A stored object with no
+      // sha256 (a legacy or manually-put object we cannot verify) proceeds as a dedup hit, best effort.
+      const storedSha = existing.customMetadata?.sha256;
+      if (storedSha !== undefined && storedSha !== full) return refuse(409, 'hash-collision');
       // Identical bytes are already stored: skip the put. A second upload does no second put, so a
       // concurrent dedup-reuse is never clobbered. Flag a stored type that disagrees with this sniff.
       reused = true;
       mismatch = existing.httpMetadata?.contentType !== undefined && existing.httpMetadata.contentType !== sniffed;
     } else {
-      await store.put(key, bytes, { contentType: sniffed, cacheControl: 'public, max-age=31536000, immutable' });
+      await store.put(
+        key,
+        bytes,
+        { contentType: sniffed, cacheControl: 'public, max-age=31536000, immutable' },
+        { sha256: full },
+      );
       reused = false;
     }
 

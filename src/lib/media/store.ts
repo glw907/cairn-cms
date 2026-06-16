@@ -15,8 +15,15 @@ import type {
 /** The narrow R2 surface the media pipeline uses. The engine depends on this, not on R2Bucket, so the
  *  multipart, list, and conditional-read surface R2 also carries never leaks into the media code. */
 export interface MediaStore {
-  /** Store bytes under a content-addressed key, with the response HTTP metadata (the content type). */
-  put(key: string, bytes: ArrayBuffer | Uint8Array, httpMetadata?: R2HTTPMetadata): Promise<void>;
+  /** Store bytes under a content-addressed key, with the response HTTP metadata (the content type)
+   *  and optional custom metadata (the upload stores the full sha256 here, so a short-hash collision
+   *  is detectable on a later dedup probe). */
+  put(
+    key: string,
+    bytes: ArrayBuffer | Uint8Array,
+    httpMetadata?: R2HTTPMetadata,
+    customMetadata?: Record<string, string>,
+  ): Promise<void>;
   /** The object's metadata, or null when no object lives at the key (the dedup probe). */
   head(key: string): Promise<R2Object | null>;
   /** The object body for streaming to a delivery response, or null when the key is absent. The
@@ -32,11 +39,16 @@ export interface MediaStore {
 }
 
 /** Wrap an R2 bucket binding as a MediaStore. Each method delegates to the binding; put folds the
- *  HTTP metadata into R2's options shape and drops the returned R2Object the pipeline does not read. */
+ *  HTTP and custom metadata into R2's options shape and drops the returned R2Object the pipeline does
+ *  not read. */
 export function r2Store(bucket: R2Bucket): MediaStore {
   return {
-    async put(key, bytes, httpMetadata) {
-      await bucket.put(key, bytes, httpMetadata ? { httpMetadata } : undefined);
+    async put(key, bytes, httpMetadata, customMetadata) {
+      const options =
+        httpMetadata || customMetadata
+          ? { ...(httpMetadata ? { httpMetadata } : {}), ...(customMetadata ? { customMetadata } : {}) }
+          : undefined;
+      await bucket.put(key, bytes, options);
     },
     head: (key) => bucket.head(key),
     get: (key, opts) => bucket.get(key, opts),

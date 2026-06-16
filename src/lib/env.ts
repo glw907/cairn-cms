@@ -61,11 +61,16 @@ export function requireDb(env: { AUTH_DB?: D1Database }): D1Database {
  * export and that package is only a devDependency). The cast through `unknown` is sound because the
  * seam models a subset of the real R2 bucket API.
  *
- * @throws CairnError (`config.bindings-missing`) when the named binding is absent.
+ * The guard rejects a value wired to the wrong kind of binding too (a KV namespace, a string var),
+ * which is truthy but carries no callable `get`. Without that check the cast would succeed and the
+ * first `bucket.get(...)` would throw an uncaught 500 rather than the drained 503 a missing binding
+ * earns.
+ *
+ * @throws CairnError (`config.bindings-missing`) when the named binding is absent or not an R2 bucket.
  */
 export function requireBucket(env: Record<string, unknown>, bindingName: string): DeliveryBucket {
   const bucket = env[bindingName];
-  if (!bucket) {
+  if (!bucket || typeof (bucket as { get?: unknown }).get !== 'function') {
     throw new CairnError('config.bindings-missing', {
       message: `${bindingName} binding is not configured`,
     });

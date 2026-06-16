@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { D1Database } from '@cloudflare/workers-types';
-import { requireOrigin, requireDb } from '../../lib/env.js';
+import { requireOrigin, requireDb, requireBucket } from '../../lib/env.js';
 import { CairnError } from '../../lib/diagnostics/index.js';
 
 describe('requireOrigin', () => {
@@ -66,5 +66,38 @@ describe('requireDb', () => {
     }
     expect(thrown).toBeInstanceOf(CairnError);
     expect((thrown as CairnError).conditionId).toBe('config.bindings-missing');
+  });
+});
+
+describe('requireBucket', () => {
+  it('returns the binding when it carries a callable get', () => {
+    const bucket = { get() {} };
+    expect(requireBucket({ MEDIA_BUCKET: bucket }, 'MEDIA_BUCKET')).toBe(bucket as never);
+  });
+
+  it('throws config.bindings-missing when the binding is absent', () => {
+    let thrown: unknown;
+    try {
+      requireBucket({}, 'MEDIA_BUCKET');
+    } catch (err) {
+      thrown = err;
+    }
+    expect(thrown).toBeInstanceOf(CairnError);
+    expect((thrown as CairnError).conditionId).toBe('config.bindings-missing');
+  });
+
+  it('throws config.bindings-missing for a wrong-type binding (a string var, a KV namespace)', () => {
+    // A truthy non-R2 value: a string env var or a KV namespace (which has no `get` in this shape).
+    const wrongValues: unknown[] = ['some-string', { put() {}, list() {} }, 42, true];
+    for (const value of wrongValues) {
+      let thrown: unknown;
+      try {
+        requireBucket({ MEDIA_BUCKET: value }, 'MEDIA_BUCKET');
+      } catch (err) {
+        thrown = err;
+      }
+      expect(thrown, JSON.stringify(value)).toBeInstanceOf(CairnError);
+      expect((thrown as CairnError).conditionId).toBe('config.bindings-missing');
+    }
   });
 });

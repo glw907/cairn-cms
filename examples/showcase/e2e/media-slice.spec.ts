@@ -18,9 +18,11 @@ import { parse as devalueParse } from 'devalue';
 //
 // NOTE on the upload transport: the upload action is wired as a SvelteKit form action
 // (admin.actions.upload). SvelteKit's action gate rejects a POST whose content-type is not a form
-// content-type with a 415 before the action runs, so the body rides as `text/plain` here (a
-// CORS-safe form content-type the engine sniffs the real type from regardless of the declared
-// one). The shipped client helper declares `image/png`, which SvelteKit 415s; see the report.
+// content-type with a 415 before the action runs, so the body rides as `text/plain` (a CORS-safe
+// form content-type the engine sniffs the real type from regardless of the declared one). This is
+// the same transport the shipped client helper's buildUploadRequest sends. The showcase installs the
+// fake-backend hook, not createAuthGuard, so this E2E proves the action+render+save legs; the
+// guard's header-CSRF path is proven in the engine's auth-guard integration test.
 
 // The server-owned MediaEntry the upload action returns and the save re-posts. The save's
 // parseMediaEntries re-validates every field, so the whole record must survive the round trip.

@@ -230,9 +230,19 @@ describe('CSRF (cairn owns it)', () => {
       platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: 'https://test.dev' } },
       setHeaders: () => {},
     };
-    const res = await handle({ event: ev, resolve: async () => OK });
+    // The header-CSRF path must NOT consume or clone the body, so a downstream action can still read
+    // the raw upload bytes. resolve reads them and asserts they survived the guard intact.
+    let seen: Uint8Array | null = null;
+    const res = await handle({
+      event: ev,
+      resolve: async () => {
+        seen = new Uint8Array(await ev.request.arrayBuffer());
+        return OK;
+      },
+    });
     expect(res).toBe(OK);
     expect(ev.locals.editor?.email).toBe('own@x.dev');
+    expect(seen).toEqual(new Uint8Array([0xff, 0xd8, 0xff]));
   });
 
   it('rejects an admin POST whose X-Cairn-CSRF header does not match the cookie', async () => {

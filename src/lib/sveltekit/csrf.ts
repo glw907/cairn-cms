@@ -52,6 +52,10 @@ export function issueCsrfToken(event: { url: URL; cookies: CookieJar }): string 
  * body and are read once, so the form-field path (which clones the body to read `formData`) does not
  * apply; the action carries the CSRF authority for uploads instead. Compares the header against the
  * csrf cookie the loads issue, constant-time.
+ *
+ * Security rests on a custom request header being unsettable cross-origin without a CORS preflight:
+ * never add a permissive `Access-Control-Allow-Headers: x-cairn-csrf` (or an allow-origin) for
+ * `/admin` or `/media`, or this header witness collapses.
  */
 export function validateCsrfHeader(event: { url: URL; request: Request; cookies: CookieJar }): boolean {
   const cookie = event.cookies.get(csrfCookieName(event.url.protocol === 'https:'));

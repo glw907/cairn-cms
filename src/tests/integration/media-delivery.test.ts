@@ -64,6 +64,22 @@ describe('media delivery route (Task 4)', () => {
     expect(body).toEqual(BYTES);
   });
 
+  it('defaults Content-Type to application/octet-stream for an object stored with no content type', async () => {
+    // An object put outside the upload pipeline (a manual put, a future import) carries no content
+    // type, so writeHttpMetadata sets none. The route pairs nosniff with a safe explicit default.
+    await bucket.put(KEY, BYTES);
+    const handler = createMediaRoute(resolvedOn);
+    const res = await invoke(handler, SLUG_PATH);
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get('Content-Type')).toBe('application/octet-stream');
+    expect(res.headers.get('X-Content-Type-Options')).toBe('nosniff');
+    expect(res.headers.get('Content-Disposition')).toBe('inline');
+    expect(res.headers.get('Content-Security-Policy')).toBe("default-src 'none'; sandbox");
+    const body = new Uint8Array(await res.arrayBuffer());
+    expect(body).toEqual(BYTES);
+  });
+
   it('returns 304 with no body when If-None-Match matches the stored etag', async () => {
     await bucket.put(KEY, BYTES, { httpMetadata: { contentType: 'image/png' } });
     const handler = createMediaRoute(resolvedOn);

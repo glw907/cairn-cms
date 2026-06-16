@@ -197,8 +197,10 @@ export interface UploadRequestOpts {
 
 /**
  * Construct the upload request the helper will `fetch`: a `POST` to the named SvelteKit form action
- * `/admin/<conceptId>/<id>?/upload`, the raw bytes as the body, `redirect: 'manual'` so an expired
- * session's 303 surfaces instead of being silently followed, and the `X-Cairn-*` headers the
+ * `/admin/<conceptId>/<id>?/upload`, the raw bytes as the body, `redirect: 'manual'` so the guard's
+ * expired-session 303 surfaces as an opaque, status-0 response (which the caller detects by
+ * `response.type === 'opaqueredirect'`) instead of being silently followed, and the `X-Cairn-*`
+ * headers the
  * uploadAction reads. The filename, alt, and display name are percent-encoded so a unicode value
  * survives header transport; width and height ride only when present. Pure: it returns the request
  * shape and never calls `fetch`, so a test can assert the URL, method, and headers.

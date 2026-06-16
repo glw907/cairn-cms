@@ -30,6 +30,10 @@ function applySecurityHeaders(headers: Headers, etag: string): void {
   headers.set('Content-Security-Policy', "default-src 'none'; sandbox");
   headers.set('Cache-Control', 'public, max-age=31536000, immutable');
   headers.set('ETag', etag);
+  // An object stored outside the upload pipeline (a manual put, a future import) may carry no
+  // content type, so writeHttpMetadata would set none. Pair `nosniff` with an explicit safe
+  // default rather than serving a typeless response.
+  if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/octet-stream');
 }
 
 /** True when the returned object carries a body (a full or ranged read), narrowing it to the body

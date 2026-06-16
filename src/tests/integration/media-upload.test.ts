@@ -153,6 +153,19 @@ describe('upload action: the untrusted-input contract (Task 5)', () => {
     expect(puts).toBe(1);
   });
 
+  it('refuses a short-hash collision: a stored object whose full sha256 differs gives fail(409)', async () => {
+    const routes = createContentRoutes(runtime());
+    const hash = shortHash(await hashBytes(PNG));
+    // Pre-put an object at the PNG's content-addressed key carrying a different full sha256, the way
+    // a genuine 16-hex short-hash collision between two distinct files would look on the dedup probe.
+    await bucket.put(r2Key(hash, 'png'), new Uint8Array([1, 2, 3]), {
+      customMetadata: { sha256: '0'.repeat(64) },
+    });
+    const res = (await routes.uploadAction(uploadEvent({ bytes: PNG }))) as ActionResult;
+    expect(res.status).toBe(409);
+    expect(res.data?.error).toBe('hash-collision');
+  });
+
   it('rejects an oversize Content-Length with fail(413) before reading the body', async () => {
     const routes = createContentRoutes(
       runtime({

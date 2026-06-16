@@ -140,6 +140,44 @@ export const cairn = defineAdapter({
 </svelte:head>
 ```
 
+#### `assets` (adapter member)
+
+```ts
+interface AssetConfig {
+  bucketBinding: string;
+  publicBase?: string;
+  urlForm?: 'slug' | 'opaque';
+  maxUploadBytes?: number;
+  allowedTypes?: string[];
+  variants?: Record<string, VariantSpec>;
+}
+
+interface VariantSpec {
+  width?: number;
+  height?: number;
+  quality?: number;
+  fit?: 'scale-down' | 'contain' | 'cover' | 'crop' | 'pad';
+  gravity?: 'auto' | 'face' | string;
+  format?: 'auto' | 'webp' | 'avif' | string;
+}
+```
+
+A site turns on R2-backed media by declaring `assets`; omitting it leaves media off. `bucketBinding`
+names the R2 bucket bound to the Worker and is the one required field. `publicBase` is the delivery
+base path (default `/media`), and `urlForm` chooses whether the public URL carries the slug
+(`/media/<slug>.<hash>.<ext>`, the default) or stays opaque (`/media/<aa>/<hash>.<ext>`).
+`maxUploadBytes` (default 25 MB) and `allowedTypes` (default the common web image types) bound an
+upload. `variants` are named Cloudflare Images presets, merged over the built-in `thumb`, `inline`,
+`card`, and `hero` presets, so a same-named entry overrides a built-in.
+
+Content references a stored asset by a logical handle, `media:<slug>.<hash>` (or the bare
+`media:<hash>`), the same shape as the `cairn:` link scheme. The hash is the content identity and the
+slug is cosmetic, so a rename never breaks a reference. At render, the handle rewrites to a delivery
+URL, and a variant becomes a `/cdn-cgi/image/<options>/...` transform over that path. See the
+[media storage explanation](../explanation/media-storage.md) for the full model. This grew from a
+reserved seam, so it is additive: a site that declares no `assets` is unchanged, and the author-facing
+upload surface lands in a later phase on this substrate.
+
 #### `defineFields`
 
 ```ts
@@ -582,7 +620,7 @@ function signatures above reference these.
 | `NavMenuConfig` | `interface NavMenuConfig` | A git-committed YAML menu the nav editor manages. |
 | `PreviewConfig` | `interface PreviewConfig` | The live site's stylesheets and container classes for the edit page's preview frame, with optional per-concept wrapper overrides. |
 | `ResolvedPreview` | `type ResolvedPreview = Omit<PreviewConfig, 'byConcept'>` | The flat per-entry preview shape `editLoad` ships: the top-level values with the entry's concept override applied. |
-| `AssetConfig` | `interface AssetConfig` | Reserved asset slot (seam 4), typed and unused in the rebuild. |
+| `AssetConfig` | `interface AssetConfig` | A site's media configuration: the R2 bucket binding, the delivery base and URL form, the upload limits, and the named Cloudflare Images variant presets. Omitting it leaves media off. See the `assets` adapter member above. |
 | `CairnExtension` | `interface CairnExtension` | A future build-time extension that folds in like the adapter. |
 | `CairnRuntime` | `interface CairnRuntime` | The composed runtime the engine serves from (seam 2 output). |
 | `ComposeInput` | `interface ComposeInput` | The input to `composeRuntime`: adapter, siteConfig, extensions. |

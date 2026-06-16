@@ -253,13 +253,55 @@ self-hosted video pipeline (video is referenced, not stored). Documents are in t
 after images. A cross-cutting "everything referenced in my content" audit view, if ever wanted, is a
 separate read-only surface, not the media library.
 
-## Open questions for the foundation spike
+## Foundation spike: findings (resolved 2026-06-15)
 
-- The delivery route shape, a Worker route that resolves the hash and streams from R2, an R2 custom
-  domain, or Cloudflare Images serving directly. The choice affects the cache and the URL form; the
-  spike settles it.
-- Cloudflare Images cost at each site's scale. The research recommends Cloudflare Images over a
-  hand-rolled Worker transform for the maintainability win, given the lean-core north star; confirm the
-  cost is acceptable for the two production sites.
-- The media manifest's exact home and shape (a separate `media.json` versus an extension of the content
-  manifest), settled in the foundation plan.
+The two narrow spikes the methodology flagged ran in the foundation phase (plan task 8) against the
+live `glw907` Cloudflare account. They settle the open questions.
+
+### Delivery route: a Worker route that streams from R2
+
+The delivery route is a Worker route that resolves the content hash and streams the object from R2,
+chosen over an R2 custom domain and over Cloudflare Images serving the bytes directly. The URL shape
+decides it. cairn's public path carries the cosmetic slug (`/media/<slug>.<hash>.<ext>`) while the R2
+object key is the content-addressed fan-out (`media/<aa>/<hash>.<ext>`), and the two are deliberately
+different so a rename never moves the bytes. Only a Worker route bridges them: it reads the hash out of
+the public path, maps it to the R2 key, and streams. An R2 custom domain would serve the raw key,
+forcing the slug into the key and losing the rename-stable property. Cloudflare Images serving directly
+means storing the bytes inside the Images product behind an `imagedelivery.net` URL, which contradicts
+the locked bytes-in-R2 decision and reintroduces the lock-in the logical reference exists to defeat.
+The Worker route also owns the response, so it sets the one-year immutable cache and answers a
+conditional GET. Responsive variants then run as Cloudflare Images URL transforms over that same route,
+the `/cdn-cgi/image/<options>/media/<slug>.<hash>.<ext>` form the transform-url builder already emits.
+`publicPath` and `r2Key` already encode this split, so the foundation carries the decision with no
+change.
+
+### Cost: within the Cloudflare Images free tier for both sites
+
+Transforming images stored outside Images (the R2 case) is on the Images Free plan, which includes
+5,000 unique transformations per month at no charge. A unique transformation is one
+source-plus-options combination, cached long-term once served; past 5,000 a new transform returns
+`9422` and the cache keeps serving, with no overage charge on Free. Both production sites are small and
+the four named presets bound the option-sets, so the monthly unique-transform count sits far below the
+ceiling. R2 adds little (zero egress, storage at a fraction of a cent per gigabyte-month, a few class-A
+writes per upload), and delivery rides the site's existing Worker. The running cost is effectively zero
+for both sites, which confirms the research call to lean on Cloudflare Images rather than hand-roll a
+transform.
+
+### Live proof and what rides the site wiring
+
+The storage half is proven live. A content-addressed put under `media/<aa>/<hash>.<ext>` and a get
+round-tripped byte-identical against a throwaway bucket, and a missing key returned not-found (the
+store wrapper's null path). The bucket was provisioned and removed through the Cloudflare MCP, leaving
+no residue. The transform half is not proven live this phase, by design: URL transforms need the
+per-zone `Transformations` setting, which is site wiring the foundation does not do. A read-only probe
+found `907.life` returns 404 on a `/cdn-cgi/image/` path today, so transformations are not yet enabled
+there, and the R2/Workers-scoped token cannot read or flip a zone setting. The end-to-end transform
+proof rides the first site wiring, when a zone has transformations on and the `/media/*` route is
+mounted. `cairn-doctor` gains a readiness check for the R2 binding and the per-zone transformations
+setting at that point, a plan carry-forward.
+
+### Manifest home and shape (settled in the plan)
+
+The media manifest is a separate `src/content/.cairn/media.json` beside the content manifest, keyed by
+the 16-hex content-hash prefix, not an extension of the content manifest. The foundation plan settled
+this and `src/lib/media/manifest.ts` implements it.

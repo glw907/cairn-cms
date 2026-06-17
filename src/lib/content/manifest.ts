@@ -7,6 +7,7 @@ import { parseMarkdown } from './frontmatter.js';
 import { deriveExcerpt } from './excerpt.js';
 import { entryIdentity, asString } from './identity.js';
 import { extractCairnLinks, type CairnRef, type LinkResolve } from './links.js';
+import { extractMediaRefs } from './media-refs.js';
 import type { ConceptDescriptor } from './types.js';
 
 /** One entry's projection: its identity, routing, draft flag, and outbound cairn: edges. */
@@ -19,6 +20,10 @@ export interface ManifestEntry {
   summary?: string;
   draft: boolean;
   links: CairnRef[];
+  /** The content hashes of the media this entry references (its hero plus its body images). The
+   *  main side of the media where-used index. Additive and optional: an entry with no media omits
+   *  the key, and a manifest committed before this field still parses (absent reads as no refs). */
+  mediaRefs?: string[];
 }
 
 /** The whole corpus as one committed file. `version` guards a future shape migration. */
@@ -43,6 +48,9 @@ export interface LinkTarget {
 export function manifestEntryFromFile(descriptor: ConceptDescriptor, file: { path: string; raw: string }): ManifestEntry {
   const { frontmatter, body } = parseMarkdown(file.raw);
   const { id, date, permalink } = entryIdentity(descriptor, file.path, frontmatter);
+  // Set mediaRefs only when non-empty, so an image-free entry's row stays byte-identical to before
+  // (matching the optional-spread for date and summary).
+  const mediaRefs = extractMediaRefs(frontmatter, body, descriptor.fields);
   return {
     id,
     concept: descriptor.id,
@@ -54,6 +62,7 @@ export function manifestEntryFromFile(descriptor: ConceptDescriptor, file: { pat
     summary: deriveExcerpt(body, { description: asString(frontmatter.description) }) || undefined,
     draft: frontmatter.draft === true,
     links: extractCairnLinks(body),
+    ...(mediaRefs.length ? { mediaRefs } : {}),
   };
 }
 
@@ -78,6 +87,7 @@ export function serializeManifest(manifest: Manifest): string {
     ...(e.summary ? { summary: e.summary } : {}),
     draft: e.draft,
     links: [...e.links].sort(compareRef).map((r) => ({ concept: r.concept, id: r.id })),
+    ...(e.mediaRefs && e.mediaRefs.length ? { mediaRefs: [...e.mediaRefs].sort() } : {}),
   }));
   return `${JSON.stringify({ version: 1, entries }, null, 2)}\n`;
 }
@@ -109,9 +119,20 @@ export function parseManifest(raw: string): Manifest {
       typeof e.draft === 'boolean' &&
       (e.date === undefined || typeof e.date === 'string') &&
       (e.summary === undefined || typeof e.summary === 'string') &&
+      (e.mediaRefs === undefined || Array.isArray(e.mediaRefs)) &&
       Array.isArray(e.links);
     if (!ok) {
       throw new Error(`content manifest: malformed entry ${JSON.stringify(e)}`);
+    }
+    // mediaRefs is additive and optional: an entry without it parses (the field reads as absent),
+    // so a manifest committed before this field still builds. When present, validate each element
+    // is a string, mirroring the link-element validation, so a hand-edited file fails loudly.
+    if (e.mediaRefs !== undefined) {
+      for (const hash of e.mediaRefs as unknown[]) {
+        if (typeof hash !== 'string') {
+          throw new Error(`content manifest: malformed mediaRefs element ${JSON.stringify(hash)} in entry ${JSON.stringify(e)}`);
+        }
+      }
     }
     // Validate each link element's shape, not just that links is an array. inboundLinks and the
     // delete guard read l.concept and l.id, so a string, null, or id-less element would read as
@@ -181,11 +202,33 @@ function formatDiff(d: ManifestDiff): string {
 export function verifyManifest(built: Manifest, committedRaw: string): void {
   const builtRaw = serializeManifest(built);
   if (committedRaw === builtRaw) return;
+  // mediaRefs is additive: a site whose committed manifest predates the field must still build,
+  // even when its content references media (open risk 3, the migration landmine). Before diffing,
+  // normalize the built manifest against the committed one: for any built entry whose committed
+  // counterpart carries no mediaRefs key, drop mediaRefs from the built entry. An un-regenerated
+  // site (committed omits mediaRefs) then matches; a regenerated site (committed carries mediaRefs)
+  // still detects real drift in that field. The normalization is per entry and per missing key, so
+  // it never masks drift in any other field or in an entry the committed manifest already tracks.
+  const committed = parseManifest(committedRaw);
+  const committedByKey = new Map(committed.entries.map((e) => [keyOf(e), e]));
+  const normalized: Manifest = {
+    version: 1,
+    entries: built.entries.map((b) => {
+      const c = committedByKey.get(keyOf(b));
+      if (b.mediaRefs && c && c.mediaRefs === undefined) {
+        const { mediaRefs: _dropped, ...rest } = b;
+        return rest;
+      }
+      return b;
+    }),
+  };
+  const normalizedRaw = serializeManifest(normalized);
+  if (committedRaw === normalizedRaw) return;
   // Diff the canonical built form, not the raw one. serializeManifest sorts each entry's links, so a
   // build whose links are in extraction order would otherwise report a false (links) drift for an
   // entry whose link set is identical and only the order differs. Reuse the serialized form so both
   // sides are canonical.
-  const diff = diffManifests(parseManifest(builtRaw), parseManifest(committedRaw));
+  const diff = diffManifests(parseManifest(normalizedRaw), committed);
   throw new Error(
     'content manifest is stale: the committed file does not match the corpus.\n' +
       formatDiff(diff) +

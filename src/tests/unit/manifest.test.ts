@@ -43,6 +43,24 @@ describe('manifestEntryFromFile', () => {
     expect(row.draft).toBe(true);
     expect(row.links).toEqual([]);
   });
+  it('records mediaRefs for an entry with a hero and body images, and omits the key when image-free', () => {
+    const heroPosts: ConceptDescriptor = {
+      ...posts,
+      fields: [{ name: 'image', label: 'Hero', type: 'image' }],
+    };
+    const withMedia = manifestEntryFromFile(heroPosts, {
+      path: 'src/content/posts/2026-01-15-hello.md',
+      raw:
+        '---\ntitle: Hello\ndate: 2026-01-15\nimage:\n  src: media:hero.00112233445566aa\n  alt: A cairn\n---\n\n' +
+        '![inline](media:inline.aabbccddeeff0011)\n',
+    });
+    expect(withMedia.mediaRefs?.sort()).toEqual(['00112233445566aa', 'aabbccddeeff0011']);
+
+    const noMedia = manifestEntryFromFile(posts, file);
+    expect(noMedia.mediaRefs).toBeUndefined();
+    // The serialized row of an image-free entry carries no mediaRefs key.
+    expect(serializeManifest({ version: 1, entries: [noMedia] })).not.toContain('mediaRefs');
+  });
   it('derives a summary from the description, else the body', () => {
     // A non-dated descriptor, so the slug permalink resolves from the file stem alone.
     const pages: ConceptDescriptor = {
@@ -148,6 +166,24 @@ describe('parseManifest hardening', () => {
     ] }));
     expect(old.entries[0].summary).toBeUndefined();
   });
+  it('leniently accepts an entry with no mediaRefs key (a manifest predating the field)', () => {
+    const old = parseManifest(JSON.stringify({ version: 1, entries: [
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [] },
+    ] }));
+    expect(old.entries[0].mediaRefs).toBeUndefined();
+  });
+  it('round-trips a present mediaRefs and serializes it sorted', () => {
+    const out = serializeManifest({ version: 1, entries: [
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], mediaRefs: ['bbbb111122223333', 'aaaa111122223333'] },
+    ] });
+    expect(out).toContain('mediaRefs');
+    const parsed = parseManifest(out);
+    expect(parsed.entries[0].mediaRefs).toEqual(['aaaa111122223333', 'bbbb111122223333']);
+  });
+  it('rejects a mediaRefs element that is not a string', () => {
+    const raw = JSON.stringify({ version: 1, entries: [{ id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], mediaRefs: [123] }] });
+    expect(() => parseManifest(raw)).toThrow(/entry|mediaRefs/i);
+  });
 });
 
 const entryA: ManifestEntry = { id: 'a', concept: 'pages', title: 'A', permalink: '/a', draft: false, links: [] };
@@ -171,6 +207,38 @@ describe('verifyManifest', () => {
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [] },
     ] });
     expect(() => verifyManifest(built, staleCommitted)).toThrow(/stale/);
+  });
+  it('does NOT red when the built manifest references media but the committed one omits mediaRefs', () => {
+    // The migration landmine (open risk 3): a site whose committed manifest predates mediaRefs must
+    // build even when its content references media. The built side carries mediaRefs; the committed
+    // side has no mediaRefs key. verifyManifest treats the built mediaRefs as absent for that entry.
+    const built = { version: 1 as const, entries: [
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], mediaRefs: ['00112233445566aa'] },
+    ] };
+    const committedNoMediaRefs = serializeManifest({ version: 1, entries: [
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [] },
+    ] });
+    expect(() => verifyManifest(built, committedNoMediaRefs)).not.toThrow();
+  });
+  it('still reds on real drift even with the mediaRefs leniency in place', () => {
+    // Leniency must not blind verify to a genuine change: a changed title still fails.
+    const built = { version: 1 as const, entries: [
+      { id: 'a', concept: 'posts', title: 'A renamed', permalink: '/a', draft: false, links: [], mediaRefs: ['00112233445566aa'] },
+    ] };
+    const committedNoMediaRefs = serializeManifest({ version: 1, entries: [
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [] },
+    ] });
+    expect(() => verifyManifest(built, committedNoMediaRefs)).toThrow(/stale/);
+  });
+  it('reds when a regenerated committed manifest drifts in mediaRefs', () => {
+    // Once a site regenerates (committed carries mediaRefs), a real mediaRefs drift is detected.
+    const built = { version: 1 as const, entries: [
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], mediaRefs: ['00112233445566aa'] },
+    ] };
+    const committedWithStaleRefs = serializeManifest({ version: 1, entries: [
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], mediaRefs: ['ffffffffffffffff'] },
+    ] });
+    expect(() => verifyManifest(built, committedWithStaleRefs)).toThrow(/stale/);
   });
 });
 

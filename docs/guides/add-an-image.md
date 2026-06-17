@@ -80,6 +80,23 @@ text" notice sits near the top of the page with a count, and it can jump you to 
 waiting for a description. The notice never stops you from saving or publishing. It is there so the
 gap does not slip out the door unnoticed.
 
+## Set a hero image
+
+A hero is the lead picture for a whole post or page, separate from the images in the body. You set it
+in the Details panel, not in the writing area. Open Details, find the "Hero image" field, and click
+"Add a hero image". The same chooser opens: upload a new picture, or pick one you have already added.
+
+After you pick, a panel shows the image with two things to fill in. Write the alt text, or mark the
+image decorative if it carries no meaning a reader would miss. Then, if you want, add a caption, the
+line your site can show under the picture. Alt and caption are different jobs: alt is spoken to
+readers who cannot see the image, the caption is shown to everyone. Click "Use this image" to set the
+hero. Nothing is committed until you save the entry, the same as the rest of your changes.
+
+One hero does two jobs. It leads the page, and it is the picture shown when the post is shared on
+social media, so there is one image to set, not two. The same "needs alt text" notice counts a hero
+with no alt text, and can jump you straight to its description. To swap the picture, open the
+field again and choose Replace; to clear it, choose Remove.
+
 ## Saving and publishing
 
 A new image is stored the moment you add it, but it does not reach your live site on its own. It

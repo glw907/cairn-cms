@@ -53,6 +53,20 @@ name the registry refuses to let a site component shadow. cairn ships default `.
 the showcase reference, and a site restyles those classes to own the placement pixels. A guide section
 covers it in [add an image](docs/guides/add-an-image.md).
 
+Hero images land in the same release. A Post or Page carries a lead image in frontmatter as a nested
+`image: { src, alt, caption }` object, where `src` is a `media:` reference, `alt` is the screen-reader
+description, and `caption` is an optional line the template may show. `image` is a new built-in field
+type declared through `defineFields` like `text` or `date`. The editor renders it in the details panel
+as a one-row resting field that opens the same picker and capture flow the body insert uses. Alt stays
+debt, and the needs-alt notice now counts a hero with an empty alt alongside the body images. One
+image serves two jobs: the delivery read path resolves the frontmatter reference into a derived
+`heroImage` projection the template lays out, and the SEO head reads the same resolved image as the
+`og:image` and `twitter:image`. The on-disk `media:` token stays canonical, since resolution is a
+separate projection that is never written back. `resolveImageUrl` now rejects a non-http(s) result, so
+an unresolved `media:` token degrades to no social image rather than shipping a broken tag. The site
+template owns the hero layout: cairn ships the resolved data and the social-card wiring, not a hero
+render step. A required `image` field is enforced on the presence of its `src`, never on its alt.
+
 Consumers must: bind an R2 bucket and mount the delivery route before media works. Add an
 `r2_buckets` binding named `MEDIA_BUCKET` in `wrangler.jsonc`, and mount the delivery route at
 `src/routes/media/[...path]/+server.ts` with `createMediaRoute(runtime.resolvedAssets)`. Declare the

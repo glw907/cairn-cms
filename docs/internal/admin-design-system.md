@@ -105,6 +105,11 @@ Defined per theme root in `cairn-admin.css`: `[data-theme='cairn-admin']` (light
   base-100, 5.59:1 on the 8% accent chip tint); dark is `oklch(80% 0.14 70)` (8.61:1 and 6.20:1). The
   needs-alt markers use it: the picker's needs-alt label and the `.cm-cairn-media-needs-alt` rule in
   the editor's media chip. Reference it as `text-[var(--cairn-warning-ink)]`.
+- `--color-positive-ink` is the green counterpart, the on-surface confirming TEXT ink for a positive
+  status word on `base-100`. Light is `oklch(48% 0.12 150)` (~4.9:1 on base-100); dark is
+  `oklch(78% 0.12 150)` (~7:1). The hero field's "Described" alt-status chip uses it. Reference it as
+  `text-[var(--color-positive-ink)]`. It is a defined token, not a mockup-only color; a chip that
+  references an undefined custom property falls back to body ink with no gate to catch it.
 
 ## Type
 
@@ -379,6 +384,24 @@ Recipes:
   and `.cairn-place-full` a full-bleed image with its `figcaption` returned to the measure. A site
   copies and restyles those classes. This is content CSS, not admin chrome, so it lives with the site's
   rendered-content stylesheet, not in `cairn-admin.css`.
+- **Media: the hero field (`MediaHeroField`).** The persistent details-panel field that sets a
+  concept's frontmatter hero. At rest, when a hero is set, it is one row at sibling weight: the
+  resolved thumbnail, the display name, an alt-status chip, and an Edit control, with the caption
+  shown beneath as a read-only italic preview. The alt-status chip is glyph-plus-label, never hue
+  alone: Described in `--color-positive-ink`, Needs alt in `--cairn-warning-ink`, Decorative in
+  `--color-muted`. Empty, the field is a slim labeled dropzone (hover and focus-visible states, real
+  drag-and-drop) plus one plain unify line stating the image is also the social card. Edit or Add
+  opens a native `<dialog class="modal">` (the Dialog recipe) holding the chooser (an upload button
+  and the `MediaPicker` combobox) and, after a pick or upload, the placement view: a 16:9 crop
+  preview, the describe-or-decorative alt radiogroup, the caption field, and Replace/Remove as quiet
+  text controls beneath the preview. Two load-bearing constraints, both from the field rendering
+  inside the edit `<form>`: it carries no `<form>` of its own (the dialog's working inputs are
+  name-less and never submit; the committed value rides three named hidden inputs the decode arm
+  reads), and the alt radios share a component-unique `name` so native arrow-key navigation works
+  while staying out of the three decoded sub-fields. It reuses `MediaPicker` directly and replicates
+  `MediaCaptureCard`'s alt model rather than mounting it (that card holds its own `<form>`, illegal
+  nested here, and a Name field a hero does not use). Alt is debt: confirm is never disabled for a
+  missing alt, and the needs-alt notice counts a hero with an empty alt and focuses its alt input.
 
 ## Chrome and spacing
 

@@ -442,6 +442,29 @@ another purpose now renders it as an engine figure, so check for one. Second, ca
 adjust the pixels to own the placement look. Without them a `wide` or `full` figure still renders, it
 just sits at the text measure until the classes are styled.
 
+The release also adds the frontmatter hero image, a new built-in `image` field type. Adopting it is
+optional and additive; a site does nothing until it declares the field. To give a concept a hero:
+
+1. **Declare the field.** Add `{ type: 'image', name: 'image', label: 'Hero image' }` to the
+   concept's `defineFields`. The field named `image` is the social-card image by default; mark a
+   differently-named field with `seo: true` to feed the `og:image`, and a concept declares at most
+   one such field. The stored value is a nested object `{ src, alt, caption }`.
+
+2. **Inject the resolver and render the hero.** Pass `resolveMedia` to `createPublicRoutes`, the same
+   resolver the body render path uses (`makeMediaResolver(mediaManifest, normalizeAssets(...))`).
+   The read path then exposes a derived `heroImage` projection on the entry data, and the template
+   renders it however it wants (`<img src={data.heroImage.url} alt={data.heroImage.alt}>`). The site
+   owns the hero layout; cairn ships only the resolved data. The SEO head reads the same resolved
+   image as the `og:image` automatically.
+
+If a site already carries a bare-string SEO image under a `{ type: 'text', name: 'image' }` field,
+that keeps working unchanged: the SEO head still reads the string. Migrating it to the structured
+hero is optional. To migrate, switch the field to `type: 'image'` and rewrite each post's
+`image: /path.png` string to the nested form `image: { src: media:..., alt: ... }`, since the
+`image` field type stores an object and drops a bare string. Behavior change to know about regardless
+of adoption: `resolveImageUrl` now returns no URL for a non-http(s) value, so an unresolved `media:`
+reference degrades to no social image instead of shipping a `media:` token in the `og:image` tag.
+
 ## 0.55.0: the office list gains triage and self-describing rows
 
 The post and page list rises to the same grade as the editor: a triage bar filters by publish state

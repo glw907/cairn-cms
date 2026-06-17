@@ -63,6 +63,29 @@ that same route. This shape was chosen over serving the bucket on a custom domai
 slug into the storage key, and over storing the bytes inside Cloudflare Images directly, which would
 reintroduce the host lock-in the logical reference exists to avoid.
 
+## A frontmatter hero resolves like a body image, into a projection
+
+A Post or Page can carry a lead image in frontmatter, the hero, as a nested
+`image: { src, alt, caption }` object whose `src` is a `media:` reference like any other. The logical
+reference idea carries over: the committed frontmatter holds the content-addressed token, not a path,
+so a rename never breaks it.
+
+The body resolver only visits image nodes in the rendered markdown, so a frontmatter reference needs
+its own resolution home. The delivery read path takes an injected resolver and computes a derived
+`heroImage` projection (`url`, `absoluteUrl`, `alt`, `caption`) on the entry data. The on-disk
+`image.src` is never mutated. Resolution is a separate projection, so re-serializing an entry never
+writes a resolved URL back to git, and the token keeps its rename-stability. This mirrors the
+`ContentSummary.tags` versus `frontmatter.tags` split the codebase already documents: a derived
+read-model alongside the canonical stored value.
+
+One image serves two jobs. The template reads `heroImage.url`, the root-relative path, to lay out the
+lead picture, and the SEO head reads `heroImage.absoluteUrl` as the `og:image`. A single resolved
+value cannot serve both a root-relative `<img>` and an absolute social tag, so the projection carries
+both forms. Which field feeds the social card is an explicit choice, the `seo`-flagged image field,
+defaulting to the field named `image`, and a concept declares at most one. As a backstop,
+`resolveImageUrl` rejects any non-http(s) result, so a still-unresolved `media:` token degrades to no
+social image rather than shipping a broken tag.
+
 ## What the foundation carries
 
 This phase is the engine substrate: the reference codec, the content-hash and slug naming, the

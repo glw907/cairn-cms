@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Proposed design: the inline figure, captions and placement (media 3a, rev. 2)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+  rel="stylesheet"
+/>
+<style>
+  /* rev. 2 folds in an adversarial UI critique. The load-bearing changes: the control now shows its
+     full state machine (disabled, wrap-a-bare-image, edit-an-existing-figure) inside its real host
+     (a persistent toolbar button that opens the form), alt state is surfaced beside the caption so
+     alt reads as distinct from caption, the wide band shares the measure gutter so it never crosses
+     the measure, a narrow-viewport proof is added, and the "None" role is renamed "Measure". */
+
+  /* ---- mock scaffold (outside the themed surfaces) ---- */
+  body { margin: 0; background: #d8d4cf; }
+  .mock-label { font: 600 13px/1.4 system-ui; letter-spacing: .08em; text-transform: uppercase; color: #444; padding: 26px 24px 4px; }
+  .mock-note { font: 400 13px/1.55 system-ui; color: #5a564f; padding: 0 24px 14px; max-width: 76ch; }
+  .mock-note code { font-family: ui-monospace, monospace; background: rgba(0,0,0,.06); padding: 1px 4px; border-radius: 3px; }
+  .screen { border: 1px solid #aaa; margin: 0 16px 48px; box-shadow: 0 2px 14px rgba(0,0,0,.08); overflow: hidden; }
+  .screen.narrow { max-width: 384px; }
+
+  /* ---- Warm Stone tokens, both theme roots, inlined so the mockup stands alone ---- */
+  [data-theme='cairn-admin'] {
+    --color-base-100: oklch(99% 0.004 75);
+    --color-base-200: oklch(96.5% 0.006 75);
+    --color-base-300: oklch(89% 0.011 75);
+    --color-base-content: oklch(26% 0.014 75);
+    --color-primary: oklch(52% 0.2 293);
+    --color-primary-content: oklch(98% 0.01 293);
+    --color-accent: oklch(54% 0.16 300);
+    --color-muted: oklch(48% 0.01 75);
+    --color-subtle: oklch(42% 0.01 75);
+    --color-positive-ink: oklch(48% 0.12 150);
+    --cairn-code-chip: oklch(94.5% 0.008 75);
+    --cairn-warning-ink: oklch(50% 0.13 70);
+    --cairn-card-border: oklch(93% 0.008 75);
+    --cairn-shadow: 0 1px 2px oklch(28% 0.02 75 / 0.05), 0 8px 24px -6px oklch(28% 0.02 75 / 0.1);
+  }
+  [data-theme='cairn-admin-dark'] {
+    --color-base-100: oklch(24% 0.01 75);
+    --color-base-200: oklch(15.5% 0.009 75);
+    --color-base-300: oklch(30% 0.014 75);
+    --color-base-content: oklch(93% 0.006 75);
+    --color-primary: oklch(68% 0.18 293);
+    --color-primary-content: oklch(20% 0.03 293);
+    --color-accent: oklch(70% 0.14 300);
+    --color-muted: oklch(72% 0.01 75);
+    --color-subtle: oklch(80% 0.008 75);
+    --color-positive-ink: oklch(78% 0.12 150);
+    --cairn-code-chip: oklch(29.5% 0.012 75);
+    --cairn-warning-ink: oklch(80% 0.14 70);
+    --cairn-card-border: oklch(30% 0.014 75);
+    --cairn-shadow: 0 1px 2px oklch(0% 0 0 / 0.35), 0 8px 24px -6px oklch(0% 0 0 / 0.5);
+  }
+
+  [data-theme] {
+    --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+    --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-editor: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+
+  /* ===== the reader surface: how a published figure renders (site-owned default CSS) ===== */
+  .reader { background: var(--color-base-100); color: var(--color-base-content); font-family: var(--font-body); -webkit-font-smoothing: antialiased; padding: 8px 0 36px; }
+  .reader h1 { font-family: var(--font-display); font-weight: 700; letter-spacing: -.02em; font-size: 1.85rem; margin: 1.4rem 0 .2rem; }
+  .reader .kicker { color: var(--color-muted); font-size: .9rem; margin: 0 0 1.6rem; }
+  .reader p { font-size: 1.0625rem; line-height: 1.7; margin: 1.05rem 0; }
+
+  /* the full-bleed content grid: a measure column with a left and right gutter, so wide and full
+     break out of the measure while body text holds it. the standard robust content-layout pattern. */
+  .prose {
+    --measure: 40rem;
+    --wide: 52rem;
+    --gutter: 1.25rem; /* each side; the measure track reserves 2 x this */
+    display: grid;
+    grid-template-columns: 1fr min(var(--measure), 100% - calc(var(--gutter) * 2)) 1fr;
+  }
+  .prose > * { grid-column: 2; }
+
+  .cairn-fig { margin: 2.1rem 0; }
+  .cairn-fig img,
+  .cairn-fig .ph { display: block; width: 100%; height: auto; border-radius: .5rem; }
+  .cairn-fig figcaption { margin-top: .6rem; font-size: .8125rem; line-height: 1.5; color: var(--color-muted); }
+
+  /* measure default: a bare <figure>, image at the reading measure. nothing breaks out. */
+
+  /* center: a below-measure image, centered in the measure column. for a portrait or a small image.
+     a measure-width landscape image looks the same as the default here, by design (center only
+     changes a sub-measure image), so the control teaches when to reach for it. */
+  .cairn-place-center { text-align: center; }
+  .cairn-place-center img,
+  .cairn-place-center .ph { max-width: min(100%, 24rem); margin-inline: auto; }
+
+  /* wide: breaks past the measure to a wider band, centered. shares the measure's gutter so at narrow
+     widths it converges with the default rather than poking past the body text edge. */
+  .cairn-place-wide { grid-column: 1 / -1; width: min(var(--wide), 100% - calc(var(--gutter) * 2)); margin-inline: auto; }
+
+  /* full: full-bleed across the content width, corners squared to read as a deliberate bleed. the
+     caption returns to the measure (and its gutter), so it reads as a line of text, not a banner. */
+  .cairn-place-full { grid-column: 1 / -1; width: 100%; }
+  .cairn-place-full img,
+  .cairn-place-full .ph { border-radius: 0; }
+  .cairn-place-full figcaption { max-width: var(--measure); margin-inline: auto; padding: 0 var(--gutter); }
+
+  /* photo stand-ins (no bundled bytes): warm dawn-light gradients at photo proportions, kept in the
+     warm hue family so they sit on the Warm Stone surface rather than competing with the violet accent */
+  .ph { aspect-ratio: 3 / 2; }
+  .ph-a { background: linear-gradient(170deg, oklch(82% 0.06 80) 0%, oklch(74% 0.08 60) 55%, oklch(64% 0.09 45) 100%); }
+  .ph-b { background: linear-gradient(150deg, oklch(52% 0.06 60) 0%, oklch(70% 0.09 50) 60%, oklch(85% 0.08 80) 100%); }
+  .ph-c { background: linear-gradient(200deg, oklch(88% 0.05 85) 0%, oklch(72% 0.07 55) 100%); }
+  .ph-d { background: linear-gradient(160deg, oklch(40% 0.05 60) 0%, oklch(60% 0.1 45) 55%, oklch(86% 0.08 85) 100%); }
+
+  .role-eyebrow {
+    font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--color-muted); margin: 2.4rem 0 -.6rem; display: flex; align-items: baseline; gap: .55rem;
+  }
+  .role-eyebrow code { font-family: var(--font-editor); text-transform: none; letter-spacing: 0; color: var(--color-accent); font-size: .75rem; }
+
+  /* ===== the admin panel surfaces (toolbar, control, chip) ===== */
+  .panel-ground { background: var(--color-base-200); color: var(--color-base-content); font-family: var(--font-body); padding: 30px 26px 34px; -webkit-font-smoothing: antialiased; }
+  .panel-grid { display: flex; flex-wrap: wrap; gap: 26px; align-items: flex-start; }
+  .panel-eyebrow { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); margin: 0 0 12px; }
+  .col { display: flex; flex-direction: column; gap: 14px; }
+
+  /* the persistent toolbar control (editor instrument strip: ghost glyph buttons, hairline dividers).
+     the figure control is a toolbar button, enabled when the caret is on a media image, NOT a
+     contextual toolbar that mounts on caret movement. */
+  .strip { display: inline-flex; align-items: center; gap: 2px; padding: 5px 7px; background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: .7rem; box-shadow: var(--cairn-shadow); }
+  .tb { display: inline-flex; align-items: center; justify-content: center; height: 30px; width: 30px; border: 0; background: transparent; border-radius: .5rem; color: var(--color-subtle); cursor: pointer; }
+  .tb:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .tb-fig { width: auto; gap: 5px; padding: 0 9px; font: 500 .8125rem/1 var(--font-body); }
+  .tb-fig.on { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); font-weight: 600; }
+  .tb-fig.off { color: var(--color-muted); opacity: .55; cursor: not-allowed; }
+  .tdiv { width: 1px; height: 18px; background: var(--cairn-card-border); margin: 0 5px; }
+  .strip-note { font-size: .75rem; color: var(--color-muted); margin: 7px 2px 0; }
+
+  /* the figure control form (the MediaFigureControl the toolbar button opens; a popover-grade card) */
+  .pop { position: relative; background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: .85rem; box-shadow: var(--cairn-shadow); padding: 16px; width: 21rem; max-width: 100%; }
+  .pop::before { content: ""; position: absolute; top: -7px; left: 22px; width: 12px; height: 12px; background: var(--color-base-100); border-left: 1px solid var(--cairn-card-border); border-top: 1px solid var(--cairn-card-border); transform: rotate(45deg); }
+  .pop-head { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+  .pop-head .glyph { width: 26px; height: 26px; border-radius: .5rem; display: inline-flex; align-items: center; justify-content: center; background: color-mix(in oklab, var(--color-primary) 12%, transparent); color: var(--color-primary); flex: none; }
+  .pop-head .title { font-weight: 600; font-size: .9375rem; }
+
+  .field { margin-bottom: 13px; }
+  .field > label { display: block; font-size: .8125rem; font-weight: 500; margin-bottom: 6px; }
+  .input { width: 100%; box-sizing: border-box; font: 400 .875rem/1.4 var(--font-body); color: var(--color-base-content); background: var(--color-base-100); border: 1px solid var(--color-base-300); border-radius: .625rem; padding: 8px 11px; }
+  .input::placeholder { color: var(--color-muted); }
+  .input:focus-visible { outline: none; border-color: color-mix(in oklab, var(--color-primary) 70%, transparent); box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-primary) 70%, transparent); }
+  .field-hint { font-size: .75rem; color: var(--color-muted); margin-top: 6px; line-height: 1.45; }
+
+  /* alt state, surfaced beside the caption so alt reads as distinct from the caption */
+  .alt-row { display: flex; align-items: center; gap: 8px; font-size: .8125rem; margin: -2px 0 13px; padding: 7px 10px; border-radius: .55rem; background: color-mix(in oklab, var(--color-base-content) 3%, transparent); }
+  .alt-row .lbl { font-weight: 500; }
+  .alt-row .set { display: inline-flex; align-items: center; gap: 4px; color: var(--color-positive-ink); }
+  .alt-row .miss { display: inline-flex; align-items: center; gap: 4px; color: var(--cairn-warning-ink); font-weight: 500; }
+  .alt-row .act { margin-left: auto; background: transparent; border: 0; color: var(--color-primary); font: 500 .8125rem/1 var(--font-body); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+
+  /* the role segmented control (segmented recipe: one bordered group, borderless tinting segments,
+     a check glyph as the non-color state cue) */
+  .seg { display: inline-flex; width: 100%; border: 1px solid var(--color-base-300); border-radius: .625rem; overflow: hidden; background: var(--color-base-100); }
+  .seg button { flex: 1 1 0; font: 500 .8125rem/1 var(--font-body); border: 0; background: transparent; color: var(--color-muted); padding: 8px 4px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--color-base-300); }
+  .seg button[aria-pressed='true'] { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); font-weight: 600; }
+  .seg button .chk { width: 12px; height: 12px; opacity: 0; }
+  .seg button[aria-pressed='true'] .chk { opacity: 1; }
+  .seg.dim { opacity: .5; }
+
+  .pop-actions { display: flex; align-items: center; gap: 8px; margin-top: 15px; }
+  .btn { font: 600 .8125rem/1 var(--font-body); border-radius: .625rem; padding: 9px 14px; cursor: pointer; border: 1px solid transparent; }
+  .btn-primary { background: var(--color-primary); color: var(--color-primary-content); box-shadow: 0 1px 2px color-mix(in oklab, var(--color-primary) 35%, transparent); }
+  .btn-primary[disabled] { opacity: .5; cursor: not-allowed; box-shadow: none; }
+  .btn-ghost { background: transparent; color: var(--color-subtle); border-color: var(--color-base-300); }
+
+  /* the alt radiogroup (describe it / decorative), the choice that the warning sits beneath */
+  .radio-row { display: flex; gap: 8px; }
+  .radio { flex: 1 1 0; display: flex; align-items: center; gap: 7px; padding: 8px 10px; border: 1px solid var(--color-base-300); border-radius: .625rem; font-size: .8125rem; cursor: pointer; }
+  .radio.sel { border-color: color-mix(in oklab, var(--color-primary) 55%, transparent); background: color-mix(in oklab, var(--color-primary) 8%, transparent); color: var(--color-primary); font-weight: 600; }
+  .radio .dot { width: 13px; height: 13px; border-radius: 50%; border: 1px solid var(--color-base-300); flex: none; }
+  .radio.sel .dot { border-color: var(--color-primary); background: radial-gradient(circle at center, var(--color-primary) 0 4px, transparent 5px); }
+
+  .warn { display: flex; gap: 7px; align-items: flex-start; margin-top: 12px; padding: 9px 11px; border-radius: .55rem; background: color-mix(in oklab, var(--cairn-warning-ink) 8%, transparent); }
+  .warn svg { flex: none; margin-top: 1px; color: var(--cairn-warning-ink); }
+  .warn p { margin: 0; font-size: .75rem; line-height: 1.5; color: var(--cairn-warning-ink); }
+
+  /* ===== the editor source view: the chip and the directive rail ===== */
+  .editor-card { background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: 1rem; box-shadow: var(--cairn-shadow); padding: 16px 0; width: 30rem; max-width: 100%; }
+  .src { font-family: var(--font-editor); font-size: .9375rem; line-height: 1.85; }
+  .src .ln { padding: 0 18px; white-space: pre-wrap; }
+  .src .mk { color: var(--color-muted); }
+  .src .dirname { color: var(--color-accent); font-weight: 500; }
+  .src .rail { box-shadow: inset 2px 0 0 0 color-mix(in oklab, var(--color-accent) 72%, transparent); padding-left: calc(18px + 1.1rem); }
+
+  .chip { display: inline-flex; align-items: center; gap: .45rem; vertical-align: -3px; background: color-mix(in oklab, var(--color-accent) 8%, var(--color-base-100)); border: 1px solid color-mix(in oklab, var(--color-accent) 30%, transparent); border-radius: .4rem; padding: .12rem .42rem; font-family: var(--font-editor); font-size: .8125rem; color: var(--color-base-content); }
+  .chip .thumb { width: 1.15rem; height: 1.15rem; border-radius: .22rem; flex: none; }
+  .chip .name { max-width: 11rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chip .role-pill { font-family: var(--font-body); font-size: .625rem; font-weight: 600; letter-spacing: .01em; color: var(--color-accent); border: 1px solid color-mix(in oklab, var(--color-accent) 35%, transparent); border-radius: .3rem; padding: .04rem .34rem; background: var(--color-base-100); }
+  .chip .needs-alt { display: inline-flex; align-items: center; gap: .18rem; font-family: var(--font-body); font-size: .6875rem; font-weight: 500; color: var(--cairn-warning-ink); }
+  .chip .needs-alt svg { width: 11px; height: 11px; }
+  .chip-demo { background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: 1rem; box-shadow: var(--cairn-shadow); padding: 16px 18px; width: 24rem; max-width: 100%; }
+  .chip-demo .cap { font-family: var(--font-body); font-size: .75rem; color: var(--color-muted); margin: 10px 0 0; }
+</style>
+</head>
+<body>
+
+<p class="mock-label">Media 3a, the inline figure, captions and placement (rev. 2)</p>
+<p class="mock-note">
+  The visual contract for the figure render output and the editor controls. A figure is the cairn-reserved
+  <code>:::figure</code> directive wrapping a media image. The placement role rides the class
+  (<code>center</code>, <code>wide</code>, <code>full</code>, plus the bare measure default), and the caption is
+  the directive body text. Tasks 4 through 6 implement against this. Section A is the reader render: the
+  showcase ships these <code>.cairn-place-*</code> values as default CSS and a site overrides them. Rev. 2 folds
+  in an adversarial critique (the control's full state machine, alt surfaced beside the caption, a robust wide
+  gutter, a narrow-viewport proof, and the "Measure" rename).
+</p>
+
+<!-- ============================== LIGHT ============================== -->
+<div class="screen"><div data-theme="cairn-admin">
+
+  <!-- Section A: the rendered placement states -->
+  <div class="reader">
+    <div class="prose">
+      <h1>A season on the early tracks</h1>
+      <p class="kicker">How four placements read in the flow of a post.</p>
+      <p>
+        Body text holds the reading measure so the line length stays comfortable. A figure can sit at that
+        same measure, step in narrower, break past it, or run the full width. The placement is the author's
+        call, made once in the control and written into the source as a role class.
+      </p>
+
+      <div class="role-eyebrow">Measure default <code>:::figure</code></div>
+      <figure class="cairn-fig">
+        <div class="ph ph-a" role="img" aria-label="Dawn light over groomed cross-country tracks"></div>
+        <figcaption>First light on the groomed tracks, a half hour before the lot fills.</figcaption>
+      </figure>
+      <p>
+        The default figure sits at the measure, the same width as the paragraphs around it. It is the right
+        choice for most images in the body of a post.
+      </p>
+
+      <div class="role-eyebrow">Center <code>:::figure{.center}</code></div>
+      <figure class="cairn-fig cairn-place-center">
+        <div class="ph ph-c" role="img" aria-label="A trail sign at a junction" style="aspect-ratio: 3 / 4;"></div>
+        <figcaption>The junction sign at the top of the climb.</figcaption>
+      </figure>
+      <p>
+        Center keeps a smaller image from stretching to the full measure. It suits a portrait crop or a detail
+        shot, held in the column and centered.
+      </p>
+
+      <div class="role-eyebrow">Wide <code>:::figure{.wide}</code></div>
+      <figure class="cairn-fig cairn-place-wide">
+        <div class="ph ph-b" role="img" aria-label="A panorama of the valley from the ridge"></div>
+        <figcaption>The valley opens up from the ridge at the far turn.</figcaption>
+      </figure>
+      <p>
+        Wide breaks past the measure to a broader band, still centered on the page. Reach for it when an image
+        earns more room than the text column gives.
+      </p>
+
+      <div class="role-eyebrow">Full <code>:::figure{.full}</code></div>
+      <figure class="cairn-fig cairn-place-full">
+        <div class="ph ph-d" role="img" aria-label="The full ridgeline at dusk"></div>
+        <figcaption>The ridgeline at dusk. The caption returns to the measure so it reads as a line of text.</figcaption>
+      </figure>
+      <p>
+        Full runs edge to edge across the content width. The image goes full-bleed, and the caption steps back
+        to the measure so it stays readable rather than spanning the whole band.
+      </p>
+    </div>
+  </div>
+
+  <!-- Section B: the control, shown as a persistent toolbar button across its states -->
+  <div class="panel-ground">
+    <div class="panel-grid">
+
+      <div class="col">
+        <p class="panel-eyebrow">The control is a persistent toolbar button</p>
+        <div>
+          <div class="strip">
+            <button class="tb" title="Bold" aria-label="Bold"><b>B</b></button>
+            <button class="tb" title="Link" aria-label="Link"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
+            <span class="tdiv"></span>
+            <button class="tb tb-fig on" title="Edit figure">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>Figure
+            </button>
+          </div>
+          <p class="strip-note">Enabled: the caret sits on a media image.</p>
+        </div>
+        <div>
+          <div class="strip">
+            <button class="tb" title="Bold" aria-label="Bold"><b>B</b></button>
+            <button class="tb" title="Link" aria-label="Link"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
+            <span class="tdiv"></span>
+            <button class="tb tb-fig off" disabled title="Put the caret on an image">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>Figure
+            </button>
+          </div>
+          <p class="strip-note">Disabled: the caret is in plain text. The button never moves or hides.</p>
+        </div>
+      </div>
+
+      <!-- the form, on a bare image (wrap) -->
+      <div class="col">
+        <p class="panel-eyebrow">Caret on a bare image</p>
+        <div class="pop">
+          <div class="pop-head">
+            <span class="glyph" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg></span>
+            <span class="title">Wrap in a figure</span>
+          </div>
+          <div class="field">
+            <label for="cap1">Caption</label>
+            <input class="input" id="cap1" type="text" placeholder="Describe what the image adds to the post" />
+            <p class="field-hint">Shown under the image, for everyone. This is not the alt text.</p>
+          </div>
+          <div class="alt-row">
+            <span class="lbl">Alt text</span>
+            <span class="set"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Described</span>
+            <button class="act">Edit</button>
+          </div>
+          <div class="field">
+            <label id="pl1">Placement</label>
+            <div class="seg" role="group" aria-labelledby="pl1">
+              <button type="button" aria-pressed="true"><svg class="chk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Measure</button>
+              <button type="button" aria-pressed="false">Center</button>
+              <button type="button" aria-pressed="false">Wide</button>
+              <button type="button" aria-pressed="false">Full</button>
+            </div>
+            <p class="field-hint">Center suits an image narrower than the text column. Measure keeps it at the column width.</p>
+          </div>
+          <div class="pop-actions">
+            <button class="btn btn-primary">Wrap in figure</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- the form, on an existing figure (update / unwrap) -->
+      <div class="col">
+        <p class="panel-eyebrow">Caret in an existing figure</p>
+        <div class="pop">
+          <div class="pop-head">
+            <span class="glyph" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg></span>
+            <span class="title">Edit figure</span>
+          </div>
+          <div class="field">
+            <label for="cap2">Caption</label>
+            <input class="input" id="cap2" type="text" value="The valley opens up from the ridge at the far turn." />
+          </div>
+          <div class="alt-row">
+            <span class="lbl">Alt text</span>
+            <span class="set"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Described</span>
+            <button class="act">Edit</button>
+          </div>
+          <div class="field">
+            <label id="pl2">Placement</label>
+            <div class="seg" role="group" aria-labelledby="pl2">
+              <button type="button" aria-pressed="false">Measure</button>
+              <button type="button" aria-pressed="false">Center</button>
+              <button type="button" aria-pressed="true"><svg class="chk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Wide</button>
+              <button type="button" aria-pressed="false">Full</button>
+            </div>
+          </div>
+          <div class="pop-actions">
+            <button class="btn btn-primary">Update figure</button>
+            <button class="btn btn-ghost">Unwrap</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- the warning state and the source chip -->
+    <div class="panel-grid" style="margin-top: 28px;">
+
+      <div class="col">
+        <p class="panel-eyebrow">A decorative image given a caption</p>
+        <div class="pop" style="width: 22rem;">
+          <div class="pop-head">
+            <span class="glyph" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg></span>
+            <span class="title">Edit figure</span>
+          </div>
+          <div class="field">
+            <label for="cap3">Caption</label>
+            <input class="input" id="cap3" type="text" value="The junction sign at the top of the climb." />
+          </div>
+          <div class="field">
+            <label id="alt3">Alt text</label>
+            <div class="radio-row" role="radiogroup" aria-labelledby="alt3">
+              <span class="radio"><span class="dot"></span>Describe it</span>
+              <span class="radio sel"><span class="dot"></span>Decorative</span>
+            </div>
+          </div>
+          <div class="warn" role="note">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <p>A decorative image is hidden from screen readers, but this one has a caption. Describe it, or remove the caption.</p>
+          </div>
+          <div class="pop-actions">
+            <button class="btn btn-primary">Update figure</button>
+            <button class="btn btn-ghost">Unwrap</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="col">
+        <p class="panel-eyebrow">The source chip and the directive</p>
+        <div class="editor-card">
+          <div class="src">
+            <div class="ln"><span class="mk">:::</span><span class="dirname">figure</span><span class="mk">{.wide}</span></div>
+            <div class="ln rail"><span class="chip"><span class="thumb ph-b"></span><span class="name">valley-ridge</span><span class="role-pill">wide</span></span></div>
+            <div class="ln rail">The valley opens up from the ridge at the far turn.</div>
+            <div class="ln"><span class="mk">:::</span></div>
+          </div>
+        </div>
+        <div class="chip-demo">
+          <p class="cap" style="margin-top:0; margin-bottom:10px;">A bare image, no figure yet, alt still missing:</p>
+          <span class="chip">
+            <span class="thumb ph-a"></span>
+            <span class="name">first-light</span>
+            <span class="needs-alt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>needs alt</span>
+          </span>
+          <p class="cap">Inside a figure the chip echoes the role at a glance, since the chip stands in for the raw token. The decoration agrees with the <code style="font-family:var(--font-editor)">{.wide}</code> on the opener.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div></div>
+
+<!-- ============================== DARK ============================== -->
+<div class="screen"><div data-theme="cairn-admin-dark">
+
+  <div class="reader">
+    <div class="prose">
+      <h1>A season on the early tracks</h1>
+      <p class="kicker">The same four placements on the dark surface.</p>
+
+      <div class="role-eyebrow">Measure default <code>:::figure</code></div>
+      <figure class="cairn-fig">
+        <div class="ph ph-a" role="img" aria-label="Dawn light over groomed cross-country tracks"></div>
+        <figcaption>First light on the groomed tracks, a half hour before the lot fills.</figcaption>
+      </figure>
+
+      <div class="role-eyebrow">Center <code>:::figure{.center}</code></div>
+      <figure class="cairn-fig cairn-place-center">
+        <div class="ph ph-c" role="img" aria-label="A trail sign at a junction" style="aspect-ratio: 3 / 4;"></div>
+        <figcaption>The junction sign at the top of the climb.</figcaption>
+      </figure>
+
+      <div class="role-eyebrow">Wide <code>:::figure{.wide}</code></div>
+      <figure class="cairn-fig cairn-place-wide">
+        <div class="ph ph-b" role="img" aria-label="A panorama of the valley from the ridge"></div>
+        <figcaption>The valley opens up from the ridge at the far turn.</figcaption>
+      </figure>
+
+      <div class="role-eyebrow">Full <code>:::figure{.full}</code></div>
+      <figure class="cairn-fig cairn-place-full">
+        <div class="ph ph-d" role="img" aria-label="The full ridgeline at dusk"></div>
+        <figcaption>The ridgeline at dusk. The caption returns to the measure so it reads as a line of text.</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <div class="panel-ground">
+    <div class="panel-grid">
+
+      <div class="col">
+        <p class="panel-eyebrow">The control, edit-an-existing-figure state</p>
+        <div class="strip" style="margin-bottom: 4px;">
+          <button class="tb" title="Bold" aria-label="Bold"><b>B</b></button>
+          <span class="tdiv"></span>
+          <button class="tb tb-fig on" title="Edit figure">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>Figure
+          </button>
+        </div>
+        <div class="pop">
+          <div class="pop-head">
+            <span class="glyph" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg></span>
+            <span class="title">Edit figure</span>
+          </div>
+          <div class="field">
+            <label for="capd">Caption</label>
+            <input class="input" id="capd" type="text" value="The valley opens up from the ridge at the far turn." />
+          </div>
+          <div class="alt-row">
+            <span class="lbl">Alt text</span>
+            <span class="miss"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Needs alt</span>
+            <button class="act">Add</button>
+          </div>
+          <div class="field">
+            <label id="pld">Placement</label>
+            <div class="seg" role="group" aria-labelledby="pld">
+              <button type="button" aria-pressed="false">Measure</button>
+              <button type="button" aria-pressed="false">Center</button>
+              <button type="button" aria-pressed="true"><svg class="chk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Wide</button>
+              <button type="button" aria-pressed="false">Full</button>
+            </div>
+          </div>
+          <div class="pop-actions">
+            <button class="btn btn-primary">Update figure</button>
+            <button class="btn btn-ghost">Unwrap</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="col">
+        <p class="panel-eyebrow">The source chip and the directive</p>
+        <div class="editor-card">
+          <div class="src">
+            <div class="ln"><span class="mk">:::</span><span class="dirname">figure</span><span class="mk">{.wide}</span></div>
+            <div class="ln rail"><span class="chip"><span class="thumb ph-b"></span><span class="name">valley-ridge</span><span class="role-pill">wide</span></span></div>
+            <div class="ln rail">The valley opens up from the ridge at the far turn.</div>
+            <div class="ln"><span class="mk">:::</span></div>
+          </div>
+        </div>
+        <div class="chip-demo">
+          <p class="cap" style="margin-top:0; margin-bottom:10px;">A bare image, no figure yet, alt still missing:</p>
+          <span class="chip">
+            <span class="thumb ph-a"></span>
+            <span class="name">first-light</span>
+            <span class="needs-alt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>needs alt</span>
+          </span>
+          <p class="cap">The role pill holds contrast on the dark surface in the accent ink.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div></div>
+
+<!-- ===================== NARROW VIEWPORT PROOF (open risk 4) ===================== -->
+<p class="mock-label">Narrow viewport (about 384px): the four placements hold</p>
+<p class="mock-note">
+  Wide shares the measure gutter, so it converges with the default rather than poking past the body text edge.
+  Full bleeds to the content edge with the caption stepped back to the gutter.
+</p>
+<div class="screen narrow"><div data-theme="cairn-admin">
+  <div class="reader" style="padding-bottom: 20px;">
+    <div class="prose">
+      <p style="font-size: .95rem;">Body text holds the measure even on a phone.</p>
+      <div class="role-eyebrow">Default</div>
+      <figure class="cairn-fig"><div class="ph ph-a"></div><figcaption>First light on the groomed tracks.</figcaption></figure>
+      <div class="role-eyebrow">Center</div>
+      <figure class="cairn-fig cairn-place-center"><div class="ph ph-c" style="aspect-ratio:3/4;"></div><figcaption>The junction sign.</figcaption></figure>
+      <div class="role-eyebrow">Wide</div>
+      <figure class="cairn-fig cairn-place-wide"><div class="ph ph-b"></div><figcaption>The valley from the ridge.</figcaption></figure>
+      <div class="role-eyebrow">Full</div>
+      <figure class="cairn-fig cairn-place-full"><div class="ph ph-d"></div><figcaption>The ridgeline at dusk.</figcaption></figure>
+    </div>
+  </div>
+</div></div>
+
+</body>
+</html>

@@ -11,7 +11,53 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-16, latest): media is author-usable; Phase 2b insert UI LANDED on `feat/media-2b`, the whole media stack is release-ready as `0.57.0`
+## Immediate next action (2026-06-16, latest): Phase 3a the inline figure LANDED on `feat/media-3a`; the whole media stack (1, 2a, 2b, 3a) is release-ready as `0.57.0`
+
+**Phase 3a of the media gallery (the inline figure: captions and placement) LANDED on `feat/media-3a`**
+(off `main` at `8410e9e`, which carried the whole media stack through 2b plus the 3a plan commit). Nine
+plan tasks, the code-simplifier pass, a three-reviewer gate with its fold-in, and the docs arm. Commits
+`1f3c15f..40603af`. **The version stays `0.57.0`: 3a folds into the unreleased bundled media release**,
+additive to the public API with no new consumer action beyond the 2b R2 wiring.
+
+An author now wraps an inline image in a cairn-reserved `:::figure` directive to give it a caption (the
+directive body text, rendered to `<figcaption>`) and a placement (a closed role set `center`/`wide`/`full`
+plus the bare measure default, carried as a `cairn-place-*` class on the `<figure>`). Built: the
+`remarkFigure` render step (handling both the blank-line and no-blank-line caption forms); `figure`/
+`figcaption` in the base sanitize floor and the reserved `figure` registry name; the showcase default
+`.cairn-place-*` CSS; the four pure source transforms (`figureAtImage`, `wrapImageInFigure`,
+`updateFigure`, `unwrapFigure`) that keep the inner `media:` token byte-intact; the `MediaFigureControl`
+form on the persistent Edit-block toolbar control with a new `onMediaImageAtCaret` seam; and the source
+chip's figure/role pill. The markdown source is the source of truth and the preview stays read-only.
+
+Gate green at the tip, run first-hand: `npm run check` 973 files 0/0, `npm test` 184 files / 1913 tests
+exit 0 (stable, not cache-dependent), the showcase Playwright E2E 14 passed in a real browser (the new
+`media-figure.spec.ts` drives insert -> Figure control -> `:::figure{.wide}` source -> preview
+`<figure class><img><figcaption>` -> commit body + `media.json`), the reference/package/docs/prose,
+version, and editor-boundary gates green. Three reviewers (svelte, daisyui-a11y, an Opus render/transform
+correctness pass): one CRITICAL caught only by the adversarial pass (`readCaption` read only the
+blank-line caption form, so a hand-authored no-blank-line figure showed an empty caption and "Update"
+dropped it; fixed + tested), one IMPORTANT (the disabled Figure button's `.btn-disabled` set
+`pointer-events: none` and killed the title tooltip; switched to `opacity`/`cursor`), and four Minors,
+all folded at `cb3df0f`. Contrast computed: the role pill text 5.28:1 light / 5.86:1 dark, the warning
+ink AA on base-100 and the 8% tint in both themes. The live admin smoke rides the first site cutover
+(presentation change, proven by the E2E + the 2a workerd suite), matching the 2b deferral. Post-mortem
+with the carry-forwards in the plan (`docs/superpowers/plans/2026-06-16-cairn-media-3a-inline-figure.md`).
+
+**Next actions, in order (all Geoff's calls):**
+1. **Merge `feat/media-3a` to `main`** (needs the push). The branch is the whole media stack on main,
+   release-ready at `0.57.0`. Earlier media branches (`feat/media-foundation`, `feat/media-2a`,
+   `feat/media-2b`) fold into this if not already on local main.
+2. **Cut the bundled `0.57.0` release**: push `main`, then `gh release create v0.57.0 --target main` with
+   the `0.57.0` changelog entry (now carrying the figure work) as the body. It carries the R2-wiring
+   `Consumers must:` line and fires the OIDC trusted-publishing workflow.
+3. **Per-site cutover** (each a site-pass, the live proof): bind a `MEDIA_BUCKET` R2 bucket, mount the
+   `/media` route, bump to `^0.57.0`, run the real guard + upload + delivery live smoke; copy the
+   `.cairn-place-*` CSS into the site's content stylesheet to style the placements.
+4. Then **Phase 3b** (the hero frontmatter image field) and **3c** (the gallery component), reusing the
+   caption+alt+role model 3a designed once. The `backup-media-2b-pre-scrub` safety branch can be deleted
+   after the push.
+
+## Prior next action (2026-06-16): media is author-usable; Phase 2b insert UI LANDED on `feat/media-2b`, the whole media stack is release-ready as `0.57.0`
 
 **Phase 2b of the media gallery (the insert UI) LANDED on `feat/media-2b`** (branched off `main` at
 `a4c1aaf`, which already carried the Phase 1 foundation and the Phase 2a infra, so this branch is the whole

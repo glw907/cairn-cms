@@ -336,3 +336,60 @@ media release that ships Phases 1, 2a, 2b, and 3a together is Geoff's separate c
 - If a shipped cairn content stylesheet (rather than the showcase reference plus the docs snippet) is
   wanted so a fresh non-scaffolded site gets the placement defaults out of the box, that is a separate
   engine call (cairn ships admin CSS today, not content CSS).
+
+---
+
+## Post-mortem (2026-06-16)
+
+**LANDED on `feat/media-3a`** (off `main` at `8410e9e`, which already carried the whole media stack
+through 2b). All nine tasks, the code-simplifier pass, the three-reviewer gate with its fold-in, and
+the docs arm. Commits `1f3c15f..40603af`. The version stays `0.57.0`: 3a folds into the unreleased
+bundled media release, additive to the public API with no new consumer action beyond the 2b R2 wiring.
+
+**Built.** A `remarkFigure` engine render step rewrites the reserved `:::figure` directive into
+`<figure><img><figcaption>`, the child media image left for the untouched resolver, the role validated
+against the closed set `center`/`wide`/`full`. `figure`/`figcaption` joined the base sanitize floor and
+`figure` became a reserved registry name. The showcase carries the default `.cairn-place-*` CSS (the
+viewport-breakout model, so `wide`/`full` escape the measure without a grid). The editor gained four
+pure source transforms (`figureAtImage`, `wrapImageInFigure`, `updateFigure`, `unwrapFigure`), a new
+`onMediaImageAtCaret` seam mirroring `onComponentAtCaret`, the `MediaFigureControl` form (the Edit-block
+dialog pattern), and the source-chip role pill. A `frontend-design` mockup (rev. 2, adversarially
+critiqued) was the visual contract.
+
+**Verified, first-hand.** `npm run check` 973 files 0/0, `npm test` 184 files / 1913 tests exit 0 (run
+fresh, stable, not cache-dependent), the showcase Playwright E2E 14 passed in a real browser (the new
+`media-figure.spec.ts` drives insert -> Figure control -> `:::figure{.wide}` source -> preview
+`<figure class><img><figcaption>` -> commit body + `media.json`), the reference/package/docs/prose and
+editor-boundary gates green. The role-pill and warning-ink contrast was computed: pill text 5.28:1
+light / 5.86:1 dark, warning ink AA on base-100 and the 8% tint in both themes.
+
+**Decisions locked.** The emitted source uses a blank line between the image and the caption, but
+`remarkFigure` and `figureAtImage` both handle the no-blank-line form too, so a hand-authored figure in
+either form renders and round-trips. The caption is raw single-line markdown (inline markup preserved),
+fence-escaped only against a leading directive colon. The inner `media:` token is preserved
+byte-for-byte across wrap/update/unwrap (open risk 3 held). The chip role pill mirrors `remarkFigure`
+exactly (a role only for exactly one closed-set class, via the `.class` shorthand or `class="..."`).
+The layer charter is an owned, bounded exception: content carries a closed theme-owned role set, never
+freeform presentation (recorded in the render-safety explanation).
+
+**Review gate.** Three reviewers (svelte, daisyui-a11y, an Opus render/transform-correctness pass). One
+**Critical**, caught only by the adversarial correctness pass: `readCaption` read only the blank-line
+caption form, so opening a hand-authored no-blank-line figure showed an empty caption and "Update"
+silently dropped it. Fixed and tested. One **Important** (both UI reviewers): the disabled Figure
+button's `.btn-disabled` set `pointer-events: none`, suppressing the title tooltip; switched to
+`opacity`/`cursor` utilities. Minors folded: clear the dialog snapshot on close, tie the alt-status row
+to its label, make the warning an always-present `role="status"` live region, read the explicit
+`class="..."` form in the chip. All at `cb3df0f`.
+
+**Watch items / carry-forward.** A caption authored with a literal leading `\:` loses its backslash on
+round-trip (a deliberately deferred extreme edge). The figure apply rewrites the whole doc via
+`replaceRange(0, body.length, ...)` (correct, undo reverts in one step via the selection-only second
+dispatch, but coarser than a targeted range; a future refinement could return a minimal change range).
+The live admin smoke rides the first site cutover (the render-and-editor change is presentation, proven
+by the E2E and the 2a workerd suite), matching the 2b deferral. Phases 3b (the hero frontmatter image
+field) and 3c (the gallery component) reuse the caption-plus-alt-plus-role model designed here.
+
+**Next (Geoff's calls).** Merge `feat/media-3a` to `main`, then cut the bundled `0.57.0` release
+(`gh release create v0.57.0 --target main`, the changelog window as the body, carrying the R2-wiring
+Consumers-must line) which fires OIDC trusted publishing, then the per-site R2 cutover (the deferred
+live smoke). Then Phase 3b. The `backup-media-2b-pre-scrub` branch can be deleted after the push.

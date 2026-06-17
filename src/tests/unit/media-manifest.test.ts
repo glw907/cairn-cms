@@ -4,6 +4,7 @@ import {
   parseMediaEntries,
   findByHash,
   upsertMediaEntry,
+  removeMediaEntry,
   serializeMediaManifest,
   type MediaEntry,
   type MediaManifest,
@@ -130,6 +131,33 @@ describe('upsertMediaEntry', () => {
     // The original manifest still holds the original entry's values.
     expect(manifest).toEqual(before);
     expect(manifest[ENTRY_A.hash].alt).toBe('A pair of blue running shoes');
+  });
+});
+
+describe('removeMediaEntry', () => {
+  it('drops the named hash and leaves the other rows untouched', () => {
+    const manifest: MediaManifest = { [ENTRY_A.hash]: ENTRY_A, [ENTRY_B.hash]: ENTRY_B };
+    const next = removeMediaEntry(manifest, ENTRY_A.hash);
+
+    expect(next).not.toBe(manifest);
+    expect(ENTRY_A.hash in next).toBe(false);
+    expect(next[ENTRY_B.hash]).toBe(ENTRY_B);
+  });
+  it('is a no-op for an absent hash, returning an equivalent new manifest', () => {
+    const manifest: MediaManifest = { [ENTRY_A.hash]: ENTRY_A };
+    const next = removeMediaEntry(manifest, ENTRY_B.hash);
+
+    expect(next).not.toBe(manifest);
+    expect(next).toEqual(manifest);
+  });
+  it('does not mutate the input manifest', () => {
+    const manifest: MediaManifest = { [ENTRY_A.hash]: ENTRY_A, [ENTRY_B.hash]: ENTRY_B };
+    const before = structuredClone(manifest);
+
+    removeMediaEntry(manifest, ENTRY_A.hash);
+
+    expect(manifest).toEqual(before);
+    expect(ENTRY_A.hash in manifest).toBe(true);
   });
 });
 

@@ -10,6 +10,7 @@ export {
   parseMediaManifest,
   findByHash,
   upsertMediaEntry,
+  removeMediaEntry,
   serializeMediaManifest,
   parseMediaEntries,
   type MediaEntry,

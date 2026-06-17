@@ -25,6 +25,7 @@ import { mediaToken } from '../media/reference.js';
 import { r2Store } from '../media/store.js';
 import { parseMediaEntries, parseMediaManifest, upsertMediaEntry, serializeMediaManifest } from '../media/manifest.js';
 import type { MediaEntry } from '../media/manifest.js';
+import { mediaLibraryEntry } from '../media/library-entry.js';
 import type { MediaLibrary } from '../media/library-entry.js';
 import type { CookieJar, EventBase } from './types.js';
 import type { CairnRuntime, ConceptDescriptor, FrontmatterField, PreviewConfig, ResolvedPreview } from '../content/types.js';
@@ -500,17 +501,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     const mediaLibrary: EditData['mediaLibrary'] = {};
     for (const [hash, e] of Object.entries(parseMediaManifest(parseMediaJson(mediaRaw)))) {
       mediaTargets[hash] = { slug: e.slug, ext: e.ext, contentType: e.contentType };
-      mediaLibrary[hash] = {
-        hash,
-        slug: e.slug,
-        ext: e.ext,
-        contentType: e.contentType,
-        displayName: e.displayName,
-        alt: e.alt,
-        width: e.width,
-        height: e.height,
-        bytes: e.bytes,
-      };
+      mediaLibrary[hash] = mediaLibraryEntry(e);
     }
 
     return {

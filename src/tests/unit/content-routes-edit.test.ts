@@ -402,6 +402,7 @@ describe('editLoad media targets', () => {
         width: 800,
         height: 600,
         bytes: 1234,
+        createdAt: '2026-06-15T00:00:00.000Z',
       },
     });
   });

@@ -1112,6 +1112,7 @@ describe('MarkdownEditor', () => {
       width: 800,
       height: 600,
       bytes: 12345,
+      createdAt: '2026-06-15T00:00:00.000Z',
     },
     [HASH_B]: {
       hash: HASH_B,
@@ -1123,6 +1124,7 @@ describe('MarkdownEditor', () => {
       width: 1024,
       height: 768,
       bytes: 23456,
+      createdAt: '2026-06-15T00:00:00.000Z',
     },
   };
 
@@ -1240,6 +1242,7 @@ describe('MarkdownEditor', () => {
           width: 640,
           height: 480,
           bytes: 9999,
+          createdAt: '2026-06-15T00:00:00.000Z',
         },
       },
     });

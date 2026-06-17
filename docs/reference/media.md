@@ -88,6 +88,15 @@ declare function upsertMediaEntry(manifest: MediaManifest, entry: MediaEntry): M
 Set the entry under its own hash, replacing any same-hash row, and return a new manifest. The input
 is left untouched, so a caller's prior manifest reference stays valid.
 
+### `removeMediaEntry`
+
+```ts
+declare function removeMediaEntry(manifest: MediaManifest, hash: string): MediaManifest;
+```
+
+Drop the entry under the given hash and return a new manifest. Removing an absent hash is a no-op
+that still returns an equivalent new manifest, and the input is left untouched.
+
 ### `serializeMediaManifest`
 
 ```ts

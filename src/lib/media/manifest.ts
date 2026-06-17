@@ -103,6 +103,14 @@ export function upsertMediaEntry(manifest: MediaManifest, entry: MediaEntry): Me
   return { ...manifest, [entry.hash]: entry };
 }
 
+/** Drop the entry under the given hash, returning a new manifest and leaving the input untouched.
+ *  Removing an absent hash is a no-op that still returns an equivalent new manifest. The safe-delete
+ *  path's patch. */
+export function removeMediaEntry(manifest: MediaManifest, hash: string): MediaManifest {
+  const { [hash]: _removed, ...rest } = manifest;
+  return rest;
+}
+
 /** Serialize canonically: the top-level hash keys sorted ascending, two-space pretty, and a trailing
  *  newline, so the committed file diffs cleanly in a PR and a re-serialization is byte-identical. */
 export function serializeMediaManifest(manifest: MediaManifest): string {

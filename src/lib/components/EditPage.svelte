@@ -63,6 +63,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   import type { MediaResolve } from '../render/resolve-media.js';
   import { manifestMediaResolver } from '../render/resolve-media.js';
   import type { MediaEntry } from '../media/manifest.js';
+  import { mediaLibraryEntry } from '../media/library-entry.js';
 
   interface Props {
     /** The edit load's data, plus the site name for the heading. */
@@ -853,22 +854,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   // a just-uploaded image carries its source chip before the next save commits it.
   const mediaLibrary = $derived({
     ...data.mediaLibrary,
-    ...Object.fromEntries(
-      uploadedRecords.map((r) => [
-        r.hash,
-        {
-          hash: r.hash,
-          slug: r.slug,
-          ext: r.ext,
-          contentType: r.contentType,
-          displayName: r.displayName,
-          alt: r.alt,
-          width: r.width,
-          height: r.height,
-          bytes: r.bytes,
-        },
-      ]),
-    ),
+    ...Object.fromEntries(uploadedRecords.map((r) => [r.hash, mediaLibraryEntry(r)])),
   });
 
   // The [[ autocomplete source over the same link targets, handed to the editor's generic seam.

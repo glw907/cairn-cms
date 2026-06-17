@@ -53,9 +53,32 @@ with the carry-forwards in the plan (`docs/superpowers/plans/2026-06-16-cairn-me
 3. **Per-site cutover** (each a site-pass, the live proof): bind a `MEDIA_BUCKET` R2 bucket, mount the
    `/media` route, bump to `^0.57.0`, run the real guard + upload + delivery live smoke; copy the
    `.cairn-place-*` CSS into the site's content stylesheet to style the placements.
-4. Then **Phase 3b** (the hero frontmatter image field) and **3c** (the gallery component), reusing the
-   caption+alt+role model 3a designed once. The `backup-media-2b-pre-scrub` safety branch can be deleted
-   after the push.
+4. Then **Phase 3b** (the hero frontmatter image field), now **DESIGNED + PLANNED 2026-06-16** and ready to
+   execute on a fresh worktree off `main` after `0.57.0` ships. Spec
+   `docs/superpowers/specs/2026-06-16-cairn-media-3b-hero-field-design.md`, plan (9 tasks)
+   `docs/superpowers/plans/2026-06-16-cairn-media-3b-hero-field.md`, the polished mockup
+   `docs/internal/design/2026-06-16-media-3b-hero-mockup.html` (three explorations beside it). 3b designed
+   through a Workflow fan-out (three divergent UI mockups) and two adversarial Opus critics; the UI critic
+   picked the inline-field direction with resting-row and 16:9-preview grafts, and the technical critic
+   caught three blockers now locked as required hardening (frontmatter resolution needs a delivery-layer
+   home; `resolveImageUrl` ships a `media:` token verbatim as a broken og:image, verified; `formValues`
+   stringifies the nested object, verified). The hero is a built-in nested-object `image` field
+   (`{ src, alt, caption }`), unified with the SEO social-card image (one image, both uses), alt as debt,
+   the on-disk `media:` token kept canonical with resolution as a separate `heroImage` projection. Tasks 1
+   (the field-type contract), 3 (the delivery resolution), and 5 (the editor field) are high-blast. **Then
+   3c** (the gallery component), reusing the caption+alt model. The `backup-media-2b-pre-scrub` safety
+   branch can be deleted after the push.
+
+**Resume prompt for the 3b build (fresh session, effort high, after `0.57.0` ships and 3a is on `main`):**
+"Execute Phase 3b of the cairn media gallery: the hero frontmatter image field, plan at
+`docs/superpowers/plans/2026-06-16-cairn-media-3b-hero-field.md` (spec
+`docs/superpowers/specs/2026-06-16-cairn-media-3b-hero-field-design.md`). Invoke the `cairn-pass` skill.
+Launch in `cairn-cms`, create a fresh worktree off `main`. Confirm the baseline (`npm test` exit 0), then
+run the 9 tasks test-first: one `cairn-implementer` per task, review each diff, clear the full gate between
+dispatches, at high effort. Tasks 1, 3, and 5 are high-blast: review closely and upshift to `model: opus`
+if warranted. Tasks 8 (the polish) and 9 (the pass-end, whose adversarial review-gate workflow needs my
+'use a workflow' opt-in) run in the main loop. The mockup is already done. 3b bumps to the next minor after
+`0.57.0` at pass-end."
 
 ## Prior next action (2026-06-16): media is author-usable; Phase 2b insert UI LANDED on `feat/media-2b`, the whole media stack is release-ready as `0.57.0`
 

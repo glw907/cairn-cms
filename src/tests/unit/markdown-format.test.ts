@@ -328,6 +328,24 @@ describe('figureAtImage', () => {
     const info = figureAtImage(block, 12);
     expect(info!.figure!.caption).toBe('A [draft] note with *emphasis*.');
   });
+
+  it('reads the no-blank-line caption form (image and caption share one paragraph)', () => {
+    // The render step handles a hand-authored figure with no blank line between the image and the
+    // caption; the read must too, or opening it in the control shows an empty caption and Update
+    // silently drops it. This is the render step's canonical-example form.
+    const block = `:::figure{.wide}\n${TOKEN}\nA quiet shore at dusk.\n:::`;
+    const info = figureAtImage(block, 20);
+    expect(info!.figure!.role).toBe('wide');
+    expect(info!.figure!.caption).toBe('A quiet shore at dusk.');
+  });
+
+  it('reads only the first text block as the caption, not a trailing stray paragraph', () => {
+    // The render step renders only the first text block after the image as the figcaption; a later
+    // paragraph is a stray <p>. The read mirrors that and does not concatenate the extra block.
+    const block = `:::figure\n${TOKEN}\n\nThe caption.\n\nA stray paragraph.\n:::`;
+    const info = figureAtImage(block, 12);
+    expect(info!.figure!.caption).toBe('The caption.');
+  });
 });
 
 describe('updateFigure', () => {

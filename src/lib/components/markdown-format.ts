@@ -344,25 +344,45 @@ function unescapeCaption(raw: string): string {
   return raw.replace(/^\\(?=:)/, '');
 }
 
-/** Read the raw caption source from a figure directive: the source span from the first text-bearing
- *  block after the image to the last such block, with internal newlines collapsed to single spaces
- *  (the caption is single-line) and the fence escape stripped. Empty when the figure has no caption. */
+/** Collapse a raw caption source span to the single-line value the control edits: internal newlines
+ *  to single spaces, trimmed, with the leading-colon fence escape stripped. */
+function finishCaption(raw: string): string {
+  return unescapeCaption(raw.replace(/\s*\n\s*/g, ' ').trim());
+}
+
+/** Read the raw caption source from a figure directive, mirroring the render step's caption: the first
+ *  text-bearing content after the image. The render step (remark-figure.ts) handles both caption
+ *  forms, so the read must too. In the no-blank-line form the caption shares the image's paragraph,
+ *  trailing the token, so it is read from the token end to that block's end; in the blank-line form it
+ *  is the first text-bearing block after the image's paragraph. Only the first such content is the
+ *  caption (a later block is a stray paragraph the render leaves outside the figcaption). Empty when
+ *  the figure has no caption. */
 function readCaption(doc: string, figure: ContainerDirective, image: Image): string {
-  const imageEnd = image.position?.end?.offset ?? -1;
-  let from = -1;
-  let to = -1;
+  const imageStart = image.position?.start?.offset;
+  const imageEnd = image.position?.end?.offset;
+  if (imageStart == null || imageEnd == null) return '';
+  // The figure's direct child that holds the image (its paragraph).
+  const imageBlock = figure.children.find((child) => {
+    const start = child.position?.start?.offset;
+    const end = child.position?.end?.offset;
+    return start != null && end != null && start <= imageStart && end >= imageEnd;
+  });
+  // No-blank-line form: caption text trails the token inside the image's own paragraph.
+  const blockEnd = imageBlock?.position?.end?.offset;
+  if (blockEnd != null && doc.slice(imageEnd, blockEnd).trim() !== '') {
+    return finishCaption(doc.slice(imageEnd, blockEnd));
+  }
+  // Blank-line form: the first text-bearing block after the image's paragraph.
+  const afterEnd = blockEnd ?? imageEnd;
   for (const child of figure.children) {
     const start = child.position?.start?.offset;
     const end = child.position?.end?.offset;
     if (start == null || end == null) continue;
-    if (start < imageEnd) continue; // the image's own paragraph (or anything before it)
+    if (start < afterEnd) continue;
     if (!blockHasText(child)) continue;
-    if (from === -1) from = start;
-    to = end;
+    return finishCaption(doc.slice(start, end));
   }
-  if (from === -1) return '';
-  const collapsed = doc.slice(from, to).replace(/\s*\n\s*/g, ' ').trim();
-  return unescapeCaption(collapsed);
+  return '';
 }
 
 /** Whether a block's subtree carries any non-whitespace text, the caption-candidate test the render

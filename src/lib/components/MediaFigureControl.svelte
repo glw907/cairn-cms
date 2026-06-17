@@ -108,11 +108,12 @@ own name.
   <!-- The alt-status row: the image's alt state the host derives. Described or Needs alt, the latter
        in the warning ink with a glyph so the state never rides hue alone (WCAG 1.4.1). -->
   <div class="flex items-center gap-2 text-sm">
-    <span class="font-medium">Alt text</span>
+    <span class="font-medium" aria-hidden="true">Alt text</span>
     {#if decorative}
       <span
         class="inline-flex items-center gap-1 font-medium text-[var(--cairn-warning-ink)]"
         data-cairn-alt-status="needs"
+        aria-label="Alt text: needs a description"
       >
         <svg
           width="13"
@@ -132,7 +133,11 @@ own name.
         Needs alt
       </span>
     {:else}
-      <span class="inline-flex items-center gap-1 text-[var(--color-muted)]" data-cairn-alt-status="described">
+      <span
+        class="inline-flex items-center gap-1 text-[var(--color-muted)]"
+        data-cairn-alt-status="described"
+        aria-label="Alt text: described"
+      >
         <svg
           width="13"
           height="13"
@@ -198,9 +203,12 @@ own name.
     </p>
   </div>
 
-  {#if decorativeWithCaption}
+  <!-- An always-present polite live region, so the contradiction announces when it appears in
+       response to the author's own typing (not only on the dialog's open read). Empty and invisible
+       until the warning fills it. -->
+  <div role="status" aria-live="polite">
+    {#if decorativeWithCaption}
     <div
-      role="note"
       class="flex items-start gap-2 rounded-[0.55rem] p-2.5 text-[var(--cairn-warning-ink)]"
       style="background: color-mix(in oklab, var(--cairn-warning-ink) 8%, transparent);"
     >
@@ -225,7 +233,8 @@ own name.
         remove the caption.
       </p>
     </div>
-  {/if}
+    {/if}
+  </div>
 
   <div class="flex justify-end gap-2">
     {#if mode === 'edit'}

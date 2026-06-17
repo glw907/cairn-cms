@@ -617,8 +617,9 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
 
   // Write a figure transform's result back to the editor: overwrite the whole doc through the
   // replaceRange seam, then place the selection the transform chose (the seam alone drops the caret
-  // at the end). The two dispatches land in one undo step's worth of intent; replaceRange focuses the
-  // surface, selectRange then sets the range. Close the dialog last.
+  // at the end). replaceRange dispatches the doc change and focuses the surface; selectRange then
+  // dispatches a selection-only transaction, which CodeMirror's history does not record as its own
+  // undoable event, so one undo reverts the whole figure write. Close the dialog last.
   function writeFigureResult(result: { doc: string; from: number; to: number }) {
     replaceRange(0, body.length, result.doc);
     selectRange(result.from, result.to);
@@ -1278,11 +1279,14 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
                (and the Write surface is up). It never mounts or unmounts on caret movement; only its
                enabled state changes (the Edit-block pattern). The unavailable state uses aria-disabled,
                not the native disabled attribute, so the control stays focusable and its reason reaches
-               assistive technology; openFigure() early-returns so the dead click is inert. -->
+               assistive technology; openFigure() early-returns so the dead click is inert. The dimming
+               uses opacity and cursor utilities, never .btn-disabled, because that sets
+               pointer-events: none and would suppress the title tooltip a mouse user reads for the why. -->
           <button
             type="button"
             class="btn btn-sm btn-ghost btn-square"
-            class:btn-disabled={!figureAvailable}
+            class:opacity-50={!figureAvailable}
+            class:cursor-not-allowed={!figureAvailable}
             aria-haspopup="dialog"
             aria-label={figureLabel}
             title={figureLabel}
@@ -1633,8 +1637,15 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
 <!-- The figure control's host dialog, mounted headless outside the edit form (the control holds its
      own <form>). The toolbar Figure control opens it through openFigure(), pre-filled from the caret
      snapshot. The control is keyed on figurePrefill so it remounts fresh per open, seeding its fields
-     from the new caption/role. The native <dialog> gives the focus trap and Escape for free. -->
-<dialog class="modal" aria-labelledby="cairn-figure-dialog-title" bind:this={figureDialog}>
+     from the new caption/role. The native <dialog> gives the focus trap and Escape for free, and the
+     close event (the X, the backdrop, Escape, and the apply path all fire it) clears the snapshot so
+     the host state matches the closed dialog. -->
+<dialog
+  class="modal"
+  aria-labelledby="cairn-figure-dialog-title"
+  bind:this={figureDialog}
+  onclose={() => (figurePrefill = null)}
+>
   <div class="modal-box max-w-sm">
     <div class="mb-3 flex items-center justify-between">
       <h2 id="cairn-figure-dialog-title" class="flex items-center gap-2 text-base font-semibold">

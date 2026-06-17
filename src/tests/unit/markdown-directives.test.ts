@@ -253,6 +253,12 @@ describe('figureRoleAtLine', () => {
     const lines = [':::figure{.left}', '![alt](media:x.0123456789abcdef)', ':::'];
     expect(figureRoleAtLine(fenceScan(lines), lines, 1)).toBe('figure');
   });
+  it('reads the explicit class="..." attribute form, matching the render', () => {
+    // mdast folds class="wide" into node.attributes.class the same as the .wide shorthand, so the
+    // chip must surface it too, or a hand-authored class="..." figure shows the wrong pill.
+    const lines = [':::figure{class="wide"}', '![alt](media:x.0123456789abcdef)', ':::'];
+    expect(figureRoleAtLine(fenceScan(lines), lines, 1)).toBe('wide');
+  });
   it('treats a multi-class brace as the measure default, matching the render', () => {
     // remark-figure folds `.wide .foo` into class="wide foo", which is not one closed-set name, so
     // the figure renders without a role. The chip must agree: the pill reads `figure`, not `wide`.

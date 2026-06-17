@@ -172,6 +172,7 @@ const FIGURE_ROLES = new Set(['center', 'wide', 'full']);
 // a multi-class brace reads as the measure default on the chip exactly as it renders.
 const ATTR_BRACE = /\{([^}]*)\}/;
 const CLASS_SHORTHAND = /\.([\w-]+)/g;
+const CLASS_ATTR = /class\s*=\s*"([^"]*)"/;
 
 /** The figure placement role for a media token sitting on `lineIndex`, derived from the editor's
  *  line scan without a remark parse (the chip rebuild runs on every doc and viewport change).
@@ -194,7 +195,11 @@ export function figureRoleAtLine(
   const opener = lines[container.fromLine] ?? '';
   if (directiveOpenerName(opener) !== 'figure') return null;
   const brace = ATTR_BRACE.exec(opener)?.[1] ?? '';
+  // mdast folds both the `.class` shorthand and an explicit `class="a b"` into one class value, so
+  // collect from both to mirror what remark-figure reads off node.attributes.class.
   const classes = [...brace.matchAll(CLASS_SHORTHAND)].map((m) => m[1]);
+  const explicit = CLASS_ATTR.exec(brace)?.[1];
+  if (explicit) classes.push(...explicit.split(/\s+/).filter(Boolean));
   // remark-figure keeps the role only when the whole class value is one closed-set name; a multi-class
   // or out-of-set brace renders as the measure default, so the pill reads `figure` to match.
   return classes.length === 1 && FIGURE_ROLES.has(classes[0])

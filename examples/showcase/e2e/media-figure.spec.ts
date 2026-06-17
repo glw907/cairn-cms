@@ -56,7 +56,9 @@ test('the figure flow: wrap an inserted image in a wide figure, render the figca
   await expect(popover).toBeVisible();
 
   await popover.getByRole('button', { name: 'Upload an image' }).click();
-  await page
+  // Scope the file input to the popover: the hero field (3b) also renders a hidden file input in its
+  // always-mounted dialog, so a page-wide `input[type="file"]` now matches two elements.
+  await popover
     .locator('input[type="file"]')
     .setInputFiles({ name: 'harbor.png', mimeType: 'image/png', buffer: PNG_BUFFER });
   await expect(popover.locator('input').first()).toHaveValue('harbor');

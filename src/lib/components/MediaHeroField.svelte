@@ -137,8 +137,12 @@ popover's runUpload but resolves to this field, not an editor placeholder.
   // Only a set hero can be debt; an empty field (no src) reports false even though committedStatus
   // reads 'needs-alt' by default.
   const heroNeedsAlt = $derived(hasHero && committedStatus === 'needs-alt');
+  // Report the signal on mount and on every real change, but read the callback through untrack so a
+  // fresh callback identity (the host recreates the arrow on each of its own renders, which this very
+  // call triggers) does not re-run the effect and loop. The effect depends only on the signal value.
   $effect(() => {
-    onneedsaltchange?.(heroNeedsAlt);
+    const signal = heroNeedsAlt;
+    untrack(() => onneedsaltchange?.(signal));
   });
 
   // ---- the dialog ----

@@ -91,8 +91,9 @@ const { renderMarkdown } = createRenderer(registry);
 
 // The default public media resolver, backing the public build over the committed manifest. The
 // preview path injects its own resolveMedia from the edit page's mediaTargets; this default keeps a
-// published `media:` reference from throwing when no per-call resolver is supplied.
-const publicMediaResolver = makeMediaResolver(
+// published `media:` reference from throwing when no per-call resolver is supplied. Exported so the
+// public route can inject the same resolver for the frontmatter hero, one source of truth.
+export const publicMediaResolver = makeMediaResolver(
   mediaManifest,
   normalizeAssets({ bucketBinding: 'MEDIA_BUCKET' }),
 );
@@ -110,7 +111,7 @@ export const cairn = defineAdapter({
         // The post files carry a description the SEO head reads; declare it so it survives the
         // validate-once read. Every frontmatter key a site reads must be in its schema.
         { type: 'textarea', name: 'description', label: 'Description' },
-        { type: 'text', name: 'image', label: 'Social image' },
+        { type: 'image', name: 'image', label: 'Hero image' },
         { type: 'text', name: 'author', label: 'Author' },
       ]),
     },

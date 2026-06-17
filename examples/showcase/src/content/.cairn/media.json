@@ -1,1 +1,16 @@
-{}
+{
+  "00112233445566aa": {
+    "hash": "00112233445566aa",
+    "sha256": "00112233445566aabbccddeeff00112233445566aabbccddeeff00112233445566",
+    "slug": "hello-hero",
+    "displayName": "Hello hero",
+    "originalFilename": "hello-hero.png",
+    "alt": "A cairn of stacked stones on a misty ridge",
+    "ext": "png",
+    "contentType": "image/png",
+    "bytes": 20480,
+    "width": 1200,
+    "height": 630,
+    "createdAt": "2026-01-15T00:00:00.000Z"
+  }
+}

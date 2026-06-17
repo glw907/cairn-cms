@@ -306,6 +306,23 @@ through the adapter's render. Swapping the editor stays a one-file change.
           letterSpacing: '0.02em',
         },
         '.cm-cairn-media-needs-alt-glyph': { fontSize: '0.85em', lineHeight: '1' },
+        // The figure/role pill: a small bordered pill carrying the placement role (or "figure" for
+        // the measure default) when a media token sits inside a :::figure, in the directive accent
+        // language. The accent ink and a color-mix accent border on the base-100 surface read as a
+        // quiet tag beside the name. The ink is theme-defined, so it holds contrast in both themes
+        // (Task 8's polish confirms it visually). A bare token renders no pill at all.
+        '.cm-cairn-media-role': {
+          fontFamily: 'var(--font-body, ui-sans-serif, sans-serif)',
+          fontSize: '0.625rem',
+          fontWeight: '600',
+          letterSpacing: '0.01em',
+          color: 'var(--color-accent)',
+          backgroundColor: 'var(--color-base-100)',
+          border: '1px solid color-mix(in oklab, var(--color-accent) 35%, transparent)',
+          borderRadius: '0.3rem',
+          padding: '0.04rem 0.34rem',
+          flex: '0 0 auto',
+        },
         // The optimistic upload placeholder: an inline pill in the accent language, carrying a small
         // thumbnail of the image the author is placing and a determinate progress bar beneath it. It
         // stands in for the committed image text only while the upload runs; on resolve the seam

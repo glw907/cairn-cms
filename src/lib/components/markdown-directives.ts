@@ -161,6 +161,47 @@ export function containerRanges(scan: FenceScan): ContainerRange[] {
   return out;
 }
 
+/** The closed placement-role set for the reserved `figure` directive, mirroring remark-figure.ts.
+ *  A class outside this set is the measure default, never passed through as a role. */
+const FIGURE_ROLES = new Set(['center', 'wide', 'full']);
+
+// The directive `{attrs}` brace, and the `.class` shorthands inside it. mdast-util-directive folds
+// every `.class` into a space-joined node.attributes.class, and remark-figure honors a role only when
+// that whole value is exactly one closed-set name. The chip reads the opener line directly (the
+// editor has no mdast), so it collects all class shorthands and applies the same exactly-one rule, so
+// a multi-class brace reads as the measure default on the chip exactly as it renders.
+const ATTR_BRACE = /\{([^}]*)\}/;
+const CLASS_SHORTHAND = /\.([\w-]+)/g;
+
+/** The figure placement role for a media token sitting on `lineIndex`, derived from the editor's
+ *  line scan without a remark parse (the chip rebuild runs on every doc and viewport change).
+ *
+ *  Returns the closed-set role (`center`/`wide`/`full`) when the innermost container holding the
+ *  line is a `:::figure` carrying exactly that one class, `'figure'` for a figure with no role (the
+ *  measure default), an out-of-set class, or more than one class, and null when the line sits in no
+ *  container or in a non-figure one. A bare media token earns no role pill (the no-hidden-state rule:
+ *  the visible decoration and the source agree, including the multi-class case remark-figure ignores).
+ *  Robust to a half-typed or unpaired fence, since {@link caretContainerRange} already disowns
+ *  fence-shaped lines inside code blocks and runs an unclosed container to the end.
+ */
+export function figureRoleAtLine(
+  scan: FenceScan,
+  lines: string[],
+  lineIndex: number,
+): 'center' | 'wide' | 'full' | 'figure' | null {
+  const container = caretContainerRange(scan, lineIndex);
+  if (!container) return null;
+  const opener = lines[container.fromLine] ?? '';
+  if (directiveOpenerName(opener) !== 'figure') return null;
+  const brace = ATTR_BRACE.exec(opener)?.[1] ?? '';
+  const classes = [...brace.matchAll(CLASS_SHORTHAND)].map((m) => m[1]);
+  // remark-figure keeps the role only when the whole class value is one closed-set name; a multi-class
+  // or out-of-set brace renders as the measure default, so the pill reads `figure` to match.
+  return classes.length === 1 && FIGURE_ROLES.has(classes[0])
+    ? (classes[0] as 'center' | 'wide' | 'full')
+    : 'figure';
+}
+
 /** One span of a fence line, in line-local offsets: machinery (`mark`) or meaning (`label`). */
 export interface FenceToken {
   from: number;

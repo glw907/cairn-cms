@@ -23,6 +23,7 @@ import {
 import { RangeSetBuilder, type Extension, type Range } from '@codemirror/state';
 import { parseMediaToken } from '../media/reference.js';
 import { publicPath } from '../media/naming.js';
+import { fenceScan, figureRoleAtLine } from './markdown-directives.js';
 // The decoration reads MediaLibrary/MediaLibraryEntry (the shared node-safe projection) for the
 // thumbnail path, the display name, and the alt-empty test.
 import type { MediaLibrary, MediaLibraryEntry } from '../media/library-entry.js';
@@ -35,7 +36,9 @@ import type { MediaLibrary, MediaLibraryEntry } from '../media/library-entry.js'
 const MEDIA_IMAGE = /!\[([^\]]*)\]\((media:[^\s)]+)\)/g;
 
 /** A matched media image in a line: the alt text and the URL token's character offsets within the
- *  whole document, plus the parsed reference and the library entry (null when the hash is unknown). */
+ *  whole document, plus the parsed reference and the library entry (null when the hash is unknown).
+ *  figureRole carries the enclosing `:::figure` placement (the closed-set role, or `'figure'` for
+ *  the measure default), or null when the token is not in a figure: a bare token shows no role pill. */
 interface MediaImageMatch {
   alt: string;
   from: number;
@@ -44,6 +47,7 @@ interface MediaImageMatch {
   slug: string | null;
   hash: string;
   entry: MediaLibraryEntry | null;
+  figureRole: 'center' | 'wide' | 'full' | 'figure' | null;
 }
 
 // The chip widget: an inline element carrying the thumbnail and the display name, with a needs-alt
@@ -64,6 +68,7 @@ class MediaChipWidget extends WidgetType {
     return (
       a.token === b.token &&
       a.alt === b.alt &&
+      a.figureRole === b.figureRole &&
       a.entry?.slug === b.entry?.slug &&
       a.entry?.ext === b.entry?.ext &&
       a.entry?.displayName === b.entry?.displayName
@@ -71,7 +76,7 @@ class MediaChipWidget extends WidgetType {
   }
 
   toDOM(): HTMLElement {
-    const { entry, slug, hash, alt } = this.match;
+    const { entry, slug, hash, alt, figureRole } = this.match;
     const chip = document.createElement('span');
     chip.className = 'cm-cairn-media-chip';
     chip.setAttribute('aria-hidden', 'true');
@@ -92,6 +97,18 @@ class MediaChipWidget extends WidgetType {
     // missed); the bare hash stands in when even the slug is absent.
     name.textContent = entry?.displayName || slug || hash;
     chip.appendChild(name);
+
+    if (figureRole !== null) {
+      // The figure/role pill: the role name (or "figure" for the measure default), in the directive
+      // accent language. It is present only inside a :::figure, so the visible chip and the source
+      // agree (the no-hidden-state rule). aria-hidden like the rest of the chip; the source `{.wide}`
+      // carries the meaning for assistive tech.
+      const pill = document.createElement('span');
+      pill.className = 'cm-cairn-media-role';
+      pill.setAttribute('aria-hidden', 'true');
+      pill.textContent = figureRole;
+      chip.appendChild(pill);
+    }
 
     if (alt.trim() === '') {
       // The needs-alt marker: a glyph and a label, never hue alone (the spec accessibility rule). The
@@ -137,18 +154,35 @@ function matchesInLine(text: string, lineFrom: number, library: MediaLibrary): M
     const tokenStart = m.index + m[0].indexOf('(' + token + ')') + 1;
     const from = lineFrom + tokenStart;
     const to = from + token.length;
-    out.push({ alt, from, to, token, slug: ref.slug, hash: ref.hash, entry: library[ref.hash] ?? null });
+    out.push({
+      alt,
+      from,
+      to,
+      token,
+      slug: ref.slug,
+      hash: ref.hash,
+      entry: library[ref.hash] ?? null,
+      figureRole: null,
+    });
   }
   return out;
 }
 
-/** Every media image match across the editor's visible ranges, in document order. */
+/** Every media image match across the editor's visible ranges, in document order, each carrying its
+ *  enclosing figure role. One {@link fenceScan} over the whole document feeds the cheap per-token
+ *  figure detection (no remark parse on the per-rebuild chip path); the visible lines are scanned
+ *  for tokens, then each token's line index drives {@link figureRoleAtLine}. */
 function visibleMatches(view: EditorView, library: MediaLibrary): MediaImageMatch[] {
+  const lines = view.state.doc.toString().split('\n');
+  const scan = fenceScan(lines);
   const out: MediaImageMatch[] = [];
   for (const { from, to } of view.visibleRanges) {
     for (let pos = from; pos <= to; ) {
       const line = view.state.doc.lineAt(pos);
-      out.push(...matchesInLine(line.text, line.from, library));
+      const role = figureRoleAtLine(scan, lines, line.number - 1);
+      for (const match of matchesInLine(line.text, line.from, library)) {
+        out.push({ ...match, figureRole: role });
+      }
       pos = line.to + 1;
     }
   }

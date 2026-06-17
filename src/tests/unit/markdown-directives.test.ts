@@ -7,6 +7,7 @@ import {
   fenceDepths,
   fenceScan,
   fenceTokens,
+  figureRoleAtLine,
   findInlineDirectives,
   markerPrefix,
 } from '../../lib/components/markdown-directives.js';
@@ -232,6 +233,49 @@ describe('containerRanges', () => {
     expect(containerRanges(fenceScan([':::aside', ':::', ':::', 'after']))).toEqual([
       { fromLine: 0, toLine: 1, depth: 1 },
     ]);
+  });
+});
+
+describe('figureRoleAtLine', () => {
+  it('returns the closed-set role for a line inside a roled figure', () => {
+    const lines = [':::figure{.wide}', '![alt](media:x.0123456789abcdef)', 'A caption.', ':::'];
+    const scan = fenceScan(lines);
+    // The image line and the caption line both sit inside the figure and carry its role.
+    expect(figureRoleAtLine(scan, lines, 1)).toBe('wide');
+    expect(figureRoleAtLine(scan, lines, 2)).toBe('wide');
+    expect(figureRoleAtLine(scan, lines, 0)).toBe('wide');
+  });
+  it('maps a bare figure (no class) to the measure default', () => {
+    const lines = [':::figure', '![alt](media:x.0123456789abcdef)', ':::'];
+    expect(figureRoleAtLine(fenceScan(lines), lines, 1)).toBe('figure');
+  });
+  it('treats an out-of-set class as the measure default', () => {
+    const lines = [':::figure{.left}', '![alt](media:x.0123456789abcdef)', ':::'];
+    expect(figureRoleAtLine(fenceScan(lines), lines, 1)).toBe('figure');
+  });
+  it('treats a multi-class brace as the measure default, matching the render', () => {
+    // remark-figure folds `.wide .foo` into class="wide foo", which is not one closed-set name, so
+    // the figure renders without a role. The chip must agree: the pill reads `figure`, not `wide`.
+    const lines = [':::figure{.wide .foo}', '![alt](media:x.0123456789abcdef)', ':::'];
+    expect(figureRoleAtLine(fenceScan(lines), lines, 1)).toBe('figure');
+  });
+  it('returns null for a line in no container', () => {
+    const lines = ['plain', '![alt](media:x.0123456789abcdef)', 'more'];
+    expect(figureRoleAtLine(fenceScan(lines), lines, 1)).toBeNull();
+  });
+  it('returns null for a line in a non-figure container', () => {
+    const lines = [':::aside', '![alt](media:x.0123456789abcdef)', ':::'];
+    expect(figureRoleAtLine(fenceScan(lines), lines, 1)).toBeNull();
+  });
+  it('reads the role from the innermost figure when nested', () => {
+    // A figure inside an aside: the innermost container holding the image is the figure.
+    const lines = ['::::aside', ':::figure{.full}', '![alt](media:x.0123456789abcdef)', ':::', '::::'];
+    expect(figureRoleAtLine(fenceScan(lines), lines, 2)).toBe('full');
+  });
+  it('does not crash on a half-typed unpaired figure fence', () => {
+    const lines = [':::figure{.wide}', '![alt](media:x.0123456789abcdef)'];
+    // An unclosed figure runs to the document end; the image still reads its role.
+    expect(figureRoleAtLine(fenceScan(lines), lines, 1)).toBe('wide');
   });
 });
 

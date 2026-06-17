@@ -1248,4 +1248,43 @@ describe('MarkdownEditor', () => {
       .toBe('A late arrival');
     expect(screen.container.querySelector('.cm-cairn-media-thumb')).not.toBeNull();
   });
+
+  it('surfaces the figure role on the chip and leaves a bare token unpilled', async () => {
+    // A media token inside a roled figure, one inside a bare figure, and one bare token. The chip
+    // shows a role pill matching the source, the no-hidden-state rule (a bare token shows none).
+    const doc = [
+      ':::figure{.wide}',
+      `![A trail map](media:trail-map.${HASH_A})`,
+      'A caption.',
+      ':::',
+      '',
+      ':::figure',
+      `![](media:finish-line.${HASH_B})`,
+      ':::',
+      '',
+      `Bare ![A trail map](media:trail-map.${HASH_A}) here.`,
+    ].join('\n');
+    const screen = render(MarkdownEditor, { value: doc, name: 'body', mediaLibrary: MEDIA_LIBRARY });
+    await expect.poll(() => screen.container.querySelectorAll('.cm-cairn-media-chip').length).toBe(3);
+    const pills = [...screen.container.querySelectorAll('.cm-cairn-media-role')].map((p) => p.textContent);
+    // The roled figure reads "wide"; the bare figure reads the measure default "figure"; the bare
+    // token outside any figure carries no pill, so only two pills exist.
+    expect(pills).toEqual(['wide', 'figure']);
+  });
+
+  it('styles the chip role pill in the accent language', async () => {
+    const unpin = pinThemeVars({ '--color-accent': 'rgb(0, 130, 60)' });
+    try {
+      const doc = [':::figure{.wide}', `![A trail map](media:trail-map.${HASH_A})`, ':::'].join('\n');
+      const screen = render(MarkdownEditor, { value: doc, name: 'body', mediaLibrary: MEDIA_LIBRARY });
+      await expect.poll(() => screen.container.querySelector('.cm-cairn-media-role')).not.toBeNull();
+      const pill = screen.container.querySelector<HTMLElement>('.cm-cairn-media-role')!;
+      // The pill inks in the accent (the directive accent language), not the body content ink.
+      expect(getComputedStyle(pill).color).toBe('rgb(0, 130, 60)');
+      // It is marked decorative like the rest of the chip; the source class carries the meaning.
+      expect(pill.getAttribute('aria-hidden')).toBe('true');
+    } finally {
+      unpin();
+    }
+  });
 });

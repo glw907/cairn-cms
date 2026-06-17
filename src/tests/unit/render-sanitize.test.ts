@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { h } from 'hastscript';
+import { defaultSchema } from 'hast-util-sanitize';
 import { createRenderer } from '../../lib/render/pipeline.js';
 import { defineRegistry } from '../../lib/render/registry.js';
+import { manifestMediaResolver } from '../../lib/render/resolve-media.js';
 import type { Schema } from 'hast-util-sanitize';
 
 const plain = () => createRenderer(defineRegistry({ components: [] }));
@@ -93,6 +95,46 @@ describe('render sanitize floor', () => {
     const r = createRenderer(defineRegistry({ components: [] }), { unsafeDisableSanitize: true });
     const html = await r.renderMarkdown('<img src=x onerror="alert(1)">');
     expect(html).toContain('onerror');
+  });
+
+  it('keeps a captioned placed figure on the base floor with no consumer override', async () => {
+    const html = await plain().renderMarkdown(
+      '<figure class="cairn-place-wide"><figcaption>cap</figcaption></figure>',
+    );
+    expect(html).toContain('<figure class="cairn-place-wide">');
+    expect(html).toContain('<figcaption>cap</figcaption>');
+  });
+
+  it('keeps the figure tags when a consumer extend adds an unrelated tag', async () => {
+    const extend = (s: Schema): Schema => ({ ...s, tagNames: [...(s.tagNames ?? []), 'aside'] });
+    const r = createRenderer(defineRegistry({ components: [] }), { sanitizeSchema: extend });
+    const html = await r.renderMarkdown(
+      '<aside>note</aside>\n\n<figure class="cairn-place-wide"><figcaption>cap</figcaption></figure>',
+    );
+    expect(html).toContain('<aside>');
+    expect(html).toContain('<figure class="cairn-place-wide">');
+    expect(html).toContain('<figcaption>cap</figcaption>');
+  });
+
+  it('documents why the base addition is required: defaultSchema omits figure', () => {
+    // hast-util-sanitize's defaultSchema does not allow figure, so the floor would strip it
+    // without cairn's base addition. This guard fails if a dependency bump starts allowing it.
+    expect(defaultSchema.tagNames ?? []).not.toContain('figure');
+    expect(defaultSchema.tagNames ?? []).not.toContain('figcaption');
+  });
+
+  it('survives the real default floor end-to-end: the placed figure renders through createRenderer', async () => {
+    const resolveMedia = manifestMediaResolver({
+      a1b2c3d4e5f6a7b8: { slug: 'blue-running-shoes', ext: 'webp', contentType: 'image/webp' },
+    });
+    const token = 'media:blue-running-shoes.a1b2c3d4e5f6a7b8';
+    const html = await plain().renderMarkdown(
+      `:::figure{.wide}\n![alt](${token})\n\nA caption.\n:::`,
+      { resolveMedia },
+    );
+    expect(html).toContain('<figure class="cairn-place-wide">');
+    expect(html).toContain('src="/media/blue-running-shoes.a1b2c3d4e5f6a7b8.webp"');
+    expect(html).toContain('<figcaption>A caption.</figcaption>');
   });
 });
 

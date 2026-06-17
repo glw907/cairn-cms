@@ -13,8 +13,10 @@ const FIXED_MARKERS = ['dataPrimitive', 'dataSlot', 'dataRole', 'dataRise'];
  * then adds exactly what cairn's render needs. The directive markers (the fixed ones plus the
  * dataAttr<Key> markers derived from the registry) survive so the dispatch reads its stamps after
  * the floor. The benign author tags real content uses (nav, details, summary) and class/target/rel
- * on anchors are admitted. A site extends the result through `extend`, always starting from this
- * safe base, so it can add to the allowlist but not weaken the core strip.
+ * on anchors are admitted. figure/figcaption join the base so the engine's placed figure survives
+ * the floor on every site, including one that supplies its own `sanitizeSchema` extension. A site
+ * extends the result through `extend`, always starting from this safe base, so it can add to the
+ * allowlist but not weaken the core strip.
  */
 export function buildSanitizeSchema(
   registry: ComponentRegistry,
@@ -36,7 +38,7 @@ export function buildSanitizeSchema(
   const protocols = defaultSchema.protocols ?? {};
   const schema: Schema = {
     ...defaultSchema,
-    tagNames: [...(defaultSchema.tagNames ?? []), 'nav', 'details', 'summary'],
+    tagNames: [...(defaultSchema.tagNames ?? []), 'nav', 'details', 'summary', 'figure', 'figcaption'],
     attributes: {
       ...attributes,
       '*': [...(attributes['*'] ?? []), 'className', ...markers],

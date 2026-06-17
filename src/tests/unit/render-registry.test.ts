@@ -81,6 +81,20 @@ describe('defineRegistry icon guard', () => {
       }),
     ).toThrow('cairn: component "c" sets defaultIconByRole but declares no type:\'icon\' attribute');
   });
+  it('rejects a component that takes the reserved "figure" name', () => {
+    expect(() =>
+      defineRegistry({
+        components: [
+          {
+            name: 'figure',
+            label: 'x',
+            description: 'x',
+            build: () => ({ type: 'element', tagName: 'figure', properties: {}, children: [] }),
+          },
+        ],
+      }),
+    ).toThrow('cairn: "figure" is a reserved directive name handled by the engine render step');
+  });
   it('accepts a component that declares both defaultIconByRole and an icon attribute', () => {
     expect(() =>
       defineRegistry({

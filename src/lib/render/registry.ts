@@ -127,6 +127,11 @@ function findIconField(def: ComponentDef): AttributeField | undefined {
  */
 export function defineRegistry({ components }: { components: ComponentDef[] }): ComponentRegistry {
   for (const c of components) {
+    if (c.name === 'figure') {
+      throw new Error(
+        'cairn: "figure" is a reserved directive name handled by the engine render step; a component cannot use it',
+      );
+    }
     if (c.defaultIconByRole && Object.keys(c.defaultIconByRole).length > 0 && !findIconField(c)) {
       throw new Error(
         `cairn: component "${c.name}" sets defaultIconByRole but declares no type:'icon' attribute, so the default icon can never render`,

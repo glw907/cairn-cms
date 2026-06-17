@@ -1,0 +1,965 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Media Library mockup A: the office list, for media (media 3c)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+  rel="stylesheet"
+/>
+<style>
+  /* Media Library mockup, DIRECTION A: "the office list, for media" (consistency-first).
+     The bet: make the Library a peer screen of Posts and Pages by mirroring the existing office list
+     EXACTLY. Same eyebrow-and-count header, same search, same triage segmented control, same enriched
+     self-describing rows, same managed pagination, same details slide-over, same safe-delete dialog.
+     An author who already manages Posts knows this screen on sight, because it is the same screen with
+     media-shaped rows. The asset detail opens in the editor's right slide-over (the 3b panel recipe),
+     not a route, so the list stays put behind it. Where-used rides the row as a usage pill and gates
+     the delete; the delete is a type-to-confirm alertdialog because deleting an in-use asset breaks
+     pages, a higher-stakes act than deleting one entry. The token block and the fonts are lifted from
+     the 3b hero mockup so this stands alone and matches its polish grade. */
+
+  /* ---- mock scaffold (outside the themed surfaces) ---- */
+  body { margin: 0; background: #d8d4cf; }
+  .mock-label { font: 600 13px/1.4 system-ui; letter-spacing: .08em; text-transform: uppercase; color: #444; padding: 26px 24px 4px; }
+  .mock-note { font: 400 13px/1.55 system-ui; color: #5a564f; padding: 0 24px 14px; max-width: 82ch; }
+  .mock-note code { font-family: ui-monospace, monospace; background: rgba(0,0,0,.06); padding: 1px 4px; border-radius: 3px; }
+  .screen { border: 1px solid #aaa; margin: 0 16px 48px; box-shadow: 0 2px 14px rgba(0,0,0,.08); overflow: hidden; }
+  .pair { display: flex; flex-wrap: wrap; gap: 0; }
+  .pair > .screen { flex: 1 1 440px; margin: 0 16px 48px; }
+
+  /* ---- Warm Stone tokens, both theme roots, inlined so the mockup stands alone (from 3b) ---- */
+  [data-theme='cairn-admin'] {
+    --color-base-100: oklch(99% 0.004 75);
+    --color-base-200: oklch(96.5% 0.006 75);
+    --color-base-300: oklch(89% 0.011 75);
+    --color-base-content: oklch(26% 0.014 75);
+    --color-primary: oklch(52% 0.2 293);
+    --color-primary-content: oklch(98% 0.01 293);
+    --color-accent: oklch(54% 0.16 300);
+    --color-muted: oklch(48% 0.01 75);
+    --color-subtle: oklch(42% 0.01 75);
+    --color-positive-ink: oklch(48% 0.12 150);
+    --color-error: oklch(55% 0.19 25);
+    --cairn-code-chip: oklch(94.5% 0.008 75);
+    --cairn-warning-ink: oklch(50% 0.13 70);
+    --cairn-card-border: oklch(93% 0.008 75);
+    --cairn-shadow: 0 1px 2px oklch(28% 0.02 75 / 0.05), 0 8px 24px -6px oklch(28% 0.02 75 / 0.1);
+  }
+  [data-theme='cairn-admin-dark'] {
+    --color-base-100: oklch(24% 0.01 75);
+    --color-base-200: oklch(15.5% 0.009 75);
+    --color-base-300: oklch(30% 0.014 75);
+    --color-base-content: oklch(93% 0.006 75);
+    --color-primary: oklch(68% 0.18 293);
+    --color-primary-content: oklch(20% 0.03 293);
+    --color-accent: oklch(70% 0.14 300);
+    --color-muted: oklch(72% 0.01 75);
+    --color-subtle: oklch(80% 0.008 75);
+    --color-positive-ink: oklch(78% 0.12 150);
+    --color-error: oklch(70% 0.17 25);
+    --cairn-code-chip: oklch(29.5% 0.012 75);
+    --cairn-warning-ink: oklch(80% 0.14 70);
+    --cairn-card-border: oklch(30% 0.014 75);
+    --cairn-shadow: 0 1px 2px oklch(0% 0 0 / 0.35), 0 8px 24px -6px oklch(0% 0 0 / 0.5);
+  }
+  [data-theme] {
+    --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+    --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-editor: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+
+  /* ===== the office shell: sidebar + topbar as one flat band, the content area recessed ===== */
+  .office { display: flex; min-height: 600px; background: var(--color-base-200); color: var(--color-base-content); font-family: var(--font-body); -webkit-font-smoothing: antialiased; position: relative; }
+  .office.short { min-height: 0; }
+
+  /* the nav sidebar (w-56), aligned left edge: brand, eyebrow groups, nav items */
+  .nav { width: 14rem; flex: none; background: var(--color-base-100); border-right: 1px solid var(--cairn-card-border); display: flex; flex-direction: column; }
+  .nav-brand { display: flex; align-items: center; gap: 9px; height: 64px; min-height: 64px; padding: 0 16px; border-bottom: 1px solid var(--cairn-card-border); }
+  .brand-tile { display: inline-flex; align-items: center; justify-content: center; height: 32px; width: 32px; flex: none; border-radius: .75rem; background: var(--color-primary); color: var(--color-primary-content); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+  .brand-word { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; letter-spacing: -.01em; }
+  .nav-body { padding: 14px 10px; display: flex; flex-direction: column; gap: 18px; }
+  .nav-group { display: flex; flex-direction: column; gap: 3px; }
+  .nav-eyebrow { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); padding: 4px 8px 5px; }
+  .nav-item { display: flex; align-items: center; gap: 9px; padding: 7px 8px; border-radius: .5rem; font-size: .875rem; font-weight: 500; color: var(--color-subtle); text-decoration: none; }
+  .nav-item svg { width: 16px; height: 16px; flex: none; }
+  .nav-item.active { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); font-weight: 600; }
+
+  /* the topbar, pinned 64px, flat with the sidebar across the seam */
+  .main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+  .topbar { display: flex; align-items: center; gap: 10px; height: 64px; min-height: 64px; padding: 0 20px; background: var(--color-base-100); border-bottom: 1px solid var(--cairn-card-border); }
+  .topbar .grow { flex: 1 1 auto; }
+  .tb-search { display: flex; align-items: center; gap: 7px; height: 34px; padding: 0 11px; border: 1px solid var(--color-base-300); border-radius: .625rem; background: var(--color-base-100); color: var(--color-muted); width: 15rem; }
+  .tb-search input { border: 0; background: transparent; outline: none; font: 400 .8125rem/1 var(--font-body); color: var(--color-base-content); width: 100%; }
+  .tb-search input::placeholder { color: var(--color-muted); }
+  .tb-kbd { font: 500 .6875rem/1 var(--font-body); color: var(--color-muted); border: 1px solid var(--color-base-300); border-radius: .3rem; padding: 2px 5px; }
+
+  .content { flex: 1 1 auto; padding: 28px 28px 36px; overflow: hidden; }
+
+  /* ===== the page header: eyebrow + count, search, Upload primary action ===== */
+  .pg-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 22px; }
+  .pg-head .titles { display: flex; flex-direction: column; gap: 2px; }
+  .eyebrow { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); }
+  .pg-title { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; letter-spacing: -.025em; line-height: 1.1; }
+  .pg-count { font-size: .8125rem; color: var(--color-muted); margin-top: 3px; }
+  .pg-actions { display: flex; align-items: center; gap: 10px; }
+  .search { display: flex; align-items: center; gap: 7px; height: 34px; padding: 0 11px; border: 1px solid var(--color-base-300); border-radius: .625rem; background: var(--color-base-100); color: var(--color-muted); width: 16rem; max-width: 100%; }
+  .search svg { flex: none; }
+  .search input { border: 0; background: transparent; outline: none; font: 400 .8125rem/1 var(--font-body); color: var(--color-base-content); width: 100%; }
+  .search input::placeholder { color: var(--color-muted); }
+  .search:focus-within { border-color: color-mix(in oklab, var(--color-primary) 70%, transparent); box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-primary) 70%, transparent); }
+  .btn-primary { display: inline-flex; align-items: center; gap: 7px; font: 600 .8125rem/1 var(--font-body); border-radius: .55rem; padding: 0 14px; height: 34px; border: 1px solid transparent; background: var(--color-primary); color: var(--color-primary-content); cursor: pointer; box-shadow: 0 1px 2px color-mix(in oklab, var(--color-primary) 35%, transparent); }
+  .btn-primary svg { width: 15px; height: 15px; }
+
+  /* ===== the triage bar: a bordered pick-one segmented control + a type facet + a sort ===== */
+  .triage { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
+  .seg { display: inline-flex; align-items: center; overflow: hidden; border-radius: .55rem; border: 1px solid var(--cairn-card-border); background: var(--color-base-100); }
+  .seg button { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; font: 400 .8125rem/1 var(--font-body); color: var(--color-muted); background: transparent; border: 0; cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--cairn-card-border); }
+  .seg button.on { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); font-weight: 500; }
+  .seg button .ct { font-variant-numeric: tabular-nums; }
+  .seg button svg.chk { width: 12px; height: 12px; }
+  .triage-div { width: 1px; height: 20px; background: var(--cairn-card-border); }
+  .facet { display: inline-flex; align-items: center; gap: 6px; }
+  .facet .lbl { font-size: .6875rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--color-muted); }
+  .pill-toggle { display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: .5rem; border: 0; background: transparent; font: 400 .8125rem/1 var(--font-body); color: var(--color-muted); cursor: pointer; }
+  .pill-toggle:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .pill-toggle.on { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); font-weight: 500; }
+  .pill-toggle svg.chk { width: 12px; height: 12px; }
+
+  /* ===== the list card: the floating-card recipe, rows mirroring the picker + the office row ===== */
+  .list-card { border: 1px solid var(--cairn-card-border); background: var(--color-base-100); border-radius: 1rem; box-shadow: var(--cairn-shadow); overflow: hidden; }
+  .col-head { display: grid; grid-template-columns: 1fr 9.5rem 7rem 6.5rem; align-items: center; gap: 14px; padding: 11px 18px; border-bottom: 1px solid var(--cairn-card-border); }
+  .col-head .ch { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); }
+  .col-head .ch.sortable { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+  .col-head .ch.sortable svg { width: 12px; height: 12px; opacity: .6; }
+  .col-head .ch.right { text-align: right; }
+
+  .row { display: grid; grid-template-columns: 1fr 9.5rem 7rem 6.5rem; align-items: center; gap: 14px; padding: 11px 18px; border-bottom: 1px solid var(--cairn-card-border); cursor: pointer; }
+  .row:last-child { border-bottom: 0; }
+  .row:hover { background: color-mix(in oklab, var(--color-base-200) 60%, transparent); }
+  .row.sel { background: color-mix(in oklab, var(--color-primary) 7%, transparent); box-shadow: inset 3px 0 0 var(--color-primary); }
+  .row:focus-visible { outline: none; box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-primary) 70%, transparent); border-radius: .35rem; }
+
+  /* the identity cell: thumbnail + name + a metadata line (the self-describing row) */
+  .r-id { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .r-thumb { width: 52px; height: 40px; flex: none; border-radius: .45rem; border: 1px solid var(--cairn-card-border); object-fit: cover; position: relative; overflow: hidden; }
+  .r-thumb .doc-glyph { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--color-muted); }
+  .r-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .r-name { font-size: .875rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .r-meta { font-size: .75rem; color: var(--color-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .r-meta .dot { opacity: .5; padding: 0 5px; }
+
+  /* the alt-status chip: glyph + label, never hue alone (the 3b chip recipe) */
+  .alt-chip { display: inline-flex; align-items: center; gap: 5px; font-size: .75rem; font-weight: 500; width: max-content; }
+  .alt-chip.ok { color: var(--color-positive-ink); }
+  .alt-chip.miss { color: var(--cairn-warning-ink); }
+  .alt-chip.deco { color: var(--color-muted); }
+  .alt-chip svg { width: 13px; height: 13px; flex: none; }
+
+  /* the usage pill: cairn's headline. "used in N" leans on the body ink; "no references" is muted */
+  .use-pill { display: inline-flex; align-items: center; gap: 5px; font-size: .75rem; font-weight: 500; width: max-content; color: var(--color-base-content); }
+  .use-pill svg { width: 13px; height: 13px; flex: none; color: var(--color-muted); }
+  .use-pill.none { color: var(--color-muted); }
+  .use-pill.none svg { color: var(--color-subtle); }
+
+  .r-trail { display: flex; align-items: center; justify-content: flex-end; gap: 2px; }
+  .r-chevron { color: var(--color-muted); opacity: .55; }
+  .icon-btn { display: inline-flex; align-items: center; justify-content: center; height: 30px; width: 30px; border: 0; background: transparent; border-radius: .45rem; color: var(--color-subtle); cursor: pointer; }
+  .icon-btn:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .icon-btn.danger:hover { color: var(--color-error); }
+
+  /* the trailing upload foot-row, mirroring the office list's New foot row */
+  .foot-row { display: flex; width: 100%; align-items: center; gap: 8px; border: 0; border-top: 1px solid var(--cairn-card-border); background: transparent; padding: 12px 18px; font: 500 .875rem/1 var(--font-body); color: var(--color-primary); cursor: pointer; }
+  .foot-row:hover { background: color-mix(in oklab, var(--color-primary) 6%, transparent); }
+  .foot-row svg { width: 15px; height: 15px; }
+
+  /* ===== the pagination footer (managed, never infinite scroll) ===== */
+  .pager { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 16px; font-size: .8125rem; color: var(--color-muted); }
+  .pager .ctrls { display: flex; align-items: center; gap: 8px; color: var(--color-base-content); }
+  .pager select { font: 400 .8125rem/1 var(--font-body); border: 1px solid var(--color-base-300); border-radius: .45rem; padding: 5px 7px; background: var(--color-base-100); color: var(--color-base-content); }
+  .pager .pg-btn { display: inline-flex; align-items: center; justify-content: center; height: 30px; width: 30px; border: 1px solid var(--color-base-300); border-radius: .45rem; background: var(--color-base-100); color: var(--color-subtle); cursor: pointer; }
+  .pager .pg-btn[disabled] { opacity: .4; cursor: default; }
+  .pager .pg-btn svg { width: 15px; height: 15px; }
+
+  /* ===== the details slide-over (the editor's details panel recipe, the 3b panel) ===== */
+  .scrim { position: absolute; inset: 0; background: oklch(20% 0.01 75 / 0.18); }
+  .panel { position: absolute; top: 0; right: 0; bottom: 0; width: 23rem; background: var(--color-base-100); border-left: 1px solid var(--cairn-card-border); box-shadow: var(--cairn-shadow); display: flex; flex-direction: column; font-family: var(--font-body); }
+  .panel.static { position: static; width: 23rem; box-shadow: none; }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; padding: 15px 16px; border-bottom: 1px solid var(--cairn-card-border); }
+  .panel-x { display: inline-flex; align-items: center; justify-content: center; height: 28px; width: 28px; border: 0; background: transparent; border-radius: .45rem; color: var(--color-subtle); cursor: pointer; }
+  .panel-body { padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+
+  .pv { width: 100%; aspect-ratio: 16 / 10; border-radius: .65rem; border: 1px solid var(--cairn-card-border); overflow: hidden; }
+  .pv-name { font-size: 1rem; font-weight: 600; margin-top: 2px; word-break: break-word; }
+  .pv-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+
+  /* the metadata grid: a definition list at small type */
+  .meta-grid { display: grid; grid-template-columns: auto 1fr; gap: 7px 14px; font-size: .8125rem; }
+  .meta-grid dt { color: var(--color-muted); }
+  .meta-grid dd { margin: 0; color: var(--color-base-content); }
+  .meta-grid dd code { font-family: var(--font-editor); font-size: .75rem; color: var(--color-muted); word-break: break-all; }
+
+  /* the where-used list: cairn's headline feature, surfaced on the asset */
+  .section-eyebrow { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); margin-bottom: 9px; display: flex; align-items: center; gap: 7px; }
+  .where-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+  .where-list a { display: flex; align-items: center; gap: 9px; padding: 7px 9px; border-radius: .5rem; text-decoration: none; color: var(--color-base-content); font-size: .8125rem; }
+  .where-list a:hover { background: color-mix(in oklab, var(--color-base-content) 5%, transparent); }
+  .where-list .w-glyph { color: var(--color-muted); flex: none; display: inline-flex; }
+  .where-list .w-glyph svg { width: 15px; height: 15px; }
+  .where-list .w-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .where-list .w-title { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .where-list .w-where { font-size: .6875rem; color: var(--color-muted); }
+  .where-list .w-branch { margin-left: auto; flex: none; font-size: .625rem; font-family: var(--font-editor); color: var(--color-muted); background: var(--cairn-code-chip); border-radius: .3rem; padding: 2px 5px; }
+  .where-none { display: flex; align-items: center; gap: 8px; font-size: .8125rem; color: var(--color-muted); padding: 2px 0; }
+  .where-none svg { width: 15px; height: 15px; flex: none; color: var(--color-subtle); }
+
+  /* the edit fields in the panel: alt + rename, the 3b field recipe */
+  .fld { display: flex; flex-direction: column; gap: 5px; }
+  .fld > .lbl { font-size: .8125rem; font-weight: 500; }
+  .input, .textarea { width: 100%; box-sizing: border-box; font: 400 .8125rem/1.45 var(--font-body); color: var(--color-base-content); background: var(--color-base-100); border: 1px solid var(--color-base-300); border-radius: .625rem; padding: 7px 10px; }
+  .textarea { resize: none; min-height: 3.6rem; }
+  .input::placeholder, .textarea::placeholder { color: var(--color-muted); }
+  .input:focus-visible, .textarea:focus-visible { outline: none; border-color: color-mix(in oklab, var(--color-primary) 70%, transparent); box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-primary) 70%, transparent); }
+  .fld-hint { font-size: .75rem; color: var(--color-muted); line-height: 1.45; }
+  .alt-radio-row { display: flex; gap: 7px; }
+  .alt-radio { flex: 1 1 0; display: flex; align-items: center; gap: 6px; padding: 7px 10px; border: 1px solid var(--color-base-300); border-radius: .55rem; font-size: .8125rem; cursor: pointer; }
+  .alt-radio.sel { border-color: color-mix(in oklab, var(--color-primary) 55%, transparent); background: color-mix(in oklab, var(--color-primary) 8%, transparent); color: var(--color-primary); font-weight: 600; }
+  .alt-radio .dot2 { width: 12px; height: 12px; border-radius: 50%; border: 1px solid var(--color-base-300); flex: none; }
+  .alt-radio.sel .dot2 { border-color: var(--color-primary); background: radial-gradient(circle at center, var(--color-primary) 0 3.5px, transparent 4.5px); }
+
+  .panel-actions { display: flex; flex-direction: column; gap: 9px; border-top: 1px solid var(--cairn-card-border); padding-top: 16px; }
+  .pa-row { display: flex; gap: 9px; }
+  .btn-soft { flex: 1 1 0; display: inline-flex; align-items: center; justify-content: center; gap: 7px; font: 600 .8125rem/1 var(--font-body); border-radius: .55rem; padding: 9px 13px; border: 1px solid var(--color-base-300); background: transparent; color: var(--color-subtle); cursor: pointer; }
+  .btn-soft svg { width: 15px; height: 15px; }
+  .btn-primary-wide { flex: 1 1 0; display: inline-flex; align-items: center; justify-content: center; gap: 7px; font: 600 .8125rem/1 var(--font-body); border-radius: .55rem; padding: 9px 13px; border: 1px solid transparent; background: var(--color-primary); color: var(--color-primary-content); cursor: pointer; box-shadow: 0 1px 2px color-mix(in oklab, var(--color-primary) 35%, transparent); }
+  .btn-danger-soft { display: inline-flex; align-items: center; justify-content: center; gap: 7px; font: 600 .8125rem/1 var(--font-body); border-radius: .55rem; padding: 9px 13px; border: 1px solid color-mix(in oklab, var(--color-error) 35%, transparent); background: transparent; color: var(--color-error); cursor: pointer; }
+  .btn-danger-soft svg { width: 15px; height: 15px; }
+
+  /* ===== the safe-delete alertdialog (type-to-confirm, no light dismiss) ===== */
+  .scrim-modal { position: absolute; inset: 0; background: oklch(20% 0.01 75 / 0.32); display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .alertdialog { width: 27rem; max-width: 100%; background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: 1rem; box-shadow: var(--cairn-shadow); overflow: hidden; font-family: var(--font-body); }
+  .ad-body { padding: 20px 20px 6px; }
+  .ad-head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+  .ad-glyph { display: inline-flex; align-items: center; justify-content: center; height: 36px; width: 36px; flex: none; border-radius: .6rem; }
+  .ad-glyph.warn { background: color-mix(in oklab, var(--cairn-warning-ink) 12%, transparent); color: var(--cairn-warning-ink); }
+  .ad-glyph.safe { background: color-mix(in oklab, var(--color-base-content) 7%, transparent); color: var(--color-muted); }
+  .ad-glyph svg { width: 19px; height: 19px; }
+  .ad-title { font-family: var(--font-display); font-size: 1.125rem; font-weight: 700; letter-spacing: -.01em; }
+  .ad-text { font-size: .875rem; line-height: 1.5; color: var(--color-base-content); }
+  .ad-text.muted { color: var(--color-muted); }
+  .ad-uselist { list-style: none; margin: 11px 0 0; padding: 0; border: 1px solid var(--cairn-card-border); border-radius: .6rem; overflow: hidden; }
+  .ad-uselist li { display: flex; align-items: center; gap: 9px; padding: 8px 11px; font-size: .8125rem; }
+  .ad-uselist li + li { border-top: 1px solid var(--cairn-card-border); }
+  .ad-uselist .u-glyph { color: var(--color-muted); display: inline-flex; flex: none; }
+  .ad-uselist .u-glyph svg { width: 14px; height: 14px; }
+  .ad-uselist .u-where { margin-left: auto; font-size: .6875rem; color: var(--color-muted); }
+  .ad-confirm { margin-top: 16px; }
+  .ad-confirm .lbl { font-size: .8125rem; color: var(--color-base-content); margin-bottom: 6px; display: block; }
+  .ad-confirm .lbl b { font-family: var(--font-editor); font-weight: 500; background: var(--cairn-code-chip); border-radius: .3rem; padding: 1px 5px; }
+  .ad-foot { display: flex; justify-content: flex-end; gap: 9px; padding: 14px 20px 18px; }
+  .ad-cancel { font: 600 .8125rem/1 var(--font-body); border-radius: .55rem; padding: 9px 14px; border: 1px solid var(--color-base-300); background: transparent; color: var(--color-subtle); cursor: pointer; }
+  .ad-delete { font: 600 .8125rem/1 var(--font-body); border-radius: .55rem; padding: 9px 15px; border: 1px solid transparent; background: var(--color-error); color: oklch(99% 0.01 25); cursor: pointer; }
+  .ad-delete[disabled] { opacity: .5; cursor: default; }
+
+  /* ===== the empty state (the office empty-state recipe: owns the area, concept-named copy) ===== */
+  .empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; text-align: center; min-height: 52vh; padding: 48px 24px; }
+  .empty .glyph { color: var(--color-primary); opacity: .3; }
+  .empty .e-main { font-size: 1rem; font-weight: 600; }
+  .empty .e-sub { font-size: .875rem; color: var(--color-muted); max-width: 38ch; line-height: 1.5; }
+  .empty .e-dropzone { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 22px 28px; border: 1px dashed var(--color-base-300); border-radius: .8rem; color: var(--color-muted); margin-top: 4px; }
+  .empty .e-dropzone .ed-sub { font-size: .75rem; }
+
+  /* photo stand-ins (no bundled bytes): warm dawn-light gradients (from 3b) */
+  .ph-a { background: linear-gradient(170deg, oklch(82% 0.06 80) 0%, oklch(74% 0.08 60) 55%, oklch(64% 0.09 45) 100%); }
+  .ph-b { background: linear-gradient(150deg, oklch(52% 0.06 60) 0%, oklch(70% 0.09 50) 60%, oklch(85% 0.08 80) 100%); }
+  .ph-c { background: linear-gradient(200deg, oklch(88% 0.05 85) 0%, oklch(72% 0.07 55) 100%); }
+  .ph-d { background: linear-gradient(160deg, oklch(40% 0.05 60) 0%, oklch(60% 0.1 45) 55%, oklch(86% 0.08 85) 100%); }
+  .ph-e { background: linear-gradient(140deg, oklch(78% 0.09 35) 0%, oklch(64% 0.11 25) 100%); }
+  .ph-f { background: linear-gradient(185deg, oklch(86% 0.07 95) 0%, oklch(70% 0.08 70) 60%, oklch(56% 0.08 50) 100%); }
+  .ph-doc { background: var(--cairn-code-chip); }
+</style>
+</head>
+<body>
+
+<p class="mock-label">Media 3c, the Media Library &mdash; Direction A: the office list, for media</p>
+<p class="mock-note">
+  The Library is a peer screen of Posts and Pages, reached from the same nav. Direction A mirrors the
+  existing office list exactly so the screen feels native on sight: the eyebrow-and-count header, the
+  search, the triage segmented control, the self-describing rows, the managed pagination, the details
+  slide-over, and the safe-delete dialog all carry over from <code>ConceptList</code>. The rows borrow
+  the 2b <code>MediaPicker</code> feel: a thumbnail, the name, an alt-status chip, and a usage pill.
+  cairn's headline payoffs ride the row and the detail: where-used is exact and visible, and it gates
+  the delete.
+</p>
+
+<!-- ============================================================================================ -->
+<!-- SCREEN 1: the library list, LIGHT, a realistic set with a needs-alt and an unused asset       -->
+<!-- ============================================================================================ -->
+<p class="mock-label">1 &mdash; Light: the library list</p>
+<p class="mock-note">
+  Each row describes itself: thumbnail, name, a metadata line (dimensions, size, type, date), the
+  alt-status chip (glyph plus label, never hue alone), and the usage pill. <code>valley-ridge</code>
+  reads Needs alt in the warning ink; <code>old-trailhead-map</code> shows no references found, the
+  cue that it is safe to delete. The triage segments filter to All, Needs alt, and Unused with live
+  counts; the type facet (Images / Documents) appears because the library holds both. A click on a row
+  opens the details slide-over.
+</p>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="office">
+    <!-- the office nav -->
+    <nav class="nav" aria-label="Admin">
+      <div class="nav-brand">
+        <span class="brand-tile" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 8.5 9h7L12 3Zm-4.2 7L3 18h18l-4.8-8H7.8Z"/></svg></span>
+        <span class="brand-word">cairn</span>
+      </div>
+      <div class="nav-body">
+        <div class="nav-group">
+          <span class="nav-eyebrow">Content</span>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Posts</a>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Pages</a>
+          <a class="nav-item active" href="#" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>Media</a>
+        </div>
+        <div class="nav-group">
+          <span class="nav-eyebrow">Site</span>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>Navigation</a>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="main">
+      <!-- the topbar -->
+      <div class="topbar">
+        <div class="grow"></div>
+        <div class="tb-search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Search or jump to" /><span class="tb-kbd">⌘K</span></div>
+      </div>
+
+      <div class="content">
+        <!-- the page header: eyebrow + count, search, Upload primary action -->
+        <div class="pg-head">
+          <div class="titles">
+            <span class="eyebrow">Media</span>
+            <span class="pg-title">Media library</span>
+            <span class="pg-count">24 assets &middot; 38.6 MB</span>
+          </div>
+          <div class="pg-actions">
+            <div class="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Search name, alt, or caption" aria-label="Search the media library" /></div>
+            <button class="btn-primary" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>Upload</button>
+          </div>
+        </div>
+
+        <!-- the triage bar: pick-one segments + type facet + sort -->
+        <div class="triage">
+          <div class="seg" role="group" aria-label="Filter assets">
+            <button type="button" class="on" aria-pressed="true"><svg class="chk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>All<span class="ct">24</span></button>
+            <button type="button" aria-pressed="false">Needs alt<span class="ct">3</span></button>
+            <button type="button" aria-pressed="false">Unused<span class="ct">5</span></button>
+          </div>
+          <span class="triage-div" aria-hidden="true"></span>
+          <div class="facet" role="group" aria-label="Filter by type">
+            <span class="lbl">Type</span>
+            <button type="button" class="pill-toggle on" aria-pressed="true"><svg class="chk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>All</button>
+            <button type="button" class="pill-toggle" aria-pressed="false">Images</button>
+            <button type="button" class="pill-toggle" aria-pressed="false">Documents</button>
+          </div>
+        </div>
+
+        <!-- the list card -->
+        <div class="list-card">
+          <div class="col-head" role="row">
+            <span class="ch sortable">Asset <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg></span>
+            <span class="ch">Alt status</span>
+            <span class="ch">Used</span>
+            <span class="ch sortable right" style="justify-self:end;">Added <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+          </div>
+
+          <!-- row: described, used -->
+          <div class="row" role="button" tabindex="0">
+            <div class="r-id">
+              <span class="r-thumb ph-a" role="img" aria-label="Dawn light over the groomed tracks"></span>
+              <span class="r-text">
+                <span class="r-name">first-light</span>
+                <span class="r-meta">1600&times;900<span class="dot">&middot;</span>284 KB<span class="dot">&middot;</span>WebP</span>
+              </span>
+            </div>
+            <span class="alt-chip ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Described</span>
+            <span class="use-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>used in 3</span>
+            <span class="r-trail"><span style="font-size:.8125rem;color:var(--color-muted);font-variant-numeric:tabular-nums;">Mar 4</span><span class="r-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span></span>
+          </div>
+
+          <!-- row: needs alt, used (the warning case) -->
+          <div class="row" role="button" tabindex="0">
+            <div class="r-id">
+              <span class="r-thumb ph-b" role="img" aria-label=""></span>
+              <span class="r-text">
+                <span class="r-name">valley-ridge</span>
+                <span class="r-meta">2048&times;1152<span class="dot">&middot;</span>512 KB<span class="dot">&middot;</span>JPEG</span>
+              </span>
+            </div>
+            <span class="alt-chip miss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Needs alt</span>
+            <span class="use-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>used in 1</span>
+            <span class="r-trail"><span style="font-size:.8125rem;color:var(--color-muted);font-variant-numeric:tabular-nums;">Feb 18</span><span class="r-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span></span>
+          </div>
+
+          <!-- row: described, unused (the safe-to-delete case) -->
+          <div class="row" role="button" tabindex="0">
+            <div class="r-id">
+              <span class="r-thumb ph-doc" role="img" aria-label="">
+                <span class="doc-glyph"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg></span>
+              </span>
+              <span class="r-text">
+                <span class="r-name">old-trailhead-map</span>
+                <span class="r-meta">PDF<span class="dot">&middot;</span>1.2 MB<span class="dot">&middot;</span>Document</span>
+              </span>
+            </div>
+            <span class="alt-chip deco"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>Not applicable</span>
+            <span class="use-pill none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.73 4 22 18a2 2 0 0 1-1.73 3H3.73A2 2 0 0 1 2 18L10.27 4a2 2 0 0 1 3.46 0z"/><line x1="2" y1="2" x2="22" y2="22"/></svg>no references</span>
+            <span class="r-trail"><span style="font-size:.8125rem;color:var(--color-muted);font-variant-numeric:tabular-nums;">Jan 22</span><span class="r-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span></span>
+          </div>
+
+          <!-- row: described, used -->
+          <div class="row" role="button" tabindex="0">
+            <div class="r-id">
+              <span class="r-thumb ph-d" role="img" aria-label="A ridgeline at dusk"></span>
+              <span class="r-text">
+                <span class="r-name">ridgeline-dusk</span>
+                <span class="r-meta">1920&times;1280<span class="dot">&middot;</span>431 KB<span class="dot">&middot;</span>WebP</span>
+              </span>
+            </div>
+            <span class="alt-chip ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Described</span>
+            <span class="use-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>used in 2</span>
+            <span class="r-trail"><span style="font-size:.8125rem;color:var(--color-muted);font-variant-numeric:tabular-nums;">Jan 9</span><span class="r-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span></span>
+          </div>
+
+          <!-- row: decorative, used -->
+          <div class="row" role="button" tabindex="0">
+            <div class="r-id">
+              <span class="r-thumb ph-c" role="img" aria-label=""></span>
+              <span class="r-text">
+                <span class="r-name">junction-sign</span>
+                <span class="r-meta">1200&times;800<span class="dot">&middot;</span>198 KB<span class="dot">&middot;</span>WebP</span>
+              </span>
+            </div>
+            <span class="alt-chip deco"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>Decorative</span>
+            <span class="use-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>used in 1</span>
+            <span class="r-trail"><span style="font-size:.8125rem;color:var(--color-muted);font-variant-numeric:tabular-nums;">Dec 30</span><span class="r-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span></span>
+          </div>
+
+          <!-- row: needs alt, unused (both flags, the strongest cleanup candidate) -->
+          <div class="row" role="button" tabindex="0">
+            <div class="r-id">
+              <span class="r-thumb ph-f" role="img" aria-label=""></span>
+              <span class="r-text">
+                <span class="r-name">lodge-exterior-2019</span>
+                <span class="r-meta">1024&times;768<span class="dot">&middot;</span>156 KB<span class="dot">&middot;</span>JPEG</span>
+              </span>
+            </div>
+            <span class="alt-chip miss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Needs alt</span>
+            <span class="use-pill none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.73 4 22 18a2 2 0 0 1-1.73 3H3.73A2 2 0 0 1 2 18L10.27 4a2 2 0 0 1 3.46 0z"/><line x1="2" y1="2" x2="22" y2="22"/></svg>no references</span>
+            <span class="r-trail"><span style="font-size:.8125rem;color:var(--color-muted);font-variant-numeric:tabular-nums;">Nov 11</span><span class="r-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span></span>
+          </div>
+
+          <!-- the trailing upload foot row -->
+          <button type="button" class="foot-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>Upload media</button>
+        </div>
+
+        <!-- the managed pager (never infinite scroll) -->
+        <div class="pager">
+          <span role="status">6 of 24</span>
+          <div class="ctrls">
+            <label style="display:flex;align-items:center;gap:6px;"><span style="color:var(--color-muted);">Per page</span>
+              <select aria-label="Rows per page"><option>12</option><option>24</option><option>48</option></select>
+            </label>
+            <button class="pg-btn" aria-label="Previous page" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+            <span>Page 1 of 2</span>
+            <button class="pg-btn" aria-label="Next page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- ============================================================================================ -->
+<!-- SCREEN 2: the details slide-over open, LIGHT, where-used + actions                            -->
+<!-- ============================================================================================ -->
+<p class="mock-label">2 &mdash; Light: the details slide-over (where-used and actions)</p>
+<p class="mock-note">
+  A click on a row opens the details slide-over (the editor's details-panel recipe). It holds a larger
+  preview, the full metadata, and the headline Where used list: each entry that references the asset is
+  a link, tagged with the branch it was found on (the cross-branch grep reaches open
+  <code>cairn/*</code> edit branches, not just <code>main</code>). Beneath, the alt and the name are
+  editable in place, with Replace and a Safe-delete control. The list behind the panel dims under a
+  light scrim, and the row that opened it stays selected. Editing here commits on Save, the same as the
+  editor.
+</p>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="office">
+    <nav class="nav" aria-label="Admin">
+      <div class="nav-brand">
+        <span class="brand-tile" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 8.5 9h7L12 3Zm-4.2 7L3 18h18l-4.8-8H7.8Z"/></svg></span>
+        <span class="brand-word">cairn</span>
+      </div>
+      <div class="nav-body">
+        <div class="nav-group">
+          <span class="nav-eyebrow">Content</span>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Posts</a>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Pages</a>
+          <a class="nav-item active" href="#" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>Media</a>
+        </div>
+        <div class="nav-group">
+          <span class="nav-eyebrow">Site</span>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>Navigation</a>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="main">
+      <div class="topbar">
+        <div class="grow"></div>
+        <div class="tb-search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Search or jump to" /><span class="tb-kbd">⌘K</span></div>
+      </div>
+
+      <div class="content">
+        <div class="pg-head">
+          <div class="titles">
+            <span class="eyebrow">Media</span>
+            <span class="pg-title">Media library</span>
+            <span class="pg-count">24 assets &middot; 38.6 MB</span>
+          </div>
+          <div class="pg-actions">
+            <div class="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Search name, alt, or caption" aria-label="Search the media library" /></div>
+            <button class="btn-primary" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>Upload</button>
+          </div>
+        </div>
+
+        <!-- a compact list behind the panel, with the open row selected -->
+        <div class="list-card">
+          <div class="row sel" role="button" tabindex="0" aria-selected="true">
+            <div class="r-id">
+              <span class="r-thumb ph-a" role="img" aria-label="Dawn light over the groomed tracks"></span>
+              <span class="r-text"><span class="r-name">first-light</span><span class="r-meta">1600&times;900<span class="dot">&middot;</span>284 KB<span class="dot">&middot;</span>WebP</span></span>
+            </div>
+            <span class="alt-chip ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Described</span>
+            <span class="use-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>used in 3</span>
+            <span class="r-trail"><span style="font-size:.8125rem;color:var(--color-muted);font-variant-numeric:tabular-nums;">Mar 4</span><span class="r-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span></span>
+          </div>
+          <div class="row" role="button" tabindex="0">
+            <div class="r-id">
+              <span class="r-thumb ph-b" role="img" aria-label=""></span>
+              <span class="r-text"><span class="r-name">valley-ridge</span><span class="r-meta">2048&times;1152<span class="dot">&middot;</span>512 KB<span class="dot">&middot;</span>JPEG</span></span>
+            </div>
+            <span class="alt-chip miss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Needs alt</span>
+            <span class="use-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>used in 1</span>
+            <span class="r-trail"><span style="font-size:.8125rem;color:var(--color-muted);font-variant-numeric:tabular-nums;">Feb 18</span><span class="r-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span></span>
+          </div>
+          <div class="row" role="button" tabindex="0" style="opacity:.85;">
+            <div class="r-id">
+              <span class="r-thumb ph-d" role="img" aria-label="A ridgeline at dusk"></span>
+              <span class="r-text"><span class="r-name">ridgeline-dusk</span><span class="r-meta">1920&times;1280<span class="dot">&middot;</span>431 KB<span class="dot">&middot;</span>WebP</span></span>
+            </div>
+            <span class="alt-chip ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Described</span>
+            <span class="use-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>used in 2</span>
+            <span class="r-trail"><span style="font-size:.8125rem;color:var(--color-muted);font-variant-numeric:tabular-nums;">Jan 9</span><span class="r-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- the scrim dims the list; the details slide-over rides over it -->
+      <div class="scrim"></div>
+      <aside class="panel" role="region" aria-label="Asset details">
+        <div class="panel-head">
+          <span class="eyebrow">Asset</span>
+          <button class="panel-x" aria-label="Close details"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+        <div class="panel-body">
+          <div>
+            <div class="pv ph-a" role="img" aria-label="Dawn light over the groomed cross-country tracks"></div>
+            <div class="pv-name">first-light</div>
+          </div>
+
+          <div class="pv-chips">
+            <span class="alt-chip ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Described</span>
+            <span class="use-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>used in 3 entries</span>
+          </div>
+
+          <dl class="meta-grid">
+            <dt>Dimensions</dt><dd>1600 &times; 900</dd>
+            <dt>Size</dt><dd>284 KB</dd>
+            <dt>Type</dt><dd>WebP image</dd>
+            <dt>Added</dt><dd>March 4, 2026</dd>
+            <dt>Reference</dt><dd><code>media:first-light.a1b2c3d4e5f60718</code></dd>
+          </dl>
+
+          <!-- the headline: where-used, exact and cross-branch -->
+          <div>
+            <p class="section-eyebrow"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Where used</p>
+            <ul class="where-list">
+              <li><a href="#"><span class="w-glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span><span class="w-text"><span class="w-title">A season on the early tracks</span><span class="w-where">Post &middot; hero image</span></span><span class="w-branch">main</span></a></li>
+              <li><a href="#"><span class="w-glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span><span class="w-text"><span class="w-title">Grooming report, week one</span><span class="w-where">Post &middot; in the body</span></span><span class="w-branch">main</span></a></li>
+              <li><a href="#"><span class="w-glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span><span class="w-text"><span class="w-title">About the trails</span><span class="w-where">Page &middot; in the body</span></span><span class="w-branch">cairn/pages/about-the-trails</span></a></li>
+            </ul>
+          </div>
+
+          <!-- alt + rename, editable in place -->
+          <div class="fld">
+            <span class="lbl">Alt text</span>
+            <div class="alt-radio-row" role="radiogroup" aria-label="Alt text">
+              <span class="alt-radio sel"><span class="dot2"></span>Describe it</span>
+              <span class="alt-radio"><span class="dot2"></span>Decorative</span>
+            </div>
+            <input class="input" type="text" value="Dawn light over the groomed cross-country tracks before sunrise." aria-label="Alt text description" />
+            <span class="fld-hint">A short description for screen readers. Saving updates every entry that uses this image.</span>
+          </div>
+
+          <div class="fld">
+            <label class="lbl" for="d2-name">Name</label>
+            <input class="input" id="d2-name" type="text" value="first-light" />
+            <span class="fld-hint">The display name in the library. The reference stays the same.</span>
+          </div>
+
+          <!-- the panel actions: Replace, Save, then Safe-delete -->
+          <div class="panel-actions">
+            <div class="pa-row">
+              <button class="btn-soft" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M21 12A9 9 0 0 0 6 5.3L3 8"/><path d="M21 22v-6h-6"/><path d="M3 12a9 9 0 0 0 15 6.7l3-2.7"/></svg>Replace</button>
+              <button class="btn-primary-wide" type="button">Save changes</button>
+            </div>
+            <button class="btn-danger-soft" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete this asset</button>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div></div>
+
+<!-- ============================================================================================ -->
+<!-- SCREEN 3: the safe-delete alertdialog, both phrasings                                         -->
+<!-- ============================================================================================ -->
+<p class="mock-label">3 &mdash; Light: the safe-delete alertdialog (in-use and orphaned)</p>
+<p class="mock-note">
+  Delete opens a type-to-confirm alertdialog, never a plain confirm, because deleting media can break
+  pages. Left, the asset is in use: the dialog names the entries that would break and requires typing
+  the asset name to enable Delete. Right, the asset is orphaned: no references found, so the dialog is a
+  light confirm that notes git history makes it recoverable. Neither dialog light-dismisses on the
+  backdrop.
+</p>
+<div class="pair">
+
+  <!-- IN USE: the hard-confirm, type-to-confirm -->
+  <div class="screen"><div data-theme="cairn-admin">
+    <div class="office short" style="min-height:430px; background: var(--color-base-200);">
+      <div class="scrim-modal">
+        <div class="alertdialog" role="alertdialog" aria-labelledby="d3a-title" aria-describedby="d3a-desc" aria-modal="true">
+          <div class="ad-body">
+            <div class="ad-head">
+              <span class="ad-glyph warn" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+              <div>
+                <div class="ad-title" id="d3a-title">Delete first-light?</div>
+              </div>
+            </div>
+            <p class="ad-text" id="d3a-desc">This image is used in 3 entries. Deleting it breaks those entries until you repoint or remove the reference.</p>
+            <ul class="ad-uselist">
+              <li><span class="u-glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span>A season on the early tracks<span class="u-where">hero</span></li>
+              <li><span class="u-glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span>Grooming report, week one<span class="u-where">body</span></li>
+              <li><span class="u-glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span>About the trails<span class="u-where">body</span></li>
+            </ul>
+            <div class="ad-confirm">
+              <label class="lbl" for="d3a-type">To confirm, type <b>first-light</b></label>
+              <input class="input" id="d3a-type" type="text" placeholder="first-light" />
+            </div>
+          </div>
+          <div class="ad-foot">
+            <button class="ad-cancel" type="button">Cancel</button>
+            <button class="ad-delete" type="button" disabled>Delete this asset</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+
+  <!-- ORPHANED: the light confirm -->
+  <div class="screen"><div data-theme="cairn-admin">
+    <div class="office short" style="min-height:430px; background: var(--color-base-200);">
+      <div class="scrim-modal">
+        <div class="alertdialog" role="alertdialog" aria-labelledby="d3b-title" aria-describedby="d3b-desc" aria-modal="true">
+          <div class="ad-body">
+            <div class="ad-head">
+              <span class="ad-glyph safe" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span>
+              <div>
+                <div class="ad-title" id="d3b-title">Delete old-trailhead-map?</div>
+              </div>
+            </div>
+            <p class="ad-text" id="d3b-desc">No references found. Nothing on the site links to this file, so deleting it changes nothing for your readers.</p>
+            <p class="ad-text muted" style="margin-top:10px;">It stays in git history, so you can bring it back later if you need it.</p>
+          </div>
+          <div class="ad-foot">
+            <button class="ad-cancel" type="button">Cancel</button>
+            <button class="ad-delete" type="button">Delete this asset</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+
+</div>
+
+<!-- ============================================================================================ -->
+<!-- SCREEN 4: the empty state                                                                     -->
+<!-- ============================================================================================ -->
+<p class="mock-label">4 &mdash; Light: the empty state</p>
+<p class="mock-note">
+  No media yet. The state owns the content area (no card), mirroring the office empty state: the cairn
+  mark, concept-named copy, and the upload affordance with a dropzone. The triage bar and the search
+  stay out of the way until there is something to triage.
+</p>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="office">
+    <nav class="nav" aria-label="Admin">
+      <div class="nav-brand">
+        <span class="brand-tile" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 8.5 9h7L12 3Zm-4.2 7L3 18h18l-4.8-8H7.8Z"/></svg></span>
+        <span class="brand-word">cairn</span>
+      </div>
+      <div class="nav-body">
+        <div class="nav-group">
+          <span class="nav-eyebrow">Content</span>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Posts</a>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Pages</a>
+          <a class="nav-item active" href="#" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>Media</a>
+        </div>
+        <div class="nav-group">
+          <span class="nav-eyebrow">Site</span>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>Navigation</a>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="main">
+      <div class="topbar">
+        <div class="grow"></div>
+        <div class="tb-search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Search or jump to" /><span class="tb-kbd">⌘K</span></div>
+      </div>
+
+      <div class="content" style="display:flex;flex-direction:column;">
+        <div class="pg-head">
+          <div class="titles">
+            <span class="eyebrow">Media</span>
+            <span class="pg-title">Media library</span>
+          </div>
+        </div>
+
+        <div class="empty">
+          <span class="glyph" aria-hidden="true"><svg width="46" height="46" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 8.5 9h7L12 3Zm-4.2 7L3 18h18l-4.8-8H7.8Z"/></svg></span>
+          <div>
+            <p class="e-main">No media yet</p>
+            <p class="e-sub">Upload an image and it shows up here, ready to drop into a post or set as a hero.</p>
+          </div>
+          <div class="e-dropzone">
+            <button class="btn-primary" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>Upload media</button>
+            <span class="ed-sub">or drop a file anywhere on this page</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- ============================================================================================ -->
+<!-- SCREEN 5: the list and the slide-over in DARK                                                 -->
+<!-- ============================================================================================ -->
+<p class="mock-label">5 &mdash; Dark: the list and the details slide-over</p>
+<p class="mock-note">
+  The same two surfaces through the dark tokens. The warning ink, the positive ink, and the accent all
+  resolve from the theme variables, and the theme-adaptive border carries the card edges where the soft
+  shadow barely shows.
+</p>
+
+<!-- DARK list -->
+<div class="screen"><div data-theme="cairn-admin-dark">
+  <div class="office">
+    <nav class="nav" aria-label="Admin">
+      <div class="nav-brand">
+        <span class="brand-tile" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 8.5 9h7L12 3Zm-4.2 7L3 18h18l-4.8-8H7.8Z"/></svg></span>
+        <span class="brand-word">cairn</span>
+      </div>
+      <div class="nav-body">
+        <div class="nav-group">
+          <span class="nav-eyebrow">Content</span>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Posts</a>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Pages</a>
+          <a class="nav-item active" href="#" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>Media</a>
+        </div>
+        <div class="nav-group">
+          <span class="nav-eyebrow">Site</span>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>Navigation</a>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="main">
+      <div class="topbar">
+        <div class="grow"></div>
+        <div class="tb-search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Search or jump to" /><span class="tb-kbd">⌘K</span></div>
+      </div>
+
+      <div class="content">
+        <div class="pg-head">
+          <div class="titles">
+            <span class="eyebrow">Media</span>
+            <span class="pg-title">Media library</span>
+            <span class="pg-count">24 assets &middot; 38.6 MB</span>
+          </div>
+          <div class="pg-actions">
+            <div class="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Search name, alt, or caption" aria-label="Search the media library" /></div>
+            <button class="btn-primary" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>Upload</button>
+          </div>
+        </div>
+
+        <div class="triage">
+          <div class="seg" role="group" aria-label="Filter assets">
+            <button type="button" class="on" aria-pressed="true"><svg class="chk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>All<span class="ct">24</span></button>
+            <button type="button" aria-pressed="false">Needs alt<span class="ct">3</span></button>
+            <button type="button" aria-pressed="false">Unused<span class="ct">5</span></button>
+          </div>
+          <span class="triage-div" aria-hidden="true"></span>
+          <div class="facet" role="group" aria-label="Filter by type">
+            <span class="lbl">Type</span>
+            <button type="button" class="pill-toggle on" aria-pressed="true"><svg class="chk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>All</button>
+            <button type="button" class="pill-toggle" aria-pressed="false">Images</button>
+            <button type="button" class="pill-toggle" aria-pressed="false">Documents</button>
+          </div>
+        </div>
+
+        <div class="list-card">
+          <div class="col-head" role="row">
+            <span class="ch sortable">Asset <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg></span>
+            <span class="ch">Alt status</span>
+            <span class="ch">Used</span>
+            <span class="ch sortable right" style="justify-self:end;">Added <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+          </div>
+
+          <div class="row" role="button" tabindex="0">
+            <div class="r-id">
+              <span class="r-thumb ph-a" role="img" aria-label="Dawn light over the groomed tracks"></span>
+              <span class="r-text"><span class="r-name">first-light</span><span class="r-meta">1600&times;900<span class="dot">&middot;</span>284 KB<span class="dot">&middot;</span>WebP</span></span>
+            </div>
+            <span class="alt-chip ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Described</span>
+            <span class="use-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>used in 3</span>
+            <span class="r-trail"><span style="font-size:.8125rem;color:var(--color-muted);font-variant-numeric:tabular-nums;">Mar 4</span><span class="r-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span></span>
+          </div>
+
+          <div class="row" role="button" tabindex="0">
+            <div class="r-id">
+              <span class="r-thumb ph-b" role="img" aria-label=""></span>
+              <span class="r-text"><span class="r-name">valley-ridge</span><span class="r-meta">2048&times;1152<span class="dot">&middot;</span>512 KB<span class="dot">&middot;</span>JPEG</span></span>
+            </div>
+            <span class="alt-chip miss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Needs alt</span>
+            <span class="use-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>used in 1</span>
+            <span class="r-trail"><span style="font-size:.8125rem;color:var(--color-muted);font-variant-numeric:tabular-nums;">Feb 18</span><span class="r-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span></span>
+          </div>
+
+          <div class="row" role="button" tabindex="0">
+            <div class="r-id">
+              <span class="r-thumb ph-doc" role="img" aria-label="">
+                <span class="doc-glyph"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg></span>
+              </span>
+              <span class="r-text"><span class="r-name">old-trailhead-map</span><span class="r-meta">PDF<span class="dot">&middot;</span>1.2 MB<span class="dot">&middot;</span>Document</span></span>
+            </div>
+            <span class="alt-chip deco"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>Not applicable</span>
+            <span class="use-pill none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.73 4 22 18a2 2 0 0 1-1.73 3H3.73A2 2 0 0 1 2 18L10.27 4a2 2 0 0 1 3.46 0z"/><line x1="2" y1="2" x2="22" y2="22"/></svg>no references</span>
+            <span class="r-trail"><span style="font-size:.8125rem;color:var(--color-muted);font-variant-numeric:tabular-nums;">Jan 22</span><span class="r-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span></span>
+          </div>
+
+          <div class="row" role="button" tabindex="0">
+            <div class="r-id">
+              <span class="r-thumb ph-f" role="img" aria-label=""></span>
+              <span class="r-text"><span class="r-name">lodge-exterior-2019</span><span class="r-meta">1024&times;768<span class="dot">&middot;</span>156 KB<span class="dot">&middot;</span>JPEG</span></span>
+            </div>
+            <span class="alt-chip miss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Needs alt</span>
+            <span class="use-pill none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.73 4 22 18a2 2 0 0 1-1.73 3H3.73A2 2 0 0 1 2 18L10.27 4a2 2 0 0 1 3.46 0z"/><line x1="2" y1="2" x2="22" y2="22"/></svg>no references</span>
+            <span class="r-trail"><span style="font-size:.8125rem;color:var(--color-muted);font-variant-numeric:tabular-nums;">Nov 11</span><span class="r-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span></span>
+          </div>
+
+          <button type="button" class="foot-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>Upload media</button>
+        </div>
+
+        <div class="pager">
+          <span role="status">6 of 24</span>
+          <div class="ctrls">
+            <label style="display:flex;align-items:center;gap:6px;"><span style="color:var(--color-muted);">Per page</span>
+              <select aria-label="Rows per page"><option>12</option><option>24</option><option>48</option></select>
+            </label>
+            <button class="pg-btn" aria-label="Previous page" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+            <span>Page 1 of 2</span>
+            <button class="pg-btn" aria-label="Next page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- DARK slide-over (framed alone, the panel recipe through dark tokens) -->
+<p class="mock-note">The details slide-over through the dark tokens, framed on its own.</p>
+<div class="screen" style="max-width:24rem;"><div data-theme="cairn-admin-dark">
+  <div class="office short" style="min-height:0; background: var(--color-base-100);">
+    <aside class="panel static">
+      <div class="panel-head">
+        <span class="eyebrow">Asset</span>
+        <button class="panel-x" aria-label="Close details"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div class="panel-body">
+        <div>
+          <div class="pv ph-b" role="img" aria-label=""></div>
+          <div class="pv-name">valley-ridge</div>
+        </div>
+        <div class="pv-chips">
+          <span class="alt-chip miss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Needs alt</span>
+          <span class="use-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>used in 1 entry</span>
+        </div>
+        <dl class="meta-grid">
+          <dt>Dimensions</dt><dd>2048 &times; 1152</dd>
+          <dt>Size</dt><dd>512 KB</dd>
+          <dt>Type</dt><dd>JPEG image</dd>
+          <dt>Added</dt><dd>February 18, 2026</dd>
+          <dt>Reference</dt><dd><code>media:valley-ridge.f0e1d2c3b4a59687</code></dd>
+        </dl>
+        <div>
+          <p class="section-eyebrow"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Where used</p>
+          <ul class="where-list">
+            <li><a href="#"><span class="w-glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span><span class="w-text"><span class="w-title">From the ridge</span><span class="w-where">Post &middot; hero image</span></span><span class="w-branch">cairn/posts/from-the-ridge</span></a></li>
+          </ul>
+        </div>
+        <div class="fld">
+          <span class="lbl">Alt text</span>
+          <div class="alt-radio-row" role="radiogroup" aria-label="Alt text">
+            <span class="alt-radio sel"><span class="dot2"></span>Describe it</span>
+            <span class="alt-radio"><span class="dot2"></span>Decorative</span>
+          </div>
+          <input class="input" type="text" placeholder="Describe this image for screen readers" aria-label="Alt text description" />
+          <span class="fld-hint">This image has no alt text yet. Adding it updates the entry that uses it.</span>
+        </div>
+        <div class="fld">
+          <label class="lbl" for="dk-name">Name</label>
+          <input class="input" id="dk-name" type="text" value="valley-ridge" />
+        </div>
+        <div class="panel-actions">
+          <div class="pa-row">
+            <button class="btn-soft" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M21 12A9 9 0 0 0 6 5.3L3 8"/><path d="M21 22v-6h-6"/><path d="M3 12a9 9 0 0 0 15 6.7l3-2.7"/></svg>Replace</button>
+            <button class="btn-primary-wide" type="button">Save changes</button>
+          </div>
+          <button class="btn-danger-soft" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete this asset</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div></div>
+
+</body>
+</html>

@@ -1,0 +1,956 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Media Library exploration C: usage-first / cleanup-forward (media 3c)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+  rel="stylesheet"
+/>
+<style>
+  /* Media Library exploration C, "usage-first / cleanup-forward". One of the divergent 3c mockups.
+     The bet: cairn knows EXACTLY where each asset is used (a cross-branch grep across main and every
+     open cairn/* edit branch) and knows when nothing references it. That is the single most-requested,
+     most-paywalled capability in the whole field (WordPress concedes it unsolvable, Decap's plea has
+     115 reactions, Sanity gates it behind Enterprise, Strapi and Payload lack it). So this screen does
+     not bury where-used as a detail-panel footnote. It LEADS with it. Usage is the headline column on
+     every row, a triage header counts what is worth acting on, a "Tidy up" lens surfaces the orphans
+     and the alt-debt first, and the detail view is organized AROUND the where-used list, grouped by
+     published versus open-edit-branch since cairn unions main with the cairn/* branches. Safe-delete is
+     the star: it refuses (or hard-confirms) an in-use asset by listing the exact entries that would
+     break, and reassures on an orphan because git history makes the delete recoverable.
+
+     Token block and fonts copied verbatim from the 3b hero mockup (the visual-fidelity bar). Photo
+     stand-ins are warm dawn-light gradients, no bundled bytes. Copy is plain, on-brand, no em dashes. */
+
+  /* ---- mock scaffold (outside the themed surfaces) ---- */
+  body { margin: 0; background: #d8d4cf; }
+  .mock-label { font: 600 13px/1.4 system-ui; letter-spacing: .08em; text-transform: uppercase; color: #444; padding: 30px 24px 4px; }
+  .mock-note { font: 400 13px/1.55 system-ui; color: #5a564f; padding: 0 24px 14px; max-width: 88ch; }
+  .mock-note code { font-family: ui-monospace, monospace; background: rgba(0,0,0,.06); padding: 1px 4px; border-radius: 3px; }
+  .mock-intro { font: 400 14px/1.6 system-ui; color: #46423b; padding: 8px 24px 4px; max-width: 92ch; }
+  .screen { border: 1px solid #aaa; margin: 0 16px 48px; box-shadow: 0 2px 14px rgba(0,0,0,.08); overflow: hidden; }
+  .pair { display: flex; flex-wrap: wrap; gap: 0; }
+  .pair > .screen { flex: 1 1 440px; margin: 0 16px 48px; }
+
+  /* ---- Warm Stone tokens, both theme roots, inlined so the mockup stands alone (from 3b) ---- */
+  [data-theme='cairn-admin'] {
+    --color-base-100: oklch(99% 0.004 75);
+    --color-base-200: oklch(96.5% 0.006 75);
+    --color-base-300: oklch(89% 0.011 75);
+    --color-base-content: oklch(26% 0.014 75);
+    --color-primary: oklch(52% 0.2 293);
+    --color-primary-content: oklch(98% 0.01 293);
+    --color-accent: oklch(54% 0.16 300);
+    --color-muted: oklch(48% 0.01 75);
+    --color-subtle: oklch(42% 0.01 75);
+    --color-positive-ink: oklch(48% 0.12 150);
+    --cairn-code-chip: oklch(94.5% 0.008 75);
+    --cairn-warning-ink: oklch(50% 0.13 70);
+    --cairn-card-border: oklch(93% 0.008 75);
+    --cairn-shadow: 0 1px 2px oklch(28% 0.02 75 / 0.05), 0 8px 24px -6px oklch(28% 0.02 75 / 0.1);
+    --color-error: oklch(55% 0.2 25);
+    --cairn-error-ink: oklch(50% 0.19 25);
+    --cairn-error-tint: oklch(96% 0.03 25);
+    --cairn-error-border: oklch(85% 0.06 25);
+  }
+  [data-theme='cairn-admin-dark'] {
+    --color-base-100: oklch(24% 0.01 75);
+    --color-base-200: oklch(15.5% 0.009 75);
+    --color-base-300: oklch(30% 0.014 75);
+    --color-base-content: oklch(93% 0.006 75);
+    --color-primary: oklch(68% 0.18 293);
+    --color-primary-content: oklch(20% 0.03 293);
+    --color-accent: oklch(70% 0.14 300);
+    --color-muted: oklch(72% 0.01 75);
+    --color-subtle: oklch(80% 0.008 75);
+    --color-positive-ink: oklch(78% 0.12 150);
+    --cairn-code-chip: oklch(29.5% 0.012 75);
+    --cairn-warning-ink: oklch(80% 0.14 70);
+    --cairn-card-border: oklch(30% 0.014 75);
+    --cairn-shadow: 0 1px 2px oklch(0% 0 0 / 0.35), 0 8px 24px -6px oklch(0% 0 0 / 0.5);
+    --color-error: oklch(64% 0.18 25);
+    --cairn-error-ink: oklch(78% 0.15 25);
+    --cairn-error-tint: oklch(28% 0.06 25);
+    --cairn-error-border: oklch(40% 0.09 25);
+  }
+  [data-theme] {
+    --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+    --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-editor: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+
+  /* ===== the office shell: sidebar + topbar, the context the library lives in (it is an office route) ===== */
+  .app { display: flex; min-height: 620px; background: var(--color-base-200); color: var(--color-base-content); font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
+  .app.short { min-height: 0; }
+
+  /* sidebar (w-56), a peer-nav so Media reads as a sibling of Posts and Pages */
+  .side { width: 14rem; flex: none; background: var(--color-base-100); border-right: 1px solid var(--cairn-card-border); display: flex; flex-direction: column; }
+  .side-brand { display: flex; align-items: center; gap: 9px; height: 64px; padding: 0 16px; border-bottom: 1px solid var(--cairn-card-border); }
+  .brand-tile { height: 32px; width: 32px; flex: none; border-radius: .75rem; background: var(--color-primary); color: var(--color-primary-content); display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px oklch(0% 0 0 / .12); }
+  .brand-word { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; letter-spacing: -.01em; }
+  .side-nav { padding: 14px 10px; display: flex; flex-direction: column; gap: 2px; }
+  .side-eyebrow { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); padding: 8px 10px 4px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: .55rem; font-size: .875rem; font-weight: 500; color: var(--color-subtle); text-decoration: none; }
+  .nav-item svg { width: 17px; height: 17px; flex: none; color: var(--color-muted); }
+  .nav-item.on { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); font-weight: 600; }
+  .nav-item.on svg { color: var(--color-primary); }
+  .nav-count { margin-left: auto; font-size: .75rem; font-weight: 500; color: var(--color-muted); font-variant-numeric: tabular-nums; }
+  .nav-item.on .nav-count { color: var(--color-primary); }
+
+  /* topbar */
+  .top { height: 64px; flex: none; background: var(--color-base-100); border-bottom: 1px solid var(--cairn-card-border); display: flex; align-items: center; gap: 12px; padding: 0 20px; }
+  .top .crumb { font-size: .875rem; color: var(--color-muted); }
+  .top .crumb b { color: var(--color-base-content); font-weight: 550; }
+  .grow { flex: 1 1 auto; }
+  .top-search { display: flex; align-items: center; gap: 8px; height: 34px; width: 16rem; padding: 0 11px; border: 1px solid var(--color-base-300); border-radius: .625rem; background: var(--color-base-100); color: var(--color-muted); }
+  .top-search input { border: 0; background: transparent; outline: none; font: 400 .8125rem/1 var(--font-body); color: var(--color-base-content); width: 100%; }
+  .top-search input::placeholder { color: var(--color-muted); }
+  .top-k { font-size: .6875rem; border: 1px solid var(--color-base-300); border-radius: .3rem; padding: 2px 5px; color: var(--color-muted); }
+
+  .main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+  .content { padding: 26px 30px 34px; }
+
+  /* page heading row */
+  .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; margin-bottom: 18px; }
+  .page-title { font-family: var(--font-display); font-size: 1.875rem; font-weight: 700; letter-spacing: -.025em; }
+  .page-sub { font-size: .875rem; color: var(--color-muted); margin-top: 3px; }
+  .btn-primary { display: inline-flex; align-items: center; gap: 7px; font: 600 .8125rem/1 var(--font-body); border-radius: .625rem; padding: 9px 15px; border: 1px solid transparent; background: var(--color-primary); color: var(--color-primary-content); cursor: pointer; box-shadow: 0 1px 2px color-mix(in oklab, var(--color-primary) 35%, transparent); }
+  .btn-ghost { display: inline-flex; align-items: center; gap: 6px; font: 500 .8125rem/1 var(--font-body); border-radius: .55rem; padding: 8px 13px; border: 1px solid var(--color-base-300); background: transparent; color: var(--color-subtle); cursor: pointer; }
+  .btn-ghost.sm { padding: 6px 10px; font-size: .75rem; }
+
+  /* ===== the triage header: the usage-first headline. Three count tiles, the screen's organizing read ===== */
+  .triage { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
+  .tile { background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: 1rem; box-shadow: var(--cairn-shadow); padding: 14px 16px; display: flex; flex-direction: column; gap: 3px; }
+  .tile .t-num { font-family: var(--font-display); font-size: 1.625rem; font-weight: 700; letter-spacing: -.02em; line-height: 1.05; font-variant-numeric: tabular-nums; }
+  .tile .t-lbl { font-size: .75rem; color: var(--color-muted); display: inline-flex; align-items: center; gap: 5px; }
+  .tile .t-lbl svg { width: 13px; height: 13px; }
+  .tile.act { border-color: color-mix(in oklab, var(--cairn-warning-ink) 35%, var(--cairn-card-border)); }
+  .tile.act .t-num { color: var(--cairn-warning-ink); }
+  .tile.act .t-lbl { color: var(--cairn-warning-ink); }
+  .tile.calm .t-num { color: var(--color-base-content); }
+
+  /* ===== the lens + filter bar: the "Tidy up" lens leads, then search ===== */
+  .lensbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .lens-group { display: inline-flex; align-items: center; overflow: hidden; border-radius: .625rem; border: 1px solid var(--cairn-card-border); background: var(--color-base-100); }
+  .lens { display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; font: 500 .8125rem/1 var(--font-body); color: var(--color-muted); background: transparent; border: 0; cursor: pointer; }
+  .lens + .lens { border-left: 1px solid var(--cairn-card-border); }
+  .lens.on { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); font-weight: 600; }
+  .lens .lens-n { font-variant-numeric: tabular-nums; font-size: .75rem; opacity: .9; }
+  .lens svg { width: 13px; height: 13px; }
+  .lens-check { width: 13px; height: 13px; }
+  .vdiv { width: 1px; height: 22px; background: var(--cairn-card-border); }
+  .inline-search { display: flex; align-items: center; gap: 8px; height: 34px; flex: 1 1 14rem; max-width: 20rem; padding: 0 11px; border: 1px solid var(--color-base-300); border-radius: .625rem; background: var(--color-base-100); color: var(--color-muted); }
+  .inline-search input { border: 0; background: transparent; outline: none; font: 400 .8125rem/1 var(--font-body); color: var(--color-base-content); width: 100%; }
+  .inline-search input::placeholder { color: var(--color-muted); }
+  .search-scope { margin-left: auto; font-size: .75rem; color: var(--color-muted); }
+
+  /* the tidy-up lens explainer strip (shown only in the Tidy up lens) */
+  .lens-note { display: flex; align-items: flex-start; gap: 9px; padding: 10px 13px; margin-bottom: 16px; border-radius: .7rem; border: 1px solid color-mix(in oklab, var(--cairn-warning-ink) 22%, var(--cairn-card-border)); background: color-mix(in oklab, var(--cairn-warning-ink) 6%, var(--color-base-100)); font-size: .8125rem; color: var(--color-base-content); line-height: 1.5; }
+  .lens-note svg { width: 15px; height: 15px; flex: none; margin-top: 1px; color: var(--cairn-warning-ink); }
+
+  /* ===== the asset table: usage is the HEADLINE column, leading each row ===== */
+  .lib-card { background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: 1rem; box-shadow: var(--cairn-shadow); overflow: hidden; }
+  table.lib { width: 100%; border-collapse: collapse; }
+  table.lib thead th { text-align: left; font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); padding: 11px 16px; border-bottom: 1px solid var(--cairn-card-border); }
+  table.lib thead th.sortable { cursor: pointer; }
+  table.lib thead th .sort-caret { opacity: .5; }
+  table.lib tbody tr { border-bottom: 1px solid var(--cairn-card-border); }
+  table.lib tbody tr:last-child { border-bottom: 0; }
+  table.lib tbody tr:hover { background: color-mix(in oklab, var(--color-base-200) 55%, transparent); }
+  table.lib td { padding: 12px 16px; vertical-align: middle; }
+  /* the selected/active row: a left accent edge + tint, announced selection */
+  table.lib tbody tr.sel { background: color-mix(in oklab, var(--color-primary) 7%, transparent); box-shadow: inset 3px 0 0 var(--color-primary); }
+
+  /* the identity cell: thumb + name + slug */
+  .asset-id { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .asset-thumb { width: 52px; height: 40px; flex: none; border-radius: .5rem; border: 1px solid var(--cairn-card-border); object-fit: cover; }
+  .asset-meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .asset-name { font-size: .875rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .asset-slug { font-family: var(--font-editor); font-size: .6875rem; color: var(--color-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* THE USAGE CELL: the headline signal, glyph + count, links to the where-used detail */
+  .usage { display: inline-flex; align-items: center; gap: 7px; font-size: .8125rem; font-weight: 550; }
+  .usage .u-glyph { width: 26px; height: 26px; flex: none; border-radius: .5rem; display: inline-flex; align-items: center; justify-content: center; }
+  .usage .u-glyph svg { width: 14px; height: 14px; }
+  .usage.used { color: var(--color-base-content); }
+  .usage.used .u-glyph { background: color-mix(in oklab, var(--color-positive-ink) 14%, transparent); color: var(--color-positive-ink); }
+  .usage.orphan { color: var(--color-muted); }
+  .usage.orphan .u-glyph { background: color-mix(in oklab, var(--color-base-content) 7%, transparent); color: var(--color-muted); }
+  .usage .u-sub { display: block; font-size: .6875rem; font-weight: 400; color: var(--color-muted); }
+  .usage-stack { display: flex; flex-direction: column; gap: 1px; }
+
+  /* the alt-status cell: glyph + label, never hue alone */
+  .alt-chip { display: inline-flex; align-items: center; gap: 5px; font-size: .75rem; font-weight: 500; }
+  .alt-chip svg { width: 12px; height: 12px; flex: none; }
+  .alt-chip.ok { color: var(--color-positive-ink); }
+  .alt-chip.miss { color: var(--cairn-warning-ink); }
+  .alt-chip.deco { color: var(--color-muted); }
+
+  .cell-meta { font-size: .8125rem; color: var(--color-muted); font-variant-numeric: tabular-nums; }
+  .row-actions { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
+  .icon-btn { width: 30px; height: 30px; border: 0; background: transparent; border-radius: .5rem; color: var(--color-subtle); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+  .icon-btn:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .icon-btn.danger:hover { background: var(--cairn-error-tint); color: var(--cairn-error-ink); }
+  .icon-btn svg { width: 16px; height: 16px; }
+
+  /* the foot: managed load-more (never infinite scroll) + count */
+  .lib-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 16px; border-top: 1px solid var(--cairn-card-border); }
+  .foot-count { font-size: .8125rem; color: var(--color-muted); }
+  .load-more { display: inline-flex; align-items: center; gap: 7px; font: 600 .8125rem/1 var(--font-body); border-radius: .55rem; padding: 8px 14px; border: 1px solid var(--color-base-300); background: transparent; color: var(--color-subtle); cursor: pointer; }
+
+  /* the empty state */
+  .empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 70px 24px; text-align: center; }
+  .empty .e-mark { color: var(--color-primary); opacity: .3; }
+  .empty .e-title { font-weight: 600; }
+  .empty .e-sub { font-size: .875rem; color: var(--color-muted); max-width: 42ch; }
+
+  /* the tidy-up "all clear" state (Tidy up lens, nothing to act on) */
+  .allclear { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 54px 24px; text-align: center; }
+  .allclear .ac-ring { width: 46px; height: 46px; border-radius: 50%; background: color-mix(in oklab, var(--color-positive-ink) 14%, transparent); color: var(--color-positive-ink); display: inline-flex; align-items: center; justify-content: center; }
+  .allclear .ac-ring svg { width: 22px; height: 22px; }
+
+  /* ===== the DETAIL view: a slide-over centered on WHERE-USED ===== */
+  .detail-wrap { position: relative; }
+  .detail { position: absolute; top: 0; right: 0; bottom: 0; width: 27rem; background: var(--color-base-100); border-left: 1px solid var(--cairn-card-border); box-shadow: var(--cairn-shadow); display: flex; flex-direction: column; font-family: var(--font-body); }
+  .detail.static { position: static; width: 100%; box-shadow: none; border-left: 1px solid var(--cairn-card-border); border-radius: 1rem; overflow: hidden; }
+  .detail-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--cairn-card-border); }
+  .detail-eyebrow { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); }
+  .detail-body { padding: 18px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+  .detail-x { width: 28px; height: 28px; border: 0; background: transparent; border-radius: .45rem; color: var(--color-subtle); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+
+  /* the detail preview + identity header */
+  .d-preview { width: 100%; aspect-ratio: 16/9; border-radius: .7rem; border: 1px solid var(--cairn-card-border); }
+  .d-name { font-size: 1.0625rem; font-weight: 650; margin-top: 12px; }
+  .d-slug { font-family: var(--font-editor); font-size: .75rem; color: var(--color-muted); word-break: break-all; margin-top: 2px; }
+
+  /* THE WHERE-USED BLOCK: the centerpiece of the detail view */
+  .where { display: flex; flex-direction: column; gap: 12px; }
+  .where-head { display: flex; align-items: baseline; justify-content: space-between; }
+  .where-title { font-size: .9375rem; font-weight: 650; }
+  .where-total { font-size: .75rem; color: var(--color-muted); }
+  .where-group { display: flex; flex-direction: column; gap: 6px; }
+  .where-group-label { display: inline-flex; align-items: center; gap: 6px; font-size: .6875rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--color-muted); }
+  .where-group-label .wg-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+  .wg-dot.pub { background: var(--color-positive-ink); }
+  .wg-dot.branch { background: oklch(60% 0.15 70); }
+  .ref-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+  .ref { display: flex; align-items: center; gap: 10px; padding: 9px 11px; border: 1px solid var(--cairn-card-border); border-radius: .6rem; text-decoration: none; color: var(--color-base-content); background: var(--color-base-100); }
+  .ref:hover { border-color: color-mix(in oklab, var(--color-primary) 45%, var(--cairn-card-border)); background: color-mix(in oklab, var(--color-primary) 4%, transparent); }
+  .ref-glyph { width: 16px; height: 16px; flex: none; color: var(--color-muted); }
+  .ref-body { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1 1 auto; }
+  .ref-title { font-size: .8125rem; font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ref-where { font-size: .6875rem; color: var(--color-muted); }
+  .ref-branch { font-family: var(--font-editor); font-size: .625rem; color: oklch(52% 0.13 70); }
+  [data-theme='cairn-admin-dark'] .ref-branch { color: oklch(78% 0.13 70); }
+  .ref-arrow { width: 14px; height: 14px; flex: none; color: var(--color-muted); }
+
+  .where-orphan { display: flex; align-items: flex-start; gap: 10px; padding: 13px; border-radius: .7rem; border: 1px dashed var(--color-base-300); background: color-mix(in oklab, var(--color-base-200) 50%, transparent); }
+  .where-orphan svg { width: 18px; height: 18px; flex: none; color: var(--color-muted); margin-top: 1px; }
+  .where-orphan .wo-text { font-size: .8125rem; color: var(--color-base-content); line-height: 1.5; }
+  .where-orphan .wo-text b { font-weight: 600; }
+
+  /* the detail metadata grid + alt editor */
+  .meta-grid { display: grid; grid-template-columns: auto 1fr; gap: 7px 16px; font-size: .8125rem; }
+  .meta-grid dt { color: var(--color-muted); }
+  .meta-grid dd { margin: 0; font-variant-numeric: tabular-nums; }
+  .d-section-label { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); margin-bottom: 8px; }
+  .fld { display: flex; flex-direction: column; gap: 5px; }
+  .fld .lbl { font-size: .8125rem; font-weight: 500; }
+  .input { width: 100%; box-sizing: border-box; font: 400 .8125rem/1.45 var(--font-body); color: var(--color-base-content); background: var(--color-base-100); border: 1px solid var(--color-base-300); border-radius: .625rem; padding: 8px 11px; }
+  .input::placeholder { color: var(--color-muted); }
+  .fld-hint { font-size: .75rem; color: var(--color-muted); line-height: 1.45; }
+  .with-suffix { font-family: var(--font-editor); }
+  .d-actions { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 4px; }
+  .btn-quiet { display: inline-flex; align-items: center; gap: 6px; font: 500 .8125rem/1 var(--font-body); border-radius: .55rem; padding: 8px 13px; border: 1px solid var(--color-base-300); background: transparent; color: var(--color-subtle); cursor: pointer; }
+  .btn-quiet svg { width: 14px; height: 14px; }
+  .btn-danger-quiet { display: inline-flex; align-items: center; gap: 6px; font: 500 .8125rem/1 var(--font-body); border-radius: .55rem; padding: 8px 13px; border: 1px solid var(--cairn-error-border); background: transparent; color: var(--cairn-error-ink); cursor: pointer; margin-left: auto; }
+  .btn-danger-quiet svg { width: 14px; height: 14px; }
+
+  /* ===== the safe-delete alertdialog (the star interaction) ===== */
+  .scrim { position: absolute; inset: 0; background: oklch(20% 0.01 75 / 0.34); display: flex; align-items: center; justify-content: center; padding: 22px; }
+  .alertdialog { width: 30rem; max-width: 100%; max-height: 92%; overflow: hidden; display: flex; flex-direction: column; background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: 1rem; box-shadow: var(--cairn-shadow); font-family: var(--font-body); }
+  .ad-head { display: flex; align-items: flex-start; gap: 12px; padding: 18px 20px 12px; }
+  .ad-head .ad-icon { width: 36px; height: 36px; flex: none; border-radius: .6rem; display: inline-flex; align-items: center; justify-content: center; }
+  .ad-head .ad-icon svg { width: 19px; height: 19px; }
+  .ad-icon.warn { background: var(--cairn-error-tint); color: var(--cairn-error-ink); }
+  .ad-icon.calm { background: color-mix(in oklab, var(--color-base-content) 7%, transparent); color: var(--color-muted); }
+  .ad-title { font-size: 1rem; font-weight: 650; }
+  .ad-lede { font-size: .8125rem; color: var(--color-muted); margin-top: 3px; line-height: 1.5; }
+  .ad-body { padding: 4px 20px 8px; display: flex; flex-direction: column; gap: 13px; overflow-y: auto; }
+  .ad-asset { display: flex; align-items: center; gap: 11px; padding: 11px; border-radius: .65rem; border: 1px solid var(--cairn-card-border); background: color-mix(in oklab, var(--color-base-200) 50%, transparent); }
+  .ad-asset .aa-thumb { width: 44px; height: 34px; flex: none; border-radius: .45rem; border: 1px solid var(--cairn-card-border); object-fit: cover; }
+  .ad-asset .aa-name { font-size: .8125rem; font-weight: 600; }
+  .ad-asset .aa-slug { font-family: var(--font-editor); font-size: .6875rem; color: var(--color-muted); }
+
+  .ad-break-label { font-size: .8125rem; font-weight: 600; color: var(--cairn-error-ink); display: inline-flex; align-items: center; gap: 6px; }
+  .ad-break-label svg { width: 14px; height: 14px; }
+  .ad-break-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; max-height: 9rem; overflow-y: auto; border: 1px solid var(--cairn-error-border); border-radius: .65rem; padding: 8px; background: var(--cairn-error-tint); }
+  .ad-break { display: flex; align-items: center; gap: 9px; padding: 5px 6px; border-radius: .45rem; text-decoration: none; color: var(--color-base-content); }
+  .ad-break:hover { background: color-mix(in oklab, var(--cairn-error-ink) 9%, transparent); }
+  .ad-break svg.b-glyph { width: 14px; height: 14px; flex: none; color: var(--cairn-error-ink); }
+  .ad-break .b-body { display: flex; flex-direction: column; gap: 0; min-width: 0; flex: 1 1 auto; }
+  .ad-break .b-title { font-size: .8125rem; font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ad-break .b-where { font-size: .625rem; color: var(--color-muted); }
+  .ad-break .b-branch { font-family: var(--font-editor); font-size: .6rem; color: oklch(52% 0.13 70); }
+  [data-theme='cairn-admin-dark'] .ad-break .b-branch { color: oklch(78% 0.13 70); }
+
+  .ad-confirm { display: flex; flex-direction: column; gap: 6px; }
+  .ad-confirm .ac-prompt { font-size: .8125rem; color: var(--color-base-content); line-height: 1.5; }
+  .ad-confirm .ac-prompt code { font-family: var(--font-editor); font-size: .75rem; background: var(--cairn-code-chip); padding: 1px 6px; border-radius: .3rem; color: var(--color-base-content); font-weight: 600; }
+  .ad-confirm-input { width: 100%; box-sizing: border-box; font: 500 .8125rem/1.4 var(--font-editor); color: var(--color-base-content); background: var(--color-base-100); border: 1px solid var(--cairn-error-border); border-radius: .55rem; padding: 9px 11px; }
+  .ad-confirm-input::placeholder { color: var(--color-muted); font-family: var(--font-body); font-weight: 400; }
+
+  .ad-calm-note { display: flex; align-items: flex-start; gap: 9px; font-size: .8125rem; color: var(--color-base-content); line-height: 1.5; padding: 11px 13px; border-radius: .65rem; background: color-mix(in oklab, var(--color-base-200) 55%, transparent); border: 1px solid var(--cairn-card-border); }
+  .ad-calm-note svg { width: 15px; height: 15px; flex: none; margin-top: 1px; color: var(--color-muted); }
+
+  .ad-foot { display: flex; align-items: center; justify-content: flex-end; gap: 9px; padding: 14px 20px 18px; border-top: 1px solid var(--cairn-card-border); margin-top: 6px; }
+  .btn-cancel { font: 500 .8125rem/1 var(--font-body); border-radius: .55rem; padding: 9px 14px; border: 1px solid var(--color-base-300); background: transparent; color: var(--color-subtle); cursor: pointer; }
+  .btn-delete { font: 600 .8125rem/1 var(--font-body); border-radius: .55rem; padding: 9px 15px; border: 1px solid transparent; background: var(--color-error); color: oklch(99% 0.01 25); cursor: pointer; }
+  .btn-delete.disabled { opacity: .5; cursor: not-allowed; }
+
+  /* photo stand-ins (no bundled bytes): warm dawn-light gradients (from 3b, plus more) */
+  .ph-a { background: linear-gradient(170deg, oklch(82% 0.06 80) 0%, oklch(74% 0.08 60) 55%, oklch(64% 0.09 45) 100%); }
+  .ph-b { background: linear-gradient(150deg, oklch(52% 0.06 60) 0%, oklch(70% 0.09 50) 60%, oklch(85% 0.08 80) 100%); }
+  .ph-c { background: linear-gradient(200deg, oklch(88% 0.05 85) 0%, oklch(72% 0.07 55) 100%); }
+  .ph-d { background: linear-gradient(160deg, oklch(40% 0.05 60) 0%, oklch(60% 0.1 45) 55%, oklch(86% 0.08 85) 100%); }
+  .ph-e { background: linear-gradient(140deg, oklch(78% 0.07 95) 0%, oklch(66% 0.1 70) 100%); }
+  .ph-f { background: linear-gradient(190deg, oklch(58% 0.08 40) 0%, oklch(80% 0.07 75) 100%); }
+  .ph-g { background: linear-gradient(155deg, oklch(70% 0.06 110) 0%, oklch(56% 0.09 130) 100%); }
+</style>
+</head>
+<body>
+
+<p class="mock-label">Media Library exploration C: usage-first / cleanup-forward</p>
+<p class="mock-intro">
+  The bet of this direction: make cairn's structural superpower the spine of the whole screen. Every
+  rival's number-one missing or paywalled feature is "where is this used" plus a safe delete. cairn knows
+  usage exactly, for free, by grepping <code>media:&lt;slug&gt;.&lt;hash&gt;</code> across main and every
+  open <code>cairn/*</code> edit branch. So the library leads with usage and alt-debt rather than treating
+  them as detail-panel footnotes. A triage header counts what is worth acting on, a Tidy up lens surfaces
+  the orphans and the missing alt first, usage is the headline column on every row, and the detail view is
+  built around the where-used list. Safe-delete is the star interaction.
+</p>
+
+<!-- ============================================================= -->
+<!-- 1. DEFAULT VIEW (LIGHT): the usage-forward library            -->
+<!-- ============================================================= -->
+<p class="mock-label">1. Light: the default view, usage-forward, with the triage header</p>
+<p class="mock-note">
+  Media sits in the nav as a peer of Posts and Pages, so the office shell stays (sidebar plus topbar). The
+  triage header is the headline read: total assets, then the two counts worth acting on (unused and needs
+  alt) in the warning ink, then storage used. The All lens is active here, so every asset shows. Usage is
+  the leading data column: a green "Used in N" or a muted "Not used", each with a one-line locator. The
+  <code>meadow-fence</code> row is an orphan and <code>valley-ridge</code> needs alt, so both stand out
+  without a separate screen. Load-more sits at the foot, never infinite scroll.
+</p>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="app">
+    <!-- sidebar -->
+    <aside class="side">
+      <div class="side-brand">
+        <span class="brand-tile" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l2.5 4.5L19 9l-3.5 3 1 5L12 14.8 7.5 17l1-5L5 9l4.5-1.5L12 3z" opacity=".9"/></svg></span>
+        <span class="brand-word">cairn</span>
+      </div>
+      <nav class="side-nav" aria-label="Sections">
+        <span class="side-eyebrow">Content</span>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h6"/></svg>Posts<span class="nav-count">24</span></a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 9v11"/></svg>Pages<span class="nav-count">7</span></a>
+        <a class="nav-item on" href="#" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>Media<span class="nav-count">38</span></a>
+        <span class="side-eyebrow" style="margin-top:10px;">Site</span>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>Navigation</a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+      </nav>
+    </aside>
+
+    <!-- main -->
+    <div class="main">
+      <div class="top">
+        <span class="crumb"><b>Media</b></span>
+        <div class="grow"></div>
+        <div class="top-search">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input placeholder="Search the admin" /><span class="top-k">Ctrl K</span>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="page-head">
+          <div>
+            <h1 class="page-title">Media</h1>
+            <p class="page-sub">Every image committed to the site. See where each is used, fix its alt, and clean up what nothing references.</p>
+          </div>
+          <button class="btn-primary" type="button"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Upload</button>
+        </div>
+
+        <!-- the triage header: the usage-first headline -->
+        <div class="triage" role="group" aria-label="Library summary">
+          <div class="tile calm">
+            <span class="t-num">38</span>
+            <span class="t-lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>Assets</span>
+          </div>
+          <div class="tile act">
+            <span class="t-num">5</span>
+            <span class="t-lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Not used</span>
+          </div>
+          <div class="tile act">
+            <span class="t-num">4</span>
+            <span class="t-lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Need alt</span>
+          </div>
+          <div class="tile calm">
+            <span class="t-num">21<span style="font-size:.9rem;font-weight:600;color:var(--color-muted);"> MB</span></span>
+            <span class="t-lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>Stored</span>
+          </div>
+        </div>
+
+        <!-- the lens + search bar -->
+        <div class="lensbar">
+          <div class="lens-group" role="group" aria-label="View">
+            <button class="lens on" type="button" aria-pressed="true">
+              <svg class="lens-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+              All <span class="lens-n">38</span>
+            </button>
+            <button class="lens" type="button" aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 7 9 5 9-5"/><path d="M3 7v10l9 5 9-5V7"/><path d="m3 7 9-5 9 5"/></svg>
+              Tidy up <span class="lens-n">8</span>
+            </button>
+          </div>
+          <div class="vdiv" aria-hidden="true"></div>
+          <div class="inline-search">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input placeholder="Search name, alt, or caption" aria-label="Search the library" />
+          </div>
+          <span class="search-scope">Sorted by newest</span>
+        </div>
+
+        <!-- the asset table: usage is the headline column -->
+        <div class="lib-card">
+          <table class="lib">
+            <thead>
+              <tr>
+                <th style="width:38%;">Asset</th>
+                <th class="sortable" style="width:24%;">Used <svg class="sort-caret" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;"><path d="m6 9 6 6 6-6"/></svg></th>
+                <th style="width:14%;">Alt</th>
+                <th style="width:13%;">Added</th>
+                <th style="width:11%;text-align:right;"><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- USED, described -->
+              <tr>
+                <td><div class="asset-id"><span class="asset-thumb ph-a" role="img" aria-label="Dawn over the groomed tracks"></span><span class="asset-meta"><span class="asset-name">first-light</span><span class="asset-slug">media:first-light.9f4c2a</span></span></div></td>
+                <td>
+                  <span class="usage used"><span class="u-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="usage-stack"><span>Used in 3 entries</span><span class="u-sub">A season on the early tracks, and 2 more</span></span></span>
+                </td>
+                <td><span class="alt-chip ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Described</span></td>
+                <td class="cell-meta">Mar 4</td>
+                <td><div class="row-actions"><button class="icon-btn" aria-label="View first-light"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button></div></td>
+              </tr>
+              <!-- USED, needs alt -->
+              <tr>
+                <td><div class="asset-id"><span class="asset-thumb ph-b" role="img"></span><span class="asset-meta"><span class="asset-name">valley-ridge</span><span class="asset-slug">media:valley-ridge.71b0e8</span></span></div></td>
+                <td>
+                  <span class="usage used"><span class="u-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="usage-stack"><span>Used in 1 entry</span><span class="u-sub">From the ridge, the whole valley</span></span></span>
+                </td>
+                <td><span class="alt-chip miss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Needs alt</span></td>
+                <td class="cell-meta">Feb 18</td>
+                <td><div class="row-actions"><button class="icon-btn" aria-label="View valley-ridge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button></div></td>
+              </tr>
+              <!-- ORPHAN -->
+              <tr>
+                <td><div class="asset-id"><span class="asset-thumb ph-c" role="img" aria-label="A weathered trail fence at the meadow edge"></span><span class="asset-meta"><span class="asset-name">meadow-fence</span><span class="asset-slug">media:meadow-fence.3ad902</span></span></div></td>
+                <td>
+                  <span class="usage orphan"><span class="u-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span><span class="usage-stack"><span>Not used</span><span class="u-sub">No references found</span></span></span>
+                </td>
+                <td><span class="alt-chip ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Described</span></td>
+                <td class="cell-meta">Jan 22</td>
+                <td><div class="row-actions"><button class="icon-btn" aria-label="View meadow-fence"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button><button class="icon-btn danger" aria-label="Delete meadow-fence"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></td>
+              </tr>
+              <!-- USED, described -->
+              <tr>
+                <td><div class="asset-id"><span class="asset-thumb ph-d" role="img" aria-label="The ridgeline at dusk"></span><span class="asset-meta"><span class="asset-name">ridgeline-dusk</span><span class="asset-slug">media:ridgeline-dusk.c20f5b</span></span></div></td>
+                <td>
+                  <span class="usage used"><span class="u-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="usage-stack"><span>Used in 2 entries</span><span class="u-sub">Trail notes, and 1 more</span></span></span>
+                </td>
+                <td><span class="alt-chip ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Described</span></td>
+                <td class="cell-meta">Jan 9</td>
+                <td><div class="row-actions"><button class="icon-btn" aria-label="View ridgeline-dusk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button></div></td>
+              </tr>
+              <!-- USED, decorative -->
+              <tr>
+                <td><div class="asset-id"><span class="asset-thumb ph-e" role="img" aria-label=""></span><span class="asset-meta"><span class="asset-name">junction-sign</span><span class="asset-slug">media:junction-sign.88d1a0</span></span></div></td>
+                <td>
+                  <span class="usage used"><span class="u-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="usage-stack"><span>Used in 1 entry</span><span class="u-sub">Where the loops meet</span></span></span>
+                </td>
+                <td><span class="alt-chip deco"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>Decorative</span></td>
+                <td class="cell-meta">Dec 30</td>
+                <td><div class="row-actions"><button class="icon-btn" aria-label="View junction-sign"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button></div></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="lib-foot">
+            <span class="foot-count" role="status">Showing 5 of 38</span>
+            <button class="load-more" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>Load 25 more</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- ============================================================= -->
+<!-- 2. THE "TIDY UP" LENS (LIGHT)                                  -->
+<!-- ============================================================= -->
+<p class="mock-label">2. Light: the Tidy up lens (orphans and alt-debt first)</p>
+<p class="mock-note">
+  The Tidy up lens narrows to the assets worth acting on, orphans and missing alt, ordered with the
+  orphans on top. The explainer strip names what the lens does and what makes a delete safe here (git
+  history). An orphan row leads with "Not used" and carries the delete action inline. A used-but-needs-alt
+  row keeps its usage count (so the author sees deleting it would break a page) and offers Add alt. When
+  the lens empties, it reads as an all-clear rather than a bare blank.
+</p>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="app short">
+    <aside class="side">
+      <div class="side-brand">
+        <span class="brand-tile" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l2.5 4.5L19 9l-3.5 3 1 5L12 14.8 7.5 17l1-5L5 9l4.5-1.5L12 3z" opacity=".9"/></svg></span>
+        <span class="brand-word">cairn</span>
+      </div>
+      <nav class="side-nav" aria-label="Sections">
+        <span class="side-eyebrow">Content</span>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h6"/></svg>Posts<span class="nav-count">24</span></a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 9v11"/></svg>Pages<span class="nav-count">7</span></a>
+        <a class="nav-item on" href="#" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>Media<span class="nav-count">38</span></a>
+      </nav>
+    </aside>
+    <div class="main">
+      <div class="top"><span class="crumb"><b>Media</b></span><div class="grow"></div>
+        <div class="top-search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Search the admin" /><span class="top-k">Ctrl K</span></div>
+      </div>
+      <div class="content">
+        <div class="lensbar">
+          <div class="lens-group" role="group" aria-label="View">
+            <button class="lens" type="button" aria-pressed="false">All <span class="lens-n">38</span></button>
+            <button class="lens on" type="button" aria-pressed="true">
+              <svg class="lens-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+              Tidy up <span class="lens-n">8</span>
+            </button>
+          </div>
+          <div class="vdiv" aria-hidden="true"></div>
+          <div class="inline-search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Search name, alt, or caption" aria-label="Search the library" /></div>
+        </div>
+
+        <div class="lens-note" role="note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          <span>These assets are worth a look: 5 nothing references, and 4 still need alt text. Deleting an unused asset is safe to undo, since every version stays in git history.</span>
+        </div>
+
+        <div class="lib-card">
+          <table class="lib">
+            <thead>
+              <tr>
+                <th style="width:40%;">Asset</th>
+                <th style="width:26%;">Used</th>
+                <th style="width:16%;">Alt</th>
+                <th style="width:18%;text-align:right;"><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- ORPHANS, surfaced first -->
+              <tr>
+                <td><div class="asset-id"><span class="asset-thumb ph-c" role="img" aria-label="A weathered trail fence at the meadow edge"></span><span class="asset-meta"><span class="asset-name">meadow-fence</span><span class="asset-slug">media:meadow-fence.3ad902</span></span></div></td>
+                <td><span class="usage orphan"><span class="u-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span><span class="usage-stack"><span>Not used</span><span class="u-sub">No references found</span></span></span></td>
+                <td><span class="alt-chip ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Described</span></td>
+                <td><div class="row-actions"><button class="btn-ghost sm" type="button"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>View</button><button class="icon-btn danger" aria-label="Delete meadow-fence"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></td>
+              </tr>
+              <tr>
+                <td><div class="asset-id"><span class="asset-thumb ph-f" role="img" aria-label="An old lift pylon in low sun"></span><span class="asset-meta"><span class="asset-name">old-pylon</span><span class="asset-slug">media:old-pylon.5e7c14</span></span></div></td>
+                <td><span class="usage orphan"><span class="u-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span><span class="usage-stack"><span>Not used</span><span class="u-sub">No references found</span></span></span></td>
+                <td><span class="alt-chip miss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Needs alt</span></td>
+                <td><div class="row-actions"><button class="btn-ghost sm" type="button"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>View</button><button class="icon-btn danger" aria-label="Delete old-pylon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></td>
+              </tr>
+              <!-- USED but NEEDS ALT (kept in tidy-up because alt is debt; usage warns against delete) -->
+              <tr>
+                <td><div class="asset-id"><span class="asset-thumb ph-b" role="img"></span><span class="asset-meta"><span class="asset-name">valley-ridge</span><span class="asset-slug">media:valley-ridge.71b0e8</span></span></div></td>
+                <td><span class="usage used"><span class="u-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="usage-stack"><span>Used in 1 entry</span><span class="u-sub">From the ridge, the whole valley</span></span></span></td>
+                <td><span class="alt-chip miss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Needs alt</span></td>
+                <td><div class="row-actions"><button class="btn-ghost sm" type="button"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Add alt</button></div></td>
+              </tr>
+              <tr>
+                <td><div class="asset-id"><span class="asset-thumb ph-g" role="img"></span><span class="asset-meta"><span class="asset-name">crew-truck</span><span class="asset-slug">media:crew-truck.a91d6f</span></span></div></td>
+                <td><span class="usage used"><span class="u-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="usage-stack"><span>Used in 2 entries</span><span class="u-sub">Grooming notes, and 1 more</span></span></span></td>
+                <td><span class="alt-chip miss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Needs alt</span></td>
+                <td><div class="row-actions"><button class="btn-ghost sm" type="button"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Add alt</button></div></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="lib-foot">
+            <span class="foot-count" role="status">Showing 4 of 8 to tidy</span>
+            <button class="load-more" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>Load the rest</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- ============================================================= -->
+<!-- 3. THE DETAIL VIEW (LIGHT): centered on WHERE-USED            -->
+<!-- ============================================================= -->
+<p class="mock-label">3. Light: the detail view, built around where-used</p>
+<p class="mock-note">
+  Opening an asset slides a panel over the list (the row stays selected, with the left accent edge and an
+  announced selection). The where-used list is the centerpiece, directly under the identity header,
+  grouped by published versus open edit branch since cairn unions main with the open <code>cairn/*</code>
+  branches. The first group is live on the site; the second is a draft on a per-entry edit branch that
+  has not been published yet, named by its branch. Metadata, the alt and rename editors, Replace, and a
+  Delete that opens the safe-delete dialog sit below.
+</p>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="app">
+    <aside class="side">
+      <div class="side-brand">
+        <span class="brand-tile" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l2.5 4.5L19 9l-3.5 3 1 5L12 14.8 7.5 17l1-5L5 9l4.5-1.5L12 3z" opacity=".9"/></svg></span>
+        <span class="brand-word">cairn</span>
+      </div>
+      <nav class="side-nav" aria-label="Sections">
+        <span class="side-eyebrow">Content</span>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Posts<span class="nav-count">24</span></a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 9v11"/></svg>Pages<span class="nav-count">7</span></a>
+        <a class="nav-item on" href="#" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>Media<span class="nav-count">38</span></a>
+      </nav>
+    </aside>
+    <div class="main">
+      <div class="top"><span class="crumb"><b>Media</b></span><div class="grow"></div>
+        <div class="top-search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Search the admin" /><span class="top-k">Ctrl K</span></div>
+      </div>
+      <div class="content detail-wrap" style="padding-right:0;">
+        <!-- a slimmed list peeking behind the panel -->
+        <div class="lib-card" style="margin-right:30px;">
+          <table class="lib">
+            <thead><tr><th style="width:46%;">Asset</th><th style="width:30%;">Used</th><th style="width:24%;">Alt</th></tr></thead>
+            <tbody>
+              <tr class="sel" aria-selected="true"><td><div class="asset-id"><span class="asset-thumb ph-a" role="img" aria-label="Dawn over the groomed tracks"></span><span class="asset-meta"><span class="asset-name">first-light</span><span class="asset-slug">media:first-light.9f4c2a</span></span></div></td><td><span class="usage used"><span class="u-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Used in 3 entries</span></td><td><span class="alt-chip ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Described</span></td></tr>
+              <tr><td><div class="asset-id"><span class="asset-thumb ph-b" role="img"></span><span class="asset-meta"><span class="asset-name">valley-ridge</span><span class="asset-slug">media:valley-ridge.71b0e8</span></span></div></td><td><span class="usage used"><span class="u-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Used in 1 entry</span></td><td><span class="alt-chip miss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Needs alt</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- THE DETAIL PANEL -->
+        <aside class="detail" role="region" aria-label="first-light details">
+          <div class="detail-head">
+            <span class="detail-eyebrow">Asset</span>
+            <button class="detail-x" aria-label="Close details"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+          </div>
+          <div class="detail-body">
+            <div>
+              <div class="d-preview ph-a" role="img" aria-label="Dawn over the groomed cross-country tracks"></div>
+              <div class="d-name">first-light</div>
+              <div class="d-slug">media:first-light.9f4c2a</div>
+            </div>
+
+            <!-- THE WHERE-USED CENTERPIECE -->
+            <div class="where">
+              <div class="where-head">
+                <span class="where-title">Where this is used</span>
+                <span class="where-total">3 references</span>
+              </div>
+
+              <div class="where-group">
+                <span class="where-group-label"><span class="wg-dot pub" aria-hidden="true"></span>Published on the site</span>
+                <ul class="ref-list">
+                  <li><a class="ref" href="#"><svg class="ref-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="ref-body"><span class="ref-title">A season on the early tracks</span><span class="ref-where">Post, hero image</span></span><svg class="ref-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></a></li>
+                  <li><a class="ref" href="#"><svg class="ref-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="ref-body"><span class="ref-title">Grooming the first loop</span><span class="ref-where">Post, in the body</span></span><svg class="ref-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></a></li>
+                </ul>
+              </div>
+
+              <div class="where-group">
+                <span class="where-group-label"><span class="wg-dot branch" aria-hidden="true"></span>In an unpublished edit</span>
+                <ul class="ref-list">
+                  <li><a class="ref" href="#"><svg class="ref-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="ref-body"><span class="ref-title">Trailhead, day one</span><span class="ref-where">Post, hero image</span><span class="ref-branch">cairn/posts/trailhead-day-one</span></span><svg class="ref-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></a></li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- alt editor -->
+            <div class="fld">
+              <span class="d-section-label">Alt text</span>
+              <input class="input" type="text" value="Dawn over the groomed cross-country tracks before the lot fills." aria-label="Alt text" />
+              <span class="fld-hint">A short description for screen readers. You can save without it and add it later.</span>
+            </div>
+
+            <!-- rename -->
+            <div class="fld">
+              <span class="d-section-label">Name</span>
+              <input class="input with-suffix" type="text" value="first-light" aria-label="Asset name" />
+              <span class="fld-hint">Renaming keeps every reference pointed here. The address updates across the site on the next publish.</span>
+            </div>
+
+            <!-- metadata -->
+            <div>
+              <span class="d-section-label">Details</span>
+              <dl class="meta-grid">
+                <dt>Dimensions</dt><dd>2400 by 1600</dd>
+                <dt>Size</dt><dd>418 KB</dd>
+                <dt>Type</dt><dd>WebP</dd>
+                <dt>Added</dt><dd>Mar 4, 2026</dd>
+              </dl>
+            </div>
+
+            <!-- actions -->
+            <div class="d-actions">
+              <button class="btn-quiet" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>Replace</button>
+              <button class="btn-danger-quiet" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- ============================================================= -->
+<!-- 4. SAFE-DELETE: in-use (refuse / hard-confirm) and orphan     -->
+<!-- ============================================================= -->
+<p class="mock-label">4. Light: the safe-delete alertdialog (the star interaction)</p>
+<p class="mock-note">
+  Two faces of one dialog. Left, an in-use asset: it lists the exact entries that would break, grouped the
+  same way (published first, then the named edit branch), and requires a typed confirm so the delete is
+  deliberate. Right, an orphan: a calm confirm that states nothing references it and that git history keeps
+  the bytes recoverable, so there is no fear and no typing. Both are <code>role="alertdialog"</code> with
+  an explicit confirm, no light dismiss.
+</p>
+<div class="pair">
+
+  <!-- IN-USE: hard-confirm, lists what would break -->
+  <div class="screen"><div data-theme="cairn-admin">
+    <div class="app short" style="min-height:560px;">
+      <div class="main" style="background:var(--color-base-200);">
+        <div class="scrim" style="position:relative;min-height:560px;">
+          <div class="alertdialog" role="alertdialog" aria-labelledby="ad1-title" aria-describedby="ad1-desc" aria-modal="true">
+            <div class="ad-head">
+              <span class="ad-icon warn" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+              <div><div class="ad-title" id="ad1-title">Delete first-light?</div><p class="ad-lede" id="ad1-desc">This image is used in 3 places. Deleting it now would leave each one with a broken image.</p></div>
+            </div>
+            <div class="ad-body">
+              <div class="ad-asset"><span class="aa-thumb ph-a" role="img" aria-label="Dawn over the groomed tracks"></span><div><div class="aa-name">first-light</div><div class="aa-slug">media:first-light.9f4c2a</div></div></div>
+
+              <div>
+                <span class="ad-break-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>These would break</span>
+                <ul class="ad-break-list" style="margin-top:7px;">
+                  <li><a class="ad-break" href="#"><svg class="b-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="b-body"><span class="b-title">A season on the early tracks</span><span class="b-where">Published, hero image</span></span></a></li>
+                  <li><a class="ad-break" href="#"><svg class="b-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="b-body"><span class="b-title">Grooming the first loop</span><span class="b-where">Published, in the body</span></span></a></li>
+                  <li><a class="ad-break" href="#"><svg class="b-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="b-body"><span class="b-title">Trailhead, day one</span><span class="b-where">Unpublished edit, hero image</span><span class="b-branch">cairn/posts/trailhead-day-one</span></span></a></li>
+                </ul>
+              </div>
+
+              <div class="ad-confirm">
+                <p class="ac-prompt">If you understand this will break those 3 places, type <code>first-light</code> to delete it anyway.</p>
+                <input class="ad-confirm-input" type="text" placeholder="Type the asset name" aria-label="Type first-light to confirm" />
+              </div>
+            </div>
+            <div class="ad-foot">
+              <button class="btn-cancel" type="button">Cancel</button>
+              <button class="btn-delete disabled" type="button" disabled>Delete anyway</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+
+  <!-- ORPHAN: calm confirm -->
+  <div class="screen"><div data-theme="cairn-admin">
+    <div class="app short" style="min-height:560px;">
+      <div class="main" style="background:var(--color-base-200);">
+        <div class="scrim" style="position:relative;min-height:560px;">
+          <div class="alertdialog" role="alertdialog" aria-labelledby="ad2-title" aria-describedby="ad2-desc" aria-modal="true" style="width:27rem;">
+            <div class="ad-head">
+              <span class="ad-icon calm" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span>
+              <div><div class="ad-title" id="ad2-title">Delete meadow-fence?</div><p class="ad-lede" id="ad2-desc">Nothing on the site references this image, so deleting it breaks nothing.</p></div>
+            </div>
+            <div class="ad-body">
+              <div class="ad-asset"><span class="aa-thumb ph-c" role="img" aria-label="A weathered trail fence at the meadow edge"></span><div><div class="aa-name">meadow-fence</div><div class="aa-slug">media:meadow-fence.3ad902</div></div></div>
+              <div class="ad-calm-note">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0z"/><path d="M12 7v5l3 3"/></svg>
+                <span>Every version stays in git history, so you can bring this back later if you need it.</span>
+              </div>
+            </div>
+            <div class="ad-foot">
+              <button class="btn-cancel" type="button">Cancel</button>
+              <button class="btn-delete" type="button">Delete it</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+
+</div>
+
+<!-- ============================================================= -->
+<!-- 5. DARK: the default view and the detail panel                -->
+<!-- ============================================================= -->
+<p class="mock-label">5. Dark: the default view and the where-used detail</p>
+<p class="mock-note">
+  The same surfaces through the dark tokens. The usage inks (positive green for used, muted for orphan),
+  the warning ink for needs-alt, the published and edit-branch group dots, and the error tones in the
+  delete dialog all resolve from the theme variables.
+</p>
+
+<div class="screen"><div data-theme="cairn-admin-dark">
+  <div class="app">
+    <aside class="side">
+      <div class="side-brand">
+        <span class="brand-tile" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l2.5 4.5L19 9l-3.5 3 1 5L12 14.8 7.5 17l1-5L5 9l4.5-1.5L12 3z" opacity=".9"/></svg></span>
+        <span class="brand-word">cairn</span>
+      </div>
+      <nav class="side-nav" aria-label="Sections">
+        <span class="side-eyebrow">Content</span>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Posts<span class="nav-count">24</span></a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 9v11"/></svg>Pages<span class="nav-count">7</span></a>
+        <a class="nav-item on" href="#" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>Media<span class="nav-count">38</span></a>
+      </nav>
+    </aside>
+    <div class="main">
+      <div class="top"><span class="crumb"><b>Media</b></span><div class="grow"></div>
+        <div class="top-search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Search the admin" /><span class="top-k">Ctrl K</span></div>
+      </div>
+      <div class="content detail-wrap" style="padding-right:0;">
+        <div class="page-head" style="margin-right:30px;">
+          <div><h1 class="page-title">Media</h1><p class="page-sub">See where each image is used, fix its alt, and clean up what nothing references.</p></div>
+          <button class="btn-primary" type="button"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Upload</button>
+        </div>
+        <div class="triage" role="group" aria-label="Library summary" style="margin-right:30px;">
+          <div class="tile calm"><span class="t-num">38</span><span class="t-lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>Assets</span></div>
+          <div class="tile act"><span class="t-num">5</span><span class="t-lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Not used</span></div>
+          <div class="tile act"><span class="t-num">4</span><span class="t-lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Need alt</span></div>
+          <div class="tile calm"><span class="t-num">21<span style="font-size:.9rem;font-weight:600;color:var(--color-muted);"> MB</span></span><span class="t-lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>Stored</span></div>
+        </div>
+        <div class="lib-card" style="margin-right:30px;">
+          <table class="lib">
+            <thead><tr><th style="width:46%;">Asset</th><th style="width:30%;">Used</th><th style="width:24%;">Alt</th></tr></thead>
+            <tbody>
+              <tr class="sel" aria-selected="true"><td><div class="asset-id"><span class="asset-thumb ph-a" role="img" aria-label="Dawn over the groomed tracks"></span><span class="asset-meta"><span class="asset-name">first-light</span><span class="asset-slug">media:first-light.9f4c2a</span></span></div></td><td><span class="usage used"><span class="u-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Used in 3 entries</span></td><td><span class="alt-chip ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Described</span></td></tr>
+              <tr><td><div class="asset-id"><span class="asset-thumb ph-c" role="img" aria-label="A weathered trail fence"></span><span class="asset-meta"><span class="asset-name">meadow-fence</span><span class="asset-slug">media:meadow-fence.3ad902</span></span></div></td><td><span class="usage orphan"><span class="u-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span>Not used</span></td><td><span class="alt-chip ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Described</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <aside class="detail" role="region" aria-label="first-light details">
+          <div class="detail-head">
+            <span class="detail-eyebrow">Asset</span>
+            <button class="detail-x" aria-label="Close details"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+          </div>
+          <div class="detail-body">
+            <div>
+              <div class="d-preview ph-a" role="img" aria-label="Dawn over the groomed cross-country tracks"></div>
+              <div class="d-name">first-light</div>
+              <div class="d-slug">media:first-light.9f4c2a</div>
+            </div>
+            <div class="where">
+              <div class="where-head"><span class="where-title">Where this is used</span><span class="where-total">3 references</span></div>
+              <div class="where-group">
+                <span class="where-group-label"><span class="wg-dot pub" aria-hidden="true"></span>Published on the site</span>
+                <ul class="ref-list">
+                  <li><a class="ref" href="#"><svg class="ref-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="ref-body"><span class="ref-title">A season on the early tracks</span><span class="ref-where">Post, hero image</span></span><svg class="ref-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></a></li>
+                  <li><a class="ref" href="#"><svg class="ref-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="ref-body"><span class="ref-title">Grooming the first loop</span><span class="ref-where">Post, in the body</span></span><svg class="ref-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></a></li>
+                </ul>
+              </div>
+              <div class="where-group">
+                <span class="where-group-label"><span class="wg-dot branch" aria-hidden="true"></span>In an unpublished edit</span>
+                <ul class="ref-list">
+                  <li><a class="ref" href="#"><svg class="ref-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="ref-body"><span class="ref-title">Trailhead, day one</span><span class="ref-where">Post, hero image</span><span class="ref-branch">cairn/posts/trailhead-day-one</span></span><svg class="ref-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></a></li>
+                </ul>
+              </div>
+            </div>
+            <div class="fld">
+              <span class="d-section-label">Alt text</span>
+              <input class="input" type="text" value="Dawn over the groomed cross-country tracks before the lot fills." aria-label="Alt text" />
+              <span class="fld-hint">A short description for screen readers. You can save without it and add it later.</span>
+            </div>
+            <div class="d-actions">
+              <button class="btn-quiet" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>Replace</button>
+              <button class="btn-danger-quiet" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- DARK: the in-use safe-delete, to show the error tones resolve -->
+<p class="mock-label">Dark: the in-use safe-delete dialog</p>
+<div class="screen"><div data-theme="cairn-admin-dark">
+  <div class="app short" style="min-height:540px;">
+    <div class="main" style="background:var(--color-base-200);">
+      <div class="scrim" style="position:relative;min-height:540px;background:oklch(0% 0 0 / .5);">
+        <div class="alertdialog" role="alertdialog" aria-labelledby="ad3-title" aria-describedby="ad3-desc" aria-modal="true">
+          <div class="ad-head">
+            <span class="ad-icon warn" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+            <div><div class="ad-title" id="ad3-title">Delete valley-ridge?</div><p class="ad-lede" id="ad3-desc">This image is used in 2 places. Deleting it now would leave each one with a broken image.</p></div>
+          </div>
+          <div class="ad-body">
+            <div class="ad-asset"><span class="aa-thumb ph-b" role="img" aria-label="The valley from the ridge"></span><div><div class="aa-name">valley-ridge</div><div class="aa-slug">media:valley-ridge.71b0e8</div></div></div>
+            <div>
+              <span class="ad-break-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>These would break</span>
+              <ul class="ad-break-list" style="margin-top:7px;">
+                <li><a class="ad-break" href="#"><svg class="b-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="b-body"><span class="b-title">From the ridge, the whole valley</span><span class="b-where">Published, hero image</span></span></a></li>
+                <li><a class="ad-break" href="#"><svg class="b-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="b-body"><span class="b-title">Spring conditions</span><span class="b-where">Unpublished edit, in the body</span><span class="b-branch">cairn/posts/spring-conditions</span></span></a></li>
+              </ul>
+            </div>
+            <div class="ad-confirm">
+              <p class="ac-prompt">If you understand this will break those 2 places, type <code>valley-ridge</code> to delete it anyway.</p>
+              <input class="ad-confirm-input" type="text" placeholder="Type the asset name" aria-label="Type valley-ridge to confirm" />
+            </div>
+          </div>
+          <div class="ad-foot">
+            <button class="btn-cancel" type="button">Cancel</button>
+            <button class="btn-delete disabled" type="button" disabled>Delete anyway</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- ============================================================= -->
+<!-- BONUS: the empty state                                         -->
+<!-- ============================================================= -->
+<p class="mock-label">The empty state (no media yet)</p>
+<p class="mock-note">
+  A first-run library, before any image is committed. The cairn mark, a concept-named line, and the Upload
+  CTA, centered on the content area rather than a small box at the top (the office empty-state recipe).
+</p>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="app short" style="min-height:440px;">
+    <aside class="side">
+      <div class="side-brand"><span class="brand-tile" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l2.5 4.5L19 9l-3.5 3 1 5L12 14.8 7.5 17l1-5L5 9l4.5-1.5L12 3z" opacity=".9"/></svg></span><span class="brand-word">cairn</span></div>
+      <nav class="side-nav" aria-label="Sections">
+        <span class="side-eyebrow">Content</span>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Posts<span class="nav-count">24</span></a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 9v11"/></svg>Pages<span class="nav-count">7</span></a>
+        <a class="nav-item on" href="#" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>Media<span class="nav-count">0</span></a>
+      </nav>
+    </aside>
+    <div class="main">
+      <div class="top"><span class="crumb"><b>Media</b></span><div class="grow"></div>
+        <div class="top-search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Search the admin" /><span class="top-k">Ctrl K</span></div>
+      </div>
+      <div class="content">
+        <div class="empty">
+          <span class="e-mark" aria-hidden="true"><svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l2.5 4.5L19 9l-3.5 3 1 5L12 14.8 7.5 17l1-5L5 9l4.5-1.5L12 3z"/></svg></span>
+          <div><p class="e-title">No media yet</p><p class="e-sub">Upload your first image, or add one straight from a post. Every image you use will gather here.</p></div>
+          <button class="btn-primary" type="button"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Upload an image</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+</body>
+</html>

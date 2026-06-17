@@ -9,7 +9,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
 -->
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { applyMarkdownFormat, insertImage as insertImageFormat, insertInlineLink, type FormatKind, type FormatResult } from './markdown-format.js';
+  import { applyMarkdownFormat, figureAtImage, insertImage as insertImageFormat, insertInlineLink, type FigureAtImage, type FormatKind, type FormatResult } from './markdown-format.js';
   import { fenceScan, caretContainerRange, directiveOpenerName } from './markdown-directives.js';
   import { firstImageFile, guardDropTarget } from './client-ingest.js';
   import type { MediaLibrary } from '../media/library-entry.js';
@@ -63,6 +63,10 @@ through the adapter's render. Swapping the editor stays a one-file change.
     /** Reports the directive container at the caret (or null when outside any container) whenever
      *  the reported value changes; the host resolves it against the registry to offer Edit-block. */
     onComponentAtCaret?: (info: ComponentAtCaret | null) => void;
+    /** Reports the media image at the caret (or null when the caret is not on one) whenever the
+     *  reported value changes; the host opens the figure control over it to wrap, edit, or unwrap a
+     *  `:::figure`. The figure transforms write source through registerReplaceRange. */
+    onMediaImageAtCaret?: (info: FigureAtImage | null) => void;
     /** Receives a `(from, to, text) => void` that overwrites a document span; the dialog's Update
      *  calls it to write an edited block back over its original range. */
     registerReplaceRange?: (replace: (from: number, to: number, text: string) => void) => void;
@@ -96,6 +100,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
     registerGetSelection,
     registerFormat,
     onComponentAtCaret,
+    onMediaImageAtCaret,
     registerReplaceRange,
     registerSelectRange,
     completionSources = [],
@@ -568,6 +573,10 @@ through the adapter's render. Swapping the editor stays a one-file change.
             // caret sits in, so the reporter runs on either; the dedupe below absorbs the no-ops.
             if (onComponentAtCaret && (update.docChanged || update.selectionSet))
               reportComponentAtCaret(update.state);
+            // The media-image reporter rides the same two triggers: a caret move lands on or off an
+            // image, an edit shifts the figure's span. The dedupe absorbs the keystroke no-ops.
+            if (onMediaImageAtCaret && (update.docChanged || update.selectionSet))
+              reportMediaImageAtCaret(update.state);
           }),
         ],
       }),
@@ -586,6 +595,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
     // Report the caret's starting container once the editor exists, so a caret that mounts inside
     // a block is known without waiting for the first move.
     if (onComponentAtCaret) reportComponentAtCaret(view.state);
+    if (onMediaImageAtCaret) reportMediaImageAtCaret(view.state);
     mounted = true;
   });
 
@@ -666,6 +676,32 @@ through the adapter's render. Swapping the editor stays a one-file change.
     if (same) return;
     lastCaretReport = next;
     onComponentAtCaret?.(next);
+  }
+
+  // The last media-image report, so the reporter fires only on a change. The compared identity is
+  // the image span plus the figure's range/caption/role; a pure caret move within one image (or one
+  // figure) leaves them unchanged, so it does not refire, while an edit that shifts the figure span
+  // or rewrites the caption does. A null transitions to or from null on entering/leaving an image.
+  let lastMediaReport: FigureAtImage | null = null;
+
+  // Compute the media image at the caret from a CodeMirror state and report it through
+  // onMediaImageAtCaret, deduped so a caret move that stays on the same image does not refire.
+  function reportMediaImageAtCaret(state: import('@codemirror/state').EditorState) {
+    const next = figureAtImage(state.doc.toString(), state.selection.main.head);
+    const prev = lastMediaReport;
+    const same =
+      prev === next ||
+      (prev !== null &&
+        next !== null &&
+        prev.imageFrom === next.imageFrom &&
+        prev.imageTo === next.imageTo &&
+        (prev.figure?.from ?? null) === (next.figure?.from ?? null) &&
+        (prev.figure?.to ?? null) === (next.figure?.to ?? null) &&
+        (prev.figure?.caption ?? null) === (next.figure?.caption ?? null) &&
+        (prev.figure?.role ?? null) === (next.figure?.role ?? null));
+    if (same) return;
+    lastMediaReport = next;
+    onMediaImageAtCaret?.(next);
   }
 
   // Overwrite a document span with new text and drop the caret after it, mirroring insertAtCursor's

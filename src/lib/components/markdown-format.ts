@@ -6,8 +6,10 @@
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkGfm from 'remark-gfm';
+import remarkDirective from 'remark-directive';
 import { visit } from 'unist-util-visit';
-import type { Image, Link } from 'mdast';
+import type { Image, Link, Root, RootContent } from 'mdast';
+import type { ContainerDirective } from 'mdast-util-directive';
 import { escapeLinkText } from '../content/links.js';
 import { parseMediaToken } from '../media/reference.js';
 
@@ -246,4 +248,235 @@ export function unwrapCairnLink(doc: string, href: string): string {
     out = out.slice(0, span.start) + span.text + out.slice(span.end);
   }
   return out;
+}
+
+/** The closed placement role set the figure render step honors. A role outside it is the measure
+ *  default (null), so the control never writes one. Mirrors the set in render/remark-figure.ts. */
+export type FigureRole = 'center' | 'wide' | 'full';
+const FIGURE_ROLES = new Set<string>(['center', 'wide', 'full']);
+
+/**
+ * The media image at a caret, with the enclosing `:::figure` block when there is one. `imageFrom`
+ * and `imageTo` are the EXACT source offsets of the inner `![alt](media:slug.hash)` token, so a
+ * transform reuses the token byte-for-byte and never reserializes it (open risk 3). `figure` is null
+ * for a bare image (not in a figure); otherwise it carries the figure BLOCK's source offsets, the raw
+ * caption source the author wrote (inline markdown preserved, the directive-fence escape stripped),
+ * and the placement role (or null for the measure default).
+ */
+export interface FigureAtImage {
+  /** The start offset of the inner `![...](media:...)` token. */
+  imageFrom: number;
+  /** The end offset of the inner `![...](media:...)` token. */
+  imageTo: number;
+  /** The enclosing figure, or null when the image is bare. */
+  figure: {
+    /** The figure block's start offset (the `:::figure` opener). */
+    from: number;
+    /** The figure block's end offset (just past the closing `:::`). */
+    to: number;
+    /** The raw caption source, inline markdown preserved; empty when the figure has no caption. */
+    caption: string;
+    /** The placement role, or null for the measure default. */
+    role: FigureRole | null;
+  } | null;
+}
+
+/** Parse a doc with the figure-aware pipeline (the render step's grammar), so the editor transforms
+ *  agree with what renders. Container directives need remark-directive on top of the markdown base. */
+function parseFigureDoc(doc: string): Root {
+  return unified().use(remarkParse).use(remarkGfm).use(remarkDirective).parse(doc) as Root;
+}
+
+/** Find the media `image` node whose source range contains `pos`, or whose enclosing figure contains
+ *  `pos`, along with its enclosing `figure` directive when there is one. Returns null when `pos` is
+ *  not on a media image nor inside a figure that wraps one. */
+function locateMediaImage(
+  tree: Root,
+  pos: number,
+): { image: Image; figure: ContainerDirective | null } | null {
+  let bareHit: { image: Image; figure: ContainerDirective | null } | null = null;
+  let figureHit: { image: Image; figure: ContainerDirective } | null = null;
+  // Track the figure ancestor while visiting; unist-util-visit hands the ancestors array last.
+  visit(tree, 'image', (node: Image, _index, _parent) => {
+    if (!parseMediaToken(node.url)) return;
+    const from = node.position?.start?.offset;
+    const to = node.position?.end?.offset;
+    if (from == null || to == null) return;
+    const figure = enclosingFigure(tree, node);
+    if (pos >= from && pos <= to) {
+      if (figure) figureHit = { image: node, figure };
+      else if (!bareHit) bareHit = { image: node, figure: null };
+      return;
+    }
+    // The caret can sit in the caption, off the image token; a media image inside a figure whose
+    // block range contains pos still counts as "at" that figure.
+    if (figure) {
+      const f0 = figure.position?.start?.offset;
+      const f1 = figure.position?.end?.offset;
+      if (f0 != null && f1 != null && pos >= f0 && pos <= f1 && !figureHit) {
+        figureHit = { image: node, figure };
+      }
+    }
+  });
+  // A figure hit (the caret on the image or anywhere in its block) wins over a bare hit.
+  return figureHit ?? bareHit;
+}
+
+/** The `figure`-named container directive that encloses `node`, or null. Walks the tree to find the
+ *  ancestor, since unist-util-visit's per-call ancestors are not retained across the traversal. */
+function enclosingFigure(tree: Root, target: Image): ContainerDirective | null {
+  let found: ContainerDirective | null = null;
+  visit(tree, 'containerDirective', (dir: ContainerDirective) => {
+    if (dir.name !== 'figure') return;
+    let holds = false;
+    visit(dir, 'image', (img: Image) => {
+      if (img === target) holds = true;
+    });
+    if (holds) found = dir;
+  });
+  return found;
+}
+
+/** Strip one leading backslash sitting immediately before a colon, the inverse of the fence-escape
+ *  wrapImageInFigure/updateFigure apply, so a caption that began with a directive-opening colon run
+ *  round-trips to the author's original text. */
+function unescapeCaption(raw: string): string {
+  return raw.replace(/^\\(?=:)/, '');
+}
+
+/** Read the raw caption source from a figure directive: the source span from the first text-bearing
+ *  block after the image to the last such block, with internal newlines collapsed to single spaces
+ *  (the caption is single-line) and the fence escape stripped. Empty when the figure has no caption. */
+function readCaption(doc: string, figure: ContainerDirective, image: Image): string {
+  const imageEnd = image.position?.end?.offset ?? -1;
+  let from = -1;
+  let to = -1;
+  for (const child of figure.children) {
+    const start = child.position?.start?.offset;
+    const end = child.position?.end?.offset;
+    if (start == null || end == null) continue;
+    if (start < imageEnd) continue; // the image's own paragraph (or anything before it)
+    if (!blockHasText(child)) continue;
+    if (from === -1) from = start;
+    to = end;
+  }
+  if (from === -1) return '';
+  const collapsed = doc.slice(from, to).replace(/\s*\n\s*/g, ' ').trim();
+  return unescapeCaption(collapsed);
+}
+
+/** Whether a block's subtree carries any non-whitespace text, the caption-candidate test the render
+ *  step uses (a bare image paragraph has no text node, so it is never read as a caption). */
+function blockHasText(node: RootContent): boolean {
+  let found = false;
+  visit(node, 'text', (text) => {
+    if (text.value.trim() !== '') found = true;
+  });
+  return found;
+}
+
+/**
+ * Inspect the media image at caret position `pos`. Returns the image's exact token offsets plus the
+ * enclosing `:::figure` block (its range, raw caption, and role) when the image is wrapped, or
+ * `figure: null` when it is bare. Returns null when `pos` is not on or in a media image. The parse
+ * uses the figure-aware pipeline, so this agrees with what remarkFigure renders. Pure and node-safe.
+ */
+export function figureAtImage(doc: string, pos: number): FigureAtImage | null {
+  const tree = parseFigureDoc(doc);
+  const hit = locateMediaImage(tree, pos);
+  if (!hit) return null;
+  const imageFrom = hit.image.position?.start?.offset;
+  const imageTo = hit.image.position?.end?.offset;
+  if (imageFrom == null || imageTo == null) return null;
+  if (!hit.figure) return { imageFrom, imageTo, figure: null };
+  const dir = hit.figure;
+  const from = dir.position?.start?.offset;
+  const to = dir.position?.end?.offset;
+  if (from == null || to == null) return { imageFrom, imageTo, figure: null };
+  const className = dir.attributes?.class ?? undefined;
+  const role = className && FIGURE_ROLES.has(className) ? (className as FigureRole) : null;
+  return { imageFrom, imageTo, figure: { from, to, caption: readCaption(doc, dir, hit.image), role } };
+}
+
+/** Sanitize a caption into a single safe body line: collapse internal newlines to single spaces,
+ *  trim, and neutralize ONLY the directive-fence hazard (a leading colon would open a directive at
+ *  line start) by prefixing one backslash. The author's inline markdown is preserved otherwise, so
+ *  emphasis and links survive. figureAtImage strips the backslash on read for a clean round-trip. */
+function sanitizeCaption(caption: string): string {
+  const line = caption.replace(/\s*\n\s*/g, ' ').trim();
+  return line.startsWith(':') ? '\\' + line : line;
+}
+
+/** Build the canonical figure block source: the opener (with the role brace only for a non-null
+ *  role), the image token verbatim on its own line, then a blank line and the sanitized caption when
+ *  the caption is non-empty, and the closing fence. This is the blank-line form remarkFigure reads as
+ *  its primary path, and it reads cleanly when hand-edited. */
+function buildFigureBlock(imageSrc: string, caption: string, role: FigureRole | null): string {
+  const opener = role ? `:::figure{.${role}}` : ':::figure';
+  const cap = sanitizeCaption(caption);
+  const body = cap ? `${imageSrc}\n\n${cap}` : imageSrc;
+  return `${opener}\n${body}\n:::`;
+}
+
+/**
+ * Wrap a bare media image in a `:::figure` block. The image token is reused EXACTLY from its source
+ * offsets and never reserialized (open risk 3: the atomic `media:` reference stays byte-identical).
+ * The block lands on its own lines, with a blank line before it (unless it starts the document) and
+ * after it, so it reads as a clean block even when the image sat inline in a paragraph. The selection
+ * collapses just past the inserted block.
+ */
+export function wrapImageInFigure(
+  doc: string,
+  imageFrom: number,
+  imageTo: number,
+  caption: string,
+  role: FigureRole | null,
+): FormatResult {
+  const imageSrc = doc.slice(imageFrom, imageTo);
+  const block = buildFigureBlock(imageSrc, caption, role);
+  const before = doc.slice(0, imageFrom);
+  const after = doc.slice(imageTo);
+  // Ensure the block starts on its own line: a blank line before it unless it opens the doc or the
+  // text before it already ends with one. Trailing context gets a matching blank line.
+  const lead = before === '' ? '' : before.endsWith('\n\n') ? '' : before.endsWith('\n') ? '\n' : '\n\n';
+  const trail = after === '' ? '' : after.startsWith('\n\n') ? '' : after.startsWith('\n') ? '\n' : '\n\n';
+  const inserted = lead + block + trail;
+  const blockStart = imageFrom + lead.length;
+  const end = blockStart + block.length;
+  return { doc: before + inserted + after, from: end, to: end };
+}
+
+/**
+ * Rewrite an existing figure's caption and role in place. The inner image token is extracted from the
+ * current block and PRESERVED BYTE-FOR-BYTE (open risk 3); the block is rebuilt in the blank-line
+ * form with the new opener and caption. The selection collapses just past the rewritten block.
+ */
+export function updateFigure(
+  doc: string,
+  figureRange: { from: number; to: number },
+  caption: string,
+  role: FigureRole | null,
+): FormatResult {
+  const info = figureAtImage(doc, figureRange.from);
+  const imageSrc =
+    info && info.imageFrom != null ? doc.slice(info.imageFrom, info.imageTo) : '';
+  const block = buildFigureBlock(imageSrc, caption, role);
+  const end = figureRange.from + block.length;
+  return { doc: doc.slice(0, figureRange.from) + block + doc.slice(figureRange.to), from: end, to: end };
+}
+
+/**
+ * Unwrap a figure block back to its bare image line, dropping the caption and the directive fences.
+ * The inner image token is reused verbatim (open risk 3). The selection lands on the restored image
+ * so the author can act on it again.
+ */
+export function unwrapFigure(doc: string, figureRange: { from: number; to: number }): FormatResult {
+  const info = figureAtImage(doc, figureRange.from);
+  const imageSrc =
+    info && info.imageFrom != null ? doc.slice(info.imageFrom, info.imageTo) : '';
+  return {
+    doc: doc.slice(0, figureRange.from) + imageSrc + doc.slice(figureRange.to),
+    from: figureRange.from,
+    to: figureRange.from + imageSrc.length,
+  };
 }

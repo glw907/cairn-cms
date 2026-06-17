@@ -25,6 +25,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   import LinkIcon from '@lucide/svelte/icons/link';
   import FileSymlinkIcon from '@lucide/svelte/icons/file-symlink';
   import PanelRightIcon from '@lucide/svelte/icons/panel-right';
+  import ImageIcon from '@lucide/svelte/icons/image';
   import { useTopbar } from './topbar-context.js';
   import CsrfField from './CsrfField.svelte';
   import MarkdownEditor from './MarkdownEditor.svelte';
@@ -33,12 +34,24 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   import LinkPicker from './LinkPicker.svelte';
   import WebLinkDialog from './WebLinkDialog.svelte';
   import MediaInsertPopover from './MediaInsertPopover.svelte';
+  import MediaFigureControl from './MediaFigureControl.svelte';
   import DeleteDialog from './DeleteDialog.svelte';
   import RenameDialog from './RenameDialog.svelte';
   import MarkdownHelpDialog from './MarkdownHelpDialog.svelte';
   import ShortcutsDialog from './ShortcutsDialog.svelte';
   import { cairnLinkCompletionSource } from './link-completion.js';
-  import { findMediaImagesNeedingAlt, unwrapCairnLink, type FormatKind } from './markdown-format.js';
+  import {
+    figureAtImage,
+    findMediaImagesNeedingAlt,
+    unwrapCairnLink,
+    unwrapFigure,
+    updateFigure,
+    wrapImageInFigure,
+    type FigureAtImage,
+    type FigureRole,
+    type FormatKind,
+  } from './markdown-format.js';
+  import { parseMediaToken } from '../media/reference.js';
   import { buildPreviewDoc, deviceLabel, previewDevice, previewDevices, type PreviewDeviceId } from './preview-doc.js';
   import { directiveLineKind, findInlineDirectives } from './markdown-directives.js';
   import type { ComponentRegistry, ComponentDef } from '../render/registry.js';
@@ -445,6 +458,35 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   // matching interface is not exported.
   type CaretComponent = { name: string | null; markdown: string; from: number; to: number };
   let caretComponent = $state<CaretComponent | null>(null);
+
+  // The media image at the editor caret, reported by MarkdownEditor whenever it changes (null off any
+  // media image). The Figure control reads it to wrap a bare image or edit an existing figure; it
+  // writes source through the replaceRange seam. The figure dialog is mounted headless below.
+  let mediaAtCaret = $state<FigureAtImage | null>(null);
+  // The figure control's host <dialog>, opened by the toolbar control. Mounted outside the edit form
+  // (a form nested in a form is invalid HTML), the Edit-block dialog pattern.
+  let figureDialog = $state<HTMLDialogElement | null>(null);
+  // Whether the Figure control is available: a media image sits at the caret and Preview is not
+  // showing (the insert controls disable together with the Write surface). The control is always
+  // rendered (it never mounts on caret move); only its enabled state changes.
+  const figureAvailable = $derived(mediaAtCaret != null && !insertDisabled);
+  const figureLabel = $derived(
+    figureAvailable
+      ? mediaAtCaret?.figure
+        ? 'Edit the figure at the cursor'
+        : 'Wrap the image at the cursor in a figure'
+      : 'Place the cursor on an image to add a figure',
+  );
+  // Whether the image at the caret is decorative (empty or whitespace-only alt). The token came from
+  // a parsed image node, so the alt is the source between `![` and the closing `]` before `](`. An
+  // empty alt is the needs-alt signal; the figure control surfaces it and the decorative-plus-caption
+  // warning. Derived from the reported token so it tracks the caret.
+  const figureDecorative = $derived.by(() => {
+    if (!mediaAtCaret) return false;
+    const token = body.slice(mediaAtCaret.imageFrom, mediaAtCaret.imageTo);
+    const match = /^!\[([\s\S]*?)\]\(/.exec(token);
+    return (match?.[1] ?? '').trim() === '';
+  });
   // A def is actionable for guided edit when it has a schema (the same notion the insert catalog
   // lists by): a template-only def has no form to re-open into. Reuses the dialog's exported
   // hasSchema so the two surfaces can never drift on what counts as editable.
@@ -522,6 +564,67 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     if (insertDisabled || !editable) return;
     const values = await parseComponent(editable.markdown, editable.def);
     insertDialog?.editComponent(editable.def, values, editable.range);
+  }
+
+  // The figure dialog's pre-fill, snapshotted when the control opens so the form never mixes a newer
+  // caret with the values it opened on. Captured from mediaAtCaret at open time: edit mode with the
+  // figure's caption/role when a figure wraps the image, else wrap mode with empty caption and the
+  // measure default. decorative rides the snapshot too. Null while the dialog is closed.
+  let figurePrefill = $state<{
+    mode: 'wrap' | 'edit';
+    caption: string;
+    role: FigureRole | null;
+    decorative: boolean;
+    image: { from: number; to: number };
+    figureRange: { from: number; to: number } | null;
+  } | null>(null);
+
+  // Open the figure control over the media image at the caret. Inert unless a media image sits there
+  // and the Write surface is up, the same gate the toolbar control shows. The snapshot is the source
+  // of truth for the apply handlers, so a caret move while the dialog is open never re-targets it.
+  function openFigure() {
+    if (!figureAvailable || !mediaAtCaret) return;
+    const at = mediaAtCaret;
+    figurePrefill = {
+      mode: at.figure ? 'edit' : 'wrap',
+      caption: at.figure?.caption ?? '',
+      role: at.figure?.role ?? null,
+      decorative: figureDecorative,
+      image: { from: at.imageFrom, to: at.imageTo },
+      figureRange: at.figure ? { from: at.figure.from, to: at.figure.to } : null,
+    };
+    figureDialog?.showModal();
+  }
+
+  // Apply the control's choice through the replaceRange seam, then close. Wrap a bare image or update
+  // an existing figure, off the snapshot the dialog opened on. The pure transform owns the source
+  // shape and keeps the media token byte-intact; the preview stays read-only.
+  function applyFigure(choice: { caption: string; role: FigureRole | null }) {
+    const pre = figurePrefill;
+    if (!pre) return;
+    const result =
+      pre.mode === 'edit' && pre.figureRange
+        ? updateFigure(body, pre.figureRange, choice.caption, choice.role)
+        : wrapImageInFigure(body, pre.image.from, pre.image.to, choice.caption, choice.role);
+    writeFigureResult(result);
+  }
+
+  // Unwrap the figure back to its bare image, then close. Edit mode only (the snapshot carries the
+  // figure range). The bare image token is restored verbatim by the pure transform.
+  function unwrapFigureAction() {
+    const pre = figurePrefill;
+    if (!pre || !pre.figureRange) return;
+    writeFigureResult(unwrapFigure(body, pre.figureRange));
+  }
+
+  // Write a figure transform's result back to the editor: overwrite the whole doc through the
+  // replaceRange seam, then place the selection the transform chose (the seam alone drops the caret
+  // at the end). The two dispatches land in one undo step's worth of intent; replaceRange focuses the
+  // surface, selectRange then sets the range. Close the dialog last.
+  function writeFigureResult(result: { doc: string; from: number; to: number }) {
+    replaceRange(0, body.length, result.doc);
+    selectRange(result.from, result.to);
+    figureDialog?.close();
   }
 
   // The header's status badge, in ConceptList's vocabulary: a pending entry reads Edited (or New
@@ -1173,6 +1276,23 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
             </svg>
           </button>
+          <!-- The Figure control: always rendered, enabled only when the caret sits on a media image
+               (and the Write surface is up). It never mounts or unmounts on caret movement; only its
+               enabled state changes (the Edit-block pattern). The unavailable state uses aria-disabled,
+               not the native disabled attribute, so the control stays focusable and its reason reaches
+               assistive technology; openFigure() early-returns so the dead click is inert. -->
+          <button
+            type="button"
+            class="btn btn-sm btn-ghost btn-square"
+            class:btn-disabled={!figureAvailable}
+            aria-haspopup="dialog"
+            aria-label={figureLabel}
+            title={figureLabel}
+            aria-disabled={!figureAvailable}
+            onclick={openFigure}
+          >
+            <ImageIcon class="h-4 w-4" aria-hidden="true" />
+          </button>
         {/snippet}
       </EditorToolbar>
       {/if}
@@ -1185,6 +1305,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
           {surface}
           registerInsert={(fn) => (insert = fn)}
           onComponentAtCaret={(info) => (caretComponent = info)}
+          onMediaImageAtCaret={(info) => (mediaAtCaret = info)}
           registerReplaceRange={(fn) => (replaceRange = fn)}
           registerSelectRange={(fn) => (selectRange = fn)}
           registerInsertLink={(fn) => (insertLink = fn)}
@@ -1510,6 +1631,37 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   editor={editorApi}
   onuploaded={(record) => (uploadedRecords = [...uploadedRecords, record])}
 />
+
+<!-- The figure control's host dialog, mounted headless outside the edit form (the control holds its
+     own <form>). The toolbar Figure control opens it through openFigure(), pre-filled from the caret
+     snapshot. The control is keyed on figurePrefill so it remounts fresh per open, seeding its fields
+     from the new caption/role. The native <dialog> gives the focus trap and Escape for free. -->
+<dialog class="modal" aria-labelledby="cairn-figure-dialog-title" bind:this={figureDialog}>
+  <div class="modal-box max-w-sm">
+    <div class="mb-3 flex items-center justify-between">
+      <h2 id="cairn-figure-dialog-title" class="flex items-center gap-2 text-base font-semibold">
+        <ImageIcon class="h-4 w-4 text-[var(--color-accent)]" aria-hidden="true" />
+        {figurePrefill?.mode === 'edit' ? 'Edit figure' : 'Wrap in a figure'}
+      </h2>
+      <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={() => figureDialog?.close()}>✕</button>
+    </div>
+    {#if figurePrefill}
+      {#key figurePrefill}
+        <MediaFigureControl
+          caption={figurePrefill.caption}
+          role={figurePrefill.role}
+          mode={figurePrefill.mode}
+          decorative={figurePrefill.decorative}
+          onapply={applyFigure}
+          onunwrap={unwrapFigureAction}
+        />
+      {/key}
+    {/if}
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button tabindex="-1" aria-label="Close">close</button>
+  </form>
+</dialog>
 
 <!-- The lifecycle dialogs, mounted headless: the header's overflow menu drives them through their
      exported open(). Their POST forms flip the leaving flag so the leave guard stands down. -->

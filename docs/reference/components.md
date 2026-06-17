@@ -313,6 +313,7 @@ let { value = $bindable(), name, registerInsert, registerInsertLink, registerIns
   registerGetSelection?: (get: () => string) => void;
   registerFormat?: (format: (kind: FormatKind) => void) => void;
   onComponentAtCaret?: (info: { name: string | null; markdown: string; from: number; to: number } | null) => void;
+  onMediaImageAtCaret?: (info: FigureAtImage | null) => void;
   registerReplaceRange?: (replace: (from: number, to: number, text: string) => void) => void;
   registerSelectRange?: (select: (from: number, to: number) => void) => void;
   completionSources?: CompletionSource[];
@@ -338,7 +339,12 @@ that overwrites a document span and drops the caret after it, which the Edit-blo
 calls to write an edited block back over its original range. `registerSelectRange` hands the parent a
 `(from, to)` callback that selects a document span, focuses the surface, and scrolls the range into
 view, which the publish-time needs-alt notice's jump control calls to land the author on an image
-that lacks alt text. The media seams support the insert
+that lacks alt text. `onMediaImageAtCaret` reports the media image under the caret whenever it
+changes: the inner `![alt](media:slug.hash)` token's exact source offsets, plus the enclosing
+`:::figure` block (its range, raw caption, and placement role) when the image is wrapped, or
+`figure: null` when it is bare, or `null` when the caret is not on a media image. The host opens the
+figure control over it to wrap, edit, or unwrap a figure, writing the source through
+`registerReplaceRange`. The media seams support the insert
 popover: `registerInsertImage` inserts an inline `![alt](media:slug.hash)` image at the caret (the
 picker and the capture card call it), `onImageIngest` fires with the first image file of a paste or
 drop onto the surface (the host opens the capture card with the bytes), and `mediaLibrary` is the

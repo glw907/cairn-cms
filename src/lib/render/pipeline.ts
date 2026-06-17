@@ -11,6 +11,7 @@ import type { Schema } from 'hast-util-sanitize';
 import { VFile } from 'vfile';
 import { buildSanitizeSchema, rehypeAnchorRel, rehypeSinkGuard } from './sanitize-schema.js';
 import { remarkDirectiveStamp } from './remark-directives.js';
+import { remarkFigure } from './remark-figure.js';
 import { remarkResolveCairnLinks, CAIRN_RESOLVE } from './resolve-links.js';
 import { remarkResolveMedia, MEDIA_RESOLVE, type MediaResolve } from './resolve-media.js';
 import { rehypeDispatch } from './rehype-dispatch.js';
@@ -48,6 +49,7 @@ export function createRenderer(
     remarkDirective,
     [remarkDirectiveStamp, registry],
     remarkResolveCairnLinks,
+    remarkFigure,
     remarkResolveMedia,
   ];
   // The sanitize floor runs after rehype-raw (so author raw HTML is parsed, then cleaned) and

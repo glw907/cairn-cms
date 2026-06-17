@@ -377,30 +377,30 @@ popover's runUpload but resolves to this field, not an editor placeholder.
         <img
           src={committedThumb}
           alt={committedStatus === 'decorative' ? '' : committedAlt}
-          class="h-9 w-[3.25rem] flex-none rounded-box border border-[var(--cairn-card-border)] object-cover"
+          class="h-9 w-[3.25rem] flex-none rounded-field border border-[var(--cairn-card-border)] object-cover"
         />
         <span class="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span class="truncate text-sm font-medium">{committedName}</span>
+          <span class="truncate text-[0.8125rem] font-medium">{committedName}</span>
           {#if committedStatus === 'described'}
-            <span class="inline-flex w-max items-center gap-1 text-xs font-medium text-[var(--color-positive-ink)]">
-              <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+            <span class="inline-flex w-max items-center gap-1 text-[0.6875rem] font-medium text-[var(--color-positive-ink)]">
+              <svg class="h-[0.6875rem] w-[0.6875rem]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
               <span>Described</span>
             </span>
           {:else if committedStatus === 'needs-alt'}
-            <span class="inline-flex w-max items-center gap-1 text-xs font-medium text-[var(--cairn-warning-ink)]">
-              <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
+            <span class="inline-flex w-max items-center gap-1 text-[0.6875rem] font-medium text-[var(--cairn-warning-ink)]">
+              <svg class="h-[0.6875rem] w-[0.6875rem]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
               <span>Needs alt</span>
             </span>
           {:else}
-            <span class="inline-flex w-max items-center gap-1 text-xs font-medium text-[var(--color-muted)]">
-              <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" /><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" /><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" /><line x1="2" y1="2" x2="22" y2="22" /></svg>
+            <span class="inline-flex w-max items-center gap-1 text-[0.6875rem] font-medium text-[var(--color-muted)]">
+              <svg class="h-[0.6875rem] w-[0.6875rem]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" /><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" /><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" /><line x1="2" y1="2" x2="22" y2="22" /></svg>
               <span>Decorative</span>
             </span>
           {/if}
         </span>
         <button
           type="button"
-          class="flex-none bg-transparent p-1 text-sm font-medium text-[var(--color-primary)] underline underline-offset-2"
+          class="flex-none bg-transparent p-1 text-[0.8125rem] font-medium text-[var(--color-primary)] underline underline-offset-2"
           aria-haspopup="dialog"
           onclick={() => openDialog('placement')}
         >
@@ -425,7 +425,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
     <span class="text-sm font-medium">{field.label}</span>
     <button
       type="button"
-      class="cairn-hero-dropzone flex w-full items-center gap-2.5 rounded-field border border-dashed border-base-300 bg-base-100 px-3 py-2.5 text-left"
+      class="flex w-full items-center gap-2.5 rounded-field border border-dashed border-base-300 bg-base-100 px-3 py-2.5 text-left transition-colors hover:border-[color-mix(in_oklab,var(--color-primary)_45%,transparent)] hover:bg-[color-mix(in_oklab,var(--color-primary)_4%,transparent)] focus-visible:border-[color-mix(in_oklab,var(--color-primary)_70%,transparent)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[color-mix(in_oklab,var(--color-primary)_70%,transparent)]"
       aria-haspopup="dialog"
       onclick={() => openDialog('chooser')}
       ondrop={onDropzoneDrop}

@@ -1,0 +1,1390 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Media Library, the consolidated polished mockup (media 3c)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+  rel="stylesheet"
+/>
+<style>
+  /* The Media Library, CONSOLIDATED and final. This synthesizes the three exploration mockups after
+     the adversarial critique settled the verdict. The base is Direction B (the contact-sheet grid),
+     with B's permanent side panel REMOVED: the detail lives in a non-modal slide-over (the editor's
+     details-panel recipe), opened from a tile, closed on Escape, focus returning to the originating
+     tile. From Direction A it grafts the office chrome and the enriched list-density row (a real
+     <table> with sortable headers, the usage pill, an always-visible delete, and a trailing upload
+     foot-row), the home for documents and for sort-and-scan. From Direction C it grafts the
+     where-used grouped by published-versus-edit-branch and the two-faced safe-delete (an in-use face
+     that names the entries that would break and requires a typed confirm, and a calm orphan face).
+     CUT by the verdict: multi-select, the selection toolbar, bulk actions, bulk download, tags and
+     folders, and the standing triage dashboard. The type-facet seam stays, hidden until the library
+     holds more than one type. The token block and the fonts are lifted verbatim from the 3b hero
+     mockup so this stands beside it at the same polish grade. Copy is plain and on-brand: no em
+     dashes, no AI-tell phrasing. */
+
+  /* ---- mock scaffold (outside the themed surfaces; system font on purpose) ---- */
+  body { margin: 0; background: #d8d4cf; }
+  .mock-label { font: 600 13px/1.4 system-ui; letter-spacing: .08em; text-transform: uppercase; color: #444; padding: 30px 24px 4px; }
+  .mock-note { font: 400 13px/1.55 system-ui; color: #5a564f; padding: 0 24px 14px; max-width: 92ch; }
+  .mock-note code { font-family: ui-monospace, monospace; background: rgba(0,0,0,.06); padding: 1px 4px; border-radius: 3px; }
+  .mock-note b { color: #2a2a2a; }
+  .mock-intro { font: 400 14px/1.6 system-ui; color: #46423b; padding: 8px 24px 4px; max-width: 94ch; }
+  .screen { border: 1px solid #aaa; margin: 0 16px 48px; box-shadow: 0 2px 14px rgba(0,0,0,.08); overflow: hidden; }
+  .screen.narrow { max-width: 392px; }
+  .pair { display: flex; flex-wrap: wrap; gap: 0; }
+  .pair > .screen { flex: 1 1 440px; margin: 0 16px 48px; }
+
+  /* ---- Warm Stone tokens, both theme roots, inlined verbatim from 3b so the mockup stands alone ---- */
+  [data-theme='cairn-admin'] {
+    --color-base-100: oklch(99% 0.004 75);
+    --color-base-200: oklch(96.5% 0.006 75);
+    --color-base-300: oklch(89% 0.011 75);
+    --color-base-content: oklch(26% 0.014 75);
+    --color-primary: oklch(52% 0.2 293);
+    --color-primary-content: oklch(98% 0.01 293);
+    --color-accent: oklch(54% 0.16 300);
+    --color-muted: oklch(48% 0.01 75);
+    --color-subtle: oklch(42% 0.01 75);
+    --color-positive-ink: oklch(48% 0.12 150);
+    --cairn-code-chip: oklch(94.5% 0.008 75);
+    --cairn-warning-ink: oklch(50% 0.13 70);
+    --cairn-card-border: oklch(93% 0.008 75);
+    --cairn-shadow: 0 1px 2px oklch(28% 0.02 75 / 0.05), 0 8px 24px -6px oklch(28% 0.02 75 / 0.1);
+    /* the danger family for the safe-delete (the on-surface ink holds AA; the fill carries the button) */
+    --color-error: oklch(55% 0.2 25);
+    --cairn-error-ink: oklch(50% 0.19 25);
+    --cairn-error-tint: oklch(96% 0.03 25);
+    --cairn-error-border: oklch(85% 0.06 25);
+  }
+  [data-theme='cairn-admin-dark'] {
+    --color-base-100: oklch(24% 0.01 75);
+    --color-base-200: oklch(15.5% 0.009 75);
+    --color-base-300: oklch(30% 0.014 75);
+    --color-base-content: oklch(93% 0.006 75);
+    --color-primary: oklch(68% 0.18 293);
+    --color-primary-content: oklch(20% 0.03 293);
+    --color-accent: oklch(70% 0.14 300);
+    --color-muted: oklch(72% 0.01 75);
+    --color-subtle: oklch(80% 0.008 75);
+    --color-positive-ink: oklch(78% 0.12 150);
+    --cairn-code-chip: oklch(29.5% 0.012 75);
+    --cairn-warning-ink: oklch(80% 0.14 70);
+    --cairn-card-border: oklch(30% 0.014 75);
+    --cairn-shadow: 0 1px 2px oklch(0% 0 0 / 0.35), 0 8px 24px -6px oklch(0% 0 0 / 0.5);
+    --color-error: oklch(64% 0.18 25);
+    --cairn-error-ink: oklch(78% 0.15 25);
+    --cairn-error-tint: oklch(28% 0.06 25);
+    --cairn-error-border: oklch(40% 0.09 25);
+  }
+  [data-theme] {
+    --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+    --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-editor: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+
+  /* ===================== the office shell (sidebar + 64px topbar, flat across the seam) ===================== */
+  .app { display: flex; background: var(--color-base-200); color: var(--color-base-content); font-family: var(--font-body); -webkit-font-smoothing: antialiased; min-height: 600px; position: relative; }
+  .app.short { min-height: 0; }
+
+  .sidebar { width: 14rem; flex: none; background: var(--color-base-100); border-right: 1px solid var(--cairn-card-border); display: flex; flex-direction: column; }
+  .brand { display: flex; align-items: center; gap: 9px; height: 64px; min-height: 64px; padding: 0 16px; border-bottom: 1px solid var(--cairn-card-border); }
+  .brand-tile { display: inline-flex; align-items: center; justify-content: center; height: 32px; width: 32px; flex: none; border-radius: .75rem; background: var(--color-primary); color: var(--color-primary-content); box-shadow: 0 1px 2px oklch(0% 0 0 / .12); }
+  .brand-mark { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; letter-spacing: -.01em; }
+  .nav { padding: 14px 10px; display: flex; flex-direction: column; gap: 18px; }
+  .nav-group { display: flex; flex-direction: column; gap: 3px; }
+  .nav-eyebrow { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); padding: 4px 8px 5px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 7px 9px; border-radius: .55rem; font-size: .875rem; font-weight: 500; color: var(--color-subtle); text-decoration: none; }
+  .nav-item svg { width: 16px; height: 16px; flex: none; color: var(--color-muted); }
+  .nav-item.active { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); font-weight: 600; }
+  .nav-item.active svg { color: var(--color-primary); }
+
+  .main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+  .topbar { display: flex; align-items: center; height: 64px; min-height: 64px; padding: 0 20px; background: var(--color-base-100); border-bottom: 1px solid var(--cairn-card-border); gap: 12px; }
+  .topbar .crumb { display: flex; align-items: center; gap: 7px; font-size: .875rem; color: var(--color-muted); }
+  .topbar .crumb b { color: var(--color-base-content); font-weight: 550; }
+  .topbar .grow { flex: 1 1 auto; }
+  .topbar-k { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; border-radius: .55rem; border: 1px solid var(--color-base-300); background: var(--color-base-100); color: var(--color-muted); font-size: .8125rem; cursor: pointer; }
+  .topbar-k kbd { font: 500 .6875rem/1 var(--font-editor); border: 1px solid var(--color-base-300); border-radius: .3rem; padding: 2px 5px; color: var(--color-subtle); }
+  .topbar-theme { display: inline-flex; align-items: center; justify-content: center; height: 34px; width: 34px; border-radius: .55rem; border: 0; background: transparent; color: var(--color-subtle); cursor: pointer; }
+
+  /* the content area, the recessed ground */
+  .content { flex: 1 1 auto; min-height: 0; padding: 24px 26px 30px; overflow: hidden; }
+
+  /* ===================== the library header (the office recipe: eyebrow, h1, count, Upload) ===================== */
+  .lib-head { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 16px; }
+  .lib-title-wrap { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .eyebrow { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); }
+  .lib-title { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; letter-spacing: -.025em; line-height: 1.1; margin: 1px 0 0; }
+  .lib-count { font-size: .8125rem; color: var(--color-muted); margin-top: 3px; }
+  .lib-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; flex: none; }
+
+  .btn-primary { display: inline-flex; align-items: center; gap: 7px; font: 600 .8125rem/1 var(--font-body); border-radius: .55rem; padding: 0 14px; height: 36px; border: 1px solid transparent; background: var(--color-primary); color: var(--color-primary-content); cursor: pointer; box-shadow: 0 1px 2px color-mix(in oklab, var(--color-primary) 35%, transparent); }
+  .btn-primary svg { width: 16px; height: 16px; }
+  .btn-ghost { display: inline-flex; align-items: center; gap: 6px; font: 500 .8125rem/1 var(--font-body); border-radius: .55rem; padding: 0 13px; height: 34px; border: 1px solid var(--color-base-300); background: var(--color-base-100); color: var(--color-subtle); cursor: pointer; }
+  .btn-ghost svg { width: 15px; height: 15px; }
+
+  /* ===================== one toolbar row: search (left, flex), triage segments, density toggle (right) ===================== */
+  .toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .search-wrap { position: relative; flex: 1 1 16rem; min-width: 12rem; max-width: 26rem; }
+  .search-glyph { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--color-muted); pointer-events: none; }
+  .search-input { width: 100%; box-sizing: border-box; font: 400 .8125rem/1.2 var(--font-body); color: var(--color-base-content); background: var(--color-base-100); border: 1px solid var(--color-base-300); border-radius: .55rem; padding: 9px 11px 9px 34px; }
+  .search-input::placeholder { color: var(--color-muted); }
+  .search-input:focus-visible { outline: none; border-color: color-mix(in oklab, var(--color-primary) 70%, transparent); box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-primary) 70%, transparent); }
+
+  /* the triage segmented control: a bordered pick-one group (the shared border carries pick-one),
+     borderless segments, the active one tinting + showing the check glyph (the non-color cue). It is
+     a radiogroup with aria-checked, NOT aria-pressed: choosing one filter unchooses the rest. */
+  .seg { display: inline-flex; align-items: center; overflow: hidden; border-radius: .55rem; border: 1px solid var(--cairn-card-border); background: var(--color-base-100); }
+  .seg button { display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; height: 34px; font: 400 .8125rem/1 var(--font-body); color: var(--color-muted); background: transparent; border: 0; cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--cairn-card-border); }
+  .seg button.on { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); font-weight: 500; }
+  .seg button .ct { font-variant-numeric: tabular-nums; opacity: .9; }
+  .seg button .chk { width: 12px; height: 12px; }
+
+  /* the type facet, a separate pick-one group, hidden until more than one stored type exists */
+  .facet { display: inline-flex; align-items: center; gap: 8px; }
+  .facet .facet-lbl { font-size: .6875rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--color-muted); }
+
+  .toolbar-spacer { flex: 1 1 auto; }
+  /* the density toggle: a small two-button capsule, grid vs list */
+  .density { display: inline-flex; border: 1px solid var(--color-base-300); border-radius: .55rem; overflow: hidden; }
+  .density button { display: inline-flex; align-items: center; justify-content: center; height: 34px; width: 38px; border: 0; background: var(--color-base-100); color: var(--color-subtle); cursor: pointer; }
+  .density button + button { border-left: 1px solid var(--color-base-300); }
+  .density button.on { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); }
+  .density button svg { width: 16px; height: 16px; }
+
+  /* ===================== the contact-sheet grid (full content width, a roving listbox) ===================== */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(158px, 1fr)); gap: 14px; }
+  .tile { position: relative; display: flex; flex-direction: column; border-radius: .7rem; border: 1px solid var(--cairn-card-border); background: var(--color-base-100); box-shadow: var(--cairn-shadow); overflow: hidden; cursor: pointer; outline: none; }
+  .tile:hover { border-color: color-mix(in oklab, var(--color-primary) 30%, var(--cairn-card-border)); }
+  /* the visible focus ring per tile (roving tabindex), and the open-into-detail ring */
+  .tile.focusring { box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-primary) 70%, transparent), var(--cairn-shadow); border-color: color-mix(in oklab, var(--color-primary) 70%, transparent); }
+  .tile.open { border-color: var(--color-primary); box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-primary) 55%, transparent), var(--cairn-shadow); }
+  /* the image well: a consistent aspect, object-fit contain on a quiet checker mat, never crop-to-mystery */
+  .tile-img { aspect-ratio: 4 / 3; background:
+      repeating-conic-gradient(oklch(95% 0.005 75) 0% 25%, oklch(92.5% 0.006 75) 0% 50%) 50% / 16px 16px;
+    display: flex; align-items: center; justify-content: center; position: relative; }
+  [data-theme='cairn-admin-dark'] .tile-img { background: repeating-conic-gradient(oklch(27% 0.008 75) 0% 25%, oklch(25% 0.009 75) 0% 50%) 50% / 16px 16px; }
+  .tile-img .pic { object-fit: contain; border-radius: .25rem; }
+  /* the footer: the name ALWAYS visible, plus the alt-status glyph (glyph carries the accessible name) */
+  .tile-foot { display: flex; align-items: center; gap: 7px; padding: 8px 9px; border-top: 1px solid var(--cairn-card-border); }
+  .tile-name { font-size: .8125rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1 1 auto; min-width: 0; }
+  .alt-glyph { display: inline-flex; flex: none; }
+  .alt-glyph svg { width: 13px; height: 13px; }
+  .alt-glyph.ok { color: var(--color-positive-ink); }
+  .alt-glyph.miss { color: var(--cairn-warning-ink); }
+  .alt-glyph.deco { color: var(--color-muted); }
+
+  /* the where-used marker on the tile: a compact corner pill. Used carries a quiet count; an unused
+     asset carries the warning-ink "Unused" marker (a real label in the detail and the alertdialog). */
+  .use-dot { position: absolute; top: 8px; right: 8px; display: inline-flex; align-items: center; gap: 5px; height: 20px; padding: 0 7px; border-radius: 999px; background: color-mix(in oklab, var(--color-base-100) 88%, transparent); border: 1px solid var(--cairn-card-border); backdrop-filter: blur(3px); font: 600 .625rem/1 var(--font-body); letter-spacing: .01em; color: var(--color-muted); }
+  .use-dot .d { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+  .use-dot.used .d { background: var(--color-positive-ink); }
+  .use-dot.unused { color: var(--cairn-warning-ink); }
+  .use-dot.unused .d { background: var(--cairn-warning-ink); }
+
+  /* the in-flight upload tile (widget-only, the 2b optimistic placeholder, never writes text) */
+  .tile-img.uploading { color: var(--color-muted); }
+  .tile-uplabel { position: absolute; bottom: 8px; left: 8px; right: 8px; font: 500 .6875rem/1.3 var(--font-body); color: var(--color-muted); text-align: center; }
+  .tile-progress-track { position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: color-mix(in oklab, var(--color-base-content) 8%, transparent); }
+  .tile-progress { position: absolute; bottom: 0; left: 0; height: 3px; background: var(--color-primary); }
+
+  /* the managed Load more (NEVER infinite scroll), with the announced "Showing N of M" count */
+  .loadmore { display: flex; flex-direction: column; align-items: center; gap: 7px; margin-top: 22px; }
+  .loadmore .count { font-size: .75rem; color: var(--color-muted); font-variant-numeric: tabular-nums; }
+  .loadmore .btn { font: 600 .8125rem/1 var(--font-body); border-radius: .55rem; padding: 9px 16px; border: 1px solid var(--color-base-300); background: var(--color-base-100); color: var(--color-subtle); cursor: pointer; }
+
+  /* ===================== the list density: an enriched real <table> (grafted from A) ===================== */
+  .list-card { border: 1px solid var(--cairn-card-border); background: var(--color-base-100); border-radius: 1rem; box-shadow: var(--cairn-shadow); overflow: hidden; }
+  table.lib { width: 100%; border-collapse: collapse; }
+  table.lib thead th { text-align: left; font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); padding: 0; border-bottom: 1px solid var(--cairn-card-border); }
+  /* a sortable header is a real <button> filling the cell, with aria-sort on the <th> */
+  table.lib thead th .th-btn { display: inline-flex; align-items: center; gap: 5px; width: 100%; box-sizing: border-box; padding: 12px 16px; background: transparent; border: 0; font: inherit; color: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; }
+  table.lib thead th .th-btn.right { justify-content: flex-end; }
+  table.lib thead th .th-btn:hover { color: var(--color-subtle); }
+  table.lib thead th .th-plain { display: inline-block; padding: 12px 16px; }
+  table.lib thead th .sort-caret { width: 12px; height: 12px; flex: none; }
+  table.lib thead th[aria-sort='ascending'] .th-btn, table.lib thead th[aria-sort='descending'] .th-btn { color: var(--color-base-content); }
+  table.lib tbody tr { border-bottom: 1px solid var(--cairn-card-border); cursor: pointer; }
+  table.lib tbody tr:last-of-type { border-bottom: 0; }
+  table.lib tbody tr:hover { background: color-mix(in oklab, var(--color-base-200) 55%, transparent); }
+  table.lib tbody tr.sel { background: color-mix(in oklab, var(--color-primary) 7%, transparent); box-shadow: inset 3px 0 0 var(--color-primary); }
+  table.lib tbody tr:focus-visible { outline: none; box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--color-primary) 70%, transparent); }
+  table.lib td { padding: 11px 16px; vertical-align: middle; }
+
+  /* the identity cell: thumbnail + name + a metadata line (dimensions, size, type, date) */
+  .r-id { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .r-thumb { width: 52px; height: 40px; flex: none; border-radius: .45rem; border: 1px solid var(--cairn-card-border); object-fit: cover; position: relative; overflow: hidden; }
+  .r-thumb .doc-glyph { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--color-muted); }
+  .r-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .r-name { font-size: .875rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .r-meta { font-size: .75rem; color: var(--color-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .r-meta .dot { opacity: .5; padding: 0 5px; }
+
+  /* the alt-status chip (glyph + label, never hue alone) reused on the row */
+  .alt-chip { display: inline-flex; align-items: center; gap: 5px; font-size: .75rem; font-weight: 500; width: max-content; }
+  .alt-chip.ok { color: var(--color-positive-ink); }
+  .alt-chip.miss { color: var(--cairn-warning-ink); }
+  .alt-chip.deco { color: var(--color-muted); }
+  .alt-chip svg { width: 13px; height: 13px; flex: none; }
+
+  /* the usage pill: "found in N entries" leans on body ink; "no references found" is muted */
+  .use-pill { display: inline-flex; align-items: center; gap: 5px; font-size: .75rem; font-weight: 500; width: max-content; color: var(--color-base-content); }
+  .use-pill svg { width: 13px; height: 13px; flex: none; color: var(--color-muted); }
+  .use-pill.none { color: var(--color-muted); }
+  .use-pill.none svg { color: var(--color-subtle); }
+
+  .r-added { font-size: .8125rem; color: var(--color-muted); font-variant-numeric: tabular-nums; }
+  .r-trail { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
+  .icon-btn { display: inline-flex; align-items: center; justify-content: center; height: 30px; width: 30px; border: 0; background: transparent; border-radius: .45rem; color: var(--color-subtle); cursor: pointer; }
+  .icon-btn:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .icon-btn.danger:hover { background: var(--cairn-error-tint); color: var(--cairn-error-ink); }
+  .icon-btn svg { width: 16px; height: 16px; }
+
+  /* the trailing upload foot-row */
+  .foot-row { display: flex; width: 100%; align-items: center; gap: 8px; border: 0; border-top: 1px solid var(--cairn-card-border); background: transparent; padding: 12px 16px; font: 500 .875rem/1 var(--font-body); color: var(--color-primary); cursor: pointer; }
+  .foot-row:hover { background: color-mix(in oklab, var(--color-primary) 6%, transparent); }
+  .foot-row svg { width: 15px; height: 15px; }
+
+  /* ===================== the detail slide-over (the editor's details-panel recipe, NON-MODAL) ===================== */
+  /* No scrim: the panel is non-modal, the library stays live behind it. Focus moves in on open and
+     returns to the originating tile on close; Escape closes it. */
+  .panel { position: absolute; top: 64px; right: 0; bottom: 0; width: 22rem; background: var(--color-base-100); border-left: 1px solid var(--cairn-card-border); box-shadow: var(--cairn-shadow); display: flex; flex-direction: column; font-family: var(--font-body); }
+  .panel.static { position: static; width: 22rem; box-shadow: none; border-left: 1px solid var(--cairn-card-border); border-radius: 1rem; overflow: hidden; }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--cairn-card-border); }
+  .panel-x { display: inline-flex; align-items: center; justify-content: center; height: 28px; width: 28px; border: 0; background: transparent; border-radius: .45rem; color: var(--color-subtle); cursor: pointer; }
+  .panel-body { padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; }
+
+  /* the large preview, the name, and the media: reference */
+  .d-preview { width: 100%; aspect-ratio: 16 / 10; border-radius: .65rem; border: 1px solid var(--cairn-card-border); background:
+      repeating-conic-gradient(oklch(95% 0.005 75) 0% 25%, oklch(92.5% 0.006 75) 0% 50%) 50% / 18px 18px;
+    display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  [data-theme='cairn-admin-dark'] .d-preview { background: repeating-conic-gradient(oklch(27% 0.008 75) 0% 25%, oklch(25% 0.009 75) 0% 50%) 50% / 18px 18px; }
+  .d-preview .pic { object-fit: contain; max-width: 100%; max-height: 100%; border-radius: .25rem; }
+  .d-id { display: flex; flex-direction: column; gap: 4px; }
+  .d-name { font-size: 1.0625rem; font-weight: 650; line-height: 1.25; word-break: break-word; }
+  .d-ref { display: flex; align-items: center; gap: 7px; }
+  .d-ref code { font-family: var(--font-editor); font-size: .6875rem; color: var(--color-muted); word-break: break-all; min-width: 0; }
+  .d-ref .copy { flex: none; display: inline-flex; align-items: center; justify-content: center; height: 24px; width: 24px; border: 0; background: transparent; border-radius: .35rem; color: var(--color-subtle); cursor: pointer; }
+  .d-ref .copy svg { width: 13px; height: 13px; }
+
+  .d-status { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+
+  .d-section-label { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); margin-bottom: 9px; }
+
+  /* the alt editor: the 2b capture-card alt model (describe / decorative radiogroup) + the alt field */
+  .fld { display: flex; flex-direction: column; gap: 5px; }
+  .fld > .lbl { font-size: .8125rem; font-weight: 500; }
+  .alt-radio-row { display: flex; gap: 7px; }
+  .alt-radio { flex: 1 1 0; display: flex; align-items: center; gap: 6px; padding: 7px 10px; border: 1px solid var(--color-base-300); border-radius: .55rem; font-size: .8125rem; cursor: pointer; }
+  .alt-radio.sel { border-color: color-mix(in oklab, var(--color-primary) 55%, transparent); background: color-mix(in oklab, var(--color-primary) 8%, transparent); color: var(--color-primary); font-weight: 600; }
+  .alt-radio .dot2 { width: 12px; height: 12px; border-radius: 50%; border: 1px solid var(--color-base-300); flex: none; }
+  .alt-radio.sel .dot2 { border-color: var(--color-primary); background: radial-gradient(circle at center, var(--color-primary) 0 3.5px, transparent 4.5px); }
+  .input, .textarea { width: 100%; box-sizing: border-box; font: 400 .8125rem/1.45 var(--font-body); color: var(--color-base-content); background: var(--color-base-100); border: 1px solid var(--color-base-300); border-radius: .55rem; padding: 8px 10px; }
+  .textarea { resize: none; min-height: 3.6rem; }
+  .input::placeholder, .textarea::placeholder { color: var(--color-muted); }
+  .input:focus-visible, .textarea:focus-visible { outline: none; border-color: color-mix(in oklab, var(--color-primary) 70%, transparent); box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-primary) 70%, transparent); }
+  .fld-hint { font-size: .75rem; color: var(--color-muted); line-height: 1.45; }
+
+  /* the where-used block, grouped by published-vs-edit-branch (grafted from C) */
+  .where { display: flex; flex-direction: column; gap: 12px; }
+  .where-head { display: flex; align-items: baseline; justify-content: space-between; }
+  .where-title { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); }
+  .where-total { font-size: .75rem; color: var(--color-muted); }
+  .where-group { display: flex; flex-direction: column; gap: 6px; }
+  .where-group-label { display: inline-flex; align-items: center; gap: 6px; font-size: .6875rem; font-weight: 600; letter-spacing: .03em; color: var(--color-muted); }
+  .wg-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+  .wg-dot.pub { background: var(--color-positive-ink); }
+  .wg-dot.branch { background: oklch(60% 0.15 70); }
+  .ref-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+  .ref { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--cairn-card-border); border-radius: .55rem; text-decoration: none; color: var(--color-base-content); background: var(--color-base-100); }
+  .ref:hover { border-color: color-mix(in oklab, var(--color-primary) 45%, var(--cairn-card-border)); background: color-mix(in oklab, var(--color-primary) 4%, transparent); }
+  .ref-glyph { width: 15px; height: 15px; flex: none; color: var(--color-muted); }
+  .ref-body { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1 1 auto; }
+  .ref-title { font-size: .8125rem; font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ref-where { font-size: .6875rem; color: var(--color-muted); }
+  .ref-branch { font-family: var(--font-editor); font-size: .625rem; color: oklch(52% 0.13 70); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  [data-theme='cairn-admin-dark'] .ref-branch { color: oklch(78% 0.13 70); }
+  .ref-arrow { width: 14px; height: 14px; flex: none; color: var(--color-muted); opacity: .6; }
+  .where-none { display: flex; align-items: flex-start; gap: 9px; padding: 12px; border-radius: .6rem; border: 1px dashed var(--color-base-300); background: color-mix(in oklab, var(--color-base-200) 50%, transparent); }
+  .where-none svg { width: 16px; height: 16px; flex: none; color: var(--color-muted); margin-top: 1px; }
+  .where-none .wn-text { font-size: .8125rem; color: var(--color-base-content); line-height: 1.5; }
+  .where-none .wn-text b { font-weight: 600; }
+
+  /* the metadata grid */
+  .meta-grid { display: grid; grid-template-columns: auto 1fr; gap: 7px 14px; font-size: .8125rem; }
+  .meta-grid dt { color: var(--color-muted); }
+  .meta-grid dd { margin: 0; color: var(--color-base-content); text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* the panel actions: Replace and Delete */
+  .panel-actions { display: flex; gap: 9px; border-top: 1px solid var(--cairn-card-border); padding-top: 16px; }
+  .btn-soft { flex: 1 1 0; display: inline-flex; align-items: center; justify-content: center; gap: 7px; font: 600 .8125rem/1 var(--font-body); border-radius: .55rem; padding: 9px 13px; border: 1px solid var(--color-base-300); background: transparent; color: var(--color-subtle); cursor: pointer; }
+  .btn-soft svg { width: 15px; height: 15px; }
+  .btn-danger-soft { display: inline-flex; align-items: center; justify-content: center; gap: 7px; font: 600 .8125rem/1 var(--font-body); border-radius: .55rem; padding: 9px 14px; border: 1px solid var(--cairn-error-border); background: transparent; color: var(--cairn-error-ink); cursor: pointer; }
+  .btn-danger-soft svg { width: 15px; height: 15px; }
+
+  /* ===================== the safe-delete alertdialog (two-faced, grafted from C) ===================== */
+  .scrim-modal { position: absolute; inset: 0; background: oklch(20% 0.01 75 / 0.34); display: flex; align-items: center; justify-content: center; padding: 22px; }
+  [data-theme='cairn-admin-dark'] .scrim-modal { background: oklch(0% 0 0 / 0.5); }
+  .alertdialog { width: 30rem; max-width: 100%; max-height: 92%; overflow: hidden; display: flex; flex-direction: column; background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: 1rem; box-shadow: var(--cairn-shadow); font-family: var(--font-body); }
+  .ad-head { display: flex; align-items: flex-start; gap: 12px; padding: 18px 20px 12px; }
+  .ad-icon { display: inline-flex; align-items: center; justify-content: center; height: 36px; width: 36px; flex: none; border-radius: .6rem; }
+  .ad-icon svg { width: 19px; height: 19px; }
+  .ad-icon.warn { background: var(--cairn-error-tint); color: var(--cairn-error-ink); }
+  .ad-icon.calm { background: color-mix(in oklab, var(--color-base-content) 7%, transparent); color: var(--color-muted); }
+  .ad-title { font-family: var(--font-display); font-size: 1.125rem; font-weight: 700; letter-spacing: -.01em; }
+  .ad-lede { font-size: .8125rem; color: var(--color-muted); margin-top: 4px; line-height: 1.5; }
+  .ad-body { padding: 4px 20px 8px; display: flex; flex-direction: column; gap: 13px; overflow-y: auto; }
+  .ad-asset { display: flex; align-items: center; gap: 11px; padding: 11px; border-radius: .6rem; border: 1px solid var(--cairn-card-border); background: color-mix(in oklab, var(--color-base-200) 50%, transparent); }
+  .ad-asset .aa-thumb { width: 44px; height: 34px; flex: none; border-radius: .45rem; border: 1px solid var(--cairn-card-border); object-fit: cover; }
+  .ad-asset .aa-name { font-size: .875rem; font-weight: 600; }
+  .ad-asset .aa-ref { font-family: var(--font-editor); font-size: .6875rem; color: var(--color-muted); }
+
+  /* the break list: names the entries that would break, grouped published-then-branch */
+  .ad-break-label { font-size: .8125rem; font-weight: 600; color: var(--cairn-error-ink); display: inline-flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+  .ad-break-label svg { width: 14px; height: 14px; }
+  .ad-break-list { list-style: none; margin: 0; padding: 8px; display: flex; flex-direction: column; gap: 4px; max-height: 11rem; overflow-y: auto; border: 1px solid var(--cairn-error-border); border-radius: .6rem; background: var(--cairn-error-tint); }
+  .ad-break-group-label { display: inline-flex; align-items: center; gap: 6px; font-size: .625rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--color-muted); padding: 5px 6px 2px; }
+  .ad-break-group-label .wg-dot { width: 6px; height: 6px; }
+  .ad-break { display: flex; align-items: center; gap: 9px; padding: 5px 6px; border-radius: .4rem; text-decoration: none; color: var(--color-base-content); }
+  .ad-break:hover { background: color-mix(in oklab, var(--cairn-error-ink) 9%, transparent); }
+  .ad-break svg.b-glyph { width: 14px; height: 14px; flex: none; color: var(--cairn-error-ink); }
+  .ad-break .b-body { display: flex; flex-direction: column; gap: 0; min-width: 0; flex: 1 1 auto; }
+  .ad-break .b-title { font-size: .8125rem; font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ad-break .b-where { font-size: .625rem; color: var(--color-muted); }
+  .ad-break .b-branch { font-family: var(--font-editor); font-size: .6rem; color: oklch(52% 0.13 70); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  [data-theme='cairn-admin-dark'] .ad-break .b-branch { color: oklch(78% 0.13 70); }
+
+  .ad-text { font-size: .875rem; line-height: 1.55; color: var(--color-base-content); }
+  .ad-text b { font-weight: 600; }
+  .ad-confirm { display: flex; flex-direction: column; gap: 6px; }
+  .ad-confirm .ac-prompt { font-size: .875rem; color: var(--color-base-content); line-height: 1.5; }
+  .ad-confirm .ac-prompt code { font-family: var(--font-editor); font-size: .8125rem; background: var(--cairn-code-chip); padding: 1px 6px; border-radius: .3rem; color: var(--color-base-content); font-weight: 600; }
+  .ad-confirm-input { width: 100%; box-sizing: border-box; font: 500 .875rem/1.3 var(--font-editor); color: var(--color-base-content); background: var(--color-base-100); border: 1px solid var(--cairn-error-border); border-radius: .55rem; padding: 9px 11px; }
+  .ad-confirm-input::placeholder { color: var(--color-muted); font-family: var(--font-body); font-weight: 400; }
+  .ad-confirm-input:focus-visible { outline: none; border-color: color-mix(in oklab, var(--color-error) 65%, transparent); box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-error) 65%, transparent); }
+
+  /* the git-recoverable reassurance */
+  .ad-calm-note { display: flex; align-items: flex-start; gap: 9px; font-size: .8125rem; color: var(--color-base-content); line-height: 1.5; padding: 11px 13px; border-radius: .6rem; background: color-mix(in oklab, var(--color-base-200) 55%, transparent); border: 1px solid var(--cairn-card-border); }
+  .ad-calm-note svg { width: 15px; height: 15px; flex: none; margin-top: 1px; color: var(--color-positive-ink); }
+
+  .ad-foot { display: flex; align-items: center; justify-content: flex-end; gap: 9px; padding: 14px 20px 18px; border-top: 1px solid var(--cairn-card-border); margin-top: 6px; }
+  .btn-cancel { font: 600 .8125rem/1 var(--font-body); border-radius: .55rem; padding: 9px 14px; border: 1px solid var(--color-base-300); background: transparent; color: var(--color-subtle); cursor: pointer; }
+  .btn-delete { font: 600 .8125rem/1 var(--font-body); border-radius: .55rem; padding: 9px 15px; border: 1px solid transparent; background: var(--color-error); color: oklch(99% 0.01 25); cursor: pointer; }
+  .btn-delete[disabled] { opacity: .5; cursor: not-allowed; }
+
+  /* ===================== the replace-in-place dialog (a quiet slide-over action) ===================== */
+  .rp-note { display: flex; align-items: flex-start; gap: 8px; font-size: .75rem; color: var(--color-muted); line-height: 1.5; padding: 9px 11px; border-radius: .55rem; background: color-mix(in oklab, var(--color-base-200) 55%, transparent); }
+  .rp-note svg { width: 14px; height: 14px; flex: none; margin-top: 1px; color: var(--color-muted); }
+  .rp-warn { display: flex; align-items: flex-start; gap: 8px; font-size: .8125rem; color: var(--color-base-content); line-height: 1.5; }
+  .rp-warn svg { width: 15px; height: 15px; flex: none; margin-top: 1px; color: var(--cairn-warning-ink); }
+
+  /* ===================== the empty state (the office empty-state recipe, owns the area) ===================== */
+  .empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; min-height: 52vh; padding: 56px 24px; }
+  .empty .e-mark { color: var(--color-primary); opacity: .32; }
+  .empty .e-title { font-family: var(--font-display); font-size: 1.375rem; font-weight: 700; letter-spacing: -.01em; }
+  .empty .e-sub { font-size: .875rem; color: var(--color-muted); max-width: 40ch; line-height: 1.6; }
+  .empty .e-dropzone { display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 22px 28px; border: 1px dashed var(--color-base-300); border-radius: .8rem; color: var(--color-muted); margin-top: 4px; }
+  .empty .e-dropzone .ed-sub { font-size: .75rem; }
+
+  /* ===================== narrow viewport: the slide-over becomes a bottom sheet ===================== */
+  .phone { position: relative; background: var(--color-base-200); color: var(--color-base-content); font-family: var(--font-body); -webkit-font-smoothing: antialiased; min-height: 680px; overflow: hidden; }
+  .phone-topbar { display: flex; align-items: center; gap: 10px; height: 56px; padding: 0 14px; background: var(--color-base-100); border-bottom: 1px solid var(--cairn-card-border); }
+  .phone-topbar .brand-tile { height: 28px; width: 28px; }
+  .phone-topbar .t { font-family: var(--font-display); font-size: 1.0625rem; font-weight: 700; }
+  .phone-topbar .grow { flex: 1 1 auto; }
+  .phone-topbar .ic { display: inline-flex; align-items: center; justify-content: center; height: 34px; width: 34px; border: 0; background: transparent; color: var(--color-subtle); border-radius: .5rem; cursor: pointer; }
+  .phone-body { padding: 14px; }
+  .phone-search { position: relative; margin-bottom: 12px; }
+  .phone-chips { display: flex; gap: 7px; overflow-x: auto; margin-bottom: 14px; padding-bottom: 2px; }
+  .phone-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 11px; }
+
+  .sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--color-base-100); border-top: 1px solid var(--cairn-card-border); border-radius: 1.1rem 1.1rem 0 0; box-shadow: 0 -8px 30px -8px oklch(0% 0 0 / .25); max-height: 84%; display: flex; flex-direction: column; overflow: hidden; }
+  .sheet-grip { width: 38px; height: 4px; border-radius: 999px; background: var(--color-base-300); margin: 9px auto 4px; flex: none; }
+  .sheet-head { display: flex; align-items: center; gap: 10px; padding: 6px 16px 12px; border-bottom: 1px solid var(--cairn-card-border); }
+  .sheet-head .a-thumb { width: 42px; height: 32px; flex: none; border-radius: .4rem; border: 1px solid var(--cairn-card-border); object-fit: cover; }
+  .sheet-head .sh-name { font-size: .9375rem; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1 1 auto; }
+  .sheet-head .sh-x { flex: none; display: inline-flex; align-items: center; justify-content: center; height: 30px; width: 30px; border: 0; background: transparent; color: var(--color-subtle); border-radius: .45rem; cursor: pointer; }
+  .sheet-body { padding: 14px 16px 18px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; }
+
+  /* photo stand-ins (no bundled bytes): warm dawn-light gradients, lifted from 3b */
+  .ph-a { background: linear-gradient(170deg, oklch(82% 0.06 80) 0%, oklch(74% 0.08 60) 55%, oklch(64% 0.09 45) 100%); }
+  .ph-b { background: linear-gradient(150deg, oklch(52% 0.06 60) 0%, oklch(70% 0.09 50) 60%, oklch(85% 0.08 80) 100%); }
+  .ph-c { background: linear-gradient(200deg, oklch(88% 0.05 85) 0%, oklch(72% 0.07 55) 100%); }
+  .ph-d { background: linear-gradient(160deg, oklch(40% 0.05 60) 0%, oklch(60% 0.1 45) 55%, oklch(86% 0.08 85) 100%); }
+  .ph-e { background: linear-gradient(140deg, oklch(78% 0.09 95) 0%, oklch(66% 0.11 70) 100%); }
+  .ph-f { background: linear-gradient(190deg, oklch(60% 0.08 30) 0%, oklch(80% 0.07 65) 100%); }
+  .ph-g { background: linear-gradient(165deg, oklch(70% 0.07 200) 0%, oklch(82% 0.06 150) 100%); }
+  .ph-h { background: linear-gradient(155deg, oklch(86% 0.05 110) 0%, oklch(68% 0.09 80) 100%); }
+  .ph-doc { background: var(--cairn-code-chip); }
+</style>
+</head>
+<body>
+
+<p class="mock-label">Media 3c, the Media Library (consolidated, final)</p>
+<p class="mock-intro">
+  The Media Library is a first-class admin screen, a peer of Posts and Pages, reached at
+  <code>/admin/media</code>. Its only job is to manage the site's committed media: browse every asset, see
+  where each is used, fix its alt and name, replace it, and delete it safely. The public site renders no
+  gallery. This is the consolidated design, after the three exploration mockups and the adversarial
+  critique: a contact-sheet <b>grid</b> at full content width is the default, the detail opens in a
+  <b>non-modal slide-over</b>, a density toggle flips the grid to an enriched <b>table</b> for documents
+  and for sort-and-scan, <b>where-used</b> rides every asset and gates delete and replace, and
+  <b>safe-delete</b> is a two-faced alertdialog. Multi-select, bulk actions, and folders are out of scope
+  by decision.
+</p>
+
+<!-- =========================================================================================
+     SCREEN 1: the grid default view, LIGHT
+     ========================================================================================= -->
+<p class="mock-label">1. Light: the grid default view</p>
+<p class="mock-note">
+  The header is the office recipe: the <b>Media</b> eyebrow, a <code>Media library</code> h1 in the display
+  face, a live count line, and Upload top-right. One toolbar row carries search (left, searching name, alt,
+  and caption), the triage segmented control (All, Needs alt, Unused with live counts, a
+  <code>radiogroup</code> with <code>aria-checked</code>), and a grid/list density toggle (right). The grid
+  is a roving-tabindex listbox: each tile is an option with <code>object-fit: contain</code> on a quiet
+  mat, the name always in a footer, and the alt-status as a glyph carrying an accessible name. A needs-alt
+  tile shows the warning glyph; an unused tile carries the corner Unused marker. A managed Load more sits
+  below with an announced count. Never infinite scroll.
+</p>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="app">
+
+    <!-- the office sidebar: Media is a peer of Posts and Pages under Content -->
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-tile" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 8.5 9h7L12 3Zm-4.2 7L3 18h18l-4.8-8H7.8Z"/></svg></span>
+        <span class="brand-mark">cairn</span>
+      </div>
+      <nav class="nav" aria-label="Main">
+        <div class="nav-group">
+          <span class="nav-eyebrow">Content</span>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg>Posts</a>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 9v11"/></svg>Pages</a>
+          <a class="nav-item active" href="#" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>Media</a>
+        </div>
+        <div class="nav-group">
+          <span class="nav-eyebrow">Site</span>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>Navigation</a>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+        </div>
+      </nav>
+    </aside>
+
+    <div class="main">
+      <div class="topbar">
+        <nav class="crumb" aria-label="Breadcrumb"><b>Media</b></nav>
+        <div class="grow"></div>
+        <button class="topbar-k"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search<kbd>Ctrl K</kbd></button>
+        <button class="topbar-theme" aria-label="Toggle theme"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button>
+      </div>
+
+      <div class="content">
+        <!-- the office header -->
+        <div class="lib-head">
+          <div class="lib-title-wrap">
+            <span class="eyebrow">Media</span>
+            <h1 class="lib-title">Media library</h1>
+            <p class="lib-count">38 images, 33 used on the site</p>
+          </div>
+          <div class="lib-actions">
+            <button class="btn-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>Upload</button>
+          </div>
+        </div>
+
+        <!-- one toolbar row: search + triage segments + density -->
+        <div class="toolbar">
+          <div class="search-wrap">
+            <span class="search-glyph" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
+            <input class="search-input" type="search" placeholder="Search name, alt, or caption" aria-label="Search the media library" />
+          </div>
+          <div class="seg" role="radiogroup" aria-label="Filter assets">
+            <button type="button" class="on" role="radio" aria-checked="true"><svg class="chk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>All <span class="ct">38</span></button>
+            <button type="button" role="radio" aria-checked="false">Needs alt <span class="ct">5</span></button>
+            <button type="button" role="radio" aria-checked="false">Unused <span class="ct">5</span></button>
+          </div>
+          <div class="toolbar-spacer"></div>
+          <div class="density" role="group" aria-label="Layout density">
+            <button class="on" aria-pressed="true" aria-label="Grid view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
+            <button aria-pressed="false" aria-label="List view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></button>
+          </div>
+        </div>
+
+        <!-- the contact-sheet grid at full content width (no permanent side panel) -->
+        <div class="grid" role="listbox" aria-label="Media, 38 images" aria-activedescendant="">
+
+          <!-- described, used -->
+          <div class="tile" role="option" aria-selected="false" tabindex="0" aria-label="first-light. Described. Found in 3 entries.">
+            <div class="tile-img"><span class="use-dot used" aria-hidden="true"><span class="d"></span>3</span><span class="pic ph-a" style="width:88%;height:88%"></span></div>
+            <div class="tile-foot">
+              <span class="tile-name">first-light</span>
+              <span class="alt-glyph ok" role="img" aria-label="Described"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+            </div>
+          </div>
+
+          <!-- NEEDS ALT, used -->
+          <div class="tile" role="option" aria-selected="false" tabindex="-1" aria-label="valley-ridge. Needs alt text. Found in 1 entry.">
+            <div class="tile-img"><span class="use-dot used" aria-hidden="true"><span class="d"></span>1</span><span class="pic ph-b" style="width:92%;height:80%"></span></div>
+            <div class="tile-foot">
+              <span class="tile-name">valley-ridge</span>
+              <span class="alt-glyph miss" role="img" aria-label="Needs alt text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+            </div>
+          </div>
+
+          <!-- the open tile (drives the slide-over in screen 3), described, used -->
+          <div class="tile open" id="s1-open" role="option" aria-selected="true" tabindex="-1" aria-label="ridgeline-dusk. Described. Found in 3 entries. Open.">
+            <div class="tile-img"><span class="use-dot used" aria-hidden="true"><span class="d"></span>3</span><span class="pic ph-d" style="width:86%;height:90%"></span></div>
+            <div class="tile-foot">
+              <span class="tile-name">ridgeline-dusk</span>
+              <span class="alt-glyph ok" role="img" aria-label="Described"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+            </div>
+          </div>
+
+          <!-- UNUSED, described (the safe-to-delete cue) -->
+          <div class="tile" role="option" aria-selected="false" tabindex="-1" aria-label="meadow-fence. Described. No references found.">
+            <div class="tile-img"><span class="use-dot unused"><span class="d"></span>Unused</span><span class="pic ph-c" style="width:84%;height:86%"></span></div>
+            <div class="tile-foot">
+              <span class="tile-name">meadow-fence</span>
+              <span class="alt-glyph ok" role="img" aria-label="Described"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+            </div>
+          </div>
+
+          <!-- described, used -->
+          <div class="tile" role="option" aria-selected="false" tabindex="-1" aria-label="groomer-dawn. Described. Found in 4 entries.">
+            <div class="tile-img"><span class="use-dot used" aria-hidden="true"><span class="d"></span>4</span><span class="pic ph-e" style="width:90%;height:84%"></span></div>
+            <div class="tile-foot">
+              <span class="tile-name">groomer-dawn</span>
+              <span class="alt-glyph ok" role="img" aria-label="Described"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+            </div>
+          </div>
+
+          <!-- decorative, used -->
+          <div class="tile" role="option" aria-selected="false" tabindex="-1" aria-label="texture-snow. Decorative. Found in 1 entry.">
+            <div class="tile-img"><span class="use-dot used" aria-hidden="true"><span class="d"></span>1</span><span class="pic ph-h" style="width:94%;height:94%"></span></div>
+            <div class="tile-foot">
+              <span class="tile-name">texture-snow</span>
+              <span class="alt-glyph deco" role="img" aria-label="Decorative"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg></span>
+            </div>
+          </div>
+
+          <!-- the in-flight upload tile: widget-only optimistic placeholder, never writes text -->
+          <div class="tile" aria-hidden="true">
+            <div class="tile-img uploading"><span class="pic ph-f" style="width:70%;height:74%;opacity:.5"></span><span class="tile-uplabel">Uploading lift-line.jpg</span><span class="tile-progress-track"></span><span class="tile-progress" style="width:62%"></span></div>
+            <div class="tile-foot"><span class="tile-name" style="color:var(--color-muted)">lift-line</span></div>
+          </div>
+
+          <!-- UNUSED, needs alt -->
+          <div class="tile" role="option" aria-selected="false" tabindex="-1" aria-label="old-pylon. Needs alt text. No references found.">
+            <div class="tile-img"><span class="use-dot unused"><span class="d"></span>Unused</span><span class="pic ph-f" style="width:80%;height:90%"></span></div>
+            <div class="tile-foot">
+              <span class="tile-name">old-pylon</span>
+              <span class="alt-glyph miss" role="img" aria-label="Needs alt text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+            </div>
+          </div>
+
+          <!-- described, used -->
+          <div class="tile" role="option" aria-selected="false" tabindex="-1" aria-label="trailhead-sign. Described. Found in 2 entries.">
+            <div class="tile-img"><span class="use-dot used" aria-hidden="true"><span class="d"></span>2</span><span class="pic ph-g" style="width:88%;height:82%"></span></div>
+            <div class="tile-foot">
+              <span class="tile-name">trailhead-sign</span>
+              <span class="alt-glyph ok" role="img" aria-label="Described"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- the announced count + the managed load-more (never infinite scroll) -->
+        <p class="sr-only" role="status" aria-live="polite">Showing 9 of 38 images.</p>
+        <div class="loadmore">
+          <span class="count">Showing 9 of 38</span>
+          <button class="btn" type="button">Load more</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- =========================================================================================
+     SCREEN 2: the list density, LIGHT
+     ========================================================================================= -->
+<p class="mock-label">2. Light: the list density (the enriched table, with a document and the sortable header)</p>
+<p class="mock-note">
+  The density toggle flips the grid to a real <code>&lt;table&gt;</code>. Each row carries the thumbnail,
+  the name with a metadata line (dimensions, size, type, date), the alt-status chip, the usage pill, a
+  sortable <b>Added</b> column (a real <code>&lt;th&gt;&lt;button&gt;</code> with <code>aria-sort</code>),
+  and an always-visible per-row delete. A trailing <b>Upload media</b> foot-row sits at the bottom. This
+  density is the home for documents: <code>old-trailhead-map</code> is a PDF, so its alt status reads Not
+  applicable and the row shows a document glyph. The triage and type facet show because the library now
+  holds more than one type.
+</p>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-tile" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 8.5 9h7L12 3Zm-4.2 7L3 18h18l-4.8-8H7.8Z"/></svg></span>
+        <span class="brand-mark">cairn</span>
+      </div>
+      <nav class="nav" aria-label="Main">
+        <div class="nav-group">
+          <span class="nav-eyebrow">Content</span>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg>Posts</a>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 9v11"/></svg>Pages</a>
+          <a class="nav-item active" href="#" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>Media</a>
+        </div>
+        <div class="nav-group">
+          <span class="nav-eyebrow">Site</span>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>Navigation</a>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+        </div>
+      </nav>
+    </aside>
+
+    <div class="main">
+      <div class="topbar">
+        <nav class="crumb" aria-label="Breadcrumb"><b>Media</b></nav>
+        <div class="grow"></div>
+        <button class="topbar-k"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search<kbd>Ctrl K</kbd></button>
+        <button class="topbar-theme" aria-label="Toggle theme"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button>
+      </div>
+
+      <div class="content">
+        <div class="lib-head">
+          <div class="lib-title-wrap">
+            <span class="eyebrow">Media</span>
+            <h1 class="lib-title">Media library</h1>
+            <p class="lib-count">24 assets, 38.6 MB stored</p>
+          </div>
+          <div class="lib-actions">
+            <button class="btn-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>Upload</button>
+          </div>
+        </div>
+
+        <!-- the toolbar, here with the type facet shown (the library holds images and documents) -->
+        <div class="toolbar">
+          <div class="search-wrap">
+            <span class="search-glyph" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
+            <input class="search-input" type="search" placeholder="Search name, alt, or caption" aria-label="Search the media library" />
+          </div>
+          <div class="seg" role="radiogroup" aria-label="Filter assets">
+            <button type="button" class="on" role="radio" aria-checked="true"><svg class="chk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>All <span class="ct">24</span></button>
+            <button type="button" role="radio" aria-checked="false">Needs alt <span class="ct">3</span></button>
+            <button type="button" role="radio" aria-checked="false">Unused <span class="ct">5</span></button>
+          </div>
+          <div class="facet" role="radiogroup" aria-label="Filter by type">
+            <span class="facet-lbl">Type</span>
+            <div class="seg">
+              <button type="button" class="on" role="radio" aria-checked="true"><svg class="chk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>All</button>
+              <button type="button" role="radio" aria-checked="false">Images</button>
+              <button type="button" role="radio" aria-checked="false">Documents</button>
+            </div>
+          </div>
+          <div class="toolbar-spacer"></div>
+          <div class="density" role="group" aria-label="Layout density">
+            <button aria-pressed="false" aria-label="Grid view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
+            <button class="on" aria-pressed="true" aria-label="List view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></button>
+          </div>
+        </div>
+
+        <!-- the enriched real <table> -->
+        <div class="list-card">
+          <table class="lib">
+            <thead>
+              <tr>
+                <th scope="col"><span class="th-plain">Asset</span></th>
+                <th scope="col"><span class="th-plain">Alt status</span></th>
+                <th scope="col"><span class="th-plain">Used</span></th>
+                <th scope="col" aria-sort="descending" style="text-align:right;">
+                  <button type="button" class="th-btn right">Added <svg class="sort-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+                </th>
+                <th scope="col" style="width:3.5rem;"><span class="th-plain" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- described, used -->
+              <tr tabindex="0">
+                <td>
+                  <div class="r-id">
+                    <span class="r-thumb ph-a" role="img" aria-label="Dawn light over the groomed tracks"></span>
+                    <span class="r-text"><span class="r-name">first-light</span><span class="r-meta">1600&times;900<span class="dot">&middot;</span>284 KB<span class="dot">&middot;</span>WebP</span></span>
+                  </div>
+                </td>
+                <td><span class="alt-chip ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Described</span></td>
+                <td><span class="use-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>found in 3</span></td>
+                <td style="text-align:right;"><span class="r-added">Mar 4</span></td>
+                <td><div class="r-trail"><button class="icon-btn danger" type="button" aria-label="Delete first-light"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></td>
+              </tr>
+
+              <!-- needs alt, used (the warning case) -->
+              <tr tabindex="0">
+                <td>
+                  <div class="r-id">
+                    <span class="r-thumb ph-b" role="img" aria-label=""></span>
+                    <span class="r-text"><span class="r-name">valley-ridge</span><span class="r-meta">2048&times;1152<span class="dot">&middot;</span>512 KB<span class="dot">&middot;</span>JPEG</span></span>
+                  </div>
+                </td>
+                <td><span class="alt-chip miss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Needs alt</span></td>
+                <td><span class="use-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>found in 1</span></td>
+                <td style="text-align:right;"><span class="r-added">Feb 18</span></td>
+                <td><div class="r-trail"><button class="icon-btn danger" type="button" aria-label="Delete valley-ridge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></td>
+              </tr>
+
+              <!-- a DOCUMENT row: alt is not applicable, no references found -->
+              <tr tabindex="0">
+                <td>
+                  <div class="r-id">
+                    <span class="r-thumb ph-doc" role="img" aria-label="">
+                      <span class="doc-glyph"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg></span>
+                    </span>
+                    <span class="r-text"><span class="r-name">old-trailhead-map</span><span class="r-meta">PDF<span class="dot">&middot;</span>1.2 MB<span class="dot">&middot;</span>Document</span></span>
+                  </div>
+                </td>
+                <td><span class="alt-chip deco"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>Not applicable</span></td>
+                <td><span class="use-pill none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.73 4 22 18a2 2 0 0 1-1.73 3H3.73A2 2 0 0 1 2 18L10.27 4a2 2 0 0 1 3.46 0z"/><line x1="2" y1="2" x2="22" y2="22"/></svg>no references found</span></td>
+                <td style="text-align:right;"><span class="r-added">Jan 22</span></td>
+                <td><div class="r-trail"><button class="icon-btn danger" type="button" aria-label="Delete old-trailhead-map"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></td>
+              </tr>
+
+              <!-- described, used -->
+              <tr tabindex="0">
+                <td>
+                  <div class="r-id">
+                    <span class="r-thumb ph-d" role="img" aria-label="A ridgeline at dusk"></span>
+                    <span class="r-text"><span class="r-name">ridgeline-dusk</span><span class="r-meta">1920&times;1280<span class="dot">&middot;</span>431 KB<span class="dot">&middot;</span>WebP</span></span>
+                  </div>
+                </td>
+                <td><span class="alt-chip ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Described</span></td>
+                <td><span class="use-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>found in 3</span></td>
+                <td style="text-align:right;"><span class="r-added">Jan 9</span></td>
+                <td><div class="r-trail"><button class="icon-btn danger" type="button" aria-label="Delete ridgeline-dusk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></td>
+              </tr>
+
+              <!-- needs alt, unused (the strongest cleanup candidate) -->
+              <tr tabindex="0">
+                <td>
+                  <div class="r-id">
+                    <span class="r-thumb ph-f" role="img" aria-label=""></span>
+                    <span class="r-text"><span class="r-name">old-pylon</span><span class="r-meta">1024&times;768<span class="dot">&middot;</span>156 KB<span class="dot">&middot;</span>JPEG</span></span>
+                  </div>
+                </td>
+                <td><span class="alt-chip miss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Needs alt</span></td>
+                <td><span class="use-pill none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.73 4 22 18a2 2 0 0 1-1.73 3H3.73A2 2 0 0 1 2 18L10.27 4a2 2 0 0 1 3.46 0z"/><line x1="2" y1="2" x2="22" y2="22"/></svg>no references found</span></td>
+                <td style="text-align:right;"><span class="r-added">Nov 11</span></td>
+                <td><div class="r-trail"><button class="icon-btn danger" type="button" aria-label="Delete old-pylon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <button type="button" class="foot-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>Upload media</button>
+        </div>
+
+        <p class="sr-only" role="status" aria-live="polite">Showing 5 of 24 assets.</p>
+        <div class="loadmore">
+          <span class="count">Showing 5 of 24</span>
+          <button class="btn" type="button">Load more</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- =========================================================================================
+     SCREEN 3: the detail slide-over open, LIGHT
+     ========================================================================================= -->
+<p class="mock-label">3. Light: the detail slide-over (where-used grouped, alt editor, actions)</p>
+<p class="mock-note">
+  Opening a tile slides a <b>non-modal</b> panel in from the right (the editor's details-slide-over recipe:
+  no scrim, the grid stays live behind it, Escape closes it, focus returns to the originating tile). Top to
+  bottom: a large preview, the name and the <code>media:</code> reference, the alt editor (the 2b
+  describe-or-decorative radiogroup plus the alt field, alt-as-debt, never gated), <b>Where used</b> grouped
+  by Published on the site versus In an unpublished edit (each entry a link; edit-branch entries name their
+  branch), the metadata grid, and Replace and Delete.
+</p>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-tile" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 8.5 9h7L12 3Zm-4.2 7L3 18h18l-4.8-8H7.8Z"/></svg></span>
+        <span class="brand-mark">cairn</span>
+      </div>
+      <nav class="nav" aria-label="Main">
+        <div class="nav-group">
+          <span class="nav-eyebrow">Content</span>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg>Posts</a>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 9v11"/></svg>Pages</a>
+          <a class="nav-item active" href="#" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>Media</a>
+        </div>
+        <div class="nav-group">
+          <span class="nav-eyebrow">Site</span>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>Navigation</a>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+        </div>
+      </nav>
+    </aside>
+
+    <div class="main">
+      <div class="topbar">
+        <nav class="crumb" aria-label="Breadcrumb"><b>Media</b></nav>
+        <div class="grow"></div>
+        <button class="topbar-k"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search<kbd>Ctrl K</kbd></button>
+        <button class="topbar-theme" aria-label="Toggle theme"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button>
+      </div>
+
+      <div class="content" style="padding-right:23rem;">
+        <div class="lib-head">
+          <div class="lib-title-wrap">
+            <span class="eyebrow">Media</span>
+            <h1 class="lib-title">Media library</h1>
+            <p class="lib-count">38 images, 33 used on the site</p>
+          </div>
+        </div>
+        <!-- a slimmer grid stays live behind the non-modal panel; the open tile keeps its ring -->
+        <div class="grid" role="listbox" aria-label="Media, 38 images" style="grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));">
+          <div class="tile" role="option" aria-selected="false" tabindex="-1" aria-label="first-light. Described. Found in 3 entries.">
+            <div class="tile-img"><span class="use-dot used" aria-hidden="true"><span class="d"></span>3</span><span class="pic ph-a" style="width:88%;height:88%"></span></div>
+            <div class="tile-foot"><span class="tile-name">first-light</span><span class="alt-glyph ok" role="img" aria-label="Described"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></div>
+          </div>
+          <div class="tile" role="option" aria-selected="false" tabindex="-1" aria-label="valley-ridge. Needs alt text. Found in 1 entry.">
+            <div class="tile-img"><span class="use-dot used" aria-hidden="true"><span class="d"></span>1</span><span class="pic ph-b" style="width:92%;height:80%"></span></div>
+            <div class="tile-foot"><span class="tile-name">valley-ridge</span><span class="alt-glyph miss" role="img" aria-label="Needs alt text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span></div>
+          </div>
+          <div class="tile open" role="option" aria-selected="true" tabindex="0" aria-label="ridgeline-dusk. Described. Found in 3 entries. Open.">
+            <div class="tile-img"><span class="use-dot used" aria-hidden="true"><span class="d"></span>3</span><span class="pic ph-d" style="width:86%;height:90%"></span></div>
+            <div class="tile-foot"><span class="tile-name">ridgeline-dusk</span><span class="alt-glyph ok" role="img" aria-label="Described"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></div>
+          </div>
+          <div class="tile" role="option" aria-selected="false" tabindex="-1" aria-label="meadow-fence. Described. No references found.">
+            <div class="tile-img"><span class="use-dot unused"><span class="d"></span>Unused</span><span class="pic ph-c" style="width:84%;height:86%"></span></div>
+            <div class="tile-foot"><span class="tile-name">meadow-fence</span><span class="alt-glyph ok" role="img" aria-label="Described"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></div>
+          </div>
+          <div class="tile" role="option" aria-selected="false" tabindex="-1" aria-label="groomer-dawn. Described. Found in 4 entries.">
+            <div class="tile-img"><span class="use-dot used" aria-hidden="true"><span class="d"></span>4</span><span class="pic ph-e" style="width:90%;height:84%"></span></div>
+            <div class="tile-foot"><span class="tile-name">groomer-dawn</span><span class="alt-glyph ok" role="img" aria-label="Described"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></div>
+          </div>
+          <div class="tile" role="option" aria-selected="false" tabindex="-1" aria-label="texture-snow. Decorative. Found in 1 entry.">
+            <div class="tile-img"><span class="use-dot used" aria-hidden="true"><span class="d"></span>1</span><span class="pic ph-h" style="width:94%;height:94%"></span></div>
+            <div class="tile-foot"><span class="tile-name">texture-snow</span><span class="alt-glyph deco" role="img" aria-label="Decorative"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg></span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- the non-modal slide-over: no scrim, the grid is still live and scrollable behind it -->
+      <aside class="panel" role="region" aria-label="ridgeline-dusk details">
+        <div class="panel-head">
+          <span class="eyebrow">Asset</span>
+          <button class="panel-x" aria-label="Close details"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+        <div class="panel-body">
+          <div class="d-preview"><span class="pic ph-d" style="width:78%;height:88%"></span></div>
+
+          <div class="d-id">
+            <span class="d-name">ridgeline-dusk</span>
+            <span class="d-ref">
+              <code>media:ridgeline-dusk.c20f5b91a4</code>
+              <button class="copy" type="button" aria-label="Copy reference"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+            </span>
+          </div>
+
+          <!-- the alt editor: the 2b alt model (describe / decorative) + the alt field, alt-as-debt -->
+          <div class="fld">
+            <span class="d-section-label">Alt text</span>
+            <div class="alt-radio-row" role="radiogroup" aria-label="Alt text">
+              <span class="alt-radio sel" role="radio" aria-checked="true"><span class="dot2"></span>Describe it</span>
+              <span class="alt-radio" role="radio" aria-checked="false"><span class="dot2"></span>Decorative</span>
+            </div>
+            <textarea class="textarea" aria-label="Alt text description">Skiers cresting a ridgeline at dusk, the valley below already in shadow.</textarea>
+            <span class="fld-hint">A short description for screen readers. You can save without it and add it later.</span>
+          </div>
+
+          <!-- where-used, grouped published-vs-edit-branch (the headline) -->
+          <div class="where">
+            <div class="where-head">
+              <span class="where-title">Where used</span>
+              <span class="where-total">3 entries</span>
+            </div>
+            <div class="where-group">
+              <span class="where-group-label"><span class="wg-dot pub" aria-hidden="true"></span>Published on the site</span>
+              <ul class="ref-list">
+                <li><a class="ref" href="#"><svg class="ref-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="ref-body"><span class="ref-title">A season on the early tracks</span><span class="ref-where">Post, hero image</span></span><svg class="ref-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></a></li>
+                <li><a class="ref" href="#"><svg class="ref-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="ref-body"><span class="ref-title">Grooming the first loop</span><span class="ref-where">Post, in the body</span></span><svg class="ref-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></a></li>
+              </ul>
+            </div>
+            <div class="where-group">
+              <span class="where-group-label"><span class="wg-dot branch" aria-hidden="true"></span>In an unpublished edit</span>
+              <ul class="ref-list">
+                <li><a class="ref" href="#"><svg class="ref-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 9v11"/></svg><span class="ref-body"><span class="ref-title">About the trails</span><span class="ref-where">Page, in the body</span><span class="ref-branch">cairn/pages/about-the-trails</span></span><svg class="ref-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></a></li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- metadata -->
+          <div>
+            <span class="d-section-label">Details</span>
+            <dl class="meta-grid">
+              <dt>Dimensions</dt><dd>2400 &times; 1600</dd>
+              <dt>Size</dt><dd>431 KB</dd>
+              <dt>Type</dt><dd>WebP</dd>
+              <dt>Added</dt><dd>Jan 9, 2026</dd>
+            </dl>
+          </div>
+
+          <!-- actions: Replace and Delete -->
+          <div class="panel-actions">
+            <button class="btn-soft" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M21 12A9 9 0 0 0 6 5.3L3 8"/><path d="M21 22v-6h-6"/><path d="M3 12a9 9 0 0 0 15 6.7l3-2.7"/></svg>Replace</button>
+            <button class="btn-danger-soft" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete</button>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div></div>
+
+<!-- =========================================================================================
+     SCREEN 4: the two-faced safe-delete alertdialog
+     ========================================================================================= -->
+<p class="mock-label">4. The safe-delete alertdialog (in-use and orphan)</p>
+<p class="mock-note">
+  Two faces of one <code>role="alertdialog"</code>, neither light-dismissing. Left, the in-use face: it
+  names the entries that would break (grouped published-then-branch) and requires typing the slug to
+  confirm, in a plain two-sentence voice. Right, the orphan face: a calm confirm, no typing, with the
+  git-history reassurance. The where-used count warns in both. Copy says "found in N entries" and "no
+  references found", never the bare word "unused" in prose.
+</p>
+<div class="pair">
+
+  <!-- IN-USE: names what breaks, grouped, type-to-confirm -->
+  <div class="screen"><div data-theme="cairn-admin">
+    <div class="app short" style="min-height:560px;">
+      <div class="main" style="background:var(--color-base-200);">
+        <div class="scrim-modal" style="position:relative;min-height:560px;">
+          <div class="alertdialog" role="alertdialog" aria-labelledby="ad1-title" aria-describedby="ad1-desc" aria-modal="true">
+            <div class="ad-head">
+              <span class="ad-icon warn" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+              <div>
+                <div class="ad-title" id="ad1-title">Delete first-light?</div>
+                <p class="ad-lede" id="ad1-desc">Deleting this breaks the image in 3 entries. Type the name to delete it anyway.</p>
+              </div>
+            </div>
+            <div class="ad-body">
+              <div class="ad-asset"><span class="aa-thumb ph-a" role="img" aria-label="Dawn over the groomed tracks"></span><div><div class="aa-name">first-light</div><div class="aa-ref">media:first-light.9f4c2a10b7</div></div></div>
+
+              <div>
+                <span class="ad-break-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>These would break</span>
+                <ul class="ad-break-list">
+                  <li><span class="ad-break-group-label"><span class="wg-dot pub" aria-hidden="true"></span>Published on the site</span></li>
+                  <li><a class="ad-break" href="#"><svg class="b-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="b-body"><span class="b-title">A season on the early tracks</span><span class="b-where">Post, hero image</span></span></a></li>
+                  <li><a class="ad-break" href="#"><svg class="b-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="b-body"><span class="b-title">Grooming the first loop</span><span class="b-where">Post, in the body</span></span></a></li>
+                  <li><span class="ad-break-group-label"><span class="wg-dot branch" aria-hidden="true"></span>In an unpublished edit</span></li>
+                  <li><a class="ad-break" href="#"><svg class="b-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 9v11"/></svg><span class="b-body"><span class="b-title">About the trails</span><span class="b-where">Page, in the body</span><span class="b-branch">cairn/pages/about-the-trails</span></span></a></li>
+                </ul>
+              </div>
+
+              <div class="ad-confirm">
+                <p class="ac-prompt">Type <code>first-light</code> to delete it anyway.</p>
+                <input class="ad-confirm-input" type="text" placeholder="Type the asset name" aria-label="Type first-light to confirm deletion" />
+              </div>
+
+              <div class="ad-calm-note">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0z"/><path d="M12 7v5l3 3"/></svg>
+                <span>Every version stays in git history, so a developer can bring this back later.</span>
+              </div>
+            </div>
+            <div class="ad-foot">
+              <button class="btn-cancel" type="button">Cancel</button>
+              <button class="btn-delete" type="button" disabled>Delete anyway</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+
+  <!-- ORPHAN: calm confirm, no typing -->
+  <div class="screen"><div data-theme="cairn-admin">
+    <div class="app short" style="min-height:560px;">
+      <div class="main" style="background:var(--color-base-200);">
+        <div class="scrim-modal" style="position:relative;min-height:560px;">
+          <div class="alertdialog" role="alertdialog" aria-labelledby="ad2-title" aria-describedby="ad2-desc" aria-modal="true" style="width:27rem;">
+            <div class="ad-head">
+              <span class="ad-icon calm" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span>
+              <div>
+                <div class="ad-title" id="ad2-title">Delete meadow-fence?</div>
+                <p class="ad-lede" id="ad2-desc">No references found. Deleting this changes nothing readers see.</p>
+              </div>
+            </div>
+            <div class="ad-body">
+              <div class="ad-asset"><span class="aa-thumb ph-c" role="img" aria-label="A weathered trail fence at the meadow edge"></span><div><div class="aa-name">meadow-fence</div><div class="aa-ref">media:meadow-fence.3ad902c8f1</div></div></div>
+              <div class="ad-calm-note">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0z"/><path d="M12 7v5l3 3"/></svg>
+                <span>Every version stays in git history, so you can bring this back later if you need it.</span>
+              </div>
+            </div>
+            <div class="ad-foot">
+              <button class="btn-cancel" type="button">Cancel</button>
+              <button class="btn-delete" type="button">Delete it</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+
+</div>
+
+<!-- =========================================================================================
+     SCREEN 4b: the replace-in-place dialog (the same usage-aware language)
+     ========================================================================================= -->
+<p class="mock-label">4b. The replace-in-place dialog (usage-aware, a quiet slide-over action)</p>
+<p class="mock-note">
+  Replace opens a quiet dialog from the slide-over. It carries the same usage-aware language as delete, and
+  one plain note: the placements keep their reference, so a swap reaches every entry, but the new image may
+  differ in dimensions. The chooser is the 2b insert surface (upload first, then the library picker).
+</p>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="app short" style="min-height:480px;">
+    <div class="main" style="background:var(--color-base-200);">
+      <div class="scrim-modal" style="position:relative;min-height:480px;">
+        <div class="alertdialog" role="dialog" aria-labelledby="rp-title" aria-modal="true" style="width:28rem;">
+          <div class="ad-head">
+            <span class="ad-icon calm" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M21 12A9 9 0 0 0 6 5.3L3 8"/><path d="M21 22v-6h-6"/><path d="M3 12a9 9 0 0 0 15 6.7l3-2.7"/></svg></span>
+            <div>
+              <div class="ad-title" id="rp-title">Replace first-light</div>
+              <p class="ad-lede">Found in 3 entries. The new image takes its place in all of them.</p>
+            </div>
+          </div>
+          <div class="ad-body">
+            <div class="rp-warn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <span>Every entry that uses first-light keeps its reference and shows the new image on the next publish. A new image with different dimensions may sit differently in a layout.</span>
+            </div>
+            <div class="fld">
+              <span class="lbl" style="margin-bottom:2px;">New image</span>
+              <div class="e-dropzone" style="margin-top:0;border-radius:.7rem;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-primary)"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
+                <span style="font-size:.875rem;font-weight:500;color:var(--color-base-content)">Drop an image, or upload</span>
+                <span class="ed-sub">PNG, JPEG, WebP, or HEIC, or pick one from the library</span>
+              </div>
+            </div>
+            <p class="rp-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>The old image stays in git history, so this is recoverable too.</p>
+          </div>
+          <div class="ad-foot">
+            <button class="btn-cancel" type="button">Cancel</button>
+            <button class="btn-primary" type="button" style="height:36px;">Choose a file</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- =========================================================================================
+     SCREEN 5: the empty state
+     ========================================================================================= -->
+<p class="mock-label">5. The empty state</p>
+<p class="mock-note">
+  A library with no media yet drops the grid and centers the office empty-state recipe on the content area:
+  the cairn mark, the concept-named line, the Upload CTA, and a dropzone line. The triage segments and the
+  search stay hidden until there is content to triage.
+</p>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="app short" style="min-height:480px;">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-tile" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 8.5 9h7L12 3Zm-4.2 7L3 18h18l-4.8-8H7.8Z"/></svg></span>
+        <span class="brand-mark">cairn</span>
+      </div>
+      <nav class="nav" aria-label="Main">
+        <div class="nav-group">
+          <span class="nav-eyebrow">Content</span>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg>Posts</a>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 9v11"/></svg>Pages</a>
+          <a class="nav-item active" href="#" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>Media</a>
+        </div>
+        <div class="nav-group">
+          <span class="nav-eyebrow">Site</span>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>Navigation</a>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+        </div>
+      </nav>
+    </aside>
+    <div class="main">
+      <div class="topbar">
+        <nav class="crumb" aria-label="Breadcrumb"><b>Media</b></nav>
+        <div class="grow"></div>
+        <button class="topbar-theme" aria-label="Toggle theme"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button>
+      </div>
+      <div class="content" style="display:flex;flex-direction:column;">
+        <div class="lib-head">
+          <div class="lib-title-wrap">
+            <span class="eyebrow">Media</span>
+            <h1 class="lib-title">Media library</h1>
+          </div>
+        </div>
+        <div class="empty">
+          <span class="e-mark" aria-hidden="true"><svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 8.5 9h7L12 3Zm-4.2 7L3 18h18l-4.8-8H7.8Z"/></svg></span>
+          <h2 class="e-title">No media yet</h2>
+          <p class="e-sub">Upload an image and it shows up here, ready to drop into a post or set as a hero. Every image you add to the site gathers in this one place.</p>
+          <div class="e-dropzone">
+            <button class="btn-primary" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>Upload an image</button>
+            <span class="ed-sub">or drop a file anywhere on this page</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- =========================================================================================
+     SCREEN 6: the grid + slide-over in DARK
+     ========================================================================================= -->
+<p class="mock-label">6. Dark: the grid default with the detail slide-over open</p>
+<p class="mock-note">
+  The same surfaces through the dark tokens. The warning ink, the positive ink, the usage marker, the focus
+  ring, the published and edit-branch group dots, and the danger tones all resolve from the theme variables,
+  so the dark proof inherits the light layout. Here <code>old-pylon</code> is open: an unused asset that
+  also needs alt, so the slide-over shows the no-references state and the empty alt editor.
+</p>
+<div class="screen"><div data-theme="cairn-admin-dark">
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-tile" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 8.5 9h7L12 3Zm-4.2 7L3 18h18l-4.8-8H7.8Z"/></svg></span>
+        <span class="brand-mark">cairn</span>
+      </div>
+      <nav class="nav" aria-label="Main">
+        <div class="nav-group">
+          <span class="nav-eyebrow">Content</span>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg>Posts</a>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 9v11"/></svg>Pages</a>
+          <a class="nav-item active" href="#" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>Media</a>
+        </div>
+        <div class="nav-group">
+          <span class="nav-eyebrow">Site</span>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>Navigation</a>
+          <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+        </div>
+      </nav>
+    </aside>
+
+    <div class="main">
+      <div class="topbar">
+        <nav class="crumb" aria-label="Breadcrumb"><b>Media</b></nav>
+        <div class="grow"></div>
+        <button class="topbar-k"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search<kbd>Ctrl K</kbd></button>
+        <button class="topbar-theme" aria-label="Toggle theme"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+      </div>
+
+      <div class="content" style="padding-right:23rem;">
+        <div class="lib-head">
+          <div class="lib-title-wrap">
+            <span class="eyebrow">Media</span>
+            <h1 class="lib-title">Media library</h1>
+            <p class="lib-count">38 images, 33 used on the site</p>
+          </div>
+        </div>
+        <div class="toolbar">
+          <div class="search-wrap">
+            <span class="search-glyph" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
+            <input class="search-input" type="search" placeholder="Search name, alt, or caption" aria-label="Search the media library" />
+          </div>
+          <div class="seg" role="radiogroup" aria-label="Filter assets">
+            <button type="button" class="on" role="radio" aria-checked="true"><svg class="chk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>All <span class="ct">38</span></button>
+            <button type="button" role="radio" aria-checked="false">Needs alt <span class="ct">5</span></button>
+            <button type="button" role="radio" aria-checked="false">Unused <span class="ct">5</span></button>
+          </div>
+          <div class="toolbar-spacer"></div>
+          <div class="density" role="group" aria-label="Layout density">
+            <button class="on" aria-pressed="true" aria-label="Grid view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
+            <button aria-pressed="false" aria-label="List view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></button>
+          </div>
+        </div>
+
+        <div class="grid" role="listbox" aria-label="Media, 38 images" style="grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));">
+          <div class="tile" role="option" aria-selected="false" tabindex="-1" aria-label="first-light. Described. Found in 3 entries.">
+            <div class="tile-img"><span class="use-dot used" aria-hidden="true"><span class="d"></span>3</span><span class="pic ph-a" style="width:88%;height:88%"></span></div>
+            <div class="tile-foot"><span class="tile-name">first-light</span><span class="alt-glyph ok" role="img" aria-label="Described"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></div>
+          </div>
+          <div class="tile" role="option" aria-selected="false" tabindex="-1" aria-label="valley-ridge. Needs alt text. Found in 1 entry.">
+            <div class="tile-img"><span class="use-dot used" aria-hidden="true"><span class="d"></span>1</span><span class="pic ph-b" style="width:92%;height:80%"></span></div>
+            <div class="tile-foot"><span class="tile-name">valley-ridge</span><span class="alt-glyph miss" role="img" aria-label="Needs alt text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span></div>
+          </div>
+          <div class="tile" role="option" aria-selected="false" tabindex="-1" aria-label="ridgeline-dusk. Described. Found in 3 entries.">
+            <div class="tile-img"><span class="use-dot used" aria-hidden="true"><span class="d"></span>3</span><span class="pic ph-d" style="width:86%;height:90%"></span></div>
+            <div class="tile-foot"><span class="tile-name">ridgeline-dusk</span><span class="alt-glyph ok" role="img" aria-label="Described"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></div>
+          </div>
+          <div class="tile" role="option" aria-selected="false" tabindex="-1" aria-label="meadow-fence. Described. No references found.">
+            <div class="tile-img"><span class="use-dot unused"><span class="d"></span>Unused</span><span class="pic ph-c" style="width:84%;height:86%"></span></div>
+            <div class="tile-foot"><span class="tile-name">meadow-fence</span><span class="alt-glyph ok" role="img" aria-label="Described"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></div>
+          </div>
+          <div class="tile open" role="option" aria-selected="true" tabindex="0" aria-label="old-pylon. Needs alt text. No references found. Open.">
+            <div class="tile-img"><span class="use-dot unused"><span class="d"></span>Unused</span><span class="pic ph-f" style="width:80%;height:90%"></span></div>
+            <div class="tile-foot"><span class="tile-name">old-pylon</span><span class="alt-glyph miss" role="img" aria-label="Needs alt text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span></div>
+          </div>
+          <div class="tile" role="option" aria-selected="false" tabindex="-1" aria-label="groomer-dawn. Described. Found in 4 entries.">
+            <div class="tile-img"><span class="use-dot used" aria-hidden="true"><span class="d"></span>4</span><span class="pic ph-e" style="width:90%;height:84%"></span></div>
+            <div class="tile-foot"><span class="tile-name">groomer-dawn</span><span class="alt-glyph ok" role="img" aria-label="Described"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="panel" role="region" aria-label="old-pylon details">
+        <div class="panel-head">
+          <span class="eyebrow">Asset</span>
+          <button class="panel-x" aria-label="Close details"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+        <div class="panel-body">
+          <div class="d-preview"><span class="pic ph-f" style="width:74%;height:88%"></span></div>
+          <div class="d-id">
+            <span class="d-name">old-pylon</span>
+            <span class="d-ref">
+              <code>media:old-pylon.5e7c14a2b9</code>
+              <button class="copy" type="button" aria-label="Copy reference"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+            </span>
+          </div>
+          <div class="fld">
+            <span class="d-section-label">Alt text</span>
+            <div class="alt-radio-row" role="radiogroup" aria-label="Alt text">
+              <span class="alt-radio sel" role="radio" aria-checked="true"><span class="dot2"></span>Describe it</span>
+              <span class="alt-radio" role="radio" aria-checked="false"><span class="dot2"></span>Decorative</span>
+            </div>
+            <textarea class="textarea" placeholder="Describe this image for screen readers" aria-label="Alt text description"></textarea>
+            <span class="fld-hint">This image has no alt text yet. Add a description, or mark it decorative.</span>
+          </div>
+          <div class="where">
+            <div class="where-head">
+              <span class="where-title">Where used</span>
+            </div>
+            <div class="where-none">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.73 4 22 18a2 2 0 0 1-1.73 3H3.73A2 2 0 0 1 2 18L10.27 4a2 2 0 0 1 3.46 0z"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+              <span class="wn-text"><b>No references found.</b> This image is not placed in any post or page, on the published site or in an open edit branch.</span>
+            </div>
+          </div>
+          <div>
+            <span class="d-section-label">Details</span>
+            <dl class="meta-grid">
+              <dt>Dimensions</dt><dd>1024 &times; 768</dd>
+              <dt>Size</dt><dd>156 KB</dd>
+              <dt>Type</dt><dd>JPEG</dd>
+              <dt>Added</dt><dd>Nov 11, 2025</dd>
+            </dl>
+          </div>
+          <div class="panel-actions">
+            <button class="btn-soft" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M21 12A9 9 0 0 0 6 5.3L3 8"/><path d="M21 22v-6h-6"/><path d="M3 12a9 9 0 0 0 15 6.7l3-2.7"/></svg>Replace</button>
+            <button class="btn-danger-soft" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete</button>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div></div>
+
+<!-- =========================================================================================
+     SCREEN 7: narrow viewport, the slide-over as a bottom sheet
+     ========================================================================================= -->
+<p class="mock-label">7. Narrow viewport: the grid stacks, the detail rises as a bottom sheet</p>
+<p class="mock-note">
+  Below the narrow breakpoint the slide-over cannot sit beside the grid, so the grid takes the full width at
+  two columns and the detail rises as a <b>bottom sheet</b> (the dialog-sizing rule). The sheet carries the
+  same preview, alt editor, where-used, and actions. Tapping a tile raises it; the grip or the close control
+  lowers it, and focus returns to the tile.
+</p>
+<div class="screen narrow"><div data-theme="cairn-admin">
+  <div class="phone">
+    <div class="phone-topbar">
+      <span class="brand-tile" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 8.5 9h7L12 3Zm-4.2 7L3 18h18l-4.8-8H7.8Z"/></svg></span>
+      <span class="t">Media</span>
+      <span class="grow"></span>
+      <button class="ic" aria-label="Search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button>
+      <button class="ic" aria-label="Upload"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg></button>
+    </div>
+    <div class="phone-body">
+      <div class="phone-search">
+        <span class="search-glyph" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
+        <input class="search-input" type="search" placeholder="Search name, alt, or caption" aria-label="Search the media library" />
+      </div>
+      <div class="phone-chips">
+        <div class="seg" role="radiogroup" aria-label="Filter assets">
+          <button type="button" class="on" role="radio" aria-checked="true"><svg class="chk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>All <span class="ct">38</span></button>
+          <button type="button" role="radio" aria-checked="false">Needs alt <span class="ct">5</span></button>
+          <button type="button" role="radio" aria-checked="false">Unused <span class="ct">5</span></button>
+        </div>
+      </div>
+      <div class="phone-grid" role="listbox" aria-label="Media, 38 images">
+        <div class="tile" role="option" aria-selected="false" tabindex="-1" aria-label="first-light. Described. Found in 3 entries.">
+          <div class="tile-img"><span class="use-dot used" aria-hidden="true"><span class="d"></span>3</span><span class="pic ph-a" style="width:88%;height:88%"></span></div>
+          <div class="tile-foot"><span class="tile-name">first-light</span><span class="alt-glyph ok" role="img" aria-label="Described"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></div>
+        </div>
+        <div class="tile open" role="option" aria-selected="true" tabindex="0" aria-label="ridgeline-dusk. Described. Found in 3 entries. Open.">
+          <div class="tile-img"><span class="use-dot used" aria-hidden="true"><span class="d"></span>3</span><span class="pic ph-d" style="width:86%;height:90%"></span></div>
+          <div class="tile-foot"><span class="tile-name">ridgeline-dusk</span><span class="alt-glyph ok" role="img" aria-label="Described"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></div>
+        </div>
+        <div class="tile" role="option" aria-selected="false" tabindex="-1" aria-label="valley-ridge. Needs alt text. Found in 1 entry.">
+          <div class="tile-img"><span class="use-dot used" aria-hidden="true"><span class="d"></span>1</span><span class="pic ph-b" style="width:92%;height:80%"></span></div>
+          <div class="tile-foot"><span class="tile-name">valley-ridge</span><span class="alt-glyph miss" role="img" aria-label="Needs alt text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span></div>
+        </div>
+        <div class="tile" role="option" aria-selected="false" tabindex="-1" aria-label="meadow-fence. Described. No references found.">
+          <div class="tile-img"><span class="use-dot unused"><span class="d"></span>Unused</span><span class="pic ph-c" style="width:84%;height:86%"></span></div>
+          <div class="tile-foot"><span class="tile-name">meadow-fence</span><span class="alt-glyph ok" role="img" aria-label="Described"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- the bottom sheet (the slide-over, raised) -->
+    <div class="sheet" role="dialog" aria-modal="true" aria-label="ridgeline-dusk">
+      <div class="sheet-grip" aria-hidden="true"></div>
+      <div class="sheet-head">
+        <span class="a-thumb ph-d" aria-hidden="true"></span>
+        <span class="sh-name">ridgeline-dusk</span>
+        <button class="sh-x" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div class="sheet-body">
+        <div class="d-status">
+          <span class="alt-chip ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Described</span>
+          <span class="use-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>found in 3 entries</span>
+        </div>
+        <div class="fld">
+          <span class="d-section-label">Alt text</span>
+          <div class="alt-radio-row" role="radiogroup" aria-label="Alt text">
+            <span class="alt-radio sel" role="radio" aria-checked="true"><span class="dot2"></span>Describe it</span>
+            <span class="alt-radio" role="radio" aria-checked="false"><span class="dot2"></span>Decorative</span>
+          </div>
+          <textarea class="textarea" aria-label="Alt text description">Skiers cresting a ridgeline at dusk, the valley below already in shadow.</textarea>
+        </div>
+        <div class="where">
+          <div class="where-head"><span class="where-title">Where used</span><span class="where-total">3 entries</span></div>
+          <div class="where-group">
+            <span class="where-group-label"><span class="wg-dot pub" aria-hidden="true"></span>Published on the site</span>
+            <ul class="ref-list">
+              <li><a class="ref" href="#"><svg class="ref-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="ref-body"><span class="ref-title">A season on the early tracks</span><span class="ref-where">Post, hero image</span></span><svg class="ref-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></a></li>
+            </ul>
+          </div>
+          <div class="where-group">
+            <span class="where-group-label"><span class="wg-dot branch" aria-hidden="true"></span>In an unpublished edit</span>
+            <ul class="ref-list">
+              <li><a class="ref" href="#"><svg class="ref-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 9v11"/></svg><span class="ref-body"><span class="ref-title">About the trails</span><span class="ref-where">Page, in the body</span><span class="ref-branch">cairn/pages/about-the-trails</span></span><svg class="ref-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="panel-actions" style="padding-top:14px;">
+          <button class="btn-soft" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M21 12A9 9 0 0 0 6 5.3L3 8"/><path d="M21 22v-6h-6"/><path d="M3 12a9 9 0 0 0 15 6.7l3-2.7"/></svg>Replace</button>
+          <button class="btn-danger-soft" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<p class="mock-note" style="padding-top:8px;">
+  <b>The synthesis, in one line.</b> The grid is the room and the slide-over is the desk: media is visual,
+  so the picture leads at full width, and the management facts (alt, where-used, replace, delete) ride a
+  non-modal panel one tile away, with a table density for documents and for sort-and-scan. cairn's
+  structural payoffs carry the screen: where-used is exact and cross-branch, it gates delete and replace,
+  and safe-delete trusts the author with the facts and a typed confirm only when a delete would break a
+  published or drafted entry. Multi-select, bulk actions, and folders are deliberately out. The type-facet
+  seam waits, hidden, until a second kind of file arrives.
+</p>
+
+</body>
+</html>

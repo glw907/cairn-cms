@@ -446,6 +446,14 @@ export function wrapImageInFigure(
   return { doc: before + inserted + after, from: end, to: end };
 }
 
+/** The inner image token of the figure at `figureRange.from`, sliced verbatim from the source so it
+ *  is reused byte-for-byte (open risk 3). Empty when no media image is found there, which leaves the
+ *  rebuild image-less rather than throwing. Shared by updateFigure and unwrapFigure. */
+function figureImageSrc(doc: string, figureRange: { from: number; to: number }): string {
+  const info = figureAtImage(doc, figureRange.from);
+  return info ? doc.slice(info.imageFrom, info.imageTo) : '';
+}
+
 /**
  * Rewrite an existing figure's caption and role in place. The inner image token is extracted from the
  * current block and PRESERVED BYTE-FOR-BYTE (open risk 3); the block is rebuilt in the blank-line
@@ -457,10 +465,7 @@ export function updateFigure(
   caption: string,
   role: FigureRole | null,
 ): FormatResult {
-  const info = figureAtImage(doc, figureRange.from);
-  const imageSrc =
-    info && info.imageFrom != null ? doc.slice(info.imageFrom, info.imageTo) : '';
-  const block = buildFigureBlock(imageSrc, caption, role);
+  const block = buildFigureBlock(figureImageSrc(doc, figureRange), caption, role);
   const end = figureRange.from + block.length;
   return { doc: doc.slice(0, figureRange.from) + block + doc.slice(figureRange.to), from: end, to: end };
 }
@@ -471,9 +476,7 @@ export function updateFigure(
  * so the author can act on it again.
  */
 export function unwrapFigure(doc: string, figureRange: { from: number; to: number }): FormatResult {
-  const info = figureAtImage(doc, figureRange.from);
-  const imageSrc =
-    info && info.imageFrom != null ? doc.slice(info.imageFrom, info.imageTo) : '';
+  const imageSrc = figureImageSrc(doc, figureRange);
   return {
     doc: doc.slice(0, figureRange.from) + imageSrc + doc.slice(figureRange.to),
     from: figureRange.from,

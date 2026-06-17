@@ -41,7 +41,6 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   import ShortcutsDialog from './ShortcutsDialog.svelte';
   import { cairnLinkCompletionSource } from './link-completion.js';
   import {
-    figureAtImage,
     findMediaImagesNeedingAlt,
     unwrapCairnLink,
     unwrapFigure,
@@ -51,7 +50,6 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     type FigureRole,
     type FormatKind,
   } from './markdown-format.js';
-  import { parseMediaToken } from '../media/reference.js';
   import { buildPreviewDoc, deviceLabel, previewDevice, previewDevices, type PreviewDeviceId } from './preview-doc.js';
   import { directiveLineKind, findInlineDirectives } from './markdown-directives.js';
   import type { ComponentRegistry, ComponentDef } from '../render/registry.js';

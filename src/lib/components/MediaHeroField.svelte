@@ -27,7 +27,7 @@ save block; a decorative hero resolves alt to the empty string. The upload path 
 popover's runUpload but resolves to this field, not an editor placeholder.
 -->
 <script lang="ts">
-  import { getContext, untrack } from 'svelte';
+  import { getContext, tick, untrack } from 'svelte';
   import { CSRF_CONTEXT_KEY } from './csrf-context.js';
   import MediaPicker, { type MediaLibraryEntry, type MediaSelection } from './MediaPicker.svelte';
   import {
@@ -65,6 +65,11 @@ popover's runUpload but resolves to this field, not an editor placeholder.
     /** Called when the committed value changes (a confirm or a remove), so the host sets fieldsDirty.
      *  The hidden-input writes do not fire the form's oninput, so the field signals dirty explicitly. */
     ondirty: () => void;
+    /** Called once on mount and again whenever this hero's needs-alt status changes, with the current
+     *  signal (a non-decorative hero with an empty alt is needs-alt). The host sums this with the body
+     *  scanner's hits for the needs-alt notice. A frontmatter hero has no body offset, so it is
+     *  reported from the field state, never routed through the body scanner. */
+    onneedsaltchange?: (needsAlt: boolean) => void;
   }
 
   let {
@@ -76,6 +81,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
     id,
     onuploaded,
     ondirty,
+    onneedsaltchange,
   }: Props = $props();
 
   // The CSRF token getter from the admin context (AdminLayout provides it). Undefined outside the
@@ -126,6 +132,15 @@ popover's runUpload but resolves to this field, not an editor placeholder.
     committedDecorative ? 'decorative' : committedAlt.trim() !== '' ? 'described' : 'needs-alt',
   );
 
+  // Report this hero's needs-alt signal to the host: once on mount and again whenever the committed
+  // status changes. The host sums the signal with the body scanner's hits for the needs-alt notice.
+  // Only a set hero can be debt; an empty field (no src) reports false even though committedStatus
+  // reads 'needs-alt' by default.
+  const heroNeedsAlt = $derived(hasHero && committedStatus === 'needs-alt');
+  $effect(() => {
+    onneedsaltchange?.(heroNeedsAlt);
+  });
+
   // ---- the dialog ----
   // The dialog element and which view it shows. 'chooser' picks or uploads; 'placement' captures alt
   // and caption for a chosen image; null means the working selection is not yet made.
@@ -147,6 +162,9 @@ popover's runUpload but resolves to this field, not an editor placeholder.
   let upload = $state<Upload>({ kind: 'idle' });
 
   let fileInput = $state<HTMLInputElement | null>(null);
+  // The describe-mode alt text input, bound so the needs-alt remediation path (focusAlt) can land
+  // the author's focus directly on it.
+  let altInput = $state<HTMLInputElement | null>(null);
 
   /** Open the dialog to the chooser. Editing a set hero still leads with the placement view seeded
    *  from the committed value, so an author lands on the alt and caption they already wrote. */
@@ -163,6 +181,20 @@ popover's runUpload but resolves to this field, not an editor placeholder.
 
   function closeDialog() {
     dialog?.close();
+  }
+
+  /** The needs-alt remediation path the edit page's notice row calls: open the dialog to the
+   *  placement view seeded from the committed value, switch a non-decorative hero into describe mode
+   *  so the alt text input renders, and land focus on it. This is the "Add alt text" action, the
+   *  frontmatter counterpart to the body notice's select-range jump (a hero has no body offset, so it
+   *  focuses the field's own alt input rather than a source range). */
+  export async function focusAlt() {
+    openDialog('placement');
+    if (workAltMode !== 'decorative') {
+      workAltMode = 'describe';
+    }
+    await tick();
+    altInput?.focus();
   }
 
   /** Seed the placement working state from the committed value (the Edit path). */
@@ -472,6 +504,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
           </div>
           {#if workAltMode === 'describe'}
             <input
+              bind:this={altInput}
               class="input input-sm w-full"
               aria-label="Alt text description"
               placeholder="A short description"

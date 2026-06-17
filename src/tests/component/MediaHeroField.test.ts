@@ -204,3 +204,82 @@ describe('MediaHeroField is the persistent field', () => {
     expect(screen.container.querySelector('input[type="hidden"][name="image.src"]')).not.toBeNull();
   });
 });
+
+describe('MediaHeroField needs-alt signal', () => {
+  it('reports needsAlt true for a hero with an empty alt', async () => {
+    const onneedsaltchange = vi.fn();
+    mount({
+      value: { src: 'media:valley-ridge.fedcba9876543210', alt: '' },
+      onneedsaltchange,
+    });
+    await tick();
+    expect(onneedsaltchange).toHaveBeenCalledWith(true);
+  });
+
+  it('reports needsAlt false for a described hero', async () => {
+    const onneedsaltchange = vi.fn();
+    mount({
+      value: { src: 'media:first-light.0123456789abcdef', alt: 'Dawn light over the tracks' },
+      onneedsaltchange,
+    });
+    await tick();
+    expect(onneedsaltchange).toHaveBeenCalledWith(false);
+    expect(onneedsaltchange).not.toHaveBeenCalledWith(true);
+  });
+
+  it('reports needsAlt false for a decorative hero', async () => {
+    const onneedsaltchange = vi.fn();
+    mount({
+      value: { src: 'media:first-light.0123456789abcdef', alt: '' },
+      decorative: true,
+      onneedsaltchange,
+    });
+    await tick();
+    expect(onneedsaltchange).toHaveBeenCalledWith(false);
+    expect(onneedsaltchange).not.toHaveBeenCalledWith(true);
+  });
+
+  it('reports needsAlt false for an empty field (no hero)', async () => {
+    const onneedsaltchange = vi.fn();
+    mount({ onneedsaltchange });
+    await tick();
+    expect(onneedsaltchange).toHaveBeenCalledWith(false);
+  });
+
+  it('re-reports needsAlt false after an empty-alt hero gains a description', async () => {
+    const onneedsaltchange = vi.fn();
+    const screen = mount({
+      value: { src: 'media:valley-ridge.fedcba9876543210', alt: '' },
+      onneedsaltchange,
+    });
+    await tick();
+    expect(onneedsaltchange).toHaveBeenLastCalledWith(true);
+    // Open Add, describe it, confirm: the committed status flips to described.
+    await screen.getByRole('button', { name: /^add$/i }).click();
+    await tick();
+    await screen.getByRole('radio', { name: /describe/i }).click();
+    await tick();
+    await screen.getByRole('textbox', { name: /alt|description/i }).fill('Valley ridge at dusk');
+    await screen.getByRole('button', { name: /use this image/i }).click();
+    await tick();
+    expect(onneedsaltchange).toHaveBeenLastCalledWith(false);
+  });
+});
+
+describe('MediaHeroField focusAlt remediation', () => {
+  it('opens the dialog and moves focus into the alt text input', async () => {
+    const screen = mount({
+      value: { src: 'media:valley-ridge.fedcba9876543210', alt: '' },
+    });
+    await tick();
+    // The exported focusAlt() opens the dialog and lands the author on the alt input.
+    (screen.component as { focusAlt: () => void }).focusAlt();
+    await tick();
+    await tick();
+    const altInput = screen.container.querySelector(
+      'input[aria-label="Alt text description"]',
+    ) as HTMLInputElement | null;
+    expect(altInput).not.toBeNull();
+    expect(document.activeElement).toBe(altInput);
+  });
+});

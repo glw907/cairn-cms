@@ -431,6 +431,14 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   // The headless media insert popover, opened from the toolbar control, paste, or drop.
   let mediaPopover = $state<MediaInsertPopover | null>(null);
 
+  // The rendered hero fields' refs (for the needs-alt notice's "Add alt text" action, which focuses
+  // the field's own alt input) and their reported needs-alt signals, keyed by field name. A hero is
+  // a frontmatter value with no body offset, so its needs-alt signal comes from the field, not the
+  // body scanner (findMediaImagesNeedingAlt), and its remediation focuses the alt input, never a
+  // source range (selectRange).
+  let heroFieldRefs = $state<Record<string, MediaHeroField>>({});
+  let heroNeedsAlt = $state<Record<string, boolean>>({});
+
   // The server-owned records from each successful upload this session. They ride the save form as
   // the hidden `media` field, so the save action merges them into media.json.
   let uploadedRecords = $state<MediaEntry[]>([]);
@@ -702,6 +710,16 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   // accessibility debt, never a render or publish failure, so this drives a non-blocking warning the
   // author can act on or leave; the count drops and the notice clears as each alt is filled.
   const needsAlt = $derived(findMediaImagesNeedingAlt(body));
+
+  // The declared image (hero) fields, for labelling the needs-alt notice's frontmatter rows.
+  const imageFields = $derived(
+    data.fields.filter((f) => f.type === 'image').map((f) => ({ name: f.name, label: f.label })),
+  );
+  // The frontmatter-hero needs-alt rows: each image field whose hero reports a needs-alt signal. The
+  // row's action focuses the field's alt input (the body scanner and its source-range jump cannot
+  // reach a frontmatter value). The headline count sums these with the body scanner's hits.
+  const heroRows = $derived(imageFields.filter((f) => heroNeedsAlt[f.name]));
+  const needsAltCount = $derived(needsAlt.length + heroRows.length);
 
   // The delete guard's inbound linkers, from a refused delete (fail 409). Empty when the delete was
   // not refused. When set, a delete was blocked by a link that appeared since the page loaded.
@@ -1132,13 +1150,13 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
      content gate on the count, so an empty region shows nothing. A plain wrapper (not display:contents)
      carries the role, since some assistive tech drops a role off a display:contents box. -->
 <div role="status">
-  {#if needsAlt.length}
+  {#if needsAltCount}
     <div class="alert alert-warning mb-4 flex-col items-start text-sm">
       <p class="flex items-center gap-2 font-medium">
         <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
         </svg>
-        <span>{needsAlt.length} {needsAlt.length === 1 ? 'image needs' : 'images need'} alt text</span>
+        <span>{needsAltCount} {needsAltCount === 1 ? 'image needs' : 'images need'} alt text</span>
       </p>
       <p>Alt text describes an image for readers who cannot see it. Add it now, or save and come back to it.</p>
       <ul class="mt-1 w-full">
@@ -1146,6 +1164,14 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
           <li class="flex items-center justify-between gap-2">
             <code class="text-xs">{item.ref}</code>
             <button type="button" class="btn btn-xs" onclick={() => selectRange(item.from, item.to)}>Add alt text</button>
+          </li>
+        {/each}
+        <!-- The frontmatter-hero rows: a hero has no body offset, so its action focuses the field's
+             own alt input rather than a source range. -->
+        {#each heroRows as hero (hero.name)}
+          <li class="flex items-center justify-between gap-2">
+            <span class="text-xs font-medium">{hero.label}</span>
+            <button type="button" class="btn btn-xs" onclick={() => heroFieldRefs[hero.name]?.focusAlt()}>Add alt text</button>
           </li>
         {/each}
       </ul>
@@ -1556,6 +1582,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
         {:else if field.type === 'image'}
           {@const heroValue = data.frontmatter[field.name] as ImageValue | undefined}
           <MediaHeroField
+            bind:this={heroFieldRefs[field.name]}
             field={{ name: field.name, label: field.label }}
             value={heroValue}
             mediaLibrary={mediaLibrary}
@@ -1563,6 +1590,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
             id={data.id}
             onuploaded={(record) => (uploadedRecords = [...uploadedRecords, record])}
             ondirty={markFieldsDirty}
+            onneedsaltchange={(n) => (heroNeedsAlt = { ...heroNeedsAlt, [field.name]: n })}
           />
         {:else}
           <label class="flex flex-col gap-1">

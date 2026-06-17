@@ -15,7 +15,8 @@ export type AdminView =
   | { view: 'list'; concept: ConceptDescriptor }
   | { view: 'edit'; concept: ConceptDescriptor; id: string }
   | { view: 'editors' }
-  | { view: 'nav' };
+  | { view: 'nav' }
+  | { view: 'media' };
 
 /**
  * Fixed first segments that never resolve as concepts. The engine only allows posts and pages
@@ -57,6 +58,10 @@ export function parseAdminPath(
     if (head === 'login') return { view: 'login' };
     if (head === 'editors') return { view: 'editors' };
     if (head === 'nav') return { view: 'nav' };
+    // media is its own view, a peer of editors and nav, so it is decided here, not added to the
+    // reserved-no-view set. /admin/media/<anything> 404s naturally (media is not a configured
+    // concept), which is the correct shape.
+    if (head === 'media') return { view: 'media' };
     if (RESERVED_SEGMENTS.has(head)) return null;
     const concept = findConcept(concepts, head);
     return concept ? { view: 'list', concept } : null;

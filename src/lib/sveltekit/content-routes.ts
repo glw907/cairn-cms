@@ -26,7 +26,9 @@ import { r2Store } from '../media/store.js';
 import { parseMediaEntries, parseMediaManifest, upsertMediaEntry, serializeMediaManifest } from '../media/manifest.js';
 import type { MediaEntry } from '../media/manifest.js';
 import { mediaLibraryEntry } from '../media/library-entry.js';
-import type { MediaLibrary } from '../media/library-entry.js';
+import type { MediaLibrary, MediaLibraryEntry } from '../media/library-entry.js';
+import { buildUsageIndex } from '../media/usage.js';
+import type { UsageEntry } from '../media/usage.js';
 import type { CookieJar, EventBase } from './types.js';
 import type { CairnRuntime, ConceptDescriptor, FrontmatterField, PreviewConfig, ResolvedPreview } from '../content/types.js';
 import type { Editor, Role } from '../auth/types.js';
@@ -132,6 +134,25 @@ export interface EditData {
    *  when one exists, applied over the top-level values); null when the site sets none, which
    *  leaves the frame rendering unstyled markup behind a hint. */
   preview: ResolvedPreview | null;
+}
+
+/** One asset's where-used overlay, kept separate from MediaLibraryEntry so the picker's shared
+ *  projection stays decoupled from the Library-only usage facts. */
+export interface MediaUsageInfo {
+  /** Distinct content entries that reference the asset (count by distinct concept+id). */
+  count: number;
+  /** Every where-used row (published and edit-branch origins), for the detail's grouped list. */
+  entries: UsageEntry[];
+}
+
+/** The Media Library screen's data: the unioned assets, the per-hash usage overlay, and the
+ *  degraded-load error. The usage overlay is keyed by content hash; an asset with no references
+ *  simply has no key, which the screen renders as "no references found". */
+export interface MediaLibraryData {
+  assets: MediaLibraryEntry[];
+  /** Per-hash usage overlay, kept separate from MediaLibraryEntry so the popover stays decoupled. */
+  usage: Record<string, MediaUsageInfo>;
+  error: string | null;
 }
 
 /** The structural event the content routes read; a real SvelteKit RequestEvent satisfies it. */
@@ -393,6 +414,71 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     } catch {
       return { ...base, entries: [], error: 'Could not load this content type from GitHub.' };
     }
+  }
+
+  /** The admin Media Library load: union the media manifest across main and every open cairn/*
+   *  branch (so a not-yet-published asset shows), project each row through the shared
+   *  mediaLibraryEntry helper, and attach the cross-branch where-used overlay keyed by content
+   *  hash. The assets union and the usage overlay degrade independently: a usage-build failure
+   *  still lists the assets with an empty overlay, and a wholesale read failure degrades to the
+   *  assets gathered so far rather than a thrown 500, mirroring listLoad's posture. */
+  async function mediaLibraryLoad(event: ContentEvent): Promise<MediaLibraryData> {
+    requireSession(event);
+    let token: string;
+    try {
+      token = await mintToken(event.platform?.env ?? {});
+    } catch {
+      return { assets: [], usage: {}, error: 'Could not authenticate with GitHub.' };
+    }
+
+    // Union the media manifest by hash: main's rows first, then any branch hash not already present.
+    // Identical bytes share one row, so a hash on both branches prefers main's row. A failed or
+    // absent branch read degrades to no rows for that branch (the tolerant parse yields {} on null).
+    const union = new Map<string, MediaEntry>();
+    try {
+      const mediaRaw = await readRaw(runtime.backend, runtime.mediaManifestPath, token);
+      for (const [hash, e] of Object.entries(parseMediaManifest(parseMediaJson(mediaRaw)))) {
+        union.set(hash, e);
+      }
+      const names = await listBranches(runtime.backend, PENDING_PREFIX, token);
+      const branchManifests = await Promise.all(
+        names.map((name) =>
+          readRaw({ ...runtime.backend, branch: name }, runtime.mediaManifestPath, token)
+            .then((raw) => parseMediaManifest(parseMediaJson(raw)))
+            .catch(() => ({}) as Record<string, MediaEntry>),
+        ),
+      );
+      for (const manifest of branchManifests) {
+        for (const [hash, e] of Object.entries(manifest)) {
+          if (!union.has(hash)) union.set(hash, e);
+        }
+      }
+    } catch {
+      // A wholesale read failure leaves whatever rows were already unioned; the screen lists them
+      // with no usage overlay rather than failing.
+      return { assets: [...union.values()].map(mediaLibraryEntry), usage: {}, error: 'Could not load media.' };
+    }
+    const assets = [...union.values()].map(mediaLibraryEntry);
+
+    // Build the where-used overlay from main's content manifest plus the open branches. A failure
+    // here keeps the asset list intact with an empty overlay, since the screen still lists assets.
+    let usage: Record<string, MediaUsageInfo> = {};
+    try {
+      const manifestRaw = await readRaw(runtime.backend, runtime.manifestPath, token);
+      const manifest = manifestRaw === null ? emptyManifest() : parseManifest(manifestRaw);
+      const index = await buildUsageIndex(runtime.backend, token, runtime.concepts, manifest);
+      usage = {};
+      for (const [hash, entries] of index) {
+        // Count distinct concept/id pairs: a published use and an edit-branch edit of the same
+        // entry are two rows but one distinct entry.
+        const distinct = new Set(entries.map((e) => `${e.concept}/${e.id}`)).size;
+        usage[hash] = { count: distinct, entries };
+      }
+    } catch {
+      usage = {};
+    }
+
+    return { assets, usage, error: null };
   }
 
   /** Create a new entry: validate the slug, compose a dated id when the concept is dated, refuse to clobber. */
@@ -1165,7 +1251,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     return { reference, record, reused, mismatch };
   }
 
-  return { layoutLoad, indexRedirect, listLoad, createAction, editLoad, saveAction, publishAction, publishAllAction, discardAction, deleteAction, listDeleteAction, renameAction, uploadAction, mintToken };
+  return { layoutLoad, indexRedirect, listLoad, mediaLibraryLoad, createAction, editLoad, saveAction, publishAction, publishAllAction, discardAction, deleteAction, listDeleteAction, renameAction, uploadAction, mintToken };
 }
 
 /** The cap, in characters, on the stored alt text. The human fields are display copy, not content,

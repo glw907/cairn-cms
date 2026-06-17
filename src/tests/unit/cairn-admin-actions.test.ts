@@ -242,6 +242,34 @@ describe('content actions', () => {
   });
 });
 
+describe('media view load', () => {
+  it('returns the layout plus the media library data', async () => {
+    new GithubDouble({ main: {} }).install();
+    const admin = createCairnAdmin(runtime(), deps);
+    const event = actionEvent('/admin/media');
+    const data = (await admin.load({ ...event, setHeaders: () => {} } as never)) as {
+      view: string;
+      layout: unknown;
+      page: { assets: unknown[]; usage: Record<string, unknown>; error: string | null };
+    };
+    expect(data.view).toBe('media');
+    expect(data.layout).toBeDefined();
+    expect(Array.isArray(data.page.assets)).toBe(true);
+    expect(data.page.usage).toEqual({});
+  });
+
+  it('lets publishAll post from the media view', async () => {
+    const gh = new GithubDouble({
+      main: {},
+      'cairn/posts/2026-05-01-hi': { 'src/content/posts/2026-05-01-hi.md': '---\ntitle: Hi\ndate: 2026-05-01\n---\nbody' },
+    });
+    gh.install();
+    const admin = createCairnAdmin(runtime(), deps);
+    const event = actionEvent('/admin/media');
+    await expectRedirect(admin.actions.publishAll(event as never), '/admin/posts?publishedAll=1');
+  });
+});
+
 describe('save on the nav view', () => {
   it('delegates to navSave when a navMenu is configured', async () => {
     vi.stubGlobal('fetch', vi.fn(async (_url: string, init?: RequestInit) => {

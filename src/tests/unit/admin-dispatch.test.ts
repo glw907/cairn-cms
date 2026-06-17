@@ -20,6 +20,8 @@ describe('parseAdminPath', () => {
     ['/admin/editors/', { view: 'editors' }],
     ['/admin/nav', { view: 'nav' }],
     ['/admin/nav/', { view: 'nav' }],
+    ['/admin/media', { view: 'media' }],
+    ['/admin/media/', { view: 'media' }],
   ];
   it.each(fixedViews)('parses %s', (pathname, expected) => {
     expect(parseAdminPath(pathname, concepts)).toEqual(expected);
@@ -42,6 +44,13 @@ describe('parseAdminPath', () => {
       concept: pages,
       id: 'about',
     });
+  });
+
+  it('treats media as its own view, not a reserved no-view segment', () => {
+    // media is a first-class view like editors and nav, so it parses, and a deeper path 404s
+    // naturally (media is not a configured concept), never resolving as a list or edit view.
+    expect(parseAdminPath('/admin/media', concepts)).toEqual({ view: 'media' });
+    expect(parseAdminPath('/admin/media/anything', concepts)).toBeNull();
   });
 
   it('reserves /admin/settings, even against a concept claiming the segment', () => {

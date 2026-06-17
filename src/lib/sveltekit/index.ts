@@ -11,6 +11,8 @@ export type {
   EntrySummary,
   ListData,
   EditData,
+  MediaUsageInfo,
+  MediaLibraryData,
   ContentEvent,
   ContentRoutesDeps,
   SaveFailure,

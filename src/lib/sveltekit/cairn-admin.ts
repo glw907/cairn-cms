@@ -14,6 +14,7 @@ import {
   type LayoutData,
   type ListData,
   type EditData,
+  type MediaLibraryData,
 } from './content-routes.js';
 import { createEditorRoutes } from './editors-routes.js';
 import { createNavRoutes, type NavLoadData } from './nav-routes.js';
@@ -53,7 +54,8 @@ export type AdminData =
   | { view: 'list'; layout: LayoutData; page: ListData }
   | { view: 'edit'; layout: LayoutData; page: EditData }
   | { view: 'editors'; layout: LayoutData; page: { editors: Editor[]; self: string } }
-  | { view: 'nav'; layout: LayoutData; page: NavLoadData };
+  | { view: 'nav'; layout: LayoutData; page: NavLoadData }
+  | { view: 'media'; layout: LayoutData; page: MediaLibraryData };
 
 export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {}) {
   // The runtime already composes the site name and the sender identity, so the magic-link
@@ -122,6 +124,11 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
         const [layout, page] = await Promise.all([content.layoutLoad(delegated), nav.navLoad(delegated)]);
         return { view: 'nav', layout, page };
       }
+      case 'media': {
+        const delegated = contentEvent(event, {});
+        const [layout, page] = await Promise.all([content.layoutLoad(delegated), content.mediaLibraryLoad(delegated)]);
+        return { view: 'media', layout, page };
+      }
     }
   }
 
@@ -141,9 +148,9 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
   }
 
   // The topbar posts publishAll from every authed admin page; login and confirm may not.
-  const authedViews = ['list', 'edit', 'editors', 'nav'] as const;
+  const authedViews = ['list', 'edit', 'editors', 'nav', 'media'] as const;
   // An editor signs out from wherever they are, so logout accepts any parsed view.
-  const anyView = ['index', 'login', 'confirm', 'list', 'edit', 'editors', 'nav'] as const;
+  const anyView = ['index', 'login', 'confirm', 'list', 'edit', 'editors', 'nav', 'media'] as const;
 
   /** The full admin action vocabulary, one named async function per action, so a site's
    *  catch-all route exports `admin.actions` directly. Each wrapper stays thin: parse,

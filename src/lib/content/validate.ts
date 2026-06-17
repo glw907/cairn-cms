@@ -2,7 +2,7 @@
 // required-and-coerce baseline, then layers any bespoke rules on top, so the per-site
 // validator stays thin (engine-fat rule). Saving runs the concept's validator on the
 // server before any commit; invalid input bounces to the form (spec §7.4).
-import type { FrontmatterField, ValidationResult } from './types.js';
+import type { FrontmatterField, ImageValue, ValidationResult } from './types.js';
 import { dateInputValue, isCalendarDate } from './frontmatter.js';
 
 /**
@@ -53,7 +53,7 @@ export function validateFields(
           const obj = value as Record<string, unknown>;
           const src = typeof obj.src === 'string' ? obj.src.trim() : '';
           if (src !== '') {
-            const normalized: { src: string; alt: string; caption?: string } = {
+            const normalized: ImageValue = {
               src,
               alt: typeof obj.alt === 'string' ? obj.alt : '',
             };

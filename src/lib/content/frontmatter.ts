@@ -3,7 +3,7 @@
 // on-disk write/read pair. Kept as one seam so a site owns its serialization contract
 // (quoting, key order) without the save endpoint reaching for gray-matter directly.
 import matter from 'gray-matter';
-import type { FrontmatterField } from './types.js';
+import type { FrontmatterField, ImageValue } from './types.js';
 
 /** Decode submitted form data into raw frontmatter, one rule per field type. */
 export function frontmatterFromForm(
@@ -36,7 +36,7 @@ export function frontmatterFromForm(
         // is dropped so committed frontmatter stays minimal.
         const src = String(form.get(`${field.name}.src`) ?? '').trim();
         if (src === '') break;
-        const value: { src: string; alt: string; caption?: string } = {
+        const value: ImageValue = {
           src,
           alt: String(form.get(`${field.name}.alt`) ?? ''),
         };

@@ -23,6 +23,30 @@ describe('buildSeoMeta', () => {
     expect(meta.jsonLd['@type']).toBe('WebSite');
   });
 
+  it('emits twitter:image:alt when both image and imageAlt are set', () => {
+    const meta = buildSeoMeta({
+      title: 'Post',
+      description: 'A post.',
+      canonicalUrl: 'https://example.com/posts/p',
+      siteName: 'Example',
+      image: 'https://example.com/media/a.0123456789abcdef.webp',
+      imageAlt: 'A hero photo',
+    });
+    expect(meta.meta).toContainEqual({ property: 'og:image', content: 'https://example.com/media/a.0123456789abcdef.webp' });
+    expect(meta.meta).toContainEqual({ name: 'twitter:image:alt', content: 'A hero photo' });
+  });
+
+  it('emits no twitter:image:alt when image is set without imageAlt', () => {
+    const meta = buildSeoMeta({
+      title: 'Post',
+      description: 'A post.',
+      canonicalUrl: 'https://example.com/posts/p',
+      siteName: 'Example',
+      image: 'https://example.com/media/a.0123456789abcdef.webp',
+    });
+    expect(meta.meta.some((m) => m.name === 'twitter:image:alt')).toBe(false);
+  });
+
   it('builds Article JSON-LD with published and modified dates', () => {
     const meta = buildSeoMeta({
       title: 'Post',

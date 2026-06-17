@@ -120,6 +120,98 @@ describe('createPublicRoutes', () => {
     expect(b.heroImage).toBeUndefined();
   });
 
+  it('entryLoad emits og:image from a resolved structured hero plus twitter:image:alt', async () => {
+    const [heroPages] = normalizeConcepts({
+      pages: { dir: 'g', schema: defineFields([{ type: 'image', name: 'image', label: 'Hero' }]) },
+    });
+    const heroSite = createSiteResolver([
+      { descriptor: heroPages, index: createContentIndex([
+        { path: '/g/hero.md', raw: '---\ntitle: Hero\nimage:\n  src: "media:a.0123456789abcdef"\n  alt: A hero photo\n---\n\nHero body.' },
+      ], heroPages) },
+    ]);
+    const resolveMedia = (ref: { hash: string }) =>
+      ref.hash === '0123456789abcdef' ? '/media/a.0123456789abcdef.webp' : undefined;
+    const heroRoutes = createPublicRoutes({
+      site: heroSite,
+      render: (md) => `<r>${md.trim()}</r>`,
+      origin: 'https://example.com',
+      siteName: 'Test',
+      description: 'Test description.',
+      resolveMedia,
+    });
+
+    const data = await heroRoutes.entryLoad({ url: new URL('https://example.com/hero') });
+    expect(data.seo.meta).toContainEqual({ property: 'og:image', content: 'https://example.com/media/a.0123456789abcdef.webp' });
+    expect(data.seo.meta).toContainEqual({ name: 'twitter:image:alt', content: 'A hero photo' });
+  });
+
+  it('entryLoad keeps the back-compat string image (origin-anchored, no twitter:image:alt)', async () => {
+    const [stringPages] = normalizeConcepts({
+      pages: { dir: 'g', schema: defineFields([{ type: 'text', name: 'image', label: 'Social image' }]) },
+    });
+    const stringSite = createSiteResolver([
+      { descriptor: stringPages, index: createContentIndex([
+        { path: '/g/legacy.md', raw: '---\ntitle: Legacy\nimage: /og/legacy.png\n---\n\nLegacy body.' },
+      ], stringPages) },
+    ]);
+    const stringRoutes = createPublicRoutes({
+      site: stringSite,
+      render: (md) => `<r>${md.trim()}</r>`,
+      origin: 'https://example.com',
+      siteName: 'Test',
+      description: 'Test description.',
+    });
+
+    const data = await stringRoutes.entryLoad({ url: new URL('https://example.com/legacy') });
+    expect(data.seo.meta).toContainEqual({ property: 'og:image', content: 'https://example.com/og/legacy.png' });
+    expect(data.seo.meta.some((m) => m.name === 'twitter:image:alt')).toBe(false);
+  });
+
+  it('entryLoad emits no og:image when the only image-shaped field is under another key and no default', async () => {
+    const [coverPages] = normalizeConcepts({
+      pages: { dir: 'g', schema: defineFields([{ type: 'image', name: 'cover', label: 'Cover' }]) },
+    });
+    const coverSite = createSiteResolver([
+      { descriptor: coverPages, index: createContentIndex([
+        { path: '/g/cover.md', raw: '---\ntitle: Cover\ncover:\n  src: "media:a.0123456789abcdef"\n  alt: x\n---\n\nCover body.' },
+      ], coverPages) },
+    ]);
+    const coverRoutes = createPublicRoutes({
+      site: coverSite,
+      render: (md) => `<r>${md.trim()}</r>`,
+      origin: 'https://example.com',
+      siteName: 'Test',
+      description: 'Test description.',
+      resolveMedia: (ref: { hash: string }) =>
+        ref.hash === '0123456789abcdef' ? '/media/a.0123456789abcdef.webp' : undefined,
+    });
+
+    const data = await coverRoutes.entryLoad({ url: new URL('https://example.com/cover') });
+    expect(data.seo.meta.some((m) => m.property === 'og:image')).toBe(false);
+  });
+
+  it('entryLoad emits no og:image when a structured hero does not resolve', async () => {
+    const [heroPages] = normalizeConcepts({
+      pages: { dir: 'g', schema: defineFields([{ type: 'image', name: 'image', label: 'Hero' }]) },
+    });
+    const heroSite = createSiteResolver([
+      { descriptor: heroPages, index: createContentIndex([
+        { path: '/g/hero.md', raw: '---\ntitle: Hero\nimage:\n  src: "media:a.0123456789abcdef"\n  alt: x\n---\n\nHero body.' },
+      ], heroPages) },
+    ]);
+    const heroRoutes = createPublicRoutes({
+      site: heroSite,
+      render: (md) => `<r>${md.trim()}</r>`,
+      origin: 'https://example.com',
+      siteName: 'Test',
+      description: 'Test description.',
+      resolveMedia: () => undefined,
+    });
+
+    const data = await heroRoutes.entryLoad({ url: new URL('https://example.com/hero') });
+    expect(data.seo.meta.some((m) => m.property === 'og:image')).toBe(false);
+  });
+
   it('entryLoad resolves cairn links and fails the build on a dangling token', async () => {
     const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
     function linkRoutes(body: string) {

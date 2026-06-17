@@ -108,8 +108,13 @@ export function createPublicRoutes(deps: PublicRoutesDeps) {
     const { newer, older } = site.adjacent(entry);
     const canonicalUrl = origin + entry.permalink;
     const fields = readSeoFields(entry.frontmatter);
+    const heroImage = deriveHeroImage(entry.frontmatter);
+    // The SEO unify (locked decision 3): a resolved structured hero is the social card and wins over
+    // the back-compat string `image` field and the site default. A bare-string `image` keeps its
+    // origin-anchored behavior. An empty hero alt emits no twitter:image:alt.
     const rawImage = fields.image ?? defaultImage;
-    const image = rawImage ? resolveImageUrl(rawImage, origin) : undefined;
+    const image = heroImage?.absoluteUrl ?? (rawImage ? resolveImageUrl(rawImage, origin) : undefined);
+    const imageAlt = heroImage?.alt && heroImage.alt.trim() !== '' ? heroImage.alt : undefined;
     // A dated entry is an article; an undated one (a page) is a website.
     const seo = buildSeoMeta({
       title: entry.title,
@@ -120,11 +125,11 @@ export function createPublicRoutes(deps: PublicRoutesDeps) {
       ...(entry.date ? { published: entry.date } : {}),
       ...(entry.updated ? { modified: entry.updated } : {}),
       ...(image ? { image } : {}),
+      ...(imageAlt ? { imageAlt } : {}),
       ...(fields.robots ? { robots: fields.robots } : {}),
       ...(fields.author ? { author: fields.author } : {}),
       ...(entry.date ? { feeds } : {}),
     });
-    const heroImage = deriveHeroImage(entry.frontmatter);
     return { concept: entry.concept, entry, html: await render(entry.body, { stagger: true, resolve: buildLinkResolver(site) }), canonicalUrl, seo, newer, older, ...(heroImage ? { heroImage } : {}) };
   }
 

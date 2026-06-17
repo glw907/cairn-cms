@@ -13,6 +13,8 @@ export interface SeoInput {
   modified?: string;
   feeds?: { rss?: string; json?: string };
   image?: string;
+  /** The social image's alt text, emitted as twitter:image:alt. Used only when image is also set. */
+  imageAlt?: string;
   /** A robots meta directive, e.g. "noindex, nofollow". Omitted from the head when absent. */
   robots?: string;
   /** Author name, emitted as article:author for the article type. */
@@ -42,6 +44,9 @@ export function buildSeoMeta(input: SeoInput): SeoMeta {
   if (input.image) {
     meta.push({ property: 'og:image', content: input.image });
     meta.push({ name: 'twitter:image', content: input.image });
+    if (input.imageAlt) {
+      meta.push({ name: 'twitter:image:alt', content: input.imageAlt });
+    }
   }
 
   if (input.robots) {

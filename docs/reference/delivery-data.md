@@ -385,6 +385,6 @@ descriptors feed `createContentIndex` and `createSiteResolver` when you assemble
 | `FeedChannel` | `interface FeedChannel { title; description; siteUrl; feedUrl; language?; author? }` | Feed channel metadata, with absolute URLs. |
 | `FeedItem` | `interface FeedItem { title; url; date?; updated?; summary; contentHtml?; tags? }` | One feed entry; `contentHtml` carries the rendered body for a full-content feed. |
 | `SitemapUrl` | `interface SitemapUrl { loc: string; lastmod?: string }` | One sitemap URL; `lastmod` is a YYYY-MM-DD date. |
-| `SeoInput` | `interface SeoInput { title; description; canonicalUrl; siteName; type?; published?; modified?; feeds?; image?; robots?; author? }` | The inputs for the head builder, all URLs absolute. |
+| `SeoInput` | `interface SeoInput { title; description; canonicalUrl; siteName; type?; published?; modified?; feeds?; image?; imageAlt?; robots?; author? }` | The inputs for the head builder, all URLs absolute. `imageAlt` becomes `twitter:image:alt` when `image` is set. |
 | `SeoMeta` | `interface SeoMeta { title; meta; links; jsonLd }` | The plain-data head: a title, meta tags, link tags, and one JSON-LD object. |
 | `SeoFields` | `interface SeoFields { description?; image?; robots?; author? }` | The optional SEO head fields a concept can carry in frontmatter. |

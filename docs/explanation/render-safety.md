@@ -51,7 +51,9 @@ On top of that base the engine admits exactly what its render needs.
 - The directive markers. `FIXED_MARKERS` (`dataPrimitive`, `dataSlot`, `dataRole`, `dataRise`)
   plus the `dataAttr<Key>` markers derived from the component registry survive the floor as inert
   data attributes, so the dispatch can read its stamps after the floor has run.
-- Three benign author tags real content uses: `nav`, `details`, and `summary`.
+- Benign author tags real content uses: `nav`, `details`, `summary`, and the figure pair `figure`
+  and `figcaption`. These join the base, not a renderer option a consumer can replace, so a captioned
+  figure survives the floor on every site, including one that supplies its own `sanitizeSchema`.
 - A free-form `className` on every element. The engine drops `defaultSchema`'s per-tag `className`
   tuple on the `a` entry first (that tuple would otherwise restrict a link's class to a single
   footnote value and strip an author's link class).
@@ -59,6 +61,22 @@ On top of that base the engine admits exactly what its render needs.
 - The inert `cairn:` href scheme on top of the default protocol allowlist. The resolver rewrites a
   `cairn:` link to a live permalink before delivery. An unresolved one survives as its inert token
   text, a visible signal of a broken link, never an executable vector.
+
+## The content presentation charter
+
+The free-form `className` the floor keeps raises a question the figure makes concrete: may content
+carry presentation? The charter is bounded. Content may carry a closed, theme-owned set of layout
+role classes, and nothing more. A figure's placement is the live example: `:::figure{.wide}` stamps
+`<figure class="cairn-place-wide">`, and the `remarkFigure` step validates the class against the
+closed set `center`, `wide`, `full` before the floor ever sees it, so the directive can never carry a
+freeform value. The theme owns every pixel of what `wide` means; the content owns only the choice of a
+named role from the set.
+
+This is a deliberate, owned exception to "no presentation in content," not a loophole. `wide` and
+`full` are layout, and calling them semantic intent would not change that. The boundedness is the
+invariant that holds. Content never carries a freeform presentation value: no pixel size, no color, no
+margin, no float, no literal `align=` or `width=`. A directive carries identity, decorative wrapping,
+and a bounded role from a closed set, and the editor controls only ever write one of those.
 
 ## What the floor strips
 

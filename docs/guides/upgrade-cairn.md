@@ -432,6 +432,16 @@ full-size bytes until it sets `transformations: true`, which needs the zone's Im
 on. The route mount is also covered in
 [the wire the delivery surface guide](wire-the-delivery-surface.md).
 
+The same release adds the inline figure: an image wraps in a cairn-reserved `:::figure` directive to
+carry a caption and a placement. This is additive and needs no setup, with two things to know. First,
+`figure` is now a reserved directive name: `defineRegistry` throws if a site component is named
+`figure`, so rename any such component. A site that already hand-authored a `:::figure` block for
+another purpose now renders it as an engine figure, so check for one. Second, cairn ships default
+`.cairn-place-center`, `.cairn-place-wide`, and `.cairn-place-full` CSS in the showcase reference
+(`examples/showcase/src/lib/site.css`); copy those rules into your site's content stylesheet and
+adjust the pixels to own the placement look. Without them a `wide` or `full` figure still renders, it
+just sits at the text measure until the classes are styled.
+
 ## 0.55.0: the office list gains triage and self-describing rows
 
 The post and page list rises to the same grade as the editor: a triage bar filters by publish state

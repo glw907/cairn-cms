@@ -352,6 +352,33 @@ Recipes:
   jump-to-each control. It is modeled on the broken-link banner but is a warning, never a block: it
   never stops a save or a Publish. It tells the editor about the gap and helps them close it, and
   leaves the decision with them.
+- **Media: the figure control (`MediaFigureControl`).** The form that gives an inline image a caption
+  and a placement. It is the persistent Edit-block pattern: a toolbar Figure button, always rendered,
+  enabled only when the caret sits on a media image (bare or already in a `:::figure`), opening a
+  headless dialog over a caret snapshot so a later caret move never re-targets it. The unavailable
+  button uses `aria-disabled` (not the native `disabled`) with a stateful `aria-label`, dimmed with
+  `opacity`/`cursor` utilities rather than `.btn-disabled` (which sets `pointer-events: none` and would
+  kill the title tooltip). The form carries a caption field (with the hint that the caption is shown to
+  everyone and is not the alt text), an alt-status row that names the image's alt state distinct from
+  the caption, and the placement as the segmented check-and-tint recipe rendered as a roving-tabindex
+  radiogroup (Measure, Center, Wide, Full; Measure is the null role). The decorative-plus-caption
+  warning sits in an always-present `role="status"` live region in `--cairn-warning-ink`, so it
+  announces when an author makes the contradiction. The control writes markdown source only; the
+  preview stays read-only.
+- **Media: the figure role pill on the source chip.** When a `media:` token sits inside a `:::figure`,
+  the source chip carries a small role pill (the role name, or `figure` for the measure default) in the
+  directive accent language (the accent ink, a `color-mix` accent border, the body font at `0.625rem`),
+  so the visible decoration agrees with the source (the no-hidden-state rule). A bare token shows no
+  pill. The pill is `aria-hidden` like the rest of the chip; the `{.wide}` in the source is the
+  AT-readable truth. The accent ink holds AA as small text on `base-100` in both themes (5.28:1 light,
+  5.86:1 dark).
+- **Media: the placement default CSS (`.cairn-place-*`).** cairn defines the figure placement class
+  contract; a site owns the pixels. The reference values live in the showcase
+  (`examples/showcase/src/lib/site.css`): the bare `figure` at the text measure, `.cairn-place-center`
+  a below-measure centered image, `.cairn-place-wide` a viewport-centered breakout past the measure,
+  and `.cairn-place-full` a full-bleed image with its `figcaption` returned to the measure. A site
+  copies and restyles those classes. This is content CSS, not admin chrome, so it lives with the site's
+  rendered-content stylesheet, not in `cairn-admin.css`.
 
 ## Chrome and spacing
 

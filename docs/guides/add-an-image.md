@@ -36,6 +36,31 @@ address. Switch to Preview and the image renders the way your site will show it.
 While the upload is still finishing, the chip shows a thumbnail with a progress bar. It settles into
 the named chip as soon as the upload is done.
 
+## Give an image a caption and a placement
+
+Put your cursor on an image and the toolbar's Figure button turns on. It opens a small form with two
+things: a caption and a placement.
+
+The caption is a line shown under the image, to everyone. It is different from the alt text. Alt text
+describes the picture for a reader who cannot see it; the caption adds context for every reader, like
+naming the place or the moment. An image can have both, and they say different things.
+
+The placement is how wide the image sits on the page:
+
+- **Measure** keeps it at the width of your text, the right choice for most images.
+- **Center** holds a smaller image in the column and centers it, good for a tall photo or a detail shot.
+- **Wide** breaks past the text to a broader band.
+- **Full** runs the image edge to edge across the page.
+
+Pick one and the image updates. The Figure button also lets you change a caption or placement later,
+or unwrap the image back to a plain one. Behind the scenes this writes plain markdown you can read and
+edit by hand: the image wraps in a `:::figure` block with the caption as its text. The chip in your
+writing shows the placement, so what you see matches what is saved.
+
+If you mark an image decorative but also give it a caption, the form warns you. A decorative image is
+hidden from screen readers, so a caption on it reads without anything to anchor it. Describe the image
+or drop the caption.
+
 ## Reusing an image already on your site
 
 The Insert image button opens with an upload area first, and under it a section headed "or reuse an

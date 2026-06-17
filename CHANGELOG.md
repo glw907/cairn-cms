@@ -41,6 +41,18 @@ writes no document text until it resolves. A non-blocking needs-alt notice on th
 images still waiting for a description and jumps to each one, never blocking a save or a Publish. The
 edit-page preview renders inserted images through the same resolver the live site uses.
 
+Figures land in the same release. An inline image can carry a caption and a placement through a
+cairn-reserved `:::figure` directive that wraps the image as a child node. The caption is the
+directive's body text, rendered to a real `<figcaption>`, and the placement is a closed role set
+(`center`, `wide`, `full`, plus the bare measure default) carried as a class on the `<figure>`. A
+persistent editor control wraps a bare image, edits an existing figure's caption and role, or unwraps
+it, writing the markdown source the author can read and hand-edit, and the source chip shows the
+figure's role so the decoration agrees with the source. `figure` and `figcaption` join the base
+sanitize floor, so a captioned figure survives on every site, and `figure` is a reserved directive
+name the registry refuses to let a site component shadow. cairn ships default `.cairn-place-*` CSS in
+the showcase reference, and a site restyles those classes to own the placement pixels. A guide section
+covers it in [add an image](docs/guides/add-an-image.md).
+
 Consumers must: bind an R2 bucket and mount the delivery route before media works. Add an
 `r2_buckets` binding named `MEDIA_BUCKET` in `wrangler.jsonc`, and mount the delivery route at
 `src/routes/media/[...path]/+server.ts` with `createMediaRoute(runtime.resolvedAssets)`. Declare the

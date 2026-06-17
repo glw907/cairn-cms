@@ -37,6 +37,17 @@ describe('resolveImageUrl', () => {
   it('returns undefined for a malformed image string', () => {
     expect(resolveImageUrl('http://[invalid', origin)).toBeUndefined();
   });
+  it('returns undefined for an unresolved media: token rather than the token verbatim', () => {
+    expect(resolveImageUrl('media:photo.0123456789abcdef', origin)).toBeUndefined();
+  });
+  it('returns undefined for a non-http scheme such as javascript:', () => {
+    expect(resolveImageUrl('javascript:alert(1)', origin)).toBeUndefined();
+  });
+  it('still anchors a hashed root-relative media path to an https origin', () => {
+    expect(resolveImageUrl('/media/a.0123456789abcdef.webp', origin)).toBe(
+      'https://x.test/media/a.0123456789abcdef.webp',
+    );
+  });
 });
 
 describe('a declared SEO field reaches the inferred type', () => {

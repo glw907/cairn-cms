@@ -36,7 +36,12 @@ export function readSeoFields(frontmatter: Record<string, unknown>): SeoFields {
  *  that path, per the WHATWG URL rules. */
 export function resolveImageUrl(image: string, origin: string): string | undefined {
   try {
-    return new URL(image, origin).href;
+    const url = new URL(image, origin);
+    // Guard the unresolved-`media:`-token failure mode: `media:photo.<hash>` is a valid URL scheme,
+    // so `new URL(...).href` returns the token verbatim and it would otherwise ship as the og:image.
+    // Only an http or https result is a real social-card URL; anything else degrades to no image.
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return undefined;
+    return url.href;
   } catch {
     return undefined;
   }

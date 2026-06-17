@@ -86,12 +86,15 @@ interface PublicRoutesDeps {
   description: string;
   feeds?: { rss?: string; json?: string };
   defaultImage?: string;
+  resolveMedia?: MediaResolve;
 }
 ```
 
 The injected dependencies for the public loaders. `render` turns an entry's markdown into html,
 `origin` and `feeds` build the absolute URLs in the head, and `description` and `defaultImage` are the
-site-wide fallbacks for an entry that declares none.
+site-wide fallbacks for an entry that declares none. `resolveMedia` resolves a frontmatter `media:`
+hero reference to its delivery path; the site builds it from its committed `media.json` exactly as it
+builds the body resolver, and when it is absent no `heroImage` projection is derived.
 
 ### `ListData`
 
@@ -134,11 +137,16 @@ interface EntryData {
   seo: SeoMeta;
   newer?: ContentSummary;
   older?: ContentSummary;
+  heroImage?: { url: string; absoluteUrl?: string; alt: string; caption?: string };
 }
 ```
 
 One entry's data: the detail entry, its rendered html, its canonical URL, the SEO head, and the
-adjacent entries for prev and next links. The catch-all `entryLoad` returns this.
+adjacent entries for prev and next links. The catch-all `entryLoad` returns this. `heroImage` is a
+derived projection of the frontmatter `image` field, resolved through `resolveMedia`: `url` is the
+root-relative path for an `<img>` and `absoluteUrl` the origin-anchored form for the og:image. The
+canonical token is left untouched, so `entry.frontmatter.image.src` stays the `media:` token, and
+`heroImage` is undefined when no hero is set, media is off, or the reference does not resolve.
 
 ---
 

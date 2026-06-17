@@ -57,6 +57,69 @@ describe('createPublicRoutes', () => {
     expect(routes.tagIndexLoad('posts').tags).toEqual([{ tag: 'x', count: 1 }, { tag: 'y', count: 1 }]);
   });
 
+  it('entryLoad derives a heroImage projection from a frontmatter media: reference', async () => {
+    const [heroPages] = normalizeConcepts({
+      pages: { dir: 'g', schema: defineFields([{ type: 'image', name: 'image', label: 'Hero' }]) },
+    });
+    const heroSite = createSiteResolver([
+      { descriptor: heroPages, index: createContentIndex([
+        { path: '/g/hero.md', raw: '---\ntitle: Hero\nimage:\n  src: "media:a.0123456789abcdef"\n  alt: x\n  caption: y\n---\n\nHero body.' },
+      ], heroPages) },
+    ]);
+    const resolveMedia = (ref: { hash: string }) =>
+      ref.hash === '0123456789abcdef' ? '/media/a.0123456789abcdef.webp' : undefined;
+    const heroRoutes = createPublicRoutes({
+      site: heroSite,
+      render: (md) => `<r>${md.trim()}</r>`,
+      origin: 'https://example.com',
+      siteName: 'Test',
+      description: 'Test description.',
+      resolveMedia,
+    });
+
+    const data = await heroRoutes.entryLoad({ url: new URL('https://example.com/hero') });
+    expect(data.heroImage).toEqual({
+      url: '/media/a.0123456789abcdef.webp',
+      absoluteUrl: 'https://example.com/media/a.0123456789abcdef.webp',
+      alt: 'x',
+      caption: 'y',
+    });
+    // Locked decision 5: the on-disk token is never mutated; the projection is additive.
+    expect((data.entry.frontmatter as { image: { src: string } }).image.src).toBe('media:a.0123456789abcdef');
+  });
+
+  it('entryLoad leaves heroImage undefined for an unresolved hash, and when media is off', async () => {
+    const [heroPages] = normalizeConcepts({
+      pages: { dir: 'g', schema: defineFields([{ type: 'image', name: 'image', label: 'Hero' }]) },
+    });
+    const heroIndex = () => createContentIndex([
+      { path: '/g/hero.md', raw: '---\ntitle: Hero\nimage:\n  src: "media:a.0123456789abcdef"\n  alt: x\n---\n\nHero body.' },
+    ], heroPages);
+
+    // Resolver present but the hash does not resolve: no throw, undefined projection.
+    const unresolved = createPublicRoutes({
+      site: createSiteResolver([{ descriptor: heroPages, index: heroIndex() }]),
+      render: (md) => `<r>${md.trim()}</r>`,
+      origin: 'https://example.com',
+      siteName: 'Test',
+      description: 'Test description.',
+      resolveMedia: () => undefined,
+    });
+    const a = await unresolved.entryLoad({ url: new URL('https://example.com/hero') });
+    expect(a.heroImage).toBeUndefined();
+
+    // Media off: no resolveMedia dep at all, still undefined and no throw.
+    const off = createPublicRoutes({
+      site: createSiteResolver([{ descriptor: heroPages, index: heroIndex() }]),
+      render: (md) => `<r>${md.trim()}</r>`,
+      origin: 'https://example.com',
+      siteName: 'Test',
+      description: 'Test description.',
+    });
+    const b = await off.entryLoad({ url: new URL('https://example.com/hero') });
+    expect(b.heroImage).toBeUndefined();
+  });
+
   it('entryLoad resolves cairn links and fails the build on a dangling token', async () => {
     const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
     function linkRoutes(body: string) {

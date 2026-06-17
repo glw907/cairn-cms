@@ -11,6 +11,8 @@ import type { SeoMeta } from './seo.js';
 import { readSeoFields, resolveImageUrl } from './seo-fields.js';
 import { buildLinkResolver } from './site-resolver.js';
 import type { LinkResolve } from '../content/links.js';
+import type { MediaResolve } from '../render/resolve-media.js';
+import { parseMediaToken } from '../media/reference.js';
 
 /** Injected dependencies for the public loaders. */
 export interface PublicRoutesDeps {
@@ -26,6 +28,10 @@ export interface PublicRoutesDeps {
   /** A site-wide default OG image, used when an entry declares none. Resolved to absolute like the
    *  canonical URL, so a relative path such as "/og/default.png" works. */
   defaultImage?: string;
+  /** Resolve a frontmatter `media:` hero reference to its delivery path. The site builds this from its
+   *  committed `media.json` exactly as it builds the body resolver (`makeMediaResolver`). When absent,
+   *  media is off and no `heroImage` projection is derived. */
+  resolveMedia?: MediaResolve;
 }
 
 /** The archive and tag list data: summaries the template renders. */
@@ -52,11 +58,41 @@ export interface EntryData {
   seo: SeoMeta;
   newer?: ContentSummary;
   older?: ContentSummary;
+  /** The resolved hero image, a derived projection of the frontmatter `image` field. `url` is the
+   *  root-relative delivery path for an `<img>`, `absoluteUrl` the origin-anchored form for the
+   *  og:image, and `alt`/`caption` carry from the stored object. The canonical token is untouched:
+   *  `entry.frontmatter.image.src` stays the `media:` token. Undefined when no hero is set, media is
+   *  off, the reference does not parse, or the resolver finds no asset. */
+  heroImage?: { url: string; absoluteUrl?: string; alt: string; caption?: string };
 }
 
 /** Build the public loaders for a site's unified index. */
 export function createPublicRoutes(deps: PublicRoutesDeps) {
-  const { site, render, origin, siteName, description, feeds, defaultImage } = deps;
+  const { site, render, origin, siteName, description, feeds, defaultImage, resolveMedia } = deps;
+
+  /** Derive the hero projection from an entry's frontmatter, without mutating it (locked decision 5).
+   *  The hero lives at the conventional `image` key as the validated nested object `{ src, alt, caption }`;
+   *  only an image field's validate arm produces an object-with-string-`src` shape, so detecting that
+   *  structure is enough (a text field stores a string, a tags field an array). Returns undefined when
+   *  media is off, no hero is set, the token does not parse, or the resolver finds no asset. */
+  function deriveHeroImage(frontmatter: Record<string, unknown>): EntryData['heroImage'] {
+    if (!resolveMedia) return undefined;
+    const value = frontmatter.image;
+    if (value === null || typeof value !== 'object' || Array.isArray(value)) return undefined;
+    const obj = value as { src?: unknown; alt?: unknown; caption?: unknown };
+    if (typeof obj.src !== 'string' || obj.src === '') return undefined;
+    const ref = parseMediaToken(obj.src);
+    if (!ref) return undefined;
+    const path = resolveMedia(ref);
+    if (!path) return undefined;
+    const hero: NonNullable<EntryData['heroImage']> = {
+      url: path,
+      absoluteUrl: resolveImageUrl(path, origin),
+      alt: typeof obj.alt === 'string' ? obj.alt : '',
+    };
+    if (typeof obj.caption === 'string' && obj.caption !== '') hero.caption = obj.caption;
+    return hero;
+  }
 
   /** Resolve one concept's index by id, or a 404 (the route names an unconfigured concept). */
   function indexOf(conceptId: string) {
@@ -88,7 +124,8 @@ export function createPublicRoutes(deps: PublicRoutesDeps) {
       ...(fields.author ? { author: fields.author } : {}),
       ...(entry.date ? { feeds } : {}),
     });
-    return { concept: entry.concept, entry, html: await render(entry.body, { stagger: true, resolve: buildLinkResolver(site) }), canonicalUrl, seo, newer, older };
+    const heroImage = deriveHeroImage(entry.frontmatter);
+    return { concept: entry.concept, entry, html: await render(entry.body, { stagger: true, resolve: buildLinkResolver(site) }), canonicalUrl, seo, newer, older, ...(heroImage ? { heroImage } : {}) };
   }
 
   /** The chronological archive for one concept: every non-draft summary, newest-first. */

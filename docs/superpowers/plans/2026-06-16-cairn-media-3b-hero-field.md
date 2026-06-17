@@ -357,3 +357,64 @@ release per the release process (`gh release create`), Geoff's call.
 - **A second image field per concept (a `cover` separate from the social `image`):** the field type and
   the resolution key by field name already allow it, and the SEO `seo` flag picks which feeds the social
   card. No further work needed unless a concept wants it.
+- **Delivery resolution honors a renamed `seo`-flagged field.** `deriveHeroImage` resolves the `image`
+  key today (the back-compat SEO default). The schema layer validates a renamed `seo: true` hero (e.g.
+  `cover`) and the editor renders it, but delivery does not yet resolve a non-`image` key, since the
+  field declarations are not reachable in the delivery read path. The review gate flagged this as a
+  cross-layer mismatch; it is harmless now (every consumer uses `image`) and documented in
+  `deriveHeroImage`. Closing it means threading the concept's SEO image field name into the delivery
+  deps (per-concept, since `createPublicRoutes` is global). Bundle with the second-image-field work.
+- **Persist the decorative choice in frontmatter.** A decorative hero commits `alt: ''`, the same as a
+  left-blank hero, so on reload it reads as needs-alt (the editor cannot tell them apart). This matches
+  the 2b body-image model (decorative and blank both commit empty alt). A future pass could add a
+  `decorative: true` sub-key to the stored object so the choice survives a reload; the `MediaHeroField`
+  `decorative` prop seam is already in place for it.
+
+---
+
+## Post-mortem (landed 2026-06-17)
+
+**What was built.** The frontmatter hero image field, end to end. A Post or Page carries a hero as a
+nested `image: { src, alt, caption }` object, a new built-in `image` `FrontmatterField` variant threaded
+through every arm (the union + `seo?` flag, the `FieldValue`/`InferFields` type map to `ImageValue`, the
+`frontmatterFromForm` decode, the `formValues` read-back that the default arm would have stringified to
+`'[object Object]'`, the `validateFields` normalize + required-on-`src` enforcement, and the
+at-most-one-SEO-image guard in `defineFields`). The delivery read path takes an injected `resolveMedia`
+and derives a `heroImage` projection (`url`, `absoluteUrl`, `alt`, `caption`) without mutating
+`entry.frontmatter` (the `media:` token stays canonical). The SEO head reads the resolved hero as the
+`og:image` + `twitter:image:alt`, with `resolveImageUrl` hardened to reject a non-http(s) result so an
+unresolved token never ships as a tag. `MediaHeroField.svelte` is the editor field: a one-row resting
+state, an empty dropzone, and a native-`<dialog>` chooser + placement view reusing `MediaPicker` and
+the `MediaCaptureCard` alt model. The needs-alt notice extends to the hero from form state (no body
+offset). The showcase declares the field, wires the resolver, renders the hero, and migrates the seeded
+hello post; a new `media-hero.spec.ts` proves the field round-trip and the public render.
+
+**Verified (evidence, first-hand).** Full gate green at the tip: `npm run check` 975 files 0/0; `npm test`
+185 files / 1957 tests exit 0 (the first run hit the documented `@vitest/browser` rpc-closed teardown
+flake; a clean re-run confirmed 1957/1957 exit 0); the showcase Playwright E2E 16 passed in a real
+browser (the new `media-hero.spec.ts` plus the unchanged 2b/3a/golden specs); `check:reference`,
+`check:package`, `check:docs` (62 files), and prose all green. Nine plan tasks, the code-simplifier pass,
+a three-reviewer gate, and the docs arm.
+
+**Review gate.** Three parallel reviewers (svelte, daisyui-a11y, an Opus delivery/data-contract
+correctness pass). One CRITICAL: `--color-positive-ink` was referenced by the Described chip but lived
+only in the mockup, never carried into `cairn-admin.css`, so the chip fell back to body ink; fixed by
+defining the locked-pair token in both themes (light ~4.9:1, dark ~7:1 on base-100). Two IMPORTANTs:
+the alt radiogroup had no `name`, so native arrow-key navigation was broken (fixed with a
+component-unique name the decode arm ignores); and `required` was unenforced on the image arm against
+its non-optional inferred type (fixed to enforce on `src`, alt stays debt). The Opus pass and svelte
+reviewer both flagged the delivery-resolves-only-`image`-key limitation, now documented and carried
+forward. Minors folded (the `heroNeedsAlt` record invariant comment). The E2E itself caught a real
+reactive loop in the needs-alt `$effect` during Task 7 (a fresh host callback identity re-fired the
+effect, which re-rendered the host); fixed by reading the signal reactively and calling the callback
+through `untrack`. The component tests had missed it because they mount with a stable callback.
+
+**Decisions locked.** The hero is a structured nested-object field, not a string; resolution is a
+derived projection that never mutates the on-disk token; one image serves both the lead and the social
+card via the `seo`-flagged field (default `image`); alt is debt, never a save block; the editor field
+carries no `<form>` (name-less dialog inputs + named hidden inputs) to stay legal inside the edit form;
+the field replicates the `MediaCaptureCard` alt model rather than mounting it (nested-form rule + the
+dropped name field). Version held at `0.57.0`: the bundling decision (STATUS + the pass directive)
+supersedes the plan's pre-bundling "bump to the next minor" note; the whole media stack ships in one
+release when Phase 3 is complete. Live admin smoke deferred to the first site cutover (presentation +
+a delivery read, covered by the E2E and the both-theme token reasoning), matching the 2b/3a judgment.

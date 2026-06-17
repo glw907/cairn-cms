@@ -11,78 +11,65 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-16, latest): Phase 3a the inline figure MERGED to `main`; the release is deferred until the whole image work is complete; Phase 3b is the next build
+## Immediate next action (2026-06-17, latest): Phase 3b the hero field LANDED on `feat/media-3b`; the release stays deferred until the whole image work is complete; Phase 3c is the next build
 
-**Phase 3a of the media gallery (the inline figure: captions and placement) is MERGED to `main`** (the
-whole media stack 1, 2a, 2b, 3a, plus the 3b design, fast-forwarded to `c671b44` and pushed to origin
-2026-06-16). Nine plan tasks, the code-simplifier pass, a three-reviewer gate with its fold-in, and the
-docs arm. The 3a work is commits `1f3c15f..40603af`. **No release is cut yet (Geoff's call): the whole
-image work ships in one release when Phase 3 is complete, not in interim bumps.** The version on `main`
-stays `0.57.0` in the changelog as the in-progress media window. So Phase 3b (and 3c) execute off `main`
-directly, with no release gate between them, and the single bundled release happens once the image work is
-done.
+**Phase 3b of the media gallery (the hero frontmatter image field) LANDED on `feat/media-3b`** (a fresh
+worktree off `main` at `dc442ca`). Nine plan tasks, the code-simplifier pass, a three-reviewer gate with
+its fold-in, and the docs arm. **No release is cut (Geoff's call): the whole image work ships in one
+release when Phase 3 is complete.** The version stays `0.57.0` as the in-progress media window, so 3b
+(and 3c) land on `main` unreleased, with the single bundled release once the image work is done.
 
-An author now wraps an inline image in a cairn-reserved `:::figure` directive to give it a caption (the
-directive body text, rendered to `<figcaption>`) and a placement (a closed role set `center`/`wide`/`full`
-plus the bare measure default, carried as a `cairn-place-*` class on the `<figure>`). Built: the
-`remarkFigure` render step (handling both the blank-line and no-blank-line caption forms); `figure`/
-`figcaption` in the base sanitize floor and the reserved `figure` registry name; the showcase default
-`.cairn-place-*` CSS; the four pure source transforms (`figureAtImage`, `wrapImageInFigure`,
-`updateFigure`, `unwrapFigure`) that keep the inner `media:` token byte-intact; the `MediaFigureControl`
-form on the persistent Edit-block toolbar control with a new `onMediaImageAtCaret` seam; and the source
-chip's figure/role pill. The markdown source is the source of truth and the preview stays read-only.
+A Post or Page now carries a hero image in frontmatter as a nested `image: { src, alt, caption }` object,
+set in the editor's details panel through the 2b picker and capture flow, resolved at delivery into a
+derived `heroImage` projection, and unified with the SEO social card (one image, both uses). Built: the
+built-in `image` `FrontmatterField` variant threaded through every arm (union + `seo?` flag, the
+`FieldValue`/`InferFields` type map to `ImageValue`, the `frontmatterFromForm` decode, the `formValues`
+read-back, the `validateFields` normalize + required-on-`src`, the at-most-one-SEO-image guard); the
+delivery `deriveHeroImage` projection over an injected `resolveMedia` that never mutates the canonical
+`media:` token; the SEO unify (`og:image` + `twitter:image:alt`) with `resolveImageUrl` hardened to
+reject a non-http(s) result; `MediaHeroField.svelte` (a one-row resting state, an empty dropzone, a
+native-`<dialog>` chooser + 16:9 placement view reusing `MediaPicker` and the `MediaCaptureCard` alt
+model); the needs-alt notice extended to the hero from form state; and the showcase slice (the declared
+field, the wired resolver, the rendered hero, the migrated hello post, a new `media-hero.spec.ts`).
 
-Gate green at the tip, run first-hand: `npm run check` 973 files 0/0, `npm test` 184 files / 1913 tests
-exit 0 (stable, not cache-dependent), the showcase Playwright E2E 14 passed in a real browser (the new
-`media-figure.spec.ts` drives insert -> Figure control -> `:::figure{.wide}` source -> preview
-`<figure class><img><figcaption>` -> commit body + `media.json`), the reference/package/docs/prose,
-version, and editor-boundary gates green. Three reviewers (svelte, daisyui-a11y, an Opus render/transform
-correctness pass): one CRITICAL caught only by the adversarial pass (`readCaption` read only the
-blank-line caption form, so a hand-authored no-blank-line figure showed an empty caption and "Update"
-dropped it; fixed + tested), one IMPORTANT (the disabled Figure button's `.btn-disabled` set
-`pointer-events: none` and killed the title tooltip; switched to `opacity`/`cursor`), and four Minors,
-all folded at `cb3df0f`. Contrast computed: the role pill text 5.28:1 light / 5.86:1 dark, the warning
-ink AA on base-100 and the 8% tint in both themes. The live admin smoke rides the first site cutover
-(presentation change, proven by the E2E + the 2a workerd suite), matching the 2b deferral. Post-mortem
-with the carry-forwards in the plan (`docs/superpowers/plans/2026-06-16-cairn-media-3a-inline-figure.md`).
+Gate green at the tip, run first-hand: `npm run check` 975 files 0/0, `npm test` 185 files / 1957 tests
+exit 0 (the first run hit the documented `@vitest/browser` rpc-closed teardown flake; a clean re-run
+confirmed 1957/1957 exit 0), the showcase Playwright E2E 16 passed in a real browser (the new
+`media-hero.spec.ts` proves the field round-trip + the public render + the `og:image`; the 2b/3a/golden
+specs stay green), the reference/package/docs/prose and editor-boundary gates green. Three reviewers
+(svelte, daisyui-a11y, an Opus delivery/data-contract correctness pass): one CRITICAL (the Described
+chip's `--color-positive-ink` token lived only in the mockup, never in `cairn-admin.css`, so the chip
+fell back to body ink; fixed as a locked-pair token, light ~4.9:1 / dark ~7:1 on base-100), two
+IMPORTANTs (the alt radiogroup had no `name` so arrow-key nav was broken, fixed with a decode-ignored
+unique name; `required` was unenforced on the image arm, fixed to enforce on `src`), the delivery
+resolves-only-`image`-key limitation documented + carried, and Minors folded. The E2E itself caught a
+real reactive loop in the needs-alt `$effect` (fixed via `untrack`). Live admin smoke deferred to the
+first site cutover (presentation + a delivery read, covered by the E2E), matching 2b/3a. Post-mortem with
+the carry-forwards in the plan (`docs/superpowers/plans/2026-06-16-cairn-media-3b-hero-field.md`).
 
 **Next actions, in order:**
-1. **DONE: merged `feat/media-3a` to `main` and pushed** (2026-06-16, fast-forward to `c671b44`). The whole
-   media stack 1, 2a, 2b, 3a plus the 3b design is on `main`. The `feat/media-3a` and
-   `backup-media-2b-pre-scrub` branches are deleted. Stale merged branches `feat/media-2a`, `feat/media-2b`
-   (still has a worktree), and `feat/media-foundation` remain and can be cleaned at will.
+1. **Merge `feat/media-3b` to `main`** (fast-forward; the whole media stack 1, 2a, 2b, 3a, 3b is then on
+   `main`, unreleased at `0.57.0`). Geoff's call on the push.
 2. **Release DEFERRED (Geoff's call):** no interim release. The whole image work ships in one release once
    Phase 3 is complete, so there is no `gh release create` between 3a, 3b, and 3c.
-3. **Per-site cutover rides that single release** (it needs the published package): bind a `MEDIA_BUCKET` R2
-   bucket, mount the `/media` route, bump to the published range, run the real guard + upload + delivery
-   live smoke (the deferred proof), and copy the `.cairn-place-*` CSS into the site's content stylesheet.
-4. **NEXT: build Phase 3b** (the hero frontmatter image field), **DESIGNED + PLANNED 2026-06-16** and ready
-   to execute on a fresh worktree off `main` now (no release gate, since the release is deferred). Spec
-   `docs/superpowers/specs/2026-06-16-cairn-media-3b-hero-field-design.md`, plan (9 tasks)
-   `docs/superpowers/plans/2026-06-16-cairn-media-3b-hero-field.md`, the polished mockup
-   `docs/internal/design/2026-06-16-media-3b-hero-mockup.html` (three explorations beside it). 3b designed
-   through a Workflow fan-out (three divergent UI mockups) and two adversarial Opus critics; the UI critic
-   picked the inline-field direction with resting-row and 16:9-preview grafts, and the technical critic
-   caught three blockers now locked as required hardening (frontmatter resolution needs a delivery-layer
-   home; `resolveImageUrl` ships a `media:` token verbatim as a broken og:image, verified; `formValues`
-   stringifies the nested object, verified). The hero is a built-in nested-object `image` field
-   (`{ src, alt, caption }`), unified with the SEO social-card image (one image, both uses), alt as debt,
-   the on-disk `media:` token kept canonical with resolution as a separate `heroImage` projection. Tasks 1
-   (the field-type contract), 3 (the delivery resolution), and 5 (the editor field) are high-blast. **Then
-   3c** (the gallery component), reusing the caption+alt model. **Then the single bundled release plus the
-   per-site cutover**, once the whole image work is complete.
+3. **Per-site cutover rides that single release** (it needs the published package): bind a `MEDIA_BUCKET`
+   R2 bucket, mount the `/media` route, bump to the published range, run the real guard + upload + delivery
+   live smoke (the deferred proof), copy the `.cairn-place-*` CSS, and (to adopt the hero) declare the
+   `image` field, inject `resolveMedia` into `createPublicRoutes`, render `heroImage`, and migrate any
+   string `image` SEO field to the structured object.
+4. **NEXT: build Phase 3c** (the gallery component): a site-defined registry component with ordered tiles
+   referencing library assets, each with its own alt and caption; gallery-from-library first, then
+   gallery-with-bulk-upload after the batch-coalesced ingest (2b open risk 5). Reuses the caption+alt
+   model. Needs a design pass first (mockup-first per the UI-design-pass methodology); not yet specced or
+   planned. **Then the single bundled release plus the per-site cutover**, once the image work is complete.
 
-**Resume prompt for the 3b build (fresh session, effort high, 3a already on `main`):**
-"Execute Phase 3b of the cairn media gallery: the hero frontmatter image field, plan at
-`docs/superpowers/plans/2026-06-16-cairn-media-3b-hero-field.md` (spec
-`docs/superpowers/specs/2026-06-16-cairn-media-3b-hero-field-design.md`). Invoke the `cairn-pass` skill.
-Launch in `cairn-cms`, create a fresh worktree off `main` (no release gate; the media release is deferred
-until Phase 3 is complete). Confirm the baseline (`npm test` exit 0), then run the 9 tasks test-first: one
-`cairn-implementer` per task, review each diff, clear the full gate between dispatches, at high effort.
-Tasks 1, 3, and 5 are high-blast: review closely and upshift to `model: opus` if warranted. Tasks 8 (the
-polish) and 9 (the pass-end, whose adversarial review-gate workflow needs my 'use a workflow' opt-in) run
-in the main loop. The mockup is already done. 3b lands on `main` unreleased; the whole media stack ships in
-one release when Phase 3 is complete."
+**Resume prompt for the 3c design (fresh session):**
+"Design Phase 3c of the cairn media gallery: the gallery component (a site-defined registry component
+with ordered tiles, each tile a library asset with its own alt and caption). Invoke `cairn-pass`. Launch
+in `cairn-cms`. The umbrella spec is `docs/superpowers/specs/2026-06-15-cairn-media-gallery-design.md`;
+3a (`feat/media-3a`) and 3b (`feat/media-3b`) are on `main` unreleased at `0.57.0`. Run the mockup-first
+design methodology (research -> frontend-design mockups -> adversarial critique -> spec -> plan) before
+implementing. The whole media stack ships in one release when Phase 3 is complete."
 
 ## Prior next action (2026-06-16): media is author-usable; Phase 2b insert UI LANDED on `feat/media-2b`, the whole media stack is release-ready as `0.57.0`
 

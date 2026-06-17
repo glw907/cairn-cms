@@ -16,6 +16,8 @@ export type {
   BooleanField,
   TagsField,
   FreeTagsField,
+  ImageField,
+  ImageValue,
   ValidationResult,
   BackendConfig,
   SenderConfig,

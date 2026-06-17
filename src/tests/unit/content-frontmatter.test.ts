@@ -64,6 +64,51 @@ describe('frontmatterFromForm', () => {
 
     expect(frontmatterFromForm(pageFields, form)).toEqual({ title: 'About' });
   });
+
+  it('assembles an image field from its src, alt, and caption sub-fields', () => {
+    const fields: FrontmatterField[] = [{ type: 'image', name: 'image', label: 'Hero' }];
+    const form = new FormData();
+    form.set('image.src', 'media:a.0123456789abcdef');
+    form.set('image.alt', 'A snowy ridge');
+    form.set('image.caption', 'Above the treeline.');
+
+    expect(frontmatterFromForm(fields, form)).toEqual({
+      image: { src: 'media:a.0123456789abcdef', alt: 'A snowy ridge', caption: 'Above the treeline.' },
+    });
+  });
+
+  it('omits an empty caption from an image field', () => {
+    const fields: FrontmatterField[] = [{ type: 'image', name: 'image', label: 'Hero' }];
+    const form = new FormData();
+    form.set('image.src', 'media:a.0123456789abcdef');
+    form.set('image.alt', 'A snowy ridge');
+    form.set('image.caption', '   ');
+
+    expect(frontmatterFromForm(fields, form)).toEqual({
+      image: { src: 'media:a.0123456789abcdef', alt: 'A snowy ridge' },
+    });
+  });
+
+  it('omits the whole image key when src is empty', () => {
+    const fields: FrontmatterField[] = [{ type: 'image', name: 'image', label: 'Hero' }];
+    const form = new FormData();
+    form.set('image.src', '');
+    form.set('image.alt', 'orphaned alt');
+    form.set('image.caption', 'orphaned caption');
+
+    expect('image' in frontmatterFromForm(fields, form)).toBe(false);
+  });
+
+  it('stores image alt verbatim, with no markdown escaping', () => {
+    const fields: FrontmatterField[] = [{ type: 'image', name: 'image', label: 'Hero' }];
+    const form = new FormData();
+    form.set('image.src', 'media:a.0123456789abcdef');
+    form.set('image.alt', 'A [bracketed] *starred* alt');
+
+    expect(frontmatterFromForm(fields, form)).toEqual({
+      image: { src: 'media:a.0123456789abcdef', alt: 'A [bracketed] *starred* alt' },
+    });
+  });
 });
 
 describe('dateInputValue', () => {
@@ -126,5 +171,14 @@ describe('serialize and parse', () => {
   it('parses a file back into frontmatter and body', () => {
     const source = '---\ntitle: About\n---\n\nThe body.\n';
     expect(parseMarkdown(source)).toEqual({ frontmatter: { title: 'About' }, body: '\nThe body.\n' });
+  });
+
+  it('round-trips a nested image object, quoting the media: token and omitting an absent caption', () => {
+    const data = { image: { src: 'media:a.0123456789abcdef', alt: 'x' } };
+    const out = serializeMarkdown(data, '');
+    // The media: token carries a colon, so gray-matter must quote it rather than read it as a YAML map.
+    const parsed = parseMarkdown(out);
+    expect(parsed.frontmatter).toEqual(data);
+    expect((parsed.frontmatter.image as { caption?: string }).caption).toBeUndefined();
   });
 });

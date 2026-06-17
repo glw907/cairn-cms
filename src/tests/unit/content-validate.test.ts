@@ -95,6 +95,50 @@ describe('validateFields', () => {
   });
 });
 
+describe('image field', () => {
+  const fields: FrontmatterField[] = [{ type: 'image', name: 'image', label: 'Hero' }];
+
+  it('normalizes a valid object and carries a non-empty caption', () => {
+    const result = validateFields(fields, {
+      image: { src: 'media:a.0123456789abcdef', alt: 'x', caption: 'A line.' },
+    });
+    expect(result).toEqual({
+      ok: true,
+      data: { image: { src: 'media:a.0123456789abcdef', alt: 'x', caption: 'A line.' } },
+    });
+  });
+
+  it('defaults a missing alt to an empty string and never fails on empty alt', () => {
+    const result = validateFields(fields, { image: { src: 'media:a.0123456789abcdef' } });
+    expect(result).toEqual({ ok: true, data: { image: { src: 'media:a.0123456789abcdef', alt: '' } } });
+  });
+
+  it('omits an empty or whitespace caption', () => {
+    const result = validateFields(fields, {
+      image: { src: 'media:a.0123456789abcdef', alt: 'x', caption: '   ' },
+    });
+    expect(result).toEqual({ ok: true, data: { image: { src: 'media:a.0123456789abcdef', alt: 'x' } } });
+  });
+
+  it('drops the key when src is empty', () => {
+    const result = validateFields(fields, { image: { src: '', alt: 'x' } });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect('image' in result.data).toBe(false);
+  });
+
+  it('drops the key when the value is absent', () => {
+    const result = validateFields(fields, {});
+    expect(result.ok).toBe(true);
+    if (result.ok) expect('image' in result.data).toBe(false);
+  });
+
+  it('drops a malformed value without throwing', () => {
+    expect(validateFields(fields, { image: 'media:a.0123456789abcdef' })).toEqual({ ok: true, data: {} });
+    expect(validateFields(fields, { image: { alt: 'no src' } })).toEqual({ ok: true, data: {} });
+    expect(validateFields(fields, { image: { src: 42 } })).toEqual({ ok: true, data: {} });
+  });
+});
+
 describe('date validation', () => {
   const fields: FrontmatterField[] = [{ type: 'date', name: 'date', label: 'Date', required: true }];
 

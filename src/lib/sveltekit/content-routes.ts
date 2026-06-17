@@ -434,6 +434,9 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       if (field.type === 'date') out[field.name] = dateInputValue(value);
       else if (field.type === 'boolean') out[field.name] = value === true;
       else if (field.type === 'tags' || field.type === 'freetags') out[field.name] = Array.isArray(value) ? value.map(String) : [];
+      // A hero is a nested object; the default String() arm would corrupt it to '[object Object]'.
+      // Hand the stored object back as-is so the editor reads .src/.alt/.caption on open.
+      else if (field.type === 'image') out[field.name] = value !== null && typeof value === 'object' ? value : undefined;
       else out[field.name] = typeof value === 'string' ? value : value == null ? '' : String(value);
     }
     return out;

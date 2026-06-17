@@ -74,11 +74,25 @@ export interface FreeTagsField extends FieldBase {
   type: 'freetags';
   placeholder?: string;
 }
+/**
+ * A hero image set in frontmatter. The stored value is the nested object
+ * `{ src: string; alt: string; caption?: string }`, where `src` is a 2b `media:` reference, `alt`
+ * is the screen-reader description, and `caption` is an optional line the site template may show.
+ * One image serves two jobs: the template's lead image and the social-card image. The field feeding
+ * the social card is the `seo`-flagged one, defaulting to the field named `image`; a concept declares
+ * at most one SEO image field.
+ */
+export interface ImageField extends FieldBase {
+  type: 'image';
+  /** Whether this field feeds the social-card image. The field named `image` defaults to true. */
+  seo?: boolean;
+}
 
 /**
- * The discriminated union the per-concept frontmatter form is generated from. Adding a
- * field type is one variant here plus one decode arm in `frontmatterFromForm` and one in
- * `validateFields`.
+ * The discriminated union the per-concept frontmatter form is generated from. A scalar field type
+ * is one variant here plus one decode arm in `frontmatterFromForm` and one in `validateFields`. The
+ * structured `image` field additionally needs a read-back arm in `formValues` and a type-inference
+ * arm in `schema.ts`, since its value is a nested object rather than a single string.
  */
 export type FrontmatterField =
   | TextField
@@ -86,7 +100,16 @@ export type FrontmatterField =
   | DateField
   | BooleanField
   | TagsField
-  | FreeTagsField;
+  | FreeTagsField
+  | ImageField;
+
+/** The stored value of an `image` field: a `media:` reference, a screen-reader description, and an
+ *  optional caption. */
+export interface ImageValue {
+  src: string;
+  alt: string;
+  caption?: string;
+}
 
 /**
  * A validator's verdict. On success it carries the normalized frontmatter to commit; on

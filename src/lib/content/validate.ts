@@ -44,6 +44,26 @@ export function validateFields(
         if (list.length > 0) data[field.name] = list;
         break;
       }
+      case 'image': {
+        // A hero is the nested object { src, alt, caption }. Normalize a well-formed value (default
+        // a missing alt to empty, since alt is debt and never a save block), and drop the key when
+        // src is empty or absent. A malformed value (a string, or an object without a string src)
+        // drops the key rather than throwing, so a hand-edit never breaks a save.
+        if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+          const obj = value as Record<string, unknown>;
+          const src = typeof obj.src === 'string' ? obj.src.trim() : '';
+          if (src !== '') {
+            const normalized: { src: string; alt: string; caption?: string } = {
+              src,
+              alt: typeof obj.alt === 'string' ? obj.alt : '',
+            };
+            const caption = typeof obj.caption === 'string' ? obj.caption.trim() : '';
+            if (caption !== '') normalized.caption = caption;
+            data[field.name] = normalized;
+          }
+        }
+        break;
+      }
       case 'date': {
         const text = value instanceof Date ? dateInputValue(value) : typeof value === 'string' ? value.trim() : '';
         if (field.required && text === '') errors[field.name] = `${field.label} is required`;

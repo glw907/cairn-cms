@@ -2,7 +2,7 @@
 // declaration yields a plain-data field projection for the editor form, a generated validator,
 // and an inferred frontmatter type. Plan 1 builds the additive primitive; the adapter-contract
 // cutover and the typed reads are Plan 2.
-import type { FrontmatterField, ValidationResult } from './types.js';
+import type { FrontmatterField, ImageValue, ValidationResult } from './types.js';
 import { validateFields } from './validate.js';
 
 /** The validate input the cairn adapter takes: the raw frontmatter and the body. */
@@ -26,14 +26,17 @@ type StandardResult<Output> =
   | { readonly issues: ReadonlyArray<{ readonly message: string; readonly path?: ReadonlyArray<PropertyKey> }> };
 
 /** Map one field descriptor to the TS type of its normalized value. text, textarea, and date
- *  normalize to a string; a closed-vocabulary `tags` field to the option-union array. */
+ *  normalize to a string; a closed-vocabulary `tags` field to the option-union array; an `image`
+ *  field to its nested object. */
 type FieldValue<K extends FrontmatterField> = K extends { type: 'boolean' }
   ? boolean
-  : K extends { type: 'tags'; options: readonly (infer O extends string)[] }
-    ? O[]
-    : K extends { type: 'tags' | 'freetags' }
-      ? string[]
-      : string;
+  : K extends { type: 'image' }
+    ? ImageValue
+    : K extends { type: 'tags'; options: readonly (infer O extends string)[] }
+      ? O[]
+      : K extends { type: 'tags' | 'freetags' }
+        ? string[]
+        : string;
 
 /** Flatten an intersection into a single readable object type. */
 type Prettify<T> = { [K in keyof T]: T[K] } & {};
@@ -102,6 +105,26 @@ function compilePatterns(fields: FrontmatterField[]): Map<string, RegExp> {
   return compiled;
 }
 
+// True when an image field feeds the social card: an explicit `seo: true`, or the back-compat
+// default that the field named `image` is the SEO image. The SEO unify (Task 4) reads this flag.
+function isSeoImage(field: FrontmatterField): boolean {
+  return field.type === 'image' && (field.seo === true || (field.seo === undefined && field.name === 'image'));
+}
+
+// A concept declares at most one SEO image field, so the social card is unambiguous. More than one
+// is a site config error: a hero named `cover` plus an explicit `seo` on another, or two explicit
+// `seo` fields. Fail loudly at declaration rather than emit a silent or wrong og:image.
+function checkSeoImageFields(fields: FrontmatterField[]): void {
+  const seo = fields.filter(isSeoImage);
+  if (seo.length > 1) {
+    const names = seo.map((field) => `"${field.name}"`).join(', ');
+    throw new Error(
+      `cairn: a concept declares at most one SEO image field, but found ${seo.length} (${names}). ` +
+        'Set seo: false on all but one, or rename the extra image fields so only one feeds the social card.',
+    );
+  }
+}
+
 /** Declare a concept's fields once. Returns the schema's faces derived from that one declaration. */
 export function defineFields<const F extends readonly FrontmatterField[]>(
   fields: F,
@@ -109,6 +132,7 @@ export function defineFields<const F extends readonly FrontmatterField[]>(
 ): ConceptSchema<F> {
   const list = [...fields] as FrontmatterField[];
   const patterns = compilePatterns(list);
+  checkSeoImageFields(list);
   const validate = (frontmatter: Record<string, unknown>, body: string): ValidationResult => {
     const base = validateFields(list, frontmatter);
     if (!base.ok) return base;

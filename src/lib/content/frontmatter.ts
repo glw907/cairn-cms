@@ -30,6 +30,21 @@ export function frontmatterFromForm(
           ),
         ];
         break;
+      case 'image': {
+        // The hero submits three sub-fields under one key. An empty src means no hero, so omit the
+        // whole key. Alt is stored verbatim (it is not markdown, so no escaping). A blank caption
+        // is dropped so committed frontmatter stays minimal.
+        const src = String(form.get(`${field.name}.src`) ?? '').trim();
+        if (src === '') break;
+        const value: { src: string; alt: string; caption?: string } = {
+          src,
+          alt: String(form.get(`${field.name}.alt`) ?? ''),
+        };
+        const caption = String(form.get(`${field.name}.caption`) ?? '').trim();
+        if (caption !== '') value.caption = caption;
+        data[field.name] = value;
+        break;
+      }
       default:
         // FormData.get returns null for an absent field; normalize to an empty string so
         // a caller reading a text value never gets null.

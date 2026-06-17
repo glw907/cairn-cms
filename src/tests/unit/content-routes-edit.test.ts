@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { serializeManifest } from '../../lib/content/manifest.js';
+import { serializeMarkdown, frontmatterFromForm } from '../../lib/content/frontmatter.js';
 import { serializeMediaManifest, type MediaEntry } from '../../lib/media/manifest.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { ResolvedAssetConfig } from '../../lib/media/config.js';
@@ -108,6 +109,38 @@ describe('editLoad', () => {
     // No pending branch: the entry reads from main and is published by existence.
     expect(data.pending).toBe(false);
     expect(data.published).toBe(true);
+  });
+
+  it('round-trips a nested image frontmatter object rather than stringifying it', async () => {
+    // The default form-value arm stringifies an object to '[object Object]', corrupting a hero on
+    // open. The image arm must hand the object back as-is so the editor reads .src/.alt/.caption.
+    const withImage = runtime();
+    withImage.concepts[0].fields = [
+      { type: 'text', name: 'title', label: 'Title', required: true },
+      { type: 'image', name: 'image', label: 'Hero' },
+    ];
+    editFetch(
+      serializeMarkdown(
+        { title: 'Hello', image: { src: 'media:a.0123456789abcdef', alt: 'A ridge', caption: 'High up.' } },
+        'The body.',
+      ),
+    );
+    const routes = createContentRoutes(withImage, deps);
+    const data = await routes.editLoad(editEvent('2026-05-hello') as never);
+    expect(data.frontmatter.image).toEqual({
+      src: 'media:a.0123456789abcdef',
+      alt: 'A ridge',
+      caption: 'High up.',
+    });
+
+    // The form-value -> form -> decode loop is stable for the same object.
+    const stored = data.frontmatter.image as { src: string; alt: string; caption?: string };
+    const form = new FormData();
+    form.set('image.src', stored.src);
+    form.set('image.alt', stored.alt);
+    if (stored.caption !== undefined) form.set('image.caption', stored.caption);
+    const imageField = withImage.concepts[0].fields.filter((f) => f.type === 'image');
+    expect(frontmatterFromForm(imageField, form)).toEqual({ image: stored });
   });
 
   it('returns a blank document for ?new=1 when the file is missing', async () => {

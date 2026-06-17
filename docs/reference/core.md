@@ -641,6 +641,8 @@ function signatures above reference these.
 | `BooleanField` | `interface BooleanField` | A checkbox field; absent means false. |
 | `TagsField` | `interface TagsField` | A closed-vocabulary tag set rendered as checkboxes. |
 | `FreeTagsField` | `interface FreeTagsField` | Free-form tags edited as one comma-separated input. |
+| `ImageField` | `interface ImageField` | A hero image set in frontmatter, with an optional `seo` flag for the social card. |
+| `ImageValue` | `interface ImageValue` | The stored value of an `image` field: a `media:` src, an alt, and an optional caption. |
 | `ValidationResult` | `type ValidationResult` | A validator's verdict: normalized data, or field-keyed errors. |
 | `ConceptSchema` | `interface ConceptSchema<F>` | A concept's schema: fields, validator, and Standard Schema conformance. |
 | `DefineFieldsOptions` | `interface DefineFieldsOptions<F>` | Options for `defineFields`, carrying the `refine` cross-field check. |

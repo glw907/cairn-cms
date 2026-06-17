@@ -16,6 +16,8 @@ function widgetFor(field: FrontmatterField): string {
       return `checkboxes:${field.options.length}`;
     case 'freetags':
       return 'csv';
+    case 'image':
+      return 'image';
   }
 }
 

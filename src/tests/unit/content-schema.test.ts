@@ -19,6 +19,21 @@ describe('defineFields: projection and inference', () => {
       draft?: boolean;
     }>();
   });
+
+  it('infers an image field as an optional nested object', () => {
+    const withHero = defineFields([
+      { name: 'title', type: 'text', label: 'Title', required: true },
+      { name: 'image', type: 'image', label: 'Hero' },
+    ]);
+    expectTypeOf<Infer<typeof withHero>>().toEqualTypeOf<{
+      title: string;
+      image?: { src: string; alt: string; caption?: string };
+    }>();
+    // A typed read of the nested src compiles.
+    expectTypeOf<Infer<typeof withHero>['image']>().toMatchTypeOf<
+      { src: string; alt: string; caption?: string } | undefined
+    >();
+  });
 });
 
 describe('defineFields: baseline validation', () => {
@@ -144,5 +159,40 @@ describe('defineFields: hardening', () => {
   it('returns issues rather than throwing when ~standard receives a null frontmatter', () => {
     const r = posts['~standard'].validate({ frontmatter: null, body: '' });
     expect('issues' in r).toBe(true);
+  });
+
+  it('throws when two SEO image fields are declared on one concept', () => {
+    expect(() =>
+      defineFields([
+        { name: 'image', type: 'image', label: 'Hero' },
+        { name: 'cover', type: 'image', label: 'Cover', seo: true },
+      ]),
+    ).toThrow(/seo/i);
+  });
+
+  it('treats the field named image as seo by default, so a second seo field collides', () => {
+    // image is seo by default; an explicit seo cover is a second SEO image.
+    expect(() =>
+      defineFields([
+        { name: 'image', type: 'image', label: 'Hero' },
+        { name: 'cover', type: 'image', label: 'Cover', seo: true },
+      ]),
+    ).toThrow();
+    // Two explicit seo fields also collide.
+    expect(() =>
+      defineFields([
+        { name: 'hero', type: 'image', label: 'Hero', seo: true },
+        { name: 'cover', type: 'image', label: 'Cover', seo: true },
+      ]),
+    ).toThrow();
+  });
+
+  it('allows one SEO image alongside non-SEO image fields', () => {
+    expect(() =>
+      defineFields([
+        { name: 'image', type: 'image', label: 'Hero' },
+        { name: 'cover', type: 'image', label: 'Cover' },
+      ]),
+    ).not.toThrow();
   });
 });

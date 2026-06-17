@@ -34,6 +34,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   import LinkPicker from './LinkPicker.svelte';
   import WebLinkDialog from './WebLinkDialog.svelte';
   import MediaInsertPopover from './MediaInsertPopover.svelte';
+  import MediaHeroField from './MediaHeroField.svelte';
   import MediaFigureControl from './MediaFigureControl.svelte';
   import DeleteDialog from './DeleteDialog.svelte';
   import RenameDialog from './RenameDialog.svelte';
@@ -56,7 +57,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   import { parseComponent, componentRoundTripSafety } from '../render/component-grammar.js';
   import type { IconSet } from '../render/glyph.js';
   import type { ContentFormFailure, EditData } from '../sveltekit/content-routes.js';
-  import type { TextareaField, TagsField, FreeTagsField } from '../content/types.js';
+  import type { TextareaField, TagsField, FreeTagsField, ImageValue } from '../content/types.js';
   import type { LinkResolve } from '../content/links.js';
   import { manifestLinkResolver } from '../content/manifest.js';
   import type { MediaResolve } from '../render/resolve-media.js';
@@ -142,6 +143,12 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     // contenteditable. Skipping the surface keeps body edits owned by bodyDirty, so undoing back
     // to the committed text reads clean again.
     if (target?.closest('dialog, #cairn-pane-write')) return;
+    fieldsDirty = true;
+  }
+  // Mark the details fields dirty without a form input event. The hero field writes its value to
+  // hidden inputs, whose programmatic value changes do not fire the form's oninput, so it signals
+  // dirty through this helper instead.
+  function markFieldsDirty() {
     fieldsDirty = true;
   }
 
@@ -1546,6 +1553,17 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
               value={tagValue}
             />
           </label>
+        {:else if field.type === 'image'}
+          {@const heroValue = data.frontmatter[field.name] as ImageValue | undefined}
+          <MediaHeroField
+            field={{ name: field.name, label: field.label }}
+            value={heroValue}
+            mediaLibrary={mediaLibrary}
+            conceptId={data.conceptId}
+            id={data.id}
+            onuploaded={(record) => (uploadedRecords = [...uploadedRecords, record])}
+            ondirty={markFieldsDirty}
+          />
         {:else}
           <label class="flex flex-col gap-1">
             <span class="text-sm font-medium">{field.label}</span>

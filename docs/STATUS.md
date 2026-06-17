@@ -57,19 +57,41 @@ the carry-forwards in the plan (`docs/superpowers/plans/2026-06-16-cairn-media-3
    live smoke (the deferred proof), copy the `.cairn-place-*` CSS, and (to adopt the hero) declare the
    `image` field, inject `resolveMedia` into `createPublicRoutes`, render `heroImage`, and migrate any
    string `image` SEO field to the structured object.
-4. **NEXT: build Phase 3c** (the gallery component): a site-defined registry component with ordered tiles
-   referencing library assets, each with its own alt and caption; gallery-from-library first, then
-   gallery-with-bulk-upload after the batch-coalesced ingest (2b open risk 5). Reuses the caption+alt
-   model. Needs a design pass first (mockup-first per the UI-design-pass methodology); not yet specced or
-   planned. **Then the single bundled release plus the per-site cutover**, once the image work is complete.
+4. **NEXT: build Phase 3c** (the admin **Media Library** screen), **DESIGNED + PLANNED 2026-06-17 on
+   `feat/media-3c`** (off `main` at `f865c7b`), ready to execute. **Scope correction (Geoff):** 3c is the
+   admin media-management screen ("the gallery should just be default UI ... it's only for the admin
+   interface"; he prefers the term "library"), NOT a forward-facing content gallery component, which is
+   dropped (a developer builds their own; core stays lean). This supersedes the umbrella spec's
+   gallery-component framing. The full mockup-first methodology ran: competitor + user-feedback research
+   (the design reference), three divergent UI mockups, an adversarial UI critique, an adversarial
+   backend-feasibility review, a frontend-design polish (the consolidated mockup), and an adversarial spec
+   review. Artifacts on `feat/media-3c`: design reference
+   `docs/internal/design/2026-06-17-media-library-design-reference.md`, the consolidated mockup
+   `docs/internal/design/2026-06-17-media-library-mockup.html` (three explorations beside it), spec
+   `docs/superpowers/specs/2026-06-17-cairn-media-3c-library-design.md`, plan (10 tasks)
+   `docs/superpowers/plans/2026-06-17-cairn-media-3c-library.md`. The Library is a peer of Posts/Pages at
+   `/admin/media`: a visual grid + a list-density toggle, a non-modal detail slide-over, where-used grouped
+   published-vs-edit-branch (cairn's git-substrate advantage, the universally-missing feature), a two-faced
+   safe-delete, a triage radiogroup, client-side pagination; no multi-select/bulk/tags/dashboard. Locked
+   backend hardening (the reviews): the usage index keys by HASH and reads the FRONTMATTER hero (not just
+   body images); `main` rides a new ADDITIVE content-manifest `mediaRefs` field (no build break), the
+   branch arm parses each open branch's edited entry markdown; the loader UNIONS main + open branches so
+   not-yet-published assets show; safe-delete commits-then-deletes-R2 on a FRESH gate; rename/alt is
+   display-layer only. Replace/bulk/tags/propagating-alt deferred. High-blast tasks: 1, 2, 4, 5, 6. **Then
+   the single bundled `0.57.0` release plus the per-site cutover**, since 3c completes Phase 3.
 
-**Resume prompt for the 3c design (fresh session):**
-"Design Phase 3c of the cairn media gallery: the gallery component (a site-defined registry component
-with ordered tiles, each tile a library asset with its own alt and caption). Invoke `cairn-pass`. Launch
-in `cairn-cms`. The umbrella spec is `docs/superpowers/specs/2026-06-15-cairn-media-gallery-design.md`;
-3a (`feat/media-3a`) and 3b (`feat/media-3b`) are on `main` unreleased at `0.57.0`. Run the mockup-first
-design methodology (research -> frontend-design mockups -> adversarial critique -> spec -> plan) before
-implementing. The whole media stack ships in one release when Phase 3 is complete."
+**Resume prompt for the 3c build (fresh session, effort high):**
+"Execute Phase 3c of the cairn media gallery: the admin Media Library screen, plan at
+`docs/superpowers/plans/2026-06-17-cairn-media-3c-library.md` (spec
+`docs/superpowers/specs/2026-06-17-cairn-media-3c-library-design.md`). Invoke the `cairn-pass` skill.
+Launch in `cairn-cms`; the design + plan are on the `feat/media-3c` worktree (off `main`). Confirm the
+baseline (`npm test` exit 0), then run the 10 tasks test-first: one `cairn-implementer` per task, review
+each diff, clear the full gate between dispatches, at high effort. Tasks 1, 2, 4, 5, 6 are high-blast:
+review closely and upshift to `model: opus` if warranted. The correctness core (Task 1 the
+content-manifest `mediaRefs` field + extractor, Task 2 the cross-branch usage index) lands first and
+alone. Tasks 9 (frontend-design polish) and 10 (pass-end, whose review-gate workflow needs my 'use a
+workflow' opt-in) run in the main loop. 3c completes Phase 3; version stays 0.57.0; the single bundled
+release + per-site cutover follow at pass-end."
 
 ## Prior next action (2026-06-16): media is author-usable; Phase 2b insert UI LANDED on `feat/media-2b`, the whole media stack is release-ready as `0.57.0`
 

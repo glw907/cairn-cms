@@ -1,0 +1,749 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Proposed design: the hero image, Direction C (the capture-card echo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+  rel="stylesheet"
+/>
+<style>
+  /* Direction C, the capture-card echo. The thesis is literal reuse of the 2b insert flow. An editor
+     who has already inserted a body image knows this surface by heart, so setting a hero reuses the
+     same two pieces verbatim: the 2b chooser (upload first, then the "or reuse an image" combobox)
+     for the empty state, and the 2b MediaCaptureCard (thumbnail, the alt radiogroup, here joined by
+     the optional caption) for the set state. The one thing the hero adds that a body insert does not:
+     the captured card SETTLES into a compact resting row, so it sits quietly beside the other
+     frontmatter fields instead of holding a tall card open forever. Editing reopens the same card. */
+
+  /* ---- mock scaffold (outside the themed surfaces), copied from the 3a figure mockup ---- */
+  body { margin: 0; background: #d8d4cf; }
+  .mock-label { font: 600 13px/1.4 system-ui; letter-spacing: .08em; text-transform: uppercase; color: #444; padding: 26px 24px 4px; }
+  .mock-note { font: 400 13px/1.55 system-ui; color: #5a564f; padding: 0 24px 14px; max-width: 76ch; }
+  .mock-note code { font-family: ui-monospace, monospace; background: rgba(0,0,0,.06); padding: 1px 4px; border-radius: 3px; }
+  .screen { border: 1px solid #aaa; margin: 0 16px 48px; box-shadow: 0 2px 14px rgba(0,0,0,.08); overflow: hidden; }
+  .screen.narrow { max-width: 384px; }
+
+  /* ---- Warm Stone tokens, both theme roots, inlined so the mockup stands alone (from the 3a mockup) ---- */
+  [data-theme='cairn-admin'] {
+    --color-base-100: oklch(99% 0.004 75);
+    --color-base-200: oklch(96.5% 0.006 75);
+    --color-base-300: oklch(89% 0.011 75);
+    --color-base-content: oklch(26% 0.014 75);
+    --color-primary: oklch(52% 0.2 293);
+    --color-primary-content: oklch(98% 0.01 293);
+    --color-accent: oklch(54% 0.16 300);
+    --color-muted: oklch(48% 0.01 75);
+    --color-subtle: oklch(42% 0.01 75);
+    --color-positive-ink: oklch(48% 0.12 150);
+    --cairn-code-chip: oklch(94.5% 0.008 75);
+    --cairn-warning-ink: oklch(50% 0.13 70);
+    --cairn-card-border: oklch(93% 0.008 75);
+    --cairn-shadow: 0 1px 2px oklch(28% 0.02 75 / 0.05), 0 8px 24px -6px oklch(28% 0.02 75 / 0.1);
+  }
+  [data-theme='cairn-admin-dark'] {
+    --color-base-100: oklch(24% 0.01 75);
+    --color-base-200: oklch(15.5% 0.009 75);
+    --color-base-300: oklch(30% 0.014 75);
+    --color-base-content: oklch(93% 0.006 75);
+    --color-primary: oklch(68% 0.18 293);
+    --color-primary-content: oklch(20% 0.03 293);
+    --color-accent: oklch(70% 0.14 300);
+    --color-muted: oklch(72% 0.01 75);
+    --color-subtle: oklch(80% 0.008 75);
+    --color-positive-ink: oklch(78% 0.12 150);
+    --cairn-code-chip: oklch(29.5% 0.012 75);
+    --cairn-warning-ink: oklch(80% 0.14 70);
+    --cairn-card-border: oklch(30% 0.014 75);
+    --cairn-shadow: 0 1px 2px oklch(0% 0 0 / 0.35), 0 8px 24px -6px oklch(0% 0 0 / 0.5);
+  }
+
+  [data-theme] {
+    --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+    --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-editor: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+
+  /* ===== the desk shell behind the slide-over (just enough to read the panel in context) ===== */
+  .desk { display: flex; min-height: 30rem; background: var(--color-base-200); color: var(--color-base-content); font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
+  .desk-stage { flex: 1 1 auto; position: relative; min-width: 0; }
+  .desk-band { display: flex; align-items: center; height: 56px; padding: 0 18px; background: var(--color-base-100); border-bottom: 1px solid var(--cairn-card-border); gap: 12px; }
+  .crumb { display: flex; align-items: center; gap: 7px; font-size: .8125rem; color: var(--color-muted); }
+  .crumb .here { color: var(--color-base-content); font-weight: 550; }
+  .crumb .sep { opacity: .45; }
+  .band-spacer { flex: 1 1 auto; }
+  .band-btn { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 0; background: transparent; border-radius: .5rem; color: var(--color-subtle); font: 500 .8125rem/1 var(--font-body); cursor: pointer; }
+  .band-btn.on { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); }
+  .manuscript { font-family: var(--font-editor); font-size: 1rem; line-height: 1.85; color: var(--color-muted); max-width: 40rem; margin: 0 auto; padding: 30px 24px; }
+  .manuscript .doc-title { font-family: var(--font-display); font-size: 1.7rem; font-weight: 700; letter-spacing: -.02em; color: var(--color-base-content); margin-bottom: 18px; }
+  .manuscript .ln { white-space: pre-wrap; }
+  .manuscript .mk { color: color-mix(in oklab, var(--color-muted) 70%, transparent); }
+
+  /* ===== the details slide-over (the design surface) ===== */
+  .panel { position: absolute; top: 0; right: 0; bottom: 0; width: 21rem; max-width: 100%; background: var(--color-base-100); border-left: 1px solid var(--cairn-card-border); box-shadow: var(--cairn-shadow); display: flex; flex-direction: column; }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 10px; }
+  .panel-eyebrow { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); }
+  .panel-close { display: inline-flex; align-items: center; justify-content: center; height: 28px; width: 28px; border: 0; background: transparent; border-radius: .5rem; color: var(--color-subtle); cursor: pointer; }
+  .panel-close:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .panel-body { flex: 1 1 auto; overflow: auto; padding: 4px 16px 20px; }
+
+  /* a sibling frontmatter field, so the hero field is seen among neighbors */
+  .fm { margin-bottom: 16px; }
+  .fm > label { display: block; font-size: .8125rem; font-weight: 500; margin-bottom: 5px; }
+  .fm .input { width: 100%; box-sizing: border-box; font: 400 .875rem/1.4 var(--font-body); color: var(--color-base-content); background: var(--color-base-100); border: 1px solid var(--color-base-300); border-radius: .625rem; padding: 8px 11px; }
+  .fm textarea.input { resize: vertical; min-height: 4.4rem; line-height: 1.5; }
+  .fm .input::placeholder { color: var(--color-muted); }
+  .fm .input:focus-visible { outline: none; border-color: color-mix(in oklab, var(--color-primary) 70%, transparent); box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-primary) 70%, transparent); }
+  .fm .hint { font-size: .75rem; color: var(--color-muted); margin-top: 5px; line-height: 1.45; }
+  .fm-split { display: flex; gap: 10px; }
+  .fm-split .fm { flex: 1 1 0; }
+
+  .field-divider { height: 1px; background: var(--cairn-card-border); margin: 4px 0 16px; }
+
+  /* the hero field label sits in the field rhythm, with a small "Hero image" eyebrow-weight tag */
+  .hero-label { display: flex; align-items: center; gap: 7px; font-size: .8125rem; font-weight: 500; margin-bottom: 7px; }
+  .hero-label .badge { font-family: var(--font-body); font-size: .625rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--color-muted); border: 1px solid var(--color-base-300); border-radius: .3rem; padding: .08rem .34rem; }
+
+  /* ---- EMPTY state: the exact 2b chooser, rendered inline in the panel (not in a popover) ---- */
+  .chooser { border: 1px dashed color-mix(in oklab, var(--color-base-300) 80%, var(--color-base-content) 12%); border-radius: .75rem; padding: 14px; display: flex; flex-direction: column; gap: 11px; background: color-mix(in oklab, var(--color-base-content) 1.5%, transparent); }
+  .btn { font: 600 .8125rem/1 var(--font-body); border-radius: .625rem; padding: 9px 14px; cursor: pointer; border: 1px solid transparent; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+  .btn-primary { background: var(--color-primary); color: var(--color-primary-content); box-shadow: 0 1px 2px color-mix(in oklab, var(--color-primary) 35%, transparent); }
+  .btn-primary[disabled] { opacity: .5; cursor: not-allowed; box-shadow: none; }
+  .btn-ghost { background: transparent; color: var(--color-subtle); border: 1px solid var(--color-base-300); }
+  .btn-sm { font-size: .8125rem; padding: 7px 11px; }
+  .btn-block { width: 100%; }
+  .chooser-or { font-size: .75rem; color: var(--color-muted); text-align: center; margin: 0; }
+  .chooser-hint { font-size: .75rem; color: var(--color-muted); margin: 0; line-height: 1.5; }
+
+  /* the combobox, the MediaPicker pattern verbatim (search input + listbox of thumbnail rows) */
+  .combo { display: flex; align-items: center; gap: 8px; border: 1px solid var(--cairn-card-border); border-radius: .625rem; background: var(--color-base-100); padding: 7px 10px; }
+  .combo svg { color: var(--color-muted); flex: none; }
+  .combo input { width: 100%; border: 0; background: transparent; padding: 0; font: 400 .8125rem/1.4 var(--font-body); color: var(--color-base-content); outline: none; }
+  .combo input::placeholder { color: var(--color-muted); }
+  .listbox { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; max-height: 14rem; overflow: auto; }
+  .opt { display: flex; align-items: flex-start; gap: 10px; padding: 6px 7px; border-radius: .55rem; cursor: pointer; }
+  .opt:hover { background: color-mix(in oklab, var(--color-base-content) 4%, transparent); }
+  .opt.active { background: color-mix(in oklab, var(--color-base-content) 8%, transparent); }
+  .opt .thumb { width: 2.25rem; height: 2.25rem; border-radius: .5rem; border: 1px solid var(--cairn-card-border); flex: none; }
+  .opt .meta { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .opt .nm { font-size: .8125rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .opt .needs-alt { display: inline-flex; align-items: center; gap: 3px; font-size: .6875rem; font-weight: 500; color: var(--cairn-warning-ink); }
+  .opt .needs-alt svg { width: 11px; height: 11px; }
+
+  /* ---- SET state, the captured card: the 2b MediaCaptureCard almost verbatim ---- */
+  .capcard { border: 1px solid var(--cairn-card-border); border-radius: .85rem; background: var(--color-base-100); box-shadow: var(--cairn-shadow); padding: 14px; }
+  .capcard-top { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+  .capcard-thumb { width: 4.5rem; height: 4.5rem; flex: none; border-radius: .625rem; border: 1px solid var(--cairn-card-border); }
+  .capcard-name { flex: 1 1 0; min-width: 0; }
+  .capcard-name .lbl { display: flex; align-items: center; gap: 7px; font-size: .8125rem; font-weight: 500; margin-bottom: 5px; }
+  .badge-suggested { font-family: var(--font-body); font-size: .625rem; font-weight: 600; color: var(--color-muted); background: color-mix(in oklab, var(--color-base-content) 7%, transparent); border-radius: .3rem; padding: .08rem .36rem; }
+  .input { width: 100%; box-sizing: border-box; font: 400 .875rem/1.4 var(--font-body); color: var(--color-base-content); background: var(--color-base-100); border: 1px solid var(--color-base-300); border-radius: .625rem; padding: 8px 11px; }
+  .input::placeholder { color: var(--color-muted); }
+  .input:focus-visible { outline: none; border-color: color-mix(in oklab, var(--color-primary) 70%, transparent); box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-primary) 70%, transparent); }
+  .input-sm { font-size: .8125rem; padding: 6px 9px; }
+
+  .alt-fieldset { border: 0; padding: 0; margin: 0 0 14px; }
+  .alt-fieldset legend { font-size: .8125rem; font-weight: 500; padding: 0; margin-bottom: 4px; }
+  .alt-fieldset .note { font-size: .75rem; color: var(--color-muted); margin: 0 0 8px; line-height: 1.45; }
+  .alt-opt { display: flex; align-items: center; gap: 8px; font-size: .8125rem; cursor: pointer; margin-bottom: 7px; }
+  .alt-opt .radio { width: 15px; height: 15px; border-radius: 50%; border: 1.5px solid var(--color-base-300); flex: none; }
+  .alt-opt.sel .radio { border-color: var(--color-primary); background: radial-gradient(circle at center, var(--color-primary) 0 4px, transparent 5px); }
+  .alt-desc { margin: -2px 0 7px 1.45rem; }
+
+  .cap-field { margin-bottom: 4px; }
+  .cap-field > label { display: block; font-size: .8125rem; font-weight: 500; margin-bottom: 5px; }
+  .cap-field .hint { font-size: .75rem; color: var(--color-muted); margin-top: 5px; line-height: 1.45; }
+
+  .capcard-actions { display: flex; align-items: center; gap: 8px; margin-top: 14px; }
+  .capcard-actions .grow { flex: 1 1 auto; }
+
+  /* the needs-alt notice that mirrors the editor's publish notice, here scoped to the hero */
+  .alt-warn { display: flex; gap: 7px; align-items: flex-start; margin-top: 10px; padding: 9px 11px; border-radius: .55rem; background: color-mix(in oklab, var(--cairn-warning-ink) 8%, transparent); }
+  .alt-warn svg { flex: none; margin-top: 1px; color: var(--cairn-warning-ink); }
+  .alt-warn p { margin: 0; font-size: .75rem; line-height: 1.5; color: var(--cairn-warning-ink); }
+
+  /* ---- SET state, the settled resting row: how the captured card collapses so it does not dominate ---- */
+  .resting { display: flex; align-items: center; gap: 11px; border: 1px solid var(--cairn-card-border); border-radius: .75rem; background: var(--color-base-100); padding: 10px 12px; }
+  .resting .thumb { width: 3rem; height: 3rem; flex: none; border-radius: .55rem; border: 1px solid var(--cairn-card-border); }
+  .resting .meta { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+  .resting .nm { font-size: .8125rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .resting .sub { display: inline-flex; align-items: center; gap: 5px; font-size: .75rem; color: var(--color-muted); }
+  .resting .sub.ok { color: var(--color-positive-ink); }
+  .resting .sub.warn { color: var(--cairn-warning-ink); font-weight: 500; }
+  .resting .sub svg { width: 12px; height: 12px; }
+  .resting-edit { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 11px; border: 1px solid var(--color-base-300); background: transparent; border-radius: .55rem; color: var(--color-subtle); font: 500 .8125rem/1 var(--font-body); cursor: pointer; flex: none; }
+  .resting-edit:hover { color: var(--color-base-content); background: color-mix(in oklab, var(--color-base-content) 4%, transparent); }
+
+  .caption-preview { font-size: .75rem; color: var(--color-muted); margin: 7px 2px 0; line-height: 1.5; font-style: italic; }
+
+  /* the small "this also becomes the share card" reassurance line, the one hero-only addition */
+  .unify { display: flex; gap: 7px; align-items: flex-start; margin-top: 9px; padding: 8px 10px; border-radius: .55rem; background: color-mix(in oklab, var(--color-base-content) 3%, transparent); }
+  .unify svg { flex: none; margin-top: 1px; color: var(--color-muted); }
+  .unify p { margin: 0; font-size: .75rem; line-height: 1.5; color: var(--color-muted); }
+
+  .col-note { font: 400 13px/1.55 system-ui; color: #5a564f; padding: 0 0 10px; max-width: 60ch; }
+</style>
+</head>
+<body>
+
+<p class="mock-label">Media 3b, the hero image, Direction C (the capture-card echo)</p>
+<p class="mock-note">
+  A concept gets a hero image in frontmatter, edited in the editor's details slide-over alongside the other
+  frontmatter fields. The stored value is a nested object, <code>image: { src: media:slug.hash, alt, caption }</code>.
+  One image serves both the page hero and the social-card <code>og:image</code>. This direction reuses the 2b insert flow
+  to the letter: the empty state is the 2b chooser (upload first, then the "or reuse an image" combobox), and the set
+  state is the 2b MediaCaptureCard (thumbnail, the alt radiogroup, joined here by the caption field). An editor who has
+  inserted a body image already knows this surface. The hero adds one move a body insert does not need: once captured,
+  the tall card settles into a compact resting row so it sits quietly among the other fields.
+</p>
+
+<!-- ============================== LIGHT: EMPTY ============================== -->
+<p class="mock-label">Light, empty: no hero set, the 2b chooser inline in the panel</p>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="desk">
+    <div class="desk-stage">
+      <div class="desk-band">
+        <div class="crumb"><a style="color:inherit;text-decoration:none">Posts</a><span class="sep">/</span><span class="here">A season on the early tracks</span></div>
+        <span class="band-spacer"></span>
+        <button class="band-btn on" type="button">Details</button>
+      </div>
+      <div class="manuscript">
+        <div class="doc-title">A season on the early tracks</div>
+        <div class="ln"><span class="mk">## </span>The first grooming run</div>
+        <div class="ln">The cat goes out before five, and by the time the lot</div>
+        <div class="ln">fills the corduroy has set hard in the cold.</div>
+      </div>
+    </div>
+
+    <div class="panel" role="region" aria-label="Entry details">
+      <div class="panel-head">
+        <span class="panel-eyebrow">Details</span>
+        <button class="panel-close" type="button" aria-label="Close details">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <div class="panel-body">
+
+        <div class="fm">
+          <label for="date-e">Date</label>
+          <input class="input" id="date-e" type="text" value="2026-02-14" />
+        </div>
+
+        <div class="field-divider"></div>
+
+        <!-- the hero field, EMPTY: the 2b chooser pattern, inline -->
+        <div class="fm" style="margin-bottom: 18px;">
+          <div class="hero-label">
+            Hero image
+            <span class="badge">Optional</span>
+          </div>
+          <div class="chooser">
+            <button class="btn btn-primary btn-block btn-sm" type="button">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Upload an image
+            </button>
+            <p class="chooser-or">or reuse an image</p>
+            <div class="combo">
+              <svg width="15" height="15" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M229.7 218.3 179.6 168.2A92.2 92.2 0 1 0 168.2 179.6l50.1 50.1a8 8 0 0 0 11.4-11.4ZM40 112a72 72 0 1 1 72 72 72.1 72.1 0 0 1-72-72Z" /></svg>
+              <input type="text" placeholder="Search the media library" aria-label="Search the media library" />
+            </div>
+            <ul class="listbox" role="listbox" aria-label="Media library">
+              <li class="opt active" role="option" aria-selected="true">
+                <span class="thumb ph-b"></span>
+                <span class="meta"><span class="nm">valley-ridge</span></span>
+              </li>
+              <li class="opt" role="option" aria-selected="false">
+                <span class="thumb ph-a"></span>
+                <span class="meta">
+                  <span class="nm">first-light</span>
+                  <span class="needs-alt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Needs alt</span>
+                </span>
+              </li>
+              <li class="opt" role="option" aria-selected="false">
+                <span class="thumb ph-c"></span>
+                <span class="meta"><span class="nm">junction-sign</span></span>
+              </li>
+            </ul>
+            <p class="chooser-hint">The hero shows at the top of the post and on the link card when the post is shared.</p>
+          </div>
+        </div>
+
+        <div class="fm">
+          <label for="desc-e">Description</label>
+          <textarea class="input" id="desc-e" placeholder="A line or two for search results and link previews">A season spent on the early grooming runs, before the lot fills.</textarea>
+          <p class="hint">Used for search results and the social card text.</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- ============================== LIGHT: SET, captured card ============================== -->
+<p class="mock-label">Light, just captured: the 2b MediaCaptureCard, with the caption joined in</p>
+<p class="mock-note">
+  This is the 2b capture card almost verbatim. The thumbnail, the editable Name with its Suggested tag, and the alt
+  radiogroup are the same controls a body insert shows. The hero adds the optional Caption field and a quiet line noting
+  the image doubles as the share card. Save is never blocked on alt. When the editor is done, Done collapses the card to
+  the resting row below.
+</p>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="desk">
+    <div class="desk-stage">
+      <div class="desk-band">
+        <div class="crumb"><a style="color:inherit;text-decoration:none">Posts</a><span class="sep">/</span><span class="here">A season on the early tracks</span></div>
+        <span class="band-spacer"></span>
+        <button class="band-btn on" type="button">Details</button>
+      </div>
+      <div class="manuscript">
+        <div class="doc-title">A season on the early tracks</div>
+        <div class="ln"><span class="mk">## </span>The first grooming run</div>
+        <div class="ln">The cat goes out before five, and by the time the lot</div>
+        <div class="ln">fills the corduroy has set hard in the cold.</div>
+      </div>
+    </div>
+
+    <div class="panel" role="region" aria-label="Entry details">
+      <div class="panel-head">
+        <span class="panel-eyebrow">Details</span>
+        <button class="panel-close" type="button" aria-label="Close details">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <div class="panel-body">
+
+        <div class="fm">
+          <label for="date-s">Date</label>
+          <input class="input" id="date-s" type="text" value="2026-02-14" />
+        </div>
+
+        <div class="field-divider"></div>
+
+        <!-- the hero field, SET (just captured): the 2b MediaCaptureCard, plus caption -->
+        <div class="fm" style="margin-bottom: 18px;">
+          <div class="hero-label">Hero image</div>
+          <div class="capcard">
+            <div class="capcard-top">
+              <span class="capcard-thumb ph-b"></span>
+              <div class="capcard-name">
+                <span class="lbl">Name <span class="badge-suggested">Suggested</span></span>
+                <input class="input input-sm" type="text" value="valley-ridge" />
+              </div>
+            </div>
+
+            <fieldset class="alt-fieldset" role="radiogroup" aria-label="Alt text">
+              <legend>Alt text</legend>
+              <p class="note">Describe the image for screen readers, or mark it decorative. You can save without alt text and add it later.</p>
+              <label class="alt-opt sel"><span class="radio"></span>Write a description</label>
+              <input class="input input-sm alt-desc" type="text" value="The valley opens up from the ridge at the far turn" aria-label="Alt text description" />
+              <label class="alt-opt"><span class="radio"></span>Mark as decorative</label>
+            </fieldset>
+
+            <div class="cap-field">
+              <label for="cap-s">Caption</label>
+              <input class="input input-sm" id="cap-s" type="text" placeholder="A line shown under the hero, if your site shows captions" />
+              <p class="hint">Optional. Shown under the image. This is not the alt text.</p>
+            </div>
+
+            <div class="unify" role="note">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+              <p>This image is also the share card when the post is posted to social.</p>
+            </div>
+
+            <div class="capcard-actions">
+              <span class="grow"></span>
+              <button class="btn btn-ghost btn-sm" type="button">Remove</button>
+              <button class="btn btn-primary btn-sm" type="button">Done</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="fm">
+          <label for="desc-s">Description</label>
+          <textarea class="input" id="desc-s">A season spent on the early grooming runs, before the lot fills.</textarea>
+          <p class="hint">Used for search results and the social card text.</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- ============================== LIGHT: SET, resting row ============================== -->
+<p class="mock-label">Light, settled: the captured card collapses to a compact resting row</p>
+<p class="mock-note">
+  Once Done is pressed the card settles to this row, so the hero no longer dominates the panel. The row carries the
+  thumbnail, the name, and the alt status. Edit reopens the same capture card. A caption, if set, previews beneath the
+  row. This is the one thing the hero needs that a body insert does not: a body image lives in the manuscript, but a
+  hero lives in this panel for the whole session, so it has to learn to sit quietly.
+</p>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="desk">
+    <div class="desk-stage">
+      <div class="desk-band">
+        <div class="crumb"><a style="color:inherit;text-decoration:none">Posts</a><span class="sep">/</span><span class="here">A season on the early tracks</span></div>
+        <span class="band-spacer"></span>
+        <button class="band-btn on" type="button">Details</button>
+      </div>
+      <div class="manuscript">
+        <div class="doc-title">A season on the early tracks</div>
+        <div class="ln"><span class="mk">## </span>The first grooming run</div>
+        <div class="ln">The cat goes out before five, and by the time the lot</div>
+        <div class="ln">fills the corduroy has set hard in the cold.</div>
+        <div class="ln">By nine the classic track is glassy and fast.</div>
+      </div>
+    </div>
+
+    <div class="panel" role="region" aria-label="Entry details">
+      <div class="panel-head">
+        <span class="panel-eyebrow">Details</span>
+        <button class="panel-close" type="button" aria-label="Close details">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <div class="panel-body">
+
+        <div class="fm">
+          <label for="date-r">Date</label>
+          <input class="input" id="date-r" type="text" value="2026-02-14" />
+        </div>
+
+        <div class="field-divider"></div>
+
+        <!-- the hero field, SET (at rest): the compact resting row -->
+        <div class="fm" style="margin-bottom: 18px;">
+          <div class="hero-label">Hero image</div>
+          <div class="resting">
+            <span class="thumb ph-b"></span>
+            <div class="meta">
+              <span class="nm">valley-ridge</span>
+              <span class="sub ok">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                Described
+              </span>
+            </div>
+            <button class="resting-edit" type="button">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+              Edit
+            </button>
+          </div>
+          <p class="caption-preview">"The valley opens up from the ridge at the far turn."</p>
+        </div>
+
+        <div class="fm">
+          <label for="desc-r">Description</label>
+          <textarea class="input" id="desc-r">A season spent on the early grooming runs, before the lot fills.</textarea>
+          <p class="hint">Used for search results and the social card text.</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- ============================== LIGHT: SET, needs-alt at rest ============================== -->
+<p class="mock-label">Light, settled with alt still missing: the resting row carries the needs-alt marker</p>
+<p class="mock-note">
+  Alt is debt, not a save block. A hero saved without alt still settles to the resting row, but the status reads "Needs
+  alt" in the warning ink, and the same panel-level notice the editor uses surfaces below it. The decision stays with
+  the editor; nothing here stops a save or a publish.
+</p>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="desk">
+    <div class="desk-stage">
+      <div class="desk-band">
+        <div class="crumb"><a style="color:inherit;text-decoration:none">Posts</a><span class="sep">/</span><span class="here">A season on the early tracks</span></div>
+        <span class="band-spacer"></span>
+        <button class="band-btn on" type="button">Details</button>
+      </div>
+      <div class="manuscript">
+        <div class="doc-title">A season on the early tracks</div>
+        <div class="ln"><span class="mk">## </span>The first grooming run</div>
+        <div class="ln">The cat goes out before five, and by the time the lot</div>
+        <div class="ln">fills the corduroy has set hard in the cold.</div>
+      </div>
+    </div>
+
+    <div class="panel" role="region" aria-label="Entry details">
+      <div class="panel-head">
+        <span class="panel-eyebrow">Details</span>
+        <button class="panel-close" type="button" aria-label="Close details">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <div class="panel-body">
+
+        <div class="fm">
+          <label for="date-w">Date</label>
+          <input class="input" id="date-w" type="text" value="2026-02-14" />
+        </div>
+
+        <div class="field-divider"></div>
+
+        <div class="fm" style="margin-bottom: 18px;">
+          <div class="hero-label">Hero image</div>
+          <div class="resting">
+            <span class="thumb ph-a"></span>
+            <div class="meta">
+              <span class="nm">first-light</span>
+              <span class="sub warn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                Needs alt
+              </span>
+            </div>
+            <button class="resting-edit" type="button">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+              Edit
+            </button>
+          </div>
+          <div class="alt-warn" role="status">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <p>The hero has no alt text. Add a description so readers on a screen reader know what it shows.</p>
+          </div>
+        </div>
+
+        <div class="fm">
+          <label for="desc-w">Description</label>
+          <textarea class="input" id="desc-w">A season spent on the early grooming runs, before the lot fills.</textarea>
+          <p class="hint">Used for search results and the social card text.</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- ============================== DARK: EMPTY and SET, side by side context ============================== -->
+<p class="mock-label">Dark, empty: the chooser inline in the panel</p>
+<div class="screen"><div data-theme="cairn-admin-dark">
+  <div class="desk">
+    <div class="desk-stage">
+      <div class="desk-band">
+        <div class="crumb"><a style="color:inherit;text-decoration:none">Posts</a><span class="sep">/</span><span class="here">Closing day on the high loop</span></div>
+        <span class="band-spacer"></span>
+        <button class="band-btn on" type="button">Details</button>
+      </div>
+      <div class="manuscript">
+        <div class="doc-title">Closing day on the high loop</div>
+        <div class="ln"><span class="mk">## </span>Last laps</div>
+        <div class="ln">The snow holds in the trees long after the open</div>
+        <div class="ln">meadows have gone to mud.</div>
+      </div>
+    </div>
+
+    <div class="panel" role="region" aria-label="Entry details">
+      <div class="panel-head">
+        <span class="panel-eyebrow">Details</span>
+        <button class="panel-close" type="button" aria-label="Close details">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <div class="panel-body">
+
+        <div class="fm">
+          <label for="date-de">Date</label>
+          <input class="input" id="date-de" type="text" value="2026-04-02" />
+        </div>
+
+        <div class="field-divider"></div>
+
+        <div class="fm" style="margin-bottom: 18px;">
+          <div class="hero-label">
+            Hero image
+            <span class="badge">Optional</span>
+          </div>
+          <div class="chooser">
+            <button class="btn btn-primary btn-block btn-sm" type="button">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Upload an image
+            </button>
+            <p class="chooser-or">or reuse an image</p>
+            <div class="combo">
+              <svg width="15" height="15" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M229.7 218.3 179.6 168.2A92.2 92.2 0 1 0 168.2 179.6l50.1 50.1a8 8 0 0 0 11.4-11.4ZM40 112a72 72 0 1 1 72 72 72.1 72.1 0 0 1-72-72Z" /></svg>
+              <input type="text" placeholder="Search the media library" aria-label="Search the media library" />
+            </div>
+            <ul class="listbox" role="listbox" aria-label="Media library">
+              <li class="opt active" role="option" aria-selected="true">
+                <span class="thumb ph-d"></span>
+                <span class="meta"><span class="nm">ridgeline-dusk</span></span>
+              </li>
+              <li class="opt" role="option" aria-selected="false">
+                <span class="thumb ph-b"></span>
+                <span class="meta"><span class="nm">valley-ridge</span></span>
+              </li>
+            </ul>
+            <p class="chooser-hint">The hero shows at the top of the post and on the link card when the post is shared.</p>
+          </div>
+        </div>
+
+        <div class="fm">
+          <label for="desc-de">Description</label>
+          <textarea class="input" id="desc-de" placeholder="A line or two for search results and link previews"></textarea>
+          <p class="hint">Used for search results and the social card text.</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<p class="mock-label">Dark, just captured: the capture card, decorative chosen (no alt needed)</p>
+<p class="mock-note">
+  The decorative path: when an image carries no meaning for a reader, the editor marks it decorative and no alt is owed.
+  The needs-alt status never fires for a decorative hero. The caption stays available, since a decorative image can still
+  carry a human-facing caption.
+</p>
+<div class="screen"><div data-theme="cairn-admin-dark">
+  <div class="desk">
+    <div class="desk-stage">
+      <div class="desk-band">
+        <div class="crumb"><a style="color:inherit;text-decoration:none">Posts</a><span class="sep">/</span><span class="here">Closing day on the high loop</span></div>
+        <span class="band-spacer"></span>
+        <button class="band-btn on" type="button">Details</button>
+      </div>
+      <div class="manuscript">
+        <div class="doc-title">Closing day on the high loop</div>
+        <div class="ln"><span class="mk">## </span>Last laps</div>
+        <div class="ln">The snow holds in the trees long after the open</div>
+        <div class="ln">meadows have gone to mud.</div>
+      </div>
+    </div>
+
+    <div class="panel" role="region" aria-label="Entry details">
+      <div class="panel-head">
+        <span class="panel-eyebrow">Details</span>
+        <button class="panel-close" type="button" aria-label="Close details">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <div class="panel-body">
+
+        <div class="fm">
+          <label for="date-ds">Date</label>
+          <input class="input" id="date-ds" type="text" value="2026-04-02" />
+        </div>
+
+        <div class="field-divider"></div>
+
+        <div class="fm" style="margin-bottom: 18px;">
+          <div class="hero-label">Hero image</div>
+          <div class="capcard">
+            <div class="capcard-top">
+              <span class="capcard-thumb ph-d"></span>
+              <div class="capcard-name">
+                <span class="lbl">Name</span>
+                <input class="input input-sm" type="text" value="ridgeline-dusk" />
+              </div>
+            </div>
+
+            <fieldset class="alt-fieldset" role="radiogroup" aria-label="Alt text">
+              <legend>Alt text</legend>
+              <p class="note">Describe the image for screen readers, or mark it decorative. You can save without alt text and add it later.</p>
+              <label class="alt-opt"><span class="radio"></span>Write a description</label>
+              <label class="alt-opt sel"><span class="radio"></span>Mark as decorative</label>
+            </fieldset>
+
+            <div class="cap-field">
+              <label for="cap-ds">Caption</label>
+              <input class="input input-sm" id="cap-ds" type="text" value="" placeholder="A line shown under the hero, if your site shows captions" />
+              <p class="hint">Optional. Shown under the image. This is not the alt text.</p>
+            </div>
+
+            <div class="unify" role="note">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+              <p>This image is also the share card when the post is posted to social.</p>
+            </div>
+
+            <div class="capcard-actions">
+              <span class="grow"></span>
+              <button class="btn btn-ghost btn-sm" type="button">Remove</button>
+              <button class="btn btn-primary btn-sm" type="button">Done</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="fm">
+          <label for="desc-ds">Description</label>
+          <textarea class="input" id="desc-ds">Closing day, the last laps before the high loop melts out.</textarea>
+          <p class="hint">Used for search results and the social card text.</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<p class="mock-label">Dark, settled: the resting row, decorative hero (no caption set)</p>
+<div class="screen"><div data-theme="cairn-admin-dark">
+  <div class="desk">
+    <div class="desk-stage">
+      <div class="desk-band">
+        <div class="crumb"><a style="color:inherit;text-decoration:none">Posts</a><span class="sep">/</span><span class="here">Closing day on the high loop</span></div>
+        <span class="band-spacer"></span>
+        <button class="band-btn on" type="button">Details</button>
+      </div>
+      <div class="manuscript">
+        <div class="doc-title">Closing day on the high loop</div>
+        <div class="ln"><span class="mk">## </span>Last laps</div>
+        <div class="ln">The snow holds in the trees long after the open</div>
+        <div class="ln">meadows have gone to mud.</div>
+        <div class="ln">We take the high loop one more time before it goes.</div>
+      </div>
+    </div>
+
+    <div class="panel" role="region" aria-label="Entry details">
+      <div class="panel-head">
+        <span class="panel-eyebrow">Details</span>
+        <button class="panel-close" type="button" aria-label="Close details">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <div class="panel-body">
+
+        <div class="fm">
+          <label for="date-dr">Date</label>
+          <input class="input" id="date-dr" type="text" value="2026-04-02" />
+        </div>
+
+        <div class="field-divider"></div>
+
+        <div class="fm" style="margin-bottom: 18px;">
+          <div class="hero-label">Hero image</div>
+          <div class="resting">
+            <span class="thumb ph-d"></span>
+            <div class="meta">
+              <span class="nm">ridgeline-dusk</span>
+              <span class="sub">Decorative</span>
+            </div>
+            <button class="resting-edit" type="button">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+              Edit
+            </button>
+          </div>
+        </div>
+
+        <div class="fm">
+          <label for="desc-dr">Description</label>
+          <textarea class="input" id="desc-dr">Closing day, the last laps before the high loop melts out.</textarea>
+          <p class="hint">Used for search results and the social card text.</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- the photo stand-ins, reused from the 3a mockup so the thumbnails read as real images -->
+<style>
+  .ph-a, .ph-b, .ph-c, .ph-d { background-size: cover; background-position: center; }
+  .ph-a { background: linear-gradient(170deg, oklch(82% 0.06 80) 0%, oklch(74% 0.08 60) 55%, oklch(64% 0.09 45) 100%); }
+  .ph-b { background: linear-gradient(150deg, oklch(52% 0.06 60) 0%, oklch(70% 0.09 50) 60%, oklch(85% 0.08 80) 100%); }
+  .ph-c { background: linear-gradient(200deg, oklch(88% 0.05 85) 0%, oklch(72% 0.07 55) 100%); }
+  .ph-d { background: linear-gradient(160deg, oklch(40% 0.05 60) 0%, oklch(60% 0.1 45) 55%, oklch(86% 0.08 85) 100%); }
+</style>
+
+</body>
+</html>

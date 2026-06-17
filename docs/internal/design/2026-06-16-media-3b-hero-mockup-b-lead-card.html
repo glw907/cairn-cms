@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Proposed design: the hero image (media 3b, direction B, the prominent lead-image card)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+  rel="stylesheet"
+/>
+<style>
+  /* Direction B, "the prominent lead-image card". The hero is the page's lead image AND its social
+     card, so it earns a distinct, prominent treatment pinned at the very top of the details panel,
+     above the plain text fields. Empty is a generous 16:9 dropzone. Set is a large 16:9 preview with
+     the alt control and an optional caption beneath it, plus Replace and Remove. A quiet line notes
+     that the same image becomes the social-card image (the unify decision). There is NO placement
+     role here; the site template owns the hero layout on the page (unlike the 3a inline figure). */
+
+  /* ---- mock scaffold (outside the themed surfaces) ---- */
+  body { margin: 0; background: #d8d4cf; }
+  .mock-label { font: 600 13px/1.4 system-ui; letter-spacing: .08em; text-transform: uppercase; color: #444; padding: 26px 24px 4px; }
+  .mock-note { font: 400 13px/1.55 system-ui; color: #5a564f; padding: 0 24px 14px; max-width: 78ch; }
+  .mock-note code { font-family: ui-monospace, monospace; background: rgba(0,0,0,.06); padding: 1px 4px; border-radius: 3px; }
+  .screen { border: 1px solid #aaa; margin: 0 16px 48px; box-shadow: 0 2px 14px rgba(0,0,0,.08); overflow: hidden; }
+  .screen.narrow { max-width: 384px; }
+
+  /* ---- Warm Stone tokens, both theme roots, inlined so the mockup stands alone ---- */
+  [data-theme='cairn-admin'] {
+    --color-base-100: oklch(99% 0.004 75);
+    --color-base-200: oklch(96.5% 0.006 75);
+    --color-base-300: oklch(89% 0.011 75);
+    --color-base-content: oklch(26% 0.014 75);
+    --color-primary: oklch(52% 0.2 293);
+    --color-primary-content: oklch(98% 0.01 293);
+    --color-accent: oklch(54% 0.16 300);
+    --color-muted: oklch(48% 0.01 75);
+    --color-subtle: oklch(42% 0.01 75);
+    --color-positive-ink: oklch(48% 0.12 150);
+    --cairn-code-chip: oklch(94.5% 0.008 75);
+    --cairn-warning-ink: oklch(50% 0.13 70);
+    --cairn-card-border: oklch(93% 0.008 75);
+    --cairn-shadow: 0 1px 2px oklch(28% 0.02 75 / 0.05), 0 8px 24px -6px oklch(28% 0.02 75 / 0.1);
+  }
+  [data-theme='cairn-admin-dark'] {
+    --color-base-100: oklch(24% 0.01 75);
+    --color-base-200: oklch(15.5% 0.009 75);
+    --color-base-300: oklch(30% 0.014 75);
+    --color-base-content: oklch(93% 0.006 75);
+    --color-primary: oklch(68% 0.18 293);
+    --color-primary-content: oklch(20% 0.03 293);
+    --color-accent: oklch(70% 0.14 300);
+    --color-muted: oklch(72% 0.01 75);
+    --color-subtle: oklch(80% 0.008 75);
+    --color-positive-ink: oklch(78% 0.12 150);
+    --cairn-code-chip: oklch(29.5% 0.012 75);
+    --cairn-warning-ink: oklch(80% 0.14 70);
+    --cairn-card-border: oklch(30% 0.014 75);
+    --cairn-shadow: 0 1px 2px oklch(0% 0 0 / 0.35), 0 8px 24px -6px oklch(0% 0 0 / 0.5);
+  }
+
+  [data-theme] {
+    --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+    --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-editor: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+
+  /* ===== the desk ground and the editor sliver (context, so the panel reads in place) ===== */
+  .desk { display: flex; background: var(--color-base-200); color: var(--color-base-content); font-family: var(--font-body); -webkit-font-smoothing: antialiased; min-height: 540px; position: relative; }
+  .desk-main { flex: 1 1 auto; padding: 30px 34px; min-width: 0; }
+  .desk-title { font-family: var(--font-display); font-size: 1.7rem; font-weight: 700; letter-spacing: -.025em; margin: 0 0 14px; }
+  .desk-card { background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: 1rem; box-shadow: var(--cairn-shadow); padding: 22px 24px; }
+  .desk-card p { font-size: .95rem; line-height: 1.75; color: var(--color-muted); margin: 0 0 .9rem; }
+  .desk-card p:last-child { margin-bottom: 0; }
+  .desk-card .lead { color: var(--color-base-content); }
+
+  /* ===== the details slide-over panel (gold-standard recipe: ~19rem, base-100, left hairline) ===== */
+  .panel { width: 21.5rem; flex: none; background: var(--color-base-100); border-left: 1px solid var(--cairn-card-border); box-shadow: var(--cairn-shadow); padding: 16px 16px 24px; overflow-y: auto; }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .eyebrow { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); }
+  .panel-x { display: inline-flex; align-items: center; justify-content: center; height: 24px; width: 24px; border: 0; background: transparent; border-radius: .5rem; color: var(--color-subtle); cursor: pointer; font-size: 15px; }
+  .panel-x:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+
+  /* the sibling frontmatter fields (the plain text fields the hero sits apart from) */
+  .fld { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+  .fld > span { font-weight: 500; font-size: .8125rem; }
+  .input, .textarea { width: 100%; box-sizing: border-box; font: 400 .875rem/1.45 var(--font-body); color: var(--color-base-content); background: var(--color-base-100); border: 1px solid var(--color-base-300); border-radius: .625rem; padding: 8px 11px; }
+  .textarea { resize: vertical; }
+  .input::placeholder, .textarea::placeholder { color: var(--color-muted); }
+  .input:focus-visible, .textarea:focus-visible { outline: none; border-color: color-mix(in oklab, var(--color-primary) 70%, transparent); box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-primary) 70%, transparent); }
+  .chkrow { display: flex; align-items: center; gap: 9px; font-size: .875rem; cursor: pointer; }
+  .chkrow input { width: 16px; height: 16px; accent-color: var(--color-primary); }
+  .sect-rule { border: 0; border-top: 1px solid var(--cairn-card-border); margin: 20px 0 16px; }
+  .sub-eyebrow { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); margin-bottom: 10px; }
+
+  /* === THE LEAD-IMAGE CARD: the prominent hero block, pinned above the Details eyebrow === */
+  .hero-card { border: 1px solid var(--cairn-card-border); border-radius: .85rem; background: color-mix(in oklab, var(--color-base-content) 2%, var(--color-base-100)); overflow: hidden; margin-bottom: 4px; }
+  .hero-card-head { display: flex; align-items: center; gap: 7px; padding: 11px 13px 10px; }
+  .hero-card-head .ico { width: 15px; height: 15px; color: var(--color-primary); flex: none; }
+  .hero-card-head .lbl { font: 600 .8125rem/1 var(--font-body); letter-spacing: .01em; }
+  .hero-card-head .lead-tag { margin-left: auto; font-size: .625rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--color-primary); background: color-mix(in oklab, var(--color-primary) 10%, transparent); border-radius: .3rem; padding: 2px 6px; }
+
+  /* EMPTY: a generous 16:9 dropzone */
+  .hero-drop { margin: 0 13px 13px; aspect-ratio: 16 / 9; border: 1.5px dashed color-mix(in oklab, var(--color-base-content) 22%, transparent); border-radius: .6rem; background: color-mix(in oklab, var(--color-base-content) 1.5%, transparent); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 9px; text-align: center; padding: 14px; cursor: pointer; }
+  .hero-drop:hover { border-color: color-mix(in oklab, var(--color-primary) 50%, transparent); background: color-mix(in oklab, var(--color-primary) 5%, transparent); }
+  .hero-drop .drop-ico { width: 30px; height: 30px; color: var(--color-muted); }
+  .hero-drop:hover .drop-ico { color: var(--color-primary); }
+  .hero-drop .drop-lead { font-size: .875rem; font-weight: 500; color: var(--color-base-content); }
+  .hero-drop .drop-lead b { color: var(--color-primary); font-weight: 600; }
+  .hero-drop .drop-sub { font-size: .75rem; color: var(--color-muted); line-height: 1.45; max-width: 22ch; }
+  .hero-empty-note { display: flex; gap: 7px; align-items: flex-start; padding: 0 13px 13px; font-size: .75rem; line-height: 1.5; color: var(--color-muted); }
+  .hero-empty-note svg { flex: none; margin-top: 2px; color: var(--color-muted); }
+
+  /* SET: a large 16:9 preview, then alt + caption beneath */
+  .hero-shot { position: relative; margin: 0 13px 14px; aspect-ratio: 16 / 9; border-radius: .6rem; overflow: hidden; border: 1px solid var(--cairn-card-border); }
+  .hero-shot .ph { width: 100%; height: 100%; }
+  .hero-shot .shot-actions { position: absolute; right: 8px; bottom: 8px; display: flex; gap: 6px; }
+  .pill-btn { display: inline-flex; align-items: center; gap: 5px; font: 500 .75rem/1 var(--font-body); border: 0; border-radius: .45rem; padding: 6px 10px; cursor: pointer; background: color-mix(in oklab, var(--color-base-100) 86%, transparent); color: var(--color-base-content); backdrop-filter: blur(6px); box-shadow: 0 1px 3px oklch(0% 0 0 / .18); }
+  .pill-btn:hover { background: var(--color-base-100); }
+  .pill-btn svg { width: 13px; height: 13px; }
+  .pill-btn.danger:hover { color: var(--cairn-warning-ink); }
+
+  .hero-body { padding: 0 13px 13px; }
+  .hero-fld { margin-bottom: 12px; }
+  .hero-fld > label { display: block; font-size: .8125rem; font-weight: 500; margin-bottom: 6px; }
+  .field-hint { font-size: .75rem; color: var(--color-muted); margin-top: 6px; line-height: 1.45; }
+
+  /* the alt control: a radiogroup (describe it / decorative), the 2b/3a alt-as-debt model */
+  .radio-row { display: flex; gap: 8px; }
+  .radio { flex: 1 1 0; display: flex; align-items: center; gap: 7px; padding: 7px 10px; border: 1px solid var(--color-base-300); border-radius: .55rem; font-size: .8125rem; cursor: pointer; }
+  .radio.sel { border-color: color-mix(in oklab, var(--color-primary) 55%, transparent); background: color-mix(in oklab, var(--color-primary) 8%, transparent); color: var(--color-primary); font-weight: 600; }
+  .radio .dot { width: 13px; height: 13px; border-radius: 50%; border: 1px solid var(--color-base-300); flex: none; }
+  .radio.sel .dot { border-color: var(--color-primary); background: radial-gradient(circle at center, var(--color-primary) 0 4px, transparent 5px); }
+
+  /* the needs-alt notice on the hero (warning ink, the 2b token; a notice, never a block) */
+  .hero-needs-alt { display: flex; gap: 7px; align-items: flex-start; margin-top: 8px; padding: 8px 10px; border-radius: .5rem; background: color-mix(in oklab, var(--cairn-warning-ink) 8%, transparent); }
+  .hero-needs-alt svg { flex: none; margin-top: 1px; color: var(--cairn-warning-ink); }
+  .hero-needs-alt p { margin: 0; font-size: .75rem; line-height: 1.5; color: var(--cairn-warning-ink); }
+
+  /* the unify note: this image is also the social card */
+  .social-note { display: flex; gap: 7px; align-items: center; margin: 2px 13px 0; padding: 9px 11px; border-top: 1px solid var(--cairn-card-border); font-size: .75rem; line-height: 1.45; color: var(--color-muted); }
+  .social-note svg { flex: none; color: var(--color-muted); }
+  .social-note .og { font-family: var(--font-editor); font-size: .6875rem; color: var(--color-base-content); background: var(--cairn-code-chip); border-radius: .25rem; padding: 1px 5px; }
+
+  /* photo stand-ins (no bundled bytes): warm dawn-light gradients, kept in the warm hue family */
+  .ph-hero { background: linear-gradient(150deg, oklch(52% 0.06 60) 0%, oklch(70% 0.09 50) 55%, oklch(86% 0.08 82) 100%); }
+  .ph-alt { background: linear-gradient(165deg, oklch(40% 0.05 60) 0%, oklch(62% 0.1 48) 60%, oklch(86% 0.08 85) 100%); }
+</style>
+</head>
+<body>
+
+<p class="mock-label">Media 3b, the hero image, direction B (the prominent lead-image card)</p>
+<p class="mock-note">
+  A concept gets a hero image in frontmatter: <code>image: { src: media:slug.hash, alt, caption }</code>. The
+  field lives in the editor's details slide-over, the right panel that holds the frontmatter fields. This
+  direction pins the hero as a distinct, prominent card at the very top of the panel, above the
+  <code>Details</code> eyebrow, set apart from the plain text fields below it. The point is prominence that
+  matches the hero's weight on the page. One image serves both the page hero and the social card
+  (<code>og:image</code>), so a small note carries that link. Alt is debt, not a save block. There is no
+  placement role: the site template owns the hero layout (unlike the 3a inline figure). It reuses the 2b
+  capture card, the picker, the alt radiogroup, and the resolved-thumbnail treatment. Two states are shown,
+  empty and set, in both themes.
+</p>
+
+<!-- ============================== LIGHT ============================== -->
+
+<p class="mock-label" style="padding-top:8px;">Light · empty (no hero set yet)</p>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="desk">
+    <div class="desk-main">
+      <h1 class="desk-title">First tracks at Birkebeiner</h1>
+      <div class="desk-card">
+        <p class="lead">The editor card sits here on the desk. The details panel is open on the right, where
+          the hero field leads the frontmatter.</p>
+        <p>An empty hero shows a generous dropzone. The author drops a photo on it or clicks to upload or pick
+          one from the library, the same two ways every image enters a cairn post.</p>
+      </div>
+    </div>
+
+    <aside class="panel" role="region" aria-label="Entry details">
+      <!-- THE LEAD-IMAGE CARD, pinned at the top, ABOVE the Details eyebrow -->
+      <div class="hero-card">
+        <div class="hero-card-head">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>
+          <span class="lbl">Hero image</span>
+          <span class="lead-tag">Lead</span>
+        </div>
+        <div class="hero-drop" role="button" tabindex="0" aria-label="Add a hero image">
+          <svg class="drop-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 13v8"/><path d="m8 17 4-4 4 4"/><path d="M20 16.7A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/></svg>
+          <span class="drop-lead">Drop a photo, or <b>add one</b></span>
+          <span class="drop-sub">Upload a new image or pick one from the library.</span>
+        </div>
+        <div class="hero-empty-note">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+          <span>This image leads the page and becomes the social-card image when the post is shared.</span>
+        </div>
+      </div>
+
+      <hr class="sect-rule" />
+
+      <!-- the plain frontmatter fields, visually below the prominent hero -->
+      <div class="panel-head">
+        <span class="eyebrow">Details</span>
+        <button class="panel-x" aria-label="Close details">&times;</button>
+      </div>
+      <label class="fld"><span>Description</span><textarea class="textarea" rows="3" placeholder="A sentence or two for search results and link previews.">A first look at the season's grooming on the Birkebeiner trail, and what the early snow means for the weeks ahead.</textarea></label>
+      <label class="fld"><span>Date</span><input class="input" value="06/14/2026" /></label>
+      <div class="sub-eyebrow" style="margin-top:18px;">Visibility</div>
+      <label class="chkrow"><input type="checkbox" /><span>Hidden</span></label>
+    </aside>
+  </div>
+</div></div>
+
+<p class="mock-label">Light · set (a hero chosen, alt described, caption written)</p>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="desk">
+    <div class="desk-main">
+      <h1 class="desk-title">First tracks at Birkebeiner</h1>
+      <div class="desk-card">
+        <p class="lead">With a hero set, the panel shows the real lead image at a large 16:9 preview, so the
+          editor sees what will sit at the top of the page.</p>
+        <p>The alt control and the caption field sit under the preview. Replace and Remove ride the image
+          itself. The site template decides whether to render the caption on the page.</p>
+      </div>
+    </div>
+
+    <aside class="panel" role="region" aria-label="Entry details">
+      <div class="hero-card">
+        <div class="hero-card-head">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>
+          <span class="lbl">Hero image</span>
+          <span class="lead-tag">Lead</span>
+        </div>
+        <!-- the large 16:9 preview, with Replace/Remove over the image -->
+        <div class="hero-shot">
+          <div class="ph ph-hero" role="img" aria-label="Skiers on the freshly groomed Birkebeiner trail at first light"></div>
+          <div class="shot-actions">
+            <button class="pill-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>Replace</button>
+            <button class="pill-btn danger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Remove</button>
+          </div>
+        </div>
+        <div class="hero-body">
+          <div class="hero-fld">
+            <label id="alt-set">Alt text</label>
+            <div class="radio-row" role="radiogroup" aria-labelledby="alt-set">
+              <span class="radio sel"><span class="dot"></span>Describe it</span>
+              <span class="radio"><span class="dot"></span>Decorative</span>
+            </div>
+            <input class="input" style="margin-top:8px;" value="Skiers on the freshly groomed Birkebeiner trail at first light" aria-label="Describe the hero image" />
+            <p class="field-hint">Read aloud to people who cannot see the image. Describe what is in it.</p>
+          </div>
+          <div class="hero-fld" style="margin-bottom:0;">
+            <label for="cap-set">Caption</label>
+            <input class="input" id="cap-set" value="First light on the Birkebeiner, opening weekend." placeholder="Optional. Shown under the hero if the site uses captions." />
+            <p class="field-hint">Optional. Your site template decides whether to show it. This is not the alt text.</p>
+          </div>
+        </div>
+        <div class="social-note">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+          <span>Also the social-card image <span class="og">og:image</span> when the post is shared.</span>
+        </div>
+      </div>
+
+      <hr class="sect-rule" />
+
+      <div class="panel-head">
+        <span class="eyebrow">Details</span>
+        <button class="panel-x" aria-label="Close details">&times;</button>
+      </div>
+      <label class="fld"><span>Description</span><textarea class="textarea" rows="3">A first look at the season's grooming on the Birkebeiner trail, and what the early snow means for the weeks ahead.</textarea></label>
+      <label class="fld"><span>Date</span><input class="input" value="06/14/2026" /></label>
+      <div class="sub-eyebrow" style="margin-top:18px;">Visibility</div>
+      <label class="chkrow"><input type="checkbox" /><span>Hidden</span></label>
+    </aside>
+  </div>
+</div></div>
+
+<!-- ============================== DARK ============================== -->
+
+<p class="mock-label">Dark · set, with the hero alt still missing (the needs-alt notice)</p>
+<p class="mock-note">
+  The same set state on the dark surface, with one difference: the hero has no alt text yet. The needs-alt
+  notice appears under the alt control in the warning ink. It tells the editor about the gap and helps close
+  it. It never blocks a save or a publish.
+</p>
+<div class="screen"><div data-theme="cairn-admin-dark">
+  <div class="desk">
+    <div class="desk-main">
+      <h1 class="desk-title">First tracks at Birkebeiner</h1>
+      <div class="desk-card">
+        <p class="lead">Everything resolves from the dark theme tokens. The lead-image card holds its
+          prominence on the recessed dark ground.</p>
+        <p>The alt radiogroup is set to Describe it, but the field is still empty, so the needs-alt notice
+          shows. The editor can keep working and add the description later.</p>
+      </div>
+    </div>
+
+    <aside class="panel" role="region" aria-label="Entry details">
+      <div class="hero-card">
+        <div class="hero-card-head">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>
+          <span class="lbl">Hero image</span>
+          <span class="lead-tag">Lead</span>
+        </div>
+        <div class="hero-shot">
+          <div class="ph ph-alt" role="img" aria-label="Hero image, not yet described"></div>
+          <div class="shot-actions">
+            <button class="pill-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>Replace</button>
+            <button class="pill-btn danger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Remove</button>
+          </div>
+        </div>
+        <div class="hero-body">
+          <div class="hero-fld">
+            <label id="alt-dark">Alt text</label>
+            <div class="radio-row" role="radiogroup" aria-labelledby="alt-dark">
+              <span class="radio sel"><span class="dot"></span>Describe it</span>
+              <span class="radio"><span class="dot"></span>Decorative</span>
+            </div>
+            <input class="input" style="margin-top:8px;" placeholder="Describe what is in the image" aria-label="Describe the hero image" />
+            <div class="hero-needs-alt" role="status">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <p>This hero needs alt text. Add a description, or mark it decorative.</p>
+            </div>
+          </div>
+          <div class="hero-fld" style="margin-bottom:0;">
+            <label for="cap-dark">Caption</label>
+            <input class="input" id="cap-dark" placeholder="Optional. Shown under the hero if the site uses captions." />
+            <p class="field-hint">Optional. Your site template decides whether to show it. This is not the alt text.</p>
+          </div>
+        </div>
+        <div class="social-note">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+          <span>Also the social-card image <span class="og">og:image</span> when the post is shared.</span>
+        </div>
+      </div>
+
+      <hr class="sect-rule" />
+
+      <div class="panel-head">
+        <span class="eyebrow">Details</span>
+        <button class="panel-x" aria-label="Close details">&times;</button>
+      </div>
+      <label class="fld"><span>Description</span><textarea class="textarea" rows="3">A first look at the season's grooming on the Birkebeiner trail, and what the early snow means for the weeks ahead.</textarea></label>
+      <label class="fld"><span>Date</span><input class="input" value="06/14/2026" /></label>
+      <div class="sub-eyebrow" style="margin-top:18px;">Visibility</div>
+      <label class="chkrow"><input type="checkbox" /><span>Hidden</span></label>
+    </aside>
+  </div>
+</div></div>
+
+<p class="mock-label">Dark · empty</p>
+<div class="screen"><div data-theme="cairn-admin-dark">
+  <div class="desk" style="min-height:420px;">
+    <div class="desk-main">
+      <h1 class="desk-title">First tracks at Birkebeiner</h1>
+      <div class="desk-card">
+        <p class="lead">The empty dropzone on the dark surface. The dashed border lifts to the violet accent
+          on hover, the same affordance every image entry point uses.</p>
+      </div>
+    </div>
+
+    <aside class="panel" role="region" aria-label="Entry details">
+      <div class="hero-card">
+        <div class="hero-card-head">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>
+          <span class="lbl">Hero image</span>
+          <span class="lead-tag">Lead</span>
+        </div>
+        <div class="hero-drop" role="button" tabindex="0" aria-label="Add a hero image">
+          <svg class="drop-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 13v8"/><path d="m8 17 4-4 4 4"/><path d="M20 16.7A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/></svg>
+          <span class="drop-lead">Drop a photo, or <b>add one</b></span>
+          <span class="drop-sub">Upload a new image or pick one from the library.</span>
+        </div>
+        <div class="hero-empty-note">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+          <span>This image leads the page and becomes the social-card image when the post is shared.</span>
+        </div>
+      </div>
+
+      <hr class="sect-rule" />
+
+      <div class="panel-head">
+        <span class="eyebrow">Details</span>
+        <button class="panel-x" aria-label="Close details">&times;</button>
+      </div>
+      <label class="fld"><span>Description</span><textarea class="textarea" rows="3" placeholder="A sentence or two for search results and link previews."></textarea></label>
+      <label class="fld"><span>Date</span><input class="input" value="06/14/2026" /></label>
+    </aside>
+  </div>
+</div></div>
+
+</body>
+</html>

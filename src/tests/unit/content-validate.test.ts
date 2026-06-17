@@ -137,6 +137,19 @@ describe('image field', () => {
     expect(validateFields(fields, { image: { alt: 'no src' } })).toEqual({ ok: true, data: {} });
     expect(validateFields(fields, { image: { src: 42 } })).toEqual({ ok: true, data: {} });
   });
+
+  it('enforces required on a missing src, but never on a missing alt', () => {
+    const required: FrontmatterField[] = [{ type: 'image', name: 'image', label: 'Hero', required: true }];
+    // Absent, empty, and malformed src all fail a required image (the presence check).
+    expect(validateFields(required, {}).ok).toBe(false);
+    expect(validateFields(required, { image: { src: '', alt: 'x' } }).ok).toBe(false);
+    expect(validateFields(required, { image: 'a string' }).ok).toBe(false);
+    // A valid src passes even with an empty alt: alt is debt, never a save block.
+    expect(validateFields(required, { image: { src: 'media:a.0123456789abcdef', alt: '' } })).toEqual({
+      ok: true,
+      data: { image: { src: 'media:a.0123456789abcdef', alt: '' } },
+    });
+  });
 });
 
 describe('date validation', () => {

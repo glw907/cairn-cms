@@ -49,9 +49,10 @@ export function validateFields(
         // a missing alt to empty, since alt is debt and never a save block), and drop the key when
         // src is empty or absent. A malformed value (a string, or an object without a string src)
         // drops the key rather than throwing, so a hand-edit never breaks a save.
+        let src = '';
         if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
           const obj = value as Record<string, unknown>;
-          const src = typeof obj.src === 'string' ? obj.src.trim() : '';
+          src = typeof obj.src === 'string' ? obj.src.trim() : '';
           if (src !== '') {
             const normalized: ImageValue = {
               src,
@@ -62,6 +63,10 @@ export function validateFields(
             data[field.name] = normalized;
           }
         }
+        // A required image needs a src (the presence check), like the other arms; alt is never
+        // required, since alt is debt. The inferred type makes a required image non-optional, so the
+        // validator must enforce it or a save could omit it against the type.
+        if (field.required && src === '') errors[field.name] = `${field.label} is required`;
         break;
       }
       case 'date': {

@@ -492,17 +492,20 @@ popover's runUpload but resolves to this field, not an editor placeholder.
           <button type="button" class="bg-transparent p-0 text-xs font-medium text-[var(--color-muted)] underline underline-offset-2" onclick={remove}>Remove</button>
         </div>
 
-        <!-- Alt as a describe-or-decorative radiogroup (the MediaCaptureCard model, name-less so it
-             never submits with the edit form). Insert is never disabled for a missing alt. -->
+        <!-- Alt as a describe-or-decorative radiogroup (the MediaCaptureCard model). The radios share a
+             component-unique name so native radiogroup keyboard navigation (one tab stop, arrow-key
+             cycling) works; the name is not one of the decode arm's three sub-fields
+             (<name>.src/.alt/.caption), so it is ignored on submit and never reaches the frontmatter.
+             Insert is never disabled for a missing alt. -->
         <fieldset class="flex flex-col gap-2" role="radiogroup" aria-label="Alt text" aria-describedby={altNoteId}>
           <legend class="text-sm font-medium">Alt text</legend>
           <div class="flex gap-2">
             <label class="flex flex-1 cursor-pointer items-center gap-1.5 rounded-field border px-2.5 py-1.5 text-[0.8125rem] {workAltMode === 'describe' ? 'border-[color-mix(in_oklab,var(--color-primary)_55%,transparent)] bg-[color-mix(in_oklab,var(--color-primary)_8%,transparent)] font-semibold text-[var(--color-primary)]' : 'border-base-300'}">
-              <input type="radio" class="radio radio-xs" value="describe" bind:group={workAltMode} />
+              <input type="radio" class="radio radio-xs" name="cairn-hero-alt-{uid}" value="describe" bind:group={workAltMode} />
               <span>Describe it</span>
             </label>
             <label class="flex flex-1 cursor-pointer items-center gap-1.5 rounded-field border px-2.5 py-1.5 text-[0.8125rem] {workAltMode === 'decorative' ? 'border-[color-mix(in_oklab,var(--color-primary)_55%,transparent)] bg-[color-mix(in_oklab,var(--color-primary)_8%,transparent)] font-semibold text-[var(--color-primary)]' : 'border-base-300'}">
-              <input type="radio" class="radio radio-xs" value="decorative" bind:group={workAltMode} />
+              <input type="radio" class="radio radio-xs" name="cairn-hero-alt-{uid}" value="decorative" bind:group={workAltMode} />
               <span>Decorative</span>
             </label>
           </div>

@@ -90,6 +90,11 @@
      Locked pair: on base-100 measures 5.98:1, on the 8% accent chip tint the source chip uses 5.59:1.
      Do not lighten without re-checking both. */
   --cairn-warning-ink: oklch(50% 0.13 70);
+  /* The on-surface POSITIVE ink, for small confirming TEXT (the hero field's "Described" alt-status
+     chip). The green counterpart to the warning ink, tuned as readable small text on a light surface
+     rather than a fill. Locked pair: on base-100 measures ~4.9:1, clearing the 4.5:1 AA floor (WCAG
+     1.4.3). Do not lighten without re-checking. */
+  --color-positive-ink: oklch(48% 0.12 150);
   --color-error: oklch(56% 0.2 25);
   --color-error-content: oklch(98% 0.012 25);
 
@@ -192,6 +197,10 @@
      value near it. Locked pair: on dark base-100 measures 8.61:1, on the 8% accent chip tint 6.20:1.
      Do not darken without re-checking both. */
   --cairn-warning-ink: oklch(80% 0.14 70);
+  /* The on-surface POSITIVE ink on dark, for the hero field's "Described" alt-status chip. The dark
+     counterpart to the warning ink. Locked pair: on dark base-100 measures ~7:1. Do not darken
+     without re-checking. */
+  --color-positive-ink: oklch(78% 0.12 150);
   --color-error: oklch(70% 0.18 25);
   --color-error-content: oklch(20% 0.04 25);
 

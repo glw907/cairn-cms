@@ -74,7 +74,14 @@ export function createPublicRoutes(deps: PublicRoutesDeps) {
    *  The hero lives at the conventional `image` key as the validated nested object `{ src, alt, caption }`;
    *  only an image field's validate arm produces an object-with-string-`src` shape, so detecting that
    *  structure is enough (a text field stores a string, a tags field an array). Returns undefined when
-   *  media is off, no hero is set, the token does not parse, or the resolver finds no asset. */
+   *  media is off, no hero is set, the token does not parse, or the resolver finds no asset.
+   *
+   *  Scope: this resolves the `image` key, which is the back-compat SEO default the schema's `seo`
+   *  flag also defaults to. A concept that renames its hero (e.g. `cover`) with `seo: true` validates
+   *  and renders in the editor, but its delivery resolution is not wired here yet, since the field
+   *  declarations are not reachable in the delivery read path. Honoring a renamed `seo`-flagged field
+   *  (and a second image field per concept) at delivery is a carried follow-up; every consumer today
+   *  uses `image`. */
   function deriveHeroImage(frontmatter: Record<string, unknown>): EntryData['heroImage'] {
     if (!resolveMedia) return undefined;
     const value = frontmatter.image;

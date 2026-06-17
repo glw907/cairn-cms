@@ -435,7 +435,8 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   // the field's own alt input) and their reported needs-alt signals, keyed by field name. A hero is
   // a frontmatter value with no body offset, so its needs-alt signal comes from the field, not the
   // body scanner (findMediaImagesNeedingAlt), and its remediation focuses the alt input, never a
-  // source range (selectRange).
+  // source range (selectRange). The records are keyed by field name; `data.fields` is static for the
+  // page's lifetime, so a key never goes stale (no per-key cleanup on unmount is needed).
   let heroFieldRefs = $state<Record<string, MediaHeroField>>({});
   let heroNeedsAlt = $state<Record<string, boolean>>({});
 

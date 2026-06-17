@@ -11,13 +11,16 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-16, latest): Phase 3a the inline figure LANDED on `feat/media-3a`; the whole media stack (1, 2a, 2b, 3a) is release-ready as `0.57.0`
+## Immediate next action (2026-06-16, latest): Phase 3a the inline figure MERGED to `main`; the release is deferred until the whole image work is complete; Phase 3b is the next build
 
-**Phase 3a of the media gallery (the inline figure: captions and placement) LANDED on `feat/media-3a`**
-(off `main` at `8410e9e`, which carried the whole media stack through 2b plus the 3a plan commit). Nine
-plan tasks, the code-simplifier pass, a three-reviewer gate with its fold-in, and the docs arm. Commits
-`1f3c15f..40603af`. **The version stays `0.57.0`: 3a folds into the unreleased bundled media release**,
-additive to the public API with no new consumer action beyond the 2b R2 wiring.
+**Phase 3a of the media gallery (the inline figure: captions and placement) is MERGED to `main`** (the
+whole media stack 1, 2a, 2b, 3a, plus the 3b design, fast-forwarded to `c671b44` and pushed to origin
+2026-06-16). Nine plan tasks, the code-simplifier pass, a three-reviewer gate with its fold-in, and the
+docs arm. The 3a work is commits `1f3c15f..40603af`. **No release is cut yet (Geoff's call): the whole
+image work ships in one release when Phase 3 is complete, not in interim bumps.** The version on `main`
+stays `0.57.0` in the changelog as the in-progress media window. So Phase 3b (and 3c) execute off `main`
+directly, with no release gate between them, and the single bundled release happens once the image work is
+done.
 
 An author now wraps an inline image in a cairn-reserved `:::figure` directive to give it a caption (the
 directive body text, rendered to `<figcaption>`) and a placement (a closed role set `center`/`wide`/`full`
@@ -43,18 +46,18 @@ ink AA on base-100 and the 8% tint in both themes. The live admin smoke rides th
 (presentation change, proven by the E2E + the 2a workerd suite), matching the 2b deferral. Post-mortem
 with the carry-forwards in the plan (`docs/superpowers/plans/2026-06-16-cairn-media-3a-inline-figure.md`).
 
-**Next actions, in order (all Geoff's calls):**
-1. **Merge `feat/media-3a` to `main`** (needs the push). The branch is the whole media stack on main,
-   release-ready at `0.57.0`. Earlier media branches (`feat/media-foundation`, `feat/media-2a`,
-   `feat/media-2b`) fold into this if not already on local main.
-2. **Cut the bundled `0.57.0` release**: push `main`, then `gh release create v0.57.0 --target main` with
-   the `0.57.0` changelog entry (now carrying the figure work) as the body. It carries the R2-wiring
-   `Consumers must:` line and fires the OIDC trusted-publishing workflow.
-3. **Per-site cutover** (each a site-pass, the live proof): bind a `MEDIA_BUCKET` R2 bucket, mount the
-   `/media` route, bump to `^0.57.0`, run the real guard + upload + delivery live smoke; copy the
-   `.cairn-place-*` CSS into the site's content stylesheet to style the placements.
-4. Then **Phase 3b** (the hero frontmatter image field), now **DESIGNED + PLANNED 2026-06-16** and ready to
-   execute on a fresh worktree off `main` after `0.57.0` ships. Spec
+**Next actions, in order:**
+1. **DONE: merged `feat/media-3a` to `main` and pushed** (2026-06-16, fast-forward to `c671b44`). The whole
+   media stack 1, 2a, 2b, 3a plus the 3b design is on `main`. The `feat/media-3a` and
+   `backup-media-2b-pre-scrub` branches are deleted. Stale merged branches `feat/media-2a`, `feat/media-2b`
+   (still has a worktree), and `feat/media-foundation` remain and can be cleaned at will.
+2. **Release DEFERRED (Geoff's call):** no interim release. The whole image work ships in one release once
+   Phase 3 is complete, so there is no `gh release create` between 3a, 3b, and 3c.
+3. **Per-site cutover rides that single release** (it needs the published package): bind a `MEDIA_BUCKET` R2
+   bucket, mount the `/media` route, bump to the published range, run the real guard + upload + delivery
+   live smoke (the deferred proof), and copy the `.cairn-place-*` CSS into the site's content stylesheet.
+4. **NEXT: build Phase 3b** (the hero frontmatter image field), **DESIGNED + PLANNED 2026-06-16** and ready
+   to execute on a fresh worktree off `main` now (no release gate, since the release is deferred). Spec
    `docs/superpowers/specs/2026-06-16-cairn-media-3b-hero-field-design.md`, plan (9 tasks)
    `docs/superpowers/plans/2026-06-16-cairn-media-3b-hero-field.md`, the polished mockup
    `docs/internal/design/2026-06-16-media-3b-hero-mockup.html` (three explorations beside it). 3b designed
@@ -66,19 +69,20 @@ with the carry-forwards in the plan (`docs/superpowers/plans/2026-06-16-cairn-me
    (`{ src, alt, caption }`), unified with the SEO social-card image (one image, both uses), alt as debt,
    the on-disk `media:` token kept canonical with resolution as a separate `heroImage` projection. Tasks 1
    (the field-type contract), 3 (the delivery resolution), and 5 (the editor field) are high-blast. **Then
-   3c** (the gallery component), reusing the caption+alt model. The `backup-media-2b-pre-scrub` safety
-   branch can be deleted after the push.
+   3c** (the gallery component), reusing the caption+alt model. **Then the single bundled release plus the
+   per-site cutover**, once the whole image work is complete.
 
-**Resume prompt for the 3b build (fresh session, effort high, after `0.57.0` ships and 3a is on `main`):**
+**Resume prompt for the 3b build (fresh session, effort high, 3a already on `main`):**
 "Execute Phase 3b of the cairn media gallery: the hero frontmatter image field, plan at
 `docs/superpowers/plans/2026-06-16-cairn-media-3b-hero-field.md` (spec
 `docs/superpowers/specs/2026-06-16-cairn-media-3b-hero-field-design.md`). Invoke the `cairn-pass` skill.
-Launch in `cairn-cms`, create a fresh worktree off `main`. Confirm the baseline (`npm test` exit 0), then
-run the 9 tasks test-first: one `cairn-implementer` per task, review each diff, clear the full gate between
-dispatches, at high effort. Tasks 1, 3, and 5 are high-blast: review closely and upshift to `model: opus`
-if warranted. Tasks 8 (the polish) and 9 (the pass-end, whose adversarial review-gate workflow needs my
-'use a workflow' opt-in) run in the main loop. The mockup is already done. 3b bumps to the next minor after
-`0.57.0` at pass-end."
+Launch in `cairn-cms`, create a fresh worktree off `main` (no release gate; the media release is deferred
+until Phase 3 is complete). Confirm the baseline (`npm test` exit 0), then run the 9 tasks test-first: one
+`cairn-implementer` per task, review each diff, clear the full gate between dispatches, at high effort.
+Tasks 1, 3, and 5 are high-blast: review closely and upshift to `model: opus` if warranted. Tasks 8 (the
+polish) and 9 (the pass-end, whose adversarial review-gate workflow needs my 'use a workflow' opt-in) run
+in the main loop. The mockup is already done. 3b lands on `main` unreleased; the whole media stack ships in
+one release when Phase 3 is complete."
 
 ## Prior next action (2026-06-16): media is author-usable; Phase 2b insert UI LANDED on `feat/media-2b`, the whole media stack is release-ready as `0.57.0`
 

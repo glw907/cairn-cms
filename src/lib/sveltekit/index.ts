@@ -18,6 +18,8 @@ export type {
   SaveFailure,
   DeleteRefusal,
   RenameFailure,
+  MediaDeleteRefusal,
+  MediaUpdateFailure,
   ContentFormFailure,
   UploadResult,
 } from './content-routes.js';

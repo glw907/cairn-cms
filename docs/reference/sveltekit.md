@@ -238,6 +238,8 @@ declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutes
   listDeleteAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
   renameAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
   uploadAction: (event: ContentEvent) => Promise<ActionFailure<unknown> | UploadResult>;
+  mediaDeleteAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
+  mediaUpdateAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
   mintToken: (env: GithubKeyEnv) => string | Promise<string>;
 };
 ```
@@ -252,8 +254,14 @@ media-enabled site: a raw-body JSON endpoint that stores the bytes in R2, return
 `mediaLibraryLoad` backs the admin Media Library view: it unions `media.json` from the default
 branch with every open `cairn/*` branch (so a not-yet-published asset shows, with the default
 branch winning a same-hash tie), projects each row through the shared `mediaLibraryEntry` helper,
-and attaches a per-hash where-used overlay (`MediaLibraryData`). The optional `deps.mintToken`
-stubs the GitHub App token mint, which is how the showcase runs in dev without a real key.
+and attaches a per-hash where-used overlay (`MediaLibraryData`). `mediaDeleteAction` safe-deletes a
+committed asset: it rechecks usage against a fresh server-side index at delete time, refuses an
+in-use asset (`MediaDeleteRefusal`) unless the form carries the typed-slug override, then commits
+the `media.json` row removal before deleting the R2 object so a mid-failure leaves a benign orphan
+rather than a broken delivery. `mediaUpdateAction` edits an asset's display name, slug, and default
+alt in one row commit with no reference rewrite (the resolver keys on the hash), refusing a bad slug
+with `MediaUpdateFailure`. The optional `deps.mintToken` stubs the GitHub App token mint, which is
+how the showcase runs in dev without a real key.
 
 A save holds the edit on the entry's pending branch (`cairn/<concept>/<id>`) and does not touch
 the default branch, so the live site stays as it was. `publishAction` publishes what the author
@@ -389,6 +397,8 @@ imports the matching `*Data` type to type its `data` prop.
 | `SaveFailure` | `interface SaveFailure { error: string; brokenLinks: string[]; body: string }` | A blocked save or publish: the one-line summary, the cairn tokens that resolve to no entry, and the author's edited markdown for reseeding the editor. |
 | `DeleteRefusal` | `interface DeleteRefusal { error: string; inboundLinks: InboundLink[]; id: string }` | A refused delete: the one-line summary, the entries that still link to the refused one, and its id so a list marks the right row. |
 | `RenameFailure` | `interface RenameFailure { error: string }` | A refused rename (bad slug, collision, or pending edits): just the one-line summary. |
+| `MediaDeleteRefusal` | `interface MediaDeleteRefusal { error: string; hash: string; usage: UsageEntry[]; foundIn: number }` | A refused media delete: the one-line summary, the asset's content hash, the where-used rows (published first, then by branch) the in-use face lists, and the distinct-entry count. `usage` is empty and `foundIn` is zero for an uncommitted asset or a media-off refusal. |
+| `MediaUpdateFailure` | `interface MediaUpdateFailure { error: string }` | A refused media metadata edit (an asset not committed on the default branch, or an invalid slug): just the one-line summary. |
 | `ContentFormFailure` | `type ContentFormFailure = Partial<SaveFailure & DeleteRefusal & RenameFailure>` | The shape a route's single `form` export presents to a view component: whichever content action last failed, every field optional, `error` always set on a failure. |
 | `NavPageOption` | `interface NavPageOption { label: string; url: string }` | One page option for the nav editor's URL picker datalist. |
 | `NavLoadData` | `interface NavLoadData { menu: { name; label; maxDepth }; tree: NavNode[]; pages: NavPageOption[]; saved; error: string \| null }` | The nav editor's load data: the menu meta, the current tree, the page options, and the status flags. |

@@ -175,6 +175,8 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
         ? content.deleteAction(contentEvent(event, { concept: view.concept.id, id: view.id }))
         : content.listDeleteAction(contentEvent(event, { concept: view.concept.id })),
     ),
+    mediaDelete: viewAction(['media'], (event) => content.mediaDeleteAction(contentEvent(event, {}))),
+    mediaUpdate: viewAction(['media'], (event) => content.mediaUpdateAction(contentEvent(event, {}))),
     publishAll: viewAction(authedViews, (event) => content.publishAllAction(contentEvent(event, {}))),
     addEditor: viewAction(['editors'], (event) => editors.addEditorAction(event)),
     removeEditor: viewAction(['editors'], (event) => editors.removeEditorAction(event)),

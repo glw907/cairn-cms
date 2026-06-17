@@ -23,7 +23,7 @@ import { sniffMediaType, isDeniedUpload, extForMediaType } from '../media/sniff.
 import { hashBytes, shortHash, slugifyFilename, r2Key } from '../media/naming.js';
 import { mediaToken } from '../media/reference.js';
 import { r2Store } from '../media/store.js';
-import { parseMediaEntries, parseMediaManifest, upsertMediaEntry, serializeMediaManifest } from '../media/manifest.js';
+import { parseMediaEntries, parseMediaManifest, upsertMediaEntry, removeMediaEntry, serializeMediaManifest } from '../media/manifest.js';
 import type { MediaEntry } from '../media/manifest.js';
 import { mediaLibraryEntry } from '../media/library-entry.js';
 import type { MediaLibrary, MediaLibraryEntry } from '../media/library-entry.js';
@@ -193,6 +193,27 @@ export interface DeleteRefusal {
 /** A refused rename: `fail(400)` on a bad slug, `fail(409)` on a collision or pending edits. */
 export interface RenameFailure {
   /** The one-line human summary every content action failure carries. */
+  error: string;
+}
+
+/** A refused media delete: `fail(404)` for an asset not committed on the default branch, or
+ *  `fail(409)` when a fresh usage read finds the asset still in use and the typed-slug override
+ *  was not given. `fail(503)` covers media-off or a missing bucket binding. */
+export interface MediaDeleteRefusal {
+  /** The one-line human summary every action failure carries. */
+  error: string;
+  /** The refused asset's content hash, so the dialog marks the right asset. */
+  hash: string;
+  /** The where-used rows (published first, then by branch) the in-use face lists; empty otherwise. */
+  usage: UsageEntry[];
+  /** The distinct-entry count behind the refusal; zero when the asset is uncommitted. */
+  foundIn: number;
+}
+
+/** A refused media metadata edit: `fail(404)` for an asset not committed on the default branch, or
+ *  `fail(400)` for an invalid slug. */
+export interface MediaUpdateFailure {
+  /** The one-line human summary every action failure carries. */
   error: string;
 }
 
@@ -1251,7 +1272,137 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     return { reference, record, reused, mismatch };
   }
 
-  return { layoutLoad, indexRedirect, listLoad, mediaLibraryLoad, createAction, editLoad, saveAction, publishAction, publishAllAction, discardAction, deleteAction, listDeleteAction, renameAction, uploadAction, mintToken };
+  /** A media slug is the same lowercase-alphanumeric-with-hyphens grammar the reference token uses. */
+  const MEDIA_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+  /** A 16-hex content-hash prefix, the immutable asset key. */
+  const MEDIA_HASH_RE = /^[0-9a-f]{16}$/;
+
+  /** Safe-delete a committed media asset. The gate rechecks usage server-side against a FRESH index
+   *  read at delete time (never a client-passed count), mirroring deleteEntry's authoritative inbound
+   *  recheck. An in-use asset refuses unless the form carries the typed-slug override (the in-use
+   *  alertdialog's type-to-confirm). When confirmed, the order is load-bearing: commit the manifest
+   *  row removal FIRST, then delete the R2 object, so a failure after the commit leaves bytes with no
+   *  row (a benign orphan) rather than a row pointing at deleted bytes (a broken delivery). Scope:
+   *  3c deletes assets committed on the default branch; a branch-only upload is removed by discarding
+   *  its draft, not here. */
+  async function mediaDeleteAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
+    const editor = requireSession(event);
+    const token = await mintToken(event.platform?.env ?? {});
+
+    const form = await event.request.formData();
+    const hash = String(form.get('hash') ?? '');
+    if (!MEDIA_HASH_RE.test(hash)) throw error(400, 'Invalid media hash');
+
+    // The asset must be committed on the default branch to be deletable here. A branch-only upload
+    // (the common 2b case before publish) has no main row; removing it is a discard of the draft.
+    const manifest = parseMediaManifest(parseMediaJson(await readRaw(runtime.backend, runtime.mediaManifestPath, token)));
+    const row = manifest[hash];
+    if (!row) {
+      return fail(404, {
+        error: 'That asset is not committed. Discard its draft to remove an unpublished upload.',
+        hash,
+        usage: [],
+        foundIn: 0,
+      } satisfies MediaDeleteRefusal);
+    }
+
+    // The authoritative gate: a fresh usage read, never a client count. The index spans main's
+    // content manifest and every open cairn/* branch.
+    const index = await buildUsageIndex(runtime.backend, token, runtime.concepts, await readManifest(token));
+    const rows = index.get(hash) ?? [];
+    const foundIn = new Set(rows.map((e) => `${e.concept}/${e.id}`)).size;
+
+    if (rows.length > 0) {
+      // In use: refuse unless the editor typed the slug to force it (the in-use face's confirmation).
+      const confirmSlug = String(form.get('confirmSlug') ?? '');
+      if (confirmSlug !== row.slug) {
+        log.warn('media.delete_blocked', { editor: editor.email, hash, foundIn });
+        // Group published-first, then branch entries by branch name, so the list reads stably.
+        const usage = [...rows].sort((a, b) => originRank(a) - originRank(b) || branchKey(a).localeCompare(branchKey(b)));
+        return fail(409, {
+          error: `Cannot delete ${row.slug}: found in ${foundIn} ${foundIn === 1 ? 'entry' : 'entries'}.`,
+          hash,
+          usage,
+          foundIn,
+        } satisfies MediaDeleteRefusal);
+      }
+    }
+
+    // Resolve the R2 bucket before the commit, so a missing binding refuses before any write.
+    const resolved = runtime.resolvedAssets;
+    if (!resolved.enabled) {
+      return fail(503, { error: 'Media is not enabled for this site.', hash, usage: [], foundIn } satisfies MediaDeleteRefusal);
+    }
+    const platformEnv = (event.platform as { env?: Record<string, unknown> } | undefined)?.env ?? {};
+    const rawBucket = platformEnv[resolved.bucketBinding];
+    if (!rawBucket) {
+      return fail(503, { error: 'The media bucket is not bound.', hash, usage: [], foundIn } satisfies MediaDeleteRefusal);
+    }
+    const store = r2Store(rawBucket as R2Bucket);
+
+    // Commit the manifest row removal FIRST. The order is load-bearing (see the docstring).
+    const commitFields = { concept: 'media', id: hash, editor: editor.email };
+    try {
+      await commitFiles(
+        runtime.backend,
+        [{ path: runtime.mediaManifestPath, content: serializeMediaManifest(removeMediaEntry(manifest, hash)) }],
+        { message: `Delete media: ${row.slug}`, author: { name: editor.displayName, email: editor.email } },
+        token,
+      );
+      log.info('commit.succeeded', commitFields);
+    } catch (err) {
+      commitFailure(commitFields, err, '/admin/media',
+        'The media manifest changed since you opened it. Reload and try again.');
+    }
+    // THEN delete the object. An absent object is a no-op (the R2 contract), so a dead row clears.
+    await store.delete(r2Key(hash, row.ext));
+    log.info('media.deleted', { editor: editor.email, hash });
+    throw redirect(303, '/admin/media?deleted=1');
+  }
+
+  /** Edit a committed asset's metadata: its display name, slug, and default alt. A single media.json
+   *  row commit, with NO reference rewrite: the resolver and the delivery route key on the hash, so a
+   *  rename never breaks an existing `media:` reference. The default alt is the asset's value for the
+   *  next placement, never a propagating edit of the alt already committed in existing placements. */
+  async function mediaUpdateAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
+    const editor = requireSession(event);
+    const token = await mintToken(event.platform?.env ?? {});
+
+    const form = await event.request.formData();
+    const hash = String(form.get('hash') ?? '');
+    if (!MEDIA_HASH_RE.test(hash)) throw error(400, 'Invalid media hash');
+
+    const manifest = parseMediaManifest(parseMediaJson(await readRaw(runtime.backend, runtime.mediaManifestPath, token)));
+    const row = manifest[hash];
+    if (!row) {
+      return fail(404, { error: 'That asset is not committed.' } satisfies MediaUpdateFailure);
+    }
+
+    const displayName = sanitizeField(String(form.get('displayName') ?? ''), MAX_DISPLAY_NAME);
+    const slug = String(form.get('slug') ?? '').trim();
+    const alt = sanitizeField(String(form.get('alt') ?? ''), MAX_ALT);
+    if (!MEDIA_SLUG_RE.test(slug)) {
+      return fail(400, { error: 'Enter a valid slug: lowercase letters, numbers, and hyphens.' } satisfies MediaUpdateFailure);
+    }
+
+    const edited: MediaEntry = { ...row, displayName: displayName || slug, slug, alt };
+    const commitFields = { concept: 'media', id: hash, editor: editor.email };
+    try {
+      await commitFiles(
+        runtime.backend,
+        [{ path: runtime.mediaManifestPath, content: serializeMediaManifest(upsertMediaEntry(manifest, edited)) }],
+        { message: `Update media: ${edited.slug}`, author: { name: editor.displayName, email: editor.email } },
+        token,
+      );
+      log.info('commit.succeeded', commitFields);
+    } catch (err) {
+      commitFailure(commitFields, err, '/admin/media',
+        'The media manifest changed since you opened it. Reload and try again.');
+    }
+    throw redirect(303, '/admin/media?updated=1');
+  }
+
+  return { layoutLoad, indexRedirect, listLoad, mediaLibraryLoad, createAction, editLoad, saveAction, publishAction, publishAllAction, discardAction, deleteAction, listDeleteAction, renameAction, uploadAction, mediaDeleteAction, mediaUpdateAction, mintToken };
 }
 
 /** The cap, in characters, on the stored alt text. The human fields are display copy, not content,
@@ -1280,6 +1431,18 @@ function safeDecode(value: string | null): string {
 function basename(name: string): string {
   const parts = name.split(/[/\\]/);
   return parts[parts.length - 1];
+}
+
+/** Sort key for a where-used row's origin: published rows rank before branch rows, so the in-use
+ *  refusal lists "Published on the site" first, then the edit-branch references. */
+function originRank(entry: UsageEntry): number {
+  return entry.origin.kind === 'published' ? 0 : 1;
+}
+
+/** A where-used row's branch name for the secondary sort (the empty string for a published row,
+ *  which sorts ahead of any branch by `originRank` already). */
+function branchKey(entry: UsageEntry): string {
+  return entry.origin.kind === 'branch' ? entry.origin.branch : '';
 }
 
 /** Strip control characters from a human field and cap it at `max` characters. Control characters

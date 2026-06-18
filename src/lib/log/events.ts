@@ -22,4 +22,7 @@ export type CairnLogEvent =
   | 'media.orphan_reconcile'
   | 'media.resolve_missing'
   | 'media.deleted'
-  | 'media.delete_blocked';
+  | 'media.delete_blocked'
+  | 'media.replaced'
+  | 'media.replace_blocked'
+  | 'media.alt_propagated';

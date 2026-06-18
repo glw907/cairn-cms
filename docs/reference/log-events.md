@@ -33,6 +33,9 @@ redaction stance.
 | `media.resolve_missing` | warn | A `media:` reference resolves against the manifest and finds no entry for its hash. | `hash` |
 | `media.deleted` | info | An asset's bytes and manifest row are removed. | `editor`, `hash` |
 | `media.delete_blocked` | warn | A delete is refused because the asset is still referenced. | `editor`, `hash`, `foundIn` (the count of referencing entries) |
+| `media.replaced` | info | A replace-in-place rewrites every referencing entry to the new asset and adds its manifest row. | `editor`, `oldHash`, `newHash`, `affected` (the count of rewritten entries) |
+| `media.replace_blocked` | warn | A replace is refused because the typed-slug confirm was missing or wrong. | `editor`, `hash`, `foundIn` (the count of referencing entries) |
+| `media.alt_propagated` | info | An alt-propagation fills the asset's default alt into its empty placements (and customized ones on the opt-in) across the referencing entries. | `editor`, `hash`, `overwrite`, `written` (the count of rewritten entries) |
 
 Saves land on the entry's pending branch, so `commit.succeeded` and `commit.failed` carry a
 `branch` field (`cairn/<concept>/<id>`) on the save path. Deletes, renames, and nav saves commit to
@@ -72,8 +75,12 @@ count. A `media:` reference that resolves to no manifest entry logs `media.resol
 unresolved `hash`, which is how a broken reference surfaces in a build or a preview. A delete logs
 `media.deleted` once the bytes and the manifest row are gone. When the asset is still referenced, the
 delete is refused and logs `media.delete_blocked` instead, with `foundIn` set to how many entries
-still point at it. The `hash` is the asset's content hash, which is its stable identity across these
-records.
+still point at it. A replace-in-place logs `media.replaced` once the commit lands, naming the
+`oldHash`, the `newHash`, and the `affected` count of rewritten entries. A replace that arrives
+without the typed-slug confirm is refused and logs `media.replace_blocked`, with `foundIn` set to the
+referencing-entry count. An alt-propagation logs `media.alt_propagated` with the `hash`, the
+`overwrite` opt-in flag, and the `written` count of entries it rewrote. The `hash` is the asset's
+content hash, which is its stable identity across these records.
 
 The `email` on `auth.link.requested` is the raw submitted address, logged before the allowlist
 check, so it is unvalidated request input. cairn lowercases it, trims it, and caps the logged value

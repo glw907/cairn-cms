@@ -25,3 +25,7 @@ export { default as CopyIcon } from '@lucide/svelte/icons/copy';
 export { default as FileTextIcon } from '@lucide/svelte/icons/file-text';
 export { default as ClockIcon } from '@lucide/svelte/icons/clock';
 export { default as Link2OffIcon } from '@lucide/svelte/icons/link-2-off';
+export { default as RefreshCwIcon } from '@lucide/svelte/icons/refresh-cw';
+export { default as GitBranchIcon } from '@lucide/svelte/icons/git-branch';
+export { default as ArrowRightIcon } from '@lucide/svelte/icons/arrow-right';
+export { default as MegaphoneIcon } from '@lucide/svelte/icons/megaphone';

@@ -428,3 +428,76 @@ the manifest, so the real-commit proof matters.
   multi-asset replace, all Pass C.
 - Very-large-N preview density (virtualization or collapse-by-concept) if real corpora hit 40+ refs.
 - The `runtime.publicMediaResolver` ergonomic (carried from Pass A, needs its own brainstorm).
+
+## Post-mortem (landed 2026-06-18 on `feat/media-pass-b`, HELD for merge/release/push)
+
+**What shipped.** All ten tasks, test-first, on a fresh worktree off `main`. The two pure byte-exact
+transforms (`repointMediaRef`, `fillAltForHash` in `src/lib/content/media-rewrite.ts`), the fail-closed
+planner (`planMediaRewrite` in `src/lib/media/rewrite-plan.ts`), the flash flags and the two fail
+payloads, the four admin actions (`mediaReplacePreview`/`mediaReplaceApply`/`mediaAltPreview`/
+`mediaAltApply` on `createContentRoutes`), the two review modals on `CairnMediaLibrary.svelte` (the
+Replace alertdialog and the Push-alt dialog with the three buckets and the native opt-in), the showcase
+E2E, and the docs plus the `0.58.0` bump.
+
+**A plan gap fixed during execution: the composer wiring.** The plan's Task 5/6 said "register both on
+the returned actions record" (the `createContentRoutes` return), but the catch-all admin route reaches
+actions through `createCairnAdmin`'s `actions` record in `src/lib/sveltekit/cairn-admin.ts`, which the
+plan never mentioned. The new actions, plus a media-scoped `mediaUpload` (the existing param-free
+`uploadAction` mounted on the media view, since the Library is not entry-scoped), had to be registered
+there via `viewAction(['media'], ...)`, or every live action would 405. Added with routing tests. This
+is the integration seam a future media action must also wire.
+
+**A spec-compliance decision (FLAG for Geoff, easily reverted): replace keeps the asset's slug.** The
+plan's Task 1/5 wording said the repointed token "carries the new asset's slug" (the uploaded file's
+name). The approved spec and the rev.2 mockup both promise "The name {slug} stays the same. Only the
+content hash changes", and the built component displays exactly that. The two contradict when the new
+upload has a different filename, which the showcase E2E surfaced. I aligned the behavior to the spec
+(the higher authority): the repointed token keeps the OLD asset's slug (`row.slug`, server-authoritative
+in apply; the client-sent old slug in the preview), so `media:first-light.<old>` becomes
+`media:first-light.<new>`. The new `media.json` row still keeps the new file's own slug (the new asset's
+own identity); the resolver bridges by hash, so delivery is unaffected. If Geoff prefers the new file's
+name to win, it is a one-line revert in `mediaReplaceApply`/`mediaReplacePreview` plus the test
+assertions.
+
+**Verified (first-hand from the worktree at the tip):** `npm run check` 1004 files 0/0; `npm test` 194
+files / 2153 tests exit 0; `npm run package` exit 0; the showcase Playwright E2E 25 passed (the two new
+Pass B round-trips plus the 23 existing); the `version` (0.58.0 minor + `release-size: minor` marker),
+`docs`, `reference`, `reference:signatures`, `package`, `readiness`, and `prose` gates all exit 0.
+
+**Review gate.** code-simplifier first (two small refinements). Then a four-reviewer parallel fan-out
+(svelte, daisyui-a11y, web-auth-security, and an Opus correctness reviewer on the rewrite/commit logic).
+The security review came back clean (CSRF on every surface, untrusted input re-validated, the slug
+pinned server-authoritative, the strict gate fail-closed with no partial-commit path, a poisoned record
+cannot escape paths or repoint delivery). The correctness reviewer found three real transform bugs the
+canonical-YAML fixtures had missed, all fixed test-first with a shared structural frontmatter locator
+(correlate the image field by key name, locate the `src:`/`alt:` byte spans within that key's own block
+range, with an overlap guard): (1, CRITICAL) `fillAltForHash` committed build-breaking YAML when two
+image fields share a hash, when the token also appeared in a text frontmatter value, on a flow-style
+hero, or with a blank/nested line between `src:` and `alt:`; (2) `bodyAltEdits` mislocated the alt span
+when an existing alt contained `](`/`![` under overwrite; (3) `repointMediaRef` rewrote a `media:` token
+sitting in a plain-text frontmatter field. The svelte and a11y reviews fixed the "Show all N"
+focus-to-revealed-row gap, a stale-preview in-flight guard, the Replace live-region `role="status"`, and
+the `outline-hidden` v4 rename. Eleven new tests across the two fix dispatches; the gate stayed green.
+
+**Live admin smoke: DEFERRED to the first site cutover (HELD for Geoff), matching the 3c precedent.**
+The plan called for a live smoke, but the showcase has no wrangler/D1 config (it runs `vite preview`
+with the fake GitHub and R2 doubles), so a real-Worker, real-GitHub-commit smoke is not doable in-repo.
+The transforms' workerd dependencies (the remark pipeline, gray-matter, `commitFiles`, `buildUsageIndex`)
+already run in workerd via the admin load at runtime, and the actions are proven by the unit
+(GithubDouble), integration (workerd R2/upload), and real-browser E2E suites. A real-commit proof needs
+a real site repo, which is the first cutover (and rides Geoff's release). Recorded as the one held
+verification.
+
+**Held for Geoff (the user's call):** merge `feat/media-pass-b` to `main`; cut the release (this pass
+is `0.58.0`; if it rolls with other held minors, summarize the window); push; then the per-site cutover
+with the live admin smoke. The slug-keep decision above is his to veto.
+
+**Carry-forwards (beyond the existing list):** a flow-style hero (`image: { src, alt }` inline) is an
+unanchorable safe-skip (not repointed, not alt-filled); cairn emits block style, so this is a
+non-canonical-input edge, not a regression. The fail-closed surface scrapes the unreadable branch name
+from the error string with a regex; a structured `branch?: string` on `MediaReplaceFailure` would be
+sturdier (debt). The alt-field reseed in the slide-over discards unsaved name/slug/alt edits when a
+failed `?/mediaUpdate` re-selects the same asset (pre-existing, not Pass B; gate the reseed on a hash
+change if it bites). `mediaReplaceApply` builds the full cross-branch plan before the typed-slug gate,
+so a wrong-slug retry pays the read cost (self-inflicted by an authenticated editor; move the
+empty-stored-slug short-circuit ahead of the plan build to tighten).

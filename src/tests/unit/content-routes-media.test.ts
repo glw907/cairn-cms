@@ -7,6 +7,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
+import type { ContentFormFailure } from '../../lib/sveltekit/content-routes.js';
 import { serializeManifest } from '../../lib/content/manifest.js';
 import { parseMediaManifest, serializeMediaManifest, type MediaEntry, type MediaManifest } from '../../lib/media/manifest.js';
 import { parseMediaToken } from '../../lib/media/reference.js';
@@ -247,6 +248,22 @@ describe('mediaLibraryLoad flash flags', () => {
     expect(data.flashError).toBeNull();
   });
 
+  it('reads the replaced flash from ?replaced=1', async () => {
+    gh();
+    const routes = createContentRoutes(runtime(), deps);
+    const data = await routes.mediaLibraryLoad(libraryEvent('?replaced=1') as never);
+    expect(data.flash).toBe('replaced');
+    expect(data.flashError).toBeNull();
+  });
+
+  it('reads the altPropagated flash from ?altPropagated=1', async () => {
+    gh();
+    const routes = createContentRoutes(runtime(), deps);
+    const data = await routes.mediaLibraryLoad(libraryEvent('?altPropagated=1') as never);
+    expect(data.flash).toBe('altPropagated');
+    expect(data.flashError).toBeNull();
+  });
+
   it('reads the conflict error from ?error= into flashError, not the load error slot', async () => {
     gh();
     const routes = createContentRoutes(runtime(), deps);
@@ -263,6 +280,18 @@ describe('mediaLibraryLoad flash flags', () => {
     const data = await routes.mediaLibraryLoad(libraryEvent() as never);
     expect(data.flash).toBeNull();
     expect(data.flashError).toBeNull();
+  });
+});
+
+describe('ContentFormFailure accepts the media replace and alt-propagate shapes', () => {
+  it('accepts a MediaReplaceFailure and a MediaAltPropagateFailure shape', () => {
+    // Type-level assertions: the union must carry the replace failure's full key set (hash, usage,
+    // foundIn) and the alt-propagate failure's bare summary. A compile-only check; the runtime
+    // assertion just keeps the const live.
+    const replace: ContentFormFailure = { error: 'still in use', hash: 'a'.repeat(16), usage: [], foundIn: 1 };
+    const altPropagate: ContentFormFailure = { error: 'could not verify usage' };
+    expect(replace.error).toBe('still in use');
+    expect(altPropagate.error).toBe('could not verify usage');
   });
 });
 

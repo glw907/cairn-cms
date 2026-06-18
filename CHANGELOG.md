@@ -2,6 +2,35 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.58.0
+
+<!-- release-size: minor -->
+
+The Media Library learns to fix an image everywhere it is used. Two new operations rewrite every
+placement of one asset in a single commit to `main`, each behind a preview an editor confirms before
+anything changes. Both read usage across `main` and every open edit branch, both report the held edits
+they will not touch, and both fail closed when usage cannot be verified.
+
+Replace swaps the file behind an image without revisiting the pages that use it. cairn is
+content-addressed, so a corrected upload is a new object with a new content hash; replace repoints
+every published reference from the old hash to the new one and keeps the slug, so `media:first-light.<old>`
+becomes `media:first-light.<new>` and the name an author sees is unchanged. The old row and its R2 bytes
+are kept, recoverable from git history, rather than erased. A typed-slug confirm gates the apply, since
+it rewrites published content and can break a draft, and the preview names the open edit branches still
+on the old file. Those branches keep the old file until they republish; they are never rewritten.
+
+Push alt fills missing descriptions from one place. An image's default alt copies into every placement
+that has none, in one atomic commit. An explicit opt-in, off by default, also overwrites placements
+that already carry a custom alt, since that replaces an author's words. A frontmatter hero marked
+decorative is skipped, because its empty alt is deliberate. The media manifest is not changed: the
+default alt is read from the row, never rewritten there. Alt fill is reversible and frequent, so it
+carries no typed-slug gate.
+
+No consumer action is required. Both operations are admin-side and additive, with no public surface
+change and no content-format change. An editor walkthrough is in
+[manage the media library](docs/guides/manage-the-media-library.md), and the design rationale is in
+[media storage](docs/explanation/media-storage.md).
+
 ## 0.57.1
 
 Media polish and cutover DX, the first follow-on after the `0.57.0` media stack. The Media Library

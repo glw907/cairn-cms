@@ -270,6 +270,43 @@ describe('media view load', () => {
   });
 });
 
+describe('media replace and alt actions (composer wiring)', () => {
+  const mediaActions = ['mediaUpload', 'mediaReplacePreview', 'mediaReplace', 'mediaAltPreview', 'mediaAltPropagate'] as const;
+
+  for (const name of mediaActions) {
+    it(`404s ${name} posted outside the media view`, async () => {
+      const admin = createCairnAdmin(runtime(), deps);
+      await expect(admin.actions[name](actionEvent('/admin/posts') as never)).rejects.toMatchObject({ status: 404 });
+    });
+  }
+
+  it('mediaUpload on the media view reaches uploadAction (refused 503 when media is off)', async () => {
+    new GithubDouble({ main: {} }).install();
+    const admin = createCairnAdmin(runtime(), deps);
+    const result = await admin.actions.mediaUpload(actionEvent('/admin/media') as never);
+    expect(result).toMatchObject({ status: 503 });
+  });
+
+  it('mediaReplace on the media view reaches the apply (400 on a missing hash)', async () => {
+    new GithubDouble({ main: {} }).install();
+    const admin = createCairnAdmin(runtime(), deps);
+    await expect(admin.actions.mediaReplace(actionEvent('/admin/media') as never)).rejects.toMatchObject({ status: 400 });
+  });
+
+  it('mediaReplacePreview on the media view reaches the preview (403 without the CSRF header)', async () => {
+    new GithubDouble({ main: {} }).install();
+    const admin = createCairnAdmin(runtime(), deps);
+    const result = await admin.actions.mediaReplacePreview(actionEvent('/admin/media') as never);
+    expect(result).toMatchObject({ status: 403 });
+  });
+
+  it('mediaAltPropagate on the media view reaches the apply (400 on a missing hash)', async () => {
+    new GithubDouble({ main: {} }).install();
+    const admin = createCairnAdmin(runtime(), deps);
+    await expect(admin.actions.mediaAltPropagate(actionEvent('/admin/media') as never)).rejects.toMatchObject({ status: 400 });
+  });
+});
+
 describe('save on the nav view', () => {
   it('delegates to navSave when a navMenu is configured', async () => {
     vi.stubGlobal('fetch', vi.fn(async (_url: string, init?: RequestInit) => {

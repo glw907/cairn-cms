@@ -340,3 +340,12 @@ inherit a clean list rather than one prose note.
   "copy those rules and adjust the pixels", but a site whose content container differs (ecxc uses
   `.post-body`) must re-scope every selector, not just tune pixels. Candidate: call out the re-scope,
   or ship the placement CSS as an importable, container-agnostic stylesheet.
+- **developer** (media Pass B: adding an admin action has no single documented path, from the
+  `sveltekit.md` reference work, 2026-06-18): MEDIUM. A new admin action must be wired in two places
+  the docs do not connect: the function on `createContentRoutes` AND a `viewAction([...])` registration
+  in `createCairnAdmin`'s `actions` record (`cairn-admin.ts`). Pass B's component posted to
+  `?/mediaReplacePreview` and friends before the composer registered them, so the live action would have
+  405'd; only the showcase E2E (or a real cutover) would catch it, since the unit/component tests stub
+  the transport. Candidate: a short "Adding an admin action" note (extending Pass A's "Writing an admin
+  fetch action") that lists both registration points plus the reference-signature, log-events, and
+  composer-routing-test steps, so the seam is not rediscovered each pass.

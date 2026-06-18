@@ -20,6 +20,8 @@ export type {
   RenameFailure,
   MediaDeleteRefusal,
   MediaUpdateFailure,
+  MediaReplaceFailure,
+  MediaAltPropagateFailure,
   ContentFormFailure,
   UploadResult,
 } from './content-routes.js';

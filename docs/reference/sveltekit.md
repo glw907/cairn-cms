@@ -240,6 +240,10 @@ declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutes
   uploadAction: (event: ContentEvent) => Promise<ActionFailure<unknown> | UploadResult>;
   mediaDeleteAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
   mediaUpdateAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
+  mediaReplacePreview: (event: ContentEvent) => Promise<ActionFailure<unknown> | MediaReplacePreviewPlan>;
+  mediaReplaceApply: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
+  mediaAltPreview: (event: ContentEvent) => Promise<ActionFailure<unknown> | MediaAltPreviewPlan>;
+  mediaAltApply: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
   mintToken: (env: GithubKeyEnv) => string | Promise<string>;
 };
 ```
@@ -260,8 +264,23 @@ in-use asset (`MediaDeleteRefusal`) unless the form carries the typed-slug overr
 the `media.json` row removal before deleting the R2 object so a mid-failure leaves a benign orphan
 rather than a broken delivery. `mediaUpdateAction` edits an asset's display name, slug, and default
 alt in one row commit with no reference rewrite (the resolver keys on the hash), refusing a bad slug
-with `MediaUpdateFailure`. The optional `deps.mintToken` stubs the GitHub App token mint, which is
-how the showcase runs in dev without a real key.
+with `MediaUpdateFailure`. The replace-in-place pair swaps one asset for another across the published
+corpus. `mediaReplacePreview` is a display-only fetch endpoint (the upload's `X-Cairn-CSRF` header
+transport): it plans the rewrite of every entry that references the old asset and returns a
+`MediaReplacePreviewPlan` (the affected entries with their per-reference diff, the affected count, and
+a report-only cross-branch delta), committing nothing. `mediaReplaceApply` re-derives that plan from a
+fresh read, gates every replace behind a typed-slug confirm (`MediaReplaceFailure` on a wrong or
+missing confirm), and rewrites every referencing entry plus the new `media.json` row in one commit;
+it performs no R2 write, since the new bytes are already stored and the old asset's row is kept. Both
+fail closed on an unverifiable usage read. The alt-propagation pair pushes an asset's default alt
+across the same corpus. `mediaAltPreview` plans the fill over that header transport and returns a
+`MediaAltPreviewPlan` that sorts each placement into a will-fill bucket (an empty alt), a customized
+bucket (a hand-written alt kept unless the editor opts in), or a decorative-hero bucket (left alone).
+`mediaAltApply` re-derives the plan from a fresh read, fills the empty alts (and the customized ones
+when the `overwrite` opt-in is set), and commits only the entries it changes in one commit. It never
+writes `media.json`, never gates on a typed slug, and never touches a decorative hero. The optional
+`deps.mintToken` stubs the GitHub App token mint, which is how the showcase runs in dev without a
+real key.
 
 A save holds the edit on the entry's pending branch (`cairn/<concept>/<id>`) and does not touch
 the default branch, so the live site stays as it was. `publishAction` publishes what the author
@@ -281,8 +300,10 @@ names what refused: a blocked save or publish returns `SaveFailure` (the broken 
 edited body), a refused delete returns `DeleteRefusal` (the inbound linkers and the entry id),
 and a refused rename returns `RenameFailure`. The media actions add two more: a refused media
 delete returns `MediaDeleteRefusal` (the asset hash, the where-used rows, and the count) and a
-refused media metadata edit returns `MediaUpdateFailure`. A page component types its `form` prop
-with `ContentFormFailure`, the optional merge of all five.
+refused media metadata edit returns `MediaUpdateFailure`. A refused replace returns
+`MediaReplaceFailure` (the same shape as the delete refusal) and a refused alt-propagation returns
+`MediaAltPropagateFailure` (the bare summary). A page component types its `form` prop with
+`ContentFormFailure`, the optional merge of all seven.
 
 ```ts
 // src/routes/admin/(app)/[concept]/+page.server.ts (per-route mounting)
@@ -414,7 +435,9 @@ imports the matching `*Data` type to type its `data` prop.
 | `RenameFailure` | `interface RenameFailure { error: string }` | A refused rename (bad slug, collision, or pending edits): just the one-line summary. |
 | `MediaDeleteRefusal` | `interface MediaDeleteRefusal { error: string; hash: string; usage: UsageEntry[]; foundIn: number }` | A refused media delete: the one-line summary, the asset's content hash, the where-used rows (published first, then by branch) the in-use face lists, and the distinct-entry count. `usage` is empty and `foundIn` is zero for an uncommitted asset or a media-off refusal. |
 | `MediaUpdateFailure` | `interface MediaUpdateFailure { error: string }` | A refused media metadata edit (an asset not committed on the default branch, or an invalid slug): just the one-line summary. |
-| `ContentFormFailure` | `type ContentFormFailure = Partial<SaveFailure & DeleteRefusal & RenameFailure & MediaDeleteRefusal & MediaUpdateFailure>` | The shape a route's single `form` export presents to a view component: whichever content action last failed, every field optional, `error` always set on a failure. The media refusals merge in too, so the Media Library's one `form` prop carries a `?/mediaDelete` or `?/mediaUpdate` refusal. |
+| `MediaReplaceFailure` | `interface MediaReplaceFailure { error: string; hash: string; usage: UsageEntry[]; foundIn: number }` | A refused media replace: the one-line summary, the asset's content hash, the where-used rows, and the distinct-entry count. Mirrors `MediaDeleteRefusal`: a fresh usage read found the asset still in use without the typed-slug override (409), or usage could not be verified or the bucket is unbound (503). |
+| `MediaAltPropagateFailure` | `interface MediaAltPropagateFailure { error: string }` | A refused media alt-propagation: just the one-line summary. Usage could not be verified across main and every open branch (503), or the bucket is unbound. Alt fill has no typed-slug gate. |
+| `ContentFormFailure` | `type ContentFormFailure = Partial<SaveFailure & DeleteRefusal & RenameFailure & MediaDeleteRefusal & MediaUpdateFailure & MediaReplaceFailure & MediaAltPropagateFailure>` | The shape a route's single `form` export presents to a view component: whichever content action last failed, every field optional, `error` always set on a failure. The media refusals merge in too, so the Media Library's one `form` prop carries a `?/mediaDelete`, `?/mediaUpdate`, `?/mediaReplace`, or `?/mediaAltPropagate` refusal. |
 | `NavPageOption` | `interface NavPageOption { label: string; url: string }` | One page option for the nav editor's URL picker datalist. |
 | `NavLoadData` | `interface NavLoadData { menu: { name; label; maxDepth }; tree: NavNode[]; pages: NavPageOption[]; saved; error: string \| null }` | The nav editor's load data: the menu meta, the current tree, the page options, and the status flags. |
 | `NavRoutesDeps` | `interface NavRoutesDeps { mintToken?: (env: GithubKeyEnv) => string \| Promise<string> }` | Injectable dependencies for `createNavRoutes`; tests stub the token mint, and a bare string return works. |

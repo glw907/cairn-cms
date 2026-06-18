@@ -550,6 +550,16 @@ so read it when you adopt media. The new
 [content authoring syntax reference](../reference/authoring-syntax.md) collects the `cairn:` and
 `media:` token schemes.
 
+## 0.58.0: replace and push-alt across content, additive
+
+The Media Library gains two operations that rewrite every placement of one asset in a single commit:
+Replace swaps the file behind an image and repoints every published reference to the new content hash
+while keeping the slug, and Push alt fills missing alt text (with an opt-in to overwrite custom alt)
+from the asset's default. Both read usage across `main` and every open edit branch and refuse when
+usage cannot be verified. No consumer action: the surface is admin-side and additive, with no rename
+and no content-format change. The editor walkthrough is in
+[manage the media library](manage-the-media-library.md).
+
 ## 0.55.0: the office list gains triage and self-describing rows
 
 The post and page list rises to the same grade as the editor: a triage bar filters by publish state

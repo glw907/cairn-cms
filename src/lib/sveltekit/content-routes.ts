@@ -29,6 +29,10 @@ import { mediaLibraryEntry } from '../media/library-entry.js';
 import type { MediaLibrary, MediaLibraryEntry } from '../media/library-entry.js';
 import { buildUsageIndex } from '../media/usage.js';
 import type { UsageEntry } from '../media/usage.js';
+import { repointMediaRef, fillAltForHash } from '../content/media-rewrite.js';
+import type { RepointPlacement, AltPlacement } from '../content/media-rewrite.js';
+import { planMediaRewrite } from '../media/rewrite-plan.js';
+import type { BranchRef } from '../media/rewrite-plan.js';
 import type { CookieJar, EventBase } from './types.js';
 import type { CairnRuntime, ConceptDescriptor, FrontmatterField, PreviewConfig, ResolvedPreview } from '../content/types.js';
 import type { Editor, Role } from '../auth/types.js';
@@ -157,8 +161,9 @@ export interface MediaLibraryData {
    *  redirected commit conflict never overwrite each other. */
   error: string | null;
   /** The success flash a redirected action carries: `deleted` from `?deleted=1`, `updated` from
-   *  `?updated=1`, null otherwise. The component renders a polite success strip for each. */
-  flash: 'deleted' | 'updated' | null;
+   *  `?updated=1`, `replaced` from `?replaced=1`, `altPropagated` from `?altPropagated=1`, null
+   *  otherwise. The component renders a polite success strip for each. */
+  flash: 'deleted' | 'updated' | 'replaced' | 'altPropagated' | null;
   /** A redirected action's conflict error read from `?error=` (a commit-conflict bounce). Kept in
    *  its own slot rather than the degraded-load `error` above, so the two never collide. */
   flashError: string | null;
@@ -226,12 +231,88 @@ export interface MediaUpdateFailure {
   error: string;
 }
 
+/** A refused media replace: `fail(409)` when a fresh usage read finds the asset still in use and the
+ *  typed-slug override was not given, or `fail(503)` when usage cannot be verified (fail closed) or the
+ *  bucket is unbound. Mirrors MediaDeleteRefusal: the asset hash, the where-used rows, and the count. */
+export interface MediaReplaceFailure {
+  error: string;
+  hash: string;
+  usage: UsageEntry[];
+  foundIn: number;
+}
+
+/** A refused media alt-propagation: `fail(503)` when usage cannot be verified across main and every
+ *  open branch (fail closed), or the bucket is unbound. Just the one-line summary; alt fill has no
+ *  typed-slug gate. */
+export interface MediaAltPropagateFailure {
+  error: string;
+}
+
+/** One entry the replace preview will rewrite, enriched with its display title and permalink from the
+ *  content manifest (the planner's PlannedEntry carries neither). The screen lists these as the
+ *  confirm dialog's where-touched preview, and the apply re-derives its own plan rather than trusting
+ *  this. Admin-internal: exported from content-routes for the bundled Media Library component, not
+ *  added to the package's sveltekit subpath, so it carries no reference page. */
+export interface MediaReplacePreviewEntry {
+  /** The concept id, e.g. "posts". */
+  concept: string;
+  /** The entry id (its filename stem). */
+  id: string;
+  /** The entry's display title, from the content manifest. */
+  title: string;
+  /** The entry's public permalink, from the content manifest. */
+  permalink?: string;
+  /** The per-reference diff for this entry: one placement per repointed `media:` token. */
+  placements: RepointPlacement[];
+}
+
+/** The replace preview plan: the affected main entries (enriched), the distinct affected count, and
+ *  the report-only cross-branch delta (open cairn/* branches that reference the same bytes; an apply
+ *  rewrites main only). Display-only: the apply re-derives a fresh plan and never trusts this. */
+export interface MediaReplacePreviewPlan {
+  affectedCount: number;
+  entries: MediaReplacePreviewEntry[];
+  branchDelta: BranchRef[];
+}
+
+/** One entry the alt-propagation preview reports, enriched with its display title and permalink from
+ *  the content manifest. Its placements carry every reference of the asset on this entry, each tagged
+ *  with the bucket it falls in (a will-fill, a customized alt left as-is, or a decorative hero), so
+ *  the screen can show what would change. Admin-internal: exported from content-routes for the bundled
+ *  Media Library component, not added to the package's sveltekit subpath, so it carries no reference
+ *  page. */
+export interface MediaAltPreviewEntry {
+  /** The concept id, e.g. "posts". */
+  concept: string;
+  /** The entry id (its filename stem). */
+  id: string;
+  /** The entry's display title, from the content manifest. */
+  title: string;
+  /** The entry's public permalink, from the content manifest. */
+  permalink?: string;
+  /** The per-reference diff for this entry: one placement per reference of the asset. */
+  placements: AltPlacement[];
+}
+
+/** The alt-propagation preview plan: every entry that references the asset (enriched), the report-only
+ *  cross-branch delta, and the bucket counts aggregated across every placement. Display-only: the
+ *  apply re-derives a fresh plan and never trusts this. The preview reports an entry even when its
+ *  only placements are reported-but-unchanged (a kept custom alt, a decorative hero), so the screen
+ *  can show every bucket; the apply commits only the entries it actually changes. */
+export interface MediaAltPreviewPlan {
+  entries: MediaAltPreviewEntry[];
+  branchDelta: BranchRef[];
+  /** The placement counts by bucket, summed across all entries. */
+  counts: { willFill: number; customized: number; decorativeSkipped: number };
+}
+
 /** What a route's single `form` export presents to a view component: whichever content action
  *  last failed, merged with every field optional. `error` is always set on a failure; the richer
  *  keys identify which guard refused. The media refusals ride here too, so the Media Library's one
- *  `form` prop carries a `?/mediaDelete` or `?/mediaUpdate` refusal without a second type. */
+ *  `form` prop carries a `?/mediaDelete`, `?/mediaUpdate`, `?/mediaReplace`, or `?/mediaAltPropagate`
+ *  refusal without a second type. */
 export type ContentFormFailure = Partial<
-  SaveFailure & DeleteRefusal & RenameFailure & MediaDeleteRefusal & MediaUpdateFailure
+  SaveFailure & DeleteRefusal & RenameFailure & MediaDeleteRefusal & MediaUpdateFailure & MediaReplaceFailure & MediaAltPropagateFailure
 >;
 
 /** The successful upload's response (`uploadAction`). The server-owned `record` rides the editor's
@@ -463,6 +544,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     let flash: MediaLibraryData['flash'] = null;
     if (event.url.searchParams.get('deleted') === '1') flash = 'deleted';
     else if (event.url.searchParams.get('updated') === '1') flash = 'updated';
+    else if (event.url.searchParams.get('replaced') === '1') flash = 'replaced';
+    else if (event.url.searchParams.get('altPropagated') === '1') flash = 'altPropagated';
     const flashError = event.url.searchParams.get('error');
     let token: string;
     try {
@@ -1452,7 +1535,353 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     throw redirect(303, '/admin/media?updated=1');
   }
 
-  return { layoutLoad, indexRedirect, listLoad, mediaLibraryLoad, createAction, editLoad, saveAction, publishAction, publishAllAction, discardAction, deleteAction, listDeleteAction, renameAction, uploadAction, mediaDeleteAction, mediaUpdateAction, mintToken };
+  /** Build the canonical `media:` token for a replacement, treating a slug that fails the grammar (or
+   *  an empty one) as absent so the bare-hash form is used. The slug is cosmetic: the resolver keys on
+   *  the hash, so a missing slug still resolves. Shared by the preview and apply token construction. */
+  function replacementToken(slug: string, hash: string): string {
+    return mediaToken({ slug: MEDIA_SLUG_RE.test(slug) ? slug : null, hash });
+  }
+
+  /** Preview a replace-in-place: the display-only fetch action (the 2a transport). It plans the rewrite
+   *  of every published main entry that references `oldHash` to the new asset's `media:` token, enriches
+   *  each with its title and permalink, and returns the plan plus the report-only cross-branch delta.
+   *  It commits nothing. The plan runs strict (fail-closed): an unverifiable usage read returns a 503
+   *  rather than a partial plan, so the confirm dialog never shows a count it cannot stand behind.
+   *
+   *  Wire contract: a fetch POST with the JSON body `{ oldHash, newHash, slug }`, the CSRF token in
+   *  the `X-Cairn-CSRF` header (the raw-body transport, no form-CSRF), and a `MediaReplacePreviewPlan`
+   *  returned as the 200 ActionResult the client reads. A refusal rides a `fail(status, ...)` envelope
+   *  with the MediaReplaceFailure shape (the same fail shape the apply uses), so the client reads
+   *  `type`/`status` from the body, never the HTTP status. */
+  async function mediaReplacePreview(event: ContentEvent): Promise<ReturnType<typeof fail> | MediaReplacePreviewPlan> {
+    // CSRF first: this is a raw-body (JSON) POST, so the header witness is the authority, like the
+    // upload action. A failed check refuses before the session read or any GitHub call.
+    if (!event.cookies || !validateCsrfHeader({ url: event.url, request: event.request, cookies: event.cookies })) {
+      return fail(403, { error: 'csrf', hash: '', usage: [], foundIn: 0 } satisfies MediaReplaceFailure);
+    }
+    requireSession(event);
+
+    // Parse the JSON body. A malformed body or a hash that fails the 16-hex grammar refuses with a 400
+    // before any GitHub read. The slug is the OLD asset's: a replace keeps the name and changes only the
+    // content hash, so the repointed token carries the existing slug (an invalid slug falls back to a
+    // bare-hash token below). It is cosmetic for the preview display; the apply re-derives it server-side.
+    let payload: { oldHash?: unknown; newHash?: unknown; slug?: unknown };
+    try {
+      payload = JSON.parse(await event.request.text());
+    } catch {
+      return fail(400, { error: 'Could not read the replace request.', hash: '', usage: [], foundIn: 0 } satisfies MediaReplaceFailure);
+    }
+    const oldHash = String(payload.oldHash ?? '');
+    const newHash = String(payload.newHash ?? '');
+    const slug = String(payload.slug ?? '');
+    if (!MEDIA_HASH_RE.test(oldHash) || !MEDIA_HASH_RE.test(newHash)) {
+      return fail(400, { error: 'Invalid media hash.', hash: oldHash, usage: [], foundIn: 0 } satisfies MediaReplaceFailure);
+    }
+
+    const token = await mintToken(event.platform?.env ?? {});
+    const contentManifest = await readManifest(token);
+    const newToken = replacementToken(slug, newHash);
+
+    // Plan the rewrite. The planner runs buildUsageIndex in STRICT mode, so an unverifiable branch read
+    // throws out of here rather than degrading to an absent reference; catch it and fail closed, the
+    // same posture the delete gate takes.
+    let plan: Awaited<ReturnType<typeof planMediaRewrite<RepointPlacement>>>;
+    try {
+      plan = await planMediaRewrite<RepointPlacement>({
+        backend: runtime.backend,
+        token,
+        concepts: runtime.concepts,
+        contentManifest,
+        hash: oldHash,
+        transform: (md) => repointMediaRef(md, oldHash, newToken),
+      });
+    } catch {
+      return fail(503, {
+        error: 'Could not verify where this asset is used. Try again.',
+        hash: oldHash,
+        usage: [],
+        foundIn: 0,
+      } satisfies MediaReplaceFailure);
+    }
+
+    // Enrich each planned entry with its title and permalink from the content manifest (the planner
+    // carries neither). A planned entry always has a manifest row (the usage index is built from the
+    // manifest), so the lookup hits; an id-only fallback keeps the type total if a row is ever absent.
+    const byKey = new Map(contentManifest.entries.map((e) => [`${e.concept}/${e.id}`, e]));
+    const entries: MediaReplacePreviewEntry[] = plan.entries.map((e) => {
+      const row = byKey.get(`${e.concept}/${e.id}`);
+      return {
+        concept: e.concept,
+        id: e.id,
+        title: row?.title ?? e.id,
+        permalink: row?.permalink,
+        placements: e.placements,
+      };
+    });
+
+    return { affectedCount: plan.affectedCount, entries, branchDelta: plan.branchDelta };
+  }
+
+  /** Apply a replace-in-place: rewrite every published main entry that references the old asset to the
+   *  new asset's `media:` token, and add the new media.json row, in ONE atomic commit. The plan is
+   *  re-derived here from a FRESH read (never a client-passed plan), so a concurrent edit between the
+   *  preview and the apply is rewritten too. EVERY replace is gated behind the typed-slug confirm
+   *  (unlike delete, which only gates an in-use asset): a replace silently repoints published content,
+   *  so it always demands the type-to-confirm. An empty stored slug is never satisfiable, exactly like
+   *  delete. The plan runs strict, so an unverifiable usage read fails the replace closed (commits
+   *  nothing) rather than rewriting some references and leaving others.
+   *
+   *  No R2 operation: the new bytes were already stored put-first by the upload action, and the old
+   *  bytes are KEPT (the old row stays in media.json), so this action writes only to git and never
+   *  resolves the bucket binding. It guards `resolvedAssets.enabled` for the media-off case only. */
+  async function mediaReplaceApply(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
+    const editor = requireSession(event);
+    const token = await mintToken(event.platform?.env ?? {});
+
+    const form = await event.request.formData();
+    const oldHash = String(form.get('oldHash') ?? '');
+    const newHash = String(form.get('newHash') ?? '');
+    if (!MEDIA_HASH_RE.test(oldHash) || !MEDIA_HASH_RE.test(newHash)) throw error(400, 'Invalid media hash');
+    const confirmSlug = String(form.get('confirmSlug') ?? '');
+
+    // The new asset's optimistic record rides the post (the same untrusted-record contract as save).
+    // Find the row for newHash; its absence is a malformed or missing replacement, a 400.
+    const record = parseMediaEntries(form.get('media')).find((r) => r.hash === newHash);
+    if (!record) {
+      return fail(400, {
+        error: 'The replacement upload is missing or invalid.',
+        hash: oldHash,
+        usage: [],
+        foundIn: 0,
+      } satisfies MediaReplaceFailure);
+    }
+
+    // The old asset must be committed on main to be replaceable here. A branch-only upload has no main
+    // row; it is replaced by editing its draft, not here.
+    const manifest = parseMediaManifest(parseMediaJson(await readRaw(runtime.backend, runtime.mediaManifestPath, token)));
+    const row = manifest[oldHash];
+    if (!row) {
+      return fail(404, {
+        error: 'That asset is not committed. Discard its draft to remove an unpublished upload.',
+        hash: oldHash,
+        usage: [],
+        foundIn: 0,
+      } satisfies MediaReplaceFailure);
+    }
+
+    // Media-enabled guard only: replace does no R2 write (the new bytes are already stored, the old
+    // bytes are kept), so there is no bucket binding to resolve. Media-off still refuses before any
+    // git write.
+    if (!runtime.resolvedAssets.enabled) {
+      return fail(503, { error: 'Media is not enabled for this site.', hash: oldHash, usage: [], foundIn: 0 } satisfies MediaReplaceFailure);
+    }
+
+    // Re-derive the plan from a FRESH content-manifest read (never trust a client plan). The planner
+    // runs strict, so an unverifiable branch read throws; catch it and fail the replace closed (commit
+    // nothing) rather than rewriting a partial set of references. The repointed token keeps the OLD
+    // asset's slug (server-authoritative `row.slug`): a replace changes only the content hash, so the
+    // name in every reference stays the same (the new bytes resolve by hash regardless of the slug).
+    const newToken = replacementToken(row.slug, record.hash);
+    let plan: Awaited<ReturnType<typeof planMediaRewrite<RepointPlacement>>>;
+    try {
+      plan = await planMediaRewrite<RepointPlacement>({
+        backend: runtime.backend,
+        token,
+        concepts: runtime.concepts,
+        contentManifest: await readManifest(token),
+        hash: oldHash,
+        transform: (md) => repointMediaRef(md, oldHash, newToken),
+      });
+    } catch {
+      return fail(503, {
+        error: 'Could not verify where this asset is used. Try again.',
+        hash: oldHash,
+        usage: [],
+        foundIn: 0,
+      } satisfies MediaReplaceFailure);
+    }
+
+    // The typed-slug gate, ALWAYS required for replace. A blank stored slug can never be satisfied by
+    // the empty default, so it is treated as never-confirmed (the confirm cannot be bypassed).
+    if (row.slug === '' || confirmSlug !== row.slug) {
+      log.warn('media.replace_blocked', { editor: editor.email, hash: oldHash, foundIn: plan.affectedCount });
+      return fail(409, {
+        error: `Type ${row.slug} to confirm replacing it in ${plan.affectedCount} ${plan.affectedCount === 1 ? 'entry' : 'entries'}.`,
+        hash: oldHash,
+        usage: [],
+        foundIn: plan.affectedCount,
+      } satisfies MediaReplaceFailure);
+    }
+
+    // Commit atomically: every rewritten entry plus the new media.json row (the OLD row stays, so the
+    // old bytes keep a row). One commit, the same conflict handling as delete.
+    const changes: FileChange[] = plan.entries.map((e) => ({ path: e.path, content: e.newMarkdown }));
+    changes.push({ path: runtime.mediaManifestPath, content: serializeMediaManifest(upsertMediaEntry(manifest, record)) });
+
+    const commitFields = { concept: 'media', id: oldHash, editor: editor.email };
+    try {
+      await commitFiles(
+        runtime.backend,
+        changes,
+        { message: `Replace media: ${row.slug}`, author: { name: editor.displayName, email: editor.email } },
+        token,
+      );
+      log.info('media.replaced', { editor: editor.email, oldHash, newHash, affected: plan.affectedCount });
+    } catch (err) {
+      commitFailure(commitFields, err, '/admin/media',
+        'The site changed since you opened it. Reload and try again.');
+    }
+    throw redirect(303, '/admin/media?replaced=1');
+  }
+
+  /** Preview an alt-propagation: the display-only fetch action (the 2a transport). It plans filling the
+   *  asset's default alt across every published main entry that references it, bucketing each placement
+   *  (a will-fill empty alt, a customized alt left as-is, a decorative hero skipped), and returns the
+   *  enriched entries, the report-only cross-branch delta, and the bucket counts. It commits nothing.
+   *  The plan runs strict (fail-closed): an unverifiable usage read returns a 503 rather than a partial
+   *  plan, so the dialog never shows a count it cannot stand behind.
+   *
+   *  Wire contract: a fetch POST with the JSON body `{ hash }`, the CSRF token in the `X-Cairn-CSRF`
+   *  header (the raw-body transport, no form-CSRF), and a `MediaAltPreviewPlan` returned as the 200
+   *  ActionResult the client reads. A refusal rides a `fail(status, ...)` envelope with the
+   *  MediaAltPropagateFailure shape, so the client reads `type`/`status` from the body. */
+  async function mediaAltPreview(event: ContentEvent): Promise<ReturnType<typeof fail> | MediaAltPreviewPlan> {
+    // CSRF first: a raw-body (JSON) POST, so the header witness is the authority, like the upload and
+    // replace-preview actions. A failed check refuses before the session read or any GitHub call.
+    if (!event.cookies || !validateCsrfHeader({ url: event.url, request: event.request, cookies: event.cookies })) {
+      return fail(403, { error: 'csrf' } satisfies MediaAltPropagateFailure);
+    }
+    requireSession(event);
+
+    let payload: { hash?: unknown };
+    try {
+      payload = JSON.parse(await event.request.text());
+    } catch {
+      return fail(400, { error: 'Could not read the request.' } satisfies MediaAltPropagateFailure);
+    }
+    const hash = String(payload.hash ?? '');
+    if (!MEDIA_HASH_RE.test(hash)) {
+      return fail(400, { error: 'Invalid media hash.' } satisfies MediaAltPropagateFailure);
+    }
+
+    const token = await mintToken(event.platform?.env ?? {});
+    // The default alt to propagate is the asset's manifest row value (set via mediaUpdateAction). An
+    // asset with no committed row has no default alt to push, so refuse.
+    const mediaManifest = parseMediaManifest(parseMediaJson(await readRaw(runtime.backend, runtime.mediaManifestPath, token)));
+    const row = mediaManifest[hash];
+    if (!row) {
+      return fail(404, { error: 'That asset is not committed.' } satisfies MediaAltPropagateFailure);
+    }
+
+    // Plan the fill. The planner runs strict, so an unverifiable branch read throws out of here; catch
+    // it and fail closed, the same posture replace and delete take.
+    const contentManifest = await readManifest(token);
+    let plan: Awaited<ReturnType<typeof planMediaRewrite<AltPlacement>>>;
+    try {
+      plan = await planMediaRewrite<AltPlacement>({
+        backend: runtime.backend,
+        token,
+        concepts: runtime.concepts,
+        contentManifest,
+        hash,
+        transform: (md) => fillAltForHash(md, hash, row.alt, { overwrite: false }),
+      });
+    } catch {
+      return fail(503, { error: 'Could not verify where this asset is used. Try again.' } satisfies MediaAltPropagateFailure);
+    }
+
+    // Enrich each planned entry with its title and permalink from the content manifest (the planner
+    // carries neither), and aggregate the bucket counts across every placement.
+    const byKey = new Map(contentManifest.entries.map((e) => [`${e.concept}/${e.id}`, e]));
+    const counts = { willFill: 0, customized: 0, decorativeSkipped: 0 };
+    const entries: MediaAltPreviewEntry[] = plan.entries.map((e) => {
+      for (const p of e.placements) {
+        if (p.bucket === 'will-fill') counts.willFill += 1;
+        else if (p.bucket === 'customized') counts.customized += 1;
+        else counts.decorativeSkipped += 1;
+      }
+      const manifestRow = byKey.get(`${e.concept}/${e.id}`);
+      return {
+        concept: e.concept,
+        id: e.id,
+        title: manifestRow?.title ?? e.id,
+        permalink: manifestRow?.permalink,
+        placements: e.placements,
+      };
+    });
+
+    return { entries, branchDelta: plan.branchDelta, counts };
+  }
+
+  /** Apply an alt-propagation: fill the asset's default alt into every empty placement across the
+   *  published corpus (and, on the `overwrite` opt-in, customized placements too), in ONE atomic
+   *  commit. The plan is re-derived from a FRESH read (never a client plan). Three deliberate
+   *  differences from replace: there is NO typed-slug gate (alt fill is reversible and frequent), there
+   *  is NO media.json change (the default alt is READ from the row, never rewritten there), and a
+   *  decorative hero is never written regardless of `overwrite` (enforced inside fillAltForHash). A run
+   *  that changes nothing commits nothing and still redirects (a no-op success). It fails the operation
+   *  closed on an unverifiable usage read, and writes only entry files in git (no R2 op). */
+  async function mediaAltApply(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
+    const editor = requireSession(event);
+    const token = await mintToken(event.platform?.env ?? {});
+
+    const form = await event.request.formData();
+    const hash = String(form.get('hash') ?? '');
+    if (!MEDIA_HASH_RE.test(hash)) throw error(400, 'Invalid media hash');
+    // The opt-in to also overwrite customized alts; absent (the default) leaves custom alts alone.
+    const overwrite = form.get('overwrite') === 'on' || form.get('overwrite') === 'true';
+
+    const mediaManifest = parseMediaManifest(parseMediaJson(await readRaw(runtime.backend, runtime.mediaManifestPath, token)));
+    const row = mediaManifest[hash];
+    if (!row) {
+      return fail(404, { error: 'That asset is not committed.' } satisfies MediaAltPropagateFailure);
+    }
+
+    // Media-enabled guard only: alt fill does no R2 write, so there is no bucket binding to resolve.
+    if (!runtime.resolvedAssets.enabled) {
+      return fail(503, { error: 'Media is not enabled for this site.' } satisfies MediaAltPropagateFailure);
+    }
+
+    // Re-derive from a FRESH content-manifest read with the actual overwrite choice. Strict, so an
+    // unverifiable branch read throws; catch it and fail closed (commit nothing).
+    let plan: Awaited<ReturnType<typeof planMediaRewrite<AltPlacement>>>;
+    try {
+      plan = await planMediaRewrite<AltPlacement>({
+        backend: runtime.backend,
+        token,
+        concepts: runtime.concepts,
+        contentManifest: await readManifest(token),
+        hash,
+        transform: (md) => fillAltForHash(md, hash, row.alt, { overwrite }),
+      });
+    } catch {
+      return fail(503, { error: 'Could not verify where this asset is used. Try again.' } satisfies MediaAltPropagateFailure);
+    }
+
+    // Commit only the entries the transform actually changed. A reported-but-unchanged placement (a
+    // kept custom alt, a decorative hero) has after === before, so an entry with only those is a no-op
+    // and is excluded. Nothing changed at all is a successful no-op: skip the commit, still redirect.
+    const changed = plan.entries.filter((e) => e.placements.some((p) => p.after !== p.before));
+    if (changed.length === 0) throw redirect(303, '/admin/media?altPropagated=1');
+
+    const changes: FileChange[] = changed.map((e) => ({ path: e.path, content: e.newMarkdown }));
+    const commitFields = { concept: 'media', id: hash, editor: editor.email };
+    try {
+      await commitFiles(
+        runtime.backend,
+        changes,
+        { message: `Propagate alt: ${row.slug}`, author: { name: editor.displayName, email: editor.email } },
+        token,
+      );
+      log.info('media.alt_propagated', { editor: editor.email, hash, overwrite, written: changed.length });
+    } catch (err) {
+      commitFailure(commitFields, err, '/admin/media',
+        'The site changed since you opened it. Reload and try again.');
+    }
+    throw redirect(303, '/admin/media?altPropagated=1');
+  }
+
+  return { layoutLoad, indexRedirect, listLoad, mediaLibraryLoad, createAction, editLoad, saveAction, publishAction, publishAllAction, discardAction, deleteAction, listDeleteAction, renameAction, uploadAction, mediaDeleteAction, mediaUpdateAction, mediaReplacePreview, mediaReplaceApply, mediaAltPreview, mediaAltApply, mintToken };
 }
 
 /** The cap, in characters, on the stored alt text. The human fields are display copy, not content,

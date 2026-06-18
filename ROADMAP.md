@@ -29,10 +29,12 @@ needs. Items move up from lower tiers as the core fills in.
   below or the scaffolder.
 
 ## Next
-- **Media Pass B: replace-in-place and alt propagation.** Upload a new file and repoint an existing
-  reference (a `main`-only repoint with a branch-delta report), and propagate an alt fix across every
-  placement of an image. High blast radius (cross-branch rewrites), so mockup-first for the Replace
-  control.
+- **Media Pass B: replace-in-place and alt propagation.** LANDED on `feat/media-pass-b` as `0.58.0`,
+  HELD for merge/release/push (Geoff's call). Upload a new file and repoint every published reference
+  (a `main`-only repoint with a report-only branch-delta, the slug kept so only the hash changes), and
+  propagate an alt fix across every placement of an image (opt-in overwrite, decorative respected).
+  Both atomic, fail-closed, preview-confirmed. Plan + post-mortem at
+  `docs/superpowers/plans/2026-06-18-cairn-media-pass-b.md`.
 - **Media Pass C: bulk operations and orphan collection.** Multi-select, usage-aware bulk delete, the
   destructive `reconcileMedia` sweep that collects orphaned R2 objects, and the broadened needs-alt
   scanner. Mockup-first.

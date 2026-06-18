@@ -11,7 +11,44 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-18, latest): Pass A SHIPPED as `0.57.1`; Pass B (replace + alt propagation) SPEC + PLAN authored and approved; EXECUTE Pass B next
+## Immediate next action (2026-06-18, latest): Pass B (replace + alt propagation) LANDED on `feat/media-pass-b` as `0.58.0`, HELD for merge/release/push (Geoff's call)
+
+**Pass B is COMPLETE** on a fresh worktree off `main` (`feat/media-pass-b`), all ten tasks test-first,
+the code-simplifier pass, a four-reviewer gate, and the docs arm. It adds two admin Media Library
+operations that rewrite published content for every placement of one asset in one atomic commit to
+`main`, behind a preview the editor confirms: **replace-in-place** (upload a corrected file; cairn is
+content-addressed, so the new file has a new hash and every reference is repointed; the slug/name is
+kept, only the hash changes; typed-slug confirm; old asset kept; fail-closed) and **alt propagation**
+(push the asset default alt into empty placements, opt-in overwrite of custom alts, decorative hero
+skipped, no typed gate). The pure transforms (`media-rewrite.ts`), the fail-closed planner over
+`buildUsageIndex` (`rewrite-plan.ts`), the four actions on `createContentRoutes` plus their composer
+registration in `cairn-admin.ts`, the two review modals on `CairnMediaLibrary.svelte`, the showcase
+E2E, and the docs all landed. Post-mortem with the full carry-forwards in
+`docs/superpowers/plans/2026-06-18-cairn-media-pass-b.md`.
+
+Gate green at the tip, run first-hand from the worktree: `npm run check` 1004 files 0/0; `npm test` 194
+files / 2153 tests exit 0; `npm run package` exit 0; the showcase Playwright E2E 25 passed (the two new
+round-trips plus 23 existing); the `version` (0.58.0 minor + `release-size: minor`), `docs`,
+`reference`, `reference:signatures`, `package`, `readiness`, `prose` gates all exit 0. The review gate
+(svelte, daisyui-a11y, web-auth-security, Opus correctness) was clean on security and folded in three
+real transform bugs (the canonical-YAML fixtures had missed non-canonical-frontmatter cases) and four
+component a11y/reactivity fixes, all test-first.
+
+**HELD for Geoff (his call):** merge `feat/media-pass-b` to `main`; cut the `0.58.0` release
+(`gh release create v0.58.0 --target main`, fires the OIDC trusted-publishing workflow); push; then
+the per-site cutover with the live admin smoke. The smoke is DEFERRED to that cutover (the 3c
+precedent): the showcase has no real Worker/GitHub (it runs `vite preview` with fakes), so a real
+commit needs a real site repo; the workerd deps are proven via the admin load and the behavior is
+covered by the unit + integration + real-browser E2E suites. **One decision flagged for Geoff:**
+replace KEEPS the asset's slug (only the hash changes), a spec-compliance fix the E2E surfaced (the
+approved spec/mockup promise "the name stays the same"); the plan's Task 1/5 wording had said the new
+file's slug wins. One-line revert if Geoff prefers new-slug. See the post-mortem.
+
+**Then: Pass C** (bulk multi-select + orphan collection of superseded assets, mockup-first, in design)
+and the `create-cairn-site` scaffolder. The `runtime.publicMediaResolver` ergonomic stays a
+carry-forward needing its own brainstorm.
+
+## Prior next action (2026-06-18): Pass A SHIPPED as `0.57.1`; Pass B SPEC + PLAN authored and approved; EXECUTE Pass B next
 
 **Execute Pass B**, planned at `docs/superpowers/plans/2026-06-18-cairn-media-pass-b.md` (spec
 `docs/superpowers/specs/2026-06-18-cairn-media-pass-b-design.md`), a `0.58.0` minor. Main-loop

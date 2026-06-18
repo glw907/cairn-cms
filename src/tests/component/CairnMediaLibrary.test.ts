@@ -1,8 +1,30 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render } from 'vitest-browser-svelte';
+import { tick } from 'svelte';
+import { stringify as devalueStringify } from 'devalue';
 import CairnMediaLibrary from '../../lib/components/CairnMediaLibrary.svelte';
 import type { MediaLibraryEntry } from '../../lib/media/library-entry.js';
-import type { MediaLibraryData, MediaUsageInfo } from '../../lib/sveltekit/content-routes.js';
+import type {
+  MediaLibraryData,
+  MediaUsageInfo,
+  MediaReplacePreviewPlan,
+  MediaReplaceFailure,
+  MediaAltPreviewPlan,
+  MediaAltPropagateFailure,
+} from '../../lib/sveltekit/content-routes.js';
+import type { MediaEntry } from '../../lib/media/manifest.js';
+import * as ingest from '../../lib/components/client-ingest.js';
+
+// The Replace upload step reuses the 2b ingest helpers. ESM namespaces are not configurable in the
+// browser pool, so the helpers cannot be spied directly: mock the module so ingestFile and sendUpload
+// are controllable per test while the pure helpers (buildUploadRequest, the failure taxonomy) stay
+// real, exactly as the MediaInsertPopover suite does.
+vi.mock('../../lib/components/client-ingest.js', async () => {
+  const actual = await vi.importActual<typeof import('../../lib/components/client-ingest.js')>(
+    '../../lib/components/client-ingest.js',
+  );
+  return { ...actual, ingestFile: vi.fn(), sendUpload: vi.fn() };
+});
 
 // A projected library entry keyed elsewhere by the 16-hex content hash. Defaults a fully-described,
 // used asset; each test overrides the fields it exercises.
@@ -497,5 +519,626 @@ describe('CairnMediaLibrary safe-delete alertdialog', () => {
     expect(dialog.textContent ?? '').toContain('A late edit');
     const form = [...dialog.querySelectorAll('form')].find((f) => f.getAttribute('action') === '?/mediaDelete')!;
     expect((form.querySelector('input[name="hash"]') as HTMLInputElement).value).toBe(UNUSED.hash);
+  });
+});
+
+// --- Task 7: the Replace flow (the two-step Replace dialog, the preview fetch, the fail-closed face) ---
+
+// A 1x1 transparent PNG, enough bytes for an object-URL preview through the upload step.
+const PNG_BYTES = Uint8Array.from([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52,
+  0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4,
+  0x89, 0x00, 0x00, 0x00, 0x0a, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9c, 0x63, 0x00, 0x01, 0x00, 0x00,
+  0x05, 0x00, 0x01, 0x0d, 0x0a, 0x2d, 0xb4, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae,
+  0x42, 0x60, 0x82,
+]);
+
+// The server-owned record the upload returns and the Replace flow holds: a fresh content hash and the
+// same slug as the asset being replaced (content-addressed: the name stays, the hash changes).
+function newRecord(overrides: Partial<MediaEntry> = {}): MediaEntry {
+  return {
+    hash: 'b42e0d51aaaa0000',
+    sha256: 'a'.repeat(64),
+    slug: 'first-light',
+    displayName: 'first-light',
+    originalFilename: 'first-light-v2.png',
+    alt: '',
+    ext: 'webp',
+    contentType: 'image/webp',
+    bytes: 26100,
+    width: 1600,
+    height: 1067,
+    createdAt: '2026-06-18T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
+// Serialize a SvelteKit form-action result the way the server does: the envelope is JSON, but its
+// `data` field is a devalue-stringified string (deserialize runs devalue.parse on it). The preview
+// fetch reads its body through deserialize, so its stub must speak the same dialect.
+function successBody(data: unknown): string {
+  return JSON.stringify({ type: 'success', status: 200, data: devalueStringify(data) });
+}
+function failureBody(data: unknown): string {
+  return JSON.stringify({ type: 'failure', status: 503, data: devalueStringify(data) });
+}
+
+// Stub the upload step deterministically: ingestFile skips createImageBitmap, sendUpload returns the
+// success envelope carrying the new record.
+function stubUpload(record: MediaEntry) {
+  vi.mocked(ingest.ingestFile).mockResolvedValue({
+    blob: new Blob([PNG_BYTES], { type: 'image/png' }),
+    contentType: 'image/png',
+    width: 1,
+    height: 1,
+  });
+  vi.mocked(ingest.sendUpload).mockResolvedValue({
+    type: 'basic',
+    status: 200,
+    text: async () => successBody({ reference: `media:${record.slug}.${record.hash}`, record, reused: false, mismatch: false }),
+  } as unknown as Response);
+}
+
+// Stub the preview fetch (the ?/mediaReplacePreview POST). The component reads res.text() through
+// deserialize, so the stubbed Response returns the devalue envelope body.
+function stubPreviewFetch(body: string) {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => ({ status: 200, text: async () => body }) as unknown as Response),
+  );
+}
+
+// Open the Replace dialog: open the slide-over for an asset, click "Replace image", and wait for the
+// dialog to open on the upload step.
+async function openReplace(screen: ReturnType<typeof render>, name: RegExp) {
+  await openSlideOver(screen, name);
+  const replaceButton = screen.container.querySelector<HTMLButtonElement>('[data-cairn-replace-open]')!;
+  replaceButton.click();
+  const dialog = screen.container.querySelector('[data-testid="cairn-replace-dialog"]') as HTMLDialogElement;
+  await expect.poll(() => dialog.open).toBe(true);
+  return dialog;
+}
+
+// Drive the upload step to a held record, then resolve the preview, so the dialog reaches the review
+// (or fail-closed) step. Returns the dialog.
+async function uploadThroughReplace(screen: ReturnType<typeof render>, name: RegExp) {
+  const dialog = await openReplace(screen, name);
+  const fileInput = dialog.querySelector('input[type="file"]') as HTMLInputElement;
+  const file = new File([PNG_BYTES], 'first-light-v2.png', { type: 'image/png' });
+  Object.defineProperty(fileInput, 'files', { value: [file], configurable: true });
+  fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+  return dialog;
+}
+
+const REPLACE_PLAN: MediaReplacePreviewPlan = {
+  affectedCount: 2,
+  entries: [
+    {
+      concept: 'posts',
+      id: 'early-tracks',
+      title: 'A season on the early tracks',
+      permalink: '/posts/early-tracks',
+      placements: [
+        { kind: 'hero', before: 'media:first-light.aaaa111122223333', after: 'media:first-light.b42e0d51aaaa0000' },
+        { kind: 'body', before: 'media:first-light.aaaa111122223333', after: 'media:first-light.b42e0d51aaaa0000' },
+      ],
+    },
+    {
+      concept: 'pages',
+      id: 'the-crew',
+      title: 'The crew page',
+      placements: [
+        { kind: 'hero', before: 'media:first-light.aaaa111122223333', after: 'media:first-light.b42e0d51aaaa0000' },
+      ],
+    },
+  ],
+  branchDelta: [
+    { branch: 'cairn/posts/trailhead-notes', entries: [{ concept: 'posts', id: 'trailhead-notes' }] },
+  ],
+};
+
+beforeEach(() => {
+  vi.mocked(ingest.ingestFile).mockReset();
+  vi.mocked(ingest.sendUpload).mockReset();
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+describe('CairnMediaLibrary Replace entry point and dialog', () => {
+  it('places both new entry points beside Delete in the slide-over actions block', async () => {
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const panel = await openSlideOver(screen, /first-light/);
+    // The Replace and Push-alt entry points carry aria-haspopup="dialog" beside the Delete control.
+    const replace = panel.querySelector('[data-cairn-replace-open]') as HTMLButtonElement;
+    expect(replace).not.toBeNull();
+    expect(replace.getAttribute('aria-haspopup')).toBe('dialog');
+    expect(replace.textContent ?? '').toMatch(/replace image/i);
+    expect(panel.textContent ?? '').toMatch(/push alt to placements/i);
+  });
+
+  it('opens the Replace dialog as an alertdialog on the upload step, Cancel focused', async () => {
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const dialog = await openReplace(screen, /first-light/);
+    expect(dialog.getAttribute('role')).toBe('alertdialog');
+    expect(dialog.getAttribute('aria-modal')).toBe('true');
+    // The title and sub are wired to aria-labelledby / aria-describedby.
+    const labelledby = dialog.getAttribute('aria-labelledby');
+    const describedby = dialog.getAttribute('aria-describedby');
+    expect(labelledby && dialog.querySelector(`#${labelledby}`)).toBeTruthy();
+    expect(describedby && dialog.querySelector(`#${describedby}`)).toBeTruthy();
+    // Step one is the upload step: the asset being replaced is named, and there is a file control.
+    expect(dialog.textContent ?? '').toMatch(/first-light/);
+    expect(dialog.querySelector('input[type="file"]')).not.toBeNull();
+    // There is no apply button on the upload step.
+    expect([...dialog.querySelectorAll('button')].some((b) => /replace in|replace \d/i.test(b.textContent ?? ''))).toBe(false);
+    // Initial focus is Cancel (the destructive-confirm default).
+    await expect.poll(() => (document.activeElement as HTMLElement)?.textContent?.toLowerCase()).toContain('cancel');
+  });
+
+  it('closing the dialog restores focus to the Replace entry point', async () => {
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const dialog = await openReplace(screen, /first-light/);
+    const opener = screen.container.querySelector<HTMLButtonElement>('[data-cairn-replace-open]')!;
+    // Cancel the dialog; focus returns to the entry-point button.
+    const cancel = [...dialog.querySelectorAll('button')].find((b) => /^cancel$/i.test(b.textContent?.trim() ?? ''))!;
+    cancel.click();
+    await expect.poll(() => dialog.open).toBe(false);
+    await expect.poll(() => document.activeElement).toBe(opener);
+  });
+});
+
+describe('CairnMediaLibrary Replace impact review', () => {
+  it('reaches the review step after upload, renders the content-hash copy, and never says the reference is unchanged', async () => {
+    const usage = { [DESCRIBED_USED.hash]: mixedUsage() };
+    stubUpload(newRecord());
+    stubPreviewFetch(successBody(REPLACE_PLAN));
+    const screen = render(CairnMediaLibrary, { data: fixture({ usage }) } as never);
+    const dialog = await uploadThroughReplace(screen, /first-light/);
+
+    // The preview resolved into the impact review: the affected entries are listed.
+    await expect.poll(() => dialog.textContent ?? '').toContain('A season on the early tracks');
+    expect(dialog.textContent ?? '').toContain('The crew page');
+
+    // The CORRECTED content-addressed copy is present verbatim.
+    expect(dialog.textContent ?? '').toMatch(/only the content hash changes/i);
+    expect(dialog.textContent ?? '').toMatch(/the name first-light stays the same/i);
+    // It must NEVER claim the reference is unchanged (the load-bearing rev.2 correction).
+    expect(dialog.textContent ?? '').not.toMatch(/unchanged/i);
+
+    // The report-only branch delta is named.
+    expect(dialog.textContent ?? '').toContain('cairn/posts/trailhead-notes');
+  });
+
+  it('gates the apply button until the typed slug matches, and posts the replace form fields', async () => {
+    const usage = { [DESCRIBED_USED.hash]: mixedUsage() };
+    stubUpload(newRecord());
+    stubPreviewFetch(successBody(REPLACE_PLAN));
+    const screen = render(CairnMediaLibrary, { data: fixture({ usage }) } as never);
+    const dialog = await uploadThroughReplace(screen, /first-light/);
+    await expect.poll(() => dialog.textContent ?? '').toContain('A season on the early tracks');
+
+    const form = [...dialog.querySelectorAll('form')].find((f) => f.getAttribute('action') === '?/mediaReplace')!;
+    expect(form).toBeTruthy();
+    const submit = [...form.querySelectorAll('button')].find((b) => b.getAttribute('type') === 'submit') as HTMLButtonElement;
+    // Gated until the typed slug equals the asset slug (first-light).
+    expect(submit.disabled).toBe(true);
+
+    const confirm = dialog.querySelector('input[data-cairn-replace-confirm]') as HTMLInputElement;
+    confirm.value = 'first-light';
+    confirm.dispatchEvent(new Event('input', { bubbles: true }));
+    await expect.poll(() => submit.disabled).toBe(false);
+
+    // The apply form carries oldHash, newHash, confirmSlug, and the untrusted record under media.
+    expect((form.querySelector('input[name="oldHash"]') as HTMLInputElement).value).toBe(DESCRIBED_USED.hash);
+    expect((form.querySelector('input[name="newHash"]') as HTMLInputElement).value).toBe('b42e0d51aaaa0000');
+    await expect.poll(() => (form.querySelector('input[name="confirmSlug"]') as HTMLInputElement).value).toBe('first-light');
+    const media = JSON.parse((form.querySelector('input[name="media"]') as HTMLInputElement).value);
+    expect(Array.isArray(media)).toBe(true);
+    expect(media[0].hash).toBe('b42e0d51aaaa0000');
+  });
+});
+
+describe('CairnMediaLibrary Replace fail-closed surface', () => {
+  it('shows no apply button, names the branch, and offers Check usage again when the preview fails closed', async () => {
+    const usage = { [DESCRIBED_USED.hash]: mixedUsage() };
+    stubUpload(newRecord());
+    const failure: MediaReplaceFailure = {
+      error: 'Could not read cairn/posts/trailhead-notes.',
+      hash: DESCRIBED_USED.hash,
+      usage: [],
+      foundIn: 0,
+    };
+    stubPreviewFetch(failureBody(failure));
+    const screen = render(CairnMediaLibrary, { data: fixture({ usage }) } as never);
+    const dialog = await uploadThroughReplace(screen, /first-light/);
+
+    // The blocked face renders: no apply form at all (not a disabled button).
+    await expect.poll(() => dialog.textContent ?? '').toMatch(/on hold|could not.*verif/i);
+    expect([...dialog.querySelectorAll('form')].some((f) => f.getAttribute('action') === '?/mediaReplace')).toBe(false);
+    expect([...dialog.querySelectorAll('button')].some((b) => /replace in|replace \d/i.test(b.textContent ?? ''))).toBe(false);
+
+    // There is no typed-slug gate when nothing is safe to confirm.
+    expect(dialog.querySelector('input[data-cairn-replace-confirm]')).toBeNull();
+
+    // The specific unreadable branch from the failure error is named.
+    expect(dialog.textContent ?? '').toContain('cairn/posts/trailhead-notes');
+
+    // A quiet "Check usage again" control re-runs the scan.
+    expect([...dialog.querySelectorAll('button')].some((b) => /check usage again/i.test(b.textContent ?? ''))).toBe(true);
+  });
+
+  it('falls back to a generic honest line when the failure names no branch', async () => {
+    const usage = { [DESCRIBED_USED.hash]: mixedUsage() };
+    stubUpload(newRecord());
+    const failure: MediaReplaceFailure = {
+      error: 'Could not verify where this asset is used. Try again.',
+      hash: DESCRIBED_USED.hash,
+      usage: [],
+      foundIn: 0,
+    };
+    stubPreviewFetch(failureBody(failure));
+    const screen = render(CairnMediaLibrary, { data: fixture({ usage }) } as never);
+    const dialog = await uploadThroughReplace(screen, /first-light/);
+
+    await expect.poll(() => dialog.textContent ?? '').toMatch(/on hold|could not.*verif/i);
+    // No specific cairn/* branch in the failure, so the honest generic line stands in.
+    expect(dialog.textContent ?? '').toMatch(/an edit branch would not load/i);
+    expect([...dialog.querySelectorAll('button')].some((b) => /check usage again/i.test(b.textContent ?? ''))).toBe(true);
+  });
+});
+
+// --- Task 8: the Alt-propagation review modal (the three buckets, the native opt-in, the moving total) ---
+
+// The default alt being pushed (DESCRIBED_USED carries this alt; the dialog propagates it).
+const PUSHED_ALT = 'A pair of blue running shoes';
+
+// A plan spanning all three buckets with distinct entry titles: one will-fill (a body image with no
+// alt), one customized (a body image with the editor's own alt), and one decorative-skipped hero. The
+// counts are the bucket totals the moving footer reads.
+const ALT_PLAN: MediaAltPreviewPlan = {
+  entries: [
+    {
+      concept: 'posts',
+      id: 'early-tracks',
+      title: 'A season on the early tracks',
+      permalink: '/posts/early-tracks',
+      placements: [{ kind: 'body', bucket: 'will-fill', before: '', after: PUSHED_ALT }],
+    },
+    {
+      concept: 'posts',
+      id: 'the-far-turn',
+      title: 'The far turn',
+      placements: [
+        { kind: 'body', bucket: 'customized', before: 'The turn most skiers stop for.', after: 'The turn most skiers stop for.' },
+      ],
+    },
+    {
+      concept: 'pages',
+      id: 'the-crew',
+      title: 'The crew page',
+      placements: [{ kind: 'hero', bucket: 'decorative-skipped', before: '', after: '' }],
+    },
+  ],
+  branchDelta: [{ branch: 'cairn/posts/from-the-ridge', entries: [{ concept: 'posts', id: 'from-the-ridge' }] }],
+  counts: { willFill: 1, customized: 1, decorativeSkipped: 1 },
+};
+
+// Open the Push-alt dialog: open the slide-over for an asset, click "Push alt to placements", and wait
+// for the dialog to open. Mirrors openReplace.
+async function openPushAlt(screen: ReturnType<typeof render>, name: RegExp) {
+  await openSlideOver(screen, name);
+  const button = screen.container.querySelector<HTMLButtonElement>('[data-cairn-pushalt-open]')!;
+  button.click();
+  const dialog = screen.container.querySelector('[data-testid="cairn-alt-dialog"]') as HTMLDialogElement;
+  await expect.poll(() => dialog.open).toBe(true);
+  return dialog;
+}
+
+// Open the dialog and resolve the preview, so it reaches the review state. Returns the dialog.
+async function pushAltThroughPreview(screen: ReturnType<typeof render>, name: RegExp) {
+  stubPreviewFetch(successBody(ALT_PLAN));
+  const dialog = await openPushAlt(screen, name);
+  await expect.poll(() => dialog.textContent ?? '').toContain('A season on the early tracks');
+  return dialog;
+}
+
+describe('CairnMediaLibrary Push-alt dialog', () => {
+  it('opens as role="dialog" (the everyday register, not alertdialog), aria-modal, labelled and described', async () => {
+    stubPreviewFetch(successBody(ALT_PLAN));
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const dialog = await openPushAlt(screen, /first-light/);
+    expect(dialog.getAttribute('role')).toBe('dialog');
+    // It is the everyday register, never the alertdialog Replace uses.
+    expect(dialog.getAttribute('role')).not.toBe('alertdialog');
+    expect(dialog.getAttribute('aria-modal')).toBe('true');
+    const labelledby = dialog.getAttribute('aria-labelledby');
+    const describedby = dialog.getAttribute('aria-describedby');
+    expect(labelledby && dialog.querySelector(`#${labelledby}`)).toBeTruthy();
+    expect(describedby && dialog.querySelector(`#${describedby}`)).toBeTruthy();
+  });
+
+  it('closing the dialog restores focus to the Push-alt entry point', async () => {
+    stubPreviewFetch(successBody(ALT_PLAN));
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const dialog = await openPushAlt(screen, /first-light/);
+    const opener = screen.container.querySelector<HTMLButtonElement>('[data-cairn-pushalt-open]')!;
+    const cancel = [...dialog.querySelectorAll('button')].find((b) => /^cancel$/i.test(b.textContent?.trim() ?? ''))!;
+    cancel.click();
+    await expect.poll(() => dialog.open).toBe(false);
+    await expect.poll(() => document.activeElement).toBe(opener);
+  });
+});
+
+describe('CairnMediaLibrary Push-alt three buckets', () => {
+  it('shows the work-tuned headline, the alt being pushed once, and each entry title in its bucket', async () => {
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const dialog = await pushAltThroughPreview(screen, /first-light/);
+
+    // The headline is tuned to the will-fill count.
+    expect(dialog.textContent ?? '').toMatch(/fill alt on 1 placement/i);
+    // The alt being pushed is shown once.
+    expect(dialog.textContent ?? '').toContain(PUSHED_ALT);
+    // Each bucket names its entry.
+    expect(dialog.textContent ?? '').toContain('A season on the early tracks'); // will-fill
+    expect(dialog.textContent ?? '').toContain('The far turn'); // customized
+    expect(dialog.textContent ?? '').toContain('The crew page'); // decorative-skipped
+    // The report-only branch delta is named.
+    expect(dialog.textContent ?? '').toContain('cairn/posts/from-the-ridge');
+  });
+
+  it('renders the will-fill bucket with the body-vs-hero caveat beside it', async () => {
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const dialog = await pushAltThroughPreview(screen, /first-light/);
+    // The will-fill row shows the (no alt) -> default arrow.
+    expect(dialog.textContent ?? '').toMatch(/no alt/i);
+    // The caveat: a body image cannot record decorative, only a hero can be skipped.
+    expect(dialog.textContent ?? '').toMatch(/only a hero can be skipped/i);
+  });
+
+  it('renders the decorative-skipped bucket as listed and muted with no input', async () => {
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const dialog = await pushAltThroughPreview(screen, /first-light/);
+    const skip = dialog.querySelector('[data-cairn-alt-skip]') as HTMLElement;
+    expect(skip).not.toBeNull();
+    expect(skip.textContent ?? '').toMatch(/decorative/i);
+    expect(skip.textContent ?? '').toContain('The crew page');
+    // The skip bucket never carries a form input.
+    expect(skip.querySelector('input')).toBeNull();
+  });
+});
+
+describe('CairnMediaLibrary Push-alt overwrite opt-in', () => {
+  it('exposes a real native checkbox in the a11y tree, kept-before and struck was->default after', async () => {
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const dialog = await pushAltThroughPreview(screen, /first-light/);
+
+    // The opt-in is a real native <input type="checkbox"> inside its label.
+    const optin = dialog.querySelector('[data-cairn-alt-optin]') as HTMLInputElement;
+    expect(optin).not.toBeNull();
+    expect(optin.type).toBe('checkbox');
+    expect(optin.closest('label')).not.toBeNull();
+    expect(optin.checked).toBe(false);
+
+    // The customized bucket: before opt-in, the row shows the existing alt plain and "kept".
+    const custom = dialog.querySelector('[data-cairn-alt-custom]') as HTMLElement;
+    expect(custom.textContent ?? '').toContain('The turn most skiers stop for.');
+    expect(custom.textContent ?? '').toMatch(/kept/i);
+    // No struck "was" before the opt-in is checked.
+    expect(custom.querySelector('[data-cairn-alt-was]')).toBeNull();
+
+    // Check the opt-in: the row flips to the struck was -> default form.
+    optin.checked = true;
+    optin.dispatchEvent(new Event('change', { bubbles: true }));
+    await expect.poll(() => custom.querySelector('[data-cairn-alt-was]')).not.toBeNull();
+    expect(custom.textContent ?? '').toContain(PUSHED_ALT);
+    // "kept" is gone now that the row is overwritten.
+    await expect.poll(() => /kept/i.test(custom.textContent ?? '')).toBe(false);
+  });
+
+  it('moves the committed total in the footer button and the live region when the opt-in toggles', async () => {
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const dialog = await pushAltThroughPreview(screen, /first-light/);
+
+    const applyButton = () => [...dialog.querySelectorAll('button')].find((b) => /fill \d|update \d/i.test(b.textContent ?? ''))!;
+    const live = dialog.querySelector('[role="status"][aria-live="polite"]') as HTMLElement;
+
+    // Unchecked: the total is the will-fill count (1). The footer reads "Fill 1 placement".
+    expect(applyButton().textContent ?? '').toMatch(/fill 1 placement/i);
+    expect(live.textContent ?? '').toMatch(/writing alt to 1 placement/i);
+
+    // Check the opt-in: the total moves to willFill + customized (2). The footer reads "Update 2".
+    const optin = dialog.querySelector('[data-cairn-alt-optin]') as HTMLInputElement;
+    optin.checked = true;
+    optin.dispatchEvent(new Event('change', { bubbles: true }));
+    await expect.poll(() => applyButton().textContent ?? '').toMatch(/update 2 placements/i);
+    expect(live.textContent ?? '').toMatch(/writing alt to 2 placements/i);
+  });
+
+  it('posts the apply form to ?/mediaAltPropagate with the hash and the overwrite flag tracking the opt-in', async () => {
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const dialog = await pushAltThroughPreview(screen, /first-light/);
+
+    const form = [...dialog.querySelectorAll('form')].find((f) => f.getAttribute('action') === '?/mediaAltPropagate')!;
+    expect(form).toBeTruthy();
+    // The hidden hash names the asset.
+    expect((form.querySelector('input[name="hash"]') as HTMLInputElement).value).toBe(DESCRIBED_USED.hash);
+    // Apply is always enabled (alt fill is reversible, no typed gate).
+    const submit = [...form.querySelectorAll('button')].find((b) => b.getAttribute('type') === 'submit') as HTMLButtonElement;
+    expect(submit.disabled).toBe(false);
+
+    // The overwrite flag is posted as a hidden input mirroring the opt-in; the server reads
+    // form.get('overwrite') === 'on'. Before the opt-in it is empty; checking the box sets it to 'on'.
+    const overwriteField = form.querySelector('input[name="overwrite"]') as HTMLInputElement;
+    expect(overwriteField).not.toBeNull();
+    expect(overwriteField.value).not.toBe('on');
+
+    const optin = dialog.querySelector('[data-cairn-alt-optin]') as HTMLInputElement;
+    optin.checked = true;
+    optin.dispatchEvent(new Event('change', { bubbles: true }));
+    await expect.poll(() => (form.querySelector('input[name="overwrite"]') as HTMLInputElement).value).toBe('on');
+  });
+});
+
+describe('CairnMediaLibrary Push-alt fail-closed surface', () => {
+  it('shows a blocked surface with no apply form and a Check usage again control when the preview fails closed', async () => {
+    const failure: MediaAltPropagateFailure = { error: 'Could not verify where this asset is used. Try again.' };
+    stubPreviewFetch(failureBody(failure));
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const dialog = await openPushAlt(screen, /first-light/);
+
+    // The blocked face: a quiet "could not verify" surface, no apply form, a re-run control.
+    await expect.poll(() => dialog.textContent ?? '').toMatch(/could not.*verif|on hold/i);
+    expect([...dialog.querySelectorAll('form')].some((f) => f.getAttribute('action') === '?/mediaAltPropagate')).toBe(false);
+    expect([...dialog.querySelectorAll('button')].some((b) => /check usage again/i.test(b.textContent ?? ''))).toBe(true);
+    // No opt-in checkbox when nothing was verified.
+    expect(dialog.querySelector('input[name="overwrite"]')).toBeNull();
+  });
+});
+
+// --- Pass B fix-up: focus-to-first-revealed-row on "Show all", and the Replace live region role ---
+
+// A Replace plan with more entries than the row cap (8), so the "Show the other N entries" expander
+// renders. Each entry carries one hero placement.
+const REPLACE_PLAN_MANY: MediaReplacePreviewPlan = {
+  affectedCount: 11,
+  entries: Array.from({ length: 11 }, (_, i) => ({
+    concept: 'posts',
+    id: `entry-${i}`,
+    title: `Entry number ${i}`,
+    permalink: `/posts/entry-${i}`,
+    placements: [
+      { kind: 'hero' as const, before: 'media:first-light.aaaa111122223333', after: 'media:first-light.b42e0d51aaaa0000' },
+    ],
+  })),
+  branchDelta: [],
+};
+
+// An alt plan with more will-fill placements than the row cap (8), so the will-fill "Show the other N
+// placements" expander renders. Each entry contributes one will-fill body placement.
+const ALT_PLAN_MANY: MediaAltPreviewPlan = {
+  entries: Array.from({ length: 11 }, (_, i) => ({
+    concept: 'posts',
+    id: `fill-${i}`,
+    title: `Fill entry ${i}`,
+    permalink: `/posts/fill-${i}`,
+    placements: [{ kind: 'body' as const, bucket: 'will-fill' as const, before: '', after: PUSHED_ALT }],
+  })),
+  branchDelta: [],
+  counts: { willFill: 11, customized: 0, decorativeSkipped: 0 },
+};
+
+describe('CairnMediaLibrary "Show all" moves focus to the first revealed row', () => {
+  it('Replace: clicking "Show all" focuses a revealed entry row, not the body', async () => {
+    const usage = { [DESCRIBED_USED.hash]: mixedUsage() };
+    stubUpload(newRecord());
+    stubPreviewFetch(successBody(REPLACE_PLAN_MANY));
+    const screen = render(CairnMediaLibrary, { data: fixture({ usage }) } as never);
+    const dialog = await uploadThroughReplace(screen, /first-light/);
+    await expect.poll(() => dialog.textContent ?? '').toContain('Entry number 0');
+
+    const list = dialog.querySelector('#cairn-ml-replace-entries') as HTMLElement;
+    // The capped list shows 8 of 11; the expander offers the other 3.
+    expect(list.querySelectorAll('li').length).toBe(8);
+    const expander = [...dialog.querySelectorAll('button')].find((b) => /show the other 3 entries/i.test(b.textContent ?? ''))!;
+    expect(expander).toBeTruthy();
+
+    expander.click();
+    // The reveal mounts every row, and focus lands on the first newly revealed row (the 9th), never
+    // on <body> (the bug: the activated button unmounts and drops focus).
+    await expect.poll(() => list.querySelectorAll('li').length).toBe(11);
+    await expect.poll(() => document.activeElement).not.toBe(document.body);
+    const rows = [...list.querySelectorAll('li')];
+    expect(document.activeElement).toBe(rows[8]);
+  });
+
+  it('Push-alt: clicking "Show all" focuses a revealed will-fill row, not the body', async () => {
+    stubPreviewFetch(successBody(ALT_PLAN_MANY));
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const dialog = await openPushAlt(screen, /first-light/);
+    await expect.poll(() => dialog.textContent ?? '').toContain('Fill entry 0');
+
+    const list = dialog.querySelector('#cairn-ml-alt-fill') as HTMLElement;
+    expect(list.querySelectorAll('li').length).toBe(8);
+    const expander = [...dialog.querySelectorAll('button')].find((b) => /show the other 3 placements/i.test(b.textContent ?? ''))!;
+    expect(expander).toBeTruthy();
+
+    expander.click();
+    await expect.poll(() => list.querySelectorAll('li').length).toBe(11);
+    await expect.poll(() => document.activeElement).not.toBe(document.body);
+    const rows = [...list.querySelectorAll('li')];
+    expect(document.activeElement).toBe(rows[8]);
+  });
+});
+
+describe('CairnMediaLibrary Replace review live region', () => {
+  it('carries role="status" on the polite live region for a portable announcement', async () => {
+    const usage = { [DESCRIBED_USED.hash]: mixedUsage() };
+    stubUpload(newRecord());
+    stubPreviewFetch(successBody(REPLACE_PLAN));
+    const screen = render(CairnMediaLibrary, { data: fixture({ usage }) } as never);
+    const dialog = await uploadThroughReplace(screen, /first-light/);
+    await expect.poll(() => dialog.textContent ?? '').toContain('A season on the early tracks');
+
+    // The review live region matches the Push-alt one: role="status" plus aria-live="polite".
+    const live = [...dialog.querySelectorAll('[role="status"][aria-live="polite"]')].find((el) =>
+      /replace first-light in/i.test(el.textContent ?? ''),
+    );
+    expect(live).toBeTruthy();
+  });
+});
+
+describe('CairnMediaLibrary preview in-flight guard', () => {
+  it('Push-alt: a stale preview from a prior open never clobbers the dialog reopened for another asset', async () => {
+    // The first open's preview is deferred so it lands LATE, after the dialog is reopened for a second
+    // asset whose own preview already resolved. Without the per-call guard the stale response would
+    // overwrite the fresh plan; the guard must drop it. Each fetch call returns the next queued body.
+    let resolveFirst: (body: string) => void = () => {};
+    const firstBody = new Promise<string>((r) => {
+      resolveFirst = r;
+    });
+    const ALT_PLAN_SECOND: MediaAltPreviewPlan = {
+      entries: [
+        {
+          concept: 'posts',
+          id: 'second-asset',
+          title: 'The second asset entry',
+          permalink: '/posts/second-asset',
+          placements: [{ kind: 'body', bucket: 'will-fill', before: '', after: PUSHED_ALT }],
+        },
+      ],
+      branchDelta: [],
+      counts: { willFill: 1, customized: 0, decorativeSkipped: 0 },
+    };
+    const bodies: (string | Promise<string>)[] = [firstBody, successBody(ALT_PLAN_SECOND)];
+    let call = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        const body = bodies[call++];
+        return { status: 200, text: async () => body } as unknown as Response;
+      }),
+    );
+
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    // First open (its preview is in flight, deferred).
+    const dialog = await openPushAlt(screen, /first-light/);
+    const cancel = () => [...dialog.querySelectorAll('button')].find((b) => /^cancel$/i.test(b.textContent?.trim() ?? ''))!;
+    cancel().click();
+    await expect.poll(() => dialog.open).toBe(false);
+
+    // Reopen for a second asset; its preview resolves immediately to the second plan.
+    await openSlideOver(screen, /meadow-fence/);
+    screen.container.querySelector<HTMLButtonElement>('[data-cairn-pushalt-open]')!.click();
+    await expect.poll(() => dialog.open).toBe(true);
+    await expect.poll(() => dialog.textContent ?? '').toContain('The second asset entry');
+
+    // Now let the FIRST (stale) preview land. The guard drops it: the second plan stays put.
+    resolveFirst(successBody(ALT_PLAN));
+    await tick();
+    await new Promise((r) => setTimeout(r, 30));
+    expect(dialog.textContent ?? '').toContain('The second asset entry');
+    expect(dialog.textContent ?? '').not.toContain('A season on the early tracks');
   });
 });

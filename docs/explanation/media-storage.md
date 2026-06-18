@@ -142,10 +142,47 @@ A per-placement alt is the text in a specific `![alt](...)` or a specific hero `
 lives in the entry's committed content, and it is what the public site renders for that placement.
 The asset default alt is the value that prefills the next time someone inserts the image. Editing the
 default in the Library changes what the next placement starts with. It does not reach back and
-rewrite the alt already committed in existing placements. So a Library alt change never propagates to
-live pages, and the detail panel labels the field as the default to keep that from surprising anyone.
-Propagating a fix to every existing use is a cross-branch content rewrite, the same shape as
-replace-in-place, and it is deferred with replace.
+rewrite the alt already committed in existing placements. So saving a new default in the Library never
+propagates to live pages on its own, and the detail panel labels the field as the default to keep that
+from surprising anyone. Pushing that default out to every existing use is a separate, explicit action,
+Push alt, described below alongside replace.
+
+## Replace repoints, it does not mutate in place
+
+A corrected upload is not the same asset with new bytes. Identity is the content hash, so different
+bytes are a different asset with a different hash, full stop. Replace works with that grain rather than
+against it. cairn ingests the corrected file as a new content-addressed object, then rewrites every
+`main` reference from the old hash to the new one in a single `commitFiles`. The slug rides along: a
+placement reading `media:first-light.<oldhash>` becomes `media:first-light.<newhash>`, the name kept
+and only the hash changed, since the resolver and the delivery route key on the hash alone.
+
+The old asset is kept, not erased. Its `media.json` row and its R2 bytes stay in place, recoverable
+from git history, and collecting an orphaned object once nothing points at it is a later pass rather
+than a side effect of replace. Open edit branches are reported, never rewritten: the operation reads
+`cairn/*` edit branches to tell the author which held edits still point at the old asset, but it leaves
+their content alone, so a draft keeps the file its author placed until it republishes. That is the same
+report-only branch-delta the where-used list already shows.
+
+Two safety properties match the rest of the media surface. The operation re-derives its rewrite plan
+from a fresh read at apply time, never from a count the screen passed in, so a placement added after
+the preview opened is included. And it fails closed: if usage cannot be verified across `main` and
+every open branch (media off, the bucket unbound), it refuses rather than rewrite a partial set. A
+typed-slug confirm gates the apply, because it edits published content and can break a draft, the same
+gate the in-use delete uses.
+
+## Alt propagation across placements
+
+Push alt is the cross-content counterpart to the per-placement-versus-default split above. It reads
+the asset's default alt from the `media.json` row and writes it into the placements that have none,
+filling the gaps in one atomic commit of the rewritten entries. An explicit opt-in widens the target
+to placements that already carry a custom alt, overwriting an author's words, so it is off by default.
+A frontmatter hero marked `decorative` is never touched, because its empty alt is a recorded choice,
+not a missing description.
+
+The media manifest does not change. The default alt is read from the row, never rewritten there, so
+the operation only edits content entries. Alt fill is reversible and frequent, so unlike replace it
+carries no typed-slug gate. It shares the same fail-closed read and the same report-only branch-delta:
+it rewrites `main`, names the open edits that still lack alt, and refuses if it cannot verify the set.
 
 ## What the foundation carries
 

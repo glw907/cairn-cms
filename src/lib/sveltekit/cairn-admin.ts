@@ -177,6 +177,15 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
     ),
     mediaDelete: viewAction(['media'], (event) => content.mediaDeleteAction(contentEvent(event, {}))),
     mediaUpdate: viewAction(['media'], (event) => content.mediaUpdateAction(contentEvent(event, {}))),
+    // The Library is not entry-scoped, so a replace uploads its new file through the same content-
+    // addressed ingest mounted media-scoped (uploadAction reads no concept/id), then previews and
+    // applies the repoint. Alt propagation previews and applies the alt fill. The preview pair are 2a
+    // fetch actions; the apply pair are form posts. All gate on the media view.
+    mediaUpload: viewAction(['media'], (event) => content.uploadAction(contentEvent(event, {}))),
+    mediaReplacePreview: viewAction(['media'], (event) => content.mediaReplacePreview(contentEvent(event, {}))),
+    mediaReplace: viewAction(['media'], (event) => content.mediaReplaceApply(contentEvent(event, {}))),
+    mediaAltPreview: viewAction(['media'], (event) => content.mediaAltPreview(contentEvent(event, {}))),
+    mediaAltPropagate: viewAction(['media'], (event) => content.mediaAltApply(contentEvent(event, {}))),
     publishAll: viewAction(authedViews, (event) => content.publishAllAction(contentEvent(event, {}))),
     addEditor: viewAction(['editors'], (event) => editors.addEditorAction(event)),
     removeEditor: viewAction(['editors'], (event) => editors.removeEditorAction(event)),

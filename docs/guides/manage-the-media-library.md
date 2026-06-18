@@ -50,6 +50,40 @@ the Library sets the value that fills in the next time someone inserts this imag
 every existing placement exactly as its author wrote it. The field is labeled as the default so the
 distinction stays clear.
 
+## Replacing an image
+
+Sometimes the picture is right but the file is wrong: a typo in a chart, a crop that needs redoing, a
+photo you re-exported at a better quality. Replace swaps the file behind an image without you having
+to revisit every page that uses it. Open the image, choose Replace, and upload the corrected version.
+
+The review tells you the scope before anything changes. It counts how many published entries use the
+image and names them, the same grouping the where-used list uses. The name stays the same and only
+the file behind it changes, so every page that already shows the image picks up the new version. cairn
+asks you to type the image's slug to confirm, because a replace rewrites your published pages in one
+commit and could break a draft that was mid-edit.
+
+Two things stay where they were. An edit held on its own branch keeps the old file until that edit is
+republished, so a draft you have not published yet is never rewritten under you. And the old file is
+not erased: it stays in your git history, so a replace you regret can be undone from the repository.
+The review names any open edits that are still on the old file, so you know what to expect when they
+publish.
+
+## Filling in missing alt text
+
+Alt text describes a picture for a reader who cannot see it, and it is easy to drop an image into a
+page without writing any. Push alt fills those gaps from one place. The image's default alt, the
+description you set in the Library, copies into every placement that has none. Open the image and
+choose Push alt to start it.
+
+By default it only fills the blanks and leaves any alt an author already wrote alone, because that
+text is their words for that page. An opt-in lets you overwrite the placements that already have their
+own alt too. It is off by default, since turning it on replaces what an author wrote, so reach for it
+only when you mean to standardize on the Library's description.
+
+A hero image marked decorative is skipped, because its empty alt is a deliberate choice rather than a
+gap. The fill lands as one commit across every page it touches, and git keeps every version, so this
+too can be walked back from history.
+
 ## Deleting an image safely
 
 Delete is in the details panel, and it has two faces depending on whether the image is in use.

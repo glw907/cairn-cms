@@ -124,9 +124,53 @@ export const SEED_MEDIA = {
   branchOnly: { hash: '9999aaaabbbbcccc', slug: 'draft-banner', alt: 'A draft banner image' },
 } as const;
 
-/** The R2 object keys (media/<aa>/<hash>.<ext>) the four assets resolve through, so hooks.server.ts
- *  seeds the matching bytes. Kept here so the key derivation lives next to the manifest seed. */
-export const SEED_MEDIA_KEYS = Object.values(SEED_MEDIA).map(
+// --- the Pass B replace + alt-propagation fixture ---
+//
+// A dedicated asset isolated from the four above, backing both Pass B round-trips (media-pass-b.spec.ts)
+// with no interference: the alt round-trip changes only the alt text on its placements, and the replace
+// round-trip changes only the content hash. It is one asset referenced by TWO main entries whose
+// MARKDOWN carries the real `media:` token (the repoint and alt transforms read the entry markdown, not
+// the manifest), so the bulk rewrite has real source to act on:
+//
+//   - 2026-06-first-empty references it with an EMPTY alt (the alt round-trip's will-fill bucket).
+//   - 2026-06-first-custom references it with a CUSTOM alt (the alt round-trip's customized bucket; the
+//     replace round-trip repoints both).
+//
+// Both entries are added to main's content manifest with mediaRefs pointing at the asset, so the usage
+// index (which the planner builds from mediaRefs) selects them, then reads their markdown to rewrite it.
+
+/** The Pass B asset's hash, slug, and stored default alt, exported so the spec asserts the alt the
+ *  push propagates and the hash the replace repoints away from. A distinct 16-hex hash from the four. */
+export const PASS_B_MEDIA = {
+  hash: 'cccc4444dddd5555',
+  slug: 'first-light',
+  alt: 'Dawn light over the tracks',
+} as const;
+
+/** The two main entries that reference the Pass B asset, exported so the spec reads their committed
+ *  markdown back through the /test/branch-file fixture after each round-trip. `emptyAlt` carries an
+ *  empty alt (the will-fill bucket); `customAlt` carries a custom alt (the customized bucket). */
+export const PASS_B_ENTRIES = {
+  emptyAlt: {
+    id: '2026-06-first-empty',
+    title: 'Light on the early track',
+    path: 'src/content/posts/2026-06-first-empty.md',
+    permalink: '/posts/first-empty',
+    customAltText: '',
+  },
+  customAlt: {
+    id: '2026-06-first-custom',
+    title: 'A later pass',
+    path: 'src/content/posts/2026-06-first-custom.md',
+    permalink: '/posts/first-custom',
+    customAltText: "A skier's own words",
+  },
+} as const;
+
+/** The R2 object keys (media/<aa>/<hash>.<ext>) every seeded asset resolves through, so hooks.server.ts
+ *  seeds the matching bytes. Kept here so the key derivation lives next to the manifest seed. Includes
+ *  the Pass B asset so its thumbnail resolves in the replace dialog. */
+export const SEED_MEDIA_KEYS = [...Object.values(SEED_MEDIA), PASS_B_MEDIA].map(
   (m) => `media/${m.hash.slice(0, 2)}/${m.hash}.png`,
 );
 
@@ -158,17 +202,33 @@ export function seedMediaLibrary(): void {
   const main = branches.get('main');
   if (!main) return;
 
-  // The three main-side asset rows, keyed by hash (the MediaManifest shape).
+  // The main-side asset rows, keyed by hash (the MediaManifest shape). The three Library assets plus
+  // the dedicated Pass B asset (first-light), which two main entries reference in their markdown.
   const mainMedia: Record<string, unknown> = {
     [SEED_MEDIA.used.hash]: mediaRow(SEED_MEDIA.used.slug, SEED_MEDIA.used.hash, SEED_MEDIA.used.alt),
     [SEED_MEDIA.orphan.hash]: mediaRow(SEED_MEDIA.orphan.slug, SEED_MEDIA.orphan.hash, SEED_MEDIA.orphan.alt),
     [SEED_MEDIA.needsAlt.hash]: mediaRow(SEED_MEDIA.needsAlt.slug, SEED_MEDIA.needsAlt.hash, SEED_MEDIA.needsAlt.alt),
+    [PASS_B_MEDIA.hash]: mediaRow(PASS_B_MEDIA.slug, PASS_B_MEDIA.hash, PASS_B_MEDIA.alt),
   };
   main.set('src/content/.cairn/media.json', `${JSON.stringify(mainMedia, null, 2)}\n`);
 
+  // The two Pass B entries' markdown on main: each carries a real `media:` token the bulk transforms
+  // rewrite (the planner reads the entry markdown, not the manifest). One with an empty alt (will-fill),
+  // one with a custom alt (customized). The token is `media:<slug>.<hash>`, the canonical form.
+  const passBToken = `media:${PASS_B_MEDIA.slug}.${PASS_B_MEDIA.hash}`;
+  main.set(
+    PASS_B_ENTRIES.emptyAlt.path,
+    `---\ntitle: ${PASS_B_ENTRIES.emptyAlt.title}\ndate: 2026-06-05\n---\nFirst run of the season: ![](${passBToken})\n`,
+  );
+  main.set(
+    PASS_B_ENTRIES.customAlt.path,
+    `---\ntitle: ${PASS_B_ENTRIES.customAlt.title}\ndate: 2026-06-07\n---\nA quieter lap: ![${PASS_B_ENTRIES.customAlt.customAltText}](${passBToken})\n`,
+  );
+
   // The content manifest on main: the seed post entry, carrying a non-empty summary (the office
   // triage spec asserts it) and a mediaRefs pointing at the used asset (so its where-used reads
-  // published). The Manifest shape from src/lib/content/manifest.ts.
+  // published), plus the two Pass B entries whose mediaRefs point at first-light (so the usage index
+  // selects them for the bulk rewrite). The Manifest shape from src/lib/content/manifest.ts.
   const manifest = {
     version: 1,
     entries: [
@@ -182,6 +242,28 @@ export function seedMediaLibrary(): void {
         draft: false,
         links: [],
         mediaRefs: [SEED_MEDIA.used.hash],
+      },
+      {
+        id: PASS_B_ENTRIES.emptyAlt.id,
+        concept: 'posts',
+        title: PASS_B_ENTRIES.emptyAlt.title,
+        date: '2026-06-05',
+        permalink: PASS_B_ENTRIES.emptyAlt.permalink,
+        summary: 'First run of the season.',
+        draft: false,
+        links: [],
+        mediaRefs: [PASS_B_MEDIA.hash],
+      },
+      {
+        id: PASS_B_ENTRIES.customAlt.id,
+        concept: 'posts',
+        title: PASS_B_ENTRIES.customAlt.title,
+        date: '2026-06-07',
+        permalink: PASS_B_ENTRIES.customAlt.permalink,
+        summary: 'A quieter lap.',
+        draft: false,
+        links: [],
+        mediaRefs: [PASS_B_MEDIA.hash],
       },
     ],
   };

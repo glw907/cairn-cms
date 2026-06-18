@@ -24,12 +24,33 @@ It is node-safe by construction: it types assets with MediaLibraryEntry from the
 projection and pulls in no editor module (the editor-boundary test bars a @codemirror leak).
 -->
 <script lang="ts">
-  import { flushSync, tick } from 'svelte';
+  import { flushSync, getContext, tick } from 'svelte';
+  import { deserialize } from '$app/forms';
   import type { MediaLibraryEntry } from '../media/library-entry.js';
-  import type { MediaLibraryData, ContentFormFailure } from '../sveltekit/content-routes.js';
+  import type {
+    MediaLibraryData,
+    ContentFormFailure,
+    MediaReplacePreviewPlan,
+    MediaReplaceFailure,
+    MediaReplacePreviewEntry,
+    MediaAltPreviewPlan,
+    MediaAltPropagateFailure,
+  } from '../sveltekit/content-routes.js';
+  import type { AltPlacement } from '../content/media-rewrite.js';
   import type { UsageEntry } from '../media/usage.js';
+  import type { MediaEntry } from '../media/manifest.js';
   import { publicPath } from '../media/naming.js';
   import { mediaToken } from '../media/reference.js';
+  import { CSRF_CONTEXT_KEY } from './csrf-context.js';
+  import {
+    ingestFile,
+    buildUploadRequest,
+    sendUpload,
+    ingestFailureKind,
+    failureCard,
+    type IngestFailureCard,
+  } from './client-ingest.js';
+  import { uploadOutcome, type UploadEnvelope } from './media-upload-outcome.js';
   import CsrfField from './CsrfField.svelte';
   import CairnLogo from './CairnLogo.svelte';
   import {
@@ -48,6 +69,10 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     FileTextIcon,
     ClockIcon,
     Link2OffIcon,
+    RefreshCwIcon,
+    GitBranchIcon,
+    ArrowRightIcon,
+    MegaphoneIcon,
   } from './admin-icons.js';
 
   interface Props {
@@ -64,7 +89,12 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
 
   // The success flash a redirected action carried back: a safe-delete or a metadata edit. The
   // conflict error (data.flashError) renders in the inline error treatment below instead.
-  const FLASH_MESSAGE = { deleted: 'Asset deleted.', updated: 'Changes saved.' } as const;
+  const FLASH_MESSAGE = {
+    deleted: 'Asset deleted.',
+    updated: 'Changes saved.',
+    replaced: 'Asset replaced.',
+    altPropagated: 'Alt text applied.',
+  } as const;
   const flashMessage = $derived(data.flash ? FLASH_MESSAGE[data.flash] : '');
 
   // --- the per-hash usage facts the screen joins onto each asset ---
@@ -220,7 +250,14 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   // fires only when focus is inside the panel: an Escape in the search box clears it and leaves the
   // panel exactly as the user left it, while an Escape with focus in the panel still closes it.
   function onWindowKeydown(e: KeyboardEvent) {
-    if (e.key === 'Escape' && selected && !deleteDialog?.open && panelEl?.contains(document.activeElement)) {
+    if (
+      e.key === 'Escape' &&
+      selected &&
+      !deleteDialog?.open &&
+      !replaceDialog?.open &&
+      !altDialog?.open &&
+      panelEl?.contains(document.activeElement)
+    ) {
       e.preventDefault();
       closePanel();
     }
@@ -246,6 +283,387 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
       deleteOnly = false;
       selected = null;
     }
+  }
+
+  // --- the Replace flow: a two-step alertdialog (upload, then impact review) over the selected asset ---
+  // Replace uploads a new file for the selected asset; cairn is content-addressed, so the new file has a
+  // new hash and every published reference is repointed to it in one commit to main. The dialog opens on
+  // the quiet upload step, holds the server-owned record on a successful upload, fetches the preview
+  // (fail-closed), and renders the impact review behind a typed-slug gate. The CSRF token getter comes
+  // from the admin context, the same seam the insert popover reads.
+  const csrf = getContext<(() => string) | undefined>(CSRF_CONTEXT_KEY);
+
+  type ReplaceStep = 'upload' | 'review' | 'blocked';
+  // The transient upload status under the upload step: idle, an in-flight ingest/upload, or a typed
+  // ingest failure card with a retry. Mirrors the insert popover's failed-card grammar.
+  type ReplaceUpload =
+    | { kind: 'idle' }
+    | { kind: 'working' }
+    | { kind: 'failed'; card: IngestFailureCard | { status: 'failed'; message: string }; retry: () => void };
+
+  let replaceDialog = $state<HTMLDialogElement | null>(null);
+  // The entry-point button that opened the dialog, so focus restores to it on close (the alertdialog
+  // recipe, like the delete dialog's slide-over Delete button).
+  let replaceOrigin: HTMLElement | null = null;
+  // The Cancel control, the destructive-confirm initial focus.
+  let replaceCancelButton = $state<HTMLButtonElement | null>(null);
+  let replaceFileInput = $state<HTMLInputElement | null>(null);
+  let replaceStep = $state<ReplaceStep>('upload');
+  let replaceUpload = $state<ReplaceUpload>({ kind: 'idle' });
+  // The server-owned record the upload returned (the new asset), held for the preview and the apply.
+  let replaceRecord = $state<MediaEntry | null>(null);
+  // The resolved preview plan (the review step) or the fail-closed failure (the blocked step).
+  let replacePlan = $state<MediaReplacePreviewPlan | null>(null);
+  let replaceFailure = $state<MediaReplaceFailure | null>(null);
+  // The typed-slug confirm gate, echoing the delete dialog's type-to-confirm.
+  let replaceConfirmInput = $state('');
+  // The asset the Replace dialog acts on, pinned at open so a background re-render never swaps it.
+  let replaceAsset = $state<MediaLibraryEntry | null>(null);
+  const replaceConfirmMatches = $derived(replaceAsset !== null && replaceConfirmInput === replaceAsset.slug);
+
+  function openReplaceDialog(origin?: HTMLElement | null) {
+    if (!selected) return;
+    // The entry-point button passed from the click (focus restores here on close), falling back to the
+    // active element. A programmatic .click() does not focus its target, so the explicit origin is the
+    // reliable restore point.
+    replaceOrigin = origin ?? (document.activeElement as HTMLElement | null) ?? null;
+    replaceAsset = selected;
+    replaceStep = 'upload';
+    replaceUpload = { kind: 'idle' };
+    replaceRecord = null;
+    replacePlan = null;
+    replaceFailure = null;
+    replaceConfirmInput = '';
+    // Show the dialog after the step state flushes, then move focus to Cancel.
+    void tick().then(() => {
+      replaceDialog?.showModal();
+      replaceCancelButton?.focus();
+    });
+  }
+  function closeReplaceDialog() {
+    replaceDialog?.close();
+    replaceAsset = null;
+    replaceRecord = null;
+    replacePlan = null;
+    replaceFailure = null;
+    replaceConfirmInput = '';
+    replaceUpload = { kind: 'idle' };
+    // Restore focus to the entry-point button (the alertdialog focus-restore recipe).
+    replaceOrigin?.focus();
+    replaceOrigin = null;
+  }
+
+  // The chosen-file handler: route the file through the ingest-and-upload loop, exactly as the insert
+  // popover does, then fetch the preview. A file is the only path (Pass B is upload-new-only).
+  function onReplaceFileChosen(e: Event) {
+    const input = e.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    if (file) void runReplaceUpload(file);
+  }
+
+  // The upload loop for the new file. It ingests (decode/transcode), uploads through the shared
+  // transport, and on the success envelope holds the new record and runs the preview. A typed ingest or
+  // upload failure surfaces a retry card on the upload step; an expired session reads as a generic card.
+  // The upload posts to the media-scoped ?/mediaUpload action: the Library is not entry-scoped, so it
+  // overrides buildUploadRequest's entry URL while reusing its header-and-body transport verbatim.
+  async function runReplaceUpload(file: File) {
+    if (!replaceAsset) return;
+    replaceUpload = { kind: 'working' };
+    const genericFail = () =>
+      (replaceUpload = {
+        kind: 'failed',
+        card: { status: 'failed', message: GENERIC_UPLOAD_MESSAGE },
+        retry: () => void runReplaceUpload(file),
+      });
+
+    let ingested: Awaited<ReturnType<typeof ingestFile>>;
+    try {
+      ingested = await ingestFile(file);
+    } catch (err) {
+      replaceUpload = { kind: 'failed', card: failureCard(ingestFailureKind(err)), retry: () => void runReplaceUpload(file) };
+      return;
+    }
+
+    const built = buildUploadRequest({
+      conceptId: '',
+      id: '',
+      bytes: ingested.blob,
+      contentType: ingested.contentType,
+      csrf: csrf?.() ?? '',
+      filename: file.name,
+      width: ingested.width,
+      height: ingested.height,
+    });
+    let res: Response;
+    try {
+      res = await sendUpload(REPLACE_UPLOAD_URL, built.init);
+    } catch (err) {
+      replaceUpload = { kind: 'failed', card: failureCard(ingestFailureKind(err)), retry: () => void runReplaceUpload(file) };
+      return;
+    }
+    // The guard's expired-session 303 under redirect:'manual' surfaces as an opaque, status-0 response.
+    if (res.type === 'opaqueredirect' || res.status === 0) {
+      genericFail();
+      return;
+    }
+    let outcome: ReturnType<typeof uploadOutcome>;
+    try {
+      outcome = uploadOutcome(deserialize(await res.text()) as UploadEnvelope);
+    } catch {
+      genericFail();
+      return;
+    }
+    if (outcome.kind !== 'inserted') {
+      genericFail();
+      return;
+    }
+    // Hold the server-owned record, then fetch the impact preview for (oldHash -> newHash).
+    replaceRecord = outcome.record;
+    replaceUpload = { kind: 'idle' };
+    await runReplacePreview();
+  }
+
+  // A per-call request token guards the preview fetch against a stale response landing on a closed or
+  // reopened dialog. Svelte reactivity does not track reads below the first `await`, so each call pins
+  // its own sequence at entry and bails after the await if a newer call (a reopen, or a "Check usage
+  // again" double-click) has since superseded it.
+  let replacePreviewSeq = 0;
+
+  // The preview fetch: POST the (oldHash, newHash, slug) tuple in the 2a transport (a text/plain
+  // body, the CSRF token in the X-Cairn-CSRF header), parse the SvelteKit ActionResult envelope, and
+  // route to the review step (a plan) or the fail-closed blocked step (a failure). Re-runnable from the
+  // blocked step's "Check usage again". The slug is the OLD asset's: a replace keeps the name and
+  // changes only the content hash, so the repointed token carries the existing slug, not the new file's.
+  async function runReplacePreview() {
+    if (!replaceAsset || !replaceRecord) return;
+    const hash = replaceAsset.hash;
+    const seq = ++replacePreviewSeq;
+    // The fail-closed landing: an unverifiable usage read, an unreachable preview, or an unparseable
+    // body all route to the blocked step. The passed failure carries the branch-naming error when the
+    // server returned one; a transport miss carries the empty error (the generic honest line stands in).
+    const blockClosed = (failure?: MediaReplaceFailure) => {
+      replaceFailure = failure ?? { error: '', hash, usage: [], foundIn: 0 };
+      replacePlan = null;
+      replaceStep = 'blocked';
+    };
+
+    const body = JSON.stringify({ oldHash: hash, newHash: replaceRecord.hash, slug: replaceAsset.slug });
+    let result: { type: string; data?: unknown };
+    try {
+      const res = await fetch(REPLACE_PREVIEW_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain', 'X-Cairn-CSRF': csrf?.() ?? '' },
+        body,
+      });
+      result = deserialize(await res.text()) as { type: string; data?: unknown };
+    } catch {
+      // Drop a stale response that lost the race to a reopen or a re-run before surfacing the block.
+      if (seq !== replacePreviewSeq) return;
+      blockClosed();
+      return;
+    }
+    // The dialog was closed or reopened (for another asset, or via a re-run) while this fetch was in
+    // flight, so this response is stale: ignore it rather than clobber the live state.
+    if (seq !== replacePreviewSeq) return;
+    if (result.type === 'success' && result.data) {
+      replacePlan = result.data as MediaReplacePreviewPlan;
+      replaceFailure = null;
+      replaceConfirmInput = '';
+      replaceStep = 'review';
+    } else {
+      blockClosed(result.data as MediaReplaceFailure | undefined);
+    }
+  }
+
+  const GENERIC_UPLOAD_MESSAGE = 'The upload could not be completed. Please try again.';
+  // The media-scoped upload and preview action URLs, relative to /admin/media. The upload reuses the
+  // shared ingest transport but the Library has no entry, so it targets ?/mediaUpload rather than the
+  // entry-scoped ?/upload. The apply form below posts ?/mediaReplace.
+  const REPLACE_UPLOAD_URL = '?/mediaUpload';
+  const REPLACE_PREVIEW_URL = '?/mediaReplacePreview';
+
+  // The affected-entry well caps past this many rows; "Show all N" reveals the rest into the same
+  // scroll container (the a11y contract: aria-expanded + aria-controls).
+  const REPLACE_ROW_CAP = 8;
+  let replaceShowAll = $state(false);
+  // The affected-entry list element, so "Show all" can move focus to the first newly revealed row (the
+  // one just past the cap) instead of dropping to <body> when the expander button unmounts.
+  let replaceEntriesList = $state<HTMLElement | null>(null);
+  $effect(() => {
+    // Reset the reveal whenever a fresh plan arrives, so a second preview never opens pre-expanded.
+    void replacePlan;
+    replaceShowAll = false;
+  });
+  // Reveal the capped rows, then move focus to the first newly revealed row (the rev.2 contract). The
+  // expander unmounts on the flag flip, so without this focus falls to <body>.
+  function showAllReplaceEntries() {
+    replaceShowAll = true;
+    void tick().then(() => (replaceEntriesList?.children[REPLACE_ROW_CAP] as HTMLElement | undefined)?.focus());
+  }
+  const replaceEntries = $derived(replacePlan?.entries ?? []);
+  const replaceVisibleEntries = $derived(
+    replaceShowAll ? replaceEntries : replaceEntries.slice(0, REPLACE_ROW_CAP),
+  );
+  const replaceHiddenCount = $derived(Math.max(0, replaceEntries.length - REPLACE_ROW_CAP));
+  // The server's distinct affected-entry count, read in several places across the review markup and
+  // the apply button. Coalesced once here so each read stays a plain number.
+  const replaceAffected = $derived(replacePlan?.affectedCount ?? 0);
+
+  // The where-used summary line for one affected entry, derived from its repointed placements: a hero
+  // count and a body count, folded into a plain phrase ("Hero and 2 in the body", "1 in the body").
+  function replaceWhereUsed(entry: MediaReplacePreviewEntry): string {
+    let hero = 0;
+    let body = 0;
+    for (const p of entry.placements) {
+      if (p.kind === 'hero') hero += 1;
+      else body += 1;
+    }
+    const parts: string[] = [];
+    if (hero > 0) parts.push(hero === 1 ? 'Hero' : `${hero} heroes`);
+    if (body > 0) parts.push(`${body} in the body`);
+    return parts.length > 0 ? parts.join(' and ') : 'Used in this entry';
+  }
+
+  // The specific unreadable branch named by a fail-closed failure, or null for the generic honest line.
+  // The current MediaReplaceFailure carries only an error string, so a cairn/* branch name is pulled
+  // from the message when the strict read named one; otherwise the generic variant stands in.
+  const replaceBlockedBranch = $derived.by(() => {
+    const match = replaceFailure?.error.match(/cairn\/[^\s.]+/);
+    return match ? match[0] : null;
+  });
+
+  // --- the Push-alt flow: a one-step review dialog (the everyday register) over the selected asset ---
+  // Alt propagation pushes the asset's default alt into published placements that lack it, with one
+  // bucket-level opt-in to also overwrite placements that carry a custom alt. It is reversible and
+  // frequent, so the dialog is role="dialog" (not alertdialog) with no typed-slug gate; apply is always
+  // enabled. The preview fetch reuses the 2a transport (a text/plain body, the CSRF token in the
+  // X-Cairn-CSRF header) and fails closed to a blocked surface when usage cannot be verified.
+  type AltStep = 'review' | 'blocked';
+  const ALT_PREVIEW_URL = '?/mediaAltPreview';
+
+  let altDialog = $state<HTMLDialogElement | null>(null);
+  // The entry-point button that opened the dialog, so focus restores to it on close.
+  let altOrigin: HTMLElement | null = null;
+  // The Cancel control, the initial focus on open.
+  let altCancelButton = $state<HTMLButtonElement | null>(null);
+  let altStep = $state<AltStep>('review');
+  // The resolved preview plan (the review step) or the fail-closed failure (the blocked step).
+  let altPlan = $state<MediaAltPreviewPlan | null>(null);
+  let altFailure = $state<MediaAltPropagateFailure | null>(null);
+  // The bucket-level opt-in to also overwrite customized alts. Bound to the one native checkbox.
+  let altOverwrite = $state(false);
+  // The asset the dialog acts on, pinned at open so a background re-render never swaps it. The alt it
+  // pushes is this asset's default alt.
+  let altAsset = $state<MediaLibraryEntry | null>(null);
+
+  function openAltDialog(origin?: HTMLElement | null) {
+    if (!selected) return;
+    altOrigin = origin ?? (document.activeElement as HTMLElement | null) ?? null;
+    altAsset = selected;
+    altStep = 'review';
+    altPlan = null;
+    altFailure = null;
+    altOverwrite = false;
+    void tick().then(() => {
+      altDialog?.showModal();
+      altCancelButton?.focus();
+    });
+    void runAltPreview();
+  }
+  function closeAltDialog() {
+    altDialog?.close();
+    altAsset = null;
+    altPlan = null;
+    altFailure = null;
+    altOverwrite = false;
+    altOrigin?.focus();
+    altOrigin = null;
+  }
+
+  // The per-call request token for the alt preview, mirroring the Replace guard: a stale response from
+  // a closed or reopened dialog (or a "Check usage again" double-click) is dropped after the await.
+  let altPreviewSeq = 0;
+
+  // The preview fetch: POST the hash in the 2a transport, parse the ActionResult envelope, and route to
+  // the review step (a plan) or the fail-closed blocked step (a failure). Re-runnable from the blocked
+  // step's "Check usage again".
+  async function runAltPreview() {
+    if (!altAsset) return;
+    const hash = altAsset.hash;
+    const seq = ++altPreviewSeq;
+    const blockClosed = (failure?: MediaAltPropagateFailure) => {
+      altFailure = failure ?? { error: '' };
+      altPlan = null;
+      altStep = 'blocked';
+    };
+    let result: { type: string; data?: unknown };
+    try {
+      const res = await fetch(ALT_PREVIEW_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain', 'X-Cairn-CSRF': csrf?.() ?? '' },
+        body: JSON.stringify({ hash }),
+      });
+      result = deserialize(await res.text()) as { type: string; data?: unknown };
+    } catch {
+      if (seq !== altPreviewSeq) return;
+      blockClosed();
+      return;
+    }
+    // Stale-response guard: a reopen or a re-run superseded this fetch while it was in flight.
+    if (seq !== altPreviewSeq) return;
+    if (result.type === 'success' && result.data) {
+      altPlan = result.data as MediaAltPreviewPlan;
+      altFailure = null;
+      altStep = 'review';
+    } else {
+      blockClosed(result.data as MediaAltPropagateFailure | undefined);
+    }
+  }
+
+  // The default alt the dialog propagates: the selected asset's stored alt. Empty is guarded by the
+  // entry point (an asset with no default alt cannot push one), but the dialog reads it defensively.
+  const altPushed = $derived(altAsset?.alt.trim() ?? '');
+
+  // The three buckets, flattened from the plan's entries: each row carries its entry title, the
+  // placement kind (the pill), and the placement's before/after. Grouping by bucket keeps each well
+  // self-contained, the way the mockup lays them out.
+  type AltRow = { title: string; kind: AltPlacement['kind']; before: string; after: string; key: string };
+  function altRows(bucket: AltPlacement['bucket']): AltRow[] {
+    const rows: AltRow[] = [];
+    for (const entry of altPlan?.entries ?? []) {
+      entry.placements.forEach((p, i) => {
+        if (p.bucket !== bucket) return;
+        rows.push({ title: entry.title, kind: p.kind, before: p.before, after: p.after, key: `${entry.concept}/${entry.id}/${i}` });
+      });
+    }
+    return rows;
+  }
+  const altFillRows = $derived(altRows('will-fill'));
+  const altCustomRows = $derived(altRows('customized'));
+  const altSkipRows = $derived(altRows('decorative-skipped'));
+
+  // The committed total: the will-fill placements always, plus the customized placements only on the
+  // opt-in. The footer button and the live region read this; the count moves when the opt-in toggles.
+  const altCounts = $derived(altPlan?.counts ?? { willFill: 0, customized: 0, decorativeSkipped: 0 });
+  const altTotal = $derived(altCounts.willFill + (altOverwrite ? altCounts.customized : 0));
+
+  // The will-fill bucket caps past this many rows; "Show all N" reveals the rest (aria-expanded +
+  // aria-controls). The customized bucket lists in full (it is the consequential one).
+  const ALT_ROW_CAP = 8;
+  let altShowAll = $state(false);
+  // The will-fill list element, so "Show all" can move focus to its first newly revealed row.
+  let altFillList = $state<HTMLElement | null>(null);
+  $effect(() => {
+    void altPlan;
+    altShowAll = false;
+  });
+  const altFillVisible = $derived(altShowAll ? altFillRows : altFillRows.slice(0, ALT_ROW_CAP));
+  const altFillHidden = $derived(Math.max(0, altFillRows.length - ALT_ROW_CAP));
+  // Reveal the capped will-fill rows, then move focus to the first newly revealed row (the rev.2
+  // contract: the expander unmounts on the flag flip, so focus would otherwise fall to <body>).
+  function showAllAltFill() {
+    altShowAll = true;
+    void tick().then(() => (altFillList?.children[ALT_ROW_CAP] as HTMLElement | undefined)?.focus());
   }
 
   // --- the where-used overlay the slide-over and the dialog read, grouped published-then-branch ---
@@ -555,7 +973,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
             aria-selected={selected?.hash === asset.hash}
             tabindex={i === activeIndex ? 0 : -1}
             aria-label="{asset.displayName}. {missing ? 'Needs alt text' : 'Described'}. {used > 0 ? `Found in ${used} ${used === 1 ? 'entry' : 'entries'}` : 'No references found'}."
-            class="group flex cursor-pointer flex-col overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-primary/70 {selected?.hash === asset.hash ? 'ring-2 ring-primary/70' : ''}"
+            class="group flex cursor-pointer flex-col overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 outline-hidden transition-shadow focus-visible:ring-2 focus-visible:ring-primary/70 {selected?.hash === asset.hash ? 'ring-2 ring-primary/70' : ''}"
             onclick={(e) => openAsset(asset, e.currentTarget)}
             onkeydown={(e) => onGridKeydown(e, i)}
           >
@@ -850,9 +1268,33 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
         </dl>
       </div>
 
-      <!-- The actions. Replace is deferred (no Replace control in this slice). -->
-      <div class="flex gap-2.5 border-t border-[var(--cairn-card-border)] pt-4">
-        <button type="button" class="btn btn-sm flex-1 border-[var(--cairn-error-border)] text-[var(--cairn-error-ink)]" onclick={openDeleteDialog}>
+      <!-- The actions block (rev.2 decision 7): two quiet text-weight entry points (Replace, Push alt)
+           above the existing danger-bordered Delete. The quiet controls are button:not(.btn) levelled
+           rows, lighter than a bordered button; each carries aria-haspopup="dialog". Push alt's handler
+           lands in Task 8; the button is placed now so the block matches the design. -->
+      <div class="flex flex-col gap-1 border-t border-[var(--cairn-card-border)] pt-4">
+        <span class="{headerLabel} mb-1">Actions</span>
+        <button
+          type="button"
+          data-cairn-replace-open
+          class="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-[0.8125rem] font-medium text-base-content hover:bg-base-content/[0.06]"
+          aria-haspopup="dialog"
+          onclick={(e) => openReplaceDialog(e.currentTarget)}
+        >
+          <RefreshCwIcon class="h-4 w-4 flex-none text-[var(--color-muted)]" aria-hidden="true" />
+          Replace image
+        </button>
+        <button
+          type="button"
+          data-cairn-pushalt-open
+          class="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-[0.8125rem] font-medium text-base-content hover:bg-base-content/[0.06]"
+          aria-haspopup="dialog"
+          onclick={(e) => openAltDialog(e.currentTarget)}
+        >
+          <MegaphoneIcon class="h-4 w-4 flex-none text-[var(--color-muted)]" aria-hidden="true" />
+          Push alt to placements
+        </button>
+        <button type="button" class="btn btn-sm mt-1.5 border-[var(--cairn-error-border)] text-[var(--cairn-error-ink)]" onclick={openDeleteDialog}>
           <Trash2Icon class="h-4 w-4" aria-hidden="true" /> Delete
         </button>
       </div>
@@ -944,6 +1386,534 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           </div>
         </form>
       </div>
+    </div>
+  {/if}
+</dialog>
+
+<!-- The Replace alertdialog: a native modal <dialog> (native focus trap + Escape), NO light dismiss.
+     A replace repoints a content hash and can break a draft, so it carries role="alertdialog", the
+     danger register, and a typed-slug gate. Step one is the quiet upload; step two is the impact review
+     gated behind the typed slug; the blocked step is the fail-closed surface (no apply button). -->
+<dialog
+  bind:this={replaceDialog}
+  data-testid="cairn-replace-dialog"
+  class="modal"
+  role="alertdialog"
+  aria-modal="true"
+  aria-labelledby="cairn-ml-replace-title"
+  aria-describedby="cairn-ml-replace-sub"
+  oncancel={closeReplaceDialog}
+>
+  {#if replaceAsset}
+    {@const asset = replaceAsset}
+    <div class="modal-box max-w-xl">
+      <div class="mb-3 flex items-start gap-3">
+        <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-[var(--cairn-error-tint)] text-[var(--cairn-error-ink)]" aria-hidden="true">
+          {#if replaceStep === 'blocked'}<TriangleAlertIcon class="h-5 w-5" />{:else}<RefreshCwIcon class="h-5 w-5" />{/if}
+        </span>
+        <div class="flex-1">
+          <h2 id="cairn-ml-replace-title" class="text-lg font-bold tracking-tight font-[family-name:var(--font-display)]">
+            {#if replaceStep === 'review'}
+              Replace {asset.slug} in {replaceAffected} published {replaceAffected === 1 ? 'entry' : 'entries'}
+            {:else if replaceStep === 'blocked'}
+              Replace is on hold
+            {:else}
+              Replace {asset.displayName}
+            {/if}
+          </h2>
+          <p id="cairn-ml-replace-sub" class="mt-1 text-[0.8125rem] leading-relaxed text-[var(--color-muted)]">
+            {#if replaceStep === 'review'}
+              The new file replaces the stored image. Every published entry that uses it is repointed in one commit to main, and readers see the change once the build finishes.
+            {:else if replaceStep === 'blocked'}
+              cairn could not read every place this image is used, so it will not repoint references it cannot see. No file was changed.
+            {:else}
+              Upload a new file. Every published entry that uses this image points to the new one, in one commit to main.
+            {/if}
+          </p>
+        </div>
+        <button type="button" class="btn btn-ghost btn-xs btn-square" aria-label="Cancel" onclick={closeReplaceDialog}>
+          <XIcon class="h-3.5 w-3.5" aria-hidden="true" />
+        </button>
+      </div>
+
+      {#if replaceStep === 'upload'}
+        <!-- Step one: upload a new file (upload-new-only). The asset being replaced stays named above
+             the dropzone, so the author never loses it. Cancel is the initial focus; no apply yet. -->
+        <div class="flex flex-col gap-3">
+          <div class="flex items-center gap-3 rounded-box border border-[var(--cairn-card-border)] bg-base-200/60 p-3">
+            <span class="flex h-12 w-12 flex-none items-center justify-center overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100">
+              {#if brokenHashes.has(asset.hash)}
+                <ImageOffIcon class="h-5 w-5 text-[var(--color-subtle)]" aria-hidden="true" />
+              {:else}
+                <img src={thumbSrc(asset)} alt="" aria-hidden="true" class="h-full w-full object-cover" onerror={() => markBroken(asset.hash)} />
+              {/if}
+            </span>
+            <span class="flex min-w-0 flex-col gap-0.5">
+              <span class="text-[0.625rem] font-semibold uppercase tracking-[0.06em] text-[var(--color-muted)]">Replacing</span>
+              <span class="text-sm font-semibold">{asset.displayName}</span>
+              <span class="font-[family-name:var(--font-editor)] text-[0.75rem] text-[var(--color-muted)] tabular-nums">
+                {#if dimensions(asset)}{dimensions(asset)}<span class="px-1" aria-hidden="true">&middot;</span>{/if}{formatBytes(asset.bytes)}
+              </span>
+            </span>
+          </div>
+
+          {#if replaceUpload.kind === 'failed'}
+            <!-- A typed ingest/upload failure: an assertive alert with the message and a Retry. -->
+            <div role="alert" class="flex flex-col items-center gap-2.5 rounded-box border border-[var(--cairn-error-border)] bg-[var(--cairn-error-tint)] p-4 text-center">
+              <TriangleAlertIcon class="h-6 w-6 text-[var(--cairn-error-ink)]" aria-hidden="true" />
+              <span class="text-[0.8125rem] text-[var(--cairn-error-ink)]">{replaceUpload.card.message}</span>
+              <button type="button" class="btn btn-sm" onclick={replaceUpload.retry}>Try another file</button>
+            </div>
+          {:else if replaceUpload.kind === 'working'}
+            <div role="status" class="flex flex-col items-center gap-2 rounded-box border border-dashed border-[var(--cairn-card-border)] bg-base-100 p-5 text-center text-[var(--color-muted)]">
+              <span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
+              <span class="text-[0.8125rem]">Preparing the new file...</span>
+            </div>
+          {:else}
+            <div class="flex flex-col items-center gap-1.5 rounded-box border border-dashed border-[var(--cairn-card-border)] bg-base-100 p-5 text-center text-[var(--color-muted)]">
+              <UploadIcon class="h-6 w-6 text-primary" aria-hidden="true" />
+              <span class="text-[0.875rem] font-medium text-base-content">Drop the new image, or upload</span>
+              <span class="text-xs">PNG, JPEG, WebP, or HEIC. We convert HEIC for you.</span>
+              <button type="button" class="btn btn-sm btn-primary mt-1.5" onclick={() => replaceFileInput?.click()}>Choose a file</button>
+              <input
+                bind:this={replaceFileInput}
+                type="file"
+                accept="image/*"
+                class="sr-only"
+                aria-label="Choose a new image to replace this asset"
+                onchange={onReplaceFileChosen}
+              />
+            </div>
+          {/if}
+        </div>
+        <div class="mt-4 flex justify-end gap-2.5 border-t border-[var(--cairn-card-border)] pt-3.5">
+          <button bind:this={replaceCancelButton} type="button" class="btn btn-sm" onclick={closeReplaceDialog}>Cancel</button>
+        </div>
+      {:else if replaceStep === 'review'}
+        {@const newRec = replaceRecord}
+        <!-- Step two: the impact review. The from/to strip carries the CORRECTED content-addressed copy
+             (the name stays, only the hash changes); the affected-entry well is expanded by default and
+             scroll-capped; the branch-delta is a calm report-only aside; the typed-slug gates apply. -->
+        <div class="flex flex-col gap-4">
+          {#if newRec}
+            <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-box border border-[var(--cairn-card-border)] bg-base-200/60 p-3">
+              <div class="flex min-w-0 flex-col gap-0.5">
+                <span class="text-[0.625rem] font-semibold uppercase tracking-[0.06em] text-[var(--color-muted)]">Current</span>
+                <span class="font-[family-name:var(--font-editor)] text-[0.75rem] text-[var(--color-muted)] tabular-nums line-through">.{asset.hash}</span>
+              </div>
+              <ArrowRightIcon class="h-4 w-4 flex-none text-[var(--color-muted)]" aria-hidden="true" />
+              <div class="flex min-w-0 flex-col gap-0.5">
+                <span class="text-[0.625rem] font-semibold uppercase tracking-[0.06em] text-[var(--color-muted)]">New file</span>
+                <span class="font-[family-name:var(--font-editor)] text-[0.75rem] text-primary tabular-nums">.{newRec.hash}</span>
+              </div>
+              <div class="col-span-3 flex items-start gap-2 border-t border-[var(--cairn-card-border)] pt-2.5">
+                <CheckIcon class="mt-0.5 h-4 w-4 flex-none text-[var(--color-positive-ink)]" aria-hidden="true" />
+                <span class="text-[0.8125rem] leading-relaxed">The name <code class="rounded bg-[var(--cairn-code-chip)] px-1.5 py-0.5 font-[family-name:var(--font-editor)] text-[0.75rem]">{asset.slug}</code> stays the same. Only the content hash changes, so every published entry is repointed to the new file in one commit.</span>
+              </div>
+            </div>
+          {/if}
+
+          <div>
+            <div class="mb-2 flex items-baseline justify-between">
+              <span class={headerLabel}>Published entries that will be repointed</span>
+              <span class="text-xs tabular-nums text-[var(--color-muted)]">{replaceEntries.length}</span>
+            </div>
+            <div class="rounded-box border border-[var(--cairn-card-border)] bg-base-100">
+              <ul bind:this={replaceEntriesList} id="cairn-ml-replace-entries" class="flex max-h-56 list-none flex-col gap-1 overflow-y-auto p-2">
+                {#each replaceVisibleEntries as entry, i (entry.concept + '/' + entry.id)}
+                  <!-- The first row past the cap is a script-only focus target for "Show all" (tabindex
+                       -1 keeps it out of the tab order). svelte-ignore: the rule allows a literal -1 but
+                       does not see through the per-row conditional that selects which row carries it. -->
+                  <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+                  <li class="flex items-start gap-2.5 rounded px-1.5 py-1.5" tabindex={i === REPLACE_ROW_CAP ? -1 : undefined}>
+                    <FileTextIcon class="mt-0.5 h-4 w-4 flex-none text-[var(--color-muted)]" aria-hidden="true" />
+                    <span class="flex min-w-0 flex-col">
+                      <span class="truncate text-[0.8125rem] font-medium">{entry.title}</span>
+                      <span class="truncate text-[0.6875rem] text-[var(--color-muted)]">{replaceWhereUsed(entry)}</span>
+                    </span>
+                  </li>
+                {/each}
+              </ul>
+              {#if replaceHiddenCount > 0 && !replaceShowAll}
+                <div class="border-t border-[var(--cairn-card-border)] p-1.5">
+                  <button
+                    type="button"
+                    class="flex w-full items-center justify-center gap-1.5 rounded px-2 py-1 text-[0.75rem] font-medium text-primary hover:bg-primary/[0.08]"
+                    aria-expanded={replaceShowAll}
+                    aria-controls="cairn-ml-replace-entries"
+                    onclick={showAllReplaceEntries}
+                  >
+                    Show the other {replaceHiddenCount} {replaceHiddenCount === 1 ? 'entry' : 'entries'}
+                  </button>
+                </div>
+              {/if}
+            </div>
+          </div>
+
+          {#if (replacePlan?.branchDelta?.length ?? 0) > 0}
+            <!-- The report-only branch delta: open cairn/* edits keep the old file until they publish.
+                 Calm dashed base-200, never the danger register. -->
+            <div class="rounded-box border border-dashed border-[var(--cairn-card-border)] bg-base-200/40 p-3">
+              <div class="mb-1.5 flex items-center gap-2">
+                <GitBranchIcon class="h-4 w-4 flex-none text-[var(--color-muted)]" aria-hidden="true" />
+                <span class="text-[0.8125rem] font-semibold">Open edits still on the old file</span>
+                <span class="text-xs tabular-nums text-[var(--color-muted)]">{replacePlan?.branchDelta.length ?? 0}</span>
+              </div>
+              <p class="mb-2 text-[0.75rem] leading-relaxed text-[var(--color-muted)]">These edits are on their own branches and are not touched. Each keeps the old file until it is published again.</p>
+              <ul class="flex list-none flex-col gap-1 p-0">
+                {#each replacePlan?.branchDelta ?? [] as delta (delta.branch)}
+                  <li class="font-[family-name:var(--font-editor)] text-[0.6875rem] text-[var(--cairn-warning-ink)]">{delta.branch}</li>
+                {/each}
+              </ul>
+            </div>
+          {/if}
+
+          <div class="flex items-start gap-2.5 rounded-box border border-[var(--cairn-card-border)] bg-base-200/50 p-3 text-[0.8125rem] leading-relaxed">
+            <ClockIcon class="mt-0.5 h-4 w-4 flex-none text-[var(--color-positive-ink)]" aria-hidden="true" />
+            <span>The old file stays in git history. A developer can bring it back. The alt text on each placement is left exactly as it is.</span>
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[0.875rem]" for="cairn-ml-replace-confirm">Type <code class="rounded bg-[var(--cairn-code-chip)] px-1.5 py-0.5 font-[family-name:var(--font-editor)] text-[0.8125rem] font-semibold">{asset.slug}</code> to replace the file in all {replaceAffected} {replaceAffected === 1 ? 'entry' : 'entries'}.</label>
+            <input id="cairn-ml-replace-confirm" data-cairn-replace-confirm class="input input-sm border-[var(--cairn-error-border)] font-[family-name:var(--font-editor)]" autocomplete="off" placeholder="Type the asset slug" bind:value={replaceConfirmInput} />
+          </div>
+        </div>
+
+        <!-- A polite live region mirrors the footer impact for a screen reader on the review step. The
+             role="status" matches the Push-alt live region: the stronger, more portable form. -->
+        <div class="sr-only" role="status" aria-live="polite">
+          Replace {asset.slug} in {replaceAffected} published {replaceAffected === 1 ? 'entry' : 'entries'}.{(replacePlan?.branchDelta?.length ?? 0) > 0 ? ` ${replacePlan?.branchDelta.length} open ${(replacePlan?.branchDelta?.length ?? 0) === 1 ? 'edit is' : 'edits are'} not touched.` : ''}
+        </div>
+
+        <form method="POST" action="?/mediaReplace" class="mt-4 flex items-center justify-end gap-2.5 border-t border-[var(--cairn-card-border)] pt-3.5">
+          <CsrfField />
+          <input type="hidden" name="oldHash" value={asset.hash} />
+          <input type="hidden" name="newHash" value={replaceRecord?.hash ?? ''} />
+          <input type="hidden" name="confirmSlug" value={replaceConfirmInput} />
+          <input type="hidden" name="media" value={replaceRecord ? JSON.stringify([replaceRecord]) : '[]'} />
+          <span class="mr-auto inline-flex items-center gap-1.5 text-[0.75rem] text-[var(--color-muted)]">
+            <GitBranchIcon class="h-3.5 w-3.5" aria-hidden="true" /> One commit to main
+          </span>
+          <button type="button" class="btn btn-sm" onclick={closeReplaceDialog}>Cancel</button>
+          <button type="submit" class="btn btn-sm btn-error" disabled={!replaceConfirmMatches}>
+            <RefreshCwIcon class="h-4 w-4" aria-hidden="true" /> Replace in {replaceAffected} {replaceAffected === 1 ? 'entry' : 'entries'}
+          </button>
+        </form>
+      {:else}
+        <!-- The fail-closed surface: usage could not be fully verified, so the replace refuses rather
+             than guess. NO apply button (not even disabled), and no typed gate. A quiet "Check usage
+             again" re-runs the scan; the held upload stays ready. -->
+        <div class="flex flex-col gap-3">
+          <div role="status" class="flex flex-col gap-2.5 rounded-box border border-[var(--cairn-error-border)] bg-[var(--cairn-error-tint)] p-3.5">
+            <span class="inline-flex items-center gap-2 text-[0.8125rem] font-semibold text-[var(--cairn-error-ink)]">
+              <TriangleAlertIcon class="h-4 w-4 flex-none" aria-hidden="true" /> Usage could not be fully verified
+            </span>
+            <p class="text-[0.8125rem] leading-relaxed">
+              {#if replaceBlockedBranch}
+                The published site read cleanly. One edit branch would not load, so cairn cannot tell whether it uses the image too. Replacing now could leave that branch pointing at the old file with no record of it.
+              {:else}
+                The published site could not be fully read, so cairn cannot tell every place this image is used. Replacing now could leave a reference pointing at the old file with no record of it.
+              {/if}
+            </p>
+            {#if replaceBlockedBranch}
+              <p class="inline-flex items-center gap-1.5 text-[0.8125rem]">
+                <XIcon class="h-3.5 w-3.5 flex-none text-[var(--cairn-error-ink)]" aria-hidden="true" />
+                Could not read <code class="font-[family-name:var(--font-editor)] text-[0.75rem]">{replaceBlockedBranch}</code>
+              </p>
+            {:else}
+              <p class="inline-flex items-center gap-1.5 text-[0.8125rem]">
+                <XIcon class="h-3.5 w-3.5 flex-none text-[var(--cairn-error-ink)]" aria-hidden="true" />
+                An edit branch would not load.
+              </p>
+            {/if}
+            <button type="button" class="btn btn-sm self-start border-[var(--cairn-error-border)] text-[var(--cairn-error-ink)]" onclick={runReplacePreview}>
+              <RefreshCwIcon class="h-4 w-4" aria-hidden="true" /> Check usage again
+            </button>
+          </div>
+          <div class="flex items-start gap-2.5 rounded-box border border-[var(--cairn-card-border)] bg-base-200/50 p-3 text-[0.8125rem] leading-relaxed">
+            <ClockIcon class="mt-0.5 h-4 w-4 flex-none text-[var(--color-positive-ink)]" aria-hidden="true" />
+            <span>Your uploaded file is held and ready. Once the scan completes, the review opens with the full impact.</span>
+          </div>
+        </div>
+        <div class="mt-4 flex items-center justify-end gap-2.5 border-t border-[var(--cairn-card-border)] pt-3.5">
+          <span class="mr-auto text-[0.75rem] text-[var(--color-muted)]">No file was changed.</span>
+          <button type="button" class="btn btn-sm" onclick={closeReplaceDialog}>Cancel</button>
+        </div>
+      {/if}
+    </div>
+  {/if}
+</dialog>
+
+<!-- The Push-alt review dialog: a native modal <dialog> (native focus trap + Escape), NO light dismiss.
+     Alt fill is reversible and frequent, so it carries role="dialog" (the everyday register, never
+     alertdialog) with NO typed-slug gate; apply is always enabled. The review step lists three buckets
+     (will-fill always applied, customized behind one opt-in, decorative-skipped reported); the blocked
+     step is the fail-closed surface (no apply form). -->
+<!-- svelte-ignore a11y_no_redundant_roles -->
+<!-- The explicit role="dialog" is the native <dialog> default, but it is stated to mark the everyday
+     register against the Replace dialog's role="alertdialog" sibling, and the component test reads it. -->
+<dialog
+  bind:this={altDialog}
+  data-testid="cairn-alt-dialog"
+  class="modal"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="cairn-ml-alt-title"
+  aria-describedby="cairn-ml-alt-sub"
+  oncancel={closeAltDialog}
+>
+  {#if altAsset}
+    {@const asset = altAsset}
+    <div class="modal-box max-w-xl">
+      <div class="mb-3 flex items-start gap-3">
+        <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-primary/10 text-primary" aria-hidden="true">
+          <MegaphoneIcon class="h-5 w-5" />
+        </span>
+        <div class="flex-1">
+          <h2 id="cairn-ml-alt-title" class="text-lg font-bold tracking-tight font-[family-name:var(--font-display)]">
+            {#if altStep === 'blocked'}
+              Push alt is on hold
+            {:else}
+              Fill alt on {altCounts.willFill} {altCounts.willFill === 1 ? 'placement' : 'placements'}
+            {/if}
+          </h2>
+          <p id="cairn-ml-alt-sub" class="mt-1 text-[0.8125rem] leading-relaxed text-[var(--color-muted)]">
+            {#if altStep === 'blocked'}
+              cairn could not read every place this image is used, so it will not write alt where it cannot see. Nothing was changed.
+            {:else}
+              This writes the default alt for {asset.displayName} into the published placements that have none. One commit to main. Placements that already have their own alt stay as they are, unless you choose to overwrite them below.
+            {/if}
+          </p>
+        </div>
+        <button type="button" class="btn btn-ghost btn-xs btn-square" aria-label="Cancel" onclick={closeAltDialog}>
+          <XIcon class="h-3.5 w-3.5" aria-hidden="true" />
+        </button>
+      </div>
+
+      {#if altStep === 'review'}
+        <div class="flex flex-col gap-4">
+          <!-- The alt being pushed, shown once so the author confirms the text before applying. -->
+          <div class="flex items-start gap-2.5 rounded-box border border-primary/25 bg-primary/[0.05] p-3 text-[0.8125rem] leading-relaxed">
+            <MegaphoneIcon class="mt-0.5 h-4 w-4 flex-none text-primary" aria-hidden="true" />
+            <span>The alt being pushed: <strong class="font-semibold">{altPushed ? `“${altPushed}”` : '(no default alt set)'}</strong>. Edit it in the panel first if it is not right.</span>
+          </div>
+
+          <div class="flex flex-col gap-3">
+            <!-- WILL FILL: every row's honest (no alt) -> default alt, always applied. -->
+            {#if altFillRows.length > 0}
+              <div class="overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100">
+                <div class="flex items-center gap-2.5 p-3">
+                  <span class="flex h-[26px] w-[26px] flex-none items-center justify-center rounded-md bg-primary/10 text-primary" aria-hidden="true">
+                    <CheckIcon class="h-3.5 w-3.5" />
+                  </span>
+                  <div class="min-w-0 flex-1">
+                    <div class="text-[0.8125rem] font-semibold">Will fill the gap</div>
+                    <div class="mt-px text-[0.6875rem] leading-snug text-[var(--color-muted)]">These placements have no alt today. The default alt is written in.</div>
+                  </div>
+                  <span class="flex-none text-[0.8125rem] font-bold tabular-nums text-primary">{altFillRows.length}</span>
+                </div>
+                <ul bind:this={altFillList} id="cairn-ml-alt-fill" class="flex max-h-44 list-none flex-col overflow-y-auto border-t border-[var(--cairn-card-border)] p-0">
+                  {#each altFillVisible as row, i (row.key)}
+                    <!-- The first row past the cap is the script-only focus target for "Show all"
+                         (tabindex -1). svelte-ignore: as above, the conditional hides the literal -1. -->
+                    <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+                    <li class="flex items-start gap-2.5 border-t border-[var(--cairn-card-border)]/70 px-3 py-2.5 first:border-t-0" tabindex={i === ALT_ROW_CAP ? -1 : undefined}>
+                      <FileTextIcon class="mt-0.5 h-3.5 w-3.5 flex-none text-[var(--color-muted)]" aria-hidden="true" />
+                      <div class="flex min-w-0 flex-1 flex-col gap-0.5">
+                        <div class="flex items-center gap-1.5">
+                          <span class="truncate text-[0.8125rem] font-semibold">{row.title}</span>
+                          <span class="flex-none rounded-full bg-base-content/[0.06] px-1.5 py-px text-[0.625rem] font-semibold uppercase tracking-wide text-[var(--color-muted)]">{row.kind}</span>
+                        </div>
+                        <div class="flex flex-wrap items-baseline gap-1.5 text-[0.75rem] leading-snug">
+                          <span class="italic text-[var(--color-muted)]">(no alt)</span>
+                          <ArrowRightIcon class="h-3 w-3 flex-none text-[var(--color-muted)] opacity-65" aria-hidden="true" />
+                          <span class="font-medium text-primary">{row.after}</span>
+                        </div>
+                      </div>
+                    </li>
+                  {/each}
+                </ul>
+                {#if altFillHidden > 0 && !altShowAll}
+                  <div class="border-t border-[var(--cairn-card-border)] p-1.5">
+                    <button
+                      type="button"
+                      class="flex w-full items-center justify-center gap-1.5 rounded px-2 py-1 text-[0.75rem] font-medium text-primary hover:bg-primary/[0.08]"
+                      aria-expanded={altShowAll}
+                      aria-controls="cairn-ml-alt-fill"
+                      onclick={showAllAltFill}
+                    >
+                      Show the other {altFillHidden} {altFillHidden === 1 ? 'placement' : 'placements'}, all gaining the same alt
+                    </button>
+                  </div>
+                {/if}
+              </div>
+
+              <!-- The body-vs-hero caveat, anchored beside will-fill where the surprised author looks. -->
+              <div class="flex items-start gap-2 px-0.5 text-[0.75rem] leading-relaxed">
+                <TriangleAlertIcon class="mt-0.5 h-3.5 w-3.5 flex-none text-[var(--cairn-warning-ink)]" aria-hidden="true" />
+                <span>A body image has no place to record decorative, so an empty body image always reads as a gap to fill. Only a hero can be skipped as decorative.</span>
+              </div>
+            {/if}
+
+            <!-- HAS CUSTOM ALT: one bucket-level opt-in (a real native checkbox). Before it is checked,
+                 each row shows its existing alt plain and "kept"; checking flips to was -> default. -->
+            {#if altCustomRows.length > 0}
+              <div data-cairn-alt-custom class="overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100">
+                <div class="flex items-center gap-2.5 p-3">
+                  <span class="flex h-[26px] w-[26px] flex-none items-center justify-center rounded-md bg-[var(--cairn-warning-ink)]/10 text-[var(--cairn-warning-ink)]" aria-hidden="true">
+                    <MegaphoneIcon class="h-3.5 w-3.5" />
+                  </span>
+                  <div class="min-w-0 flex-1">
+                    <div class="text-[0.8125rem] font-semibold">Already has custom alt</div>
+                    <div class="mt-px text-[0.6875rem] leading-snug text-[var(--color-muted)]">
+                      {altOverwrite ? 'You chose to overwrite these.' : 'Left alone by default. You can overwrite these too.'}
+                    </div>
+                  </div>
+                  <span class="flex-none text-[0.8125rem] font-bold tabular-nums text-[var(--cairn-warning-ink)]">{altCustomRows.length}</span>
+                </div>
+                <!-- The opt-in band, styled in the danger family: overwriting an editor's words is the
+                     destructive choice. The checkbox is a REAL native input in the a11y tree. -->
+                <div class="border-t border-[var(--cairn-error-border)] bg-[var(--cairn-error-tint)] p-3">
+                  <label class="flex cursor-pointer items-start gap-2.5">
+                    <input
+                      type="checkbox"
+                      data-cairn-alt-optin
+                      class="checkbox checkbox-sm mt-px border-[var(--cairn-error-border)] checked:border-[var(--cairn-error-ink)] checked:bg-[var(--cairn-error-ink)]"
+                      aria-describedby="cairn-ml-alt-optin-hint"
+                      bind:checked={altOverwrite}
+                    />
+                    <span class="text-[0.8125rem] leading-snug text-[var(--cairn-error-ink)]">
+                      <span class="font-semibold">Also overwrite {altCustomRows.length === 1 ? 'this 1 placement' : `these ${altCustomRows.length} placements`} with the default alt.</span>
+                      <span id="cairn-ml-alt-optin-hint" class="mt-0.5 block">Overwrites the alt these entries already have. Git keeps the old version.</span>
+                    </span>
+                  </label>
+                </div>
+                <ul class="flex max-h-44 list-none flex-col overflow-y-auto p-0">
+                  {#each altCustomRows as row (row.key)}
+                    <li class="flex items-start gap-2.5 border-t border-[var(--cairn-card-border)]/70 px-3 py-2.5 first:border-t-0">
+                      <FileTextIcon class="mt-0.5 h-3.5 w-3.5 flex-none text-[var(--color-muted)]" aria-hidden="true" />
+                      <div class="flex min-w-0 flex-1 flex-col gap-0.5">
+                        <div class="flex items-center gap-1.5">
+                          <span class="truncate text-[0.8125rem] font-semibold">{row.title}</span>
+                          <span class="flex-none rounded-full bg-base-content/[0.06] px-1.5 py-px text-[0.625rem] font-semibold uppercase tracking-wide text-[var(--color-muted)]">{row.kind}</span>
+                        </div>
+                        <div class="flex flex-wrap items-baseline gap-1.5 text-[0.75rem] leading-snug">
+                          {#if altOverwrite}
+                            <span data-cairn-alt-was class="text-base-content line-through decoration-[var(--color-muted)]/55">{`“${row.before}”`}</span>
+                            <ArrowRightIcon class="h-3 w-3 flex-none text-[var(--color-muted)] opacity-65" aria-hidden="true" />
+                            <span class="font-medium text-primary">{altPushed}</span>
+                          {:else}
+                            <span class="text-base-content">{`“${row.before}”`}</span>
+                            <span class="text-[var(--color-muted)] opacity-65" aria-hidden="true">&middot;</span>
+                            <span class="text-[var(--color-muted)]">kept</span>
+                          {/if}
+                        </div>
+                      </div>
+                    </li>
+                  {/each}
+                </ul>
+              </div>
+            {/if}
+
+            <!-- DECORATIVE HERO, SKIPPED: listed, muted, never an input. -->
+            {#if altSkipRows.length > 0}
+              <div data-cairn-alt-skip class="overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 opacity-90">
+                <div class="flex items-center gap-2.5 p-3">
+                  <span class="flex h-[26px] w-[26px] flex-none items-center justify-center rounded-md bg-base-content/[0.07] text-[var(--color-muted)]" aria-hidden="true">
+                    <ImageOffIcon class="h-3.5 w-3.5" />
+                  </span>
+                  <div class="min-w-0 flex-1">
+                    <div class="text-[0.8125rem] font-semibold">Marked decorative, skipped</div>
+                    <div class="mt-px text-[0.6875rem] leading-snug text-[var(--color-muted)]">A hero set as decorative on purpose. It is left without alt.</div>
+                  </div>
+                  <span class="flex-none text-[0.8125rem] font-bold tabular-nums text-[var(--color-muted)]">{altSkipRows.length}</span>
+                </div>
+                <ul class="flex list-none flex-col border-t border-[var(--cairn-card-border)] p-0">
+                  {#each altSkipRows as row (row.key)}
+                    <li class="flex items-center gap-2.5 border-t border-[var(--cairn-card-border)]/70 px-3 py-2 text-[0.75rem] text-[var(--color-muted)] first:border-t-0">
+                      <span class="truncate">{row.title}</span>
+                      <span class="flex-none rounded-full bg-base-content/[0.06] px-1.5 py-px text-[0.625rem] font-semibold uppercase tracking-wide">{row.kind}</span>
+                    </li>
+                  {/each}
+                </ul>
+              </div>
+            {/if}
+          </div>
+
+          {#if (altPlan?.branchDelta?.length ?? 0) > 0}
+            <!-- The report-only branch delta: open cairn/* edits keep their own alt until they publish. -->
+            <div class="rounded-box border border-dashed border-[var(--cairn-card-border)] bg-base-200/40 p-3">
+              <div class="mb-1.5 flex items-center gap-2">
+                <GitBranchIcon class="h-4 w-4 flex-none text-[var(--color-muted)]" aria-hidden="true" />
+                <span class="text-[0.8125rem] font-semibold">Open edits not touched</span>
+                <span class="text-xs tabular-nums text-[var(--color-muted)]">{altPlan?.branchDelta.length ?? 0}</span>
+              </div>
+              <p class="mb-2 text-[0.75rem] leading-relaxed text-[var(--color-muted)]">These edits are on their own branches and are not changed. Each keeps its alt as the author has it there.</p>
+              <ul class="flex list-none flex-col gap-1 p-0">
+                {#each altPlan?.branchDelta ?? [] as delta (delta.branch)}
+                  <li class="font-[family-name:var(--font-editor)] text-[0.6875rem] text-[var(--cairn-warning-ink)]">{delta.branch}</li>
+                {/each}
+              </ul>
+            </div>
+          {/if}
+
+          <div class="flex items-start gap-2.5 rounded-box border border-[var(--cairn-card-border)] bg-base-200/50 p-3 text-[0.8125rem] leading-relaxed">
+            <ClockIcon class="mt-0.5 h-4 w-4 flex-none text-[var(--color-positive-ink)]" aria-hidden="true" />
+            <span>Every version stays in git history, so any overwrite can be undone.</span>
+          </div>
+        </div>
+
+        <!-- The polite live region announces the moving committed total when the opt-in toggles. -->
+        <div class="sr-only" role="status" aria-live="polite">
+          Now writing alt to {altTotal} {altTotal === 1 ? 'placement' : 'placements'}.{altOverwrite && altCounts.customized > 0 ? ` ${altCounts.willFill} filled, ${altCounts.customized} overwritten.` : ''}
+        </div>
+
+        <form method="POST" action="?/mediaAltPropagate" class="mt-4 flex items-center justify-end gap-2.5 border-t border-[var(--cairn-card-border)] pt-3.5">
+          <CsrfField />
+          <input type="hidden" name="hash" value={asset.hash} />
+          <!-- The opt-in checkbox lives beside the customized rows (outside the form), so its bound
+               state is mirrored here as the posted flag. The server reads form.get('overwrite') === 'on'. -->
+          <input type="hidden" name="overwrite" value={altOverwrite ? 'on' : ''} />
+          <span class="mr-auto inline-flex items-center gap-1.5 text-[0.75rem] text-[var(--color-muted)]">
+            <GitBranchIcon class="h-3.5 w-3.5" aria-hidden="true" /> One commit to main
+          </span>
+          <button type="button" class="btn btn-sm" onclick={closeAltDialog}>Cancel</button>
+          <button type="submit" class="btn btn-sm btn-primary">
+            <CheckIcon class="h-4 w-4" aria-hidden="true" />
+            {#if altOverwrite && altCounts.customized > 0}
+              Update {altTotal} {altTotal === 1 ? 'placement' : 'placements'}
+            {:else}
+              Fill {altTotal} {altTotal === 1 ? 'placement' : 'placements'}
+            {/if}
+          </button>
+        </form>
+      {:else}
+        <!-- The fail-closed surface: usage could not be fully verified, so the push refuses rather than
+             guess. NO apply form. A quiet "Check usage again" re-runs the scan. The banner on open is
+             role="status" (not alert): no action was attempted yet. MediaAltPropagateFailure carries
+             only `error`, so the generic honest line stands in. -->
+        <div class="flex flex-col gap-3">
+          <div role="status" class="flex flex-col gap-2.5 rounded-box border border-[var(--cairn-error-border)] bg-[var(--cairn-error-tint)] p-3.5">
+            <span class="inline-flex items-center gap-2 text-[0.8125rem] font-semibold text-[var(--cairn-error-ink)]">
+              <TriangleAlertIcon class="h-4 w-4 flex-none" aria-hidden="true" /> Usage could not be fully verified
+            </span>
+            <p class="text-[0.8125rem] leading-relaxed">
+              cairn could not read every place this image is used, so it cannot tell which placements need alt. Writing now could miss a placement or write over one with no record of it.
+            </p>
+            <button type="button" class="btn btn-sm self-start border-[var(--cairn-error-border)] text-[var(--cairn-error-ink)]" onclick={runAltPreview}>
+              <RefreshCwIcon class="h-4 w-4" aria-hidden="true" /> Check usage again
+            </button>
+          </div>
+          <div class="flex items-start gap-2.5 rounded-box border border-[var(--cairn-card-border)] bg-base-200/50 p-3 text-[0.8125rem] leading-relaxed">
+            <ClockIcon class="mt-0.5 h-4 w-4 flex-none text-[var(--color-positive-ink)]" aria-hidden="true" />
+            <span>Nothing was changed. Once the scan completes, the review opens with every placement.</span>
+          </div>
+        </div>
+        <div class="mt-4 flex items-center justify-end gap-2.5 border-t border-[var(--cairn-card-border)] pt-3.5">
+          <span class="mr-auto text-[0.75rem] text-[var(--color-muted)]">No alt was changed.</span>
+          <button type="button" class="btn btn-sm" onclick={closeAltDialog}>Cancel</button>
+        </div>
+      {/if}
     </div>
   {/if}
 </dialog>

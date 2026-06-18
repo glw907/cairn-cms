@@ -51,7 +51,7 @@ const USAGE: Record<string, MediaUsageInfo> = {
 };
 
 function fixture(over: Partial<MediaLibraryData> = {}): MediaLibraryData {
-  return { assets: ASSETS, usage: USAGE, error: null, ...over };
+  return { assets: ASSETS, usage: USAGE, error: null, flash: null, flashError: null, ...over };
 }
 
 describe('CairnMediaLibrary grid', () => {
@@ -226,7 +226,9 @@ describe('CairnMediaLibrary pagination', () => {
     const before = visible();
     expect(before).toBeLessThan(30);
 
-    const live = screen.container.querySelector('[aria-live="polite"]');
+    // Target the count region specifically: the action flash strip also carries aria-live="polite"
+    // but no role, so scope to the status-role count region.
+    const live = screen.container.querySelector('[role="status"][aria-live="polite"]');
     expect(live?.textContent ?? '').toMatch(new RegExp(`Showing ${before} of 30`));
 
     await screen.getByRole('button', { name: /load more/i }).click();
@@ -248,6 +250,26 @@ describe('CairnMediaLibrary empty and broken states', () => {
     const screen = render(CairnMediaLibrary, { data: fixture({ error: 'Could not read the media library.' }) } as never);
     const alert = screen.container.querySelector('[role="alert"]');
     expect(alert?.textContent ?? '').toContain('Could not read the media library.');
+  });
+
+  it('renders the success strip for the deleted flash in a polite live region', async () => {
+    const screen = render(CairnMediaLibrary, { data: fixture({ flash: 'deleted' }) } as never);
+    const strip = screen.container.querySelector('[aria-live="polite"]');
+    expect(strip).not.toBeNull();
+    expect(screen.container.textContent ?? '').toContain('Asset deleted.');
+    // The strip never steals focus.
+    expect(document.activeElement).toBe(document.body);
+  });
+
+  it('renders the success strip for the updated flash', async () => {
+    const screen = render(CairnMediaLibrary, { data: fixture({ flash: 'updated' }) } as never);
+    expect(screen.container.textContent ?? '').toContain('Changes saved.');
+  });
+
+  it('renders the conflict error from flashError in the inline error treatment', async () => {
+    const screen = render(CairnMediaLibrary, { data: fixture({ flashError: 'The media manifest changed. Reload and try again.' }) } as never);
+    const alert = screen.container.querySelector('[role="alert"]');
+    expect(alert?.textContent ?? '').toContain('The media manifest changed. Reload and try again.');
   });
 
   it('lists a missing-bytes asset with a broken-image affordance once its thumbnail fails', async () => {
@@ -304,6 +326,24 @@ describe('CairnMediaLibrary detail slide-over', () => {
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     await expect.poll(() => screen.container.querySelector('[role="region"]')).toBeNull();
     expect(document.activeElement).toBe(tile);
+  });
+
+  it('does not close the slide-over when Escape fires with focus in the search box (the native search clear keeps the panel)', async () => {
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const panel = await openSlideOver(screen, /first-light/);
+
+    // Move focus out of the panel and into the search input. The browser handles Escape there
+    // (clearing a type="search"); the window guard must not also close the panel.
+    const search = screen.container.querySelector<HTMLInputElement>('input[type="search"]')!;
+    search.focus();
+    expect(panel.contains(document.activeElement)).toBe(false);
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    // Let any reactive close cycle flush, then confirm the panel is still open, exactly as the user
+    // left it (the bug would have torn the region down here).
+    await new Promise((r) => setTimeout(r, 50));
+    expect(screen.container.querySelector('[role="region"]')).not.toBeNull();
+    expect(document.activeElement).toBe(search);
   });
 
   it('groups where-used published vs branch, links each entry to its editor, names a branch, and shows the empty case', async () => {

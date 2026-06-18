@@ -60,6 +60,9 @@ export function validateFields(
             };
             const caption = typeof obj.caption === 'string' ? obj.caption.trim() : '';
             if (caption !== '') normalized.caption = caption;
+            // An explicit decorative choice carries through; it is never required and never a save
+            // block. A missing or non-boolean value drops the key, like a blank caption.
+            if (obj.decorative === true) normalized.decorative = true;
             data[field.name] = normalized;
           }
         }

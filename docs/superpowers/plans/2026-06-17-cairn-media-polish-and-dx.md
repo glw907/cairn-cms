@@ -279,3 +279,79 @@ decorative round trip by the unit and component suites.
 - The decorative body-image case stays out of scope: a decorative `![](media:...)` cannot persist the
   choice in markdown alt, so it still reads as needs-alt on reload, unless a syntax or media.json
   convention for it is designed.
+
+---
+
+## Post-mortem (2026-06-17)
+
+**Landed** on `feat/media-polish` (a fresh worktree off `main` at `c87ee9f`), `0.57.1`, six tasks
+test-first. Held for Geoff: the merge to `main` and the push.
+
+**What was built.**
+- Task 1, the Media Library action feedback strip: `mediaLibraryLoad` reads `?deleted=1`/`?updated=1`
+  and `?error=` from the URL and returns `flash` plus a distinct `flashError` slot on
+  `MediaLibraryData` (the conflict error never collides with the degraded-load `error`).
+  `CairnMediaLibrary` renders the office flash grammar (a polite `sr-only` live region plus a visible
+  `alert-success`, the conflict error in the inline error treatment). Mirrors `ConceptList`'s pattern.
+- Task 2, the slide-over Escape edge: `onWindowKeydown` now closes the panel only when
+  `panelEl?.contains(document.activeElement)`, so Escape in the `type="search"` box clears the search
+  and leaves the panel open. Dialog precedence and focus-return-to-origin preserved.
+- Task 3, the decorative-hero alt persistence: an additive optional `ImageValue.decorative` decoded in
+  `frontmatterFromForm`, carried in `validateFields`, read back through `formValues` and seeded into
+  `MediaHeroField` via a fourth hidden input, so a decorative hero reads Decorative (not Needs alt)
+  after a reload. The frozen type-inference snapshot in `content-schema.test.ts` was updated additively
+  (svelte-check caught the coupling; the unit run alone would have hidden it). The body-image
+  asymmetry is documented in the field comment, the explanation arm, and the changelog.
+- Task 5, the reserved-`figure` throw: `defineRegistry` now names the colliding component and gives a
+  remove-or-rename hint.
+- Task 4, the DX docs: the public media resolver wiring moved into the required media steps in both the
+  upgrade and wire guides, with the `wrangler.toml` dialect, the `@glw907/cairn-cms/media` import path,
+  and the empty-`media.json` bootstrap; the reserved-`figure` collision raised to a prominent breaking
+  callout in the upgrade guide and the `0.57.0` changelog (`Consumers must:` extended); a new
+  `docs/reference/authoring-syntax.md` (the `cairn:`/`media:` token schemes) linked from the reference
+  index; the figure-CSS `.site-main` re-scope called out; a "Writing an admin fetch action" note in the
+  sveltekit reference; a tests-live-under-`src/tests/` note in the internal README.
+- Task 6, the ROADMAP refresh: the shipped `0.56.0` gates pass and the shipped gallery retired; the
+  post-media series recorded (Pass A here, Pass B replace-in-place, Pass C bulk + orphan, then the
+  scaffolder, with `runtime.publicMediaResolver` and the CSRF migration in their buckets). The friction
+  log gained a 2026-06-17 Pass A triage block marking the closed and carried findings.
+
+**Verified (evidence, run first-hand from the worktree).** `npm run check` 994 files 0/0; `npm test`
+190 files / 2055 tests exit 0 (no teardown flake this run); the `version`, `docs`, `reference`,
+`reference:signatures`, `package`, `readiness`, and `prose` gates all exit 0; `prose-guard` on every
+changed doc exits 0 (advisory tells only, all in pre-existing body text). Baseline before the pass was
+2037 tests; the pass added 18.
+
+**Review gate.** code-simplifier (two nested-ternary refinements: a `FLASH_MESSAGE` lookup and an
+if/else-if in the loader), then `svelte-reviewer` and `daisyui-a11y-reviewer` in parallel (not a
+Workflow; Geoff did not opt in). Both reviewers converged on one finding, the success live-region
+pattern. No code change followed, deliberately: the implementer faithfully matched the office flash
+grammar the plan told it to match (`ConceptList.svelte:227` uses the identical `sr-only` polite region
+plus a no-role visible alert, and `EditPage.svelte:1134` documents this as the codebase's announce-on-
+mutation pattern, correct for the enhanced-form redirect). The a11y reviewer's "present at first paint"
+concern assumes a full reload; the actual client-side-nav redirect mutates the region. The svelte
+reviewer's repeated-flash edge (two identical flashes do not re-announce) maps exactly to an
+already-tracked ROADMAP item ("a live region that re-announces a repeated error"). Diverging this one
+screen to `role="status"` would break consistency with the office convention. The Escape narrowing,
+the token/contrast story (`alert-success`/`alert-error` resolve to defined theme tokens, AA-clear),
+the decorative wiring, and the DaisyUI 5 classes all passed clean.
+
+**Process note (logged for the record).** Mid-pass, the doc/changelog/ROADMAP/`package.json` edits were
+first written to the `main` checkout's working tree instead of the `feat/media-polish` worktree (a
+wrong absolute path; the implementer agents and all source edits were always in the worktree). Caught
+by `check:version` reading the worktree's still-`0.57.0` files. Recovered by copying each edited file
+into the worktree and `git restore`-ing the `main` working tree to clean, then re-running every gate
+against the worktree. No content lost; `main` left clean.
+
+**No live admin smoke owed.** The feedback strip and the Escape fix are covered by the component suite,
+the decorative round trip by the unit and component suites, matching the plan.
+
+**Decisions locked.** `decorative` persists on the frontmatter hero only (the object has a slot); a
+decorative body image stays needs-alt on reload (markdown alt has no slot), accepted. The conflict
+error rides its own `flashError` slot, distinct from the degraded-load `error`.
+
+**Carry-forwards** (unchanged from the plan's Carry-forward section): the `runtime.publicMediaResolver`
+ergonomic (needs a brainstorm); resolving a renamed `seo:true` hero field in `deriveHeroImage`; Pass B
+(replace-in-place + alt propagation, mockup-first); Pass C (bulk + orphan collection, mockup-first);
+the decorative body-image case. Plus the office-flash-grammar a11y consolidation noted above, folded
+into the existing ROADMAP "re-announces a repeated error" item.

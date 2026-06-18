@@ -42,6 +42,10 @@ export function frontmatterFromForm(
         };
         const caption = String(form.get(`${field.name}.caption`) ?? '').trim();
         if (caption !== '') value.caption = caption;
+        // An explicit decorative choice persists so a reload tells it apart from a left-blank alt.
+        // The key is dropped otherwise to keep committed frontmatter minimal.
+        const decorative = String(form.get(`${field.name}.decorative`) ?? '');
+        if (decorative === 'true') value.decorative = true;
         data[field.name] = value;
         break;
       }

@@ -152,7 +152,16 @@ export interface MediaLibraryData {
   assets: MediaLibraryEntry[];
   /** Per-hash usage overlay, kept separate from MediaLibraryEntry so the popover stays decoupled. */
   usage: Record<string, MediaUsageInfo>;
+  /** The degraded-load error: a failed token mint or media read. This slot is the failure of THIS
+   *  load, distinct from a prior action's conflict error (see `flashError`), so a read failure and a
+   *  redirected commit conflict never overwrite each other. */
   error: string | null;
+  /** The success flash a redirected action carries: `deleted` from `?deleted=1`, `updated` from
+   *  `?updated=1`, null otherwise. The component renders a polite success strip for each. */
+  flash: 'deleted' | 'updated' | null;
+  /** A redirected action's conflict error read from `?error=` (a commit-conflict bounce). Kept in
+   *  its own slot rather than the degraded-load `error` above, so the two never collide. */
+  flashError: string | null;
 }
 
 /** The structural event the content routes read; a real SvelteKit RequestEvent satisfies it. */
@@ -448,11 +457,18 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
    *  assets gathered so far rather than a thrown 500, mirroring listLoad's posture. */
   async function mediaLibraryLoad(event: ContentEvent): Promise<MediaLibraryData> {
     requireSession(event);
+    // Read the flash flags a redirected action carried back, mirroring listLoad's `?error`/
+    // `?publishedAll` grammar: a deleted/updated success flag and a commit-conflict error. The
+    // conflict error rides its own slot so it never collides with the degraded-load `error` below.
+    let flash: MediaLibraryData['flash'] = null;
+    if (event.url.searchParams.get('deleted') === '1') flash = 'deleted';
+    else if (event.url.searchParams.get('updated') === '1') flash = 'updated';
+    const flashError = event.url.searchParams.get('error');
     let token: string;
     try {
       token = await mintToken(event.platform?.env ?? {});
     } catch {
-      return { assets: [], usage: {}, error: 'Could not authenticate with GitHub.' };
+      return { assets: [], usage: {}, error: 'Could not authenticate with GitHub.', flash, flashError };
     }
 
     // Union the media manifest by hash: main's rows first, then any branch hash not already present.
@@ -484,7 +500,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     } catch {
       // A wholesale read failure leaves whatever rows were already unioned; the screen lists them
       // with no usage overlay rather than failing.
-      return { assets: [...union.values()].map(mediaLibraryEntry), usage: {}, error: 'Could not load media.' };
+      return { assets: [...union.values()].map(mediaLibraryEntry), usage: {}, error: 'Could not load media.', flash, flashError };
     }
     const assets = [...union.values()].map(mediaLibraryEntry);
 
@@ -504,7 +520,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       usage = {};
     }
 
-    return { assets, usage, error: null };
+    return { assets, usage, error: null, flash, flashError };
   }
 
   /** Create a new entry: validate the slug, compose a dated id when the concept is dated, refuse to clobber. */

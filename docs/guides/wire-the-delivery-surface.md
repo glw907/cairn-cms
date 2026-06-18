@@ -172,10 +172,14 @@ This guide assumes a running cairn site whose content you want to deliver. The w
    import { buildSiteManifest } from '@glw907/cairn-cms/delivery/data';
    ```
 
-6. **Mount the media delivery route (when your site uses images).** A media-enabled site serves its
-   stored images from a `/media` route that streams content-addressed bytes from an R2 bucket. Bind
-   the bucket in `wrangler.jsonc` and mount the route; the route is off until the adapter declares an
-   `assets` block, so a text-only site can skip this step.
+6. **Wire media end to end (when your site uses images).** A media-enabled site serves its stored
+   images from a `/media` route that streams content-addressed bytes from an R2 bucket, and it resolves
+   each `media:` token to a URL through a resolver the public render path reads. Both halves are
+   required for public images; the route alone serves the editor but leaves a published
+   `![](media:...)` as a bare token on the live page. The whole feature is off until the adapter
+   declares an `assets` block, so a text-only site can skip this step.
+
+   First bind the bucket and mount the route. In `wrangler.jsonc`:
 
    ```jsonc
    // wrangler.jsonc
@@ -183,6 +187,9 @@ This guide assumes a running cairn site whose content you want to deliver. The w
      { "binding": "MEDIA_BUCKET", "bucket_name": "your-site-media" }
    ]
    ```
+
+   A `wrangler.toml` site writes the same binding as `[[r2_buckets]]` with `binding` and `bucket_name`
+   keys.
 
    ```ts
    // src/routes/media/[...path]/+server.ts
@@ -193,10 +200,34 @@ This guide assumes a running cairn site whose content you want to deliver. The w
    ```
 
    The route validates the hash and extension before any R2 read, derives the object key from the
-   validated values alone, and carries its own security headers, since it sits outside `/admin`. For
-   the adapter `assets` block that turns media on, see [the media reference](../reference/media.md);
+   validated values alone, and carries its own security headers, since it sits outside `/admin`.
+
+   Then build the public resolver and inject it into the render path and the catch-all route, so a
+   published token resolves to a `/media` URL. `makeMediaResolver` and `normalizeAssets` import from
+   `@glw907/cairn-cms/media`; the manifest is the committed `src/content/.cairn/media.json`:
+
+   ```ts
+   // src/lib/cairn.config.ts
+   import { normalizeAssets, makeMediaResolver } from '@glw907/cairn-cms/media';
+   import mediaManifest from './content/.cairn/media.json';
+
+   export const publicMediaResolver = makeMediaResolver(
+     mediaManifest,
+     normalizeAssets({ bucketBinding: 'MEDIA_BUCKET' }),
+   );
+   // In defineAdapter: default the render resolver so a body image resolves on the public build.
+   //   render: (md, opts) => renderMarkdown(md, { ...opts, resolveMedia: opts?.resolveMedia ?? publicMediaResolver }),
+   ```
+
+   Pass the same `publicMediaResolver` to `createPublicRoutes` (step 2) as `resolveMedia`, so the
+   frontmatter hero resolves through the one source of truth. A fresh site that has never uploaded has
+   no `media.json`, and the JSON import fails the build, so create it as `{}` first:
+   `mkdir -p src/content/.cairn && echo '{}' > src/content/.cairn/media.json`.
+
+   For the adapter `assets` block that turns media on, see [the media reference](../reference/media.md);
    for the route handler, see
-   [`createMediaRoute`](../reference/sveltekit.md#createmediaroute).
+   [`createMediaRoute`](../reference/sveltekit.md#createmediaroute); for the resolver, see
+   [`makeMediaResolver`](../reference/media.md#makemediaresolver).
 
 ## Verify
 

@@ -54,12 +54,12 @@ function restingText(container: HTMLElement): string {
   return text;
 }
 
-/** Read the three hidden inputs the field writes for the decode arm to read on save. */
+/** Read the four hidden inputs the field writes for the decode arm to read on save. */
 function hiddenValues(container: HTMLElement) {
   const get = (suffix: string) =>
     (container.querySelector(`input[type="hidden"][name="image.${suffix}"]`) as HTMLInputElement | null)
       ?.value ?? null;
-  return { src: get('src'), alt: get('alt'), caption: get('caption') };
+  return { src: get('src'), alt: get('alt'), caption: get('caption'), decorative: get('decorative') };
 }
 
 describe('MediaHeroField resting state', () => {
@@ -115,6 +115,38 @@ describe('MediaHeroField resting state', () => {
     expect(src).toBe('media:first-light.0123456789abcdef');
     expect(alt).toBe('Dawn light over the groomed tracks');
     expect(caption).toBe('First light on the tracks.');
+  });
+});
+
+describe('MediaHeroField persists the decorative choice', () => {
+  it('carries the decorative flag and an empty alt on a seeded decorative hero', async () => {
+    const screen = mount({
+      value: { src: 'media:first-light.0123456789abcdef', alt: '', caption: '' },
+      decorative: true,
+    });
+    const row = restingText(screen.container);
+    expect(row).toMatch(/decorative/i);
+    const { decorative, alt } = hiddenValues(screen.container);
+    expect(decorative).toBe('true');
+    expect(alt).toBe('');
+  });
+
+  it('leaves the decorative input empty for a described hero', async () => {
+    const screen = mount({
+      value: { src: 'media:first-light.0123456789abcdef', alt: 'Dawn over the tracks' },
+    });
+    const row = restingText(screen.container);
+    expect(row).toMatch(/described/i);
+    expect(hiddenValues(screen.container).decorative).toBe('');
+  });
+
+  it('leaves the decorative input empty for a left-blank hero', async () => {
+    const screen = mount({
+      value: { src: 'media:valley-ridge.fedcba9876543210', alt: '' },
+    });
+    const row = restingText(screen.container);
+    expect(row).toMatch(/needs alt/i);
+    expect(hiddenValues(screen.container).decorative).toBe('');
   });
 });
 

@@ -94,11 +94,11 @@ function contentManifest(mediaRefs: string[]): string {
   });
 }
 
-function libraryEvent() {
+function libraryEvent(search = '') {
   return {
-    url: new URL('https://t.example/admin/media'),
+    url: new URL(`https://t.example/admin/media${search}`),
     params: {},
-    request: new Request('https://t.example/admin/media'),
+    request: new Request(`https://t.example/admin/media${search}`),
     locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
   };
@@ -215,7 +215,54 @@ describe('mediaLibraryLoad degrade paths', () => {
       },
     });
     const data = await routes.mediaLibraryLoad(libraryEvent() as never);
-    expect(data).toEqual({ assets: [], usage: {}, error: 'Could not authenticate with GitHub.' });
+    expect(data).toEqual({ assets: [], usage: {}, error: 'Could not authenticate with GitHub.', flash: null, flashError: null });
+  });
+});
+
+describe('mediaLibraryLoad flash flags', () => {
+  function gh() {
+    const dbl = new GithubDouble({
+      main: {
+        [MEDIA_PATH]: mediaManifest(mediaEntry(HASH_MAIN, 'on-main')),
+        [MANIFEST_PATH]: contentManifest([]),
+      },
+    });
+    dbl.install();
+    return dbl;
+  }
+
+  it('reads the deleted flash from ?deleted=1', async () => {
+    gh();
+    const routes = createContentRoutes(runtime(), deps);
+    const data = await routes.mediaLibraryLoad(libraryEvent('?deleted=1') as never);
+    expect(data.flash).toBe('deleted');
+    expect(data.flashError).toBeNull();
+  });
+
+  it('reads the updated flash from ?updated=1', async () => {
+    gh();
+    const routes = createContentRoutes(runtime(), deps);
+    const data = await routes.mediaLibraryLoad(libraryEvent('?updated=1') as never);
+    expect(data.flash).toBe('updated');
+    expect(data.flashError).toBeNull();
+  });
+
+  it('reads the conflict error from ?error= into flashError, not the load error slot', async () => {
+    gh();
+    const routes = createContentRoutes(runtime(), deps);
+    const data = await routes.mediaLibraryLoad(libraryEvent('?error=The%20media%20manifest%20changed.') as never);
+    expect(data.flashError).toBe('The media manifest changed.');
+    expect(data.flash).toBeNull();
+    // The degraded-load error slot stays null on a successful load: the conflict error rides flashError.
+    expect(data.error).toBeNull();
+  });
+
+  it('returns null flash and flashError when the URL carries no flag', async () => {
+    gh();
+    const routes = createContentRoutes(runtime(), deps);
+    const data = await routes.mediaLibraryLoad(libraryEvent() as never);
+    expect(data.flash).toBeNull();
+    expect(data.flashError).toBeNull();
   });
 });
 

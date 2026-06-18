@@ -402,14 +402,24 @@ engine stores it in R2, names it by its content hash, commits it with the entry,
 locked-down `/media` route. The full surface is in [the media reference](../reference/media.md) and
 [the sveltekit reference](../reference/sveltekit.md).
 
-Media is off until a site wires it, so this is additive with two setup steps. Consumers must:
+Media is off until a site wires it, so this is additive with four required setup steps. The fourth
+step is the one a site is most likely to miss: without the public resolver, a published
+`![](media:...)` ships a bare `media:` token to the live page with no error. Consumers must:
 
-1. **Bind the R2 bucket.** Add an `r2_buckets` entry named `MEDIA_BUCKET` to `wrangler.jsonc`:
+1. **Bind the R2 bucket.** Add an `r2_buckets` entry named `MEDIA_BUCKET`. In `wrangler.jsonc`:
 
    ```jsonc
    "r2_buckets": [
      { "binding": "MEDIA_BUCKET", "bucket_name": "your-site-media" }
    ]
+   ```
+
+   A `wrangler.toml` site (both production sites use one) writes the same binding as a table array:
+
+   ```toml
+   [[r2_buckets]]
+   binding = "MEDIA_BUCKET"
+   bucket_name = "your-site-media"
    ```
 
 2. **Mount the delivery route.** Create `src/routes/media/[...path]/+server.ts` and export the
@@ -427,32 +437,81 @@ Media is off until a site wires it, so this is additive with two setup steps. Co
    so `normalizeAssets` turns media on. See [the media reference](../reference/media.md#config) for
    the field shape. Without the block, media stays off and the route 404s.
 
+4. **Wire the public media resolver.** Steps 1 through 3 make media work for the editor: insert and
+   the admin preview both resolve through the route. The published page does not. A public
+   `![](media:...)` token (a body image or a frontmatter hero) only resolves to a URL when the site
+   threads a resolver into the render path and the public routes. Build one resolver and inject it in
+   both places:
+
+   ```ts
+   // src/lib/cairn.config.ts
+   import { normalizeAssets, makeMediaResolver } from '@glw907/cairn-cms/media';
+   import mediaManifest from './content/.cairn/media.json';
+
+   // One resolver over the committed manifest, exported so the public route reuses it.
+   export const publicMediaResolver = makeMediaResolver(
+     mediaManifest,
+     normalizeAssets({ bucketBinding: 'MEDIA_BUCKET' }),
+   );
+
+   export const cairn = defineAdapter({
+     // ...
+     assets: { bucketBinding: 'MEDIA_BUCKET' },
+     // Default opts.resolveMedia so a published body image resolves; the preview path overrides it.
+     render: (md, opts) => renderMarkdown(md, { ...opts, resolveMedia: opts?.resolveMedia ?? publicMediaResolver }),
+   });
+   ```
+
+   ```ts
+   // src/routes/(site)/[...path]/+page.server.ts
+   import { publicMediaResolver } from '$lib/cairn.config';
+   const routes = createPublicRoutes({ /* ...existing... */, resolveMedia: publicMediaResolver });
+   ```
+
+   `makeMediaResolver` and `normalizeAssets` both import from `@glw907/cairn-cms/media`. The
+   `mediaManifest` import reads the committed `src/content/.cairn/media.json`. A fresh site that has
+   never uploaded has no such file, and the JSON import fails the build, so create it as an empty
+   object first:
+
+   ```sh
+   mkdir -p src/content/.cairn && echo '{}' > src/content/.cairn/media.json
+   ```
+
+   The upload pipeline writes real rows into that file from then on.
+
 Cloudflare Images transforms stay behind the `transformations: false` default. A site serves
 full-size bytes until it sets `transformations: true`, which needs the zone's Image Resizing turned
 on. The route mount is also covered in
 [the wire the delivery surface guide](wire-the-delivery-surface.md).
 
-The same release adds the inline figure: an image wraps in a cairn-reserved `:::figure` directive to
-carry a caption and a placement. This is additive and needs no setup, with two things to know. First,
-`figure` is now a reserved directive name: `defineRegistry` throws if a site component is named
-`figure`, so rename any such component. A site that already hand-authored a `:::figure` block for
-another purpose now renders it as an engine figure, so check for one. Second, cairn ships default
-`.cairn-place-center`, `.cairn-place-wide`, and `.cairn-place-full` CSS in the showcase reference
-(`examples/showcase/src/lib/site.css`); copy those rules into your site's content stylesheet and
-adjust the pixels to own the placement look. Without them a `wide` or `full` figure still renders, it
-just sits at the text measure until the classes are styled.
+> **Breaking: `figure` is now a reserved directive name.** The same release adds the inline figure (an
+> image wraps in a cairn-reserved `:::figure` directive to carry a caption and a placement), and that
+> reserves the name. `defineRegistry` throws if a site registers a component named `figure`, which
+> hard-fails both `cairn-manifest` and the build. If your site has a custom `figure` component, the
+> fix depends on why it exists. A `figure` that the engine's built-in figure now covers (a
+> hand-rolled caption-and-placement wrapper, which is the common case) should be removed so the site
+> adopts the engine's; renaming it keeps a duplicate. A `figure` that does something unrelated should
+> be renamed. Also check for a hand-authored `:::figure` block in your content: it now renders as an
+> engine figure.
+
+The inline figure also ships default `.cairn-place-center`, `.cairn-place-wide`, and
+`.cairn-place-full` CSS in the showcase reference (`examples/showcase/src/lib/site.css`). Copy those
+rules into your site's content stylesheet to own the placement look. The showcase scopes them under
+`.site-main`, its content container. A site whose container differs (ecxc uses `.post-body`) must
+re-scope every selector to its own container, not just tune the pixel values. Without the rules a
+`wide` or `full` figure still renders, it just sits at the text measure until the classes are styled.
 
 The release also adds the frontmatter hero image, a new built-in `image` field type. Adopting it is
-optional and additive; a site does nothing until it declares the field. To give a concept a hero:
+optional and additive; a site does nothing until it declares the field. The public resolver from
+required step 4 already covers the hero, so adoption is only the field plus the template:
 
 1. **Declare the field.** Add `{ type: 'image', name: 'image', label: 'Hero image' }` to the
    concept's `defineFields`. The field named `image` is the social-card image by default; mark a
    differently-named field with `seo: true` to feed the `og:image`, and a concept declares at most
    one such field. The stored value is a nested object `{ src, alt, caption }`.
 
-2. **Inject the resolver and render the hero.** Pass `resolveMedia` to `createPublicRoutes`, the same
-   resolver the body render path uses (`makeMediaResolver(mediaManifest, normalizeAssets(...))`).
-   The read path then exposes a derived `heroImage` projection on the entry data, and the template
+2. **Render the hero.** With `resolveMedia` already injected into `createPublicRoutes` (required step
+   4), the read path exposes a derived `heroImage` projection on the entry data, and the template
    renders it however it wants (`<img src={data.heroImage.url} alt={data.heroImage.alt}>`). The site
    owns the hero layout; cairn ships only the resolved data. The SEO head reads the same resolved
    image as the `og:image` automatically.
@@ -474,6 +533,22 @@ so the Library's where-used is accurate for already-published content. The manif
 manifest reads every published media reference as absent (the Library shows "no references found" and
 safe-delete would treat an in-use asset as an orphan). Save and publish keep the field current from
 then on, so the one-time regenerate only matters for content committed before this release.
+
+## 0.57.1: media polish and cutover DX, additive
+
+A polish patch over the `0.57.0` media stack. The Media Library now confirms a delete or a rename and
+surfaces a commit conflict on a feedback strip; the slide-over Escape no longer fights the search box;
+and a frontmatter hero marked decorative persists that choice (an additive `decorative` key on the
+`image` object) so it stops reading as needs-alt after a reload. The reserved-`figure` build error now
+names the colliding component. No consumer action: the `decorative` key is additive and optional, and
+the rest is admin or build-time behavior with no public surface change.
+
+This release also reworks the media docs. If you are wiring media for the first time, the public media
+resolver is now documented as a required step (a published `media:` token ships bare without it), and
+the reserved-`figure` collision is a prominent breaking callout. The 0.57.0 entry above carries both,
+so read it when you adopt media. The new
+[content authoring syntax reference](../reference/authoring-syntax.md) collects the `cairn:` and
+`media:` token schemes.
 
 ## 0.55.0: the office list gains triage and self-describing rows
 

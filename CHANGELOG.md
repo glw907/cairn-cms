@@ -2,6 +2,29 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.57.1
+
+Media polish and cutover DX, the first follow-on after the `0.57.0` media stack. The Media Library
+gains the action feedback it lacked: a delete, a rename, and a commit conflict now land on a strip
+that confirms the result or shows the error, instead of a silent page. With the detail slide-over open
+and focus in the search box, Escape now clears the search and leaves the panel open, rather than doing
+both at once. A frontmatter hero marked decorative persists that choice as an additive `decorative` key
+on the `image` object, so a deliberately decorative hero stops reading as needs-alt after a reload (a
+decorative body image still cannot persist the choice, since markdown alt text has no slot for it). The
+reserved-`figure` build error now names the colliding component and points at the fix.
+
+The rest is documentation. The public media resolver wiring moved into the required media setup steps
+in both the upgrade guide and the wire-the-delivery guide, since a published `media:` token ships bare
+without it. The reserved-`figure` collision is now a prominent breaking callout. A new
+[content authoring syntax reference](docs/reference/authoring-syntax.md) documents the `cairn:` and
+`media:` token schemes together. The guides now show the `wrangler.toml` binding dialect, the
+`@glw907/cairn-cms/media` import path, the empty-`media.json` bootstrap, and the `.site-main` re-scope
+for the figure placement CSS.
+
+No consumer action is required. The `decorative` key is additive and optional, so existing content
+parses and builds unchanged, and the feedback strip, the Escape fix, and the registry error message
+are admin or build-time with no public surface change.
+
 ## 0.57.0
 
 Images become first-class. An editor can paste, drag, or insert an image straight into a post, and
@@ -92,6 +115,21 @@ default, so a site serves full-size bytes until it opts in. The wiring steps are
 [wire the delivery surface guide](docs/guides/wire-the-delivery-surface.md); the surface is documented
 in [the media reference](docs/reference/media.md) and
 [the sveltekit reference](docs/reference/sveltekit.md).
+
+Consumers must also wire the public media resolver for any public image. The bucket, route, and
+`assets` block make media work for the editor, but a published `![](media:...)` (a body image or a
+frontmatter hero) ships a bare token to the live page unless the site threads a resolver into the
+render path and `createPublicRoutes`. Build one with
+`makeMediaResolver(mediaManifest, normalizeAssets({ bucketBinding: 'MEDIA_BUCKET' }))` from
+`@glw907/cairn-cms/media`, where `mediaManifest` is the committed `src/content/.cairn/media.json`
+(create it as `{}` on a fresh site so the import resolves). The
+[upgrade guide](docs/guides/upgrade-cairn.md) gives the full snippet.
+
+Breaking: `figure` is now a reserved directive name. `defineRegistry` throws if a site registers a
+component named `figure`, which hard-fails both `cairn-manifest` and the build. A custom `figure` that
+the engine's built-in figure now covers should be removed so the site adopts the engine's; a `figure`
+that does something else should be renamed. Check too for any hand-authored `:::figure` block in your
+content, which now renders as an engine figure.
 
 Recommended, not required: regenerate the content manifest (`cairn-manifest`) and commit it so the
 Media Library's `main` where-used is accurate. The `mediaRefs` field is additive, so a site builds

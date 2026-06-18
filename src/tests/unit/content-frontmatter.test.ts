@@ -99,6 +99,40 @@ describe('frontmatterFromForm', () => {
     expect('image' in frontmatterFromForm(fields, form)).toBe(false);
   });
 
+  it('commits the decorative flag with an empty alt when the form marks it decorative', () => {
+    const fields: FrontmatterField[] = [{ type: 'image', name: 'image', label: 'Hero' }];
+    const form = new FormData();
+    form.set('image.src', 'media:a.0123456789abcdef');
+    form.set('image.alt', '');
+    form.set('image.decorative', 'true');
+
+    expect(frontmatterFromForm(fields, form)).toEqual({
+      image: { src: 'media:a.0123456789abcdef', alt: '', decorative: true },
+    });
+  });
+
+  it('omits the decorative key for a described hero with no decorative flag', () => {
+    const fields: FrontmatterField[] = [{ type: 'image', name: 'image', label: 'Hero' }];
+    const form = new FormData();
+    form.set('image.src', 'media:a.0123456789abcdef');
+    form.set('image.alt', 'A snowy ridge');
+
+    expect(frontmatterFromForm(fields, form)).toEqual({
+      image: { src: 'media:a.0123456789abcdef', alt: 'A snowy ridge' },
+    });
+  });
+
+  it('omits the decorative key for a left-blank hero with no decorative flag', () => {
+    const fields: FrontmatterField[] = [{ type: 'image', name: 'image', label: 'Hero' }];
+    const form = new FormData();
+    form.set('image.src', 'media:a.0123456789abcdef');
+    form.set('image.alt', '');
+
+    expect(frontmatterFromForm(fields, form)).toEqual({
+      image: { src: 'media:a.0123456789abcdef', alt: '' },
+    });
+  });
+
   it('stores image alt verbatim, with no markdown escaping', () => {
     const fields: FrontmatterField[] = [{ type: 'image', name: 'image', label: 'Hero' }];
     const form = new FormData();

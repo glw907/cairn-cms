@@ -86,6 +86,15 @@ defaulting to the field named `image`, and a concept declares at most one. As a 
 `resolveImageUrl` rejects any non-http(s) result, so a still-unresolved `media:` token degrades to no
 social image rather than shipping a broken tag.
 
+The hero object also persists a decorative choice that a body image cannot. An author can mark a hero
+decorative, meaning its empty alt is deliberate rather than missing, and the needs-alt notice then
+leaves it alone. The frontmatter hero stores that as a `decorative: true` key on the `image` object,
+so the choice survives a reload and a deliberately decorative hero never reads as needs-alt. A
+decorative body image (`![](media:...)`) has no such slot: markdown alt text is a single string with
+no place to record "deliberately empty," so a decorative body image still reads as needs-alt after a
+reload. The asymmetry is inherent to the two storage formats, one an object with room for a flag, the
+other a bare alt string, and it is accepted rather than worked around.
+
 ## Where-used is read from git, by content hash
 
 The admin Media Library answers a question most CMS libraries cannot: where is this image actually

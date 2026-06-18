@@ -25,3 +25,9 @@ reason.
 - [The `cairn-manifest` CLI](./cli-cairn-manifest.md): the manifest regenerate command.
 - [The `cairn-doctor` CLI](./doctor.md): the setup preflight that checks a site's local config, Cloudflare account, and GitHub App.
 - [Log events](./log-events.md): the structured diagnostic events cairn emits, and their fields.
+
+One page here is not export-keyed, since it documents author-facing markdown syntax rather than a
+package subpath:
+
+- [Content authoring syntax](./authoring-syntax.md): the `cairn:` internal-link and `media:` asset
+  token schemes an author types in markdown.

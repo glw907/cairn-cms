@@ -3,6 +3,12 @@
 Maintainer-facing documents. Nothing here is part of the adopter docs; the four public arms
 live one level up.
 
+## Conventions
+
+- **Tests live under `src/tests/{unit,integration,component}/`.** The vitest config only globs those
+  three directories, so a co-located `src/lib/**/*.test.ts` is silently never run. When a plan names a
+  test path, point it inside `src/tests/`, not next to the source.
+
 ## Live
 
 - `admin-design-system.md`: the agent-facing design system for the `/admin` surface. Read it

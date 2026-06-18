@@ -27,11 +27,11 @@ describe('defineFields: projection and inference', () => {
     ]);
     expectTypeOf<Infer<typeof withHero>>().toEqualTypeOf<{
       title: string;
-      image?: { src: string; alt: string; caption?: string };
+      image?: { src: string; alt: string; caption?: string; decorative?: boolean };
     }>();
     // A typed read of the nested src compiles.
     expectTypeOf<Infer<typeof withHero>['image']>().toMatchTypeOf<
-      { src: string; alt: string; caption?: string } | undefined
+      { src: string; alt: string; caption?: string; decorative?: boolean } | undefined
     >();
   });
 });

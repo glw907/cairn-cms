@@ -44,6 +44,46 @@ robots-collision warn.
 
 Each live item is re-verified at plan time, since this sweep showed how stale the log had grown.
 
+## Triage (2026-06-17, Pass A)
+
+Pass A (`0.57.1`, `docs/superpowers/plans/2026-06-17-cairn-media-polish-and-dx.md`) closed the media
+and cutover findings below. Status of each:
+
+**Resolved (shipped in Pass A or earlier).**
+- The optional concept `singular` descriptor (2026-06-13 finding) already shipped before this pass:
+  `normalizeConcepts` resolves `singular: config.singular ?? label` and the create affordances render
+  `New {createNoun}` from it. Marked resolved, not re-done.
+- The `media:`/`cairn:` content-authoring syntax home (media foundation finding): a new
+  `docs/reference/authoring-syntax.md` documents both token schemes together, independent of the
+  export pages, linked from the reference index.
+- The plan test-path convention (media foundation finding): a Conventions note in
+  `docs/internal/README.md` records that tests live under `src/tests/{unit,integration,component}/`.
+- The admin fetch-action transport (2a finding): a "Writing an admin fetch action" note in
+  `docs/reference/sveltekit.md` documents the `text/plain` body, the `X-Cairn-CSRF` header, and the
+  200 JSON envelope.
+- Cutover finding 1, the reserved-`figure` collision (HIGH): the thrown error in `defineRegistry` now
+  names the colliding component and gives a remove-or-rename hint (engine), and the upgrade guide and
+  changelog carry a prominent breaking callout that states the remove-the-custom-figure case (docs).
+- Cutover finding 2, the public media resolver as a required step (HIGH, docs half): the resolver
+  wiring moved into the required media steps in both the upgrade guide and the wire-the-delivery
+  guide, with the changelog's `Consumers must:` extended to name it. The deeper ergonomic is carried
+  (below).
+- Cutover finding 3, the resolver import path: the guide snippets now name
+  `@glw907/cairn-cms/media` for `makeMediaResolver` and `normalizeAssets`.
+- Cutover finding 4, the empty `media.json` bootstrap (docs half): the guides now tell a fresh site
+  to create `src/content/.cairn/media.json` as `{}`. The resolver-tolerance alternative is carried.
+- Cutover finding 5, the R2 binding dialect: the upgrade and wire guides now show both the
+  `wrangler.jsonc` and the `wrangler.toml` form.
+- Cutover finding 6, the figure CSS scope: the guides now call out that the `.cairn-place-*` rules are
+  scoped to the showcase's `.site-main`, so a site whose content container differs must re-scope every
+  selector.
+
+**Carried (a deeper fix beyond Pass A).**
+- The `runtime.publicMediaResolver` ergonomic, shared by cutover findings 2 and 4: have
+  `composeRuntime` expose a ready-built public resolver so a site stops hand-assembling it and
+  hand-seeding an empty `media.json`. Needs a brainstorm before a plan; tracked in `ROADMAP.md` (Next)
+  and the Pass A plan's carry-forwards.
+
 ## Findings
 
 Phase 1 seeds this file. Later phases append as they write.

@@ -1572,6 +1572,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
             bind:this={heroFieldRefs[field.name]}
             field={{ name: field.name, label: field.label }}
             value={heroValue}
+            decorative={heroValue?.decorative ?? false}
             mediaLibrary={mediaLibrary}
             conceptId={data.conceptId}
             id={data.id}

@@ -109,6 +109,8 @@ export interface ImageValue {
   src: string;
   alt: string;
   caption?: string;
+  /** An explicit decorative choice: an empty alt that is not debt. Omitted unless true. */
+  decorative?: boolean;
 }
 
 /**

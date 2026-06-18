@@ -296,6 +296,19 @@ export const load = routes.listLoad;
 export const actions = { create: routes.createAction, delete: routes.listDeleteAction, publishAll: routes.publishAllAction };
 ```
 
+### Writing an admin fetch action
+
+`uploadAction` is the one admin action a client drives with `fetch` rather than a form submit, and its
+transport has two SvelteKit constraints worth knowing before you write another fetch-style action or a
+client that calls this one. A SvelteKit form action rejects any POST whose content type is not
+form-encoded with a 415 before the action body runs, so the upload client posts `text/plain`, the one
+form content type that carries raw bytes. CSRF rides an `X-Cairn-CSRF` header that the admin guard
+clears before its body-cloning form-field check, since reading the body twice would consume the stream.
+A form action's result is always a 200 JSON envelope (`{ type, status, data }`), so a `fail(413)` from
+the action is not an HTTP 413: the client reads the envelope and branches on `data`, not on the
+response status. Build a new fetch-style admin action against this contract from the start. The upload
+client in `examples/showcase` is the working reference.
+
 ### `createMediaRoute`
 
 ```ts

@@ -129,7 +129,7 @@ export function defineRegistry({ components }: { components: ComponentDef[] }): 
   for (const c of components) {
     if (c.name === 'figure') {
       throw new Error(
-        'cairn: "figure" is a reserved directive name handled by the engine render step; a component cannot use it',
+        `cairn: component "${c.name}" uses "figure", a reserved directive name handled by the engine render step: remove it if the engine's built-in figure now covers your use, or rename it otherwise`,
       );
     }
     if (c.defaultIconByRole && Object.keys(c.defaultIconByRole).length > 0 && !findIconField(c)) {

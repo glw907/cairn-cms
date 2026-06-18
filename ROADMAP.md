@@ -10,49 +10,49 @@ needs. Items move up from lower tiers as the core fills in.
 
 ## Now
 
-- **Gates, tooling, and DX-hardening pass (`0.56.0`).** One pass clears the live friction-log
-  backlog that is not the scaffolder's own output (the full triage is in
-  `docs/internal/docs-friction-log.md`). A 2026-06-13 sweep found most of the log already addressed,
-  including the public-surface narrowing it had treated as the release-gating keystone: the root `.`
-  is now a deliberate export list, the leaked internal helpers and the delivery re-exports are gone,
-  and `/sveltekit` no longer duplicates the public route-data types. The `0.50.0` window absorbed the
-  composer alignment, the `mintToken` widening, the published `fail` payload types, the
-  `App.Locals.editor` ambient type, and the `PUBLIC_ORIGIN` condition; the golden-path E2E is already
-  wired into CI. What remains is robustness and polish, mostly small and independent:
-  - **Gates/CI:** an automated DOM check for the admin render (the drawer-scoping regression that
-    shipped on a glance); a signature-currency check that compares each reference page's declared
-    types against the real exports; the plain-Node dist-spawn test that rot-proofs the
-    `/delivery/data` node-safety guarantee; the manifest bin's `cwd`-versus-`config.root` fix; the
-    editor link-picker narrowing to real content targets.
-  - **Engine DX (additive):** re-export `AuthEnv` from `/sveltekit` (it is consumed there, and
-    `skipLibCheck` hid the missing member through two retrofits); an optional `singular` on a concept
-    descriptor for the create affordances ("New post", not "New Posts"); render attribute-sink
-    hardening so a component `build()` cannot route a value into an `href`/`src`/`style` sink
-    unsanitized (defence-in-depth, site-developer-controlled today, gated by the security reviewer).
-  - **Docs:** the preview frame's dual client/server emission; doctor self-derivation tied to the
-    `cairnManifest` plugin; the `app.d.ts` Platform block verbatim; the `prerender.handleHttpError`
-    flag where the delivery docs introduce the feeds; an interim security contact in `SECURITY.md`
-    while the repo stays private; steering manifest regeneration to the `cairn-manifest` bin.
+- **Media polish and cutover DX (Pass A, `0.57.1`).** The first follow-on after the media stack
+  shipped in `0.57.0`. It clears the small polish and DX debt the media work left, plus the friction
+  the two site cutovers (ecxc and 907) surfaced: the Media Library action feedback strip and the
+  slide-over Escape edge (the 3c review carry-forwards), the decorative-hero alt persistence (the 3b
+  carry-forward, so a decorative hero stops reading as needs-alt after a reload), a clearer
+  reserved-`figure` build error that names the colliding component, the six cutover doc findings (two
+  HIGH: the public media resolver belongs in the required media steps, and the figure-collision is a
+  prominent breaking callout), and this ROADMAP refresh. The full plan is
+  `docs/superpowers/plans/2026-06-17-cairn-media-polish-and-dx.md`. Additive and contained, so it
+  ships as a patch.
 
-  The tasks are mostly independent, so this pass is a good candidate for the Workflow tool on opt-in.
-  Each item is re-verified at plan time, since the friction-log sweep showed how stale the log had grown.
+  The `0.56.0` gates, tooling, and DX-hardening pass that held this slot has shipped: the
+  public-surface narrowing, the composer alignment, the published `fail` payload types, the
+  `App.Locals.editor` ambient type, the `AuthEnv` re-export, the optional concept `singular`, and the
+  CI-wired golden-path E2E all landed across the `0.50.0`-through-`0.56.0` window. The remaining
+  friction-log items are triaged in `docs/internal/docs-friction-log.md`, carried into the passes
+  below or the scaffolder.
 
 ## Next
-- **Image and gallery management.** Let a non-technical author add and place images from
-  `/admin`. The open fork is storage: versioned in git next to content, or in Cloudflare R2.
-  Needs a brainstorm before a plan. Sequenced ahead of the scaffolder so the capstone template
-  ships image support baked in.
-- **`create-cairn-site` scaffolder.** The last engine deliverable, sequenced after the gallery and
-  after the DX backlog is cleared, so it templates a surface that is already hardened, DX-complete, and
-  image-aware. One command scaffolds a working site with the corrected defaults, the `cairnManifest()`
-  Vite wiring, and the setup docs, so a new site skips the integration archaeology the first two
-  migrations hit. The Phase 5 reproduction sharpened its worklist from a fresh-install seat: ship a
-  fenced local dev backend so a newcomer never hand-pastes a fake GitHub and an auth bypass, emit the
-  `App.Locals.editor` type augmentation, omit the skeleton's clashing `static/robots.txt`, avoid
-  emitting `prerender.handleHttpError: 'warn'` so a dangling link fails the build, and declare
-  `@types/node`. Much of the remaining DX backlog is the scaffolder's own output (registering all four
-  admin actions by default, the single import surface, the one sanitize floor, the `cairn:` link
-  constraint README), so those items land here, not ahead of it.
+- **Media Pass B: replace-in-place and alt propagation.** Upload a new file and repoint an existing
+  reference (a `main`-only repoint with a branch-delta report), and propagate an alt fix across every
+  placement of an image. High blast radius (cross-branch rewrites), so mockup-first for the Replace
+  control.
+- **Media Pass C: bulk operations and orphan collection.** Multi-select, usage-aware bulk delete, the
+  destructive `reconcileMedia` sweep that collects orphaned R2 objects, and the broadened needs-alt
+  scanner. Mockup-first.
+- **The `runtime.publicMediaResolver` ergonomic.** A deeper fix the ecxc cutover surfaced: have
+  `composeRuntime` expose a ready-built public media resolver so a site writes
+  `resolveMedia: runtime.publicMediaResolver` instead of hand-assembling
+  `makeMediaResolver(mediaManifest, normalizeAssets(...))` and hand-seeding an empty `media.json`. The
+  open question is how the engine reaches the committed manifest at the composition point, and whether
+  the read can tolerate an absent manifest. Needs a brainstorm before a plan. It would subsume several
+  of Pass A's doc fixes for future sites and the scaffolder.
+- **`create-cairn-site` scaffolder.** The last engine deliverable, sequenced after the media passes so
+  it templates a surface that is already hardened, DX-complete, and image-aware. One command scaffolds
+  a working site with the corrected defaults, the `cairnManifest()` Vite wiring, and the setup docs, so
+  a new site skips the integration archaeology the first two migrations hit. The Phase 5 reproduction
+  sharpened its worklist from a fresh-install seat: ship a fenced local dev backend so a newcomer never
+  hand-pastes a fake GitHub and an auth bypass, emit the `App.Locals.editor` type augmentation, omit
+  the skeleton's clashing `static/robots.txt`, avoid emitting `prerender.handleHttpError: 'warn'` so a
+  dangling link fails the build, and declare `@types/node`. Much of the remaining DX backlog is the
+  scaffolder's own output (registering all four admin actions by default, the single import surface,
+  the one sanitize floor, the `cairn:` link constraint README), so those items land here.
 
 ## Later
 

@@ -120,6 +120,47 @@ describe('image field', () => {
     expect(result).toEqual({ ok: true, data: { image: { src: 'media:a.0123456789abcdef', alt: 'x' } } });
   });
 
+  it('normalizes a decorative object and keeps the decorative key', () => {
+    const result = validateFields(fields, {
+      image: { src: 'media:a.0123456789abcdef', alt: '', decorative: true },
+    });
+    expect(result).toEqual({
+      ok: true,
+      data: { image: { src: 'media:a.0123456789abcdef', alt: '', decorative: true } },
+    });
+  });
+
+  it('omits the decorative key when the object lacks it', () => {
+    const result = validateFields(fields, {
+      image: { src: 'media:a.0123456789abcdef', alt: 'x' },
+    });
+    expect(result).toEqual({
+      ok: true,
+      data: { image: { src: 'media:a.0123456789abcdef', alt: 'x' } },
+    });
+  });
+
+  it('omits the decorative key for a falsy or non-boolean decorative value', () => {
+    expect(validateFields(fields, { image: { src: 'media:a.0123456789abcdef', alt: 'x', decorative: false } })).toEqual({
+      ok: true,
+      data: { image: { src: 'media:a.0123456789abcdef', alt: 'x' } },
+    });
+    expect(validateFields(fields, { image: { src: 'media:a.0123456789abcdef', alt: 'x', decorative: 'true' } })).toEqual({
+      ok: true,
+      data: { image: { src: 'media:a.0123456789abcdef', alt: 'x' } },
+    });
+  });
+
+  it('parses an existing committed object that predates the decorative key', () => {
+    const result = validateFields(fields, {
+      image: { src: 'media:a.0123456789abcdef', alt: 'x', caption: 'A line.' },
+    });
+    expect(result).toEqual({
+      ok: true,
+      data: { image: { src: 'media:a.0123456789abcdef', alt: 'x', caption: 'A line.' } },
+    });
+  });
+
   it('drops the key when src is empty', () => {
     const result = validateFields(fields, { image: { src: '', alt: 'x' } });
     expect(result.ok).toBe(true);

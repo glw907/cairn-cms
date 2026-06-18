@@ -62,6 +62,11 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
 
   let { data, form }: Props = $props();
 
+  // The success flash a redirected action carried back: a safe-delete or a metadata edit. The
+  // conflict error (data.flashError) renders in the inline error treatment below instead.
+  const FLASH_MESSAGE = { deleted: 'Asset deleted.', updated: 'Changes saved.' } as const;
+  const flashMessage = $derived(data.flash ? FLASH_MESSAGE[data.flash] : '');
+
   // --- the per-hash usage facts the screen joins onto each asset ---
   /** The distinct-entry usage count for an asset; zero when the asset has no usage key. */
   function usageCount(hash: string): number {
@@ -189,6 +194,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   // The element that opened the slide-over (a tile or a row trigger), so focus returns to it on
   // close (the non-modal region recipe: focus moves in on open, back to the origin on close).
   let panelOrigin: HTMLElement | null = null;
+  let panelEl = $state<HTMLElement | null>(null);
   let closeButton = $state<HTMLButtonElement | null>(null);
   let deleteDialog = $state<HTMLDialogElement | null>(null);
 
@@ -210,8 +216,11 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   // Escape closes the slide-over (the non-modal region recipe). A window listener carries it, the
   // way EditPage's details panel does, so the non-interactive region needs no keyboard handler. The
   // dialog (when open) claims Escape natively, so the panel handles it only when no dialog is up.
+  // Escape is also the native clear gesture for the toolbar's type="search" input, so the close
+  // fires only when focus is inside the panel: an Escape in the search box clears it and leaves the
+  // panel exactly as the user left it, while an Escape with focus in the panel still closes it.
   function onWindowKeydown(e: KeyboardEvent) {
-    if (e.key === 'Escape' && selected && !deleteDialog?.open) {
+    if (e.key === 'Escape' && selected && !deleteDialog?.open && panelEl?.contains(document.activeElement)) {
       e.preventDefault();
       closePanel();
     }
@@ -444,6 +453,16 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   </button>
 </header>
 
+<!-- The action feedback strip (the office flash grammar). A persistent polite live region carries
+     the success message, so an inserted-fresh element is announced reliably; the visible alert below
+     keeps its styling without a role. The strip never steals focus. -->
+<div class="sr-only" aria-live="polite">{flashMessage}</div>
+{#if flashMessage}
+  <div class="alert alert-success mb-4 text-sm">{flashMessage}</div>
+{/if}
+{#if data.flashError}
+  <div role="alert" class="alert alert-error mb-4 text-sm">{data.flashError}</div>
+{/if}
 {#if data.error}
   <div role="alert" class="alert alert-warning mb-4 text-sm">{data.error}</div>
 {/if}
@@ -676,6 +695,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
        and focus returns to the originating tile or row (the region-with-focus-management recipe).
        Below the narrow breakpoint the same panel reads as a bottom sheet (the responsive treatment). -->
   <aside
+    bind:this={panelEl}
     role="region"
     aria-label="{asset.displayName} details"
     class="fixed inset-x-0 bottom-0 z-30 flex max-h-[85vh] flex-col rounded-t-2xl border-t border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)] sm:inset-x-auto sm:bottom-0 sm:right-0 sm:top-16 sm:max-h-none sm:w-[22rem] sm:rounded-t-none sm:border-l sm:border-t-0"

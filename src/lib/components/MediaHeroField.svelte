@@ -2,14 +2,21 @@
 @component
 The hero image frontmatter field: the persistent details-panel field that sets a concept's lead
 picture, the one image that both leads the page and becomes the social card. It edits the structured
-value `{ src, alt, caption }` and writes it to three hidden form inputs the save path's decode arm
-reads. cairn stays markdown-first, so this is a structured-data form field, never a WYSIWYG canvas.
+value `{ src, alt, caption, decorative }` and writes it to four hidden form inputs the save path's
+decode arm reads. cairn stays markdown-first, so this is a structured-data form field, never a
+WYSIWYG canvas.
 
 The field renders inside the edit form (the EditPage details loop). A nested <form> would break SSR,
 so the field carries no <form> of its own: the working inputs in the dialog (the alt input, the
-caption input) carry no name and never submit, and the committed value rides three named hidden
-inputs (`<name>.src`, `<name>.alt`, `<name>.caption`). "Use this image" copies the dialog's working
-state into those hidden inputs; the form's own Save commits them.
+caption input) carry no name and never submit, and the committed value rides four named hidden
+inputs (`<name>.src`, `<name>.alt`, `<name>.caption`, `<name>.decorative`). "Use this image" copies
+the dialog's working state into those hidden inputs; the form's own Save commits them.
+
+The decorative choice persists for the frontmatter hero because the hero value is an object with a
+slot for it. A reload then tells a deliberately decorative hero apart from a left-blank alt, so a
+decorative hero no longer trips the needs-alt notice. A decorative body image (`![](media:...)`)
+cannot persist the same choice, since markdown alt has no slot for it, so a decorative body image
+still reads as needs-alt on reload.
 
 At rest, when a hero is set, the field is one row at sibling weight: the resolved thumbnail, the
 display name, an alt-status chip (Described, Needs alt, or Decorative, each a glyph plus a label,
@@ -49,7 +56,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
     /** The field descriptor: the form input name base and the visible label. */
     field: { name: string; label: string };
     /** The initial committed value, from `data.frontmatter[field.name]`. */
-    value?: { src: string; alt: string; caption?: string };
+    value?: { src: string; alt: string; caption?: string; decorative?: boolean };
     /** Whether the initial hero is an explicit decorative choice (an empty alt that is not debt).
      *  Defaults false; a fresh field with an empty alt reads as needs-alt. */
     decorative?: boolean;
@@ -444,12 +451,14 @@ popover's runUpload but resolves to this field, not an editor placeholder.
     </p>
   {/if}
 
-  <!-- The committed value rides three named hidden inputs the save path's decode arm reads. They sit
+  <!-- The committed value rides four named hidden inputs the save path's decode arm reads. They sit
        inside the edit form (this component renders in the detailFields loop), so they submit; the
-       dialog's working inputs carry no name and never submit. -->
+       dialog's working inputs carry no name and never submit. The decorative input persists the
+       explicit decorative choice so a reload tells it apart from a left-blank alt. -->
   <input type="hidden" name="{field.name}.src" value={committedSrc} />
   <input type="hidden" name="{field.name}.alt" value={committedAlt} />
   <input type="hidden" name="{field.name}.caption" value={committedCaption} />
+  <input type="hidden" name="{field.name}.decorative" value={committedDecorative ? 'true' : ''} />
 </div>
 
 <!-- The edit dialog: a native modal (focus trap and Escape for free). It sits at the end of the

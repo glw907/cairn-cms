@@ -11,7 +11,45 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-17, latest): `0.57.0` RELEASED; both sites cut over on held branches; execute Pass A (media polish + the cutover DX debt)
+## Immediate next action (2026-06-17, latest): Pass A (media polish + cutover DX) LANDED on `feat/media-polish` as `0.57.1`; merge + release HELD for Geoff; Pass B is next (mockup-first)
+
+**Pass A LANDED on `feat/media-polish`** (a fresh worktree off `main` at `c87ee9f`), `0.57.1`, six
+tasks test-first, the code-simplifier pass, a two-reviewer gate, and the docs arm. **Held for Geoff:
+the merge to `main`, the `0.57.1` release, and the push.** It cleared the 3c review carry-forwards (the
+`/admin/media` action feedback strip with a distinct `flashError` slot; the slide-over Escape edge,
+which now yields to the search box), the 3b decorative-hero alt persistence (an additive
+`ImageValue.decorative` round-tripped through form/validate/read-back so a decorative hero stops reading
+as needs-alt on reload; the body-image case stays needs-alt by design), the reserved-`figure` throw
+(now names the colliding component), the six cutover doc findings (two HIGH: the public media resolver
+wiring moved into the required media steps, and the figure-collision raised to a prominent breaking
+callout; plus the `wrangler.toml` dialect, the `/media` import path, the empty-`media.json` bootstrap,
+the `.site-main` re-scope, a new `docs/reference/authoring-syntax.md`, a "Writing an admin fetch action"
+note, and a tests-path note), and the ROADMAP refresh (the shipped `0.56.0` pass and the shipped
+gallery retired; the post-media Pass A/B/C-then-scaffolder series recorded).
+
+Gate green at the tip, run first-hand from the worktree: `npm run check` 994 files 0/0; `npm test` 190
+files / 2055 tests exit 0 (no teardown flake); the `version`, `docs`, `reference`, `reference:signatures`,
+`package`, `readiness`, and `prose` gates all exit 0; `prose-guard` clean on every changed doc (advisory
+tells only, all pre-existing body). Two reviewers (svelte, daisyui-a11y) converged on the success
+live-region pattern; no code change followed, deliberately, since the implementer matched the office
+flash grammar the plan mandated (`ConceptList`'s `sr-only`-polite-plus-visible-alert, the codebase's
+announce-on-mutation pattern) and the residual repeated-flash edge maps to an existing ROADMAP item.
+Post-mortem with the carry-forwards in the plan
+(`docs/superpowers/plans/2026-06-17-cairn-media-polish-and-dx.md`). No live admin smoke owed (covered by
+the component and unit suites), matching the plan.
+
+**Next actions, in order (Geoff's calls):**
+1. **Merge `feat/media-polish` to `main`** (held). STATUS.md and the ROADMAP refresh ride the merge.
+2. **Cut the `0.57.1` release** (`gh release create v0.57.1 --target main`, after the push): the body
+   is the `0.57.1` changelog window. This fires the OIDC trusted-publishing workflow. No `Consumers
+   must:` line is owed (the `decorative` key is additive; the rest is admin or build-time).
+3. **Pass B, replace-in-place + alt propagation**, the next media pass: upload-new plus a `main`-only
+   repoint with a branch-delta report, and propagating an alt fix across every placement. High blast
+   (cross-branch rewrites), mockup-first (the Replace control). Then Pass C (bulk + orphan collection,
+   mockup-first), then the scaffolder. The `runtime.publicMediaResolver` ergonomic is a carry-forward
+   needing a brainstorm before it is planned (see the plan and the ROADMAP).
+
+## Prior next action (2026-06-17): `0.57.0` RELEASED; both sites cut over on held branches; execute Pass A (media polish + the cutover DX debt)
 
 **`0.57.0` is published** (the whole media stack 1 through 3c). `feat/media-3c` merged to `main` and
 pushed; `gh release create v0.57.0` fired the OIDC trusted-publishing workflow; `npm view

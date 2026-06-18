@@ -338,6 +338,88 @@ describe('mediaDeleteAction in-use refusal', () => {
   });
 });
 
+describe('mediaDeleteAction strict-usage gate', () => {
+  it('fails closed with 503 and deletes nothing when a branch read fails during the recheck', async () => {
+    const gh = new GithubDouble({
+      main: {
+        [MEDIA_PATH]: mediaManifest(mediaEntry(HASH_MAIN, 'maybe-used')),
+        [MANIFEST_PATH]: contentManifest([]),
+      },
+      // An open edit branch whose content read will be made to throw (a transient 403/5xx), so the
+      // best-effort index would skip it and call the asset an orphan. Strict mode must refuse instead.
+      'cairn/posts/2026-05-flaky': {
+        'src/content/posts/2026-05-flaky.md': '---\ntitle: Flaky\n---\n\n![](media:maybe-used.' + HASH_MAIN + ')\n',
+      },
+    });
+    gh.install();
+    const timeline: string[] = [];
+    const bucket = fakeBucket(timeline);
+    const routes = createContentRoutes(runtime(), deps);
+    // Wrap fetch (after mediaActionEvent installs its own wrapper) so the flaky branch's content read
+    // rejects. mediaActionEvent stubs fetch, so wrap once more on top.
+    const event = mediaActionEvent({ hash: HASH_MAIN }, bucket, timeline);
+    const wrapped = globalThis.fetch;
+    vi.stubGlobal('fetch', vi.fn((input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.includes('2026-05-flaky')) return Promise.reject(new Error('transient'));
+      return wrapped(input, init);
+    }));
+
+    const result = await routes.mediaDeleteAction(event as never);
+    expect(result).toMatchObject({ status: 503 });
+    const data = (result as { data: { error: string } }).data;
+    expect(data.error).toMatch(/could not verify/i);
+    // Nothing was committed or deleted: the row survives.
+    expect(parseMediaManifest(JSON.parse(gh.read('main', MEDIA_PATH)!))[HASH_MAIN]).toBeDefined();
+    expect(bucket.delete).not.toHaveBeenCalled();
+    expect(timeline).toEqual([]);
+  });
+});
+
+describe('mediaDeleteAction confirm guards', () => {
+  it('never confirms an in-use delete when the stored slug is empty (no empty-default bypass)', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const gh = new GithubDouble({
+      main: {
+        // A pathological row with an empty slug.
+        [MEDIA_PATH]: mediaManifest(mediaEntry(HASH_MAIN, '', { slug: '', displayName: 'blank' })),
+        [MANIFEST_PATH]: contentManifest([HASH_MAIN]),
+      },
+    });
+    gh.install();
+    const timeline: string[] = [];
+    const bucket = fakeBucket(timeline);
+    const routes = createContentRoutes(runtime(), deps);
+    // The empty-default confirmSlug ('') would match an empty row.slug under a naive compare.
+    const result = await routes.mediaDeleteAction(mediaActionEvent({ hash: HASH_MAIN, confirmSlug: '' }, bucket, timeline) as never);
+    expect(result).toMatchObject({ status: 409 });
+    expect(bucket.delete).not.toHaveBeenCalled();
+    expect(timeline).toEqual([]);
+    expect(parseMediaManifest(JSON.parse(gh.read('main', MEDIA_PATH)!))[HASH_MAIN]).toBeDefined();
+  });
+
+  it('throws on a corrupt ext before the commit, so the row is not removed nor the bytes orphaned', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    const gh = new GithubDouble({
+      main: {
+        // A corrupt ext (not 1-5 lowercase alphanumerics): r2Key throws on it.
+        [MEDIA_PATH]: mediaManifest(mediaEntry(HASH_ORPHAN, 'bad-ext', { ext: 'BAD!' })),
+        [MANIFEST_PATH]: contentManifest([]),
+      },
+    });
+    gh.install();
+    const timeline: string[] = [];
+    const bucket = fakeBucket(timeline);
+    const routes = createContentRoutes(runtime(), deps);
+    // The key derivation runs before the commit, so the corrupt ext throws before any write.
+    await expect(routes.mediaDeleteAction(mediaActionEvent({ hash: HASH_ORPHAN }, bucket, timeline) as never)).rejects.toThrow();
+    // The row survives and no object delete ran.
+    expect(parseMediaManifest(JSON.parse(gh.read('main', MEDIA_PATH)!))[HASH_ORPHAN]).toBeDefined();
+    expect(bucket.delete).not.toHaveBeenCalled();
+    expect(timeline).toEqual([]);
+  });
+});
+
 describe('mediaDeleteAction orphan delete', () => {
   it('commits the manifest delete then deletes the R2 object, in that order, and emits media.deleted', async () => {
     const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});

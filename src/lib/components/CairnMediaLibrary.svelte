@@ -24,7 +24,7 @@ It is node-safe by construction: it types assets with MediaLibraryEntry from the
 projection and pulls in no editor module (the editor-boundary test bars a @codemirror leak).
 -->
 <script lang="ts">
-  import { flushSync } from 'svelte';
+  import { flushSync, tick } from 'svelte';
   import type { MediaLibraryEntry } from '../media/library-entry.js';
   import type { MediaLibraryData, ContentFormFailure } from '../sveltekit/content-routes.js';
   import type { UsageEntry } from '../media/usage.js';
@@ -106,6 +106,25 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     { value: 'needs-alt', label: 'Needs alt', count: () => triageCounts.needsAlt },
     { value: 'unused', label: 'Unused', count: () => triageCounts.unused },
   ];
+
+  // The triage radiogroup's roving tabindex and ARIA radio keyboard pattern: the selected radio is
+  // the only tab stop, and Arrow/Home/End move the selection and the focus, mirroring the grid's
+  // roving listbox. A declared radiogroup owes this keyboard model.
+  let segEls = $state<HTMLButtonElement[]>([]);
+  function selectTriage(value: Triage) {
+    triage = value;
+  }
+  function onTriageKeydown(e: KeyboardEvent, i: number) {
+    let next = i;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = (i + 1) % segments.length;
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = (i - 1 + segments.length) % segments.length;
+    else if (e.key === 'Home') next = 0;
+    else if (e.key === 'End') next = segments.length - 1;
+    else return;
+    e.preventDefault();
+    selectTriage(segments[next].value);
+    segEls[next]?.focus();
+  }
 
   function matchesTriage(asset: MediaLibraryEntry): boolean {
     switch (triage) {
@@ -239,9 +258,12 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   const refusalForSelected = $derived(
     form && form.hash && selected && form.hash === selected.hash ? form : null,
   );
-  // A ?/mediaUpdate failure carries only `error` (no `usage`/`hash`); a delete refusal carries
-  // `usage`. The slide-over surfaces the update error and never a delete refusal here.
-  const updateError = $derived(form?.error && !form.usage && !form.hash ? form.error : null);
+  // The slide-over's error alert covers two failures that leave no in-use dialog to re-open: a pure
+  // ?/mediaUpdate failure (only `error`, no `hash`) and a hash-bearing delete refusal that is NOT an
+  // in-use block (a 404 "not committed", with `hash` but no `usage`). An in-use refusal (usage rows)
+  // re-opens the dialog instead, so it is excluded here.
+  const hasUsage = $derived((form?.usage?.length ?? 0) > 0);
+  const updateError = $derived(form?.error && !hasUsage ? form.error : null);
   const breakingRows = $derived.by((): UsageEntry[] => {
     if (refusalForSelected?.usage) return refusalForSelected.usage;
     return selected ? usageEntries(selected.hash) : [];
@@ -257,18 +279,34 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   let confirmSlugInput = $state('');
   const confirmMatches = $derived(selected !== null && confirmSlugInput === selected.slug);
 
-  // A fresh mediaDelete refusal re-opens the dialog on its in-use face with the server's fresh list.
-  // The action redirects on success, so a present refusal is always an in-use block to re-surface.
+  // Forms post full-page (no use:enhance), so on a failure the screen remounts with no selection and
+  // the error would render nowhere. This effect re-surfaces the failure from the `form` prop. An
+  // in-use delete refusal (usage rows) re-opens the dialog on its fresh breaking list; any other
+  // hash-bearing failure (a 404 "not committed", an invalid-slug ?/mediaUpdate) re-selects the asset
+  // and opens the slide-over so its error alert renders. The action redirects on success, so a
+  // present `form` is always a failure to re-surface.
+  //
+  // The dialog is always mounted and its body reads breakingRows/deleteInUse reactively, so set the
+  // state then call showModal() directly. tick() (NOT flushSync, which Svelte's flush_sync_in_effect
+  // guard rejects inside an effect on a newer 5.x) flushes the new `selected` before showModal so the
+  // dialog body renders the fresh asset.
   $effect(() => {
-    if (form && form.hash && form.usage && form.usage.length > 0) {
-      const target = data.assets.find((a) => a.hash === form!.hash);
-      if (target && deleteDialog && !deleteDialog.open) {
+    if (!form || !form.hash) return;
+    const target = data.assets.find((a) => a.hash === form!.hash);
+    if (!target) return;
+    if (form.usage && form.usage.length > 0) {
+      // The in-use face, re-opened on the server's fresh breaking list.
+      if (deleteDialog && !deleteDialog.open) {
         deleteOnly = true;
         selected = target;
         confirmSlugInput = '';
-        flushSync();
-        deleteDialog.showModal();
+        void tick().then(() => deleteDialog?.showModal());
       }
+    } else if (!selected) {
+      // A hash-bearing failure that is not an in-use block: re-select the asset and open the
+      // slide-over so updateError renders. Guarded on `!selected` so it runs once, not on every edit.
+      deleteOnly = false;
+      selected = target;
     }
   });
 
@@ -441,11 +479,14 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     <div role="radiogroup" aria-label="Filter assets" class="bg-base-100 inline-flex items-center overflow-hidden rounded-lg border border-[var(--cairn-card-border)]">
       {#each segments as seg, i (seg.value)}
         <button
+          bind:this={segEls[i]}
           type="button"
           role="radio"
           aria-checked={triage === seg.value}
+          tabindex={triage === seg.value ? 0 : -1}
           class="{segButtonClass(triage === seg.value)} {i > 0 ? 'border-l border-[var(--cairn-card-border)]' : ''}"
-          onclick={() => (triage = seg.value)}
+          onclick={() => selectTriage(seg.value)}
+          onkeydown={(e) => onTriageKeydown(e, i)}
         >
           {#if triage === seg.value}<CheckIcon class="h-3 w-3" aria-hidden="true" />{/if}
           {seg.label}<span class="tabular-nums">{seg.count()}</span>
@@ -690,7 +731,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
              Alt is debt: Save is never gated on it, and a left-blank or a decorative both submit an
              empty alt. The submitted value rides a hidden input so the disabled-or-absent textarea
              never strands the field. -->
-        <fieldset class="flex flex-col gap-2" role="radiogroup" aria-label="Default alt text" aria-describedby="cairn-ml-alt-note">
+        <fieldset class="flex flex-col gap-2" aria-describedby="cairn-ml-alt-note">
           <legend class="text-[0.8125rem] font-medium">Default alt text</legend>
           <p id="cairn-ml-alt-note" class="text-xs text-[var(--color-muted)]">
             The default for the next time this image is placed. It does not change the alt on pages that already use it. You can save without it and add it later.
@@ -809,6 +850,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   role="alertdialog"
   aria-labelledby="cairn-ml-delete-title"
   aria-describedby="cairn-ml-delete-desc"
+  oncancel={closeDeleteDialog}
 >
   {#if selected}
     {@const asset = selected}
@@ -869,7 +911,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
             <input type="hidden" name="confirmSlug" value={confirmSlugInput} />
             <div class="flex flex-col gap-1.5">
               <label class="text-[0.875rem]" for="cairn-ml-confirm">Type <code class="rounded bg-[var(--cairn-code-chip)] px-1.5 py-0.5 font-[family-name:var(--font-editor)] text-[0.8125rem] font-semibold">{asset.slug}</code> to delete it anyway.</label>
-              <input id="cairn-ml-confirm" class="input input-sm font-[family-name:var(--font-editor)]" autocomplete="off" placeholder="Type the asset slug" bind:value={confirmSlugInput} />
+              <input id="cairn-ml-confirm" class="input input-sm border-[var(--cairn-error-border)] font-[family-name:var(--font-editor)]" autocomplete="off" placeholder="Type the asset slug" bind:value={confirmSlugInput} />
             </div>
           {/if}
           <div class="flex justify-end gap-2.5 border-t border-[var(--cairn-card-border)] pt-3.5">

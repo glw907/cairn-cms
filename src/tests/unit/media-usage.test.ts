@@ -189,6 +189,74 @@ describe('buildUsageIndex branch arm', () => {
     expect(rows?.map((r) => r.origin.kind).sort()).toEqual(['branch', 'published']);
   });
 
+  it('reuses a passed-in branch list without listing branches a second time', async () => {
+    const gh = new GithubDouble({
+      main: {},
+      'cairn/posts/2026-05-draft': {
+        'src/content/posts/2026-05-draft.md': entryMarkdown({
+          title: 'A draft',
+          body: `see ![](media:photo.${BRANCH_HASH})`,
+        }),
+      },
+    });
+    gh.install();
+
+    const index = await buildUsageIndex(repo, token, [postsConcept()], manifest([]), {
+      branches: ['cairn/posts/2026-05-draft'],
+    });
+
+    // The passed-in branch was read, and no matching-refs listing was made.
+    expect(index.get(BRANCH_HASH)).toHaveLength(1);
+    expect(gh.calls.some((c) => c.url.includes('matching-refs'))).toBe(false);
+  });
+
+  it('degrades one failed branch read in the default best-effort mode', async () => {
+    const gh = new GithubDouble({
+      main: {},
+      'cairn/posts/2026-05-ok': {
+        'src/content/posts/2026-05-ok.md': entryMarkdown({ title: 'OK', body: `![](media:a.${BRANCH_HASH})` }),
+      },
+    });
+    gh.install();
+    // The contents read for the failing branch throws (a transient network error), not a 404.
+    const realFetch = globalThis.fetch;
+    vi.stubGlobal('fetch', vi.fn((input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.includes('2026-05-bad')) return Promise.reject(new Error('boom'));
+      return realFetch(input, init);
+    }));
+
+    const index = await buildUsageIndex(repo, token, [postsConcept()], manifest([]), {
+      branches: ['cairn/posts/2026-05-ok', 'cairn/posts/2026-05-bad'],
+    });
+
+    // The good branch still resolved; the failed one was skipped, not thrown.
+    expect(index.get(BRANCH_HASH)).toHaveLength(1);
+  });
+
+  it('rethrows a branch read failure in strict mode so a delete gate can fail closed', async () => {
+    const gh = new GithubDouble({
+      main: {},
+      'cairn/posts/2026-05-ok': {
+        'src/content/posts/2026-05-ok.md': entryMarkdown({ title: 'OK', body: `![](media:a.${BRANCH_HASH})` }),
+      },
+    });
+    gh.install();
+    const realFetch = globalThis.fetch;
+    vi.stubGlobal('fetch', vi.fn((input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.includes('2026-05-bad')) return Promise.reject(new Error('boom'));
+      return realFetch(input, init);
+    }));
+
+    await expect(
+      buildUsageIndex(repo, token, [postsConcept()], manifest([]), {
+        branches: ['cairn/posts/2026-05-ok', 'cairn/posts/2026-05-bad'],
+        strict: true,
+      }),
+    ).rejects.toThrow();
+  });
+
   it('ignores a stray or unconfigured cairn/* ref without a row or a throw', async () => {
     const gh = new GithubDouble({
       main: {},

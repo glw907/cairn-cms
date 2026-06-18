@@ -161,6 +161,33 @@ describe('CairnMediaLibrary triage radiogroup', () => {
     expect(radios.find((r) => /all/i.test(r.textContent ?? ''))!.getAttribute('aria-checked')).toBe('true');
   });
 
+  it('implements the ARIA radio keyboard pattern: one tab stop, arrows move selection and focus', async () => {
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const radios = () => [...screen.container.querySelectorAll<HTMLElement>('[role="radio"]')];
+    // One tab stop: only the checked radio (All, by default) is tabbable.
+    expect(radios().filter((r) => r.getAttribute('tabindex') === '0').length).toBe(1);
+    expect(radios()[0].getAttribute('aria-checked')).toBe('true');
+    expect(radios()[0].getAttribute('tabindex')).toBe('0');
+
+    radios()[0].focus();
+    radios()[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    // ArrowRight moved selection AND focus to the second segment (Needs alt).
+    await expect.poll(() => radios()[1].getAttribute('aria-checked')).toBe('true');
+    expect(document.activeElement).toBe(radios()[1]);
+    expect(radios()[1].getAttribute('tabindex')).toBe('0');
+    expect(radios()[0].getAttribute('tabindex')).toBe('-1');
+    // The grid narrowed to the Needs-alt set, so the keyboard move actually drove the filter.
+    await expect.poll(() => screen.container.querySelectorAll('[role="option"]').length).toBe(2);
+
+    // End jumps to the last segment (Unused), Home back to the first.
+    radios()[1].dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
+    await expect.poll(() => document.activeElement).toBe(radios()[2]);
+    expect(radios()[2].getAttribute('aria-checked')).toBe('true');
+    radios()[2].dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }));
+    await expect.poll(() => document.activeElement).toBe(radios()[0]);
+    expect(radios()[0].getAttribute('aria-checked')).toBe('true');
+  });
+
   it('filters to Needs alt and to Unused', async () => {
     const screen = render(CairnMediaLibrary, { data: fixture() } as never);
     const radios = () => [...screen.container.querySelectorAll<HTMLElement>('[role="radio"]')];
@@ -317,9 +344,14 @@ describe('CairnMediaLibrary detail slide-over', () => {
     expect((form.querySelector('input[name="slug"]') as HTMLInputElement).value).toBe('first-light');
     // The alt field rides a hidden input; DESCRIBED_USED has a described alt, so it seeds describe.
     expect((form.querySelector('input[name="alt"]') as HTMLInputElement).value).toBe('A pair of blue running shoes');
-    // The alt editor is a real radiogroup labeled as the asset default for new placements.
-    const altGroup = form.querySelector('[role="radiogroup"]')!;
-    expect(altGroup.getAttribute('aria-label')).toMatch(/alt/i);
+    // The alt editor groups two NATIVE radios under a fieldset (native radios form their own group
+    // with arrow-key nav, so no role="radiogroup" is added). The legend names it; the radios share a
+    // name so they are one group.
+    const altFieldset = form.querySelector('fieldset')!;
+    expect(altFieldset.querySelector('legend')?.textContent ?? '').toMatch(/alt/i);
+    const altRadios = [...altFieldset.querySelectorAll('input[type="radio"]')] as HTMLInputElement[];
+    expect(altRadios.length).toBe(2);
+    expect(new Set(altRadios.map((r) => r.name)).size).toBe(1);
     expect(form.textContent ?? '').toMatch(/default for the next time/i);
   });
 
@@ -328,6 +360,22 @@ describe('CairnMediaLibrary detail slide-over', () => {
     const screen = render(CairnMediaLibrary, { data: fixture(), form: failed } as never);
     const panel = await openSlideOver(screen, /first-light/);
     expect(panel.querySelector('[role="alert"]')?.textContent ?? '').toContain('Enter a valid slug');
+  });
+
+  it('auto-re-opens the slide-over and shows the error on a hash-bearing non-usage failure (full-page post)', async () => {
+    // The form posts full-page, so a fail() remounts with no selection. A hash-bearing failure that
+    // is NOT an in-use block (a 404 "not committed", or an invalid-slug update carrying the hash)
+    // must re-select the asset and open the slide-over so the error renders.
+    const failed = { error: 'Enter a valid slug: lowercase letters, numbers, and hyphens.', hash: DESCRIBED_USED.hash };
+    const screen = render(CairnMediaLibrary, { data: fixture(), form: failed } as never);
+    // No manual open: the effect re-selects from the hash and opens the region.
+    await expect.poll(() => screen.container.querySelector('[role="region"]')).not.toBeNull();
+    const panel = screen.container.querySelector('[role="region"]') as HTMLElement;
+    expect(panel.getAttribute('aria-label') ?? '').toContain('first-light');
+    expect(panel.querySelector('[role="alert"]')?.textContent ?? '').toContain('Enter a valid slug');
+    // It opened the slide-over, not the delete dialog.
+    const dialog = screen.container.querySelector('dialog[role="alertdialog"]') as HTMLDialogElement;
+    expect(dialog.open).toBe(false);
   });
 });
 

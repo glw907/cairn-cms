@@ -50,6 +50,17 @@ export interface UsageEntry {
  *  found" (see the raw-HTML caveat above), never a proven orphan. */
 export type UsageIndex = Map<string, UsageEntry[]>;
 
+/** Build options. `branches` lets a caller that already listed the open cairn/* branches pass them
+ *  in so the index does not list them a second time (the load path lists once for the media-union).
+ *  `strict` flips the per-branch read from degrade-and-skip to fail-closed: a delete gate must not
+ *  treat a transient branch-read failure as an absent reference, so it rethrows instead. */
+export interface BuildUsageOptions {
+  /** The open cairn/* branch names, already listed. When present the index skips its own listing. */
+  branches?: string[];
+  /** When true a branch read that throws rejects the whole build, so the caller can fail closed. */
+  strict?: boolean;
+}
+
 /** Append a row under its hash, creating the bucket on first use. */
 function push(index: UsageIndex, hash: string, entry: UsageEntry): void {
   const rows = index.get(hash);
@@ -59,15 +70,21 @@ function push(index: UsageIndex, hash: string, entry: UsageEntry): void {
 
 /**
  * Build the hash-keyed usage index over main (from the manifest's per-entry mediaRefs) plus every
- * open cairn/* branch (parsed from its edited markdown). A single branch read that throws degrades
- * that one branch and is skipped, the way the admin loaders degrade a failed read, rather than
- * sinking the whole screen.
+ * open cairn/* branch (parsed from its edited markdown).
+ *
+ * By default a single branch read that throws degrades that one branch and is skipped, the way the
+ * admin loaders degrade a failed read, rather than sinking the whole screen. That tolerance is right
+ * for the Library DISPLAY, but wrong for the delete gate: a transient branch-read failure would make
+ * a still-referenced asset look orphaned. Pass `strict: true` (the delete path) to rethrow a branch
+ * failure so the caller fails closed. Pass `branches` to reuse a branch list the caller already has
+ * (the load path lists once for the media-union) rather than listing them a second time.
  */
 export async function buildUsageIndex(
   repo: RepoRef,
   token: string,
   concepts: ConceptDescriptor[],
   manifest: Manifest,
+  opts: BuildUsageOptions = {},
 ): Promise<UsageIndex> {
   const index: UsageIndex = new Map();
 
@@ -85,37 +102,50 @@ export async function buildUsageIndex(
     }
   }
 
-  // The branch arm: list the open cairn/* branches and read each edited entry's one file. The path
-  // is derivable from the branch name, so no tree-listing is needed.
-  const names = await listBranches(repo, PENDING_PREFIX, token);
-  for (const name of names) {
-    // Resolve the branch name to a configured entry with the same guard the branch tooling uses: a
-    // malformed name, an id that fails the slug rule (entry paths are built from it, so this is the
-    // path confinement), or a concept this site does not configure is skipped, no read attempted.
-    const ref = parsePendingBranch(name);
-    if (!ref || !isValidId(ref.id)) continue;
-    const concept = findConcept(concepts, ref.concept);
-    if (!concept) continue;
+  // The branch arm: read each open cairn/* branch's one edited file. The path is derivable from the
+  // branch name, so no tree-listing is needed. The branch list is reused when the caller passes it.
+  const names = opts.branches ?? (await listBranches(repo, PENDING_PREFIX, token));
+  // Read the branches in parallel rather than one at a time, so the latency floor is one round trip
+  // instead of N. workerd self-throttles to 6 simultaneous outbound connections, so this batch and
+  // the load path's media-union batch each stay under the limit; do NOT merge the two into one
+  // wider Promise.all, since the combined fan-out would queue behind that throttle.
+  const perBranch = await Promise.all(
+    names.map(async (name): Promise<{ hash: string; entry: UsageEntry }[]> => {
+      // Resolve the branch name to a configured entry with the same guard the branch tooling uses: a
+      // malformed name, an id that fails the slug rule (entry paths are built from it, so this is the
+      // path confinement), or a concept this site does not configure is skipped, no read attempted.
+      const ref = parsePendingBranch(name);
+      if (!ref || !isValidId(ref.id)) return [];
+      const concept = findConcept(concepts, ref.concept);
+      if (!concept) return [];
 
-    const path = `${concept.dir}/${filenameFromId(ref.id)}`;
-    try {
-      const raw = await readRaw({ ...repo, branch: name }, path, token);
-      if (raw === null) continue; // The file is absent on the branch: nothing to extract.
-      const { frontmatter, body } = parseMarkdown(raw);
-      const fmTitle = frontmatter.title;
-      const title = typeof fmTitle === 'string' && fmTitle.trim() ? fmTitle : ref.id;
-      for (const hash of extractMediaRefs(frontmatter, body, concept.fields)) {
-        push(index, hash, {
-          concept: concept.id,
-          id: ref.id,
-          title,
-          origin: { kind: 'branch', branch: name },
-        });
+      const path = `${concept.dir}/${filenameFromId(ref.id)}`;
+      try {
+        const raw = await readRaw({ ...repo, branch: name }, path, token);
+        if (raw === null) return []; // The file is absent on the branch: nothing to extract.
+        const { frontmatter, body } = parseMarkdown(raw);
+        const fmTitle = frontmatter.title;
+        const title = typeof fmTitle === 'string' && fmTitle.trim() ? fmTitle : ref.id;
+        const rows: { hash: string; entry: UsageEntry }[] = [];
+        for (const hash of extractMediaRefs(frontmatter, body, concept.fields)) {
+          rows.push({
+            hash,
+            entry: { concept: concept.id, id: ref.id, title, origin: { kind: 'branch', branch: name } },
+          });
+        }
+        return rows;
+      } catch (err) {
+        // In strict mode a branch failure fails the whole build so the delete gate can fail closed;
+        // otherwise degrade this one branch rather than sinking the screen.
+        if (opts.strict) throw err;
+        return [];
       }
-    } catch {
-      // Degrade this one branch rather than failing the whole index.
-      continue;
-    }
+    }),
+  );
+
+  // Fold the per-branch rows back in, preserving the branch order so the index reads stably.
+  for (const rows of perBranch) {
+    for (const { hash, entry } of rows) push(index, hash, entry);
   }
 
   return index;

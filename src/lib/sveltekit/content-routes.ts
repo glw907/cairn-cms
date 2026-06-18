@@ -458,13 +458,17 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     // Union the media manifest by hash: main's rows first, then any branch hash not already present.
     // Identical bytes share one row, so a hash on both branches prefers main's row. A failed or
     // absent branch read degrades to no rows for that branch (the tolerant parse yields {} on null).
+    // The branch list is taken ONCE here and handed to buildUsageIndex below, so the load path does
+    // not enumerate the open branches twice (the per-page subrequest budget is tight at ~25+ branches).
     const union = new Map<string, MediaEntry>();
+    let branchNames: string[] = [];
     try {
       const mediaRaw = await readRaw(runtime.backend, runtime.mediaManifestPath, token);
       for (const [hash, e] of Object.entries(parseMediaManifest(parseMediaJson(mediaRaw)))) {
         union.set(hash, e);
       }
       const names = await listBranches(runtime.backend, PENDING_PREFIX, token);
+      branchNames = names;
       const branchManifests = await Promise.all(
         names.map((name) =>
           readRaw({ ...runtime.backend, branch: name }, runtime.mediaManifestPath, token)
@@ -490,7 +494,9 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     try {
       const manifestRaw = await readRaw(runtime.backend, runtime.manifestPath, token);
       const manifest = manifestRaw === null ? emptyManifest() : parseManifest(manifestRaw);
-      const index = await buildUsageIndex(runtime.backend, token, runtime.concepts, manifest);
+      // Reuse the branch list from the media-union above; the Library DISPLAY keeps the default
+      // best-effort behavior (a failed branch read degrades that one branch, not the screen).
+      const index = await buildUsageIndex(runtime.backend, token, runtime.concepts, manifest, { branches: branchNames });
       for (const [hash, entries] of index) {
         usage[hash] = { count: distinctEntryCount(entries), entries };
       }
@@ -1283,7 +1289,17 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
    *  row removal FIRST, then delete the R2 object, so a failure after the commit leaves bytes with no
    *  row (a benign orphan) rather than a row pointing at deleted bytes (a broken delivery). Scope:
    *  3c deletes assets committed on the default branch; a branch-only upload is removed by discarding
-   *  its draft, not here. */
+   *  its draft, not here.
+   *
+   *  The published-usage side of the gate trusts the content manifest's mediaRefs (kept fresh by
+   *  save/publish via manifestEntryFromFile), the same manifest-trust model the entry-delete gate
+   *  uses; a raw git edit that adds a media reference without a save/publish or a manifest regenerate
+   *  is not seen, matching the documented "regenerate after a raw edit" contract. The recheck reads
+   *  in STRICT mode, so a transient branch-read failure fails the delete closed rather than mistaking
+   *  a referenced asset for an orphan. There is an inherent stale-read window between the recheck and
+   *  the commit (no sha-guard ties them); it is bounded because the resolver and the route key on the
+   *  hash, so a reference added in that window still resolves to bytes that may be gone, the same
+   *  delete-races-an-edit window every safe delete carries. */
   async function mediaDeleteAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
     const editor = requireSession(event);
     const token = await mintToken(event.platform?.env ?? {});
@@ -1306,15 +1322,31 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     }
 
     // The authoritative gate: a fresh usage read, never a client count. The index spans main's
-    // content manifest and every open cairn/* branch.
-    const index = await buildUsageIndex(runtime.backend, token, runtime.concepts, await readManifest(token));
+    // content manifest and every open cairn/* branch. STRICT mode rethrows a branch-read failure
+    // (rather than the display path's degrade-and-skip), so a transient branch read failing does not
+    // make a still-referenced asset look orphaned and skip the typed-slug confirm.
+    let index: Awaited<ReturnType<typeof buildUsageIndex>>;
+    try {
+      index = await buildUsageIndex(runtime.backend, token, runtime.concepts, await readManifest(token), { strict: true });
+    } catch {
+      // Fail closed: we could not verify every place the asset is used, so refuse rather than risk
+      // deleting bytes a branch still references.
+      return fail(503, {
+        error: 'Could not verify where this asset is used. Try again.',
+        hash,
+        usage: [],
+        foundIn: 0,
+      } satisfies MediaDeleteRefusal);
+    }
     const rows = index.get(hash) ?? [];
     const foundIn = distinctEntryCount(rows);
 
     if (rows.length > 0) {
       // In use: refuse unless the editor typed the slug to force it (the in-use face's confirmation).
+      // An empty stored slug must never be satisfiable by the empty default, so a blank row.slug is
+      // treated as never-confirmed: the typed confirm cannot be bypassed.
       const confirmSlug = String(form.get('confirmSlug') ?? '');
-      if (confirmSlug !== row.slug) {
+      if (row.slug === '' || confirmSlug !== row.slug) {
         log.warn('media.delete_blocked', { editor: editor.email, hash, foundIn });
         // Group published-first, then branch entries by branch name, so the list reads stably.
         const usage = [...rows].sort((a, b) => originRank(a) - originRank(b) || branchKey(a).localeCompare(branchKey(b)));
@@ -1338,6 +1370,9 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       return fail(503, { error: 'The media bucket is not bound.', hash, usage: [], foundIn } satisfies MediaDeleteRefusal);
     }
     const store = r2Store(rawBucket as R2Bucket);
+    // Derive the R2 key BEFORE the commit. A corrupt ext throws here, so a bad key refuses before
+    // any write rather than after the row is already removed (which would orphan the bytes).
+    const objectKey = r2Key(hash, row.ext);
 
     // Commit the manifest row removal FIRST. The order is load-bearing (see the docstring).
     const commitFields = { concept: 'media', id: hash, editor: editor.email };
@@ -1354,7 +1389,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
         'The media manifest changed since you opened it. Reload and try again.');
     }
     // THEN delete the object. An absent object is a no-op (the R2 contract), so a dead row clears.
-    await store.delete(r2Key(hash, row.ext));
+    await store.delete(objectKey);
     log.info('media.deleted', { editor: editor.email, hash });
     throw redirect(303, '/admin/media?deleted=1');
   }

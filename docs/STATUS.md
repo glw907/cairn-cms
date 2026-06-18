@@ -47,15 +47,20 @@ Post-mortem with the carry-forwards in the plan
 (`docs/superpowers/plans/2026-06-17-cairn-media-3c-library.md`).
 
 **Next actions, in order:**
-1. **Merge `feat/media-3c` to `main`** (the whole media stack 1, 2a, 2b, 3a, 3b, 3c is then on `main`,
-   unreleased at `0.57.0`). Geoff's call on the merge and the push.
-2. **Cut the single bundled `0.57.0` release** (`gh release create v0.57.0 --target main`): the release
-   body is the changelog window since the last published tag, carrying the one `Consumers must:` line
-   (bind `MEDIA_BUCKET`, mount the `/media` route, declare the `assets` block) plus the recommended
-   content-manifest regenerate. This fires the OIDC trusted-publishing workflow. Geoff's call.
+1. **Merge `feat/media-3c` to `main`** DONE 2026-06-17 (fast-forward, local; the whole media stack 1,
+   2a, 2b, 3a, 3b, 3c is on `main`, unreleased at `0.57.0`). The push is held for Geoff.
+2. **Cut the single bundled `0.57.0` release** (`gh release create v0.57.0 --target main`, after the
+   push): the release body is the changelog window since the last published tag, carrying the one
+   `Consumers must:` line (bind `MEDIA_BUCKET`, mount the `/media` route, declare the `assets` block)
+   plus the recommended content-manifest regenerate. This fires the OIDC trusted-publishing workflow.
 3. **Per-site cutover** (rides the published package): bind the R2 bucket, mount the route, bump the
    range, run the live guard + upload + delivery + Library smoke, copy the `.cairn-place-*` CSS, adopt
    the hero field, and regenerate the content manifest so the Library's `main` where-used is accurate.
+4. **Then execute Pass A** (media polish, the decorative-hero alt fix, and DX docs), planned at
+   `docs/superpowers/plans/2026-06-17-cairn-media-polish-and-dx.md`, a `0.57.1` patch. It clears the
+   3c review carry-forwards (the `/admin/media` action feedback strip, the slide-over Escape edge), the
+   3b decorative-hero alt persistence, three DX doc gaps, and the ROADMAP refresh. Mostly independent
+   tasks, a good Workflow candidate. The cutover comes first so live use filters the priorities.
 
 ## Prior next action (2026-06-17): Phase 3b the hero field LANDED on `feat/media-3b`; the release stays deferred until the whole image work is complete; Phase 3c is the next build
 

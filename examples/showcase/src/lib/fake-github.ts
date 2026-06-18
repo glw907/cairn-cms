@@ -92,6 +92,122 @@ export function committedFile(branch: string, path: string): string | null {
   return branches.get(branch)?.get(path) ?? null;
 }
 
+// --- the Media Library seed ---
+//
+// The Media Library E2E (media-library.spec.ts) drives the real /admin/media screen, which reads
+// `media.json` and the content manifest `index.json` from main and unions in every open cairn/*
+// branch. The bare seed tree above carries only the post markdown, so the Library would show zero
+// assets. seedMediaLibrary writes a realistic set into the in-memory repo: three assets on main
+// (a used+described, an orphan+described, and a needs-alt one), a content manifest whose seed-post
+// entry references the used asset (so its where-used reads "published"), and one open branch
+// carrying a fourth, not-yet-published asset its edited entry references (so the union shows it and
+// its where-used names the branch). The R2 bytes for these hashes are seeded separately in
+// hooks.server.ts so the thumbnails resolve and the orphan delete removes real bytes.
+//
+// The seed is consistent with the existing specs: the content manifest lists the seed post
+// (2026-06-hello) so listLoad keeps showing it, and the branch is a distinct id that never collides
+// with the post the other specs edit.
+
+/** The seed post the other specs edit, listed in the seeded content manifest so listLoad keeps it. */
+const SEED_POST_ID = '2026-06-hello';
+
+/** The branch-only asset's open edit branch and the entry that references it. A distinct id so it
+ *  never collides with the seed post or the per-run posts the other specs create. */
+const SEED_BRANCH = 'cairn/posts/2026-05-draft-gallery';
+const SEED_BRANCH_ENTRY = 'src/content/posts/2026-05-draft-gallery.md';
+
+/** The four seeded asset hashes, slugs, and alts, named so the spec can assert each role. */
+export const SEED_MEDIA = {
+  used: { hash: 'aa00bb11cc22dd33', slug: 'mountain-pass', alt: 'A mountain pass at sunrise' },
+  orphan: { hash: '1111222233334444', slug: 'sunset-orphan', alt: 'A sunset over still water' },
+  needsAlt: { hash: '5555666677778888', slug: 'untagged-shot', alt: '' },
+  branchOnly: { hash: '9999aaaabbbbcccc', slug: 'draft-banner', alt: 'A draft banner image' },
+} as const;
+
+/** The R2 object keys (media/<aa>/<hash>.<ext>) the four assets resolve through, so hooks.server.ts
+ *  seeds the matching bytes. Kept here so the key derivation lives next to the manifest seed. */
+export const SEED_MEDIA_KEYS = Object.values(SEED_MEDIA).map(
+  (m) => `media/${m.hash.slice(0, 2)}/${m.hash}.png`,
+);
+
+function mediaRow(slug: string, hash: string, alt: string): Record<string, unknown> {
+  return {
+    hash,
+    sha256: `${hash}${'0'.repeat(64 - hash.length)}`,
+    slug,
+    displayName: slug.replace(/-/g, ' ').replace(/^\w/, (c) => c.toUpperCase()),
+    originalFilename: `${slug}.png`,
+    alt,
+    ext: 'png',
+    contentType: 'image/png',
+    bytes: 20480,
+    width: 1200,
+    height: 800,
+    createdAt: '2026-05-01T00:00:00.000Z',
+  };
+}
+
+let mediaSeeded = false;
+
+/** Seed the Media Library fixtures into the in-memory repo. Idempotent: a reused dev server (the
+ *  Playwright reuseExistingServer path) calls this once per process. */
+export function seedMediaLibrary(): void {
+  if (mediaSeeded) return;
+  mediaSeeded = true;
+
+  const main = branches.get('main');
+  if (!main) return;
+
+  // The three main-side asset rows, keyed by hash (the MediaManifest shape).
+  const mainMedia: Record<string, unknown> = {
+    [SEED_MEDIA.used.hash]: mediaRow(SEED_MEDIA.used.slug, SEED_MEDIA.used.hash, SEED_MEDIA.used.alt),
+    [SEED_MEDIA.orphan.hash]: mediaRow(SEED_MEDIA.orphan.slug, SEED_MEDIA.orphan.hash, SEED_MEDIA.orphan.alt),
+    [SEED_MEDIA.needsAlt.hash]: mediaRow(SEED_MEDIA.needsAlt.slug, SEED_MEDIA.needsAlt.hash, SEED_MEDIA.needsAlt.alt),
+  };
+  main.set('src/content/.cairn/media.json', `${JSON.stringify(mainMedia, null, 2)}\n`);
+
+  // The content manifest on main: the seed post entry, carrying a non-empty summary (the office
+  // triage spec asserts it) and a mediaRefs pointing at the used asset (so its where-used reads
+  // published). The Manifest shape from src/lib/content/manifest.ts.
+  const manifest = {
+    version: 1,
+    entries: [
+      {
+        id: SEED_POST_ID,
+        concept: 'posts',
+        title: 'Hello',
+        date: '2026-06-01',
+        permalink: '/posts/hello',
+        summary: 'The original body.',
+        draft: false,
+        links: [],
+        mediaRefs: [SEED_MEDIA.used.hash],
+      },
+    ],
+  };
+  main.set('src/content/.cairn/index.json', `${JSON.stringify(manifest, null, 2)}\n`);
+  heads.set('main', nextSha());
+
+  // The open edit branch: a snapshot of main plus its own media.json (carrying the fourth asset) and
+  // its edited entry markdown (which references that asset in its body). The usage builder reads the
+  // entry markdown off the branch; the loader unions the branch media.json by hash.
+  const branchTree: Tree = new Map(main);
+  const branchMedia: Record<string, unknown> = {
+    [SEED_MEDIA.branchOnly.hash]: mediaRow(
+      SEED_MEDIA.branchOnly.slug,
+      SEED_MEDIA.branchOnly.hash,
+      SEED_MEDIA.branchOnly.alt,
+    ),
+  };
+  branchTree.set('src/content/.cairn/media.json', `${JSON.stringify(branchMedia, null, 2)}\n`);
+  branchTree.set(
+    SEED_BRANCH_ENTRY,
+    `---\ntitle: Draft gallery\ndate: 2026-05-15\n---\nA work in progress: ![${SEED_MEDIA.branchOnly.alt}](media:${SEED_MEDIA.branchOnly.slug}.${SEED_MEDIA.branchOnly.hash})\n`,
+  );
+  branches.set(SEED_BRANCH, branchTree);
+  heads.set(SEED_BRANCH, nextSha());
+}
+
 export function installFakeGitHub(): void {
   if (installed) return;
   installed = true;

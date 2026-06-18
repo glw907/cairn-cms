@@ -47,6 +47,10 @@ export interface FakeR2Bucket {
   get(key: string, opts?: GetOptions): Promise<FakeR2Object | null>;
   list(opts?: { prefix?: string }): Promise<{ objects: { key: string }[]; truncated: false; cursor: undefined }>;
   delete(key: string): Promise<void>;
+  /** Dev-only: seed an object's bytes under an R2 object key, so the Media Library lists a committed
+   *  asset whose thumbnail resolves and whose orphan delete removes real bytes. Not part of the real
+   *  R2 surface; the showcase calls it once at startup from hooks.server.ts. */
+  seedObject(key: string): void;
 }
 
 /** Stable, content-shaped etag: a quoted hash of the key and size, enough for an If-None-Match round
@@ -71,8 +75,20 @@ function toBytes(input: ArrayBuffer | Uint8Array): Uint8Array {
   return input instanceof Uint8Array ? input : new Uint8Array(input);
 }
 
+/** A tiny but real PNG (the 8-byte signature plus four zero bytes), enough for the delivery route to
+ *  stream a 200 with image bytes. The Media Library E2E seeds one per asset hash so a thumbnail
+ *  resolves and an orphan delete removes real bytes. */
+const SEED_PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
+
 export function createFakeR2(): FakeR2Bucket {
   const store = new Map<string, StoredObject>();
+
+  /** Seed one object's bytes under an R2 object key, so the Media Library lists a committed asset
+   *  whose thumbnail resolves through the /media route. The bytes are a tiny real PNG; the content
+   *  type matches the seeded media.json row. */
+  function seed(key: string): void {
+    store.set(key, { bytes: SEED_PNG, contentType: 'image/png' });
+  }
 
   /** Build the returned object for a stored entry, optionally with its body and a served range. */
   function objectFor(key: string, obj: StoredObject, withBody: boolean, range?: { offset?: number; length?: number }): FakeR2Object {
@@ -151,6 +167,10 @@ export function createFakeR2(): FakeR2Bucket {
 
     async delete(key) {
       store.delete(key);
+    },
+
+    seedObject(key) {
+      seed(key);
     },
   };
 }

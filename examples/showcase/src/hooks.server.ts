@@ -3,7 +3,7 @@
 // is installed, and the GitHub double is never activated. The Playwright config sets the flag
 // so the E2E server process gets the fixture backend without any manual steps.
 import type { Handle } from '@sveltejs/kit';
-import { installFakeGitHub } from '$lib/fake-github.js';
+import { installFakeGitHub, seedMediaLibrary, SEED_MEDIA_KEYS } from '$lib/fake-github.js';
 import { createFakeAuthDb } from '$lib/fake-auth-db.js';
 import { createFakeR2 } from '$lib/fake-r2.js';
 
@@ -11,6 +11,8 @@ const FAKE = process.env.SHOWCASE_FAKE_BACKEND === '1';
 
 if (FAKE) {
   installFakeGitHub();
+  // Seed the Media Library fixtures into the in-memory repo so /admin/media has a realistic set.
+  seedMediaLibrary();
 }
 
 // One instance for the server's lifetime, like the fake GitHub's in-memory repo, so editors
@@ -20,6 +22,12 @@ const fakeAuthDb = FAKE ? createFakeAuthDb() : null;
 // One MEDIA_BUCKET double for the server's lifetime, so an asset uploaded through /admin streams
 // back from the /media delivery route in the same dev session.
 const fakeR2 = FAKE ? createFakeR2() : null;
+
+// Seed the R2 bytes for the Media Library fixtures, so each seeded asset's thumbnail resolves
+// through /media and the orphan delete removes a real object.
+if (fakeR2) {
+  for (const key of SEED_MEDIA_KEYS) fakeR2.seedObject(key);
+}
 
 export const handle: Handle = async ({ event, resolve }) => {
   if (FAKE) {

@@ -11,11 +11,15 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-17, latest): Pass A (media polish + cutover DX) LANDED on `feat/media-polish` as `0.57.1`; merge + release HELD for Geoff; Pass B is next (mockup-first)
+## Immediate next action (2026-06-18, latest): Pass A SHIPPED as `0.57.1` (merged to `main`, released, npm `latest`); Pass B is next, mockup-first and in design
+
+**`0.57.1` is published.** `feat/media-polish` fast-forward merged to `main` (`c31a8ba`) and pushed;
+`gh release create v0.57.1` fired the OIDC trusted-publishing workflow (`publish.yml` run `27739007263`
+green, `npm publish --access public`); `npm view @glw907/cairn-cms version` is `0.57.1` (the registry
+`latest`). No consumer action: the `decorative` key is additive, the rest is admin or build-time.
 
 **Pass A LANDED on `feat/media-polish`** (a fresh worktree off `main` at `c87ee9f`), `0.57.1`, six
-tasks test-first, the code-simplifier pass, a two-reviewer gate, and the docs arm. **Held for Geoff:
-the merge to `main`, the `0.57.1` release, and the push.** It cleared the 3c review carry-forwards (the
+tasks test-first, the code-simplifier pass, a two-reviewer gate, and the docs arm. It cleared the 3c review carry-forwards (the
 `/admin/media` action feedback strip with a distinct `flashError` slot; the slide-over Escape edge,
 which now yields to the search box), the 3b decorative-hero alt persistence (an additive
 `ImageValue.decorative` round-tripped through form/validate/read-back so a decorative hero stops reading
@@ -38,16 +42,14 @@ Post-mortem with the carry-forwards in the plan
 (`docs/superpowers/plans/2026-06-17-cairn-media-polish-and-dx.md`). No live admin smoke owed (covered by
 the component and unit suites), matching the plan.
 
-**Next actions, in order (Geoff's calls):**
-1. **Merge `feat/media-polish` to `main`** (held). STATUS.md and the ROADMAP refresh ride the merge.
-2. **Cut the `0.57.1` release** (`gh release create v0.57.1 --target main`, after the push): the body
-   is the `0.57.1` changelog window. This fires the OIDC trusted-publishing workflow. No `Consumers
-   must:` line is owed (the `decorative` key is additive; the rest is admin or build-time).
-3. **Pass B, replace-in-place + alt propagation**, the next media pass: upload-new plus a `main`-only
-   repoint with a branch-delta report, and propagating an alt fix across every placement. High blast
-   (cross-branch rewrites), mockup-first (the Replace control). Then Pass C (bulk + orphan collection,
-   mockup-first), then the scaffolder. The `runtime.publicMediaResolver` ergonomic is a carry-forward
-   needing a brainstorm before it is planned (see the plan and the ROADMAP).
+**Next: Pass B, replace-in-place plus alt propagation**, the next media pass, now in design. The pass
+lets an author upload a new file and repoint an existing reference (a `main`-only repoint with a
+branch-delta report), and propagate an alt fix across every placement of an image. It is high blast
+(cross-branch rewrites) and mockup-first (the Replace control), so it runs the design-and-approval
+gate before a plan: a brainstorm to settle the open decisions, then a frontend-design mockup, then the
+spec and the plan. The open design questions are being worked with Geoff now. Pass C (bulk plus orphan
+collection, also mockup-first) and the scaffolder follow. The `runtime.publicMediaResolver` ergonomic
+stays a carry-forward needing its own brainstorm (see the Pass A plan and the ROADMAP).
 
 ## Prior next action (2026-06-17): `0.57.0` RELEASED; both sites cut over on held branches; execute Pass A (media polish + the cutover DX debt)
 

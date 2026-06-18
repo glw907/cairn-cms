@@ -11,7 +11,53 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-17, latest): Phase 3b the hero field LANDED on `feat/media-3b`; the release stays deferred until the whole image work is complete; Phase 3c is the next build
+## Immediate next action (2026-06-17, latest): Phase 3c the Media Library LANDED on `feat/media-3c`; Phase 3 is complete; the single bundled `0.57.0` release plus the per-site cutover are next (Geoff's call); the merge and push are held
+
+**Phase 3c of the media gallery (the admin Media Library) LANDED on `feat/media-3c`** (off `main` at
+`f865c7b`). Ten plan tasks test-first, the code-simplifier pass, a four-reviewer gate with its fold-in,
+the frontend-design polish, and the docs arm. **No release is cut (Geoff's call): the whole image work
+ships in one `0.57.0` release now that Phase 3 is complete. The merge and the push are held for Geoff.**
+
+The Media Library is a first-class admin screen at `/admin/media`, a peer of Posts and Pages: a
+contact-sheet grid with a list-density toggle, a non-modal detail slide-over, where-used grouped
+published-vs-edit-branch (computed by content hash across `main` and every open `cairn/*` branch), a
+two-faced safe-delete (in-use names what breaks and needs a typed slug; orphan is a calm confirm), a
+triage radiogroup (All/Needs alt/Unused), client pagination, and rename/default-alt edits. The
+correctness core landed first and alone: the additive content-manifest `mediaRefs` field + the
+`extractMediaRefs` extractor (reads the frontmatter hero plus body images, hash-keyed), the cross-branch
+`buildUsageIndex`, the shared `mediaLibraryEntry` projection + `removeMediaEntry`, then the union
+`mediaLibraryLoad` and the `media` view across the single-mount dispatch, then the actions and the
+screen. Safe-delete commits the manifest row removal before the R2 delete and fails closed when it
+cannot verify usage; rename/default-alt is display-layer only (the route keys on the hash).
+
+Gate green at the tip, run first-hand: `npm run check` 994 files 0/0, `npm test` 190 files / 2037 tests
+exit 0 (the first run hit the documented `@vitest/browser` rpc-closed teardown flake; a clean re-run
+confirmed exit 0), the showcase Playwright E2E 23 passed in a real browser (the new
+`media-library.spec.ts` adds 7 cases), the reference/signature/package/docs/prose/version and
+editor-boundary gates green. Four reviewers (svelte, daisyui-a11y, cloudflare-workers, an Opus
+correctness pass): the fold-in moved a `flushSync` out of an effect (forward-compat crash), made the
+delete gate fail closed on an unverifiable branch read, parallelized + de-duplicated the branch
+enumeration, gave the triage the ARIA roving-tabindex pattern, surfaced the update/404 failures, and
+added the missing `--cairn-error-*` danger token family to both theme roots. The Opus reviewer's
+"Critical" (the delete gate trusting a stale manifest) was triaged down: save/publish keep `mediaRefs`
+fresh via `manifestEntryFromFile`, media is unreleased so no stale-manifest installed base exists, and
+the gate matches the engine's existing manifest-trust model; documented, not re-architected. Live admin
+smoke deferred to the first site cutover (covered by the E2E + the suites), matching 2b/3a/3b.
+Post-mortem with the carry-forwards in the plan
+(`docs/superpowers/plans/2026-06-17-cairn-media-3c-library.md`).
+
+**Next actions, in order:**
+1. **Merge `feat/media-3c` to `main`** (the whole media stack 1, 2a, 2b, 3a, 3b, 3c is then on `main`,
+   unreleased at `0.57.0`). Geoff's call on the merge and the push.
+2. **Cut the single bundled `0.57.0` release** (`gh release create v0.57.0 --target main`): the release
+   body is the changelog window since the last published tag, carrying the one `Consumers must:` line
+   (bind `MEDIA_BUCKET`, mount the `/media` route, declare the `assets` block) plus the recommended
+   content-manifest regenerate. This fires the OIDC trusted-publishing workflow. Geoff's call.
+3. **Per-site cutover** (rides the published package): bind the R2 bucket, mount the route, bump the
+   range, run the live guard + upload + delivery + Library smoke, copy the `.cairn-place-*` CSS, adopt
+   the hero field, and regenerate the content manifest so the Library's `main` where-used is accurate.
+
+## Prior next action (2026-06-17): Phase 3b the hero field LANDED on `feat/media-3b`; the release stays deferred until the whole image work is complete; Phase 3c is the next build
 
 **Phase 3b of the media gallery (the hero frontmatter image field) LANDED on `feat/media-3b`** (a fresh
 worktree off `main` at `dc442ca`). Nine plan tasks, the code-simplifier pass, a three-reviewer gate with

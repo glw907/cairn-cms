@@ -401,3 +401,63 @@ Geoff's call.
 - Tags and organization, added only if a real site asks; the triage filter plus search suffices now.
 - The broadened needs-alt scanner (filename-as-alt, generic words, duplicates) beyond the empty-alt signal.
 - Documents as a fully surfaced type beyond the facet seam (the delivery route is image-only today).
+
+---
+
+## Post-mortem (2026-06-17, LANDED on `feat/media-3c`, unreleased)
+
+All ten tasks landed test-first, one `cairn-implementer` per task, the main loop reviewing each diff and
+clearing the full gate between dispatches. The high-blast tasks (1, 2, 4, 5, 6) and the integration
+seed (8) ran on `model: opus`; the rest on Sonnet. The pass added ~3,300 lines across 36 files.
+
+**What was built.** The correctness core landed first and alone: a pure `extractMediaRefs`
+(`content/media-refs.ts`) reading the frontmatter hero plus body images keyed by content hash, an
+additive optional `mediaRefs` field on `ManifestEntry` with a lenient `verifyManifest` so an
+un-regenerated site still builds, and the cross-branch `buildUsageIndex` (`media/usage.ts`) unioning
+`main` (from the manifest) with every open `cairn/*` branch (parsed markdown). Then the screen built on
+it: the shared `mediaLibraryEntry` projection with `createdAt`, `removeMediaEntry`, the union
+`mediaLibraryLoad` plus the `media` admin view across the single-mount dispatch, the safe-delete and
+rename/default-alt actions, the `CairnMediaLibrary` screen (grid + list + triage + search + pagination
++ empty state), the non-modal detail slide-over and the two-faced safe-delete alertdialog, and the
+showcase seed + E2E.
+
+**Verified (evidence, run first-hand at the tip).** `npm run check` 994 files 0/0; `npm test` 190 files
+/ 2037 tests exit 0 (the first run hit the documented `@vitest/browser` rpc-closed teardown flake; a
+clean re-run confirmed 2037/2037 exit 0); the showcase Playwright E2E 23 passed in a real browser (the
+new `media-library.spec.ts` adds 7 cases: browse, list density, triage filters, the grouped where-used
+slide-over, a rename/default-alt commit, the orphan safe-delete, and the in-use refusal; the
+2b/3a/3b/golden specs stay green); the reference, signature, package, docs, prose, version, and
+editor-boundary gates green.
+
+**Review gate.** code-simplifier (three light refinements), then a four-reviewer fan-out: `svelte`,
+`daisyui-a11y`, `cloudflare-workers`, and an Opus correctness pass over the usage index and the delete
+gate. The fold-in fixed real issues: a `flushSync` inside the dialog re-open effect (would throw under a
+newer-but-peer-permitted Svelte) moved to `tick`; the delete gate now fails closed (a strict
+`buildUsageIndex` rethrows a branch-read failure rather than treating a still-referenced asset as an
+orphan); the branch arm reads in parallel and reuses one branch list rather than enumerating twice; the
+triage gained the ARIA roving-tabindex keyboard pattern; the update and 404 failures now re-open the
+slide-over so their error renders; native dialog Escape runs the teardown; the R2 key derives before the
+commit; an empty stored slug can no longer satisfy the typed confirm. The polish pass found the
+load-bearing token gap (the `--cairn-error-*` danger family the mockup defines was absent from
+`cairn-admin.css`) and added it to both theme roots, contrast-checked.
+
+**The downgraded Critical.** The Opus reviewer flagged the delete gate trusting the content manifest's
+`mediaRefs` for published usage as a Critical (an un-regenerated manifest reads in-use published assets
+as orphans). Triaged down: `saveToBranch` and `publishAction` both rebuild the entry via
+`manifestEntryFromFile`, so every save/publish keeps `mediaRefs` fresh on `main`; media is entirely
+unreleased, so no installed base carries a pre-3c media-referencing manifest; and the gate matches the
+engine's existing manifest-trust model (the entry-delete gate trusts manifest links the same way).
+Documented in the `mediaDeleteAction` docstring and the changelog's recommended regenerate, not
+re-architected to crawl (which would break the content-manifest design principle).
+
+**Decisions locked.** The Library is a peer of Posts/Pages at `/admin/media` through the single-mount
+seam (six touch points). Where-used keys by hash across `main` plus open branches and reads the
+frontmatter hero (the landmine), counting distinct entries. Safe-delete commits-then-deletes on a fresh
+fail-closed gate; rename/default-alt is display-layer only (no reference rewrite). Replace, bulk, tags,
+and propagating-alt stay deferred (the carry-forwards above).
+
+**Deferred.** The live admin smoke is deferred to the first site cutover, matching 2b/3a/3b: the screen
+reads and the delete/rename commits are covered by the showcase E2E and the unit/component suites, and
+the both-theme rendering is covered by the mockup plus the token contrast check. The single bundled
+`0.57.0` release and the per-site cutover become available at pass-end, Geoff's call. The merge and push
+are held for Geoff.

@@ -258,3 +258,45 @@ inherit a clean list rather than one prose note.
   short "writing an admin fetch action" note in the SvelteKit reference or a guide, so the 2b client and
   any future fetch-style admin action build against the envelope-and-text/plain transport from the start
   rather than rediscovering the 415 and the envelope. Tracked as a 2b carry-forward in STATUS.
+- **developer** (media: the reserved-figure collision is a hard build break, from the ecxc 0.57.0
+  cutover, 2026-06-17): HIGH. Cairn 0.57 reserves the `figure` directive (3a), so `defineRegistry`
+  throws if a site registers a component named `figure`, which fails `cairn-manifest` AND the build
+  with `cairn: "figure" is a reserved directive name ... a component cannot use it`. ecxc had exactly
+  one (a hand-rolled `:::figure[Caption]` that 3a now provides natively), so the upgrade did not build
+  until it was removed. The upgrade guide warns about the rename, but three gaps: the error names
+  neither the offending registry nor the component, so a developer must grep; the guide says "rename
+  any such component" without the case that matters more (a custom figure superseded by 3a should be
+  REMOVED, adopting the engine's, not renamed); and a hard build failure on a point upgrade deserves a
+  prominent breaking-change callout, not a mid-paragraph aside. Candidate: name the colliding component
+  in the thrown error with a "rename or remove it" hint, and raise the figure-collision note in the
+  changelog and the upgrade guide.
+- **developer** (media: the public media resolver is required, not hero-optional, from the ecxc 0.57.0
+  cutover, 2026-06-17): HIGH. The upgrade guide's required steps (bind the bucket, mount the route,
+  declare `assets`) make media work for the EDITOR (insert plus the admin preview), but a published
+  body `![](media:...)` ships a bare `media:` token on the LIVE site unless the site threads a
+  `makeMediaResolver` into both `render` and `createPublicRoutes`. That wiring is buried under the
+  OPTIONAL "adopt the hero" section, so a developer who does only the required steps ships broken public
+  images and no error says so. Candidate: move the resolver wiring into the required media steps (it is
+  needed for any public media, body or hero), and consider having `composeRuntime` expose a ready-built
+  public resolver (`runtime.publicMediaResolver` over the media manifest plus `resolvedAssets`) so a
+  site writes `resolveMedia: runtime.publicMediaResolver` instead of hand-assembling it from `/media`.
+- **developer** (media: the resolver symbols lack an import path, from the ecxc 0.57.0 cutover,
+  2026-06-17): MEDIUM. The upgrade guide writes `makeMediaResolver(mediaManifest, normalizeAssets(...))`
+  but never states both import from `@glw907/cairn-cms/media`; only the showcase source shows it. A
+  developer cannot resolve the symbols from the guide alone. Candidate: name the `/media` subpath in
+  the guide snippet.
+- **developer** (media: a fresh site needs a hand-seeded empty media.json, from the ecxc 0.57.0
+  cutover, 2026-06-17): MEDIUM. The showcase pattern `import mediaManifest from
+  '../content/.cairn/media.json'` fails the build with a module-not-found on a site that has never
+  uploaded, since no `media.json` exists yet and the upload pipeline writes it only on a branch.
+  Candidate: tell the cutover to create `src/content/.cairn/media.json` as `{}` first, or have the
+  resolver tolerate an absent manifest so the import is not load-bearing.
+- **developer** (media: the R2 binding is documented as wrangler.jsonc only, from the ecxc 0.57.0
+  cutover, 2026-06-17): LOW. Both the upgrade guide and the wire guide give the `r2_buckets` binding as
+  a JSONC snippet; a `wrangler.toml` site (ecxc) must translate it to `[[r2_buckets]]`. Candidate: show
+  both dialects, or note the translation.
+- **developer** (media: the figure CSS reference is scoped to .site-main, from the ecxc 0.57.0 cutover,
+  2026-06-17): LOW. The showcase `.cairn-place-*` rules are scoped to `.site-main`; the guide says
+  "copy those rules and adjust the pixels", but a site whose content container differs (ecxc uses
+  `.post-body`) must re-scope every selector, not just tune pixels. Candidate: call out the re-scope,
+  or ship the placement CSS as an importable, container-agnostic stylesheet.

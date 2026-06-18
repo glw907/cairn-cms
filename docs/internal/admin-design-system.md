@@ -402,6 +402,47 @@ Recipes:
   `MediaCaptureCard`'s alt model rather than mounting it (that card holds its own `<form>`, illegal
   nested here, and a Name field a hero does not use). Alt is debt: confirm is never disabled for a
   missing alt, and the needs-alt notice counts a hero with an empty alt and focuses its alt input.
+- **Media: the Library screen (`CairnMediaLibrary`).** The admin Media Library, a first-class office
+  view at `/admin/media`, a peer of Posts and Pages. It composes from the established office parts: the
+  office header recipe up top (the Media eyebrow, the display-face "Media library" heading, a live
+  count, the Upload primary action), one toolbar row (search left, the triage segmented control, a
+  hidden type facet, the grid/list density toggle), then the asset surface. The resting surface is a
+  contact-sheet grid (`role="listbox"`) of image tiles; the density toggle flips it to the enriched
+  sortable table the office list uses. Activating a tile or row opens the detail in a non-modal
+  slide-over (the details-slide-over recipe), which carries the preview, the name and `media:`
+  reference, the alt editor, the grouped where-used list, the metadata, and the actions. Delete opens a
+  two-faced safe-delete `alertdialog`. The screen and the 2b picker share the row vocabulary but keep
+  different ARIA models on purpose (the picker is a combobox, this grid is a roving listbox).
+  Load-bearing a11y patterns:
+  - **Roving tabindex on the grid.** One tabstop for the whole listbox: the active tile carries
+    `tabindex="0"` and every other carries `-1`; arrows move the active index, Home/End jump, Space or
+    Enter opens the detail, and `aria-selected` tracks the open asset. Filtering preserves a valid
+    active index.
+  - **The triage is a true radiogroup, not a toggle group.** `role="radiogroup"` over `role="radio"`
+    segments with `aria-checked` (never `aria-pressed`), the same roving-tabindex keyboard model the
+    ARIA radio pattern owes (the selected radio is the only tabstop, arrows move and select). The
+    selected segment shows a check glyph so hue is not the only state cue (WCAG 1.4.1).
+  - **The list sorts through real header buttons.** The Added column header is a `<button>` inside a
+    `<th>` carrying `aria-sort`, never a div with a click handler.
+  - **The slide-over is a non-modal region.** `role="region"` with an `aria-label`, no scrim, so the
+    grid stays in the a11y tree and the tab order. Focus moves into the panel on open and returns to the
+    originating tile or row on close, and a window Escape listener closes it (the EditPage
+    details-panel recipe). It never traps focus or inerts the list.
+  - **The safe-delete is a modal alertdialog with no light dismiss.** A native `<dialog>` opened with
+    `showModal()` (native focus trap and Escape), `role="alertdialog"`, and no `method="dialog"`
+    backdrop, so a stray backdrop click cannot dismiss a destructive surface. The in-use face names the
+    breaking entries (grouped published-then-branch) and gates Delete behind a type-the-slug
+    confirmation (`confirmMatches`), the one legitimate disabled submit, a visible typed confirmation
+    rather than a hidden requirement. The orphan face is a calm confirm. A server refusal forces the
+    dialog back to the in-use face with the fresh list.
+
+  Alt-status ink tokens (each glyph-plus-label, never hue alone): Described is `--color-positive-ink`,
+  Needs alt is `--cairn-warning-ink`, and the safe-delete danger surface uses the `--cairn-error-*`
+  family (`--cairn-error-ink` for the "these would break" label and the danger Delete text,
+  `--cairn-error-tint` for the break-list surface, `--cairn-error-border` for the tint hairline and the
+  type-to-confirm input). The error ink is the readable small-text counterpart to `--color-error`,
+  which is tuned as a button fill and fails AA as small text; the locked contrast floors sit beside the
+  token in `cairn-admin.css`.
 
 ## Chrome and spacing
 

@@ -67,6 +67,21 @@ an unresolved `media:` token degrades to no social image rather than shipping a 
 template owns the hero layout: cairn ships the resolved data and the social-card wiring, not a hero
 render step. A required `image` field is enforced on the presence of its `src`, never on its alt.
 
+The Media Library lands in the same release. A first-class admin screen at `/admin/media`, a peer of
+Posts and Pages, browses every committed asset, shows where each one is used, edits its name and
+default alt, and deletes it safely. The resting surface is a contact-sheet grid with a list-density
+toggle; a non-modal detail slide-over carries the preview, the alt editor, the grouped where-used
+list, and the actions. The Library computes where-used by content hash across `main` and every open
+edit branch, so a not-yet-published upload still shows and a renamed slug still resolves. The content
+manifest gained an additive `mediaRefs` field per entry to feed the `main` side of that index; an
+existing manifest without it still parses and builds. Safe-delete rechecks usage server-side against
+a fresh read at delete time, refuses an in-use asset (the in-use face names what would break and
+requires typing the slug), commits the manifest row removal before deleting the R2 object, and fails
+closed if it cannot verify usage. Rename and default-alt are a single `media.json` row commit with no
+reference rewrite, since the resolver and route key on the hash; the default alt is the value
+prefilled into the next placement, not a rewrite of alt already committed. Replace, bulk actions, and
+tags are deferred.
+
 Consumers must: bind an R2 bucket and mount the delivery route before media works. Add an
 `r2_buckets` binding named `MEDIA_BUCKET` in `wrangler.jsonc`, and mount the delivery route at
 `src/routes/media/[...path]/+server.ts` with `createMediaRoute(runtime.resolvedAssets)`. Declare the
@@ -77,6 +92,11 @@ default, so a site serves full-size bytes until it opts in. The wiring steps are
 [wire the delivery surface guide](docs/guides/wire-the-delivery-surface.md); the surface is documented
 in [the media reference](docs/reference/media.md) and
 [the sveltekit reference](docs/reference/sveltekit.md).
+
+Recommended, not required: regenerate the content manifest (`cairn-manifest`) and commit it so the
+Media Library's `main` where-used is accurate. The `mediaRefs` field is additive, so a site builds
+without it, but an un-regenerated manifest reads every published media reference as absent until it
+is regenerated. Save and publish keep the field current from then on.
 
 ## 0.56.2
 

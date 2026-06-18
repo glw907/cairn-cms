@@ -465,6 +465,16 @@ hero is optional. To migrate, switch the field to `type: 'image'` and rewrite ea
 of adoption: `resolveImageUrl` now returns no URL for a non-http(s) value, so an unresolved `media:`
 reference degrades to no social image instead of shipping a `media:` token in the `og:image` tag.
 
+The release also adds the Media Library, the admin screen at `/admin/media` that browses every
+committed asset, shows where each is used, edits its name and default alt, and deletes it safely. It
+appears in the admin nav automatically once media is wired; nothing else turns it on. One recommended
+step: regenerate the content manifest (`npm run cairn:manifest` or `npx cairn-manifest`, then commit)
+so the Library's where-used is accurate for already-published content. The manifest gained an additive
+`mediaRefs` field; it is optional, so a site builds without regenerating, but an un-regenerated
+manifest reads every published media reference as absent (the Library shows "no references found" and
+safe-delete would treat an in-use asset as an orphan). Save and publish keep the field current from
+then on, so the one-time regenerate only matters for content committed before this release.
+
 ## 0.55.0: the office list gains triage and self-describing rows
 
 The post and page list rises to the same grade as the editor: a triage bar filters by publish state

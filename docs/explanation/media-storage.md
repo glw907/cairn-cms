@@ -86,6 +86,58 @@ defaulting to the field named `image`, and a concept declares at most one. As a 
 `resolveImageUrl` rejects any non-http(s) result, so a still-unresolved `media:` token degrades to no
 social image rather than shipping a broken tag.
 
+## Where-used is read from git, by content hash
+
+The admin Media Library answers a question most CMS libraries cannot: where is this image actually
+used? cairn answers it because the content is in git and an image's identity is its content hash.
+The screen builds one in-memory map from each image's hash to the distinct entries that reference it,
+computed once when the screen loads. It keys on the hash, never the cosmetic slug, so a renamed image
+and a bare-hash reference both resolve to the same image.
+
+The map reads two halves and unions them. Its `main` half rides the content manifest, which records
+each entry's media references the same way it already records its inbound links, so the common case
+is a single manifest read with no per-file crawl. Its branch half covers held edits: for every open
+`cairn/*` edit branch, cairn parses the one edited entry's markdown and reads both its body image
+nodes and its frontmatter hero `image.src`. That hero site is load-bearing, because a hero lives in
+frontmatter rather than the body, and an extractor that visited only body images would read every
+in-use hero as orphaned. The verdict counts distinct entries, so an image used twice in one entry is
+one row.
+
+One caveat shapes the wording. A reference hidden inside a raw-HTML block (an `<img>` tag a writer
+dropped in by hand) is invisible to a markdown parse, so absence of a row is not proof of absence of
+use. The screen says "found in N entries" or "no references found", never a bare "unused". The
+verdict is honest about what it can and cannot see.
+
+## Safe-delete is gated on a fresh read, in a deliberate order
+
+Deleting an image removes its `media.json` row and its R2 object. Two design choices make that safe.
+
+The gate rechecks usage server-side at the moment of the delete, against a fresh index read, never a
+count the client passed in. This is the same shape the entry delete uses for its inbound-link check.
+A draft that placed the image after the screen loaded is caught, and the delete is refused. The gate
+fails closed: if usage cannot be verified (media is off, or the bucket is unbound), the delete does
+not proceed.
+
+Order matters in the two-step delete: commit the manifest delete first, then delete the R2 object. If
+the process fails between those steps, the failure window leaves bytes in R2 with no row pointing at
+them. That is a benign orphan, recoverable by reconcile, and invisible to the site. The reverse order
+would leave a row pointing at bytes that no longer exist, which is a broken delivery a visitor would
+hit. Designing for the benign failure is the point.
+
+## The asset default alt versus the per-placement alt
+
+An image carries a default alt in its `media.json` row, and each placement of that image carries its
+own alt text. These are distinct on purpose, and the Library edits only the first.
+
+A per-placement alt is the text in a specific `![alt](...)` or a specific hero `image.alt`. It
+lives in the entry's committed content, and it is what the public site renders for that placement.
+The asset default alt is the value that prefills the next time someone inserts the image. Editing the
+default in the Library changes what the next placement starts with. It does not reach back and
+rewrite the alt already committed in existing placements. So a Library alt change never propagates to
+live pages, and the detail panel labels the field as the default to keep that from surprising anyone.
+Propagating a fix to every existing use is a cross-branch content rewrite, the same shape as
+replace-in-place, and it is deferred with replace.
+
 ## What the foundation carries
 
 This phase is the engine substrate: the reference codec, the content-hash and slug naming, the

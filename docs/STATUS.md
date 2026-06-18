@@ -11,7 +11,34 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-17, latest): Phase 3c the Media Library LANDED on `feat/media-3c`; Phase 3 is complete; the single bundled `0.57.0` release plus the per-site cutover are next (Geoff's call); the merge and push are held
+## Immediate next action (2026-06-17, latest): `0.57.0` RELEASED; both sites cut over on held branches; execute Pass A (media polish + the cutover DX debt)
+
+**`0.57.0` is published** (the whole media stack 1 through 3c). `feat/media-3c` merged to `main` and
+pushed; `gh release create v0.57.0` fired the OIDC trusted-publishing workflow; `npm view
+@glw907/cairn-cms version` is `0.57.0` (the registry `latest`).
+
+**Both production sites are cut over to 0.57.0 media on `feat/media-cutover` branches, held for the
+live smoke and deploy.** ecxc-ski (`64e8965`, off `main`) and 907-life (`25fe32a`, off `main`) each
+bound a `MEDIA_BUCKET` R2 bucket (`ecxc-media`, `907-life-media`, both created live), mounted the
+`/media` route, declared the `assets` block, and threaded a `publicMediaResolver` into `render` and
+`createPublicRoutes`; both build green. ecxc additionally removed its custom `:::figure` component
+(it collided with 0.57's reserved figure directive); 907 had no collision (empty registry). HELD for
+Geoff: the live admin smoke (the magic-link click is manual), the optional frontmatter hero field,
+and the push + deploy on each branch. Note: 907's `main` carries a pre-existing uncommitted edit
+(`docs/superpowers/archive/plans/2026-06-12-cairn-0.51-crossing.md`, a DONE marker) left untouched.
+
+**Immediate next: execute Pass A**, planned at
+`docs/superpowers/plans/2026-06-17-cairn-media-polish-and-dx.md`, a `0.57.1` patch. Main-loop
+execution, test-first, one `cairn-implementer` per task, the full gate between dispatches, on a fresh
+worktree off `main`. It clears the 3c review carry-forwards (the `/admin/media` action feedback strip,
+the slide-over Escape edge), the 3b decorative-hero alt persistence, the reserved-`figure` error
+message, the six cutover doc findings (two HIGH: the resolver wiring belongs in the required media
+steps, and the figure-collision callout), and the ROADMAP refresh. The cutover DX findings are logged
+in `docs/internal/docs-friction-log.md`. Then Pass B (replace-in-place + alt propagation) and Pass C
+(bulk + orphan collection) follow, then the scaffolder; the `runtime.publicMediaResolver` ergonomic is
+a carry-forward needing a brainstorm (see the plan).
+
+## Prior next action (2026-06-17): Phase 3c the Media Library LANDED on `feat/media-3c`; Phase 3 is complete; the single bundled `0.57.0` release plus the per-site cutover are next (Geoff's call); the merge and push are held
 
 **Phase 3c of the media gallery (the admin Media Library) LANDED on `feat/media-3c`** (off `main` at
 `f865c7b`). Ten plan tasks test-first, the code-simplifier pass, a four-reviewer gate with its fold-in,

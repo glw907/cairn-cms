@@ -219,8 +219,11 @@ export interface MediaUpdateFailure {
 
 /** What a route's single `form` export presents to a view component: whichever content action
  *  last failed, merged with every field optional. `error` is always set on a failure; the richer
- *  keys identify which guard refused. */
-export type ContentFormFailure = Partial<SaveFailure & DeleteRefusal & RenameFailure>;
+ *  keys identify which guard refused. The media refusals ride here too, so the Media Library's one
+ *  `form` prop carries a `?/mediaDelete` or `?/mediaUpdate` refusal without a second type. */
+export type ContentFormFailure = Partial<
+  SaveFailure & DeleteRefusal & RenameFailure & MediaDeleteRefusal & MediaUpdateFailure
+>;
 
 /** The successful upload's response (`uploadAction`). The server-owned `record` rides the editor's
  *  optimistic client state and commits with the entry at Save (the upload itself commits nothing).

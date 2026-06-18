@@ -120,7 +120,7 @@ per-route mounting it lives at `src/routes/admin/(app)/[concept]/+page.svelte`.
 ### `CairnMediaLibrary`
 
 ```ts
-let { data, form }: { data: MediaLibraryData; form?: unknown | null };
+let { data, form }: { data: MediaLibraryData; form?: ContentFormFailure | null };
 ```
 
 The admin Media Library screen, a peer of the concept lists at `/admin/media`. `data` is the
@@ -130,6 +130,17 @@ listbox of tiles); a density toggle flips to an enriched sortable table. A toolb
 search, a pick-one triage radiogroup (All, Needs alt, Unused), and the density toggle, with
 client-side pagination over the full set. The single mount renders it for the `media` view inside
 `CairnAdmin`; a per-route mount lives at `src/routes/admin/(app)/media/+page.svelte`.
+
+Activating a tile or row opens a non-modal detail slide-over: a labelled region (not a dialog), so
+the library stays live behind it. It holds the large preview, the `media:` reference with a copy
+button, an alt editor and a rename posting together to `?/mediaUpdate`, the where-used list grouped
+published-then-branch with a link to each entry's editor, the metadata, and a Delete action. Escape
+closes the slide-over and returns focus to the originating tile or row. Delete opens a two-faced
+safe-delete alertdialog (a native modal `<dialog>` with no light dismiss): the in-use face names
+the breaking entries and gates Delete behind a typed-slug confirmation, the orphan face is a calm
+confirm, and both post to `?/mediaDelete`. `form` carries the last media action's result, so a
+`MediaDeleteRefusal` re-opens the in-use face on its fresh breaking list and a `MediaUpdateFailure`
+surfaces in the slide-over.
 
 ```svelte
 <script lang="ts">

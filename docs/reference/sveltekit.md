@@ -279,8 +279,10 @@ branch exists, and a delete cascades to the pending branch after its own commit 
 Every action failure carries `error: string` as its one-line summary, alongside the payload that
 names what refused: a blocked save or publish returns `SaveFailure` (the broken links and the
 edited body), a refused delete returns `DeleteRefusal` (the inbound linkers and the entry id),
-and a refused rename returns `RenameFailure`. A page component types its `form` prop with
-`ContentFormFailure`, the optional merge of the three.
+and a refused rename returns `RenameFailure`. The media actions add two more: a refused media
+delete returns `MediaDeleteRefusal` (the asset hash, the where-used rows, and the count) and a
+refused media metadata edit returns `MediaUpdateFailure`. A page component types its `form` prop
+with `ContentFormFailure`, the optional merge of all five.
 
 ```ts
 // src/routes/admin/(app)/[concept]/+page.server.ts (per-route mounting)
@@ -399,7 +401,7 @@ imports the matching `*Data` type to type its `data` prop.
 | `RenameFailure` | `interface RenameFailure { error: string }` | A refused rename (bad slug, collision, or pending edits): just the one-line summary. |
 | `MediaDeleteRefusal` | `interface MediaDeleteRefusal { error: string; hash: string; usage: UsageEntry[]; foundIn: number }` | A refused media delete: the one-line summary, the asset's content hash, the where-used rows (published first, then by branch) the in-use face lists, and the distinct-entry count. `usage` is empty and `foundIn` is zero for an uncommitted asset or a media-off refusal. |
 | `MediaUpdateFailure` | `interface MediaUpdateFailure { error: string }` | A refused media metadata edit (an asset not committed on the default branch, or an invalid slug): just the one-line summary. |
-| `ContentFormFailure` | `type ContentFormFailure = Partial<SaveFailure & DeleteRefusal & RenameFailure>` | The shape a route's single `form` export presents to a view component: whichever content action last failed, every field optional, `error` always set on a failure. |
+| `ContentFormFailure` | `type ContentFormFailure = Partial<SaveFailure & DeleteRefusal & RenameFailure & MediaDeleteRefusal & MediaUpdateFailure>` | The shape a route's single `form` export presents to a view component: whichever content action last failed, every field optional, `error` always set on a failure. The media refusals merge in too, so the Media Library's one `form` prop carries a `?/mediaDelete` or `?/mediaUpdate` refusal. |
 | `NavPageOption` | `interface NavPageOption { label: string; url: string }` | One page option for the nav editor's URL picker datalist. |
 | `NavLoadData` | `interface NavLoadData { menu: { name; label; maxDepth }; tree: NavNode[]; pages: NavPageOption[]; saved; error: string \| null }` | The nav editor's load data: the menu meta, the current tree, the page options, and the status flags. |
 | `NavRoutesDeps` | `interface NavRoutesDeps { mintToken?: (env: GithubKeyEnv) => string \| Promise<string> }` | Injectable dependencies for `createNavRoutes`; tests stub the token mint, and a bare string return works. |

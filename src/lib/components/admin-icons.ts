@@ -20,3 +20,8 @@ export { default as ListIcon } from '@lucide/svelte/icons/list';
 export { default as ImageOffIcon } from '@lucide/svelte/icons/image-off';
 export { default as CheckIcon } from '@lucide/svelte/icons/check';
 export { default as TriangleAlertIcon } from '@lucide/svelte/icons/triangle-alert';
+export { default as XIcon } from '@lucide/svelte/icons/x';
+export { default as CopyIcon } from '@lucide/svelte/icons/copy';
+export { default as FileTextIcon } from '@lucide/svelte/icons/file-text';
+export { default as ClockIcon } from '@lucide/svelte/icons/clock';
+export { default as Link2OffIcon } from '@lucide/svelte/icons/link-2-off';

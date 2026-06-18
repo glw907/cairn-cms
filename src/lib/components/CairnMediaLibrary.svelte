@@ -1,21 +1,36 @@
 <!--
 @component
 The admin Media Library screen, a peer of Posts and Pages. It browses every committed media asset,
-shows where each one is used, and exposes the selection and per-row delete intent the detail
-slide-over (Task 7) consumes. The resting surface is a visual contact-sheet grid (a roving-tabindex
-listbox of tiles), with a list-density toggle that flips to an enriched sortable table. One toolbar
-row carries search, a pick-one triage radiogroup (All, Needs alt, Unused), and the density toggle.
-Filtering, sorting, and a growing client window all run over the full loaded set in component state.
+shows where each one is used, edits its name and default alt, and deletes it safely. The resting
+surface is a visual contact-sheet grid (a roving-tabindex listbox of tiles), with a list-density
+toggle that flips to an enriched sortable table. One toolbar row carries search, a pick-one triage
+radiogroup (All, Needs alt, Unused), and the density toggle. Filtering, sorting, and a growing
+client window all run over the full loaded set in component state.
+
+Activating a tile or row opens a NON-MODAL detail slide-over from the right (the established
+details-slide-over recipe): no scrim, the library stays live and in the a11y tree behind it, Escape
+closes it, focus moves in on open and returns to the originating tile or row on close. It is a
+labelled region, not a dialog, so it never traps focus or inerts the list. It holds the large
+preview, the name and the `media:` reference with a copy button, the alt editor (a describe or
+decorative radiogroup plus the alt field, posting to `?/mediaUpdate` together with the display name
+and slug), the where-used list grouped published-then-branch, the metadata grid, and the actions.
+
+Delete opens a two-faced safe-delete alertdialog: a native modal `<dialog>` with no light dismiss.
+The in-use face names the breaking entries and gates Delete behind a typed-slug confirmation; the
+orphan face is a calm confirm. Both post to `?/mediaDelete`. A `form` carrying a fresh
+`MediaDeleteRefusal` re-opens the in-use face on its fresh breaking list.
 
 It is node-safe by construction: it types assets with MediaLibraryEntry from the shared node-safe
-projection and pulls in no editor module (the editor-boundary test bars a @codemirror leak). The
-detail panel, the alt editor, the where-used list, and the delete dialog are Task 7; this slice
-exposes the `selected` asset and the `pendingDelete` flag, and renders no panel yet.
+projection and pulls in no editor module (the editor-boundary test bars a @codemirror leak).
 -->
 <script lang="ts">
+  import { flushSync } from 'svelte';
   import type { MediaLibraryEntry } from '../media/library-entry.js';
-  import type { MediaLibraryData } from '../sveltekit/content-routes.js';
+  import type { MediaLibraryData, ContentFormFailure } from '../sveltekit/content-routes.js';
+  import type { UsageEntry } from '../media/usage.js';
   import { publicPath } from '../media/naming.js';
+  import { mediaToken } from '../media/reference.js';
+  import CsrfField from './CsrfField.svelte';
   import CairnLogo from './CairnLogo.svelte';
   import {
     SearchIcon,
@@ -27,19 +42,24 @@ exposes the `selected` asset and the `pendingDelete` flag, and renders no panel 
     ImageOffIcon,
     Trash2Icon,
     ChevronDownIcon,
+    ChevronRightIcon,
+    XIcon,
+    CopyIcon,
+    FileTextIcon,
+    ClockIcon,
+    Link2OffIcon,
   } from './admin-icons.js';
 
   interface Props {
     /** The media library load's data: the unioned assets, the per-hash usage overlay, and a
      *  degraded-load error. */
     data: MediaLibraryData;
-    /** The last media action's result. Task 7 types the delete refusal payload; accepted loosely
-     *  here so the route's one `form` export flows through without a coupling this slice does not use. */
-    form?: unknown | null;
+    /** The last media action's result. A `?/mediaDelete` refusal carries the fresh breaking list
+     *  the in-use face re-opens on; a `?/mediaUpdate` failure carries the error the slide-over
+     *  surfaces. The route exports one `form`, so this is the merged `ContentFormFailure`. */
+    form?: ContentFormFailure | null;
   }
 
-  // `form` is accepted so the route's one `form` export flows through; Task 7 reads its delete
-  // refusal payload. This slice does not consume it, so it is destructured without a default.
   let { data, form }: Props = $props();
 
   // --- the per-hash usage facts the screen joins onto each asset ---
@@ -139,21 +159,153 @@ exposes the `selected` asset and the `pendingDelete` flag, and renders no panel 
     shown = Math.min(shown + PAGE, sorted.length);
   }
 
-  // --- selection and open intent (consumed by Task 7's slide-over) ---
-  // The asset a tile/row activation opened, marked aria-selected/active. Task 7 renders the
-  // {#if selected} slide-over over this state. `pendingDelete` is the row-delete intent Task 7's
-  // alertdialog reads; it sets `selected` plus this flag without opening the dialog here.
+  // --- selection, the slide-over, and the safe-delete dialog ---
+  // `selected` is the asset the slide-over (and the alertdialog) render off. The table's per-row
+  // trash opens the alertdialog straight to the right face for that asset (requestDelete) without
+  // opening the slide-over; a tile or row activation opens the slide-over (openAsset).
   let selected = $state<MediaLibraryEntry | null>(null);
-  let pendingDelete = $state(false);
+  // True while the dialog was opened straight from a row trash without the slide-over, so the
+  // {#if selected} slide-over stays closed for a delete-only intent.
+  let deleteOnly = $state(false);
 
-  function openAsset(asset: MediaLibraryEntry) {
+  // The element that opened the slide-over (a tile or a row trigger), so focus returns to it on
+  // close (the non-modal region recipe: focus moves in on open, back to the origin on close).
+  let panelOrigin: HTMLElement | null = null;
+  let closeButton = $state<HTMLButtonElement | null>(null);
+  let deleteDialog = $state<HTMLDialogElement | null>(null);
+
+  function openAsset(asset: MediaLibraryEntry, origin?: HTMLElement | null) {
+    panelOrigin = origin ?? (document.activeElement as HTMLElement | null);
+    deleteOnly = false;
     selected = asset;
-    pendingDelete = false;
+    // flushSync mounts the panel synchronously so its close button exists before we move focus in.
+    flushSync();
+    closeButton?.focus();
   }
+  /** Close the slide-over and return focus to the tile or row that opened it. */
+  function closePanel() {
+    selected = null;
+    deleteOnly = false;
+    panelOrigin?.focus();
+    panelOrigin = null;
+  }
+  // Escape closes the slide-over (the non-modal region recipe). A window listener carries it, the
+  // way EditPage's details panel does, so the non-interactive region needs no keyboard handler. The
+  // dialog (when open) claims Escape natively, so the panel handles it only when no dialog is up.
+  function onWindowKeydown(e: KeyboardEvent) {
+    if (e.key === 'Escape' && selected && !deleteDialog?.open) {
+      e.preventDefault();
+      closePanel();
+    }
+  }
+
+  // The per-row delete intent opens the alertdialog directly on the right face for that asset.
   function requestDelete(asset: MediaLibraryEntry) {
+    deleteOnly = true;
     selected = asset;
-    pendingDelete = true;
+    openDeleteDialog();
   }
+  // The slide-over's Delete button opens the same dialog for the already-selected asset.
+  function openDeleteDialog() {
+    confirmSlugInput = '';
+    flushSync();
+    deleteDialog?.showModal();
+  }
+  function closeDeleteDialog() {
+    deleteDialog?.close();
+    confirmSlugInput = '';
+    // A row-only delete leaves no slide-over to return to, so clear the selection on cancel.
+    if (deleteOnly) {
+      deleteOnly = false;
+      selected = null;
+    }
+  }
+
+  // --- the where-used overlay the slide-over and the dialog read, grouped published-then-branch ---
+  function usageEntries(hash: string): UsageEntry[] {
+    return data.usage[hash]?.entries ?? [];
+  }
+  /** Published rows first, then the edit-branch rows. */
+  function publishedRows(hash: string): UsageEntry[] {
+    return usageEntries(hash).filter((e) => e.origin.kind === 'published');
+  }
+  function branchRows(hash: string): UsageEntry[] {
+    return usageEntries(hash).filter((e) => e.origin.kind === 'branch');
+  }
+  const branchNameOf = (e: UsageEntry): string => (e.origin.kind === 'branch' ? e.origin.branch : '');
+
+  // --- the safe-delete dialog's face and its type-to-confirm gate ---
+  // The breaking list the dialog shows: the FRESH list from a refusal when one is present for this
+  // asset, else the load-time overlay. The fresh server list supersedes a stale load-time count.
+  const refusalForSelected = $derived(
+    form && form.hash && selected && form.hash === selected.hash ? form : null,
+  );
+  // A ?/mediaUpdate failure carries only `error` (no `usage`/`hash`); a delete refusal carries
+  // `usage`. The slide-over surfaces the update error and never a delete refusal here.
+  const updateError = $derived(form?.error && !form.usage && !form.hash ? form.error : null);
+  const breakingRows = $derived.by((): UsageEntry[] => {
+    if (refusalForSelected?.usage) return refusalForSelected.usage;
+    return selected ? usageEntries(selected.hash) : [];
+  });
+  // The face is chosen by whether the asset is in use at open: in-use names what breaks and gates
+  // Delete on a typed slug; orphan is a calm confirm. A refusal's fresh list also forces in-use.
+  const deleteInUse = $derived(breakingRows.length > 0);
+  const deleteBreakingPublished = $derived(breakingRows.filter((e) => e.origin.kind === 'published'));
+  const deleteBreakingBranch = $derived(breakingRows.filter((e) => e.origin.kind === 'branch'));
+
+  // The type-to-confirm input. The Delete submit is gated until it equals the asset slug (the one
+  // legitimate disable: a visible, typed destructive confirmation, not a hidden requirement).
+  let confirmSlugInput = $state('');
+  const confirmMatches = $derived(selected !== null && confirmSlugInput === selected.slug);
+
+  // A fresh mediaDelete refusal re-opens the dialog on its in-use face with the server's fresh list.
+  // The action redirects on success, so a present refusal is always an in-use block to re-surface.
+  $effect(() => {
+    if (form && form.hash && form.usage && form.usage.length > 0) {
+      const target = data.assets.find((a) => a.hash === form!.hash);
+      if (target && deleteDialog && !deleteDialog.open) {
+        deleteOnly = true;
+        selected = target;
+        confirmSlugInput = '';
+        flushSync();
+        deleteDialog.showModal();
+      }
+    }
+  });
+
+  // --- the copy-reference affordance, announced politely ---
+  let copyNotice = $state('');
+  function copyReference(token: string) {
+    void navigator.clipboard?.writeText(token).then(
+      () => {
+        copyNotice = 'Reference copied to the clipboard.';
+      },
+      () => {
+        copyNotice = 'Could not copy the reference.';
+      },
+    );
+  }
+
+  // --- the alt editor's describe/decorative model (the 2b capture-card model) ---
+  // Seeded from the selected asset each time the slide-over opens: a non-empty alt is "describe", an
+  // empty alt is "decorative" only when the author last chose it, else unset. The Library has no
+  // stored decorative flag, so an empty alt reads as unset (needs-alt), matching MediaCaptureCard.
+  let altMode = $state<'describe' | 'decorative' | null>(null);
+  let altText = $state('');
+  let nameInput = $state('');
+  let slugInput = $state('');
+  // Reseed the editable fields whenever the selected asset changes.
+  $effect(() => {
+    const a = selected;
+    if (!a) return;
+    altText = a.alt;
+    altMode = a.alt.trim() !== '' ? 'describe' : null;
+    nameInput = a.displayName;
+    slugInput = a.slug;
+  });
+  // The submitted alt: a described image carries its text, a decorative or left-blank submits empty
+  // (matching MediaCaptureCard's needs-alt-debt model).
+  const submittedAlt = $derived(altMode === 'describe' ? altText : '');
 
   // --- the roving tabindex over the grid's visible tiles ---
   // One tabstop for the listbox: the active index is the only option with tabindex 0; arrows,
@@ -185,7 +337,7 @@ exposes the `selected` asset and the `pendingDelete` flag, and renders no panel 
       focusTile(visible.length - 1);
     } else if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      openAsset(visible[i]);
+      openAsset(visible[i], tileEls[i]);
     }
   }
 
@@ -234,6 +386,8 @@ exposes the `selected` asset and the `pendingDelete` flag, and renders no panel 
 
   const headerLabel = 'text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]';
 </script>
+
+<svelte:window onkeydown={onWindowKeydown} />
 
 <!-- The office header recipe: the Media eyebrow, the display-face heading, a live count line, and
      the Upload primary action top-right. -->
@@ -343,7 +497,7 @@ exposes the `selected` asset and the `pendingDelete` flag, and renders no panel 
             tabindex={i === activeIndex ? 0 : -1}
             aria-label="{asset.displayName}. {missing ? 'Needs alt text' : 'Described'}. {used > 0 ? `Found in ${used} ${used === 1 ? 'entry' : 'entries'}` : 'No references found'}."
             class="group flex cursor-pointer flex-col overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-primary/70 {selected?.hash === asset.hash ? 'ring-2 ring-primary/70' : ''}"
-            onclick={() => openAsset(asset)}
+            onclick={(e) => openAsset(asset, e.currentTarget)}
             onkeydown={(e) => onGridKeydown(e, i)}
           >
             <div class="relative flex aspect-[4/3] items-center justify-center bg-base-200/60">
@@ -411,7 +565,7 @@ exposes the `selected` asset and the `pendingDelete` flag, and renders no panel 
             {@const missing = needsAlt(asset)}
             <tr class="transition-colors hover:bg-base-200/60 {selected?.hash === asset.hash ? 'bg-primary/[0.06]' : ''}">
               <td class="max-w-0">
-                <button type="button" class="flex w-full items-center gap-3 text-left" onclick={() => openAsset(asset)}>
+                <button type="button" class="flex w-full items-center gap-3 text-left" onclick={(e) => openAsset(asset, e.currentTarget)}>
                   <span class="relative flex h-10 w-14 flex-none items-center justify-center overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-200/60">
                     {#if brokenHashes.has(asset.hash)}
                       <ImageOffIcon data-cairn-broken class="h-4 w-4 text-[var(--color-subtle)]" aria-hidden="true" />
@@ -470,3 +624,265 @@ exposes the `selected` asset and the `pendingDelete` flag, and renders no panel 
     </div>
   {/if}
 {/if}
+
+<!-- A persistent polite region announces a copy-reference result. -->
+<div class="sr-only" role="status" aria-live="polite">{copyNotice}</div>
+
+{#if selected && !deleteOnly}
+  {@const asset = selected}
+  {@const reference = mediaToken({ slug: asset.slug, hash: asset.hash })}
+  <!-- The NON-MODAL detail slide-over: no scrim, the library stays live behind it. It is a labelled
+       region, not a dialog, so the list stays in the a11y tree and the tab order. Escape closes it
+       and focus returns to the originating tile or row (the region-with-focus-management recipe).
+       Below the narrow breakpoint the same panel reads as a bottom sheet (the responsive treatment). -->
+  <aside
+    role="region"
+    aria-label="{asset.displayName} details"
+    class="fixed inset-x-0 bottom-0 z-30 flex max-h-[85vh] flex-col rounded-t-2xl border-t border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)] sm:inset-x-auto sm:bottom-0 sm:right-0 sm:top-16 sm:max-h-none sm:w-[22rem] sm:rounded-t-none sm:border-l sm:border-t-0"
+  >
+    <div class="flex items-center justify-between border-b border-[var(--cairn-card-border)] px-4 py-3.5">
+      <h2 class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">Asset</h2>
+      <button bind:this={closeButton} type="button" class="btn btn-ghost btn-xs btn-square" aria-label="Close details" onclick={closePanel}>
+        <XIcon class="h-3.5 w-3.5" aria-hidden="true" />
+      </button>
+    </div>
+
+    <div class="flex flex-col gap-5 overflow-y-auto p-4">
+      <!-- The large preview, object-fit contain on the quiet mat, with the broken-image affordance. -->
+      <div class="flex aspect-[16/10] items-center justify-center overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-200/60">
+        {#if brokenHashes.has(asset.hash)}
+          <span data-cairn-broken class="flex flex-col items-center gap-1 text-[var(--color-subtle)]">
+            <ImageOffIcon class="h-8 w-8" aria-hidden="true" />
+            <span class="text-xs">Image missing</span>
+          </span>
+        {:else}
+          <img src={thumbSrc(asset)} alt="" aria-hidden="true" class="max-h-full max-w-full object-contain" onerror={() => markBroken(asset.hash)} />
+        {/if}
+      </div>
+
+      <!-- The name and the media: reference with a copy button. -->
+      <div class="flex flex-col gap-1.5">
+        <span class="text-[1.0625rem] font-semibold leading-tight break-words">{asset.displayName}</span>
+        <span class="flex items-center gap-1.5">
+          <code class="min-w-0 break-all font-[family-name:var(--font-editor)] text-[0.6875rem] text-[var(--color-muted)]">{reference}</code>
+          <button type="button" class="btn btn-ghost btn-xs btn-square" aria-label="Copy reference" onclick={() => copyReference(reference)}>
+            <CopyIcon class="h-3.5 w-3.5" aria-hidden="true" />
+          </button>
+        </span>
+      </div>
+
+      <!-- The metadata edit form: the display name, the slug, and the default alt, posting one Save
+           to ?/mediaUpdate. The alt is the asset DEFAULT for new placements, never a rewrite of
+           the alt already committed in existing placements (decision 6). -->
+      <form method="POST" action="?/mediaUpdate" class="flex flex-col gap-4">
+        <CsrfField />
+        <input type="hidden" name="hash" value={asset.hash} />
+
+        <label class="flex flex-col gap-1">
+          <span class="text-[0.8125rem] font-medium">Name</span>
+          <input class="input input-sm" name="displayName" bind:value={nameInput} autocomplete="off" />
+        </label>
+        <label class="flex flex-col gap-1">
+          <span class="text-[0.8125rem] font-medium">URL slug</span>
+          <input class="input input-sm font-[family-name:var(--font-editor)]" name="slug" bind:value={slugInput} autocomplete="off" />
+        </label>
+
+        <!-- The alt editor: the describe/decorative radiogroup (the 2b model) plus the alt field.
+             Alt is debt: Save is never gated on it, and a left-blank or a decorative both submit an
+             empty alt. The submitted value rides a hidden input so the disabled-or-absent textarea
+             never strands the field. -->
+        <fieldset class="flex flex-col gap-2" role="radiogroup" aria-label="Default alt text" aria-describedby="cairn-ml-alt-note">
+          <legend class="text-[0.8125rem] font-medium">Default alt text</legend>
+          <p id="cairn-ml-alt-note" class="text-xs text-[var(--color-muted)]">
+            The default for the next time this image is placed. It does not change the alt on pages that already use it. You can save without it and add it later.
+          </p>
+          <input type="hidden" name="alt" value={submittedAlt} />
+          <label class="flex cursor-pointer items-center gap-2">
+            <input type="radio" class="radio radio-sm" name="cairn-ml-alt-mode" value="describe" bind:group={altMode} />
+            <span class="text-sm">Describe it</span>
+          </label>
+          {#if altMode === 'describe'}
+            <textarea class="textarea textarea-sm ml-6 w-[calc(100%-1.5rem)]" aria-label="Alt text description" rows="2" bind:value={altText}></textarea>
+          {/if}
+          <label class="flex cursor-pointer items-center gap-2">
+            <input type="radio" class="radio radio-sm" name="cairn-ml-alt-mode" value="decorative" bind:group={altMode} />
+            <span class="text-sm">Decorative</span>
+          </label>
+        </fieldset>
+
+        {#if updateError}
+          <p role="alert" class="text-xs text-[var(--cairn-error-ink)]">{updateError}</p>
+        {/if}
+
+        <div class="flex justify-end">
+          <button type="submit" class="btn btn-sm btn-primary">Save</button>
+        </div>
+      </form>
+
+      <!-- Where used, grouped published-then-branch. Each entry links to its editor; a branch entry
+           names its branch. No entries shows the no-references treatment (never a bare "unused"). -->
+      <div class="flex flex-col gap-3">
+        <div class="flex items-baseline justify-between">
+          <span class={headerLabel}>Where used</span>
+          {#if usageEntries(asset.hash).length > 0}
+            <span class="text-xs text-[var(--color-muted)]">{usageEntries(asset.hash).length} {usageEntries(asset.hash).length === 1 ? 'entry' : 'entries'}</span>
+          {/if}
+        </div>
+
+        {#if usageEntries(asset.hash).length === 0}
+          <div class="flex items-start gap-2.5 rounded-box border border-dashed border-[var(--cairn-card-border)] bg-base-200/40 p-3">
+            <Link2OffIcon class="mt-0.5 h-4 w-4 flex-none text-[var(--color-muted)]" aria-hidden="true" />
+            <span class="text-[0.8125rem] leading-relaxed">No references found. Deleting this changes nothing readers see.</span>
+          </div>
+        {:else}
+          {#if publishedRows(asset.hash).length > 0}
+            <div class="flex flex-col gap-1.5">
+              <span class="text-[0.6875rem] font-semibold text-[var(--color-muted)]">Published on the site</span>
+              <ul class="flex list-none flex-col gap-1 p-0">
+                {#each publishedRows(asset.hash) as entry (entry.concept + '/' + entry.id)}
+                  <li>
+                    <a href="/admin/{entry.concept}/{entry.id}" class="flex items-center gap-2.5 rounded-box border border-[var(--cairn-card-border)] bg-base-100 px-2.5 py-2 no-underline hover:border-primary/40">
+                      <FileTextIcon class="h-3.5 w-3.5 flex-none text-[var(--color-muted)]" aria-hidden="true" />
+                      <span class="min-w-0 flex-1 truncate text-[0.8125rem] font-medium">{entry.title}</span>
+                      <ChevronRightIcon class="h-3.5 w-3.5 flex-none text-[var(--color-muted)] opacity-60" aria-hidden="true" />
+                    </a>
+                  </li>
+                {/each}
+              </ul>
+            </div>
+          {/if}
+          {#if branchRows(asset.hash).length > 0}
+            <div class="flex flex-col gap-1.5">
+              <span class="text-[0.6875rem] font-semibold text-[var(--color-muted)]">In an unpublished edit</span>
+              <ul class="flex list-none flex-col gap-1 p-0">
+                {#each branchRows(asset.hash) as entry (entry.concept + '/' + entry.id + branchNameOf(entry))}
+                  <li>
+                    <a href="/admin/{entry.concept}/{entry.id}" class="flex items-center gap-2.5 rounded-box border border-[var(--cairn-card-border)] bg-base-100 px-2.5 py-2 no-underline hover:border-primary/40">
+                      <FileTextIcon class="h-3.5 w-3.5 flex-none text-[var(--color-muted)]" aria-hidden="true" />
+                      <span class="flex min-w-0 flex-1 flex-col">
+                        <span class="truncate text-[0.8125rem] font-medium">{entry.title}</span>
+                        <span class="truncate font-[family-name:var(--font-editor)] text-[0.625rem] text-[var(--cairn-warning-ink)]">{branchNameOf(entry)}</span>
+                      </span>
+                      <ChevronRightIcon class="h-3.5 w-3.5 flex-none text-[var(--color-muted)] opacity-60" aria-hidden="true" />
+                    </a>
+                  </li>
+                {/each}
+              </ul>
+            </div>
+          {/if}
+        {/if}
+      </div>
+
+      <!-- The metadata grid. -->
+      <div>
+        <span class={headerLabel}>Details</span>
+        <dl class="mt-2 grid grid-cols-[auto_1fr] gap-x-3.5 gap-y-1.5 text-[0.8125rem]">
+          {#if dimensions(asset)}
+            <dt class="text-[var(--color-muted)]">Dimensions</dt>
+            <dd class="m-0 text-right tabular-nums">{dimensions(asset)}</dd>
+          {/if}
+          <dt class="text-[var(--color-muted)]">Size</dt>
+          <dd class="m-0 text-right tabular-nums">{formatBytes(asset.bytes)}</dd>
+          <dt class="text-[var(--color-muted)]">Type</dt>
+          <dd class="m-0 text-right">{typeLabel(asset)}</dd>
+          <dt class="text-[var(--color-muted)]">Added</dt>
+          <dd class="m-0 text-right tabular-nums">{formatAdded(asset.createdAt)}</dd>
+        </dl>
+      </div>
+
+      <!-- The actions. Replace is deferred (no Replace control in this slice). -->
+      <div class="flex gap-2.5 border-t border-[var(--cairn-card-border)] pt-4">
+        <button type="button" class="btn btn-sm flex-1 border-[var(--cairn-error-border)] text-[var(--cairn-error-ink)]" onclick={openDeleteDialog}>
+          <Trash2Icon class="h-4 w-4" aria-hidden="true" /> Delete
+        </button>
+      </div>
+    </div>
+  </aside>
+{/if}
+
+<!-- The two-faced safe-delete alertdialog: a native modal <dialog> (the focus trap is native), with
+     NO light dismiss (no method="dialog" backdrop). The in-use face names the breaking entries and
+     gates Delete behind the typed-slug confirmation; the orphan face is a calm confirm. Both post
+     hash to ?/mediaDelete; the in-use face also posts confirmSlug. -->
+<dialog
+  bind:this={deleteDialog}
+  class="modal"
+  role="alertdialog"
+  aria-labelledby="cairn-ml-delete-title"
+  aria-describedby="cairn-ml-delete-desc"
+>
+  {#if selected}
+    {@const asset = selected}
+    <div class="modal-box max-w-lg">
+      <div class="mb-3 flex items-start gap-3">
+        <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box {deleteInUse ? 'bg-[var(--cairn-error-tint)] text-[var(--cairn-error-ink)]' : 'bg-base-content/[0.07] text-[var(--color-muted)]'}" aria-hidden="true">
+          {#if deleteInUse}<TriangleAlertIcon class="h-5 w-5" />{:else}<Trash2Icon class="h-5 w-5" />{/if}
+        </span>
+        <div class="flex-1">
+          <h2 id="cairn-ml-delete-title" class="text-lg font-bold tracking-tight font-[family-name:var(--font-display)]">Delete {asset.displayName}?</h2>
+          <p id="cairn-ml-delete-desc" class="mt-1 text-[0.8125rem] leading-relaxed text-[var(--color-muted)]">
+            {#if deleteInUse}
+              Deleting this breaks the image in {breakingRows.length} {breakingRows.length === 1 ? 'entry' : 'entries'}. Type the name to delete it anyway.
+            {:else}
+              No references found. Deleting this changes nothing readers see.
+            {/if}
+          </p>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-3">
+        {#if deleteInUse}
+          <div>
+            <span class="mb-2 inline-flex items-center gap-1.5 text-[0.8125rem] font-semibold text-[var(--cairn-error-ink)]">
+              <XIcon class="h-3.5 w-3.5" aria-hidden="true" /> These would break
+            </span>
+            <ul class="flex max-h-44 list-none flex-col gap-1 overflow-y-auto rounded-box border border-[var(--cairn-error-border)] bg-[var(--cairn-error-tint)] p-2">
+              {#if deleteBreakingPublished.length > 0}
+                <li class="px-1.5 pb-0.5 pt-1 text-[0.625rem] font-semibold uppercase tracking-wide text-[var(--color-muted)]">Published on the site</li>
+                {#each deleteBreakingPublished as entry (entry.concept + '/' + entry.id)}
+                  <li><a href="/admin/{entry.concept}/{entry.id}" class="flex items-center gap-2 rounded px-1.5 py-1 text-[0.8125rem] font-medium no-underline hover:bg-[var(--cairn-error-ink)]/10">{entry.title}</a></li>
+                {/each}
+              {/if}
+              {#if deleteBreakingBranch.length > 0}
+                <li class="px-1.5 pb-0.5 pt-1 text-[0.625rem] font-semibold uppercase tracking-wide text-[var(--color-muted)]">In an unpublished edit</li>
+                {#each deleteBreakingBranch as entry (entry.concept + '/' + entry.id + branchNameOf(entry))}
+                  <li>
+                    <a href="/admin/{entry.concept}/{entry.id}" class="flex flex-col rounded px-1.5 py-1 no-underline hover:bg-[var(--cairn-error-ink)]/10">
+                      <span class="text-[0.8125rem] font-medium">{entry.title}</span>
+                      <span class="font-[family-name:var(--font-editor)] text-[0.6rem] text-[var(--cairn-warning-ink)]">{branchNameOf(entry)}</span>
+                    </a>
+                  </li>
+                {/each}
+              {/if}
+            </ul>
+          </div>
+        {/if}
+
+        <div class="flex items-start gap-2.5 rounded-box border border-[var(--cairn-card-border)] bg-base-200/50 p-3 text-[0.8125rem] leading-relaxed">
+          <ClockIcon class="mt-0.5 h-4 w-4 flex-none text-[var(--color-positive-ink)]" aria-hidden="true" />
+          <span>Every version stays in git history, so a developer can bring this back later.</span>
+        </div>
+
+        <form method="POST" action="?/mediaDelete" class="flex flex-col gap-3">
+          <CsrfField />
+          <input type="hidden" name="hash" value={asset.hash} />
+          {#if deleteInUse}
+            <input type="hidden" name="confirmSlug" value={confirmSlugInput} />
+            <div class="flex flex-col gap-1.5">
+              <label class="text-[0.875rem]" for="cairn-ml-confirm">Type <code class="rounded bg-[var(--cairn-code-chip)] px-1.5 py-0.5 font-[family-name:var(--font-editor)] text-[0.8125rem] font-semibold">{asset.slug}</code> to delete it anyway.</label>
+              <input id="cairn-ml-confirm" class="input input-sm font-[family-name:var(--font-editor)]" autocomplete="off" placeholder="Type the asset slug" bind:value={confirmSlugInput} />
+            </div>
+          {/if}
+          <div class="flex justify-end gap-2.5 border-t border-[var(--cairn-card-border)] pt-3.5">
+            <button type="button" class="btn btn-sm" onclick={closeDeleteDialog}>Cancel</button>
+            {#if deleteInUse}
+              <button type="submit" class="btn btn-sm btn-error" disabled={!confirmMatches}>Delete anyway</button>
+            {:else}
+              <button type="submit" class="btn btn-sm btn-error">Delete it</button>
+            {/if}
+          </div>
+        </form>
+      </div>
+    </div>
+  {/if}
+</dialog>

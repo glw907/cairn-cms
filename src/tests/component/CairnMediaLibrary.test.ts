@@ -235,3 +235,179 @@ describe('CairnMediaLibrary empty and broken states', () => {
     expect(brokenTile.textContent ?? '').toContain('old-pylon');
   });
 });
+
+// --- Task 7: the detail slide-over and the safe-delete dialog ---
+
+// A usage overlay with a published reference and an edit-branch reference, for the where-used tests.
+function mixedUsage(): MediaUsageInfo {
+  return {
+    count: 2,
+    entries: [
+      { concept: 'posts', id: 'first-season', title: 'A season on the early tracks', origin: { kind: 'published' } },
+      { concept: 'pages', id: 'about-the-trails', title: 'About the trails', origin: { kind: 'branch', branch: 'cairn/pages/about-the-trails' } },
+    ],
+  };
+}
+
+/** Open the first asset's slide-over by activating its tile with Enter, and return the region. */
+async function openSlideOver(screen: ReturnType<typeof render>, name: RegExp) {
+  const option = [...screen.container.querySelectorAll<HTMLElement>('[role="option"]')].find((o) => name.test(o.textContent ?? ''))!;
+  option.focus();
+  option.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  await expect.poll(() => screen.container.querySelector('[role="region"]')).not.toBeNull();
+  return screen.container.querySelector('[role="region"]') as HTMLElement;
+}
+
+describe('CairnMediaLibrary detail slide-over', () => {
+  it('opens non-modal (the listbox stays in the a11y tree), Escape closes it, focus returns to the origin', async () => {
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const tile = [...screen.container.querySelectorAll<HTMLElement>('[role="option"]')].find((o) => /first-light/.test(o.textContent ?? ''))!;
+    tile.focus();
+    tile.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+    const panel = await openSlideOver(screen, /first-light/);
+    // Non-modal: it is a region, not a dialog, and the grid is still queryable behind it.
+    expect(panel.getAttribute('role')).toBe('region');
+    expect(panel.getAttribute('aria-modal')).toBeNull();
+    expect(screen.container.querySelector('[role="listbox"]')).not.toBeNull();
+    // Focus moved into the panel (onto a control inside the region).
+    await expect.poll(() => panel.contains(document.activeElement)).toBe(true);
+
+    // Escape closes it and focus returns to the originating tile.
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await expect.poll(() => screen.container.querySelector('[role="region"]')).toBeNull();
+    expect(document.activeElement).toBe(tile);
+  });
+
+  it('groups where-used published vs branch, links each entry to its editor, names a branch, and shows the empty case', async () => {
+    const usage = { [DESCRIBED_USED.hash]: mixedUsage() };
+    const screen = render(CairnMediaLibrary, { data: fixture({ usage }) } as never);
+    const panel = await openSlideOver(screen, /first-light/);
+
+    expect(panel.textContent ?? '').toContain('Published on the site');
+    expect(panel.textContent ?? '').toContain('In an unpublished edit');
+    expect(panel.textContent ?? '').toContain('A season on the early tracks');
+    // The branch entry names its branch.
+    expect(panel.textContent ?? '').toContain('cairn/pages/about-the-trails');
+    // Each entry links to its editor.
+    const pub = [...panel.querySelectorAll('a')].find((a) => /A season on the early tracks/.test(a.textContent ?? ''))!;
+    expect(pub.getAttribute('href')).toBe('/admin/posts/first-season');
+    const branch = [...panel.querySelectorAll('a')].find((a) => /About the trails/.test(a.textContent ?? ''))!;
+    expect(branch.getAttribute('href')).toBe('/admin/pages/about-the-trails');
+
+    // The empty case: an asset with no usage key shows the no-references wording, never "unused".
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await expect.poll(() => screen.container.querySelector('[role="region"]')).toBeNull();
+    const orphan = await openSlideOver(screen, /meadow-fence/);
+    expect(orphan.textContent ?? '').toMatch(/no references found/i);
+  });
+
+  it('carries the media: reference and the alt editor + rename in one ?/mediaUpdate form', async () => {
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const panel = await openSlideOver(screen, /first-light/);
+
+    // The media: reference is shown.
+    expect(panel.textContent ?? '').toContain('media:first-light.aaaa111122223333');
+
+    // One update form carries the hidden hash, the display name, the slug, and the default alt.
+    const form = [...panel.querySelectorAll('form')].find((f) => f.getAttribute('action') === '?/mediaUpdate')!;
+    expect(form).toBeTruthy();
+    expect((form.querySelector('input[name="hash"]') as HTMLInputElement).value).toBe('aaaa111122223333');
+    expect((form.querySelector('input[name="displayName"]') as HTMLInputElement).value).toBe('first-light');
+    expect((form.querySelector('input[name="slug"]') as HTMLInputElement).value).toBe('first-light');
+    // The alt field rides a hidden input; DESCRIBED_USED has a described alt, so it seeds describe.
+    expect((form.querySelector('input[name="alt"]') as HTMLInputElement).value).toBe('A pair of blue running shoes');
+    // The alt editor is a real radiogroup labeled as the asset default for new placements.
+    const altGroup = form.querySelector('[role="radiogroup"]')!;
+    expect(altGroup.getAttribute('aria-label')).toMatch(/alt/i);
+    expect(form.textContent ?? '').toMatch(/default for the next time/i);
+  });
+
+  it('surfaces a ?/mediaUpdate failure error in the slide-over', async () => {
+    const failed = { error: 'Enter a valid slug: lowercase letters, numbers, and hyphens.' };
+    const screen = render(CairnMediaLibrary, { data: fixture(), form: failed } as never);
+    const panel = await openSlideOver(screen, /first-light/);
+    expect(panel.querySelector('[role="alert"]')?.textContent ?? '').toContain('Enter a valid slug');
+  });
+});
+
+describe('CairnMediaLibrary safe-delete alertdialog', () => {
+  it('shows the in-use face: lists entries, gates Delete behind the typed slug, posts confirmSlug', async () => {
+    const usage = { [DESCRIBED_USED.hash]: mixedUsage() };
+    const screen = render(CairnMediaLibrary, { data: fixture({ usage }) } as never);
+    await openSlideOver(screen, /first-light/);
+
+    // Open the delete from the slide-over.
+    await screen.getByRole('button', { name: /^delete$/i }).click();
+    const dialog = screen.container.querySelector('dialog[role="alertdialog"]') as HTMLDialogElement;
+    expect(dialog).not.toBeNull();
+    await expect.poll(() => dialog.open).toBe(true);
+
+    // The in-use face names the breaking entries, grouped.
+    expect(dialog.textContent ?? '').toContain('These would break');
+    expect(dialog.textContent ?? '').toContain('A season on the early tracks');
+    expect(dialog.textContent ?? '').toContain('About the trails');
+
+    // The Delete submit is gated until the typed slug matches.
+    const form = [...dialog.querySelectorAll('form')].find((f) => f.getAttribute('action') === '?/mediaDelete')!;
+    const submit = [...form.querySelectorAll('button')].find((b) => b.getAttribute('type') === 'submit') as HTMLButtonElement;
+    expect(submit.disabled).toBe(true);
+
+    const confirm = dialog.querySelector('#cairn-ml-confirm') as HTMLInputElement;
+    confirm.value = 'first-light';
+    confirm.dispatchEvent(new Event('input', { bubbles: true }));
+    await expect.poll(() => submit.disabled).toBe(false);
+
+    // The form posts hash and confirmSlug to ?/mediaDelete.
+    expect((form.querySelector('input[name="hash"]') as HTMLInputElement).value).toBe('aaaa111122223333');
+    await expect.poll(() => (form.querySelector('input[name="confirmSlug"]') as HTMLInputElement).value).toBe('first-light');
+  });
+
+  it('shows the orphan face: a calm confirm, no confirmSlug, Delete enabled', async () => {
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    await openSlideOver(screen, /meadow-fence/);
+    await screen.getByRole('button', { name: /^delete$/i }).click();
+    const dialog = screen.container.querySelector('dialog[role="alertdialog"]') as HTMLDialogElement;
+    await expect.poll(() => dialog.open).toBe(true);
+
+    expect(dialog.textContent ?? '').not.toContain('These would break');
+    expect(dialog.textContent ?? '').toMatch(/no references found/i);
+    expect(dialog.textContent ?? '').toMatch(/git history/i);
+
+    const form = [...dialog.querySelectorAll('form')].find((f) => f.getAttribute('action') === '?/mediaDelete')!;
+    expect(form.querySelector('input[name="confirmSlug"]')).toBeNull();
+    expect((form.querySelector('input[name="hash"]') as HTMLInputElement).value).toBe('cccc777788889999');
+    const submit = [...form.querySelectorAll('button')].find((b) => b.getAttribute('type') === 'submit') as HTMLButtonElement;
+    expect(submit.disabled).toBe(false);
+  });
+
+  it('opens the dialog directly on the row-delete intent from the table', async () => {
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    await screen.getByRole('button', { name: /list view/i }).click();
+    const rowDelete = [...screen.container.querySelectorAll<HTMLButtonElement>('tbody button')].find((b) => /delete meadow-fence/i.test(b.getAttribute('aria-label') ?? ''))!;
+    rowDelete.click();
+    const dialog = screen.container.querySelector('dialog[role="alertdialog"]') as HTMLDialogElement;
+    await expect.poll(() => dialog.open).toBe(true);
+    // No slide-over opened, just the dialog.
+    expect(screen.container.querySelector('[role="region"]')).toBeNull();
+    expect(dialog.textContent ?? '').toContain('meadow-fence');
+  });
+
+  it('re-opens the in-use face on a fresh MediaDeleteRefusal with the server fresh list', async () => {
+    // A stale load-time overlay says no references, but the FRESH refusal carries a breaking entry.
+    const refusal = {
+      error: 'Cannot delete meadow-fence: found in 1 entry.',
+      hash: UNUSED.hash,
+      foundIn: 1,
+      usage: [{ concept: 'posts', id: 'late-edit', title: 'A late edit', origin: { kind: 'published' as const } }],
+    };
+    const screen = render(CairnMediaLibrary, { data: fixture(), form: refusal } as never);
+    const dialog = screen.container.querySelector('dialog[role="alertdialog"]') as HTMLDialogElement;
+    await expect.poll(() => dialog.open).toBe(true);
+    // The in-use face with the fresh list, not the stale "no references".
+    expect(dialog.textContent ?? '').toContain('These would break');
+    expect(dialog.textContent ?? '').toContain('A late edit');
+    const form = [...dialog.querySelectorAll('form')].find((f) => f.getAttribute('action') === '?/mediaDelete')!;
+    expect((form.querySelector('input[name="hash"]') as HTMLInputElement).value).toBe(UNUSED.hash);
+  });
+});

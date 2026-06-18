@@ -133,11 +133,10 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   let sortAsc = $state(false); // newest-first by default, the usual CMS convention
   const sorted = $derived.by(() => {
     // Lexical compare on the ISO createdAt is chronological; copy first so the source order holds.
-    const rows = [...filtered].sort((a, b) => {
-      const cmp = a.createdAt < b.createdAt ? -1 : a.createdAt > b.createdAt ? 1 : 0;
+    return [...filtered].sort((a, b) => {
+      const cmp = a.createdAt.localeCompare(b.createdAt);
       return sortAsc ? cmp : -cmp;
     });
-    return rows;
   });
   function toggleSort() {
     sortAsc = !sortAsc;

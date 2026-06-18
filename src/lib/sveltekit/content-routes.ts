@@ -491,12 +491,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       const manifestRaw = await readRaw(runtime.backend, runtime.manifestPath, token);
       const manifest = manifestRaw === null ? emptyManifest() : parseManifest(manifestRaw);
       const index = await buildUsageIndex(runtime.backend, token, runtime.concepts, manifest);
-      usage = {};
       for (const [hash, entries] of index) {
-        // Count distinct concept/id pairs: a published use and an edit-branch edit of the same
-        // entry are two rows but one distinct entry.
-        const distinct = new Set(entries.map((e) => `${e.concept}/${e.id}`)).size;
-        usage[hash] = { count: distinct, entries };
+        usage[hash] = { count: distinctEntryCount(entries), entries };
       }
     } catch {
       usage = {};
@@ -1313,7 +1309,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     // content manifest and every open cairn/* branch.
     const index = await buildUsageIndex(runtime.backend, token, runtime.concepts, await readManifest(token));
     const rows = index.get(hash) ?? [];
-    const foundIn = new Set(rows.map((e) => `${e.concept}/${e.id}`)).size;
+    const foundIn = distinctEntryCount(rows);
 
     if (rows.length > 0) {
       // In use: refuse unless the editor typed the slug to force it (the in-use face's confirmation).
@@ -1446,6 +1442,12 @@ function originRank(entry: UsageEntry): number {
  *  which sorts ahead of any branch by `originRank` already). */
 function branchKey(entry: UsageEntry): string {
   return entry.origin.kind === 'branch' ? entry.origin.branch : '';
+}
+
+/** The distinct-entry count behind a where-used set: a published use and an edit-branch edit of the
+ *  same entry are two rows but one distinct entry, so count by concept/id. */
+function distinctEntryCount(rows: UsageEntry[]): number {
+  return new Set(rows.map((e) => `${e.concept}/${e.id}`)).size;
 }
 
 /** Strip control characters from a human field and cap it at `max` characters. Control characters

@@ -20,6 +20,7 @@ identical on every host regardless of the site's own theme.
   import SignpostIcon from '@lucide/svelte/icons/signpost';
   import SettingsIcon from '@lucide/svelte/icons/settings';
   import UsersIcon from '@lucide/svelte/icons/users';
+  import ImageIcon from '@lucide/svelte/icons/image';
   import BlocksIcon from '@lucide/svelte/icons/blocks';
   import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
   import './cairn-admin.css';
@@ -56,6 +57,8 @@ identical on every host regardless of the site's own theme.
   // the owner-only Editors.
   const coreItems: NavItem[] = $derived([
     ...data.concepts.map((c) => ({ label: c.label, icon: FileTextIcon, href: `/admin/${c.id}` })),
+    // Media is a content peer, immediately after the concepts.
+    { label: 'Media', icon: ImageIcon, href: '/admin/media' },
     ...(data.navLabel ? [{ label: data.navLabel, icon: SignpostIcon, href: '/admin/nav' }] : []),
     { label: 'Settings', icon: SettingsIcon, href: '/admin/settings' },
     ...(data.canManageEditors ? [{ label: 'Editors', icon: UsersIcon, href: '/admin/editors' }] : []),

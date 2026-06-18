@@ -117,6 +117,31 @@ per-route mounting it lives at `src/routes/admin/(app)/[concept]/+page.svelte`.
 <ConceptList {data} />
 ```
 
+### `CairnMediaLibrary`
+
+```ts
+let { data, form }: { data: MediaLibraryData; form?: unknown | null };
+```
+
+The admin Media Library screen, a peer of the concept lists at `/admin/media`. `data` is the
+`MediaLibraryData` from `mediaLibraryLoad`: the unioned `assets`, the per-hash `usage` overlay, and
+a degraded-load `error`. The resting surface is a visual contact-sheet grid (a roving-tabindex
+listbox of tiles); a density toggle flips to an enriched sortable table. A toolbar row carries
+search, a pick-one triage radiogroup (All, Needs alt, Unused), and the density toggle, with
+client-side pagination over the full set. The single mount renders it for the `media` view inside
+`CairnAdmin`; a per-route mount lives at `src/routes/admin/(app)/media/+page.svelte`.
+
+```svelte
+<script lang="ts">
+  import { CairnMediaLibrary } from '@glw907/cairn-cms/components';
+  import type { MediaLibraryData } from '@glw907/cairn-cms/sveltekit';
+
+  let { data }: { data: MediaLibraryData } = $props();
+</script>
+
+<CairnMediaLibrary {data} />
+```
+
 ### `EditPage`
 
 ```ts

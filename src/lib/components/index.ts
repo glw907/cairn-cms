@@ -6,6 +6,7 @@ export { default as LoginPage } from './LoginPage.svelte';
 export { default as ConfirmPage } from './ConfirmPage.svelte';
 export { default as CsrfField } from './CsrfField.svelte';
 export { default as ConceptList } from './ConceptList.svelte';
+export { default as CairnMediaLibrary } from './CairnMediaLibrary.svelte';
 export { default as EditPage } from './EditPage.svelte';
 export { default as ManageEditors } from './ManageEditors.svelte';
 export { default as MarkdownEditor } from './MarkdownEditor.svelte';

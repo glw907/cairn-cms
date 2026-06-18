@@ -97,6 +97,15 @@
   --color-positive-ink: oklch(48% 0.12 150);
   --color-error: oklch(56% 0.2 25);
   --color-error-content: oklch(98% 0.012 25);
+  /* The danger family for the safe-delete dialog: the on-surface error INK (the "these would break"
+     label and the danger-soft Delete button text), a soft error TINT (the break-list surface), and a
+     danger BORDER (the tint's hairline and the type-to-confirm input). --color-error is tuned as a
+     button fill, so the ink is the readable small-text counterpart. Locked: the ink on base-100
+     measures ~5.2:1 and on the error tint ~4.9:1, clearing the 4.5:1 AA floor (WCAG 1.4.3). Do not
+     lighten the ink or darken the tint without re-checking both. */
+  --cairn-error-ink: oklch(50% 0.19 25);
+  --cairn-error-tint: oklch(96% 0.03 25);
+  --cairn-error-border: oklch(85% 0.06 25);
 
   /* Accessible muted text tones: >= 4.5:1 contrast on base-100/base-200. */
   --color-muted: oklch(48% 0.01 75);
@@ -203,6 +212,13 @@
   --color-positive-ink: oklch(78% 0.12 150);
   --color-error: oklch(70% 0.18 25);
   --color-error-content: oklch(20% 0.04 25);
+  /* The danger family on dark, the counterpart to the light root's. The ink reads as small danger
+     text on the dark bases and on the dark error tint; the tint and border carry the safe-delete
+     dialog's surfaces. Locked: the ink on dark base-100 measures ~7:1 and on the dark error tint
+     ~5.3:1. Do not darken the ink or lighten the tint without re-checking both. */
+  --cairn-error-ink: oklch(78% 0.15 25);
+  --cairn-error-tint: oklch(28% 0.06 25);
+  --cairn-error-border: oklch(40% 0.09 25);
 
   /* Accessible muted text tones on the dark bases. */
   --color-muted: oklch(72% 0.01 75);

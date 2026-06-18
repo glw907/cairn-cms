@@ -1,0 +1,1082 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Proposed design: Replace and Alt-propagation (media Pass B, rev.2 consolidated)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+  rel="stylesheet"
+/>
+<style>
+  /* ===========================================================================================
+     REV.2 CONSOLIDATED — media Pass B, Replace and Alt-propagation.
+
+     Two new operations on the existing Media Library detail slide-over (/admin/media). Replace
+     uploads a new file for an existing asset; cairn is content-addressed, so the new file has a new
+     hash and every reference in published content is repointed to it in one commit to main. Alt
+     propagation pushes the asset's default alt to placements that lack it, with an opt-in to also
+     overwrite placements that carry custom alt. Both rewrite N published entries at once, so the
+     UI's whole job is to make the impact legible and confirmable BEFORE applying.
+
+     The base is impactreview's dedicated review modal: a single-column modal at ~38rem, the
+     modal-box as the scroll container under min(content, 85vh), built in the shipped safe-delete
+     alertdialog grammar. Onto that base the correctness wins from comparison are grafted, and the
+     calm resting slide-over from incontext.
+
+     What rev.2 settles:
+     1. THE FAKE-CHECKBOX CRITICAL IS FIXED. The custom-alt opt-in is a real native
+        <input type="checkbox" class="checkbox checkbox-sm"> inside its <label>, peer/:checked-driven
+        for the visual. It changes the committed total, so it must be keyboard-operable and in the
+        a11y tree. impactreview's styled aria-hidden span is gone.
+     2. THE CONTENT-ADDRESSED COPY IS CORRECTED. We never say the reference is unchanged
+        (impactreview's load-bearing error). The line reads: "The name first-light stays the same.
+        Only the content hash changes, so every published entry is repointed to the new file in one
+        commit." The from/to strip shows the old hash struck and the new hash in accent.
+     3. THE OFF-SYSTEM WARNING TINT IS DROPPED. The custom bucket renders on plain base-100 with a
+        --cairn-warning-ink glyph-plus-label header. The opt-in band and its checked checkbox are
+        styled in the shipped --cairn-error-* family, because overwriting an editor's words is the
+        destructive choice. No invented --cairn-warning-tint; shipped tokens only.
+     4. HONEST BEFORE/AFTER, NOT 2-OF-N. The will-fill bucket shows every row's actual
+        (no alt) -> default-alt string. The custom bucket shows each row's existing custom alt (the
+        "was" value) struck/quietened BEFORE the opt-in is checked, so the author reads what is at
+        risk first; checking flips the rows to was -> default. This is comparison's per-row honesty
+        on impactreview's shell. Neither flow is truncated to two samples; both cap past ~8 with a
+        real "Show all N" carrying aria-expanded + aria-controls.
+     5. THE ALT FLOW IS role="dialog", NOT alertdialog, and has NO typed gate. Replace keeps
+        role="alertdialog" and the typed-slug gate (it repoints a hash and can break a draft). Alt
+        fill is reversible and frequent, so it is the everyday register with one bucket-level opt-in.
+     6. THE FAIL-CLOSED SURFACE HAS NO DEAD BUTTON. There is no disabled Replace button. A quiet
+        "Check usage again" primary re-runs the scan, the typed gate is absent (nothing safe to
+        confirm), and the specific unreadable branch is named. The banner on open is role="status";
+        role="alert" is reserved for a failure surfaced after the user pressed Replace.
+     7. THE RESTING SLIDE-OVER GAINS TWO QUIET TEXT-WEIGHT CONTROLS beside the existing Delete
+        (incontext's light treatment), each a levelled button:not(.btn), lighter than a bordered row.
+     8. RECOVERABILITY IS STATED PLAINLY per operation (comparison's reassurance): Replace says the
+        old file stays in git history and the alt on each placement is left exactly as it is; alt
+        propagation says every version stays in git history so any overwrite can be undone.
+     9. THE BODY-VS-HERO CAVEAT sits beside the will-fill bucket, where the surprised author looks.
+
+     cairn is NOT WYSIWYG: every before/after is a structured fact (the alt string, the hash, the
+     title, the placement), never a rendered-page canvas. Live-region choreography (the polite count
+     on opt-in toggle, focus-to-first-revealed-row on "show all", Cancel-autofocus, focus-restore to
+     the slide-over entry point on close) is annotated here and must be wired in the Svelte build;
+     a static mockup cannot prove it.
+
+     This mockup hand-rolls the DaisyUI/Tailwind look in plain CSS (no build step), but every class it
+     stands in for is a real DaisyUI v5 / Tailwind 4 class, and every color is a shipped Warm Stone
+     token copied verbatim from cairn-admin.css. No removed classes (no form-control, label-text,
+     -bordered, btn-group, card-compact). The .checkbox / .radio stand-ins mirror DaisyUI v5
+     .checkbox.checkbox-sm and .radio.radio-sm.
+     =========================================================================================== */
+
+  /* ---- mock scaffold (outside the themed surfaces) ---- */
+  body { margin: 0; background: #d8d4cf; }
+  .mock-label { font: 600 13px/1.4 system-ui; letter-spacing: .08em; text-transform: uppercase; color: #444; padding: 28px 24px 4px; }
+  .mock-note { font: 400 13px/1.6 system-ui; color: #5a564f; padding: 0 24px 14px; max-width: 88ch; }
+  .mock-note code { font-family: ui-monospace, monospace; background: rgba(0,0,0,.06); padding: 1px 4px; border-radius: 3px; }
+  .mock-note b { color: #3a362f; }
+  .screen { border: 1px solid #aaa; margin: 0 16px 48px; box-shadow: 0 2px 14px rgba(0,0,0,.08); overflow: hidden; border-radius: 2px; }
+  .screen.narrow { max-width: 392px; }
+  .pair { display: flex; flex-wrap: wrap; gap: 0; }
+  .pair > .screen { flex: 1 1 460px; margin: 0 16px 48px; }
+  /* the inline annotation chip: documents a11y behavior provable only in the Svelte build. Never a
+     user-visible element; it stands in for the implementer's wiring note. */
+  .anno { font: 600 11px/1.45 system-ui; color: #6b4f9c; background: #ece4f8; border: 1px dashed #b9a6dd; border-radius: 5px; padding: 5px 10px; margin: 0 24px 12px; display: inline-block; max-width: 86ch; }
+
+  /* ---- Warm Stone tokens, both theme roots, inlined VERBATIM from cairn-admin.css so the mockup
+       stands alone. The full --cairn-error-* danger family, --cairn-warning-ink, --color-positive-ink,
+       --cairn-code-chip, --color-error / --color-error-content are copied, not invented. ---- */
+  [data-theme='cairn-admin'] {
+    --color-base-100: oklch(99% 0.004 75);
+    --color-base-200: oklch(96.5% 0.006 75);
+    --color-base-300: oklch(89% 0.011 75);
+    --color-base-content: oklch(26% 0.014 75);
+    --color-primary: oklch(52% 0.2 293);
+    --color-primary-content: oklch(98% 0.01 293);
+    --color-accent: oklch(54% 0.16 300);
+    --color-muted: oklch(48% 0.01 75);
+    --color-subtle: oklch(42% 0.01 75);
+    --color-positive-ink: oklch(48% 0.12 150);
+    --color-error: oklch(56% 0.2 25);
+    --color-error-content: oklch(98% 0.012 25);
+    --cairn-error-ink: oklch(50% 0.19 25);
+    --cairn-error-tint: oklch(96% 0.03 25);
+    --cairn-error-border: oklch(85% 0.06 25);
+    --cairn-code-chip: oklch(94.5% 0.008 75);
+    --cairn-warning-ink: oklch(50% 0.13 70);
+    --cairn-card-border: oklch(93% 0.008 75);
+    --cairn-shadow: 0 1px 2px oklch(28% 0.02 75 / 0.05), 0 8px 24px -6px oklch(28% 0.02 75 / 0.1);
+    --cairn-scrim: oklch(20% 0.01 75 / 0.4);
+  }
+  [data-theme='cairn-admin-dark'] {
+    --color-base-100: oklch(24% 0.01 75);
+    --color-base-200: oklch(15.5% 0.009 75);
+    --color-base-300: oklch(30% 0.014 75);
+    --color-base-content: oklch(93% 0.006 75);
+    --color-primary: oklch(68% 0.18 293);
+    --color-primary-content: oklch(20% 0.03 293);
+    --color-accent: oklch(70% 0.14 300);
+    --color-muted: oklch(72% 0.01 75);
+    --color-subtle: oklch(80% 0.008 75);
+    --color-positive-ink: oklch(78% 0.12 150);
+    --color-error: oklch(70% 0.18 25);
+    --color-error-content: oklch(20% 0.04 25);
+    --cairn-error-ink: oklch(78% 0.15 25);
+    --cairn-error-tint: oklch(28% 0.06 25);
+    --cairn-error-border: oklch(40% 0.09 25);
+    --cairn-code-chip: oklch(29.5% 0.012 75);
+    --cairn-warning-ink: oklch(80% 0.14 70);
+    --cairn-card-border: oklch(30% 0.014 75);
+    --cairn-shadow: 0 1px 2px oklch(0% 0 0 / 0.35), 0 8px 24px -6px oklch(0% 0 0 / 0.5);
+    --cairn-scrim: oklch(0% 0 0 / 0.55);
+  }
+  [data-theme] {
+    --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+    --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-editor: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+
+  /* ===== the office ground: a thin sidebar + topbar, just enough to seat the slide-over and the modal ===== */
+  .ground { position: relative; overflow: hidden; background: var(--color-base-200); color: var(--color-base-content); font-family: var(--font-body); -webkit-font-smoothing: antialiased; min-height: 560px; }
+  .eyebrow { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); }
+  .app { display: flex; min-height: 560px; }
+  .side { width: 13rem; flex: none; background: var(--color-base-100); border-right: 1px solid var(--cairn-card-border); padding: 14px 12px; }
+  .brand { display: flex; align-items: center; gap: 9px; padding: 2px 6px 18px; }
+  .brand .tile { width: 30px; height: 30px; border-radius: 11px; background: var(--color-primary); color: var(--color-primary-content); display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+  .brand .wm { font-family: var(--font-display); font-weight: 700; font-size: 1.18rem; letter-spacing: -.01em; }
+  .nav-grp { margin-top: 10px; }
+  .nav-grp .gl { padding: 6px 8px; }
+  .nav-item { display: flex; align-items: center; gap: 9px; padding: 6px 9px; border-radius: .55rem; font-size: .8125rem; font-weight: 500; color: var(--color-subtle); text-decoration: none; }
+  .nav-item.on { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); font-weight: 600; }
+  .nav-item svg { width: 16px; height: 16px; flex: none; }
+  .main { flex: 1 1 auto; min-width: 0; position: relative; }
+  .topbar { height: 64px; display: flex; align-items: center; padding: 0 18px; background: var(--color-base-100); border-bottom: 1px solid var(--cairn-card-border); }
+  .topbar .crumb { font-size: .875rem; color: var(--color-muted); }
+  .topbar .crumb b { color: var(--color-base-content); font-weight: 600; }
+  .grow { flex: 1 1 auto; }
+  .content { padding: 22px; }
+  .page-h { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+  .page-h h1 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; letter-spacing: -.02em; margin: 2px 0 4px; }
+  .page-h .count { font-size: .875rem; color: var(--color-muted); }
+
+  /* the resting contact-sheet grid, dimmed behind the modal so the panel reads as the focus (the grid
+     stays in the a11y tree behind the slide-over, but a modal scrim sits over both) */
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .grid.dim { opacity: .5; filter: saturate(.85); pointer-events: none; }
+  .gtile { border: 1px solid var(--cairn-card-border); border-radius: 1rem; overflow: hidden; background: var(--color-base-100); }
+  .gtile.sel { box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-primary) 70%, transparent); }
+  .gtile .thumb { aspect-ratio: 4/3; }
+  .gtile .cap { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 7px 9px; border-top: 1px solid var(--cairn-card-border); }
+  .gtile .nm { font-size: .8125rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gtile .mk { display: inline-flex; align-items: center; gap: 3px; font-size: .625rem; font-weight: 600; }
+  .gtile .mk.ok { color: var(--color-positive-ink); } .gtile .mk.miss { color: var(--cairn-warning-ink); }
+  .gtile .mk svg { width: 12px; height: 12px; }
+
+  .btn-primary { font: 600 .8125rem/1 var(--font-body); border-radius: .5rem; padding: 8px 13px; border: 1px solid transparent; background: var(--color-primary); color: var(--color-primary-content); cursor: pointer; box-shadow: 0 1px 2px color-mix(in oklab, var(--color-primary) 35%, transparent); display: inline-flex; align-items: center; gap: 6px; }
+  .btn-primary svg { width: 15px; height: 15px; }
+
+  /* ===== the detail slide-over (the non-modal region recipe; here at rest) ===== */
+  .panel { position: absolute; top: 0; right: 0; bottom: 0; width: 22rem; background: var(--color-base-100); border-left: 1px solid var(--cairn-card-border); box-shadow: var(--cairn-shadow); display: flex; flex-direction: column; font-family: var(--font-body); }
+  .panel.static { position: static; width: 23rem; box-shadow: none; border-left: 0; }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; padding: 13px 16px; border-bottom: 1px solid var(--cairn-card-border); }
+  .panel-x { display: inline-flex; align-items: center; justify-content: center; height: 26px; width: 26px; border: 0; background: transparent; border-radius: .45rem; color: var(--color-subtle); cursor: pointer; }
+  .panel-x:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .panel-x:focus-visible { outline: 2px solid color-mix(in oklab, var(--color-primary) 70%, transparent); outline-offset: 1px; }
+  .panel-body { padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; }
+  .pv { aspect-ratio: 16/10; border: 1px solid var(--cairn-card-border); border-radius: 1rem; overflow: hidden; }
+  .id-row { display: flex; flex-direction: column; gap: 6px; }
+  .id-name { font-size: 1.0625rem; font-weight: 600; line-height: 1.2; }
+  .ref-row { display: flex; align-items: center; gap: 6px; }
+  .ref-row code { font-family: var(--font-editor); font-size: .6875rem; color: var(--color-muted); word-break: break-all; min-width: 0; }
+  .icbtn { display: inline-flex; align-items: center; justify-content: center; height: 24px; width: 24px; border: 0; background: transparent; border-radius: .4rem; color: var(--color-subtle); cursor: pointer; flex: none; }
+  .icbtn:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .icbtn:focus-visible { outline: 2px solid color-mix(in oklab, var(--color-primary) 70%, transparent); outline-offset: 1px; }
+  .lbl { font-size: .8125rem; font-weight: 500; }
+  .fld { display: flex; flex-direction: column; gap: 6px; }
+  .textarea { width: 100%; box-sizing: border-box; font: 400 .8125rem/1.45 var(--font-body); color: var(--color-base-content); background: var(--color-base-100); border: 1px solid var(--color-base-300); border-radius: .625rem; padding: 7px 10px; resize: none; min-height: 3.4rem; }
+  .textarea:focus-visible { outline: none; border-color: color-mix(in oklab, var(--color-primary) 70%, transparent); box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-primary) 70%, transparent); }
+  .hint { font-size: .75rem; color: var(--color-muted); line-height: 1.45; }
+  .radio-line { display: flex; align-items: center; gap: 8px; font-size: .875rem; cursor: pointer; }
+  .rdot { width: 14px; height: 14px; border-radius: 50%; border: 1px solid var(--color-base-300); flex: none; }
+  .rdot.on { border-color: var(--color-primary); background: radial-gradient(circle at center, var(--color-primary) 0 4px, transparent 5px); }
+
+  /* the where-used block (the established grouped list), kept brief at rest */
+  .wu-grp { font-size: .6875rem; font-weight: 600; color: var(--color-muted); margin-bottom: 6px; }
+  .wu-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+  .wu-row { display: flex; align-items: center; gap: 9px; border: 1px solid var(--cairn-card-border); border-radius: .55rem; background: var(--color-base-100); padding: 7px 9px; text-decoration: none; color: var(--color-base-content); }
+  .wu-row svg.lead { width: 14px; height: 14px; flex: none; color: var(--color-muted); }
+  .wu-row .nm { min-width: 0; flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .8125rem; font-weight: 500; }
+  .wu-row svg.chev { width: 13px; height: 13px; flex: none; color: var(--color-muted); opacity: .55; }
+
+  /* ----- the actions block: the two NEW operation entry points join the existing Delete, all
+       quiet text-weight (incontext's light treatment). Each is a levelled button:not(.btn), lighter
+       than a bordered act-btn row. Delete keeps the shipped danger-bordered control. ----- */
+  .actions { display: flex; flex-direction: column; gap: 4px; border-top: 1px solid var(--cairn-card-border); padding-top: 12px; }
+  .actions .ah { margin-bottom: 4px; }
+  /* a quiet text-weight entry point: no fill, no border, levelled like the scoped button:not(.btn)
+     reset, with a left glyph and an underline-on-hover affordance */
+  .act-quiet { display: flex; align-items: center; gap: 9px; width: 100%; box-sizing: border-box; text-align: left; background: transparent; border: 0; border-radius: .5rem; padding: 8px 8px; cursor: pointer; color: var(--color-base-content); font: 500 .8125rem/1.3 var(--font-body); }
+  .act-quiet svg { width: 15px; height: 15px; flex: none; color: var(--color-muted); }
+  .act-quiet:hover { background: color-mix(in oklab, var(--color-base-content) 5%, transparent); }
+  .act-quiet:hover .lab { text-decoration: underline; text-underline-offset: 2px; }
+  .act-quiet:focus-visible { outline: 2px solid color-mix(in oklab, var(--color-primary) 70%, transparent); outline-offset: 1px; }
+  .act-quiet .lab { min-width: 0; }
+  .act-quiet.danger { color: var(--cairn-error-ink); }
+  .act-quiet.danger svg { color: var(--cairn-error-ink); }
+  .act-quiet.danger:hover { background: color-mix(in oklab, var(--cairn-error-ink) 6%, transparent); }
+
+  /* ============================================================================================
+     THE SHARED REVIEW MODAL SHELL. A native <dialog class="modal"> opened with showModal(): native
+     focus trap + Escape. The modal-box is ~38rem, single column, max-height min(content, 85vh), and
+     IS the scroll container: its head and footer hold, the body scrolls. Below the narrow breakpoint
+     it becomes a full-width bottom sheet.
+     ============================================================================================ */
+  .scrim { position: absolute; inset: 0; background: var(--cairn-scrim); display: flex; align-items: flex-start; justify-content: center; padding: 36px 18px; overflow-y: auto; }
+  .modal-box { width: 38rem; max-width: 100%; max-height: min(100%, calc(100% - 36px)); display: flex; flex-direction: column; background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: 1rem; box-shadow: var(--cairn-shadow); font-family: var(--font-body); overflow: hidden; }
+
+  /* the modal head: a glyph badge, the asset-named title with the count folded in, the scope line.
+     The badge hue carries the register: danger-red for Replace and fail-closed, primary for alt. */
+  .mb-head { display: flex; align-items: flex-start; gap: 13px; padding: 18px 20px 14px; }
+  .mb-badge { width: 38px; height: 38px; flex: none; border-radius: .7rem; display: inline-flex; align-items: center; justify-content: center; }
+  .mb-badge svg { width: 20px; height: 20px; }
+  .mb-badge.primary { background: color-mix(in oklab, var(--color-primary) 12%, transparent); color: var(--color-primary); }
+  .mb-badge.danger { background: var(--cairn-error-tint); color: var(--cairn-error-ink); }
+  .mb-htext { flex: 1 1 auto; min-width: 0; }
+  .mb-title { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; letter-spacing: -.02em; line-height: 1.15; }
+  .mb-title b { font-weight: 700; }
+  .mb-sub { margin-top: 5px; font-size: .8125rem; line-height: 1.5; color: var(--color-muted); }
+  .mb-sub b { color: var(--color-base-content); font-weight: 600; }
+  .mb-sub code { font-family: var(--font-editor); }
+
+  /* the modal body: the scroll container's scrolling region */
+  .mb-body { padding: 0 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+
+  /* the from/to identity strip for Replace: old bytes left, an arrow, the new bytes. The corrected
+     content-addressed line lives in the foot. The old hash is struck; the new hash is accent. */
+  .swap { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; padding: 13px; border: 1px solid var(--cairn-card-border); border-radius: .8rem; background: var(--color-base-200); }
+  .swap-col { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .swap-col .sthumb { width: 56px; height: 40px; flex: none; border-radius: .45rem; border: 1px solid var(--cairn-card-border); }
+  .swap-col .sm { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .swap-col .sm .role { font-size: .625rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--color-muted); }
+  .swap-col .sm .meta { font-size: .75rem; color: var(--color-base-content); font-family: var(--font-editor); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .swap-col .sm .hash-old { color: var(--color-muted); text-decoration: line-through; text-decoration-color: color-mix(in oklab, var(--color-muted) 60%, transparent); }
+  .swap-col.to .role { color: var(--color-primary); }
+  .swap-col.to .sm .hash-new { color: var(--color-primary); font-weight: 500; }
+  .swap-arrow { color: var(--color-muted); display: inline-flex; }
+  .swap-arrow svg { width: 18px; height: 18px; }
+  .swap-foot { grid-column: 1 / -1; display: flex; align-items: flex-start; gap: 8px; padding-top: 11px; margin-top: 2px; border-top: 1px dashed var(--cairn-card-border); font-size: .75rem; line-height: 1.5; color: var(--color-muted); }
+  .swap-foot svg { width: 14px; height: 14px; flex: none; margin-top: 1px; color: var(--color-positive-ink); }
+  .swap-foot code { font-family: var(--font-editor); color: var(--color-base-content); background: var(--cairn-code-chip); padding: 1px 5px; border-radius: 4px; }
+
+  /* a section header inside the modal: an eyebrow with a trailing count */
+  .sec-head { display: flex; align-items: baseline; gap: 8px; }
+  .sec-head .ct { font-size: .6875rem; font-weight: 600; color: var(--color-muted); font-variant-numeric: tabular-nums; }
+
+  /* the per-entry old-to-new well for Replace: each row carries the LEGIBLE FACT (entry title +
+     where used), grouped published-then-branch. The redundant identical @old->@new hash pair is
+     dropped from every row (the swap is shown once at the asset level). Scroll-capped (max-h-44),
+     expanded by default. Echoes the safe-delete breaking-list pattern. */
+  .ent-well { border: 1px solid var(--cairn-card-border); border-radius: .8rem; overflow: hidden; }
+  .ent-scroll { max-height: 11rem; overflow-y: auto; }
+  .ent-grp { padding: 8px 12px 3px; font-size: .625rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--color-muted); }
+  .ent-list { list-style: none; margin: 0; padding: 0; }
+  .ent-row { display: flex; align-items: center; gap: 11px; padding: 9px 12px; }
+  .ent-row + .ent-row { border-top: 1px solid color-mix(in oklab, var(--cairn-card-border) 70%, transparent); }
+  .ent-ico { width: 15px; height: 15px; flex: none; color: var(--color-muted); }
+  .ent-main { flex: 1 1 auto; min-width: 0; }
+  .ent-title { font-size: .8125rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ent-where { font-size: .6875rem; color: var(--color-muted); margin-top: 1px; }
+  .ent-branch { font-family: var(--font-editor); font-size: .625rem; color: var(--cairn-warning-ink); flex: none; }
+  /* the "show all N" control: full-width, carries aria-expanded + aria-controls, reveals into the
+     same scroll container with focus to the first revealed row */
+  .show-all { display: block; width: 100%; box-sizing: border-box; text-align: center; background: transparent; border: 0; border-top: 1px solid var(--cairn-card-border); padding: 9px; font: 500 .75rem/1 var(--font-body); color: var(--color-primary); cursor: pointer; }
+  .show-all:hover { text-decoration: underline; text-underline-offset: 2px; }
+  .show-all:focus-visible { outline: 2px solid color-mix(in oklab, var(--color-primary) 70%, transparent); outline-offset: -2px; }
+
+  /* ===== the alt buckets: three named groups on plain base-100, each a framed block with a
+       glyph-plus-label header (never hue alone) and a count ===== */
+  .buckets { display: flex; flex-direction: column; gap: 10px; }
+  .bucket { border: 1px solid var(--cairn-card-border); border-radius: .8rem; overflow: hidden; background: var(--color-base-100); }
+  .bucket-head { display: flex; align-items: center; gap: 9px; padding: 10px 12px; }
+  .bucket-head .bg { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; flex: none; border-radius: .5rem; }
+  .bucket-head .bg svg { width: 14px; height: 14px; }
+  .bucket-head .bt { flex: 1 1 auto; min-width: 0; }
+  .bucket-head .bt .bn { font-size: .8125rem; font-weight: 600; }
+  .bucket-head .bt .bd { font-size: .6875rem; color: var(--color-muted); margin-top: 1px; line-height: 1.4; }
+  .bucket-head .bc { flex: none; font-size: .8125rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  /* the fill bucket: primary glyph, primary count. The surface stays plain base-100. */
+  .bucket.fill .bg { background: color-mix(in oklab, var(--color-primary) 12%, transparent); color: var(--color-primary); }
+  .bucket.fill .bc { color: var(--color-primary); }
+  /* the custom bucket: a --cairn-warning-ink glyph-plus-label header on PLAIN base-100 (no
+     off-system warning tint). The danger register is reserved for the opt-in band below. */
+  .bucket.custom .bg { background: color-mix(in oklab, var(--cairn-warning-ink) 12%, var(--color-base-100)); color: var(--cairn-warning-ink); }
+  .bucket.custom .bc { color: var(--cairn-warning-ink); }
+  .bucket.skip { opacity: .9; }
+  .bucket.skip .bg { background: color-mix(in oklab, var(--color-base-content) 7%, transparent); color: var(--color-muted); }
+  .bucket.skip .bc { color: var(--color-muted); }
+
+  /* the will-fill / custom per-row before/after list inside a bucket, scroll-capped */
+  .bk-scroll { max-height: 11rem; overflow-y: auto; border-top: 1px solid var(--cairn-card-border); }
+  .bk-list { list-style: none; margin: 0; padding: 0; }
+  .bk-row { display: flex; align-items: flex-start; gap: 10px; padding: 9px 12px; }
+  .bk-row + .bk-row { border-top: 1px solid color-mix(in oklab, var(--cairn-card-border) 70%, transparent); }
+  .bk-ico { width: 14px; height: 14px; flex: none; color: var(--color-muted); margin-top: 2px; }
+  .bk-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+  .bk-top { display: flex; align-items: center; gap: 7px; min-width: 0; }
+  .bk-title { font-size: .8125rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .place-pill { flex: none; font-size: .625rem; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; color: var(--color-muted); background: color-mix(in oklab, var(--color-base-content) 6%, transparent); border-radius: 999px; padding: 1px 7px; }
+  /* the honest before/after line: the FROM struck/quietened, the TO accent, never a rendered preview */
+  .ba { display: flex; align-items: baseline; gap: 7px; font-size: .75rem; line-height: 1.45; flex-wrap: wrap; }
+  .ba .from { color: var(--color-muted); }
+  .ba .from.struck { text-decoration: line-through; text-decoration-color: color-mix(in oklab, var(--color-muted) 55%, transparent); }
+  .ba .from.empty { font-style: italic; }
+  .ba .arr { color: var(--color-muted); opacity: .65; }
+  .ba .to { color: var(--color-primary); font-weight: 500; }
+  /* a custom row that is NOT yet opted in: the FROM (their alt) reads plain, the TO is "kept" */
+  .bk-row.kept .ba .to { color: var(--color-muted); font-weight: 400; }
+  .bk-row.kept .ba .from { color: var(--color-base-content); }
+
+  /* the custom bucket's opt-in band: styled in the shipped --cairn-error-* family, because
+     overwriting an editor's words is the destructive choice. The control is a REAL native checkbox. */
+  .optin-band { border-top: 1px solid var(--cairn-error-border); background: var(--cairn-error-tint); padding: 11px 12px; }
+  .optin-label { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
+  .optin-text { font-size: .8125rem; line-height: 1.45; color: var(--cairn-error-ink); }
+  .optin-text .ot-strong { font-weight: 600; }
+  .optin-text .ot-hint { display: block; margin-top: 2px; color: color-mix(in oklab, var(--cairn-error-ink) 85%, var(--color-base-content)); }
+  /* the DaisyUI v5 .checkbox.checkbox-sm stand-in: a real <input type="checkbox">, peer/:checked
+     driven. In the build this is class="checkbox checkbox-sm". The checked fill uses the danger ink
+     here (matching safe-delete's destructive register), kept off the default primary accent. */
+  .checkbox { appearance: none; -webkit-appearance: none; width: 16px; height: 16px; flex: none; margin: 1px 0 0; border: 1.5px solid var(--cairn-error-border); border-radius: .3rem; background: var(--color-base-100); cursor: pointer; position: relative; display: inline-block; }
+  .checkbox:checked { background: var(--cairn-error-ink); border-color: var(--cairn-error-ink); }
+  .checkbox:checked::after { content: ""; position: absolute; left: 4.5px; top: 1px; width: 4px; height: 8px; border: solid var(--color-base-100); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+  .checkbox:focus-visible { outline: 2px solid color-mix(in oklab, var(--cairn-error-ink) 75%, transparent); outline-offset: 2px; }
+  .checkbox:indeterminate { background: var(--cairn-error-ink); border-color: var(--cairn-error-ink); }
+  .checkbox:indeterminate::after { content: ""; position: absolute; left: 3px; top: 6px; width: 8px; height: 2px; border: 0; background: var(--color-base-100); transform: none; }
+
+  /* the decorative-hero skip note */
+  .skip-note { border-top: 1px solid var(--cairn-card-border); padding: 9px 12px; font-size: .6875rem; color: var(--color-muted); line-height: 1.5; }
+
+  /* the alt being pushed, shown once (primary-tinted) so the author confirms the text */
+  .pushed { display: flex; align-items: flex-start; gap: 9px; border: 1px solid color-mix(in oklab, var(--color-primary) 25%, transparent); border-radius: .7rem; background: color-mix(in oklab, var(--color-primary) 5%, transparent); padding: 10px 12px; font-size: .8125rem; line-height: 1.5; }
+  .pushed svg { width: 15px; height: 15px; flex: none; margin-top: 1px; color: var(--color-primary); }
+  .pushed b { font-weight: 600; }
+
+  /* the body-vs-hero caveat, anchored beside the will-fill bucket, warning ink */
+  .caveat { display: flex; align-items: flex-start; gap: 8px; font-size: .75rem; line-height: 1.5; color: var(--color-base-content); padding: 0 2px; }
+  .caveat svg { width: 14px; height: 14px; flex: none; margin-top: 2px; color: var(--cairn-warning-ink); }
+  .caveat b { color: var(--cairn-warning-ink); font-weight: 600; }
+
+  /* the branch-delta: a calm dashed report-only aside on base-200. NEVER the danger family, because
+     nothing here is rewritten. (incontext's quiet weight.) */
+  .delta { border: 1px dashed var(--cairn-card-border); border-radius: .8rem; background: var(--color-base-200); padding: 12px 13px; }
+  .delta-head { display: flex; align-items: center; gap: 8px; }
+  .delta-head svg { width: 15px; height: 15px; color: var(--color-muted); flex: none; }
+  .delta-head .dh { font-size: .75rem; font-weight: 600; color: var(--color-base-content); }
+  .delta-head .ct { font-size: .6875rem; font-weight: 600; color: var(--color-muted); font-variant-numeric: tabular-nums; }
+  .delta-note { font-size: .6875rem; color: var(--color-muted); margin: 5px 0 0; line-height: 1.5; padding-left: 23px; }
+  .delta-list { list-style: none; margin: 9px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+  .delta-list li { display: flex; align-items: center; gap: 8px; padding: 3px 0 3px 23px; }
+  .delta-list .dt { font-size: .75rem; font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .delta-list .br { font-family: var(--font-editor); font-size: .625rem; color: var(--cairn-warning-ink); margin-left: auto; flex: none; }
+
+  /* the recoverability reassurance (echoes the safe-delete git-history line) */
+  .reassure { display: flex; align-items: flex-start; gap: 9px; border: 1px solid var(--cairn-card-border); border-radius: .7rem; background: var(--color-base-200); padding: 10px 12px; font-size: .75rem; line-height: 1.5; }
+  .reassure svg { width: 15px; height: 15px; flex: none; margin-top: 1px; color: var(--color-positive-ink); }
+
+  /* the typed-slug confirm for Replace, the safe-delete gate echoed (--cairn-error-* family) */
+  .confirm-block { display: flex; flex-direction: column; gap: 7px; padding: 13px; border: 1px solid var(--cairn-error-border); border-radius: .8rem; background: var(--cairn-error-tint); }
+  .confirm-block .cl { font-size: .8125rem; line-height: 1.45; }
+  .confirm-block .cl code { font-family: var(--font-editor); font-weight: 600; background: color-mix(in oklab, var(--cairn-error-ink) 12%, transparent); color: var(--cairn-error-ink); padding: 1px 6px; border-radius: 4px; }
+  .confirm-input { width: 100%; box-sizing: border-box; font: 500 .8125rem/1.4 var(--font-editor); color: var(--color-base-content); background: var(--color-base-100); border: 1px solid var(--cairn-error-border); border-radius: .55rem; padding: 8px 11px; }
+  .confirm-input::placeholder { color: var(--color-muted); font-family: var(--font-body); font-weight: 400; }
+  .confirm-input:focus-visible { outline: none; box-shadow: 0 0 0 1px var(--cairn-error-ink); border-color: var(--cairn-error-ink); }
+
+  /* the modal footer: a left-aligned commit-target note, then Cancel + the confirm action. The
+       footer holds while the body scrolls. */
+  .mb-foot { display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-top: 1px solid var(--cairn-card-border); }
+  .foot-note { flex: 1 1 auto; min-width: 0; font-size: .6875rem; color: var(--color-muted); display: flex; align-items: center; gap: 6px; line-height: 1.4; }
+  .foot-note svg { width: 13px; height: 13px; flex: none; }
+  .foot-note code { font-family: var(--font-editor); color: var(--color-base-content); }
+  .btn-ghost { font: 500 .8125rem/1 var(--font-body); border-radius: .55rem; padding: 9px 14px; border: 1px solid var(--color-base-300); background: transparent; color: var(--color-subtle); cursor: pointer; }
+  .btn-ghost:focus-visible { outline: 2px solid color-mix(in oklab, var(--color-primary) 70%, transparent); outline-offset: 2px; }
+  .btn-go { font: 600 .8125rem/1 var(--font-body); border-radius: .55rem; padding: 10px 16px; border: 1px solid transparent; background: var(--color-primary); color: var(--color-primary-content); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px color-mix(in oklab, var(--color-primary) 35%, transparent); }
+  .btn-go svg { width: 15px; height: 15px; }
+  .btn-go:focus-visible { outline: 2px solid color-mix(in oklab, var(--color-primary) 70%, transparent); outline-offset: 2px; }
+  /* the solid danger confirm: matches the shipped safe-delete .btn-error (the --color-error fill).
+     Disabled until the typed slug matches. */
+  .btn-danger { font: 600 .8125rem/1 var(--font-body); border-radius: .55rem; padding: 10px 16px; border: 1px solid transparent; background: var(--color-error); color: var(--color-error-content); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-danger svg { width: 15px; height: 15px; }
+  .btn-danger:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-danger:focus-visible { outline: 2px solid color-mix(in oklab, var(--color-error) 70%, transparent); outline-offset: 2px; }
+
+  /* the fail-closed block: Replace cannot proceed because usage could not be fully verified */
+  .blocked { display: flex; flex-direction: column; gap: 11px; padding: 15px; border: 1px solid var(--cairn-error-border); border-radius: .8rem; background: var(--cairn-error-tint); }
+  .blocked-head { display: flex; align-items: center; gap: 9px; font-weight: 600; font-size: .875rem; color: var(--cairn-error-ink); }
+  .blocked-head svg { width: 17px; height: 17px; flex: none; }
+  .blocked-body { font-size: .8125rem; line-height: 1.55; color: var(--color-base-content); }
+  .blocked-list { list-style: none; margin: 6px 0 0; padding: 0; font-size: .75rem; color: var(--color-muted); line-height: 1.6; display: flex; flex-direction: column; gap: 3px; }
+  .blocked-list li { display: flex; align-items: center; gap: 7px; }
+  .blocked-list li svg { width: 13px; height: 13px; flex: none; }
+  .blocked-list li.read svg { color: var(--color-positive-ink); }
+  .blocked-list li.unread svg { color: var(--cairn-error-ink); }
+  .blocked-list code { font-family: var(--font-editor); color: var(--cairn-error-ink); }
+
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+  /* photo stand-ins (no bundled bytes): warm dawn-light gradients in the warm hue family */
+  .ph-a { background: linear-gradient(170deg, oklch(82% 0.06 80) 0%, oklch(74% 0.08 60) 55%, oklch(64% 0.09 45) 100%); }
+  .ph-a2 { background: linear-gradient(165deg, oklch(86% 0.05 85) 0%, oklch(70% 0.085 58) 60%, oklch(60% 0.095 42) 100%); }
+  .ph-b { background: linear-gradient(150deg, oklch(52% 0.06 60) 0%, oklch(70% 0.09 50) 60%, oklch(85% 0.08 80) 100%); }
+  .ph-c { background: linear-gradient(200deg, oklch(88% 0.05 85) 0%, oklch(72% 0.07 55) 100%); }
+  .ph-d { background: linear-gradient(160deg, oklch(40% 0.05 60) 0%, oklch(60% 0.1 45) 55%, oklch(86% 0.08 85) 100%); }
+
+  @media (max-width: 540px) {
+    /* the dialog-sizing rule's small-viewport arm: the modal becomes a full-width bottom sheet */
+    .scrim { padding: 0; align-items: flex-end; }
+    .modal-box { width: 100%; max-height: 92%; border-radius: 1rem 1rem 0 0; }
+  }
+</style>
+</head>
+<body>
+
+<p class="mock-label">Media Pass B &mdash; Replace and Alt-propagation &mdash; rev.2 (consolidated)</p>
+<p class="mock-note">
+  Two new operations on the existing Media Library detail slide-over at <code>/admin/media</code>.
+  <b>Replace</b> uploads a new file for an existing asset. cairn is content-addressed, so the new file
+  has a new hash and every reference in published content is repointed to it in one commit to
+  <code>main</code>. <b>Alt propagation</b> pushes the asset's default alt to placements that lack it,
+  with an opt-in to also overwrite placements that carry custom alt. Both rewrite N published entries
+  at once, so the UI's whole job is to make the impact legible and confirmable before applying. Each
+  operation opens its own dedicated review modal (~38rem, single column, the modal-box is the scroll
+  container) from the resting non-modal slide-over. Replace is <code>role="alertdialog"</code> with the
+  danger family and a typed-slug confirm; alt fill is <code>role="dialog"</code> with the primary
+  register and a single bucket-level opt-in. Read the rev.2 decisions in the source comment at the top
+  of this file.
+</p>
+
+<!-- =================================================================================================
+     1. THE SLIDE-OVER AT REST, WITH THE TWO NEW ENTRY POINTS (light, modal scrim down so the panel reads)
+     ================================================================================================= -->
+<p class="mock-label">1 &middot; Light: the slide-over at rest, with the Replace and Push-alt entry points</p>
+<p class="mock-note">
+  The resting panel is the shipped detail slide-over. The actions block gains two quiet text-weight
+  controls beside the existing Delete: <b>Replace image</b> and <b>Push alt to placements</b>. They are
+  levelled controls, lighter than a bordered row, and neither acts until its review modal is read and
+  confirmed. Delete keeps the shipped danger-bordered control. The grid behind stays live and in the
+  a11y tree (the non-modal region recipe); a modal scrim only appears once a review opens.
+</p>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="ground">
+    <div class="app">
+      <aside class="side">
+        <div class="brand"><span class="tile"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 8.5 8h7L12 2Zm-4.2 7L3 17h8.2L7.8 9Zm8.4 0-3.4 8H21l-4.8-8ZM4.3 18l-1 3h17.4l-1-3H4.3Z"/></svg></span><span class="wm">cairn</span></div>
+        <div class="nav-grp">
+          <div class="gl eyebrow">Content</div>
+          <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>Posts</a>
+          <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>Pages</a>
+          <a class="nav-item on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>Media</a>
+        </div>
+      </aside>
+      <div class="main">
+        <div class="topbar"><span class="crumb">Media library / <b>first-light</b></span><span class="grow"></span></div>
+        <div class="content">
+          <div class="page-h">
+            <div><div class="eyebrow">Media</div><h1>Media library</h1><span class="count">18 images, 11 used on the site <span aria-hidden="true">&middot;</span> 14.2 MB stored</span></div>
+            <button class="btn-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>Upload</button>
+          </div>
+          <div class="grid">
+            <div class="gtile sel"><div class="thumb ph-a"></div><div class="cap"><span class="nm">first-light</span><span class="mk ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></div></div>
+            <div class="gtile"><div class="thumb ph-b"></div><div class="cap"><span class="nm">valley-ridge</span><span class="mk miss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>alt</span></div></div>
+            <div class="gtile"><div class="thumb ph-c"></div><div class="cap"><span class="nm">junction-sign</span><span class="mk ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></div></div>
+            <div class="gtile"><div class="thumb ph-d"></div><div class="cap"><span class="nm">ridgeline-dusk</span><span class="mk ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></div></div>
+          </div>
+        </div>
+
+        <!-- the resting detail slide-over -->
+        <aside class="panel" role="region" aria-label="first-light details">
+          <div class="panel-head"><span class="eyebrow">Asset</span>
+            <button class="panel-x" aria-label="Close details"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+          </div>
+          <div class="panel-body">
+            <div class="pv ph-a"></div>
+            <div class="id-row">
+              <span class="id-name">first-light</span>
+              <span class="ref-row"><code>media:first-light.7f3a91c2</code>
+                <button class="icbtn" aria-label="Copy reference"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+              </span>
+            </div>
+            <div class="fld">
+              <span class="lbl">Default alt text</span>
+              <textarea class="textarea">Dawn light over the groomed cross-country tracks before sunrise.</textarea>
+              <span class="hint">The default for the next time this image is placed. It does not change the alt on pages that already use it. Use Push alt below to fill the gaps.</span>
+            </div>
+            <div>
+              <span class="eyebrow">Where used</span>
+              <div style="margin-top:9px;">
+                <div class="wu-grp">Published on the site</div>
+                <ul class="wu-list">
+                  <li><a class="wu-row"><svg class="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="nm">A season on the early tracks</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></a></li>
+                  <li><a class="wu-row"><svg class="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="nm">Reading the snow before a groom</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></a></li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- the actions block: two quiet new entry points, then the existing Delete -->
+            <div class="actions">
+              <span class="eyebrow ah">Actions</span>
+              <button class="act-quiet" aria-haspopup="dialog">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>
+                <span class="lab">Replace image</span>
+              </button>
+              <button class="act-quiet" aria-haspopup="dialog">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
+                <span class="lab">Push alt to placements</span>
+              </button>
+              <button class="act-quiet danger" aria-haspopup="dialog">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                <span class="lab">Delete</span>
+              </button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- =================================================================================================
+     2. REPLACE, step 1: upload-new-only (light)
+     ================================================================================================= -->
+<p class="mock-label">2 &middot; Light: Replace, step one (upload a new file)</p>
+<p class="mock-note">
+  Replace opens its modal on a quiet upload step. Pass B is upload-new-only, so there is one path: drop
+  or choose a file. The asset being replaced stays named above, so the author never loses it. Cancel is
+  present; there is no apply yet.
+</p>
+<span class="anno">role="alertdialog" &middot; opened with showModal() (native focus trap + Escape) &middot; NO method="dialog" backdrop (no light dismiss) &middot; initial focus is Cancel</span>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="ground" style="min-height:480px;">
+    <div class="scrim" style="position:static; align-items:flex-start; padding:28px 18px;">
+      <div class="modal-box" role="alertdialog" aria-modal="true" aria-labelledby="rep1-title" aria-describedby="rep1-sub" style="max-height:none;">
+        <div class="mb-head">
+          <span class="mb-badge danger" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg></span>
+          <div class="mb-htext">
+            <div class="mb-title" id="rep1-title">Replace <b>first-light</b></div>
+            <p class="mb-sub" id="rep1-sub">Upload a new file. Every published entry that uses this image points to the new one, in one commit to <code>main</code>.</p>
+          </div>
+          <button class="panel-x" aria-label="Cancel"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+        <div class="mb-body" style="padding-bottom:4px;">
+          <!-- the asset being replaced, held in view -->
+          <div class="swap" style="grid-template-columns:auto 1fr; gap:11px; background:var(--color-base-200);">
+            <span class="swap-col" style="gap:10px;"><span class="sthumb ph-a"></span></span>
+            <span class="sm" style="display:flex; flex-direction:column; gap:2px; min-width:0;">
+              <span class="role" style="font-size:.625rem; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--color-muted);">Replacing</span>
+              <span style="font-size:.875rem; font-weight:600;">first-light</span>
+              <span class="meta" style="font-size:.75rem; color:var(--color-muted); font-family:var(--font-editor);">1600&times;1067 &middot; 248 KB</span>
+            </span>
+          </div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:5px; padding:18px; text-align:center; border:1px dashed var(--color-base-300); border-radius:.7rem; color:var(--color-muted); background:var(--color-base-100);">
+            <span aria-hidden="true" style="color:var(--color-primary);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg></span>
+            <span style="font-size:.875rem; font-weight:500; color:var(--color-base-content);">Drop the new image, or upload</span>
+            <span style="font-size:.75rem;">PNG, JPEG, WebP, or HEIC. We convert HEIC for you.</span>
+            <button class="btn-go" style="margin-top:6px; padding:8px 14px;" type="button">Choose a file</button>
+          </div>
+        </div>
+        <div class="mb-foot">
+          <span class="foot-note"></span>
+          <button class="btn-ghost" type="button">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- =================================================================================================
+     3. REPLACE, step 2: the impact review (light)
+     ================================================================================================= -->
+<p class="mock-label">3 &middot; Light: Replace &mdash; the impact review</p>
+<p class="mock-note">
+  After the new file is uploaded, the modal shows the impact. The title is asset-named with the count
+  folded in. The from/to identity strip shows old bytes to new, the old hash struck and the new hash in
+  the accent, with the <b>corrected content-addressed line</b>: the name stays, only the hash changes,
+  so every published entry is repointed in one commit. The per-entry well is expanded by default and
+  carries each entry's title and where it is used (the swap is shown once at the asset level, so no
+  redundant hash pair per row). The branch-delta below is a calm report-only aside. Replace is gated
+  behind the typed-slug confirm, the safe-delete gate echoed.
+</p>
+<span class="anno">aria-live="polite" mirrors the footer count &middot; the per-entry well is expanded by default (this is the impact) &middot; "Show all" carries aria-expanded + aria-controls and moves focus to the first revealed row</span>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="ground" style="min-height:880px;">
+    <div class="app">
+      <aside class="side"><div class="brand"><span class="tile"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 8.5 8h7L12 2Zm-4.2 7L3 17h8.2L7.8 9Zm8.4 0-3.4 8H21l-4.8-8ZM4.3 18l-1 3h17.4l-1-3H4.3Z"/></svg></span><span class="wm">cairn</span></div></aside>
+      <div class="main">
+        <div class="topbar"><span class="crumb">Media library / <b>first-light</b></span></div>
+        <div class="content"><div class="grid dim" aria-hidden="true"><div class="gtile sel"><div class="thumb ph-a"></div><div class="cap"><span class="nm">first-light</span></div></div><div class="gtile"><div class="thumb ph-b"></div><div class="cap"><span class="nm">valley-ridge</span></div></div><div class="gtile"><div class="thumb ph-c"></div><div class="cap"><span class="nm">junction-sign</span></div></div><div class="gtile"><div class="thumb ph-d"></div><div class="cap"><span class="nm">ridgeline-dusk</span></div></div></div></div>
+        <div class="scrim">
+          <div class="modal-box" role="alertdialog" aria-modal="true" aria-labelledby="rep2-title" aria-describedby="rep2-sub">
+            <div class="mb-head">
+              <span class="mb-badge danger" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg></span>
+              <div class="mb-htext">
+                <div class="mb-title" id="rep2-title">Replace <b>first-light</b> in 7 published entries</div>
+                <p class="mb-sub" id="rep2-sub">The new file replaces the stored image. Every published entry that uses it is repointed in one commit to <code>main</code>, and readers see the change once the build finishes.</p>
+              </div>
+              <button class="panel-x" aria-label="Cancel"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+            </div>
+            <div class="mb-body">
+              <!-- the from/to identity strip, with the CORRECTED content-addressed copy -->
+              <div class="swap">
+                <div class="swap-col"><span class="sthumb ph-a"></span><span class="sm"><span class="role">Current</span><span class="meta">1600&times;1067 &middot; 248 KB</span><span class="meta hash-old">.7f3a91c2</span></span></div>
+                <span class="swap-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span>
+                <div class="swap-col to"><span class="sthumb ph-a2"></span><span class="sm"><span class="role">New file</span><span class="meta">1600&times;1067 &middot; 261 KB</span><span class="meta hash-new">.b42e0d51</span></span></div>
+                <div class="swap-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 7 17l-5-5"/></svg><span>The name <code>first-light</code> stays the same. Only the content hash changes, so every published entry is repointed to the new file in one commit.</span></div>
+              </div>
+
+              <!-- the per-entry old-to-new well: expanded by default, grouped published-then-branch,
+                   each row the legible fact (title + where used), no redundant hash pair -->
+              <div>
+                <div class="sec-head"><span class="eyebrow">Published entries that will be repointed</span><span class="ct">7</span></div>
+                <div class="ent-well" style="margin-top:8px;">
+                  <div class="ent-scroll">
+                    <ul class="ent-list" id="rep-ent-list">
+                      <li class="ent-row"><svg class="ent-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg><div class="ent-main"><div class="ent-title">A season on the early tracks</div><div class="ent-where">Hero and 2 in the body</div></div></li>
+                      <li class="ent-row"><svg class="ent-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg><div class="ent-main"><div class="ent-title">Reading the snow before a groom</div><div class="ent-where">1 in the body</div></div></li>
+                      <li class="ent-row"><svg class="ent-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg><div class="ent-main"><div class="ent-title">The crew page</div><div class="ent-where">Hero</div></div></li>
+                    </ul>
+                  </div>
+                  <button class="show-all" type="button" aria-expanded="false" aria-controls="rep-ent-list">Show the other 4 entries</button>
+                </div>
+              </div>
+
+              <!-- the branch-delta: report-only, calm dashed base-200, never danger -->
+              <div class="delta">
+                <div class="delta-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg><span class="dh">Open edits still on the old file</span><span class="ct">2</span></div>
+                <p class="delta-note">These edits are on their own branches and are not touched. Each keeps the old file until it is published again.</p>
+                <ul class="delta-list">
+                  <li><span class="dt">Trailhead notes for March</span><span class="br">cairn/posts/trailhead-notes</span></li>
+                  <li><span class="dt">A season on the early tracks</span><span class="br">cairn/posts/early-tracks</span></li>
+                </ul>
+              </div>
+
+              <!-- the recoverability reassurance (comparison's plain pair) -->
+              <div class="reassure"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span>The old file stays in git history. A developer can bring it back. The alt text on each placement is left exactly as it is.</span></div>
+
+              <!-- the typed-slug confirm, the safe-delete gate echoed -->
+              <div class="confirm-block">
+                <label class="cl" for="rep-confirm">Type <code>first-light</code> to replace the file in all 7 entries.</label>
+                <input id="rep-confirm" class="confirm-input" type="text" autocomplete="off" placeholder="Type the asset slug" aria-label="Type the asset slug to confirm" />
+              </div>
+            </div>
+            <div class="mb-foot">
+              <span class="foot-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>One commit to <code>main</code></span>
+              <button class="btn-ghost" type="button">Cancel</button>
+              <button class="btn-danger" type="button" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>Replace in 7 entries</button>
+            </div>
+            <div class="sr-only" aria-live="polite">Replace first-light in 7 published entries. 2 open edits are not touched.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- =================================================================================================
+     4. REPLACE: the fail-closed state (light)
+     ================================================================================================= -->
+<p class="mock-label">4 &middot; Light: Replace &mdash; on hold (usage could not be fully verified)</p>
+<p class="mock-note">
+  A replace rewrites every reference, so it must know every reference. If the usage scan cannot
+  complete, the modal refuses rather than guess. It names what read cleanly (the published entries) and
+  the <b>specific unreadable branch</b>. There is <b>no apply button</b>, not even a dead disabled one;
+  a quiet <b>Check usage again</b> primary re-runs the scan. The typed gate is absent, because there is
+  nothing safe to confirm. The held-uploaded-file reassurance stays.
+</p>
+<span class="anno">the banner on open is role="status" (polite) &middot; role="alert" is reserved for a failure surfaced AFTER the user pressed Replace &middot; no Replace button present</span>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="ground" style="min-height:0;">
+    <div class="scrim" style="position:static; align-items:flex-start; padding:18px;">
+      <div class="modal-box" role="alertdialog" aria-modal="true" aria-labelledby="fc-title" aria-describedby="fc-sub" style="max-height:none;">
+        <div class="mb-head">
+          <span class="mb-badge danger" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
+          <div class="mb-htext">
+            <div class="mb-title" id="fc-title">Replace is on hold</div>
+            <p class="mb-sub" id="fc-sub">cairn could not read every place this image is used, so it will not repoint references it cannot see. No file was changed.</p>
+          </div>
+          <button class="panel-x" aria-label="Cancel"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+        <div class="mb-body">
+          <div class="blocked" role="status">
+            <div class="blocked-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Usage could not be fully verified</div>
+            <div class="blocked-body">
+              The published site read cleanly: 7 entries use this image. One edit branch would not load, so cairn cannot tell whether it uses the image too. Replacing now could leave that branch pointing at the old file with no record of it.
+              <ul class="blocked-list">
+                <li class="read"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Read 7 published entries</li>
+                <li class="unread"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>Could not read <code>cairn/posts/trailhead-notes</code></li>
+              </ul>
+            </div>
+            <button class="btn-go" style="align-self:flex-start; padding:8px 13px; background:var(--color-base-100); color:var(--cairn-error-ink); border:1px solid var(--cairn-error-border); box-shadow:none;" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/></svg>Check usage again</button>
+          </div>
+          <div class="reassure"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span>Your uploaded file is held and ready. Once the scan completes, the review opens with the full impact.</span></div>
+        </div>
+        <div class="mb-foot">
+          <span class="foot-note">No file was changed.</span>
+          <button class="btn-ghost" type="button">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- =================================================================================================
+     5. ALT PROPAGATION: the three buckets, opt-in UNCHECKED (light)
+     ================================================================================================= -->
+<p class="mock-label">5 &middot; Light: Push alt to placements &mdash; the three buckets (opt-in unchecked)</p>
+<p class="mock-note">
+  Alt propagation is the everyday register: <code>role="dialog"</code>, no typed gate. The work-tuned
+  title is "Fill alt on 5 placements". The alt being pushed is shown once so the author confirms the
+  text. <b>Will fill</b> (empty alt) is always applied and shows every row's honest
+  <span style="font-style:italic;">(no alt) &rarr; default-alt</span>. <b>Has custom alt</b> is opt-in
+  through one real native checkbox; before it is checked, each row's existing custom alt is shown plain
+  and marked "kept", so the author reads what is at risk first. The opt-in band is styled in the
+  danger family, because overwriting an editor's words is the destructive choice. <b>Decorative hero,
+  skipped</b> is reported and never an input. The body-vs-hero caveat sits beside will-fill.
+</p>
+<span class="anno">role="dialog" (NOT alertdialog) &middot; the opt-in is a REAL native input type="checkbox" class="checkbox checkbox-sm" inside its label (peer/:checked-driven, in the a11y tree, keyboard-operable) &middot; checking it is the only state that changes the total</span>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="ground" style="min-height:920px;">
+    <div class="app">
+      <aside class="side"><div class="brand"><span class="tile"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 8.5 8h7L12 2Zm-4.2 7L3 17h8.2L7.8 9Zm8.4 0-3.4 8H21l-4.8-8ZM4.3 18l-1 3h17.4l-1-3H4.3Z"/></svg></span><span class="wm">cairn</span></div></aside>
+      <div class="main">
+        <div class="topbar"><span class="crumb">Media library / <b>valley-ridge</b></span></div>
+        <div class="content"><div class="grid dim" aria-hidden="true"><div class="gtile"><div class="thumb ph-a"></div><div class="cap"><span class="nm">first-light</span></div></div><div class="gtile sel"><div class="thumb ph-b"></div><div class="cap"><span class="nm">valley-ridge</span></div></div><div class="gtile"><div class="thumb ph-c"></div><div class="cap"><span class="nm">junction-sign</span></div></div><div class="gtile"><div class="thumb ph-d"></div><div class="cap"><span class="nm">ridgeline-dusk</span></div></div></div></div>
+        <div class="scrim">
+          <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="alt-title" aria-describedby="alt-sub">
+            <div class="mb-head">
+              <span class="mb-badge primary" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
+              <div class="mb-htext">
+                <div class="mb-title" id="alt-title">Fill alt on 5 placements</div>
+                <p class="mb-sub" id="alt-sub">This writes the default alt for <b>valley-ridge</b> into the published placements that have none. One commit to <code>main</code>. Placements that already have their own alt stay as they are, unless you choose to overwrite them below.</p>
+              </div>
+              <button class="panel-x" aria-label="Cancel"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+            </div>
+            <div class="mb-body">
+              <!-- the alt being pushed, shown once -->
+              <div class="pushed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span>The alt being pushed: <b>&ldquo;A wide valley seen from a snow-covered ridge.&rdquo;</b> Edit it in the panel first if it is not right.</span></div>
+
+              <div class="buckets">
+                <!-- WILL FILL: every row's honest (no alt) -> default-alt, never two samples -->
+                <div class="bucket fill">
+                  <div class="bucket-head">
+                    <span class="bg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                    <div class="bt"><div class="bn">Will fill the gap</div><div class="bd">These placements have no alt today. The default alt is written in.</div></div>
+                    <span class="bc">5</span>
+                  </div>
+                  <div class="bk-scroll">
+                    <ul class="bk-list" id="alt-fill-list">
+                      <li class="bk-row"><svg class="bk-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg><div class="bk-main"><div class="bk-top"><span class="bk-title">From the ridge</span><span class="place-pill">hero</span></div><div class="ba"><span class="from empty">(no alt)</span><span class="arr">&rarr;</span><span class="to">A wide valley seen from a snow-covered ridge.</span></div></div></li>
+                      <li class="bk-row"><svg class="bk-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg><div class="bk-main"><div class="bk-top"><span class="bk-title">A season on the early tracks</span><span class="place-pill">body</span></div><div class="ba"><span class="from empty">(no alt)</span><span class="arr">&rarr;</span><span class="to">A wide valley seen from a snow-covered ridge.</span></div></div></li>
+                    </ul>
+                    <button class="show-all" type="button" aria-expanded="false" aria-controls="alt-fill-list" style="border-top:1px solid color-mix(in oklab, var(--cairn-card-border) 70%, transparent);">Show the other 3 placements, all gaining the same alt</button>
+                  </div>
+                </div>
+
+                <!-- the caveat, anchored beside will-fill where the surprised author looks -->
+                <div class="caveat">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                  <span>A body image has no place to record decorative, so an empty body image always reads as a gap to fill. Only a hero can be skipped as decorative.</span>
+                </div>
+
+                <!-- HAS CUSTOM ALT: one bucket-level opt-in (a real checkbox), each row's "was" shown
+                     plain and "kept" BEFORE opt-in -->
+                <div class="bucket custom">
+                  <div class="bucket-head">
+                    <span class="bg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
+                    <div class="bt"><div class="bn">Already has custom alt</div><div class="bd">Left alone by default. You can overwrite these too.</div></div>
+                    <span class="bc">3</span>
+                  </div>
+                  <div class="optin-band">
+                    <label class="optin-label">
+                      <input type="checkbox" class="checkbox checkbox-sm" aria-describedby="optin-hint" />
+                      <span class="optin-text"><span class="ot-strong">Also overwrite these 3 with the default alt.</span><span class="ot-hint" id="optin-hint">Overwrites the alt these entries already have. Git keeps the old version.</span></span>
+                    </label>
+                  </div>
+                  <div class="bk-scroll" style="border-top:0;">
+                    <ul class="bk-list" id="alt-custom-list">
+                      <li class="bk-row kept"><svg class="bk-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg><div class="bk-main"><div class="bk-top"><span class="bk-title">The far turn</span><span class="place-pill">body</span></div><div class="ba"><span class="from">&ldquo;The turn most skiers stop for at the far ridge.&rdquo;</span><span class="arr">&middot;</span><span class="to">kept</span></div></div></li>
+                      <li class="bk-row kept"><svg class="bk-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg><div class="bk-main"><div class="bk-top"><span class="bk-title">Looking back</span><span class="place-pill">body</span></div><div class="ba"><span class="from">&ldquo;Looking back down the valley from the top.&rdquo;</span><span class="arr">&middot;</span><span class="to">kept</span></div></div></li>
+                      <li class="bk-row kept"><svg class="bk-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg><div class="bk-main"><div class="bk-top"><span class="bk-title">Ridge panorama</span><span class="place-pill">hero</span></div><div class="ba"><span class="from">&ldquo;The whole valley from the ridge at golden hour.&rdquo;</span><span class="arr">&middot;</span><span class="to">kept</span></div></div></li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- DECORATIVE HERO, SKIPPED: muted, never an input -->
+                <div class="bucket skip">
+                  <div class="bucket-head">
+                    <span class="bg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg></span>
+                    <div class="bt"><div class="bn">Marked decorative, skipped</div><div class="bd">A hero set as decorative on purpose. It is left without alt.</div></div>
+                    <span class="bc">1</span>
+                  </div>
+                  <div class="skip-note">The crew page hero is marked decorative, so it carries no alt by choice. Change it on that entry if it should be described.</div>
+                </div>
+              </div>
+
+              <!-- the branch-delta -->
+              <div class="delta">
+                <div class="delta-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg><span class="dh">Open edits not touched</span><span class="ct">1</span></div>
+                <p class="delta-note">This edit is on its own branch and is not changed. Its alt is left as the author has it there.</p>
+                <ul class="delta-list"><li><span class="dt">From the ridge</span><span class="br">cairn/posts/from-the-ridge</span></li></ul>
+              </div>
+
+              <!-- recoverability -->
+              <div class="reassure"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span>Every version stays in git history, so any overwrite can be undone.</span></div>
+            </div>
+            <div class="mb-foot">
+              <span class="foot-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>One commit to <code>main</code></span>
+              <button class="btn-ghost" type="button">Cancel</button>
+              <button class="btn-go" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Fill 5 placements</button>
+            </div>
+            <div class="sr-only" aria-live="polite">Fill 5 placements.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- =================================================================================================
+     6. ALT PROPAGATION: the opt-in CHECKED (light) — rows flip to was -> default, the count moves
+     ================================================================================================= -->
+<p class="mock-label">6 &middot; Light: Push alt &mdash; the overwrite opt-in checked (the rows flip, the count moves)</p>
+<p class="mock-note">
+  The same dialog with the custom-alt opt-in checked. The native checkbox fills in the danger ink, and
+  each customized row flips from "kept" to the honest <span style="font-style:italic;">was &rarr;
+  default</span>: the author's words struck, the default alt in the accent. The footer button count
+  moves from "Fill 5" to "Update 8 placements", and the polite live region announces the new total. The
+  overwrite is the one destructive choice, so its band carries the danger register; the rest of the
+  dialog stays the everyday primary register.
+</p>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="ground" style="min-height:0;">
+    <div class="scrim" style="position:static; background:transparent; align-items:flex-start; padding:18px;">
+      <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="alt2-title" style="max-height:none;">
+        <div class="mb-head">
+          <span class="mb-badge primary" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
+          <div class="mb-htext">
+            <div class="mb-title" id="alt2-title">Fill alt on 5 placements</div>
+            <p class="mb-sub">You also chose to overwrite 3 placements that have custom alt. The total is now 8.</p>
+          </div>
+          <button class="panel-x" aria-label="Cancel"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+        <div class="mb-body">
+          <div class="buckets">
+            <!-- WILL FILL collapsed to its head for this state view -->
+            <div class="bucket fill">
+              <div class="bucket-head"><span class="bg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><div class="bt"><div class="bn">Will fill the gap</div><div class="bd">5 placements with no alt today gain the default.</div></div><span class="bc">5</span></div>
+            </div>
+
+            <!-- HAS CUSTOM ALT, opt-in CHECKED: the checkbox fills, the rows flip to was -> default -->
+            <div class="bucket custom">
+              <div class="bucket-head"><span class="bg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span><div class="bt"><div class="bn">Already has custom alt</div><div class="bd">You chose to overwrite these.</div></div><span class="bc">3</span></div>
+              <div class="optin-band">
+                <label class="optin-label">
+                  <input type="checkbox" class="checkbox checkbox-sm" checked aria-describedby="optin2-hint" />
+                  <span class="optin-text"><span class="ot-strong">Also overwrite these 3 with the default alt.</span><span class="ot-hint" id="optin2-hint">Overwrites the alt these entries already have. Git keeps the old version.</span></span>
+                </label>
+              </div>
+              <div class="bk-scroll" style="border-top:0;">
+                <ul class="bk-list">
+                  <li class="bk-row"><svg class="bk-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg><div class="bk-main"><div class="bk-top"><span class="bk-title">The far turn</span><span class="place-pill">body</span></div><div class="ba"><span class="from struck">&ldquo;The turn most skiers stop for at the far ridge.&rdquo;</span><span class="arr">&rarr;</span><span class="to">A wide valley seen from a snow-covered ridge.</span></div></div></li>
+                  <li class="bk-row"><svg class="bk-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg><div class="bk-main"><div class="bk-top"><span class="bk-title">Looking back</span><span class="place-pill">body</span></div><div class="ba"><span class="from struck">&ldquo;Looking back down the valley from the top.&rdquo;</span><span class="arr">&rarr;</span><span class="to">A wide valley seen from a snow-covered ridge.</span></div></div></li>
+                  <li class="bk-row"><svg class="bk-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg><div class="bk-main"><div class="bk-top"><span class="bk-title">Ridge panorama</span><span class="place-pill">hero</span></div><div class="ba"><span class="from struck">&ldquo;The whole valley from the ridge at golden hour.&rdquo;</span><span class="arr">&rarr;</span><span class="to">A wide valley seen from a snow-covered ridge.</span></div></div></li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="bucket skip">
+              <div class="bucket-head"><span class="bg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg></span><div class="bt"><div class="bn">Marked decorative, skipped</div><div class="bd">Left without alt by choice.</div></div><span class="bc">1</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="mb-foot">
+          <span class="foot-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>One commit to <code>main</code></span>
+          <button class="btn-ghost" type="button">Cancel</button>
+          <button class="btn-go" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Update 8 placements</button>
+        </div>
+        <div class="sr-only" aria-live="polite">Update 8 placements: 5 filled, 3 overwritten.</div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- =================================================================================================
+     7. DARK: both review modals through the dark tokens
+     ================================================================================================= -->
+<p class="mock-label">7 &middot; Dark: both review modals through the dark tokens</p>
+<p class="mock-note">
+  The same two modals on the dark theme roots. The danger-red of Replace, the primary violet of the alt
+  fill, the warning ink on the custom-bucket header, the danger ink on the checked overwrite checkbox,
+  and the muted skip bucket all resolve from the dark variables. The danger tint and border read as a
+  defined block in dark, where a shadow alone barely shows.
+</p>
+<div class="pair">
+
+  <!-- DARK Replace (compact, the typed gate filled) -->
+  <div class="screen"><div data-theme="cairn-admin-dark">
+    <div class="ground" style="min-height:0;">
+      <div class="scrim" style="position:static; background:transparent; align-items:flex-start; padding:18px;">
+        <div class="modal-box" role="alertdialog" aria-modal="true" aria-labelledby="dk-rep-title" aria-describedby="dk-rep-sub" style="max-height:none;">
+          <div class="mb-head">
+            <span class="mb-badge danger" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg></span>
+            <div class="mb-htext">
+              <div class="mb-title" id="dk-rep-title">Replace <b>first-light</b> in 7 published entries</div>
+              <p class="mb-sub" id="dk-rep-sub">The new file is repointed across every published entry in one commit to <code>main</code>.</p>
+            </div>
+            <button class="panel-x" aria-label="Cancel"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+          </div>
+          <div class="mb-body">
+            <div class="swap">
+              <div class="swap-col"><span class="sthumb ph-a"></span><span class="sm"><span class="role">Current</span><span class="meta">248 KB</span><span class="meta hash-old">.7f3a91c2</span></span></div>
+              <span class="swap-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span>
+              <div class="swap-col to"><span class="sthumb ph-a2"></span><span class="sm"><span class="role">New file</span><span class="meta">261 KB</span><span class="meta hash-new">.b42e0d51</span></span></div>
+              <div class="swap-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 7 17l-5-5"/></svg><span>The name <code>first-light</code> stays the same. Only the content hash changes.</span></div>
+            </div>
+            <div>
+              <div class="sec-head"><span class="eyebrow">Published entries</span><span class="ct">7</span></div>
+              <div class="ent-well" style="margin-top:8px;">
+                <div class="ent-scroll">
+                  <ul class="ent-list">
+                    <li class="ent-row"><svg class="ent-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg><div class="ent-main"><div class="ent-title">A season on the early tracks</div><div class="ent-where">Hero and 2 in the body</div></div></li>
+                    <li class="ent-row"><svg class="ent-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg><div class="ent-main"><div class="ent-title">Reading the snow before a groom</div><div class="ent-where">1 in the body</div></div></li>
+                  </ul>
+                </div>
+                <button class="show-all" type="button" aria-expanded="false" aria-controls="dk-rep-list">Show the other 5 entries</button>
+              </div>
+            </div>
+            <div class="delta">
+              <div class="delta-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg><span class="dh">Open edits still on the old file</span><span class="ct">2</span></div>
+              <p class="delta-note">Not touched by this replace. Each keeps the old file until published again.</p>
+              <ul class="delta-list"><li><span class="dt">Trailhead notes for March</span><span class="br">cairn/posts/trailhead-notes</span></li></ul>
+            </div>
+            <div class="reassure"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span>The old file stays in git history. The alt on each placement is left as it is.</span></div>
+            <div class="confirm-block">
+              <label class="cl" for="dk-rep-confirm">Type <code>first-light</code> to replace the file in all 7 entries.</label>
+              <input id="dk-rep-confirm" class="confirm-input" type="text" value="first-light" aria-label="Type the asset slug to confirm" />
+            </div>
+          </div>
+          <div class="mb-foot">
+            <span class="foot-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>One commit</span>
+            <button class="btn-ghost" type="button">Cancel</button>
+            <button class="btn-danger" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>Replace in 7 entries</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+
+  <!-- DARK Alt propagation (compact, opt-in checked so the danger checkbox shows on dark) -->
+  <div class="screen"><div data-theme="cairn-admin-dark">
+    <div class="ground" style="min-height:0;">
+      <div class="scrim" style="position:static; background:transparent; align-items:flex-start; padding:18px;">
+        <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="dk-alt-title" aria-describedby="dk-alt-sub" style="max-height:none;">
+          <div class="mb-head">
+            <span class="mb-badge primary" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
+            <div class="mb-htext">
+              <div class="mb-title" id="dk-alt-title">Fill alt on 5 placements</div>
+              <p class="mb-sub" id="dk-alt-sub">Writes the default alt into placements that have none. One commit to <code>main</code>.</p>
+            </div>
+            <button class="panel-x" aria-label="Cancel"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+          </div>
+          <div class="mb-body">
+            <div class="buckets">
+              <div class="bucket fill">
+                <div class="bucket-head"><span class="bg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><div class="bt"><div class="bn">Will fill the gap</div><div class="bd">No alt today. The default is written in.</div></div><span class="bc">5</span></div>
+                <div class="bk-scroll">
+                  <ul class="bk-list">
+                    <li class="bk-row"><svg class="bk-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg><div class="bk-main"><div class="bk-top"><span class="bk-title">From the ridge</span><span class="place-pill">hero</span></div><div class="ba"><span class="from empty">(no alt)</span><span class="arr">&rarr;</span><span class="to">A wide valley seen from a snow-covered ridge.</span></div></div></li>
+                  </ul>
+                </div>
+              </div>
+              <div class="caveat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span>A body image cannot be marked decorative, so an empty one always reads as a gap. Only a hero can be skipped.</span></div>
+              <div class="bucket custom">
+                <div class="bucket-head"><span class="bg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span><div class="bt"><div class="bn">Already has custom alt</div><div class="bd">You chose to overwrite these.</div></div><span class="bc">3</span></div>
+                <div class="optin-band">
+                  <label class="optin-label">
+                    <input type="checkbox" class="checkbox checkbox-sm" checked aria-describedby="dk-optin-hint" />
+                    <span class="optin-text"><span class="ot-strong">Also overwrite these 3 with the default alt.</span><span class="ot-hint" id="dk-optin-hint">Overwrites the alt these entries already have. Git keeps the old version.</span></span>
+                  </label>
+                </div>
+                <div class="bk-scroll" style="border-top:0;">
+                  <ul class="bk-list">
+                    <li class="bk-row"><svg class="bk-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg><div class="bk-main"><div class="bk-top"><span class="bk-title">The far turn</span><span class="place-pill">body</span></div><div class="ba"><span class="from struck">&ldquo;The turn most skiers stop for.&rdquo;</span><span class="arr">&rarr;</span><span class="to">A wide valley seen from a snow-covered ridge.</span></div></div></li>
+                  </ul>
+                </div>
+              </div>
+              <div class="bucket skip">
+                <div class="bucket-head"><span class="bg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg></span><div class="bt"><div class="bn">Marked decorative, skipped</div><div class="bd">Left without alt by choice.</div></div><span class="bc">1</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="mb-foot">
+            <span class="foot-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>One commit</span>
+            <button class="btn-ghost" type="button">Cancel</button>
+            <button class="btn-go" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Update 8 placements</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+
+</div>
+
+<!-- =================================================================================================
+     8. NARROW VIEWPORT: the review modal as a bottom sheet
+     ================================================================================================= -->
+<p class="mock-label">8 &middot; Narrow viewport (about 392px): the review becomes a bottom sheet</p>
+<p class="mock-note">
+  Below the narrow breakpoint the modal becomes a full-width bottom sheet (the dialog-sizing rule). The
+  head and the footer hold; the body scrolls. The from/to strip stacks, the per-entry well stays
+  scroll-capped, and the typed confirm holds its gate. The slide-over's entry-point controls stack the
+  same way.
+</p>
+<div class="screen narrow"><div data-theme="cairn-admin">
+  <div class="ground" style="min-height:0; background:var(--color-base-200);">
+    <div style="padding:0;">
+      <div class="modal-box" role="alertdialog" aria-modal="true" aria-labelledby="nr-title" aria-describedby="nr-sub" style="width:100%; max-height:none; border-radius:1rem 1rem 0 0;">
+        <div class="mb-head" style="padding:15px 15px 12px;">
+          <span class="mb-badge danger" aria-hidden="true" style="width:34px; height:34px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg></span>
+          <div class="mb-htext"><div class="mb-title" id="nr-title" style="font-size:1.0625rem;">Replace <b>first-light</b> in 7 entries</div><p class="mb-sub" id="nr-sub" style="margin-top:4px;">Every published reference is repointed in one commit to <code>main</code>.</p></div>
+        </div>
+        <div class="mb-body" style="padding:0 15px;">
+          <div class="swap" style="grid-template-columns:1fr; gap:9px;">
+            <div class="swap-col"><span class="sthumb ph-a"></span><span class="sm"><span class="role">Current</span><span class="meta hash-old">.7f3a91c2 &middot; 248 KB</span></span></div>
+            <span class="swap-arrow" aria-hidden="true" style="justify-self:center; transform:rotate(90deg);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span>
+            <div class="swap-col to"><span class="sthumb ph-a2"></span><span class="sm"><span class="role">New file</span><span class="meta hash-new">.b42e0d51 &middot; 261 KB</span></span></div>
+            <div class="swap-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 7 17l-5-5"/></svg><span>The name <code>first-light</code> stays. Only the hash changes.</span></div>
+          </div>
+          <div>
+            <div class="sec-head"><span class="eyebrow">Entries</span><span class="ct">7</span></div>
+            <div class="ent-well" style="margin-top:8px;">
+              <div class="ent-scroll">
+                <ul class="ent-list">
+                  <li class="ent-row"><svg class="ent-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg><div class="ent-main"><div class="ent-title">A season on the early tracks</div><div class="ent-where">Hero and 2 in the body</div></div></li>
+                </ul>
+              </div>
+              <button class="show-all" type="button" aria-expanded="false" aria-controls="nr-list">Show all 7</button>
+            </div>
+          </div>
+          <div class="confirm-block"><label class="cl" for="nr-confirm">Type <code>first-light</code> to replace.</label><input id="nr-confirm" class="confirm-input" type="text" placeholder="Type the asset slug" aria-label="Type the asset slug to confirm" /></div>
+        </div>
+        <div class="mb-foot" style="padding:12px 15px;">
+          <button class="btn-ghost" type="button" style="flex:1;">Cancel</button>
+          <button class="btn-danger" type="button" disabled style="flex:1; justify-content:center;">Replace</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+</body>
+</html>

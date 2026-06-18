@@ -1,0 +1,988 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Proposed design: Replace and Alt propagation (media Pass B, comparison direction)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+  rel="stylesheet"
+/>
+<style>
+  /* DIRECTION: Comparison, transparency-first.
+     Both Pass B operations rewrite N published entries in one atomic commit to main, so the whole
+     job of the UI is to make that impact legible and confirmable BEFORE applying. This direction
+     answers that with a two-pane confirm surface. The LEFT pane is the anchor: the single thing
+     changing, held still (old asset vs new for Replace; old default alt vs new for Propagation),
+     with thumbnails, names, and dimensions so the author sees exactly what they are committing. The
+     RIGHT pane is the affected-placements list: one scannable row per entry, each carrying where it
+     is used and its own before/after, with the opt-in overwrite checkbox inline on each customized
+     row. A report-only branch-delta zone sits below the list (open cairn/* edits that still point at
+     the old asset; never rewritten, only disclosed).
+
+     The main tradeoff: per-row transparency costs vertical space, so a long list leans on a sticky
+     anchor pane, a scrolling right column, grouped buckets, and a select-all affordance to stay
+     scannable. The payoff is that nothing about a published-content rewrite is hidden behind a
+     count: the author can read every changed line and toggle each opt-in before the one commit.
+
+     This earns a TRUE modal (focus trap, restore, Escape, no light dismiss), distinct from the
+     non-modal detail slide-over it opens from, because it is a destructive, all-at-once write to
+     published content. It echoes the existing two-faced safe-delete alertdialog's danger grammar
+     (the --cairn-error-* family, the typed-name gate on the genuinely irreversible-feeling step,
+     the "git keeps every version" reassurance) so Replace and Delete read as one family.
+
+     cairn is not WYSIWYG: every before/after is the structured fact (the alt string, the asset
+     name and dimensions, the entry title), never a rendered-page canvas. */
+
+  /* ---- mock scaffold (outside the themed surfaces) ---- */
+  body { margin: 0; background: #d8d4cf; }
+  .mock-label { font: 600 13px/1.4 system-ui; letter-spacing: .08em; text-transform: uppercase; color: #444; padding: 30px 24px 4px; }
+  .mock-note { font: 400 13px/1.55 system-ui; color: #5a564f; padding: 0 24px 14px; max-width: 86ch; }
+  .mock-note code { font-family: ui-monospace, monospace; background: rgba(0,0,0,.06); padding: 1px 4px; border-radius: 3px; }
+  .screen { border: 1px solid #aaa; margin: 0 16px 52px; box-shadow: 0 2px 14px rgba(0,0,0,.08); overflow: hidden; }
+  .screen.narrow { max-width: 392px; }
+  .pair { display: flex; flex-wrap: wrap; gap: 0; }
+  .pair > .screen { flex: 1 1 380px; margin: 0 16px 52px; }
+
+  /* ---- Warm Stone tokens, both theme roots, inlined so the mockup stands alone ---- */
+  [data-theme='cairn-admin'] {
+    --color-base-100: oklch(99% 0.004 75);
+    --color-base-200: oklch(96.5% 0.006 75);
+    --color-base-300: oklch(89% 0.011 75);
+    --color-base-content: oklch(26% 0.014 75);
+    --color-primary: oklch(52% 0.2 293);
+    --color-primary-content: oklch(98% 0.01 293);
+    --color-accent: oklch(54% 0.16 300);
+    --color-muted: oklch(48% 0.01 75);
+    --color-subtle: oklch(42% 0.01 75);
+    --color-positive-ink: oklch(48% 0.12 150);
+    --cairn-code-chip: oklch(94.5% 0.008 75);
+    --cairn-warning-ink: oklch(50% 0.13 70);
+    --cairn-error-ink: oklch(50% 0.19 25);
+    --cairn-error-tint: oklch(96% 0.03 25);
+    --cairn-error-border: oklch(85% 0.06 25);
+    --cairn-card-border: oklch(93% 0.008 75);
+    --cairn-shadow: 0 1px 2px oklch(28% 0.02 75 / 0.05), 0 8px 24px -6px oklch(28% 0.02 75 / 0.1);
+    --cairn-scrim: oklch(20% 0.01 75 / 0.34);
+  }
+  [data-theme='cairn-admin-dark'] {
+    --color-base-100: oklch(24% 0.01 75);
+    --color-base-200: oklch(15.5% 0.009 75);
+    --color-base-300: oklch(30% 0.014 75);
+    --color-base-content: oklch(93% 0.006 75);
+    --color-primary: oklch(68% 0.18 293);
+    --color-primary-content: oklch(20% 0.03 293);
+    --color-accent: oklch(70% 0.14 300);
+    --color-muted: oklch(72% 0.01 75);
+    --color-subtle: oklch(80% 0.008 75);
+    --color-positive-ink: oklch(78% 0.12 150);
+    --cairn-code-chip: oklch(29.5% 0.012 75);
+    --cairn-warning-ink: oklch(80% 0.14 70);
+    --cairn-error-ink: oklch(78% 0.15 25);
+    --cairn-error-tint: oklch(28% 0.06 25);
+    --cairn-error-border: oklch(40% 0.09 25);
+    --cairn-card-border: oklch(30% 0.014 75);
+    --cairn-shadow: 0 1px 2px oklch(0% 0 0 / 0.35), 0 8px 24px -6px oklch(0% 0 0 / 0.5);
+    --cairn-scrim: oklch(0% 0 0 / 0.55);
+  }
+  [data-theme] {
+    --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+    --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-editor: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+
+  /* ===== the office ground: just enough to seat the slide-over and the modal ===== */
+  .ground { position: relative; overflow: hidden; background: var(--color-base-200); color: var(--color-base-content); font-family: var(--font-body); -webkit-font-smoothing: antialiased; min-height: 620px; }
+  .office { padding: 22px 24px; }
+  .office-eyebrow { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); }
+  .office-h1 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; letter-spacing: -.02em; margin: 2px 0 2px; }
+  .office-count { font-size: .875rem; color: var(--color-muted); }
+  .sheet { margin-top: 18px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .tile { border: 1px solid var(--cairn-card-border); border-radius: 1rem; overflow: hidden; background: var(--color-base-100); }
+  .tile.sel { outline: 2px solid color-mix(in oklab, var(--color-primary) 70%, transparent); outline-offset: -1px; }
+  .tile .pic { aspect-ratio: 4/3; }
+  .tile .cap { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 7px 9px; border-top: 1px solid var(--cairn-card-border); font-size: .8125rem; font-weight: 500; }
+  .tile .cap .miss { color: var(--cairn-warning-ink); display: inline-flex; align-items: center; gap: 3px; font-size: .625rem; font-weight: 600; }
+  .tile .cap .ok { color: var(--color-positive-ink); display: inline-flex; }
+
+  /* ===== the non-modal detail slide-over (the established recipe), with the two new entry points ===== */
+  .panel { position: absolute; top: 0; right: 0; bottom: 0; width: 22rem; background: var(--color-base-100); border-left: 1px solid var(--cairn-card-border); box-shadow: var(--cairn-shadow); font-family: var(--font-body); display: flex; flex-direction: column; }
+  .panel.static { position: static; width: 22rem; box-shadow: none; }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; padding: 13px 16px; border-bottom: 1px solid var(--cairn-card-border); }
+  .eyebrow { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); }
+  .icon-btn { display: inline-flex; align-items: center; justify-content: center; height: 26px; width: 26px; border: 0; background: transparent; border-radius: .45rem; color: var(--color-subtle); cursor: pointer; }
+  .icon-btn:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .icon-btn:focus-visible { outline: 2px solid color-mix(in oklab, var(--color-primary) 70%, transparent); outline-offset: 1px; }
+  .panel-body { padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; }
+  .preview-lg { aspect-ratio: 16/10; border: 1px solid var(--cairn-card-border); border-radius: 1rem; overflow: hidden; }
+  .asset-id { display: flex; flex-direction: column; gap: 6px; }
+  .asset-name { font-size: 1.0625rem; font-weight: 600; line-height: 1.2; }
+  .ref-row { display: flex; align-items: center; gap: 6px; }
+  .ref-row code { font-family: var(--font-editor); font-size: .6875rem; color: var(--color-muted); word-break: break-all; min-width: 0; }
+  .grp-label { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); }
+
+  .fld { display: flex; flex-direction: column; gap: 5px; }
+  .fld > .lbl { font-size: .8125rem; font-weight: 500; }
+  .input, .textarea { width: 100%; box-sizing: border-box; font: 400 .8125rem/1.45 var(--font-body); color: var(--color-base-content); background: var(--color-base-100); border: 1px solid var(--color-base-300); border-radius: .625rem; padding: 7px 10px; }
+  .textarea { resize: none; min-height: 3.6rem; }
+  .input::placeholder, .textarea::placeholder { color: var(--color-muted); }
+  .input:focus-visible, .textarea:focus-visible { outline: none; border-color: color-mix(in oklab, var(--color-primary) 70%, transparent); box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-primary) 70%, transparent); }
+  .fld-hint { font-size: .75rem; color: var(--color-muted); line-height: 1.45; }
+
+  /* The two new actions sit with the existing ones in the slide-over footer. Replace and Push alt are
+     the new openers; Delete is the existing danger control. Push alt lives next to the alt editor
+     because it acts on that field's value; Replace sits in the action row. */
+  .alt-actionrow { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .text-action { background: transparent; border: 0; padding: 4px 2px; font: 500 .8125rem/1 var(--font-body); color: var(--color-primary); cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+  .text-action:hover { text-decoration: underline; text-underline-offset: 2px; }
+  .text-action:focus-visible { outline: 2px solid color-mix(in oklab, var(--color-primary) 70%, transparent); outline-offset: 2px; border-radius: 4px; }
+  .action-row { display: flex; gap: 9px; border-top: 1px solid var(--cairn-card-border); padding-top: 14px; }
+  .btn { font: 600 .8125rem/1 var(--font-body); border-radius: .55rem; padding: 8px 13px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+  .btn:focus-visible { outline: 2px solid color-mix(in oklab, var(--color-primary) 70%, transparent); outline-offset: 2px; }
+  .btn-quiet { border: 1px solid var(--color-base-300); background: transparent; color: var(--color-subtle); }
+  .btn-quiet:hover { background: color-mix(in oklab, var(--color-base-content) 5%, transparent); }
+  .btn-primary { border: 1px solid transparent; background: var(--color-primary); color: var(--color-primary-content); box-shadow: 0 1px 2px color-mix(in oklab, var(--color-primary) 35%, transparent); }
+  .btn-danger { border: 1px solid var(--cairn-error-border); background: transparent; color: var(--cairn-error-ink); }
+  .btn-danger.solid { background: var(--cairn-error-ink); color: var(--color-base-100); border-color: transparent; }
+  .btn-danger.solid:disabled { opacity: .5; cursor: not-allowed; }
+  .btn[disabled] { cursor: not-allowed; }
+  .btn-flex { flex: 1; }
+
+  /* ===== the comparison MODAL (true modal: trap, restore, Escape, no light dismiss) ===== */
+  .scrim { position: absolute; inset: 0; background: var(--cairn-scrim); display: flex; align-items: center; justify-content: center; padding: 22px; }
+  .modal { width: 60rem; max-width: 100%; max-height: calc(100% - 8px); display: flex; flex-direction: column; background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: 1rem; box-shadow: var(--cairn-shadow); font-family: var(--font-body); overflow: hidden; }
+  .modal-head { display: flex; align-items: flex-start; gap: 12px; padding: 17px 20px; border-bottom: 1px solid var(--cairn-card-border); }
+  .modal-head .glyph { display: inline-flex; align-items: center; justify-content: center; height: 36px; width: 36px; flex: none; border-radius: .65rem; }
+  .modal-head .glyph.warn { background: color-mix(in oklab, var(--cairn-warning-ink) 14%, transparent); color: var(--cairn-warning-ink); }
+  .modal-head .glyph.danger { background: var(--cairn-error-tint); color: var(--cairn-error-ink); }
+  .modal-head .ht { flex: 1; min-width: 0; }
+  .modal-head h2 { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; letter-spacing: -.015em; margin: 0; }
+  .modal-head .sub { margin: 3px 0 0; font-size: .8125rem; line-height: 1.5; color: var(--color-muted); }
+  .modal-head .sub b { color: var(--color-base-content); font-weight: 600; }
+
+  /* the two panes: anchor left (sticky), affected-placements right (scrolls) */
+  .panes { display: grid; grid-template-columns: 19rem 1fr; min-height: 0; flex: 1; }
+  .anchor { border-right: 1px solid var(--cairn-card-border); background: var(--color-base-200); padding: 18px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; }
+  .affected { display: flex; flex-direction: column; min-height: 0; }
+  .affected-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 13px 18px 11px; border-bottom: 1px solid var(--cairn-card-border); }
+  .affected-title { font-size: .9375rem; font-weight: 600; }
+  .affected-scroll { overflow-y: auto; padding: 6px 18px 16px; display: flex; flex-direction: column; gap: 16px; min-height: 0; }
+
+  .anchor-eyebrow { font-size: .625rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--color-muted); }
+  /* the anchor's old->new asset comparison (Replace) */
+  .swap { display: flex; flex-direction: column; gap: 9px; }
+  .swap-card { border: 1px solid var(--cairn-card-border); border-radius: .8rem; overflow: hidden; background: var(--color-base-100); }
+  .swap-card.out { opacity: .92; }
+  .swap-card.in { border-color: color-mix(in oklab, var(--color-primary) 45%, transparent); box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-primary) 25%, transparent); }
+  .swap-card .sc-pic { aspect-ratio: 16/10; }
+  .swap-card .sc-meta { padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; }
+  .swap-card .sc-tag { font-size: .625rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+  .swap-card.out .sc-tag { color: var(--color-muted); }
+  .swap-card.in .sc-tag { color: var(--color-primary); }
+  .swap-card .sc-name { font-size: .8125rem; font-weight: 600; word-break: break-word; }
+  .swap-card .sc-dim { font-size: .6875rem; color: var(--color-muted); font-family: var(--font-editor); }
+  .swap-arrow { display: flex; align-items: center; justify-content: center; color: var(--color-muted); }
+
+  /* the anchor's old->new alt comparison (Propagation) */
+  .alt-swap { display: flex; flex-direction: column; gap: 8px; }
+  .alt-block { border: 1px solid var(--cairn-card-border); border-radius: .7rem; padding: 9px 11px; background: var(--color-base-100); }
+  .alt-block.in { border-color: color-mix(in oklab, var(--color-primary) 45%, transparent); }
+  .alt-block .ab-tag { font-size: .625rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--color-muted); margin-bottom: 4px; }
+  .alt-block.in .ab-tag { color: var(--color-primary); }
+  .alt-block .ab-text { font-size: .8125rem; line-height: 1.45; }
+  .alt-block .ab-text.empty { color: var(--color-muted); font-style: italic; }
+  .alt-thumb-row { display: flex; align-items: center; gap: 9px; padding-bottom: 4px; }
+  .alt-thumb { width: 46px; height: 32px; flex: none; border-radius: .4rem; border: 1px solid var(--cairn-card-border); }
+  .alt-thumb-name { font-size: .8125rem; font-weight: 600; }
+  .alt-thumb-dim { font-size: .6875rem; color: var(--color-muted); font-family: var(--font-editor); }
+
+  /* the anchor reassurance footer (echoes the safe-delete "git keeps every version" line) */
+  .anchor-note { display: flex; gap: 8px; align-items: flex-start; font-size: .75rem; line-height: 1.5; color: var(--color-muted); border-top: 1px solid var(--cairn-card-border); padding-top: 12px; }
+  .anchor-note svg { flex: none; margin-top: 1px; color: var(--color-positive-ink); }
+
+  /* the affected-placements bucket headers */
+  .bucket { display: flex; flex-direction: column; gap: 7px; }
+  .bucket-head { display: flex; align-items: center; gap: 8px; }
+  .bucket-name { font-size: .6875rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+  .bucket-name.fill { color: var(--color-primary); }
+  .bucket-name.custom { color: var(--cairn-warning-ink); }
+  .bucket-name.skip { color: var(--color-muted); }
+  .bucket-count { font-size: .6875rem; font-weight: 600; color: var(--color-muted); background: color-mix(in oklab, var(--color-base-content) 6%, transparent); border-radius: 999px; padding: 1px 7px; }
+  .bucket-blurb { font-size: .6875rem; color: var(--color-muted); line-height: 1.4; }
+  .select-all { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: .75rem; color: var(--color-primary); cursor: pointer; background: transparent; border: 0; }
+  .select-all:hover { text-decoration: underline; text-underline-offset: 2px; }
+
+  /* one affected-placement row: where used (left) + the before/after (right), plus an inline opt-in
+     checkbox on a customized row */
+  .rows { display: flex; flex-direction: column; gap: 6px; }
+  .arow { display: grid; grid-template-columns: 1fr; gap: 8px; border: 1px solid var(--cairn-card-border); border-radius: .7rem; padding: 9px 11px; background: var(--color-base-100); }
+  .arow .where { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .arow .where .ic { color: var(--color-muted); flex: none; }
+  .arow .where .title { font-size: .8125rem; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .arow .where .place { font-size: .625rem; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; color: var(--color-muted); background: color-mix(in oklab, var(--color-base-content) 6%, transparent); border-radius: 999px; padding: 1px 7px; flex: none; }
+  .arow .where .ext { margin-left: auto; flex: none; color: var(--color-muted); opacity: .6; }
+  /* the before/after line: marker-muted FROM, accent TO, never a rendered preview */
+  .delta { display: flex; flex-direction: column; gap: 3px; font-size: .75rem; line-height: 1.4; padding-left: 24px; }
+  .delta .d-from, .delta .d-to { display: flex; gap: 7px; }
+  .delta .d-key { font-family: var(--font-editor); font-size: .625rem; color: var(--color-muted); flex: none; width: 2.4rem; padding-top: 1px; }
+  .delta .d-from .d-val { color: var(--color-muted); text-decoration: line-through; text-decoration-color: color-mix(in oklab, var(--color-muted) 55%, transparent); }
+  .delta .d-from .d-val.empty { font-style: italic; text-decoration: none; }
+  .delta .d-to .d-val { color: var(--color-base-content); }
+  .delta .d-to .d-val.accent { color: var(--color-primary); font-weight: 500; }
+
+  /* the customized-row opt-in: a real checkbox, inline, gating that single row's overwrite */
+  .arow.custom { grid-template-columns: auto 1fr; align-items: start; column-gap: 11px; }
+  .arow.custom .ck { margin-top: 2px; }
+  .ck { width: 16px; height: 16px; flex: none; appearance: none; border: 1.5px solid var(--color-base-300); border-radius: .35rem; cursor: pointer; position: relative; background: var(--color-base-100); }
+  .ck:checked { background: var(--color-primary); border-color: var(--color-primary); }
+  .ck:checked::after { content: ""; position: absolute; left: 4.5px; top: 1px; width: 4px; height: 8px; border: solid var(--color-primary-content); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+  .ck:focus-visible { outline: 2px solid color-mix(in oklab, var(--color-primary) 70%, transparent); outline-offset: 2px; }
+  .arow.custom .body { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+  .arow.custom .delta { padding-left: 0; }
+  /* a customized row not opted in: its before/after is shown but quietened to "keeping current" */
+  .arow.custom.off .delta .d-to .d-val { color: var(--color-muted); text-decoration: line-through; text-decoration-color: color-mix(in oklab, var(--color-muted) 45%, transparent); font-weight: 400; }
+  .keep-tag { font-size: .625rem; font-weight: 600; color: var(--color-muted); }
+
+  /* a skipped (decorative-hero) row reads calm and is never an input */
+  .arow.skip { opacity: .82; }
+  .arow.skip .where .title { font-weight: 500; }
+  .skip-reason { font-size: .6875rem; color: var(--color-muted); padding-left: 24px; display: flex; align-items: center; gap: 5px; }
+  .skip-reason svg { flex: none; }
+
+  /* the body-image caveat callout (one honest line, warning ink, never alarmist) */
+  .caveat { display: flex; gap: 8px; align-items: flex-start; border: 1px solid color-mix(in oklab, var(--cairn-warning-ink) 35%, var(--cairn-card-border)); background: color-mix(in oklab, var(--cairn-warning-ink) 7%, transparent); border-radius: .7rem; padding: 9px 11px; font-size: .75rem; line-height: 1.5; color: var(--color-base-content); }
+  .caveat svg { flex: none; margin-top: 1px; color: var(--cairn-warning-ink); }
+
+  /* the branch-delta zone: report-only, visually set apart from the rewrite list */
+  .branch-zone { border: 1px dashed var(--cairn-card-border); border-radius: .8rem; background: color-mix(in oklab, var(--color-base-content) 2.5%, transparent); padding: 11px 13px; display: flex; flex-direction: column; gap: 8px; }
+  .branch-zone .bz-head { display: flex; align-items: center; gap: 7px; }
+  .branch-zone .bz-title { font-size: .6875rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--color-muted); }
+  .branch-zone .bz-blurb { font-size: .6875rem; color: var(--color-muted); line-height: 1.5; }
+  .branch-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; }
+  .branch-row .b-title { font-size: .8125rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .branch-row .b-branch { font-family: var(--font-editor); font-size: .625rem; color: var(--cairn-warning-ink); margin-left: auto; flex: none; }
+  .branch-row .ic { color: var(--color-muted); flex: none; }
+
+  /* the modal footer: live summary left, the two actions right; the destructive Replace earns a
+     typed-name gate to match the safe-delete grammar */
+  .modal-foot { border-top: 1px solid var(--cairn-card-border); padding: 13px 20px; display: flex; align-items: center; gap: 14px; }
+  .foot-summary { font-size: .8125rem; color: var(--color-muted); min-width: 0; }
+  .foot-summary b { color: var(--color-base-content); font-weight: 600; }
+  .foot-spacer { flex: 1; }
+  .foot-actions { display: flex; align-items: center; gap: 9px; flex: none; }
+  .confirm-gate { display: flex; align-items: center; gap: 8px; }
+  .confirm-gate label { font-size: .75rem; color: var(--color-muted); }
+  .confirm-gate code { font-family: var(--font-editor); font-size: .75rem; font-weight: 600; background: var(--cairn-code-chip); border-radius: .3rem; padding: 1px 5px; color: var(--color-base-content); }
+  .confirm-input { width: 9rem; font: 400 .8125rem/1 var(--font-editor); border: 1px solid var(--cairn-error-border); border-radius: .5rem; padding: 7px 9px; background: var(--color-base-100); color: var(--color-base-content); }
+  .confirm-input:focus-visible { outline: none; box-shadow: 0 0 0 1px var(--cairn-error-ink); border-color: var(--cairn-error-ink); }
+
+  /* the in-flight verification state (replace fails closed if usage can't be fully verified) */
+  .verify-banner { display: flex; gap: 9px; align-items: flex-start; border: 1px solid var(--cairn-error-border); background: var(--cairn-error-tint); border-radius: .7rem; padding: 11px 13px; margin: 12px 18px 0; font-size: .8125rem; line-height: 1.5; color: var(--color-base-content); }
+  .verify-banner svg { flex: none; margin-top: 1px; color: var(--cairn-error-ink); }
+  .verify-banner b { color: var(--cairn-error-ink); }
+
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+  /* radiogroup (the alt describe/decorative model carried into the modal anchor) */
+  .alt-radio-row { display: flex; gap: 7px; }
+  .alt-radio { flex: 1 1 0; display: flex; align-items: center; gap: 6px; padding: 6px 9px; border: 1px solid var(--color-base-300); border-radius: .55rem; font-size: .8125rem; cursor: pointer; }
+  .alt-radio.sel { border-color: color-mix(in oklab, var(--color-primary) 55%, transparent); background: color-mix(in oklab, var(--color-primary) 8%, transparent); color: var(--color-primary); font-weight: 600; }
+  .alt-radio .dot2 { width: 12px; height: 12px; border-radius: 50%; border: 1px solid var(--color-base-300); flex: none; }
+  .alt-radio.sel .dot2 { border-color: var(--color-primary); background: radial-gradient(circle at center, var(--color-primary) 0 3.5px, transparent 4.5px); }
+
+  /* photo stand-ins (no bundled bytes): warm dawn-light gradients in the warm hue family */
+  .ph-a { background: linear-gradient(170deg, oklch(82% 0.06 80) 0%, oklch(74% 0.08 60) 55%, oklch(64% 0.09 45) 100%); }
+  .ph-b { background: linear-gradient(150deg, oklch(52% 0.06 60) 0%, oklch(70% 0.09 50) 60%, oklch(85% 0.08 80) 100%); }
+  .ph-c { background: linear-gradient(200deg, oklch(88% 0.05 85) 0%, oklch(72% 0.07 55) 100%); }
+  .ph-d { background: linear-gradient(160deg, oklch(40% 0.05 60) 0%, oklch(60% 0.1 45) 55%, oklch(86% 0.08 85) 100%); }
+  .ph-e { background: linear-gradient(155deg, oklch(70% 0.1 30) 0%, oklch(82% 0.07 60) 100%); }
+
+  @media (max-width: 900px) {
+    .panes { grid-template-columns: 1fr; }
+    .anchor { border-right: 0; border-bottom: 1px solid var(--cairn-card-border); }
+  }
+</style>
+</head>
+<body>
+
+<p class="mock-label">Media Pass B, Replace and Alt propagation (comparison direction)</p>
+<p class="mock-note">
+  Two operations the author starts from a media asset's detail slide-over. <b>Replace</b> swaps in a
+  newly uploaded file; because cairn is content-addressed, the new file gets a new hash and every
+  published reference is repointed to it in one commit to <code>main</code>. <b>Alt propagation</b>
+  pushes the asset's edited default alt to placements that lack alt, with an opt-in to also overwrite
+  placements that carry custom alt. Both rewrite N entries at once, so each opens a two-pane confirm
+  modal: the left anchors the single change, the right lists every affected placement with its own
+  before and after. A report-only branch-delta names open <code>cairn/*</code> edits that still point
+  at the old asset and are never rewritten. Replace fails closed if usage cannot be fully verified.
+</p>
+
+<!-- ===================== ENTRY POINTS: the slide-over at rest, with Replace and Push alt ===================== -->
+<p class="mock-label">Light: the slide-over at rest, where both flows start</p>
+<p class="mock-note">
+  The existing non-modal detail slide-over gains two openers. <b>Replace</b> is a quiet text control in
+  the action row beside Delete. <b>Push to placements</b> sits under the default-alt editor, because it
+  acts on that field's value. Both open the comparison modal; the slide-over stays where it is behind
+  the modal scrim.
+</p>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="ground">
+    <div class="office" style="padding-right: calc(22rem + 24px);">
+      <span class="office-eyebrow">Media</span>
+      <h1 class="office-h1">Media library</h1>
+      <span class="office-count">24 images, 19 used on the site &middot; 41.2 MB stored</span>
+      <div class="sheet">
+        <div class="tile sel"><div class="pic ph-a"></div><div class="cap">first-light <span class="ok"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--color-positive-ink)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></div></div>
+        <div class="tile"><div class="pic ph-b"></div><div class="cap">valley-ridge <span class="miss"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>alt</span></div></div>
+        <div class="tile"><div class="pic ph-d"></div><div class="cap">ridgeline-dusk <span class="ok"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--color-positive-ink)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></div></div>
+        <div class="tile"><div class="pic ph-c"></div><div class="cap">junction-sign</div></div>
+      </div>
+    </div>
+
+    <aside class="panel" role="region" aria-label="first-light details">
+      <div class="panel-head">
+        <span class="eyebrow">Asset</span>
+        <button class="icon-btn" aria-label="Close details"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div class="panel-body">
+        <div class="preview-lg ph-a" role="img" aria-label="Dawn light over the groomed tracks"></div>
+        <div class="asset-id">
+          <span class="asset-name">first-light</span>
+          <span class="ref-row">
+            <code>media:posts/first-light@a1b2c3</code>
+            <button class="icon-btn" aria-label="Copy reference"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+          </span>
+        </div>
+
+        <div class="fld">
+          <span class="lbl">Default alt text</span>
+          <p class="fld-hint">The default for the next time this image is placed. Push it to existing placements below.</p>
+          <textarea class="textarea" aria-label="Default alt text">Dawn light over the groomed cross-country tracks before sunrise.</textarea>
+          <div class="alt-actionrow">
+            <button class="text-action" type="button">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+              Push to placements
+            </button>
+            <button class="btn btn-primary" type="button" style="padding:6px 12px;">Save</button>
+          </div>
+        </div>
+
+        <div class="action-row">
+          <button class="btn btn-quiet btn-flex" type="button">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+            Replace
+          </button>
+          <button class="btn btn-danger btn-flex" type="button">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            Delete
+          </button>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div></div>
+
+<!-- ===================== REPLACE: the comparison modal ===================== -->
+<p class="mock-label">Light: Replace, the two-pane confirm</p>
+<p class="mock-note">
+  Left, the anchor: the file leaving over the file arriving, each with name and dimensions, so the
+  author sees exactly what swaps. Right, every published placement that will repoint, grouped by
+  concept, each row naming where it is used and showing the reference moving from the old hash to the
+  new one. The branch-delta below is report-only. Because a repoint is a write to published content,
+  the footer asks the author to type the asset slug, the same gate the safe-delete uses. Save commits
+  one atomic rewrite.
+</p>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="ground" style="min-height: 660px;">
+    <div class="office" style="padding-right: calc(22rem + 24px);">
+      <span class="office-eyebrow">Media</span>
+      <h1 class="office-h1">Media library</h1>
+      <span class="office-count">24 images, 19 used on the site</span>
+    </div>
+    <div class="scrim">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="rep-title">
+        <div class="modal-head">
+          <span class="glyph warn" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg></span>
+          <div class="ht">
+            <h2 id="rep-title">Replace first-light</h2>
+            <p class="sub">The new file repoints <b>4 published entries</b> to it, in one commit to <b>main</b>. Readers see the new image as soon as the build finishes.</p>
+          </div>
+          <button class="icon-btn" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+
+        <div class="panes">
+          <!-- ANCHOR: old asset -> new asset -->
+          <div class="anchor">
+            <span class="anchor-eyebrow">The change</span>
+            <div class="swap">
+              <div class="swap-card out">
+                <div class="sc-pic ph-a" role="img" aria-label="Current image: dawn light over the tracks"></div>
+                <div class="sc-meta">
+                  <span class="sc-tag">Replacing</span>
+                  <span class="sc-name">first-light</span>
+                  <span class="sc-dim">1600&times;1000 &middot; a1b2c3</span>
+                </div>
+              </div>
+              <div class="swap-arrow" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+              </div>
+              <div class="swap-card in">
+                <div class="sc-pic ph-e" role="img" aria-label="New image: first light, regraded"></div>
+                <div class="sc-meta">
+                  <span class="sc-tag">New file</span>
+                  <span class="sc-name">first-light-regrade.jpg</span>
+                  <span class="sc-dim">2400&times;1500 &middot; 9f8e7d</span>
+                </div>
+              </div>
+            </div>
+            <div class="anchor-note">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              <span>The old file stays in git history. A developer can bring it back, and the alt text on each placement is left exactly as it is.</span>
+            </div>
+          </div>
+
+          <!-- AFFECTED PLACEMENTS: per-entry repoint, grouped by concept -->
+          <div class="affected">
+            <div class="affected-head">
+              <span class="affected-title">Entries that will repoint</span>
+              <span class="bucket-count">4</span>
+            </div>
+            <div class="affected-scroll">
+              <div class="bucket">
+                <div class="bucket-head">
+                  <span class="bucket-name fill">Posts</span>
+                  <span class="bucket-count">3</span>
+                </div>
+                <div class="rows">
+                  <div class="arow">
+                    <div class="where">
+                      <span class="ic" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h5"/></svg></span>
+                      <span class="title">A season on the early tracks</span>
+                      <span class="place">hero</span>
+                      <span class="ext" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg></span>
+                    </div>
+                    <div class="delta">
+                      <div class="d-from"><span class="d-key">from</span><span class="d-val">media:posts/first-light@a1b2c3</span></div>
+                      <div class="d-to"><span class="d-key">to</span><span class="d-val accent">media:posts/first-light@9f8e7d</span></div>
+                    </div>
+                  </div>
+                  <div class="arow">
+                    <div class="where">
+                      <span class="ic" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h5"/></svg></span>
+                      <span class="title">Grooming the first loop</span>
+                      <span class="place">body</span>
+                      <span class="ext" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg></span>
+                    </div>
+                    <div class="delta">
+                      <div class="d-from"><span class="d-key">from</span><span class="d-val">media:posts/first-light@a1b2c3</span></div>
+                      <div class="d-to"><span class="d-key">to</span><span class="d-val accent">media:posts/first-light@9f8e7d</span></div>
+                    </div>
+                  </div>
+                  <div class="arow">
+                    <div class="where">
+                      <span class="ic" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h5"/></svg></span>
+                      <span class="title">A season on the early tracks</span>
+                      <span class="place">body &times;2</span>
+                      <span class="ext" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg></span>
+                    </div>
+                    <div class="delta">
+                      <div class="d-from"><span class="d-key">from</span><span class="d-val">media:posts/first-light@a1b2c3</span></div>
+                      <div class="d-to"><span class="d-key">to</span><span class="d-val accent">media:posts/first-light@9f8e7d</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="bucket">
+                <div class="bucket-head">
+                  <span class="bucket-name fill">Pages</span>
+                  <span class="bucket-count">1</span>
+                </div>
+                <div class="rows">
+                  <div class="arow">
+                    <div class="where">
+                      <span class="ic" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h5"/></svg></span>
+                      <span class="title">About the trails</span>
+                      <span class="place">body</span>
+                      <span class="ext" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg></span>
+                    </div>
+                    <div class="delta">
+                      <div class="d-from"><span class="d-key">from</span><span class="d-val">media:posts/first-light@a1b2c3</span></div>
+                      <div class="d-to"><span class="d-key">to</span><span class="d-val accent">media:posts/first-light@9f8e7d</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- BRANCH-DELTA: report-only -->
+              <div class="branch-zone">
+                <div class="bz-head">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+                  <span class="bz-title">Open edits that still point at the old file</span>
+                </div>
+                <p class="bz-blurb">These live on unpublished <code>cairn/*</code> branches. Replace does not touch them. When each is published, it carries the old reference unless its author replaces it too.</p>
+                <div class="branch-row">
+                  <span class="ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h5"/></svg></span>
+                  <span class="b-title">Winter trail report (draft)</span>
+                  <span class="b-branch">cairn/posts/winter-trail-report</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-foot">
+          <span class="foot-summary"><b>4 entries</b> repoint &middot; 1 open edit untouched</span>
+          <span class="foot-spacer"></span>
+          <div class="foot-actions">
+            <div class="confirm-gate">
+              <label for="rep-confirm">Type <code>first-light</code></label>
+              <input id="rep-confirm" class="confirm-input" autocomplete="off" placeholder="asset slug" />
+            </div>
+            <button class="btn btn-quiet" type="button">Cancel</button>
+            <button class="btn btn-danger solid" type="button" disabled>Replace in 4 entries</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- ===================== REPLACE: the fail-closed verification state ===================== -->
+<p class="mock-label">Light: Replace fails closed when usage cannot be fully verified</p>
+<p class="mock-note">
+  If a branch is unreadable or the index is stale, the impact is not fully known, so Replace will not
+  proceed. The banner names the gap, the action stays unavailable, and the typed-name gate is hidden
+  (there is nothing safe to confirm). Retry re-runs the scan.
+</p>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="ground" style="min-height: 440px;">
+    <div class="scrim" style="position: static; padding: 22px; align-items: flex-start;">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="repf-title" style="max-height: none;">
+        <div class="modal-head">
+          <span class="glyph danger" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg></span>
+          <div class="ht">
+            <h2 id="repf-title">Replace first-light</h2>
+            <p class="sub">Hold on. We could not check every place this image is used.</p>
+          </div>
+          <button class="icon-btn" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+        <div class="verify-banner" role="alert">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span><b>One branch could not be read.</b> Replace rewrites published content, so it only runs when every reference is accounted for. Nothing has changed. Try again, or open the branch to clear it first.</span>
+        </div>
+        <div class="modal-foot">
+          <span class="foot-summary">No changes made.</span>
+          <span class="foot-spacer"></span>
+          <div class="foot-actions">
+            <button class="btn btn-quiet" type="button">Close</button>
+            <button class="btn btn-primary" type="button">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+              Check again
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- ===================== ALT PROPAGATION: the comparison modal, three buckets ===================== -->
+<p class="mock-label">Light: Push alt to placements, the three buckets</p>
+<p class="mock-note">
+  Left, the anchor: the old default alt over the new one, with the asset's thumbnail and name so the
+  author keeps the image in view. Right, the placements split into three buckets. <b>Will fill</b> is
+  every empty-alt placement, written by default. <b>Already described</b> keeps its custom alt unless
+  the author opts a row in with its checkbox (Select all sits in the bucket header, and the bucket
+  carries a count). <b>Skipped</b> is the decorative hero, left alone. The caveat states the one honest
+  limit: a body image cannot record a decorative choice, so an empty-alt body image reads as a fill gap.
+</p>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="ground" style="min-height: 720px;">
+    <div class="office" style="padding-right: calc(22rem + 24px);">
+      <span class="office-eyebrow">Media</span>
+      <h1 class="office-h1">Media library</h1>
+      <span class="office-count">24 images, 19 used on the site</span>
+    </div>
+    <div class="scrim">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="alt-title">
+        <div class="modal-head">
+          <span class="glyph warn" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
+          <div class="ht">
+            <h2 id="alt-title">Push alt text to placements</h2>
+            <p class="sub">This writes the new alt to <b>2 placements</b> that have none, in one commit to <b>main</b>. Turn on a described placement to overwrite it too.</p>
+          </div>
+          <button class="icon-btn" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+
+        <div class="panes">
+          <!-- ANCHOR: old default alt -> new default alt -->
+          <div class="anchor">
+            <span class="anchor-eyebrow">The change</span>
+            <div class="alt-thumb-row">
+              <span class="alt-thumb ph-a" role="img" aria-label="first-light"></span>
+              <span>
+                <span class="alt-thumb-name" style="display:block;">first-light</span>
+                <span class="alt-thumb-dim">1600&times;1000</span>
+              </span>
+            </div>
+            <div class="alt-swap">
+              <div class="alt-block out">
+                <div class="ab-tag">Old default alt</div>
+                <div class="ab-text empty">No description</div>
+              </div>
+              <div class="swap-arrow" aria-hidden="true" style="height:14px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+              </div>
+              <div class="alt-block in">
+                <div class="ab-tag">New default alt</div>
+                <div class="ab-text">Dawn light over the groomed cross-country tracks before sunrise.</div>
+              </div>
+            </div>
+            <div class="caveat">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+              <span>A body image has no place to mark itself decorative, so an empty one always counts as a gap. Only a hero can be set decorative and skipped.</span>
+            </div>
+            <div class="anchor-note">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              <span>Every version stays in git history, so any overwrite can be undone.</span>
+            </div>
+          </div>
+
+          <!-- AFFECTED PLACEMENTS: three buckets -->
+          <div class="affected">
+            <div class="affected-head">
+              <span class="affected-title">Placements</span>
+              <span class="bucket-count">5 found</span>
+            </div>
+            <div class="affected-scroll">
+              <!-- WILL FILL -->
+              <div class="bucket">
+                <div class="bucket-head">
+                  <span class="bucket-name fill">Will fill</span>
+                  <span class="bucket-count">2</span>
+                </div>
+                <p class="bucket-blurb">These have no alt today. The new default is written to each.</p>
+                <div class="rows">
+                  <div class="arow">
+                    <div class="where">
+                      <span class="ic" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h5"/></svg></span>
+                      <span class="title">Grooming the first loop</span>
+                      <span class="place">body</span>
+                    </div>
+                    <div class="delta">
+                      <div class="d-from"><span class="d-key">now</span><span class="d-val empty">no alt</span></div>
+                      <div class="d-to"><span class="d-key">after</span><span class="d-val accent">Dawn light over the groomed cross-country tracks before sunrise.</span></div>
+                    </div>
+                  </div>
+                  <div class="arow">
+                    <div class="where">
+                      <span class="ic" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h5"/></svg></span>
+                      <span class="title">About the trails</span>
+                      <span class="place">body</span>
+                    </div>
+                    <div class="delta">
+                      <div class="d-from"><span class="d-key">now</span><span class="d-val empty">no alt</span></div>
+                      <div class="d-to"><span class="d-key">after</span><span class="d-val accent">Dawn light over the groomed cross-country tracks before sunrise.</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ALREADY DESCRIBED: opt-in overwrite, per-row checkbox -->
+              <div class="bucket">
+                <div class="bucket-head">
+                  <span class="bucket-name custom">Already described</span>
+                  <span class="bucket-count">2</span>
+                  <button class="select-all" type="button">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                    Overwrite all
+                  </button>
+                </div>
+                <p class="bucket-blurb">Each of these has its own alt. They stay as they are unless you turn one on.</p>
+                <div class="rows">
+                  <!-- opted IN -->
+                  <label class="arow custom">
+                    <input class="ck" type="checkbox" checked aria-label="Overwrite alt on A season on the early tracks, hero" />
+                    <div class="body">
+                      <div class="where">
+                        <span class="ic" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h5"/></svg></span>
+                        <span class="title">A season on the early tracks</span>
+                        <span class="place">hero</span>
+                      </div>
+                      <div class="delta">
+                        <div class="d-from"><span class="d-key">now</span><span class="d-val">First snow on the loop.</span></div>
+                        <div class="d-to"><span class="d-key">after</span><span class="d-val accent">Dawn light over the groomed cross-country tracks before sunrise.</span></div>
+                      </div>
+                    </div>
+                  </label>
+                  <!-- opted OUT: the after is struck, a "keeping current" tag shows -->
+                  <label class="arow custom off">
+                    <input class="ck" type="checkbox" aria-label="Overwrite alt on A season on the early tracks, body" />
+                    <div class="body">
+                      <div class="where">
+                        <span class="ic" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h5"/></svg></span>
+                        <span class="title">A season on the early tracks</span>
+                        <span class="place">body</span>
+                        <span class="keep-tag" style="margin-left:auto;">Keeping its own alt</span>
+                      </div>
+                      <div class="delta">
+                        <div class="d-from"><span class="d-key">now</span><span class="d-val" style="text-decoration:none;color:var(--color-base-content);">Crews break trail before dawn.</span></div>
+                        <div class="d-to"><span class="d-key">after</span><span class="d-val accent">Dawn light over the groomed cross-country tracks before sunrise.</span></div>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <!-- SKIPPED: decorative hero -->
+              <div class="bucket">
+                <div class="bucket-head">
+                  <span class="bucket-name skip">Skipped</span>
+                  <span class="bucket-count">1</span>
+                </div>
+                <p class="bucket-blurb">Marked decorative on purpose. Alt is left empty.</p>
+                <div class="rows">
+                  <div class="arow skip">
+                    <div class="where">
+                      <span class="ic" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h5"/></svg></span>
+                      <span class="title">Trail map</span>
+                      <span class="place">hero</span>
+                    </div>
+                    <div class="skip-reason">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+                      Decorative hero, kept empty on purpose.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- BRANCH-DELTA: report-only -->
+              <div class="branch-zone">
+                <div class="bz-head">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+                  <span class="bz-title">Open edits with this image</span>
+                </div>
+                <p class="bz-blurb">These live on unpublished <code>cairn/*</code> branches and are not changed. Push the alt again after they publish if you want it applied there.</p>
+                <div class="branch-row">
+                  <span class="ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h5"/></svg></span>
+                  <span class="b-title">Winter trail report (draft)</span>
+                  <span class="b-branch">cairn/posts/winter-trail-report</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-foot">
+          <span class="foot-summary"><b>3 placements</b> change &middot; 2 filled, 1 overwritten &middot; 1 skipped</span>
+          <span class="foot-spacer"></span>
+          <div class="foot-actions">
+            <button class="btn btn-quiet" type="button">Cancel</button>
+            <button class="btn btn-primary" type="button">Write alt to 3 placements</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- ===================== DARK: Replace and Alt propagation ===================== -->
+<p class="mock-label">Dark: Replace (left) and Push alt (right)</p>
+<p class="mock-note">The same two-pane surface through the dark tokens. The danger family, the warning ink, the accent, and the positive ink all resolve from the theme variables. Compact framings here; the structure is identical to the light versions above.</p>
+<div class="pair">
+
+  <!-- DARK Replace -->
+  <div class="screen"><div data-theme="cairn-admin-dark">
+    <div class="ground" style="min-height: 0; background: var(--color-base-100);">
+      <div style="padding: 16px;">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="dk-rep" style="width: 100%; max-height: none; box-shadow: none;">
+          <div class="modal-head">
+            <span class="glyph warn" aria-hidden="true"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg></span>
+            <div class="ht">
+              <h2 id="dk-rep">Replace first-light</h2>
+              <p class="sub">Repoints <b>4 published entries</b> in one commit to <b>main</b>.</p>
+            </div>
+          </div>
+          <div class="panes" style="grid-template-columns: 1fr;">
+            <div class="anchor" style="border-right:0;border-bottom:1px solid var(--cairn-card-border);">
+              <span class="anchor-eyebrow">The change</span>
+              <div class="swap" style="flex-direction:row;align-items:stretch;gap:10px;">
+                <div class="swap-card out" style="flex:1;">
+                  <div class="sc-pic ph-a"></div>
+                  <div class="sc-meta"><span class="sc-tag">Replacing</span><span class="sc-name">first-light</span><span class="sc-dim">1600&times;1000</span></div>
+                </div>
+                <div class="swap-arrow" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></div>
+                <div class="swap-card in" style="flex:1;">
+                  <div class="sc-pic ph-e"></div>
+                  <div class="sc-meta"><span class="sc-tag">New file</span><span class="sc-name">first-light-regrade.jpg</span><span class="sc-dim">2400&times;1500</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="affected">
+              <div class="affected-head"><span class="affected-title">Entries that will repoint</span><span class="bucket-count">4</span></div>
+              <div class="affected-scroll">
+                <div class="bucket">
+                  <div class="bucket-head"><span class="bucket-name fill">Posts</span><span class="bucket-count">3</span></div>
+                  <div class="rows">
+                    <div class="arow">
+                      <div class="where"><span class="ic" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h5"/></svg></span><span class="title">A season on the early tracks</span><span class="place">hero</span></div>
+                      <div class="delta"><div class="d-from"><span class="d-key">from</span><span class="d-val">&hellip;first-light@a1b2c3</span></div><div class="d-to"><span class="d-key">to</span><span class="d-val accent">&hellip;first-light@9f8e7d</span></div></div>
+                    </div>
+                    <div class="arow">
+                      <div class="where"><span class="ic" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h5"/></svg></span><span class="title">Grooming the first loop</span><span class="place">body</span></div>
+                      <div class="delta"><div class="d-from"><span class="d-key">from</span><span class="d-val">&hellip;first-light@a1b2c3</span></div><div class="d-to"><span class="d-key">to</span><span class="d-val accent">&hellip;first-light@9f8e7d</span></div></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="branch-zone">
+                  <div class="bz-head"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg><span class="bz-title">Open edits, not touched</span></div>
+                  <div class="branch-row"><span class="ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h5"/></svg></span><span class="b-title">Winter trail report</span><span class="b-branch">cairn/posts/winter-trail-report</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-foot">
+            <span class="foot-summary"><b>4 entries</b> repoint</span>
+            <span class="foot-spacer"></span>
+            <div class="foot-actions">
+              <div class="confirm-gate"><label for="dk-confirm">Type <code>first-light</code></label><input id="dk-confirm" class="confirm-input" placeholder="asset slug" /></div>
+              <button class="btn btn-danger solid" type="button" disabled>Replace</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+
+  <!-- DARK Alt propagation -->
+  <div class="screen"><div data-theme="cairn-admin-dark">
+    <div class="ground" style="min-height: 0; background: var(--color-base-100);">
+      <div style="padding: 16px;">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="dk-alt" style="width: 100%; max-height: none; box-shadow: none;">
+          <div class="modal-head">
+            <span class="glyph warn" aria-hidden="true"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
+            <div class="ht">
+              <h2 id="dk-alt">Push alt text to placements</h2>
+              <p class="sub">Writes the new alt to <b>2 placements</b> with none. Turn on a described one to overwrite it.</p>
+            </div>
+          </div>
+          <div class="panes" style="grid-template-columns: 1fr;">
+            <div class="anchor" style="border-right:0;border-bottom:1px solid var(--cairn-card-border);">
+              <span class="anchor-eyebrow">The change</span>
+              <div class="alt-swap">
+                <div class="alt-block out"><div class="ab-tag">Old default alt</div><div class="ab-text empty">No description</div></div>
+                <div class="alt-block in"><div class="ab-tag">New default alt</div><div class="ab-text">Dawn light over the groomed cross-country tracks before sunrise.</div></div>
+              </div>
+              <div class="caveat">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                <span>A body image cannot be marked decorative, so an empty one always counts as a gap. Only a hero can be skipped.</span>
+              </div>
+            </div>
+            <div class="affected">
+              <div class="affected-head"><span class="affected-title">Placements</span><span class="bucket-count">5 found</span></div>
+              <div class="affected-scroll">
+                <div class="bucket">
+                  <div class="bucket-head"><span class="bucket-name fill">Will fill</span><span class="bucket-count">2</span></div>
+                  <div class="rows">
+                    <div class="arow">
+                      <div class="where"><span class="ic" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h5"/></svg></span><span class="title">Grooming the first loop</span><span class="place">body</span></div>
+                      <div class="delta"><div class="d-from"><span class="d-key">now</span><span class="d-val empty">no alt</span></div><div class="d-to"><span class="d-key">after</span><span class="d-val accent">Dawn light over the groomed tracks before sunrise.</span></div></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="bucket">
+                  <div class="bucket-head"><span class="bucket-name custom">Already described</span><span class="bucket-count">2</span><button class="select-all" type="button"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Overwrite all</button></div>
+                  <div class="rows">
+                    <label class="arow custom">
+                      <input class="ck" type="checkbox" checked aria-label="Overwrite alt on this placement" />
+                      <div class="body">
+                        <div class="where"><span class="ic" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h5"/></svg></span><span class="title">A season on the early tracks</span><span class="place">hero</span></div>
+                        <div class="delta"><div class="d-from"><span class="d-key">now</span><span class="d-val">First snow on the loop.</span></div><div class="d-to"><span class="d-key">after</span><span class="d-val accent">Dawn light over the groomed tracks.</span></div></div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+                <div class="bucket">
+                  <div class="bucket-head"><span class="bucket-name skip">Skipped</span><span class="bucket-count">1</span></div>
+                  <div class="rows">
+                    <div class="arow skip">
+                      <div class="where"><span class="ic" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h5"/></svg></span><span class="title">Trail map</span><span class="place">hero</span></div>
+                      <div class="skip-reason"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>Decorative hero, kept empty.</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-foot">
+            <span class="foot-summary"><b>3 placements</b> change &middot; 1 skipped</span>
+            <span class="foot-spacer"></span>
+            <div class="foot-actions">
+              <button class="btn btn-quiet" type="button">Cancel</button>
+              <button class="btn btn-primary" type="button">Write alt to 3</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+
+</div>
+
+<!-- ===================== NARROW VIEWPORT ===================== -->
+<p class="mock-label">Narrow viewport (about 392px): the modal stacks anchor-over-list</p>
+<p class="mock-note">
+  Below the narrow breakpoint the two panes stack: the anchor sits on top as a horizontal old-to-new
+  strip, the affected list scrolls beneath it, and the footer pins. The typed-name gate wraps above the
+  buttons. The slide-over it opened from is a bottom sheet (the dialog-sizing rule), here covered by the
+  modal scrim.
+</p>
+<div class="screen narrow"><div data-theme="cairn-admin">
+  <div class="ground" style="min-height: 0; background: var(--color-base-100);">
+    <div style="padding: 12px;">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="nr-title" style="width:100%; max-height:none; box-shadow:none;">
+        <div class="modal-head" style="padding: 14px 15px;">
+          <span class="glyph warn" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg></span>
+          <div class="ht"><h2 id="nr-title" style="font-size:1.0625rem;">Replace first-light</h2><p class="sub">Repoints <b>4 entries</b> in one commit to <b>main</b>.</p></div>
+        </div>
+        <div class="panes" style="grid-template-columns: 1fr;">
+          <div class="anchor" style="border-right:0;border-bottom:1px solid var(--cairn-card-border);">
+            <span class="anchor-eyebrow">The change</span>
+            <div class="swap" style="flex-direction:row;align-items:stretch;gap:8px;">
+              <div class="swap-card out" style="flex:1;"><div class="sc-pic ph-a"></div><div class="sc-meta"><span class="sc-tag">Old</span><span class="sc-name">first-light</span></div></div>
+              <div class="swap-arrow" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></div>
+              <div class="swap-card in" style="flex:1;"><div class="sc-pic ph-e"></div><div class="sc-meta"><span class="sc-tag">New</span><span class="sc-name">first-light-regrade</span></div></div>
+            </div>
+          </div>
+          <div class="affected">
+            <div class="affected-head" style="padding:11px 15px 9px;"><span class="affected-title">Will repoint</span><span class="bucket-count">4</span></div>
+            <div class="affected-scroll" style="padding:6px 15px 14px;">
+              <div class="bucket">
+                <div class="bucket-head"><span class="bucket-name fill">Posts</span><span class="bucket-count">3</span></div>
+                <div class="rows">
+                  <div class="arow">
+                    <div class="where"><span class="ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h5"/></svg></span><span class="title">A season on the early tracks</span><span class="place">hero</span></div>
+                    <div class="delta"><div class="d-from"><span class="d-key">from</span><span class="d-val">@a1b2c3</span></div><div class="d-to"><span class="d-key">to</span><span class="d-val accent">@9f8e7d</span></div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-foot" style="flex-wrap:wrap; gap:10px; padding: 12px 15px;">
+          <div class="confirm-gate" style="width:100%;"><label for="nr-confirm">Type <code>first-light</code> to confirm</label></div>
+          <input id="nr-confirm" class="confirm-input" style="width:100%;" placeholder="asset slug" />
+          <span class="foot-spacer"></span>
+          <button class="btn btn-quiet" type="button">Cancel</button>
+          <button class="btn btn-danger solid" type="button" disabled>Replace in 4</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+</body>
+</html>

@@ -11,7 +11,22 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-18, latest): Pass A SHIPPED as `0.57.1` (merged to `main`, released, npm `latest`); Pass B is next, mockup-first and in design
+## Immediate next action (2026-06-18, latest): Pass A SHIPPED as `0.57.1`; Pass B (replace + alt propagation) SPEC + PLAN authored and approved; EXECUTE Pass B next
+
+**Execute Pass B**, planned at `docs/superpowers/plans/2026-06-18-cairn-media-pass-b.md` (spec
+`docs/superpowers/specs/2026-06-18-cairn-media-pass-b-design.md`), a `0.58.0` minor. Main-loop
+orchestrate-and-verify, test-first, one `cairn-implementer` per task, the full gate between dispatches,
+on a FRESH worktree off `main`. Review Tasks 5 and 6 most closely (they rewrite published body content
+atomically with the typed-slug and fail-closed gates; consider `model: opus`). The approved rev.2 design
+target is `docs/internal/design/2026-06-18-media-pass-b-rev2-mockup.html` (the three source mockups and
+the two adversarial critiques produced it via a Workflow). Ten tasks: the pure repoint and alt-fill
+transforms, the fail-closed planner over `buildUsageIndex`, the flash/types, the replace actions, the
+alt-propagation actions, the two review modals, the showcase E2E, and the docs plus the `0.58.0` bump. A
+live admin smoke IS owed this pass (the first media action that rewrites entry content, not just the
+manifest). Pass C (bulk + orphan collection, mockup-first) and the scaffolder follow; the
+`runtime.publicMediaResolver` ergonomic stays a carry-forward needing its own brainstorm.
+
+## Prior next action (2026-06-18): Pass A SHIPPED as `0.57.1` (merged to `main`, released, npm `latest`); Pass B is next, mockup-first and in design
 
 **`0.57.1` is published.** `feat/media-polish` fast-forward merged to `main` (`c31a8ba`) and pushed;
 `gh release create v0.57.1` fired the OIDC trusted-publishing workflow (`publish.yml` run `27739007263`

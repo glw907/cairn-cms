@@ -1,0 +1,960 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Proposed design: media Pass B (Replace and Alt propagation) — in-context direction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+  rel="stylesheet"
+/>
+<style>
+  /* ============================================================================================
+     THESIS. Both operations rewrite N published entries at once, so the whole job is to make that
+     impact legible and confirmable BEFORE applying. This direction keeps everything inside the
+     existing non-modal detail slide-over: Replace and Propagate each expand an inline preview
+     region in place (the affected-entries list, the counts, the old-to-new detail, and the
+     report-only branch-delta), and confirm in place. The resting slide-over stays calm; the impact
+     detail appears on demand through progressive disclosure, so no new modal, no route change, and
+     the asset you are acting on stays in view the entire time.
+
+     MAIN TRADEOFF. A heavy preview (a long affected-entries list plus a branch-delta) has to live
+     in a ~22rem column that already carries the preview, the alt editor, where-used, and metadata.
+     The slide-over grows tall and the author scrolls within it, and on a phone the bottom sheet
+     does real vertical work. We buy calm-at-rest and zero context loss at the cost of a cramped,
+     scroll-heavy confirm surface for a large blast radius. A center-stage modal would give the
+     impact more room but would cover the asset and break the in-context promise; this direction
+     bets that staying in place is worth the narrower canvas.
+
+     Tone: this is a "you are changing published content" moment, told plainly. The danger family
+     (--cairn-error-*) is spent only where it is earned: the fail-closed verification block, and
+     the opt-in overwrite of custom alt. The ordinary repoint preview reads in body ink with a
+     primary confirm, serious without alarm. The branch-delta is a calm report-only aside, never a
+     warning, because nothing on a branch is rewritten.
+     ============================================================================================ */
+
+  /* ---- mock scaffold (outside the themed surfaces) ---- */
+  body { margin: 0; background: #d8d4cf; }
+  .mock-label { font: 600 13px/1.4 system-ui; letter-spacing: .08em; text-transform: uppercase; color: #444; padding: 28px 24px 4px; }
+  .mock-note { font: 400 13px/1.55 system-ui; color: #5a564f; padding: 0 24px 14px; max-width: 86ch; }
+  .mock-note code { font-family: ui-monospace, monospace; background: rgba(0,0,0,.06); padding: 1px 4px; border-radius: 3px; }
+  .screen { border: 1px solid #aaa; margin: 0 16px 48px; box-shadow: 0 2px 14px rgba(0,0,0,.08); overflow: hidden; }
+  .screen.narrow { max-width: 392px; }
+  .pair { display: flex; flex-wrap: wrap; gap: 0; }
+  .pair > .screen { flex: 1 1 420px; margin: 0 16px 48px; }
+
+  /* ---- Warm Stone tokens, both theme roots, inlined so the mockup stands alone. Values copied
+       verbatim from src/lib/components/cairn-admin.css, including the full --cairn-error-* family
+       and --cairn-warning-ink. ---- */
+  [data-theme='cairn-admin'] {
+    --color-base-100: oklch(99% 0.004 75);
+    --color-base-200: oklch(96.5% 0.006 75);
+    --color-base-300: oklch(89% 0.011 75);
+    --color-base-content: oklch(26% 0.014 75);
+    --color-primary: oklch(52% 0.2 293);
+    --color-primary-content: oklch(98% 0.01 293);
+    --color-accent: oklch(54% 0.16 300);
+    --color-muted: oklch(48% 0.01 75);
+    --color-subtle: oklch(42% 0.01 75);
+    --color-positive-ink: oklch(48% 0.12 150);
+    --cairn-code-chip: oklch(94.5% 0.008 75);
+    --cairn-warning-ink: oklch(50% 0.13 70);
+    --cairn-error-ink: oklch(50% 0.19 25);
+    --cairn-error-tint: oklch(96% 0.03 25);
+    --cairn-error-border: oklch(85% 0.06 25);
+    --cairn-card-border: oklch(93% 0.008 75);
+    --cairn-shadow: 0 1px 2px oklch(28% 0.02 75 / 0.05), 0 8px 24px -6px oklch(28% 0.02 75 / 0.1);
+  }
+  [data-theme='cairn-admin-dark'] {
+    --color-base-100: oklch(24% 0.01 75);
+    --color-base-200: oklch(15.5% 0.009 75);
+    --color-base-300: oklch(30% 0.014 75);
+    --color-base-content: oklch(93% 0.006 75);
+    --color-primary: oklch(68% 0.18 293);
+    --color-primary-content: oklch(20% 0.03 293);
+    --color-accent: oklch(70% 0.14 300);
+    --color-muted: oklch(72% 0.01 75);
+    --color-subtle: oklch(80% 0.008 75);
+    --color-positive-ink: oklch(78% 0.12 150);
+    --cairn-code-chip: oklch(29.5% 0.012 75);
+    --cairn-warning-ink: oklch(80% 0.14 70);
+    --cairn-error-ink: oklch(78% 0.15 25);
+    --cairn-error-tint: oklch(28% 0.06 25);
+    --cairn-error-border: oklch(40% 0.09 25);
+    --cairn-card-border: oklch(30% 0.014 75);
+    --cairn-shadow: 0 1px 2px oklch(0% 0 0 / 0.35), 0 8px 24px -6px oklch(0% 0 0 / 0.5);
+  }
+  [data-theme] {
+    --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+    --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-editor: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+
+  /* ===== the office ground + a thin sidebar/topbar, just enough to seat the slide-over in /admin/media ===== */
+  .app { position: relative; display: flex; background: var(--color-base-200); color: var(--color-base-content); font-family: var(--font-body); -webkit-font-smoothing: antialiased; min-height: 620px; overflow: hidden; }
+  .side { width: 13rem; flex: none; background: var(--color-base-100); border-right: 1px solid var(--cairn-card-border); padding: 14px 12px; display: flex; flex-direction: column; gap: 18px; }
+  .brand { display: flex; align-items: center; gap: 9px; padding: 2px 4px; }
+  .brand .tile { height: 30px; width: 30px; border-radius: .65rem; background: var(--color-primary); color: var(--color-primary-content); display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,.15); }
+  .brand .word { font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; letter-spacing: -.01em; }
+  .navgrp { display: flex; flex-direction: column; gap: 2px; }
+  .nav-eyebrow { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); padding: 4px 8px; }
+  .nav-item { display: flex; align-items: center; gap: 9px; padding: 6px 8px; border-radius: .55rem; font-size: .875rem; font-weight: 500; color: var(--color-subtle); text-decoration: none; }
+  .nav-item.on { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); font-weight: 600; }
+  .nav-item svg { width: 16px; height: 16px; flex: none; }
+
+  .main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+  .topbar { height: 56px; flex: none; background: var(--color-base-100); border-bottom: 1px solid var(--cairn-card-border); display: flex; align-items: center; padding: 0 18px; gap: 12px; }
+  .topbar .crumb { font-size: .875rem; color: var(--color-muted); }
+  .topbar .crumb b { color: var(--color-base-content); font-weight: 600; }
+  .topbar .grow { flex: 1 1 auto; }
+  .ic-btn { display: inline-flex; align-items: center; justify-content: center; height: 30px; width: 30px; border: 0; background: transparent; color: var(--color-subtle); border-radius: .5rem; cursor: pointer; }
+
+  /* the office body: the contact-sheet grid, dimmed under the open slide-over to focus the panel */
+  .office { position: relative; flex: 1 1 auto; padding: 18px 20px; overflow: hidden; }
+  .office-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
+  .office-eyebrow { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); }
+  .office-h1 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; letter-spacing: -.02em; margin: 2px 0 0; }
+  .office-count { font-size: .8125rem; color: var(--color-muted); margin-top: 2px; }
+  .btn-primary-sm { display: inline-flex; align-items: center; gap: 6px; font: 600 .8125rem/1 var(--font-body); border-radius: .5rem; padding: 8px 13px; border: 1px solid transparent; background: var(--color-primary); color: var(--color-primary-content); cursor: pointer; box-shadow: 0 1px 2px color-mix(in oklab, var(--color-primary) 35%, transparent); }
+  .sheet-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; max-width: 760px; }
+  .sheet-tile { border: 1px solid var(--cairn-card-border); border-radius: .9rem; overflow: hidden; background: var(--color-base-100); }
+  .sheet-tile.sel { outline: 2px solid color-mix(in oklab, var(--color-primary) 70%, transparent); outline-offset: 1px; }
+  .sheet-thumb { aspect-ratio: 4/3; }
+  .sheet-cap { display: flex; align-items: center; justify-content: space-between; gap: 6px; border-top: 1px solid var(--cairn-card-border); padding: 6px 9px; font-size: .75rem; font-weight: 500; }
+  .sheet-cap .ok { color: var(--color-positive-ink); display: inline-flex; }
+  .sheet-cap .ok svg { width: 13px; height: 13px; }
+  .office.under::after { content: ""; position: absolute; inset: 0; background: oklch(20% 0.01 75 / 0.12); }
+
+  /* ===== the NON-MODAL detail slide-over (the established recipe: no scrim, region not dialog) ===== */
+  .panel { position: absolute; top: 0; right: 0; bottom: 0; width: 23rem; background: var(--color-base-100); border-left: 1px solid var(--cairn-card-border); box-shadow: var(--cairn-shadow); display: flex; flex-direction: column; font-family: var(--font-body); z-index: 5; }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--cairn-card-border); padding: 13px 16px; }
+  .panel-eyebrow { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); }
+  .panel-x { display: inline-flex; align-items: center; justify-content: center; height: 26px; width: 26px; border: 0; background: transparent; border-radius: .45rem; color: var(--color-subtle); cursor: pointer; }
+  .panel-body { flex: 1 1 auto; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 18px; }
+
+  .asset-preview { aspect-ratio: 16/10; border-radius: .85rem; border: 1px solid var(--cairn-card-border); overflow: hidden; background: var(--color-base-200); }
+  .asset-id { display: flex; flex-direction: column; gap: 6px; }
+  .asset-name { font-size: 1.0625rem; font-weight: 600; line-height: 1.2; }
+  .asset-ref { display: flex; align-items: center; gap: 6px; }
+  .asset-ref code { min-width: 0; word-break: break-all; font-family: var(--font-editor); font-size: .6875rem; color: var(--color-muted); }
+  .icon-mini { display: inline-flex; align-items: center; justify-content: center; height: 24px; width: 24px; border: 0; background: transparent; border-radius: .4rem; color: var(--color-subtle); cursor: pointer; flex: none; }
+
+  .eyebrow { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); }
+  .fld { display: flex; flex-direction: column; gap: 5px; }
+  .fld > .lbl { font-size: .8125rem; font-weight: 500; }
+  .input { width: 100%; box-sizing: border-box; font: 400 .8125rem/1.45 var(--font-body); color: var(--color-base-content); background: var(--color-base-100); border: 1px solid var(--color-base-300); border-radius: .625rem; padding: 7px 10px; }
+  .input.mono { font-family: var(--font-editor); }
+  .textarea { width: 100%; box-sizing: border-box; resize: none; min-height: 3.6rem; font: 400 .8125rem/1.45 var(--font-body); color: var(--color-base-content); background: var(--color-base-100); border: 1px solid var(--color-base-300); border-radius: .625rem; padding: 7px 10px; }
+  .input:focus-visible, .textarea:focus-visible { outline: none; border-color: color-mix(in oklab, var(--color-primary) 70%, transparent); box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-primary) 70%, transparent); }
+  .hint { font-size: .75rem; color: var(--color-muted); line-height: 1.45; }
+
+  /* the where-used block, the established grouped-published-then-branch list */
+  .wu-grp-label { font-size: .6875rem; font-weight: 600; color: var(--color-muted); margin-bottom: 5px; }
+  .wu-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+  .wu-row { display: flex; align-items: center; gap: 9px; border: 1px solid var(--cairn-card-border); border-radius: .55rem; background: var(--color-base-100); padding: 7px 9px; text-decoration: none; color: var(--color-base-content); }
+  .wu-row svg.lead { width: 14px; height: 14px; flex: none; color: var(--color-muted); }
+  .wu-row .nm { min-width: 0; flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .8125rem; font-weight: 500; }
+  .wu-row .br { font-family: var(--font-editor); font-size: .625rem; color: var(--cairn-warning-ink); }
+  .wu-row svg.chev { width: 13px; height: 13px; flex: none; color: var(--color-muted); opacity: .55; }
+
+  /* alt-status chip (glyph + label, never hue alone) */
+  .alt-chip { display: inline-flex; align-items: center; gap: 4px; font-size: .6875rem; font-weight: 500; }
+  .alt-chip.ok { color: var(--color-positive-ink); }
+  .alt-chip.miss { color: var(--cairn-warning-ink); }
+  .alt-chip svg { width: 12px; height: 12px; }
+
+  /* ----- the two operation entry points: quiet text-weight controls in an actions block ----- */
+  .actions { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--cairn-card-border); padding-top: 16px; }
+  .act-row { display: flex; gap: 8px; }
+  .btn-q { flex: 1 1 0; display: inline-flex; align-items: center; justify-content: center; gap: 7px; font: 500 .8125rem/1 var(--font-body); border-radius: .55rem; padding: 9px 11px; border: 1px solid var(--color-base-300); background: transparent; color: var(--color-base-content); cursor: pointer; }
+  .btn-q:hover { border-color: color-mix(in oklab, var(--color-primary) 45%, transparent); }
+  .btn-q svg { width: 15px; height: 15px; color: var(--color-muted); }
+  .btn-q.danger { border-color: var(--cairn-error-border); color: var(--cairn-error-ink); }
+  .btn-q.danger svg { color: var(--cairn-error-ink); }
+
+  /* a control that is currently expanded reads as "open": tinted + chevron-down */
+  .btn-q.open { background: color-mix(in oklab, var(--color-primary) 8%, transparent); border-color: color-mix(in oklab, var(--color-primary) 45%, transparent); color: var(--color-primary); }
+  .btn-q.open svg { color: var(--color-primary); }
+
+  /* ============================================================================================
+     THE INLINE PREVIEW REGION. The shared disclosure surface both flows expand into, in place.
+     A bordered well that reads as a distinct moment without a modal: a small heading, an impact
+     line, the affected-entries detail (old -> new), the report-only branch-delta, and an in-place
+     confirm footer. It carries role="group" + aria-label in real code; the live region announces
+     the impact summary politely when it opens.
+     ============================================================================================ */
+  .disclose { border: 1px solid color-mix(in oklab, var(--color-primary) 28%, var(--cairn-card-border)); border-radius: .85rem; background: color-mix(in oklab, var(--color-primary) 3.5%, var(--color-base-100)); overflow: hidden; }
+  .disclose-head { display: flex; align-items: flex-start; gap: 9px; padding: 12px 13px 10px; }
+  .disclose-head .glyph { flex: none; height: 26px; width: 26px; border-radius: .5rem; display: inline-flex; align-items: center; justify-content: center; background: color-mix(in oklab, var(--color-primary) 12%, transparent); color: var(--color-primary); }
+  .disclose-head .glyph svg { width: 15px; height: 15px; }
+  .disclose-title { font-size: .875rem; font-weight: 600; line-height: 1.25; }
+  .disclose-sub { font-size: .75rem; color: var(--color-muted); line-height: 1.45; margin-top: 2px; }
+  .disclose-body { padding: 0 13px 12px; display: flex; flex-direction: column; gap: 13px; }
+
+  /* the impact line: the headline count, told in body ink (serious, not alarmist) */
+  .impact { display: flex; align-items: baseline; gap: 8px; padding: 9px 11px; border-radius: .6rem; background: var(--color-base-100); border: 1px solid var(--cairn-card-border); }
+  .impact .n { font-family: var(--font-display); font-size: 1.45rem; font-weight: 700; line-height: 1; letter-spacing: -.02em; }
+  .impact .what { font-size: .8125rem; color: var(--color-muted); line-height: 1.3; }
+
+  /* the old -> new asset comparison, the heart of Replace */
+  .swap { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 9px; }
+  .swap-cell { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+  .swap-thumb { aspect-ratio: 16/10; border-radius: .55rem; border: 1px solid var(--cairn-card-border); overflow: hidden; }
+  .swap-cell.from .swap-thumb { opacity: .62; }
+  .swap-tag { font-size: .625rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--color-muted); }
+  .swap-meta { font-size: .625rem; color: var(--color-muted); font-family: var(--font-editor); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .swap-arrow { color: var(--color-primary); display: inline-flex; }
+  .swap-arrow svg { width: 18px; height: 18px; }
+
+  /* the affected-entries detail list (per-entry old -> new), an accordion within the well */
+  .detail-toggle { display: flex; align-items: center; gap: 7px; width: 100%; box-sizing: border-box; background: transparent; border: 0; padding: 8px 0 0; font: 500 .75rem/1.3 var(--font-body); color: var(--color-primary); cursor: pointer; }
+  .detail-toggle svg { width: 13px; height: 13px; transition: transform .15s; }
+  .detail-toggle.open svg { transform: rotate(90deg); }
+  .entries { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; border-radius: .55rem; overflow: hidden; border: 1px solid var(--cairn-card-border); }
+  .entry { background: var(--color-base-100); padding: 8px 10px; display: flex; flex-direction: column; gap: 4px; }
+  .entry + .entry { border-top: 1px solid var(--cairn-card-border); }
+  .entry-top { display: flex; align-items: center; gap: 8px; }
+  .entry-top svg { width: 13px; height: 13px; flex: none; color: var(--color-muted); }
+  .entry-name { font-size: .8125rem; font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1 1 auto; }
+  .entry-where { font-size: .625rem; color: var(--color-muted); flex: none; }
+  /* the per-entry old -> new line: a monospace ref pair, the change made literal */
+  .entry-change { display: flex; align-items: center; gap: 6px; font-family: var(--font-editor); font-size: .625rem; padding-left: 21px; min-width: 0; }
+  .entry-change .ref-old { color: var(--color-muted); text-decoration: line-through; text-decoration-color: color-mix(in oklab, var(--cairn-error-ink) 55%, transparent); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .entry-change .ref-new { color: var(--color-positive-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .entry-change svg { width: 11px; height: 11px; flex: none; color: var(--color-muted); }
+  /* an alt-fill entry shows the alt text it will gain instead of a ref swap */
+  .entry-change.alt { font-family: var(--font-body); font-size: .6875rem; color: var(--color-base-content); }
+  .entry-change.alt .gain { color: var(--color-positive-ink); }
+  .entry-change.alt .over { color: var(--cairn-error-ink); }
+
+  /* the branch-delta: a calm, report-only aside. Never the danger family; nothing here is rewritten. */
+  .branchdelta { border-radius: .6rem; border: 1px dashed var(--cairn-card-border); background: var(--color-base-200); padding: 9px 11px; }
+  .branchdelta-head { display: flex; align-items: center; gap: 7px; font-size: .6875rem; font-weight: 600; color: var(--color-muted); }
+  .branchdelta-head svg { width: 13px; height: 13px; }
+  .branchdelta-note { font-size: .6875rem; color: var(--color-muted); line-height: 1.4; margin: 4px 0 7px; }
+  .branchdelta ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+  .branchdelta li { display: flex; align-items: center; gap: 7px; font-size: .6875rem; }
+  .branchdelta li .nm { color: var(--color-base-content); font-weight: 500; }
+  .branchdelta li .br { font-family: var(--font-editor); font-size: .6rem; color: var(--cairn-warning-ink); margin-left: auto; }
+
+  /* the alt-propagation buckets: three named groups (will-fill, customized opt-in, decorative-hero skipped) */
+  .bucket { border: 1px solid var(--cairn-card-border); border-radius: .6rem; background: var(--color-base-100); overflow: hidden; }
+  .bucket + .bucket { margin-top: 8px; }
+  .bucket-head { display: flex; align-items: center; gap: 8px; padding: 9px 11px; }
+  .bucket-head .b-glyph { flex: none; display: inline-flex; }
+  .bucket-head .b-glyph svg { width: 14px; height: 14px; }
+  .bucket-head .b-title { font-size: .8125rem; font-weight: 600; }
+  .bucket-head .b-count { margin-left: auto; font-size: .75rem; font-weight: 600; font-family: var(--font-editor); color: var(--color-muted); }
+  .bucket.fill .b-glyph { color: var(--color-positive-ink); }
+  .bucket.custom .b-glyph { color: var(--cairn-error-ink); }
+  .bucket.skip .b-glyph { color: var(--color-muted); }
+  .bucket-sub { font-size: .6875rem; color: var(--color-muted); line-height: 1.45; padding: 0 11px 9px; }
+  /* the customized bucket carries the explicit opt-in checkbox: overwriting custom alt is the danger move */
+  .optin { display: flex; align-items: flex-start; gap: 8px; margin: 0 11px 10px; padding: 9px 10px; border-radius: .5rem; background: var(--cairn-error-tint); border: 1px solid var(--cairn-error-border); cursor: pointer; }
+  .optin input { margin-top: 1px; width: 15px; height: 15px; flex: none; accent-color: var(--cairn-error-ink); }
+  .optin .ot { font-size: .75rem; line-height: 1.4; color: var(--cairn-error-ink); }
+  .optin .ot b { font-weight: 600; }
+  .bucket-list { list-style: none; margin: 0; padding: 0 11px 10px; display: flex; flex-direction: column; gap: 5px; }
+  .bucket-list li { display: flex; align-items: center; gap: 7px; font-size: .75rem; }
+  .bucket-list li svg { width: 12px; height: 12px; flex: none; color: var(--color-muted); }
+  .bucket-list li .nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bucket-list li .tag { margin-left: auto; flex: none; font-size: .625rem; color: var(--color-muted); }
+  .bucket-list li .tag.was { font-family: var(--font-editor); font-style: italic; }
+
+  /* the in-place confirm footer */
+  .confirm-foot { display: flex; align-items: center; gap: 8px; padding: 11px 13px; border-top: 1px solid var(--cairn-card-border); background: var(--color-base-100); }
+  .confirm-foot .spacer { flex: 1 1 auto; }
+  .btn-ghost-sm { font: 500 .8125rem/1 var(--font-body); border-radius: .55rem; padding: 8px 12px; border: 1px solid var(--color-base-300); background: transparent; color: var(--color-subtle); cursor: pointer; }
+  .btn-apply { display: inline-flex; align-items: center; gap: 7px; font: 600 .8125rem/1 var(--font-body); border-radius: .55rem; padding: 9px 14px; border: 1px solid transparent; background: var(--color-primary); color: var(--color-primary-content); cursor: pointer; box-shadow: 0 1px 2px color-mix(in oklab, var(--color-primary) 35%, transparent); }
+  .btn-apply svg { width: 14px; height: 14px; }
+
+  /* ----- the Replace upload step (upload-new-only in Pass B) ----- */
+  .upload-zone { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 16px; text-align: center; border: 1px dashed var(--color-base-300); border-radius: .65rem; color: var(--color-muted); background: var(--color-base-100); }
+  .upload-zone .ug { color: var(--color-primary); }
+  .upload-zone .um { font-size: .8125rem; font-weight: 500; color: var(--color-base-content); }
+  .upload-zone .us { font-size: .6875rem; }
+  .upload-zone .ub { margin-top: 5px; font: 600 .8125rem/1 var(--font-body); border-radius: .5rem; padding: 7px 12px; border: 1px solid transparent; background: var(--color-primary); color: var(--color-primary-content); cursor: pointer; }
+
+  /* ----- the FAIL-CLOSED state: usage could not be fully verified, so Replace cannot proceed ----- */
+  .failclosed { border: 1px solid var(--cairn-error-border); border-radius: .85rem; background: var(--cairn-error-tint); overflow: hidden; }
+  .failclosed-head { display: flex; align-items: flex-start; gap: 9px; padding: 12px 13px 9px; }
+  .failclosed-head .glyph { flex: none; height: 26px; width: 26px; border-radius: .5rem; display: inline-flex; align-items: center; justify-content: center; background: color-mix(in oklab, var(--cairn-error-ink) 12%, transparent); color: var(--cairn-error-ink); }
+  .failclosed-head .glyph svg { width: 15px; height: 15px; }
+  .failclosed-title { font-size: .875rem; font-weight: 600; color: var(--cairn-error-ink); line-height: 1.25; }
+  .failclosed-sub { font-size: .75rem; color: var(--cairn-error-ink); opacity: .92; line-height: 1.5; margin-top: 3px; }
+  .failclosed-body { padding: 0 13px 12px; }
+  .failclosed-list { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+  .failclosed-list li { display: flex; align-items: center; gap: 7px; font-size: .6875rem; color: var(--cairn-error-ink); }
+  .failclosed-list li .br { font-family: var(--font-editor); font-size: .6rem; margin-left: auto; }
+  .failclosed-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 10px 13px; border-top: 1px solid var(--cairn-error-border); }
+
+  /* the live-region pill the panel announces through (shown here as a visible cue for the mockup) */
+  .liveannounce { display: inline-flex; align-items: center; gap: 6px; font-size: .625rem; color: var(--color-muted); padding: 3px 8px; border-radius: 999px; background: var(--color-base-200); border: 1px dashed var(--cairn-card-border); }
+
+  /* photo stand-ins (no bundled bytes): warm dawn-light gradients in the warm hue family */
+  .ph-a { background: linear-gradient(170deg, oklch(82% 0.06 80) 0%, oklch(74% 0.08 60) 55%, oklch(64% 0.09 45) 100%); }
+  .ph-b { background: linear-gradient(150deg, oklch(52% 0.06 60) 0%, oklch(70% 0.09 50) 60%, oklch(85% 0.08 80) 100%); }
+  .ph-c { background: linear-gradient(200deg, oklch(88% 0.05 85) 0%, oklch(72% 0.07 55) 100%); }
+  .ph-d { background: linear-gradient(160deg, oklch(40% 0.05 60) 0%, oklch(60% 0.1 45) 55%, oklch(86% 0.08 85) 100%); }
+  .ph-e { background: linear-gradient(135deg, oklch(70% 0.07 30) 0%, oklch(86% 0.05 70) 100%); }
+  .ph-new { background: linear-gradient(150deg, oklch(58% 0.1 250) 0%, oklch(76% 0.09 210) 55%, oklch(88% 0.06 190) 100%); }
+</style>
+</head>
+<body>
+
+<p class="mock-label">Media Pass B — Replace and Alt propagation (in-context direction)</p>
+<p class="mock-note">
+  Two new operations on the Media Library detail slide-over at <code>/admin/media</code>. <b>Replace</b> swaps an
+  asset for a freshly uploaded file and repoints every published reference to the new content-addressed hash in one
+  commit. <b>Alt propagation</b> pushes the asset's default alt to placements that lack it, with an opt-in to also
+  overwrite custom alt. Both rewrite N published entries at once, so this direction keeps the whole flow inside the
+  existing non-modal slide-over: each operation expands an inline preview region in place (impact count, per-entry
+  old&nbsp;to&nbsp;new, the report-only branch-delta) and confirms in place. The asset stays in view; no modal, no
+  route change. The danger family is spent only where earned: the fail-closed verification block and the overwrite
+  opt-in.
+</p>
+
+<!-- ============================================================================================
+     1. LIGHT: the slide-over AT REST, with the two entry points
+     ============================================================================================ -->
+<p class="mock-label">Light: the slide-over at rest, with the Replace and Push-alt entry points</p>
+<p class="mock-note">
+  The resting panel is the established detail slide-over: the preview, the name and <code>media:</code> reference,
+  the default-alt editor, where-used grouped published-then-branch, and metadata. The new operations are two quiet
+  controls in the actions block: Replace and Push alt. They sit beside the existing Delete, all text-weight, so the
+  panel stays calm until the author opens one. The grid behind stays live and in the a11y tree (no scrim), lightly
+  dimmed to focus the panel.
+</p>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="app">
+    <aside class="side">
+      <div class="brand"><span class="tile"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l3.2 4.4L12 9.2 8.8 7.4 12 3zm0 7.6l4.6 2.6L12 15.8 7.4 13.2 12 10.6zM4.5 14.4L12 18.6l7.5-4.2 1.5.9L12 21 3 15.3l1.5-.9z"/></svg></span><span class="word">cairn</span></div>
+      <div class="navgrp">
+        <span class="nav-eyebrow">Content</span>
+        <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Posts</a>
+        <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Pages</a>
+        <a class="nav-item on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>Media</a>
+      </div>
+    </aside>
+    <div class="main">
+      <div class="topbar">
+        <span class="crumb">Media library</span>
+        <span class="grow"></span>
+        <button class="ic-btn" aria-label="Command palette"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button>
+      </div>
+      <div class="office under">
+        <div class="office-head">
+          <div>
+            <div class="office-eyebrow">Media</div>
+            <h1 class="office-h1">Media library</h1>
+            <div class="office-count">18 images, 12 used on the site &middot; 42 MB stored</div>
+          </div>
+          <button class="btn-primary-sm"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>Upload</button>
+        </div>
+        <div class="sheet-grid" aria-hidden="true">
+          <div class="sheet-tile sel"><div class="sheet-thumb ph-a"></div><div class="sheet-cap">first-light<span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></div></div>
+          <div class="sheet-tile"><div class="sheet-thumb ph-b"></div><div class="sheet-cap">valley-ridge</div></div>
+          <div class="sheet-tile"><div class="sheet-thumb ph-c"></div><div class="sheet-cap">junction-sign</div></div>
+          <div class="sheet-tile"><div class="sheet-thumb ph-d"></div><div class="sheet-cap">ridgeline</div></div>
+          <div class="sheet-tile"><div class="sheet-thumb ph-e"></div><div class="sheet-cap">warming-hut</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- the resting slide-over -->
+    <aside class="panel" role="region" aria-label="first-light details">
+      <div class="panel-head">
+        <span class="panel-eyebrow">Asset</span>
+        <button class="panel-x" aria-label="Close details"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div class="panel-body">
+        <div class="asset-preview ph-a" role="img" aria-label="Dawn light over the groomed tracks"></div>
+        <div class="asset-id">
+          <span class="asset-name">first-light</span>
+          <span class="asset-ref">
+            <code>media:first-light@7f3c1a</code>
+            <button class="icon-mini" aria-label="Copy reference"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+          </span>
+        </div>
+
+        <div class="fld">
+          <span class="lbl">Default alt text</span>
+          <textarea class="textarea">Dawn light over the groomed cross-country tracks before sunrise.</textarea>
+          <span class="hint">The default for the next time this image is placed. It does not change the alt on pages that already use it.</span>
+        </div>
+
+        <div>
+          <span class="eyebrow">Where used</span>
+          <div style="margin-top:9px;">
+            <div class="wu-grp-label">Published on the site</div>
+            <ul class="wu-list">
+              <li><a class="wu-row"><svg class="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="nm">A season on the early tracks</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></a></li>
+              <li><a class="wu-row"><svg class="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="nm">Trail report, week one</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></a></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- the actions block: the two new operations join the existing Delete, all quiet -->
+        <div class="actions">
+          <span class="eyebrow">Actions</span>
+          <button class="btn-q"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>Replace image</button>
+          <button class="btn-q"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>Push alt to placements</button>
+          <button class="btn-q danger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div></div>
+
+<!-- ============================================================================================
+     2. LIGHT: REPLACE — the upload step, then the impact preview expanded in place
+     ============================================================================================ -->
+<p class="mock-label">Light: Replace, step one (upload the new file)</p>
+<p class="mock-note">
+  Replace expands in place over a quiet upload step. Pass B is upload-new-only, so there is one path: drop or choose
+  a file. The header states plainly what Replace does, so the author commits with eyes open. The asset preview stays
+  above, so they never lose the thing they are replacing.
+</p>
+<div class="pair">
+
+  <!-- Replace step 1: upload -->
+  <div class="screen"><div data-theme="cairn-admin">
+    <div class="app" style="min-height:0;">
+      <aside class="panel" role="region" aria-label="first-light details" style="position:static; width:23rem; box-shadow:none; border-left:0;">
+        <div class="panel-head"><span class="panel-eyebrow">Asset</span>
+          <button class="panel-x" aria-label="Close details"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+        <div class="panel-body">
+          <div class="asset-preview ph-a" role="img" aria-label="Dawn light over the groomed tracks"></div>
+          <div class="asset-id"><span class="asset-name">first-light</span><span class="asset-ref"><code>media:first-light@7f3c1a</code></span></div>
+
+          <!-- the expanded Replace region: upload step -->
+          <div class="disclose" role="group" aria-label="Replace this image">
+            <div class="disclose-head">
+              <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg></span>
+              <div>
+                <div class="disclose-title">Replace this image</div>
+                <div class="disclose-sub">Upload a new file. Every published post that uses this image will point to the new one, in a single commit.</div>
+              </div>
+            </div>
+            <div class="disclose-body">
+              <div class="upload-zone">
+                <span class="ug" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg></span>
+                <span class="um">Drop the new image, or upload</span>
+                <span class="us">PNG, JPEG, WebP, or HEIC. We convert HEIC for you.</span>
+                <button class="ub" type="button">Choose a file</button>
+              </div>
+            </div>
+            <div class="confirm-foot">
+              <button class="btn-ghost-sm" type="button">Cancel</button>
+              <span class="spacer"></span>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div></div>
+
+  <!-- Replace step 2: the impact preview, the detail collapsed -->
+  <div class="screen"><div data-theme="cairn-admin">
+    <div class="app" style="min-height:0;">
+      <aside class="panel" role="region" aria-label="first-light details" style="position:static; width:23rem; box-shadow:none; border-left:0;">
+        <div class="panel-head"><span class="panel-eyebrow">Asset</span>
+          <button class="panel-x" aria-label="Close details"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+        <div class="panel-body">
+          <div class="asset-id" style="margin-bottom:2px;"><span class="asset-name">first-light</span></div>
+          <span class="liveannounce"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11a9 9 0 0 1 9 9"/><path d="M3 4a16 16 0 0 1 16 16"/><circle cx="4" cy="20" r="1"/></svg>announced: ready to replace across 4 posts</span>
+
+          <!-- the expanded Replace region: impact preview -->
+          <div class="disclose" role="group" aria-label="Confirm the replacement">
+            <div class="disclose-head">
+              <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg></span>
+              <div>
+                <div class="disclose-title">Replace across the site</div>
+                <div class="disclose-sub">This rewrites the reference in every published post below, in one commit to main.</div>
+              </div>
+            </div>
+            <div class="disclose-body">
+
+              <!-- old -> new -->
+              <div class="swap">
+                <div class="swap-cell from">
+                  <div class="swap-thumb ph-a"></div>
+                  <span class="swap-tag">Now</span>
+                  <span class="swap-meta">@7f3c1a</span>
+                </div>
+                <span class="swap-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span>
+                <div class="swap-cell to">
+                  <div class="swap-thumb ph-new"></div>
+                  <span class="swap-tag">New</span>
+                  <span class="swap-meta">@b29e04</span>
+                </div>
+              </div>
+
+              <!-- the impact line -->
+              <div class="impact" role="status">
+                <span class="n">4</span>
+                <span class="what">published posts will point to the new image</span>
+              </div>
+
+              <!-- the per-entry detail, collapsed by default -->
+              <div>
+                <button class="detail-toggle" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>Show the 4 posts that change</button>
+              </div>
+
+              <!-- the report-only branch-delta -->
+              <div class="branchdelta">
+                <div class="branchdelta-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v12"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>2 open edit branches also use it</div>
+                <p class="branchdelta-note">Replace touches only what is published. These unpublished edits keep the old image until they are saved again.</p>
+                <ul>
+                  <li><span class="nm">Trail report, week two</span><span class="br">cairn/posts/trail-week-2</span></li>
+                  <li><span class="nm">Grooming schedule</span><span class="br">cairn/pages/grooming</span></li>
+                </ul>
+              </div>
+            </div>
+            <div class="confirm-foot">
+              <button class="btn-ghost-sm" type="button">Cancel</button>
+              <span class="spacer"></span>
+              <button class="btn-apply" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Replace in 4 posts</button>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div></div>
+
+</div>
+
+<!-- ============================================================================================
+     3. LIGHT: REPLACE — the per-entry detail expanded (old -> new made literal)
+     ============================================================================================ -->
+<p class="mock-label">Light: Replace, the per-entry detail expanded</p>
+<p class="mock-note">
+  Show the posts that change opens an accordion of the affected entries. Each row names the post and where the
+  reference sits (body or hero), then a monospace old&nbsp;to&nbsp;new line that makes the rewrite literal: the old
+  hash struck through, the new hash in the positive ink. This is the "you are changing published content" detail,
+  available on demand and never forced.
+</p>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="app" style="min-height:0;">
+    <aside class="panel" role="region" aria-label="first-light details" style="position:static; width:23rem; box-shadow:none; border-left:0;">
+      <div class="panel-head"><span class="panel-eyebrow">Asset</span>
+        <button class="panel-x" aria-label="Close details"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div class="panel-body">
+        <div class="asset-id" style="margin-bottom:2px;"><span class="asset-name">first-light</span></div>
+        <div class="disclose" role="group" aria-label="Confirm the replacement">
+          <div class="disclose-head">
+            <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg></span>
+            <div><div class="disclose-title">Replace across the site</div><div class="disclose-sub">This rewrites the reference in every published post below, in one commit to main.</div></div>
+          </div>
+          <div class="disclose-body">
+            <div class="swap">
+              <div class="swap-cell from"><div class="swap-thumb ph-a"></div><span class="swap-tag">Now</span><span class="swap-meta">@7f3c1a</span></div>
+              <span class="swap-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span>
+              <div class="swap-cell to"><div class="swap-thumb ph-new"></div><span class="swap-tag">New</span><span class="swap-meta">@b29e04</span></div>
+            </div>
+            <div class="impact" role="status"><span class="n">4</span><span class="what">published posts will point to the new image</span></div>
+
+            <div>
+              <button class="detail-toggle open" type="button" aria-expanded="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>Hide the 4 posts that change</button>
+              <ul class="entries" style="margin-top:8px;">
+                <li class="entry">
+                  <div class="entry-top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="entry-name">A season on the early tracks</span><span class="entry-where">hero</span></div>
+                  <div class="entry-change"><span class="ref-old">@7f3c1a</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg><span class="ref-new">@b29e04</span></div>
+                </li>
+                <li class="entry">
+                  <div class="entry-top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="entry-name">Trail report, week one</span><span class="entry-where">body</span></div>
+                  <div class="entry-change"><span class="ref-old">@7f3c1a</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg><span class="ref-new">@b29e04</span></div>
+                </li>
+                <li class="entry">
+                  <div class="entry-top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="entry-name">Why we groom at dawn</span><span class="entry-where">body, 2 spots</span></div>
+                  <div class="entry-change"><span class="ref-old">@7f3c1a</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg><span class="ref-new">@b29e04</span></div>
+                </li>
+                <li class="entry">
+                  <div class="entry-top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="entry-name">The lodge at first snow</span><span class="entry-where">hero</span></div>
+                  <div class="entry-change"><span class="ref-old">@7f3c1a</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg><span class="ref-new">@b29e04</span></div>
+                </li>
+              </ul>
+            </div>
+
+            <div class="branchdelta">
+              <div class="branchdelta-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v12"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>2 open edit branches also use it</div>
+              <p class="branchdelta-note">Replace touches only what is published. These unpublished edits keep the old image until they are saved again.</p>
+              <ul>
+                <li><span class="nm">Trail report, week two</span><span class="br">cairn/posts/trail-week-2</span></li>
+                <li><span class="nm">Grooming schedule</span><span class="br">cairn/pages/grooming</span></li>
+              </ul>
+            </div>
+          </div>
+          <div class="confirm-foot">
+            <button class="btn-ghost-sm" type="button">Cancel</button>
+            <span class="spacer"></span>
+            <button class="btn-apply" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Replace in 4 posts</button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div></div>
+
+<!-- ============================================================================================
+     4. LIGHT: ALT PROPAGATION — the three buckets, with the opt-in for custom alt
+     ============================================================================================ -->
+<p class="mock-label">Light: Push alt to placements (the three buckets)</p>
+<p class="mock-note">
+  Push alt expands its own region. It groups affected placements into three buckets. <b>Will fill</b> are
+  empty-alt placements that gain the default (the safe, default action). <b>Already described</b> are placements
+  with custom alt, skipped unless the author ticks the opt-in to overwrite them; the checkbox and the count live in
+  the danger family because overwriting an editor's words is the destructive move. <b>Decorative</b> heroes are
+  skipped per the persisted flag. The footer count tracks the opt-in: it reads the fill count alone, then fill plus
+  custom when the box is ticked.
+</p>
+<div class="pair">
+
+  <!-- alt buckets, opt-in OFF -->
+  <div class="screen"><div data-theme="cairn-admin">
+    <div class="app" style="min-height:0;">
+      <aside class="panel" role="region" aria-label="first-light details" style="position:static; width:23rem; box-shadow:none; border-left:0;">
+        <div class="panel-head"><span class="panel-eyebrow">Asset</span>
+          <button class="panel-x" aria-label="Close details"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+        <div class="panel-body">
+          <div class="asset-id" style="margin-bottom:2px;"><span class="asset-name">first-light</span></div>
+          <div class="fld">
+            <span class="lbl">Default alt text</span>
+            <textarea class="textarea">Dawn light over the groomed cross-country tracks before sunrise.</textarea>
+          </div>
+
+          <div class="disclose" role="group" aria-label="Push alt text to placements">
+            <div class="disclose-head">
+              <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></span>
+              <div><div class="disclose-title">Push this alt to placements</div><div class="disclose-sub">Fill the alt on placements that have none. Already-described placements stay as they are unless you choose to overwrite them.</div></div>
+            </div>
+            <div class="disclose-body">
+
+              <!-- will fill -->
+              <div class="bucket fill">
+                <div class="bucket-head"><span class="b-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="b-title">Will fill</span><span class="b-count">2</span></div>
+                <p class="bucket-sub">These placements have no alt today. They gain the default above.</p>
+                <ul class="bucket-list">
+                  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="nm">Trail report, week one</span><span class="tag">body</span></li>
+                  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="nm">Why we groom at dawn</span><span class="tag">body</span></li>
+                </ul>
+              </div>
+
+              <!-- already described, opt-in OFF -->
+              <div class="bucket custom">
+                <div class="bucket-head"><span class="b-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span><span class="b-title">Already described</span><span class="b-count">3</span></div>
+                <p class="bucket-sub">These already carry their own alt. They stay unchanged unless you overwrite them.</p>
+                <label class="optin">
+                  <input type="checkbox" />
+                  <span class="ot">Also <b>overwrite the alt</b> on these 3 placements with the default above.</span>
+                </label>
+              </div>
+
+              <!-- decorative-hero skipped -->
+              <div class="bucket skip">
+                <div class="bucket-head"><span class="b-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg></span><span class="b-title">Decorative, skipped</span><span class="b-count">1</span></div>
+                <p class="bucket-sub">A hero marked decorative is left empty on purpose. Push never overrides that.</p>
+              </div>
+            </div>
+            <div class="confirm-foot">
+              <button class="btn-ghost-sm" type="button">Cancel</button>
+              <span class="spacer"></span>
+              <button class="btn-apply" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Fill 2 placements</button>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div></div>
+
+  <!-- alt buckets, opt-in ON -->
+  <div class="screen"><div data-theme="cairn-admin">
+    <div class="app" style="min-height:0;">
+      <aside class="panel" role="region" aria-label="first-light details" style="position:static; width:23rem; box-shadow:none; border-left:0;">
+        <div class="panel-head"><span class="panel-eyebrow">Asset</span>
+          <button class="panel-x" aria-label="Close details"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+        <div class="panel-body">
+          <div class="asset-id" style="margin-bottom:2px;"><span class="asset-name">first-light</span></div>
+          <span class="liveannounce"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11a9 9 0 0 1 9 9"/><path d="M3 4a16 16 0 0 1 16 16"/><circle cx="4" cy="20" r="1"/></svg>announced: will update 5 placements</span>
+
+          <div class="disclose" role="group" aria-label="Push alt text to placements">
+            <div class="disclose-head">
+              <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></span>
+              <div><div class="disclose-title">Push this alt to placements</div><div class="disclose-sub">Fill the alt on placements that have none. Already-described placements stay as they are unless you choose to overwrite them.</div></div>
+            </div>
+            <div class="disclose-body">
+              <div class="bucket fill">
+                <div class="bucket-head"><span class="b-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="b-title">Will fill</span><span class="b-count">2</span></div>
+                <p class="bucket-sub">These placements have no alt today. They gain the default above.</p>
+                <ul class="bucket-list">
+                  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="nm">Trail report, week one</span><span class="tag">body</span></li>
+                  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="nm">Why we groom at dawn</span><span class="tag">body</span></li>
+                </ul>
+              </div>
+
+              <!-- already described, opt-in ON: now the list shows the was -> will-be -->
+              <div class="bucket custom">
+                <div class="bucket-head"><span class="b-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span><span class="b-title">Already described</span><span class="b-count">3</span></div>
+                <label class="optin">
+                  <input type="checkbox" checked />
+                  <span class="ot">Also <b>overwrite the alt</b> on these 3 placements with the default above.</span>
+                </label>
+                <ul class="bucket-list">
+                  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="nm">A season on the early tracks</span><span class="tag was">"Tracks at sunrise"</span></li>
+                  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="nm">The lodge at first snow</span><span class="tag was">"Dawn over the lodge"</span></li>
+                  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="nm">Early-season conditions</span><span class="tag was">"Groomed corduroy"</span></li>
+                </ul>
+              </div>
+
+              <div class="bucket skip">
+                <div class="bucket-head"><span class="b-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg></span><span class="b-title">Decorative, skipped</span><span class="b-count">1</span></div>
+                <p class="bucket-sub">A hero marked decorative is left empty on purpose. Push never overrides that.</p>
+              </div>
+            </div>
+            <div class="confirm-foot">
+              <button class="btn-ghost-sm" type="button">Cancel</button>
+              <span class="spacer"></span>
+              <button class="btn-apply" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Update 5 placements</button>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div></div>
+
+</div>
+
+<!-- the honest caveat about body images -->
+<p class="mock-note" style="padding-top:0;">
+  <b>The body-image caveat.</b> A body image cannot record a decorative choice, because markdown's alt has no slot
+  for it. So an empty-alt body image always reads as a fill gap, never as decorative-skipped; only a frontmatter hero
+  can be decorative. The Will-fill bucket carries one plain line to that effect when any of its rows is a body image,
+  so the author is not surprised that a deliberately-blank body image shows up to be filled.
+</p>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="app" style="min-height:0;">
+    <aside class="panel" role="region" aria-label="first-light details" style="position:static; width:23rem; box-shadow:none; border-left:0; max-width:23rem; margin:0 auto;">
+      <div class="panel-body" style="padding-top:14px;">
+        <div class="bucket fill" style="border-color: color-mix(in oklab, var(--color-primary) 28%, var(--cairn-card-border));">
+          <div class="bucket-head"><span class="b-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="b-title">Will fill</span><span class="b-count">2</span></div>
+          <p class="bucket-sub">These placements have no alt today. They gain the default above. A body image cannot be marked decorative, so a blank one shows here even if you left it blank on purpose.</p>
+          <ul class="bucket-list">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="nm">Trail report, week one</span><span class="tag">body</span></li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="nm">Why we groom at dawn</span><span class="tag">body</span></li>
+          </ul>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div></div>
+
+<!-- ============================================================================================
+     5. LIGHT: REPLACE — fail-closed (usage could not be fully verified)
+     ============================================================================================ -->
+<p class="mock-label">Light: Replace fails closed (usage could not be verified)</p>
+<p class="mock-note">
+  A replace must rewrite every reference, so it fails closed if usage cannot be fully verified: an open branch that
+  failed to read, or a stale usage index. This is the one place the danger family carries the whole region. It states
+  the reason plainly, names what could not be read, and offers the only safe next step (re-run the scan), with no
+  apply button at all. The author cannot half-replace published content.
+</p>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="app" style="min-height:0;">
+    <aside class="panel" role="region" aria-label="first-light details" style="position:static; width:23rem; box-shadow:none; border-left:0; max-width:23rem; margin:0 auto;">
+      <div class="panel-head"><span class="panel-eyebrow">Asset</span>
+        <button class="panel-x" aria-label="Close details"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div class="panel-body">
+        <div class="asset-id" style="margin-bottom:2px;"><span class="asset-name">first-light</span></div>
+        <div class="failclosed" role="alert">
+          <div class="failclosed-head">
+            <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+            <div>
+              <div class="failclosed-title">Cannot replace yet</div>
+              <div class="failclosed-sub">Replace has to rewrite every reference, and one branch could not be read. Replacing now could leave the old image behind somewhere, so it is held until the scan is clean.</div>
+            </div>
+          </div>
+          <div class="failclosed-body">
+            <span class="eyebrow" style="color:var(--cairn-error-ink);">Could not read</span>
+            <ul class="failclosed-list">
+              <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v12"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg><span>Trail report, week two</span><span class="br">cairn/posts/trail-week-2</span></li>
+            </ul>
+          </div>
+          <div class="failclosed-foot">
+            <button class="btn-ghost-sm" type="button">Cancel</button>
+            <button class="btn-apply" type="button" style="background:var(--cairn-error-ink); box-shadow:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>Re-run the scan</button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div></div>
+
+<!-- ============================================================================================
+     6. DARK: the two flows through the dark tokens
+     ============================================================================================ -->
+<p class="mock-label">Dark: Replace impact preview, and the alt buckets with the opt-in on</p>
+<p class="mock-note">
+  The same surfaces through the dark tokens. The danger family (the opt-in, the fail-closed block), the warning ink
+  (the branch names), the positive ink (the new hash, the gained alt), and the primary all resolve from the theme
+  variables; the disclosure well's accent tint reads as a calm lift on the dark ground.
+</p>
+<div class="pair">
+
+  <!-- DARK Replace impact -->
+  <div class="screen"><div data-theme="cairn-admin-dark">
+    <div class="app" style="min-height:0; background: var(--color-base-100);">
+      <aside class="panel" role="region" aria-label="first-light details" style="position:static; width:23rem; box-shadow:none; border-left:0;">
+        <div class="panel-head"><span class="panel-eyebrow">Asset</span>
+          <button class="panel-x" aria-label="Close details"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+        <div class="panel-body">
+          <div class="asset-id" style="margin-bottom:2px;"><span class="asset-name">first-light</span></div>
+          <div class="disclose" role="group" aria-label="Confirm the replacement">
+            <div class="disclose-head">
+              <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg></span>
+              <div><div class="disclose-title">Replace across the site</div><div class="disclose-sub">This rewrites the reference in every published post below, in one commit to main.</div></div>
+            </div>
+            <div class="disclose-body">
+              <div class="swap">
+                <div class="swap-cell from"><div class="swap-thumb ph-a"></div><span class="swap-tag">Now</span><span class="swap-meta">@7f3c1a</span></div>
+                <span class="swap-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span>
+                <div class="swap-cell to"><div class="swap-thumb ph-new"></div><span class="swap-tag">New</span><span class="swap-meta">@b29e04</span></div>
+              </div>
+              <div class="impact" role="status"><span class="n">4</span><span class="what">published posts will point to the new image</span></div>
+              <div>
+                <button class="detail-toggle open" type="button" aria-expanded="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>Hide the 4 posts that change</button>
+                <ul class="entries" style="margin-top:8px;">
+                  <li class="entry"><div class="entry-top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="entry-name">A season on the early tracks</span><span class="entry-where">hero</span></div><div class="entry-change"><span class="ref-old">@7f3c1a</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg><span class="ref-new">@b29e04</span></div></li>
+                  <li class="entry"><div class="entry-top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="entry-name">Trail report, week one</span><span class="entry-where">body</span></div><div class="entry-change"><span class="ref-old">@7f3c1a</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg><span class="ref-new">@b29e04</span></div></li>
+                </ul>
+              </div>
+              <div class="branchdelta">
+                <div class="branchdelta-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v12"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>2 open edit branches also use it</div>
+                <p class="branchdelta-note">Replace touches only what is published. These keep the old image until saved again.</p>
+                <ul>
+                  <li><span class="nm">Trail report, week two</span><span class="br">cairn/posts/trail-week-2</span></li>
+                  <li><span class="nm">Grooming schedule</span><span class="br">cairn/pages/grooming</span></li>
+                </ul>
+              </div>
+            </div>
+            <div class="confirm-foot">
+              <button class="btn-ghost-sm" type="button">Cancel</button>
+              <span class="spacer"></span>
+              <button class="btn-apply" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Replace in 4 posts</button>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div></div>
+
+  <!-- DARK alt buckets, opt-in on -->
+  <div class="screen"><div data-theme="cairn-admin-dark">
+    <div class="app" style="min-height:0; background: var(--color-base-100);">
+      <aside class="panel" role="region" aria-label="first-light details" style="position:static; width:23rem; box-shadow:none; border-left:0;">
+        <div class="panel-head"><span class="panel-eyebrow">Asset</span>
+          <button class="panel-x" aria-label="Close details"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+        <div class="panel-body">
+          <div class="asset-id" style="margin-bottom:2px;"><span class="asset-name">first-light</span></div>
+          <div class="disclose" role="group" aria-label="Push alt text to placements">
+            <div class="disclose-head">
+              <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></span>
+              <div><div class="disclose-title">Push this alt to placements</div><div class="disclose-sub">Fill the alt on placements that have none. Already-described placements stay unless you overwrite them.</div></div>
+            </div>
+            <div class="disclose-body">
+              <div class="bucket fill">
+                <div class="bucket-head"><span class="b-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="b-title">Will fill</span><span class="b-count">2</span></div>
+                <p class="bucket-sub">These placements have no alt today. They gain the default above.</p>
+                <ul class="bucket-list">
+                  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="nm">Trail report, week one</span><span class="tag">body</span></li>
+                  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="nm">Why we groom at dawn</span><span class="tag">body</span></li>
+                </ul>
+              </div>
+              <div class="bucket custom">
+                <div class="bucket-head"><span class="b-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span><span class="b-title">Already described</span><span class="b-count">3</span></div>
+                <label class="optin">
+                  <input type="checkbox" checked />
+                  <span class="ot">Also <b>overwrite the alt</b> on these 3 placements with the default above.</span>
+                </label>
+                <ul class="bucket-list">
+                  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="nm">A season on the early tracks</span><span class="tag was">"Tracks at sunrise"</span></li>
+                  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="nm">The lodge at first snow</span><span class="tag was">"Dawn over the lodge"</span></li>
+                  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="nm">Early-season conditions</span><span class="tag was">"Groomed corduroy"</span></li>
+                </ul>
+              </div>
+              <div class="bucket skip">
+                <div class="bucket-head"><span class="b-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg></span><span class="b-title">Decorative, skipped</span><span class="b-count">1</span></div>
+                <p class="bucket-sub">A hero marked decorative is left empty on purpose. Push never overrides that.</p>
+              </div>
+            </div>
+            <div class="confirm-foot">
+              <button class="btn-ghost-sm" type="button">Cancel</button>
+              <span class="spacer"></span>
+              <button class="btn-apply" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Update 5 placements</button>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div></div>
+
+</div>
+
+<!-- ============================================================================================
+     7. NARROW VIEWPORT: the slide-over is a bottom sheet; the disclosure region stacks
+     ============================================================================================ -->
+<p class="mock-label">Narrow viewport (about 392px): the slide-over is a bottom sheet</p>
+<p class="mock-note">
+  Below the narrow breakpoint the slide-over reads as a full-width bottom sheet (the responsive treatment in the
+  Library recipe). The disclosure region keeps its shape and stacks; the impact line, the swap, and the confirm
+  footer all hold at full width. The sheet scrolls within itself, the page behind stays put.
+</p>
+<div class="screen narrow"><div data-theme="cairn-admin">
+  <div class="app" style="min-height:0;">
+    <aside class="panel" role="region" aria-label="first-light details" style="position:static; width:100%; box-shadow:none; border-left:0; border-top:1px solid var(--cairn-card-border); border-radius:1rem 1rem 0 0;">
+      <div class="panel-head"><span class="panel-eyebrow">Asset</span>
+        <button class="panel-x" aria-label="Close details"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div class="panel-body">
+        <div class="asset-id" style="margin-bottom:2px;"><span class="asset-name">first-light</span></div>
+        <div class="disclose" role="group" aria-label="Confirm the replacement">
+          <div class="disclose-head">
+            <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg></span>
+            <div><div class="disclose-title">Replace across the site</div><div class="disclose-sub">This rewrites the reference in every published post below, in one commit to main.</div></div>
+          </div>
+          <div class="disclose-body">
+            <div class="swap">
+              <div class="swap-cell from"><div class="swap-thumb ph-a"></div><span class="swap-tag">Now</span><span class="swap-meta">@7f3c1a</span></div>
+              <span class="swap-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span>
+              <div class="swap-cell to"><div class="swap-thumb ph-new"></div><span class="swap-tag">New</span><span class="swap-meta">@b29e04</span></div>
+            </div>
+            <div class="impact" role="status"><span class="n">4</span><span class="what">published posts will point to the new image</span></div>
+            <div><button class="detail-toggle" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>Show the 4 posts that change</button></div>
+            <div class="branchdelta">
+              <div class="branchdelta-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v12"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>2 open edit branches also use it</div>
+              <p class="branchdelta-note">Replace touches only what is published. These keep the old image until saved again.</p>
+              <ul><li><span class="nm">Trail report, week two</span><span class="br">cairn/posts/trail-week-2</span></li></ul>
+            </div>
+          </div>
+          <div class="confirm-foot">
+            <button class="btn-ghost-sm" type="button">Cancel</button>
+            <span class="spacer"></span>
+            <button class="btn-apply" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Replace in 4</button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div></div>
+
+</body>
+</html>

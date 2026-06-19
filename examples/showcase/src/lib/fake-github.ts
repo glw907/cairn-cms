@@ -167,12 +167,52 @@ export const PASS_B_ENTRIES = {
   },
 } as const;
 
+// --- the Pass C bulk-delete + orphan fixture ---
+//
+// Three dedicated populations backing the Pass C round-trips (media-pass-c.spec.ts), each isolated
+// from every fixture above so they never perturb the name-based assertions of the other specs:
+//
+//   - PASS_C_UNREF: a committed MAIN media.json row referenced by NOTHING (no mediaRefs anywhere),
+//     with its bytes seeded in R2. usageCount 0, so it is deletable: the bulk-delete DELETE target.
+//     (The bulk-delete SKIP target reuses the in-use SEED_MEDIA.used asset read-only, so no new row.)
+//   - PASS_C_ORPHAN_BYTE: R2 bytes seeded, but NO media.json row anywhere and no reference. A true
+//     orphaned byte (the purge target), so it appears in the scan's orphanedBytes.
+//   - PASS_C_MISSING: a committed MAIN media.json row whose bytes are NOT seeded and which nothing
+//     references. The reconcile reports it as a missing object, so it reads out under Broken references.
+
+/** The unreferenced, byte-seeded asset on main: the bulk-delete DELETE target. */
+export const PASS_C_UNREF = {
+  hash: 'dddd6666eeee7777',
+  slug: 'pass-c-unused',
+  name: 'Pass C unused',
+  alt: 'A spare frame nothing points at',
+} as const;
+
+/** The orphaned byte: bytes in R2 under its key, but no media.json row and no reference. The purge
+ *  target. Exported as a hash so the spec can build the key and assert the scan lists it. */
+export const PASS_C_ORPHAN_BYTE = {
+  hash: 'eeee7777ffff8888',
+} as const;
+
+/** The broken-reference row: a media.json row on main whose R2 bytes are absent and which nothing
+ *  references. The read-only Broken references readout target, keyed by its slug. */
+export const PASS_C_MISSING = {
+  hash: 'ffff8888aaaa9999',
+  slug: 'pass-c-broken',
+  alt: 'A record whose file is gone',
+} as const;
+
 /** The R2 object keys (media/<aa>/<hash>.<ext>) every seeded asset resolves through, so hooks.server.ts
  *  seeds the matching bytes. Kept here so the key derivation lives next to the manifest seed. Includes
- *  the Pass B asset so its thumbnail resolves in the replace dialog. */
-export const SEED_MEDIA_KEYS = [...Object.values(SEED_MEDIA), PASS_B_MEDIA].map(
-  (m) => `media/${m.hash.slice(0, 2)}/${m.hash}.png`,
-);
+ *  the Pass B asset so its thumbnail resolves in the replace dialog, the unreferenced Pass C asset so
+ *  its tile thumbnail resolves, and the Pass C orphaned byte (whose key has NO media.json row, so the
+ *  scan finds it). PASS_C_MISSING is deliberately ABSENT: its row exists but its bytes do not, which is
+ *  what makes it a broken reference. */
+export const SEED_MEDIA_KEYS = [
+  ...[...Object.values(SEED_MEDIA), PASS_B_MEDIA, PASS_C_UNREF, PASS_C_ORPHAN_BYTE].map(
+    (m) => `media/${m.hash.slice(0, 2)}/${m.hash}.png`,
+  ),
+];
 
 function mediaRow(slug: string, hash: string, alt: string): Record<string, unknown> {
   return {
@@ -209,6 +249,16 @@ export function seedMediaLibrary(): void {
     [SEED_MEDIA.orphan.hash]: mediaRow(SEED_MEDIA.orphan.slug, SEED_MEDIA.orphan.hash, SEED_MEDIA.orphan.alt),
     [SEED_MEDIA.needsAlt.hash]: mediaRow(SEED_MEDIA.needsAlt.slug, SEED_MEDIA.needsAlt.hash, SEED_MEDIA.needsAlt.alt),
     [PASS_B_MEDIA.hash]: mediaRow(PASS_B_MEDIA.slug, PASS_B_MEDIA.hash, PASS_B_MEDIA.alt),
+    // Pass C: the unreferenced row (bytes seeded, no mediaRefs anywhere), the bulk-delete DELETE
+    // target. Its displayName is the asset name the spec selects by, so set it explicitly rather than
+    // deriving it from the slug.
+    [PASS_C_UNREF.hash]: {
+      ...mediaRow(PASS_C_UNREF.slug, PASS_C_UNREF.hash, PASS_C_UNREF.alt),
+      displayName: PASS_C_UNREF.name,
+    },
+    // Pass C: the broken-reference row (NO bytes seeded), the read-only Broken references readout
+    // target. reconcile reports it as a missing object because nothing in R2 carries its hash.
+    [PASS_C_MISSING.hash]: mediaRow(PASS_C_MISSING.slug, PASS_C_MISSING.hash, PASS_C_MISSING.alt),
   };
   main.set('src/content/.cairn/media.json', `${JSON.stringify(mainMedia, null, 2)}\n`);
 

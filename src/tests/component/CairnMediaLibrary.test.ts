@@ -1484,6 +1484,28 @@ describe('CairnMediaLibrary orphan scan surface', () => {
     expect([...dialog.querySelectorAll('button')].some((b) => /purge/i.test(b.textContent ?? ''))).toBe(false);
   });
 
+  it('posts the scan with a body so a SvelteKit form action accepts it (no body is a 415)', async () => {
+    // A SvelteKit form action rejects a body-less POST with 415 Unsupported Media Type before the
+    // action runs, so the scan fetch must carry a form body. Capture the init and assert a body is
+    // sent (an empty FormData is enough to set the multipart content-type).
+    const calls: RequestInit[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init?: RequestInit) => {
+        calls.push(init ?? {});
+        return { status: 200, text: async () => successBody(SCAN) } as unknown as Response;
+      }),
+    );
+
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    findButton(screen).click();
+    const dialog = scanDialog(screen);
+    await expect.poll(() => dialog.open).toBe(true);
+    await expect.poll(() => calls.length).toBeGreaterThan(0);
+    expect(calls[0].method).toBe('POST');
+    expect(calls[0].body).toBeInstanceOf(FormData);
+  });
+
   it('renders the orphaned-files section with byte-rows, an indeterminate section select-all, and a solid-danger Purge gated by the typed count', async () => {
     vi.stubGlobal(
       'fetch',

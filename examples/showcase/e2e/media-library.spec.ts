@@ -6,9 +6,10 @@ import { test, expect, type APIRequestContext } from '@playwright/test';
 //
 //   - a used + described asset (mountain-pass), referenced by the seed post on main, so its
 //     where-used reads "Published on the site"
-//   - an orphan + described asset (sunset-orphan), referenced by nothing, so it is Unused
-//   - a needs-alt asset (untagged-shot), empty alt and unreferenced, so it is both Needs alt and
-//     Unused
+//   - an orphan + described asset (sunset-orphan), referenced by nothing, so it reads No references
+//     found
+//   - a needs-alt asset (untagged-shot), empty alt and unreferenced, so it is both Needs alt and No
+//     references found
 //   - a branch-only asset (draft-banner), living only on the open cairn/posts/2026-05-draft-gallery
 //     branch and referenced by that branch's edited entry, so the union shows it and its where-used
 //     names the branch
@@ -70,7 +71,7 @@ test('browse the library: the count line, the triage counts, and the seeded grid
   const triage = page.getByRole('radiogroup', { name: 'Filter assets' });
   await expect(triage.getByRole('radio', { name: /^All/ })).toBeVisible();
   await expect(triage.getByRole('radio', { name: /^Needs alt/ })).toBeVisible();
-  await expect(triage.getByRole('radio', { name: /^Unused/ })).toBeVisible();
+  await expect(triage.getByRole('radio', { name: /^No references found/ })).toBeVisible();
 });
 
 test('the list density: the table, the usage pill, the sortable Added header', async ({ page }) => {
@@ -96,7 +97,7 @@ test('the list density: the table, the usage pill, the sortable Added header', a
   await expect(addedHeader).toHaveAttribute('aria-sort', 'ascending');
 });
 
-test('the triage filters: Needs alt isolates the empty-alt asset, Unused isolates the unreferenced', async ({
+test('the triage filters: Needs alt isolates the empty-alt asset, No references found isolates the unreferenced', async ({
   page,
 }) => {
   await page.goto('/admin/media');
@@ -109,9 +110,9 @@ test('the triage filters: Needs alt isolates the empty-alt asset, Unused isolate
   await expect(grid.getByText(USED.name, { exact: true })).toHaveCount(0);
   await expect(grid.getByText(ORPHAN.name, { exact: true })).toHaveCount(0);
 
-  // Unused: the orphan and the needs-alt one (both unreferenced); the used and branch-referenced
-  // assets drop out.
-  await triage.getByRole('radio', { name: /Unused/ }).click();
+  // No references found: the orphan and the needs-alt one (both unreferenced); the used and
+  // branch-referenced assets drop out.
+  await triage.getByRole('radio', { name: /No references found/ }).click();
   await expect(grid.getByText(ORPHAN.name, { exact: true })).toBeVisible();
   await expect(grid.getByText(NEEDS_ALT.name, { exact: true })).toBeVisible();
   await expect(grid.getByText(USED.name, { exact: true })).toHaveCount(0);
@@ -187,10 +188,10 @@ test('safe-delete the orphan: the calm face confirms, the row leaves main, and t
   const grid = page.getByRole('listbox', { name: 'Media library' });
 
   // The orphan may have been renamed by the prior test, so read its current name and slug back from
-  // main's media.json by its stable hash. Narrow the grid to Unused, where the orphan lives, then
-  // drive the delete from its detail slide-over.
+  // main's media.json by its stable hash. Narrow the grid to No references found, where the orphan
+  // lives, then drive the delete from its detail slide-over.
   const triage = page.getByRole('radiogroup', { name: 'Filter assets' });
-  await triage.getByRole('radio', { name: /Unused/ }).click();
+  await triage.getByRole('radio', { name: /No references found/ }).click();
 
   // The orphan delivery path before the delete: a GET returns the seeded bytes (200).
   const beforeMedia = await readMainMedia(request);

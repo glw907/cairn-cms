@@ -1089,10 +1089,12 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     closeOrphanScan();
   }
 
-  // Run the scan: POST ?/mediaOrphanScan (no body needed; the CSRF token rides the header), parse the
-  // ActionResult envelope, and route to the result phase (an OrphanScan) or the fail-closed blocked
-  // phase (a 503 MediaBulkFailure or a network throw). Nothing is pre-selected: this feeds an
-  // irreversible purge, so the operator picks each byte (or the select-all) deliberately.
+  // Run the scan: POST ?/mediaOrphanScan, parse the ActionResult envelope, and route to the result
+  // phase (an OrphanScan) or the fail-closed blocked phase (a 503 MediaBulkFailure or a network
+  // throw). The action reads no fields, but a SvelteKit form action rejects a body-less POST with a
+  // 415, so send an empty FormData to carry the form content-type. The CSRF token rides the header.
+  // Nothing is pre-selected: this feeds an irreversible purge, so the operator picks each byte (or the
+  // select-all) deliberately.
   async function runOrphanScan() {
     orphanPhase = 'scanning';
     orphanBlockedError = '';
@@ -1101,6 +1103,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
       const res = await fetch(ORPHAN_SCAN_URL, {
         method: 'POST',
         headers: { 'X-Cairn-CSRF': csrf?.() ?? '' },
+        body: new FormData(),
       });
       result = deserialize(await res.text()) as { type: string; data?: unknown };
     } catch {

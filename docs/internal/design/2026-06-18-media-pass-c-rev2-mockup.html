@@ -1,0 +1,1530 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Proposed design: the destructive cluster (media Pass C, rev.2 consolidated)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+  rel="stylesheet"
+/>
+<style>
+  /* ===========================================================================================
+     REV.2 CONSOLIDATED — media Pass C, the destructive cluster.
+
+     The synthesis target. The BASE is the in-library direction (extend the SHIPPED
+     CairnMediaLibrary in place; no new route, no tab). Two grafts from the other two reviewed
+     directions answer the critics: the on-demand entry point and the detection-time fail-closed
+     surface come from guided-review; the two-section dry-run shape, the checkerboard byte mat, and
+     the broken-references readout come from cleanup-screen. Two adversarial critiques are resolved
+     below, each at the line where it bites.
+
+     THE THREE-POPULATION TAXONOMY (the critics' top finding). Three distinct populations, each its
+     own server source, its own friction tier, never conflated:
+
+       1. UNREFERENCED ASSETS — the usage overlay at zero (usageCount === 0), the renamed
+          "No references found" triage facet. Real committed assets with tiles. REVERSIBLE (a git
+          delete). Handled by multi-select bulk delete IN the Library (panels 1-5, 9, 11).
+       2. ORPHANED BYTES — reconcile.orphanedObjects (an R2 object with no manifest row). NOT
+          assets, NO tile. IRREVERSIBLE byte purge. Handled by a SEPARATE on-demand scan surface,
+          never the triage (panels 6-8, 10). A byte never borrows a misleading thumbnail: it
+          renders as a checkerboard mat standing for record-not-picture.
+       3. BROKEN REFERENCES — reconcile.missingObjects (a manifest row whose bytes are gone). A
+          DATA-INTEGRITY READOUT, not a deletion target. A read-only section in the scan surface
+          ("N images point at bytes that are gone; re-upload or remove the reference").
+
+     CRITIC BLOCKER 1 (triage overload): the shipped in-library mockup had put orphaned-bytes INTO
+     the triage radiogroup, which swaps the listbox identity (asset options become byte rows under
+     the same role="listbox"). FIXED: the triage is asset filters ONLY, three peers
+     All / Needs alt / No references found. Orphaned bytes leave the triage entirely for the scan
+     surface, reached by a quiet "Find orphaned files" office button beside Upload.
+
+     CRITIC BLOCKER 2 (the reversible/irreversible structural split, the LOAD-BEARING rule): the
+     reversible bulk delete (asset rows: git, plain confirm, danger-OUTLINE control) and the
+     irreversible byte purge (orphan surface: solid danger fill, typed gate, verb "Purge") are NEVER
+     reachable from one shared button or one modal. Different contexts. This is what disqualified
+     guided-review as the base (it co-located both in one review modal); rev.2 keeps them apart by
+     construction. (Avoids the Lightroom Remove-vs-Delete-from-Disk trap.)
+
+     CRITIC BLOCKER 3 (the byte-orphan detection cost + fail closed): orphan detection needs an
+     R2-list plus a reconcile pass, far heavier than the loaded index, so it is an ON-DEMAND scan
+     with its own loading state and a detection-time fail-closed surface (graft cleanup-screen's:
+     present NO dry-run, name the exact unreadable branch, show no collect action even disabled).
+
+     CRITIC BLOCKER 4 (the sticky-bar positioning): the in-library mockup pinned the selection bar
+     with position: absolute, which detaches from scroll. FIXED: position: sticky (the bar rides the
+     bottom of the scrolling content and never floats off it). Annotated.
+
+     CRITIC BLOCKER 5 (the token violation): cleanup-screen's .btn-warn filled a control with
+     --cairn-warning-ink, but warning-ink is a TEXT ink, not a fill. FIXED: the irreversible purge
+     uses the shipped SOLID danger fill (--color-error / --color-error-content), the only fill the
+     destructive register owns. warning-ink stays text-only (the "No refs" chip, the skip head).
+
+     CRITIC BLOCKER 6 (the live-region collision): three NON-overlapping live regions, never sharing
+     one node: selection-count (role=status on the bar), batch progress (role=status in the running
+     modal), and the post-run summary (role=status on the summary). role="alert" is reserved for a
+     failure surfaced AFTER an action was pressed. Annotated at each site.
+
+     CRITIC BLOCKER 7 (review-time vs execution-time re-check, the stale-read trap): the per-item
+     strict re-read is shown at PROGRESS and SUMMARY time, NOT as a review-time green tick that
+     implies the gate already passed. The confirm states the recheck is still to come; the summary
+     reports succeeded / skipped-because-a-reference-turned-up-on-the-recheck / failed-with-reason.
+
+     THE SAFETY FLOOR, annotated via .anno (the make-or-break the critics verified): ONE shared
+     STRICT cross-branch usage index built per batch, fail closed if it cannot complete, then a cheap
+     per-item membership recheck against that fresh strict index. NOT N independent strict reads per
+     item (that blows workerd's ~6-connection budget at 25+ open branches). The DISPLAYED selection
+     rides the non-strict load index and is SELECTION-ONLY; the batch strict index is the gate.
+
+     OUT of scope (a later pass, NOT mocked here): needs-alt at scale, dedupe/merge, AI alt.
+
+     cairn is NOT WYSIWYG: every before/after is a STRUCTURED FACT (a hash, a slug, a title, a
+     where-used count, an R2 key), never a rendered-page canvas.
+
+     This mockup hand-rolls the DaisyUI/Tailwind look in plain CSS (no build step), but every class it
+     stands in for is a real DaisyUI v5 / Tailwind 4 class, and every color is a shipped Warm Stone
+     token copied VERBATIM from cairn-admin.css (both theme roots). No removed classes (no
+     form-control, label-text, -bordered, btn-group, card-compact). The .checkbox stand-in mirrors
+     DaisyUI v5 .checkbox.checkbox-sm; the grid/table/byte checkboxes are REAL native
+     <input type="checkbox">. It reuses the Pass B rev.2 grammar verbatim: the modal-box scroll
+     container under min(content, 85vh), the report-only dashed sections on calm base-200, the
+     typed-confirm block, the fail-closed blocked block, the sr-only role=status live regions, the
+     .anno dashed a11y/engine chips, and light + dark + narrow-bottom-sheet renders.
+     =========================================================================================== */
+
+  /* ---- mock scaffold (outside the themed surfaces) ---- */
+  body { margin: 0; background: #d8d4cf; }
+  .mock-label { font: 600 13px/1.4 system-ui; letter-spacing: .08em; text-transform: uppercase; color: #444; padding: 28px 24px 4px; }
+  .mock-note { font: 400 13px/1.6 system-ui; color: #5a564f; padding: 0 24px 14px; max-width: 90ch; }
+  .mock-note code { font-family: ui-monospace, monospace; background: rgba(0,0,0,.06); padding: 1px 4px; border-radius: 3px; }
+  .mock-note b { color: #3a362f; }
+  .screen { border: 1px solid #aaa; margin: 0 16px 48px; box-shadow: 0 2px 14px rgba(0,0,0,.08); overflow: hidden; border-radius: 2px; }
+  .screen.narrow { max-width: 392px; }
+  .pair { display: flex; flex-wrap: wrap; gap: 0; }
+  .pair > .screen { flex: 1 1 460px; margin: 0 16px 48px; }
+  /* the inline annotation chip: documents a11y or engine behavior provable only in the Svelte build.
+     Never a user-visible element; it stands in for the implementer's wiring note. */
+  .anno { font: 600 11px/1.45 system-ui; color: #6b4f9c; background: #ece4f8; border: 1px dashed #b9a6dd; border-radius: 5px; padding: 5px 10px; margin: 0 24px 12px; display: inline-block; max-width: 90ch; }
+  /* a second annotation tone for the engine safety-floor notes (the make-or-break wiring) */
+  .anno.engine { color: #2d6a4f; background: #def0e6; border-color: #93c9ac; }
+
+  /* ---- Warm Stone tokens, both theme roots, inlined VERBATIM from cairn-admin.css so the mockup
+       stands alone. The full --cairn-error-* danger family, --cairn-warning-ink, --color-positive-ink,
+       --cairn-code-chip, --color-error / --color-error-content are copied, not invented. Verified
+       present in BOTH roots of the shipped src/lib/components/cairn-admin.css. ---- */
+  [data-theme='cairn-admin'] {
+    --color-base-100: oklch(99% 0.004 75);
+    --color-base-200: oklch(96.5% 0.006 75);
+    --color-base-300: oklch(89% 0.011 75);
+    --color-base-content: oklch(26% 0.014 75);
+    --color-primary: oklch(52% 0.2 293);
+    --color-primary-content: oklch(98% 0.01 293);
+    --color-accent: oklch(54% 0.16 300);
+    --color-muted: oklch(48% 0.01 75);
+    --color-subtle: oklch(42% 0.01 75);
+    --color-positive-ink: oklch(48% 0.12 150);
+    --color-error: oklch(56% 0.2 25);
+    --color-error-content: oklch(98% 0.012 25);
+    --cairn-error-ink: oklch(50% 0.19 25);
+    --cairn-error-tint: oklch(96% 0.03 25);
+    --cairn-error-border: oklch(85% 0.06 25);
+    --cairn-code-chip: oklch(94.5% 0.008 75);
+    --cairn-warning-ink: oklch(50% 0.13 70);
+    --cairn-card-border: oklch(93% 0.008 75);
+    --cairn-shadow: 0 1px 2px oklch(28% 0.02 75 / 0.05), 0 8px 24px -6px oklch(28% 0.02 75 / 0.1);
+    --cairn-scrim: oklch(20% 0.01 75 / 0.4);
+  }
+  [data-theme='cairn-admin-dark'] {
+    --color-base-100: oklch(24% 0.01 75);
+    --color-base-200: oklch(15.5% 0.009 75);
+    --color-base-300: oklch(30% 0.014 75);
+    --color-base-content: oklch(93% 0.006 75);
+    --color-primary: oklch(68% 0.18 293);
+    --color-primary-content: oklch(20% 0.03 293);
+    --color-accent: oklch(70% 0.14 300);
+    --color-muted: oklch(72% 0.01 75);
+    --color-subtle: oklch(80% 0.008 75);
+    --color-positive-ink: oklch(78% 0.12 150);
+    --color-error: oklch(70% 0.18 25);
+    --color-error-content: oklch(20% 0.04 25);
+    --cairn-error-ink: oklch(78% 0.15 25);
+    --cairn-error-tint: oklch(28% 0.06 25);
+    --cairn-error-border: oklch(40% 0.09 25);
+    --cairn-code-chip: oklch(29.5% 0.012 75);
+    --cairn-warning-ink: oklch(80% 0.14 70);
+    --cairn-card-border: oklch(30% 0.014 75);
+    --cairn-shadow: 0 1px 2px oklch(0% 0 0 / 0.35), 0 8px 24px -6px oklch(0% 0 0 / 0.5);
+    --cairn-scrim: oklch(0% 0 0 / 0.55);
+  }
+  [data-theme] {
+    --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+    --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-editor: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+
+  /* ===== the office ground: a thin sidebar + topbar, the office context the Library renders in ===== */
+  .ground { position: relative; overflow: hidden; background: var(--color-base-200); color: var(--color-base-content); font-family: var(--font-body); -webkit-font-smoothing: antialiased; min-height: 560px; }
+  .eyebrow { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); }
+  .app { display: flex; min-height: 560px; }
+  .side { width: 14rem; flex: none; background: var(--color-base-100); border-right: 1px solid var(--cairn-card-border); padding: 14px 12px; }
+  .brand { display: flex; align-items: center; gap: 9px; padding: 2px 6px 18px; }
+  .brand .tile { width: 30px; height: 30px; border-radius: 11px; background: var(--color-primary); color: var(--color-primary-content); display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+  .brand .wm { font-family: var(--font-display); font-weight: 700; font-size: 1.18rem; letter-spacing: -.01em; }
+  .nav-grp { margin-top: 10px; }
+  .nav-grp .gl { padding: 6px 8px; }
+  .nav-item { display: flex; align-items: center; gap: 9px; padding: 6px 9px; border-radius: .55rem; font-size: .8125rem; font-weight: 500; color: var(--color-subtle); text-decoration: none; }
+  .nav-item.on { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); font-weight: 600; }
+  .nav-item svg { width: 16px; height: 16px; flex: none; }
+  .main { flex: 1 1 auto; min-width: 0; position: relative; }
+  .topbar { height: 64px; display: flex; align-items: center; padding: 0 18px; background: var(--color-base-100); border-bottom: 1px solid var(--cairn-card-border); }
+  .topbar .crumb { font-size: .875rem; color: var(--color-muted); }
+  .topbar .crumb b { color: var(--color-base-content); font-weight: 600; }
+  .grow { flex: 1 1 auto; }
+  .content { padding: 22px; }
+  .page-h { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+  .page-h h1 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; letter-spacing: -.02em; margin: 2px 0 4px; }
+  .page-h .count { font-size: .875rem; color: var(--color-muted); }
+  /* the page-head action cluster: Upload (primary) plus the quiet on-demand scan entry beside it */
+  .head-actions { display: inline-flex; align-items: center; gap: 9px; flex: none; }
+
+  .btn-primary { font: 600 .8125rem/1 var(--font-body); border-radius: .5rem; padding: 8px 13px; border: 1px solid transparent; background: var(--color-primary); color: var(--color-primary-content); cursor: pointer; box-shadow: 0 1px 2px color-mix(in oklab, var(--color-primary) 35%, transparent); display: inline-flex; align-items: center; gap: 6px; }
+  .btn-primary svg { width: 15px; height: 15px; }
+  /* the quiet bordered office button: the "Find orphaned files" on-demand scan entry sits here,
+     beside Upload. A calm office control, never the danger family (it opens a scan, not a purge). */
+  .btn-quiet { font: 500 .8125rem/1 var(--font-body); border-radius: .5rem; padding: 8px 12px; border: 1px solid var(--color-base-300); background: var(--color-base-100); color: var(--color-base-content); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-quiet svg { width: 15px; height: 15px; color: var(--color-muted); }
+  .btn-quiet:hover { border-color: color-mix(in oklab, var(--color-primary) 40%, var(--color-base-300)); }
+  .btn-quiet:focus-visible { outline: 2px solid color-mix(in oklab, var(--color-primary) 70%, transparent); outline-offset: 1px; }
+
+  /* ===== the toolbar row: search, the triage radiogroup (asset filters ONLY), the density toggle ===== */
+  .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .search { display: inline-flex; align-items: center; gap: 7px; min-width: 0; flex: 1 1 200px; max-width: 19rem; height: 32px; padding: 0 10px; border: 1px solid var(--color-base-300); border-radius: .55rem; background: var(--color-base-100); color: var(--color-muted); }
+  .search svg { width: 15px; height: 15px; flex: none; opacity: .6; }
+  .search input { border: 0; background: transparent; outline: none; font: 400 .8125rem/1 var(--font-body); color: var(--color-base-content); min-width: 0; flex: 1 1 auto; }
+  /* the triage segmented radiogroup: one bordered group, borderless segments, the active tints +
+     check glyph. REV.2: asset filters ONLY (All / Needs alt / No references found). Orphaned bytes
+     are NOT here; putting them here swapped the listbox identity (the critics' overload blocker). */
+  .triage { display: inline-flex; align-items: center; overflow: hidden; border: 1px solid var(--cairn-card-border); border-radius: .55rem; background: var(--color-base-100); }
+  .seg { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; font: 400 .8125rem/1 var(--font-body); color: var(--color-muted); background: transparent; border: 0; cursor: pointer; white-space: nowrap; }
+  .seg + .seg { border-left: 1px solid var(--cairn-card-border); }
+  .seg svg.ck { width: 12px; height: 12px; }
+  .seg .sct { font-variant-numeric: tabular-nums; }
+  .seg.on { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); font-weight: 500; }
+  .density { display: inline-flex; align-items: center; gap: 2px; border: 1px solid var(--cairn-card-border); border-radius: .55rem; background: var(--color-base-100); padding: 2px; }
+  .den-b { display: inline-flex; align-items: center; justify-content: center; height: 26px; width: 28px; border: 0; background: transparent; border-radius: .4rem; color: var(--color-muted); cursor: pointer; }
+  .den-b.on { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); }
+  .den-b svg { width: 15px; height: 15px; }
+
+  /* ===== the facet preamble: a calm dashed report-only aside above the "No references found" facet,
+       naming WHY these are candidates and WHAT cairn cannot see (the raw-HTML blind spot, at the
+       point of action). Never the danger family: selecting is not destroying. ===== */
+  .facet-note { display: flex; align-items: flex-start; gap: 9px; border: 1px dashed var(--cairn-card-border); border-radius: .7rem; background: var(--color-base-200); padding: 11px 13px; margin-bottom: 12px; }
+  .facet-note > svg { width: 16px; height: 16px; flex: none; margin-top: 1px; color: var(--color-muted); }
+  .facet-note .fn-t { font-size: .8125rem; line-height: 1.5; color: var(--color-base-content); }
+  .facet-note .fn-t b { font-weight: 600; }
+  .facet-note .fn-t .blind { display: block; margin-top: 3px; color: var(--color-muted); font-size: .75rem; }
+
+  /* ===== the contact-sheet grid: the shipped roving listbox, now aria-multiselectable. Each tile
+       carries a REAL native checkbox at top-left (focus/selection decoupled) plus the usage marker. ===== */
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .gtile { position: relative; border: 1px solid var(--cairn-card-border); border-radius: 1rem; overflow: hidden; background: var(--color-base-100); }
+  /* the selected tile: a 2px primary ring, plus a tinted cap */
+  .gtile.sel { box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-primary) 70%, transparent); }
+  .gtile.sel .cap { background: color-mix(in oklab, var(--color-primary) 6%, transparent); }
+  /* the active (roving-focus) tile, distinct from selected: a focus ring offset out */
+  .gtile.active { outline: 2px solid color-mix(in oklab, var(--color-primary) 70%, transparent); outline-offset: 2px; }
+  .gtile .thumb { aspect-ratio: 4/3; display: flex; align-items: center; justify-content: center; background: color-mix(in oklab, var(--color-base-200) 60%, var(--color-base-100)); }
+  .gtile .cap { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 7px 9px; border-top: 1px solid var(--cairn-card-border); }
+  .gtile .nm { font-size: .8125rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gtile .mk { display: inline-flex; align-items: center; gap: 3px; font-size: .625rem; font-weight: 600; flex: none; }
+  .gtile .mk.ok { color: var(--color-positive-ink); } .gtile .mk.miss { color: var(--cairn-warning-ink); }
+  .gtile .mk svg { width: 12px; height: 12px; }
+  /* the usage chip, top-right: a used count, or the renamed "No refs" warning-ink chip (was "Unused") */
+  .use-chip { position: absolute; right: 8px; top: 8px; display: inline-flex; align-items: center; gap: 3px; border: 1px solid var(--cairn-card-border); border-radius: 999px; background: color-mix(in oklab, var(--color-base-100) 90%, transparent); padding: 1px 8px; font-size: .625rem; font-weight: 600; }
+  .use-chip.used { color: var(--color-muted); }
+  .use-chip.norefs { color: var(--cairn-warning-ink); }
+  /* the select checkbox, top-left: a REAL native checkbox in a soft chip so it reads on any thumbnail */
+  .tile-pick { position: absolute; left: 8px; top: 8px; display: inline-flex; align-items: center; justify-content: center; height: 24px; width: 24px; border-radius: .45rem; background: color-mix(in oklab, var(--color-base-100) 88%, transparent); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+
+  /* the real native checkbox (DaisyUI v5 .checkbox.checkbox-sm stand-in), PRIMARY accent for selection
+     (the everyday non-destructive register; the destructive ink is reserved for confirm gates). */
+  .checkbox { appearance: none; -webkit-appearance: none; width: 16px; height: 16px; flex: none; margin: 0; border: 1.5px solid var(--color-base-300); border-radius: .3rem; background: var(--color-base-100); cursor: pointer; position: relative; display: inline-block; }
+  .checkbox:checked { background: var(--color-primary); border-color: var(--color-primary); }
+  .checkbox:checked::after { content: ""; position: absolute; left: 4.5px; top: 1px; width: 4px; height: 8px; border: solid var(--color-primary-content); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+  .checkbox:focus-visible { outline: 2px solid color-mix(in oklab, var(--color-primary) 75%, transparent); outline-offset: 2px; }
+  .checkbox:indeterminate { background: var(--color-primary); border-color: var(--color-primary); }
+  .checkbox:indeterminate::after { content: ""; position: absolute; left: 3px; top: 6px; width: 8px; height: 2px; border: 0; background: var(--color-primary-content); transform: none; }
+  /* a checkbox in the danger register (the orphaned-byte rows, the irreversible context) */
+  .checkbox.danger { border-color: var(--cairn-error-border); }
+  .checkbox.danger:checked, .checkbox.danger:indeterminate { background: var(--cairn-error-ink); border-color: var(--cairn-error-ink); }
+  .checkbox.danger:checked::after, .checkbox.danger:indeterminate::after { border-color: var(--color-base-100); background: var(--color-base-100); }
+
+  /* ===== the list density: the enriched sortable table, now with a leading select column ===== */
+  .tbl-wrap { border: 1px solid var(--cairn-card-border); border-radius: 1rem; overflow: hidden; background: var(--color-base-100); box-shadow: var(--cairn-shadow); }
+  table.tbl { width: 100%; border-collapse: collapse; font-size: .8125rem; }
+  .tbl thead th { text-align: left; padding: 10px 12px; font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); border-bottom: 1px solid var(--color-base-300); }
+  .tbl thead th.r { text-align: right; }
+  .tbl th.pick, .tbl td.pick { width: 38px; padding-left: 14px; padding-right: 0; }
+  .tbl tbody td { padding: 9px 12px; border-bottom: 1px solid color-mix(in oklab, var(--cairn-card-border) 70%, transparent); vertical-align: middle; }
+  .tbl tbody tr:last-child td { border-bottom: 0; }
+  .tbl tbody tr.sel { background: color-mix(in oklab, var(--color-primary) 6%, transparent); }
+  .tbl .asset-cell { display: flex; align-items: center; gap: 11px; }
+  .tbl .athumb { width: 56px; height: 40px; flex: none; border-radius: .5rem; border: 1px solid var(--cairn-card-border); overflow: hidden; display: flex; align-items: center; justify-content: center; background: color-mix(in oklab, var(--color-base-200) 60%, var(--color-base-100)); }
+  .tbl .aname { font-size: .875rem; font-weight: 600; }
+  .tbl .ameta { font-size: .75rem; color: var(--color-muted); font-family: var(--font-editor); margin-top: 1px; }
+  .tbl .stat { display: inline-flex; align-items: center; gap: 5px; font-size: .75rem; font-weight: 500; }
+  .tbl .stat.ok { color: var(--color-positive-ink); } .tbl .stat.miss { color: var(--cairn-warning-ink); }
+  .tbl .stat svg { width: 13px; height: 13px; }
+  .tbl .norefs { color: var(--cairn-warning-ink); font-weight: 500; }
+  .tbl .added { text-align: right; color: var(--color-muted); font-variant-numeric: tabular-nums; }
+  .tbl .sortbtn { display: inline-flex; align-items: center; gap: 5px; background: transparent; border: 0; cursor: pointer; font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit; }
+  .tbl .sortbtn svg { width: 12px; height: 12px; }
+
+  /* ===== THE STICKY SELECTION ACTION BAR (REV.2: position: sticky, the critics' positioning fix).
+       Appears once a selection exists; it rides the bottom of the scrolling content region and never
+       floats off it. It states the count, the EXPLICIT scope, a Clear, and the destructive action.
+       The action REGISTER is always the reversible one here: a git-tracked removal of manifest rows,
+       so the danger-OUTLINE control and a PLAIN confirm. The irreversible byte purge lives on a
+       different surface and is never reachable from this bar. ===== */
+  .selbar { position: sticky; bottom: 14px; margin: 16px auto 0; width: min(640px, 100%); display: flex; align-items: center; gap: 14px; padding: 11px 14px 11px 16px; border: 1px solid var(--cairn-card-border); border-radius: .9rem; background: var(--color-base-100); box-shadow: var(--cairn-shadow); }
+  .selbar .scount { font-size: .9375rem; font-weight: 700; font-variant-numeric: tabular-nums; flex: none; }
+  .selbar .sscope { font-size: .75rem; color: var(--color-muted); line-height: 1.4; min-width: 0; }
+  .selbar .sscope b { color: var(--color-base-content); font-weight: 600; }
+  .selbar .sspring { flex: 1 1 auto; }
+  .selbar .selectall { font: 500 .8125rem/1 var(--font-body); color: var(--color-primary); background: transparent; border: 0; cursor: pointer; padding: 6px 4px; white-space: nowrap; }
+  .selbar .selectall:hover { text-decoration: underline; text-underline-offset: 2px; }
+  .selbar .clearbtn { font: 500 .8125rem/1 var(--font-body); color: var(--color-subtle); background: transparent; border: 1px solid var(--color-base-300); border-radius: .5rem; padding: 8px 11px; cursor: pointer; white-space: nowrap; }
+  /* the reversible bulk-delete trigger: the danger-OUTLINE control (matches the slide-over Delete) */
+  .selbar .del-rev { display: inline-flex; align-items: center; gap: 6px; font: 600 .8125rem/1 var(--font-body); border-radius: .5rem; padding: 9px 14px; border: 1px solid var(--cairn-error-border); background: var(--color-base-100); color: var(--cairn-error-ink); cursor: pointer; white-space: nowrap; }
+  .selbar .del-rev svg { width: 15px; height: 15px; }
+
+  /* ============================================================================================
+     THE SHARED CONFIRM MODAL SHELL (the Pass B rev.2 grammar verbatim). A native
+     <dialog class="modal"> opened with showModal(): native focus trap + Escape. The modal-box is
+     ~38rem, single column, max-height min(content, 85vh), and IS the scroll container: its head and
+     footer hold, the body scrolls. Below the narrow breakpoint it becomes a full-width bottom sheet.
+     ============================================================================================ */
+  .scrim { position: absolute; inset: 0; background: var(--cairn-scrim); display: flex; align-items: flex-start; justify-content: center; padding: 36px 18px; overflow-y: auto; }
+  .modal-box { width: 38rem; max-width: 100%; max-height: min(100%, calc(100% - 36px)); display: flex; flex-direction: column; background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: 1rem; box-shadow: var(--cairn-shadow); font-family: var(--font-body); overflow: hidden; }
+  .modal-box.wide { width: 42rem; }
+
+  .mb-head { display: flex; align-items: flex-start; gap: 13px; padding: 18px 20px 14px; }
+  .mb-badge { width: 38px; height: 38px; flex: none; border-radius: .7rem; display: inline-flex; align-items: center; justify-content: center; }
+  .mb-badge svg { width: 20px; height: 20px; }
+  .mb-badge.primary { background: color-mix(in oklab, var(--color-primary) 12%, transparent); color: var(--color-primary); }
+  .mb-badge.danger { background: var(--cairn-error-tint); color: var(--cairn-error-ink); }
+  .mb-badge.neutral { background: color-mix(in oklab, var(--color-base-content) 7%, transparent); color: var(--color-muted); }
+  .mb-htext { flex: 1 1 auto; min-width: 0; }
+  .mb-title { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; letter-spacing: -.02em; line-height: 1.15; }
+  .mb-title b { font-weight: 700; }
+  .mb-sub { margin-top: 5px; font-size: .8125rem; line-height: 1.5; color: var(--color-muted); }
+  .mb-sub b { color: var(--color-base-content); font-weight: 600; }
+  .mb-sub code { font-family: var(--font-editor); }
+  .mb-body { padding: 0 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+  .panel-x { display: inline-flex; align-items: center; justify-content: center; height: 26px; width: 26px; border: 0; background: transparent; border-radius: .45rem; color: var(--color-subtle); cursor: pointer; flex: none; }
+  .panel-x:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .panel-x:focus-visible { outline: 2px solid color-mix(in oklab, var(--color-primary) 70%, transparent); outline-offset: 1px; }
+
+  /* the scope strip inside a bulk confirm: the explicit "what is being acted on" fact, plus the
+     safety-floor disclosure that each item is re-checked at execution (NOT a review-time pass tick) */
+  .scope-strip { display: flex; flex-direction: column; gap: 9px; padding: 13px; border: 1px solid var(--cairn-card-border); border-radius: .8rem; background: var(--color-base-200); }
+  .scope-line { display: flex; align-items: flex-start; gap: 9px; font-size: .8125rem; line-height: 1.5; }
+  .scope-line svg { width: 15px; height: 15px; flex: none; margin-top: 1px; }
+  .scope-line.count svg { color: var(--color-base-content); }
+  .scope-line.count b { font-weight: 600; }
+  .scope-line.floor { padding-top: 9px; border-top: 1px dashed var(--cairn-card-border); color: var(--color-muted); font-size: .75rem; }
+  .scope-line.floor svg { color: var(--color-muted); }
+
+  /* a section header inside the modal: an eyebrow with a trailing count */
+  .sec-head { display: flex; align-items: baseline; gap: 8px; }
+  .sec-head .ct { font-size: .6875rem; font-weight: 600; color: var(--color-muted); font-variant-numeric: tabular-nums; }
+
+  /* the per-item well: the items the bulk op will act on, the legible fact per row (name + slug +
+     where-used), scroll-capped, echoing the safe-delete breaking-list pattern */
+  .item-well { border: 1px solid var(--cairn-card-border); border-radius: .8rem; overflow: hidden; }
+  .item-scroll { max-height: 12.5rem; overflow-y: auto; }
+  .item-list { list-style: none; margin: 0; padding: 0; }
+  .item-row { display: flex; align-items: center; gap: 11px; padding: 9px 12px; }
+  .item-row + .item-row { border-top: 1px solid color-mix(in oklab, var(--cairn-card-border) 70%, transparent); }
+  .item-thumb { width: 38px; height: 28px; flex: none; border-radius: .35rem; border: 1px solid var(--cairn-card-border); }
+  .item-main { flex: 1 1 auto; min-width: 0; }
+  .item-name { font-size: .8125rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .item-sub { font-size: .6875rem; color: var(--color-muted); margin-top: 1px; font-family: var(--font-editor); }
+  .item-where { font-size: .6875rem; flex: none; }
+  .item-where.clean { color: var(--color-muted); }
+  .item-key { font-family: var(--font-editor); font-size: .75rem; color: var(--color-base-content); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1 1 auto; min-width: 0; }
+  .show-all { display: block; width: 100%; box-sizing: border-box; text-align: center; background: transparent; border: 0; border-top: 1px solid var(--cairn-card-border); padding: 9px; font: 500 .75rem/1 var(--font-body); color: var(--color-primary); cursor: pointer; }
+  .show-all:hover { text-decoration: underline; text-underline-offset: 2px; }
+  .show-all:focus-visible { outline: 2px solid color-mix(in oklab, var(--color-primary) 70%, transparent); outline-offset: -2px; }
+
+  /* the skip-and-report callout: items the bulk delete will SKIP because they are still referenced.
+     Drawn in the warning register on plain base-100 (a skip is not a failure), glyph-plus-label. */
+  .skip-call { border: 1px solid var(--cairn-card-border); border-radius: .8rem; overflow: hidden; }
+  .skip-head { display: flex; align-items: flex-start; gap: 9px; padding: 11px 12px; background: color-mix(in oklab, var(--cairn-warning-ink) 8%, var(--color-base-100)); }
+  .skip-head svg { width: 16px; height: 16px; flex: none; margin-top: 1px; color: var(--cairn-warning-ink); }
+  .skip-head .sh-t { font-size: .8125rem; line-height: 1.5; }
+  .skip-head .sh-t b { font-weight: 600; color: var(--cairn-warning-ink); }
+  .skip-head .sh-t .sh-d { display: block; color: var(--color-muted); margin-top: 2px; font-size: .75rem; }
+  .skip-list { list-style: none; margin: 0; padding: 0; max-height: 9rem; overflow-y: auto; }
+  .skip-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; }
+  .skip-item + .skip-item { border-top: 1px solid color-mix(in oklab, var(--cairn-card-border) 70%, transparent); }
+  .skip-item .si-thumb { width: 30px; height: 22px; flex: none; border-radius: .3rem; border: 1px solid var(--cairn-card-border); }
+  .skip-item .si-name { font-size: .8125rem; font-weight: 600; flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .skip-item .si-where { font-size: .6875rem; color: var(--cairn-warning-ink); font-weight: 600; flex: none; }
+
+  /* the recoverability reassurance (the git-as-trash line, reused from Pass B's safe-delete) */
+  .reassure { display: flex; align-items: flex-start; gap: 9px; border: 1px solid var(--cairn-card-border); border-radius: .7rem; background: var(--color-base-200); padding: 10px 12px; font-size: .75rem; line-height: 1.5; }
+  .reassure svg { width: 15px; height: 15px; flex: none; margin-top: 1px; color: var(--color-positive-ink); }
+  .reassure b { color: var(--color-base-content); font-weight: 600; }
+
+  /* the IRREVERSIBLE callout: distinct from the reversible reassurance. Danger family, a no-undo
+     glyph, the verbal distinction ("This cannot be undone. There is no git history for raw bytes."). */
+  .irrev-call { display: flex; align-items: flex-start; gap: 9px; border: 1px solid var(--cairn-error-border); border-radius: .7rem; background: var(--cairn-error-tint); padding: 11px 12px; font-size: .8125rem; line-height: 1.5; color: var(--color-base-content); }
+  .irrev-call svg { width: 16px; height: 16px; flex: none; margin-top: 1px; color: var(--cairn-error-ink); }
+  .irrev-call b { color: var(--cairn-error-ink); font-weight: 600; }
+
+  /* the typed-confirm block (the safe-delete gate echoed, --cairn-error-* family). RESERVED for the
+     IRREVERSIBLE byte purge ONLY. Aligned to the shipped safe-delete idiom: the typed value is tied
+     to the actual set (the file count), not a reflexive word. */
+  .confirm-block { display: flex; flex-direction: column; gap: 7px; padding: 13px; border: 1px solid var(--cairn-error-border); border-radius: .8rem; background: var(--cairn-error-tint); }
+  .confirm-block .cl { font-size: .8125rem; line-height: 1.45; }
+  .confirm-block .cl code { font-family: var(--font-editor); font-weight: 600; background: color-mix(in oklab, var(--cairn-error-ink) 12%, transparent); color: var(--cairn-error-ink); padding: 1px 6px; border-radius: 4px; }
+  .confirm-input { width: 100%; box-sizing: border-box; font: 500 .8125rem/1.4 var(--font-editor); color: var(--color-base-content); background: var(--color-base-100); border: 1px solid var(--cairn-error-border); border-radius: .55rem; padding: 8px 11px; }
+  .confirm-input::placeholder { color: var(--color-muted); font-family: var(--font-body); font-weight: 400; }
+  .confirm-input:focus-visible { outline: none; box-shadow: 0 0 0 1px var(--cairn-error-ink); border-color: var(--cairn-error-ink); }
+
+  /* the determinate progress for a long bulk op (the announced-progress surface). THIS is where the
+     per-item recheck happens, NOT at review time. */
+  .progress-block { display: flex; flex-direction: column; gap: 11px; align-items: center; padding: 22px 16px; }
+  .progress-ring { color: var(--color-primary); }
+  .progress-ring svg { width: 30px; height: 30px; animation: spin 1.1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .progress-text { font-size: .875rem; font-weight: 500; }
+  .progress-sub { font-size: .75rem; color: var(--color-muted); }
+  .bar { width: 100%; max-width: 22rem; height: 7px; border-radius: 999px; background: var(--color-base-300); overflow: hidden; }
+  .bar > span { display: block; height: 100%; border-radius: 999px; background: var(--color-primary); }
+
+  /* the itemized summary (the 207-Multi-Status shape): succeeded / skipped-with-reason / failed-with-reason */
+  .summary { display: flex; flex-direction: column; gap: 12px; }
+  .sum-stat-row { display: flex; gap: 10px; }
+  .sum-stat { flex: 1 1 0; display: flex; flex-direction: column; gap: 3px; padding: 11px 12px; border: 1px solid var(--cairn-card-border); border-radius: .7rem; background: var(--color-base-100); }
+  .sum-stat .n { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+  .sum-stat .k { font-size: .6875rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--color-muted); }
+  .sum-stat.ok .n { color: var(--color-positive-ink); }
+  .sum-stat.skip .n { color: var(--cairn-warning-ink); }
+  .sum-stat.fail .n { color: var(--cairn-error-ink); }
+  .sum-group { border: 1px solid var(--cairn-card-border); border-radius: .8rem; overflow: hidden; }
+  .sum-grp-head { display: flex; align-items: center; gap: 8px; padding: 9px 12px; font-size: .75rem; font-weight: 600; }
+  .sum-grp-head svg { width: 15px; height: 15px; flex: none; }
+  .sum-grp-head.skip { color: var(--cairn-warning-ink); background: color-mix(in oklab, var(--cairn-warning-ink) 8%, var(--color-base-100)); }
+  .sum-grp-head.fail { color: var(--cairn-error-ink); background: var(--cairn-error-tint); }
+  .sum-rows { list-style: none; margin: 0; padding: 0; max-height: 9rem; overflow-y: auto; }
+  .sum-rows li { display: flex; align-items: center; gap: 9px; padding: 8px 12px; }
+  .sum-rows li + li { border-top: 1px solid color-mix(in oklab, var(--cairn-card-border) 70%, transparent); }
+  .sum-rows .sr-name { font-size: .8125rem; font-weight: 600; flex: none; max-width: 42%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sum-rows .sr-reason { font-size: .75rem; color: var(--color-muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-left: auto; text-align: right; }
+  .sum-rows .sr-reason a { color: var(--color-primary); text-decoration: underline; text-underline-offset: 2px; }
+
+  /* ============================================================================================
+     THE ORPHAN SCAN SURFACE (a MODAL over the existing media view, opened on demand from the quiet
+     "Find orphaned files" office button). NOT a standing tab or route. It runs an R2-list +
+     reconcile scan with its own loading state and a detection-time fail-closed surface. Its result
+     is the two-section dry-run: an "Orphaned files" byte section (byte rows, checkerboard mats,
+     indeterminate select-all) and a read-only "Broken references" data-integrity section.
+     ============================================================================================ */
+
+  /* the loading state inside the scan modal */
+  .scan-loading { display: flex; flex-direction: column; gap: 11px; align-items: center; padding: 30px 16px; text-align: center; }
+  .scan-loading .sl-ring { color: var(--color-primary); }
+  .scan-loading .sl-ring svg { width: 30px; height: 30px; animation: spin 1.1s linear infinite; }
+  .scan-loading .sl-t { font-size: .9375rem; font-weight: 600; }
+  .scan-loading .sl-s { font-size: .8125rem; color: var(--color-muted); line-height: 1.5; max-width: 42ch; }
+
+  /* a framed scan section: a head (glyph, name, one-line description, count) then its body */
+  .scan-sec { border: 1px solid var(--cairn-card-border); border-radius: .9rem; overflow: hidden; background: var(--color-base-100); }
+  .scan-sec-head { display: flex; align-items: flex-start; gap: 11px; padding: 13px 14px; }
+  .scan-sec-badge { width: 32px; height: 32px; flex: none; border-radius: .55rem; display: inline-flex; align-items: center; justify-content: center; }
+  .scan-sec-badge svg { width: 17px; height: 17px; }
+  /* the orphaned-bytes section: the irreversible register (a solid-danger purge follows) */
+  .scan-sec.bytes .scan-sec-badge { background: var(--cairn-error-tint); color: var(--cairn-error-ink); }
+  /* the broken-references section: a neutral data-integrity register (it is a readout, not a delete) */
+  .scan-sec.broken .scan-sec-badge { background: color-mix(in oklab, var(--color-base-content) 7%, transparent); color: var(--color-muted); }
+  .scan-sec-text { flex: 1 1 auto; min-width: 0; }
+  .scan-sec-name { font-family: var(--font-display); font-size: 1rem; font-weight: 700; letter-spacing: -.01em; }
+  .scan-sec-desc { margin-top: 2px; font-size: .75rem; color: var(--color-muted); line-height: 1.45; }
+  .scan-sec-desc code { font-family: var(--font-editor); }
+  .scan-sec-count { flex: none; text-align: right; }
+  .scan-sec-count .n { font-size: 1.25rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
+  .scan-sec.bytes .scan-sec-count .n { color: var(--cairn-error-ink); }
+  .scan-sec-count .u { font-size: .625rem; color: var(--color-muted); display: block; margin-top: 2px; }
+  .scan-sec-body { padding: 0 14px 14px; display: flex; flex-direction: column; gap: 12px; }
+
+  /* the byte-row well: NOT manifest assets, so a distinct row grammar. No display name; only the R2
+     key, the bytes, a last-seen, a checkerboard mat. A real native checkbox each. An indeterminate
+     header checkbox is the section-level select-all. */
+  .byte-well { border: 1px solid var(--cairn-error-border); border-radius: .8rem; overflow: hidden; }
+  .byte-head { display: flex; align-items: center; gap: 11px; padding: 9px 12px; background: var(--cairn-error-tint); border-bottom: 1px solid var(--cairn-error-border); }
+  .byte-head .bh-t { flex: 1 1 auto; min-width: 0; font-size: .6875rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--cairn-error-ink); }
+  .byte-head .bh-c { flex: none; font-size: .6875rem; color: var(--color-muted); font-variant-numeric: tabular-nums; }
+  .byte-scroll { max-height: 13rem; overflow-y: auto; }
+  .byte-list { list-style: none; margin: 0; padding: 0; }
+  .byte-row { display: flex; align-items: center; gap: 11px; padding: 9px 12px; }
+  .byte-row + .byte-row { border-top: 1px solid color-mix(in oklab, var(--cairn-card-border) 70%, transparent); }
+  .byte-row.sel { background: var(--cairn-error-tint); }
+  /* the checkerboard mat: stands for record-not-picture, so an orphaned byte never borrows an image */
+  .byte-mat { width: 40px; height: 30px; flex: none; border-radius: .35rem; border: 1px solid var(--cairn-card-border); background: var(--color-base-200); position: relative; overflow: hidden; }
+  .byte-mat::after { content: ""; position: absolute; inset: 0; background-image: linear-gradient(45deg, color-mix(in oklab, var(--color-base-content) 7%, transparent) 25%, transparent 25%, transparent 75%, color-mix(in oklab, var(--color-base-content) 7%, transparent) 75%), linear-gradient(45deg, color-mix(in oklab, var(--color-base-content) 7%, transparent) 25%, transparent 25%, transparent 75%, color-mix(in oklab, var(--color-base-content) 7%, transparent) 75%); background-size: 10px 10px; background-position: 0 0, 5px 5px; opacity: .7; }
+  .byte-main { flex: 1 1 auto; min-width: 0; }
+  .byte-key { font-family: var(--font-editor); font-size: .8125rem; color: var(--color-base-content); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .byte-sub { font-size: .6875rem; color: var(--color-muted); margin-top: 2px; }
+  .byte-bytes { font-size: .8125rem; color: var(--color-muted); font-variant-numeric: tabular-nums; flex: none; }
+
+  /* the broken-references readout rows: a manifest row whose bytes are gone. Read-only, no checkbox,
+     no delete. The thumbnail is a "missing" placeholder, the where-used and the integrity advice. */
+  .broken-well { border: 1px solid var(--cairn-card-border); border-radius: .8rem; overflow: hidden; }
+  .broken-row { display: flex; align-items: center; gap: 11px; padding: 9px 12px; }
+  .broken-row + .broken-row { border-top: 1px solid color-mix(in oklab, var(--cairn-card-border) 70%, transparent); }
+  .broken-thumb { width: 38px; height: 28px; flex: none; border-radius: .35rem; border: 1px dashed var(--cairn-error-border); background: color-mix(in oklab, var(--cairn-error-ink) 6%, var(--color-base-100)); display: inline-flex; align-items: center; justify-content: center; color: var(--cairn-error-ink); }
+  .broken-thumb svg { width: 14px; height: 14px; }
+  .broken-main { flex: 1 1 auto; min-width: 0; }
+  .broken-name { font-size: .8125rem; font-weight: 600; }
+  .broken-sub { font-size: .6875rem; color: var(--color-muted); margin-top: 1px; font-family: var(--font-editor); }
+  .broken-where { font-size: .6875rem; color: var(--cairn-error-ink); font-weight: 600; flex: none; }
+
+  /* the per-section action row inside the scan modal: a selection note + the irreversible purge.
+     The purge button is the SOLID danger fill (NOT a warning-ink fill: warning-ink is text only). */
+  .sec-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .sec-actions .sa-spring { flex: 1 1 auto; }
+  .sa-selnote { font-size: .75rem; color: var(--color-muted); }
+  .sa-selnote .clr { color: var(--color-primary); background: transparent; border: 0; cursor: pointer; font: inherit; padding: 0 0 0 4px; text-decoration: underline; text-underline-offset: 2px; }
+
+  /* the empty state for a scan section (nothing found) */
+  .sec-clean { display: flex; align-items: center; gap: 9px; padding: 13px 14px; font-size: .8125rem; color: var(--color-muted); }
+  .sec-clean svg { width: 16px; height: 16px; flex: none; color: var(--color-positive-ink); }
+
+  /* ===== the modal footer: a left-aligned commit-target note, then Cancel + the confirm action ===== */
+  .mb-foot { display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-top: 1px solid var(--cairn-card-border); }
+  .foot-note { flex: 1 1 auto; min-width: 0; font-size: .6875rem; color: var(--color-muted); display: flex; align-items: center; gap: 6px; line-height: 1.4; }
+  .foot-note svg { width: 13px; height: 13px; flex: none; }
+  .foot-note code { font-family: var(--font-editor); color: var(--color-base-content); }
+  .btn-ghost { font: 500 .8125rem/1 var(--font-body); border-radius: .55rem; padding: 9px 14px; border: 1px solid var(--color-base-300); background: transparent; color: var(--color-subtle); cursor: pointer; }
+  .btn-ghost:focus-visible { outline: 2px solid color-mix(in oklab, var(--color-primary) 70%, transparent); outline-offset: 2px; }
+  .btn-go { font: 600 .8125rem/1 var(--font-body); border-radius: .55rem; padding: 10px 16px; border: 1px solid transparent; background: var(--color-primary); color: var(--color-primary-content); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px color-mix(in oklab, var(--color-primary) 35%, transparent); }
+  .btn-go svg { width: 15px; height: 15px; }
+  .btn-go:focus-visible { outline: 2px solid color-mix(in oklab, var(--color-primary) 70%, transparent); outline-offset: 2px; }
+  /* the SOLID danger confirm (matches the shipped safe-delete .btn-error, the --color-error fill).
+     The ONE fill the destructive register owns; reserved for the irreversible byte purge. */
+  .btn-danger { font: 600 .8125rem/1 var(--font-body); border-radius: .55rem; padding: 10px 16px; border: 1px solid transparent; background: var(--color-error); color: var(--color-error-content); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-danger svg { width: 15px; height: 15px; }
+  .btn-danger:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-danger:focus-visible { outline: 2px solid color-mix(in oklab, var(--color-error) 70%, transparent); outline-offset: 2px; }
+  /* the reversible-removal confirm: the danger-OUTLINE control, distinct from the solid irreversible fill */
+  .btn-danger-out { font: 600 .8125rem/1 var(--font-body); border-radius: .55rem; padding: 10px 16px; border: 1px solid var(--cairn-error-border); background: var(--color-base-100); color: var(--cairn-error-ink); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-danger-out svg { width: 15px; height: 15px; }
+  .btn-danger-out:focus-visible { outline: 2px solid color-mix(in oklab, var(--cairn-error-ink) 70%, transparent); outline-offset: 2px; }
+
+  /* the fail-closed block: a read could not be verified, so the op holds (reused from Pass B) */
+  .blocked { display: flex; flex-direction: column; gap: 11px; padding: 15px; border: 1px solid var(--cairn-error-border); border-radius: .8rem; background: var(--cairn-error-tint); }
+  .blocked-head { display: flex; align-items: center; gap: 9px; font-weight: 600; font-size: .875rem; color: var(--cairn-error-ink); }
+  .blocked-head svg { width: 17px; height: 17px; flex: none; }
+  .blocked-body { font-size: .8125rem; line-height: 1.55; color: var(--color-base-content); }
+  .blocked-list { list-style: none; margin: 6px 0 0; padding: 0; font-size: .75rem; color: var(--color-muted); line-height: 1.6; display: flex; flex-direction: column; gap: 3px; }
+  .blocked-list li { display: flex; align-items: center; gap: 7px; }
+  .blocked-list li svg { width: 13px; height: 13px; flex: none; }
+  .blocked-list li.read svg { color: var(--color-positive-ink); }
+  .blocked-list li.unread svg { color: var(--cairn-error-ink); }
+  .blocked-list code { font-family: var(--font-editor); color: var(--cairn-error-ink); }
+
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+  /* photo stand-ins (no bundled bytes): warm dawn-light gradients in the warm hue family */
+  .ph-a { background: linear-gradient(170deg, oklch(82% 0.06 80) 0%, oklch(74% 0.08 60) 55%, oklch(64% 0.09 45) 100%); }
+  .ph-b { background: linear-gradient(150deg, oklch(52% 0.06 60) 0%, oklch(70% 0.09 50) 60%, oklch(85% 0.08 80) 100%); }
+  .ph-c { background: linear-gradient(200deg, oklch(88% 0.05 85) 0%, oklch(72% 0.07 55) 100%); }
+  .ph-d { background: linear-gradient(160deg, oklch(40% 0.05 60) 0%, oklch(60% 0.1 45) 55%, oklch(86% 0.08 85) 100%); }
+  .ph-e { background: linear-gradient(155deg, oklch(78% 0.07 70) 0%, oklch(66% 0.1 48) 100%); }
+  .ph-f { background: linear-gradient(185deg, oklch(58% 0.07 55) 0%, oklch(80% 0.07 78) 100%); }
+  .ph-g { background: linear-gradient(140deg, oklch(70% 0.09 52) 0%, oklch(48% 0.07 60) 100%); }
+  .ph-h { background: linear-gradient(175deg, oklch(84% 0.06 82) 0%, oklch(62% 0.1 46) 100%); }
+
+  @media (max-width: 540px) {
+    /* the dialog-sizing rule's small-viewport arm: the modal becomes a full-width bottom sheet */
+    .scrim { padding: 0; align-items: flex-end; }
+    .modal-box { width: 100%; max-height: 92%; border-radius: 1rem 1rem 0 0; }
+  }
+</style>
+</head>
+<body>
+
+<p class="mock-label">Media Pass C &mdash; rev.2 consolidated: the destructive cluster</p>
+<p class="mock-note">
+  The approved design target. The base is the in-library direction: the destructive cluster extends the
+  shipped Media Library at <code>/admin/media</code> in place, with no new route and no tab. Three
+  populations are kept distinct (the critics' top finding). <b>Unreferenced assets</b> (the renamed
+  <b>No references found</b> triage facet) are reversible git deletes, handled by multi-select bulk
+  delete in the Library. <b>Orphaned bytes</b> (stored files with no library record) are an irreversible
+  purge, handled by a separate on-demand scan opened from a quiet <b>Find orphaned files</b> button, never
+  the triage. <b>Broken references</b> (a record whose bytes are gone) are a read-only data-integrity
+  readout in that same scan. The reversible and irreversible paths are never reachable from one button or
+  one modal. The safety floor: one shared strict cross-branch index built per batch (fail closed),
+  rechecked per item at execution, never the displayed count. cairn is not WYSIWYG: every before/after is
+  a structured fact. Read the full decisions in the source comment at the top of this file.
+</p>
+
+<!-- =================================================================================================
+     1. THE LIBRARY AT REST, MULTI-SELECTABLE, NOTHING SELECTED (light) — the renamed facet, the
+        new scan-entry button
+     ================================================================================================= -->
+<p class="mock-label">1 &middot; Light: the Library, multi-selectable, nothing selected (the renamed facet, the scan entry)</p>
+<p class="mock-note">
+  The shipped grid, now multi-selectable. Each tile carries a real native checkbox at top-left, decoupled
+  from the roving focus: arrows move focus, Space toggles selection. The triage radiogroup stays
+  <b>asset filters only</b>, three peers: the shipped All / Needs alt, then the renamed
+  <b>No references found</b> (was "Unused"). Orphaned bytes are not a triage facet; they live behind the
+  quiet <b>Find orphaned files</b> button beside Upload, because they are not library assets and detecting
+  them is a heavier scan. The top-right usage chip is renamed too: "Unused" becomes <b>No refs</b>. With
+  nothing selected there is no action bar; the surface reads as it does today.
+</p>
+<span class="anno">grid is role="listbox" aria-multiselectable="true" &middot; each tile role="option" with a REAL native checkbox (not aria-selected alone) &middot; roving tabindex: one tabstop, Arrows move the active tile, Space toggles selection (focus/selection DECOUPLED), Shift+Arrow extends a range, Ctrl/Cmd+A selects all in view, Esc clears</span>
+<span class="anno engine">SAFETY FLOOR: selection is held as a Set of content hashes over the NON-STRICT display index (degrade-and-skip), so it is SELECTION-ONLY, never the gate</span>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="ground">
+    <div class="app">
+      <aside class="side">
+        <div class="brand"><span class="tile"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 8.5 8h7L12 2Zm-4.2 7L3 17h8.2L7.8 9Zm8.4 0-3.4 8H21l-4.8-8ZM4.3 18l-1 3h17.4l-1-3H4.3Z"/></svg></span><span class="wm">cairn</span></div>
+        <div class="nav-grp">
+          <div class="gl eyebrow">Content</div>
+          <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>Posts</a>
+          <a class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>Pages</a>
+          <a class="nav-item on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>Media</a>
+        </div>
+      </aside>
+      <div class="main">
+        <div class="topbar"><span class="crumb">Media library</span><span class="grow"></span></div>
+        <div class="content">
+          <div class="page-h">
+            <div><div class="eyebrow">Media</div><h1>Media library</h1><span class="count">18 images, 11 used on the site <span aria-hidden="true">&middot;</span> 14.2 MB stored</span></div>
+            <div class="head-actions">
+              <button class="btn-quiet" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>Find orphaned files</button>
+              <button class="btn-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>Upload</button>
+            </div>
+          </div>
+
+          <!-- the toolbar: search, the THREE-segment asset-only triage, the density toggle -->
+          <div class="toolbar">
+            <span class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input type="search" placeholder="Search name or alt" aria-label="Search the media library" /></span>
+            <div class="triage" role="radiogroup" aria-label="Filter assets">
+              <button class="seg on" role="radio" aria-checked="true" tabindex="0"><svg class="ck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>All<span class="sct">18</span></button>
+              <button class="seg" role="radio" aria-checked="false" tabindex="-1">Needs alt<span class="sct">4</span></button>
+              <button class="seg" role="radio" aria-checked="false" tabindex="-1">No references found<span class="sct">5</span></button>
+            </div>
+            <span class="grow"></span>
+            <div class="density" role="group" aria-label="Layout density">
+              <button class="den-b on" aria-label="Grid view" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
+              <button class="den-b" aria-label="List view" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
+            </div>
+          </div>
+
+          <ul class="grid" role="listbox" aria-multiselectable="true" aria-label="Media library" style="list-style:none; margin:0; padding:0;">
+            <li class="gtile active" role="option" aria-selected="false" tabindex="0">
+              <span class="tile-pick"><input type="checkbox" class="checkbox" aria-label="Select first-light" /></span>
+              <span class="use-chip used" aria-hidden="true">used 3</span>
+              <span class="thumb ph-a"></span>
+              <span class="cap"><span class="nm">first-light</span><span class="mk ok" role="img" aria-label="Described"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></span>
+            </li>
+            <li class="gtile" role="option" aria-selected="false" tabindex="-1">
+              <span class="tile-pick"><input type="checkbox" class="checkbox" aria-label="Select valley-ridge" /></span>
+              <span class="use-chip used" aria-hidden="true">used 1</span>
+              <span class="thumb ph-b"></span>
+              <span class="cap"><span class="nm">valley-ridge</span><span class="mk miss" role="img" aria-label="Needs alt text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>alt</span></span>
+            </li>
+            <li class="gtile" role="option" aria-selected="false" tabindex="-1">
+              <span class="tile-pick"><input type="checkbox" class="checkbox" aria-label="Select old-banner" /></span>
+              <span class="use-chip norefs" aria-hidden="true">No refs</span>
+              <span class="thumb ph-c"></span>
+              <span class="cap"><span class="nm">old-banner</span><span class="mk ok" role="img" aria-label="Described"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></span>
+            </li>
+            <li class="gtile" role="option" aria-selected="false" tabindex="-1">
+              <span class="tile-pick"><input type="checkbox" class="checkbox" aria-label="Select ridgeline-dusk" /></span>
+              <span class="use-chip used" aria-hidden="true">used 2</span>
+              <span class="thumb ph-d"></span>
+              <span class="cap"><span class="nm">ridgeline-dusk</span><span class="mk ok" role="img" aria-label="Described"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- =================================================================================================
+     2. THE STICKY SELECTION BAR: three tiles selected across mixed usage (light)
+     ================================================================================================= -->
+<p class="mock-label">2 &middot; Light: three selected &mdash; the sticky action bar with explicit scope</p>
+<p class="mock-note">
+  Once a selection exists, the sticky bar appears, riding the bottom of the scrolling content
+  (<b>position: sticky</b>, the critics' fix for the base's <code>position: absolute</code>, which
+  detached from scroll). It states the count, the explicit scope (<b>3 selected in this view</b>), a
+  Clear, and the destructive action. The scope distinguishes the N in this view from all matching the
+  filter: <b>Select all 18</b> expands to the filtered set, never silently to everything. The selection
+  spans mixed usage on purpose: two with no references and one still used, so the confirm has to show the
+  skip-and-report path. The action reads <b>Delete 3</b> in the danger-outline, the reversible register
+  (these are manifest rows removed by a git commit). Selected tiles carry the 2px primary ring; the
+  still-focused tile keeps its own focus outline, so focus and selection stay visibly distinct.
+</p>
+<span class="anno">the bar is role="region" aria-label="Selection actions" &middot; "Select all 18 in this view" expands the selection to the filtered set, never silently to all assets &middot; Clear and Esc both empty the selection</span>
+<span class="anno engine">LIVE REGION 1 of 3 (selection count): a dedicated sr-only role="status" aria-live="polite" node mirrors "N selected" on every toggle &middot; it never shares a node with the progress or summary regions (the critics' collision fix)</span>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="ground" style="min-height:600px;">
+    <div class="app">
+      <aside class="side"><div class="brand"><span class="tile"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 8.5 8h7L12 2Zm-4.2 7L3 17h8.2L7.8 9Zm8.4 0-3.4 8H21l-4.8-8ZM4.3 18l-1 3h17.4l-1-3H4.3Z"/></svg></span><span class="wm">cairn</span></div></aside>
+      <div class="main">
+        <div class="topbar"><span class="crumb">Media library</span></div>
+        <div class="content">
+          <div class="page-h"><div><div class="eyebrow">Media</div><h1>Media library</h1><span class="count">18 images, 11 used on the site</span></div></div>
+          <div class="toolbar">
+            <span class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input type="search" placeholder="Search name or alt" aria-label="Search the media library" /></span>
+            <div class="triage" role="radiogroup" aria-label="Filter assets">
+              <button class="seg on" role="radio" aria-checked="true" tabindex="0"><svg class="ck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>All<span class="sct">18</span></button>
+              <button class="seg" role="radio" aria-checked="false" tabindex="-1">Needs alt<span class="sct">4</span></button>
+              <button class="seg" role="radio" aria-checked="false" tabindex="-1">No references found<span class="sct">5</span></button>
+            </div>
+          </div>
+          <ul class="grid" role="listbox" aria-multiselectable="true" aria-label="Media library" style="list-style:none; margin:0; padding:0;">
+            <li class="gtile sel" role="option" aria-selected="true" tabindex="-1">
+              <span class="tile-pick"><input type="checkbox" class="checkbox" checked aria-label="Select old-banner" /></span>
+              <span class="use-chip norefs" aria-hidden="true">No refs</span>
+              <span class="thumb ph-c"></span>
+              <span class="cap"><span class="nm">old-banner</span><span class="mk ok" role="img" aria-label="Described"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></span>
+            </li>
+            <li class="gtile sel active" role="option" aria-selected="true" tabindex="0">
+              <span class="tile-pick"><input type="checkbox" class="checkbox" checked aria-label="Select winter-promo-old" /></span>
+              <span class="use-chip norefs" aria-hidden="true">No refs</span>
+              <span class="thumb ph-e"></span>
+              <span class="cap"><span class="nm">winter-promo-old</span><span class="mk ok" role="img" aria-label="Described"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></span>
+            </li>
+            <li class="gtile sel" role="option" aria-selected="true" tabindex="-1">
+              <span class="tile-pick"><input type="checkbox" class="checkbox" checked aria-label="Select first-light" /></span>
+              <span class="use-chip used" aria-hidden="true">used 3</span>
+              <span class="thumb ph-a"></span>
+              <span class="cap"><span class="nm">first-light</span><span class="mk ok" role="img" aria-label="Described"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></span>
+            </li>
+            <li class="gtile" role="option" aria-selected="false" tabindex="-1">
+              <span class="tile-pick"><input type="checkbox" class="checkbox" aria-label="Select ridgeline-dusk" /></span>
+              <span class="use-chip used" aria-hidden="true">used 2</span>
+              <span class="thumb ph-d"></span>
+              <span class="cap"><span class="nm">ridgeline-dusk</span><span class="mk ok" role="img" aria-label="Described"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></span>
+            </li>
+          </ul>
+
+          <!-- the sticky selection bar (position: sticky, rides the bottom of the scroll region) -->
+          <div class="selbar" role="region" aria-label="Selection actions">
+            <span class="scount">3</span>
+            <span class="sscope"><b>3 selected</b> in this view<br>2 with no references, 1 still used</span>
+            <span class="sspring"></span>
+            <button class="selectall" type="button">Select all 18</button>
+            <button class="clearbtn" type="button">Clear</button>
+            <button class="del-rev" type="button" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete 3</button>
+          </div>
+          <div class="sr-only" role="status" aria-live="polite">3 selected.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- =================================================================================================
+     3. BULK DELETE CONFIRM: the skip-and-report shape (light) — THE CENTRAL SAFETY SCREEN
+     ================================================================================================= -->
+<p class="mock-label">3 &middot; Light: bulk delete confirm &mdash; the dry-run is the selection, with the skip-and-report split</p>
+<p class="mock-note">
+  The confirm dialog is the dry-run: it lists exactly what will be removed and what will be skipped, so
+  there is no separate preview step. The scope strip names the count and discloses the safety floor, and
+  it is careful about timing (the critics' review-time-vs-execution-time fix): it says the shown usage came
+  from a quick read and each item is checked again <b>when it deletes</b>, not that the gate has already
+  passed. <b>Will be deleted</b> lists the no-reference items, each with its slug and a "no references"
+  tag. <b>Will be skipped</b> reports the one item still in use, with its where-used, because a bulk delete
+  never force-removes an in-use asset; it points to the single-item path for a deliberate forced delete.
+  This is a <b>reversible</b> removal, so the confirm is plain (no typed gate): the button reads
+  <b>Delete 2, skip 1</b> in the danger-outline, and the git-revert reassurance sits at the foot.
+</p>
+<span class="anno">role="alertdialog" &middot; showModal() (native focus trap + Escape) &middot; NO method="dialog" backdrop (no light dismiss) &middot; initial focus is Cancel &middot; NO typed gate (a git-tracked removal is reversible)</span>
+<span class="anno engine">SAFETY FLOOR: the shared STRICT cross-branch index is built ONCE for this batch and fails closed if it cannot complete (panel 8); the displayed "no references" rode the non-strict load index &middot; NO green per-item pass tick here, because the recheck runs at execution, not review</span>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="ground" style="min-height:740px;">
+    <div class="scrim" style="position:static; align-items:flex-start; padding:28px 18px;">
+      <div class="modal-box" role="alertdialog" aria-modal="true" aria-labelledby="bd-title" aria-describedby="bd-sub">
+        <div class="mb-head">
+          <span class="mb-badge danger" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span>
+          <div class="mb-htext">
+            <div class="mb-title" id="bd-title">Delete 3 selected images?</div>
+            <p class="mb-sub" id="bd-sub">2 have no references and will be deleted. 1 is still used and will be skipped. Each one is checked again at delete time, so nothing in use is removed.</p>
+          </div>
+          <button class="panel-x" aria-label="Cancel" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+        <div class="mb-body">
+          <!-- the scope strip: the explicit count + the safety-floor disclosure (timed at execution) -->
+          <div class="scope-strip">
+            <div class="scope-line count"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span><b>3 images selected</b> in the current view.</span></div>
+            <div class="scope-line floor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span>The usage shown here came from a quick read. cairn checks each image again the moment it deletes it, and skips any that turns out to be in use.</span></div>
+          </div>
+
+          <!-- WILL BE DELETED: the no-reference items, each with its slug + the "no references" tag -->
+          <div>
+            <div class="sec-head"><span class="eyebrow">Will be deleted</span><span class="ct">2</span></div>
+            <div class="item-well" style="margin-top:8px;">
+              <div class="item-scroll">
+                <ul class="item-list">
+                  <li class="item-row"><span class="item-thumb ph-c"></span><div class="item-main"><div class="item-name">old-banner</div><div class="item-sub">old-banner.3c9f10ab</div></div><span class="item-where clean">no references found</span></li>
+                  <li class="item-row"><span class="item-thumb ph-e"></span><div class="item-main"><div class="item-name">winter-promo-old</div><div class="item-sub">winter-promo-old.5d22b7e1</div></div><span class="item-where clean">no references found</span></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- WILL BE SKIPPED: the still-used item, reported with its where-used (skip-and-report),
+               pointing to the single-item path for a deliberate forced delete -->
+          <div class="skip-call">
+            <div class="skip-head">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+              <div class="sh-t"><b>1 will be skipped, still in use</b><span class="sh-d">A bulk delete never removes an image that is still referenced. Open it on its own to delete it, where you can see and confirm what breaks.</span></div>
+            </div>
+            <ul class="skip-list">
+              <li class="skip-item"><span class="si-thumb ph-a"></span><span class="si-name">first-light</span><span class="si-where">found in 3 entries</span></li>
+            </ul>
+          </div>
+
+          <!-- the recoverability reassurance (reversible: a git-tracked removal) -->
+          <div class="reassure"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span><b>Every removal is one revertible commit you can undo.</b> The two deletes are one commit to <code>main</code>, so a developer can revert it and the images come back.</span></div>
+        </div>
+        <div class="mb-foot">
+          <span class="foot-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>One commit to <code>main</code></span>
+          <button class="btn-ghost" type="button">Cancel</button>
+          <button class="btn-danger-out" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete 2, skip 1</button>
+        </div>
+        <div class="sr-only" aria-live="polite">Delete 2 images with no references. 1 still in use will be skipped.</div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- =================================================================================================
+     4. BULK DELETE: in-progress and the itemized summary (light)
+     ================================================================================================= -->
+<p class="mock-label">4 &middot; Light: bulk delete &mdash; announced progress, then the itemized summary</p>
+<p class="mock-note">
+  A long bulk op shows real progress and continues past per-item outcomes. On the left, the determinate
+  progress with its own live region announcing the running count. This is where the per-item recheck
+  against the fresh strict index actually runs. On the right, the result the op ends on: the itemized
+  summary in the 207-Multi-Status shape, succeeded / skipped-with-reason / failed-with-reason. The skipped
+  row carries why, and it is the timing-honest reason the critics asked for: <b>a reference turned up on
+  the recheck</b>, with the where-used. A failed row would carry its own reason. The op is done and the
+  dialog can be dismissed; the Library re-reads behind it.
+</p>
+<span class="anno engine">LIVE REGION 2 of 3 (progress) and 3 of 3 (summary) are SEPARATE nodes from each other and from the selection-count region &middot; role="status" on both &middot; role="alert" is reserved for a post-action failure (panel 8 after Delete was pressed)</span>
+<div class="pair">
+
+  <!-- progress -->
+  <div class="screen"><div data-theme="cairn-admin">
+    <div class="ground" style="min-height:0;">
+      <div class="scrim" style="position:static; align-items:flex-start; padding:18px;">
+        <div class="modal-box" role="alertdialog" aria-modal="true" aria-labelledby="bp-title" style="max-height:none;">
+          <div class="mb-head">
+            <span class="mb-badge danger" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span>
+            <div class="mb-htext"><div class="mb-title" id="bp-title">Deleting images</div><p class="mb-sub">Checking each one against a fresh read and removing the ones with no references. This can take a moment across branches.</p></div>
+          </div>
+          <div class="mb-body">
+            <div class="progress-block">
+              <span class="progress-ring" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.2-8.5" stroke-linecap="round"/></svg></span>
+              <span class="progress-text">Checking and deleting&hellip; 6 of 9</span>
+              <div class="bar"><span style="width:67%;"></span></div>
+              <span class="progress-sub">4 deleted &middot; 1 skipped &middot; 0 failed so far</span>
+            </div>
+          </div>
+          <div class="mb-foot"><span class="foot-note">Please keep this open until it finishes.</span></div>
+          <div class="sr-only" role="status" aria-live="polite">Deleting images: 6 of 9 done. 4 deleted, 1 skipped.</div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+
+  <!-- the itemized summary -->
+  <div class="screen"><div data-theme="cairn-admin">
+    <div class="ground" style="min-height:0;">
+      <div class="scrim" style="position:static; align-items:flex-start; padding:18px;">
+        <div class="modal-box" role="alertdialog" aria-modal="true" aria-labelledby="bs-title" aria-describedby="bs-sub" style="max-height:none;">
+          <div class="mb-head">
+            <span class="mb-badge primary" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg></span>
+            <div class="mb-htext"><div class="mb-title" id="bs-title" tabindex="-1">Done. 7 deleted, 2 skipped</div><p class="mb-sub" id="bs-sub">The 7 deletes are one commit to <code>main</code>. The 2 skipped had a reference turn up on the recheck and were left as they are.</p></div>
+            <button class="panel-x" aria-label="Close" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+          </div>
+          <div class="mb-body">
+            <div class="summary">
+              <div class="sum-stat-row">
+                <div class="sum-stat ok"><span class="n">7</span><span class="k">Deleted</span></div>
+                <div class="sum-stat skip"><span class="n">2</span><span class="k">Skipped</span></div>
+                <div class="sum-stat fail"><span class="n">0</span><span class="k">Failed</span></div>
+              </div>
+              <div class="sum-group">
+                <div class="sum-grp-head skip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Skipped, a reference turned up on the recheck</div>
+                <ul class="sum-rows">
+                  <li><span class="sr-name">first-light</span><span class="sr-reason">now found in 3 entries &middot; <a href="#">open</a></span></li>
+                  <li><span class="sr-name">ridgeline-dusk</span><span class="sr-reason">now found in 2 entries &middot; <a href="#">open</a></span></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div class="mb-foot"><span class="foot-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>One commit to <code>main</code></span><button class="btn-go" type="button">Done</button></div>
+          <div class="sr-only" role="status" aria-live="polite">Finished. 7 images deleted, 2 skipped because a reference turned up on the recheck, 0 failed.</div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+
+</div>
+
+<!-- =================================================================================================
+     5. THE "NO REFERENCES FOUND" FACET (unreferenced assets) + its reversible bulk-delete confirm (light)
+     ================================================================================================= -->
+<p class="mock-label">5 &middot; Light: the No references found facet (unreferenced assets) &mdash; the reversible removal, plain confirm</p>
+<p class="mock-note">
+  This is the renamed triage facet: manifest rows referenced by nothing in the cross-branch usage index.
+  These <b>are</b> library assets (a manifest row, a tile), so the facet is the normal grid, filtered,
+  with a dashed preamble carrying the raw-HTML blind-spot caveat at the point of action. Removing them is
+  a git-tracked delete, so it is <b>reversible</b>: the bulk action is the danger-outline (not the solid
+  byte-purge fill, which belongs to a different surface), and the confirm is plain with the git-revert
+  reassurance, no typed gate. The same per-item strict recheck and skip-and-report still apply at
+  execution, because this facet rides the raw-HTML blind spot exactly as single safe-delete does. The pair
+  below shows the filtered grid (left) and the reversible confirm (right).
+</p>
+<span class="anno">the chip and the facet read "No references found" / "No refs", never "Unused" &middot; the caveat is restated at the confirm, not buried in docs (the category's honest-verdict pattern)</span>
+<div class="pair">
+
+  <!-- the filtered grid for the facet, with the caveat preamble -->
+  <div class="screen"><div data-theme="cairn-admin">
+    <div class="ground" style="min-height:560px;">
+      <div class="main">
+        <div class="topbar"><span class="crumb">Media library / <b>No references found</b></span></div>
+        <div class="content">
+          <div class="toolbar">
+            <div class="triage" role="radiogroup" aria-label="Filter assets">
+              <button class="seg" role="radio" aria-checked="false" tabindex="-1">All<span class="sct">18</span></button>
+              <button class="seg" role="radio" aria-checked="false" tabindex="-1">Needs alt<span class="sct">4</span></button>
+              <button class="seg on" role="radio" aria-checked="true" tabindex="0"><svg class="ck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>No references found<span class="sct">5</span></button>
+            </div>
+          </div>
+          <div class="facet-note">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+            <div class="fn-t"><b>No reference found in any tracked branch.</b> Nothing on the site or in an open edit points to these. Deleting them is reversible: it is one commit you can revert.<span class="blind">"No references found" is not the same as unused. cairn cannot see a raw-HTML image or a URL hardcoded into a site template, so check anything you are unsure about before deleting it.</span></div>
+          </div>
+          <ul class="grid" role="listbox" aria-multiselectable="true" aria-label="No references found" style="list-style:none; margin:0; padding:0; grid-template-columns:repeat(2,1fr);">
+            <li class="gtile sel active" role="option" aria-selected="true" tabindex="0">
+              <span class="tile-pick"><input type="checkbox" class="checkbox" checked aria-label="Select old-banner" /></span>
+              <span class="use-chip norefs" aria-hidden="true">No refs</span>
+              <span class="thumb ph-c"></span>
+              <span class="cap"><span class="nm">old-banner</span><span class="mk ok" role="img" aria-label="Described"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></span>
+            </li>
+            <li class="gtile sel" role="option" aria-selected="true" tabindex="-1">
+              <span class="tile-pick"><input type="checkbox" class="checkbox" checked aria-label="Select winter-promo-old" /></span>
+              <span class="use-chip norefs" aria-hidden="true">No refs</span>
+              <span class="thumb ph-e"></span>
+              <span class="cap"><span class="nm">winter-promo-old</span><span class="mk ok" role="img" aria-label="Described"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></span>
+            </li>
+            <li class="gtile sel" role="option" aria-selected="true" tabindex="-1">
+              <span class="tile-pick"><input type="checkbox" class="checkbox" checked aria-label="Select sponsor-logo-2023" /></span>
+              <span class="use-chip norefs" aria-hidden="true">No refs</span>
+              <span class="thumb ph-f"></span>
+              <span class="cap"><span class="nm">sponsor-logo-2023</span><span class="mk miss" role="img" aria-label="Needs alt text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>alt</span></span>
+            </li>
+            <li class="gtile sel" role="option" aria-selected="true" tabindex="-1">
+              <span class="tile-pick"><input type="checkbox" class="checkbox" checked aria-label="Select trailhead-old" /></span>
+              <span class="use-chip norefs" aria-hidden="true">No refs</span>
+              <span class="thumb ph-g"></span>
+              <span class="cap"><span class="nm">trailhead-old</span><span class="mk ok" role="img" aria-label="Described"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></span>
+            </li>
+            <li class="gtile sel" role="option" aria-selected="true" tabindex="-1">
+              <span class="tile-pick"><input type="checkbox" class="checkbox" checked aria-label="Select hero-draft" /></span>
+              <span class="use-chip norefs" aria-hidden="true">No refs</span>
+              <span class="thumb ph-h"></span>
+              <span class="cap"><span class="nm">hero-draft</span><span class="mk ok" role="img" aria-label="Described"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></span>
+            </li>
+          </ul>
+          <div class="selbar" role="region" aria-label="Selection actions">
+            <span class="scount">5</span>
+            <span class="sscope"><b>All 5 selected</b> in this view<br>none referenced anywhere tracked</span>
+            <span class="sspring"></span>
+            <button class="clearbtn" type="button">Clear</button>
+            <button class="del-rev" type="button" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete 5</button>
+          </div>
+          <div class="sr-only" role="status" aria-live="polite">All 5 selected.</div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+
+  <!-- the reversible confirm: plain (no typed gate), the git-revert reassurance, the blind-spot caveat -->
+  <div class="screen"><div data-theme="cairn-admin">
+    <div class="ground" style="min-height:0;">
+      <div class="scrim" style="position:static; align-items:flex-start; padding:18px;">
+        <div class="modal-box" role="alertdialog" aria-modal="true" aria-labelledby="dr-title" aria-describedby="dr-sub" style="max-height:none;">
+          <div class="mb-head">
+            <span class="mb-badge danger" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span>
+            <div class="mb-htext"><div class="mb-title" id="dr-title">Delete 5 images with no references?</div><p class="mb-sub" id="dr-sub">Nothing tracked points to these. cairn checks each one again at delete time and skips any that turns out to be in use.</p></div>
+            <button class="panel-x" aria-label="Cancel" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+          </div>
+          <div class="mb-body">
+            <div class="scope-strip">
+              <div class="scope-line count"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span><b>5 images selected</b>, all with no references found.</span></div>
+              <div class="scope-line floor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span>"No references found" is not proof of unused. cairn cannot see a raw-HTML image or a hardcoded URL in a site template, and it checks each one again at delete time.</span></div>
+            </div>
+            <div class="item-well">
+              <div class="item-scroll" style="max-height:10rem;">
+                <ul class="item-list" id="dr-list">
+                  <li class="item-row"><span class="item-thumb ph-c"></span><div class="item-main"><div class="item-name">old-banner</div><div class="item-sub">old-banner.3c9f10ab</div></div><span class="item-where clean">no references</span></li>
+                  <li class="item-row"><span class="item-thumb ph-e"></span><div class="item-main"><div class="item-name">winter-promo-old</div><div class="item-sub">winter-promo-old.5d22b7e1</div></div><span class="item-where clean">no references</span></li>
+                  <li class="item-row"><span class="item-thumb ph-f"></span><div class="item-main"><div class="item-name">sponsor-logo-2023</div><div class="item-sub">sponsor-logo-2023.a18ee204</div></div><span class="item-where clean">no references</span></li>
+                </ul>
+              </div>
+              <button class="show-all" type="button" aria-expanded="false" aria-controls="dr-list">Show the other 2 images</button>
+            </div>
+            <div class="reassure"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span><b>Every removal is one revertible commit you can undo.</b> All 5 deletes are one commit to <code>main</code>, so a developer can revert it and the images come back.</span></div>
+          </div>
+          <div class="mb-foot">
+            <span class="foot-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>One commit to <code>main</code></span>
+            <button class="btn-ghost" type="button">Cancel</button>
+            <button class="btn-danger-out" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete 5</button>
+          </div>
+          <div class="sr-only" aria-live="polite">Delete 5 images with no references found. This can be undone.</div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+
+</div>
+
+<!-- =================================================================================================
+     6. THE ORPHAN SCAN SURFACE: the loaded result, the two-section dry-run (light)
+        Direction A bytes (irreversible) + the read-only Broken references readout
+     ================================================================================================= -->
+<p class="mock-label">6 &middot; Light: Find orphaned files &mdash; the scan result, two sections (orphaned bytes + broken references)</p>
+<p class="mock-note">
+  The on-demand scan opens as a modal over the media view, not a standing tab. It runs an R2-list plus a
+  reconcile pass, then shows two sections, and it keeps the two reconcile populations distinct.
+  <b>Orphaned files</b> are R2 bytes with no library record: there is no tile, so each row is a structured
+  byte fact (the storage key, the size, a last-seen) with a <b>checkerboard mat</b> standing for
+  record-not-picture, so an orphaned byte never borrows a misleading image. The section has an
+  <b>indeterminate header checkbox</b> as select-all, real per-row checkboxes, and the verb <b>Purge</b>,
+  because removing bytes is irreversible. <b>Broken references</b> is a separate <b>read-only</b>
+  data-integrity readout: records whose bytes are gone. It is not a deletion target; it says what is wrong
+  and what to do (re-upload or remove the reference).
+</p>
+<span class="anno">the orphaned-byte rows are a separate aria-multiselectable list role="listbox" aria-label="Orphaned files" &middot; the header checkbox is the select-all (indeterminate on a subset) &middot; byte-orphans use their OWN selection Set of R2 keys, never the asset-hash Set &middot; the broken-references section has NO checkboxes (read-only)</span>
+<span class="anno engine">DETECTION COST: this scan is far heavier than the loaded index (an R2 list + reconcile), which is why it is on-demand, not an instant filter &middot; it builds its own strict read and fails closed (panel 8)</span>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="ground" style="min-height:780px;">
+    <div class="scrim" style="position:static; align-items:flex-start; padding:24px 18px;">
+      <div class="modal-box wide" role="dialog" aria-modal="true" aria-labelledby="sc-title" aria-describedby="sc-sub">
+        <div class="mb-head">
+          <span class="mb-badge neutral" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg></span>
+          <div class="mb-htext">
+            <div class="mb-title" id="sc-title">Orphaned files and broken references</div>
+            <p class="mb-sub" id="sc-sub">A scan of stored files against the library across every tracked branch. It found 2 stored files with no record, and 1 record whose file is gone.</p>
+          </div>
+          <button class="panel-x" aria-label="Close" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+        <div class="mb-body">
+
+          <!-- SECTION 1: orphaned BYTES (Direction A), the irreversible byte purge -->
+          <div class="scan-sec bytes">
+            <div class="scan-sec-head">
+              <span class="scan-sec-badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="9" y1="15" x2="15" y2="15"/></svg></span>
+              <div class="scan-sec-text"><div class="scan-sec-name">Orphaned files</div><div class="scan-sec-desc">Stored files with no record in the library. No <code>media:</code> reference can point to these, so nothing on the site uses them through cairn.</div></div>
+              <div class="scan-sec-count"><span class="n">2</span><span class="u">files &middot; 0.9 MB</span></div>
+            </div>
+            <div class="scan-sec-body">
+              <!-- the residual-risk note, named at the point of action -->
+              <div class="irrev-call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span><b>Purging a file removes the bytes for good.</b> There is no git history for raw storage, so this cannot be undone. The one thing cairn cannot check: a page that hardcodes a file's web address in raw HTML would still load these.</span></div>
+
+              <!-- the byte-row well: a checkerboard mat per row (record-not-picture), an indeterminate
+                   header select-all, real per-row checkboxes -->
+              <div class="byte-well">
+                <div class="byte-head">
+                  <input type="checkbox" class="checkbox danger" aria-label="Select all orphaned files" onclick="this.indeterminate=false" />
+                  <span class="bh-t">2 files in storage with no record</span>
+                  <span class="bh-c">0.9 MB total</span>
+                </div>
+                <div class="byte-scroll">
+                  <ul class="byte-list" role="listbox" aria-multiselectable="true" aria-label="Orphaned files" style="list-style:none; margin:0; padding:0;">
+                    <li class="byte-row sel" role="option" aria-selected="true" tabindex="0">
+                      <input type="checkbox" class="checkbox danger" checked aria-label="Select media/a3/a3f81c0e9b2d4f.jpg" />
+                      <span class="byte-mat" aria-hidden="true"></span>
+                      <div class="byte-main"><div class="byte-key">media/a3/a3f81c0e9b2d4f.jpg</div><div class="byte-sub">No library record &middot; last changed Apr 3</div></div>
+                      <span class="byte-bytes">612 KB</span>
+                    </li>
+                    <li class="byte-row sel" role="option" aria-selected="true" tabindex="-1">
+                      <input type="checkbox" class="checkbox danger" checked aria-label="Select media/77/77d20a14c6e8b1.png" />
+                      <span class="byte-mat" aria-hidden="true"></span>
+                      <div class="byte-main"><div class="byte-key">media/77/77d20a14c6e8b1.png</div><div class="byte-sub">No library record &middot; last changed Mar 28</div></div>
+                      <span class="byte-bytes">298 KB</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <!-- the per-section action: a selection note + the SOLID-danger purge (NOT a warning fill) -->
+              <div class="sec-actions">
+                <span class="sa-selnote">2 of 2 selected <button class="clr" type="button">Clear</button></span>
+                <span class="sa-spring"></span>
+                <button class="btn-danger" type="button" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="m9.5 11 5 5"/><path d="m14.5 11-5 5"/></svg>Purge 2 files</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 2: BROKEN references (data integrity, READ-ONLY, no mockup before drew this) -->
+          <div class="scan-sec broken">
+            <div class="scan-sec-head">
+              <span class="scan-sec-badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
+              <div class="scan-sec-text"><div class="scan-sec-name">Broken references</div><div class="scan-sec-desc">A record points at a file that is no longer in storage. This is not something to delete here. Re-upload the file, or remove the reference from the entries below.</div></div>
+              <div class="scan-sec-count"><span class="n">1</span><span class="u">record</span></div>
+            </div>
+            <div class="scan-sec-body">
+              <div class="broken-well">
+                <div class="broken-row">
+                  <span class="broken-thumb" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m3 16 5-5 4 4"/><path d="M14 14l2-2 5 5"/><line x1="3" y1="3" x2="21" y2="21"/></svg></span>
+                  <div class="broken-main"><div class="broken-name">map-2021</div><div class="broken-sub">media:map-2021.0b9d77fe &middot; file missing in storage</div></div>
+                  <span class="broken-where">used in 1 entry</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <div class="mb-foot">
+          <span class="foot-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/></svg>Scanned across the site and every open edit</span>
+          <button class="btn-ghost" type="button">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- =================================================================================================
+     7. THE IRREVERSIBLE BYTE-PURGE CONFIRM (orphaned bytes) — the typed gate (light)
+     ================================================================================================= -->
+<p class="mock-label">7 &middot; Light: purge orphaned files &mdash; the irreversible confirm with the typed gate</p>
+<p class="mock-note">
+  The byte-purge confirm is the one place in the cluster that reserves a typed confirm, because it is the
+  one irreversible action, and it is reached only from the scan surface, never from the Library's selection
+  bar. It lists the keys and bytes to remove (the dry-run), states plainly that this cannot be undone and
+  that there is no git history for raw bytes, restates the blind-spot caveat, and gates the purge behind
+  typing the <b>file count</b> (the value is tied to the actual set, the shipped safe-delete idiom, not a
+  reflexive word). The title and the action stay verbally distinct from a normal delete: <b>Purge</b>,
+  never "Delete". The badge and the button carry the <b>solid danger fill</b> (the one fill the
+  destructive register owns; warning-ink is never a fill).
+</p>
+<span class="anno">role="alertdialog" &middot; the typed gate is reserved for THIS path only (irreversible) &middot; the input is type="text" matching the file-count value &middot; the solid danger button stays disabled until the typed value matches</span>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="ground" style="min-height:640px;">
+    <div class="scrim" style="position:static; align-items:flex-start; padding:24px 18px;">
+      <div class="modal-box" role="alertdialog" aria-modal="true" aria-labelledby="pg-title" aria-describedby="pg-sub">
+        <div class="mb-head">
+          <span class="mb-badge danger" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
+          <div class="mb-htext">
+            <div class="mb-title" id="pg-title">Purge 2 orphaned files?</div>
+            <p class="mb-sub" id="pg-sub">This removes the stored bytes for good. It is not a library delete, and it cannot be undone.</p>
+          </div>
+          <button class="panel-x" aria-label="Cancel" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+        <div class="mb-body">
+          <!-- the dry-run: the keys + bytes to remove, checkerboard mats (record-not-picture) -->
+          <div>
+            <div class="sec-head"><span class="eyebrow">Files to purge</span><span class="ct">2 &middot; 0.9 MB</span></div>
+            <div class="item-well" style="margin-top:8px;">
+              <div class="item-scroll">
+                <ul class="item-list">
+                  <li class="item-row"><span class="byte-mat" aria-hidden="true" style="width:34px; height:26px;"></span><span class="item-key">media/a3/a3f81c0e9b2d4f.jpg</span><span class="byte-bytes">612 KB</span></li>
+                  <li class="item-row"><span class="byte-mat" aria-hidden="true" style="width:34px; height:26px;"></span><span class="item-key">media/77/77d20a14c6e8b1.png</span><span class="byte-bytes">298 KB</span></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- the IRREVERSIBLE callout, distinct from the reversible reassurance -->
+          <div class="irrev-call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8l-2-2Z"/><line x1="9.5" y1="13" x2="14.5" y2="13"/></svg><span><b>This cannot be undone.</b> A library delete lives in git history and a developer can bring it back. Raw storage does not, so once these bytes are purged they are gone.</span></div>
+
+          <!-- the blind-spot caveat, restated at the point of action -->
+          <div class="reassure"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-muted);"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span>cairn cannot see a raw-HTML image or a URL hardcoded into a site template. If one of these files is wired up by hand outside cairn, purging it breaks that one place.</span></div>
+
+          <!-- the typed gate, reserved for the irreversible path, tied to the file count -->
+          <div class="confirm-block">
+            <label class="cl" for="pg-confirm">Type <code>2</code> to purge these files for good.</label>
+            <input id="pg-confirm" class="confirm-input" type="text" autocomplete="off" placeholder="Type the number of files" aria-label="Type the file count to confirm the purge" />
+          </div>
+        </div>
+        <div class="mb-foot">
+          <span class="foot-note">Frees 0.9 MB. Not a library delete.</span>
+          <button class="btn-ghost" type="button">Cancel</button>
+          <button class="btn-danger" type="button" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="m9.5 11 5 5"/><path d="m14.5 11-5 5"/></svg>Purge 2 files</button>
+        </div>
+        <div class="sr-only" aria-live="polite">Purge 2 orphaned files. This cannot be undone.</div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- =================================================================================================
+     8. THE FAIL-CLOSED SURFACES (light): the bulk delete on hold, and the orphan scan that could not finish
+     ================================================================================================= -->
+<p class="mock-label">8 &middot; Light: fail closed &mdash; the bulk delete on hold (left) and the orphan scan that could not finish (right)</p>
+<p class="mock-note">
+  The safety floor in action, on both paths. <b>Left</b>: when cairn builds the shared strict index for a
+  bulk delete and a branch read fails, the op holds before touching anything, names what read cleanly and
+  the specific unreadable branch, and offers a quiet <b>Check usage again</b>. There is no delete button,
+  not even a disabled one. <b>Right</b>: the orphan scan rests on the same strict read; if a branch will
+  not load, it does not under-report orphans by quietly skipping it. It <b>refuses to present a dry-run</b>,
+  names the branch it could not read, and shows no collect action. Both are the shipped fail-closed posture,
+  one applied to the bulk gate and one to the detection scan.
+</p>
+<span class="anno">both banners on first appearance are role="status" (polite, no action attempted) &middot; role="alert" is reserved for a failure surfaced AFTER Delete or Purge was pressed &middot; no destructive button present on either &middot; the selection / scan input is held, nothing changed</span>
+<div class="pair">
+
+  <!-- the bulk delete fail-closed (the shared strict index could not complete) -->
+  <div class="screen"><div data-theme="cairn-admin">
+    <div class="ground" style="min-height:0;">
+      <div class="scrim" style="position:static; align-items:flex-start; padding:18px;">
+        <div class="modal-box" role="alertdialog" aria-modal="true" aria-labelledby="fc1-title" aria-describedby="fc1-sub" style="max-height:none;">
+          <div class="mb-head">
+            <span class="mb-badge danger" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
+            <div class="mb-htext">
+              <div class="mb-title" id="fc1-title">Delete is on hold</div>
+              <p class="mb-sub" id="fc1-sub">cairn could not read every place these images are used, so it will not delete anything it cannot fully check. Nothing was removed.</p>
+            </div>
+            <button class="panel-x" aria-label="Cancel" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+          </div>
+          <div class="mb-body">
+            <div class="blocked" role="status">
+              <div class="blocked-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Usage could not be fully verified</div>
+              <div class="blocked-body">
+                The published site read cleanly, and so did most edit branches. One branch would not load, so cairn cannot tell whether any of these images are used there. Deleting now could remove an image that branch still needs.
+                <ul class="blocked-list">
+                  <li class="read"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Read the published site and 6 edit branches</li>
+                  <li class="unread"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>Could not read <code>cairn/posts/trailhead-notes</code></li>
+                </ul>
+              </div>
+              <button class="btn-go" style="align-self:flex-start; padding:8px 13px; background:var(--color-base-100); color:var(--cairn-error-ink); border:1px solid var(--cairn-error-border); box-shadow:none;" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/></svg>Check usage again</button>
+            </div>
+            <div class="reassure"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span>Your selection is held. Once the read completes, the confirm opens with what is safe to delete and what will be skipped.</span></div>
+          </div>
+          <div class="mb-foot">
+            <span class="foot-note">Nothing was removed.</span>
+            <button class="btn-ghost" type="button">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+
+  <!-- the orphan scan fail-closed (detection-time, grafted from cleanup-screen) -->
+  <div class="screen"><div data-theme="cairn-admin">
+    <div class="ground" style="min-height:0;">
+      <div class="scrim" style="position:static; align-items:flex-start; padding:18px;">
+        <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="fc2-title" aria-describedby="fc2-sub" style="max-height:none;">
+          <div class="mb-head">
+            <span class="mb-badge neutral" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg></span>
+            <div class="mb-htext">
+              <div class="mb-title" id="fc2-title">The scan could not finish</div>
+              <p class="mb-sub" id="fc2-sub">cairn could not read one of your open edits, so it cannot tell which files are truly orphaned. No file was changed.</p>
+            </div>
+            <button class="panel-x" aria-label="Close" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+          </div>
+          <div class="mb-body">
+            <div class="blocked" role="status">
+              <div class="blocked-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Could not read every branch</div>
+              <div class="blocked-body">
+                A file looks orphaned only if no record on any branch points to it. One open edit would not load, so cairn cannot be sure. It will not show a list of files to purge that it might be wrong about.
+                <ul class="blocked-list">
+                  <li class="read"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Listed storage and read the published site</li>
+                  <li class="unread"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>Could not read <code>cairn/posts/trailhead-notes</code></li>
+                </ul>
+              </div>
+              <button class="btn-go" style="align-self:flex-start; padding:8px 13px; background:var(--color-base-100); color:var(--cairn-error-ink); border:1px solid var(--cairn-error-border); box-shadow:none;" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/></svg>Try the scan again</button>
+            </div>
+            <div class="reassure"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span>Broken references would show here too once the scan completes. Nothing is shown while a branch is unreadable.</span></div>
+          </div>
+          <div class="mb-foot">
+            <span class="foot-note">No file was changed.</span>
+            <button class="btn-ghost" type="button">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+
+</div>
+
+<!-- =================================================================================================
+     9. DARK: the reversible bulk confirm (skip split) and the irreversible purge confirm
+     ================================================================================================= -->
+<p class="mock-label">9 &middot; Dark: the reversible bulk confirm (skip-and-report) and the irreversible purge confirm</p>
+<p class="mock-note">
+  The two confirms on the dark theme roots, kept visibly distinct: the danger-outline reversible delete
+  and the solid danger irreversible purge. The warning-ink skip callout, the danger tint and border, the
+  checkerboard mats, and the danger checkbox all resolve from the dark variables. The danger tint reads as
+  a defined block in dark, where a shadow alone barely shows.
+</p>
+<div class="pair">
+
+  <!-- DARK: the reversible bulk confirm with the skip split -->
+  <div class="screen"><div data-theme="cairn-admin-dark">
+    <div class="ground" style="min-height:0;">
+      <div class="scrim" style="position:static; background:transparent; align-items:flex-start; padding:18px;">
+        <div class="modal-box" role="alertdialog" aria-modal="true" aria-labelledby="dk-bd-title" aria-describedby="dk-bd-sub" style="max-height:none;">
+          <div class="mb-head">
+            <span class="mb-badge danger" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span>
+            <div class="mb-htext"><div class="mb-title" id="dk-bd-title">Delete 3 selected images?</div><p class="mb-sub" id="dk-bd-sub">2 have no references and will be deleted. 1 is still used and will be skipped.</p></div>
+            <button class="panel-x" aria-label="Cancel" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+          </div>
+          <div class="mb-body">
+            <div class="scope-strip">
+              <div class="scope-line count"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span><b>3 images selected</b> in the current view.</span></div>
+              <div class="scope-line floor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span>The usage shown came from a quick read. Each image is checked again at delete time and skipped if it is in use.</span></div>
+            </div>
+            <div>
+              <div class="sec-head"><span class="eyebrow">Will be deleted</span><span class="ct">2</span></div>
+              <div class="item-well" style="margin-top:8px;"><div class="item-scroll"><ul class="item-list">
+                <li class="item-row"><span class="item-thumb ph-c"></span><div class="item-main"><div class="item-name">old-banner</div><div class="item-sub">old-banner.3c9f10ab</div></div><span class="item-where clean">no references found</span></li>
+                <li class="item-row"><span class="item-thumb ph-e"></span><div class="item-main"><div class="item-name">winter-promo-old</div><div class="item-sub">winter-promo-old.5d22b7e1</div></div><span class="item-where clean">no references found</span></li>
+              </ul></div></div>
+            </div>
+            <div class="skip-call">
+              <div class="skip-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><div class="sh-t"><b>1 will be skipped, still in use</b><span class="sh-d">A bulk delete never removes an image that is still referenced.</span></div></div>
+              <ul class="skip-list"><li class="skip-item"><span class="si-thumb ph-a"></span><span class="si-name">first-light</span><span class="si-where">found in 3 entries</span></li></ul>
+            </div>
+            <div class="reassure"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span><b>Every removal is one revertible commit.</b> The deletes are one commit to <code>main</code>.</span></div>
+          </div>
+          <div class="mb-foot">
+            <span class="foot-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>One commit</span>
+            <button class="btn-ghost" type="button">Cancel</button>
+            <button class="btn-danger-out" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete 2, skip 1</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+
+  <!-- DARK: the irreversible byte-purge confirm with the typed gate filled -->
+  <div class="screen"><div data-theme="cairn-admin-dark">
+    <div class="ground" style="min-height:0;">
+      <div class="scrim" style="position:static; background:transparent; align-items:flex-start; padding:18px;">
+        <div class="modal-box" role="alertdialog" aria-modal="true" aria-labelledby="dk-pg-title" aria-describedby="dk-pg-sub" style="max-height:none;">
+          <div class="mb-head">
+            <span class="mb-badge danger" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
+            <div class="mb-htext"><div class="mb-title" id="dk-pg-title">Purge 2 orphaned files?</div><p class="mb-sub" id="dk-pg-sub">This removes the stored bytes for good. It is not a library delete, and it cannot be undone.</p></div>
+            <button class="panel-x" aria-label="Cancel" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+          </div>
+          <div class="mb-body">
+            <div>
+              <div class="sec-head"><span class="eyebrow">Files to purge</span><span class="ct">2 &middot; 0.9 MB</span></div>
+              <div class="item-well" style="margin-top:8px;"><div class="item-scroll"><ul class="item-list">
+                <li class="item-row"><span class="byte-mat" aria-hidden="true" style="width:34px; height:26px;"></span><span class="item-key">media/a3/a3f81c0e9b2d4f.jpg</span><span class="byte-bytes">612 KB</span></li>
+                <li class="item-row"><span class="byte-mat" aria-hidden="true" style="width:34px; height:26px;"></span><span class="item-key">media/77/77d20a14c6e8b1.png</span><span class="byte-bytes">298 KB</span></li>
+              </ul></div></div>
+            </div>
+            <div class="irrev-call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8l-2-2Z"/><line x1="9.5" y1="13" x2="14.5" y2="13"/></svg><span><b>This cannot be undone.</b> Raw storage has no git history, so once these bytes are purged they are gone.</span></div>
+            <div class="confirm-block">
+              <label class="cl" for="dk-pg-confirm">Type <code>2</code> to purge these files for good.</label>
+              <input id="dk-pg-confirm" class="confirm-input" type="text" value="2" aria-label="Type the file count to confirm the purge" />
+            </div>
+          </div>
+          <div class="mb-foot">
+            <span class="foot-note">Frees 0.9 MB. Not a library delete.</span>
+            <button class="btn-ghost" type="button">Cancel</button>
+            <button class="btn-danger" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="m9.5 11 5 5"/><path d="m14.5 11-5 5"/></svg>Purge 2 files</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+
+</div>
+
+<!-- =================================================================================================
+     10. DARK: the orphan scan surface (the two sections through the dark tokens)
+     ================================================================================================= -->
+<p class="mock-label">10 &middot; Dark: the orphan scan surface, the byte section and the read-only broken-references readout</p>
+<p class="mock-note">
+  The on-demand scan on the dark roots. The danger-bordered byte well, the checkerboard mats, the
+  indeterminate header checkbox, the solid danger purge, and the neutral read-only broken-references
+  readout all resolve from the dark variables. The two populations stay distinct: one is a purge target,
+  one is a readout.
+</p>
+<div class="screen"><div data-theme="cairn-admin-dark">
+  <div class="ground" style="min-height:0;">
+    <div class="scrim" style="position:static; background:transparent; align-items:flex-start; padding:18px;">
+      <div class="modal-box wide" role="dialog" aria-modal="true" aria-labelledby="dk-sc-title" aria-describedby="dk-sc-sub" style="max-height:none;">
+        <div class="mb-head">
+          <span class="mb-badge neutral" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg></span>
+          <div class="mb-htext"><div class="mb-title" id="dk-sc-title">Orphaned files and broken references</div><p class="mb-sub" id="dk-sc-sub">2 stored files have no record. 1 record points at a file that is gone.</p></div>
+          <button class="panel-x" aria-label="Close" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+        <div class="mb-body">
+          <div class="scan-sec bytes">
+            <div class="scan-sec-head">
+              <span class="scan-sec-badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="9" y1="15" x2="15" y2="15"/></svg></span>
+              <div class="scan-sec-text"><div class="scan-sec-name">Orphaned files</div><div class="scan-sec-desc">Stored files with no record in the library.</div></div>
+              <div class="scan-sec-count"><span class="n">2</span><span class="u">files &middot; 0.9 MB</span></div>
+            </div>
+            <div class="scan-sec-body">
+              <div class="irrev-call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span><b>Purging removes the bytes for good.</b> No git history for raw storage. Raw HTML that hardcodes a file's address is invisible to cairn.</span></div>
+              <div class="byte-well">
+                <div class="byte-head">
+                  <input type="checkbox" class="checkbox danger" aria-label="Select all orphaned files" />
+                  <span class="bh-t">2 files in storage with no record</span>
+                  <span class="bh-c">0.9 MB total</span>
+                </div>
+                <div class="byte-scroll">
+                  <ul class="byte-list" role="listbox" aria-multiselectable="true" aria-label="Orphaned files" style="list-style:none; margin:0; padding:0;">
+                    <li class="byte-row sel" role="option" aria-selected="true" tabindex="0">
+                      <input type="checkbox" class="checkbox danger" checked aria-label="Select media/a3/a3f81c0e9b2d4f.jpg" />
+                      <span class="byte-mat" aria-hidden="true"></span>
+                      <div class="byte-main"><div class="byte-key">media/a3/a3f81c0e9b2d4f.jpg</div><div class="byte-sub">No library record &middot; last changed Apr 3</div></div>
+                      <span class="byte-bytes">612 KB</span>
+                    </li>
+                    <li class="byte-row" role="option" aria-selected="false" tabindex="-1">
+                      <input type="checkbox" class="checkbox danger" aria-label="Select media/77/77d20a14c6e8b1.png" />
+                      <span class="byte-mat" aria-hidden="true"></span>
+                      <div class="byte-main"><div class="byte-key">media/77/77d20a14c6e8b1.png</div><div class="byte-sub">No library record &middot; last changed Mar 28</div></div>
+                      <span class="byte-bytes">298 KB</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+              <div class="sec-actions">
+                <span class="sa-selnote">1 of 2 selected <button class="clr" type="button">Clear</button></span>
+                <span class="sa-spring"></span>
+                <button class="btn-danger" type="button" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="m9.5 11 5 5"/><path d="m14.5 11-5 5"/></svg>Purge 1 file</button>
+              </div>
+            </div>
+          </div>
+          <div class="scan-sec broken">
+            <div class="scan-sec-head">
+              <span class="scan-sec-badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
+              <div class="scan-sec-text"><div class="scan-sec-name">Broken references</div><div class="scan-sec-desc">A record points at a file that is gone. Re-upload it, or remove the reference. Nothing to purge here.</div></div>
+              <div class="scan-sec-count"><span class="n">1</span><span class="u">record</span></div>
+            </div>
+            <div class="scan-sec-body">
+              <div class="broken-well">
+                <div class="broken-row">
+                  <span class="broken-thumb" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m3 16 5-5 4 4"/><path d="M14 14l2-2 5 5"/><line x1="3" y1="3" x2="21" y2="21"/></svg></span>
+                  <div class="broken-main"><div class="broken-name">map-2021</div><div class="broken-sub">media:map-2021.0b9d77fe &middot; file missing in storage</div></div>
+                  <span class="broken-where">used in 1 entry</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="mb-foot">
+          <span class="foot-note">Scanned across the site and every open edit</span>
+          <button class="btn-ghost" type="button">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- =================================================================================================
+     11. NARROW VIEWPORT: the selection bar stacks; the bulk confirm and the purge confirm as bottom sheets
+     ================================================================================================= -->
+<p class="mock-label">11 &middot; Narrow viewport (about 392px): the selection bar stacks; the reversible confirm and the irreversible purge become bottom sheets</p>
+<p class="mock-note">
+  Below the narrow breakpoint the sticky bar stacks its scope above a full-width action row, and a confirm
+  becomes a full-width bottom sheet (the dialog-sizing rule). The head and footer hold; the body scrolls.
+  The reversible/irreversible distinction holds at this size too: the reversible bulk delete keeps the
+  danger-outline and a plain confirm, and the irreversible purge keeps the solid danger fill and the typed
+  gate. The skip-and-report split, the safety-floor disclosure, and the recoverability lines hold their place.
+</p>
+<div class="pair">
+
+  <!-- narrow: the stacked selection bar + the reversible bottom-sheet confirm -->
+  <div class="screen narrow"><div data-theme="cairn-admin">
+    <div class="ground" style="min-height:0; background:var(--color-base-200);">
+      <div style="padding:14px;">
+        <div class="selbar" style="position:static; width:auto; margin:0; flex-direction:column; align-items:stretch; gap:10px;">
+          <div style="display:flex; align-items:center; gap:11px;">
+            <span class="scount">3</span>
+            <span class="sscope"><b>3 selected</b> in this view &middot; 2 with no references, 1 still used</span>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="clearbtn" type="button" style="flex:1;">Clear</button>
+            <button class="del-rev" type="button" style="flex:2; justify-content:center;" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete 3</button>
+          </div>
+        </div>
+      </div>
+      <div style="padding:0;">
+        <div class="modal-box" role="alertdialog" aria-modal="true" aria-labelledby="nr-title" aria-describedby="nr-sub" style="width:100%; max-height:none; border-radius:1rem 1rem 0 0;">
+          <div class="mb-head" style="padding:15px 15px 12px;">
+            <span class="mb-badge danger" aria-hidden="true" style="width:34px; height:34px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span>
+            <div class="mb-htext"><div class="mb-title" id="nr-title" style="font-size:1.0625rem;">Delete 3 selected images?</div><p class="mb-sub" id="nr-sub" style="margin-top:4px;">2 will be deleted, 1 still in use will be skipped.</p></div>
+          </div>
+          <div class="mb-body" style="padding:0 15px;">
+            <div class="scope-strip">
+              <div class="scope-line floor" style="border-top:0; padding-top:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span>Each image is checked again at delete time and skipped if it is in use.</span></div>
+            </div>
+            <div>
+              <div class="sec-head"><span class="eyebrow">Will be deleted</span><span class="ct">2</span></div>
+              <div class="item-well" style="margin-top:8px;"><div class="item-scroll"><ul class="item-list">
+                <li class="item-row"><span class="item-thumb ph-c"></span><div class="item-main"><div class="item-name">old-banner</div><div class="item-sub">old-banner.3c9f10ab</div></div></li>
+                <li class="item-row"><span class="item-thumb ph-e"></span><div class="item-main"><div class="item-name">winter-promo-old</div><div class="item-sub">winter-promo-old.5d22b7e1</div></div></li>
+              </ul></div></div>
+            </div>
+            <div class="skip-call">
+              <div class="skip-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><div class="sh-t"><b>1 will be skipped, still in use</b></div></div>
+              <ul class="skip-list"><li class="skip-item"><span class="si-thumb ph-a"></span><span class="si-name">first-light</span><span class="si-where">in 3 entries</span></li></ul>
+            </div>
+            <div class="reassure"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span>Every removal is one revertible commit. The deletes are one commit to <code>main</code>.</span></div>
+          </div>
+          <div class="mb-foot" style="padding:12px 15px;">
+            <button class="btn-ghost" type="button" style="flex:1;">Cancel</button>
+            <button class="btn-danger-out" type="button" style="flex:2; justify-content:center;">Delete 2, skip 1</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+
+  <!-- narrow: the irreversible purge confirm as a bottom sheet (solid danger, typed gate) -->
+  <div class="screen narrow"><div data-theme="cairn-admin">
+    <div class="ground" style="min-height:0; background:var(--color-base-200);">
+      <div style="padding:0;">
+        <div class="modal-box" role="alertdialog" aria-modal="true" aria-labelledby="nr-pa-title" aria-describedby="nr-pa-sub" style="width:100%; max-height:none; border-radius:1rem 1rem 0 0;">
+          <div class="mb-head" style="padding:15px 15px 12px;">
+            <span class="mb-badge danger" aria-hidden="true" style="width:34px; height:34px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
+            <div class="mb-htext"><div class="mb-title" id="nr-pa-title" style="font-size:1.0625rem;">Purge 2 orphaned files?</div><p class="mb-sub" id="nr-pa-sub" style="margin-top:4px;">No record in the library, so nothing in git to bring them back.</p></div>
+          </div>
+          <div class="mb-body" style="padding:0 15px;">
+            <div class="item-well">
+              <div class="item-scroll" style="max-height:7rem;">
+                <ul class="item-list">
+                  <li class="item-row"><span class="byte-mat" aria-hidden="true" style="width:34px; height:26px;"></span><span class="item-key">media/a3/a3f81c0e9b2d4f.jpg</span><span class="byte-bytes">612 KB</span></li>
+                  <li class="item-row"><span class="byte-mat" aria-hidden="true" style="width:34px; height:26px;"></span><span class="item-key">media/77/77d20a14c6e8b1.png</span><span class="byte-bytes">298 KB</span></li>
+                </ul>
+              </div>
+            </div>
+            <div class="irrev-call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span><b>This cannot be undone.</b> No git record, so a developer cannot bring these back.</span></div>
+            <div class="confirm-block"><label class="cl" for="nr-pa-confirm">Type <code>2</code> to purge these files for good.</label><input id="nr-pa-confirm" class="confirm-input" type="text" placeholder="Type the number of files" aria-label="Type the file count to confirm the purge" /></div>
+          </div>
+          <div class="mb-foot" style="padding:12px 15px;">
+            <button class="btn-ghost" type="button" style="flex:1;">Cancel</button>
+            <button class="btn-danger" type="button" disabled style="flex:2; justify-content:center;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="m9.5 11 5 5"/><path d="m14.5 11-5 5"/></svg>Purge 2 files</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+
+</div>
+
+</body>
+</html>

@@ -12,9 +12,18 @@ cairn-specific safety floor the mockups must honor before any UI is drawn.
 Three jobs the 3c Library deferred, plus a possible fourth:
 
 1. **Bulk operations** on the Library: multi-select, a bulk-action bar, and usage-gated bulk delete.
-2. **Orphan collection**: the destructive half of `reconcileMedia`, which 3c left read-only. Two
-   directions, deliberately different: orphaned bytes (R2 objects with no manifest row) and
-   unreferenced assets (manifest rows referenced by nothing in the cross-branch usage index).
+2. **Orphan collection**: removing media that nothing uses. The adversarial mockup critique corrected
+   a taxonomy error this reference's first draft shared with the mockups: there are THREE distinct
+   populations, and each binds to a different server source. (a) **Orphaned bytes** =
+   `reconcile.orphanedObjects` (an R2 object with no manifest row): the irreversible byte purge. (b)
+   **Unreferenced assets** = the usage overlay at zero (a committed manifest row the cross-branch usage
+   index finds in no entry: the `usageCount === 0` path in `usage.ts` / `mediaLibraryLoad`, the renamed
+   "No references found" facet): a reversible git delete, per-item strict-gated. This is NOT a
+   `reconcile` direction; it is a separate code path. (c) **Broken references** =
+   `reconcile.missingObjects` (a manifest row whose bytes are gone): a data-integrity readout, not a
+   deletion target. The first draft conflated (b) with `reconcile`'s second direction, and (c) was
+   left unsurfaced; rev.2 and the spec must keep the three apart or the implementer wires the
+   unreferenced-asset delete to `reconcileMedia`, which does not compute it.
 3. **Needs-alt at scale**: broaden the existing needs-alt triage into a library-wide fix surface.
 4. **Dedupe/merge** (candidate): collapse exact duplicates and merge near-duplicates onto one asset.
 
@@ -122,17 +131,23 @@ destruction, rather than inventing them.
 ### Orphan collection (the biggest opportunity and the most dangerous surface)
 
 Orphan-on-delete is a category-wide unsolved gap (Decap #5097/#4069/#6642, Publii #190, Ghost, Kirby);
-no core git-backed CMS ships a reconcile tool. cairn is two-thirds there. Separate the two directions
-with different verdict strength and friction (the code already names them):
+no core git-backed CMS ships a reconcile tool. cairn is two-thirds there. Keep the three populations
+distinct, each at its own verdict strength and friction:
 
-- **Direction A: orphaned bytes (`orphanedObjects`)**, R2 keys with no manifest row. The safe-ish
-  case: no manifest row means no `media:` token resolves to those bytes, so "no reference" is close to
-  proof. The only residual risk is a raw-HTML `<img>` hardcoding the delivery URL. Treat as low-risk
-  reconcile with a mandatory itemized dry-run preview.
-- **Direction B: unreferenced assets**, manifest rows referenced by nothing in the cross-branch index.
-  The less-safe case: it rides the same raw-HTML blind spot as safe-delete, so it must inherit the full
-  strict fresh-read fail-closed gate, with the blind-spot caveat restated inline at the destructive
-  confirm. Never collect on a single-branch, display-mode, or stale read.
+- **Orphaned bytes (`reconcile.orphanedObjects`)**, R2 keys with no manifest row. The safe-ish case:
+  no manifest row means no `media:` token resolves to those bytes, so "no reference" is close to proof.
+  The only residual risk is a raw-HTML `<img>` hardcoding the delivery URL. The IRREVERSIBLE purge (no
+  git row, no history for raw bytes), so the solid-danger register and the one typed confirm. Detection
+  needs an R2 list plus a reconcile pass, heavier than the loaded index, so it is an on-demand scan
+  with its own loading and detection-time fail-closed states, not an instant filter.
+- **Unreferenced assets (the usage overlay at zero)**, committed manifest rows the cross-branch usage
+  index finds in no entry. NOT a `reconcile` direction; it is the renamed "No references found" facet.
+  Reversible (a git delete), but it rides the same raw-HTML blind spot as safe-delete, so it inherits
+  the full strict fail-closed gate per item, with the blind-spot caveat restated inline at the confirm.
+  Never collect on a single-branch, display-mode, or stale read.
+- **Broken references (`reconcile.missingObjects`)**, manifest rows whose bytes are gone. A
+  data-integrity readout (re-upload or remove the reference), not a deletion target. Surfacing it
+  closes the reconcile loop; no mockup drew it.
 
 Structure: detect-then-confirm with a mandatory dry-run that lists candidates with reasons, never an
 auto-run or one-click "delete all orphans." Keep commit-row-then-delete-R2 so a mid-sweep failure

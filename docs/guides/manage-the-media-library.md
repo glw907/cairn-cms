@@ -102,6 +102,53 @@ someone placed the image into a draft while you had the dialog open, the delete 
 dialog flips to its in-use face with the new list. The check fails closed: if cairn cannot confirm
 the image is safe to remove, it does not remove it.
 
+## Deleting several images at once
+
+When you want to clear out a batch, you do not have to open each image and delete it one by one.
+Select the ones you mean, in the grid or the list, and a bar appears along the bottom with the count
+and a Delete button. Tick a tile or a row to add it, tick again to drop it, and the bar keeps a
+running total of what you have picked.
+
+Bulk delete runs the same safe check on every image you selected, all at once. cairn looks up where
+each one is used, deletes the ones nothing points at, and leaves the rest alone. An image still in
+use is skipped, not deleted, and the result tells you which ones it skipped and why. So you can
+select a whole page of thumbnails without worrying that an in-use image slips through. The dialog is
+a plain confirm with the count, no slug to type, because nothing in use can be removed this way.
+
+A whole batch is one commit, the same as a single safe delete, so it is recoverable. The images'
+records stay in your git history, and a delete you regret can be undone from the repository. If cairn
+cannot work out usage for the batch (a branch it cannot read, say), it refuses the whole thing and
+removes nothing, rather than guess.
+
+## Cleaning up orphaned files
+
+Over time a site collects stored files that nothing uses any more: an image you uploaded and never
+placed, or one left behind when its only page changed. Find orphaned files, a control on the
+toolbar, hunts these down. It compares what is stored against what your content actually references,
+across the live site and every open edit, and reports back in two sections.
+
+One section is "Orphaned files". These are stored files with no record in the library and no
+reference anywhere in your content, on the live site or in any open edit. A file someone uploaded on
+a branch but has not placed yet is left out of this list, because that branch still points at it. So
+the files here really are unused bytes taking up room. You can purge them.
+
+Purging these is the one media action you cannot undo. Everything else in the Library lives in git,
+so a delete can be walked back from history. Raw files have no git record, so once purged they are
+gone for good. Because of that, the purge asks you to type the number of files you are about to
+remove, as a deliberate stop before an action with no undo. At the moment you confirm, cairn checks
+again and re-derives the list fresh, so a file that gained a use since you ran the scan is dropped
+from the purge and kept. It removes only files that are still orphaned right then.
+
+The second section is "Broken references". These are the reverse case: a record in the library whose
+stored file is missing. It is a read-only health readout, with no delete button, because there is
+nothing to remove. A broken reference means a page is pointing at a file that is not there, so the
+fix is to re-upload the file or remove the reference from the page. cairn shows you the list so you
+know where to look.
+
+If a scan cannot read one of your edit branches, it stops before reporting anything and offers you
+Check again, rather than show a half-answer that might call an in-use file orphaned. A clean scan is
+one cairn could run all the way through.
+
 ## One step to make where-used accurate
 
 Where-used reads your published content from a small index cairn keeps beside your content, the

@@ -572,3 +572,11 @@ then commit). The manifest is verified whole-string, so the `cairnManifest` buil
 the regenerated manifest with the new `summary` keys is committed. That is the only action; the
 triage and the rows apply in place, and a site that renders its own list against `EntrySummary` gains
 the optional `summary` field.
+
+## 0.59.0: bulk delete and orphan collection, additive
+
+The Media Library gains multi-select bulk delete and an on-demand orphan collection (Find orphaned
+files, with a one-irreversible byte purge behind a typed-count confirm). Both read usage across
+`main` and every open edit branch and refuse when usage cannot be verified. Consumers must: nothing.
+The surface is admin-side and additive, with no public surface change and no content-format change.
+The editor walkthrough is in [manage the media library](manage-the-media-library.md).

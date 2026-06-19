@@ -239,6 +239,9 @@ declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutes
   renameAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
   uploadAction: (event: ContentEvent) => Promise<ActionFailure<unknown> | UploadResult>;
   mediaDeleteAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
+  mediaBulkDelete: (event: ContentEvent) => Promise<ActionFailure<unknown> | MediaBulkDeleteResult>;
+  mediaOrphanScan: (event: ContentEvent) => Promise<ActionFailure<unknown> | OrphanScan>;
+  mediaPurgeOrphans: (event: ContentEvent) => Promise<ActionFailure<unknown> | MediaOrphanPurgeResult>;
   mediaUpdateAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
   mediaReplacePreview: (event: ContentEvent) => Promise<ActionFailure<unknown> | MediaReplacePreviewPlan>;
   mediaReplaceApply: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
@@ -278,9 +281,27 @@ across the same corpus. `mediaAltPreview` plans the fill over that header transp
 bucket (a hand-written alt kept unless the editor opts in), or a decorative-hero bucket (left alone).
 `mediaAltApply` re-derives the plan from a fresh read, fills the empty alts (and the customized ones
 when the `overwrite` opt-in is set), and commits only the entries it changes in one commit. It never
-writes `media.json`, never gates on a typed slug, and never touches a decorative hero. The optional
-`deps.mintToken` stubs the GitHub App token mint, which is how the showcase runs in dev without a
-real key.
+writes `media.json`, never gates on a typed slug, and never touches a decorative hero. The destructive
+trio (`mediaBulkDelete`, `mediaOrphanScan`, `mediaPurgeOrphans`) clears assets and stored bytes in
+bulk. `mediaBulkDelete` is the single safe-delete gate applied per item over a selection: it builds
+one strict cross-branch usage index for the whole batch, deletes the assets nothing references, and
+skips any still in use, reporting them in the returned `MediaBulkDeleteResult` (its `deleted`,
+`skipped`, and `failed` arrays) rather than force-deleting. The row removals land as one commit before
+the R2 objects are deleted, so a bulk delete is reversible from git history, the same delete-order the
+single safe-delete uses. `mediaOrphanScan` runs a storage reconcile plus a strict usage read and
+returns the `OrphanScan` projection: `orphanedBytes` (stored keys with no manifest row and no
+reference anywhere across `main` and every open branch) and the broken-reference rows (manifest hashes
+whose bytes are gone). A branch-only upload's bytes are excluded from `orphanedBytes`, since the branch
+that uploaded them references them. `mediaPurgeOrphans` is the one irreversible media action: it
+deletes the raw R2 bytes, which carry no git history, so it gates on a typed-count confirm (the number
+of files). At action time it re-derives the orphan set fresh and re-checks the strict usage index, so
+a key that gained a manifest row or a new branch reference since the scan is skipped, never purged; the
+`MediaOrphanPurgeResult` reports `purged`, `skippedClaimed`, and `failed`. All three fail closed: an
+unverifiable cross-branch usage read refuses the whole batch (503) and commits nothing. The
+single-mount composer registers the trio under `mediaBulkDelete`, `mediaOrphanScan`, and `mediaPurge`
+(the purge action's shorter composer name), each gated to the media view, so the Media Library posts
+`?/mediaBulkDelete`, `?/mediaOrphanScan`, and `?/mediaPurge`. The optional `deps.mintToken` stubs the
+GitHub App token mint, which is how the showcase runs in dev without a real key.
 
 A save holds the edit on the entry's pending branch (`cairn/<concept>/<id>`) and does not touch
 the default branch, so the live site stays as it was. `publishAction` publishes what the author

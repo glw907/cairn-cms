@@ -2,6 +2,43 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.59.0
+
+<!-- release-size: minor -->
+
+The Media Library learns to clear out images in bulk and to collect the files nothing uses any more.
+Two surfaces ship together, sharing one safety floor: a strict cross-branch usage index built fresh
+per action, and a refusal that commits nothing when usage cannot be verified.
+
+Multi-select lands in both the grid and the table. Tick the images you mean, a sticky bar shows the
+count, and one Delete runs the single safe-delete gate across the whole selection. cairn deletes the
+assets nothing references and skips any still in use, reporting them rather than force-deleting one.
+The batch is one commit that removes the manifest rows before the R2 objects, so a bulk delete is
+recoverable from git history the same way a single safe-delete is. The dialog is a plain confirm with
+the count, since nothing in use can be removed this way.
+
+Find orphaned files collects stored bytes that drifted loose from content. It pairs a storage
+reconcile with a strict usage read and reports two populations. Orphaned files are stored R2 bytes
+with no manifest row and no reference anywhere across `main` and every open branch; a branch-only
+upload is excluded, because the branch that uploaded it still references it. Broken references are the
+reverse, a manifest row whose bytes are gone, shown as a read-only data-integrity readout with no
+delete. The scan fails closed at detection: a branch it cannot read produces no result and an offer
+to check again, rather than a half-answer that might call an in-use file orphaned.
+
+The byte purge is the one irreversible media action. Everything else in the Library edits git-tracked
+state and can be walked back from history, but raw R2 bytes carry no git record, so a purge cannot be
+undone. It gates on a typed-count confirm, and at action time it re-derives the orphan set and
+re-checks the strict usage index, so a key claimed by a new manifest row or referenced on a branch
+since the scan is skipped, never purged. The shipped "Unused" triage facet is renamed to "No
+references found", with the raw-HTML caveat stated where an editor acts: absence of a found reference
+is not proof of disuse, since cairn cannot see an image hidden in raw HTML or a URL hardcoded in a
+template.
+
+No consumer action is required. The whole surface is admin-side and additive, with no public surface
+change and no content-format change. An editor walkthrough is in
+[manage the media library](docs/guides/manage-the-media-library.md), and the design rationale is in
+[media storage](docs/explanation/media-storage.md).
+
 ## 0.58.0
 
 <!-- release-size: minor -->

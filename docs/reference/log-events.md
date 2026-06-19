@@ -36,6 +36,8 @@ redaction stance.
 | `media.replaced` | info | A replace-in-place rewrites every referencing entry to the new asset and adds its manifest row. | `editor`, `oldHash`, `newHash`, `affected` (the count of rewritten entries) |
 | `media.replace_blocked` | warn | A replace is refused because the typed-slug confirm was missing or wrong. | `editor`, `hash`, `foundIn` (the count of referencing entries) |
 | `media.alt_propagated` | info | An alt-propagation fills the asset's default alt into its empty placements (and customized ones on the opt-in) across the referencing entries. | `editor`, `hash`, `overwrite`, `written` (the count of rewritten entries) |
+| `media.bulk_deleted` | info | A bulk delete commits, removing the manifest rows of the unreferenced assets in the batch. | `editor`, `deleted` (the count removed), `skipped` (the count still in use and left alone) |
+| `media.orphans_purged` | info | The orphan purge runs, deleting stored R2 bytes that no manifest row and no reference points at. | `editor`, `purged` (the count of byte objects removed) |
 
 Saves land on the entry's pending branch, so `commit.succeeded` and `commit.failed` carry a
 `branch` field (`cairn/<concept>/<id>`) on the save path. Deletes, renames, and nav saves commit to
@@ -79,8 +81,12 @@ still point at it. A replace-in-place logs `media.replaced` once the commit land
 `oldHash`, the `newHash`, and the `affected` count of rewritten entries. A replace that arrives
 without the typed-slug confirm is refused and logs `media.replace_blocked`, with `foundIn` set to the
 referencing-entry count. An alt-propagation logs `media.alt_propagated` with the `hash`, the
-`overwrite` opt-in flag, and the `written` count of entries it rewrote. The `hash` is the asset's
-content hash, which is its stable identity across these records.
+`overwrite` opt-in flag, and the `written` count of entries it rewrote. A bulk delete logs
+`media.bulk_deleted` once the commit lands, with `deleted` set to how many unreferenced assets it
+removed and `skipped` set to how many it left alone because they were still in use. An orphan purge
+logs `media.orphans_purged` with `purged` set to how many stored byte objects it deleted; this is the
+one media record that names an irreversible action, since the purged bytes have no git history. The
+`hash` is the asset's content hash, which is its stable identity across these records.
 
 The `email` on `auth.link.requested` is the raw submitted address, logged before the allowlist
 check, so it is unvalidated request input. cairn lowercases it, trims it, and caps the logged value

@@ -70,9 +70,9 @@ A Post or Page can carry a lead image in frontmatter, the hero, as a nested
 reference idea carries over: the committed frontmatter holds the content-addressed token, not a path,
 so a rename never breaks it.
 
-The body resolver only visits image nodes in the rendered markdown, so a frontmatter reference needs
+A body resolver only visits image nodes in the rendered markdown, so a frontmatter reference needs
 its own resolution home. The delivery read path takes an injected resolver and computes a derived
-`heroImage` projection (`url`, `absoluteUrl`, `alt`, `caption`) on the entry data. The on-disk
+`heroImage` projection (`url`, `absoluteUrl`, `alt`, `caption`) on the entry data, and the on-disk
 `image.src` is never mutated. Resolution is a separate projection, so re-serializing an entry never
 writes a resolved URL back to git, and the token keeps its rename-stability. This mirrors the
 `ContentSummary.tags` versus `frontmatter.tags` split the codebase already documents: a derived
@@ -132,6 +132,63 @@ the process fails between those steps, the failure window leaves bytes in R2 wit
 them. That is a benign orphan, recoverable by reconcile, and invisible to the site. The reverse order
 would leave a row pointing at bytes that no longer exist, which is a broken delivery a visitor would
 hit. Designing for the benign failure is the point.
+
+## Three populations, and only one of them is irreversible
+
+Once a site has stored bytes and committed manifest rows, the two sets drift apart, and the gap
+sorts into three populations the cleanup surface treats differently. An unreferenced asset is a
+committed row plus its bytes that no content points at any more. Orphaned bytes are stored R2 objects
+with no manifest row at all. A broken reference is a manifest row whose bytes are gone. The first is
+reversible, the second is the one irreversible media action, and the third is read-only.
+
+An unreferenced asset is removed the way a single safe-delete removes one: the manifest row is
+deleted in a git commit, then the R2 object. Bulk delete is that same gate applied per item across a
+selection. It builds one strict cross-branch usage index for the whole batch, deletes every asset
+the index shows nothing pointing at, and skips any that are still referenced, reporting them rather
+than force-deleting. Because the row removals land as one commit, a bulk delete is reversible: a
+developer reverts the commit and the rows return, and the bytes follow until a later cleanup
+collects them. The dialog is a plain confirm with no typed gate, since nothing in use can be removed
+this way.
+
+Orphaned bytes are different in kind, because raw R2 objects carry no git history. A purge of those
+bytes cannot be reverted from the repository, so it is the one irreversible action in the whole media
+surface. Everything else (a delete, a replace, an alt fill, a bulk delete) edits git-tracked state
+and can be walked back from history. A byte purge edits storage that history never recorded. That is
+why the purge alone carries a typed-count confirm, where the editor types the number of files: the
+weight of the gate matches the weight of the action.
+
+A broken reference is the reverse leak, a row whose bytes went missing, and it gets no delete action
+at all. There is nothing to remove and removing the row would only hide a real fault, so the surface
+shows it as a read-only data-integrity readout. The fix is a re-upload of the missing bytes or a
+removal of the reference, both author actions, not a one-click purge.
+
+## Orphan collection reconciles in two directions, and fails closed
+
+Collection runs on demand. It pairs a storage reconcile (which compares the stored R2 keys against
+the manifest hashes) with a strict cross-branch usage read (which gathers every `media:` reference
+across `main` and every open `cairn/*` branch). The reconcile alone is not enough to call a key
+orphaned, because reconcile sees only `main`. A file uploaded on a branch but not yet committed to
+`main`'s manifest looks orphaned to reconcile, while the branch that uploaded it still references it.
+Folding the strict usage index over the reconcile result excludes that branch-only upload, so its
+bytes are never classed as orphaned and never offered for purge.
+
+That two-direction read is why a key qualifies as an orphaned byte only when it clears both floors:
+no manifest row (reconcile) and no reference anywhere across `main` and every open branch (the strict
+index). Miss either floor and the key is kept. The same union answers the broken-reference half from
+the other side: a manifest hash with no stored object, which reconcile reports as missing.
+
+Detection fails closed. The reconcile and the strict usage read run inside one guarded
+read, so if any branch cannot be read the scan produces no result rather than a partial one. A
+partial read could omit a reference and call an in-use file orphaned, which is the exact mistake an
+irreversible purge must never make. The surface names the unreadable branch generically and offers a
+retry instead of a half-answer.
+
+The purge re-checks the strict index at action time, not from the scan. Between a scan and a confirm,
+a key can gain a manifest row (someone committed it) or a new reference (someone placed it on a
+branch). At purge time the action re-derives the orphan set fresh and re-runs the strict usage read,
+then purges only the keys that still clear both floors. A key claimed or newly referenced since the
+scan is skipped. So the typed-count confirm gates the editor's intent, and the fresh re-derivation
+guards against the world moving underneath it. The irreversible action carries both belts.
 
 ## The asset default alt versus the per-placement alt
 

@@ -4,8 +4,14 @@ The admin Media Library screen, a peer of Posts and Pages. It browses every comm
 shows where each one is used, edits its name and default alt, and deletes it safely. The resting
 surface is a visual contact-sheet grid (a roving-tabindex listbox of tiles), with a list-density
 toggle that flips to an enriched sortable table. One toolbar row carries search, a pick-one triage
-radiogroup (All, Needs alt, Unused), and the density toggle. Filtering, sorting, and a growing
-client window all run over the full loaded set in component state.
+radiogroup (All, Needs alt, No references found), and the density toggle. Filtering, sorting, and a
+growing client window all run over the full loaded set in component state.
+
+The grid and the table are aria-multiselectable: a Set of selected hashes, decoupled from the
+slide-over's single asset and from roving focus. A native checkbox per tile and row toggles it,
+Space toggles the focused tile, Shift+Arrow extends a range, Ctrl/Cmd+A selects every visible
+asset, and Escape clears. A sticky action bar appears on the first selection with a live count, the
+scope, Select all in view, Clear, and the reversible bulk Delete.
 
 Activating a tile or row opens a NON-MODAL detail slide-over from the right (the established
 details-slide-over recipe): no scrim, the library stays live and in the a11y tree behind it, Escape
@@ -116,7 +122,9 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   const triageCounts = $derived({
     all: data.assets.length,
     needsAlt: data.assets.filter((a) => needsAlt(a)).length,
-    // Unused: no usage entry, or a count of zero.
+    // No references found: no usage entry, or a count of zero. The internal enum stays `unused`; the
+    // visible label reads "No references found" because absence of a found reference is not proof of
+    // disuse (cairn cannot see a raw-HTML image or a URL hardcoded into a template).
     unused: data.assets.filter((a) => usageCount(a.hash) === 0).length,
   });
 
@@ -141,7 +149,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   const segments: { value: Triage; label: string; count: () => number }[] = [
     { value: 'all', label: 'All', count: () => triageCounts.all },
     { value: 'needs-alt', label: 'Needs alt', count: () => triageCounts.needsAlt },
-    { value: 'unused', label: 'Unused', count: () => triageCounts.unused },
+    { value: 'unused', label: 'No references found', count: () => triageCounts.unused },
   ];
 
   // The triage radiogroup's roving tabindex and ARIA radio keyboard pattern: the selected radio is
@@ -251,17 +259,24 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   // Escape is also the native clear gesture for the toolbar's type="search" input, so the close
   // fires only when focus is inside the panel: an Escape in the search box clears it and leaves the
   // panel exactly as the user left it, while an Escape with focus in the panel still closes it.
+  // Escape precedence (no overlap): an open dialog claims Escape natively (its showModal owns it, so
+  // this handler stands down while any dialog is open); else an open slide-over with focus inside it
+  // closes (today's behavior); else a non-empty selection is cleared. The search box keeps its own
+  // native Escape-to-clear: the selection clear fires only when focus is NOT in the search input.
   function onWindowKeydown(e: KeyboardEvent) {
-    if (
-      e.key === 'Escape' &&
-      selected &&
-      !deleteDialog?.open &&
-      !replaceDialog?.open &&
-      !altDialog?.open &&
-      panelEl?.contains(document.activeElement)
-    ) {
+    if (e.key !== 'Escape') return;
+    if (deleteDialog?.open || replaceDialog?.open || altDialog?.open) return;
+    if (selected && panelEl?.contains(document.activeElement)) {
       e.preventDefault();
       closePanel();
+      return;
+    }
+    if (selectedCount > 0) {
+      const active = document.activeElement as HTMLElement | null;
+      const inSearch = active instanceof HTMLInputElement && active.type === 'search';
+      if (inSearch) return;
+      e.preventDefault();
+      clearSelection();
     }
   }
 
@@ -788,20 +803,111 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     activeIndex = i;
     tileEls[i]?.focus();
   }
+
+  // --- the multi-select model (the APG multiselectable listbox, shared by the grid and the table) ---
+  // The selection is a Set of asset hashes, distinct from `selected` (the single asset the slide-over
+  // renders). Focus and selection are decoupled: roving the active tile never selects, Space/checkbox
+  // toggles, Shift+Arrow extends a range, Ctrl/Cmd+A selects every visible asset, Escape clears. The
+  // Set is never mutated in place (no reactivity on Set mutation here); every change reassigns, the
+  // same pattern markBroken uses below.
+  let selectedHashes = $state(new Set<string>());
+  const selectedCount = $derived(selectedHashes.size);
+  // The anchor index for a Shift+Arrow range, set on a plain toggle (Space or a checkbox/click). Null
+  // until the first plain selection in the current run.
+  let selectAnchor = $state<number | null>(null);
+
+  /** Toggle one hash, set the range anchor to its visible index, and reassign the Set. */
+  function toggleSelect(hash: string) {
+    const next = new Set(selectedHashes);
+    if (next.has(hash)) next.delete(hash);
+    else next.add(hash);
+    selectedHashes = next;
+    selectAnchor = visible.findIndex((a) => a.hash === hash);
+  }
+  /** Select every hash between the anchor and `to` (inclusive) over the visible set, additively. */
+  function selectRange(to: number) {
+    if (selectAnchor === null) selectAnchor = to;
+    const lo = Math.min(selectAnchor, to);
+    const hi = Math.max(selectAnchor, to);
+    const next = new Set(selectedHashes);
+    for (let j = lo; j <= hi; j++) {
+      const a = visible[j];
+      if (a) next.add(a.hash);
+    }
+    selectedHashes = next;
+  }
+  /** Select every currently-visible asset (Ctrl/Cmd+A and the bar's Select all). */
+  function selectAllVisible() {
+    const next = new Set(selectedHashes);
+    for (const a of visible) next.add(a.hash);
+    selectedHashes = next;
+    selectAnchor = 0;
+  }
+  /** Empty the selection (the bar's Clear and the Escape clear gesture). */
+  function clearSelection() {
+    if (selectedHashes.size === 0) return;
+    selectedHashes = new Set<string>();
+    selectAnchor = null;
+  }
+  // Drop any selected hash that has filtered out of the visible set so the count and the bar's scope
+  // never count an asset the user can no longer see. Reassign only when the set actually shrinks.
+  $effect(() => {
+    const live = new Set(visible.map((a) => a.hash));
+    let changed = false;
+    for (const h of selectedHashes) {
+      if (!live.has(h)) {
+        changed = true;
+        break;
+      }
+    }
+    if (!changed) return;
+    const next = new Set<string>();
+    for (const h of selectedHashes) if (live.has(h)) next.add(h);
+    selectedHashes = next;
+  });
+
+  // The bar's scope line: how many of the selection are in this view, split by usage so the confirm's
+  // skip-and-report path is foreshadowed (Task 8 reads the same split).
+  const selectionScope = $derived.by(() => {
+    let noRefs = 0;
+    let used = 0;
+    for (const a of visible) {
+      if (!selectedHashes.has(a.hash)) continue;
+      if (usageCount(a.hash) === 0) noRefs++;
+      else used++;
+    }
+    return { noRefs, used };
+  });
+
   function onGridKeydown(e: KeyboardEvent, i: number) {
+    // Ctrl/Cmd+A selects every visible asset (the listbox owns the shortcut here).
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A')) {
+      e.preventDefault();
+      selectAllVisible();
+      return;
+    }
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
       e.preventDefault();
-      focusTile(Math.min(i + 1, visible.length - 1));
+      const to = Math.min(i + 1, visible.length - 1);
+      if (e.shiftKey) selectRange(to);
+      focusTile(to);
     } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
       e.preventDefault();
-      focusTile(Math.max(i - 1, 0));
+      const to = Math.max(i - 1, 0);
+      if (e.shiftKey) selectRange(to);
+      focusTile(to);
     } else if (e.key === 'Home') {
       e.preventDefault();
       focusTile(0);
     } else if (e.key === 'End') {
       e.preventDefault();
       focusTile(visible.length - 1);
-    } else if (e.key === 'Enter' || e.key === ' ') {
+    } else if (e.key === ' ') {
+      // Space toggles selection of the focused tile; it never activates the slide-over.
+      e.preventDefault();
+      toggleSelect(visible[i].hash);
+    } else if (e.key === 'Enter') {
+      // Enter activates: it opens the detail slide-over (selection is Space and the checkbox).
       e.preventDefault();
       openAsset(visible[i], tileEls[i]);
     }
@@ -954,6 +1060,21 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     </div>
   </div>
 
+  {#if triage === 'unused'}
+    <!-- The facet preamble: a calm dashed report-only aside above the "No references found" set,
+         naming WHY these are candidates and WHAT cairn cannot see, at the point of action. Never the
+         danger family: selecting is not destroying. -->
+    <div class="mb-3 flex items-start gap-2.5 rounded-box border border-dashed border-[var(--cairn-card-border)] bg-base-200 px-3.5 py-2.5">
+      <FileTextIcon class="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-muted)]" aria-hidden="true" />
+      <p class="text-[0.8125rem] leading-relaxed text-base-content">
+        <b class="font-semibold">No reference found in any tracked branch.</b> Nothing on the site or in an open edit points to these.
+        <span class="mt-0.5 block text-xs text-[var(--color-muted)]">
+          "No references found" is not the same as unused. cairn cannot see a raw-HTML image or a URL hardcoded into a site template, so check anything you are unsure about before deleting it.
+        </span>
+      </p>
+    </div>
+  {/if}
+
   {#if sorted.length === 0}
     <!-- A filter or search narrowed the set to zero; the assets exist, none match. -->
     <div role="status" class="flex flex-col items-center gap-3 px-6 py-14 text-center">
@@ -961,30 +1082,46 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
       <p class="text-sm text-[var(--color-muted)]">No media match this filter.</p>
     </div>
   {:else if density === 'grid'}
-    <!-- The grid: a roving-tabindex listbox of tiles. One tabstop; arrows move the roving index;
-         Enter/Space open. Each tile names the asset, its alt status (a glyph plus a label, never hue
-         alone), and a compact usage marker. -->
-    <ul role="listbox" aria-label="Media library" class="grid list-none grid-cols-2 gap-3 p-0 sm:grid-cols-3 lg:grid-cols-4">
+    <!-- The grid: a roving-tabindex multiselectable listbox of tiles. One tabstop; arrows move the
+         roving index; Enter opens the detail; Space toggles selection (focus and selection are
+         decoupled). Each tile carries a native select checkbox, names the asset, its alt status (a
+         glyph plus a label, never hue alone), and a compact usage marker. -->
+    <ul role="listbox" aria-multiselectable="true" aria-label="Media library" class="grid list-none grid-cols-2 gap-3 p-0 sm:grid-cols-3 lg:grid-cols-4">
       {#each visible as asset, i (asset.hash)}
         {@const used = usageCount(asset.hash)}
         {@const missing = needsAlt(asset)}
+        {@const picked = selectedHashes.has(asset.hash)}
         <li role="presentation" class="contents">
           <div
             bind:this={tileEls[i]}
             role="option"
-            aria-selected={selected?.hash === asset.hash}
+            aria-selected={picked}
             tabindex={i === activeIndex ? 0 : -1}
             aria-label="{asset.displayName}. {missing ? 'Needs alt text' : 'Described'}. {used > 0 ? `Found in ${used} ${used === 1 ? 'entry' : 'entries'}` : 'No references found'}."
-            class="group flex cursor-pointer flex-col overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 outline-hidden transition-shadow focus-visible:ring-2 focus-visible:ring-primary/70 {selected?.hash === asset.hash ? 'ring-2 ring-primary/70' : ''}"
+            class="group relative flex cursor-pointer flex-col overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 outline-hidden transition-shadow focus-visible:ring-2 focus-visible:ring-primary/70 {picked ? 'ring-2 ring-primary/70' : selected?.hash === asset.hash ? 'ring-2 ring-primary/40' : ''}"
             onclick={(e) => openAsset(asset, e.currentTarget)}
             onkeydown={(e) => onGridKeydown(e, i)}
           >
+            <!-- The selection checkbox, top-left: a real native checkbox in a soft chip so it reads on
+                 any thumbnail. Clicking it toggles the selection only; it never opens the slide-over. -->
+            <span class="absolute left-2 top-2 z-10 inline-flex h-6 w-6 items-center justify-center rounded-md bg-base-100/90 shadow-sm">
+              <input
+                type="checkbox"
+                class="checkbox checkbox-sm"
+                checked={picked}
+                aria-label="Select {asset.displayName}"
+                onclick={(e) => e.stopPropagation()}
+                onchange={() => toggleSelect(asset.hash)}
+              />
+            </span>
             <div class="relative flex aspect-[4/3] items-center justify-center bg-base-200/60">
-              <!-- The usage marker, top-right: a used count, or the warning-ink Unused chip. -->
+              <!-- The usage marker, top-right: a used count, or the warning-ink "No refs" chip. The
+                   category reads "No references found" (renamed from "Unused"): a found reference is
+                   not proof of use, and absence of one is not proof of disuse. -->
               {#if used > 0}
                 <span class="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full border border-[var(--cairn-card-border)] bg-base-100/90 px-2 py-0.5 text-[0.625rem] font-semibold text-[var(--color-muted)]">used {used}</span>
               {:else}
-                <span class="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full border border-[var(--cairn-card-border)] bg-base-100/90 px-2 py-0.5 text-[0.625rem] font-semibold text-[var(--cairn-warning-ink)]">Unused</span>
+                <span class="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full border border-[var(--cairn-card-border)] bg-base-100/90 px-2 py-0.5 text-[0.625rem] font-semibold text-[var(--cairn-warning-ink)]">No refs</span>
               {/if}
               {#if brokenHashes.has(asset.hash)}
                 <span data-cairn-broken class="flex flex-col items-center gap-1 text-[var(--color-subtle)]">
@@ -1020,30 +1157,44 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     </ul>
   {:else}
     <!-- The list density: a real table. Each row opens the detail (sets `selected`); the Added
-         column sorts through a real <th><button> with aria-sort; the per-row delete is always
-         visible and sets the pending-delete intent Task 7 reads. -->
+         column sorts through a real header button with aria-sort; the per-row delete is always
+         visible. The table advertises and carries multi-select through its leading native-checkbox
+         column (the standard accessible selectable-table pattern). aria-multiselectable is only
+         valid on a grid, so the table takes role="grid" and its rows and cells take the matching
+         grid roles; the selection still rides the per-row native checkboxes. -->
     <div class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 overflow-x-auto shadow-[var(--cairn-shadow)]">
-      <table class="table">
+      <table class="table" role="grid" aria-multiselectable="true" aria-label="Media library">
         <thead>
           <tr class="border-base-300">
-            <th class={headerLabel}>Asset</th>
-            <th class="{headerLabel} w-32">Alt status</th>
-            <th class="{headerLabel} w-40">Used</th>
-            <th class="w-24 text-right" aria-sort={addedSort}>
+            <th role="columnheader" class="w-10"><span class="sr-only">Select</span></th>
+            <th role="columnheader" class={headerLabel}>Asset</th>
+            <th role="columnheader" class="{headerLabel} w-32">Alt status</th>
+            <th role="columnheader" class="{headerLabel} w-40">Used</th>
+            <th role="columnheader" class="w-24 text-right" aria-sort={addedSort}>
               <button type="button" class="ml-auto inline-flex items-center gap-1 {headerLabel} hover:text-base-content" aria-label="Sort by date added" onclick={toggleSort}>
                 Added
                 <ChevronDownIcon class="h-3 w-3 {sortAsc ? 'rotate-180' : ''}" aria-hidden="true" />
               </button>
             </th>
-            <th class="w-12 text-right"><span class="sr-only">Actions</span></th>
+            <th role="columnheader" class="w-12 text-right"><span class="sr-only">Actions</span></th>
           </tr>
         </thead>
         <tbody>
           {#each visible as asset (asset.hash)}
             {@const used = usageCount(asset.hash)}
             {@const missing = needsAlt(asset)}
-            <tr class="transition-colors hover:bg-base-200/60 {selected?.hash === asset.hash ? 'bg-primary/[0.06]' : ''}">
-              <td class="max-w-0">
+            {@const picked = selectedHashes.has(asset.hash)}
+            <tr aria-selected={picked} class="transition-colors hover:bg-base-200/60 {picked ? 'bg-primary/[0.06]' : selected?.hash === asset.hash ? 'bg-primary/[0.03]' : ''}">
+              <td role="gridcell" class="w-10">
+                <input
+                  type="checkbox"
+                  class="checkbox checkbox-sm"
+                  checked={picked}
+                  aria-label="Select {asset.displayName}"
+                  onchange={() => toggleSelect(asset.hash)}
+                />
+              </td>
+              <td role="gridcell" class="max-w-0">
                 <button type="button" class="flex w-full items-center gap-3 text-left" onclick={(e) => openAsset(asset, e.currentTarget)}>
                   <span class="relative flex h-10 w-14 flex-none items-center justify-center overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-200/60">
                     {#if brokenHashes.has(asset.hash)}
@@ -1060,7 +1211,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                   </span>
                 </button>
               </td>
-              <td class="w-32">
+              <td role="gridcell" class="w-32">
                 {#if missing}
                   <span class="inline-flex items-center gap-1 text-[0.75rem] font-medium text-[var(--cairn-warning-ink)]">
                     <TriangleAlertIcon class="h-3.5 w-3.5" aria-hidden="true" /> Needs alt
@@ -1071,15 +1222,15 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                   </span>
                 {/if}
               </td>
-              <td class="w-40 text-[0.8125rem]">
+              <td role="gridcell" class="w-40 text-[0.8125rem]">
                 {#if used > 0}
                   <span class="text-base-content">found in {used}</span>
                 {:else}
                   <span class="text-[var(--color-muted)]">no references found</span>
                 {/if}
               </td>
-              <td class="w-24 text-right text-sm tabular-nums text-[var(--color-muted)]">{formatAdded(asset.createdAt)}</td>
-              <td class="w-12 text-right">
+              <td role="gridcell" class="w-24 text-right text-sm tabular-nums text-[var(--color-muted)]">{formatAdded(asset.createdAt)}</td>
+              <td role="gridcell" class="w-12 text-right">
                 <button type="button" class="btn btn-ghost btn-sm" aria-label="Delete {asset.displayName}" onclick={() => requestDelete(asset)}>
                   <Trash2Icon class="h-4 w-4 text-error" />
                 </button>
@@ -1088,6 +1239,45 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           {/each}
         </tbody>
       </table>
+    </div>
+  {/if}
+
+  <!-- The selection-count live region: a dedicated sr-only role=status node that mirrors "N selected"
+       on every toggle. It never shares a node with the flash, copy, or Showing regions, so the three
+       polite regions never collide (the announced count is its own surface). -->
+  <div class="sr-only" role="status" aria-live="polite">{selectedCount > 0 ? `${selectedCount} selected.` : ''}</div>
+
+  {#if selectedCount > 0}
+    <!-- THE STICKY SELECTION ACTION BAR (position: sticky, so it rides the bottom of the scrolling
+         content and never floats off it). It states the count, names the scope, offers Select all in
+         view and Clear, and carries the reversible bulk Delete (a git-tracked removal of manifest
+         rows, so the danger-OUTLINE register; the irreversible byte purge lives on a separate
+         surface and is never reachable from this bar). -->
+    <div
+      role="region"
+      aria-label="Selection actions"
+      class="sticky bottom-3.5 z-20 mx-auto mt-4 flex w-full max-w-[640px] items-center gap-3.5 rounded-2xl border border-[var(--cairn-card-border)] bg-base-100 px-4 py-3 shadow-[var(--cairn-shadow)]"
+    >
+      <span class="shrink-0 text-[0.9375rem] font-bold tabular-nums">{selectedCount}</span>
+      <span class="min-w-0 text-xs leading-snug text-[var(--color-muted)]">
+        <b class="font-semibold text-base-content">{selectedCount} selected</b> in this view<br />
+        {selectionScope.noRefs} with no references, {selectionScope.used} still used
+      </span>
+      <span class="flex-1"></span>
+      {#if selectedCount < visible.length}
+        <button type="button" class="whitespace-nowrap px-1 py-1.5 text-[0.8125rem] font-medium text-primary hover:underline" onclick={selectAllVisible}>
+          Select all {visible.length}
+        </button>
+      {/if}
+      <button type="button" class="whitespace-nowrap rounded-lg border border-base-300 px-2.5 py-2 text-[0.8125rem] font-medium text-[var(--color-subtle)]" onclick={clearSelection}>
+        Clear
+      </button>
+      <!-- TODO(Task 8): wire this Delete to the bulk-delete alertdialog (?/mediaBulkDelete). It is a
+           present, focusable shell here so the bar matches the rev.2 design; the dialog and its
+           skip-and-report flow land in Task 8. The reversible danger-OUTLINE register. -->
+      <button type="button" aria-haspopup="dialog" class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-[var(--cairn-error-border)] bg-base-100 px-3.5 py-2.5 text-[0.8125rem] font-semibold text-[var(--cairn-error-ink)]">
+        <Trash2Icon class="h-3.5 w-3.5" aria-hidden="true" /> Delete {selectedCount}
+      </button>
     </div>
   {/if}
 

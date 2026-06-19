@@ -93,9 +93,11 @@ describe('CairnMediaLibrary grid', () => {
     const describedTile = options.find((o) => /first-light/.test(o.textContent ?? ''))!;
     expect(describedTile.querySelector('[aria-label="Described"]')).not.toBeNull();
 
-    // The unused tile carries the Unused marker; the used tile names its count.
+    // The no-references tile carries the "No refs" marker; the used tile names its count. The
+    // category never reads "Unused" (the rename: absence of a found reference is not proof of disuse).
     const unusedTile = options.find((o) => /meadow-fence/.test(o.textContent ?? ''))!;
-    expect(unusedTile.textContent ?? '').toMatch(/unused/i);
+    expect(unusedTile.textContent ?? '').toMatch(/no refs/i);
+    expect(unusedTile.textContent ?? '').not.toMatch(/unused/i);
     expect(describedTile.textContent ?? '').toMatch(/used/i);
   });
 
@@ -117,14 +119,16 @@ describe('CairnMediaLibrary grid', () => {
     await expect.poll(() => document.activeElement).toBe(options()[0]);
   });
 
-  it('activates an option with Enter, marking it aria-selected (the open intent)', async () => {
+  it('activates an option with Enter, opening the detail slide-over (not a selection)', async () => {
     const screen = render(CairnMediaLibrary, { data: fixture() } as never);
     const options = () => [...screen.container.querySelectorAll<HTMLElement>('[role="option"]')];
     const first = options()[0];
     first.focus();
     first.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-    await expect.poll(() => first.getAttribute('aria-selected')).toBe('true');
-    expect(options().filter((o) => o.getAttribute('aria-selected') === 'true').length).toBe(1);
+    // Enter activates: the detail slide-over opens. aria-selected tracks the multi-select set, so a
+    // bare Enter leaves every option unselected.
+    await expect.poll(() => screen.container.querySelector('[role="region"]')).not.toBeNull();
+    expect(options().filter((o) => o.getAttribute('aria-selected') === 'true').length).toBe(0);
   });
 });
 
@@ -177,9 +181,9 @@ describe('CairnMediaLibrary triage radiogroup', () => {
     expect(radios.length).toBe(3);
     expect(radios.every((r) => r.hasAttribute('aria-checked'))).toBe(true);
     expect(radios.some((r) => r.hasAttribute('aria-pressed'))).toBe(false);
-    // Live counts: Needs alt = 2 (NEEDS_ALT + BROKEN), Unused = 2 (UNUSED + BROKEN).
+    // Live counts: Needs alt = 2 (NEEDS_ALT + BROKEN), No references found = 2 (UNUSED + BROKEN).
     expect(radios.find((r) => /needs alt/i.test(r.textContent ?? ''))!.textContent ?? '').toContain('2');
-    expect(radios.find((r) => /unused/i.test(r.textContent ?? ''))!.textContent ?? '').toContain('2');
+    expect(radios.find((r) => /no references found/i.test(r.textContent ?? ''))!.textContent ?? '').toContain('2');
     expect(radios.find((r) => /all/i.test(r.textContent ?? ''))!.getAttribute('aria-checked')).toBe('true');
   });
 
@@ -201,7 +205,7 @@ describe('CairnMediaLibrary triage radiogroup', () => {
     // The grid narrowed to the Needs-alt set, so the keyboard move actually drove the filter.
     await expect.poll(() => screen.container.querySelectorAll('[role="option"]').length).toBe(2);
 
-    // End jumps to the last segment (Unused), Home back to the first.
+    // End jumps to the last segment (No references found), Home back to the first.
     radios()[1].dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
     await expect.poll(() => document.activeElement).toBe(radios()[2]);
     expect(radios()[2].getAttribute('aria-checked')).toBe('true');
@@ -210,7 +214,7 @@ describe('CairnMediaLibrary triage radiogroup', () => {
     expect(radios()[0].getAttribute('aria-checked')).toBe('true');
   });
 
-  it('filters to Needs alt and to Unused', async () => {
+  it('filters to Needs alt and to No references found', async () => {
     const screen = render(CairnMediaLibrary, { data: fixture() } as never);
     const radios = () => [...screen.container.querySelectorAll<HTMLElement>('[role="radio"]')];
 
@@ -219,7 +223,7 @@ describe('CairnMediaLibrary triage radiogroup', () => {
     let options = [...screen.container.querySelectorAll('[role="option"]')];
     expect(options.every((o) => /valley-ridge|old-pylon/.test(o.textContent ?? ''))).toBe(true);
 
-    await radios().find((r) => /unused/i.test(r.textContent ?? ''))!.click();
+    await radios().find((r) => /no references found/i.test(r.textContent ?? ''))!.click();
     await expect.poll(() => screen.container.querySelectorAll('[role="option"]').length).toBe(2);
     options = [...screen.container.querySelectorAll('[role="option"]')];
     expect(options.every((o) => /meadow-fence|old-pylon/.test(o.textContent ?? ''))).toBe(true);
@@ -248,14 +252,17 @@ describe('CairnMediaLibrary pagination', () => {
     const before = visible();
     expect(before).toBeLessThan(30);
 
-    // Target the count region specifically: the action flash strip also carries aria-live="polite"
-    // but no role, so scope to the status-role count region.
-    const live = screen.container.querySelector('[role="status"][aria-live="polite"]');
-    expect(live?.textContent ?? '').toMatch(new RegExp(`Showing ${before} of 30`));
+    // Target the Showing count region specifically: several polite live regions exist now (the flash
+    // strip, the copy notice, the selection count), so find the status region carrying "Showing".
+    const live = () =>
+      [...screen.container.querySelectorAll('[role="status"][aria-live="polite"]')].find((n) =>
+        /Showing/.test(n.textContent ?? ''),
+      );
+    expect(live()?.textContent ?? '').toMatch(new RegExp(`Showing ${before} of 30`));
 
     await screen.getByRole('button', { name: /load more/i }).click();
     await expect.poll(() => visible()).toBeGreaterThan(before);
-    expect(live?.textContent ?? '').toMatch(new RegExp(`Showing ${visible()} of 30`));
+    expect(live()?.textContent ?? '').toMatch(new RegExp(`Showing ${visible()} of 30`));
   });
 });
 
@@ -499,7 +506,7 @@ describe('CairnMediaLibrary safe-delete alertdialog', () => {
     const dialog = screen.container.querySelector('dialog[role="alertdialog"]') as HTMLDialogElement;
     await expect.poll(() => dialog.open).toBe(true);
     // No slide-over opened, just the dialog.
-    expect(screen.container.querySelector('[role="region"]')).toBeNull();
+    expect(screen.container.querySelector('[role="region"][aria-label$="details"]')).toBeNull();
     expect(dialog.textContent ?? '').toContain('meadow-fence');
   });
 
@@ -1140,5 +1147,178 @@ describe('CairnMediaLibrary preview in-flight guard', () => {
     await new Promise((r) => setTimeout(r, 30));
     expect(dialog.textContent ?? '').toContain('The second asset entry');
     expect(dialog.textContent ?? '').not.toContain('A season on the early tracks');
+  });
+});
+
+describe('CairnMediaLibrary multi-select', () => {
+  // The grid is an APG multiselectable listbox: focus and selection are decoupled. Space toggles the
+  // focused tile, Shift+Arrow extends a range, Ctrl/Cmd+A selects every visible asset, and Escape
+  // clears. The sticky action bar appears once a selection exists, with a live count.
+  const grid = (screen: ReturnType<typeof render>) =>
+    screen.container.querySelector('[role="listbox"]')!;
+  const options = (screen: ReturnType<typeof render>) =>
+    [...screen.container.querySelectorAll<HTMLElement>('[role="option"]')];
+  const selectionBar = (screen: ReturnType<typeof render>) =>
+    screen.container.querySelector<HTMLElement>('[aria-label="Selection actions"]');
+  // The selection-count live region is its own sr-only role=status node carrying "N selected".
+  const selectionStatus = (screen: ReturnType<typeof render>) =>
+    [...screen.container.querySelectorAll('[role="status"]')].find((n) =>
+      /\bselected\b/i.test(n.textContent ?? ''),
+    );
+
+  it('advertises the grid and the table as aria-multiselectable', async () => {
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    expect(grid(screen).getAttribute('aria-multiselectable')).toBe('true');
+
+    await screen.getByRole('button', { name: /list view/i }).click();
+    const table = screen.container.querySelector('table')!;
+    const multi =
+      table.getAttribute('aria-multiselectable') === 'true' ||
+      !!table.querySelector('[aria-multiselectable="true"]') ||
+      !!screen.container.querySelector('[role="grid"][aria-multiselectable="true"]');
+    expect(multi).toBe(true);
+  });
+
+  it('toggles selection on the focused tile with Space, never opening the slide-over', async () => {
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const first = options(screen)[0];
+    first.focus();
+
+    first.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+    await expect.poll(() => options(screen)[0].getAttribute('aria-selected')).toBe('true');
+    // Space selected, it did NOT activate: no detail slide-over opened.
+    expect(screen.container.querySelector('[role="region"][aria-label$="details"]')).toBeNull();
+    // Focus stayed on the toggled tile.
+    expect(document.activeElement).toBe(options(screen)[0]);
+
+    // Space again toggles it back off.
+    options(screen)[0].dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+    await expect.poll(() => options(screen)[0].getAttribute('aria-selected')).toBe('false');
+  });
+
+  it('updates the role=status live region and shows the sticky action bar with the count', async () => {
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    // No selection: no bar.
+    expect(selectionBar(screen)).toBeNull();
+
+    const opts = options(screen);
+    opts[0].focus();
+    opts[0].dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+    await expect.poll(() => selectionBar(screen)).not.toBeNull();
+
+    // The live region announces the count, and the bar shows it.
+    await expect.poll(() => selectionStatus(screen)?.textContent ?? '').toMatch(/\b1 selected\b/i);
+    expect(selectionBar(screen)!.textContent ?? '').toContain('1');
+
+    // A second tile: the count climbs to 2 in both the status region and the bar.
+    const next = options(screen)[1];
+    next.focus();
+    next.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+    await expect.poll(() => selectionStatus(screen)?.textContent ?? '').toMatch(/\b2 selected\b/i);
+    expect(selectionBar(screen)!.textContent ?? '').toMatch(/2 selected/i);
+  });
+
+  it('offers a Clear in the sticky bar that empties the selection', async () => {
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const first = options(screen)[0];
+    first.focus();
+    first.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+    await expect.poll(() => selectionBar(screen)).not.toBeNull();
+
+    const clear = [...selectionBar(screen)!.querySelectorAll('button')].find((b) =>
+      /^clear$/i.test(b.textContent?.trim() ?? ''),
+    )!;
+    expect(clear).toBeTruthy();
+    clear.click();
+    await expect.poll(() => selectionBar(screen)).toBeNull();
+    expect(options(screen).filter((o) => o.getAttribute('aria-selected') === 'true').length).toBe(0);
+  });
+
+  it('selects all visible assets with Ctrl/Cmd+A and clears the selection with Escape', async () => {
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const first = options(screen)[0];
+    first.focus();
+
+    first.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'a', ctrlKey: true, bubbles: true }),
+    );
+    await expect.poll(
+      () => options(screen).filter((o) => o.getAttribute('aria-selected') === 'true').length,
+    ).toBe(4);
+    expect(selectionStatus(screen)?.textContent ?? '').toMatch(/\b4 selected\b/i);
+
+    // Escape clears the whole selection (no dialog, no slide-over open).
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await expect.poll(() => selectionBar(screen)).toBeNull();
+    expect(options(screen).filter((o) => o.getAttribute('aria-selected') === 'true').length).toBe(0);
+  });
+
+  it('extends a contiguous range with Shift+Arrow from the toggle anchor', async () => {
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const first = options(screen)[0];
+    first.focus();
+    // Anchor at index 0.
+    first.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+    await expect.poll(() => options(screen)[0].getAttribute('aria-selected')).toBe('true');
+
+    // Shift+ArrowRight twice: range 0..2 selected, index 3 left out.
+    options(screen)[0].dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowRight', shiftKey: true, bubbles: true }),
+    );
+    await expect.poll(() => document.activeElement).toBe(options(screen)[1]);
+    options(screen)[1].dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowRight', shiftKey: true, bubbles: true }),
+    );
+    await expect.poll(
+      () => options(screen).filter((o) => o.getAttribute('aria-selected') === 'true').length,
+    ).toBe(3);
+    const selected = options(screen).map((o) => o.getAttribute('aria-selected'));
+    expect(selected.slice(0, 3)).toEqual(['true', 'true', 'true']);
+    expect(selected[3]).toBe('false');
+  });
+
+  it('exposes a native checkbox per tile that toggles selection without opening the slide-over', async () => {
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const opt = options(screen)[0];
+    const box = opt.querySelector<HTMLInputElement>('input[type="checkbox"]')!;
+    expect(box).toBeTruthy();
+    expect(box.getAttribute('aria-label') ?? '').toMatch(/^select /i);
+
+    box.click();
+    await expect.poll(() => options(screen)[0].getAttribute('aria-selected')).toBe('true');
+    expect(box.checked).toBe(true);
+    // Clicking the checkbox never opens the detail region.
+    expect(screen.container.querySelector('[role="region"][aria-label$="details"]')).toBeNull();
+  });
+
+  it('carries the selection into the table with a leading native checkbox column', async () => {
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    await screen.getByRole('button', { name: /list view/i }).click();
+
+    const rowBoxes = [...screen.container.querySelectorAll<HTMLInputElement>('tbody input[type="checkbox"]')];
+    expect(rowBoxes.length).toBe(4);
+    expect(rowBoxes[0].getAttribute('aria-label') ?? '').toMatch(/^select /i);
+
+    rowBoxes[0].click();
+    await expect.poll(() => selectionBar(screen)).not.toBeNull();
+    expect(selectionStatus(screen)?.textContent ?? '').toMatch(/\b1 selected\b/i);
+  });
+});
+
+describe('CairnMediaLibrary the no-references rename', () => {
+  it('names the triage facet "No references found", never "Unused"', async () => {
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const radios = [...screen.container.querySelectorAll('[role="radio"]')];
+    expect(radios.some((r) => /no references found/i.test(r.textContent ?? ''))).toBe(true);
+    expect(radios.some((r) => /unused/i.test(r.textContent ?? ''))).toBe(false);
+  });
+
+  it('carries the raw-HTML blind-spot caveat on the No references found facet', async () => {
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const radios = [...screen.container.querySelectorAll<HTMLElement>('[role="radio"]')];
+    radios.find((r) => /no references found/i.test(r.textContent ?? ''))!.click();
+    await expect.poll(() => screen.container.querySelectorAll('[role="option"]').length).toBe(2);
+    // The caveat names the blind spot at the point of action: a found reference is not proof of use.
+    expect(screen.container.textContent ?? '').toMatch(/raw-html|cannot see|not the same as unused/i);
   });
 });

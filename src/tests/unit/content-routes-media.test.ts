@@ -7,7 +7,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
-import type { ContentFormFailure } from '../../lib/sveltekit/content-routes.js';
+import type { ContentFormFailure, MediaBulkFailure } from '../../lib/sveltekit/content-routes.js';
 import { serializeManifest } from '../../lib/content/manifest.js';
 import { parseMediaManifest, serializeMediaManifest, type MediaEntry, type MediaManifest } from '../../lib/media/manifest.js';
 import { parseMediaToken } from '../../lib/media/reference.js';
@@ -264,6 +264,22 @@ describe('mediaLibraryLoad flash flags', () => {
     expect(data.flashError).toBeNull();
   });
 
+  it('reads the bulkDeleted flash from ?bulkDeleted=1', async () => {
+    gh();
+    const routes = createContentRoutes(runtime(), deps);
+    const data = await routes.mediaLibraryLoad(libraryEvent('?bulkDeleted=1') as never);
+    expect(data.flash).toBe('bulkDeleted');
+    expect(data.flashError).toBeNull();
+  });
+
+  it('reads the orphansPurged flash from ?orphansPurged=1', async () => {
+    gh();
+    const routes = createContentRoutes(runtime(), deps);
+    const data = await routes.mediaLibraryLoad(libraryEvent('?orphansPurged=1') as never);
+    expect(data.flash).toBe('orphansPurged');
+    expect(data.flashError).toBeNull();
+  });
+
   it('reads the conflict error from ?error= into flashError, not the load error slot', async () => {
     gh();
     const routes = createContentRoutes(runtime(), deps);
@@ -292,6 +308,16 @@ describe('ContentFormFailure accepts the media replace and alt-propagate shapes'
     const altPropagate: ContentFormFailure = { error: 'could not verify usage' };
     expect(replace.error).toBe('still in use');
     expect(altPropagate.error).toBe('could not verify usage');
+  });
+
+  it('accepts a MediaBulkFailure shape', () => {
+    // Type-level assertion: the union must accept the bulk failure's bare summary, and reading it back
+    // as ContentFormFailure['error'] proves the merge. A compile-only check; the runtime assertion just
+    // keeps the const live.
+    const bulkFail: MediaBulkFailure = { error: 'could not verify usage' };
+    const merged: ContentFormFailure = bulkFail;
+    const message: ContentFormFailure['error'] = merged.error;
+    expect(message).toBe('could not verify usage');
   });
 });
 

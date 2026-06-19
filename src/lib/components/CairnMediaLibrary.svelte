@@ -94,6 +94,8 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     updated: 'Changes saved.',
     replaced: 'Asset replaced.',
     altPropagated: 'Alt text applied.',
+    bulkDeleted: 'Assets deleted.',
+    orphansPurged: 'Orphans purged.',
   } as const;
   const flashMessage = $derived(data.flash ? FLASH_MESSAGE[data.flash] : '');
 

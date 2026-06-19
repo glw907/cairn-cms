@@ -33,6 +33,7 @@ import { repointMediaRef, fillAltForHash } from '../content/media-rewrite.js';
 import type { RepointPlacement, AltPlacement } from '../content/media-rewrite.js';
 import { planMediaRewrite } from '../media/rewrite-plan.js';
 import type { BranchRef } from '../media/rewrite-plan.js';
+import type { BulkDeleteSkip } from '../media/bulk-delete-plan.js';
 import type { CookieJar, EventBase } from './types.js';
 import type { CairnRuntime, ConceptDescriptor, FrontmatterField, PreviewConfig, ResolvedPreview } from '../content/types.js';
 import type { Editor, Role } from '../auth/types.js';
@@ -161,9 +162,10 @@ export interface MediaLibraryData {
    *  redirected commit conflict never overwrite each other. */
   error: string | null;
   /** The success flash a redirected action carries: `deleted` from `?deleted=1`, `updated` from
-   *  `?updated=1`, `replaced` from `?replaced=1`, `altPropagated` from `?altPropagated=1`, null
-   *  otherwise. The component renders a polite success strip for each. */
-  flash: 'deleted' | 'updated' | 'replaced' | 'altPropagated' | null;
+   *  `?updated=1`, `replaced` from `?replaced=1`, `altPropagated` from `?altPropagated=1`,
+   *  `bulkDeleted` from `?bulkDeleted=1`, `orphansPurged` from `?orphansPurged=1`, null otherwise.
+   *  The component renders a polite success strip for each. */
+  flash: 'deleted' | 'updated' | 'replaced' | 'altPropagated' | 'bulkDeleted' | 'orphansPurged' | null;
   /** A redirected action's conflict error read from `?error=` (a commit-conflict bounce). Kept in
    *  its own slot rather than the degraded-load `error` above, so the two never collide. */
   flashError: string | null;
@@ -248,6 +250,30 @@ export interface MediaAltPropagateFailure {
   error: string;
 }
 
+/** A refused media bulk delete or orphan purge: `fail(503)` for the fail-closed strict-usage refusal
+ *  (the whole batch refuses) or media-off / a missing bucket binding. The per-item outcomes ride the
+ *  returned summary, not a fail. */
+export interface MediaBulkFailure {
+  error: string;
+}
+
+/** The bulk-delete outcome the component renders: the deleted hashes, the skipped rows from the
+ *  partition (with their reason and where-used), and any per-object R2 delete failure. Admin-internal,
+ *  not on the package subpath, so no reference page. */
+export interface MediaBulkDeleteResult {
+  deleted: string[];
+  skipped: BulkDeleteSkip[];
+  failed: { hash: string; error: string }[];
+}
+
+/** The orphan-purge outcome: the purged R2 keys, the keys skipped because their hash was claimed by a
+ *  manifest row since the scan, and any per-object delete failure. Admin-internal, no reference page. */
+export interface MediaOrphanPurgeResult {
+  purged: string[];
+  skippedClaimed: string[];
+  failed: { key: string; error: string }[];
+}
+
 /** One entry the replace preview will rewrite, enriched with its display title and permalink from the
  *  content manifest (the planner's PlannedEntry carries neither). The screen lists these as the
  *  confirm dialog's where-touched preview, and the apply re-derives its own plan rather than trusting
@@ -312,7 +338,7 @@ export interface MediaAltPreviewPlan {
  *  `form` prop carries a `?/mediaDelete`, `?/mediaUpdate`, `?/mediaReplace`, or `?/mediaAltPropagate`
  *  refusal without a second type. */
 export type ContentFormFailure = Partial<
-  SaveFailure & DeleteRefusal & RenameFailure & MediaDeleteRefusal & MediaUpdateFailure & MediaReplaceFailure & MediaAltPropagateFailure
+  SaveFailure & DeleteRefusal & RenameFailure & MediaDeleteRefusal & MediaUpdateFailure & MediaReplaceFailure & MediaAltPropagateFailure & MediaBulkFailure
 >;
 
 /** The successful upload's response (`uploadAction`). The server-owned `record` rides the editor's
@@ -546,6 +572,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     else if (event.url.searchParams.get('updated') === '1') flash = 'updated';
     else if (event.url.searchParams.get('replaced') === '1') flash = 'replaced';
     else if (event.url.searchParams.get('altPropagated') === '1') flash = 'altPropagated';
+    else if (event.url.searchParams.get('bulkDeleted') === '1') flash = 'bulkDeleted';
+    else if (event.url.searchParams.get('orphansPurged') === '1') flash = 'orphansPurged';
     const flashError = event.url.searchParams.get('error');
     let token: string;
     try {

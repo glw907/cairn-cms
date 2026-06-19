@@ -10,3 +10,11 @@ export const beforeNavigateCallbacks: Array<(navigation: BeforeNavigate) => void
 export function beforeNavigate(callback: (navigation: BeforeNavigate) => void): void {
   beforeNavigateCallbacks.push(callback);
 }
+
+/** Count of invalidateAll() calls, so a test can assert a flow asked the load to re-run. */
+export const invalidateAllCalls = { count: 0 };
+
+/** Records the call. The real implementation re-runs every load function for the current page. */
+export async function invalidateAll(): Promise<void> {
+  invalidateAllCalls.count += 1;
+}

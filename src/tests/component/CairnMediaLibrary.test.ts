@@ -1322,3 +1322,114 @@ describe('CairnMediaLibrary the no-references rename', () => {
     expect(screen.container.textContent ?? '').toMatch(/raw-html|cannot see|not the same as unused/i);
   });
 });
+
+// --- Task 8: the bulk-delete alertdialog (the skip-and-report dry-run, the reversible register,
+// the announced progress, and the itemized summary) ---
+describe('CairnMediaLibrary bulk-delete dialog', () => {
+  // Select the three assets the rev.2 mockup splits: two with no references (UNUSED, BROKEN) and one
+  // still in use (DESCRIBED_USED, found in 3 entries). The selection rides the grid checkboxes.
+  async function selectFor(screen: ReturnType<typeof render>) {
+    const opts = [...screen.container.querySelectorAll<HTMLElement>('[role="option"]')];
+    for (const name of [/meadow-fence/, /old-pylon/, /first-light/]) {
+      const box = opts.find((o) => name.test(o.textContent ?? ''))!.querySelector<HTMLInputElement>('input[type="checkbox"]')!;
+      box.click();
+    }
+    await expect.poll(() => screen.container.querySelector('[aria-label="Selection actions"]')).not.toBeNull();
+  }
+  const barDelete = (screen: ReturnType<typeof render>) =>
+    [...screen.container.querySelector('[aria-label="Selection actions"]')!.querySelectorAll('button')].find((b) =>
+      /^delete\s/i.test(b.textContent?.trim() ?? ''),
+    )!;
+  const bulkDialog = (screen: ReturnType<typeof render>) =>
+    screen.container.querySelector('[data-testid="cairn-bulk-dialog"]') as HTMLDialogElement;
+
+  it('opens an alertdialog with the will-delete and will-skip groups and an outcome-naming apply', async () => {
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    await selectFor(screen);
+    barDelete(screen).click();
+
+    const dialog = bulkDialog(screen);
+    expect(dialog).not.toBeNull();
+    await expect.poll(() => dialog.open).toBe(true);
+    expect(dialog.getAttribute('role')).toBe('alertdialog');
+
+    // The will-delete group lists the two no-reference assets; the will-skip group reports the in-use
+    // one with its where-used and points to the single-item typed path.
+    expect(dialog.textContent ?? '').toMatch(/will be deleted/i);
+    expect(dialog.textContent ?? '').toContain('meadow-fence');
+    expect(dialog.textContent ?? '').toContain('old-pylon');
+    expect(dialog.textContent ?? '').toMatch(/will be skipped/i);
+    expect(dialog.textContent ?? '').toContain('first-light');
+    expect(dialog.textContent ?? '').toMatch(/3 entries/i);
+    expect(dialog.textContent ?? '').toMatch(/typed confirm|open it/i);
+
+    // The git-revert reassurance sits in the body.
+    expect(dialog.textContent ?? '').toMatch(/revert/i);
+
+    // The apply button names the outcome: 2 deletable, 1 skipped.
+    const apply = [...dialog.querySelectorAll('button')].find((b) => /^delete\s+2,\s*skip\s+1$/i.test(b.textContent?.trim() ?? ''));
+    expect(apply).toBeTruthy();
+  });
+
+  it('uses a plain confirm: no typed-slug input inside the bulk dialog', async () => {
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    await selectFor(screen);
+    barDelete(screen).click();
+    const dialog = bulkDialog(screen);
+    await expect.poll(() => dialog.open).toBe(true);
+    // The single-delete dialog gates on a typed slug; the reversible bulk delete must not.
+    expect(dialog.querySelector('input[type="text"]')).toBeNull();
+    expect(dialog.querySelector('#cairn-ml-confirm')).toBeNull();
+  });
+
+  it('restores focus to the bar Delete button when the dialog is cancelled', async () => {
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    await selectFor(screen);
+    const trigger = barDelete(screen);
+    trigger.click();
+    const dialog = bulkDialog(screen);
+    await expect.poll(() => dialog.open).toBe(true);
+
+    const cancel = [...dialog.querySelectorAll('button')].find((b) => /^cancel$/i.test(b.textContent?.trim() ?? ''))!;
+    cancel.click();
+    await expect.poll(() => dialog.open).toBe(false);
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it('renders the itemized summary (deleted count + skipped-with-reason) after the stubbed result', async () => {
+    const result = {
+      deleted: ['cccc777788889999', 'dddd000011112222'],
+      skipped: [
+        {
+          hash: 'aaaa111122223333',
+          reason: 'still-referenced' as const,
+          usage: [
+            { concept: 'posts', id: 'a', title: 'A', origin: { kind: 'published' as const } },
+            { concept: 'posts', id: 'b', title: 'B', origin: { kind: 'published' as const } },
+            { concept: 'posts', id: 'c', title: 'C', origin: { kind: 'published' as const } },
+          ],
+        },
+      ],
+      failed: [],
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ status: 200, text: async () => successBody(result) }) as unknown as Response),
+    );
+
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    await selectFor(screen);
+    barDelete(screen).click();
+    const dialog = bulkDialog(screen);
+    await expect.poll(() => dialog.open).toBe(true);
+
+    const apply = [...dialog.querySelectorAll('button')].find((b) => /^delete\s+2,\s*skip\s+1$/i.test(b.textContent?.trim() ?? ''))!;
+    apply.click();
+
+    // The summary names 2 deleted and the skipped row with its reason and where-used.
+    await expect.poll(() => dialog.textContent ?? '').toMatch(/2 deleted|done\. 2/i);
+    expect(dialog.textContent ?? '').toMatch(/skipped/i);
+    expect(dialog.textContent ?? '').toContain('first-light');
+    expect(dialog.textContent ?? '').toMatch(/3 entries|recheck/i);
+  });
+});

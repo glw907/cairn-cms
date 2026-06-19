@@ -1433,3 +1433,135 @@ describe('CairnMediaLibrary bulk-delete dialog', () => {
     expect(dialog.textContent ?? '').toMatch(/3 entries|recheck/i);
   });
 });
+
+// --- Task 9: the orphan scan surface (the on-demand scan, the fail-closed blocked state, the two
+// sections, the irreversible purge typed-count confirm, the read-only broken-references readout) ---
+describe('CairnMediaLibrary orphan scan surface', () => {
+  // The scan modal opened from the toolbar's "Find orphaned files" office control.
+  const scanDialog = (screen: ReturnType<typeof render>) =>
+    screen.container.querySelector('[data-testid="cairn-orphan-dialog"]') as HTMLDialogElement;
+  const findButton = (screen: ReturnType<typeof render>) =>
+    [...screen.container.querySelectorAll<HTMLButtonElement>('button')].find((b) =>
+      /find orphaned files/i.test(b.textContent ?? ''),
+    )!;
+
+  // An OrphanScan with two orphaned bytes and one broken reference, the rev.2 fixture.
+  const SCAN = {
+    orphanedBytes: [
+      { key: 'media/a3/a3f81c0e9b2d4f.jpg', hash: 'a3f81c0e9b2d4f00' },
+      { key: 'media/77/77d20a14c6e8b1.png', hash: '77d20a14c6e8b100' },
+    ],
+    brokenRefs: [
+      {
+        hash: '0b9d77feaaaa0000',
+        slug: 'map-2021',
+        usage: [{ concept: 'posts', id: 'trailhead', title: 'Trailhead notes', origin: { kind: 'published' as const } }],
+      },
+    ],
+  };
+
+  it('runs the scan from "Find orphaned files" and shows the blocked fail-closed surface on a 503 with no purge control', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          ({ status: 503, text: async () => failureBody({ error: 'Could not check where files are used, so the scan was not run. Try again.' }) }) as unknown as Response,
+      ),
+    );
+
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    findButton(screen).click();
+    const dialog = scanDialog(screen);
+    await expect.poll(() => dialog.open).toBe(true);
+
+    // The blocked surface names that the scan did not run and frames the unreadable open edit branch.
+    await expect.poll(() => dialog.textContent ?? '').toMatch(/could not finish|was not run|not run/i);
+    expect(dialog.textContent ?? '').toMatch(/open edit|branch/i);
+    // The server's returned error message is surfaced verbatim.
+    expect(dialog.textContent ?? '').toMatch(/Could not check where files are used/i);
+    // There is a re-run control, and NO purge control at all (not even disabled).
+    expect([...dialog.querySelectorAll('button')].some((b) => /check again|try the scan again|scan again/i.test(b.textContent ?? ''))).toBe(true);
+    expect([...dialog.querySelectorAll('button')].some((b) => /purge/i.test(b.textContent ?? ''))).toBe(false);
+  });
+
+  it('renders the orphaned-files section with byte-rows, an indeterminate section select-all, and a solid-danger Purge gated by the typed count', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ status: 200, text: async () => successBody(SCAN) }) as unknown as Response),
+    );
+
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    findButton(screen).click();
+    const dialog = scanDialog(screen);
+    await expect.poll(() => dialog.open).toBe(true);
+    await expect.poll(() => dialog.textContent ?? '').toMatch(/orphaned files/i);
+
+    // The two byte-rows render their R2 keys.
+    expect(dialog.textContent ?? '').toContain('media/a3/a3f81c0e9b2d4f.jpg');
+    expect(dialog.textContent ?? '').toContain('media/77/77d20a14c6e8b1.png');
+
+    // The section-level select-all checkbox is indeterminate when some-but-not-all are selected.
+    const selectAll = dialog.querySelector<HTMLInputElement>('input[type="checkbox"][aria-label="Select all orphaned files"]')!;
+    expect(selectAll).not.toBeNull();
+    const rowBoxes = [...dialog.querySelectorAll<HTMLInputElement>('[aria-label="Orphaned files"] input[type="checkbox"]')];
+    expect(rowBoxes.length).toBe(2);
+    // Nothing selected at open: the select-all is unchecked and not indeterminate.
+    expect(selectAll.checked).toBe(false);
+    expect(selectAll.indeterminate).toBe(false);
+    // Select one of two: the header goes indeterminate.
+    rowBoxes[0].click();
+    await expect.poll(() => selectAll.indeterminate).toBe(true);
+    expect(selectAll.checked).toBe(false);
+    // Select the second too: the header is fully checked, not indeterminate.
+    rowBoxes[1].click();
+    await expect.poll(() => selectAll.checked).toBe(true);
+    expect(selectAll.indeterminate).toBe(false);
+
+    // The Purge control is the solid-danger fill and carries the verb "Purge", never "Delete".
+    const purge = [...dialog.querySelectorAll<HTMLButtonElement>('button')].find((b) => /^purge/i.test(b.textContent?.trim() ?? ''))!;
+    expect(purge).toBeTruthy();
+    expect(purge.className).toMatch(/--color-error/);
+
+    // Open the purge confirm and assert the typed-count gate: the submit is disabled until the count is typed.
+    purge.click();
+    await expect.poll(() => dialog.textContent ?? '').toMatch(/cannot be undone|no git history|for good/i);
+    const confirmInput = dialog.querySelector<HTMLInputElement>('#cairn-ml-purge-confirm')!;
+    expect(confirmInput).not.toBeNull();
+    const purgeSubmit = [...dialog.querySelectorAll<HTMLButtonElement>('button')].find(
+      (b) => /^purge\s+\d/i.test(b.textContent?.trim() ?? '') && b !== purge,
+    )!;
+    expect(purgeSubmit.disabled).toBe(true);
+    // A wrong value keeps it disabled.
+    confirmInput.value = '1';
+    confirmInput.dispatchEvent(new Event('input', { bubbles: true }));
+    await tick();
+    expect(purgeSubmit.disabled).toBe(true);
+    // The exact selected count enables it.
+    confirmInput.value = '2';
+    confirmInput.dispatchEvent(new Event('input', { bubbles: true }));
+    await expect.poll(() => purgeSubmit.disabled).toBe(false);
+  });
+
+  it('renders the broken-references section read-only: the slug, the where-used, and no checkbox or purge/delete control', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ status: 200, text: async () => successBody(SCAN) }) as unknown as Response),
+    );
+
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    findButton(screen).click();
+    const dialog = scanDialog(screen);
+    await expect.poll(() => dialog.open).toBe(true);
+    await expect.poll(() => dialog.textContent ?? '').toMatch(/broken references/i);
+
+    const brokenSection = dialog.querySelector('[data-testid="cairn-broken-refs"]') as HTMLElement;
+    expect(brokenSection).not.toBeNull();
+    // The broken-ref row names the manifest slug, its where-used, and the re-upload-or-remove advice.
+    expect(brokenSection.textContent ?? '').toContain('map-2021');
+    expect(brokenSection.textContent ?? '').toMatch(/1 entry/i);
+    expect(brokenSection.textContent ?? '').toMatch(/re-upload|remove the reference/i);
+    // It is READ-ONLY: no checkbox, no purge/delete control inside the section.
+    expect(brokenSection.querySelector('input[type="checkbox"]')).toBeNull();
+    expect([...brokenSection.querySelectorAll('button')].some((b) => /purge|delete/i.test(b.textContent ?? ''))).toBe(false);
+  });
+});

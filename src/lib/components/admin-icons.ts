@@ -29,3 +29,4 @@ export { default as RefreshCwIcon } from '@lucide/svelte/icons/refresh-cw';
 export { default as GitBranchIcon } from '@lucide/svelte/icons/git-branch';
 export { default as ArrowRightIcon } from '@lucide/svelte/icons/arrow-right';
 export { default as MegaphoneIcon } from '@lucide/svelte/icons/megaphone';
+export { default as DatabaseIcon } from '@lucide/svelte/icons/database';

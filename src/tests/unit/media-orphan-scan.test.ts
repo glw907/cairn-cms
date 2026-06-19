@@ -76,6 +76,30 @@ describe('buildOrphanScan', () => {
     ]);
   });
 
+  it('excludes a branch-referenced orphaned key whose hash is in the usage index', () => {
+    // A branch-only upload: its bytes are in R2 and reconcile flags them orphaned (no main manifest
+    // row), but the usage index references the hash, so it must never be offered for purge.
+    const index: UsageIndex = new Map([['ffffffffffffffff', [usage('draft')]]]);
+    const reconcile: ReconcileResult = {
+      orphanedObjects: ['media/ff/ffffffffffffffff.webp'],
+      missingObjects: [],
+    };
+    const scan = buildOrphanScan(reconcile, {}, index);
+    expect(scan.orphanedBytes).toEqual([]);
+  });
+
+  it('projects a true orphan whose hash is absent from both the index and the manifest', () => {
+    const index: UsageIndex = new Map([['aaaaaaaaaaaaaaaa', [usage('other')]]]);
+    const reconcile: ReconcileResult = {
+      orphanedObjects: ['media/ff/ffffffffffffffff.webp'],
+      missingObjects: [],
+    };
+    const scan = buildOrphanScan(reconcile, {}, index);
+    expect(scan.orphanedBytes).toEqual([
+      { key: 'media/ff/ffffffffffffffff.webp', hash: 'ffffffffffffffff' },
+    ]);
+  });
+
   it('skips a malformed orphaned key that does not match the media-key grammar', () => {
     const reconcile: ReconcileResult = {
       orphanedObjects: ['not-a-media-key', 'media/ff/ffffffffffffffff.webp'],

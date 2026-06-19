@@ -267,6 +267,75 @@ describe('mediaPurgeOrphans', () => {
     expect(timeline).toEqual([]);
   });
 
+  it('skips claimed (does NOT delete) a key whose hash is referenced only on an open cairn/* branch', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    // The orphan key's hash has NO manifest row on main, so a manifest-only re-derive would purge it.
+    // But an open edit branch references that hash in its markdown body, so the strict cross-branch
+    // usage index must catch it and skip it claimed: those bytes back a colleague's in-progress draft.
+    const gh = new GithubDouble({
+      main: {
+        [MEDIA_PATH]: mediaManifest(),
+        [MANIFEST_PATH]: contentManifest([]),
+      },
+      // A draft on a branch that places the orphan byte's hash via a media: token.
+      'cairn/posts/2026-05-draft': {
+        'src/content/posts/2026-05-draft.md': `---\ntitle: Draft\n---\n\n![](media:pic.${HASH_ORPHAN})\n`,
+      },
+    });
+    gh.install();
+    const timeline: string[] = [];
+    const bucket = fakeBucket([], timeline);
+    const routes = createContentRoutes(runtime(), deps);
+
+    const orphanKey = r2Key(HASH_ORPHAN, 'jpg');
+    // One selected, so the typed confirm is the count "1".
+    const result = (await routes.mediaPurgeOrphans(
+      purgeEvent([orphanKey], '1', bucket) as never,
+    )) as MediaOrphanPurgeResult;
+
+    // The branch reference keeps the bytes alive: skipped claimed, never deleted.
+    expect(result.purged).toEqual([]);
+    expect(result.skippedClaimed).toEqual([orphanKey]);
+    expect(result.failed).toEqual([]);
+    expect(bucket.delete).not.toHaveBeenCalled();
+    expect(timeline).toEqual([]);
+  });
+
+  it('fails closed (503) and deletes NOTHING when a branch read throws during the strict index build', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    const gh = new GithubDouble({
+      main: {
+        [MEDIA_PATH]: mediaManifest(),
+        [MANIFEST_PATH]: contentManifest([]),
+      },
+      // An open edit branch whose content read will throw. A non-strict build would skip it and let
+      // the purge treat a possibly-referenced byte as a true orphan; strict mode must refuse instead.
+      'cairn/posts/2026-05-flaky': {
+        'src/content/posts/2026-05-flaky.md': '---\ntitle: Flaky\n---\n\nbody\n',
+      },
+    });
+    gh.install();
+    const timeline: string[] = [];
+    const bucket = fakeBucket([], timeline);
+    const routes = createContentRoutes(runtime(), deps);
+
+    const orphanKey = r2Key(HASH_ORPHAN, 'jpg');
+    const event = purgeEvent([orphanKey], '1', bucket);
+    const wrapped = globalThis.fetch;
+    vi.stubGlobal('fetch', vi.fn((input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.includes('2026-05-flaky')) return Promise.reject(new Error('transient'));
+      return wrapped(input, init);
+    }));
+
+    const result = await routes.mediaPurgeOrphans(event as never);
+
+    expect(result).toMatchObject({ status: 503 });
+    // No delete happened: the irreversible purge fails closed when usage cannot be verified.
+    expect(bucket.delete).not.toHaveBeenCalled();
+    expect(timeline).toEqual([]);
+  });
+
   it('refuses (400) when the confirm is a wrong number (a mistyped count)', async () => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     const gh = new GithubDouble({

@@ -1693,11 +1693,18 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
    *  "Type N to purge these files for good"); an empty selection or a mismatched count deletes nothing.
    *
    *  Re-derive fresh is the safety crux. The selection came from an earlier scan, so the action does
-   *  NOT trust it: it reads the current media manifest and, for each selected key, parses the hash from
-   *  the key grammar. A key that does not match the grammar was never a real orphan key and is dropped
-   *  silently. A key whose hash now has a manifest row was claimed since the scan (an upload landed its
-   *  bytes as a live asset), so it is skipped into skippedClaimed and its bytes survive. Only a key
-   *  whose hash is STILL absent from the manifest is purged.
+   *  NOT trust it: the purge keys are client-posted, so the server cannot assume they came from a fresh
+   *  scan. It reads the current media manifest AND rebuilds ONE strict cross-branch usage index, then
+   *  for each selected key parses the hash from the key grammar. A key that does not match the grammar
+   *  was never a real orphan key and is dropped silently. A key whose hash now has a manifest row OR is
+   *  referenced on any open cairn/* branch survived the scan window (it was claimed by a row, or a
+   *  draft started referencing those bytes), so it is skipped into skippedClaimed and its bytes survive.
+   *  Only a key whose hash is STILL absent from both is purged. This closes the TOCTOU between scan and
+   *  purge that could otherwise irreversibly delete a live draft's bytes.
+   *
+   *  Like the scan and the bulk delete, the strict index build is the fail-closed gate: a branch read
+   *  that throws refuses the whole batch with fail(503) rather than mistaking an unverifiable reference
+   *  for an absent one. The index is built exactly once for the batch, never once per key.
    *
    *  There is no commit. An orphan by definition has no manifest row to remove, so the purge deletes
    *  the R2 object directly. Each delete is best-effort and batch-resilient: a per-object error is
@@ -1732,6 +1739,18 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
 
     // Re-derive fresh against the current manifest, so a key claimed since the scan is never purged.
     const manifest = parseMediaManifest(parseMediaJson(await readRaw(runtime.backend, runtime.mediaManifestPath, token)));
+
+    // THE fail-closed gate for the whole batch: one shared strict cross-branch usage index, symmetric
+    // with the scan and the bulk delete. STRICT mode rethrows a branch-read failure, so a transient
+    // branch read refuses the irreversible purge rather than letting a possibly-referenced byte be
+    // treated as a true orphan. Build exactly one index, never one per key.
+    let index: Awaited<ReturnType<typeof buildUsageIndex>>;
+    try {
+      index = await buildUsageIndex(runtime.backend, token, runtime.concepts, await readManifest(token), { strict: true });
+    } catch {
+      return fail(503, { error: 'Could not verify where these files are used. Try again.' } satisfies MediaBulkFailure);
+    }
+
     const purged: string[] = [];
     const skippedClaimed: string[] = [];
     const failed: { key: string; error: string }[] = [];
@@ -1741,6 +1760,11 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       if (hash === undefined) continue;
       // A hash that now has a manifest row was claimed since the scan: its bytes are a live asset now.
       if (manifest[hash]) {
+        skippedClaimed.push(key);
+        continue;
+      }
+      // A hash referenced on any open cairn/* branch backs an in-progress draft: skip it claimed too.
+      if (index.has(hash)) {
         skippedClaimed.push(key);
         continue;
       }

@@ -108,7 +108,7 @@ test('orphan round-trip: the orphaned byte purges with the typed confirm, the br
 
   // The Orphaned files section lists the orphaned byte by its R2 key. Target it specifically rather
   // than asserting a total, since other specs may leave their own byte-rows behind.
-  const orphanList = dialog.getByRole('listbox', { name: 'Orphaned files' });
+  const orphanList = dialog.getByRole('list', { name: 'Orphaned files' });
   await expect(orphanList.getByText(ORPHAN_BYTE.key, { exact: true })).toBeVisible();
 
   // The read-only Broken references section lists the missing-bytes record by its slug, with no

@@ -7,11 +7,13 @@ toggle that flips to an enriched sortable table. One toolbar row carries search,
 radiogroup (All, Needs alt, No references found), and the density toggle. Filtering, sorting, and a
 growing client window all run over the full loaded set in component state.
 
-The grid and the table are aria-multiselectable: a Set of selected hashes, decoupled from the
-slide-over's single asset and from roving focus. A native checkbox per tile and row toggles it,
-Space toggles the focused tile, Shift+Arrow extends a range, Ctrl/Cmd+A selects every visible
-asset, and Escape clears. A sticky action bar appears on the first selection with a live count, the
-scope, Select all in view, Clear, and the reversible bulk Delete.
+Multi-select rides a Set of selected hashes, decoupled from the slide-over's single asset and from
+roving focus. The grid is an APG multiselectable listbox (aria-multiselectable, real cell focus):
+Space toggles the focused tile, Shift+Arrow extends a range, Ctrl/Cmd+A selects every visible asset,
+and Escape clears. The list density is a plain selectable table whose leading native-checkbox column
+is the selection signal (no grid role, since it has no grid keyboard model). A sticky action bar
+appears on the first selection with a live count, the scope, Select all in view, Clear, and the
+reversible bulk Delete.
 
 Activating a tile or row opens a NON-MODAL detail slide-over from the right (the established
 details-slide-over recipe): no scrim, the library stays live and in the a11y tree behind it, Escape
@@ -962,6 +964,15 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     bulkOrigin?.focus();
     bulkOrigin = null;
   }
+  // Escape (the dialog's cancel event) must not abandon an in-flight delete: while the request is
+  // running the close is suppressed; in every other phase Escape closes normally.
+  function onBulkCancel(e: Event) {
+    if (bulkPhase === 'deleting') {
+      e.preventDefault();
+      return;
+    }
+    closeBulkDialog();
+  }
   // The Done action after a summary: re-read the load so the deleted rows leave the list, clear the
   // selection, then close and reset. invalidateAll re-runs the media load behind the dialog.
   async function finishBulkDelete() {
@@ -1082,6 +1093,15 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     orphanPurgeError = '';
     orphanFindButton?.focus();
   }
+  // Escape (the dialog's cancel event) must not abandon an in-flight purge: while the irreversible
+  // delete is running the close is suppressed; in every other phase Escape closes normally.
+  function onOrphanCancel(e: Event) {
+    if (orphanPurgeBusy) {
+      e.preventDefault();
+      return;
+    }
+    closeOrphanScan();
+  }
   // The Done action after a purge: the bytes are gone, so re-read the load (the broken-refs readout is
   // untouched), then close. invalidateAll re-runs the media load behind the dialog.
   async function finishOrphanPurge() {
@@ -1107,7 +1127,8 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
       });
       result = deserialize(await res.text()) as { type: string; data?: unknown };
     } catch {
-      orphanBlockedError = '';
+      // A network throw blocks the scan with the generic blocked surface; orphanBlockedError stays
+      // empty (set above), so the surface shows its own framing without a server message.
       orphanPhase = 'blocked';
       return;
     }
@@ -1481,27 +1502,27 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
       {/each}
     </ul>
   {:else}
-    <!-- The list density: a real table. Each row opens the detail (sets `selected`); the Added
-         column sorts through a real header button with aria-sort; the per-row delete is always
-         visible. The table advertises and carries multi-select through its leading native-checkbox
-         column (the standard accessible selectable-table pattern). aria-multiselectable is only
-         valid on a grid, so the table takes role="grid" and its rows and cells take the matching
-         grid roles; the selection still rides the per-row native checkboxes. -->
+    <!-- The list density: a plain selectable table. Each row opens the detail (sets `selected`); the
+         Added column sorts through a real header button with aria-sort; the per-row delete is always
+         visible. Multi-select rides the leading native-checkbox column, which is the APG-correct
+         pattern for a selectable table. The earlier role="grid" + aria-multiselectable promised grid
+         keyboard navigation (arrow cell moves, roving tabindex) the table never implemented, so it
+         is dropped: a plain table with a checkbox column is honest and fully usable. -->
     <div class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 overflow-x-auto shadow-[var(--cairn-shadow)]">
-      <table class="table" role="grid" aria-multiselectable="true" aria-label="Media library">
+      <table class="table">
         <thead>
           <tr class="border-base-300">
-            <th role="columnheader" class="w-10"><span class="sr-only">Select</span></th>
-            <th role="columnheader" class={headerLabel}>Asset</th>
-            <th role="columnheader" class="{headerLabel} w-32">Alt status</th>
-            <th role="columnheader" class="{headerLabel} w-40">Used</th>
-            <th role="columnheader" class="w-24 text-right" aria-sort={addedSort}>
+            <th class="w-10"><span class="sr-only">Select</span></th>
+            <th class={headerLabel}>Asset</th>
+            <th class="{headerLabel} w-32">Alt status</th>
+            <th class="{headerLabel} w-40">Used</th>
+            <th class="w-24 text-right" aria-sort={addedSort}>
               <button type="button" class="ml-auto inline-flex items-center gap-1 {headerLabel} hover:text-base-content" aria-label="Sort by date added" onclick={toggleSort}>
                 Added
                 <ChevronDownIcon class="h-3 w-3 {sortAsc ? 'rotate-180' : ''}" aria-hidden="true" />
               </button>
             </th>
-            <th role="columnheader" class="w-12 text-right"><span class="sr-only">Actions</span></th>
+            <th class="w-12 text-right"><span class="sr-only">Actions</span></th>
           </tr>
         </thead>
         <tbody>
@@ -1509,8 +1530,8 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
             {@const used = usageCount(asset.hash)}
             {@const missing = needsAlt(asset)}
             {@const picked = selectedHashes.has(asset.hash)}
-            <tr aria-selected={picked} class="transition-colors hover:bg-base-200/60 {picked ? 'bg-primary/[0.06]' : selected?.hash === asset.hash ? 'bg-primary/[0.03]' : ''}">
-              <td role="gridcell" class="w-10">
+            <tr class="transition-colors hover:bg-base-200/60 {picked ? 'bg-primary/[0.06]' : selected?.hash === asset.hash ? 'bg-primary/[0.03]' : ''}">
+              <td class="w-10">
                 <input
                   type="checkbox"
                   class="checkbox checkbox-sm"
@@ -1519,7 +1540,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                   onchange={() => toggleSelect(asset.hash)}
                 />
               </td>
-              <td role="gridcell" class="max-w-0">
+              <td class="max-w-0">
                 <button type="button" class="flex w-full items-center gap-3 text-left" onclick={(e) => openAsset(asset, e.currentTarget)}>
                   <span class="relative flex h-10 w-14 flex-none items-center justify-center overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-200/60">
                     {#if brokenHashes.has(asset.hash)}
@@ -1536,7 +1557,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                   </span>
                 </button>
               </td>
-              <td role="gridcell" class="w-32">
+              <td class="w-32">
                 {#if missing}
                   <span class="inline-flex items-center gap-1 text-[0.75rem] font-medium text-[var(--cairn-warning-ink)]">
                     <TriangleAlertIcon class="h-3.5 w-3.5" aria-hidden="true" /> Needs alt
@@ -1547,15 +1568,15 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                   </span>
                 {/if}
               </td>
-              <td role="gridcell" class="w-40 text-[0.8125rem]">
+              <td class="w-40 text-[0.8125rem]">
                 {#if used > 0}
                   <span class="text-base-content">found in {used}</span>
                 {:else}
                   <span class="text-[var(--color-muted)]">no references found</span>
                 {/if}
               </td>
-              <td role="gridcell" class="w-24 text-right text-sm tabular-nums text-[var(--color-muted)]">{formatAdded(asset.createdAt)}</td>
-              <td role="gridcell" class="w-12 text-right">
+              <td class="w-24 text-right text-sm tabular-nums text-[var(--color-muted)]">{formatAdded(asset.createdAt)}</td>
+              <td class="w-12 text-right">
                 <button type="button" class="btn btn-ghost btn-sm" aria-label="Delete {asset.displayName}" onclick={() => requestDelete(asset)}>
                   <Trash2Icon class="h-4 w-4 text-error" />
                 </button>
@@ -1827,6 +1848,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   bind:this={deleteDialog}
   class="modal"
   role="alertdialog"
+  aria-modal="true"
   aria-labelledby="cairn-ml-delete-title"
   aria-describedby="cairn-ml-delete-desc"
   oncancel={closeDeleteDialog}
@@ -2447,9 +2469,10 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   data-testid="cairn-bulk-dialog"
   class="modal"
   role="alertdialog"
+  aria-modal="true"
   aria-labelledby="cairn-ml-bulk-title"
   aria-describedby="cairn-ml-bulk-desc"
-  oncancel={closeBulkDialog}
+  oncancel={onBulkCancel}
 >
   <div class="modal-box max-w-xl">
     {#if bulkPhase === 'review'}
@@ -2677,9 +2700,10 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   data-testid="cairn-orphan-dialog"
   class="modal"
   role="dialog"
+  aria-modal="true"
   aria-labelledby="cairn-ml-orphan-title"
   aria-describedby="cairn-ml-orphan-desc"
-  oncancel={closeOrphanScan}
+  oncancel={onOrphanCancel}
 >
   <div class="modal-box max-w-2xl">
     {#if orphanPhase === 'scanning'}
@@ -2889,10 +2913,14 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                 />
                 <span class="text-[0.75rem] font-semibold text-[var(--color-muted)]">{orphanBytes.length} {orphanBytes.length === 1 ? 'file' : 'files'} in storage with no record</span>
               </div>
-              <ul role="listbox" aria-multiselectable="true" aria-label="Orphaned files" class="flex max-h-52 list-none flex-col overflow-y-auto p-0">
+              <!-- A plain list of labelled native checkboxes, NOT a listbox. The rows carry no roving
+                   tabindex or key handler, so the listbox role would have been decorative and would
+                   have fought the Tab-to-checkbox model. Each checkbox is the selection signal; the
+                   header select-all conveys group state. -->
+              <ul aria-label="Orphaned files" class="flex max-h-52 list-none flex-col overflow-y-auto p-0">
                 {#each orphanBytes as byte (byte.key)}
                   {@const picked = orphanKeys.has(byte.key)}
-                  <li role="option" aria-selected={picked} class="flex items-center gap-2.5 border-t border-[color-mix(in_oklab,var(--cairn-card-border)_70%,transparent)] px-3 py-2 first:border-t-0">
+                  <li class="flex items-center gap-2.5 border-t border-[color-mix(in_oklab,var(--cairn-card-border)_70%,transparent)] px-3 py-2 first:border-t-0">
                     <input
                       type="checkbox"
                       class="checkbox checkbox-sm border-[var(--cairn-error-border)]"

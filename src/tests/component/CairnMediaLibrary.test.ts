@@ -1166,17 +1166,20 @@ describe('CairnMediaLibrary multi-select', () => {
       /\bselected\b/i.test(n.textContent ?? ''),
     );
 
-  it('advertises the grid and the table as aria-multiselectable', async () => {
+  it('advertises the grid as aria-multiselectable and the table as a selectable-checkbox table', async () => {
     const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    // The grid is a real APG multiselectable listbox.
     expect(grid(screen).getAttribute('aria-multiselectable')).toBe('true');
 
     await screen.getByRole('button', { name: /list view/i }).click();
     const table = screen.container.querySelector('table')!;
-    const multi =
-      table.getAttribute('aria-multiselectable') === 'true' ||
-      !!table.querySelector('[aria-multiselectable="true"]') ||
-      !!screen.container.querySelector('[role="grid"][aria-multiselectable="true"]');
-    expect(multi).toBe(true);
+    // The table is a plain selectable table: no grid-ism, just a per-row select checkbox. The grid
+    // role with aria-multiselectable but no cell navigation was a false a11y promise; the native
+    // checkbox column is the APG-correct selection signal.
+    expect(table.getAttribute('aria-multiselectable')).toBeNull();
+    expect(table.getAttribute('role')).toBeNull();
+    const rowCheckbox = table.querySelector<HTMLInputElement>('tbody input[type="checkbox"]');
+    expect(rowCheckbox).not.toBeNull();
   });
 
   it('toggles selection on the focused tile with Space, never opening the slide-over', async () => {

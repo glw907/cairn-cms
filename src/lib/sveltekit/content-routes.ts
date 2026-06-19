@@ -33,6 +33,7 @@ import { repointMediaRef, fillAltForHash } from '../content/media-rewrite.js';
 import type { RepointPlacement, AltPlacement } from '../content/media-rewrite.js';
 import { planMediaRewrite } from '../media/rewrite-plan.js';
 import type { BranchRef } from '../media/rewrite-plan.js';
+import { planBulkDelete } from '../media/bulk-delete-plan.js';
 import type { BulkDeleteSkip } from '../media/bulk-delete-plan.js';
 import type { CookieJar, EventBase } from './types.js';
 import type { CairnRuntime, ConceptDescriptor, FrontmatterField, PreviewConfig, ResolvedPreview } from '../content/types.js';
@@ -1521,6 +1522,116 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     throw redirect(303, '/admin/media?deleted=1');
   }
 
+  /** Bulk safe-delete a multi-select of committed media assets. This is mediaDeleteAction extended to
+   *  many items, with the same safety primitives and one rule that defines the batch: the gate is ONE
+   *  shared strict cross-branch usage index built per batch, never N per-item reads (N strict reads
+   *  would blow the workerd connection budget at many open branches). The fail-closed posture is for
+   *  the WHOLE batch: if that single strict index cannot complete, the action refuses everything and
+   *  commits nothing, rather than risk deleting bytes a branch still references.
+   *
+   *  Skip-and-report, never force: the pure planBulkDelete partitions the selection against the strict
+   *  index into deletable (no usage row, a committed manifest row exists), skipped-still-referenced (a
+   *  usage row, carried for the where-used), and skipped-uncommitted (no manifest row). An in-use item
+   *  is skipped and reported, never bulk-force-deleted; forced in-use deletion stays the single-item
+   *  typed-slug path.
+   *
+   *  The order is load-bearing, mirroring single delete: ONE atomic commit removes every deletable row
+   *  FIRST, then the R2 objects are deleted (commit-row-then-delete-R2). A failure after the commit
+   *  leaves bytes with no row (a benign orphan) rather than a row pointing at deleted bytes. Each R2
+   *  delete is best-effort and batch-resilient: a per-object error is reported in `failed` and never
+   *  aborts the rest of the batch. The result is an itemized 207-style summary the component renders
+   *  (deleted / skipped with reasons / failed); there is no success redirect. */
+  async function mediaBulkDelete(event: ContentEvent): Promise<ReturnType<typeof fail> | MediaBulkDeleteResult> {
+    const editor = requireSession(event);
+    const token = await mintToken(event.platform?.env ?? {});
+
+    // Read the selected hashes from the form. Accept the repeated `hash` field, falling back to a JSON
+    // `hashes` array. Each value must match the 16-hex content-hash grammar; a malformed value is
+    // dropped silently rather than surfaced as a skip (it was never a real selection).
+    const form = await event.request.formData();
+    let raw = form.getAll('hash').map(String);
+    if (raw.length === 0) {
+      const json = form.get('hashes');
+      if (typeof json === 'string') {
+        try {
+          const parsed: unknown = JSON.parse(json);
+          if (Array.isArray(parsed)) raw = parsed.map(String);
+        } catch {
+          raw = [];
+        }
+      }
+    }
+    const selected = raw.filter((h) => MEDIA_HASH_RE.test(h));
+
+    // Read the fresh media manifest (the deletable rows come from here, by hash).
+    const manifest = parseMediaManifest(parseMediaJson(await readRaw(runtime.backend, runtime.mediaManifestPath, token)));
+
+    // Resolve the R2 bucket before any write, so a media-off site or a missing binding refuses before
+    // the commit, exactly like single delete.
+    const resolved = runtime.resolvedAssets;
+    if (!resolved.enabled) {
+      return fail(503, { error: 'Media is not enabled for this site.' } satisfies MediaBulkFailure);
+    }
+    const platformEnv = (event.platform as { env?: Record<string, unknown> } | undefined)?.env ?? {};
+    const rawBucket = platformEnv[resolved.bucketBinding];
+    if (!rawBucket) {
+      return fail(503, { error: 'The media bucket is not bound.' } satisfies MediaBulkFailure);
+    }
+    const store = r2Store(rawBucket as R2Bucket);
+
+    // THE fail-closed gate for the whole batch: one shared strict usage index. STRICT mode rethrows a
+    // branch-read failure, so a transient branch read failing refuses the whole batch rather than
+    // mistaking a still-referenced asset for an orphan. Build exactly one index, never one per item.
+    let index: Awaited<ReturnType<typeof buildUsageIndex>>;
+    try {
+      index = await buildUsageIndex(runtime.backend, token, runtime.concepts, await readManifest(token), { strict: true });
+    } catch {
+      return fail(503, { error: 'Could not verify where these assets are used. Try again.' } satisfies MediaBulkFailure);
+    }
+
+    // The pure partition: membership in the fresh strict index is the gate, never the display count.
+    const plan = planBulkDelete(selected, index, manifest);
+    // An all-skipped or empty batch is a no-op success: nothing committed, nothing deleted.
+    if (plan.deletable.length === 0) {
+      return { deleted: [], skipped: plan.skipped, failed: [] } satisfies MediaBulkDeleteResult;
+    }
+
+    // ONE atomic commit removing EVERY deletable row, folded over removeMediaEntry.
+    let next = manifest;
+    for (const hash of plan.deletable) next = removeMediaEntry(next, hash);
+    const commitFields = { concept: 'media', id: 'bulk', editor: editor.email };
+    try {
+      await commitFiles(
+        runtime.backend,
+        [{ path: runtime.mediaManifestPath, content: serializeMediaManifest(next) }],
+        { message: `Delete ${plan.deletable.length} media assets`, author: { name: editor.displayName, email: editor.email } },
+        token,
+      );
+      log.info('commit.succeeded', commitFields);
+    } catch (err) {
+      commitFailure(commitFields, err, '/admin/media',
+        'The media manifest changed since you opened it. Reload and try again.');
+    }
+
+    // THEN delete each deletable hash's R2 object (the load-bearing order, see the docstring). Best
+    // effort and batch-resilient: a thrown key derivation or a delete error is reported in `failed`
+    // and the loop continues. An absent object is a no-op (the R2 contract).
+    const deleted: string[] = [];
+    const failed: { hash: string; error: string }[] = [];
+    for (const hash of plan.deletable) {
+      try {
+        const row = manifest[hash];
+        await store.delete(r2Key(row.hash, row.ext));
+        deleted.push(hash);
+      } catch (err) {
+        failed.push({ hash, error: err instanceof Error ? err.message : String(err) });
+      }
+    }
+
+    log.info('media.bulk_deleted', { editor: editor.email, deleted: deleted.length, skipped: plan.skipped.length });
+    return { deleted, skipped: plan.skipped, failed } satisfies MediaBulkDeleteResult;
+  }
+
   /** Edit a committed asset's metadata: its display name, slug, and default alt. A single media.json
    *  row commit, with NO reference rewrite: the resolver and the delivery route key on the hash, so a
    *  rename never breaks an existing `media:` reference. The default alt is the asset's value for the
@@ -1909,7 +2020,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     throw redirect(303, '/admin/media?altPropagated=1');
   }
 
-  return { layoutLoad, indexRedirect, listLoad, mediaLibraryLoad, createAction, editLoad, saveAction, publishAction, publishAllAction, discardAction, deleteAction, listDeleteAction, renameAction, uploadAction, mediaDeleteAction, mediaUpdateAction, mediaReplacePreview, mediaReplaceApply, mediaAltPreview, mediaAltApply, mintToken };
+  return { layoutLoad, indexRedirect, listLoad, mediaLibraryLoad, createAction, editLoad, saveAction, publishAction, publishAllAction, discardAction, deleteAction, listDeleteAction, renameAction, uploadAction, mediaDeleteAction, mediaBulkDelete, mediaUpdateAction, mediaReplacePreview, mediaReplaceApply, mediaAltPreview, mediaAltApply, mintToken };
 }
 
 /** The cap, in characters, on the stored alt text. The human fields are display copy, not content,

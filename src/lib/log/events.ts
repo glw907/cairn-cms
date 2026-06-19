@@ -23,6 +23,7 @@ export type CairnLogEvent =
   | 'media.resolve_missing'
   | 'media.deleted'
   | 'media.delete_blocked'
+  | 'media.bulk_deleted'
   | 'media.replaced'
   | 'media.replace_blocked'
   | 'media.alt_propagated';

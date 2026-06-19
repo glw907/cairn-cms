@@ -11,9 +11,37 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-18, latest): Pass B (replace + alt propagation) LANDED on `feat/media-pass-b` as `0.58.0`, HELD for merge/release/push (Geoff's call)
+## Immediate next action (2026-06-18, latest): Pass B SHIPPED as `0.58.0`; Pass C (bulk delete + orphan collection) DESIGNED + PLANNED, EXECUTE next
 
-**Pass B is COMPLETE** on a fresh worktree off `main` (`feat/media-pass-b`), all ten tasks test-first,
+**Execute Pass C**, planned at `docs/superpowers/plans/2026-06-18-cairn-media-pass-c.md` (spec
+`docs/superpowers/specs/2026-06-18-cairn-media-pass-c-design.md`, approved rev.2 mockup
+`docs/internal/design/2026-06-18-media-pass-c-rev2-mockup.html`, research reference
+`docs/internal/design/2026-06-18-media-pass-c-research-reference.md`), a `0.59.0` minor. Main-loop
+orchestrate-and-verify, test-first, one `cairn-implementer` per task, the full gate between dispatches,
+on a FRESH worktree off `main`. Scope = the DESTRUCTIVE CLUSTER: multi-select usage-gated bulk delete
+(skip-and-report) + orphan collection (the irreversible byte purge of `reconcile.orphanedObjects` plus a
+read-only broken-references readout of `reconcile.missingObjects`) + the "Unused" -> "No references
+found" rename. Review Tasks 4 (bulk delete) and 5 (orphan scan + purge) most closely (destructive, the
+fail-closed gate, commit-row-then-delete-R2, the irreversible byte purge; consider `model: opus`). THE
+SAFETY FLOOR: one shared STRICT cross-branch index per batch (the display index is selection-only),
+fail closed, per-item membership gate, NOT N strict reads (the workerd 6-connection budget). 11 tasks:
+the pure bulk-delete partition + the orphan-scan projection, the flash/types, the bulk-delete action,
+the orphan scan + purge, the composer wiring (the seam Pass B documented), the multi-select component,
+the bulk-delete dialog, the orphan scan surface, the showcase E2E, and the docs + `0.59.0` bump. A live
+admin smoke is owed (first bulk R2 delete + the byte purge); it rides the first site cutover (the Pass
+B/3c precedent). needs-alt at scale + dedupe/merge are Pass D. The three-population taxonomy (orphaned
+bytes / unreferenced assets / broken references) and the verified competitor study are in the research
+reference.
+
+## Prior next action (2026-06-18): Pass B (replace + alt propagation) SHIPPED as `0.58.0` (merged, released, npm `latest`)
+
+**Pass B SHIPPED 2026-06-18:** `feat/media-pass-b` fast-forward merged to `main` (`3ca2a98`) and pushed;
+`gh release create v0.58.0` fired the OIDC publish workflow (success); `npm view @glw907/cairn-cms
+version` is `0.58.0` (registry `latest`); CI on `main` (test + e2e) green; the worktree and the merged
+`feat/media-*` branches were cleaned up; `package-lock.json` version drift synced (`b01a538`). The one
+flagged decision (replace keeps the asset slug) shipped as-is. No consumer action.
+
+**Pass B was COMPLETE** on a fresh worktree off `main` (`feat/media-pass-b`), all ten tasks test-first,
 the code-simplifier pass, a four-reviewer gate, and the docs arm. It adds two admin Media Library
 operations that rewrite published content for every placement of one asset in one atomic commit to
 `main`, behind a preview the editor confirms: **replace-in-place** (upload a corrected file; cairn is

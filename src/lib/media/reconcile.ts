@@ -8,8 +8,9 @@
 import type { MediaManifest } from './manifest.js';
 import { log } from '../log/index.js';
 
-/** A stored media object key parses to its short hash via `media/<aa>/<shortHash>.<ext>`. */
-const MEDIA_KEY_RE = /^media\/[0-9a-f]{2}\/([0-9a-f]{16})\.[a-z0-9]{1,5}$/;
+/** A stored media object key parses to its short hash via `media/<aa>/<shortHash>.<ext>`. Exported so
+ *  the orphan-scan projection derives the same hash from an orphaned key without a second grammar. */
+export const MEDIA_KEY_RE = /^media\/[0-9a-f]{2}\/([0-9a-f]{16})\.[a-z0-9]{1,5}$/;
 
 /** What a reconcile read found in either direction. `orphanedObjects` are stored R2 keys whose hash
  *  has no manifest row; `missingObjects` are manifest hashes with no stored object. */

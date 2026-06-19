@@ -24,6 +24,7 @@ export type CairnLogEvent =
   | 'media.deleted'
   | 'media.delete_blocked'
   | 'media.bulk_deleted'
+  | 'media.orphans_purged'
   | 'media.replaced'
   | 'media.replace_blocked'
   | 'media.alt_propagated';

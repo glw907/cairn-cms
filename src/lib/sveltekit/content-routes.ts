@@ -29,6 +29,8 @@ import { mediaLibraryEntry } from '../media/library-entry.js';
 import type { MediaLibrary, MediaLibraryEntry } from '../media/library-entry.js';
 import { buildUsageIndex } from '../media/usage.js';
 import type { UsageEntry } from '../media/usage.js';
+import { runReconcile, MEDIA_KEY_RE, type ReconcileBucket } from '../media/reconcile.js';
+import { buildOrphanScan, type OrphanScan } from '../media/orphan-scan.js';
 import { repointMediaRef, fillAltForHash } from '../content/media-rewrite.js';
 import type { RepointPlacement, AltPlacement } from '../content/media-rewrite.js';
 import { planMediaRewrite } from '../media/rewrite-plan.js';
@@ -1632,6 +1634,129 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     return { deleted, skipped: plan.skipped, failed } satisfies MediaBulkDeleteResult;
   }
 
+  /** The on-demand orphan scan: a read-only reconcile of stored R2 bytes against the manifest, joined
+   *  with one strict cross-branch usage index for the broken-reference where-used. It runs only when
+   *  requested, never on the loaded index, because it is heavier than the load path: a full R2 list
+   *  plus a reconcile pass on top of the strict usage build.
+   *
+   *  Detection-time fail-closed: BOTH the reconcile and the strict usage build run inside one
+   *  try/catch, and any throw refuses the whole scan with fail(503) rather than returning a partial
+   *  result. The reconcile must not run on a half-listed bucket: a truncated R2 list would call
+   *  still-stored bytes orphaned. The strict usage build must not run on a half-read branch set: an
+   *  unread branch would make a branch-referenced asset look orphaned. A wrong orphan verdict here
+   *  feeds the irreversible purge, so the scan refuses rather than risk it.
+   *
+   *  The result is the OrphanScan projection: orphanedBytes (stored keys with no manifest row, the
+   *  purge surface) and brokenRefs (manifest rows whose bytes are gone, read-only, shown with their
+   *  where-used so an operator can re-ingest rather than purge a still-referenced record). */
+  async function mediaOrphanScan(event: ContentEvent): Promise<ReturnType<typeof fail> | OrphanScan> {
+    requireSession(event);
+    const token = await mintToken(event.platform?.env ?? {});
+
+    // Resolve the R2 binding. The reconcile lists the raw bucket directly, so keep the raw binding;
+    // the MediaStore seam carries no list. A media-off site or a missing binding refuses the scan.
+    const resolved = runtime.resolvedAssets;
+    if (!resolved.enabled) {
+      return fail(503, { error: 'Media is not enabled for this site.' } satisfies MediaBulkFailure);
+    }
+    const platformEnv = (event.platform as { env?: Record<string, unknown> } | undefined)?.env ?? {};
+    const rawBucket = platformEnv[resolved.bucketBinding];
+    if (!rawBucket) {
+      return fail(503, { error: 'The media bucket is not bound.' } satisfies MediaBulkFailure);
+    }
+
+    // Read the fresh media manifest for the reconcile's manifest side.
+    const manifest = parseMediaManifest(parseMediaJson(await readRaw(runtime.backend, runtime.mediaManifestPath, token)));
+
+    // THE detection-time fail-closed surface. The reconcile (an R2 list that must complete in full)
+    // and the strict usage build (a branch read that must complete in full) are both unsafe to use
+    // partially, so either throwing refuses the scan. A wrong orphan verdict from a partial read here
+    // would feed the irreversible purge.
+    let reconcile: Awaited<ReturnType<typeof runReconcile>>;
+    let index: Awaited<ReturnType<typeof buildUsageIndex>>;
+    try {
+      reconcile = await runReconcile(rawBucket as unknown as ReconcileBucket, manifest);
+      index = await buildUsageIndex(runtime.backend, token, runtime.concepts, await readManifest(token), { strict: true });
+    } catch {
+      return fail(503, { error: 'Could not check where files are used, so the scan was not run. Try again.' } satisfies MediaBulkFailure);
+    }
+
+    return buildOrphanScan(reconcile, manifest, index);
+  }
+
+  /** Purge orphaned R2 bytes: the one IRREVERSIBLE media action. Raw object bytes live only in R2, not
+   *  in git, so a purged orphan cannot be recovered the way a deleted manifest row can be reverted in
+   *  history. The whole action is built around that fact.
+   *
+   *  The typed-count confirm is the never-bypassable gate, the analogue of single delete's typed-slug
+   *  check. The form's `confirm` must equal the count of selected keys (the approved rev.2 mockup's
+   *  "Type N to purge these files for good"); an empty selection or a mismatched count deletes nothing.
+   *
+   *  Re-derive fresh is the safety crux. The selection came from an earlier scan, so the action does
+   *  NOT trust it: it reads the current media manifest and, for each selected key, parses the hash from
+   *  the key grammar. A key that does not match the grammar was never a real orphan key and is dropped
+   *  silently. A key whose hash now has a manifest row was claimed since the scan (an upload landed its
+   *  bytes as a live asset), so it is skipped into skippedClaimed and its bytes survive. Only a key
+   *  whose hash is STILL absent from the manifest is purged.
+   *
+   *  There is no commit. An orphan by definition has no manifest row to remove, so the purge deletes
+   *  the R2 object directly. Each delete is best-effort and batch-resilient: a per-object error is
+   *  reported in `failed` and the loop continues; an absent object is a no-op (the R2 contract). */
+  async function mediaPurgeOrphans(event: ContentEvent): Promise<ReturnType<typeof fail> | MediaOrphanPurgeResult> {
+    const editor = requireSession(event);
+    const token = await mintToken(event.platform?.env ?? {});
+
+    // Resolve the R2 binding, the same media-off / missing-binding refusals as the scan. The purge
+    // deletes through the MediaStore seam, so wrap the raw binding.
+    const resolved = runtime.resolvedAssets;
+    if (!resolved.enabled) {
+      return fail(503, { error: 'Media is not enabled for this site.' } satisfies MediaBulkFailure);
+    }
+    const platformEnv = (event.platform as { env?: Record<string, unknown> } | undefined)?.env ?? {};
+    const rawBucket = platformEnv[resolved.bucketBinding];
+    if (!rawBucket) {
+      return fail(503, { error: 'The media bucket is not bound.' } satisfies MediaBulkFailure);
+    }
+    const store = r2Store(rawBucket as R2Bucket);
+
+    // Read the selected R2 keys and the typed confirm.
+    const form = await event.request.formData();
+    const keys = form.getAll('key').map(String);
+    const confirm = String(form.get('confirm') ?? '');
+
+    // The irreversible gate: the confirm must equal the selected count, and the set must be non-empty.
+    // A mismatch or an empty set refuses and deletes NOTHING.
+    if (keys.length === 0 || confirm !== String(keys.length)) {
+      return fail(400, { error: 'Type the number of files to confirm the purge.' } satisfies MediaBulkFailure);
+    }
+
+    // Re-derive fresh against the current manifest, so a key claimed since the scan is never purged.
+    const manifest = parseMediaManifest(parseMediaJson(await readRaw(runtime.backend, runtime.mediaManifestPath, token)));
+    const purged: string[] = [];
+    const skippedClaimed: string[] = [];
+    const failed: { key: string; error: string }[] = [];
+    for (const key of keys) {
+      const hash = MEDIA_KEY_RE.exec(key)?.[1];
+      // A key that does not match the grammar was never a real orphan key: drop it silently.
+      if (hash === undefined) continue;
+      // A hash that now has a manifest row was claimed since the scan: its bytes are a live asset now.
+      if (manifest[hash]) {
+        skippedClaimed.push(key);
+        continue;
+      }
+      // Still orphaned: delete the object directly. No commit, there is no manifest row.
+      try {
+        await store.delete(key);
+        purged.push(key);
+      } catch (err) {
+        failed.push({ key, error: err instanceof Error ? err.message : String(err) });
+      }
+    }
+
+    log.info('media.orphans_purged', { editor: editor.email, purged: purged.length });
+    return { purged, skippedClaimed, failed } satisfies MediaOrphanPurgeResult;
+  }
+
   /** Edit a committed asset's metadata: its display name, slug, and default alt. A single media.json
    *  row commit, with NO reference rewrite: the resolver and the delivery route key on the hash, so a
    *  rename never breaks an existing `media:` reference. The default alt is the asset's value for the
@@ -2020,7 +2145,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     throw redirect(303, '/admin/media?altPropagated=1');
   }
 
-  return { layoutLoad, indexRedirect, listLoad, mediaLibraryLoad, createAction, editLoad, saveAction, publishAction, publishAllAction, discardAction, deleteAction, listDeleteAction, renameAction, uploadAction, mediaDeleteAction, mediaBulkDelete, mediaUpdateAction, mediaReplacePreview, mediaReplaceApply, mediaAltPreview, mediaAltApply, mintToken };
+  return { layoutLoad, indexRedirect, listLoad, mediaLibraryLoad, createAction, editLoad, saveAction, publishAction, publishAllAction, discardAction, deleteAction, listDeleteAction, renameAction, uploadAction, mediaDeleteAction, mediaBulkDelete, mediaOrphanScan, mediaPurgeOrphans, mediaUpdateAction, mediaReplacePreview, mediaReplaceApply, mediaAltPreview, mediaAltApply, mintToken };
 }
 
 /** The cap, in characters, on the stored alt text. The human fields are display copy, not content,

@@ -186,6 +186,12 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
     mediaReplace: viewAction(['media'], (event) => content.mediaReplaceApply(contentEvent(event, {}))),
     mediaAltPreview: viewAction(['media'], (event) => content.mediaAltPreview(contentEvent(event, {}))),
     mediaAltPropagate: viewAction(['media'], (event) => content.mediaAltApply(contentEvent(event, {}))),
+    // Pass C library actions: a multi-select bulk delete, the on-demand orphan scan, and the
+    // irreversible byte purge. The component posts to `?/mediaBulkDelete`, `?/mediaOrphanScan`, and
+    // `?/mediaPurge` (the purge key is short of its content method name). All gate on the media view.
+    mediaBulkDelete: viewAction(['media'], (event) => content.mediaBulkDelete(contentEvent(event, {}))),
+    mediaOrphanScan: viewAction(['media'], (event) => content.mediaOrphanScan(contentEvent(event, {}))),
+    mediaPurge: viewAction(['media'], (event) => content.mediaPurgeOrphans(contentEvent(event, {}))),
     publishAll: viewAction(authedViews, (event) => content.publishAllAction(contentEvent(event, {}))),
     addEditor: viewAction(['editors'], (event) => editors.addEditorAction(event)),
     removeEditor: viewAction(['editors'], (event) => editors.removeEditorAction(event)),

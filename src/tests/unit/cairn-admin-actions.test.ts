@@ -307,6 +307,38 @@ describe('media replace and alt actions (composer wiring)', () => {
   });
 });
 
+describe('media bulk-delete, orphan-scan, and purge actions (composer wiring)', () => {
+  const newMediaActions = ['mediaBulkDelete', 'mediaOrphanScan', 'mediaPurge'] as const;
+
+  for (const name of newMediaActions) {
+    it(`404s ${name} posted outside the media view`, async () => {
+      const admin = createCairnAdmin(runtime(), deps);
+      await expect(admin.actions[name](actionEvent('/admin/posts') as never)).rejects.toMatchObject({ status: 404 });
+    });
+  }
+
+  it('mediaBulkDelete on the media view reaches the content action (refused 503 when media is off)', async () => {
+    new GithubDouble({ main: {} }).install();
+    const admin = createCairnAdmin(runtime(), deps);
+    const result = await admin.actions.mediaBulkDelete(actionEvent('/admin/media') as never);
+    expect(result).toMatchObject({ status: 503 });
+  });
+
+  it('mediaOrphanScan on the media view reaches the content action (refused 503 when media is off)', async () => {
+    new GithubDouble({ main: {} }).install();
+    const admin = createCairnAdmin(runtime(), deps);
+    const result = await admin.actions.mediaOrphanScan(actionEvent('/admin/media') as never);
+    expect(result).toMatchObject({ status: 503 });
+  });
+
+  it('mediaPurge on the media view reaches mediaPurgeOrphans (refused 503 when media is off)', async () => {
+    new GithubDouble({ main: {} }).install();
+    const admin = createCairnAdmin(runtime(), deps);
+    const result = await admin.actions.mediaPurge(actionEvent('/admin/media') as never);
+    expect(result).toMatchObject({ status: 503 });
+  });
+});
+
 describe('save on the nav view', () => {
   it('delegates to navSave when a navMenu is configured', async () => {
     vi.stubGlobal('fetch', vi.fn(async (_url: string, init?: RequestInit) => {

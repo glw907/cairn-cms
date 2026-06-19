@@ -11,27 +11,43 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-18, latest): Pass B SHIPPED as `0.58.0`; Pass C (bulk delete + orphan collection) DESIGNED + PLANNED, EXECUTE next
+## Immediate next action (2026-06-19, latest): Pass C (bulk delete + orphan collection) COMPLETE on `feat/media-pass-c` as `0.59.0`; HELD for Geoff's call on merge, release, push
 
-**Execute Pass C**, planned at `docs/superpowers/plans/2026-06-18-cairn-media-pass-c.md` (spec
-`docs/superpowers/specs/2026-06-18-cairn-media-pass-c-design.md`, approved rev.2 mockup
-`docs/internal/design/2026-06-18-media-pass-c-rev2-mockup.html`, research reference
-`docs/internal/design/2026-06-18-media-pass-c-research-reference.md`), a `0.59.0` minor. Main-loop
-orchestrate-and-verify, test-first, one `cairn-implementer` per task, the full gate between dispatches,
-on a FRESH worktree off `main`. Scope = the DESTRUCTIVE CLUSTER: multi-select usage-gated bulk delete
-(skip-and-report) + orphan collection (the irreversible byte purge of `reconcile.orphanedObjects` plus a
-read-only broken-references readout of `reconcile.missingObjects`) + the "Unused" -> "No references
-found" rename. Review Tasks 4 (bulk delete) and 5 (orphan scan + purge) most closely (destructive, the
-fail-closed gate, commit-row-then-delete-R2, the irreversible byte purge; consider `model: opus`). THE
-SAFETY FLOOR: one shared STRICT cross-branch index per batch (the display index is selection-only),
-fail closed, per-item membership gate, NOT N strict reads (the workerd 6-connection budget). 11 tasks:
-the pure bulk-delete partition + the orphan-scan projection, the flash/types, the bulk-delete action,
-the orphan scan + purge, the composer wiring (the seam Pass B documented), the multi-select component,
-the bulk-delete dialog, the orphan scan surface, the showcase E2E, and the docs + `0.59.0` bump. A live
-admin smoke is owed (first bulk R2 delete + the byte purge); it rides the first site cutover (the Pass
-B/3c precedent). needs-alt at scale + dedupe/merge are Pass D. The three-population taxonomy (orphaned
-bytes / unreferenced assets / broken references) and the verified competitor study are in the research
-reference.
+**Pass C is COMPLETE** on a fresh worktree off `main` (`feat/media-pass-c`, worktree
+`.claude/worktrees/media-pass-c`), 11 plan tasks plus one safety hardening, all test-first, the
+code-simplifier pass, a four-reviewer gate, and the docs arm. It adds the destructive media cluster to
+the admin Media Library: **multi-select bulk delete** (skip-and-report, usage-gated, reversible, one
+commit per batch) and **orphan collection** (an on-demand scan, the one irreversible R2 byte purge, and
+a read-only broken-references readout), plus the "Unused" -> "No references found" rename. Ships as
+`0.59.0` (minor, additive, NO consumer action). Plan + post-mortem at
+`docs/superpowers/plans/2026-06-18-cairn-media-pass-c.md`.
+
+Gate green at the tip, run first-hand from the worktree: `npm run check` 1011 files 0/0; `npm test` 198
+files / 2208 tests exit 0; the showcase Playwright E2E 27 passed (the two new round-trips + 25 existing);
+`check:reference`, `check:reference:signatures`, `check:package`, `check:docs`, `check:readiness`,
+`check:version` (minor) all exit 0. The review gate folded in one CRITICAL (the purge re-checks the
+strict usage index at action time, closing a scan-to-purge TOCTOU on the irreversible path), one real
+E2E-found bug (the orphan scan's body-less form POST 415'd; fixed with an empty FormData), and the a11y
+findings (table dropped its `role="grid"` over-reach for the native selectable-checkbox-table pattern;
+`aria-modal` added to three dialogs; the fake orphan listbox demoted to a plain checkbox list).
+
+**Safety floor (locked).** Every destructive batch builds ONE shared strict cross-branch usage index
+and fails closed if usage cannot be verified; the bulk delete skips in-use assets (never force-deletes)
+and commits the manifest rows before deleting R2 bytes; the byte purge is the one irreversible action,
+gated by a typed-count confirm, and at action time it re-derives fresh AND re-checks the strict usage
+index, so a branch-only upload's live bytes are never purged (orphaned = no manifest row AND referenced
+nowhere).
+
+**HELD for Geoff (his call):** merge `feat/media-pass-c` to `main`; cut the `0.59.0` release
+(`gh release create v0.59.0 --target main`, fires the OIDC trusted-publishing workflow); push; then the
+per-site cutover with the LIVE ADMIN SMOKE (the first bulk R2 delete and the first byte purge; deferred
+to cutover per the Pass B/3c precedent, since the showcase has no real Worker/GitHub). At cutover, run
+the READ-ONLY `Find orphaned files` scan against the real bucket first (after a `cairn-manifest`
+regenerate) to size the orphan state before any purge.
+
+**Then:** the `create-cairn-site` scaffolder (needs its own brainstorm) and Pass D (needs-alt at scale,
+dedupe/merge, AI auto-alt, a deep-link from the broken-references readout). The
+`runtime.publicMediaResolver` ergonomic stays a carry-forward needing its own brainstorm.
 
 ## Prior next action (2026-06-18): Pass B (replace + alt propagation) SHIPPED as `0.58.0` (merged, released, npm `latest`)
 

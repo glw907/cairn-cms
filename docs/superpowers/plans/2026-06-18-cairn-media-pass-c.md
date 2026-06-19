@@ -434,3 +434,54 @@ against a real bucket at cutover to size the orphan state.
 - The workerd subrequest budget for the batch strict index plus per-item membership at ~25+ open
   branches: verify empirically during the build; chunk if needed.
 - The `runtime.publicMediaResolver` ergonomic (carried from Pass A, needs its own brainstorm).
+
+## Post-mortem (2026-06-19)
+
+LANDED on `feat/media-pass-c` off `main` (worktree `.claude/worktrees/media-pass-c`), 11 plan tasks
+plus one safety hardening (Task 10a), each test-first, the code-simplifier pass, a four-reviewer gate,
+and the docs arm. Ships as `0.59.0` (minor, additive, no consumer action). Merge, release, and push are
+HELD for Geoff's call.
+
+**Built.** The pure cores (`bulk-delete-plan.ts` partition, `orphan-scan.ts` projection); the flash
+flags, `MediaBulkFailure`, and the `MediaBulkDeleteResult`/`MediaOrphanPurgeResult` summary types; the
+three destructive actions on `createContentRoutes` (`mediaBulkDelete`, `mediaOrphanScan`,
+`mediaPurgeOrphans`) with their composer registrations (`mediaBulkDelete`/`mediaOrphanScan`/`mediaPurge`);
+the component (multi-select grid+table, the sticky action bar, the bulk-delete alertdialog, the on-demand
+orphan scan surface with the irreversible purge) and the "Unused" -> "No references found" rename; the
+showcase E2E (two round-trips); and the docs.
+
+**Verified first-hand from the worktree tip.** `npm run check` 1011 files 0/0; `npm test` 198 files /
+2208 tests exit 0; the showcase Playwright E2E 27 passed (the two new round-trips plus 25 existing);
+`check:reference`, `check:reference:signatures`, `check:package`, `check:docs`, `check:readiness`,
+`check:version` (minor) all exit 0; `prose-guard` clean (blocking tier) on every changed doc.
+
+**Decisions locked.** (1) The purge typed-confirm is the COUNT of selected files ("Type N to purge"),
+per the approved rev.2 mockup, superseding the spec's earlier "not a reflexive count" wording. (2) The
+orphaned-bytes definition was SHARPENED to "no manifest row AND referenced nowhere across main and every
+open branch" (Task 10a): `buildOrphanScan` intersects reconcile's verdict with the strict usage index,
+and the purge re-checks that index at action time, so a branch-only upload's live bytes can never be
+purged. (3) The list-density table uses the native selectable-checkbox-table pattern, NOT `role="grid"`
+(the a11y reviewers showed the grid role obliged a keyboard model the table did not implement).
+
+**Review gate caught real issues.** The adversarial correctness reviewer found a CRITICAL: the purge
+re-derived freshness against the manifest only, leaving a scan-to-purge TOCTOU window where a new branch
+reference (with client-posted keys) could irreversibly purge a live draft's bytes; fixed by building one
+fail-closed strict usage index at purge action time, symmetric with the scan and bulk delete. The E2E
+caught a real Task 9 bug: the orphan scan posted a body-less form action (SvelteKit 415s before the
+action runs; the component-test fetch stub could not catch it); fixed with an empty `FormData` body plus
+a regression test. The a11y reviewers fixed the table grid-role over-reach, missing `aria-modal` on three
+dialogs, and a fake orphan listbox; svelte review added in-flight dialog-close guards.
+
+**Carried into the cutover and beyond.**
+- LIVE ADMIN SMOKE is owed (the first bulk R2 delete and the first byte purge). It rides the first site
+  cutover, matching the Pass B/3c precedent: the showcase runs `vite preview` with fakes, so a real
+  commit and a real R2 purge need a real site repo. At cutover, run the READ-ONLY `Find orphaned files`
+  scan against the real bucket first (after a `cairn-manifest` regenerate) to size the orphan state
+  before any purge; the scan is read-only and the purge is human-gated, so there is a checkpoint before
+  any irreversible delete.
+- The narrow scan-to-purge race for a NEWLY referenced byte is closed at the purge gate now; the only
+  residual window is identical to the documented delete-races-an-edit window every safe delete carries.
+- The workerd subrequest budget for the per-batch strict index at ~25+ open branches stays inferred;
+  size it at cutover. The purge now also builds one strict index, still one per batch, not per key.
+- Pass D: needs-alt at scale, dedupe/merge, AI auto-alt, a deep-link from the broken-references readout.
+- The `runtime.publicMediaResolver` ergonomic still needs its own brainstorm.

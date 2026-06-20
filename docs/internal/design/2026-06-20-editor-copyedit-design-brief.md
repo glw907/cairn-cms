@@ -256,3 +256,33 @@ does and which choice is safe; sensible defaults must be obvious and the safe de
 state; the two-tier visibility gate must be truthful (an editor never sees config they cannot use); and
 the surface must fit the cairn admin settings screen using only shipped tokens. The design agents should
 also flag any convention worth adding that this set misses.
+
+## Convention set, corrected by the research (2026-06-20)
+
+The deep-research pass (`2026-06-20-editor-copyedit-conventions-research.md`) supersedes the proposed set
+above. The corrected set, which the frontend-design polish and the spec must use:
+
+Objective fixes (default ON): spelling and typos, DIALECT-AWARE (the spellcheck carries a per-site
+English-dialect setting and never flags regional spelling); unambiguous grammar; doubled words; whitespace
+errors (trailing spaces, tabs), but NOT sentence spacing; sentence-start capitalization; missing terminal
+punctuation.
+
+Style conventions (config, default OFF): Oxford comma (always, complex-only, or never: three positions);
+em-dash style (spaced or closed); en-dash in number ranges; ellipsis (single character or three dots);
+time format (5 PM, 5pm, or 5 p.m.); number style (spell out under ten, under one hundred, or always
+numerals, with the always-numeral exception sets for ages, dates, measurements, and percentages);
+measurements and units notation (abbreviate or spell out, notation only); percent (the sign or the word).
+
+Advanced (default OFF, gated, higher risk): smart quotes (curly), only with the full apostrophe rule set
+(contractions, possessives, decade elision, primes) and markdown scoping; brand and proper-noun
+capitalization (a curated list only, github to GitHub), the one carve-out from the otherwise out-of-scope
+terminology category. Lower-priority later candidates: currency redundancy and date-format normalization.
+
+Out of scope (voice), never exposed: word and terminology swaps, passive-to-active, weasel words, hedging,
+clichés, wordiness, adverb pruning, and rhetorical rules. Regional spelling is a locale property, not a
+toggle.
+
+Changes from the proposed set: the Oxford comma and number style become multi-position; sentence spacing
+is dropped (it collapses in the markdown-to-HTML render, so it has no visible effect); smart quotes move
+to the advanced tier (apostrophes defeat naive conversion); percent is added; brand-caps is the one
+advanced carve-out; and the spellcheck gains a per-site dialect setting.

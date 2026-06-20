@@ -467,10 +467,12 @@ what it sits on, and any future surface reuses them.
 The mechanism is a CodeMirror state field plus decorations, in its own compartment (entering and leaving
 tidy is a reconfigure, not a rebuild, the way the media decoration and folding are installed). The state
 field holds the change list and which are still pending. Insertions render as mark decorations showing the
-new text (an addition tint plus a non-color marker, the inserted text is decoration content not buffer
-text). Deletions render as widget or strike-through decorations over the original run using
-**`--cairn-error-ink`, reserved exclusively for tidy deletions**, so the author sees exactly what tidy wants
-to remove (seeing the deletion is the safety contract). The decorations live in `EditorView.theme` and a
+new text in **`--color-positive-ink`, the locked insertion-and-addition token** (an addition tint plus a
+non-color marker, the inserted text is decoration content not buffer text). Note the token is
+`--color-positive-ink`, not `--cairn-positive-ink`, which does not exist. Deletions render as widget or
+strike-through decorations over the original run using **`--cairn-error-ink`, reserved exclusively for tidy
+deletions**, so the insertion green and the deletion red are a locked pair and the author sees exactly what
+tidy wants to remove (seeing the deletion is the safety contract). The decorations live in `EditorView.theme` and a
 plugin in `MarkdownEditor.svelte`, beside the media and fold decorations, driven through a new
 `registerTidy` seam (mirroring `registerImagePlaceholders`): the host hands the editor the change set and
 gets back an api with accept-one, reject-one, accept-all, and reject-all. Entering tidy disables the
@@ -498,25 +500,32 @@ The surface's safety and trust grafts, all carried into the design:
   default to undecided, and are NOT swept by Accept-fixes until the author confirms each. The two weights
   read at a glance.
 - **The local category taxonomy, safety-ranked.** The per-hunk category is locally inferred from the diff,
-  never a claim the model made (a single-token punctuation/whitespace diff is a typo, a repeated word is
-  doubled, a usage count drives a normalization). Objective categories get a neutral treatment, judgment
+  never a claim the model made: a single-token punctuation or whitespace diff is a typo, a repeated word is
+  doubled, and a hunk that matches an enabled config convention is that convention's normalization. There is
+  no usage-count inference and no "consistency" category. The diff shape and the enabled config decide the
+  label, never a count of the author's own text. Objective categories get a neutral treatment, judgment
   categories the distinct review-this treatment.
-- **The mandatory because-line for every normalization/consistency hunk**, computed as pure string work over
-  the buffer (count the author's own usage, or name the owner's setting), no model round trip. A
-  normalization hunk that cannot show a locally-computed rationale is not offered at all. Because the model
-  no longer harmonizes, any consistency-shaped hunk the diff surfaces is one cairn explains from the buffer.
+- **The mandatory because-line for every normalization hunk**, whose only data source is the config-declared
+  setting that authorized the hunk, computed as pure string work, no model round trip. The line names the
+  convention and its variant ("Your Oxford-comma setting is always", "Your time-format setting is 5 PM",
+  "Your percent setting is the sign"), never a count of how many times the author wrote it the other way.
+  Counting the author's own usage to justify a change IS the harmonize-to-author judgment cairn must never
+  make, so it never appears. The only normalization hunk the surface ever constructs is one a config
+  convention authorized; if any usage-counted hunk could still appear, it is always held undecided and never
+  swept by the bulk action. A normalization hunk that cannot name an enabled setting is not offered at all.
 - **The two-region live model** (the shipped MediaPicker discipline): one `role="status"` region for the
   running tally, updated only on bulk actions and debounced so a rapid accept does not machine-gun, plus a
   second `aria-live="polite"` region narrating the single last action ("Hunk 3, normalization, kept"). The
   tally splits three ways: kept, to-review (undecided judgment hunks), and skipping.
 - **Keyboard step-through** on the hunk list: `j`/`k` (or `n`/`p`) to move, `a`/`r` to accept/reject the
   focused hunk, `A` to accept all objective hunks, Escape to cancel (the native dialog supplies the trap and
-  Escape). The focused hunk is announced with kind plus text, and for a judgment category the rationale is
-  appended ("consistency: trail head becomes trailhead, you write trailhead three other times").
-- **Context rows plus scroll-to-locus.** One unchanged context row above and below each hunk, and the
-  line-ref is a real "show in text" affordance that scrolls the editor underneath, which is **dimmed, never
-  blurred to unreadable** (the spine's `filter:blur(1px)` is replaced), so the author can read the
-  surrounding sentence through the scrim.
+  Escape). The focused hunk is announced with kind plus text, and for a judgment category the config-named
+  rationale is appended ("comma style: an Oxford comma added, your Oxford-comma setting is always").
+- **Context rows plus scroll-to-locus.** The context window is fixed at exactly one unchanged row on each
+  side of a hunk (one above, one below), because the native dialog is dense and a wider window pushes the
+  changed rows out of view. The line-ref is a real "show in text" affordance that scrolls the editor
+  underneath, which is **dimmed, never blurred to unreadable** (the spine's `filter:blur(1px)` is replaced),
+  so the author can read the surrounding sentence through the scrim.
 - **The genuine edge states.** A no-op never opens an empty review: it shows a quiet "Nothing to fix"
   confirmation and leaves the buffer alone. The working state is cancelable and wired to a real abort
   (section 2.1). On transition the result lands in a live region and focus moves to the first hunk or the
@@ -604,9 +613,14 @@ CairnMediaLibrary triage handler, never `aria-pressed` for a pick-one). **When t
 whole section is absent from the screen**, replaced by an honest `role="region"`-labelled gate note carrying
 a read-only "what your developer needs to do" checklist and a spellcheck-still-works reassurance, with no
 teasing disabled controls in the tab order; the editor-side tidy toolbar control is not rendered at all.
-`cairn-doctor` gains a check that warns when `tidy.enabled` is true but the secret is unset (consistent with
-the bindings checks in `checks-local.ts`); the doctor check is the engineering half of the truthful surface
-and the settings/editor suppression is the UX half.
+`cairn-doctor` gains a check that **verifies the secret is configured** by a config-presence heuristic, not
+a definitive unset claim. A Worker secret is not in the committed wrangler config and not in anything the
+doctor can `readFile`, so the doctor cannot prove it is unset. Instead, when `tidy.enabled` is true the check
+warns if `ANTHROPIC_API_KEY` appears neither as a wrangler `var` nor in `.dev.vars`, the two places the
+doctor can read. This pairs with the runtime `fail(503)` path (the action's own check at call time) and an
+optional `--probe` live check that actually exercises the key, so a deploy-time heuristic and a runtime
+truth back each other. The doctor check is the engineering half of the truthful surface and the
+settings/editor suppression is the UX half.
 
 The screen's resting state IS the safe default: Fixes on, Style off, every variant collapsed, zero
 decisions asked. Its grafted affordances:
@@ -627,12 +641,16 @@ decisions asked. Its grafted affordances:
 - An always-present `role="status"` / `aria-live="polite"` region carrying each section count and the
   summary; per-keystroke variant examples stay `aria-hidden` so the region is not chatty.
 
-**Storage (decision 12): the existing committed site-config YAML.** The `tidy` block carries `enabled`
-(default false), `model` (default `claude-sonnet-4-6`, alternative `claude-haiku-4-5`), and a `conventions`
-block of the per-convention toggles; the separate `spellcheck.dialect` field lives in the same config.
-Edited through the GitHub-App commit pipeline, diffable and shared across editors. Whether the `tidy` block
-is a new file under `src/content/.cairn/` or a block in the existing site-config file is an implementer call
-that sets the save-note copy.
+**Storage (decision 12): the existing committed site-config YAML, ONE config home.** Both `tidy` and
+`spellcheck.dialect` live in the committed YAML `SiteConfig` (the `src/lib/nav/site-config.ts` schema), NOT
+the TS `CairnAdapter`. The `tidy` block carries `enabled` (default false), `model` (default
+`claude-sonnet-4-6`, alternative `claude-haiku-4-5`), and a `conventions` block of the per-convention
+toggles; the separate `spellcheck.dialect` field lives in the same config. The settings save is the exact
+read-modify-commit the nav editor already runs: `createNavRoutes` in `src/lib/sveltekit/nav-routes.ts`
+parses the config (`parseSiteConfig`), validates, commits the edited document through `commitFile`, and
+handles a stale-SHA `isConflict`; the document edit reuses the `setMenu`/`parseDocument` machinery in
+`src/lib/nav/site-config.ts` so the save preserves comments and key order. Diffable and shared across
+editors.
 
 The editor-level affordance (the tidy button and its scope choices) appears only when `tidy.enabled` is
 true and the key is present, and it sits in the editor toolbar beside the other text-acting controls (tidy
@@ -766,7 +784,11 @@ suite.
 - The prompt-contract fixtures, `{ input, mustNotChange, shouldFix }` cases (keep "colour", keep "utilize",
   keep "fifteen" and "15" coexisting when number style is off, fix "their" to "there" only when wrong, leave
   a deliberate fragment, never touch a `media:` token), run as recorded-fixture assertions against the
-  validator and diff. A separate, opt-in, network-gated harness can run the real model against the same
+  validator and diff. The unguarded consistency classes get matching `mustNotChange` fixtures, each in the
+  shape of the "fifteen and 15 may coexist" case, so no surviving usage-count harmonization can pass: with
+  no convention enabled, "trail head" stays unchanged when "trailhead" appears elsewhere in the input;
+  "email" and "e-mail" keep coexisting; and a term capitalized two ways stays unchanged when it is not on the
+  brand-caps curated list. A separate, opt-in, network-gated harness can run the real model against the same
   inputs to catch prompt drift, kept out of the default suite so CI stays offline and deterministic.
 
 **Integration (Cloudflare workers pool)**, the actions with the Anthropic call mocked (a stub

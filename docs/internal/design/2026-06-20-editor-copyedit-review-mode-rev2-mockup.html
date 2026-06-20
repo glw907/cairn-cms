@@ -39,9 +39,10 @@
           reworded) carry a distinct REVIEW-THIS treatment, default to UNDECIDED, and are NOT
           included in Accept-all until the author confirms each. This is the one place the synthesis
           improves on the spine.
-       3. THE MANDATORY BECAUSE-LINE (graft 1). Every normalization/consistency hunk shows a
-          locally-computed rationale (a count over the author's own text, or the named owner setting).
-          A normalization that cannot show one is not offered. Pure string work, no model round trip.
+       3. THE MANDATORY BECAUSE-LINE (graft 1). Every normalization hunk shows a rationale whose ONLY
+          data source is the config setting that authorized it (the named owner setting), never a count of
+          the author's own usage. Counting the author's own habit IS the harmonize-to-author judgment cairn
+          dropped, so it never appears. A normalization that cannot name an enabled setting is not offered.
        4. KEYBOARD STEP-THROUGH (graft 3). j/k or n/p move between hunks, a/r accept/reject the
           focused one, A accepts all objective hunks, Escape cancels. The focused hunk is announced
           with kind + text, and for a judgment hunk the rationale is appended.
@@ -402,9 +403,10 @@
   /* the changed run inside a line: a del strikes through in error ink, an add underlines in positive ink */
   .rdel { background: color-mix(in oklab, var(--cairn-error-ink) 18%, transparent); color: var(--cairn-diff-del-ink); text-decoration: line-through; text-decoration-thickness: 1px; border-radius: 2px; padding: 0 1px; }
   .radd { background: color-mix(in oklab, var(--color-positive-ink) 20%, transparent); color: var(--cairn-diff-add-ink); border-radius: 2px; padding: 0 1px; }
-  /* the MANDATORY because-line (graft 1): the locally-computed rationale on a normalization/consistency
-     hunk. A separate row in the body face, set off with a small lightbulb glyph, so it reads as
-     cairn's reason, not part of the source. A normalization that cannot show one is not offered. */
+  /* the MANDATORY because-line (graft 1): the config-named rationale on a normalization hunk, citing
+     ONLY the owner setting that authorized it, never a count of the author's own usage. A separate row in
+     the body face, set off with a small lightbulb glyph, so it reads as cairn's reason, not part of the
+     source. A normalization that cannot name an enabled setting is not offered. */
   .because { display: flex; align-items: flex-start; gap: 7px; padding: 7px 11px 7px 11px; border-top: 1px dashed var(--cairn-card-border); background: color-mix(in oklab, var(--cairn-warning-ink) 5%, transparent); font-family: var(--font-body); font-size: .75rem; line-height: 1.5; color: var(--color-subtle); }
   .because svg { width: 13px; height: 13px; flex: none; margin-top: 1px; color: var(--cairn-warning-ink); }
   .because b { color: var(--color-base-content); font-weight: 600; }
@@ -605,9 +607,10 @@ that updates only on bulk actions; a second <code>aria-live="polite"</code> regi
 narrates the last single action. Per-hunk Accept/Reject is the segmented check-and-tint recipe with
 <code>aria-pressed</code>; the gutter glyph and the strike/underline carry state so color is never alone.</div>
 <div class="anno engine">engine. Following poplar's model the model returns a plain corrected STRING;
-cairn computes the diff and infers each category LOCALLY. The because-line for a normalization is pure
-string work over the buffer (count the author's own usage) or the named owner setting, never a model
-claim. Before this renders, the rewrite is validated as a PROOFREAD: frontmatter, the code span, the
+cairn computes the diff and infers each category LOCALLY from the diff shape and the enabled config. The
+because-line for a normalization names ONLY the config setting that authorized it, never a count of the
+author's own usage (counting the author's own habit is the harmonize-to-author judgment cairn dropped).
+Before this renders, the rewrite is validated as a PROOFREAD: frontmatter, the code span, the
 <code>media:</code> token, and the <code>:::figure</code> must be byte-identical, or tidy refuses and the
 author is told it could not run cleanly. All line refs are computed locally, never trusted from the model.</div>
 <div class="screen"><div data-theme="cairn-admin">
@@ -726,10 +729,12 @@ author is told it could not run cleanly. All line refs are computed locally, nev
             <div class="because"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg><span>The subject <b>crew</b> is singular here, so the verb takes <b>lays</b>. This one reworded your sentence, so give it a look.</span></div>
           </div>
 
-          <!-- HUNK 3 · CONSISTENCY / OWNER-DECLARED NORMALIZATION · JUDGMENT. REV.2 REFRAME: this is
+          <!-- HUNK 3 · OWNER-DECLARED NORMALIZATION (comma style) · JUDGMENT. REV.2 REFRAME: this is
                NOT harmonize-to-author (gone per lead decision 1). It is the Oxford comma, a style the
-               SITE OWNER switched on in settings. The because-line names the owner setting AND counts
-               the author's own usage, the mandatory local rationale (graft 1). UNDECIDED, not swept. -->
+               SITE OWNER switched on in settings. The because-line names ONLY the owner setting that
+               authorized it; it never counts the author's own usage, because that count IS the harmonize-
+               to-author judgment cairn must never make. The category is the convention's own name (comma
+               style), never a "consistency" label. UNDECIDED, not swept. -->
           <div class="hunk judgment undecided">
             <div class="hunk-head">
               <span class="hunk-cat consistency"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56"/><path d="m9 11 3 3L22 4"/></svg>Comma style</span>
@@ -747,8 +752,10 @@ author is told it could not run cleanly. All line refs are computed locally, nev
               <div class="drow add"><span class="dgut" aria-hidden="true">+</span><span class="dtext">Bring skins, a warm layer<span class="radd">,</span> and a thermos.</span></div>
               <div class="drow ctx"><span class="dgut" aria-hidden="true">&nbsp;</span><span class="dtext">The lot fills by nine on a clear Saturday.</span></div>
             </div>
-            <!-- the MANDATORY because-line: names the owner setting AND the local count -->
-            <div class="because"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg><span>Your site is set to <b>use the Oxford comma</b>. You already write it that way in <b>4 of 5</b> lists in this post, so this matches the rest.</span></div>
+            <!-- the MANDATORY because-line: names ONLY the owner setting that authorized this hunk. It
+                 never counts the author's own usage; counting the author's own habit IS the harmonize-to-
+                 author judgment cairn must never make, so the line cites the declared config and nothing more. -->
+            <div class="because"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg><span>Your <b>Oxford-comma setting</b> is <b>always</b>, so tidy adds the serial comma before the final "and".</span></div>
           </div>
 
           <!-- HUNK 4 · DOUBLED WORD · OBJECTIVE: quiet, pre-kept. -->
@@ -922,7 +929,7 @@ the single action with its rationale.</div>
               <div class="drow del"><span class="dgut" aria-hidden="true">&minus;</span><span class="dtext">Bring skins, a warm layer<span class="rdel"> </span>and a thermos.</span></div>
               <div class="drow add"><span class="dgut" aria-hidden="true">+</span><span class="dtext">Bring skins, a warm layer<span class="radd">,</span> and a thermos.</span></div>
             </div>
-            <div class="because"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg><span>Your site is set to <b>use the Oxford comma</b>. You write it that way in <b>4 of 5</b> lists in this post.</span></div>
+            <div class="because"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg><span>Your <b>Oxford-comma setting</b> is <b>always</b>, so tidy adds the serial comma before the final "and".</span></div>
           </div>
 
           <!-- HUNK 4 · DOUBLED WORD · OBJECTIVE, kept -->
@@ -951,7 +958,7 @@ the single action with its rationale.</div>
         </div>
 
         <!-- the second live region narrates the rejection WITH its rationale (graft 3 / MK-1) -->
-        <span class="sr-only" aria-live="polite">Hunk 3, comma style, rejected. It was offered because your site uses the Oxford comma and you write it that way in four of five lists.</span>
+        <span class="sr-only" aria-live="polite">Hunk 3, comma style, rejected. It was offered because your Oxford-comma setting is always.</span>
       </div>
     </div>
   </div>
@@ -1210,7 +1217,7 @@ warning ink, so every cue holds its contrast without a second palette.</div>
             <div class="because"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg><span>The subject <b>crew</b> is singular here, so the verb takes <b>lays</b>. This one reworded your sentence, so give it a look.</span></div>
           </div>
 
-          <!-- HUNK 3 · COMMA STYLE · JUDGMENT, undecided, because-line names the owner setting -->
+          <!-- HUNK 3 · COMMA STYLE · JUDGMENT, undecided, because-line names ONLY the owner setting -->
           <div class="hunk judgment undecided">
             <div class="hunk-head">
               <span class="hunk-cat consistency"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56"/><path d="m9 11 3 3L22 4"/></svg>Comma style</span>
@@ -1228,7 +1235,7 @@ warning ink, so every cue holds its contrast without a second palette.</div>
               <div class="drow add"><span class="dgut" aria-hidden="true">+</span><span class="dtext">Bring skins, a warm layer<span class="radd">,</span> and a thermos.</span></div>
               <div class="drow ctx"><span class="dgut" aria-hidden="true">&nbsp;</span><span class="dtext">The lot fills by nine on a clear Saturday.</span></div>
             </div>
-            <div class="because"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg><span>Your site is set to <b>use the Oxford comma</b>. You already write it that way in <b>4 of 5</b> lists in this post, so this matches the rest.</span></div>
+            <div class="because"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg><span>Your <b>Oxford-comma setting</b> is <b>always</b>, so tidy adds the serial comma before the final "and".</span></div>
           </div>
 
           <!-- HUNK 4 · DOUBLED WORD · OBJECTIVE -->

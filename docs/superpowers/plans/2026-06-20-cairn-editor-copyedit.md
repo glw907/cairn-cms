@@ -2,7 +2,9 @@
 
 > **For agentic workers:** Execute task-by-task by dispatching each task to `cairn-implementer`
 > (pinned Sonnet), test-first against the suite. The main loop reviews each diff and clears the full
-> gate before the next dispatch. The plan runs on a fresh worktree off `main`. Phase 1 OPENS with a
+> gate before the next dispatch. This worktree was rebased onto current `main` at `0.59.0`, verified:
+> `package.json` reads `0.59.0`. **Pre-flight precondition: confirm `package.json` reads `0.59.0` at
+> start.** Phase 1 OPENS with a
 > required worker+wasm+dictionary delivery spike (Task 1) that is a go/no-go gate: nothing else in
 > Phase 1 commits until it is green and the engine is settled (`spellchecker-wasm`, else the `nspell`
 > fallback). The highest-blast-radius tasks are the tidy transport/prompt (Task 11), the tidy
@@ -43,7 +45,7 @@ only when tidy is enabled and the key is present), stored in the committed site-
 `@codemirror/view` decorations, `@codemirror/lang-markdown` Lezer tree) plus the new `@codemirror/lint`;
 a Web Worker (dynamic-import loaded, the CodeMirror way) running the spike-chosen engine
 (`spellchecker-wasm` SymSpell, else `nspell`) over a static dialect dictionary asset; `@anthropic-ai/sdk`
-(Worker-side only, guarded by `editor-boundary.test.ts`); the cairn admin dispatch
+(Worker-side only, guarded by a new `server-only-deps.test.ts`); the cairn admin dispatch
 (`createContentRoutes`, `createCairnAdmin`), `validateCsrfHeader` (`sveltekit/csrf.ts`), `requireSession`
 (`sveltekit/guard.ts`), `commitFiles`/`CommitConflictError` (`github/repo.ts`), `parseMediaToken`
 (`media/reference.ts`), `extractMediaRefs` (`content/media-refs.ts`), `fenceScan`/`fenceTokens`
@@ -59,7 +61,8 @@ sections referenced per task).
 **Approved mockups:** the editor `docs/internal/design/2026-06-20-editor-copyedit-review-mode-rev2-mockup.html`
 and the settings `docs/internal/design/2026-06-20-editor-copyedit-settings-final-mockup.html`.
 
-**Version:** a **minor** bump (a new subsystem: spellcheck + tidy). `main` is `0.59.0` and `0.59.0` is
+**Version:** a **minor** bump (a new subsystem: spellcheck + tidy). This worktree is rebased onto current
+`main` at `0.59.0` and `package.json` reads `0.59.0` (verified at the start of this pass); `0.59.0` is
 published, so this pass ships as **`0.60.0`**. Spellcheck is additive and on by default (note the new
 default and the `spellcheck.dialect` config); tidy is additive and opt-in (note the developer-tier flag
 plus the `ANTHROPIC_API_KEY` secret). The changelog entry carries the `<!-- release-size: minor -->`
@@ -72,7 +75,8 @@ opt-in, so no site gains it without action.
 
 ## Execution
 
-Standard loop: one `cairn-implementer` per task, test-first, on a fresh worktree off `main`, the main
+Standard loop: one `cairn-implementer` per task, test-first, in this worktree (rebased onto `main` at
+`0.59.0`), the main
 loop reviewing each diff and clearing the full gate (`npm run check` 0/0, `npm test` exit 0, plus the
 reference, signature, package, docs, readiness, prose, and version gates as each applies) between
 dispatches. The build follows the spec's four-phase outline, sized into tasks for single-implementer
@@ -105,8 +109,8 @@ good adversarial-review-`Workflow` candidate on Geoff's opt-in.
 
 ## Task 1 (the go/no-go gate): the worker + wasm + dictionary delivery spike
 
-**Spec:** 1.1, 1.1.1. **This is the Phase 1 go/no-go gate. Nothing else in Phase 1 commits until this
-spike is green and the engine choice is settled.** No part of the library has ever shipped a 2MB binary
+**Spec:** 1.1 (the engine, gated on a delivery spike). **This is the Phase 1 go/no-go gate. Nothing else in
+Phase 1 commits until this spike is green and the engine choice is settled.** No part of the library has ever shipped a 2MB binary
 asset or constructed a Web Worker (`files[]` is `["dist","src/lib","CHANGELOG.md"]`, `spellchecker-wasm`
 is absent, no `new Worker`/`?worker`/`import.meta.url` construction exists in `src/`). The editor-boundary
 test guards only static `@codemirror` imports; it does not prove a Worker plus a wasm module plus a 2MB
@@ -128,8 +132,19 @@ asset survives a consumer SvelteKit/Vite build under the Cloudflare adapter.
   asset-delivery mechanism (Vite `?url`/`?worker` so the consumer build resolves the assets, OR stream
   the dictionary from a Worker route on the `createMediaRoute` pattern rather than the package `files[]`),
   and write down why.
-- Confirm the 2MB dictionary inflates neither the client bundle past a sane budget nor the Worker past
-  its size limit under the Cloudflare adapter.
+- **Ensure the spike's Web Worker module and the wasm/dictionary asset are reachable from the PACKAGED
+  `dist`, not just from `src/`.** Today `files[]` is `["dist","src/lib","CHANGELOG.md"]` with no wasm or
+  worker precedent, so the spike must update the package `exports`/`files[]` to ship the worker and asset, OR
+  ship the dictionary via a Worker route on the `createMediaRoute` pattern. Prove it from the consumed
+  package: run `npm run package` (the showcase serves `dist`), then run the showcase. `npm run package`
+  precedes every showcase run in this task.
+- Confirm the 2MB dictionary inflates neither the client bundle nor the Worker past concrete numeric
+  thresholds, recorded number-vs-number in the spike-result doc: the showcase Worker build stays under the
+  Cloudflare adapter's compressed-size limit (1 MB on the Workers Free plan, 10 MB on Paid; target under the
+  Free 1 MB gzipped so the engine ships on either plan), and the editor's client chunk grows by no more than
+  a stated delta ceiling (for example +50 KB gzipped over the pre-spike editor chunk, the dictionary and wasm
+  delivered as fetched assets, NOT bundled into the chunk). The spike-result doc records the measured numbers
+  against these thresholds; the gate is number-vs-number, not a vibe.
 - Round-trip a `check` and a `suggest` against real words to prove the protocol crosses the build
   boundary.
 
@@ -149,8 +164,9 @@ recorded in the spike-result doc, and the size budget holds. **This is the gate 
 
 ## Task 2: `@codemirror/lint` and the `frontmatterSpan` helper
 
-**Spec:** 1.3, 1.4 (the missing dependency); the shared frontmatter helper. Small and enabling; the helper
-is load-bearing for both features.
+**Spec:** 1.4 (the lint source, the single skip authority, and the frontmatter span; the missing
+`@codemirror/lint` dependency and the shared `frontmatterSpan` helper). Small and enabling; the helper is
+load-bearing for both features.
 
 **Files:**
 - Modify: `package.json` (add `@codemirror/lint`, peer-compatible with the pinned `^6` line).
@@ -177,8 +193,8 @@ the validator share.
 
 ## Task 3: the spellcheck Web Worker
 
-**Spec:** 1.1.2, 1.2, 1.3 (the Worker side). The engine host off the main thread, using the delivery
-mechanism Task 1 locked.
+**Spec:** 1.2 (dialect awareness), 1.3 (the Web Worker split, the Worker side). The engine host off the main
+thread, using the delivery mechanism Task 1 locked.
 
 **Files:**
 - Create: `src/lib/components/spellcheck-worker.ts`.
@@ -209,7 +225,7 @@ respected.
 
 ## Task 4: the spellcheck lint source and the single skip authority
 
-**Spec:** 1.3 (the main-thread side, the Lezer tree as single skip authority, the deterministic
+**Spec:** 1.4 (the main-thread side, the Lezer tree as single skip authority, the deterministic
 frontmatter span, the directive and `media:` skips). The main-thread half: the only side that touches
 CodeMirror.
 
@@ -252,8 +268,8 @@ machinery is skipped, and the body prose is kept. The latest-wins counter drops 
 
 ## Task 5: the correction popover and the locked underline token
 
-**Spec:** 1.4 (quick-fix actions, the `--cairn-warning-ink` lock, a11y). The correction UX, for free from
-lint actions.
+**Spec:** 1.5 (the correction popover: quick-fix actions, the `--cairn-warning-ink` lock, a11y). The
+correction UX, for free from lint actions.
 
 **Files:**
 - Modify: `src/lib/components/spellcheck.ts` (build the `Diagnostic`s and their `actions`).
@@ -285,8 +301,8 @@ its message. (The amber underline and the rendered tooltip are asserted in the T
 
 ## Task 6: the objective-error layer (no style linter)
 
-**Spec:** 1.6 (the deterministic doubled-word, double-space, repeated-punct checks; no style/opinion
-linter, decision 2). A second lint source on the same mechanism, no Worker.
+**Spec:** 1.7 (the objective-error layer: the deterministic doubled-word, double-space, repeated-punct
+checks; no style/opinion linter, decision 2). A second lint source on the same mechanism, no Worker.
 
 **Files:**
 - Create: `src/lib/components/objective-errors.ts` (pure checks).
@@ -317,17 +333,19 @@ doubled word inside a code-span input (already excluded from the prose spans) is
 
 ## Task 7: the `spellcheck.dialect` config field and the footer toggle
 
-**Spec:** 1.1.2, 1.7 (the per-site dialect; the per-editor on/off; remove the native attribute). Wires the
-spellcheck into config and the editor shell.
+**Spec:** 1.2 (the per-site dialect), 1.8 (the on/off toggle: the per-editor on/off; remove the native
+text-correction attributes). Wires the spellcheck into config and the editor shell.
 
 **Files:**
-- Modify: `src/lib/content/types.ts` (a `spellcheck?: { dialect?: string }` field on the site config).
+- Modify: `src/lib/nav/site-config.ts` (the committed-YAML `SiteConfig` schema gains a
+  `spellcheck?: { dialect?: string }` field; this is the ONE config home, not the TS `CairnAdapter`).
 - Modify: `src/lib/components/MarkdownEditor.svelte` (install the lint source in its own compartment; the
-  footer `localStorage`-backed `aria-pressed` toggle `cairn-editor-spellcheck`, defaulting on; **remove the
-  `EditorView.contentAttributes.of({ spellcheck: 'true', ... })`** that this feature replaces).
+  footer `localStorage`-backed `aria-pressed` toggle `cairn-editor-spellcheck`, defaulting on; **remove all
+  three native text-correction attributes from `EditorView.contentAttributes`: `spellcheck`, `autocorrect`,
+  and `autocapitalize`**).
 - Modify: wherever the dialect is read and handed to the Worker loader (the edit load that already hands
   `mediaLibrary` to the editor as a prop, `content-routes.ts`).
-- Test: `src/tests/unit/content-routes.test.ts` or the config-types test (the dialect default); the
+- Test: `src/tests/unit/content-routes.test.ts` or the site-config test (the dialect default); the
   toggle and the attribute removal are proven in the Task 8 component test.
 
 **Behavior.**
@@ -339,9 +357,11 @@ spellcheck into config and the editor shell.
   `aria-pressed` toggle in the same check-and-tint grammar as focus mode and zen. When off, the lint
   compartment reconfigures to empty, the underlines vanish, and the Worker stays idle. The objective-error
   layer follows the same toggle.
-- **Remove the native `spellcheck: 'true'` content attribute** the editor currently sets, since this
-  feature replaces it and running both would double-underline. (Decide whether `autocorrect`/`autocapitalize`
-  stay; the spec only requires removing the native spellcheck.)
+- **Remove all three native text-correction attributes** the editor currently sets on
+  `contentAttributes`: `spellcheck` (the lint source replaces it; running both double-underlines),
+  `autocorrect`, and `autocapitalize`. The latter two come off for token preservation: a browser autocorrect
+  or autocapitalization could silently rewrite a `media:` token, a directive name, or frontmatter, so the
+  surface must keep the author's exact bytes. This is the call, not a deferral.
 
 **Tests (write first, unit parts):** the config default resolves to the documented locale; an explicit
 dialect threads to the loader input. (The footer toggle, the empty-on-off compartment, and the absent
@@ -354,8 +374,8 @@ relevant reference and keep `check:reference` green.
 
 ## Task 8: spellcheck component coverage and lint-layer co-existence
 
-**Spec:** 3.1 (the component project; the lint co-existence test, synthesis TD-1). The real-browser proof of
-the Phase 1 surface.
+**Spec:** Testing, the **Component (Playwright/Chromium)** layer (the lint co-existence test, synthesis
+TD-1). The real-browser proof of the Phase 1 surface.
 
 **Files:**
 - Create: `src/tests/component/spellcheck.test.ts` (or extend the existing editor component test).
@@ -381,8 +401,8 @@ small fixture dictionary) and assert:
 
 ## Task 9: the git-committed personal dictionary (Phase 2)
 
-**Spec:** 1.5, 1.5.1 (the layered store, the `?/addDictionaryWord` action, SHA-guarded commit-and-retry).
-The one phase that touches the commit pipeline, so it is isolated.
+**Spec:** 1.6 (the personal dictionary: the layered store, the `?/addDictionaryWord` action, SHA-guarded
+commit-and-retry). The one phase that touches the commit pipeline, so it is isolated.
 
 **Files:**
 - Create: `src/lib/content/site-dictionary.ts` (pure read/merge/insert-sorted).
@@ -428,12 +448,15 @@ stale-SHA conflict; the action 404s outside the editor view and reaches the cont
 the convention toggles, the doctor check). The pure prompt contract plus the config, before the Worker call.
 
 **Files:**
-- Modify: `src/lib/content/types.ts` (a `tidy?: { enabled?: boolean; model?: string; conventions?: {...} }`
-  block; the `conventions` shape covering the corrected set).
+- Modify: `src/lib/nav/site-config.ts` (the committed-YAML `SiteConfig` schema gains a
+  `tidy?: { enabled?: boolean; model?: string; conventions?: {...} }` block; the `conventions` shape covers
+  the corrected set; this is the ONE config home, the same type Task 7's `spellcheck.dialect` lives on, not
+  the TS `CairnAdapter`).
 - Create: a `buildTidyPrompt(conventions)` builder beside the action (e.g. `src/lib/sveltekit/tidy-prompt.ts`
   or a `content-routes` sibling), the stable always-on core plus the config-built CONVENTIONS section.
-- Modify: `src/lib/doctor/checks-local.ts` (a check warning when `tidy.enabled` is true but the Anthropic
-  secret is unset, consistent with the bindings checks).
+- Modify: `src/lib/doctor/checks-local.ts` (a config-presence check: when `tidy.enabled` is true, warn if
+  `ANTHROPIC_API_KEY` appears neither as a wrangler `var` nor in `.dev.vars`, framed as "verify the secret
+  is configured").
 - Test: `src/tests/unit/tidy-prompt.test.ts` (the config-driven, never-harmonize behavior);
   `src/tests/unit/doctor-checks.test.ts` (the new check, extend).
 
@@ -454,17 +477,27 @@ the convention toggles, the doctor check). The pure prompt contract plus the con
   section is omitted. **tidy never harmonizes to the author and never guesses a style**; an undeclared style
   is the author's choice (stated explicitly in the prompt). This is the single largest design correction in
   the pass.
-- The doctor check warns when `tidy.enabled` is true but the secret is unset (the engineering half of the
-  truthful first-run surface; the settings suppression in Task 15 is the UX half). Reuse the existing
-  condition family in `checks-local.ts` so the readiness count holds.
+- The doctor check is a config-presence heuristic, NOT a definitive unset claim: a Worker secret is not in
+  the committed wrangler config and not in anything the doctor can `readFile`, so the doctor cannot prove it
+  is unset. When `tidy.enabled` is true the check warns if `ANTHROPIC_API_KEY` appears neither as a wrangler
+  `var` nor in `.dev.vars` (the two places the doctor reads), framed as "verify the secret is configured".
+  It pairs with the runtime `fail(503)` path (Task 11's call-time check) and an optional `--probe` live check
+  that actually exercises the key. This is the engineering half of the truthful first-run surface; the
+  settings suppression in Task 15 is the UX half. Reuse the existing condition family in `checks-local.ts` so
+  the readiness count holds.
 
 **Tests (write first):** `buildTidyPrompt` fixtures asserting a disabled convention emits no line, an
 enabled one emits its variant line, the always-on core is present regardless, and the CONVENTIONS section
 is omitted when nothing is enabled (this locks the config-driven, never-harmonize behavior); the
 prompt-contract `{ input, mustNotChange, shouldFix }` cases as recorded fixtures (keep "colour", keep
 "utilize", keep "fifteen" and "15" coexisting when number style is off, fix "their" to "there" only when
-wrong, leave a deliberate fragment, never touch a `media:` token); the doctor check fires only when
-enabled-without-key.
+wrong, leave a deliberate fragment, never touch a `media:` token). Add `mustNotChange` fixtures for the
+consistency classes currently unguarded, each shaped like the "fifteen and 15 may coexist" case, so no
+surviving usage-count harmonization passes: with no convention enabled, "trail head" stays unchanged when
+"trailhead" appears elsewhere in the input; "email" and "e-mail" keep coexisting; and a term capitalized two
+ways stays unchanged when it is not on the brand-caps curated list. The doctor test asserts the
+config-presence heuristic: with `tidy.enabled` true and `ANTHROPIC_API_KEY` absent from both a wrangler
+`var` and `.dev.vars`, the check warns; with the key present in either, it stays silent.
 
 **Gate:** full gate green. If the `tidy` config or the doctor check is documented this task, keep the
 reference and readiness gates green (otherwise they ride Task 17).
@@ -484,7 +517,11 @@ radius on the server side. **Consider `model: opus`.**
   the component posts to `?/tidy`).
 - Modify: `src/lib/sveltekit/index.ts` (re-export any new failure type that earns a reference row).
 - Test: `src/tests/integration/content-routes-tidy.test.ts` (workerd pool, the Anthropic call mocked);
-  `src/tests/unit/editor-boundary.test.ts` (assert `@anthropic-ai/sdk` is never reachable from client code).
+  a NEW, separately-named guard test `src/tests/unit/server-only-deps.test.ts` ("server-only deps stay off
+  the client") that scans the `.svelte` components and the modules they statically import and asserts
+  `@anthropic-ai/sdk` never appears in client-reachable code. (Do NOT reuse `editor-boundary.test.ts`: it
+  guards the OPPOSITE direction, keeping client deps such as CodeMirror and DOMPurify out of server code, so
+  it cannot guard a server-only dep.)
 
 **Behavior.** `tidyAction` reuses the media transport (`text/plain` POST `?/tidy` carrying `{ text, scope }`,
 CSRF in `X-Cairn-CSRF`, `redirect: 'manual'`, `deserialize`d response), with abort/timeout/deadline the
@@ -498,8 +535,10 @@ media calls did not need:
   from the setting, the system prompt, the author's text as the user message, a generous `max_tokens` sized
   to comfortably exceed the input token count, and adaptive thinking at its default. Read output as plain
   text.
-- **Set a Worker request deadline shorter than the platform limit and map a deadline overrun to the
-  retryable `fail(502)`** so a slow call becomes a clean "try again" rather than a platform timeout.
+- **Bound the Anthropic call with `AbortSignal.timeout(ms)` (or the SDK's request-timeout option) set
+  shorter than the platform limit, catch the resulting abort inside the action, and return the retryable
+  `fail(502)`** so a slow call becomes a clean "try again" rather than a platform timeout. The integration
+  test stubs the model call to exceed the timer and asserts `fail(502)`.
 - Return `{ corrected, model, usage }` as the success data, or a typed `fail(status, ...)` for every failure
   mode (spec 2.7): session-expired (the manual-redirect 303 surfaces as status-0), CSRF `fail(403)`,
   disabled/no-key `fail(503)`, too-large `fail(413)`, hang/timeout/abort `fail(502)`, model error
@@ -507,14 +546,14 @@ media calls did not need:
   so a failed tidy cannot corrupt the entry. The diff is computed on the client (Task 12), so the server
   stays a thin model-call boundary.
 - The client `AbortController` (Cancel button) plus a bounded client timeout are wired in Task 14; this task
-  must accept an aborted request cleanly. `@anthropic-ai/sdk` is imported only here, guarded by the
-  editor-boundary test.
+  must accept an aborted request cleanly. `@anthropic-ai/sdk` is imported only here, guarded by the new
+  `server-only-deps.test.ts`.
 
 **Tests (write first, workerd pool, Anthropic mocked):** a stub `messages.create` returning a canned
 corrected string proves the success envelope shape `{ corrected, model, usage }`; CSRF-first refusal;
 session refusal; the disabled/missing-key `fail(503)`; the too-large `fail(413)`; the deadline overrun
-mapping to `fail(502)`; a stubbed API error to `fail(502)`; a stubbed refusal to `fail(422)`. The
-editor-boundary test asserts `@anthropic-ai/sdk` is not reachable from client code.
+mapping to `fail(502)`; a stubbed API error to `fail(502)`; a stubbed refusal to `fail(422)`. The new
+`server-only-deps.test.ts` asserts `@anthropic-ai/sdk` is not reachable from client code.
 
 **Gate:** full gate green, including the reference/signature/package gates for any new exported failure
 type (its `sveltekit.md` row).
@@ -609,10 +648,12 @@ buffer-mutating apply state machine and the review UX.** Follow the approved rev
 - **The author's original stays in the buffer until they accept.** The mechanism is a CodeMirror state field
   plus decorations in its own compartment (entering/leaving tidy is a reconfigure, not a rebuild). The state
   field holds the change list and which are still pending. Insertions render as mark decorations showing the
-  new text (an addition tint plus a non-color marker; the inserted text is decoration content, not buffer
-  text). Deletions render as widget/strike-through decorations over the original run using
-  **`--cairn-error-ink`, reserved exclusively for tidy deletions**, so the author sees exactly what tidy
-  wants to remove (the safety contract).
+  new text in **`--color-positive-ink`, the locked insertion-and-addition token** (note it is
+  `--color-positive-ink`, NOT `--cairn-positive-ink`, which does not exist), plus a non-color marker; the
+  inserted text is decoration content, not buffer text. Deletions render as widget/strike-through decorations
+  over the original run using **`--cairn-error-ink`, reserved exclusively for tidy deletions**, so the
+  insertion green and the deletion red are a locked pair and the author sees exactly what tidy wants to
+  remove (the safety contract).
 - The decorations are driven through the new `registerTidy` seam (mirroring `registerImagePlaceholders`):
   the host hands the editor the change set and gets back an api with accept-one, reject-one, accept-all
   (accept-fixes), and reject-all.
@@ -671,11 +712,15 @@ The visibility gate must be truthful. **Consider `model: opus` for the gate logi
 
 **Files:**
 - Create: the settings component (e.g. `src/lib/components/CairnTidySettings.svelte`) and its load/save
-  wiring in `content-routes.ts` (a settings load that surfaces the developer-tier facts read-only and the
-  editor-tier config; a save action committing the `tidy.conventions` block through the GitHub-App pipeline).
+  wiring in `content-routes.ts`. The save targets the SAME committed-YAML `SiteConfig` type Tasks 7 and 10
+  use (`src/lib/nav/site-config.ts`), via the `createNavRoutes` read-modify-commit precedent in
+  `src/lib/sveltekit/nav-routes.ts`: `parseSiteConfig`, validate, `commitFile` the document edited with the
+  `setMenu`/`parseDocument` machinery in `src/lib/nav/site-config.ts`, and handle a stale-SHA `isConflict`.
+  The load surfaces the developer-tier facts read-only and the editor-tier `tidy.conventions` config.
 - Modify: `src/lib/sveltekit/cairn-admin.ts` (register the settings save action and, if a new view, the
   settings view).
-- Modify: `src/lib/content/types.ts` only if the settings surface needs a config shape not added in Task 10.
+- Modify: `src/lib/nav/site-config.ts` only if the settings surface needs a config shape not added in
+  Task 10 (the ONE config home, never the TS `CairnAdapter`).
 - Test: `src/tests/component/tidy-settings.test.ts` (real browser); the save action in
   `src/tests/unit/content-routes-settings.test.ts`.
 
@@ -703,10 +748,11 @@ The visibility gate must be truthful. **Consider `model: opus` for the gate logi
   quiet "reset to safe default (typos only)" control (never named a house style); an always-present
   `role="status"`/`aria-live="polite"` region carrying each section count and the summary, with
   per-keystroke variant examples `aria-hidden` so the region is not chatty.
-- **Storage (decision 12): the existing committed site-config YAML.** The save commits the `tidy.conventions`
-  block (and any editor-tier field) through the GitHub-App pipeline, diffable and shared across editors.
-  Whether the `tidy` block is a new file under `src/content/.cairn/` or a block in the existing site-config
-  file is an implementer call that sets the save-note copy.
+- **Storage (decision 12): the existing committed-YAML `SiteConfig`, the ONE config home.** The save commits
+  the `tidy.conventions` block (and any editor-tier field) as a block in the same site-config file Tasks 7
+  and 10 use, through the GitHub-App pipeline (the `createNavRoutes` precedent), diffable and shared across
+  editors. The `tidy` block is NOT a separate file under `src/content/.cairn/` (that fork is resolved here in
+  favor of one config home); the save-note copy names the site-config file.
 
 **Tests:** when tidy is disabled, the editor section and the tidy toolbar control are absent (not disabled),
 the gate note renders, and no convention control is in the tab order; when enabled-with-key, the convention
@@ -721,7 +767,8 @@ exported settings action or type.
 
 ## Task 16: the showcase E2E (the spike round-trip plus the two feature round-trips)
 
-**Spec:** 3.1 (the showcase E2E). Prove the surfaces in a real browser against the showcase.
+**Spec:** Testing, the **Showcase E2E (Playwright)** layer. Prove the surfaces in a real browser against
+the showcase.
 
 **Files:**
 - Modify: the showcase config/seed (`examples/showcase`) so the dialect dictionary loads (the spike's
@@ -739,7 +786,10 @@ exported settings action or type.
   the diff in the review dialog, accept, and confirm the corrected text saved.
 
 **Tests:** the new specs pass in the real browser; the existing media and editor E2E specs stay green.
-Rebuild `dist` (`npm run package`) before the showcase E2E (the showcase serves `dist`).
+Rebuild `dist` (`npm run package`) before the showcase E2E (the showcase serves `dist`), and confirm the
+spellcheck Worker module and the wasm/dictionary asset are reachable from the packaged `dist` (the
+`exports`/`files[]` update or the Worker route Task 1 locked), so the standing spellcheck E2E exercises the
+delivered package, not the `src/` tree.
 
 **Gate:** full gate green, showcase E2E green.
 
@@ -759,7 +809,9 @@ Rebuild `dist` (`npm run package`) before the showcase E2E (the showcase serves 
   stance, the copyedit-mechanics tier; how spellcheck stays local and markdown-aware; why the durable record
   is git for both).
 - Modify: `docs/reference/log-events.md` (any tidy/dictionary log events the actions emit).
-- Modify: the `cairn-doctor` reference (the new check: `tidy.enabled` true but the secret unset).
+- Modify: `docs/reference/doctor.md` (the same reference file the existing config/bindings checks are
+  documented in): the new config-presence check that verifies the `ANTHROPIC_API_KEY` secret is configured
+  when `tidy.enabled` is true, so `check:reference` has a concrete target.
 - Modify: `docs/internal/admin-design-system.md` (the tidy review-mode recipe: the native-dialog step-in
   diff, the safety-ranked hunk treatment, the diff run vocabulary; confirm the settings screen reuses the
   shipped check-and-tint button and radiogroup pick-one, no new primitive).
@@ -809,7 +861,9 @@ recorded.
   (Task 14) is the host seam the review surface and the settings-gated toolbar control sit on; the action
   names (`tidy`, `addDictionaryWord`, the settings save) match between the composer (Tasks 9, 11, 15) and the
   component posts (Tasks 9, 14, 15). The locked tokens (`--cairn-warning-ink` for every spellcheck underline,
-  `--cairn-error-ink` for tidy deletions only) are consistent across Tasks 5, 6, 14.
+  `--color-positive-ink` for tidy insertions/additions and the settings on-state example, and
+  `--cairn-error-ink` for tidy deletions only; note it is `--color-positive-ink`, not the nonexistent
+  `--cairn-positive-ink`) are consistent across Tasks 5, 6, 14, 15.
 - **Review-closely tasks flagged:** Tasks 11, 12, 13, 14, 15, each with `model: opus` suggested. The highest
   blast radius is the untrusted-content Worker call (11), the positional-truth diff (12), the
   proofread-not-restructure backstop (13), the buffer-mutating apply state machine (14), and the truthful
@@ -819,10 +873,11 @@ recorded.
   (the apply state machine, the settings gate) are isolated tasks; the pure cores (diff, validate, prompt,
   skip, objective-errors, frontmatter span, site-dictionary) are separate so each lands test-first and green
   before the glue consumes it.
-- **Open decisions left to the implementer (the spec permits these):** the `tidy` config file location (a new
-  file under `src/content/.cairn/` vs a block in the existing site-config YAML, sets the save-note copy
-  only); whether suggestions are fetched in the lint batch or lazily on first hover (Task 5, spec 1.4 allows
-  either, simpler first cut fetches in the batch). Neither changes the design.
+- **Open decisions left to the implementer (the spec permits these):** whether suggestions are fetched in
+  the lint batch or lazily on first hover (Task 5, spec 1.5 allows either, simpler first cut fetches in the
+  batch). This does not change the design. (The config-home and config-file-location forks are now
+  RESOLVED: both `spellcheck.dialect` and `tidy` live as blocks in the committed-YAML `SiteConfig`, one
+  config home, never a separate file.)
 
 ## Carry-forwards (beyond this pass)
 

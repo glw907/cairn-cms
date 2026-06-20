@@ -352,9 +352,12 @@ grammar as focus mode and zen (`cairn-editor-spellcheck`, defaulting to on). Whe
 is reconfigured to empty, the underlines vanish, and the Worker can stay idle. The objective-error layer
 follows the same toggle (it is part of "spellcheck" to the editor, who does not distinguish the two
 sources). The per-site dialect (section 1.1.2) is separate config, not this per-editor on/off; the toggle
-turns the feature on and off, the dialect setting picks which dictionary it uses. The browser-native
-`spellcheck: 'true'` content attribute is removed, since this feature replaces it and running both would
-double-underline.
+turns the feature on and off, the dialect setting picks which dictionary it uses. The editor's
+`contentAttributes` lose all three native text-correction attributes, `spellcheck`, `autocorrect`, and
+`autocapitalize`: the lint source replaces `spellcheck` (running both would double-underline), and
+`autocorrect`/`autocapitalize` come off too, because token preservation needs the surface to keep the
+author's exact bytes (a browser autocorrect or autocapitalization could silently rewrite a `media:` token,
+a directive name, or frontmatter). This is the call, not a deferral.
 
 ### 1.8 Spellcheck data flow
 
@@ -425,10 +428,12 @@ The server side is `tidyAction` in `content-routes.ts`, beside `mediaReplacePrev
 via `validateCsrfHeader`, then `requireSession`. It reads the Worker env through `event.platform?.env` to
 get the Anthropic API key (section 2.8). It parses and bounds the body, rejecting an over-long input before
 the model call. It calls Claude with the system prompt (section 2.3) and the author's text as the user
-message. **The Worker sets its own request deadline, shorter than the platform limit, and maps a deadline
-overrun to the retryable `fail(502)` outcome**, so a slow Anthropic call becomes a clean "try again" rather
-than a platform-level timeout. It returns the corrected text as the success data, or a typed
-`fail(status, ...)` envelope for every failure mode (section 2.7). The action never commits anything; it is
+message. **The action bounds the Anthropic call with `AbortSignal.timeout(ms)` (or the SDK's
+request-timeout option) set shorter than the platform limit, catches the resulting abort, and returns the
+retryable `fail(502)` outcome**, so a slow Anthropic call becomes a clean "try again" rather than a
+platform-level timeout. The integration test stubs the model call to exceed the timer and asserts
+`fail(502)`. It returns the corrected text as the success data, or a typed `fail(status, ...)` envelope for
+every failure mode (section 2.7). The action never commits anything; it is
 a pure transform request, like the replace preview.
 
 The response carries the corrected text, the model used, and a small usage block (input and output tokens)
@@ -484,9 +489,10 @@ undeclared style is the author's choice, and the model is told so explicitly.
 
 This is a notable departure from the first draft, which baked a single fixed "harmonize to the writer's own
 dominant usage" clause into the stable prompt. That clause is gone. Consistency-by-author-usage is no
-longer a model instruction at all; the only normalizations the model performs are the ones the site owner
-declared as config, and the only consistency the review surface reasons about is the locally-computed
-because-line over the buffer (section 2.5), never a model harmonization.
+longer a model instruction and no longer a review-surface inference at all; the only normalizations the
+model performs are the ones the site owner declared as config, and the only rationale the review surface
+shows is the config-named because-line (section 2.5), which cites the declared setting and never counts the
+author's own usage.
 
 The convention set the config can enable is the corrected set from the brief and the conventions research,
 not the first draft's proposed set. The corrected set: the Oxford comma is three-position, number style is
@@ -697,10 +703,11 @@ The mechanism breaks into a state field and a set of decorations.
 - Tidy mode is a CodeMirror state field plus a decoration set, held in its own compartment so entering and
   leaving tidy is a reconfigure, not a rebuild, the way the media decoration and folding are installed. The
   state field holds the list of changes (from the diff) and which are still pending.
-- Insertions render as mark decorations showing the new text, styled as an addition (a green-family tint
-  from the admin tokens, never hue alone: the added run also carries a marker so it is distinguishable
-  without color, per the a11y bar). The inserted text is decoration content, not document text, so it is
-  not in the buffer yet.
+- Insertions render as mark decorations showing the new text, styled as an addition in
+  **`--color-positive-ink`, the locked insertion-and-addition token** (note it is `--color-positive-ink`,
+  not `--cairn-positive-ink`, which does not exist), never hue alone: the added run also carries a marker so
+  it is distinguishable without color, per the a11y bar. The inserted text is decoration content, not
+  document text, so it is not in the buffer yet.
 - Deletions render as widget decorations (or a strike-through mark over the original run): the removed text
   is still in the document, shown struck through in a deletion style using **`--cairn-error-ink`, the token
   reserved exclusively for tidy deletions** (section 1.4), so the author sees exactly what tidy wants to
@@ -738,18 +745,24 @@ The grafts from the synthesis that touch the engine, all carried here:
 - **The two-region live model** (mirroring the shipped MediaPicker discipline): one `role="status"` region
   for the running tally, updated only on bulk actions and the resolution count and debounced so a rapid
   accept-all does not machine-gun, plus a second `aria-live="polite"` region that narrates the single last
-  action ("Hunk 3, consistency, rejected"). The first draft's single-region tally both over-announced on
+  action ("Hunk 3, comma style, rejected"). The first draft's single-region tally both over-announced on
   every per-hunk toggle and under-announced the focused hunk's state; this splits them.
-- **The mandatory local because-line for every consistency change**, computed as pure string work over the
-  buffer (count the author's own usage), no model round trip. A consistency or harmonization hunk that
-  cannot show a locally-computed rationale is not offered at all. This is the single strongest trust
-  affordance, and because the model no longer harmonizes, any consistency-shaped hunk the diff surfaces is
-  one cairn explains from the buffer, not one the model claimed.
+- **The mandatory because-line for every normalization change**, whose only data source is the
+  config-declared setting that authorized the hunk, computed as pure string work, no model round trip. The
+  line names the convention and its variant ("Your Oxford-comma setting is always", "Your time-format
+  setting is 5 PM"), never a count of how many times the author wrote it the other way. Counting the
+  author's own usage to justify a change IS the harmonize-to-author judgment cairn must never make, so it
+  never appears: there is no usage-count rule that turns a count into a normalization. A normalization hunk
+  that cannot name an enabled setting is not offered at all, and if any usage-counted hunk could still
+  appear, it is always held undecided and never swept by the bulk action.
 - **The local category taxonomy with safety-ranked weight.** The per-hunk category (Spelling, Grammar,
-  Consistency, Doubled word) is locally inferred from the diff, never a claim the model made (a
-  single-token punctuation/whitespace diff is a typo, a repeated word is doubled, a usage count drives the
-  because-line). Objective categories (spelling, doubled word, whitespace) get a quiet neutral treatment;
-  judgment categories (consistency, any grammar fix that reworded) get a distinct review-this treatment.
+  the per-convention normalization category, Doubled word) is locally inferred from the diff shape and the
+  enabled config, never a claim the model made and never a usage count: a single-token punctuation or
+  whitespace diff is a typo, a repeated word is doubled, and a hunk that matches an enabled convention is
+  that convention's normalization. There is no "Consistency" category, because consistency-by-author-usage
+  is exactly the harmonization cairn dropped. Objective categories (spelling, doubled word, whitespace) get
+  a quiet neutral treatment; judgment categories (a declared normalization, any grammar fix that reworded)
+  get a distinct review-this treatment.
 - **Keyboard step-through** on the hunk list: `j`/`k` (or `n`/`p`) to move between hunks, `a`/`r` to
   accept/reject the focused one, `A` to accept all, Escape to cancel (the native dialog supplies the trap
   and Escape; this is the per-hunk layer on top). The focused hunk's announcement speaks the kind plus the
@@ -873,14 +886,22 @@ have variants. **When tidy is not enabled, the whole section is hidden, not show
 editor-side tidy toolbar control is not rendered at all. This extends the synthesis MK-4 first-run state:
 the editor control and the settings section both stay absent until the developer tier (flag plus key) is
 satisfied, so the opt-in surface and the editor stay truthful together. `cairn-doctor` gains a check that
-warns when `tidy.enabled` is true but the secret is unset (consistent with the existing bindings checks in
-`src/lib/doctor/checks-local.ts`); that doctor check is the engineering half of the same truthful-surface
-contract, and the settings/editor suppression is the UX half.
+**verifies the secret is configured** by a config-presence heuristic, not a definitive unset claim: a Worker
+secret is not in the committed wrangler config and not in anything the doctor can `readFile`, so the doctor
+cannot prove it is unset. When `tidy.enabled` is true the check warns if `ANTHROPIC_API_KEY` appears neither
+as a wrangler `var` nor in `.dev.vars` (the two places the doctor reads), and an optional `--probe` live
+check actually exercises the key. This pairs with the runtime `fail(503)` path the action runs at call time;
+the doctor check is the engineering half of the same truthful-surface contract, and the settings/editor
+suppression is the UX half.
 
-**Storage: per-site committed YAML**, consistent with the nav and settings pattern, edited through the
-GitHub-App commit pipeline, so it is diffable and shared across editors. The `tidy` block carries
+**Storage: the committed YAML `SiteConfig`, ONE config home.** Both `tidy` and `spellcheck.dialect` live in
+the committed YAML `SiteConfig` (the `src/lib/nav/site-config.ts` schema), NOT the TS `CairnAdapter`. The
+save reuses the nav editor's read-modify-commit precedent exactly: `createNavRoutes` in
+`src/lib/sveltekit/nav-routes.ts` runs `parseSiteConfig`, validates, commits the edited document through
+`commitFile`, and handles a stale-SHA `isConflict`; the document edit reuses the `setMenu`/`parseDocument`
+machinery in `src/lib/nav/site-config.ts` so it preserves comments and key order. The `tidy` block carries
 `enabled` (default false), `model` (default `claude-sonnet-4-6`, alternative `claude-haiku-4-5`), and a
-`conventions` block of the per-convention toggles. The separate `spellcheck.dialect` field (section 1.1.2)
+`conventions` block of the per-convention toggles; the separate `spellcheck.dialect` field (section 1.1.2)
 lives in the same committed config. The alternative is per-editor personal preferences, which would need a
 per-user store off the content-in-git model; the committed YAML is the on-architecture call.
 
@@ -1087,8 +1108,11 @@ batched accept, the decoration seam); only the surface differs.
   committed YAML.
 - `@codemirror/lint` added as a dependency (first-party, peer-compatible with the pinned ^6 line; was
   missing).
-- `@anthropic-ai/sdk` added as a dependency (Worker-side only; never imported in client code, guarded by
-  the editor-boundary test the project already runs).
+- `@anthropic-ai/sdk` added as a dependency (Worker-side only; never imported in client code, guarded by a
+  NEW, separately-named guard test). The existing `editor-boundary.test.ts` guards the OTHER direction (it
+  keeps client deps such as CodeMirror and DOMPurify out of server-reachable code), so it cannot guard a
+  server-only dep. The new test ("server-only deps stay off the client") scans the `.svelte` components and
+  the modules they statically import and asserts `@anthropic-ai/sdk` never appears in client-reachable code.
 - A static dictionary asset (the engine's dictionary), delivered by the mechanism the Phase 1 spike picks;
   the engine dependency (`spellchecker-wasm` or the `nspell` fallback) is added per the spike result.
 
@@ -1162,6 +1186,6 @@ Remaining technical risk, carried for the build:
   on the model doing in-context house style, so the diff-review is the backstop for a missed application,
   not a guarantee the model applies every position perfectly.
 - **The local category and because-line are heuristics** (lead decision 1). The category may occasionally
-  be absent or generic rather than a guaranteed label on every hunk, and a consistency hunk with no
-  computable rationale is suppressed rather than shown unexplained. This is the accepted cost of the plain
+  be absent or generic rather than a guaranteed label on every hunk, and a normalization hunk that cannot
+  name an enabled setting is suppressed rather than shown unexplained. This is the accepted cost of the plain
   string-in/string-out model contract over a structured-edit one.

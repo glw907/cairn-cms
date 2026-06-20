@@ -203,3 +203,56 @@ call, the length-aware divergence bound, the single spellcheck underline token, 
 key-absent settings state) carry into the revised technical design and the rev.2 mockup. The
 consistency-clause rewrite in the system prompt is replaced wholesale by the config-driven rule emission
 in decision 1.
+
+## Settings surface and the convention set (added 2026-06-20)
+
+This is the requirements input for a dedicated settings UI/UX design workflow. That workflow designs
+several presentations of this surface, an adversarial critique picks the best, and the frontend-design
+skill polishes the winner.
+
+**Two tiers, with a visibility gate.**
+
+- Developer tier (deploy-time, not in the web UI): the master `tidy.enabled` switch and the Anthropic API
+  key (a Worker secret). Enabling tidy commits the site to an external API and a per-call cost, which is
+  an ops decision, and the key is a secret, so both stay a developer task. This is the opt-in gate.
+- Editor tier (the admin settings screen, rendered ONLY when tidy is enabled and the key is present): the
+  per-convention config. An editor turns each convention on or off and picks the variant for the ones
+  that have variants. When tidy is not enabled, the whole section is hidden, not shown disabled. This
+  extends MK-4: not only the editor toolbar control but the settings section itself stays absent until the
+  developer tier is satisfied.
+
+**Storage: per-site committed YAML** (my call, on-architecture, consistent with the nav and settings
+pattern, edited through the GitHub-App commit pipeline, so it is diffable and shared across editors).
+The alternative is per-editor personal preferences, which would need a per-user store off the
+content-in-git model; flag if you want that instead.
+
+**The convention set (proposed: poplar's set plus additions).** Each entry is a per-convention toggle;
+the style ones also carry a variant choice. Objective fixes default ON, style normalizations default OFF
+(leave the author's choice), matching poplar's default posture. The editor may turn any convention off.
+
+Objective error fixes (default ON): spelling and typos; grammar errors that are unambiguously wrong;
+doubled words; stray whitespace (double and trailing spaces); sentence-start capitalization; missing
+terminal punctuation.
+
+Style conventions (default OFF; when on, the editor picks the variant): Oxford comma (insert or remove);
+em-dash style (spaced or unspaced, and whether a double hyphen becomes one); en-dash in number ranges (a
+hyphen between two numbers becomes an en-dash); ellipsis (the single character or three dots); smart
+quotes (curly or straight); time format (5 PM, 5pm, or 5 p.m.); number style (spell out under ten, always
+numerals, or always spell out); measurements and units (abbreviate, as in 15 cm, or spell out, as in 15
+centimeters, changing only the notation and never the measurement system); sentence spacing (one space or
+two, optional).
+
+Deferred or advanced (flagged, not in the first set): freeform custom instructions (poplar's
+`CustomInstructions`, powerful but it lets a user instruct voice changes, so gate it or defer), and
+heading capitalization (title versus sentence case, more invasive because it rewrites the author's
+headings).
+
+**The system prompt is built from the enabled conventions only** (poplar's `BuildPrompt` model): an off
+convention contributes no rule line, so the model is never told to touch it. The always-on guardrails
+(never rephrase, restructure, change voice, or touch code and tokens) hold regardless.
+
+**Design goals for the settings workflow.** A non-technical editor must understand what each convention
+does and which choice is safe; sensible defaults must be obvious and the safe default must be the resting
+state; the two-tier visibility gate must be truthful (an editor never sees config they cannot use); and
+the surface must fit the cairn admin settings screen using only shipped tokens. The design agents should
+also flag any convention worth adding that this set misses.

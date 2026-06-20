@@ -1,0 +1,1358 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Proposed design (rev.2): the tidy review mode, focused step-in diff</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+  rel="stylesheet"
+/>
+<style>
+  /* ===========================================================================================
+     TIDY REVIEW MODE, REV.2. The focused step-in review surface for tidy, the light
+     voice-preserving copy-edit from Claude.
+
+     PROVENANCE. This rev.2 starts from the winning spine
+     (2026-06-20-editor-copyedit-review-mode-mockup.html), the unanimous critic pick (8/8/8). It
+     folds in the grafts and fixes the synthesis demands
+     (2026-06-20-editor-copyedit-design-synthesis.md, sections 2 and 3) and conforms to the brief's
+     LEAD DECISIONS (2026-06-20-editor-copyedit-design-brief.md, "Lead decisions", which supersede
+     the spine's harmonize-to-author model). The diff vocabulary and the token blocks are copied
+     VERBATIM from the spine, which copied them from src/lib/components/cairn-admin.css, so this
+     surface and the polished settings mockup
+     (2026-06-20-editor-copyedit-settings-final-mockup.html) speak one diff language and one
+     Warm Stone aesthetic.
+
+     WHAT REV.2 CHANGES FROM THE SPINE (each a graft or a fix, annotated where it lands):
+       1. THE CONFIG-DRIVEN MODEL (lead decisions 1-2). The spine demonstrated harmonize-to-the-
+          author ("trail head" -> "trailhead" because you write it that way). That is gone. The
+          changes shown are OBJECTIVE FIXES (spelling, doubled word, whitespace, unambiguous grammar)
+          plus OWNER-DECLARED NORMALIZATIONS (a style the site owner switched on in settings, like
+          the Oxford comma). Regional spelling is NEVER touched, so a "kept as written" note rides
+          the surface. The consistency hunk is reframed as a declared normalization with its own
+          because-line.
+       2. SAFETY-RANKED CATEGORIES (graft 2 / open decision 2). Objective hunks read QUIET and are
+          pre-kept and swept by Accept-all. Judgment hunks (a normalization, a grammar fix that
+          reworded) carry a distinct REVIEW-THIS treatment, default to UNDECIDED, and are NOT
+          included in Accept-all until the author confirms each. This is the one place the synthesis
+          improves on the spine.
+       3. THE MANDATORY BECAUSE-LINE (graft 1). Every normalization/consistency hunk shows a
+          locally-computed rationale (a count over the author's own text, or the named owner setting).
+          A normalization that cannot show one is not offered. Pure string work, no model round trip.
+       4. KEYBOARD STEP-THROUGH (graft 3). j/k or n/p move between hunks, a/r accept/reject the
+          focused one, A accepts all objective hunks, Escape cancels. The focused hunk is announced
+          with kind + text, and for a judgment hunk the rationale is appended.
+       5. CONTEXT ROWS + SCROLL-TO-LOCUS (graft 4 / MK-2). One unchanged context row sits above and
+          below each hunk, and the line-ref is a real "Show in text" affordance. The buffer behind is
+          DIMMED, never blurred to unreadable (the spine's filter:blur(1px);opacity:.5 is replaced).
+       6. TWO LIVE REGIONS (MK-1). A role="status" tally announces only on bulk actions; a second
+          aria-live="polite" region narrates the last single action ("Hunk 3, normalization, kept").
+       7. THE GENUINE EDGE STATES (graft 5 / MK-5). A no-op never opens an empty diff: it shows the
+          "Nothing to fix" confirmation. The working state is cancelable and wired to a real abort.
+       8. THE WHOLE-TIDY UNDO (graft 6). After Apply, a session-scoped "Undo tidy" surfaces in the
+          desk so an author who realizes a change ate their voice reverts in one move.
+       9. SPELLCHECK UNDERLINE = --cairn-warning-ink (MK-3), reserving --cairn-error-ink for tidy
+          deletions, so the two features never speak in the same color.
+      10. SOFTENED VOICE (MK-6). No absolute "it leaves your voice alone" promise; the copy recruits
+          the author as the voice guardian.
+
+     cairn is NOT WYSIWYG. Every before/after here is the MARKDOWN SOURCE, never a rendered page.
+
+     This mockup hand-rolls the DaisyUI/Tailwind look in plain CSS (no build step), but every color is
+     a shipped Warm Stone token copied VERBATIM from cairn-admin.css (both theme roots), and every
+     pattern it stands in for is a real shipped recipe: the desk band, the editor card and its
+     iA-Writer-Mono manuscript, the directive rails, the native <dialog class="modal"> scroll
+     container under min(content, 85vh), the segmented check-and-tint control, the .anno
+     a11y/engine wiring chips, and light + dark renders. No removed DaisyUI v5 classes.
+     =========================================================================================== */
+
+  /* ---- mock scaffold (outside the themed surfaces) ---- */
+  body { margin: 0; background: #d8d4cf; }
+  .mock-label { font: 600 13px/1.4 system-ui; letter-spacing: .08em; text-transform: uppercase; color: #444; padding: 30px 24px 4px; }
+  .mock-note { font: 400 13px/1.6 system-ui; color: #5a564f; padding: 0 24px 14px; max-width: 92ch; }
+  .mock-note code { font-family: ui-monospace, monospace; background: rgba(0,0,0,.06); padding: 1px 4px; border-radius: 3px; }
+  .mock-note b { color: #3a362f; }
+  .intro { padding: 26px 24px 4px; max-width: 92ch; }
+  .intro h1 { font: 700 24px/1.2 system-ui; color: #2c2920; margin: 0 0 10px; }
+  .intro p { font: 400 14px/1.62 system-ui; color: #4a463d; margin: 0 0 10px; max-width: 86ch; }
+  .screen { border: 1px solid #aaa; margin: 0 16px 48px; box-shadow: 0 2px 14px rgba(0,0,0,.08); overflow: hidden; border-radius: 2px; }
+  .grow { flex: 1 1 auto; }
+  /* the inline annotation chip: documents a11y or engine behavior provable only in the Svelte build.
+     Never a user-visible element; it stands in for the implementer's wiring note. */
+  .anno { font: 600 11px/1.45 system-ui; color: #6b4f9c; background: #ece4f8; border: 1px dashed #b9a6dd; border-radius: 5px; padding: 5px 10px; margin: 0 24px 12px; display: inline-block; max-width: 92ch; }
+  .anno.engine { color: #2d6a4f; background: #def0e6; border-color: #93c9ac; }
+  .anno.graft { color: #8a5a18; background: #f8ecd9; border-color: #ddc096; }
+
+  /* ---- Warm Stone tokens, both theme roots, inlined VERBATIM from cairn-admin.css so the mockup
+       stands alone. Copied, not invented; verified against the shipped src/lib/components/cairn-admin.css.
+       Identical to the spine's block, including the DERIVED diff-add / diff-del washes (color-mix
+       compositions over the EXISTING positive-ink / error-ink, NOT new shipped tokens). ---- */
+  [data-theme='cairn-admin'] {
+    --color-base-100: oklch(99% 0.004 75);
+    --color-base-200: oklch(96.5% 0.006 75);
+    --color-base-300: oklch(89% 0.011 75);
+    --color-base-content: oklch(26% 0.014 75);
+    --color-primary: oklch(52% 0.2 293);
+    --color-primary-content: oklch(98% 0.012 293);
+    --color-accent: oklch(54% 0.16 300);
+    --color-accent-content: oklch(98% 0.012 300);
+    --cairn-directive-ink-2: oklch(50% 0.16 300);
+    --cairn-directive-ink-3: oklch(48% 0.16 300);
+    --cairn-directive-rail-1: 72%;
+    --cairn-directive-rail-2: 82%;
+    --cairn-directive-rail-active: 100%;
+    --cairn-directive-ink-active: oklch(46% 0.16 300);
+    --color-muted: oklch(48% 0.01 75);
+    --color-subtle: oklch(42% 0.01 75);
+    --color-info: oklch(52% 0.12 240);
+    --color-info-content: oklch(98% 0.012 240);
+    --color-success: oklch(52% 0.12 150);
+    --color-warning: oklch(75% 0.15 70);
+    --color-positive-ink: oklch(48% 0.12 150);
+    --color-error: oklch(56% 0.2 25);
+    --color-error-content: oklch(98% 0.012 25);
+    --cairn-error-ink: oklch(50% 0.19 25);
+    --cairn-error-tint: oklch(96% 0.03 25);
+    --cairn-error-border: oklch(85% 0.06 25);
+    --cairn-code-chip: oklch(94.5% 0.008 75);
+    --cairn-warning-ink: oklch(50% 0.13 70);
+    --cairn-focus-dim-ink: oklch(66% 0.01 75);
+    --cairn-card-border: oklch(93% 0.008 75);
+    --cairn-shadow: 0 1px 2px oklch(28% 0.02 75 / 0.05), 0 8px 24px -6px oklch(28% 0.02 75 / 0.1);
+    --cairn-scrim: oklch(20% 0.01 75 / 0.4);
+    --cairn-diff-add-bg: color-mix(in oklab, var(--color-positive-ink) 11%, var(--color-base-100));
+    --cairn-diff-add-edge: color-mix(in oklab, var(--color-positive-ink) 55%, transparent);
+    --cairn-diff-add-ink: var(--color-positive-ink);
+    --cairn-diff-del-bg: color-mix(in oklab, var(--cairn-error-ink) 9%, var(--color-base-100));
+    --cairn-diff-del-edge: color-mix(in oklab, var(--cairn-error-ink) 50%, transparent);
+    --cairn-diff-del-ink: var(--cairn-error-ink);
+  }
+  [data-theme='cairn-admin-dark'] {
+    --color-base-100: oklch(24% 0.01 75);
+    --color-base-200: oklch(15.5% 0.009 75);
+    --color-base-300: oklch(30% 0.014 75);
+    --color-base-content: oklch(93% 0.006 75);
+    --color-primary: oklch(68% 0.18 293);
+    --color-primary-content: oklch(20% 0.04 293);
+    --color-accent: oklch(70% 0.14 300);
+    --color-accent-content: oklch(20% 0.04 300);
+    --cairn-directive-ink-2: oklch(74% 0.14 300);
+    --cairn-directive-ink-3: oklch(78% 0.14 300);
+    --cairn-directive-rail-1: 62%;
+    --cairn-directive-rail-2: 74%;
+    --cairn-directive-rail-active: 100%;
+    --cairn-directive-ink-active: oklch(82% 0.14 300);
+    --color-muted: oklch(72% 0.01 75);
+    --color-subtle: oklch(80% 0.008 75);
+    --color-info: oklch(72% 0.12 240);
+    --color-info-content: oklch(20% 0.04 240);
+    --color-success: oklch(70% 0.12 150);
+    --color-warning: oklch(80% 0.14 70);
+    --color-positive-ink: oklch(78% 0.12 150);
+    --color-error: oklch(70% 0.18 25);
+    --color-error-content: oklch(20% 0.04 25);
+    --cairn-error-ink: oklch(78% 0.15 25);
+    --cairn-error-tint: oklch(28% 0.06 25);
+    --cairn-error-border: oklch(40% 0.09 25);
+    --cairn-code-chip: oklch(29.5% 0.012 75);
+    --cairn-warning-ink: oklch(80% 0.14 70);
+    --cairn-focus-dim-ink: oklch(53% 0.01 75);
+    --cairn-card-border: oklch(30% 0.014 75);
+    --cairn-shadow: 0 1px 2px oklch(0% 0 0 / 0.35), 0 8px 24px -6px oklch(0% 0 0 / 0.5);
+    --cairn-scrim: oklch(0% 0 0 / 0.55);
+    --cairn-diff-add-bg: color-mix(in oklab, var(--color-positive-ink) 16%, var(--color-base-100));
+    --cairn-diff-add-edge: color-mix(in oklab, var(--color-positive-ink) 60%, transparent);
+    --cairn-diff-add-ink: var(--color-positive-ink);
+    --cairn-diff-del-bg: color-mix(in oklab, var(--cairn-error-ink) 15%, var(--color-base-100));
+    --cairn-diff-del-edge: color-mix(in oklab, var(--cairn-error-ink) 55%, transparent);
+    --cairn-diff-del-ink: var(--cairn-error-ink);
+  }
+  [data-theme] {
+    --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+    --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+    /* the manuscript / diff face stands in for the shipped iA Writer Mono with IBM Plex Mono, its
+       same-superfamily ancestor (see the design system's Type note). */
+    --font-editor: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+
+  /* ===== the ground + the desk band (the gold-standard recipe) ===== */
+  .ground { background: var(--color-base-200); position: relative; overflow: hidden; min-height: 88vh; font-family: var(--font-body); color: var(--color-base-content); -webkit-font-smoothing: antialiased; }
+  .band { display: flex; align-items: center; height: 64px; background: var(--color-base-100); border-bottom: 1px solid var(--cairn-card-border); padding: 0 20px 0 14px; }
+  .bnd-cluster { display: flex; align-items: center; gap: 4px; }
+  .bnd-sq { display: inline-flex; align-items: center; justify-content: center; height: 32px; width: 32px; border: 0; background: transparent; border-radius: .5rem; color: var(--color-subtle); cursor: pointer; }
+  .bnd-sq:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .bnd-sq svg { width: 17px; height: 17px; }
+  .bnd-btn { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border: 0; background: transparent; border-radius: .5rem; color: var(--color-subtle); font: 500 .875rem/1 var(--font-body); cursor: pointer; }
+  .bnd-btn:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .bnd-btn svg { width: 16px; height: 16px; }
+  .crumb { display: flex; align-items: center; gap: 7px; font-size: .875rem; margin-left: 4px; }
+  .crumb a { color: var(--color-muted); text-decoration: none; cursor: pointer; }
+  .crumb a:hover { color: var(--color-primary); }
+  .crumb-sep { color: var(--color-muted); opacity: .45; }
+  .crumb-here { font-weight: 550; }
+  .bnd-status { display: flex; align-items: center; gap: 12px; margin-left: 18px; padding-left: 18px; border-left: 1px solid var(--cairn-card-border); }
+  .badge-ghost { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 999px; font: 500 .6875rem/1 var(--font-body); background: color-mix(in oklab, var(--color-base-content) 8%, transparent); color: var(--color-muted); }
+  .savestate { display: inline-flex; align-items: center; gap: 6px; font-size: .75rem; color: var(--color-muted); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-warning); }
+  .dot-ok { background: var(--color-success); }
+  .bnd-div { width: 1px; height: 18px; background: var(--cairn-card-border); margin: 0 8px; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 13px; border-radius: .5rem; font: 600 .8125rem/1 var(--font-body); cursor: pointer; border: 1px solid transparent; }
+  .btn svg { width: 15px; height: 15px; }
+  .btn-outline { background: transparent; border-color: var(--color-base-300); color: var(--color-base-content); }
+  .btn-primary { background: var(--color-primary); color: var(--color-primary-content); box-shadow: 0 1px 2px color-mix(in oklab, var(--color-primary) 35%, transparent); }
+
+  /* THE WHOLE-TIDY UNDO chip (graft 6). After Apply lands the kept hunks in one history entry, the
+     desk surfaces a quiet session-scoped "Undo tidy" beside the save state, so an author who realizes
+     after the fact that a change ate their voice reverts in one move. It is the same register as the
+     save-state strip (a hairline-bounded inline affordance), not a loud banner, and it dismisses on
+     the next edit. Mechanically this is ordinary editor Undo of the one batched transaction; the graft
+     is to NAME it so the author knows the whole tidy is one move back. */
+  .undo-chip { display: inline-flex; align-items: center; gap: 8px; margin-left: 12px; padding-left: 12px; border-left: 1px solid var(--cairn-card-border); font-size: .75rem; color: var(--color-muted); }
+  .undo-chip .ok { display: inline-flex; align-items: center; gap: 5px; color: var(--color-positive-ink); font-weight: 600; }
+  .undo-chip .ok svg { width: 13px; height: 13px; }
+  .undo-btn { display: inline-flex; align-items: center; gap: 5px; border: 0; background: transparent; color: var(--color-muted); font: 600 .75rem/1 var(--font-body); text-decoration: underline; text-underline-offset: 2px; text-decoration-color: color-mix(in oklab, currentColor 40%, transparent); cursor: pointer; padding: 3px 2px; }
+  .undo-btn:hover { color: var(--color-primary); }
+  .undo-btn svg { width: 13px; height: 13px; }
+
+  /* ===== the page + the editor card ===== */
+  .page { padding: 2rem 2.5rem; }
+  .col { max-width: 49rem; margin: 0 auto; width: 100%; }
+  .ttl-wrap { font-family: var(--font-editor); font-size: 1.0625rem; max-width: 72ch; margin: 0 auto 16px; padding: 0 1.25rem; }
+  .ttl { font-family: var(--font-display); font-size: 1.875rem; font-weight: 700; letter-spacing: -.025em; }
+  .card-ed { background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: 1rem; box-shadow: var(--cairn-shadow); overflow: hidden; }
+
+  /* the toolbar strip */
+  .strip { display: flex; align-items: center; gap: 2px; padding: 6px 8px; border-bottom: 1px solid var(--cairn-card-border); }
+  .tb { display: inline-flex; align-items: center; justify-content: center; height: 30px; width: 30px; border: 0; background: transparent; border-radius: .5rem; color: var(--color-subtle); cursor: pointer; }
+  .tb:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .tb svg { width: 16px; height: 16px; }
+  .tdiv { width: 1px; height: 18px; background: var(--cairn-card-border); margin: 0 6px; flex: none; }
+  .tb-tidy { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 0; background: transparent; border-radius: .5rem; color: var(--color-subtle); font: 500 .8125rem/1 var(--font-body); cursor: pointer; }
+  .tb-tidy:hover { background: color-mix(in oklab, var(--color-primary) 9%, transparent); color: var(--color-primary); }
+  .tb-tidy svg { width: 16px; height: 16px; }
+
+  .seg-tabs { display: inline-flex; border: 1px solid var(--cairn-card-border); border-radius: .5rem; overflow: hidden; background: var(--color-base-100); }
+  .seg-tabs button { font: 400 .8125rem/1 var(--font-body); border: 0; background: transparent; color: var(--color-muted); padding: 5px 12px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+  .seg-tabs button + button { border-left: 1px solid var(--cairn-card-border); }
+  .seg-tabs button[aria-pressed="true"] { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); font-weight: 500; }
+
+  /* the manuscript */
+  .ms { font-family: var(--font-editor); font-size: 1.0625rem; line-height: 1.9; max-width: 72ch; margin: 0 auto; padding: 1.75rem 1.25rem 2.25rem; min-height: 30vh; }
+  .ln { min-height: 1.9em; white-space: pre-wrap; }
+  .gap { min-height: 1.9em; }
+  .h2 { font-size: 1.3em; font-weight: 700; }
+  .mk { color: var(--color-muted); font-weight: 400; }
+  .lk { color: var(--color-accent); }
+  .chip { background: var(--cairn-code-chip); border-radius: .25rem; padding: .05em .3em; }
+  .fm { color: var(--color-muted); }
+  .fm-key { color: var(--cairn-directive-ink-2); }
+  .fmrule { color: var(--color-muted); opacity: .8; }
+  .rail1 { box-shadow: inset 2px 0 0 0 color-mix(in oklab, var(--color-accent) var(--cairn-directive-rail-1), transparent); padding-left: 1.75rem; }
+  .lb { color: var(--color-accent); }
+  .media-chip { display: inline-flex; align-items: center; gap: 5px; vertical-align: -2px; background: color-mix(in oklab, var(--color-accent) 9%, var(--color-base-100)); border: 1px solid color-mix(in oklab, var(--color-accent) 30%, transparent); border-radius: .4rem; padding: 1px 7px 1px 4px; font-family: var(--font-body); font-size: .8125rem; color: var(--color-base-content); }
+  .media-chip .mthumb { width: 18px; height: 14px; border-radius: 2px; background: linear-gradient(135deg, oklch(72% 0.09 200), oklch(64% 0.1 150)); flex: none; }
+  .media-chip .mrole { font-size: .625rem; color: var(--color-accent); border: 1px solid color-mix(in oklab, var(--color-accent) 30%, transparent); border-radius: .3rem; padding: 0 4px; }
+  /* a manuscript line that is the locus of the focused hunk: a quiet primary wash, the scroll-to-locus
+     target (graft 4). NOT a loud highlight; it just confirms where in the page the change sits. */
+  .ln.locus { background: color-mix(in oklab, var(--color-primary) 8%, transparent); box-shadow: inset 2px 0 0 0 color-mix(in oklab, var(--color-primary) 55%, transparent); border-radius: 0 3px 3px 0; }
+
+  /* ===== SPELLCHECK underline (MK-3): now --cairn-warning-ink, never the deletion red ===== */
+  /* the misspelling: a wavy underline drawn with a repeating gradient, the SHIPPED CM6-decoration
+     idiom. REV.2 FIX (MK-3): the color is --cairn-warning-ink (the muted on-surface warning ink the
+     spec asks for), NOT the error-ink the spine used, so spellcheck and tidy deletions never speak in
+     the same color. error-ink is now reserved exclusively for tidy deletions. */
+  .sp-bad {
+    background-image: linear-gradient(45deg, transparent 65%, color-mix(in oklab, var(--cairn-warning-ink) 80%, transparent) 80%, transparent 90%),
+                      linear-gradient(135deg, transparent 65%, color-mix(in oklab, var(--cairn-warning-ink) 80%, transparent) 80%, transparent 90%);
+    background-repeat: repeat-x; background-size: 6px 3px; background-position: 0 100%;
+    padding-bottom: 2px; cursor: pointer;
+  }
+
+  /* ===== the footer strip (the shipped environment strip) ===== */
+  .ftr { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--cairn-card-border); padding: 5px 12px; font-size: .75rem; color: var(--color-muted); }
+  .ftr-right { display: flex; align-items: center; gap: 14px; }
+  .ftr-modes { display: flex; align-items: center; gap: 2px; }
+  .seg { display: inline-flex; border: 1px solid var(--cairn-card-border); border-radius: .5rem; overflow: hidden; background: var(--color-base-100); }
+  .seg button { font: 400 .75rem/1 var(--font-body); border: 0; background: transparent; color: var(--color-muted); padding: 4px 10px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--cairn-card-border); }
+  .seg button[aria-pressed="true"] { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); font-weight: 500; }
+  .ftr-toggle { font: 400 .75rem/1 var(--font-body); border: 0; background: transparent; color: var(--color-muted); padding: 4px 8px; border-radius: .5rem; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+  .ftr-toggle:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .ftr-link { color: var(--color-muted); text-decoration: underline; text-underline-offset: 2px; text-decoration-color: color-mix(in oklab, currentColor 40%, transparent); background: none; border: 0; font: inherit; cursor: pointer; }
+  .ftr-link:hover { color: var(--color-primary); }
+  .chk { width: 11px; height: 11px; }
+  .ftr-spell { display: inline-flex; align-items: center; gap: 5px; }
+  .ftr-spell svg { width: 12px; height: 12px; color: var(--cairn-warning-ink); }
+
+  /* ============================================================================================
+     THE TIDY REVIEW SURFACE. A native <dialog class="modal"> opened with showModal(): native focus
+     trap + Escape. WIDE (a diff needs width), capped at min(content, 85vh), its own scroll container.
+     Below the narrow breakpoint it becomes a full-height sheet. The author's buffer is untouched
+     behind it, DIMMED not blurred (MK-2); Confirm applies the kept hunks in one transaction.
+     ============================================================================================ */
+  /* REV.2 (MK-2): the buffer behind is DIMMED, never blurred to unreadable. The author can still read
+     the surrounding sentence through the scrim, which the scroll-to-locus affordance relies on. */
+  .col.behind { opacity: .62; transition: opacity .15s; }
+  .scrim { position: absolute; inset: 0; background: var(--cairn-scrim); display: flex; align-items: flex-start; justify-content: center; padding: 32px 18px; overflow-y: auto; }
+  .review-box { width: 54rem; max-width: 100%; max-height: min(100%, calc(100% - 32px)); display: flex; flex-direction: column; background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: 1rem; box-shadow: var(--cairn-shadow); font-family: var(--font-body); overflow: hidden; }
+
+  /* the review head */
+  .rv-head { display: flex; align-items: center; gap: 13px; padding: 16px 18px 14px; border-bottom: 1px solid var(--cairn-card-border); }
+  .rv-badge { width: 36px; height: 36px; flex: none; border-radius: .7rem; display: inline-flex; align-items: center; justify-content: center; background: color-mix(in oklab, var(--color-primary) 12%, transparent); color: var(--color-primary); }
+  .rv-badge svg { width: 19px; height: 19px; }
+  .rv-htext { flex: 1 1 auto; min-width: 0; }
+  .rv-title { font-family: var(--font-display); font-size: 1.1875rem; font-weight: 700; letter-spacing: -.02em; line-height: 1.15; }
+  .rv-sub { margin-top: 3px; font-size: .8125rem; color: var(--color-muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .rv-sub b { color: var(--color-base-content); font-weight: 600; }
+  .rv-sub .pill { display: inline-flex; align-items: center; gap: 4px; font-size: .6875rem; font-weight: 600; border-radius: 999px; padding: 1px 8px; }
+  .rv-sub .pill.model { color: var(--color-muted); border: 1px solid var(--cairn-card-border); }
+  /* a quiet keyboard-hint pill in the head, so the step-through model is discoverable (graft 3) */
+  .rv-kbd { display: inline-flex; align-items: center; gap: 6px; flex: none; font-size: .6875rem; color: var(--color-muted); }
+  .rv-kbd kbd { font-family: var(--font-editor); font-size: .625rem; border: 1px solid var(--cairn-card-border); border-bottom-width: 2px; border-radius: .3rem; padding: 1px 5px; color: var(--color-subtle); background: var(--color-base-100); }
+  .rv-viewtoggle { display: inline-flex; align-items: center; border: 1px solid var(--cairn-card-border); border-radius: .5rem; overflow: hidden; background: var(--color-base-100); flex: none; }
+  .rv-viewtoggle button { font: 500 .75rem/1 var(--font-body); border: 0; background: transparent; color: var(--color-muted); padding: 6px 11px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+  .rv-viewtoggle button + button { border-left: 1px solid var(--cairn-card-border); }
+  .rv-viewtoggle button[aria-pressed="true"] { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); }
+  .rv-viewtoggle svg { width: 13px; height: 13px; }
+  .rv-x { display: inline-flex; align-items: center; justify-content: center; height: 28px; width: 28px; border: 0; background: transparent; border-radius: .45rem; color: var(--color-subtle); cursor: pointer; flex: none; }
+  .rv-x:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .rv-x svg { width: 16px; height: 16px; }
+
+  /* the bulk-action bar under the head: a live tally + accept objective / reject all.
+     REV.2 (open decision 2): Accept-all is reframed to "Accept fixes" because it sweeps only the
+     objective hunks; judgment hunks must be confirmed each. The tally splits three ways now:
+     kept, to-review (the undecided judgment hunks), and skipping. */
+  .rv-bulk { display: flex; align-items: center; gap: 12px; padding: 10px 18px; background: var(--color-base-200); border-bottom: 1px solid var(--cairn-card-border); }
+  .rv-tally { display: inline-flex; align-items: center; gap: 9px; font-size: .8125rem; color: var(--color-muted); flex-wrap: wrap; }
+  .rv-tally .pip { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; }
+  .rv-tally .pip.kept { color: var(--color-positive-ink); }
+  .rv-tally .pip.review { color: var(--cairn-warning-ink); }
+  .rv-tally .pip.rej { color: var(--cairn-error-ink); }
+  .rv-tally .pip svg { width: 13px; height: 13px; }
+  .rv-tally .pip .num { font-variant-numeric: tabular-nums; }
+  .rv-tally .dotsep { opacity: .4; }
+  .rv-bulk .grow { flex: 1 1 auto; }
+  .bulk-btn { font: 500 .75rem/1 var(--font-body); border: 1px solid var(--color-base-300); background: var(--color-base-100); color: var(--color-base-content); border-radius: .5rem; padding: 7px 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+  .bulk-btn:hover { border-color: color-mix(in oklab, var(--color-primary) 40%, var(--color-base-300)); }
+  .bulk-btn svg { width: 13px; height: 13px; }
+  .bulk-btn.accept svg { color: var(--color-positive-ink); }
+  .bulk-btn.reject svg { color: var(--cairn-error-ink); }
+
+  /* the hunk list: the scroll container */
+  .rv-body { padding: 14px 18px 4px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+
+  /* a single hunk card. REV.2 SAFETY-RANKED CATEGORIES (graft 2 / open decision 2):
+       - .objective  : quiet neutral chrome, pre-kept, swept by Accept-fixes.
+       - .judgment   : a distinct review-this treatment (a warning-ink left edge + a faint warm wash on
+                       the head), default UNDECIDED, NOT swept by Accept-fixes; the author confirms each.
+     The two weights read at a glance, so an author scanning the list sees which changes are
+     machine-safe and which want their eye. */
+  .hunk { border: 1px solid var(--cairn-card-border); border-radius: .8rem; overflow: hidden; background: var(--color-base-100); position: relative; }
+  /* the judgment treatment: a warm left edge marks "this one wants your eye" */
+  .hunk.judgment { border-color: color-mix(in oklab, var(--cairn-warning-ink) 30%, var(--cairn-card-border)); box-shadow: inset 3px 0 0 0 color-mix(in oklab, var(--cairn-warning-ink) 55%, transparent); }
+  /* the focused hunk in the step-through (graft 3): a primary ring, the keyboard cursor */
+  .hunk.focused { outline: 2px solid color-mix(in oklab, var(--color-primary) 60%, transparent); outline-offset: 1px; }
+  .hunk.rejected { opacity: .72; }
+  .hunk-head { display: flex; align-items: center; gap: 9px; padding: 8px 11px; border-bottom: 1px solid var(--cairn-card-border); background: color-mix(in oklab, var(--color-base-content) 1.5%, transparent); }
+  .hunk.judgment .hunk-head { background: color-mix(in oklab, var(--cairn-warning-ink) 7%, transparent); }
+  .hunk-cat { display: inline-flex; align-items: center; gap: 5px; font-size: .6875rem; font-weight: 600; letter-spacing: .02em; padding: 2px 8px; border-radius: 999px; }
+  .hunk-cat svg { width: 12px; height: 12px; }
+  /* the locally-inferred category tints: each glyph-plus-word, never hue alone (WCAG 1.4.1).
+     Objective categories sit in muted/neutral ink; the two judgment categories sit in the warning ink
+     so the safety rank is legible in the badge too. */
+  .hunk-cat.typo { color: var(--color-muted); background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .hunk-cat.space { color: var(--color-muted); background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .hunk-cat.grammar { color: var(--cairn-warning-ink); background: color-mix(in oklab, var(--cairn-warning-ink) 11%, transparent); }
+  .hunk-cat.consistency { color: var(--cairn-warning-ink); background: color-mix(in oklab, var(--cairn-warning-ink) 11%, transparent); }
+  /* a "review this" flag on judgment hunks, the plain-language counterpart to the warm chrome */
+  .hunk-flag { display: inline-flex; align-items: center; gap: 4px; font-size: .625rem; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; color: var(--cairn-warning-ink); }
+  .hunk-flag svg { width: 11px; height: 11px; }
+  .hunk-lineref { display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-editor); font-size: .6875rem; color: var(--color-muted); border: 0; background: transparent; cursor: pointer; padding: 2px 5px; border-radius: .35rem; text-decoration: underline; text-underline-offset: 2px; text-decoration-color: color-mix(in oklab, currentColor 35%, transparent); }
+  .hunk-lineref:hover { color: var(--color-primary); background: color-mix(in oklab, var(--color-primary) 8%, transparent); }
+  .hunk-lineref svg { width: 11px; height: 11px; }
+  .hunk-head .grow { flex: 1 1 auto; }
+  /* the per-hunk accept/reject pair: a segmented check-and-tint group (the shipped recipe).
+     REV.2: a judgment hunk opens with BOTH segments unpressed (undecided). The accept tints positive
+     only once chosen; until then neither is pressed, so an unconfirmed judgment hunk is visibly
+     pending. An objective hunk opens with accept pressed (pre-kept). */
+  .hunk-acts { display: inline-flex; align-items: center; border: 1px solid var(--cairn-card-border); border-radius: .45rem; overflow: hidden; flex: none; }
+  .hunk.judgment.undecided .hunk-acts { border-color: color-mix(in oklab, var(--cairn-warning-ink) 45%, var(--cairn-card-border)); }
+  .hunk-acts button { font: 500 .6875rem/1 var(--font-body); border: 0; background: transparent; color: var(--color-muted); padding: 5px 9px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+  .hunk-acts button + button { border-left: 1px solid var(--cairn-card-border); }
+  .hunk-acts button svg { width: 12px; height: 12px; }
+  .hunk-acts button.accept[aria-pressed="true"] { background: color-mix(in oklab, var(--color-positive-ink) 13%, transparent); color: var(--color-positive-ink); }
+  .hunk-acts button.reject[aria-pressed="true"] { background: color-mix(in oklab, var(--cairn-error-ink) 12%, transparent); color: var(--cairn-error-ink); }
+
+  /* the UNIFIED diff body: context row, deletion rows, insertion rows, an optional because-line.
+     REV.2 (graft 4): one unchanged CONTEXT row sits above and below the changed rows, so the change
+     is judged in the flow of its sentence, not as a detached fragment. */
+  .diff { font-family: var(--font-editor); font-size: .8125rem; line-height: 1.7; }
+  .drow { display: flex; align-items: baseline; gap: 0; padding: 0; }
+  .dgut { flex: none; width: 26px; text-align: center; color: var(--color-muted); user-select: none; align-self: stretch; display: inline-flex; align-items: flex-start; justify-content: center; padding-top: 3px; font-weight: 600; }
+  .dtext { flex: 1 1 auto; min-width: 0; white-space: pre-wrap; word-break: break-word; padding: 2px 11px 2px 4px; }
+  .drow.del { background: var(--cairn-diff-del-bg); }
+  .drow.del .dgut { color: var(--cairn-diff-del-ink); box-shadow: inset 2px 0 0 0 var(--cairn-diff-del-edge); }
+  .drow.add { background: var(--cairn-diff-add-bg); }
+  .drow.add .dgut { color: var(--cairn-diff-add-ink); box-shadow: inset 2px 0 0 0 var(--cairn-diff-add-edge); }
+  .drow.ctx .dtext { color: var(--color-muted); }
+  .drow.ctx .dgut { color: color-mix(in oklab, var(--color-muted) 60%, transparent); }
+  /* the changed run inside a line: a del strikes through in error ink, an add underlines in positive ink */
+  .rdel { background: color-mix(in oklab, var(--cairn-error-ink) 18%, transparent); color: var(--cairn-diff-del-ink); text-decoration: line-through; text-decoration-thickness: 1px; border-radius: 2px; padding: 0 1px; }
+  .radd { background: color-mix(in oklab, var(--color-positive-ink) 20%, transparent); color: var(--cairn-diff-add-ink); border-radius: 2px; padding: 0 1px; }
+  /* the MANDATORY because-line (graft 1): the locally-computed rationale on a normalization/consistency
+     hunk. A separate row in the body face, set off with a small lightbulb glyph, so it reads as
+     cairn's reason, not part of the source. A normalization that cannot show one is not offered. */
+  .because { display: flex; align-items: flex-start; gap: 7px; padding: 7px 11px 7px 11px; border-top: 1px dashed var(--cairn-card-border); background: color-mix(in oklab, var(--cairn-warning-ink) 5%, transparent); font-family: var(--font-body); font-size: .75rem; line-height: 1.5; color: var(--color-subtle); }
+  .because svg { width: 13px; height: 13px; flex: none; margin-top: 1px; color: var(--cairn-warning-ink); }
+  .because b { color: var(--color-base-content); font-weight: 600; }
+  /* a rejected hunk renders the diff faded and strikes the proposed add to read "not taken" */
+  .hunk.rejected .radd { text-decoration: line-through; opacity: .7; }
+  .hunk.rejected .drow.add { background: color-mix(in oklab, var(--color-base-content) 3%, transparent); }
+  .hunk.rejected .drow.add .dgut { color: var(--color-muted); box-shadow: inset 2px 0 0 0 color-mix(in oklab, var(--color-muted) 40%, transparent); }
+
+  /* the SPLIT diff body: two columns, before left, after right */
+  .split { display: grid; grid-template-columns: 1fr 1fr; font-family: var(--font-editor); font-size: .8125rem; line-height: 1.7; }
+  .split-col { min-width: 0; }
+  .split-col + .split-col { border-left: 1px solid var(--cairn-card-border); }
+  .split-cap { font-family: var(--font-body); font-size: .625rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--color-muted); padding: 6px 11px; border-bottom: 1px solid var(--cairn-card-border); background: color-mix(in oklab, var(--color-base-content) 1.5%, transparent); }
+  .split-line { padding: 3px 11px; white-space: pre-wrap; word-break: break-word; }
+  .split-line.ctx { color: var(--color-muted); }
+  .split-col.before .split-line.chg { background: var(--cairn-diff-del-bg); box-shadow: inset 2px 0 0 0 var(--cairn-diff-del-edge); }
+  .split-col.after .split-line.chg { background: var(--cairn-diff-add-bg); box-shadow: inset 2px 0 0 0 var(--cairn-diff-add-edge); }
+
+  /* the review footer: the commit-target note + Cancel + the one-transaction Apply */
+  .rv-foot { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-top: 1px solid var(--cairn-card-border); }
+  .rv-foot-note { flex: 1 1 auto; min-width: 0; font-size: .6875rem; color: var(--color-muted); display: flex; align-items: center; gap: 6px; line-height: 1.4; }
+  .rv-foot-note svg { width: 13px; height: 13px; flex: none; color: var(--color-positive-ink); }
+  .btn-ghost { font: 500 .8125rem/1 var(--font-body); border-radius: .55rem; padding: 9px 14px; border: 1px solid var(--color-base-300); background: transparent; color: var(--color-subtle); cursor: pointer; }
+  .btn-apply { font: 600 .8125rem/1 var(--font-body); border-radius: .55rem; padding: 10px 17px; border: 1px solid transparent; background: var(--color-primary); color: var(--color-primary-content); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px color-mix(in oklab, var(--color-primary) 35%, transparent); }
+  .btn-apply svg { width: 15px; height: 15px; }
+  .btn-apply.muted { background: var(--color-base-300); color: var(--color-base-content); box-shadow: none; }
+
+  /* the running / owning-the-buffer state (cancelable, wired to abort) */
+  .rv-working { display: flex; flex-direction: column; gap: 12px; align-items: center; padding: 40px 18px; text-align: center; }
+  .rv-working .ring { color: var(--color-primary); }
+  .rv-working .ring svg { width: 30px; height: 30px; animation: spin 1.1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .rv-working .ring svg { animation-duration: 2.4s; } }
+  .rv-working .wt { font-size: .9375rem; font-weight: 600; }
+  .rv-working .ws { font-size: .8125rem; color: var(--color-muted); line-height: 1.5; max-width: 46ch; }
+
+  /* the clean-result state (tidy found nothing to fix) */
+  .rv-clean { display: flex; flex-direction: column; gap: 12px; align-items: center; padding: 40px 18px; text-align: center; }
+  .rv-clean .ci { width: 44px; height: 44px; border-radius: 50%; background: color-mix(in oklab, var(--color-positive-ink) 14%, transparent); color: var(--color-positive-ink); display: inline-flex; align-items: center; justify-content: center; }
+  .rv-clean .ci svg { width: 22px; height: 22px; }
+  .rv-clean .ct { font-family: var(--font-display); font-size: 1.125rem; font-weight: 700; }
+  .rv-clean .cs { font-size: .8125rem; color: var(--color-muted); line-height: 1.5; max-width: 44ch; }
+
+  /* the visually-hidden helper for live-region text (the screen-reader sentence the visible UI stands
+     in for). Standard sr-only. */
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+  /* narrow / bottom-sheet render */
+  .screen.narrow { max-width: 400px; }
+  .review-box.sheet { width: 100%; border-radius: 1rem 1rem 0 0; max-height: 92%; }
+</style>
+</head>
+<body>
+
+<div class="intro">
+  <h1>Tidy review mode &mdash; rev.2</h1>
+  <p>This is rev.2 of the focused step-in review surface for <b>tidy</b>, the light, voice-preserving
+  copy-edit from Claude. It starts from the winning spine and folds in the grafts the synthesis asked
+  for, while honoring the brief's lead decisions. The big shift from the spine: tidy no longer guesses a
+  style preference. The changes you see are <b>objective fixes</b> (spelling, doubled words, spacing,
+  clearly-wrong grammar) plus <b>normalizations the site owner switched on</b> (a comma rule, a number
+  style). Regional spelling is never touched.</p>
+  <p>The safety rank is the spine of rev.2. Objective fixes read quiet and come pre-kept. A change that
+  takes judgment (a normalization, or a grammar fix that reworded a clause) is flagged to review, starts
+  undecided, and is not swept in by Accept fixes until you confirm it. Every normalization carries a
+  plain reason computed from your own text. You step through with the keyboard, you see one line of
+  context around each change, and the whole tidy is one Undo away after it lands.</p>
+</div>
+
+<!-- =====================================================================================
+     STATE 0 · The desk at rest (light). Establishes the surface the review steps over: the editor
+     card with realistic blog-post markdown (frontmatter, prose carrying the deliberate misspelling
+     "accomodate", an inline code span, a resolved media: chip, a :::figure). REV.2 (MK-3): the
+     misspelling's wavy underline is now --cairn-warning-ink, the muted on-surface warning ink, NOT
+     the error-ink the spine used, so spellcheck and tidy deletions never share a color. The Tidy
+     control sits in the toolbar's action group. The footer carries the quiet spelling tally.
+     ===================================================================================== -->
+<div class="mock-label">State 0 &middot; The desk at rest, with the spellcheck underline (light)</div>
+<div class="mock-note">The everyday editor, included so the review surface has a surface to step over.
+The one change from the spine is the squiggle color: per the synthesis (MK-3) the spellcheck underline is
+now <code>--cairn-warning-ink</code>, and the deletion red is reserved for tidy. Tidy lives in the
+toolbar as a labelled action, because it is something you invoke, not a format you toggle.</div>
+<div class="anno">a11y. The misspelling is a <code>@codemirror/lint</code> diagnostic; clicking it opens
+the correction popover (suggestions, add-to-dictionary, ignore). The underline color is
+<code>--cairn-warning-ink</code> at <code>severity:'info'</code>, the one spellcheck token across the
+whole feature.</div>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="ground">
+    <div class="band">
+      <div class="bnd-cluster">
+        <button class="bnd-sq" aria-label="Open menu"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
+        <nav aria-label="Breadcrumb" class="crumb"><a>Posts</a><span class="crumb-sep">/</span><span class="crumb-here">Getting ready for spring</span></nav>
+      </div>
+      <div class="bnd-status">
+        <span class="badge-ghost">Edited</span>
+        <span class="savestate"><span class="dot"></span>Unsaved changes</span>
+      </div>
+      <div class="grow"></div>
+      <div class="bnd-cluster" style="gap:6px;">
+        <button class="bnd-btn"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M15 3v18"/></svg>Details</button>
+        <button class="bnd-sq" aria-label="More actions"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h.01"/><path d="M12 12h.01"/><path d="M19 12h.01"/></svg></button>
+        <div class="bnd-div" aria-hidden="true"></div>
+        <button class="btn btn-outline">Publish</button>
+        <button class="btn btn-primary">Save</button>
+      </div>
+    </div>
+    <main class="page">
+      <div class="col">
+        <div class="ttl-wrap"><div class="ttl">Getting ready for spring</div></div>
+        <div class="card-ed">
+          <div class="strip">
+            <button class="tb" aria-label="Bold" title="Bold (Ctrl+B)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8"/></svg></button>
+            <button class="tb" aria-label="Italic" title="Italic (Ctrl+I)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 4h-9"/><path d="M14 20H5"/><path d="M15 4 9 20"/></svg></button>
+            <div class="tdiv" aria-hidden="true"></div>
+            <button class="tb" aria-label="Heading" title="Heading"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h8"/><path d="M4 18V6"/><path d="M12 18V6"/><path d="M21 18h-4c0-4 4-3 4-6 0-1.5-2-2.5-4-1"/></svg></button>
+            <button class="tb" aria-label="Bulleted list" title="Bulleted list"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg></button>
+            <button class="tb" aria-label="Inline code" title="Inline code (Ctrl+E)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 8-4 4 4 4"/><path d="m15 8 4 4-4 4"/></svg></button>
+            <div class="tdiv" aria-hidden="true"></div>
+            <button class="tb" aria-label="Insert block" title="Insert block"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg></button>
+            <button class="tb" aria-label="Image" title="Image"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg></button>
+            <div class="tdiv" aria-hidden="true"></div>
+            <!-- the Tidy control: the single desk entry point, a labelled accent-quiet button -->
+            <button class="tb-tidy" title="Tidy: a light copy-edit you review before it lands"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.94 14.34 12 21l2.06-6.66L21 12l-6.94-2.34L12 3 9.94 9.66 3 12z"/></svg>Tidy</button>
+            <div class="grow"></div>
+            <span class="seg-tabs"><button aria-pressed="true">Write</button><button aria-pressed="false">Preview</button></span>
+          </div>
+
+          <div class="ms">
+            <div class="ln"><span class="fmrule">---</span></div>
+            <div class="ln"><span class="fm-key">title</span><span class="fm">: Getting ready for spring</span></div>
+            <div class="ln"><span class="fm-key">date</span><span class="fm">: 2026-06-01</span></div>
+            <div class="ln"><span class="fm-key">description</span><span class="fm">: Trail report and what to bring for the first weeks of spring skiing.</span></div>
+            <div class="ln"><span class="fmrule">---</span></div>
+            <div class="ln gap"></div>
+            <div class="ln"><span class="h2"><span class="mk">##</span> Getting ready for spring</span></div>
+            <div class="ln gap"></div>
+            <div class="ln">The first melt is here, and the <span class="mk">**</span><b>trail crew</b><span class="mk">**</span> is already out. We groom early so the lake loop can <span class="sp-bad" title="Possible spelling error">accomodate</span> the weekend crowd before the snow softens.</div>
+            <div class="ln gap"></div>
+            <div class="ln">Wax for the temperature you actually get. Skate skis run well around <span class="mk">`</span><span class="chip">0 to -4 C</span><span class="mk">`</span>, and the kit at the trailhead has a chart if you forget. The report updates every afternoon, so check it twice on a warm day.</div>
+            <div class="ln gap"></div>
+            <div class="ln"><span class="media-chip"><span class="mthumb"></span>lake-loop-dawn.jpg<span class="mrole">figure</span></span></div>
+            <div class="ln gap"></div>
+            <div class="ln rail1"><span class="mk">:::</span><span class="lb">figure</span></div>
+            <div class="ln rail1">Dawn on the lake loop, the first set of the season.</div>
+            <div class="ln rail1"><span class="mk">:::</span></div>
+          </div>
+
+          <div class="ftr">
+            <span style="display:inline-flex; align-items:center; gap:14px;">
+              <span>168 words</span>
+              <span class="ftr-spell"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 11 3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>1 to check</span>
+            </span>
+            <span class="ftr-right">
+              <span class="seg" role="group" aria-label="Editing surface">
+                <button aria-pressed="true"><svg class="chk" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Prose</button><button aria-pressed="false">Markup</button>
+              </span>
+              <span class="ftr-modes">
+                <button class="ftr-toggle" aria-pressed="false">Focus mode</button>
+                <button class="ftr-toggle" aria-pressed="false">Typewriter</button>
+              </span>
+              <button class="ftr-link">Markdown help</button>
+            </span>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div></div>
+
+<!-- =====================================================================================
+     STATE 1 · THE REVIEW SURFACE, MIXED HUNKS (light), the hero state of rev.2.
+     The author pressed Tidy; Claude returned a corrected rewrite; cairn computed a local diff and
+     stepped into this focused surface OVER the (DIMMED, not blurred) buffer. Four hunks show the
+     SAFETY RANK in action:
+       - HUNK 1 (Spelling) and HUNK 4 (Doubled word) are OBJECTIVE: quiet neutral chrome, Accept
+         pre-pressed (pre-kept), swept by Accept fixes.
+       - HUNK 2 (Grammar that reworded) and HUNK 3 (an owner-declared Oxford-comma normalization) are
+         JUDGMENT: a warm left edge, a "review this" flag, BOTH segments unpressed (undecided), and
+         each carries a locally-computed BECAUSE-LINE. They are NOT swept by Accept fixes.
+     The bulk bar tally splits three ways (kept / to review / skipping). A "kept as written" foot-note
+     states the regional-spelling guarantee. Two live regions: the tally (role=status, bulk only) and a
+     polite region narrating the last single action.
+     ===================================================================================== -->
+<div class="mock-label">State 1 &middot; The review surface, mixed hunks (light) &mdash; the hero</div>
+<div class="mock-note">The step-in surface. Tidy proposes a light copy-edit and you read it as a diff
+before anything lands. The two plain fixes (a misspelling, a doubled word) are quiet and already kept.
+The two that take judgment (a grammar fix that reworded a clause, and a comma rule the site owner turned
+on) are flagged to review, start undecided, and each shows why. Accept fixes sweeps only the plain ones;
+the judgment ones wait for you. The buffer behind is dimmed, not hidden, so you can read the surrounding
+line and jump to it.</div>
+<div class="anno graft">grafts folded here: the safety-ranked categories (objective quiet + pre-kept,
+judgment flagged + undecided + not in Accept-fixes), the mandatory because-line on every normalization,
+one context row above and below each hunk, the line-ref as a real "Show in text" affordance, the dimmed
+(not blurred) buffer, the two-region live model, and the keyboard-hint pill.</div>
+<div class="anno">a11y. The dialog is a native <code>&lt;dialog&gt;</code> opened with
+<code>showModal()</code> (focus trap + Escape for free). The tally is one <code>role="status"</code>
+that updates only on bulk actions; a second <code>aria-live="polite"</code> region (visually hidden)
+narrates the last single action. Per-hunk Accept/Reject is the segmented check-and-tint recipe with
+<code>aria-pressed</code>; the gutter glyph and the strike/underline carry state so color is never alone.</div>
+<div class="anno engine">engine. Following poplar's model the model returns a plain corrected STRING;
+cairn computes the diff and infers each category LOCALLY. The because-line for a normalization is pure
+string work over the buffer (count the author's own usage) or the named owner setting, never a model
+claim. Before this renders, the rewrite is validated as a PROOFREAD: frontmatter, the code span, the
+<code>media:</code> token, and the <code>:::figure</code> must be byte-identical, or tidy refuses and the
+author is told it could not run cleanly. All line refs are computed locally, never trusted from the model.</div>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="ground">
+    <!-- the (untouched) buffer, DIMMED behind the scrim (MK-2): readable, not blurred -->
+    <div class="band">
+      <div class="bnd-cluster">
+        <button class="bnd-sq" aria-label="Open menu"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
+        <nav aria-label="Breadcrumb" class="crumb"><a>Posts</a><span class="crumb-sep">/</span><span class="crumb-here">Getting ready for spring</span></nav>
+      </div>
+      <div class="bnd-status">
+        <span class="badge-ghost">Edited</span>
+        <span class="savestate"><span class="dot"></span>Unsaved changes</span>
+      </div>
+      <div class="grow"></div>
+      <div class="bnd-cluster" style="gap:6px;">
+        <button class="bnd-btn"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M15 3v18"/></svg>Details</button>
+        <div class="bnd-div" aria-hidden="true"></div>
+        <button class="btn btn-outline">Publish</button>
+        <button class="btn btn-primary">Save</button>
+      </div>
+    </div>
+    <main class="page">
+      <!-- the buffer is DIMMED (opacity .62), and the focused hunk's source line carries the quiet
+           .locus wash, the scroll-to-locus target the line-ref drives -->
+      <div class="col behind">
+        <div class="ttl-wrap"><div class="ttl">Getting ready for spring</div></div>
+        <div class="card-ed">
+          <div class="ms" style="padding: 1.25rem 1.25rem 1.5rem; min-height:0;">
+            <div class="ln">The first melt is here, and the trail crew is already out. We groom early so the lake loop can accomodate the weekend crowd.</div>
+            <div class="ln gap"></div>
+            <div class="ln locus">The crew lay the classic tracks before dawn, and they drift by afternoon.</div>
+            <div class="ln gap"></div>
+            <div class="ln">Bring skins, a warm layer and a thermos.</div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- THE REVIEW DIALOG -->
+    <div class="scrim">
+      <div class="review-box" role="dialog" aria-modal="true" aria-labelledby="rv-title-1">
+        <div class="rv-head">
+          <span class="rv-badge"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.94 14.34 12 21l2.06-6.66L21 12l-6.94-2.34L12 3 9.94 9.66 3 12z"/></svg></span>
+          <div class="rv-htext">
+            <div class="rv-title" id="rv-title-1">Review tidy</div>
+            <div class="rv-sub"><b>4 changes</b> to <b>Getting ready for spring</b><span class="dotsep" aria-hidden="true">&middot;</span><span class="pill model">Sonnet</span></div>
+          </div>
+          <!-- the keyboard-hint pill (graft 3): the step-through model, discoverable -->
+          <span class="rv-kbd" aria-hidden="true"><kbd>j</kbd><kbd>k</kbd> move<span class="dotsep">&middot;</span><kbd>a</kbd><kbd>r</kbd> accept / reject</span>
+          <div class="rv-viewtoggle" role="group" aria-label="Diff layout">
+            <button aria-pressed="true"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M3 12h18"/><path d="M3 18h18"/></svg>Unified</button>
+            <button aria-pressed="false"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="7" height="16" rx="1"/><rect x="14" y="4" width="7" height="16" rx="1"/></svg>Split</button>
+          </div>
+          <button class="rv-x" aria-label="Cancel review"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+        </div>
+
+        <!-- THE BULK BAR. REV.2: the tally is one role="status" updated ONLY on bulk actions (MK-1).
+             It splits three ways: kept (objective, pre-kept), to review (undecided judgment), skipping.
+             "Accept fixes" sweeps only the objective hunks; the judgment ones are confirmed each. -->
+        <div class="rv-bulk">
+          <span class="rv-tally" role="status" aria-label="2 fixes kept, 2 to review, 0 skipping">
+            <span class="pip kept"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span class="num">2</span> kept</span>
+            <span class="dotsep" aria-hidden="true">&middot;</span>
+            <span class="pip review"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.7 3.86a2 2 0 0 0-3.42 0z"/></svg><span class="num">2</span> to review</span>
+            <span class="dotsep" aria-hidden="true">&middot;</span>
+            <span class="pip rej"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg><span class="num">0</span> skipping</span>
+          </span>
+          <span class="grow"></span>
+          <button class="bulk-btn accept"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Accept fixes</button>
+          <button class="bulk-btn reject"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>Reject all</button>
+        </div>
+
+        <div class="rv-body">
+
+          <!-- HUNK 1 · SPELLING · OBJECTIVE: quiet, pre-kept. One context row above and below. -->
+          <div class="hunk objective focused">
+            <div class="hunk-head">
+              <span class="hunk-cat typo"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v4"/><path d="M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg>Spelling</span>
+              <button class="hunk-lineref" title="Show this line in the editor"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>line 9</button>
+              <span class="grow"></span>
+              <span class="hunk-acts" role="group" aria-label="Accept or reject this fix">
+                <button class="accept" aria-pressed="true"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Accept</button>
+                <button class="reject" aria-pressed="false"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>Reject</button>
+              </span>
+            </div>
+            <div class="diff">
+              <div class="drow ctx"><span class="dgut" aria-hidden="true">&nbsp;</span><span class="dtext">The first melt is here, and the trail crew is already out.</span></div>
+              <div class="drow del"><span class="dgut" aria-hidden="true">&minus;</span><span class="dtext">We groom early so the lake loop can <span class="rdel">accomodate</span> the weekend crowd.</span></div>
+              <div class="drow add"><span class="dgut" aria-hidden="true">+</span><span class="dtext">We groom early so the lake loop can <span class="radd">accommodate</span> the weekend crowd.</span></div>
+              <div class="drow ctx"><span class="dgut" aria-hidden="true">&nbsp;</span><span class="dtext">Wax for the temperature you actually get.</span></div>
+            </div>
+          </div>
+
+          <!-- HUNK 2 · GRAMMAR (reworded) · JUDGMENT: warm edge, review flag, UNDECIDED, because-line.
+               A subject-verb fix is unambiguously wrong, but it reworded the clause, so it wants the
+               author's eye and is not swept by Accept fixes. -->
+          <div class="hunk judgment undecided">
+            <div class="hunk-head">
+              <span class="hunk-cat grammar"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>Grammar</span>
+              <span class="hunk-flag"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>Review this</span>
+              <button class="hunk-lineref" title="Show this line in the editor"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>line 13</button>
+              <span class="grow"></span>
+              <span class="hunk-acts" role="group" aria-label="Accept or reject this change">
+                <button class="accept" aria-pressed="false"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Accept</button>
+                <button class="reject" aria-pressed="false"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>Reject</button>
+              </span>
+            </div>
+            <div class="diff">
+              <div class="drow ctx"><span class="dgut" aria-hidden="true">&nbsp;</span><span class="dtext">Conditions hold until the sun comes around the ridge.</span></div>
+              <div class="drow del"><span class="dgut" aria-hidden="true">&minus;</span><span class="dtext">The crew <span class="rdel">lay</span> the classic tracks before dawn, and they drift by afternoon.</span></div>
+              <div class="drow add"><span class="dgut" aria-hidden="true">+</span><span class="dtext">The crew <span class="radd">lays</span> the classic tracks before dawn, and they drift by afternoon.</span></div>
+              <div class="drow ctx"><span class="dgut" aria-hidden="true">&nbsp;</span><span class="dtext">Wax for the temperature you actually get.</span></div>
+            </div>
+            <!-- the because-line: why this grammar fix, computed locally -->
+            <div class="because"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg><span>The subject <b>crew</b> is singular here, so the verb takes <b>lays</b>. This one reworded your sentence, so give it a look.</span></div>
+          </div>
+
+          <!-- HUNK 3 · CONSISTENCY / OWNER-DECLARED NORMALIZATION · JUDGMENT. REV.2 REFRAME: this is
+               NOT harmonize-to-author (gone per lead decision 1). It is the Oxford comma, a style the
+               SITE OWNER switched on in settings. The because-line names the owner setting AND counts
+               the author's own usage, the mandatory local rationale (graft 1). UNDECIDED, not swept. -->
+          <div class="hunk judgment undecided">
+            <div class="hunk-head">
+              <span class="hunk-cat consistency"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56"/><path d="m9 11 3 3L22 4"/></svg>Comma style</span>
+              <span class="hunk-flag"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>Review this</span>
+              <button class="hunk-lineref" title="Show this line in the editor"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>line 18</button>
+              <span class="grow"></span>
+              <span class="hunk-acts" role="group" aria-label="Accept or reject this change">
+                <button class="accept" aria-pressed="false"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Accept</button>
+                <button class="reject" aria-pressed="false"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>Reject</button>
+              </span>
+            </div>
+            <div class="diff">
+              <div class="drow ctx"><span class="dgut" aria-hidden="true">&nbsp;</span><span class="dtext">Pack for the drive as much as the trail.</span></div>
+              <div class="drow del"><span class="dgut" aria-hidden="true">&minus;</span><span class="dtext">Bring skins, a warm layer<span class="rdel"> </span>and a thermos.</span></div>
+              <div class="drow add"><span class="dgut" aria-hidden="true">+</span><span class="dtext">Bring skins, a warm layer<span class="radd">,</span> and a thermos.</span></div>
+              <div class="drow ctx"><span class="dgut" aria-hidden="true">&nbsp;</span><span class="dtext">The lot fills by nine on a clear Saturday.</span></div>
+            </div>
+            <!-- the MANDATORY because-line: names the owner setting AND the local count -->
+            <div class="because"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg><span>Your site is set to <b>use the Oxford comma</b>. You already write it that way in <b>4 of 5</b> lists in this post, so this matches the rest.</span></div>
+          </div>
+
+          <!-- HUNK 4 · DOUBLED WORD · OBJECTIVE: quiet, pre-kept. -->
+          <div class="hunk objective">
+            <div class="hunk-head">
+              <span class="hunk-cat space"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h18"/><path d="m3 6 3 0"/><path d="m18 6 3 0"/><path d="m3 18 3 0"/><path d="m18 18 3 0"/></svg>Doubled word</span>
+              <button class="hunk-lineref" title="Show this line in the editor"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>line 22</button>
+              <span class="grow"></span>
+              <span class="hunk-acts" role="group" aria-label="Accept or reject this fix">
+                <button class="accept" aria-pressed="true"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Accept</button>
+                <button class="reject" aria-pressed="false"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>Reject</button>
+              </span>
+            </div>
+            <div class="diff">
+              <div class="drow ctx"><span class="dgut" aria-hidden="true">&nbsp;</span><span class="dtext">The lot fills by nine on a clear Saturday.</span></div>
+              <div class="drow del"><span class="dgut" aria-hidden="true">&minus;</span><span class="dtext">Bring a windproof layer for <span class="rdel">the the</span> drive home.</span></div>
+              <div class="drow add"><span class="dgut" aria-hidden="true">+</span><span class="dtext">Bring a windproof layer for <span class="radd">the</span> drive home.</span></div>
+              <div class="drow ctx"><span class="dgut" aria-hidden="true">&nbsp;</span><span class="dtext">See you out there.</span></div>
+            </div>
+          </div>
+
+          <!-- the "kept as written" guarantee (lead decision 1): regional spelling is never normalized.
+               A quiet foot-note inside the body, so the author sees the thing tidy LEFT, the most
+               reassuring cue. Not a hunk; nothing to accept. -->
+          <div class="because" style="border: 1px dashed var(--cairn-card-border); border-radius: .6rem; background: var(--cairn-code-chip); margin-top: 2px;"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--color-positive-ink);"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span style="color: var(--color-subtle);">Left as written: your regional spellings (<b>colour</b>, <b>organise</b>) follow your site's English. Tidy never changes them.</span></div>
+
+        </div>
+
+        <div class="rv-foot">
+          <span class="rv-foot-note"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Applies to the editor only. Your next Save commits it like any edit, and Undo takes the whole tidy back.</span>
+          <button class="btn-ghost">Cancel</button>
+          <!-- the Apply count reflects ONLY what is kept right now: 2 objective, judgment still undecided -->
+          <button class="btn-apply"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Apply 2 changes</button>
+        </div>
+
+        <!-- the SECOND live region (MK-1): visually hidden, aria-live=polite, narrates the LAST single
+             action. It is empty at rest; a per-hunk accept/reject fills it. Shown here with its initial
+             focus announcement, which speaks kind + text, and for a judgment hunk appends the rationale. -->
+        <span class="sr-only" aria-live="polite">Hunk 1 of 4. Spelling. accomodate becomes accommodate. Kept.</span>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- =====================================================================================
+     STATE 2 · A JUDGMENT HUNK BEING REJECTED (light). The state model in action with the safety rank.
+     The author has worked the list: the two objective fixes stay kept, the grammar fix is now CONFIRMED
+     (its Accept tints positive, the warm "review this" edge clears because it is decided), and the
+     Oxford-comma normalization is REJECTED, they want that one list to read the way they wrote it.
+     The rejected hunk fades, its Reject segment tints, its proposed add strikes through to read "not
+     taken", and the tally re-counts to 3 kept / 0 to review / 1 skipping. The second live region speaks
+     the rejection WITH its rationale, so a screen-reader author hears why it was offered before they
+     hear it is gone. Apply re-counts to 3.
+     ===================================================================================== -->
+<div class="mock-label">State 2 &middot; A judgment hunk being rejected (light)</div>
+<div class="mock-note">The author worked the list. The two plain fixes stay. The grammar fix is now
+confirmed, so its warm "review this" edge clears and its Accept turns green. The comma rule is rejected:
+they want that one list to read as written, and a rejected change does not vanish, it sits crossed out so
+they can change their mind. The tally and the Apply count follow. The screen reader hears the rejection
+together with the reason it was offered.</div>
+<div class="anno graft">grafts shown here: the safety-ranked decided/undecided states (a confirmed
+judgment hunk loses its warm edge; an unconfirmed one keeps it), the per-change reject from the safety
+contract, the three-way tally re-count on the role=status region, and the second polite region narrating
+the single action with its rationale.</div>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="ground">
+    <div class="band">
+      <div class="bnd-cluster">
+        <button class="bnd-sq" aria-label="Open menu"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
+        <nav aria-label="Breadcrumb" class="crumb"><a>Posts</a><span class="crumb-sep">/</span><span class="crumb-here">Getting ready for spring</span></nav>
+      </div>
+      <div class="bnd-status">
+        <span class="badge-ghost">Edited</span>
+        <span class="savestate"><span class="dot"></span>Unsaved changes</span>
+      </div>
+      <div class="grow"></div>
+      <div class="bnd-cluster" style="gap:6px;">
+        <button class="bnd-btn"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M15 3v18"/></svg>Details</button>
+        <div class="bnd-div" aria-hidden="true"></div>
+        <button class="btn btn-outline">Publish</button>
+        <button class="btn btn-primary">Save</button>
+      </div>
+    </div>
+    <main class="page">
+      <div class="col behind">
+        <div class="ttl-wrap"><div class="ttl">Getting ready for spring</div></div>
+        <div class="card-ed" style="height: 130px;"></div>
+      </div>
+    </main>
+
+    <div class="scrim">
+      <div class="review-box" role="dialog" aria-modal="true" aria-labelledby="rv-title-2">
+        <div class="rv-head">
+          <span class="rv-badge"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.94 14.34 12 21l2.06-6.66L21 12l-6.94-2.34L12 3 9.94 9.66 3 12z"/></svg></span>
+          <div class="rv-htext">
+            <div class="rv-title" id="rv-title-2">Review tidy</div>
+            <div class="rv-sub"><b>4 changes</b> to <b>Getting ready for spring</b><span class="dotsep" aria-hidden="true">&middot;</span><span class="pill model">Sonnet</span></div>
+          </div>
+          <span class="rv-kbd" aria-hidden="true"><kbd>j</kbd><kbd>k</kbd> move<span class="dotsep">&middot;</span><kbd>a</kbd><kbd>r</kbd> accept / reject</span>
+          <div class="rv-viewtoggle" role="group" aria-label="Diff layout">
+            <button aria-pressed="true"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M3 12h18"/><path d="M3 18h18"/></svg>Unified</button>
+            <button aria-pressed="false"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="7" height="16" rx="1"/><rect x="14" y="4" width="7" height="16" rx="1"/></svg>Split</button>
+          </div>
+          <button class="rv-x" aria-label="Cancel review"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+        </div>
+
+        <div class="rv-bulk">
+          <span class="rv-tally" role="status" aria-label="3 kept, 0 to review, 1 skipping">
+            <span class="pip kept"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span class="num">3</span> kept</span>
+            <span class="dotsep" aria-hidden="true">&middot;</span>
+            <span class="pip review"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.7 3.86a2 2 0 0 0-3.42 0z"/></svg><span class="num">0</span> to review</span>
+            <span class="dotsep" aria-hidden="true">&middot;</span>
+            <span class="pip rej"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg><span class="num">1</span> skipping</span>
+          </span>
+          <span class="grow"></span>
+          <button class="bulk-btn accept"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Accept fixes</button>
+          <button class="bulk-btn reject"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>Reject all</button>
+        </div>
+
+        <div class="rv-body">
+
+          <!-- HUNK 1 · SPELLING · OBJECTIVE, kept (unchanged from state 1, context rows trimmed for length) -->
+          <div class="hunk objective">
+            <div class="hunk-head">
+              <span class="hunk-cat typo"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v4"/><path d="M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg>Spelling</span>
+              <button class="hunk-lineref" title="Show this line in the editor"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>line 9</button>
+              <span class="grow"></span>
+              <span class="hunk-acts" role="group" aria-label="Accept or reject this fix">
+                <button class="accept" aria-pressed="true"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Accept</button>
+                <button class="reject" aria-pressed="false"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>Reject</button>
+              </span>
+            </div>
+            <div class="diff">
+              <div class="drow del"><span class="dgut" aria-hidden="true">&minus;</span><span class="dtext">We groom early so the lake loop can <span class="rdel">accomodate</span> the weekend crowd.</span></div>
+              <div class="drow add"><span class="dgut" aria-hidden="true">+</span><span class="dtext">We groom early so the lake loop can <span class="radd">accommodate</span> the weekend crowd.</span></div>
+            </div>
+          </div>
+
+          <!-- HUNK 2 · GRAMMAR · JUDGMENT, now CONFIRMED-ACCEPTED: the warm edge clears (it is decided),
+               the Accept tints positive. The because-line stays as the record of why. -->
+          <div class="hunk">
+            <div class="hunk-head">
+              <span class="hunk-cat grammar"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>Grammar</span>
+              <button class="hunk-lineref" title="Show this line in the editor"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>line 13</button>
+              <span class="grow"></span>
+              <span class="hunk-acts" role="group" aria-label="Accept or reject this change">
+                <button class="accept" aria-pressed="true"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Accept</button>
+                <button class="reject" aria-pressed="false"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>Reject</button>
+              </span>
+            </div>
+            <div class="diff">
+              <div class="drow del"><span class="dgut" aria-hidden="true">&minus;</span><span class="dtext">The crew <span class="rdel">lay</span> the classic tracks before dawn, and they drift by afternoon.</span></div>
+              <div class="drow add"><span class="dgut" aria-hidden="true">+</span><span class="dtext">The crew <span class="radd">lays</span> the classic tracks before dawn, and they drift by afternoon.</span></div>
+            </div>
+            <div class="because"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg><span>The subject <b>crew</b> is singular here, so the verb takes <b>lays</b>.</span></div>
+          </div>
+
+          <!-- HUNK 3 · COMMA STYLE · REJECTED: faded, Reject tinted, the proposed add struck through.
+               The because-line stays so the author still sees what was offered and why. -->
+          <div class="hunk judgment rejected">
+            <div class="hunk-head">
+              <span class="hunk-cat consistency"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56"/><path d="m9 11 3 3L22 4"/></svg>Comma style</span>
+              <button class="hunk-lineref" title="Show this line in the editor"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>line 18</button>
+              <span class="grow"></span>
+              <span class="hunk-acts" role="group" aria-label="Accept or reject this change">
+                <button class="accept" aria-pressed="false"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Accept</button>
+                <button class="reject" aria-pressed="true"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>Reject</button>
+              </span>
+            </div>
+            <div class="diff">
+              <div class="drow del"><span class="dgut" aria-hidden="true">&minus;</span><span class="dtext">Bring skins, a warm layer<span class="rdel"> </span>and a thermos.</span></div>
+              <div class="drow add"><span class="dgut" aria-hidden="true">+</span><span class="dtext">Bring skins, a warm layer<span class="radd">,</span> and a thermos.</span></div>
+            </div>
+            <div class="because"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg><span>Your site is set to <b>use the Oxford comma</b>. You write it that way in <b>4 of 5</b> lists in this post.</span></div>
+          </div>
+
+          <!-- HUNK 4 · DOUBLED WORD · OBJECTIVE, kept -->
+          <div class="hunk objective">
+            <div class="hunk-head">
+              <span class="hunk-cat space"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h18"/><path d="m3 6 3 0"/><path d="m18 6 3 0"/><path d="m3 18 3 0"/><path d="m18 18 3 0"/></svg>Doubled word</span>
+              <button class="hunk-lineref" title="Show this line in the editor"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>line 22</button>
+              <span class="grow"></span>
+              <span class="hunk-acts" role="group" aria-label="Accept or reject this fix">
+                <button class="accept" aria-pressed="true"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Accept</button>
+                <button class="reject" aria-pressed="false"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>Reject</button>
+              </span>
+            </div>
+            <div class="diff">
+              <div class="drow del"><span class="dgut" aria-hidden="true">&minus;</span><span class="dtext">Bring a windproof layer for <span class="rdel">the the</span> drive home.</span></div>
+              <div class="drow add"><span class="dgut" aria-hidden="true">+</span><span class="dtext">Bring a windproof layer for <span class="radd">the</span> drive home.</span></div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="rv-foot">
+          <span class="rv-foot-note"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Applies to the editor only. Your next Save commits it like any edit, and Undo takes the whole tidy back.</span>
+          <button class="btn-ghost">Cancel</button>
+          <button class="btn-apply"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Apply 3 changes</button>
+        </div>
+
+        <!-- the second live region narrates the rejection WITH its rationale (graft 3 / MK-1) -->
+        <span class="sr-only" aria-live="polite">Hunk 3, comma style, rejected. It was offered because your site uses the Oxford comma and you write it that way in four of five lists.</span>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- =====================================================================================
+     STATE 3 · THE WORKING STATE and THE NOTHING-TO-FIX STATE (light). Two short states that round out
+     the flow, both the same dialog shell so the step-in never flickers between surfaces.
+       - LEFT, WORKING (graft 5 / MK-5): tidy briefly owns the buffer while Claude reads the post. The
+         surface opens already in place with a calm wait. Cancel is wired to a REAL abort (the
+         AbortController behind the Cancel button plus the bounded fetch timeout, TD-7), so a slow or
+         hung call never strands the editor. The spinner is role="status"; reduced motion slows it.
+       - RIGHT, NOTHING TO FIX (graft 5): the rewrite came back with nothing to change, so the surface
+         says so plainly instead of opening an empty diff. A no-op NEVER opens an empty review. Focus
+         lands on "Back to editing".
+     ===================================================================================== -->
+<div class="mock-label">State 3 &middot; Working (cancelable), and nothing to fix (light)</div>
+<div class="mock-note">Two edge states. Left: tidy is running, so the surface opens in place with a calm
+wait, and Cancel actually stops the call. Right: nothing needed fixing, so tidy says so rather than
+showing an empty diff. The copy recruits you as the reader of the changes; it does not promise the output
+is safe to skip.</div>
+<div class="anno graft">grafts shown: the cancelable working state wired to a real abort (the
+<code>AbortController</code> plus a bounded timeout, TD-7), and the genuine "Nothing to fix" empty/clean
+state that never opens an empty diff (graft 5 / MK-5).</div>
+<div class="anno">a11y. The working state is a <code>role="status"</code> region, so the wait is announced
+once. On transition the result ("4 changes to review" or "Nothing to fix") lands in a live region and
+focus moves to the first hunk or to "Back to editing" (MK-5).</div>
+<div class="screen" style="display:flex; gap:0;"><div data-theme="cairn-admin" style="flex:1; border-right:1px solid #aaa;">
+  <div class="ground" style="min-height: 380px;">
+    <div class="scrim" style="padding-top: 40px;">
+      <div class="review-box" role="dialog" aria-modal="true" aria-labelledby="rv-title-3a" style="width: 31rem;">
+        <div class="rv-head">
+          <span class="rv-badge"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.94 14.34 12 21l2.06-6.66L21 12l-6.94-2.34L12 3 9.94 9.66 3 12z"/></svg></span>
+          <div class="rv-htext">
+            <div class="rv-title" id="rv-title-3a">Tidy is reading your post</div>
+          </div>
+          <button class="rv-x" aria-label="Cancel and stop tidy"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+        </div>
+        <div class="rv-working" role="status">
+          <span class="ring"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg></span>
+          <div class="wt">Looking for things to fix</div>
+          <div class="ws">It checks spelling, grammar, and the styles your site has turned on. You will see every change as a diff, and you decide what lands.</div>
+        </div>
+        <div class="rv-foot">
+          <span class="rv-foot-note"></span>
+          <!-- Cancel is wired to a real abort (TD-7) -->
+          <button class="btn-ghost">Cancel</button>
+        </div>
+        <span class="sr-only" aria-live="polite">Tidy is reading your post.</span>
+      </div>
+    </div>
+  </div>
+</div>
+<div data-theme="cairn-admin" style="flex:1;">
+  <div class="ground" style="min-height: 380px;">
+    <div class="scrim" style="padding-top: 40px;">
+      <div class="review-box" role="dialog" aria-modal="true" aria-labelledby="rv-title-3b" style="width: 31rem;">
+        <div class="rv-head">
+          <span class="rv-badge"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.94 14.34 12 21l2.06-6.66L21 12l-6.94-2.34L12 3 9.94 9.66 3 12z"/></svg></span>
+          <div class="rv-htext">
+            <div class="rv-title" id="rv-title-3b">Review tidy</div>
+          </div>
+          <button class="rv-x" aria-label="Close"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+        </div>
+        <div class="rv-clean" role="status">
+          <span class="ci"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <div class="ct">Nothing to fix</div>
+          <div class="cs">Tidy read the post and found no spelling, grammar, or style changes to make. Your draft is clean.</div>
+        </div>
+        <div class="rv-foot">
+          <span class="rv-foot-note"></span>
+          <button class="btn-apply muted">Back to editing</button>
+        </div>
+        <span class="sr-only" aria-live="polite">Nothing to fix. Tidy found no changes to make.</span>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- =====================================================================================
+     STATE 4 · THE DESK AFTER APPLY, WITH THE WHOLE-TIDY UNDO (light). Apply landed the kept hunks in
+     ONE transaction and one history entry, and returned to editing. The desk band now carries a quiet
+     session-scoped Undo (graft 6): "Tidy applied · Undo tidy". It sits in the save-state register, not
+     a loud banner, and it dismisses on the next edit. The accepted edits are visible in the manuscript
+     (accommodate, lays, the kept comma); the rejected comma-list reads as the author wrote it. This is
+     the safety net for an author who realizes after the fact that a change ate their voice: one move
+     back, no hand-reconstruction.
+     ===================================================================================== -->
+<div class="mock-label">State 4 &middot; Back at the desk, the whole-tidy Undo (light)</div>
+<div class="mock-note">After Apply the editor returns to the desk with the changes landed in one move. A
+quiet "Undo tidy" sits in the save strip, so if a change turns out to have crossed into your voice you
+take the whole tidy back at once. It is the same register as the save state, and it clears as soon as you
+type. The accepted edits show in the text; the change you rejected reads as you left it.</div>
+<div class="anno graft">graft 6: the surfaced whole-tidy Undo. Apply is one batched
+<code>view.dispatch({changes})</code> and one history entry, so a single session-scoped Undo reverts the
+entire applied tidy. The graft is to NAME it in the desk, not to invent new machinery; ordinary editor
+Undo already covers it.</div>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="ground" style="min-height: 60vh;">
+    <div class="band">
+      <div class="bnd-cluster">
+        <button class="bnd-sq" aria-label="Open menu"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
+        <nav aria-label="Breadcrumb" class="crumb"><a>Posts</a><span class="crumb-sep">/</span><span class="crumb-here">Getting ready for spring</span></nav>
+      </div>
+      <div class="bnd-status">
+        <span class="badge-ghost">Edited</span>
+        <span class="savestate"><span class="dot"></span>Unsaved changes</span>
+        <!-- THE WHOLE-TIDY UNDO chip (graft 6) -->
+        <span class="undo-chip">
+          <span class="ok"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Tidy applied</span>
+          <button class="undo-btn"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>Undo tidy</button>
+        </span>
+      </div>
+      <div class="grow"></div>
+      <div class="bnd-cluster" style="gap:6px;">
+        <button class="bnd-btn"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M15 3v18"/></svg>Details</button>
+        <div class="bnd-div" aria-hidden="true"></div>
+        <button class="btn btn-outline">Publish</button>
+        <button class="btn btn-primary">Save</button>
+      </div>
+    </div>
+    <main class="page">
+      <div class="col">
+        <div class="ttl-wrap"><div class="ttl">Getting ready for spring</div></div>
+        <div class="card-ed">
+          <div class="ms" style="padding: 1.5rem 1.25rem 1.75rem; min-height:0;">
+            <div class="ln">We groom early so the lake loop can accommodate the weekend crowd.</div>
+            <div class="ln gap"></div>
+            <div class="ln">The crew lays the classic tracks before dawn, and they drift by afternoon.</div>
+            <div class="ln gap"></div>
+            <div class="ln">Bring skins, a warm layer and a thermos.</div>
+            <div class="ln gap"></div>
+            <div class="ln">Bring a windproof layer for the drive home.</div>
+          </div>
+          <div class="ftr">
+            <span style="display:inline-flex; align-items:center; gap:14px;">
+              <span>166 words</span>
+              <span class="ftr-spell"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 11 3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>0 to check</span>
+            </span>
+            <span class="ftr-right">
+              <span class="seg" role="group" aria-label="Editing surface">
+                <button aria-pressed="true"><svg class="chk" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Prose</button><button aria-pressed="false">Markup</button>
+              </span>
+              <button class="ftr-link">Markdown help</button>
+            </span>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div></div>
+
+<!-- =====================================================================================
+     STATE 5 · THE REVIEW SURFACE THROUGH THE DARK TOKENS. The same mixed-hunk hero, nothing redrawn:
+     every color resolves from the dark theme root. The derived diff-add / diff-del washes are
+     color-mix over the dark positive-ink / error-ink, so the add/delete contrast holds without a second
+     palette. The judgment hunks' warm left edge and because-line resolve from the dark --cairn-warning-ink,
+     and the spellcheck ink (not shown here, it lives on the desk) is the same warning ink. The safety
+     rank, the context rows, the because-lines, and the three-way tally all carry over unchanged.
+     ===================================================================================== -->
+<div class="mock-label">State 5 &middot; The review surface, dark</div>
+<div class="mock-note">The same review through the dark tokens. The diff washes are color-mixed over the
+dark positive and error inks, and the warm "review this" edge and the because-lines resolve from the dark
+warning ink, so every cue holds its contrast without a second palette.</div>
+<div class="screen"><div data-theme="cairn-admin-dark">
+  <div class="ground">
+    <div class="band">
+      <div class="bnd-cluster">
+        <button class="bnd-sq" aria-label="Open menu"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
+        <nav aria-label="Breadcrumb" class="crumb"><a>Posts</a><span class="crumb-sep">/</span><span class="crumb-here">Getting ready for spring</span></nav>
+      </div>
+      <div class="bnd-status">
+        <span class="badge-ghost">Edited</span>
+        <span class="savestate"><span class="dot"></span>Unsaved changes</span>
+      </div>
+      <div class="grow"></div>
+      <div class="bnd-cluster" style="gap:6px;">
+        <button class="btn btn-outline">Publish</button>
+        <button class="btn btn-primary">Save</button>
+      </div>
+    </div>
+    <main class="page">
+      <div class="col behind">
+        <div class="ttl-wrap"><div class="ttl">Getting ready for spring</div></div>
+        <div class="card-ed" style="height: 120px;"></div>
+      </div>
+    </main>
+
+    <div class="scrim">
+      <div class="review-box" role="dialog" aria-modal="true" aria-labelledby="rv-title-5">
+        <div class="rv-head">
+          <span class="rv-badge"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.94 14.34 12 21l2.06-6.66L21 12l-6.94-2.34L12 3 9.94 9.66 3 12z"/></svg></span>
+          <div class="rv-htext">
+            <div class="rv-title" id="rv-title-5">Review tidy</div>
+            <div class="rv-sub"><b>4 changes</b> to <b>Getting ready for spring</b><span class="dotsep" aria-hidden="true">&middot;</span><span class="pill model">Sonnet</span></div>
+          </div>
+          <span class="rv-kbd" aria-hidden="true"><kbd>j</kbd><kbd>k</kbd> move<span class="dotsep">&middot;</span><kbd>a</kbd><kbd>r</kbd> accept / reject</span>
+          <div class="rv-viewtoggle" role="group" aria-label="Diff layout">
+            <button aria-pressed="true"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M3 12h18"/><path d="M3 18h18"/></svg>Unified</button>
+            <button aria-pressed="false"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="7" height="16" rx="1"/><rect x="14" y="4" width="7" height="16" rx="1"/></svg>Split</button>
+          </div>
+          <button class="rv-x" aria-label="Cancel review"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+        </div>
+
+        <div class="rv-bulk">
+          <span class="rv-tally" role="status" aria-label="2 fixes kept, 2 to review, 0 skipping">
+            <span class="pip kept"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span class="num">2</span> kept</span>
+            <span class="dotsep" aria-hidden="true">&middot;</span>
+            <span class="pip review"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.7 3.86a2 2 0 0 0-3.42 0z"/></svg><span class="num">2</span> to review</span>
+            <span class="dotsep" aria-hidden="true">&middot;</span>
+            <span class="pip rej"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg><span class="num">0</span> skipping</span>
+          </span>
+          <span class="grow"></span>
+          <button class="bulk-btn accept"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Accept fixes</button>
+          <button class="bulk-btn reject"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>Reject all</button>
+        </div>
+
+        <div class="rv-body">
+          <!-- HUNK 1 · SPELLING · OBJECTIVE -->
+          <div class="hunk objective">
+            <div class="hunk-head">
+              <span class="hunk-cat typo"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v4"/><path d="M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg>Spelling</span>
+              <button class="hunk-lineref" title="Show this line in the editor"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>line 9</button>
+              <span class="grow"></span>
+              <span class="hunk-acts" role="group" aria-label="Accept or reject this fix">
+                <button class="accept" aria-pressed="true"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Accept</button>
+                <button class="reject" aria-pressed="false"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>Reject</button>
+              </span>
+            </div>
+            <div class="diff">
+              <div class="drow ctx"><span class="dgut" aria-hidden="true">&nbsp;</span><span class="dtext">The first melt is here, and the trail crew is already out.</span></div>
+              <div class="drow del"><span class="dgut" aria-hidden="true">&minus;</span><span class="dtext">We groom early so the lake loop can <span class="rdel">accomodate</span> the weekend crowd.</span></div>
+              <div class="drow add"><span class="dgut" aria-hidden="true">+</span><span class="dtext">We groom early so the lake loop can <span class="radd">accommodate</span> the weekend crowd.</span></div>
+              <div class="drow ctx"><span class="dgut" aria-hidden="true">&nbsp;</span><span class="dtext">Wax for the temperature you actually get.</span></div>
+            </div>
+          </div>
+
+          <!-- HUNK 2 · GRAMMAR · JUDGMENT, undecided, because-line -->
+          <div class="hunk judgment undecided">
+            <div class="hunk-head">
+              <span class="hunk-cat grammar"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>Grammar</span>
+              <span class="hunk-flag"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>Review this</span>
+              <button class="hunk-lineref" title="Show this line in the editor"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>line 13</button>
+              <span class="grow"></span>
+              <span class="hunk-acts" role="group" aria-label="Accept or reject this change">
+                <button class="accept" aria-pressed="false"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Accept</button>
+                <button class="reject" aria-pressed="false"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>Reject</button>
+              </span>
+            </div>
+            <div class="diff">
+              <div class="drow ctx"><span class="dgut" aria-hidden="true">&nbsp;</span><span class="dtext">Conditions hold until the sun comes around the ridge.</span></div>
+              <div class="drow del"><span class="dgut" aria-hidden="true">&minus;</span><span class="dtext">The crew <span class="rdel">lay</span> the classic tracks before dawn, and they drift by afternoon.</span></div>
+              <div class="drow add"><span class="dgut" aria-hidden="true">+</span><span class="dtext">The crew <span class="radd">lays</span> the classic tracks before dawn, and they drift by afternoon.</span></div>
+              <div class="drow ctx"><span class="dgut" aria-hidden="true">&nbsp;</span><span class="dtext">Wax for the temperature you actually get.</span></div>
+            </div>
+            <div class="because"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg><span>The subject <b>crew</b> is singular here, so the verb takes <b>lays</b>. This one reworded your sentence, so give it a look.</span></div>
+          </div>
+
+          <!-- HUNK 3 · COMMA STYLE · JUDGMENT, undecided, because-line names the owner setting -->
+          <div class="hunk judgment undecided">
+            <div class="hunk-head">
+              <span class="hunk-cat consistency"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56"/><path d="m9 11 3 3L22 4"/></svg>Comma style</span>
+              <span class="hunk-flag"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>Review this</span>
+              <button class="hunk-lineref" title="Show this line in the editor"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>line 18</button>
+              <span class="grow"></span>
+              <span class="hunk-acts" role="group" aria-label="Accept or reject this change">
+                <button class="accept" aria-pressed="false"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Accept</button>
+                <button class="reject" aria-pressed="false"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>Reject</button>
+              </span>
+            </div>
+            <div class="diff">
+              <div class="drow ctx"><span class="dgut" aria-hidden="true">&nbsp;</span><span class="dtext">Pack for the drive as much as the trail.</span></div>
+              <div class="drow del"><span class="dgut" aria-hidden="true">&minus;</span><span class="dtext">Bring skins, a warm layer<span class="rdel"> </span>and a thermos.</span></div>
+              <div class="drow add"><span class="dgut" aria-hidden="true">+</span><span class="dtext">Bring skins, a warm layer<span class="radd">,</span> and a thermos.</span></div>
+              <div class="drow ctx"><span class="dgut" aria-hidden="true">&nbsp;</span><span class="dtext">The lot fills by nine on a clear Saturday.</span></div>
+            </div>
+            <div class="because"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg><span>Your site is set to <b>use the Oxford comma</b>. You already write it that way in <b>4 of 5</b> lists in this post, so this matches the rest.</span></div>
+          </div>
+
+          <!-- HUNK 4 · DOUBLED WORD · OBJECTIVE -->
+          <div class="hunk objective">
+            <div class="hunk-head">
+              <span class="hunk-cat space"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h18"/><path d="m3 6 3 0"/><path d="m18 6 3 0"/><path d="m3 18 3 0"/><path d="m18 18 3 0"/></svg>Doubled word</span>
+              <button class="hunk-lineref" title="Show this line in the editor"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>line 22</button>
+              <span class="grow"></span>
+              <span class="hunk-acts" role="group" aria-label="Accept or reject this fix">
+                <button class="accept" aria-pressed="true"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Accept</button>
+                <button class="reject" aria-pressed="false"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>Reject</button>
+              </span>
+            </div>
+            <div class="diff">
+              <div class="drow ctx"><span class="dgut" aria-hidden="true">&nbsp;</span><span class="dtext">The lot fills by nine on a clear Saturday.</span></div>
+              <div class="drow del"><span class="dgut" aria-hidden="true">&minus;</span><span class="dtext">Bring a windproof layer for <span class="rdel">the the</span> drive home.</span></div>
+              <div class="drow add"><span class="dgut" aria-hidden="true">+</span><span class="dtext">Bring a windproof layer for <span class="radd">the</span> drive home.</span></div>
+              <div class="drow ctx"><span class="dgut" aria-hidden="true">&nbsp;</span><span class="dtext">See you out there.</span></div>
+            </div>
+          </div>
+
+          <div class="because" style="border: 1px dashed var(--cairn-card-border); border-radius: .6rem; background: var(--cairn-code-chip); margin-top: 2px;"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--color-positive-ink);"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span style="color: var(--color-subtle);">Left as written: your regional spellings (<b>colour</b>, <b>organise</b>) follow your site's English. Tidy never changes them.</span></div>
+        </div>
+
+        <div class="rv-foot">
+          <span class="rv-foot-note"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Applies to the editor only. Your next Save commits it like any edit, and Undo takes the whole tidy back.</span>
+          <button class="btn-ghost">Cancel</button>
+          <button class="btn-apply"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Apply 2 changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- =====================================================================================
+     The keyboard step-through (graft 3), as a working demonstration on the hero state (State 1).
+     This is the ONLY script in the mockup; it stands in for the Svelte hunk-list key handlers, not a
+     shipped implementation. It wires, on the State 1 dialog only:
+       j / n  -> focus the next hunk        k / p -> focus the previous hunk
+       a      -> accept the focused hunk     r     -> reject the focused hunk
+       A      -> accept all OBJECTIVE hunks (judgment hunks are NOT swept; open decision 2)
+       Escape -> the native <dialog> gives this for free in the real build; here it is a no-op
+     Each move and each accept/reject writes the second polite live region with the focused hunk's
+     kind + text, and for a judgment hunk appends the rationale (the because-line text). The tally is
+     the role=status region and is rewritten only on the bulk action A. This proves the announcement
+     contract; production owns the real focus management inside the native dialog's trap.
+     ===================================================================================== -->
+<script>
+  (function () {
+    var dialog = document.getElementById('rv-title-1');
+    if (!dialog) return;
+    var box = dialog.closest('.review-box');
+    var hunks = Array.prototype.slice.call(box.querySelectorAll('.hunk'));
+    var live = box.querySelector('[aria-live="polite"]');
+    var tally = box.querySelector('.rv-tally');
+    var focusedIndex = 0;
+
+    function categoryOf(h) {
+      var cat = h.querySelector('.hunk-cat');
+      return cat ? cat.textContent.trim() : 'change';
+    }
+    function isJudgment(h) { return h.classList.contains('judgment'); }
+    function changeText(h) {
+      var del = h.querySelector('.rdel');
+      var add = h.querySelector('.radd');
+      var from = del ? del.textContent.trim() : '';
+      var to = add ? add.textContent.trim() : '';
+      if (from && to) return from + ' becomes ' + to;
+      if (to) return 'add ' + to;
+      return 'a change';
+    }
+    function rationaleOf(h) {
+      var b = h.querySelector('.because');
+      return b ? b.textContent.replace(/\s+/g, ' ').trim() : '';
+    }
+    function announce(prefix, h) {
+      if (!live) return;
+      var msg = prefix + ' ' + categoryOf(h) + '. ' + changeText(h) + '.';
+      if (isJudgment(h)) {
+        var why = rationaleOf(h);
+        if (why) msg += ' ' + why;
+      }
+      live.textContent = msg;
+    }
+    function setFocus(i) {
+      if (i < 0) i = 0;
+      if (i > hunks.length - 1) i = hunks.length - 1;
+      hunks.forEach(function (h) { h.classList.remove('focused'); });
+      focusedIndex = i;
+      var h = hunks[i];
+      h.classList.add('focused');
+      h.scrollIntoView({ block: 'nearest' });
+      announce('Hunk ' + (i + 1) + ' of ' + hunks.length + '.', h);
+    }
+    function decide(h, accept) {
+      var acc = h.querySelector('.hunk-acts .accept');
+      var rej = h.querySelector('.hunk-acts .reject');
+      if (!acc || !rej) return;
+      acc.setAttribute('aria-pressed', accept ? 'true' : 'false');
+      rej.setAttribute('aria-pressed', accept ? 'false' : 'true');
+      h.classList.remove('undecided');
+      h.classList.toggle('rejected', !accept);
+      announce('Hunk ' + (hunks.indexOf(h) + 1) + ', ' + (accept ? 'kept.' : 'rejected.'), h);
+    }
+
+    box.addEventListener('keydown', function (e) {
+      if (e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
+      var k = e.key;
+      if (k === 'j' || k === 'n') { e.preventDefault(); setFocus(focusedIndex + 1); }
+      else if (k === 'k' || k === 'p') { e.preventDefault(); setFocus(focusedIndex - 1); }
+      else if (k === 'a') { e.preventDefault(); decide(hunks[focusedIndex], true); }
+      else if (k === 'r') { e.preventDefault(); decide(hunks[focusedIndex], false); }
+      else if (k === 'A') {
+        e.preventDefault();
+        var n = 0;
+        hunks.forEach(function (h) { if (!isJudgment(h)) { decide(h, true); n++; } });
+        if (tally) tally.setAttribute('aria-label', n + ' fixes kept. Judgment changes still need your review.');
+        if (live) live.textContent = 'Accepted ' + n + ' fixes. The changes flagged to review still need a decision.';
+      }
+    });
+
+    box.setAttribute('tabindex', '-1');
+  })();
+</script>
+
+</body>
+</html>

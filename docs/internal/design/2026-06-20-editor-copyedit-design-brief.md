@@ -156,3 +156,50 @@ at request time. No live rebasing, which removes the hardest problem those teams
   edits rather than a rewritten string), versus a plain rewrite plus a computed diff (poplar's model).
 - The spellcheck correction surface and the personal-dictionary storage.
 - The opt-in and settings surface, and where the API key and the on/off toggles live.
+
+## Lead decisions (resolved 2026-06-20, after the critique)
+
+These resolve the open questions and supersede any conflicting wording above.
+
+1. **Style normalization is config-driven, not model-guessed (this supersedes the harmonize-to-author
+   part of decision 3).** The voice critic showed that telling the model to harmonize to "the author's
+   prevailing habit" produces voice-destroying edits: it would rewrite "fifteen centimetres" to "15 cm",
+   dropping both a number-style choice and a British spelling. The fix follows poplar's `tidytext` model.
+   Style choices are explicit per-site config toggles, and the system prompt is built from only the
+   enabled ones (poplar's `BuildPrompt` emits a rule line only for an enabled rule). The choices that
+   become config, each defaulting to leave-alone: number and unit style ("fifteen" versus "15", "15
+   centimeters" versus "15 cm"), time format ("5pm" versus "5 PM", poplar's `TimeFormat`), Oxford comma,
+   em-dash spacing, ellipsis style. With nothing configured, tidy leaves all of these exactly as the
+   author wrote them. cairn never guesses a style preference; the site owner declares it, and an
+   undeclared style is the author's choice. Regional spelling (colour, organise) is never normalized by
+   tidy regardless of config; it belongs to the author and the spellcheck dictionary.
+2. **What tidy fixes by default** narrows to the objective and the declared: spelling, typos, doubled
+   words, stray whitespace, plainly wrong punctuation, and grammar errors that are unambiguously wrong
+   (subject-verb and pronoun agreement, a homophone only where the existing form is grammatically wrong,
+   a comma splice or run-on fixed with the lightest touch). Everything stylistic is config-gated and off
+   by default.
+3. **The accept posture follows from decision 1.** Because the model no longer makes un-asked-for
+   voice-touching changes (style moved to config), a uniform Accept-all is acceptable: every proposed
+   change is either an objective fix or a normalization the owner declared, both of which the author
+   wants. The diff-review, per-change reject, and a whole-tidy Undo stay the safety net for any reworded
+   grammar fix that still feels off. If a later pass wants reworded-grammar fixes to need an explicit
+   confirm, that is a small addition, not a redesign.
+4. **Model default: Sonnet** (`claude-sonnet-4-6`), with Haiku (`claude-haiku-4-5`) as the per-site
+   cheaper option. The error-versus-choice judgment is the whole point of the feature.
+5. **Direction: the focused step-in review mode**, the unanimous critic pick (8/8/8), with the synthesis
+   grafts (the mandatory local because-line, the safety-ranked category treatment, keyboard step-through,
+   context rows plus scroll-to-locus, the two-region live model, the genuine empty/working states, and a
+   surfaced whole-tidy Undo).
+6. **Taken as recommended** (the critics did not contest these): plain rewrite with locally-computed
+   categories and because-lines, never a structured-edit model contract; the git-committed per-site
+   dictionary (`content/.cairn/dictionary.txt`) with SHA-guarded commit-and-retry; the
+   wasm-and-dictionary delivery as a spike-gated go/no-go in `examples/showcase` with `nspell` as the
+   fallback. The selection-scope harmonize question (TD-5) is now moot, since harmonize-to-author is gone
+   entirely; a selection tidy simply does the objective fixes plus the configured normalizations.
+
+All the critics' critical and important engineering blockers (the missing `@codemirror/lint` dependency,
+the deterministic frontmatter-span helper in place of a Lezer node, the abort-and-timeout on the tidy
+call, the length-aware divergence bound, the single spellcheck underline token, the first-run
+key-absent settings state) carry into the revised technical design and the rev.2 mockup. The
+consistency-clause rewrite in the system prompt is replaced wholesale by the config-driven rule emission
+in decision 1.

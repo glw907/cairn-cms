@@ -11,9 +11,29 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-19, latest): Pass C (bulk delete + orphan collection) COMPLETE on `feat/media-pass-c` as `0.59.0`; HELD for Geoff's call on merge, release, push
+## Immediate next action (2026-06-20, latest): `0.59.0` SHIPPED (merged, released, npm `latest`); both sites cut over and green on `feat/media-cutover`, HELD for the deploy + the live admin smoke
 
-**Pass C is COMPLETE** on a fresh worktree off `main` (`feat/media-pass-c`, worktree
+**`0.59.0` is SHIPPED.** `feat/media-pass-c` fast-forward merged to `main` (`34bb169`) and pushed; `gh
+release create v0.59.0` fired the OIDC publish workflow (success); `npm view @glw907/cairn-cms version` is
+`0.59.0` (registry `latest`). The Pass C gate was re-verified first-hand before the merge (check 1011 0/0,
+docs/version green, test 2208 exit 0).
+
+**Both consumer sites are cut over to `0.59.0` and green, HELD for the deploy + the live admin smoke.**
+ecxc-ski (`0f27672` on `feat/media-cutover`): bumped `^0.57.0` -> `^0.59.0`, manifest regenerated, check
+530 0/0, build green, tests 62; the stale `ec-figure` component tests left by the 0.57.0 cutover were
+dropped (cairn reserves the figure directive name, no ecxc content uses `:::figure`). 907-life (`c1c3c45`
+on `feat/media-cutover`): bumped to `^0.59.0`, check 487 0/0, build green, tests 15, no collision. The
+bumps are additive across Pass A/B/C with no consumer code change.
+
+**HELD for Geoff (his call, the irreversible/prod finale):** push the `feat/media-cutover` branches and
+deploy each site, and run the LIVE ADMIN SMOKE. The smoke is the first real-Worker run of the whole media
+stack (six passes), and it includes the two destructive operations new in Pass C (bulk delete and the
+IRREVERSIBLE byte purge), so it should run against `wrangler dev` or a preview, mint a session via a D1
+row (no email loop), and exercise the destructive ops on THROWAWAY test assets only, before any prod
+deploy. The byte purge on a real R2 bucket is the single most irreversible action in the initiative; do it
+with a human watching.
+
+**Pass C was COMPLETE** on a fresh worktree off `main` (`feat/media-pass-c`, worktree
 `.claude/worktrees/media-pass-c`), 11 plan tasks plus one safety hardening, all test-first, the
 code-simplifier pass, a four-reviewer gate, and the docs arm. It adds the destructive media cluster to
 the admin Media Library: **multi-select bulk delete** (skip-and-report, usage-gated, reversible, one

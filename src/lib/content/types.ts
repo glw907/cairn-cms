@@ -390,6 +390,13 @@ export interface CairnRuntime {
   /** The live site's content styling for the preview frame; passed through from the adapter. */
   preview?: PreviewConfig;
   assets?: AssetConfig;
+  /** The editor's spellcheck dictionary file, resolved once at compose from the site config's
+   *  `spellcheck.dialect` (defaulting to US English). The edit load threads it onto EditData and the
+   *  editor resolves it to a real asset URL on the main thread, so the Worker receives the URL and
+   *  never reads config. Just the filename, e.g. "dictionary-en-us.txt". Optional on the runtime so a
+   *  hand-built runtime need not set it; composeRuntime always fills it, and the edit load defaults a
+   *  missing value to the US English dictionary. */
+  spellcheckDictionary?: string;
   /** Admin panels contributed by extensions (Mode 2). Empty until Plan 09 wires the dispatch route. */
   adminPanels?: AdminPanel[];
   /** Field types contributed by extensions (Mode 2). Empty until Plan 09 wires the form dispatch. */

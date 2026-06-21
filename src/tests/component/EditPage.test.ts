@@ -58,6 +58,7 @@ function postProps(over = {}) {
       publishedFlash: false,
       discardedFlash: false,
       preview: null,
+      spellcheckDictionary: 'dictionary-en-us.txt',
       siteName: 'Test Site',
       ...over,
     },

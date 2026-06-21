@@ -103,6 +103,7 @@ function editData(): AdminData {
       publishedFlash: false,
       discardedFlash: false,
       preview: null,
+      spellcheckDictionary: 'dictionary-en-us.txt',
     },
   };
 }

@@ -175,12 +175,18 @@ describe('MarkdownEditor', () => {
       .toContain('second');
   });
 
-  it('enables spell check and decorates directive machinery', async () => {
+  it('disables every native text-correction attribute and decorates directive machinery', async () => {
+    // Task 7 removed the `spellcheck: 'true'` override: the editor now falls back to CodeMirror's
+    // defaults (spellcheck "false", autocorrect/autocapitalize "off"), so native spellcheck never
+    // double-underlines beside the cairn lint source and a browser never silently rewrites a media:
+    // token, a directive name, or frontmatter.
     const doc = ['## Title', '**bold** text', ':::gallery', '::hr', 'see :icon[ski]{s=1} here'].join('\n');
     const screen = render(MarkdownEditor, { value: doc, name: 'body' });
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
     const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
-    expect(content.getAttribute('spellcheck')).toBe('true');
+    expect(content.getAttribute('spellcheck')).toBe('false');
+    expect(content.getAttribute('autocorrect')).toBe('off');
+    expect(content.getAttribute('autocapitalize')).toBe('off');
     await expect.poll(() => screen.container.querySelector('.cm-line.cm-cairn-directive-fence')).not.toBeNull();
     expect(screen.container.querySelector('.cm-line.cm-cairn-directive-leaf')).not.toBeNull();
     expect(screen.container.querySelector('.cm-cairn-directive-inline')).not.toBeNull();

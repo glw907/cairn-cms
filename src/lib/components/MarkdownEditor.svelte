@@ -84,6 +84,14 @@ through the adapter's render. Swapping the editor stays a one-file change.
     /** The surface posture. Prose is the writing instrument (72ch measure, larger type, looser
      *  leading); markup is the working surface (fills the card, denser). Prose by default. */
     surface?: 'prose' | 'markup';
+    /** Spellcheck and the objective-error layer: the markdown-aware lint underlines. On by default;
+     *  when off the lint compartment reconfigures to empty (the underlines vanish, the Worker stays
+     *  idle). The footer toggle drives this. */
+    spellcheck?: boolean;
+    /** The dialect-resolved dictionary filename, e.g. "dictionary-en-us.txt", from EditData. The
+     *  source resolves it to a real asset URL and hands it to the spellcheck Worker's init. Defaults to
+     *  US English. */
+    spellcheckDictionary?: string;
   }
 
   let {
@@ -107,6 +115,8 @@ through the adapter's render. Swapping the editor stays a one-file change.
     focusMode = false,
     typewriter = false,
     surface = 'prose',
+    spellcheck = true,
+    spellcheckDictionary = 'dictionary-en-us.txt',
   }: Props = $props();
 
   let host = $state<HTMLDivElement | null>(null);
@@ -127,6 +137,13 @@ through the adapter's render. Swapping the editor stays a one-file change.
   // module loads with the other dynamic editor modules in onMount.
   let mediaCompartment: import('@codemirror/state').Compartment | null = null;
   let mediaMod: typeof import('./editor-media.js') | null = null;
+  // The spellcheck lint source (and the objective-error layer it bundles) live in their own
+  // compartment, reconfigured to empty when the footer toggle turns spellcheck off. Both surfaces ride
+  // the one extension cairnSpellcheck returns, so one compartment gates both. The extension is built
+  // asynchronously (it lazy-imports CodeMirror and the lint modules), so it is held here once resolved
+  // and the on/off effect reconfigures against it.
+  let spellcheckCompartment: import('@codemirror/state').Compartment | null = null;
+  let spellcheckExt: import('@codemirror/state').Extension | null = null;
   // The posture themes, swapped through the surface compartment. Each owns its type step and
   // leading (the base theme deliberately sets neither on the content node, so the postures never
   // contest it on adoption order). Built in onMount beside the base theme.
@@ -139,12 +156,14 @@ through the adapter's render. Swapping the editor stays a one-file change.
     const markdownMod = await import('@codemirror/lang-markdown');
     const commandsMod = await import('@codemirror/commands');
     const languageMod = await import('@codemirror/language');
+    const lintMod = await import('@codemirror/lint');
     const autocompleteMod = await import('@codemirror/autocomplete');
     const highlightMod = await import('./editor-highlight.js');
     const modesMod = await import('./editor-modes.js');
     const foldingMod = await import('./editor-folding.js');
     const placeholderMod = await import('./editor-placeholder.js');
     mediaMod = await import('./editor-media.js');
+    const spellcheckMod = await import('./spellcheck.js');
 
     if (!host) return;
 
@@ -517,6 +536,16 @@ through the adapter's render. Swapping the editor stays a one-file change.
     typewriterCompartment = new stateMod.Compartment();
     surfaceCompartment = new stateMod.Compartment();
     mediaCompartment = new stateMod.Compartment();
+    spellcheckCompartment = new stateMod.Compartment();
+    // Build the spellcheck extension once: the lint source resolves the dictionary asset URL from the
+    // dialect-resolved filename and posts it to the Worker's init. The compartment starts with the
+    // extension only when spellcheck is on, so a site that opens with it off never spins up the Worker.
+    spellcheckExt = await spellcheckMod.cairnSpellcheck({
+      dictionaryFile: spellcheckDictionary,
+      // Hand the lint source the editor's own CodeMirror module instances so its extension lands on the
+      // same copies; a separate dynamic import can resolve to a different instance and break instanceof.
+      modules: { lint: lintMod, language: languageMod, view: viewMod },
+    });
 
     view = new EditorView({
       parent: host,
@@ -552,6 +581,9 @@ through the adapter's render. Swapping the editor stays a one-file change.
           // reconfigures it without rebuilding the editor. The chip and the atomic ranges read the
           // library; an empty library decorates nothing.
           mediaCompartment.of(mediaMod.cairnMediaDecorations(mediaLibrary)),
+          // The spellcheck and objective-error lint sources plus the locked amber underline theme, in
+          // their own compartment so the footer toggle gates both surfaces at once. Empty when off.
+          spellcheckCompartment.of(spellcheck ? spellcheckExt : []),
           // Paste and drop ingest: an image carried by either gesture is preventDefault'd and handed
           // to onImageIngest (the host opens the capture card with the bytes); a gesture carrying no
           // image falls through to CodeMirror's default. 2b is single-file per gesture (open risk 3),
@@ -581,7 +613,11 @@ through the adapter's render. Swapping the editor stays a one-file change.
               return true;
             },
           }),
-          EditorView.contentAttributes.of({ spellcheck: 'true', autocorrect: 'on', autocapitalize: 'sentences' }),
+          // No native text-correction override here (Task 7). The old `spellcheck: 'true'` is gone, so
+          // the content node falls back to CodeMirror's own defaults: spellcheck "false", autocorrect
+          // "off", autocapitalize "off". The cairn lint source replaces the browser's spellcheck
+          // (running both would double-underline), and autocorrect/autocapitalize stay off so a browser
+          // never silently rewrites a `media:` token, a directive name, or frontmatter.
           theme,
           surfaceCompartment.of(surface === 'prose' ? proseTheme : markupTheme),
           EditorView.updateListener.of((update) => {
@@ -652,6 +688,16 @@ through the adapter's render. Swapping the editor stays a one-file change.
     const library = mediaLibrary;
     if (!mounted || !view || !mediaMod || !mediaCompartment) return;
     view.dispatch({ effects: mediaCompartment.reconfigure(mediaMod.cairnMediaDecorations(library)) });
+  });
+
+  // Reconfigure the spellcheck compartment when the footer toggle flips. On restores the bundled
+  // extension (both lint sources and the theme); off swaps in an empty extension, so the underlines
+  // vanish and the Worker goes idle. Reading the prop tracks it; the guard waits for the mounted
+  // editor and the resolved extension.
+  $effect(() => {
+    const on = spellcheck;
+    if (!mounted || !view || !spellcheckCompartment || !spellcheckExt) return;
+    view.dispatch({ effects: spellcheckCompartment.reconfigure(on ? spellcheckExt : []) });
   });
 
   // The last value handed to onComponentAtCaret, so the reporter fires only on a change. The

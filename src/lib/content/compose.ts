@@ -6,7 +6,7 @@
 import type { AdminPanel, CairnAdapter, CairnExtension, CairnRuntime, ConceptConfig, FieldTypeDef } from './types.js';
 import { resolveConcepts } from './concepts.js';
 import { normalizeAssets } from '../media/config.js';
-import type { SiteConfig } from '../nav/site-config.js';
+import { dictionaryFileForDialect, type SiteConfig } from '../nav/site-config.js';
 
 /** The input to {@link composeRuntime}. `siteConfig` is required so the per-concept URL policy is
  *  always derived from one source and can never be silently dropped. `extensions` fold in after the
@@ -49,6 +49,10 @@ export function composeRuntime({ adapter, siteConfig, extensions = [] }: Compose
     assets: adapter.assets,
     resolvedAssets: normalizeAssets(adapter.assets),
     mediaManifestPath: adapter.mediaManifestPath ?? 'src/content/.cairn/media.json',
+    // The spellcheck dictionary is resolved once here from the site config's dialect (default US),
+    // so the runtime and the editor never re-derive it. The site config is the one home for the
+    // dialect; the editor resolves this filename to a real asset URL on the main thread.
+    spellcheckDictionary: dictionaryFileForDialect(siteConfig.spellcheck?.dialect),
     adminPanels,
     fieldTypes,
   };

@@ -17,6 +17,7 @@ import { cachedInstallationToken } from '../github/signing.js';
 import { emptyManifest, manifestEntryFromFile, parseManifest, serializeManifest, upsertEntry, removeEntry, inboundLinks, type Manifest, type LinkTarget, type InboundLink } from '../content/manifest.js';
 import { isConflict } from '../github/types.js';
 import { log } from '../log/index.js';
+import { dictionaryFileForDialect } from '../nav/site-config.js';
 import { issueCsrfToken, validateCsrfHeader } from './csrf.js';
 import { requireSession } from './guard.js';
 import { sniffMediaType, isDeniedUpload, extForMediaType } from '../media/sniff.js';
@@ -142,6 +143,11 @@ export interface EditData {
    *  when one exists, applied over the top-level values); null when the site sets none, which
    *  leaves the frame rendering unstyled markup behind a hint. */
   preview: ResolvedPreview | null;
+  /** The spellcheck dictionary file for the site's configured dialect (default US English), resolved
+   *  once at compose. The editor resolves it to a real asset URL on the main thread and hands that URL
+   *  to the spellcheck Worker's `init`, the same way `mediaLibrary` is threaded in. Just the filename,
+   *  e.g. "dictionary-en-us.txt". */
+  spellcheckDictionary: string;
 }
 
 /** One asset's where-used overlay, kept separate from MediaLibraryEntry so the picker's shared
@@ -768,6 +774,9 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       publishedFlash: event.url.searchParams.get('published') === '1',
       discardedFlash: event.url.searchParams.get('discarded') === '1',
       preview: resolvePreview(runtime.preview, concept.id),
+      // composeRuntime always resolves this from the site config's dialect; default a hand-built
+      // runtime that omits it to the US English dictionary so the editor always has a real filename.
+      spellcheckDictionary: runtime.spellcheckDictionary ?? dictionaryFileForDialect(undefined),
     };
   }
 

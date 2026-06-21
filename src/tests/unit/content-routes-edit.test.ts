@@ -111,6 +111,22 @@ describe('editLoad', () => {
     expect(data.published).toBe(true);
   });
 
+  it('defaults the spellcheck dictionary to US English when the runtime omits it', async () => {
+    editFetch('---\ntitle: Hello\n---\nThe body.');
+    const routes = createContentRoutes(runtime(), deps);
+    const data = await routes.editLoad(editEvent('2026-05-hello') as never);
+    expect(data.spellcheckDictionary).toBe('dictionary-en-us.txt');
+  });
+
+  it('threads the runtime spellcheck dictionary onto the edit data', async () => {
+    editFetch('---\ntitle: Hello\n---\nThe body.');
+    // composeRuntime resolves this from the site config's dialect; the load hands it straight through.
+    const withDialect = { ...runtime(), spellcheckDictionary: 'dictionary-en-gb.txt' };
+    const routes = createContentRoutes(withDialect, deps);
+    const data = await routes.editLoad(editEvent('2026-05-hello') as never);
+    expect(data.spellcheckDictionary).toBe('dictionary-en-gb.txt');
+  });
+
   it('round-trips a nested image frontmatter object rather than stringifying it', async () => {
     // The default form-value arm stringifies an object to '[object Object]', corrupting a hero on
     // open. The image arm must hand the object back as-is so the editor reads .src/.alt/.caption.

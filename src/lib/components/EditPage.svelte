@@ -319,8 +319,14 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   const typewriterStorageKey = 'cairn-editor-typewriter';
   const surfaceStorageKey = 'cairn-editor-surface';
   const zenStorageKey = 'cairn-editor-zen';
+  // Spellcheck (the markdown-aware lint underlines) defaults ON, so a fresh editor checks spelling
+  // without a choice. The toggle joins the editor-preference family on the same pattern: a localStorage
+  // key read once in the effect below, written by the footer setter. Stored as 'false' only when the
+  // author turns it off; any other value (including unset) reads as on.
+  const spellcheckStorageKey = 'cairn-editor-spellcheck';
   let focusMode = $state(false);
   let typewriter = $state(false);
+  let spellcheck = $state(true);
   // Zen: the manuscript alone on the recessed ground. The band, the document title, the toolbar
   // strip, and the footer go; the editing surface stays. It joins the editor-preference family on
   // the same pattern (a localStorage key, read once below, written by the setter), and composes
@@ -334,6 +340,8 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     typewriter = localStorage.getItem(typewriterStorageKey) === 'true';
     zen = localStorage.getItem(zenStorageKey) === 'true';
     if (localStorage.getItem(surfaceStorageKey) === 'markup') surface = 'markup';
+    // Spellcheck is on unless the author explicitly stored it off.
+    spellcheck = localStorage.getItem(spellcheckStorageKey) !== 'false';
   });
   function setFocusMode(on: boolean) {
     focusMode = on;
@@ -342,6 +350,10 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   function setTypewriter(on: boolean) {
     typewriter = on;
     localStorage.setItem(typewriterStorageKey, String(on));
+  }
+  function setSpellcheck(on: boolean) {
+    spellcheck = on;
+    localStorage.setItem(spellcheckStorageKey, String(on));
   }
   function setSurface(posture: 'prose' | 'markup') {
     surface = posture;
@@ -1342,6 +1354,8 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
           {mediaLibrary}
           {focusMode}
           {typewriter}
+          {spellcheck}
+          spellcheckDictionary={data.spellcheckDictionary}
         />
         <!-- The accumulated uploaded records ride the save form alongside the body. The save action
              reads `media` and merges these records into media.json (publish submits the same form). -->
@@ -1453,6 +1467,17 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
             >
               {#if typewriter}<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>{/if}
               Typewriter
+            </button>
+            <!-- Spellcheck: the markdown-aware lint underlines. Off reconfigures the lint compartment
+                 to empty and idles the Worker. Same check-and-tint grammar as the modes beside it. -->
+            <button
+              type="button"
+              class={ftrToggleClass(spellcheck)}
+              aria-pressed={spellcheck}
+              onclick={() => setSpellcheck(!spellcheck)}
+            >
+              {#if spellcheck}<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>{/if}
+              Spellcheck
             </button>
             <!-- Zen enters from the footer (and Ctrl+Shift+.); it reads as a peer writing-mode
                  toggle here, but once on it hides the whole footer, so the chip carries the way out. -->

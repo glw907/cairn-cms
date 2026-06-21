@@ -81,7 +81,32 @@ export interface SiteConfig {
   menus?: Record<string, unknown>;
   /** Per-concept URL policy: the permalink pattern and date-prefix granularity, keyed by concept id. */
   content?: Record<string, ConceptUrlPolicy>;
+  /** The editor spellcheck settings. The dialect is declared once per site (spec 1.2), so a British
+   *  site loads the British word list and "colour" reads as correct. Today only US English ships, so an
+   *  unset or unknown dialect resolves to it. */
+  spellcheck?: { dialect?: string };
   [key: string]: unknown;
+}
+
+/** The dialect string when a site sets none: US English, the only dictionary that ships today. */
+export const DEFAULT_DIALECT = 'en-US';
+
+// The dialect-to-dictionary map. Only US English ships now; a new locale adds one entry here and one
+// committed dictionary file under spellcheck-assets, and the rest of the chain (the main-thread URL
+// resolution, the worker fetch) needs no change. An unknown or unset dialect falls back to the default
+// rather than throwing, so a typo or a future-locale config never breaks the editor.
+const DICTIONARY_BY_DIALECT: Record<string, string> = {
+  'en-US': 'dictionary-en-us.txt',
+};
+
+/**
+ * The dictionary asset file for a site's configured dialect, defaulting to US English. The main thread
+ * resolves this filename to a real URL (the spike's out-of-bundle asset) and hands it to the Worker in
+ * the `init` message; the Worker never reads config. An unknown dialect falls back to the default file.
+ */
+export function dictionaryFileForDialect(dialect: string | undefined): string {
+  const key = dialect ?? DEFAULT_DIALECT;
+  return DICTIONARY_BY_DIALECT[key] ?? DICTIONARY_BY_DIALECT[DEFAULT_DIALECT]!;
 }
 
 export class SiteConfigError extends Error {

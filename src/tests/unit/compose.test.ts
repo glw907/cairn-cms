@@ -61,6 +61,18 @@ describe('composeRuntime manifestPath', () => {
   });
 });
 
+describe('composeRuntime spellcheckDictionary', () => {
+  it('defaults to the US English dictionary when the site config sets no dialect', () => {
+    const runtime = composeRuntime({ adapter: adapter(), siteConfig: testSiteConfig });
+    expect(runtime.spellcheckDictionary).toBe('dictionary-en-us.txt');
+  });
+
+  it('falls back to the default dictionary for an unknown configured dialect', () => {
+    const runtime = composeRuntime({ adapter: adapter(), siteConfig: { ...testSiteConfig, spellcheck: { dialect: 'xx-ZZ' } } });
+    expect(runtime.spellcheckDictionary).toBe('dictionary-en-us.txt');
+  });
+});
+
 describe('composeRuntime resolvedAssets', () => {
   it('resolves to disabled media when the adapter declares no assets', () => {
     const runtime = composeRuntime({ adapter: adapter(), siteConfig: testSiteConfig });

@@ -7,6 +7,8 @@ import {
   extractMenu,
   setMenu,
   urlPolicyFrom,
+  dictionaryFileForDialect,
+  DEFAULT_DIALECT,
 } from '../../lib/nav/site-config.js';
 import { condition } from '../../lib/diagnostics/index.js';
 
@@ -90,6 +92,30 @@ describe('parseSiteConfig', () => {
 
   it('throws when siteName is missing', () => {
     expect(() => parseSiteConfig('description: x\n')).toThrow(/needs a siteName/);
+  });
+
+  it('reads an optional spellcheck.dialect', () => {
+    const config = parseSiteConfig('siteName: S\nspellcheck:\n  dialect: en-GB\n');
+    expect(config.spellcheck?.dialect).toBe('en-GB');
+  });
+
+  it('leaves spellcheck undefined when the key is absent', () => {
+    expect(parseSiteConfig('siteName: S\n').spellcheck).toBeUndefined();
+  });
+});
+
+describe('dictionaryFileForDialect', () => {
+  it('defaults to the US English dictionary when the dialect is unset', () => {
+    expect(dictionaryFileForDialect(undefined)).toBe('dictionary-en-us.txt');
+    expect(DEFAULT_DIALECT).toBe('en-US');
+  });
+
+  it('resolves an explicit en-US dialect to the US English dictionary', () => {
+    expect(dictionaryFileForDialect('en-US')).toBe('dictionary-en-us.txt');
+  });
+
+  it('falls back to the default dictionary for an unknown dialect', () => {
+    expect(dictionaryFileForDialect('xx-ZZ')).toBe('dictionary-en-us.txt');
   });
 });
 

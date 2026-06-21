@@ -38,6 +38,7 @@ function postProps() {
       publishedFlash: false,
       discardedFlash: false,
       preview: null,
+      spellcheckDictionary: 'dictionary-en-us.txt',
       siteName: 'Test Site',
     },
     registry: undefined,

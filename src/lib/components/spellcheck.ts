@@ -353,6 +353,26 @@ export function createSpellWorker(): SpellWorker {
   }) as unknown as SpellWorker;
 }
 
+// The wasm and dictionary URLs are resolved module-relative with `import.meta.url`, the same
+// mechanism createSpellWorker uses for the worker. The spike (docs/internal/design/
+// 2026-06-20-editor-copyedit-spike-result.md) proved Vite's `?worker`/`?url` package-subpath imports
+// from CONSUMER app code; the library's own source cannot self-import by package name, so it uses the
+// portable `new URL('./asset', import.meta.url)` form Vite resolves inside dependencies too. Task 16's
+// showcase E2E proves the whole chain through the real consumer build; if resolution ever fails there,
+// only these two URL lines change. The dictionary filename is the dialect-resolved one the main thread
+// passes in; the wasm filename is fixed.
+
+/** The real wasm asset URL, resolved module-relative the same way the worker is. */
+export function resolveWasmUrl(): string {
+  return new URL('./spellcheck-assets/spellchecker-wasm.wasm', import.meta.url).href;
+}
+
+/** The real dictionary asset URL for a dictionary filename, resolved module-relative. The caller
+ *  passes the dialect-resolved filename (default `dictionary-en-us.txt`). */
+export function resolveDictionaryUrl(dictionaryFile: string): string {
+  return new URL(`./spellcheck-assets/${dictionaryFile}`, import.meta.url).href;
+}
+
 /** How far past the visible viewport to lint, so a small scroll does not re-lint from scratch. */
 const VIEWPORT_MARGIN = 1000;
 
@@ -366,6 +386,29 @@ export interface SpellcheckOptions {
    *  word here. The set is the seam Task 9 commits to the git-backed dictionary file; this source only
    *  fills it and never persists. A caller that does not pass one gets a fresh internal set. */
   pendingAdditions?: Set<string>;
+  /** The dialect-resolved dictionary filename, e.g. "dictionary-en-us.txt". The source resolves it to
+   *  a real asset URL and posts it in the Worker's `init`. Defaults to US English. */
+  dictionaryFile?: string;
+  /** Override the resolved wasm and dictionary URLs the source posts in `init`. The real resolution
+   *  uses {@link resolveWasmUrl}/{@link resolveDictionaryUrl} (module-relative `import.meta.url`); a
+   *  component test that injects a fake Worker can pass canned URLs so it never touches the asset
+   *  resolver. */
+  assetUrls?: { wasmUrl: string; dictionaryUrl: string };
+  /** Treat the Worker as ready without waiting for a `ready` message. The production path is strict
+   *  (it posts `init` and waits for `ready` before painting); a fake Worker in a test that does not
+   *  answer `ready` can set this so a lint run is not held back. Defaults to false. */
+  assumeReady?: boolean;
+  /** The already-loaded CodeMirror modules to reuse instead of importing them again. The editor
+   *  component loads `@codemirror/view`/`@codemirror/language` for its own extensions, so passing them
+   *  here keeps the lint source on the SAME module instances; a second dynamic import can resolve to a
+   *  separate copy (the test bundler's dedup quirk), and CodeMirror's instanceof checks then reject the
+   *  extension. When omitted, the source imports them itself (the standalone path). `@codemirror/lint`
+   *  is loaded here when not supplied, since the editor does not otherwise need it. */
+  modules?: {
+    lint?: typeof import('@codemirror/lint');
+    language?: typeof import('@codemirror/language');
+    view?: typeof import('@codemirror/view');
+  };
 }
 
 // The lint underline is LOCKED to --cairn-warning-ink (a muted amber, the closest shipped token to
@@ -416,11 +459,13 @@ function lockedUnderlineTheme(EditorViewMod: typeof import('@codemirror/view').E
  * so Task 7's single on/off toggle gates both surfaces by reconfiguring this one extension.
  */
 export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<Extension> {
-  // Lazy value imports: this keeps CodeMirror off the server bundle (the boundary the editor relies
-  // on) and matches how link-completion.ts resolves @codemirror/language inside its source.
-  lintMod ??= await import('@codemirror/lint');
-  langMod ??= await import('@codemirror/language');
-  viewMod ??= await import('@codemirror/view');
+  // Reuse the caller's already-loaded modules when supplied (the editor passes its own view/language
+  // copies so the lint extension lands on the same instances), else lazily value-import them. The lazy
+  // imports keep CodeMirror off the server bundle (the boundary the editor relies on) and match how
+  // link-completion.ts resolves @codemirror/language inside its source.
+  lintMod = options.modules?.lint ?? lintMod ?? (await import('@codemirror/lint'));
+  langMod = options.modules?.language ?? langMod ?? (await import('@codemirror/language'));
+  viewMod = options.modules?.view ?? viewMod ?? (await import('@codemirror/view'));
   const { linter, forceLinting } = lintMod;
   const { syntaxTree } = langMod;
   const { EditorView } = viewMod;
@@ -428,8 +473,19 @@ export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<
   const createWorker = options.createWorker ?? createSpellWorker;
   const pendingAdditions = options.pendingAdditions ?? new Set<string>();
   const arbiter = arbitrateChecked();
+  // The wasm and dictionary URLs the Worker fetches, resolved module-relative unless the caller
+  // overrides them (a test injecting a fake Worker passes canned URLs). The dictionary filename is the
+  // dialect-resolved one; the wasm filename is fixed.
+  const assetUrls = options.assetUrls ?? {
+    wasmUrl: resolveWasmUrl(),
+    dictionaryUrl: resolveDictionaryUrl(options.dictionaryFile ?? 'dictionary-en-us.txt'),
+  };
 
   let worker: SpellWorker | null = null;
+  // The Worker answers `ready` once its dictionary has streamed into wasm; until then a lint run paints
+  // nothing rather than throwing. A test can set assumeReady to skip the wait when its fake Worker does
+  // not answer `ready`.
+  let ready = options.assumeReady ?? false;
   // The view from the latest lint run, captured so a management action can re-lint through it. The
   // action callbacks fire long after the source promise resolved, so the source cannot close over a
   // run-local view; it stores the last one here.
@@ -447,7 +503,25 @@ export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<
     if (worker) return worker;
     worker = createWorker();
     worker.addEventListener('message', (event: MessageEvent) => {
-      const data = event.data as { type?: string; seq?: number; results?: { id: number; correct: boolean }[] };
+      const data = event.data as {
+        type?: string;
+        seq?: number;
+        results?: { id: number; correct: boolean }[];
+        detail?: string;
+      };
+      // The init ack: lookups are live. Re-lint so the viewport paints the underlines the not-ready
+      // runs withheld; the latest-wins seq keeps the re-lint from racing an in-flight run.
+      if (data.type === 'ready') {
+        ready = true;
+        if (lastView) forceLinting(lastView);
+        return;
+      }
+      // An init or lookup failure: log it and leave the editor usable (no underlines is the graceful
+      // degrade, never a thrown error). A `check` that arrives after this still resolves to [] below.
+      if (data.type === 'error') {
+        console.warn('cairn spellcheck worker error:', data.detail ?? 'unknown');
+        return;
+      }
       if (data.type !== 'checked' || typeof data.seq !== 'number') return;
       const request = pending.get(data.seq);
       if (!request) return;
@@ -462,6 +536,10 @@ export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<
       // Fetch the ranked suggestions for every wrong word, then build the popovers from the answers.
       void buildDiagnostics(wrong).then(request.resolve);
     });
+    // The handshake: post init so the Worker streams its dictionary, then wait for `ready` before any
+    // check/suggest. The Worker answers `error` on a check that lands before ready, so the not-ready
+    // early return in the lint source keeps a check from ever racing the init.
+    worker.postMessage({ type: 'init', ...assetUrls });
     return worker;
   }
 
@@ -512,6 +590,10 @@ export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<
 
   const source = linter(async (view) => {
     lastView = view;
+    // Create the Worker (and post init) on the first run even when not yet ready, so the dictionary
+    // starts streaming. Until `ready` lands this run paints nothing; the `ready` handler re-lints.
+    ensureWorker();
+    if (!ready) return [];
     const text = view.state.doc.toString();
     const tree = syntaxTree(view.state);
 

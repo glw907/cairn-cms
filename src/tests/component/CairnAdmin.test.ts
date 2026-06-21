@@ -104,6 +104,7 @@ function editData(): AdminData {
       discardedFlash: false,
       preview: null,
       spellcheckDictionary: 'dictionary-en-us.txt',
+      siteDictionary: [],
     },
   };
 }

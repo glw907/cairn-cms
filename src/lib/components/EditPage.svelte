@@ -17,8 +17,9 @@ transient flashes, and the editor card's footer is the writing-environment strip
 count, the Prose/Markup posture pair, the focus and typewriter toggles, and the Markdown help.
 -->
 <script lang="ts">
-  import { flushSync, untrack } from 'svelte';
+  import { flushSync, untrack, getContext } from 'svelte';
   import { beforeNavigate } from '$app/navigation';
+  import { deserialize } from '$app/forms';
   import { page } from '$app/state';
   import BlocksIcon from '@lucide/svelte/icons/blocks';
   import SquarePenIcon from '@lucide/svelte/icons/square-pen';
@@ -64,6 +65,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   import { manifestMediaResolver } from '../render/resolve-media.js';
   import type { MediaEntry } from '../media/manifest.js';
   import { mediaLibraryEntry } from '../media/library-entry.js';
+  import { CSRF_CONTEXT_KEY } from './csrf-context.js';
 
   interface Props {
     /** The edit load's data, plus the site name for the heading. */
@@ -120,6 +122,10 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     const formaction = (e.submitter as HTMLButtonElement | null)?.getAttribute('formaction');
     if (formaction === '?/publish') publishing = true;
     else saving = true;
+    // Commit any pending personal-dictionary additions alongside the save. Fire-and-forget: the words
+    // are already live in the Worker, so the in-flight commit never blocks the save navigation; an add
+    // that does not land stays pending for the next save (declared before the navigation reads it).
+    void commitPendingDictionary();
   }
   // Either in-flight submit disables both buttons, so a second click cannot fire a second POST
   // while the first navigation is still pending.
@@ -354,6 +360,53 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   function setSpellcheck(on: boolean) {
     spellcheck = on;
     localStorage.setItem(spellcheckStorageKey, String(on));
+  }
+
+  // The personal-dictionary pending additions (spec 1.6), owned here and shared with MarkdownEditor's
+  // lint source: an add-to-dictionary choice records the lowercased word here (and clears the underline
+  // at once), and this host commits the set through the addDictionaryWord action at save time. An add
+  // that fails to commit stays here for the session and re-attempts on the next save, so the word is
+  // never silently dropped. A plain Set, not $state: the lint source mutates it, and nothing renders
+  // from it, so reactivity is unneeded.
+  const pendingAdditions = new Set<string>();
+  // The CSRF token getter from the admin layout context, for the raw-body dictionary commit.
+  const csrf = getContext<(() => string) | undefined>(CSRF_CONTEXT_KEY);
+
+  /** Commit the pending personal-dictionary additions through the addDictionaryWord action, then drop
+   *  the words the server confirms from the pending set. Fire-and-forget at save time: the words are
+   *  already live in the Worker's in-memory set, so a slow or failed commit never blocks the save. A
+   *  failure leaves the words pending for the next save (never dropped). The transport mirrors the media
+   *  raw-body actions: a text/plain POST, the CSRF token in X-Cairn-CSRF, a JSON `{ words }` body. */
+  async function commitPendingDictionary(): Promise<void> {
+    if (pendingAdditions.size === 0) return;
+    const words = [...pendingAdditions];
+    try {
+      const res = await fetch(`/admin/${data.conceptId}/${data.id}?/addDictionaryWord`, {
+        method: 'POST',
+        redirect: 'manual',
+        headers: { 'Content-Type': 'text/plain', 'X-Cairn-CSRF': csrf?.() ?? '' },
+        body: JSON.stringify({ words }),
+      });
+      // The guard's expired-session 303 under redirect: 'manual' surfaces as an opaque, status-0
+      // response with no body: leave the words pending and bail.
+      if (res.type === 'opaqueredirect' || res.status === 0) return;
+      // deserialize turns the devalue-encoded form-action result back into an ActionResult; a 500 HTML
+      // error page is not devalue-encoded, so it throws into the catch below. Only a success carries
+      // the merged word list; a fail (csrf, 400, 409) leaves the words pending for the next save.
+      const result = deserialize(await res.text()) as
+        | { type: 'success'; data?: { words?: unknown } }
+        | { type: 'failure' | 'error' | 'redirect' };
+      if (result.type !== 'success') return;
+      const merged = result.data?.words;
+      if (!Array.isArray(merged)) return;
+      // Reconcile: drop every now-committed word (matched lowercased, the form the action stored) from
+      // the pending set so it is not re-sent. A word the server did not confirm stays pending.
+      const committed = new Set(merged.filter((w): w is string => typeof w === 'string').map((w) => w.toLowerCase()));
+      for (const w of words) if (committed.has(w.toLowerCase())) pendingAdditions.delete(w);
+    } catch {
+      // A network failure or an unparseable server response leaves the pending set intact for the next
+      // save; the words stay live in the Worker for the session, so the author sees no regression.
+    }
   }
   function setSurface(posture: 'prose' | 'markup') {
     surface = posture;
@@ -1356,6 +1409,8 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
           {typewriter}
           {spellcheck}
           spellcheckDictionary={data.spellcheckDictionary}
+          siteDictionary={data.siteDictionary}
+          {pendingAdditions}
         />
         <!-- The accumulated uploaded records ride the save form alongside the body. The save action
              reads `media` and merges these records into media.json (publish submits the same form). -->

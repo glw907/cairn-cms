@@ -39,6 +39,7 @@ function postProps() {
       discardedFlash: false,
       preview: null,
       spellcheckDictionary: 'dictionary-en-us.txt',
+      siteDictionary: [],
       siteName: 'Test Site',
     },
     registry: undefined,

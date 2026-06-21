@@ -387,6 +387,11 @@ export interface SpellcheckOptions {
    *  word here. The set is the seam Task 9 commits to the git-backed dictionary file; this source only
    *  fills it and never persists. A caller that does not pass one gets a fresh internal set. */
   pendingAdditions?: Set<string>;
+  /** The committed personal-dictionary words (spec 1.6) the source seeds the Worker's personal layer
+   *  with, posted as one batch `addWord` right after `init`. The git-backed site dictionary is the
+   *  durable layer; the editor reads it at load (EditData.siteDictionary) and hands it here, so a word
+   *  another editor committed answers correct from the first lint. Empty by default (dialect-only). */
+  siteWords?: ReadonlyArray<string>;
   /** The dialect-resolved dictionary filename, e.g. "dictionary-en-us.txt". The source resolves it to
    *  a real asset URL and posts it in the Worker's `init`. Defaults to US English. */
   dictionaryFile?: string;
@@ -484,6 +489,8 @@ export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<
 
   const createWorker = options.createWorker ?? createSpellWorker;
   const pendingAdditions = options.pendingAdditions ?? new Set<string>();
+  // The committed site dictionary words, seeded into the Worker's personal layer at init.
+  const siteWords = options.siteWords ?? [];
   const arbiter = arbitrateChecked();
   // The wasm and dictionary URLs the Worker fetches, resolved module-relative unless the caller
   // overrides them (a test injecting a fake Worker passes canned URLs). The dictionary filename is the
@@ -562,6 +569,10 @@ export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<
     // check/suggest. The Worker answers `error` on a check that lands before ready, so the not-ready
     // early return in the lint source keeps a check from ever racing the init.
     worker.postMessage({ type: 'init', ...assetUrls });
+    // Seed the personal layer from the committed site dictionary. The Worker merges addWord into its
+    // in-memory personal set regardless of ready state (it touches no engine), so a site word answers
+    // correct from the first lint without waiting for the dialect stream.
+    if (siteWords.length > 0) worker.postMessage({ type: 'addWord', words: siteWords });
     return worker;
   }
 

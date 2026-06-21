@@ -27,4 +27,6 @@ export type CairnLogEvent =
   | 'media.orphans_purged'
   | 'media.replaced'
   | 'media.replace_blocked'
-  | 'media.alt_propagated';
+  | 'media.alt_propagated'
+  | 'dictionary.added'
+  | 'dictionary.add_conflict';

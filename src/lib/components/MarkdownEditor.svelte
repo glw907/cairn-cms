@@ -92,6 +92,15 @@ through the adapter's render. Swapping the editor stays a one-file change.
      *  source resolves it to a real asset URL and hands it to the spellcheck Worker's init. Defaults to
      *  US English. */
     spellcheckDictionary?: string;
+    /** The committed personal-dictionary words (spec 1.6), from EditData.siteDictionary. The lint
+     *  source seeds the spellcheck Worker's personal layer with these at init, so a word another editor
+     *  committed answers correct from the first lint. Empty by default (dialect-only). */
+    siteDictionary?: ReadonlyArray<string>;
+    /** The caller-owned pending personal-dictionary additions. When an author chooses "Add to
+     *  dictionary" the lint source adds the lowercased word here (the underline clears at once); the
+     *  host (EditPage) commits this set through the addDictionaryWord action at save time and reconciles
+     *  it against the merged response. A fresh set by default. */
+    pendingAdditions?: Set<string>;
     /** Test-only seam for the spellcheck Worker. The real wasm and dictionary assets are resolved with
      *  `import.meta.url` and do not load under the vitest browser dev server, so the component test
      *  injects a deterministic fake Worker factory and asks the lint source to skip the `ready` wait.
@@ -126,6 +135,8 @@ through the adapter's render. Swapping the editor stays a one-file change.
     surface = 'prose',
     spellcheck = true,
     spellcheckDictionary = 'dictionary-en-us.txt',
+    siteDictionary = [],
+    pendingAdditions = new Set<string>(),
     spellcheckTest,
   }: Props = $props();
 
@@ -552,6 +563,10 @@ through the adapter's render. Swapping the editor stays a one-file change.
     // extension only when spellcheck is on, so a site that opens with it off never spins up the Worker.
     spellcheckExt = await spellcheckMod.cairnSpellcheck({
       dictionaryFile: spellcheckDictionary,
+      // Seed the Worker's personal layer from the committed site dictionary, and share the host's
+      // pending-additions set so an add-to-dictionary choice records here for the host to commit.
+      siteWords: siteDictionary,
+      pendingAdditions,
       // Hand the lint source the editor's own CodeMirror module instances so its extension lands on the
       // same copies; a separate dynamic import can resolve to a different instance and break instanceof.
       modules: { lint: lintMod, language: languageMod, view: viewMod, state: stateMod },

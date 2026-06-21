@@ -49,6 +49,9 @@ export function composeRuntime({ adapter, siteConfig, extensions = [] }: Compose
     assets: adapter.assets,
     resolvedAssets: normalizeAssets(adapter.assets),
     mediaManifestPath: adapter.mediaManifestPath ?? 'src/content/.cairn/media.json',
+    // The personal dictionary sits beside the manifests under the same `.cairn/` content root, so the
+    // spec's `content/.cairn/dictionary.txt` resolves the same configurable way the manifest paths do.
+    dictionaryPath: adapter.dictionaryPath ?? 'src/content/.cairn/dictionary.txt',
     // The spellcheck dictionary is resolved once here from the site config's dialect (default US),
     // so the runtime and the editor never re-derive it. The site config is the one home for the
     // dialect; the editor resolves this filename to a real asset URL on the main thread.

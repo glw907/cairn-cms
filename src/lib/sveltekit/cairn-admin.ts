@@ -170,6 +170,10 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
     publish: viewAction(['edit'], (event, view) => content.publishAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     discard: viewAction(['edit'], (event, view) => content.discardAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     rename: viewAction(['edit'], (event, view) => content.renameAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
+    // The personal-dictionary add (spec 1.6): the editor commits its pending add-to-dictionary words at
+    // save time. Gated to the edit view, where the spellcheck surface lives, so it 404s elsewhere.
+    addDictionaryWord: viewAction(['edit'], (event, view) =>
+      content.addDictionaryWord(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     delete: viewAction(['edit', 'list'], (event, view) =>
       view.view === 'edit'
         ? content.deleteAction(contentEvent(event, { concept: view.concept.id, id: view.id }))

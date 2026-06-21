@@ -307,6 +307,22 @@ describe('media replace and alt actions (composer wiring)', () => {
   });
 });
 
+describe('addDictionaryWord action (composer wiring)', () => {
+  it('404s addDictionaryWord posted outside the edit view', async () => {
+    const admin = createCairnAdmin(runtime(), deps);
+    await expect(admin.actions.addDictionaryWord(actionEvent('/admin/posts') as never)).rejects.toMatchObject({ status: 404 });
+  });
+
+  it('reaches the content action on the edit view (403 without the CSRF header)', async () => {
+    new GithubDouble({ main: {} }).install();
+    const admin = createCairnAdmin(runtime(), deps);
+    // The composer's actionEvent posts no X-Cairn-CSRF header, so the content action refuses with a
+    // 403 csrf envelope: proof the route parsed the edit view and reached addDictionaryWord.
+    const result = await admin.actions.addDictionaryWord(actionEvent('/admin/posts/2026-05-01-hi') as never);
+    expect(result).toMatchObject({ status: 403 });
+  });
+});
+
 describe('media bulk-delete, orphan-scan, and purge actions (composer wiring)', () => {
   const newMediaActions = ['mediaBulkDelete', 'mediaOrphanScan', 'mediaPurge'] as const;
 

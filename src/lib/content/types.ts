@@ -264,6 +264,11 @@ export interface CairnAdapter {
   /** Repo-relative path to the committed media manifest. Defaults to src/content/.cairn/media.json,
    *  applied in composeRuntime. Sits outside any concept directory, like the content manifest. */
   mediaManifestPath?: string;
+  /** Repo-relative path to the committed personal dictionary file. Defaults to
+   *  src/content/.cairn/dictionary.txt, applied in composeRuntime: the same `.cairn/` content root the
+   *  manifests use, so the spec's `content/.cairn/dictionary.txt` resolves the same configurable way the
+   *  manifest paths do. One word per line, sorted, comment lines allowed (see site-dictionary.ts). */
+  dictionaryPath?: string;
   /** Directive component registry; the renderer and the future palette derive from it (seam 3). */
   registry?: ComponentRegistry;
   /** The site's glyph name to SVG path-data map, for the admin icon picker and the renderer. */
@@ -380,6 +385,13 @@ export interface CairnRuntime {
   manifestPath: string;
   /** The repo-relative path to the committed media manifest, defaulted in composeRuntime. */
   mediaManifestPath: string;
+  /** The repo-relative path to the committed personal dictionary file (one word per line, sorted),
+   *  defaulted in composeRuntime to src/content/.cairn/dictionary.txt: the same `.cairn/` content root
+   *  the manifests use. The edit load reads it and threads its words onto EditData; the
+   *  addDictionaryWord action reads, merges, and commits it. Optional on the runtime so a hand-built
+   *  runtime need not set it; composeRuntime always fills it, and the edit load and the action default
+   *  a missing value to the same content-root path. */
+  dictionaryPath?: string;
   /** The adapter's asset config resolved once at compose: `{ enabled: false }` for a no-media site,
    *  otherwise the filled config the upload, storage, delivery, and resolver paths read. */
   resolvedAssets: import('../media/config.js').ResolvedAssetConfig;

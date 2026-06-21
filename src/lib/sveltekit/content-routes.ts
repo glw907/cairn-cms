@@ -18,6 +18,7 @@ import { emptyManifest, manifestEntryFromFile, parseManifest, serializeManifest,
 import { isConflict } from '../github/types.js';
 import { log } from '../log/index.js';
 import { dictionaryFileForDialect } from '../nav/site-config.js';
+import { parseDictionary, mergeDictionaryWords, serializeDictionary, isValidDictionaryWord } from '../content/site-dictionary.js';
 import { issueCsrfToken, validateCsrfHeader } from './csrf.js';
 import { requireSession } from './guard.js';
 import { sniffMediaType, isDeniedUpload, extForMediaType } from '../media/sniff.js';
@@ -148,6 +149,12 @@ export interface EditData {
    *  to the spellcheck Worker's `init`, the same way `mediaLibrary` is threaded in. Just the filename,
    *  e.g. "dictionary-en-us.txt". */
   spellcheckDictionary: string;
+  /** The committed personal-dictionary words for the site (spec 1.6): the durable, shared, reviewable
+   *  layer the editor seeds the spellcheck Worker's personal set from, the way `mediaLibrary` is handed
+   *  in. Read from the git-committed `dictionary.txt` at editor load; empty when the file is absent or
+   *  unreadable (the editor degrades to dialect-only). The dialect dictionary and the session ignore
+   *  list are the other two layers; only this one is committed. */
+  siteDictionary: string[];
 }
 
 /** One asset's where-used overlay, kept separate from MediaLibraryEntry so the picker's shared
@@ -256,6 +263,21 @@ export interface MediaReplaceFailure {
  *  open branch (fail closed), or the bucket is unbound. Just the one-line summary; alt fill has no
  *  typed-slug gate. */
 export interface MediaAltPropagateFailure {
+  error: string;
+}
+
+/** The personal-dictionary add outcome (spec 1.6): the merged, canonical sorted word list after the
+ *  add landed. The client reconciles its pending-additions set against this (a word now in the list is
+ *  committed and dropped from pending). Admin-internal: exported for the editor host's reconcile, not
+ *  on the package's sveltekit subpath, so it carries no reference page. */
+export interface DictionaryAddResult {
+  words: string[];
+}
+
+/** A refused personal-dictionary add: `fail(403)` on a failed CSRF check, `fail(400)` on a body that
+ *  carries no valid word. The client keeps its pending additions for the session and re-attempts on
+ *  the next save, so the word is never silently dropped. Just the one-line summary. */
+export interface DictionaryAddFailure {
   error: string;
 }
 
@@ -711,13 +733,17 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     // The media manifest joins the concurrent batch only when media is on, read from the default
     // branch (pending branches carry no copy). A rejected media read degrades to null so the edit
     // never throws on a missing or unreadable media.json; the projection below treats null as empty.
-    const [headSha, mainRaw, manifestRaw, mediaRaw] = await Promise.all([
+    // The committed personal dictionary joins the concurrent batch, read from the default branch. A
+    // rejected read degrades to null so the edit never throws on a missing or unreadable dictionary;
+    // the projection below treats null as an empty word list (the editor falls back to dialect-only).
+    const [headSha, mainRaw, manifestRaw, mediaRaw, dictionaryRaw] = await Promise.all([
       branchHeadSha(runtime.backend, branch, token),
       readRaw(runtime.backend, path, token),
       readRaw(runtime.backend, runtime.manifestPath, token),
       runtime.resolvedAssets.enabled
         ? readRaw(runtime.backend, runtime.mediaManifestPath, token).catch(() => null)
         : Promise.resolve(null),
+      readRaw(runtime.backend, dictionaryFilePath(), token).catch(() => null),
     ]);
     const pending = headSha !== null;
     const raw = pending ? await readRaw({ ...runtime.backend, branch }, path, token) : mainRaw;
@@ -777,7 +803,17 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       // composeRuntime always resolves this from the site config's dialect; default a hand-built
       // runtime that omits it to the US English dictionary so the editor always has a real filename.
       spellcheckDictionary: runtime.spellcheckDictionary ?? dictionaryFileForDialect(undefined),
+      // The committed personal-dictionary words, normalized to the canonical sorted, deduplicated set
+      // so the editor seeds the Worker's personal layer with a clean list. A missing or unreadable file
+      // is an empty list (the dialect-only fallback).
+      siteDictionary: mergeDictionaryWords(parseDictionary(dictionaryRaw), []),
     };
+  }
+
+  /** The repo-relative personal-dictionary path, defaulting a hand-built runtime that omits it to the
+   *  same `.cairn/` content root the manifests use. composeRuntime always fills `dictionaryPath`. */
+  function dictionaryFilePath(): string {
+    return runtime.dictionaryPath ?? 'src/content/.cairn/dictionary.txt';
   }
 
   /** Log a failed commit: a conflict is the expected last-writer-wins outcome, so it warns with a
@@ -2178,7 +2214,107 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     throw redirect(303, '/admin/media?altPropagated=1');
   }
 
-  return { layoutLoad, indexRedirect, listLoad, mediaLibraryLoad, createAction, editLoad, saveAction, publishAction, publishAllAction, discardAction, deleteAction, listDeleteAction, renameAction, uploadAction, mediaDeleteAction, mediaBulkDelete, mediaOrphanScan, mediaPurgeOrphans, mediaUpdateAction, mediaReplacePreview, mediaReplaceApply, mediaAltPreview, mediaAltApply, mintToken };
+  /** The cap on a personal-dictionary word, matched by isValidDictionaryWord. A word is one line, so
+   *  this bounds an abusive input; the real authority is the per-character validation, which rejects
+   *  whitespace and control bytes so a body can never inject an extra line into the committed file. */
+  const MAX_DICTIONARY_WORD = 64;
+  /** The cap on the words a single add request carries: an editor adds a handful at save time, never
+   *  a flood. Past this the body is treated as abusive and the surplus is dropped. */
+  const MAX_DICTIONARY_BATCH = 100;
+
+  /** Read the committed personal dictionary, merge the validated additions in sorted order, and commit
+   *  the canonical file back. Shared by the first attempt and the post-conflict retry, so both re-read
+   *  the head and re-merge the same additions; the merge is order-independent, so a concurrent editor's
+   *  word that already landed is preserved and the result is the same sorted set regardless of order.
+   *  Returns the merged word list. Throws CommitConflictError (via commitFiles) when the branch moves
+   *  under the commit, which the caller catches to retry once. */
+  async function mergeAndCommitDictionary(token: string, additions: string[], editor: Editor): Promise<string[]> {
+    const path = dictionaryFilePath();
+    // The existing file as its canonical sorted set, so a no-op add is detected against the same
+    // normalization the commit would write (an already-sorted file never re-commits just to reorder).
+    const canonicalExisting = mergeDictionaryWords(parseDictionary(await readRaw(runtime.backend, path, token)), []);
+    const merged = mergeDictionaryWords(canonicalExisting, additions);
+    // Nothing new (every addition was already present): skip the commit so an idempotent add never
+    // pushes an empty commit that would redeploy the site. The merged set is still returned so the
+    // client reconciles its pending additions away.
+    if (merged.length === canonicalExisting.length) return merged;
+    await commitFiles(
+      runtime.backend,
+      [{ path, content: serializeDictionary(merged) }],
+      { message: `Add to dictionary: ${additions.join(', ')}`, author: { name: editor.displayName, email: editor.email } },
+      token,
+    );
+    return merged;
+  }
+
+  /** Add a word (or batch) to the git-committed personal dictionary (spec 1.6). The transport mirrors
+   *  the media raw-body actions exactly: a `text/plain` POST, the CSRF token in `X-Cairn-CSRF` validated
+   *  by validateCsrfHeader (CSRF first, then the session), and a small JSON body `{ word }` or
+   *  `{ words }`. It reads the current file from the default branch, inserts the validated words in
+   *  sorted order if absent (idempotent), and commits through the GitHub-App pipeline.
+   *
+   *  The commit is SHA-guarded with commit-and-retry: commitFiles throws CommitConflictError when the
+   *  branch moved under it, which is caught here to re-read the new head, re-merge the same additions
+   *  (the sorted insert is order-independent, so a concurrent editor's word is preserved), and retry
+   *  once. The response is the merged word list, so the client drops the now-committed words from its
+   *  pending set; a refusal rides a `fail` envelope the client reads by `type`/`status`.
+   *
+   *  Input validation is load-bearing here: this commits to the repo from request input, so every word
+   *  is length-bounded and rejected if it carries whitespace or control characters (a word is one
+   *  line), and the batch is capped. A body that yields no valid word refuses with a 400 and commits
+   *  nothing, so the committed file can never gain an injected or empty line. */
+  async function addDictionaryWord(event: ContentEvent): Promise<ReturnType<typeof fail> | DictionaryAddResult> {
+    // CSRF first: a raw-body (JSON) POST, so the header witness is the authority, like the upload and
+    // media actions. A failed check refuses before the session read or any GitHub call.
+    if (!event.cookies || !validateCsrfHeader({ url: event.url, request: event.request, cookies: event.cookies })) {
+      return fail(403, { error: 'csrf' } satisfies DictionaryAddFailure);
+    }
+    const editor = requireSession(event);
+
+    let payload: { word?: unknown; words?: unknown };
+    try {
+      payload = JSON.parse(await event.request.text());
+    } catch {
+      return fail(400, { error: 'Could not read the dictionary request.' } satisfies DictionaryAddFailure);
+    }
+
+    // Collect the candidate words from `word` and/or `words`, keep only the strings, validate each
+    // against the one-line word grammar, dedupe, and cap the batch. A body with no valid word refuses.
+    const raw = [
+      ...(typeof payload.word === 'string' ? [payload.word] : []),
+      ...(Array.isArray(payload.words) ? payload.words.filter((w): w is string => typeof w === 'string') : []),
+    ];
+    const additions = [...new Set(raw.filter((w) => isValidDictionaryWord(w, MAX_DICTIONARY_WORD)))].slice(0, MAX_DICTIONARY_BATCH);
+    if (additions.length === 0) {
+      return fail(400, { error: 'No valid word to add to the dictionary.' } satisfies DictionaryAddFailure);
+    }
+
+    const token = await mintToken(event.platform?.env ?? {});
+    const commitFields = { concept: 'dictionary', id: additions[0]!, editor: editor.email };
+    try {
+      const words = await mergeAndCommitDictionary(token, additions, editor);
+      log.info('dictionary.added', { editor: editor.email, words: additions });
+      return { words };
+    } catch (err) {
+      if (!isConflict(err)) throw err;
+      // The branch moved under the commit. Re-read the new head and re-merge the same additions, then
+      // retry once. The merge is order-independent, so a concurrent editor's word that landed in the
+      // window is preserved and the two adds converge on the same sorted set.
+      try {
+        const words = await mergeAndCommitDictionary(token, additions, editor);
+        log.info('dictionary.added', { editor: editor.email, words: additions, retried: true });
+        return { words };
+      } catch (retryErr) {
+        if (!isConflict(retryErr)) throw retryErr;
+        // A second conflict: give up rather than loop. The client keeps the words in its pending set
+        // for the session and re-attempts on the next save, so the word is never silently dropped.
+        log.warn('dictionary.add_conflict', { editor: editor.email, words: additions });
+        return fail(409, { error: 'The dictionary changed while saving. It will retry on the next save.' } satisfies DictionaryAddFailure);
+      }
+    }
+  }
+
+  return { layoutLoad, indexRedirect, listLoad, mediaLibraryLoad, createAction, editLoad, saveAction, publishAction, publishAllAction, discardAction, deleteAction, listDeleteAction, renameAction, uploadAction, mediaDeleteAction, mediaBulkDelete, mediaOrphanScan, mediaPurgeOrphans, mediaUpdateAction, mediaReplacePreview, mediaReplaceApply, mediaAltPreview, mediaAltApply, addDictionaryWord, mintToken };
 }
 
 /** The cap, in characters, on the stored alt text. The human fields are display copy, not content,

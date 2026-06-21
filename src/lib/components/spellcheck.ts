@@ -368,10 +368,24 @@ export function resolveWasmUrl(): string {
   return new URL('./spellcheck-assets/spellchecker-wasm.wasm', import.meta.url).href;
 }
 
+/** Each shipped dictionary, mapped to a resolver that builds its asset URL with a LITERAL
+ *  `new URL(..., import.meta.url)`. The literal path is load-bearing. A templated `new URL` makes Vite
+ *  and rolldown treat the directory as a glob and parse every sibling module to build it, including the
+ *  `.svelte` components that still carry `lang="ts"` in `dist`, and the glob parser chokes on the TS
+ *  syntax and breaks the consumer build. This set mirrors the dialect map in `nav/site-config.ts`; add
+ *  one line per new shipped dialect dictionary. */
+const DICTIONARY_URLS: Record<string, () => string> = {
+  'dictionary-en-us.txt': () =>
+    new URL('./spellcheck-assets/dictionary-en-us.txt', import.meta.url).href,
+};
+
 /** The real dictionary asset URL for a dictionary filename, resolved module-relative. The caller
- *  passes the dialect-resolved filename (default `dictionary-en-us.txt`). */
+ *  passes the dialect-resolved filename (default `dictionary-en-us.txt`). `dictionaryFileForDialect`
+ *  already collapses an unknown dialect to the default, so an unmapped name falls back the same way
+ *  rather than pointing at an asset that does not ship. */
 export function resolveDictionaryUrl(dictionaryFile: string): string {
-  return new URL(`./spellcheck-assets/${dictionaryFile}`, import.meta.url).href;
+  const resolve = DICTIONARY_URLS[dictionaryFile] ?? DICTIONARY_URLS['dictionary-en-us.txt'];
+  return resolve();
 }
 
 /** How far past the visible viewport to lint, so a small scroll does not re-lint from scratch. */

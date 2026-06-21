@@ -1,0 +1,1147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tidy settings — Direction "preview": example-first preview cards</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+  rel="stylesheet"
+/>
+<style>
+  /* ===========================================================================================
+     TIDY SETTINGS — DIRECTION "preview": example-first preview cards.
+
+     The brief (docs/internal/design/2026-06-20-editor-copyedit-design-brief.md), and in particular
+     its "Settings surface and the convention set" section, is authoritative for this pass. The chosen
+     editor surface is the review-mode mockup (2026-06-20-editor-copyedit-review-mode-mockup.html); this
+     settings surface speaks the same visual language and reuses its diff vocabulary verbatim.
+
+     THE DIRECTION. Each tidy convention is a CARD whose primary content is a real before/after
+     example. The editor learns the convention by SEEING it, not by parsing a sentence of grammar
+     terminology. The toggle lives on the card, so the editor sees exactly what a convention does
+     before turning it on. The conventions are grouped: objective fixes (on by default) and style
+     conventions (off by default, each with a variant choice). When a style convention has variants,
+     turning it on opens the variant chooser, and the in-card example RE-RENDERS to the picked variant,
+     so the example always shows the editor's own choice.
+
+     THE STRENGTH THIS DIRECTION PUSHES: the best comprehension for a non-technical editor. "Oxford
+     comma" and "en-dash in number ranges" are jargon; an example is not. The example is the spec.
+
+     THE RISK IT MUST HANDLE: cards are heavier than rows, and the full set is fifteen conventions, so
+     a flat wall of cards would not scan. The density answers:
+       - Two sections, each with a header and a live count.
+       - A resting card is COMPACT: header row + one tight example line, no chrome.
+       - An OFF style card shows its example as a single muted "would change X to Y" line; it expands
+         to the full variant chooser only when toggled on. So the long list stays a scannable list of
+         one-line cards until the editor engages one.
+       - A two-up grid on wide screens (the cards are self-contained), collapsing to one column narrow.
+       - A sticky section summary so the editor always knows how many are on.
+
+     THE TWO-TIER SPLIT (the brief's locked model):
+       - DEVELOPER tier (deploy-time, NOT editable here): the tidy.enabled master switch, the Anthropic
+         API key (a Worker secret), and the model. Shown to the editor READ-ONLY, as a calm "set up by
+         your developer" status card, so the editor understands the boundary and never tries to edit a
+         secret. (Screens 1, 2.)
+       - EDITOR tier (this screen): the per-convention config. (Screens 1, 2, 3.)
+
+     THE VISIBILITY GATE (the brief, MK-4 extended): the editor-tier section renders ONLY when the
+     developer has enabled tidy AND the key is present. When tidy is NOT enabled, the whole convention
+     section is ABSENT, replaced by a short, honest "ask your developer to enable this" note. Never a
+     teasing disabled form. (Screen 4.)
+
+     cairn is NOT WYSIWYG. Every before/after here is MARKDOWN SOURCE / the plain text the author
+     typed, in the editor monospace face, never a rendered page.
+
+     This mockup hand-rolls the DaisyUI/Tailwind look in plain CSS (no build step), but every color is a
+     shipped Warm Stone token copied VERBATIM from src/lib/components/cairn-admin.css (both theme
+     roots), and every pattern it stands in for is a real shipped recipe: the office shell (w-56
+     sidebar + h-16 topbar), the page-heading and eyebrow type, the floating card
+     (rounded-box + hairline + soft shadow), the segmented check-and-tint control, the DaisyUI v5
+     toggle, the .anno a11y/engine wiring chips, and light + dark renders. No removed DaisyUI v5
+     classes (no form-control, label-text, -bordered). The diff run-highlight tokens (.rdel / .radd)
+     and the derived diff washes are the SAME ones the review mockup defines.
+     =========================================================================================== */
+
+  /* ---- mock scaffold (outside the themed surfaces) ---- */
+  body { margin: 0; background: #d8d4cf; }
+  .mock-label { font: 600 13px/1.4 system-ui; letter-spacing: .08em; text-transform: uppercase; color: #444; padding: 30px 24px 4px; }
+  .mock-note { font: 400 13px/1.6 system-ui; color: #5a564f; padding: 0 24px 14px; max-width: 94ch; }
+  .mock-note code { font-family: ui-monospace, monospace; background: rgba(0,0,0,.06); padding: 1px 4px; border-radius: 3px; }
+  .mock-note b { color: #3a362f; }
+  .intro { padding: 26px 24px 4px; max-width: 94ch; }
+  .intro h1 { font: 700 24px/1.2 system-ui; color: #2c2920; margin: 0 0 10px; }
+  .intro p { font: 400 14px/1.62 system-ui; color: #4a463d; margin: 0 0 10px; max-width: 88ch; }
+  .screen { border: 1px solid #aaa; margin: 0 16px 48px; box-shadow: 0 2px 14px rgba(0,0,0,.08); overflow: hidden; border-radius: 2px; }
+  .grow { flex: 1 1 auto; }
+  /* the inline annotation chip: documents a11y or engine behavior provable only in the Svelte build.
+     Never a user-visible element; it stands in for the implementer's wiring note. */
+  .anno { font: 600 11px/1.45 system-ui; color: #6b4f9c; background: #ece4f8; border: 1px dashed #b9a6dd; border-radius: 5px; padding: 5px 10px; margin: 0 24px 12px; display: inline-block; max-width: 94ch; }
+  .anno.engine { color: #2d6a4f; background: #def0e6; border-color: #93c9ac; }
+
+  /* ---- Warm Stone tokens, both theme roots, inlined VERBATIM from cairn-admin.css so the mockup
+       stands alone. Copied, not invented; verified against the shipped src/lib/components/cairn-admin.css
+       and matched to the review-mode mockup. ---- */
+  [data-theme='cairn-admin'] {
+    --color-base-100: oklch(99% 0.004 75);
+    --color-base-200: oklch(96.5% 0.006 75);
+    --color-base-300: oklch(89% 0.011 75);
+    --color-base-content: oklch(26% 0.014 75);
+    --color-primary: oklch(52% 0.2 293);
+    --color-primary-content: oklch(98% 0.012 293);
+    --color-accent: oklch(54% 0.16 300);
+    --color-accent-content: oklch(98% 0.012 300);
+    --cairn-directive-ink-2: oklch(50% 0.16 300);
+    --cairn-directive-ink-3: oklch(48% 0.16 300);
+    --color-muted: oklch(48% 0.01 75);
+    --color-subtle: oklch(42% 0.01 75);
+    --color-info: oklch(52% 0.12 240);
+    --color-info-content: oklch(98% 0.012 240);
+    --color-success: oklch(52% 0.12 150);
+    --color-warning: oklch(75% 0.15 70);
+    --color-positive-ink: oklch(48% 0.12 150);
+    --color-error: oklch(56% 0.2 25);
+    --color-error-content: oklch(98% 0.012 25);
+    --cairn-error-ink: oklch(50% 0.19 25);
+    --cairn-error-tint: oklch(96% 0.03 25);
+    --cairn-error-border: oklch(85% 0.06 25);
+    --cairn-code-chip: oklch(94.5% 0.008 75);
+    --cairn-warning-ink: oklch(50% 0.13 70);
+    --cairn-focus-dim-ink: oklch(66% 0.01 75);
+    --cairn-card-border: oklch(93% 0.008 75);
+    --cairn-shadow: 0 1px 2px oklch(28% 0.02 75 / 0.05), 0 8px 24px -6px oklch(28% 0.02 75 / 0.1);
+    --cairn-scrim: oklch(20% 0.01 75 / 0.4);
+    /* DERIVED for this pass, identical to the review mockup: the diff-add and diff-del washes are
+       color-mix over the EXISTING positive-ink / error-ink, not new shipped tokens, so the example
+       highlights agree with the review surface the editor will later see. */
+    --cairn-diff-add-bg: color-mix(in oklab, var(--color-positive-ink) 11%, var(--color-base-100));
+    --cairn-diff-add-edge: color-mix(in oklab, var(--color-positive-ink) 55%, transparent);
+    --cairn-diff-add-ink: var(--color-positive-ink);
+    --cairn-diff-del-bg: color-mix(in oklab, var(--cairn-error-ink) 9%, var(--color-base-100));
+    --cairn-diff-del-edge: color-mix(in oklab, var(--cairn-error-ink) 50%, transparent);
+    --cairn-diff-del-ink: var(--cairn-error-ink);
+  }
+  [data-theme='cairn-admin-dark'] {
+    --color-base-100: oklch(24% 0.01 75);
+    --color-base-200: oklch(15.5% 0.009 75);
+    --color-base-300: oklch(30% 0.014 75);
+    --color-base-content: oklch(93% 0.006 75);
+    --color-primary: oklch(68% 0.18 293);
+    --color-primary-content: oklch(20% 0.04 293);
+    --color-accent: oklch(70% 0.14 300);
+    --color-accent-content: oklch(20% 0.04 300);
+    --cairn-directive-ink-2: oklch(74% 0.14 300);
+    --cairn-directive-ink-3: oklch(78% 0.14 300);
+    --color-muted: oklch(72% 0.01 75);
+    --color-subtle: oklch(80% 0.008 75);
+    --color-info: oklch(72% 0.12 240);
+    --color-info-content: oklch(20% 0.04 240);
+    --color-success: oklch(70% 0.12 150);
+    --color-warning: oklch(80% 0.14 70);
+    --color-positive-ink: oklch(78% 0.12 150);
+    --color-error: oklch(70% 0.18 25);
+    --color-error-content: oklch(20% 0.04 25);
+    --cairn-error-ink: oklch(78% 0.15 25);
+    --cairn-error-tint: oklch(28% 0.06 25);
+    --cairn-error-border: oklch(40% 0.09 25);
+    --cairn-code-chip: oklch(29.5% 0.012 75);
+    --cairn-warning-ink: oklch(80% 0.14 70);
+    --cairn-focus-dim-ink: oklch(53% 0.01 75);
+    --cairn-card-border: oklch(30% 0.014 75);
+    --cairn-shadow: 0 1px 2px oklch(0% 0 0 / 0.35), 0 8px 24px -6px oklch(0% 0 0 / 0.5);
+    --cairn-scrim: oklch(0% 0 0 / 0.55);
+    --cairn-diff-add-bg: color-mix(in oklab, var(--color-positive-ink) 16%, var(--color-base-100));
+    --cairn-diff-add-edge: color-mix(in oklab, var(--color-positive-ink) 60%, transparent);
+    --cairn-diff-add-ink: var(--color-positive-ink);
+    --cairn-diff-del-bg: color-mix(in oklab, var(--cairn-error-ink) 15%, var(--color-base-100));
+    --cairn-diff-del-edge: color-mix(in oklab, var(--cairn-error-ink) 55%, transparent);
+    --cairn-diff-del-ink: var(--cairn-error-ink);
+  }
+  [data-theme] {
+    --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+    --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+    /* the example face stands in for the shipped iA Writer Mono with IBM Plex Mono, its
+       same-superfamily ancestor (see the design system's Type note). */
+    --font-editor: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+
+  /* ===== the office shell (sidebar + topbar, the shipped recipe) ===== */
+  .shell { display: flex; min-height: 92vh; background: var(--color-base-200); font-family: var(--font-body); color: var(--color-base-content); -webkit-font-smoothing: antialiased; }
+  .side { width: 14rem; flex: none; background: var(--color-base-100); border-right: 1px solid var(--cairn-card-border); }
+  .side-brand { display: flex; align-items: center; gap: 10px; height: 64px; padding: 0 16px; border-bottom: 1px solid var(--cairn-card-border); }
+  .brand-tile { height: 32px; width: 32px; border-radius: .75rem; background: var(--color-primary); color: var(--color-primary-content); display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,.14); }
+  .brand-word { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; letter-spacing: -.01em; }
+  .side-nav { padding: 6px 10px; display: flex; flex-direction: column; gap: 1px; }
+  .nav-grp { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); padding: 16px 8px 5px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: .5rem; font-size: .875rem; font-weight: 500; color: var(--color-subtle); text-decoration: none; cursor: pointer; }
+  .nav-item:hover { background: color-mix(in oklab, var(--color-base-content) 5%, transparent); }
+  .nav-item.active { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); font-weight: 600; }
+  .nav-ico { width: 16px; height: 16px; flex: none; }
+  .main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+  .top { display: flex; align-items: center; height: 64px; min-height: 64px; background: var(--color-base-100); border-bottom: 1px solid var(--cairn-card-border); padding: 0 20px; gap: 12px; }
+  .palette { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; min-width: 17rem; border: 1px solid var(--cairn-card-border); border-radius: .625rem; background: var(--color-base-200); color: var(--color-muted); font: 400 .8125rem/1 var(--font-body); cursor: pointer; }
+  .palette svg { width: 15px; height: 15px; }
+  .kbd-hint { margin-left: auto; font-size: .625rem; border: 1px solid var(--cairn-card-border); border-radius: .25rem; padding: 1px 5px; color: var(--color-muted); }
+  .top-link { color: var(--color-muted); text-decoration: underline; text-underline-offset: 2px; text-decoration-color: color-mix(in oklab, currentColor 40%, transparent); background: none; border: 0; font: 400 .8125rem/1 var(--font-body); cursor: pointer; }
+  .top-link:hover { color: var(--color-primary); }
+  .btn { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 13px; border-radius: .5rem; font: 600 .8125rem/1 var(--font-body); cursor: pointer; border: 1px solid transparent; }
+  .btn svg { width: 15px; height: 15px; }
+  .btn-primary { background: var(--color-primary); color: var(--color-primary-content); box-shadow: 0 1px 2px color-mix(in oklab, var(--color-primary) 35%, transparent); }
+  .btn-primary[disabled] { opacity: .55; cursor: default; box-shadow: none; }
+
+  /* ===== the page frame ===== */
+  .page { padding: 2rem 2.5rem 3rem; }
+  .page-col { max-width: 60rem; margin: 0 auto; }
+  .pg-eyebrow { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); margin-bottom: 7px; }
+  .pg-h { font-family: var(--font-display); font-size: 1.875rem; font-weight: 700; letter-spacing: -.025em; margin: 0 0 5px; }
+  .pg-sub { font-size: .9375rem; color: var(--color-muted); margin: 0; max-width: 64ch; line-height: 1.5; }
+
+  /* ===== the developer-tier status card (read-only to the editor) ===== */
+  /* A calm "set up by your developer" card, visually distinct from the editable convention cards: a
+     faint recessed fill and a lock glyph, so the editor reads it as status, not as controls. It carries
+     the master switch state, the key state, and the model, all read-only. This makes the two-tier split
+     legible without ever rendering a disabled secret field. */
+  .dev-card { margin-top: 22px; border: 1px solid var(--cairn-card-border); border-radius: 1rem; background: color-mix(in oklab, var(--color-base-content) 2.5%, var(--color-base-100)); box-shadow: var(--cairn-shadow); overflow: hidden; }
+  .dev-head { display: flex; align-items: center; gap: 11px; padding: 14px 18px; }
+  .dev-lock { width: 32px; height: 32px; flex: none; border-radius: .6rem; display: inline-flex; align-items: center; justify-content: center; background: color-mix(in oklab, var(--color-base-content) 7%, transparent); color: var(--color-muted); }
+  .dev-lock svg { width: 17px; height: 17px; }
+  .dev-htext { flex: 1 1 auto; min-width: 0; }
+  .dev-title { font-size: .9375rem; font-weight: 600; }
+  .dev-sub { font-size: .8125rem; color: var(--color-muted); margin-top: 1px; }
+  .dev-readonly { font-size: .625rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--color-muted); border: 1px solid var(--cairn-card-border); border-radius: 999px; padding: 3px 9px; flex: none; }
+  .dev-facts { display: flex; flex-wrap: wrap; gap: 0; border-top: 1px solid var(--cairn-card-border); }
+  .dev-fact { flex: 1 1 0; min-width: 11rem; padding: 12px 18px; display: flex; flex-direction: column; gap: 4px; }
+  .dev-fact + .dev-fact { border-left: 1px solid var(--cairn-card-border); }
+  .dev-fact-k { font-size: .6875rem; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; color: var(--color-muted); }
+  .dev-fact-v { display: inline-flex; align-items: center; gap: 6px; font-size: .875rem; font-weight: 600; }
+  .dev-fact-v svg { width: 14px; height: 14px; flex: none; }
+  .dev-fact-v.ok { color: var(--color-positive-ink); }
+  .dev-fact-v .key-mask { font-family: var(--font-editor); font-weight: 500; color: var(--color-muted); }
+  .dev-fact-v .model-name { color: var(--color-base-content); }
+  .dev-fact-v .model-sub { font-size: .75rem; font-weight: 400; color: var(--color-muted); }
+  /* the model choice shown READ-ONLY: both options visible (Sonnet the default, Haiku the cheaper
+     alternative), the developer's pick marked, but inert — it is a deploy-time decision, so the editor
+     reads which model is in use and what the other choice is, and cannot change it. Distinct from the
+     editable segmented control by the absence of the primary tint and the dimmed unpicked option. */
+  .model-ro { display: inline-flex; align-items: center; gap: 0; border: 1px solid var(--cairn-card-border); border-radius: .5rem; overflow: hidden; margin-top: 1px; }
+  .model-ro span { font: 600 .75rem/1 var(--font-body); padding: 5px 9px; display: inline-flex; align-items: center; gap: 5px; color: var(--color-muted); }
+  .model-ro span + span { border-left: 1px solid var(--cairn-card-border); }
+  .model-ro span.pick { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); color: var(--color-base-content); }
+  .model-ro span.pick svg { width: 12px; height: 12px; color: var(--color-muted); }
+  .model-ro span .alt-sub { font-weight: 400; color: var(--color-muted); }
+
+  /* ===== section header + summary (the density aid) ===== */
+  .sec { margin-top: 30px; }
+  .sec-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+  .sec-h { font-size: 1.0625rem; font-weight: 700; letter-spacing: -.01em; }
+  .sec-count { font-size: .75rem; font-weight: 600; color: var(--color-muted); border: 1px solid var(--cairn-card-border); border-radius: 999px; padding: 2px 9px; }
+  .sec-count .on-n { color: var(--color-positive-ink); }
+  .sec-desc { font-size: .8125rem; color: var(--color-muted); margin: 0 0 14px; line-height: 1.5; max-width: 70ch; }
+
+  /* ===== the convention-card grid (two-up wide, one-up narrow) ===== */
+  .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; align-items: start; }
+  .cards.one { grid-template-columns: minmax(0, 1fr); }
+
+  /* a single convention card */
+  .conv { border: 1px solid var(--cairn-card-border); border-radius: .9rem; background: var(--color-base-100); box-shadow: var(--cairn-shadow); overflow: hidden; }
+  /* the ON style card lifts a hair so an enabled convention stands out from the OFF ones in the grid */
+  .conv.on-style { border-color: color-mix(in oklab, var(--color-primary) 28%, var(--cairn-card-border)); }
+  .conv-head { display: flex; align-items: flex-start; gap: 11px; padding: 13px 14px 11px; }
+  .conv-htext { flex: 1 1 auto; min-width: 0; }
+  .conv-name { font-size: .9375rem; font-weight: 600; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .conv-tag { font-size: .5625rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; border-radius: 999px; padding: 2px 7px; }
+  .conv-tag.default { color: var(--color-positive-ink); background: color-mix(in oklab, var(--color-positive-ink) 13%, transparent); }
+  .conv-tag.optional { color: var(--cairn-directive-ink-2); background: color-mix(in oklab, var(--color-accent) 11%, transparent); }
+  .conv-blurb { font-size: .75rem; color: var(--color-muted); line-height: 1.45; margin-top: 3px; }
+  .conv-ctl { flex: none; padding-top: 1px; }
+
+  /* the DaisyUI v5 toggle stand-in */
+  .toggle { appearance: none; -webkit-appearance: none; width: 40px; height: 22px; border-radius: 999px; background: var(--color-base-300); position: relative; cursor: pointer; flex: none; border: 0; margin: 0; transition: background .12s; }
+  .toggle::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: var(--color-base-100); box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: transform .12s; }
+  .toggle:checked { background: var(--color-primary); }
+  .toggle:checked::after { transform: translateX(18px); }
+  .toggle:focus-visible { outline: 2px solid color-mix(in oklab, var(--color-primary) 70%, transparent); outline-offset: 2px; }
+
+  /* ===== the in-card EXAMPLE (the heart of this direction) ===== */
+  /* the example sits on the recessed ground inside the card, framed top by a hairline, so it reads as a
+     sample lifted out of the manuscript. Monospace, the editor face: this is markdown source / typed
+     text, not a rendered page. */
+  .ex { border-top: 1px solid var(--cairn-card-border); background: var(--color-base-200); padding: 10px 14px 11px; }
+  .ex-cap { font-size: .5625rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--color-muted); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .ex-cap svg { width: 11px; height: 11px; }
+  /* the compact one-line "before -> after" example for a resting (OFF or simple-ON) card */
+  .ex-inline { font-family: var(--font-editor); font-size: .8125rem; line-height: 1.65; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .ex-arrow { color: var(--color-muted); flex: none; }
+  .ex-arrow svg { width: 13px; height: 13px; display: block; }
+  /* the stacked before/after example (the verbose form, used in the hero objective cards) */
+  .ex-row { font-family: var(--font-editor); font-size: .8125rem; line-height: 1.6; display: flex; align-items: baseline; gap: 8px; padding: 1px 0; }
+  .ex-gut { flex: none; width: 14px; text-align: center; font-weight: 600; user-select: none; }
+  .ex-row.bef .ex-gut { color: var(--cairn-diff-del-ink); }
+  .ex-row.aft .ex-gut { color: var(--cairn-diff-add-ink); }
+  .ex-txt { min-width: 0; }
+  /* the changed runs: the SAME tokens as the review surface — del strikes in error ink, add in positive ink */
+  .rdel { background: color-mix(in oklab, var(--cairn-error-ink) 18%, transparent); color: var(--cairn-diff-del-ink); text-decoration: line-through; text-decoration-thickness: 1px; border-radius: 2px; padding: 0 1px; }
+  .radd { background: color-mix(in oklab, var(--color-positive-ink) 20%, transparent); color: var(--cairn-diff-add-ink); border-radius: 2px; padding: 0 1px; }
+  /* an OFF card's example reads as "what this WOULD do", so the runs are quieted to neutral, not the
+     live red/green of an active change — it is a preview of a hypothetical, not a pending edit */
+  .conv.off .ex { background: color-mix(in oklab, var(--color-base-content) 2%, var(--color-base-100)); }
+  .conv.off .rdel { background: transparent; color: var(--color-muted); }
+  .conv.off .radd { background: transparent; color: var(--color-subtle); font-weight: 600; text-decoration: underline; text-decoration-color: color-mix(in oklab, var(--color-subtle) 45%, transparent); text-underline-offset: 2px; }
+
+  /* ===== the variant chooser (revealed when a style convention is turned ON) ===== */
+  .variant { border-top: 1px solid var(--cairn-card-border); padding: 11px 14px 13px; display: flex; flex-direction: column; gap: 8px; }
+  .variant-lbl { font-size: .6875rem; font-weight: 600; color: var(--color-base-content); display: flex; align-items: center; gap: 6px; }
+  .variant-lbl .help { font-weight: 400; color: var(--color-muted); }
+  /* the segmented check-and-tint control (the shipped recipe): a bordered group, borderless segments,
+     the active one tints primary AND shows a check glyph (the non-color cue, WCAG 1.4.1). */
+  .seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--cairn-card-border); border-radius: .5rem; overflow: hidden; background: var(--color-base-100); align-self: flex-start; max-width: 100%; }
+  .seg button { font: 500 .75rem/1.1 var(--font-body); border: 0; background: transparent; color: var(--color-muted); padding: 6px 11px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--cairn-card-border); }
+  .seg button[aria-pressed="true"], .seg button[aria-checked="true"] { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); }
+  .seg .chk { width: 11px; height: 11px; }
+  /* the example RE-RENDERS to the picked variant; a tiny caption ties the two together */
+  .variant-ex-tie { font-size: .625rem; color: var(--color-muted); display: inline-flex; align-items: center; gap: 5px; }
+  .variant-ex-tie svg { width: 11px; height: 11px; color: var(--color-primary); }
+
+  /* a sub-toggle inside a card (the double-hyphen rider on em-dash) */
+  .sub-toggle { display: flex; align-items: center; gap: 9px; }
+  .sub-toggle .toggle { width: 34px; height: 19px; }
+  .sub-toggle .toggle::after { width: 15px; height: 15px; }
+  .sub-toggle .toggle:checked::after { transform: translateX(15px); }
+  .sub-toggle-txt { font-size: .75rem; }
+  .sub-toggle-txt .st-name { font-weight: 600; }
+  .sub-toggle-txt .st-hint { color: var(--color-muted); }
+
+  /* ===== the deferred / advanced note ===== */
+  .advanced { margin-top: 26px; border: 1px dashed var(--cairn-card-border); border-radius: .9rem; background: transparent; padding: 14px 16px; }
+  .advanced-h { font-size: .8125rem; font-weight: 600; display: flex; align-items: center; gap: 7px; }
+  .advanced-h svg { width: 15px; height: 15px; color: var(--color-muted); }
+  .advanced-p { font-size: .75rem; color: var(--color-muted); line-height: 1.5; margin: 6px 0 0; max-width: 72ch; }
+
+  /* ===== the gate state (tidy NOT enabled by the developer) ===== */
+  .gate { margin-top: 22px; border: 1px solid var(--cairn-card-border); border-radius: 1rem; background: var(--color-base-100); box-shadow: var(--cairn-shadow); padding: 30px 26px; display: flex; gap: 16px; align-items: flex-start; max-width: 46rem; }
+  .gate-ico { width: 42px; height: 42px; flex: none; border-radius: .7rem; display: inline-flex; align-items: center; justify-content: center; background: color-mix(in oklab, var(--color-base-content) 6%, transparent); color: var(--color-muted); }
+  .gate-ico svg { width: 21px; height: 21px; }
+  .gate-main { flex: 1 1 auto; min-width: 0; }
+  .gate-h { font-size: 1rem; font-weight: 700; margin: 0 0 5px; }
+  .gate-p { font-size: .875rem; color: var(--color-muted); line-height: 1.55; margin: 0 0 10px; max-width: 60ch; }
+  .gate-steps { font-size: .8125rem; color: var(--color-base-content); line-height: 1.5; margin: 0; padding-left: 1.1rem; }
+  .gate-steps li { margin: 3px 0; }
+  .gate-steps code { font-family: var(--font-editor); font-size: .75rem; background: var(--cairn-code-chip); padding: 1px 5px; border-radius: 3px; }
+
+  /* ===== a save bar that sits under the editor-tier section ===== */
+  .savebar { display: flex; align-items: center; gap: 12px; margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--cairn-card-border); }
+  .savebar-note { font-size: .75rem; color: var(--color-muted); display: flex; align-items: center; gap: 7px; line-height: 1.4; }
+  .savebar-note svg { width: 14px; height: 14px; flex: none; color: var(--color-muted); }
+
+  /* a couple of inline-code spans in card blurbs */
+  .ic { font-family: var(--font-editor); font-size: .9em; background: var(--cairn-code-chip); padding: .5px 4px; border-radius: 3px; }
+
+  @media (max-width: 760px) {
+    .cards { grid-template-columns: minmax(0, 1fr); }
+    .dev-facts { flex-direction: column; }
+    .dev-fact + .dev-fact { border-left: 0; border-top: 1px solid var(--cairn-card-border); }
+  }
+</style>
+</head>
+<body>
+
+<div class="intro">
+  <h1>Tidy settings — Direction "preview": example-first preview cards</h1>
+  <p>Tidy is a light, voice-preserving copy-edit from Claude. This is where an editor governs it. The
+  governing idea of this direction: every convention is a card whose main content is a real before and
+  after example. The editor learns each one by seeing it, not by reading grammar terminology, and the
+  toggle sits on the card so the effect is visible before it is turned on.</p>
+  <p>The objective fixes are on by default and read as a tight, scannable list. The style conventions
+  are off by default; each one shows what it would do as a single muted line and opens its variant
+  chooser only when the editor turns it on, so a fifteen-convention surface still scans. Two tiers are
+  separated: the developer sets up tidy and holds the key (shown read-only), and the editor configures
+  the conventions. When the developer has not enabled tidy, the convention section is absent, replaced
+  by a short note (screen 4).</p>
+</div>
+
+<!-- =====================================================================================
+     SCREEN 1 · THE FULL SURFACE AT REST (light) — the safe defaults as the resting state.
+     The hero. The developer-tier read-only status card up top (tidy enabled, key saved, Sonnet), then
+     the two convention sections. Objective fixes: all six ON, each a compact card with one example.
+     Style conventions: all OFF, each a compact card whose example reads as "what this WOULD do" in
+     quieted ink, with the variant chooser collapsed. This is exactly what an editor sees the first
+     time: every safe default already in place, nothing demanding action.
+     ===================================================================================== -->
+<div class="mock-label">Screen 1 · The full surface at rest, safe defaults (light)</div>
+<div class="mock-note">The resting state, which is also the safe default. The developer-tier card at the
+top is read-only status. Below it, the six objective fixes are on (each a card with its example), and the
+nine style conventions are off (each a compact card showing what it would do, chooser collapsed). The
+editor changes nothing here and the settings are already correct.</div>
+<div class="anno">a11y — each convention toggle is a real <code>&lt;input type="checkbox"&gt;</code> with
+an accessible name from the card heading; the on/off state lives in the control, never in color alone.
+The two section counts are quiet text, and the developer card is plain read-only content (no disabled
+form controls to confuse a screen reader).</div>
+<div class="anno engine">engine — this whole editor-tier section renders ONLY because the developer
+enabled tidy and the key is present (screen 4 is the other branch). The per-convention values persist to
+a git-committed per-site YAML file, edited through the GitHub-App commit pipeline, so the config is
+diffable and shared across editors. The system prompt is built from the ENABLED conventions only.</div>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="shell">
+    <aside class="side">
+      <div class="side-brand">
+        <span class="brand-tile"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><ellipse cx="12" cy="18.2" rx="7" ry="2.5"/><ellipse cx="12" cy="13" rx="5.2" ry="2.1"/><ellipse cx="12" cy="8.6" rx="3.7" ry="1.7"/><ellipse cx="12" cy="5" rx="2" ry="1.2"/></svg></span>
+        <span class="brand-word">cairn</span>
+      </div>
+      <nav class="side-nav" aria-label="Sections">
+        <div class="nav-grp">Content</div>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>Posts</a>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>Pages</a>
+        <div class="nav-grp">Site</div>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 13v8"/><path d="M12 3v3"/><path d="M18 6H8.5a1 1 0 0 0-.7.3l-2.3 2.4a1 1 0 0 0 0 1.4l2.3 2.4a1 1 0 0 0 .7.3H18a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1Z"/></svg>Navigation</a>
+        <a class="nav-item active" aria-current="page"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>Settings</a>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Editors</a>
+      </nav>
+    </aside>
+    <div class="main">
+      <div class="top">
+        <button class="palette"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search and commands<span class="kbd-hint">Ctrl K</span></button>
+        <div class="grow"></div>
+        <button class="top-link">View site</button>
+      </div>
+      <main class="page">
+        <div class="page-col">
+          <div class="pg-eyebrow">Settings</div>
+          <h1 class="pg-h">Tidy</h1>
+          <p class="pg-sub">A light copy-edit from Claude. It fixes clear errors and leaves your wording
+          and voice alone. Choose what it touches; you review every change before it lands.</p>
+
+          <!-- DEVELOPER-TIER read-only status card -->
+          <!-- the master switch, the key, and the model are deploy-time and a secret, so the editor sees
+               them as confirmed status, not as controls. The lock glyph + recessed fill + "Set by your
+               developer" tag carry the boundary. -->
+          <div class="dev-card">
+            <div class="dev-head">
+              <span class="dev-lock"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+              <div class="dev-htext">
+                <div class="dev-title">Tidy is set up for this site</div>
+                <div class="dev-sub">Your developer turned tidy on and added the API key. These cannot be changed here.</div>
+              </div>
+              <span class="dev-readonly">Set by your developer</span>
+            </div>
+            <div class="dev-facts">
+              <div class="dev-fact">
+                <span class="dev-fact-k">Status</span>
+                <span class="dev-fact-v ok"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Enabled</span>
+              </div>
+              <div class="dev-fact">
+                <span class="dev-fact-k">API key</span>
+                <span class="dev-fact-v ok"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Configured <span class="key-mask">· sk-ant-…7c2a</span></span>
+              </div>
+              <div class="dev-fact">
+                <span class="dev-fact-k">Model</span>
+                <span class="model-ro" role="img" aria-label="Model: Sonnet, set by your developer. Haiku is the cheaper alternative.">
+                  <span class="pick"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Sonnet</span>
+                  <span>Haiku <span class="alt-sub">· cheaper</span></span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ===== SECTION: objective fixes (ON by default) ===== -->
+          <section class="sec">
+            <div class="sec-head">
+              <span class="sec-h">Always-safe fixes</span>
+              <span class="sec-count"><span class="on-n">6</span> of 6 on</span>
+            </div>
+            <p class="sec-desc">These correct clear mistakes. There is no judgment call, so they are on
+            by default. Turn any one off if you would rather catch it yourself.</p>
+
+            <div class="cards">
+
+              <!-- spelling -->
+              <div class="conv">
+                <div class="conv-head">
+                  <div class="conv-htext">
+                    <div class="conv-name">Spelling and typos<span class="conv-tag default">On</span></div>
+                    <div class="conv-blurb">Misspelled words and slips of the keyboard.</div>
+                  </div>
+                  <span class="conv-ctl"><input type="checkbox" class="toggle" checked aria-label="Spelling and typos" /></span>
+                </div>
+                <div class="ex">
+                  <div class="ex-cap"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v4"/><path d="M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg>Example</div>
+                  <div class="ex-inline"><span>can <span class="rdel">accomodate</span></span><span class="ex-arrow"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span><span>can <span class="radd">accommodate</span></span></div>
+                </div>
+              </div>
+
+              <!-- grammar -->
+              <div class="conv">
+                <div class="conv-head">
+                  <div class="conv-htext">
+                    <div class="conv-name">Clear grammar errors<span class="conv-tag default">On</span></div>
+                    <div class="conv-blurb">Only what is plainly wrong, like a verb that does not match its subject.</div>
+                  </div>
+                  <span class="conv-ctl"><input type="checkbox" class="toggle" checked aria-label="Clear grammar errors" /></span>
+                </div>
+                <div class="ex">
+                  <div class="ex-cap"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v4"/><path d="M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg>Example</div>
+                  <div class="ex-inline"><span>The crew <span class="rdel">lay</span> tracks</span><span class="ex-arrow"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span><span>The crew <span class="radd">lays</span> tracks</span></div>
+                </div>
+              </div>
+
+              <!-- doubled words -->
+              <div class="conv">
+                <div class="conv-head">
+                  <div class="conv-htext">
+                    <div class="conv-name">Doubled words<span class="conv-tag default">On</span></div>
+                    <div class="conv-blurb">An accidental repeat, like writing the same word twice.</div>
+                  </div>
+                  <span class="conv-ctl"><input type="checkbox" class="toggle" checked aria-label="Doubled words" /></span>
+                </div>
+                <div class="ex">
+                  <div class="ex-cap"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v4"/><path d="M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg>Example</div>
+                  <div class="ex-inline"><span>for <span class="rdel">the the</span> drive</span><span class="ex-arrow"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span><span>for <span class="radd">the</span> drive</span></div>
+                </div>
+              </div>
+
+              <!-- stray whitespace -->
+              <div class="conv">
+                <div class="conv-head">
+                  <div class="conv-htext">
+                    <div class="conv-name">Stray spaces<span class="conv-tag default">On</span></div>
+                    <div class="conv-blurb">A double space mid-sentence, or a space left at the end of a line.</div>
+                  </div>
+                  <span class="conv-ctl"><input type="checkbox" class="toggle" checked aria-label="Stray spaces" /></span>
+                </div>
+                <div class="ex">
+                  <div class="ex-cap"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v4"/><path d="M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg>Example</div>
+                  <div class="ex-inline"><span>melt<span class="rdel">·&nbsp;·</span>is here</span><span class="ex-arrow"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span><span>melt<span class="radd">·</span>is here</span></div>
+                </div>
+              </div>
+
+              <!-- sentence-start capitalization -->
+              <div class="conv">
+                <div class="conv-head">
+                  <div class="conv-htext">
+                    <div class="conv-name">Sentence capitals<span class="conv-tag default">On</span></div>
+                    <div class="conv-blurb">A new sentence that starts with a lowercase letter.</div>
+                  </div>
+                  <span class="conv-ctl"><input type="checkbox" class="toggle" checked aria-label="Sentence capitals" /></span>
+                </div>
+                <div class="ex">
+                  <div class="ex-cap"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v4"/><path d="M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg>Example</div>
+                  <div class="ex-inline"><span>softens. <span class="rdel">wax</span> for</span><span class="ex-arrow"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span><span>softens. <span class="radd">Wax</span> for</span></div>
+                </div>
+              </div>
+
+              <!-- terminal punctuation -->
+              <div class="conv">
+                <div class="conv-head">
+                  <div class="conv-htext">
+                    <div class="conv-name">Missing end punctuation<span class="conv-tag default">On</span></div>
+                    <div class="conv-blurb">A sentence in a paragraph that runs off without a full stop.</div>
+                  </div>
+                  <span class="conv-ctl"><input type="checkbox" class="toggle" checked aria-label="Missing end punctuation" /></span>
+                </div>
+                <div class="ex">
+                  <div class="ex-cap"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v4"/><path d="M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg>Example</div>
+                  <div class="ex-inline"><span>check it twice<span class="rdel"> </span></span><span class="ex-arrow"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span><span>check it twice<span class="radd">.</span></span></div>
+                </div>
+              </div>
+
+            </div>
+          </section>
+
+          <!-- ===== SECTION: style conventions (OFF by default) ===== -->
+          <section class="sec">
+            <div class="sec-head">
+              <span class="sec-h">Style choices</span>
+              <span class="sec-count"><span class="on-n" style="color:var(--color-muted);">0</span> of 9 on</span>
+            </div>
+            <p class="sec-desc">These are matters of taste, not mistakes, so tidy leaves them alone until
+            you ask. Turn one on and pick how you want it; the example shows your choice. Anything you
+            leave off stays exactly as you wrote it.</p>
+
+            <div class="cards">
+
+              <!-- Oxford comma (OFF) -->
+              <div class="conv off">
+                <div class="conv-head">
+                  <div class="conv-htext">
+                    <div class="conv-name">Oxford comma<span class="conv-tag optional">Off</span></div>
+                    <div class="conv-blurb">The comma before "and" in a list. Add it everywhere, or remove it everywhere.</div>
+                  </div>
+                  <span class="conv-ctl"><input type="checkbox" class="toggle" aria-label="Oxford comma" /></span>
+                </div>
+                <div class="ex">
+                  <div class="ex-cap"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Would change</div>
+                  <div class="ex-inline"><span>wax, skis<span class="rdel"> </span> and poles</span><span class="ex-arrow"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span><span>wax, skis<span class="radd">,</span> and poles</span></div>
+                </div>
+              </div>
+
+              <!-- em-dash style (OFF) -->
+              <div class="conv off">
+                <div class="conv-head">
+                  <div class="conv-htext">
+                    <div class="conv-name">Dash style<span class="conv-tag optional">Off</span></div>
+                    <div class="conv-blurb">How a long dash is written, and whether a double hyphen becomes one.</div>
+                  </div>
+                  <span class="conv-ctl"><input type="checkbox" class="toggle" aria-label="Dash style" /></span>
+                </div>
+                <div class="ex">
+                  <div class="ex-cap"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Would change</div>
+                  <div class="ex-inline"><span>the loop<span class="rdel">--</span>still icy</span><span class="ex-arrow"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span><span>the loop<span class="radd">—</span>still icy</span></div>
+                </div>
+              </div>
+
+              <!-- en-dash in ranges (OFF) -->
+              <div class="conv off">
+                <div class="conv-head">
+                  <div class="conv-htext">
+                    <div class="conv-name">Dashes in number ranges<span class="conv-tag optional">Off</span></div>
+                    <div class="conv-blurb">A hyphen between two numbers becomes a range dash.</div>
+                  </div>
+                  <span class="conv-ctl"><input type="checkbox" class="toggle" aria-label="Dashes in number ranges" /></span>
+                </div>
+                <div class="ex">
+                  <div class="ex-cap"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Would change</div>
+                  <div class="ex-inline"><span>pages 12<span class="rdel">-</span>15</span><span class="ex-arrow"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span><span>pages 12<span class="radd">–</span>15</span></div>
+                </div>
+              </div>
+
+              <!-- ellipsis (OFF) -->
+              <div class="conv off">
+                <div class="conv-head">
+                  <div class="conv-htext">
+                    <div class="conv-name">Ellipsis<span class="conv-tag optional">Off</span></div>
+                    <div class="conv-blurb">Three dots, or the single ellipsis character.</div>
+                  </div>
+                  <span class="conv-ctl"><input type="checkbox" class="toggle" aria-label="Ellipsis" /></span>
+                </div>
+                <div class="ex">
+                  <div class="ex-cap"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Would change</div>
+                  <div class="ex-inline"><span>maybe<span class="rdel">...</span></span><span class="ex-arrow"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span><span>maybe<span class="radd">…</span></span></div>
+                </div>
+              </div>
+
+              <!-- smart quotes (OFF) -->
+              <div class="conv off">
+                <div class="conv-head">
+                  <div class="conv-htext">
+                    <div class="conv-name">Curly quotes<span class="conv-tag optional">Off</span></div>
+                    <div class="conv-blurb">Straight typewriter quotes, or curly typographic ones.</div>
+                  </div>
+                  <span class="conv-ctl"><input type="checkbox" class="toggle" aria-label="Curly quotes" /></span>
+                </div>
+                <div class="ex">
+                  <div class="ex-cap"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Would change</div>
+                  <div class="ex-inline"><span><span class="rdel">"</span>corduroy<span class="rdel">"</span></span><span class="ex-arrow"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span><span><span class="radd">“</span>corduroy<span class="radd">”</span></span></div>
+                </div>
+              </div>
+
+              <!-- time format (OFF) -->
+              <div class="conv off">
+                <div class="conv-head">
+                  <div class="conv-htext">
+                    <div class="conv-name">Time format<span class="conv-tag optional">Off</span></div>
+                    <div class="conv-blurb">How a clock time is written, like 5 PM, 5pm, or 5 p.m.</div>
+                  </div>
+                  <span class="conv-ctl"><input type="checkbox" class="toggle" aria-label="Time format" /></span>
+                </div>
+                <div class="ex">
+                  <div class="ex-cap"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Would change</div>
+                  <div class="ex-inline"><span>opens at <span class="rdel">5pm</span></span><span class="ex-arrow"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span><span>opens at <span class="radd">5 PM</span></span></div>
+                </div>
+              </div>
+
+              <!-- number style (OFF) -->
+              <div class="conv off">
+                <div class="conv-head">
+                  <div class="conv-htext">
+                    <div class="conv-name">Number style<span class="conv-tag optional">Off</span></div>
+                    <div class="conv-blurb">When small numbers are spelled out and when they use numerals.</div>
+                  </div>
+                  <span class="conv-ctl"><input type="checkbox" class="toggle" aria-label="Number style" /></span>
+                </div>
+                <div class="ex">
+                  <div class="ex-cap"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Would change</div>
+                  <div class="ex-inline"><span><span class="rdel">3</span> laps left</span><span class="ex-arrow"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span><span><span class="radd">three</span> laps left</span></div>
+                </div>
+              </div>
+
+              <!-- measurements (OFF) -->
+              <div class="conv off">
+                <div class="conv-head">
+                  <div class="conv-htext">
+                    <div class="conv-name">Units<span class="conv-tag optional">Off</span></div>
+                    <div class="conv-blurb">Abbreviate units, or spell them out. The measurement itself never changes.</div>
+                  </div>
+                  <span class="conv-ctl"><input type="checkbox" class="toggle" aria-label="Units" /></span>
+                </div>
+                <div class="ex">
+                  <div class="ex-cap"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Would change</div>
+                  <div class="ex-inline"><span>15 <span class="rdel">centimetres</span></span><span class="ex-arrow"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span><span>15 <span class="radd">cm</span></span></div>
+                </div>
+              </div>
+
+              <!-- sentence spacing (OFF) -->
+              <div class="conv off">
+                <div class="conv-head">
+                  <div class="conv-htext">
+                    <div class="conv-name">Spacing after a period<span class="conv-tag optional">Off</span></div>
+                    <div class="conv-blurb">One space or two between sentences.</div>
+                  </div>
+                  <span class="conv-ctl"><input type="checkbox" class="toggle" aria-label="Spacing after a period" /></span>
+                </div>
+                <div class="ex">
+                  <div class="ex-cap"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Would change</div>
+                  <div class="ex-inline"><span>done.<span class="rdel">·&nbsp;·</span>Next</span><span class="ex-arrow"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span><span>done.<span class="radd">·</span>Next</span></div>
+                </div>
+              </div>
+
+            </div>
+          </section>
+
+          <!-- the deferred / advanced note: honest about what is not here yet -->
+          <div class="advanced">
+            <div class="advanced-h"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>Not here yet</div>
+            <p class="advanced-p">Two more controls are planned: free-text instructions for tidy, and a
+            heading-capitalization rule. Both can change your voice, so they need a careful design before
+            they ship.</p>
+          </div>
+
+          <div class="savebar">
+            <span class="savebar-note"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>Changes are saved to your site and shared with everyone who edits it.</span>
+            <span class="grow"></span>
+            <button class="btn btn-primary" disabled>Save changes</button>
+          </div>
+
+        </div>
+      </main>
+    </div>
+  </div>
+</div></div>
+
+<!-- =====================================================================================
+     SCREEN 2 · A STYLE CONVENTION TURNED ON, WITH ITS VARIANT OPEN (light). The crux of the
+     direction. Two cards lifted out so the expansion reads clearly:
+       (a) "Dash style" turned ON: the variant chooser opens (spaced vs unspaced em-dash), AND a sub-
+           toggle (the double-hyphen rider the brief names), AND the in-card example re-renders to the
+           PICKED variant. The card border lifts to primary so an enabled style convention stands out.
+       (b) "Number style" turned ON with its three-way variant (spell out under ten / always numerals /
+           always spell out); the example shows the chosen variant's effect.
+     This is what makes the example-first idea pay off: the editor does not read "unspaced em-dash with
+     double-hyphen normalization", they pick a segment and watch the sample change.
+     ===================================================================================== -->
+<div class="mock-label">Screen 2 · A style convention turned on, variant open (light)</div>
+<div class="mock-note">What happens when an editor turns on a style convention. The variant chooser opens
+and the card's example re-renders to the chosen variant, so the editor sees their own setting, not a
+generic one. Dash style adds a small extra toggle for the double-hyphen rule. Number style is a three-way
+choice. The card border lifts so an on convention is easy to find again in the grid.</div>
+<div class="anno">a11y — the variant chooser is the segmented check-and-tint recipe: a
+<code>role="radiogroup"</code> of segments with <code>aria-checked</code> and a roving tabindex; the
+active segment shows a check glyph so the choice is never carried by color alone. The double-hyphen
+sub-toggle is a labelled checkbox. The example updates are presentational and not announced on every
+keystroke.</div>
+<div class="anno engine">engine — only the enabled variant emits a rule line into the system prompt
+(poplar's BuildPrompt model). "Spaced em-dash" and "unspaced em-dash" are mutually exclusive variants of
+one convention, so exactly one line is emitted, never a contradiction. Regional spelling is never
+normalized by any of these; it stays with the author and the spellcheck dictionary.</div>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="shell" style="min-height:auto;">
+    <aside class="side">
+      <div class="side-brand">
+        <span class="brand-tile"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><ellipse cx="12" cy="18.2" rx="7" ry="2.5"/><ellipse cx="12" cy="13" rx="5.2" ry="2.1"/><ellipse cx="12" cy="8.6" rx="3.7" ry="1.7"/><ellipse cx="12" cy="5" rx="2" ry="1.2"/></svg></span>
+        <span class="brand-word">cairn</span>
+      </div>
+      <nav class="side-nav" aria-label="Sections">
+        <div class="nav-grp">Site</div>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 13v8"/><path d="M12 3v3"/><path d="M18 6H8.5a1 1 0 0 0-.7.3l-2.3 2.4a1 1 0 0 0 0 1.4l2.3 2.4a1 1 0 0 0 .7.3H18a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1Z"/></svg>Navigation</a>
+        <a class="nav-item active" aria-current="page"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>Settings</a>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Editors</a>
+      </nav>
+    </aside>
+    <div class="main">
+      <div class="top">
+        <button class="palette"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search and commands<span class="kbd-hint">Ctrl K</span></button>
+        <div class="grow"></div>
+        <button class="top-link">View site</button>
+        <button class="btn btn-primary">Save changes</button>
+      </div>
+      <main class="page" style="padding-bottom:2rem;">
+        <div class="page-col">
+          <section class="sec" style="margin-top:0;">
+            <div class="sec-head">
+              <span class="sec-h">Style choices</span>
+              <span class="sec-count"><span class="on-n">2</span> of 9 on</span>
+            </div>
+            <p class="sec-desc">Turn one on and pick how you want it. The example below each shows your
+            choice in action.</p>
+
+            <div class="cards">
+
+              <!-- (a) Dash style — ON, variant open, sub-toggle, example re-rendered to "unspaced" -->
+              <div class="conv on-style">
+                <div class="conv-head">
+                  <div class="conv-htext">
+                    <div class="conv-name">Dash style<span class="conv-tag default">On</span></div>
+                    <div class="conv-blurb">How a long dash is written, and whether a double hyphen becomes one.</div>
+                  </div>
+                  <span class="conv-ctl"><input type="checkbox" class="toggle" checked aria-label="Dash style" /></span>
+                </div>
+                <div class="ex">
+                  <div class="ex-cap"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v4"/><path d="M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg>Your choice</div>
+                  <div class="ex-row bef"><span class="ex-gut" aria-hidden="true">−</span><span class="ex-txt">the loop <span class="rdel">— </span>still icy</span></div>
+                  <div class="ex-row aft"><span class="ex-gut" aria-hidden="true">+</span><span class="ex-txt">the loop<span class="radd">—</span>still icy</span></div>
+                </div>
+                <div class="variant">
+                  <div class="variant-lbl">Long dash <span class="help">how it sits between words</span></div>
+                  <div class="seg" role="radiogroup" aria-label="Long dash style">
+                    <button role="radio" aria-checked="false">Spaced — like this</button>
+                    <button role="radio" aria-checked="true"><svg class="chk" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Unspaced—like this</button>
+                  </div>
+                  <div class="sub-toggle">
+                    <input type="checkbox" class="toggle" checked aria-label="Turn a double hyphen into a long dash" />
+                    <span class="sub-toggle-txt"><span class="st-name">Turn <span class="ic">--</span> into a long dash.</span> <span class="st-hint">Many keyboards type two hyphens for a dash.</span></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- (b) Number style — ON, three-way variant, example re-rendered to "spell out under ten" -->
+              <div class="conv on-style">
+                <div class="conv-head">
+                  <div class="conv-htext">
+                    <div class="conv-name">Number style<span class="conv-tag default">On</span></div>
+                    <div class="conv-blurb">When small numbers are spelled out and when they use numerals.</div>
+                  </div>
+                  <span class="conv-ctl"><input type="checkbox" class="toggle" checked aria-label="Number style" /></span>
+                </div>
+                <div class="ex">
+                  <div class="ex-cap"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v4"/><path d="M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg>Your choice</div>
+                  <div class="ex-row bef"><span class="ex-gut" aria-hidden="true">−</span><span class="ex-txt"><span class="rdel">3</span> laps left, then 18 km home</span></div>
+                  <div class="ex-row aft"><span class="ex-gut" aria-hidden="true">+</span><span class="ex-txt"><span class="radd">three</span> laps left, then 18 km home</span></div>
+                </div>
+                <div class="variant">
+                  <div class="variant-lbl">How to write numbers</div>
+                  <div class="seg" role="radiogroup" aria-label="Number style">
+                    <button role="radio" aria-checked="true"><svg class="chk" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Spell out under ten</button>
+                    <button role="radio" aria-checked="false">Always numerals</button>
+                    <button role="radio" aria-checked="false">Always spell out</button>
+                  </div>
+                  <div class="variant-ex-tie"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>The example above follows this choice.</div>
+                </div>
+              </div>
+
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
+</div></div>
+
+<!-- =====================================================================================
+     SCREEN 3 · ONE OBJECTIVE FIX TURNED OFF, AND A SECOND STYLE CONVENTION ON (light). Rounds out the
+     state model so the design reads fully: an editor CAN turn an always-safe fix off (the brief allows
+     it), and the card shows that state plainly (toggle off, the example greys to "what it would catch,
+     now skipped"). Beside it, "Curly quotes" is shown ON with its two-way variant, example re-rendered.
+     This proves the two card states (objective-off, style-on) that screen 1 did not show.
+     ===================================================================================== -->
+<div class="mock-label">Screen 3 · An always-safe fix turned off, and another style choice on (light)</div>
+<div class="mock-note">The rest of the state model. An editor can turn an always-safe fix off; the card
+greys its example so it is clear tidy will now skip that. Next to it, Curly quotes is on with its two-way
+variant. Together with screen 1 and 2 this covers every card state: objective-on, objective-off,
+style-off, and style-on.</div>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="shell" style="min-height:auto;">
+    <aside class="side">
+      <div class="side-brand">
+        <span class="brand-tile"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><ellipse cx="12" cy="18.2" rx="7" ry="2.5"/><ellipse cx="12" cy="13" rx="5.2" ry="2.1"/><ellipse cx="12" cy="8.6" rx="3.7" ry="1.7"/><ellipse cx="12" cy="5" rx="2" ry="1.2"/></svg></span>
+        <span class="brand-word">cairn</span>
+      </div>
+      <nav class="side-nav" aria-label="Sections">
+        <div class="nav-grp">Site</div>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 13v8"/><path d="M12 3v3"/><path d="M18 6H8.5a1 1 0 0 0-.7.3l-2.3 2.4a1 1 0 0 0 0 1.4l2.3 2.4a1 1 0 0 0 .7.3H18a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1Z"/></svg>Navigation</a>
+        <a class="nav-item active" aria-current="page"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>Settings</a>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Editors</a>
+      </nav>
+    </aside>
+    <div class="main">
+      <div class="top">
+        <button class="palette"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search and commands<span class="kbd-hint">Ctrl K</span></button>
+        <div class="grow"></div>
+        <button class="top-link">View site</button>
+        <button class="btn btn-primary">Save changes</button>
+      </div>
+      <main class="page" style="padding-bottom:2rem;">
+        <div class="page-col">
+          <div class="cards">
+
+            <!-- objective fix turned OFF: toggle off, example greyed to "skipped" -->
+            <div class="conv off">
+              <div class="conv-head">
+                <div class="conv-htext">
+                  <div class="conv-name">Sentence capitals<span class="conv-tag optional">Off</span></div>
+                  <div class="conv-blurb">A new sentence that starts with a lowercase letter. You turned this off, so tidy leaves it alone.</div>
+                </div>
+                <span class="conv-ctl"><input type="checkbox" class="toggle" aria-label="Sentence capitals" /></span>
+              </div>
+              <div class="ex">
+                <div class="ex-cap"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.5 13.5 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><path d="m2 2 20 20"/></svg>Now skipped</div>
+                <div class="ex-inline"><span style="color:var(--color-muted);">softens. wax for</span><span class="ex-arrow"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span><span style="color:var(--color-muted);">left as you wrote it</span></div>
+              </div>
+            </div>
+
+            <!-- style convention ON: curly quotes, two-way variant, example re-rendered -->
+            <div class="conv on-style">
+              <div class="conv-head">
+                <div class="conv-htext">
+                  <div class="conv-name">Curly quotes<span class="conv-tag default">On</span></div>
+                  <div class="conv-blurb">Straight typewriter quotes, or curly typographic ones.</div>
+                </div>
+                <span class="conv-ctl"><input type="checkbox" class="toggle" checked aria-label="Curly quotes" /></span>
+              </div>
+              <div class="ex">
+                <div class="ex-cap"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v4"/><path d="M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg>Your choice</div>
+                <div class="ex-row bef"><span class="ex-gut" aria-hidden="true">−</span><span class="ex-txt">a <span class="rdel">"</span>corduroy<span class="rdel">"</span> morning</span></div>
+                <div class="ex-row aft"><span class="ex-gut" aria-hidden="true">+</span><span class="ex-txt">a <span class="radd">“</span>corduroy<span class="radd">”</span> morning</span></div>
+              </div>
+              <div class="variant">
+                <div class="variant-lbl">Quote marks</div>
+                <div class="seg" role="radiogroup" aria-label="Quote marks">
+                  <button role="radio" aria-checked="true"><svg class="chk" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Curly “ ”</button>
+                  <button role="radio" aria-checked="false">Straight " "</button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</div></div>
+
+<!-- =====================================================================================
+     SCREEN 4 · THE VISIBILITY GATE: tidy NOT enabled by the developer (light). The OTHER branch of the
+     two-tier model, the most load-bearing honesty in this design. The developer has NOT enabled tidy
+     (no master switch, no API key), so the editor-tier convention section DOES NOT RENDER. In its place
+     is a short, plain note that explains the feature and tells the editor exactly what a developer must
+     do to turn it on. There is no teasing disabled form, no greyed cards, nothing the editor cannot
+     act on. This is the brief's rule: "the whole section is hidden, not shown disabled."
+     ===================================================================================== -->
+<div class="mock-label">Screen 4 · The visibility gate — tidy not enabled by the developer (light)</div>
+<div class="mock-note">The honest empty state. When the developer has not turned tidy on, the editor does
+not see the convention cards at all. They see a short note that says what tidy is and what a developer
+needs to do. No disabled toggles, no preview of a feature the editor cannot use. This is the truthful
+half of the two-tier gate.</div>
+<div class="anno">a11y — this is plain content, not a disabled form, so a screen reader reads an
+explanation rather than a list of controls the user cannot operate. The note names the concrete developer
+steps so the ask is actionable, never a dead end.</div>
+<div class="anno engine">engine — the editor-tier section is conditionally rendered on
+<code>tidy.enabled &amp;&amp; keyPresent</code>, both derived server-side from the Worker secret and the
+config. When the gate is closed the convention list is never sent to the browser, so there is nothing to
+reveal in dev tools either.</div>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="shell" style="min-height:auto;">
+    <aside class="side">
+      <div class="side-brand">
+        <span class="brand-tile"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><ellipse cx="12" cy="18.2" rx="7" ry="2.5"/><ellipse cx="12" cy="13" rx="5.2" ry="2.1"/><ellipse cx="12" cy="8.6" rx="3.7" ry="1.7"/><ellipse cx="12" cy="5" rx="2" ry="1.2"/></svg></span>
+        <span class="brand-word">cairn</span>
+      </div>
+      <nav class="side-nav" aria-label="Sections">
+        <div class="nav-grp">Content</div>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>Posts</a>
+        <div class="nav-grp">Site</div>
+        <a class="nav-item active" aria-current="page"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>Settings</a>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Editors</a>
+      </nav>
+    </aside>
+    <div class="main">
+      <div class="top">
+        <button class="palette"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search and commands<span class="kbd-hint">Ctrl K</span></button>
+        <div class="grow"></div>
+        <button class="top-link">View site</button>
+      </div>
+      <main class="page">
+        <div class="page-col">
+          <div class="pg-eyebrow">Settings</div>
+          <h1 class="pg-h">Tidy</h1>
+          <p class="pg-sub">A light copy-edit from Claude. It fixes clear errors and leaves your wording
+          and voice alone.</p>
+
+          <!-- THE GATE NOTE: no convention cards, no disabled controls — just the honest ask -->
+          <div class="gate">
+            <span class="gate-ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg></span>
+            <div class="gate-main">
+              <h2 class="gate-h">Tidy is not turned on for this site yet</h2>
+              <p class="gate-p">Tidy uses Claude, so it sends your draft to the Anthropic API and costs a
+              little per use. That makes it a setup step for whoever runs your site. Once it is on, the
+              writing conventions appear here for you to choose.</p>
+              <p class="gate-p" style="margin-bottom:6px;">Ask your developer to:</p>
+              <ol class="gate-steps">
+                <li>Turn on tidy in the site config (<code>tidy.enabled</code>).</li>
+                <li>Add an Anthropic API key as a Worker secret.</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</div></div>
+
+<!-- =====================================================================================
+     SCREEN 5 · THE SURFACE THROUGH THE DARK TOKENS (dark). The hero re-rendered with the dark theme
+     root; nothing redrawn. Every color resolves from the dark tokens, including the derived diff washes
+     and the example run-highlights (color-mix over the dark positive/error inks, so the add/delete
+     contrast holds). Shown condensed: the developer card, the objective section header with two cards,
+     and the style section with one OFF card and one ON card with its variant.
+     ===================================================================================== -->
+<div class="mock-label">Screen 5 · The surface, dark</div>
+<div class="mock-note">The same surface through the dark tokens. The example highlights are color-mixed over
+the dark positive and error inks, so before/after contrast holds without a second palette. Condensed to
+the developer card plus a few cards from each section.</div>
+<div class="screen"><div data-theme="cairn-admin-dark">
+  <div class="shell" style="min-height:auto;">
+    <aside class="side">
+      <div class="side-brand">
+        <span class="brand-tile"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><ellipse cx="12" cy="18.2" rx="7" ry="2.5"/><ellipse cx="12" cy="13" rx="5.2" ry="2.1"/><ellipse cx="12" cy="8.6" rx="3.7" ry="1.7"/><ellipse cx="12" cy="5" rx="2" ry="1.2"/></svg></span>
+        <span class="brand-word">cairn</span>
+      </div>
+      <nav class="side-nav" aria-label="Sections">
+        <div class="nav-grp">Site</div>
+        <a class="nav-item active" aria-current="page"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>Settings</a>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Editors</a>
+      </nav>
+    </aside>
+    <div class="main">
+      <div class="top">
+        <button class="palette"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search and commands<span class="kbd-hint">Ctrl K</span></button>
+        <div class="grow"></div>
+        <button class="top-link">View site</button>
+        <button class="btn btn-primary">Save changes</button>
+      </div>
+      <main class="page" style="padding-bottom:2rem;">
+        <div class="page-col">
+          <div class="pg-eyebrow">Settings</div>
+          <h1 class="pg-h">Tidy</h1>
+          <p class="pg-sub">A light copy-edit from Claude. It fixes clear errors and leaves your wording
+          and voice alone.</p>
+
+          <div class="dev-card">
+            <div class="dev-head">
+              <span class="dev-lock"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+              <div class="dev-htext">
+                <div class="dev-title">Tidy is set up for this site</div>
+                <div class="dev-sub">Your developer turned tidy on and added the API key. These cannot be changed here.</div>
+              </div>
+              <span class="dev-readonly">Set by your developer</span>
+            </div>
+            <div class="dev-facts">
+              <div class="dev-fact">
+                <span class="dev-fact-k">Status</span>
+                <span class="dev-fact-v ok"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Enabled</span>
+              </div>
+              <div class="dev-fact">
+                <span class="dev-fact-k">API key</span>
+                <span class="dev-fact-v ok"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Configured <span class="key-mask">· sk-ant-…7c2a</span></span>
+              </div>
+              <div class="dev-fact">
+                <span class="dev-fact-k">Model</span>
+                <span class="model-ro" role="img" aria-label="Model: Sonnet, set by your developer. Haiku is the cheaper alternative.">
+                  <span class="pick"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Sonnet</span>
+                  <span>Haiku <span class="alt-sub">· cheaper</span></span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <section class="sec">
+            <div class="sec-head">
+              <span class="sec-h">Always-safe fixes</span>
+              <span class="sec-count"><span class="on-n">6</span> of 6 on</span>
+            </div>
+            <div class="cards">
+              <div class="conv">
+                <div class="conv-head">
+                  <div class="conv-htext">
+                    <div class="conv-name">Spelling and typos<span class="conv-tag default">On</span></div>
+                    <div class="conv-blurb">Misspelled words and slips of the keyboard.</div>
+                  </div>
+                  <span class="conv-ctl"><input type="checkbox" class="toggle" checked aria-label="Spelling and typos" /></span>
+                </div>
+                <div class="ex">
+                  <div class="ex-cap"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v4"/><path d="M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg>Example</div>
+                  <div class="ex-inline"><span>can <span class="rdel">accomodate</span></span><span class="ex-arrow"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span><span>can <span class="radd">accommodate</span></span></div>
+                </div>
+              </div>
+              <div class="conv">
+                <div class="conv-head">
+                  <div class="conv-htext">
+                    <div class="conv-name">Doubled words<span class="conv-tag default">On</span></div>
+                    <div class="conv-blurb">An accidental repeat, like writing the same word twice.</div>
+                  </div>
+                  <span class="conv-ctl"><input type="checkbox" class="toggle" checked aria-label="Doubled words" /></span>
+                </div>
+                <div class="ex">
+                  <div class="ex-cap"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v4"/><path d="M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg>Example</div>
+                  <div class="ex-inline"><span>for <span class="rdel">the the</span> drive</span><span class="ex-arrow"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span><span>for <span class="radd">the</span> drive</span></div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="sec">
+            <div class="sec-head">
+              <span class="sec-h">Style choices</span>
+              <span class="sec-count"><span class="on-n">1</span> of 9 on</span>
+            </div>
+            <div class="cards">
+              <!-- one OFF -->
+              <div class="conv off">
+                <div class="conv-head">
+                  <div class="conv-htext">
+                    <div class="conv-name">Oxford comma<span class="conv-tag optional">Off</span></div>
+                    <div class="conv-blurb">The comma before "and" in a list.</div>
+                  </div>
+                  <span class="conv-ctl"><input type="checkbox" class="toggle" aria-label="Oxford comma" /></span>
+                </div>
+                <div class="ex">
+                  <div class="ex-cap"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Would change</div>
+                  <div class="ex-inline"><span>wax, skis<span class="rdel"> </span> and poles</span><span class="ex-arrow"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span><span>wax, skis<span class="radd">,</span> and poles</span></div>
+                </div>
+              </div>
+              <!-- one ON with variant -->
+              <div class="conv on-style">
+                <div class="conv-head">
+                  <div class="conv-htext">
+                    <div class="conv-name">Dash style<span class="conv-tag default">On</span></div>
+                    <div class="conv-blurb">How a long dash is written, and whether a double hyphen becomes one.</div>
+                  </div>
+                  <span class="conv-ctl"><input type="checkbox" class="toggle" checked aria-label="Dash style" /></span>
+                </div>
+                <div class="ex">
+                  <div class="ex-cap"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v4"/><path d="M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg>Your choice</div>
+                  <div class="ex-row bef"><span class="ex-gut" aria-hidden="true">−</span><span class="ex-txt">the loop <span class="rdel">— </span>still icy</span></div>
+                  <div class="ex-row aft"><span class="ex-gut" aria-hidden="true">+</span><span class="ex-txt">the loop<span class="radd">—</span>still icy</span></div>
+                </div>
+                <div class="variant">
+                  <div class="variant-lbl">Long dash <span class="help">how it sits between words</span></div>
+                  <div class="seg" role="radiogroup" aria-label="Long dash style">
+                    <button role="radio" aria-checked="false">Spaced — like this</button>
+                    <button role="radio" aria-checked="true"><svg class="chk" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Unspaced—like this</button>
+                  </div>
+                  <div class="sub-toggle">
+                    <input type="checkbox" class="toggle" checked aria-label="Turn a double hyphen into a long dash" />
+                    <span class="sub-toggle-txt"><span class="st-name">Turn <span class="ic">--</span> into a long dash.</span></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
+</div></div>
+
+</body>
+</html>

@@ -1,0 +1,979 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Proposed design: editor copy-edit + spellcheck — direction "inline" (in-flow track-changes)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+  rel="stylesheet"
+/>
+<style>
+  /* ===========================================================================================
+     DIRECTION "INLINE" — in-flow inline track-changes.
+
+     The thesis: both features live INSIDE the editor surface, so the author never leaves the
+     writing flow. There is no companion panel and no separate review screen. Spellcheck draws a
+     wavy underline under a misspelling and opens a small anchored correction popover. Tidy applies
+     its copy-edit as TRACK-CHANGES directly in the CodeMirror markdown: deletions as red struck
+     ghosts (the original text, kept in place until accepted), insertions as green added text, each
+     change carrying a tiny inline accept/reject pair, plus a compact floating bar (N changes,
+     accept all, reject all) and a keyboard step-through. The original is preserved until accepted.
+     The document stays the focus; chrome is minimal.
+
+     WHY this can work for cairn specifically (from the brief): tidy is single-author and on-demand,
+     so the model briefly owns the buffer; there is no live rebasing to fight. poplar already
+     captures the pre-tidy body at request time, so the "original" the ghosts show is a real
+     captured snapshot, not a reconstruction. And cairn is NOT WYSIWYG: this track-changes view is
+     rendered over the MARKDOWN SOURCE, not a prose canvas, so a deletion ghost and an insertion are
+     real source spans the author can read character for character. That is the safety contract
+     (decision 4): you can see exactly what was removed, so you can confirm your voice survived.
+
+     THE HARD PROBLEM this direction must answer, and how it does:
+       - Inline diff decorations sitting in a monospace markdown surface that ALREADY carries the
+         directive rails, the code chips, and the media: tokens. The change marks must read as a
+         third layer without fighting the syntax muting or the rails. Resolved by: deletions use a
+         red strike that keeps content ink weight (so it reads as your words, struck), insertions
+         use the positive-ink green, and the inline accept/reject control is a hairline pill that
+         only the ACTIVE change shows in full; the rest show a faint dot until hovered or stepped to.
+         The syntax markers (##, **, `) keep their muted treatment underneath, untouched.
+       - Token / structure preservation. A tidy that touches a media: token, a :::figure fence, or
+         the inside of a code span is rejected before it is ever offered (the brief's make-or-break).
+         So those spans render with NO change marks at all in the review; the mockup shows the
+         media: chip and the :::figure rails sitting clean inside an active review, as proof the diff
+         left them alone.
+
+     ACCESSIBILITY (the a11y bar from the brief and the design system):
+       - Never hue-alone. A deletion is struck AND red; an insertion is underlined-on-enter AND
+         green; the active change adds a 2px ring. The floating bar's counts are text.
+       - The step-through is keyboard-first: the floating bar is a real toolbar; n/p step, y/n
+         (or the buttons) accept/reject, Esc ends review. A roving live region announces each step
+         ("Change 2 of 6: deletion, 'their' becomes 'there'").
+       - The correction popover is a real anchored dialog (focus moves in, Esc restores focus to the
+         word, arrow keys walk the suggestion list).
+       - The diff is announced through a polite live region, not by color change alone.
+
+     SCOPE STATES BUILT BELOW (stacked, labeled, like the media mockups):
+       1. Desk at rest — spellcheck on, one wavy underline visible (the everyday state).
+       2. Spellcheck correction popover open at the misspelled word.
+       3. Tidy review ACTIVE — inline track-changes across the document, the floating change bar,
+          one change focused mid step-through. Shows a clean media: token and :::figure inside the
+          review (proof of preservation).
+       4. The same tidy review through the DARK tokens.
+       5. The opt-in + settings surface (spellcheck default-on with the personal dictionary; tidy
+          opt-in with the API-key note and the model choice).
+       6. A NARROW render of the tidy review (the floating bar reflows; the document still leads).
+
+     TOKENS: every color is a shipped Warm Stone token copied VERBATIM from
+     src/lib/components/cairn-admin.css (both theme roots), including the editor's directive ink and
+     rail scales, the focus-dim values, the code chip, the positive/warning/error families, and the
+     status tones. The diff colors are NOT new: a deletion reuses the shipped --cairn-error-ink /
+     --cairn-error-tint danger family; an insertion reuses --color-positive-ink / a positive tint
+     built by color-mix from --color-success. No invented hues. This mockup hand-rolls the
+     DaisyUI/Tailwind look in plain CSS (no build step), but every class it stands in for is a real
+     DaisyUI v5 / Tailwind 4 class, and the manuscript grammar (.ms/.ln/.mk/.chip/rails) is the
+     gold-standard editor shell verbatim.
+
+     .anno chips document the a11y / engine wiring that is only provable in the Svelte+CM6 build.
+     They are never user-visible; they stand in for the implementer's note.
+     =========================================================================================== */
+
+  /* ---- mock scaffold (outside the themed surfaces) ---- */
+  body { margin: 0; background: #d8d4cf; }
+  .mock-label { font: 600 13px/1.4 system-ui; letter-spacing: .08em; text-transform: uppercase; color: #444; padding: 30px 24px 4px; }
+  .mock-note { font: 400 13px/1.6 system-ui; color: #5a564f; padding: 0 24px 14px; max-width: 94ch; }
+  .mock-note code { font-family: ui-monospace, monospace; background: rgba(0,0,0,.06); padding: 1px 4px; border-radius: 3px; }
+  .mock-note b { color: #3a362f; }
+  .screen { border: 1px solid #aaa; margin: 0 16px 46px; box-shadow: 0 2px 14px rgba(0,0,0,.08); overflow: hidden; border-radius: 2px; }
+  .screen.narrow { max-width: 430px; }
+  /* the inline annotation chip: a11y/engine behavior provable only in the Svelte+CM6 build. */
+  .anno { font: 600 11px/1.45 system-ui; color: #6b4f9c; background: #ece4f8; border: 1px dashed #b9a6dd; border-radius: 5px; padding: 5px 10px; margin: 0 24px 12px; display: inline-block; max-width: 94ch; }
+  .anno.engine { color: #2d6a4f; background: #def0e6; border-color: #93c9ac; }
+
+  /* ---- Warm Stone tokens, both roots, inlined VERBATIM from cairn-admin.css so the mockup stands
+       alone. The editor directive/focus scales, the code chip, the positive/warning/error families,
+       and the status tones are all copied, not invented. ---- */
+  [data-theme='cairn-admin'] {
+    color-scheme: light;
+    --color-base-100: oklch(99% 0.004 75);
+    --color-base-200: oklch(96.5% 0.006 75);
+    --color-base-300: oklch(89% 0.011 75);
+    --color-base-content: oklch(26% 0.014 75);
+    --color-primary: oklch(52% 0.2 293);
+    --color-primary-content: oklch(98% 0.012 293);
+    --color-accent: oklch(54% 0.16 300);
+    --color-accent-content: oklch(98% 0.012 300);
+    --color-muted: oklch(48% 0.01 75);
+    --color-subtle: oklch(42% 0.01 75);
+    --color-positive-ink: oklch(48% 0.12 150);
+    --color-success: oklch(52% 0.12 150);
+    --color-success-content: oklch(98% 0.012 150);
+    --color-warning: oklch(75% 0.15 70);
+    --color-warning-content: oklch(26% 0.05 70);
+    --cairn-warning-ink: oklch(50% 0.13 70);
+    --color-error: oklch(56% 0.2 25);
+    --color-error-content: oklch(98% 0.012 25);
+    --cairn-error-ink: oklch(50% 0.19 25);
+    --cairn-error-tint: oklch(96% 0.03 25);
+    --cairn-error-border: oklch(85% 0.06 25);
+    --color-info: oklch(52% 0.12 240);
+    --color-info-content: oklch(98% 0.012 240);
+    --cairn-code-chip: oklch(94.5% 0.008 75);
+    --cairn-directive-ink-2: oklch(50% 0.16 300);
+    --cairn-directive-ink-3: oklch(48% 0.16 300);
+    --cairn-directive-rail-1: 72%;
+    --cairn-directive-rail-2: 82%;
+    --cairn-directive-rail-3: 92%;
+    --cairn-directive-rail-active: 100%;
+    --cairn-directive-ink-active: oklch(46% 0.16 300);
+    --cairn-focus-dim-ink: oklch(66% 0.01 75);
+    --radius-field: 0.625rem;
+    --radius-box: 1rem;
+    --cairn-card-border: oklch(93% 0.008 75);
+    --cairn-shadow: 0 1px 2px oklch(28% 0.02 75 / 0.05), 0 8px 24px -6px oklch(28% 0.02 75 / 0.1);
+    --cairn-scrim: oklch(20% 0.01 75 / 0.4);
+  }
+  [data-theme='cairn-admin-dark'] {
+    color-scheme: dark;
+    --color-base-100: oklch(24% 0.01 75);
+    --color-base-200: oklch(15.5% 0.009 75);
+    --color-base-300: oklch(30% 0.014 75);
+    --color-base-content: oklch(93% 0.006 75);
+    --color-primary: oklch(68% 0.18 293);
+    --color-primary-content: oklch(20% 0.03 293);
+    --color-accent: oklch(70% 0.14 300);
+    --color-accent-content: oklch(20% 0.04 300);
+    --color-muted: oklch(72% 0.01 75);
+    --color-subtle: oklch(80% 0.008 75);
+    --color-positive-ink: oklch(78% 0.12 150);
+    --color-success: oklch(70% 0.12 150);
+    --color-success-content: oklch(20% 0.04 150);
+    --color-warning: oklch(80% 0.14 70);
+    --color-warning-content: oklch(24% 0.05 70);
+    --cairn-warning-ink: oklch(80% 0.14 70);
+    --color-error: oklch(70% 0.18 25);
+    --color-error-content: oklch(20% 0.04 25);
+    --cairn-error-ink: oklch(78% 0.15 25);
+    --cairn-error-tint: oklch(28% 0.06 25);
+    --cairn-error-border: oklch(40% 0.09 25);
+    --color-info: oklch(72% 0.12 240);
+    --color-info-content: oklch(20% 0.04 240);
+    --cairn-code-chip: oklch(29.5% 0.012 75);
+    --cairn-directive-ink-2: oklch(74% 0.14 300);
+    --cairn-directive-ink-3: oklch(78% 0.14 300);
+    --cairn-directive-rail-1: 62%;
+    --cairn-directive-rail-2: 74%;
+    --cairn-directive-rail-3: 86%;
+    --cairn-directive-rail-active: 100%;
+    --cairn-directive-ink-active: oklch(82% 0.14 300);
+    --cairn-focus-dim-ink: oklch(53% 0.01 75);
+    --radius-field: 0.625rem;
+    --radius-box: 1rem;
+    --cairn-card-border: oklch(30% 0.014 75);
+    --cairn-shadow: 0 1px 2px oklch(0% 0 0 / 0.35), 0 8px 24px -6px oklch(0% 0 0 / 0.5);
+    --cairn-scrim: oklch(0% 0 0 / 0.55);
+  }
+  [data-theme] {
+    --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+    --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-editor: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+
+  /* a positive (insertion) tint, derived from the shipped --color-success by color-mix — not a new
+     token. Used only as a faint wash behind inserted text and the accept control, mirroring how the
+     danger family supplies --cairn-error-tint for deletions. */
+  [data-theme] { --diff-add-tint: color-mix(in oklab, var(--color-success) 12%, var(--color-base-100)); }
+
+  /* ===== the desk ground + band (the gold-standard editor shell, verbatim grammar) ===== */
+  .ground { position: relative; overflow: hidden; background: var(--color-base-200); min-height: 88vh; font-family: var(--font-body); color: var(--color-base-content); -webkit-font-smoothing: antialiased; }
+  .band { display: flex; align-items: center; height: 64px; background: var(--color-base-100); border-bottom: 1px solid var(--cairn-card-border); padding: 0 20px 0 14px; }
+  .bnd-cluster { display: flex; align-items: center; gap: 4px; }
+  .bnd-sq { display: inline-flex; align-items: center; justify-content: center; height: 32px; width: 32px; border: 0; background: transparent; border-radius: .5rem; color: var(--color-subtle); cursor: pointer; }
+  .bnd-sq:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .bnd-btn { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border: 0; background: transparent; border-radius: .5rem; color: var(--color-subtle); font: 500 .875rem/1 var(--font-body); cursor: pointer; }
+  .bnd-btn:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .bnd-btn.on { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); }
+  .crumb { display: flex; align-items: center; gap: 7px; font-size: .875rem; margin-left: 4px; }
+  .crumb a { color: var(--color-muted); text-decoration: none; cursor: pointer; }
+  .crumb a:hover { color: var(--color-primary); }
+  .crumb-sep { color: var(--color-muted); opacity: .45; }
+  .crumb-here { font-weight: 550; }
+  .bnd-status { display: flex; align-items: center; gap: 12px; margin-left: 18px; padding-left: 18px; border-left: 1px solid var(--cairn-card-border); }
+  .badge-ghost { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 999px; font-size: .6875rem; font-weight: 600; background: color-mix(in oklab, var(--color-base-content) 8%, transparent); color: var(--color-muted); }
+  .savestate { display: inline-flex; align-items: center; gap: 6px; font-size: .75rem; color: var(--color-muted); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-warning); }
+  .dot-ok { background: var(--color-success); }
+  .grow { flex: 1 1 auto; }
+  .bnd-div { width: 1px; height: 18px; background: var(--cairn-card-border); margin: 0 8px; }
+  .btn-outline { font: 600 .8125rem/1 var(--font-body); border-radius: .5rem; padding: 8px 13px; border: 1px solid var(--color-base-300); background: transparent; color: var(--color-base-content); cursor: pointer; }
+  .btn-primary { font: 600 .8125rem/1 var(--font-body); border-radius: .5rem; padding: 8px 13px; border: 1px solid transparent; background: var(--color-primary); color: var(--color-primary-content); cursor: pointer; box-shadow: 0 1px 2px color-mix(in oklab, var(--color-primary) 35%, transparent); }
+
+  /* ===== the page + the editor card (gold standard) ===== */
+  .page { padding: 2rem 2.5rem; }
+  .col { max-width: 49rem; margin: 0 auto; width: 100%; }
+  .ttl-wrap { font-family: var(--font-editor); font-size: 1.0625rem; max-width: 72ch; margin: 0 auto 16px; padding: 0 1.25rem; }
+  .ttl { font-family: var(--font-display); font-size: 1.875rem; font-weight: 700; letter-spacing: -.025em; }
+  .card-ed { background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: 1rem; box-shadow: var(--cairn-shadow); overflow: hidden; }
+
+  /* the toolbar strip */
+  .strip { display: flex; align-items: center; gap: 2px; padding: 6px 8px; border-bottom: 1px solid var(--cairn-card-border); }
+  .tb { display: inline-flex; align-items: center; justify-content: center; height: 30px; width: 30px; border: 0; background: transparent; border-radius: .5rem; color: var(--color-subtle); cursor: pointer; }
+  .tb:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .tb svg { width: 16px; height: 16px; }
+  .tb.on { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); }
+  .tdiv { width: 1px; height: 18px; background: var(--cairn-card-border); margin: 0 6px; flex: none; }
+  /* the Tidy entry: a quiet labeled glyph button in the strip, distinct from the icon-only formats.
+     This is the on-demand opt-in trigger; it only appears when the site has tidy turned on. */
+  .tb-tidy { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 0; background: transparent; border-radius: .5rem; color: var(--color-subtle); font: 500 .8125rem/1 var(--font-body); cursor: pointer; }
+  .tb-tidy:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .tb-tidy svg { width: 15px; height: 15px; }
+  .tb-tidy.live { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); }
+
+  .seg { display: inline-flex; border: 1px solid var(--cairn-card-border); border-radius: .5rem; overflow: hidden; background: var(--color-base-100); }
+  .seg button { font: 400 .8125rem/1 var(--font-body); border: 0; background: transparent; color: var(--color-muted); padding: 5px 12px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--cairn-card-border); }
+  .seg button[aria-pressed="true"] { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); font-weight: 500; }
+
+  /* ===== the manuscript (gold-standard grammar) ===== */
+  .ms { position: relative; font-family: var(--font-editor); font-size: 1.0625rem; line-height: 1.9; max-width: 72ch; margin: 0 auto; padding: 2rem 1.25rem 2.5rem; min-height: 40vh; }
+  .ln { min-height: 1.9em; position: relative; }
+  .gap { min-height: 1.9em; }
+  .h2 { font-size: 1.5em; font-weight: 700; }
+  .h3 { font-size: 1.17em; font-weight: 700; }
+  .mk { color: var(--color-muted); font-weight: 400; }
+  .lk { color: var(--color-accent); }
+  .chip { background: var(--cairn-code-chip); border-radius: .25rem; padding: .05em .3em; }
+  .hang2 { padding-left: 2ch; text-indent: -2ch; }
+  /* frontmatter fence + keys: machinery muted, values in content ink (mirrors the syntax grammar) */
+  .fm-rule { color: var(--color-muted); }
+  .fm-key { color: var(--color-muted); }
+
+  /* the directive rails (gold standard) */
+  .rail1 { box-shadow: inset 2px 0 0 0 color-mix(in oklab, var(--color-accent) var(--cairn-directive-rail-1), transparent); padding-left: 1.75rem; }
+  .rail2 { box-shadow: inset 2px 0 0 0 color-mix(in oklab, var(--color-accent) var(--cairn-directive-rail-1), transparent),
+                       inset 8px 0 0 0 var(--color-base-100),
+                       inset 10px 0 0 0 color-mix(in oklab, var(--color-accent) var(--cairn-directive-rail-2), transparent);
+           padding-left: 1.75rem; }
+  .lb { color: var(--color-accent); }
+  .lb2 { color: var(--cairn-directive-ink-2); }
+
+  /* the resolved media: token chip (the editor decoration, gold-standard media grammar) */
+  .media-chip { display: inline-flex; align-items: center; gap: 6px; vertical-align: baseline; background: color-mix(in oklab, var(--color-accent) 8%, var(--color-base-100)); border: 1px solid color-mix(in oklab, var(--color-accent) 30%, transparent); border-radius: .4rem; padding: .05em .5em .05em .35em; font-family: var(--font-body); font-size: .8125rem; color: var(--color-accent); }
+  .media-chip .mthumb { width: 18px; height: 14px; border-radius: 2px; background: linear-gradient(120deg, color-mix(in oklab, var(--color-accent) 35%, var(--color-base-100)), color-mix(in oklab, var(--color-primary) 30%, var(--color-base-100))); flex: none; }
+  .media-chip .role-pill { font-size: .625rem; color: var(--color-accent); border: 1px solid color-mix(in oklab, var(--color-accent) 35%, transparent); border-radius: .3rem; padding: 0 4px; }
+
+  /* =====================================================================================
+     SPELLCHECK: the wavy underline + the anchored correction popover.
+     ===================================================================================== */
+  /* the wavy underline. A real misspelling, never code/URLs/frontmatter/media tokens (the lint
+     source masks those via the Lezer tree). Hue is NOT the only cue: it is a distinctive wavy
+     decoration, and on click/hover it is announced through the lint tooltip. */
+  .sp { text-decoration: underline wavy var(--cairn-error-ink); text-decoration-skip-ink: none; text-underline-offset: 3px; cursor: pointer; }
+  /* the active misspelling under an open popover: a faint tint anchors the popover to its word */
+  .sp.open { background: color-mix(in oklab, var(--cairn-error-ink) 9%, transparent); border-radius: .2rem; }
+
+  /* the correction popover: an anchored real dialog (focus trap, Esc restores focus to the word) */
+  .sp-pop { position: absolute; z-index: 30; width: 256px; background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: .75rem; box-shadow: var(--cairn-shadow); font-family: var(--font-body); overflow: hidden; }
+  .sp-pop-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px 8px; }
+  .sp-pop-word { font-family: var(--font-editor); font-size: .8125rem; color: var(--cairn-error-ink); text-decoration: underline wavy var(--cairn-error-ink); text-underline-offset: 3px; }
+  .sp-pop-label { font-size: .6875rem; color: var(--color-muted); }
+  .sp-sugg { list-style: none; margin: 0; padding: 4px; display: flex; flex-direction: column; gap: 1px; }
+  .sp-sugg li { display: block; }
+  .sp-sugg button { display: flex; width: 100%; box-sizing: border-box; align-items: center; gap: 8px; padding: 7px 9px; border: 0; background: transparent; border-radius: .45rem; font: 500 .875rem/1 var(--font-body); color: var(--color-base-content); cursor: pointer; text-align: left; }
+  .sp-sugg button:hover, .sp-sugg button.active { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); }
+  .sp-sugg button .repl { font-family: var(--font-editor); }
+  .sp-sugg button .kbd { margin-left: auto; font-size: .625rem; color: var(--color-muted); border: 1px solid var(--cairn-card-border); border-radius: .25rem; padding: 1px 5px; font-family: var(--font-editor); }
+  .sp-sugg button.active .kbd { color: var(--color-primary); border-color: color-mix(in oklab, var(--color-primary) 35%, transparent); }
+  .sp-pop-foot { display: flex; align-items: center; gap: 2px; padding: 5px 6px; border-top: 1px solid var(--cairn-card-border); }
+  .sp-act { display: inline-flex; align-items: center; gap: 6px; padding: 6px 9px; border: 0; background: transparent; border-radius: .45rem; font: 500 .75rem/1 var(--font-body); color: var(--color-subtle); cursor: pointer; }
+  .sp-act:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); color: var(--color-base-content); }
+  .sp-act svg { width: 13px; height: 13px; }
+
+  /* =====================================================================================
+     TIDY: in-flow inline track-changes.
+     A deletion is the original text struck through in the danger ink (kept until accepted).
+     An insertion is the new text in the positive ink on a faint positive tint (decoration-added).
+     Every change is paired and carries an inline accept/reject control. The ACTIVE change shows the
+     control in full and a 2px primary ring; resting changes show a faint dot the author can hover
+     or step to. Markers (## ** `) keep their muted treatment under the marks.
+     ===================================================================================== */
+  /* the captured original being removed: struck + danger ink, content weight (it is YOUR words) */
+  .del { color: var(--cairn-error-ink); text-decoration: line-through; text-decoration-thickness: 1.5px; background: color-mix(in oklab, var(--cairn-error-ink) 7%, transparent); border-radius: .15rem; padding: 0 .05em; }
+  /* the inserted text: positive ink on a faint positive tint, a subtle underline so it is not
+     hue-alone */
+  .ins { color: var(--color-positive-ink); background: var(--diff-add-tint); border-radius: .15rem; padding: 0 .05em; text-decoration: underline; text-decoration-color: color-mix(in oklab, var(--color-positive-ink) 45%, transparent); text-underline-offset: 2px; text-decoration-thickness: 1px; }
+  /* a change cluster wraps a del+ins pair (or a lone del / lone ins) so the inline control anchors
+     to the whole change and the active ring frames it */
+  .chg { position: relative; border-radius: .25rem; padding: 0 1px; }
+  .chg.active { box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-primary) 70%, transparent); background: color-mix(in oklab, var(--color-primary) 5%, transparent); }
+  /* the inline accept/reject control: a hairline pill that floats just above the change. Full on the
+     active change; a faint dot otherwise (revealed on hover / when stepped to). */
+  .chg-ctl { position: absolute; left: 50%; transform: translateX(-50%); top: -1.55em; display: inline-flex; align-items: center; gap: 1px; background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: 999px; box-shadow: var(--cairn-shadow); padding: 2px; font-family: var(--font-body); white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .12s; }
+  .chg:hover .chg-ctl, .chg.active .chg-ctl { opacity: 1; pointer-events: auto; }
+  .chg-ctl button { display: inline-flex; align-items: center; justify-content: center; height: 22px; width: 22px; border: 0; background: transparent; border-radius: 999px; cursor: pointer; color: var(--color-muted); }
+  .chg-ctl button.acc:hover { background: color-mix(in oklab, var(--color-success) 14%, transparent); color: var(--color-positive-ink); }
+  .chg-ctl button.rej:hover { background: var(--cairn-error-tint); color: var(--cairn-error-ink); }
+  .chg-ctl button svg { width: 14px; height: 14px; }
+  .chg-ctl .ctl-kbd { font-size: .5625rem; color: var(--color-muted); padding: 0 5px 0 3px; letter-spacing: .02em; }
+  /* the resting-change dot: a quiet seam marker, so an unfocused change is locatable without the
+     full control. Carries the change kind by shape+ink, never hue alone (a small caret glyph). */
+  .chg-dot { position: absolute; left: 50%; transform: translateX(-50%); top: -0.45em; width: 5px; height: 5px; border-radius: 50%; background: color-mix(in oklab, var(--color-primary) 55%, transparent); opacity: .8; }
+  .chg.active .chg-dot, .chg:hover .chg-dot { opacity: 0; }
+
+  /* =====================================================================================
+     THE FLOATING CHANGE BAR (the compact review HUD).
+     A small, real toolbar floating low over the manuscript: the count, prev/next step, accept/reject
+     for the focused change, a hairline, then accept-all / reject-all and an end-review exit. It does
+     NOT own the page; the document stays the focus. role="toolbar"; keyboard model is n/p step,
+     y/n accept/reject the focused change, A accept-all, Esc end.
+     ===================================================================================== */
+  .tidybar { position: absolute; left: 50%; transform: translateX(-50%); bottom: 22px; z-index: 20; display: flex; align-items: center; gap: 4px; background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: 999px; box-shadow: var(--cairn-shadow); padding: 5px 6px 5px 14px; font-family: var(--font-body); }
+  .tidybar .tb-count { display: inline-flex; align-items: baseline; gap: 6px; font-size: .8125rem; color: var(--color-base-content); white-space: nowrap; }
+  .tidybar .tb-count b { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .tidybar .tb-count .of { color: var(--color-muted); font-size: .75rem; }
+  .tidybar .tdiv2 { width: 1px; height: 20px; background: var(--cairn-card-border); margin: 0 4px; flex: none; }
+  .tidybar .step { display: inline-flex; align-items: center; justify-content: center; height: 28px; width: 28px; border: 0; background: transparent; border-radius: 999px; color: var(--color-subtle); cursor: pointer; }
+  .tidybar .step:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .tidybar .step svg { width: 16px; height: 16px; }
+  .tidybar .acc-one { display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 11px; border: 0; border-radius: 999px; background: color-mix(in oklab, var(--color-success) 14%, transparent); color: var(--color-positive-ink); font: 600 .75rem/1 var(--font-body); cursor: pointer; }
+  .tidybar .rej-one { display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 11px; border: 0; border-radius: 999px; background: var(--cairn-error-tint); color: var(--cairn-error-ink); font: 600 .75rem/1 var(--font-body); cursor: pointer; }
+  .tidybar .acc-one svg, .tidybar .rej-one svg { width: 13px; height: 13px; }
+  .tidybar .all-btn { display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 11px; border: 0; background: transparent; border-radius: 999px; color: var(--color-subtle); font: 500 .75rem/1 var(--font-body); cursor: pointer; }
+  .tidybar .all-btn:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); color: var(--color-base-content); }
+  .tidybar .all-btn.accept-all { color: var(--color-primary); }
+  .tidybar .all-btn svg { width: 13px; height: 13px; }
+  .tidybar .end { display: inline-flex; align-items: center; justify-content: center; height: 28px; width: 28px; border: 0; background: transparent; border-radius: 999px; color: var(--color-subtle); cursor: pointer; }
+  .tidybar .end:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .tidybar .end svg { width: 15px; height: 15px; }
+
+  /* a small "kind" tag the focused change shows in the bar (deletion / insertion / replacement),
+     glyph + word, so the announced step is also visible (never hue-alone) */
+  .tidybar .kind { display: inline-flex; align-items: center; gap: 5px; font-size: .6875rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+  .tidybar .kind.repl { color: var(--color-primary); background: color-mix(in oklab, var(--color-primary) 10%, transparent); }
+  .tidybar .kind svg { width: 12px; height: 12px; }
+
+  /* the footer strip (gold standard, abbreviated) */
+  .ftr { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--cairn-card-border); padding: 5px 12px; font-size: .75rem; color: var(--color-muted); }
+  .ftr-right { display: flex; align-items: center; gap: 14px; }
+  .ftr-toggle { font: 400 .75rem/1 var(--font-body); border: 0; background: transparent; color: var(--color-muted); padding: 4px 8px; border-radius: .5rem; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+  .ftr-toggle[aria-pressed="true"] { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); font-weight: 500; }
+  .ftr-toggle svg { width: 11px; height: 11px; }
+  .ftr-link { color: var(--color-muted); text-decoration: underline; text-underline-offset: 2px; text-decoration-color: color-mix(in oklab, currentColor 40%, transparent); background: none; border: 0; font: inherit; cursor: pointer; }
+  .seg-tabs button { font-size: .8125rem; padding: 5px 12px; }
+
+  /* a polite live-region note shown to sighted reviewers as a faint caption under the bar (the same
+     string the aria-live region speaks). Documents what AT hears at each step. */
+  .live-cap { position: absolute; left: 50%; transform: translateX(-50%); bottom: 4px; font: 500 .6875rem/1.3 var(--font-body); color: var(--color-muted); background: color-mix(in oklab, var(--color-base-100) 85%, transparent); padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+
+  /* =====================================================================================
+     THE SETTINGS / OPT-IN SURFACE (an office settings card, the standard recipes).
+     ===================================================================================== */
+  .settings-ground { background: var(--color-base-200); font-family: var(--font-body); color: var(--color-base-content); -webkit-font-smoothing: antialiased; padding: 26px; }
+  .set-col { max-width: 44rem; margin: 0 auto; }
+  .set-eyebrow { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); }
+  .set-h1 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; letter-spacing: -.02em; margin: 3px 0 4px; }
+  .set-lede { font-size: .875rem; color: var(--color-muted); line-height: 1.55; margin-bottom: 20px; max-width: 60ch; }
+  .set-card { background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: 1rem; box-shadow: var(--cairn-shadow); overflow: hidden; margin-bottom: 18px; }
+  .set-row { display: flex; align-items: flex-start; gap: 14px; padding: 18px 20px; }
+  .set-row + .set-row { border-top: 1px solid var(--cairn-card-border); }
+  .set-ico { width: 36px; height: 36px; flex: none; border-radius: .6rem; display: inline-flex; align-items: center; justify-content: center; background: color-mix(in oklab, var(--color-primary) 12%, transparent); color: var(--color-primary); }
+  .set-ico svg { width: 19px; height: 19px; }
+  .set-body { flex: 1 1 auto; min-width: 0; }
+  .set-title { display: flex; align-items: center; gap: 9px; font-size: 1rem; font-weight: 600; }
+  .set-pill { font-size: .625rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; }
+  .set-pill.on { color: var(--color-positive-ink); background: color-mix(in oklab, var(--color-success) 12%, transparent); }
+  .set-pill.optin { color: var(--color-muted); background: color-mix(in oklab, var(--color-base-content) 8%, transparent); }
+  .set-desc { font-size: .8125rem; color: var(--color-muted); line-height: 1.55; margin-top: 4px; }
+  .set-desc code { font-family: var(--font-editor); background: var(--cairn-code-chip); padding: 1px 5px; border-radius: 3px; color: var(--color-base-content); }
+  .set-ctl { flex: none; padding-top: 2px; }
+  /* the DaisyUI v5 toggle stand-in */
+  .toggle { appearance: none; -webkit-appearance: none; width: 40px; height: 23px; border-radius: 999px; background: var(--color-base-300); position: relative; cursor: pointer; flex: none; transition: background .15s; }
+  .toggle::after { content: ""; position: absolute; top: 2.5px; left: 2.5px; width: 18px; height: 18px; border-radius: 50%; background: var(--color-base-100); box-shadow: 0 1px 2px rgba(0,0,0,.2); transition: transform .15s; }
+  .toggle:checked { background: var(--color-primary); }
+  .toggle:checked::after { transform: translateX(17px); }
+  .toggle:focus-visible { outline: 2px solid color-mix(in oklab, var(--color-primary) 70%, transparent); outline-offset: 2px; }
+
+  /* the nested sub-block inside a settings row (the API key, the model choice, the dictionary) */
+  .set-sub { margin-top: 14px; border: 1px solid var(--cairn-card-border); border-radius: .75rem; background: var(--color-base-200); overflow: hidden; }
+  .set-sub-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
+  .set-sub-row + .set-sub-row { border-top: 1px solid var(--cairn-card-border); }
+  .set-sub-label { font-size: .8125rem; font-weight: 500; flex: none; width: 8.5rem; }
+  .set-sub-label .hint { display: block; font-weight: 400; font-size: .6875rem; color: var(--color-muted); margin-top: 1px; }
+  .key-field { flex: 1 1 auto; display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 11px; border: 1px solid var(--color-base-300); border-radius: .55rem; background: var(--color-base-100); font-family: var(--font-editor); font-size: .8125rem; color: var(--color-base-content); }
+  .key-field svg { width: 14px; height: 14px; color: var(--color-muted); flex: none; }
+  .key-field .masked { color: var(--color-muted); letter-spacing: .08em; }
+  .key-status { display: inline-flex; align-items: center; gap: 5px; font-size: .75rem; font-weight: 600; color: var(--color-positive-ink); flex: none; }
+  .key-status svg { width: 14px; height: 14px; }
+  .model-seg { display: inline-flex; border: 1px solid var(--cairn-card-border); border-radius: .55rem; overflow: hidden; background: var(--color-base-100); }
+  .model-seg button { font: 500 .75rem/1 var(--font-body); border: 0; background: transparent; color: var(--color-muted); padding: 7px 13px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+  .model-seg button + button { border-left: 1px solid var(--cairn-card-border); }
+  .model-seg button[aria-pressed="true"] { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); font-weight: 600; }
+  .model-seg button svg { width: 12px; height: 12px; }
+  .model-note { font-size: .6875rem; color: var(--color-muted); margin-left: auto; flex: none; max-width: 16rem; line-height: 1.4; text-align: right; }
+
+  /* the personal-dictionary chips */
+  .dict-chips { display: flex; flex-wrap: wrap; gap: 6px; flex: 1 1 auto; }
+  .dict-chip { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-editor); font-size: .75rem; color: var(--color-base-content); background: var(--color-base-100); border: 1px solid var(--color-base-300); border-radius: 999px; padding: 3px 4px 3px 10px; }
+  .dict-chip button { display: inline-flex; align-items: center; justify-content: center; height: 17px; width: 17px; border: 0; background: transparent; border-radius: 50%; color: var(--color-muted); cursor: pointer; }
+  .dict-chip button:hover { background: color-mix(in oklab, var(--color-base-content) 8%, transparent); color: var(--color-base-content); }
+  .dict-chip button svg { width: 11px; height: 11px; }
+  .dict-add { display: inline-flex; align-items: center; gap: 5px; font: 500 .75rem/1 var(--font-body); color: var(--color-primary); background: transparent; border: 1px dashed color-mix(in oklab, var(--color-primary) 40%, var(--color-base-300)); border-radius: 999px; padding: 4px 11px; cursor: pointer; }
+  .dict-add svg { width: 12px; height: 12px; }
+  .dict-store { display: flex; align-items: center; gap: 7px; font-size: .6875rem; color: var(--color-muted); padding: 10px 14px; background: var(--color-base-100); border-top: 1px solid var(--cairn-card-border); }
+  .dict-store svg { width: 13px; height: 13px; flex: none; }
+  .dict-store code { font-family: var(--font-editor); color: var(--color-base-content); }
+
+  /* a note callout inside settings (the privacy line for tidy) */
+  .set-callout { display: flex; align-items: flex-start; gap: 9px; margin-top: 13px; padding: 11px 13px; border: 1px solid var(--cairn-card-border); border-radius: .7rem; background: var(--color-base-200); font-size: .75rem; line-height: 1.55; color: var(--color-base-content); }
+  .set-callout svg { width: 15px; height: 15px; flex: none; margin-top: 1px; color: var(--color-muted); }
+  .set-callout b { font-weight: 600; }
+</style>
+</head>
+<body>
+
+<!-- ===================================================================================== -->
+<!-- STATE 1 — The desk at rest. Spellcheck on by default; one wavy underline visible.      -->
+<!-- ===================================================================================== -->
+<div class="mock-label">State 1 · The desk at rest — spellcheck on by default</div>
+<div class="mock-note">The everyday writing state, the gold-standard desk shell unchanged. Spellcheck
+runs locally and is on by default, so the one real misspelling (<b>recieve</b>) carries a wavy
+underline. Nothing else is touched: the code span, the <code>media:</code> token, the frontmatter keys,
+and the <code>:::figure</code> directive are masked from the checker through the Lezer tree, so they are
+never flagged. Tidy sits in the toolbar as a quiet labeled control, waiting to be invoked.</div>
+<div class="anno engine">Spellcheck = a @codemirror/lint source backed by a WASM dictionary on a Web Worker. The lint source reads the Lezer markdown tree and skips CodeBlock, InlineCode, URL, FrontMatter, and the cairn media:/cairn: token nodes, so machinery is never checked.</div>
+<div class="anno">a11y: the wavy underline is a distinctive non-color decoration; the diagnostic is also reachable by keyboard (the lint cursor) and read by the screen reader as a diagnostic, never signalled by hue alone.</div>
+
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="ground">
+    <div class="band">
+      <div class="bnd-cluster">
+        <button class="bnd-sq" aria-label="Open menu"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="16" height="16"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
+        <nav aria-label="Breadcrumb" class="crumb"><a>Posts</a><span class="crumb-sep">/</span><span class="crumb-here">First snow on the pass</span></nav>
+      </div>
+      <div class="bnd-status">
+        <span class="badge-ghost">Edited</span>
+        <span class="savestate"><span class="dot"></span>Unsaved changes</span>
+      </div>
+      <div class="grow"></div>
+      <div class="bnd-cluster" style="gap:6px;">
+        <button class="bnd-btn"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="16" height="16"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M15 3v18"/></svg>Details</button>
+        <button class="bnd-sq" aria-label="More actions"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="16" height="16"><path d="M5 12h.01"/><path d="M12 12h.01"/><path d="M19 12h.01"/></svg></button>
+        <div class="bnd-div" aria-hidden="true"></div>
+        <button class="btn-outline">Publish</button>
+        <button class="btn-primary">Save</button>
+      </div>
+    </div>
+    <main class="page">
+      <div class="col">
+        <div class="ttl-wrap"><div class="ttl">First snow on the pass</div></div>
+        <div class="card-ed">
+          <div class="strip">
+            <button class="tb" aria-label="Bold (Ctrl+B)" title="Bold (Ctrl+B)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8"/></svg></button>
+            <button class="tb" aria-label="Italic (Ctrl+I)" title="Italic (Ctrl+I)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 4h-9"/><path d="M14 20H5"/><path d="M15 4 9 20"/></svg></button>
+            <div class="tdiv" aria-hidden="true"></div>
+            <button class="tb" aria-label="Heading" title="Heading"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h8"/><path d="M4 18V6"/><path d="M12 18V6"/><path d="M21 18h-4c0-4 4-3 4-6 0-1.5-2-2.5-4-1"/></svg></button>
+            <button class="tb" aria-label="Bulleted list" title="Bulleted list"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg></button>
+            <button class="tb" aria-label="Inline code" title="Inline code"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 8-4 4 4 4"/><path d="m15 8 4 4-4 4"/></svg></button>
+            <button class="tb" aria-label="Image" title="Image"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg></button>
+            <div class="tdiv" aria-hidden="true"></div>
+            <!-- the Tidy entry: present because the site has tidy turned on; the on-demand opt-in -->
+            <button class="tb-tidy" title="Tidy: a light copy-edit (Ctrl+Shift+T)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7.5L16.5 3z"/><path d="m9 13 2 2 4-4"/></svg>Tidy</button>
+            <div class="grow"></div>
+            <span class="seg seg-tabs"><button aria-pressed="true">Write</button><button aria-pressed="false">Preview</button></span>
+          </div>
+          <div class="ms">
+            <div class="ln"><span class="fm-rule">---</span></div>
+            <div class="ln"><span class="fm-key">title:</span> First snow on the pass</div>
+            <div class="ln"><span class="fm-key">date:</span> 2026-06-18</div>
+            <div class="ln"><span class="fm-key">summary:</span> The season's first real storm, and what it means for the early loop.</div>
+            <div class="ln"><span class="fm-rule">---</span></div>
+            <div class="ln gap"></div>
+            <div class="ln">The pass took its first snow overnight. We expect to <span class="sp" title="Possible spelling mistake">recieve</span> another</div>
+            <div class="ln">15 cm before the front clears, so the early loop is closed until the crew</div>
+            <div class="ln">can break trail. Check the <span class="mk">[</span><span class="lk">grooming report</span><span class="mk">](https://example.com/report)</span> first.</div>
+            <div class="ln gap"></div>
+            <div class="ln hang2"><span class="mk">-</span> Wax for <span class="mk">`</span><span class="chip">-8 to -14 C</span><span class="mk">`</span>, and pack a warm layer for the lift line</div>
+            <div class="ln gap"></div>
+            <div class="ln">Here is the view from the ridge at first light:</div>
+            <div class="ln gap"></div>
+            <div class="ln rail1"><span class="mk">:::</span><span class="lb">figure</span><span class="mk">[</span><span class="lb">Dawn over the upper bowl</span><span class="mk">]</span></div>
+            <div class="ln rail1"><span class="media-chip"><span class="mthumb"></span>first-light-ridge.jpg<span class="role-pill">wide</span></span></div>
+            <div class="ln rail1"><span class="mk">:::</span></div>
+          </div>
+          <div class="ftr">
+            <span>96 words</span>
+            <span class="ftr-right">
+              <span class="seg" role="group" aria-label="Editing surface">
+                <button aria-pressed="true"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Prose</button><button aria-pressed="false">Markup</button>
+              </span>
+              <button class="ftr-toggle" aria-pressed="false">Focus mode</button>
+              <button class="ftr-link">Markdown help</button>
+            </span>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div></div>
+
+
+<!-- ===================================================================================== -->
+<!-- STATE 2 — The spellcheck correction popover open at the word.                          -->
+<!-- ===================================================================================== -->
+<div class="mock-label">State 2 · Spellcheck — the correction popover</div>
+<div class="mock-note">Click (or the keyboard fix command) on the underlined word opens a small anchored
+popover at the word. It carries the suggestions top-to-bottom (the first is preselected, number keys
+apply), then a footer with <b>Add to dictionary</b> and <b>Ignore</b>. Picking a suggestion replaces
+only that word; the author never leaves the line. The personal dictionary is per-site and persists, so
+names and product terms stop being flagged once added.</div>
+<div class="anno">a11y: the popover is a real anchored dialog opened at the caret (the MediaInsertPopover precedent). Focus moves into the suggestion list, Up/Down walk it, Enter applies, Esc closes and restores focus to the word in the editor. aria-activedescendant tracks the highlighted suggestion.</div>
+<div class="anno engine">"Add to dictionary" appends the word to the per-site custom dictionary (a git-committed file, consistent with content-in-git); "Ignore" suppresses it for this session only. Both re-run the lint source so the underline clears.</div>
+
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="ground">
+    <div class="band">
+      <div class="bnd-cluster">
+        <button class="bnd-sq" aria-label="Open menu"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="16" height="16"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
+        <nav aria-label="Breadcrumb" class="crumb"><a>Posts</a><span class="crumb-sep">/</span><span class="crumb-here">First snow on the pass</span></nav>
+      </div>
+      <div class="bnd-status">
+        <span class="badge-ghost">Edited</span>
+        <span class="savestate"><span class="dot"></span>Unsaved changes</span>
+      </div>
+      <div class="grow"></div>
+      <div class="bnd-cluster" style="gap:6px;">
+        <button class="bnd-btn"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="16" height="16"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M15 3v18"/></svg>Details</button>
+        <div class="bnd-div" aria-hidden="true"></div>
+        <button class="btn-outline">Publish</button>
+        <button class="btn-primary">Save</button>
+      </div>
+    </div>
+    <main class="page">
+      <div class="col">
+        <div class="ttl-wrap"><div class="ttl">First snow on the pass</div></div>
+        <div class="card-ed">
+          <div class="strip">
+            <button class="tb" aria-label="Bold"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8"/></svg></button>
+            <button class="tb" aria-label="Italic"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 4h-9"/><path d="M14 20H5"/><path d="M15 4 9 20"/></svg></button>
+            <div class="tdiv" aria-hidden="true"></div>
+            <button class="tb" aria-label="Inline code"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 8-4 4 4 4"/><path d="m15 8 4 4-4 4"/></svg></button>
+            <button class="tb" aria-label="Image"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg></button>
+            <div class="tdiv" aria-hidden="true"></div>
+            <button class="tb-tidy" title="Tidy: a light copy-edit"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7.5L16.5 3z"/><path d="m9 13 2 2 4-4"/></svg>Tidy</button>
+            <div class="grow"></div>
+            <span class="seg seg-tabs"><button aria-pressed="true">Write</button><button aria-pressed="false">Preview</button></span>
+          </div>
+          <div class="ms">
+            <div class="ln gap"></div>
+            <div class="ln">The pass took its first snow overnight. We expect to <span class="sp open" title="Possible spelling mistake">recieve</span> another
+              <!-- the anchored correction popover, positioned just under the word -->
+              <div class="sp-pop" role="dialog" aria-label="Spelling suggestions for recieve" style="left: 50.5ch; top: 1.7em;">
+                <div class="sp-pop-head"><span class="sp-pop-word">recieve</span><span class="sp-pop-label">not in dictionary</span></div>
+                <ul class="sp-sugg" role="listbox" aria-label="Suggestions">
+                  <li role="option" aria-selected="true"><button class="active"><span class="repl">receive</span><span class="kbd">1</span></button></li>
+                  <li role="option" aria-selected="false"><button><span class="repl">relieve</span><span class="kbd">2</span></button></li>
+                  <li role="option" aria-selected="false"><button><span class="repl">reprieve</span><span class="kbd">3</span></button></li>
+                </ul>
+                <div class="sp-pop-foot">
+                  <button class="sp-act"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>Add to dictionary</button>
+                  <div class="grow"></div>
+                  <button class="sp-act"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>Ignore</button>
+                </div>
+              </div>
+            </div>
+            <div class="ln">15 cm before the front clears, so the early loop is closed until the crew</div>
+            <div class="ln">can break trail. Check the <span class="mk">[</span><span class="lk">grooming report</span><span class="mk">](https://example.com/report)</span> first.</div>
+            <div class="ln gap"></div>
+            <div class="ln hang2"><span class="mk">-</span> Wax for <span class="mk">`</span><span class="chip">-8 to -14 C</span><span class="mk">`</span>, and pack a warm layer for the lift line</div>
+            <div class="ln gap" style="min-height:7em"></div>
+          </div>
+          <div class="ftr">
+            <span>96 words</span>
+            <span class="ftr-right">
+              <span class="seg" role="group" aria-label="Editing surface">
+                <button aria-pressed="true"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Prose</button><button aria-pressed="false">Markup</button>
+              </span>
+              <button class="ftr-toggle" aria-pressed="false">Focus mode</button>
+              <button class="ftr-link">Markdown help</button>
+            </span>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div></div>
+
+
+<!-- ===================================================================================== -->
+<!-- STATE 3 — Tidy review ACTIVE. In-flow inline track-changes + the floating change bar.  -->
+<!-- ===================================================================================== -->
+<div class="mock-label">State 3 · Tidy review — in-flow inline track-changes</div>
+<div class="mock-note">Tidy has run and now owns the buffer for review. Its changes appear right where
+they belong, inline in the markdown. A <b style="color:#a01f23">deletion</b> is the original text struck
+through (kept until you accept), an <b style="color:#2f7a4f">insertion</b> is the new text added beside
+it. This is a <b>light copy-edit</b>: a grammar fix (<code>recieve</code> to <code>receive</code> and the
+agreement that follows), a consistency fix (the author wrote <code>cm</code> and <code>centimetres</code>
+both ways, harmonized to their dominant <code>cm</code>), and a typo (a doubled <code>the the</code>).
+Word choice, rhythm, and the author's <code>-8 to -14 C</code> are left alone. The compact bar floats low,
+states the count, and drives a per-change accept/reject and a step-through. Notice the <code>media:</code>
+chip and the <code>:::figure</code> rails sit <b>clean</b> inside the review: a tidy that touched a token
+or a fence would be rejected before it was ever shown.</div>
+<div class="anno engine">The model returns a rewritten STRING (poplar's model: string-in, string-out, no JSON patches). The client computes an LCS diff against the captured pre-tidy body and renders the changed runs as decorations. Insertions are CM6 decorations; deletions are widgets holding the removed original (it is no longer in the doc). Accept-all applies in ONE batched transaction.</div>
+<div class="anno">Structure gate (make-or-break): before the review is offered, the result is validated as a proofread, not a restructure. The frontmatter, every media:/cairn: token, the :::figure fence, and the inside of the code span must be byte-identical; any drift fails validation and the review is not shown. That is why those spans carry NO change marks here.</div>
+<div class="anno">a11y: the floating bar is role="toolbar". Keyboard: n/p step to next/previous change, y/n (or the bar buttons) accept/reject the focused change, A accept-all, Esc end review. A polite aria-live region announces each step ("Change 2 of 5: replacement, 'recieve' becomes 'receive'"). The active change carries a 2px ring AND the kind word, never hue alone.</div>
+
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="ground">
+    <div class="band">
+      <div class="bnd-cluster">
+        <button class="bnd-sq" aria-label="Open menu"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="16" height="16"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
+        <nav aria-label="Breadcrumb" class="crumb"><a>Posts</a><span class="crumb-sep">/</span><span class="crumb-here">First snow on the pass</span></nav>
+      </div>
+      <div class="bnd-status">
+        <!-- the status reads the review state: tidy is mid-review, nothing committed yet -->
+        <span class="badge-ghost" style="color:var(--color-primary);background:color-mix(in oklab, var(--color-primary) 10%, transparent);">Reviewing tidy</span>
+        <span class="savestate"><span class="dot"></span>5 suggested changes</span>
+      </div>
+      <div class="grow"></div>
+      <div class="bnd-cluster" style="gap:6px;">
+        <button class="bnd-btn"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="16" height="16"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M15 3v18"/></svg>Details</button>
+        <div class="bnd-div" aria-hidden="true"></div>
+        <button class="btn-outline">Publish</button>
+        <button class="btn-primary">Save</button>
+      </div>
+    </div>
+    <main class="page">
+      <div class="col">
+        <div class="ttl-wrap"><div class="ttl">First snow on the pass</div></div>
+        <div class="card-ed">
+          <div class="strip">
+            <button class="tb" aria-label="Bold"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8"/></svg></button>
+            <button class="tb" aria-label="Italic"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 4h-9"/><path d="M14 20H5"/><path d="M15 4 9 20"/></svg></button>
+            <div class="tdiv" aria-hidden="true"></div>
+            <button class="tb" aria-label="Inline code"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 8-4 4 4 4"/><path d="m15 8 4 4-4 4"/></svg></button>
+            <button class="tb" aria-label="Image"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg></button>
+            <div class="tdiv" aria-hidden="true"></div>
+            <!-- Tidy is live: the entry reads pressed while review is open -->
+            <button class="tb-tidy live" title="Tidy is in review"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7.5L16.5 3z"/><path d="m9 13 2 2 4-4"/></svg>Tidy</button>
+            <div class="grow"></div>
+            <span class="seg seg-tabs"><button aria-pressed="true">Write</button><button aria-pressed="false">Preview</button></span>
+          </div>
+          <div class="ms">
+            <div class="ln"><span class="fm-rule">---</span></div>
+            <div class="ln"><span class="fm-key">title:</span> First snow on the pass</div>
+            <div class="ln"><span class="fm-key">date:</span> 2026-06-18</div>
+            <div class="ln"><span class="fm-key">summary:</span> The season's first real storm, and what it means for the early loop.</div>
+            <div class="ln"><span class="fm-rule">---</span></div>
+            <div class="ln gap"></div>
+            <!-- change 1: a replacement (recieve -> receive). Resting, shows the quiet dot. -->
+            <div class="ln">The pass took its first snow overnight. We expect to <span class="chg"><span class="chg-dot" aria-hidden="true"></span><span class="del">recieve</span><span class="ins">receive</span></span> another</div>
+            <!-- change 2 (the ACTIVE change, step 2 of 5): a doubled-word typo "the the" -> "the".
+                 Shows the full inline control and the 2px ring. -->
+            <div class="ln">15 cm before <span class="chg active">
+              <span class="chg-ctl" role="group" aria-label="Change 2: accept or reject">
+                <button class="acc" aria-label="Accept (y)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button>
+                <button class="rej" aria-label="Reject (n)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+              </span><span class="del">the the</span><span class="ins">the</span></span> front clears, so the early loop is closed until</div>
+            <div class="ln">the crew can break trail. Check the <span class="mk">[</span><span class="lk">grooming report</span><span class="mk">](https://example.com/report)</span> first.</div>
+            <div class="ln gap"></div>
+            <!-- change 3: a consistency harmonization. The author used "centimetres" once and "cm"
+                 elsewhere; tidy harmonizes to their dominant "cm" (NOT an external rulebook). Resting. -->
+            <div class="ln hang2"><span class="mk">-</span> Expect another <span class="chg"><span class="chg-dot" aria-hidden="true"></span><span class="del">fifteen centimetres</span><span class="ins">15 cm</span></span> overnight, and wax for <span class="mk">`</span><span class="chip">-8 to -14 C</span><span class="mk">`</span></div>
+            <div class="ln gap"></div>
+            <div class="ln">Here is the view from the ridge at first light:</div>
+            <div class="ln gap"></div>
+            <!-- the :::figure directive + the media: token: CLEAN inside the review (no marks).
+                 Proof the diff left the structure and the token byte-identical. -->
+            <div class="ln rail1"><span class="mk">:::</span><span class="lb">figure</span><span class="mk">[</span><span class="lb">Dawn over the upper bowl</span><span class="mk">]</span></div>
+            <div class="ln rail1"><span class="media-chip"><span class="mthumb"></span>first-light-ridge.jpg<span class="role-pill">wide</span></span></div>
+            <div class="ln rail1"><span class="mk">:::</span></div>
+            <div class="ln gap" style="min-height:4em"></div>
+
+            <!-- THE FLOATING CHANGE BAR: the compact review HUD, low over the document -->
+            <div class="tidybar" role="toolbar" aria-label="Tidy review">
+              <span class="tb-count"><b>2</b><span class="of">of 5 changes</span></span>
+              <span class="kind repl"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h18"/><path d="M3 12h18"/><path d="M3 17h18"/></svg>Doubled word</span>
+              <div class="tdiv2" aria-hidden="true"></div>
+              <button class="step" aria-label="Previous change (p)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+              <button class="step" aria-label="Next change (n)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+              <button class="acc-one"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Accept</button>
+              <button class="rej-one"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>Reject</button>
+              <div class="tdiv2" aria-hidden="true"></div>
+              <button class="all-btn accept-all"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 7 17l-3-3"/><path d="m22 10-7.5 7.5L13 16"/></svg>Accept all</button>
+              <button class="all-btn">Reject all</button>
+              <div class="tdiv2" aria-hidden="true"></div>
+              <button class="end" aria-label="End review (Esc)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+            </div>
+            <!-- the polite live-region string, shown as a faint caption for sighted reviewers -->
+            <div class="live-cap" aria-hidden="true">Change 2 of 5: doubled word, “the the” becomes “the”</div>
+          </div>
+          <div class="ftr">
+            <span>96 words</span>
+            <span class="ftr-right">
+              <span class="seg" role="group" aria-label="Editing surface">
+                <button aria-pressed="true"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Prose</button><button aria-pressed="false">Markup</button>
+              </span>
+              <button class="ftr-toggle" aria-pressed="false">Focus mode</button>
+              <button class="ftr-link">Markdown help</button>
+            </span>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div></div>
+
+
+<!-- ===================================================================================== -->
+<!-- STATE 4 — The same tidy review, dark.                                                  -->
+<!-- ===================================================================================== -->
+<div class="mock-label">State 4 · Tidy review, dark</div>
+<div class="mock-note">The same review through the dark tokens. The deletion red, the insertion green, the
+active ring, and the floating bar all resolve from the dark theme roots. The struck deletion still reads
+as your words removed; the insertion still reads as added.</div>
+
+<div class="screen"><div data-theme="cairn-admin-dark">
+  <div class="ground">
+    <div class="band">
+      <div class="bnd-cluster">
+        <button class="bnd-sq" aria-label="Open menu"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="16" height="16"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
+        <nav aria-label="Breadcrumb" class="crumb"><a>Posts</a><span class="crumb-sep">/</span><span class="crumb-here">First snow on the pass</span></nav>
+      </div>
+      <div class="bnd-status">
+        <span class="badge-ghost" style="color:var(--color-primary);background:color-mix(in oklab, var(--color-primary) 12%, transparent);">Reviewing tidy</span>
+        <span class="savestate"><span class="dot"></span>5 suggested changes</span>
+      </div>
+      <div class="grow"></div>
+      <div class="bnd-cluster" style="gap:6px;">
+        <button class="bnd-btn"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="16" height="16"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M15 3v18"/></svg>Details</button>
+        <div class="bnd-div" aria-hidden="true"></div>
+        <button class="btn-outline">Publish</button>
+        <button class="btn-primary">Save</button>
+      </div>
+    </div>
+    <main class="page">
+      <div class="col">
+        <div class="ttl-wrap"><div class="ttl">First snow on the pass</div></div>
+        <div class="card-ed">
+          <div class="strip">
+            <button class="tb" aria-label="Bold"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8"/></svg></button>
+            <button class="tb" aria-label="Italic"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 4h-9"/><path d="M14 20H5"/><path d="M15 4 9 20"/></svg></button>
+            <div class="tdiv" aria-hidden="true"></div>
+            <button class="tb" aria-label="Inline code"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 8-4 4 4 4"/><path d="m15 8 4 4-4 4"/></svg></button>
+            <button class="tb" aria-label="Image"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg></button>
+            <div class="tdiv" aria-hidden="true"></div>
+            <button class="tb-tidy live"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7.5L16.5 3z"/><path d="m9 13 2 2 4-4"/></svg>Tidy</button>
+            <div class="grow"></div>
+            <span class="seg seg-tabs"><button aria-pressed="true">Write</button><button aria-pressed="false">Preview</button></span>
+          </div>
+          <div class="ms">
+            <div class="ln gap"></div>
+            <div class="ln">The pass took its first snow overnight. We expect to <span class="chg"><span class="chg-dot" aria-hidden="true"></span><span class="del">recieve</span><span class="ins">receive</span></span> another</div>
+            <div class="ln">15 cm before <span class="chg active">
+              <span class="chg-ctl" role="group" aria-label="Change 2: accept or reject">
+                <button class="acc" aria-label="Accept (y)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button>
+                <button class="rej" aria-label="Reject (n)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+              </span><span class="del">the the</span><span class="ins">the</span></span> front clears, so the early loop is closed until</div>
+            <div class="ln">the crew can break trail. Check the <span class="mk">[</span><span class="lk">grooming report</span><span class="mk">](https://example.com/report)</span> first.</div>
+            <div class="ln gap"></div>
+            <div class="ln hang2"><span class="mk">-</span> Expect another <span class="chg"><span class="chg-dot" aria-hidden="true"></span><span class="del">fifteen centimetres</span><span class="ins">15 cm</span></span> overnight, and wax for <span class="mk">`</span><span class="chip">-8 to -14 C</span><span class="mk">`</span></div>
+            <div class="ln gap"></div>
+            <div class="ln rail1"><span class="mk">:::</span><span class="lb">figure</span><span class="mk">[</span><span class="lb">Dawn over the upper bowl</span><span class="mk">]</span></div>
+            <div class="ln rail1"><span class="media-chip"><span class="mthumb"></span>first-light-ridge.jpg<span class="role-pill">wide</span></span></div>
+            <div class="ln rail1"><span class="mk">:::</span></div>
+            <div class="ln gap" style="min-height:4em"></div>
+            <div class="tidybar" role="toolbar" aria-label="Tidy review">
+              <span class="tb-count"><b>2</b><span class="of">of 5 changes</span></span>
+              <span class="kind repl"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h18"/><path d="M3 12h18"/><path d="M3 17h18"/></svg>Doubled word</span>
+              <div class="tdiv2" aria-hidden="true"></div>
+              <button class="step" aria-label="Previous change (p)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+              <button class="step" aria-label="Next change (n)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+              <button class="acc-one"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Accept</button>
+              <button class="rej-one"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>Reject</button>
+              <div class="tdiv2" aria-hidden="true"></div>
+              <button class="all-btn accept-all"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 7 17l-3-3"/><path d="m22 10-7.5 7.5L13 16"/></svg>Accept all</button>
+              <button class="all-btn">Reject all</button>
+              <div class="tdiv2" aria-hidden="true"></div>
+              <button class="end" aria-label="End review (Esc)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+            </div>
+            <div class="live-cap" aria-hidden="true">Change 2 of 5: doubled word, “the the” becomes “the”</div>
+          </div>
+          <div class="ftr">
+            <span>96 words</span>
+            <span class="ftr-right">
+              <span class="seg" role="group" aria-label="Editing surface">
+                <button aria-pressed="true"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Prose</button><button aria-pressed="false">Markup</button>
+              </span>
+              <button class="ftr-toggle" aria-pressed="false">Focus mode</button>
+              <button class="ftr-link">Markdown help</button>
+            </span>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div></div>
+
+
+<!-- ===================================================================================== -->
+<!-- STATE 5 — The opt-in + settings surface.                                               -->
+<!-- ===================================================================================== -->
+<div class="mock-label">State 5 · Settings — spellcheck on by default, tidy opt-in</div>
+<div class="mock-note">Where the two features are turned on and configured, in the admin's Settings. The
+split is the locked principle: spellcheck runs locally so it leaks nothing and costs nothing, which is
+why it ships <b>on by default</b>; tidy sends content to the Anthropic API and costs tokens, so it is a
+deliberate <b>opt-in</b> the site owner turns on and supplies a key for. Spellcheck carries the personal
+dictionary (a git-committed per-site file). Tidy carries the API-key field, the model choice (Sonnet by
+default for the judgment a light copy-edit needs, Haiku as the cheaper option), and the plain privacy
+note.</div>
+<div class="anno engine">The tidy toggle gates the Worker action and the toolbar entry: with tidy off, the Tidy button does not render. The API key is a Cloudflare Worker secret (never shipped to the browser); the field shows it masked with a live "key works" probe, mirroring the doctor --probe pattern.</div>
+
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="settings-ground">
+    <div class="set-col">
+      <div class="set-eyebrow">Settings</div>
+      <h1 class="set-h1">Writing help</h1>
+      <p class="set-lede">Two aids for the editor. Spellcheck runs in your browser and is on for everyone.
+        Tidy is a light copy-edit powered by Claude; turn it on and add a key to use it.</p>
+
+      <!-- SPELLCHECK -->
+      <div class="set-card">
+        <div class="set-row">
+          <span class="set-ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 16 4-12 4 12"/><path d="M4.5 12h5"/><path d="M14 20c2.5 0 4-1.5 4-4s-1.5-4-4-4-1.5 0-1.5 0"/><path d="M21 8v12"/></svg></span>
+          <div class="set-body">
+            <div class="set-title">Spellcheck <span class="set-pill on">On by default</span></div>
+            <p class="set-desc">Catches misspelled words as you type, with a wavy underline and a quick fix.
+              It runs entirely in the browser, so nothing leaves the page. Code, links, frontmatter, and
+              <code>media:</code> tokens are never flagged.</p>
+          </div>
+          <div class="set-ctl"><input type="checkbox" class="toggle" checked aria-label="Spellcheck" /></div>
+        </div>
+
+        <!-- the personal dictionary sub-block -->
+        <div class="set-row" style="padding-top:6px;">
+          <span class="set-ico" style="background:color-mix(in oklab, var(--color-base-content) 7%, transparent);color:var(--color-muted);"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
+          <div class="set-body">
+            <div class="set-title" style="font-size:.9375rem;">Personal dictionary</div>
+            <p class="set-desc">Words you add from the editor live here. Names, places, and product terms
+              stop being flagged once they are in.</p>
+            <div class="set-sub">
+              <div class="set-sub-row">
+                <div class="dict-chips">
+                  <span class="dict-chip">Telemark<button aria-label="Remove Telemark"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></span>
+                  <span class="dict-chip">skate-skiers<button aria-label="Remove skate-skiers"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></span>
+                  <span class="dict-chip">Kicksled<button aria-label="Remove Kicksled"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></span>
+                  <span class="dict-chip">groomer<button aria-label="Remove groomer"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></span>
+                  <button class="dict-add"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Add a word</button>
+                </div>
+              </div>
+              <div class="dict-store"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>Stored with your content in <code>.cairn/dictionary.txt</code>, committed on save like any other change.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TIDY -->
+      <div class="set-card">
+        <div class="set-row">
+          <span class="set-ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7.5L16.5 3z"/><path d="m9 13 2 2 4-4"/></svg></span>
+          <div class="set-body">
+            <div class="set-title">Tidy: a light copy-edit <span class="set-pill optin">Opt-in</span></div>
+            <p class="set-desc">Fixes spelling, typos, and clear grammar errors, and harmonizes your own
+              inconsistencies. It keeps your voice: no rephrasing, no restructuring, no tone changes. Every
+              edit is shown inline for you to accept or reject before anything is saved.</p>
+            <!-- the API key + model sub-block, shown because tidy is toggled on -->
+            <div class="set-sub">
+              <div class="set-sub-row">
+                <div class="set-sub-label">Anthropic API key<span class="hint">A Worker secret, never sent to the browser</span></div>
+                <span class="key-field"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 18v3h3l11-11"/><circle cx="16.5" cy="7.5" r="4.5"/></svg><span class="masked">sk-ant-············································4f2a</span></span>
+                <span class="key-status"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Key works</span>
+              </div>
+              <div class="set-sub-row">
+                <div class="set-sub-label">Model</div>
+                <span class="model-seg" role="group" aria-label="Tidy model">
+                  <button aria-pressed="true"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Sonnet</button>
+                  <button aria-pressed="false">Haiku</button>
+                </span>
+                <span class="model-note">Sonnet has the judgment a light copy-edit needs. Haiku costs less and is fine for mostly mechanical text.</span>
+              </div>
+            </div>
+            <div class="set-callout"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span><b>What is sent.</b> When you run Tidy, the text you are editing goes to Anthropic to be proofread, then comes back. It is not used to train a model. Spellcheck never sends anything.</span></div>
+          </div>
+          <div class="set-ctl"><input type="checkbox" class="toggle" checked aria-label="Tidy" /></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ===================================================================================== -->
+<!-- STATE 6 — Narrow: the tidy review on a small viewport.                                 -->
+<!-- ===================================================================================== -->
+<div class="mock-label">State 6 · Narrow — the tidy review reflows, the document still leads</div>
+<div class="mock-note">On a small viewport the floating bar keeps the count, the step controls, and the
+focused-change accept/reject, and folds accept-all / reject-all / end into a small overflow. The inline
+change marks and the per-change control are unchanged; the document still leads.</div>
+<div class="anno">Below the narrow breakpoint the bar drops the verbose all-controls into a "More" overflow and pins to the bottom of the card. The per-change inline control and the step-through keep working, so a small screen loses no capability.</div>
+
+<div class="screen narrow"><div data-theme="cairn-admin">
+  <div class="ground" style="min-height:0;">
+    <div class="band" style="padding:0 12px;">
+      <div class="bnd-cluster">
+        <button class="bnd-sq" aria-label="Open menu"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="16" height="16"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
+        <nav aria-label="Breadcrumb" class="crumb"><span class="crumb-here">First snow on the pass</span></nav>
+      </div>
+      <div class="grow"></div>
+      <button class="btn-primary" style="padding:7px 11px;">Save</button>
+    </div>
+    <main class="page" style="padding:1rem;">
+      <div class="col">
+        <div class="card-ed">
+          <div class="strip" style="padding:5px 6px;">
+            <button class="tb" aria-label="Bold"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8"/></svg></button>
+            <button class="tb-tidy live" style="padding:0 8px;"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7.5L16.5 3z"/><path d="m9 13 2 2 4-4"/></svg>Tidy</button>
+            <div class="grow"></div>
+            <span class="seg seg-tabs"><button aria-pressed="true">Write</button><button aria-pressed="false">Preview</button></span>
+          </div>
+          <div class="ms" style="font-size:1rem; padding:1.25rem .9rem 2rem;">
+            <div class="ln">We expect to <span class="chg"><span class="chg-dot" aria-hidden="true"></span><span class="del">recieve</span><span class="ins">receive</span></span></div>
+            <div class="ln">another 15 cm before</div>
+            <div class="ln"><span class="chg active">
+              <span class="chg-ctl" role="group" aria-label="Change 2: accept or reject">
+                <button class="acc" aria-label="Accept (y)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button>
+                <button class="rej" aria-label="Reject (n)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+              </span><span class="del">the the</span><span class="ins">the</span></span> front clears, so</div>
+            <div class="ln">the early loop is closed.</div>
+            <div class="ln gap"></div>
+            <div class="ln rail1"><span class="mk">:::</span><span class="lb">figure</span></div>
+            <div class="ln rail1"><span class="media-chip"><span class="mthumb"></span>first-light.jpg<span class="role-pill">wide</span></span></div>
+            <div class="ln rail1"><span class="mk">:::</span></div>
+            <div class="ln gap" style="min-height:3.5em"></div>
+
+            <!-- the narrow floating bar: essentials kept, the rest in an overflow -->
+            <div class="tidybar" role="toolbar" aria-label="Tidy review" style="left:0;right:0;transform:none;bottom:12px;margin:0 8px;justify-content:space-between;padding:5px 6px 5px 12px;">
+              <span class="tb-count"><b>2</b><span class="of">/ 5</span></span>
+              <div style="display:flex;align-items:center;gap:2px;">
+                <button class="step" aria-label="Previous change (p)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+                <button class="step" aria-label="Next change (n)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+                <button class="acc-one" style="padding:0 9px;"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button>
+                <button class="rej-one" style="padding:0 9px;"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+                <button class="step" aria-label="More: accept all, reject all, end review"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h.01"/><path d="M12 12h.01"/><path d="M19 12h.01"/></svg></button>
+              </div>
+            </div>
+          </div>
+          <div class="ftr">
+            <span>96 words</span>
+            <span class="ftr-right"><button class="ftr-link">Markdown help</button></span>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div></div>
+
+</body>
+</html>

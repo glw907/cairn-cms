@@ -42,6 +42,11 @@ export interface CairnAdminDeps {
   branding?: AuthBranding;
   send?: SendMagicLink;
   mintToken?: ContentRoutesDeps['mintToken'];
+  /** Build the Anthropic client for the tidy action. Forwarded to the content routes; a site that
+   *  enables tidy injects a stub here to avoid a real network call. Defaults to the real SDK client. */
+  anthropic?: ContentRoutesDeps['anthropic'];
+  /** The tidy action's own request deadline in milliseconds. Forwarded to the content routes. */
+  tidyTimeoutMs?: ContentRoutesDeps['tidyTimeoutMs'];
 }
 
 /**
@@ -68,7 +73,11 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
     replyTo: runtime.sender.replyTo,
   };
   const auth = createAuthRoutes({ branding, send: deps.send });
-  const content = createContentRoutes(runtime, { mintToken: deps.mintToken });
+  const content = createContentRoutes(runtime, {
+    mintToken: deps.mintToken,
+    anthropic: deps.anthropic,
+    tidyTimeoutMs: deps.tidyTimeoutMs,
+  });
   const editors = createEditorRoutes();
   // The nav surface exists only when the site configures a menu; without one its view is a 404.
   const nav = runtime.navMenu ? createNavRoutes(runtime, { mintToken: deps.mintToken }) : null;

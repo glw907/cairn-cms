@@ -240,6 +240,47 @@ describe('content actions', () => {
     await expectRedirect(admin.actions.publishAll(event as never), '/admin/posts?publishedAll=1');
     expect(gh.read('main', 'src/content/posts/2026-05-01-hi.md')).toBe(raw);
   });
+
+  // Gap closer (Task 16): createCairnAdmin must forward `deps.anthropic` to the content routes so the
+  // tidy action calls the injected client, not the real SDK. The tidy action reads the CSRF header, the
+  // ANTHROPIC_API_KEY from platform.env, and `runtime.tidy.enabled`, so a forwarded factory that is
+  // invoked proves the dep crossed the composition boundary.
+  it('forwards deps.anthropic to the tidy action', async () => {
+    const create = vi.fn(async () => ({
+      content: [{ type: 'text' as const, text: 'the trail' }],
+      model: 'claude-test',
+      stop_reason: 'end_turn' as const,
+      usage: { input_tokens: 3, output_tokens: 3 },
+    }));
+    const anthropic = vi.fn(() => ({ messages: { create } }));
+    const tidyRuntime = { ...runtime(), tidy: { enabled: true, model: 'claude-test', conventions: {} } } as CairnRuntime;
+    const admin = createCairnAdmin(tidyRuntime, { ...deps, anthropic });
+
+    // A CSRF-valid raw POST: the token rides the X-Cairn-CSRF header and the __Host-cairn_csrf cookie.
+    const csrf = 'csrf-token-value-0123456789abcdef';
+    const url = new URL('https://t.example/admin/posts/2026-05-01-hi');
+    const event = {
+      url,
+      request: new Request(url, {
+        method: 'POST',
+        body: JSON.stringify({ text: 'teh trail', scope: 'document' }),
+        headers: { 'content-type': 'text/plain', 'x-cairn-csrf': csrf },
+      }),
+      locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+      platform: { env: { ANTHROPIC_API_KEY: 'sk-test-key' } },
+      cookies: {
+        get: (name: string) => (name === '__Host-cairn_csrf' ? csrf : undefined),
+        set: () => {},
+        delete: () => {},
+      },
+      setHeaders: () => {},
+    };
+
+    const res = (await admin.actions.tidy(event as never)) as { corrected?: string };
+    expect(anthropic).toHaveBeenCalledTimes(1);
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(res.corrected).toBe('the trail');
+  });
 });
 
 describe('media view load', () => {

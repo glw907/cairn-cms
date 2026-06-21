@@ -3,3 +3,11 @@ menus:
   primary:
     - label: Home
       url: /
+spellcheck:
+  dialect: en-US
+tidy:
+  enabled: true
+  conventions:
+    fixes: true
+    oxfordComma: always
+    smartQuotes: true

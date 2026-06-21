@@ -116,6 +116,20 @@ const SEED_POST_ID = '2026-06-hello';
 const SEED_BRANCH = 'cairn/posts/2026-05-draft-gallery';
 const SEED_BRANCH_ENTRY = 'src/content/posts/2026-05-draft-gallery.md';
 
+/** The editor copy-edit seed entry (Task 16), backing spellcheck.spec.ts and tidy.spec.ts. Its body
+ *  carries two real en-US misspellings the dictionary flags ("recieve", "teh") so the spellcheck
+ *  underline is deterministic, and the canned tidy response (fake-anthropic.ts) corrects exactly those
+ *  two words so the review diff is two clean single-word hunks. A distinct id from every other spec's
+ *  entry, so editing it never perturbs the media fixtures. */
+export const SEED_EDITOR = {
+  id: '2026-06-copyedit',
+  path: 'src/content/posts/2026-06-copyedit.md',
+  title: 'Copy-edit demo',
+  body: 'Please recieve this draft. It has teh same idea.',
+  /** The deterministic corrected body the stubbed model returns: recieve -> receive, teh -> the. */
+  corrected: 'Please receive this draft. It has the same idea.',
+} as const;
+
 /** The four seeded asset hashes, slugs, and alts, named so the spec can assert each role. */
 export const SEED_MEDIA = {
   used: { hash: 'aa00bb11cc22dd33', slug: 'mountain-pass', alt: 'A mountain pass at sunrise' },
@@ -275,6 +289,10 @@ export function seedMediaLibrary(): void {
     `---\ntitle: ${PASS_B_ENTRIES.customAlt.title}\ndate: 2026-06-07\n---\nA quieter lap: ![${PASS_B_ENTRIES.customAlt.customAltText}](${passBToken})\n`,
   );
 
+  // The editor copy-edit seed entry (Task 16): its body carries the two misspellings the spellcheck
+  // and tidy specs act on. No media reference, so it never touches the usage index.
+  main.set(SEED_EDITOR.path, `---\ntitle: ${SEED_EDITOR.title}\ndate: 2026-06-09\n---\n${SEED_EDITOR.body}\n`);
+
   // The content manifest on main: the seed post entry, carrying a non-empty summary (the office
   // triage spec asserts it) and a mediaRefs pointing at the used asset (so its where-used reads
   // published), plus the two Pass B entries whose mediaRefs point at first-light (so the usage index
@@ -314,6 +332,17 @@ export function seedMediaLibrary(): void {
         draft: false,
         links: [],
         mediaRefs: [PASS_B_MEDIA.hash],
+      },
+      {
+        id: SEED_EDITOR.id,
+        concept: 'posts',
+        title: SEED_EDITOR.title,
+        date: '2026-06-09',
+        permalink: '/posts/copyedit',
+        summary: SEED_EDITOR.body,
+        draft: false,
+        links: [],
+        mediaRefs: [],
       },
     ],
   };

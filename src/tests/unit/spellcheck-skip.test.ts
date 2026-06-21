@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { EditorState } from '@codemirror/state';
 import { markdownLanguage } from '@codemirror/lang-markdown';
-import { syntaxTree } from '@codemirror/language';
+import { ensureSyntaxTree, syntaxTree } from '@codemirror/language';
 import type { Tree } from '@lezer/common';
 import {
   classifyProse,
@@ -12,11 +12,14 @@ import {
 } from '../../lib/components/spellcheck.js';
 
 // The unit drives the PURE classifier (part A) and the latest-wins arbiter, never a real Worker.
-// A syntax tree is built in node from the markdown language, the same way the lint source gets it
-// on the client through syntaxTree(state). CodeMirror state and language parsing run fine here.
+// A syntax tree is built in node from the markdown language. syntaxTree(state) is time-budgeted and
+// can return a tree parsed only partway under CPU pressure (a still-unparsed HTML block then reads
+// as prose), which made this unit flaky in a loaded parallel run. ensureSyntaxTree forces a complete
+// parse to the end of the document, so the tree is deterministic. The real lint source is
+// unaffected: it reads only visibleRanges, which CodeMirror keeps parsed.
 function treeOf(doc: string): Tree {
   const state = EditorState.create({ doc, extensions: [markdownLanguage] });
-  return syntaxTree(state);
+  return ensureSyntaxTree(state, doc.length, 1e9) ?? syntaxTree(state);
 }
 
 // Every absolute character range the classifier judges to be prose, as the substrings it keeps.

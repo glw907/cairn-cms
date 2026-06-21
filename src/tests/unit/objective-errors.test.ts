@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { EditorState } from '@codemirror/state';
 import { markdownLanguage } from '@codemirror/lang-markdown';
-import { syntaxTree } from '@codemirror/language';
+import { ensureSyntaxTree, syntaxTree } from '@codemirror/language';
 import type { Tree } from '@lezer/common';
 import { objectiveErrors } from '../../lib/components/objective-errors.js';
 import { classifyProse, type Range } from '../../lib/components/spellcheck.js';
@@ -9,9 +9,15 @@ import { classifyProse, type Range } from '../../lib/components/spellcheck.js';
 // The unit drives the PURE objective checks: text plus prose spans in, findings (range + fix) out.
 // No CodeMirror lint source, no DOM. For the code-exclusion test it composes classifyProse the same
 // way the lint source does, so the proof that an in-code error never surfaces runs end to end.
+//
+// syntaxTree(state) is time-budgeted and can return a tree parsed only partway under CPU pressure
+// (a still-unparsed HTML block then reads as prose), which made this unit flaky in a loaded parallel
+// run. ensureSyntaxTree forces a complete parse to the end of the document, so the tree is
+// deterministic. The real lint source is unaffected: it reads only visibleRanges, which CodeMirror
+// keeps parsed.
 function treeOf(doc: string): Tree {
   const state = EditorState.create({ doc, extensions: [markdownLanguage] });
-  return syntaxTree(state);
+  return ensureSyntaxTree(state, doc.length, 1e9) ?? syntaxTree(state);
 }
 
 // The whole document as one prose span, for the checks that do not depend on the skip authority.

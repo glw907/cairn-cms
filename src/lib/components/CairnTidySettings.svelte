@@ -189,7 +189,6 @@ home), diffable and shared across editors.
   }
 
   // --- the live counts and the generated summary, in the role="status" regions ---
-  const fixesCount = $derived(conv.fixes ? 1 : 0);
   const styleOnCount = $derived(
     styleRows.filter((r) => rowOn(r.key)).length + advancedRows.filter((r) => rowOn(r.key)).length,
   );
@@ -357,7 +356,7 @@ home), diffable and shared across editors.
           <div class="min-w-0 flex-1">
             <h2 class="flex items-center gap-2 text-lg font-bold tracking-tight">
               Fixes
-              <span role="status" aria-live="polite" class="rounded-full bg-base-content/[0.06] px-2 py-0.5 text-xs font-semibold tabular-nums text-[var(--color-muted)]">{fixesCount ? 'On' : 'Off'}<span class="sr-only">, the fixes group is {conv.fixes ? 'on' : 'off'}</span></span>
+              <span role="status" aria-live="polite" class="rounded-full bg-base-content/[0.06] px-2 py-0.5 text-xs font-semibold tabular-nums text-[var(--color-muted)]">{conv.fixes ? 'On' : 'Off'}<span class="sr-only">, the fixes group is {conv.fixes ? 'on' : 'off'}</span></span>
             </h2>
             <p class="mt-1 max-w-prose text-[0.8125rem] leading-relaxed text-[var(--color-muted)]">Plain errors, not style choices. On by default. Leave them on unless you have a reason not to.</p>
           </div>

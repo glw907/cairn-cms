@@ -271,12 +271,17 @@ export function buildBecause(key: NormalizationKey, conventions: TidyConventions
 		case 'oxfordComma': {
 			if (conventions.oxfordComma === undefined) return null;
 			const variant = conventions.oxfordComma;
-			const effect =
-				variant === 'always'
-					? 'tidy adds the serial comma before the final "and"'
-					: variant === 'never'
-						? 'tidy removes the serial comma before the final "and"'
-						: 'tidy applies the serial comma to a complex series';
+			let effect: string;
+			switch (variant) {
+				case 'always':
+					effect = 'tidy adds the serial comma before the final "and"';
+					break;
+				case 'never':
+					effect = 'tidy removes the serial comma before the final "and"';
+					break;
+				default:
+					effect = 'tidy applies the serial comma to a complex series';
+			}
 			return { label: 'Oxford-comma', variant, effect };
 		}
 		case 'numberStyle': {

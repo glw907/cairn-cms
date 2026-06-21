@@ -621,27 +621,33 @@ export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<
     );
   }
 
+  // The prose keep-spans for one view, scoped to the visible viewport plus a margin. The spellcheck
+  // source and the objective source both run over exactly these spans, so a doubled word inside a
+  // code fence is never flagged and the two surfaces can never drift on what counts as prose.
+  function visibleProseSpans(view: EditorView): { text: string; spans: Range[] } {
+    const text = view.state.doc.toString();
+    const tree = syntaxTree(view.state);
+    const docLength = text.length;
+    const spans: Range[] = [];
+    for (const vr of view.visibleRanges) {
+      const from = Math.max(0, vr.from - VIEWPORT_MARGIN);
+      const to = Math.min(docLength, vr.to + VIEWPORT_MARGIN);
+      spans.push(...classifyProse(text, tree, from, to));
+    }
+    return { text, spans };
+  }
+
   const source = linter(async (view) => {
     lastView = view;
     // Create the Worker (and post init) on the first run even when not yet ready, so the dictionary
     // starts streaming. Until `ready` lands this run paints nothing; the `ready` handler re-lints.
     ensureWorker();
     if (!ready) return [];
-    const text = view.state.doc.toString();
-    const tree = syntaxTree(view.state);
 
-    // The visible viewport plus a margin, clamped to the document, deduped to one window per run.
-    const docLength = text.length;
-    const windows = view.visibleRanges.map((vr) => ({
-      from: Math.max(0, vr.from - VIEWPORT_MARGIN),
-      to: Math.min(docLength, vr.to + VIEWPORT_MARGIN),
-    }));
-
+    const { text, spans } = visibleProseSpans(view);
     const words: ExtractedWord[] = [];
-    for (const window of windows) {
-      for (const span of classifyProse(text, tree, window.from, window.to)) {
-        words.push(...extractWords(text, span.from, span.to));
-      }
+    for (const span of spans) {
+      words.push(...extractWords(text, span.from, span.to));
     }
     if (words.length === 0) return [];
 
@@ -665,17 +671,7 @@ export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<
   // locked amber underline. It ships in the same returned extension as the spellcheck source, so the
   // Task 7 toggle reconfigures one compartment to gate both surfaces at once.
   const objectiveSource = linter((view) => {
-    const text = view.state.doc.toString();
-    const tree = syntaxTree(view.state);
-    const docLength = text.length;
-    const windows = view.visibleRanges.map((vr) => ({
-      from: Math.max(0, vr.from - VIEWPORT_MARGIN),
-      to: Math.min(docLength, vr.to + VIEWPORT_MARGIN),
-    }));
-    const spans: Range[] = [];
-    for (const window of windows) {
-      spans.push(...classifyProse(text, tree, window.from, window.to));
-    }
+    const { text, spans } = visibleProseSpans(view);
     return objectiveErrors(text, spans).map(buildObjectiveDiagnostic);
   });
 

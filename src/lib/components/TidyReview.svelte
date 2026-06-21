@@ -92,7 +92,8 @@ must never make, so no such count exists.
     const contextAfter = line < lines.length ? lines[line] ?? '' : '';
     // The changed line, split around the changed run so the diff can underline/strike just the run.
     const lineStart = original.lastIndexOf('\n', c.from - 1) + 1;
-    const lineEnd = original.indexOf('\n', c.from) === -1 ? original.length : original.indexOf('\n', c.from);
+    const nextNewline = original.indexOf('\n', c.from);
+    const lineEnd = nextNewline === -1 ? original.length : nextNewline;
     const fullLine = original.slice(lineStart, lineEnd);
     const pre = original.slice(lineStart, c.from);
     const post = original.slice(c.to, lineEnd);
@@ -120,8 +121,15 @@ must never make, so no such count exists.
   // keeps the default reactive to the derived hunks without capturing only their initial value.
   type Disposition = 'kept' | 'rejected' | 'undecided';
   let overrides = $state<Record<number, Disposition>>({});
+
+  // The disposition a hunk takes under a given override map: the author's choice if present, else the
+  // safety-rank default (objective hunks pre-kept, judgment hunks undecided). One source for the default.
+  function effectiveDisposition(h: Hunk, map: Record<number, Disposition>): Disposition {
+    return map[h.index] ?? (h.objective ? 'kept' : 'undecided');
+  }
+
   const dispositions = $derived<Record<number, Disposition>>(
-    Object.fromEntries(hunks.map((h) => [h.index, overrides[h.index] ?? (h.objective ? 'kept' : 'undecided')] as const)),
+    Object.fromEntries(hunks.map((h) => [h.index, effectiveDisposition(h, overrides)] as const)),
   );
 
   // The keyboard step-through cursor: the focused hunk's array position. j/k move; a/r act on it.
@@ -172,7 +180,7 @@ must never make, so no such count exists.
     for (const h of hunks) if (h.objective) next[h.index] = 'kept';
     overrides = next;
     const n = hunks.filter((h) => h.objective).length;
-    const stillReview = hunks.filter((h) => (next[h.index] ?? (h.objective ? 'kept' : 'undecided')) === 'undecided').length;
+    const stillReview = hunks.filter((h) => effectiveDisposition(h, next) === 'undecided').length;
     tallyMessage = `${n} fixes kept. ${stillReview} still to review.`;
   }
 

@@ -80,6 +80,13 @@ describe('isValidDictionaryWord', () => {
   it('accepts a single token within the length bound', () => {
     expect(isValidDictionaryWord('cairn')).toBe(true);
     expect(isValidDictionaryWord("O'Brien")).toBe(true);
+    // Hyphenated words must validate: the spellcheck extractor keeps intra-word hyphens, so these
+    // surface as flaggable words and the author must be able to add them. The word class negates
+    // whitespace and control characters only, never the hyphen.
+    expect(isValidDictionaryWord('well-known')).toBe(true);
+    expect(isValidDictionaryWord('e-mail')).toBe(true);
+    // A non-ASCII surname or place name validates too (the test is bytes, not an allow-list).
+    expect(isValidDictionaryWord('café')).toBe(true);
   });
 
   it('rejects whitespace, newlines, control characters, and empties', () => {

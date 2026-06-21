@@ -349,3 +349,32 @@ inherit a clean list rather than one prose note.
   the transport. Candidate: a short "Adding an admin action" note (extending Pass A's "Writing an admin
   fetch action") that lists both registration points plus the reference-signature, log-events, and
   composer-routing-test steps, so the seam is not rediscovered each pass.
+
+### Media 0.59.0 cutover, ecxc-ski live smoke (2026-06-20)
+
+The first live admin smoke of the media stack (six passes deferred to this cutover) against the real
+ecxc.ski Worker, real D1 (cairn-ecxc-auth), and real R2 (ecxc-media). Deploy was clean and the read paths
+proved live (home 200, the /media route mounted with a clean 404 for a missing asset, admin login 200,
+and /admin/media 200 rendering the empty-state Media Library off a minted D1 session). The destructive
+purge was smoked on a throwaway orphaned byte. Three DX findings:
+
+- (developer) MEDIUM. `wrangler ... --json` writes a "Cloudflare agent skills are available" notice to
+  stdout ahead of the JSON, which breaks any `JSON.parse` of the piped output. Workaround used: slice from
+  the first `[` (`sed -n '/^\[/,$p'`). Any cutover or doctor tooling that consumes wrangler `--json` needs
+  this guard, or wrangler should send that notice to stderr.
+
+- (developer) MEDIUM. There is no documented recipe for the live smoke of the MEDIA actions. The
+  admin-smoke-test doc covers minting a session, but not the media-action transport: the orphan scan, the
+  purge, and the bulk delete are SvelteKit form actions that need the CSRF double-submit (the
+  `__Host-cairn_csrf` cookie value echoed in the `X-Cairn-CSRF` header), a multipart body to satisfy the
+  form-action content-type, and decoding of the devalue-encoded ActionResult envelope. Candidate: a "media
+  smoke" appendix to admin-smoke-test.md with the curl recipe for scan/purge/bulk-delete on throwaway
+  assets, since this is the part every site cutover now has to rediscover.
+
+- (developer / operator) MEDIUM, the noteworthy one. After a purge reported success, the Worker's own
+  reconcile (the orphan scan's R2 `list`) showed the byte gone immediately, but `wrangler r2 object get` by
+  exact key still returned it for a short window. This is R2 delete propagation lag on the direct-get path,
+  not a cairn defect (the purge calls `bucket.delete()`, which resolved, and the Worker's list reflects the
+  deletion). The lesson for the smoke procedure and for any operator verifying a purge: confirm a purge via
+  the orphan scan (the Worker's list view), not a direct `wrangler r2 object get`, which can lag. Worth a
+  one-line caveat in the media smoke recipe.

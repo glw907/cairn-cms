@@ -11,27 +11,37 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-20, latest): `0.59.0` SHIPPED (merged, released, npm `latest`); both sites cut over and green on `feat/media-cutover`, HELD for the deploy + the live admin smoke
+## Immediate next action (2026-06-20, latest): `0.59.0` SHIPPED + ecxc-ski DEPLOYED and live-smoked; NEXT is the editor copy-edit + spellcheck build
 
-**`0.59.0` is SHIPPED.** `feat/media-pass-c` fast-forward merged to `main` (`34bb169`) and pushed; `gh
-release create v0.59.0` fired the OIDC publish workflow (success); `npm view @glw907/cairn-cms version` is
-`0.59.0` (registry `latest`). The Pass C gate was re-verified first-hand before the merge (check 1011 0/0,
-docs/version green, test 2208 exit 0).
+**`0.59.0` is SHIPPED and the ecxc-ski canary is DEPLOYED.** The engine merged to `main`, `gh release
+create v0.59.0` published it (npm `latest` is `0.59.0`), main CI green. ecxc-ski's `feat/media-cutover`
+(fast-forwarded onto its `main`, `0f27672`) is DEPLOYED to ecxc.ski via CI. The first live admin smoke of
+the whole media stack (six passes deferred to this cutover) passed: home 200, the `/media` route mounted
+(clean 404 for a missing asset), admin login 200, `/admin/media` 200 rendering the Media Library off a
+minted D1 session (the manifest read and the cross-branch usage index work live), and the IRREVERSIBLE
+byte purge smoked end to end on a throwaway orphaned byte (the action reported purged and the Worker's
+reconcile confirmed the orphan gone). One observation (logged): after a successful purge the Worker's R2
+`list` reflected the delete at once but `wrangler r2 object get` lagged briefly, so verify a purge via the
+scan, not a direct get. Three DX findings are in `docs/internal/docs-friction-log.md`.
 
-**Both consumer sites are cut over to `0.59.0` and green, HELD for the deploy + the live admin smoke.**
-ecxc-ski (`0f27672` on `feat/media-cutover`): bumped `^0.57.0` -> `^0.59.0`, manifest regenerated, check
-530 0/0, build green, tests 62; the stale `ec-figure` component tests left by the 0.57.0 cutover were
-dropped (cairn reserves the figure directive name, no ecxc content uses `:::figure`). 907-life (`c1c3c45`
-on `feat/media-cutover`): bumped to `^0.59.0`, check 487 0/0, build green, tests 15, no collision. The
-bumps are additive across Pass A/B/C with no consumer code change.
+**907-life is prepared and HELD (Geoff's call).** Its `feat/media-cutover` (`c1c3c45`) is bumped to
+`^0.59.0`, green (check 487 0/0, build, 15 tests), committed, NOT deployed. Geoff is batching the 907-life
+cutover with the spellcheck/tidy (editor) release so it bumps once to the combined feature set.
 
-**HELD for Geoff (his call, the irreversible/prod finale):** push the `feat/media-cutover` branches and
-deploy each site, and run the LIVE ADMIN SMOKE. The smoke is the first real-Worker run of the whole media
-stack (six passes), and it includes the two destructive operations new in Pass C (bulk delete and the
-IRREVERSIBLE byte purge), so it should run against `wrangler dev` or a preview, mint a session via a D1
-row (no email loop), and exercise the destructive ops on THROWAWAY test assets only, before any prod
-deploy. The byte purge on a real R2 bucket is the single most irreversible action in the initiative; do it
-with a human watching.
+**NEXT (the next initiative): execute the editor copy-edit + spellcheck build.** Plan:
+`docs/superpowers/plans/2026-06-20-cairn-editor-copyedit.md` (spec
+`docs/superpowers/specs/2026-06-20-cairn-editor-copyedit-design.md`; design and mockups under
+`docs/internal/design/2026-06-20-editor-copyedit-*`, with the conventions research and the design brief
+authoritative). Two features for the admin CodeMirror editor: a spellcheck (default, local, CM6
+`@codemirror/lint` plus a WASM dictionary, markdown-aware, dialect-aware) and tidy (opt-in, LLM, a
+voice-preserving light copy-edit with config-driven style normalization and a diff-review safety
+contract). Ships as `0.60.0` (a minor). Main-loop orchestrate-and-verify, test-first, one
+`cairn-implementer` per task, the full gate between dispatches, on a FRESH worktree off `main`. PHASE 1 is
+the worker-plus-wasm-plus-dictionary delivery spike as a go/no-go gate (nspell fallback) before the
+spellcheck engine is locked; the tidy apply state machine, the Worker action, the prompt, and the diff are
+the closest-review tasks (`model: opus`). The plan, spec, and design were verified by a three-lens
+adversarial pass and folded (the key fix closed a voice leak where harmonize-to-author had survived in the
+review surface's because-line). See the `cairn-editor-copyedit-initiative` memory.
 
 **Pass C was COMPLETE** on a fresh worktree off `main` (`feat/media-pass-c`, worktree
 `.claude/worktrees/media-pass-c`), 11 plan tasks plus one safety hardening, all test-first, the

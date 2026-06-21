@@ -8,6 +8,7 @@ import {
 	configCsrfDisable,
 	configSiteConfig,
 	configPublicOrigin,
+	configTidyKey,
 } from '../../lib/doctor/checks-local.js';
 import type { DoctorContext } from '../../lib/doctor/types.js';
 
@@ -481,6 +482,64 @@ describe('config.public-origin', () => {
 
 	it('ties to the config.public-origin-invalid condition', () => {
 		expect(configPublicOrigin.conditionId).toBe('config.public-origin-invalid');
+	});
+});
+
+describe('config.tidy-key', () => {
+	const TIDY_ON = `siteName: Test Site\ntidy:\n  enabled: true\n`;
+	const TIDY_OFF = `siteName: Test Site\ntidy:\n  enabled: false\n`;
+	const KEY_IN_VARS = `{ "vars": { "ANTHROPIC_API_KEY": "sk-test" } }`;
+	const KEY_IN_DEV_VARS = `ANTHROPIC_API_KEY = "sk-test"\n`;
+
+	it('skips when no site config is found', async () => {
+		const result = await configTidyKey.run(ctx({}));
+		expect(result.status).toBe('skip');
+	});
+
+	it('skips when tidy is disabled (the key is irrelevant)', async () => {
+		const result = await configTidyKey.run(ctx({ 'site.config.yaml': TIDY_OFF }));
+		expect(result.status).toBe('skip');
+		expect(result.detail).toContain('tidy');
+	});
+
+	it('skips when tidy is absent from the config', async () => {
+		const result = await configTidyKey.run(ctx({ 'site.config.yaml': GOOD_SITE_CONFIG }));
+		expect(result.status).toBe('skip');
+	});
+
+	it('warns when tidy is enabled and the key is in neither wrangler vars nor .dev.vars', async () => {
+		const result = await configTidyKey.run(
+			ctx({ 'site.config.yaml': TIDY_ON, 'wrangler.jsonc': GOOD_JSONC })
+		);
+		expect(result.status).toBe('fail');
+		expect(result.detail).toContain('ANTHROPIC_API_KEY');
+		expect(result.detail).toContain('verify');
+	});
+
+	it('stays silent when the key is present as a wrangler var', async () => {
+		const result = await configTidyKey.run(
+			ctx({ 'site.config.yaml': TIDY_ON, 'wrangler.jsonc': KEY_IN_VARS })
+		);
+		expect(result.status).toBe('pass');
+		expect(result.detail).toContain('wrangler vars');
+	});
+
+	it('stays silent when the key is present in .dev.vars', async () => {
+		const result = await configTidyKey.run(
+			ctx({ 'site.config.yaml': TIDY_ON, '.dev.vars': KEY_IN_DEV_VARS })
+		);
+		expect(result.status).toBe('pass');
+		expect(result.detail).toContain('.dev.vars');
+	});
+
+	it('warns even when no wrangler config and no .dev.vars exist', async () => {
+		const result = await configTidyKey.run(ctx({ 'site.config.yaml': TIDY_ON }));
+		expect(result.status).toBe('fail');
+		expect(result.detail).toContain('ANTHROPIC_API_KEY');
+	});
+
+	it('reuses the config.bindings-missing condition (no new registry entry)', () => {
+		expect(configTidyKey.conditionId).toBe('config.bindings-missing');
 	});
 });
 

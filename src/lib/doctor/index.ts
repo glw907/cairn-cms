@@ -9,6 +9,7 @@ import {
 	configCsrfDisable,
 	configSiteConfig,
 	configPublicOrigin,
+	configTidyKey,
 } from './checks-local.js';
 import { configDependencyFloors } from './check-floors.js';
 import { emailSenderOnboarded, edgeHttpsForced, edgeHsts, authStore } from './checks-cloudflare.js';
@@ -162,6 +163,7 @@ export function defaultChecks(): DoctorCheck[] {
 		configCsrfDisable,
 		configSiteConfig,
 		configPublicOrigin,
+		configTidyKey,
 		configDependencyFloors,
 		emailSenderOnboarded,
 		edgeHttpsForced,

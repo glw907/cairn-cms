@@ -85,7 +85,91 @@ export interface SiteConfig {
    *  site loads the British word list and "colour" reads as correct. Today only US English ships, so an
    *  unset or unknown dialect resolves to it. */
   spellcheck?: { dialect?: string };
+  /** The editor tidy (LLM copy-edit) settings. Opt-in at the site level (spec 2.8): tidy is a remote,
+   *  costly model call, so the whole block is optional and `enabled` defaults false. The model is a
+   *  developer-tier fact; the `conventions` block is the editor-tier per-convention config that builds
+   *  the prompt's CONVENTIONS section. The Anthropic API key is a Worker secret, never config. */
+  tidy?: TidyConfig;
   [key: string]: unknown;
+}
+
+/**
+ * The tidy block on the site config. Every field is optional so the YAML can carry as little as
+ * `tidy: { enabled: true }` and the defaults fill the rest.
+ */
+export interface TidyConfig {
+  /** Master switch. Default false; tidy is opt-in (spec 2.8, decision 1). */
+  enabled?: boolean;
+  /** The model id. Default `claude-sonnet-4-6`; the alternative is `claude-haiku-4-5` (spec 2.2). */
+  model?: string;
+  /** The per-convention toggles that build the prompt's CONVENTIONS section. */
+  conventions?: Partial<TidyConventions>;
+}
+
+/** The default tidy model when a site sets none: Sonnet, the judgment floor for a light copy-edit. */
+export const DEFAULT_TIDY_MODEL = 'claude-sonnet-4-6';
+
+/**
+ * The corrected convention set (spec "The corrected convention set"), the resolved shape the prompt
+ * builder consumes. Every field carries a concrete value; `resolveTidyConventions` fills the defaults
+ * from a partial config. The Fixes group is the objective fixes (default on, governed by the always-on
+ * core); the style tier defaults off (a falsy variant means off); the advanced tier defaults off.
+ * Sentence spacing is dropped on purpose and regional spelling is `spellcheck.dialect`, not a toggle.
+ */
+export interface TidyConventions {
+  /** The objective Fixes group (spelling, grammar, doubled words, whitespace, capitals, terminal
+   *  punctuation). Default on. The always-on core governs it; this toggle lets the screen turn the
+   *  group off. */
+  fixes: boolean;
+  /** Oxford comma position. Off when undefined; `always` | `complex-only` (AP) | `never`. */
+  oxfordComma?: 'always' | 'complex-only' | 'never';
+  /** Number style threshold. Off when undefined; the always-numeral exception sets (ages, dates,
+   *  measurements, percentages) apply at any threshold. */
+  numberStyle?: 'under-ten' | 'under-hundred' | 'always-numerals';
+  /** Measurement notation only (never the system, never the number). Off when undefined. */
+  measurements?: 'abbreviate' | 'spell-out';
+  /** Percent rendering. Off when undefined; `sign` is "%", `word` is "percent". */
+  percent?: 'sign' | 'word';
+  /** Em-dash spacing. Off when undefined. */
+  emDash?: 'spaced' | 'closed';
+  /** Turn a hyphen between two numbers into an en dash. Default off. */
+  enDashRanges: boolean;
+  /** Ellipsis rendering. Off when undefined. */
+  ellipsis?: 'single-char' | 'three-dots';
+  /** Time format. Off when undefined. */
+  timeFormat?: '5 PM' | '5pm' | '5 p.m.';
+  /** Advanced: convert straight quotes to curly with the full apostrophe rule set. Default off. */
+  smartQuotes: boolean;
+  /** Advanced: correct brand and proper-noun capitalization on a curated list only. Default off. */
+  brandCaps: boolean;
+}
+
+/** The resting tidy convention set: Fixes on, every style and advanced toggle off. */
+export function defaultTidyConventions(): TidyConventions {
+  return { fixes: true, enDashRanges: false, smartQuotes: false, brandCaps: false };
+}
+
+/**
+ * Resolve a partial conventions config (from the YAML) into the concrete TidyConventions the prompt
+ * builder consumes. An absent field falls to its default: Fixes on, the style and advanced toggles
+ * off. A multi-position toggle stays undefined (off) unless the config names a variant.
+ */
+export function resolveTidyConventions(partial: Partial<TidyConventions> | undefined): TidyConventions {
+  const base = defaultTidyConventions();
+  if (partial === undefined) return base;
+  return {
+    fixes: partial.fixes ?? base.fixes,
+    oxfordComma: partial.oxfordComma,
+    numberStyle: partial.numberStyle,
+    measurements: partial.measurements,
+    percent: partial.percent,
+    emDash: partial.emDash,
+    enDashRanges: partial.enDashRanges ?? base.enDashRanges,
+    ellipsis: partial.ellipsis,
+    timeFormat: partial.timeFormat,
+    smartQuotes: partial.smartQuotes ?? base.smartQuotes,
+    brandCaps: partial.brandCaps ?? base.brandCaps,
+  };
 }
 
 /** The dialect string when a site sets none: US English, the only dictionary that ships today. */

@@ -6,6 +6,7 @@ import type { CheckResult, DoctorCheck, DoctorContext } from './types.js';
 import { readWranglerConfig } from './wrangler-config.js';
 import { requireOrigin } from '../env.js';
 import { parseSiteConfig, urlPolicyFrom } from '../nav/site-config.js';
+import type { SiteConfig } from '../nav/site-config.js';
 import { normalizeConcepts } from '../content/concepts.js';
 import { defineFields } from '../content/schema.js';
 import type { ConceptConfig } from '../content/types.js';
@@ -138,16 +139,21 @@ export const configPublicOrigin: DoctorCheck = {
 // src locations the production sites use).
 const SITE_CONFIG_PATHS = ['site.config.yaml', 'src/lib/site.config.yaml', 'src/site.config.yaml'];
 
+// Read the first site.config.yaml that exists in a conventional spot, or null when none does.
+async function readSiteConfigText(ctx: DoctorContext): Promise<string | null> {
+	for (const path of SITE_CONFIG_PATHS) {
+		const text = await ctx.readFile(path);
+		if (text !== null) return text;
+	}
+	return null;
+}
+
 export const configSiteConfig: DoctorCheck = {
 	id: 'config.site-config',
 	conditionId: 'config.site-config-invalid',
 	title: 'Site config',
 	async run(ctx: DoctorContext): Promise<CheckResult> {
-		let text: string | null = null;
-		for (const path of SITE_CONFIG_PATHS) {
-			text = await ctx.readFile(path);
-			if (text !== null) break;
-		}
+		const text = await readSiteConfigText(ctx);
 		if (text === null) return skip(`no site.config.yaml found (looked in ${SITE_CONFIG_PATHS.join(', ')})`);
 		try {
 			const policy = urlPolicyFrom(parseSiteConfig(text));
@@ -163,5 +169,53 @@ export const configSiteConfig: DoctorCheck = {
 		} catch (err) {
 			return fail(err instanceof Error ? err.message : String(err));
 		}
+	},
+};
+
+// A site enables tidy with `tidy.enabled: true` in the committed config; ignore a config the rest of
+// the doctor reports through configSiteConfig, so a parse error here just skips rather than doubling
+// the failure.
+function tidyEnabled(text: string): boolean {
+	let config: SiteConfig;
+	try {
+		config = parseSiteConfig(text);
+	} catch {
+		return false;
+	}
+	return config.tidy?.enabled === true;
+}
+
+// The Anthropic key is a Worker secret, so the doctor cannot prove it is unset (it is in neither the
+// committed wrangler config nor anything readFile reaches). It CAN read the two spots a key would also
+// appear if set as a plain var: the wrangler config text and .dev.vars. A bare presence-by-name read
+// is enough for the heuristic; the runtime fail(503) and --probe are the real truth checks.
+function keyAppearsIn(text: string | null): boolean {
+	return text !== null && text.includes('ANTHROPIC_API_KEY');
+}
+
+// The tidy secret heuristic. It reuses the config.bindings-missing condition rather than registering a
+// new one, so the readiness count holds (the same pattern configMediaBucket uses). A warn here is not a
+// definitive unset claim: it asks the operator to verify the secret, since a wrangler secret is
+// invisible to the CLI.
+export const configTidyKey: DoctorCheck = {
+	id: 'config.tidy-key',
+	conditionId: 'config.bindings-missing',
+	title: 'Tidy API key',
+	async run(ctx: DoctorContext): Promise<CheckResult> {
+		const text = await readSiteConfigText(ctx);
+		if (text === null) return skip('no site.config.yaml found, so tidy enablement is unknown');
+		if (!tidyEnabled(text)) return skip('tidy is not enabled in the site config');
+		const wrangler =
+			(await ctx.readFile('wrangler.jsonc')) ?? (await ctx.readFile('wrangler.toml'));
+		if (keyAppearsIn(wrangler)) {
+			return pass('ANTHROPIC_API_KEY appears in the wrangler vars (verify it is the real key, not a placeholder)');
+		}
+		const devVars = await ctx.readFile('.dev.vars');
+		if (keyAppearsIn(devVars)) {
+			return pass('ANTHROPIC_API_KEY appears in .dev.vars (the local override; verify the Worker secret is set for production)');
+		}
+		return fail(
+			'tidy is enabled but ANTHROPIC_API_KEY is in neither the wrangler vars nor .dev.vars; verify the secret is configured with wrangler secret put ANTHROPIC_API_KEY'
+		);
 	},
 };

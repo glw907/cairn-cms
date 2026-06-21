@@ -15,6 +15,7 @@ import type { Extension } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
 import { frontmatterSpan, fenceTokens } from './markdown-directives.js';
 import { parseMediaToken } from '../media/reference.js';
+import { objectiveErrors, type ObjectiveError } from './objective-errors.js';
 
 /** An absolute character range in the document. */
 export interface Range {
@@ -288,6 +289,40 @@ export function arbitrateChecked(): SeqArbiter {
   };
 }
 
+/**
+ * Build the quick-fix popover for one objective-error finding, as a @codemirror/lint Diagnostic whose
+ * one `actions` entry applies the finding's deterministic fix. The severity is `info` so the underline
+ * shares the spellcheck surface and the locked amber color (an editor reads spelling and these
+ * mechanical errors as one "spellcheck" layer). The fix range is recomputed from the live diagnostic
+ * position CodeMirror passes, offset by the same delta as the original finding, so an edit elsewhere
+ * never makes the fix overwrite the wrong span. Pure: it takes a finding, so the unit test asserts the
+ * diagnostic without a browser.
+ */
+export function buildObjectiveDiagnostic(error: ObjectiveError): Diagnostic {
+  // The fix range sits inside the flagged range; record its offset from the flagged start so the apply
+  // can re-anchor against the live position CodeMirror reports (which may have shifted since the lint).
+  const fixOffsetFrom = error.fix.from - error.from;
+  const fixOffsetTo = error.fix.to - error.from;
+  const insert = error.fix.insert;
+  return {
+    from: error.from,
+    to: error.to,
+    severity: 'info',
+    source: 'cairn-objective',
+    message: error.message,
+    actions: [
+      {
+        name: 'Fix',
+        apply: (view: EditorView, from: number) => {
+          view.dispatch({
+            changes: { from: from + fixOffsetFrom, to: from + fixOffsetTo, insert },
+          });
+        },
+      },
+    ],
+  };
+}
+
 // ----- The linter() wiring (the CodeMirror side) -----
 //
 // Only this half touches CodeMirror, and it never value-imports an @codemirror/* package at module
@@ -376,7 +411,9 @@ function lockedUnderlineTheme(EditorViewMod: typeof import('@codemirror/view').E
  * `correct: false` answers back to ranges. Each wrong word becomes a correction popover: the source
  * fetches the ranked suggestions in the same batch, then {@link buildSpellDiagnostic} wires the
  * quick-fix actions (the suggestions, then add-to-dictionary, then ignore). The returned extension
- * bundles the linter with the locked amber underline theme.
+ * bundles the spellcheck linter, a second deterministic objective-error linter over the same prose
+ * spans (doubled words, double spaces, repeated punctuation), and the locked amber underline theme,
+ * so Task 7's single on/off toggle gates both surfaces by reconfiguring this one extension.
  */
 export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<Extension> {
   // Lazy value imports: this keeps CodeMirror off the server bundle (the boundary the editor relies
@@ -501,5 +538,25 @@ export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<
     });
   });
 
-  return [source, lockedUnderlineTheme(EditorView)];
+  // The objective-error source: a second linter() over the SAME viewport-scoped prose spans the
+  // spellcheck source uses, so a doubled word inside a code fence is never flagged. It is synchronous
+  // and deterministic (no Worker, no dictionary), and its diagnostics carry `info` so they share the
+  // locked amber underline. It ships in the same returned extension as the spellcheck source, so the
+  // Task 7 toggle reconfigures one compartment to gate both surfaces at once.
+  const objectiveSource = linter((view) => {
+    const text = view.state.doc.toString();
+    const tree = syntaxTree(view.state);
+    const docLength = text.length;
+    const windows = view.visibleRanges.map((vr) => ({
+      from: Math.max(0, vr.from - VIEWPORT_MARGIN),
+      to: Math.min(docLength, vr.to + VIEWPORT_MARGIN),
+    }));
+    const spans: Range[] = [];
+    for (const window of windows) {
+      spans.push(...classifyProse(text, tree, window.from, window.to));
+    }
+    return objectiveErrors(text, spans).map(buildObjectiveDiagnostic);
+  });
+
+  return [source, objectiveSource, lockedUnderlineTheme(EditorView)];
 }

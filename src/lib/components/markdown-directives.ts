@@ -262,6 +262,41 @@ export function markerPrefix(line: string): string | null {
   return m ? m[0] : null;
 }
 
+// A YAML-frontmatter fence: exactly three dashes on their own line, no leading whitespace. The
+// base markdown grammar does not parse frontmatter, so this line-based check is the single source
+// of the region. The strict shape (line start, three dashes, line end) is what separates a leading
+// frontmatter fence from a body `---` thematic break, which carries surrounding prose or blank
+// lines and so never sits on line 0.
+const FRONTMATTER_FENCE = /^---$/;
+
+/**
+ * The frontmatter block at the very top of the document, as absolute character offsets, or null
+ * when there is none. The block must open with an exact `---` on the first line and close with a
+ * later exact `---` line; a body `---` thematic break (which has prose or blank lines above it) is
+ * never frontmatter, a fence with leading whitespace or blank lines above it does not count, and
+ * an unterminated opening fence returns null.
+ *
+ * The span covers the whole block, both fences included: `from` is the start of the opening `---`
+ * (offset 0) and `to` is the end of the closing `---` line (no trailing newline). So
+ * `text.slice(from, to)` is the entire frontmatter, which is what the spellcheck skip and the tidy
+ * byte-for-byte validator both compare against. This is the single source of the frontmatter region.
+ */
+export function frontmatterSpan(text: string): { from: number; to: number } | null {
+  const lines = text.split('\n');
+  if (lines.length < 2 || !FRONTMATTER_FENCE.test(lines[0]!)) return null;
+  // Walk the offset forward line by line; the opening fence sits at offset 0, and each line costs
+  // its length plus the one newline that joined it. The closing fence's end is its start plus its
+  // own length, which is 3 for an exact `---`.
+  let offset = lines[0]!.length + 1;
+  for (let i = 1; i < lines.length; i++) {
+    if (FRONTMATTER_FENCE.test(lines[i]!)) {
+      return { from: 0, to: offset + lines[i]!.length };
+    }
+    offset += lines[i]!.length + 1;
+  }
+  return null;
+}
+
 /** Inline directive ranges (`:name[...]{...}`) within a line of text. */
 export function findInlineDirectives(text: string): { from: number; to: number }[] {
   const out: { from: number; to: number }[] = [];

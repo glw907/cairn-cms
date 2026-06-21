@@ -247,6 +247,8 @@ declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutes
   mediaReplaceApply: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
   mediaAltPreview: (event: ContentEvent) => Promise<ActionFailure<unknown> | MediaAltPreviewPlan>;
   mediaAltApply: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
+  addDictionaryWord: (event: ContentEvent) => Promise<ActionFailure<unknown> | DictionaryAddResult>;
+  tidyAction: (event: ContentEvent) => Promise<ActionFailure<unknown> | TidyResult>;
   mintToken: (env: GithubKeyEnv) => string | Promise<string>;
 };
 ```

@@ -174,6 +174,10 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
     // save time. Gated to the edit view, where the spellcheck surface lives, so it 404s elsewhere.
     addDictionaryWord: viewAction(['edit'], (event, view) =>
       content.addDictionaryWord(contentEvent(event, { concept: view.concept.id, id: view.id }))),
+    // Tidy (spec 2.1): the editor posts the buffer to `?/tidy` for a light LLM copy-edit. Gated to the
+    // edit view, where the review surface lives, so it 404s elsewhere.
+    tidy: viewAction(['edit'], (event, view) =>
+      content.tidyAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     delete: viewAction(['edit', 'list'], (event, view) =>
       view.view === 'edit'
         ? content.deleteAction(contentEvent(event, { concept: view.concept.id, id: view.id }))

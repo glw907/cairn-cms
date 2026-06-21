@@ -409,6 +409,12 @@ export interface CairnRuntime {
    *  hand-built runtime need not set it; composeRuntime always fills it, and the edit load defaults a
    *  missing value to the US English dictionary. */
   spellcheckDictionary?: string;
+  /** The editor tidy (LLM copy-edit) settings, passed through from the site config. Optional on the
+   *  runtime so a hand-built runtime need not set it; composeRuntime threads it from
+   *  `siteConfig.tidy`. The tidy action reads `enabled` and `model` at call time, and builds its prompt
+   *  from `conventions`. Absent (or `enabled` false) means tidy is off, and the action refuses with a
+   *  fail(503) before any model call. */
+  tidy?: import('../nav/site-config.js').TidyConfig;
   /** Admin panels contributed by extensions (Mode 2). Empty until Plan 09 wires the dispatch route. */
   adminPanels?: AdminPanel[];
   /** Field types contributed by extensions (Mode 2). Empty until Plan 09 wires the form dispatch. */

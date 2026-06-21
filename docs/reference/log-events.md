@@ -40,6 +40,10 @@ redaction stance.
 | `media.orphans_purged` | info | The orphan purge runs, deleting stored R2 bytes that no manifest row and no reference points at. | `editor`, `purged` (the count of byte objects removed) |
 | `dictionary.added` | info | A personal-dictionary add commits the new words to the committed dictionary file. | `editor`, `words` (the added words), `retried` (true when the commit landed on the post-conflict retry) |
 | `dictionary.add_conflict` | warn | A personal-dictionary add hits a second commit conflict and gives up; the client keeps the words pending and re-attempts on the next save. | `editor`, `words` |
+| `tidy.done` | info | A tidy copy-edit returns a corrected document. Carries no content and no key. | `editor`, `model`, `usage` (the token counts) |
+| `tidy.error` | warn | A tidy call fails: a deadline overrun, a client abort, or a model error. Maps to a retryable fail(502). Carries no content and no key. | `editor`, `model`, `aborted` |
+| `tidy.refused` | warn | The model refuses to edit the text. Maps to fail(422); the author's text is untouched. | `editor`, `model` |
+| `tidy.empty` | warn | The model returns no text. Maps to fail(502). | `editor`, `model` |
 
 Saves land on the entry's pending branch, so `commit.succeeded` and `commit.failed` carry a
 `branch` field (`cairn/<concept>/<id>`) on the save path. Deletes, renames, and nav saves commit to

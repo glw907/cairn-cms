@@ -56,6 +56,9 @@ export function composeRuntime({ adapter, siteConfig, extensions = [] }: Compose
     // so the runtime and the editor never re-derive it. The site config is the one home for the
     // dialect; the editor resolves this filename to a real asset URL on the main thread.
     spellcheckDictionary: dictionaryFileForDialect(siteConfig.spellcheck?.dialect),
+    // The tidy block passes through from the site config; the tidy action reads enabled/model at call
+    // time and builds its prompt from conventions. Absent means tidy is off.
+    tidy: siteConfig.tidy,
     adminPanels,
     fieldTypes,
   };

@@ -29,4 +29,8 @@ export type CairnLogEvent =
   | 'media.replace_blocked'
   | 'media.alt_propagated'
   | 'dictionary.added'
-  | 'dictionary.add_conflict';
+  | 'dictionary.add_conflict'
+  | 'tidy.done'
+  | 'tidy.error'
+  | 'tidy.refused'
+  | 'tidy.empty';

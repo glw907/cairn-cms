@@ -11,6 +11,12 @@ const migrations = await readD1Migrations(path.resolve('migrations'));
 
 export default defineConfig({
   test: {
+    // The three projects (node unit, workerd integration, chromium component) run against one shared
+    // worker pool. On an 8-core machine the default of one fork per core per project oversubscribes the
+    // CPU threefold, so a cold-start-sensitive test (a vite barrel compile, a CSS compile, an export
+    // enumeration) starves and trips its timeout under the full run while passing in seconds alone.
+    // Capping the pool at half the cores keeps the run parallel without the thrash.
+    maxWorkers: 4,
     projects: [
       {
         test: {
@@ -18,11 +24,11 @@ export default defineConfig({
           include: ['src/tests/unit/**/*.test.ts'],
           environment: 'node',
           // A few unit tests are CPU-bound (the admin CSS Tailwind+DaisyUI compile, the export
-          // enumerator that parses the public surface). On the default 5s timeout they flake under
-          // the CPU contention of the full tri-project run, though they pass comfortably in
-          // isolation. A higher ceiling absorbs the contention without hiding a real failure: an
-          // assertion failure still fails at once, and a true hang still trips the timeout.
-          testTimeout: 20_000,
+          // enumerator that parses the public surface, a runtime barrel import that vite compiles
+          // cold). With the pool capped above they no longer thrash, but a generous ceiling still
+          // absorbs a slow cold start without hiding a real failure: an assertion failure fails at
+          // once, and a true hang still trips the timeout.
+          testTimeout: 30_000,
           hookTimeout: 60_000,
         },
       },

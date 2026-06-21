@@ -12,6 +12,7 @@
 import type { Tree } from '@lezer/common';
 import type { Diagnostic } from '@codemirror/lint';
 import type { Extension } from '@codemirror/state';
+import type { EditorView } from '@codemirror/view';
 import { frontmatterSpan, fenceTokens } from './markdown-directives.js';
 import { parseMediaToken } from '../media/reference.js';
 
@@ -200,6 +201,63 @@ export function extractWords(text: string, from: number, to: number): ExtractedW
   return out;
 }
 
+// The most suggestions shown in one tooltip. SymSpell can return a long ranked list; five is the
+// spec cap, enough to cover the likely correction without burying the management actions below a
+// wall of near-ties.
+const MAX_SUGGESTIONS = 5;
+
+/** The callbacks the management actions invoke. The lint source supplies these so the pure builder
+ *  never touches the Worker or the re-lint mechanism: it only wires the buttons to these handlers. */
+export interface SpellDiagnosticActions {
+  /** Add the word to the personal dictionary (posts addWord, records the pending addition, re-lints). */
+  onAddWord(word: string): void;
+  /** Ignore the word for this session only (posts ignoreWord, re-lints). */
+  onIgnoreWord(word: string): void;
+}
+
+/**
+ * Build the correction popover for one misspelled word, as a @codemirror/lint Diagnostic whose
+ * `actions` CodeMirror renders as tooltip buttons (no custom popover code). The actions, in order:
+ * up to five ranked suggestions (each replaces the word's range with one transaction), then "Add to
+ * dictionary", then "Ignore". The severity is `info` so the underline is quiet, and the message names
+ * the word so the underline is never the only signal. Pure: it takes canned suggestions and callbacks,
+ * so the unit test asserts the actions array without a browser or a real Worker.
+ */
+export function buildSpellDiagnostic(
+  word: string,
+  range: Range,
+  suggestions: readonly string[],
+  callbacks: SpellDiagnosticActions,
+): Diagnostic {
+  const ranked = suggestions.slice(0, MAX_SUGGESTIONS).map((suggestion) => ({
+    name: suggestion,
+    // CodeMirror passes the diagnostic's current position, which may have shifted since the lint ran;
+    // the replace uses that live range so a suggestion never overwrites the wrong span after an edit.
+    apply: (view: EditorView, from: number, to: number) => {
+      view.dispatch({ changes: { from, to, insert: suggestion } });
+    },
+  }));
+
+  return {
+    from: range.from,
+    to: range.to,
+    severity: 'info',
+    source: 'cairn-spellcheck',
+    message: `\`${word}\` may be misspelled.`,
+    actions: [
+      ...ranked,
+      {
+        name: 'Add to dictionary',
+        apply: () => callbacks.onAddWord(word),
+      },
+      {
+        name: 'Ignore',
+        apply: () => callbacks.onIgnoreWord(word),
+      },
+    ],
+  };
+}
+
 /**
  * The latest-wins arbiter (the media-preview settling pattern). The lint source hands out a
  * monotonic seq with {@link next} on each run and posts it on the check message; when a `checked`
@@ -241,12 +299,15 @@ export function arbitrateChecked(): SeqArbiter {
 
 let lintMod: typeof import('@codemirror/lint') | null = null;
 let langMod: typeof import('@codemirror/language') | null = null;
+let viewMod: typeof import('@codemirror/view') | null = null;
 
-/** The narrow Worker surface the lint source drives: it posts check messages and listens for the
- *  checked answers. A test injects a fake; production injects a real Worker. */
+/** The narrow Worker surface the lint source drives: it posts check, suggest, addWord, and ignoreWord
+ *  messages and listens for the answers. A `suggest` answer is a one-shot, so the source removes its
+ *  own listener once it lands. A test injects a fake; production injects a real Worker. */
 export interface SpellWorker {
   postMessage(message: unknown): void;
   addEventListener(type: 'message', listener: (event: MessageEvent) => void): void;
+  removeEventListener(type: 'message', listener: (event: MessageEvent) => void): void;
 }
 
 /** Construct the real spellcheck Worker, the spike's delivery shape. Kept behind the seam so the
@@ -265,34 +326,85 @@ const VIEWPORT_MARGIN = 1000;
 export interface SpellcheckOptions {
   /** The Worker factory; defaults to {@link createSpellWorker}. Created lazily on the first lint. */
   createWorker?: () => SpellWorker;
+  /** The pending personal-dictionary additions, owned by the caller. When an author chooses "Add to
+   *  dictionary" the source posts addWord to the Worker (the underline clears at once) and records the
+   *  word here. The set is the seam Task 9 commits to the git-backed dictionary file; this source only
+   *  fills it and never persists. A caller that does not pass one gets a fresh internal set. */
+  pendingAdditions?: Set<string>;
+}
+
+// The lint underline is LOCKED to --cairn-warning-ink (a muted amber, the closest shipped token to
+// the spec's "neither the directive accent nor error red"; there is no --cairn-info-ink). Spellcheck
+// diagnostics carry severity `info`, so the override targets the `info` underline and tooltip row.
+// --cairn-error-ink red is reserved for tidy deletions, so a spellcheck underline and a tidy deletion
+// are never the same color. The tooltip rides the admin Warm Stone tokens and the focus rules; the
+// lint action buttons are CodeMirror's own focusable buttons, so the theme only restores a visible
+// focus ring (the admin base button reset strips the UA outline). The wavy underline uses a CSS
+// text-decoration so the locked token resolves at render rather than being baked into a static SVG.
+function lockedUnderlineTheme(EditorViewMod: typeof import('@codemirror/view').EditorView): Extension {
+  return EditorViewMod.theme({
+    // The amber wavy underline, the one spellcheck underline color across the feature.
+    '.cm-lintRange-info': {
+      backgroundImage: 'none',
+      textDecoration: 'underline wavy var(--cairn-warning-ink, oklch(50% 0.13 70))',
+      textDecorationSkipInk: 'none',
+      textUnderlineOffset: '0.2em',
+    },
+    // The tooltip surface rides the admin Warm Stone tokens.
+    '.cm-tooltip.cm-tooltip-lint': {
+      backgroundColor: 'var(--color-base-100, #fff)',
+      border: '1px solid var(--color-base-300, oklch(90% 0.01 75))',
+      borderRadius: '0.5rem',
+      color: 'var(--color-base-content, oklch(28% 0.01 75))',
+    },
+    '.cm-diagnostic-info': {
+      borderLeftColor: 'var(--cairn-warning-ink, oklch(50% 0.13 70))',
+    },
+    // The action buttons are real focusable buttons; the admin base reset strips the UA outline, so a
+    // visible focus ring is restored here to keep them keyboard-discoverable (the a11y focus rule).
+    '.cm-diagnosticAction:focus-visible': {
+      outline: '2px solid var(--cairn-warning-ink, oklch(50% 0.13 70))',
+      outlineOffset: '1px',
+    },
+  });
 }
 
 /**
  * The @codemirror/lint linter() source, made markdown-aware by the Lezer tree. It runs over the
  * visible viewport plus a margin (not the whole document), extracts the checkable words via the pure
  * classifier, posts them to the Worker keyed by a monotonic latest-wins seq, and maps the
- * `correct: false` answers back to ranges. The diagnostics it emits are minimal placeholders: Task 5
- * builds the correction popover (quick-fix actions and the locked underline token) on top of these
- * ranges, so the seam is left clean here.
+ * `correct: false` answers back to ranges. Each wrong word becomes a correction popover: the source
+ * fetches the ranked suggestions in the same batch, then {@link buildSpellDiagnostic} wires the
+ * quick-fix actions (the suggestions, then add-to-dictionary, then ignore). The returned extension
+ * bundles the linter with the locked amber underline theme.
  */
 export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<Extension> {
   // Lazy value imports: this keeps CodeMirror off the server bundle (the boundary the editor relies
   // on) and matches how link-completion.ts resolves @codemirror/language inside its source.
   lintMod ??= await import('@codemirror/lint');
   langMod ??= await import('@codemirror/language');
-  const { linter } = lintMod;
+  viewMod ??= await import('@codemirror/view');
+  const { linter, forceLinting } = lintMod;
   const { syntaxTree } = langMod;
+  const { EditorView } = viewMod;
 
   const createWorker = options.createWorker ?? createSpellWorker;
+  const pendingAdditions = options.pendingAdditions ?? new Set<string>();
   const arbiter = arbitrateChecked();
 
   let worker: SpellWorker | null = null;
-  // The in-flight requests keyed by their seq, each resolved by the matching `checked` answer. A run
-  // posts one check and awaits its verdicts; a stale answer (an older seq) is dropped by the arbiter.
+  // The view from the latest lint run, captured so a management action can re-lint through it. The
+  // action callbacks fire long after the source promise resolved, so the source cannot close over a
+  // run-local view; it stores the last one here.
+  let lastView: EditorView | null = null;
+  // The in-flight check requests keyed by their seq, each resolved by the matching `checked` answer.
   const pending = new Map<
     number,
     { words: ExtractedWord[]; resolve: (diagnostics: Diagnostic[]) => void }
   >();
+  // A monotonic seq for suggest round-trips, separate from the check seq so the two answer streams
+  // never collide on a shared counter.
+  let suggestSeq = 0;
 
   function ensureWorker(): SpellWorker {
     if (worker) return worker;
@@ -308,24 +420,61 @@ export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<
         request.resolve([]);
         return;
       }
-      const wrong = new Set((data.results ?? []).filter((r) => !r.correct).map((r) => r.id));
-      const diagnostics: Diagnostic[] = request.words
-        .filter((_, id) => wrong.has(id))
-        .map((word) => ({
-          from: word.from,
-          to: word.to,
-          // Task 5 replaces this placeholder with the correction popover and the locked underline
-          // color; the lint source's job here is the skip authority and the worker round-trip.
-          severity: 'warning' as const,
-          source: 'cairn-spellcheck',
-          message: 'Possible spelling error.',
-        }));
-      request.resolve(diagnostics);
+      const wrongIds = new Set((data.results ?? []).filter((r) => !r.correct).map((r) => r.id));
+      const wrong = request.words.filter((_, id) => wrongIds.has(id));
+      // Fetch the ranked suggestions for every wrong word, then build the popovers from the answers.
+      void buildDiagnostics(wrong).then(request.resolve);
     });
     return worker;
   }
 
-  return linter(async (view) => {
+  /** Fetch a single word's ranked suggestions over the Worker, a one-shot listener removed on the
+   *  answer. The suggest path is independent of the check seq, so a slow suggest never blocks a fresh
+   *  check; an empty list (the engine returned nothing) still yields a popover with the two
+   *  management actions. */
+  function fetchSuggestions(w: SpellWorker, word: string): Promise<string[]> {
+    suggestSeq += 1;
+    const seq = suggestSeq;
+    return new Promise<string[]>((resolve) => {
+      const listener = (event: MessageEvent) => {
+        const data = event.data as { type?: string; seq?: number; suggestions?: string[] };
+        if (data.type !== 'suggested' || data.seq !== seq) return;
+        w.removeEventListener('message', listener);
+        resolve(data.suggestions ?? []);
+      };
+      w.addEventListener('message', listener);
+      w.postMessage({ type: 'suggest', seq, word });
+    });
+  }
+
+  /** Turn the wrong words into correction popovers, each carrying its ranked suggestions and the two
+   *  management actions. */
+  async function buildDiagnostics(wrong: ExtractedWord[]): Promise<Diagnostic[]> {
+    const w = ensureWorker();
+    const callbacks: SpellDiagnosticActions = {
+      onAddWord(word) {
+        // Post addWord so the Worker's merged set now answers correct, record the pending addition for
+        // Task 9 to commit, and re-lint so every instance of the word clears at once.
+        w.postMessage({ type: 'addWord', word });
+        pendingAdditions.add(word.toLowerCase());
+        if (lastView) forceLinting(lastView);
+      },
+      onIgnoreWord(word) {
+        // Session-only ignore, never persisted; re-lint so the underline clears everywhere.
+        w.postMessage({ type: 'ignoreWord', word });
+        if (lastView) forceLinting(lastView);
+      },
+    };
+    return Promise.all(
+      wrong.map(async (word) => {
+        const suggestions = await fetchSuggestions(w, word.text);
+        return buildSpellDiagnostic(word.text, { from: word.from, to: word.to }, suggestions, callbacks);
+      }),
+    );
+  }
+
+  const source = linter(async (view) => {
+    lastView = view;
     const text = view.state.doc.toString();
     const tree = syntaxTree(view.state);
 
@@ -351,4 +500,6 @@ export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<
       ensureWorker().postMessage({ type: 'check', seq, words: checkWords });
     });
   });
+
+  return [source, lockedUnderlineTheme(EditorView)];
 }

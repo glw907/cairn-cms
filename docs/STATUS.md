@@ -11,7 +11,54 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-20, latest): `0.59.0` SHIPPED + ecxc-ski DEPLOYED and live-smoked; NEXT is the editor copy-edit + spellcheck build
+## Immediate next action (2026-06-21, latest): the editor copy-edit + spellcheck pass (`0.60.0`) is COMPLETE on `feat/editor-copyedit`; HELD for merge, release, and push
+
+**`0.60.0` is COMPLETE and unreleased on `feat/editor-copyedit`** (worktree
+`.claude/worktrees/editor-copyedit`). All 17 plan tasks landed test-first, the pass-end simplifier ran,
+an adversarial review Workflow gated it, and the docs arm is done. This was resumed from a mid-Task-16
+power loss: Tasks 1 through 15 were committed, Task 16's files were recovered intact and committed after
+one test-harness fix, then Task 17 (docs, version bump, ritual) completed.
+
+**Two editor features.** Spellcheck (default, local): a CodeMirror `@codemirror/lint` source over a Web
+Worker that streams a 1.5MB en-US dictionary into spellchecker-wasm, markdown-aware and dialect-aware
+(`spellcheck.dialect`), with a correction popover, an objective-error layer, and a personal dictionary
+committed to git. Tidy (opt-in, developer-tier `tidy.enabled` plus the `ANTHROPIC_API_KEY` secret): a
+Worker action calls the Anthropic SDK with abort/timeout/deadline, the client diffs the result (LCS over
+tokens), a validation backstop holds it to a proofread (frontmatter byte-for-byte, bounded divergence),
+and a native-dialog step-in review applies only the hunks the author keeps. A config style normalization
+is a judgment hunk (defaults to undecided, never swept); only an objective error is pre-kept.
+
+**Gate green at the tip, run first-hand from the worktree:** `npm run check` 1132 files 0/0; `npm test`
+215 files / 2429 tests exit 0; `npm run package` exit 0; the showcase Playwright E2E 30 passed (the new
+spellcheck + tidy round-trips and the standing spike, plus 27 existing); `check:reference`,
+`check:reference:signatures`, `check:package`, `check:docs`, `check:version` (minor) all exit 0.
+
+**Review gate (adversarial Workflow, Geoff's opt-in).** Five dimensions raised 14 findings; the
+adversarial verifier confirmed 11 and refuted 3. All 11 folded in test-first. The four high catches: a
+`body.indexOf(selected)` selection-offset bug that silently corrupted an entry when the selection text
+repeated earlier (fixed with a real `{from,to}` selection seam); number/measurement/time normalizations
+swept without confirmation (fixed by adding the missing `matchNormalization` branches); a dead tidy
+abort signal passed in the SDK body, not the options arg; and a dark-theme diff contrast failure
+(2.70:1) now locked to 5.89:1. Post-mortem with the full detail in
+`docs/superpowers/plans/2026-06-20-cairn-editor-copyedit.md`.
+
+**HELD for Geoff (his call):** merge `feat/editor-copyedit` to `main`; cut the `0.60.0` release
+(`gh release create v0.60.0 --target main`, fires the OIDC trusted-publishing workflow, npm `latest`);
+push; then the per-site cutover. Per the version policy, `0.60.0` bundles the FULL spellcheck + tidy
+work and BOTH the still-prepared 907-life media cutover (`feat/media-cutover` `c1c3c45`, already bumped
+to `^0.59.0`, rebump to `^0.60.0`) and any ecxc-ski bump ride this one release. The **live admin smoke
+is owed** this pass and rides the first site cutover (no real Worker/GitHub/Anthropic in the showcase):
+the first real Anthropic Worker call, the first dictionary commit, the first spellcheck Worker in a real
+consumer build. Enable tidy per site only after setting the `ANTHROPIC_API_KEY` Worker secret.
+
+**Then (next initiatives, Geoff's call on order):** the `create-cairn-site` scaffolder (needs its own
+brainstorm) and media Pass D (needs-alt at scale, dedupe/merge, AI auto-alt, the broken-references
+deep-link). Three tidy normalization sub-cases are deliberately unmatched (compound spelled numbers, a
+split-hunk time reshape, units outside the curated set) and stay safe judgment hunks; widen the matchers
+in Pass D only if real content shows the gap. The `runtime.publicMediaResolver` ergonomic stays a
+carry-forward needing its own brainstorm.
+
+## Prior next action (2026-06-20): `0.59.0` SHIPPED + ecxc-ski DEPLOYED and live-smoked; NEXT was the editor copy-edit + spellcheck build
 
 **`0.59.0` is SHIPPED and the ecxc-ski canary is DEPLOYED.** The engine merged to `main`, `gh release
 create v0.59.0` published it (npm `latest` is `0.59.0`), main CI green. ecxc-ski's `feat/media-cutover`

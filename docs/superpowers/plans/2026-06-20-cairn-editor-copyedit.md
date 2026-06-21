@@ -906,4 +906,63 @@ recorded.
   spellcheck Worker in a real consumer build). It rides the first site cutover; record the disposition in
   Task 17.
 
-## Post-mortem (to be written at pass end)
+## Post-mortem (2026-06-21)
+
+**Built.** All 17 tasks landed test-first on `feat/editor-copyedit`, shipping as the unreleased
+`0.60.0`. Spellcheck is the default: a local CodeMirror `@codemirror/lint` source backed by a Web
+Worker that streams a 1.5MB en-US dictionary into the spellchecker-wasm engine, markdown-aware (the
+`frontmatterSpan` and prose-classify skips), dialect-aware (`spellcheck.dialect`), with a correction
+popover on the locked amber `--cairn-warning-ink` underline, an objective-error layer, and a personal
+dictionary committed to git through the GitHub App pipeline. Tidy is opt-in (developer-tier
+`tidy.enabled` plus the `ANTHROPIC_API_KEY` secret): a Worker action calls the Anthropic SDK with an
+abort/timeout/deadline, the client diffs the result as an LCS over tokens, a validation backstop holds
+the edit to a proofread (frontmatter byte-for-byte, bounded divergence), and a native-dialog step-in
+review lets the author accept or reject each hunk before one transaction writes the kept set. The
+two-tier settings screen reuses the shipped check-and-tint and radiogroup primitives.
+
+**Verified (evidence).** Full gate green at the tip, run first-hand from the worktree: `npm run check`
+1132 files 0/0; `npm test` 215 files / 2429 tests exit 0; `npm run package` exit 0; the showcase
+Playwright E2E 30 passed (the new `spellcheck.spec.ts`, `tidy.spec.ts`, and the standing
+`spellcheck-spike.spec.ts` round-trip, plus 27 existing); the doc gates `check:reference`,
+`check:reference:signatures`, `check:package`, `check:docs`, and `check:version` (minor) all exit 0.
+
+**Crash and recovery.** The laptop lost power mid-Task-16. Tasks 1 through 15 were committed; Task 16's
+files were written but uncommitted. On resume the work was recovered intact and the gate run found one
+failure, a test-harness bug in `spellcheck.spec.ts`: it read `--cairn-warning-ink` off
+`document.documentElement`, but the admin tokens live on the `[data-theme='cairn-admin']` scope wrapper
+(a load-bearing design rule), so it resolved empty. Fixed by resolving the token through a probe inside
+the scope and comparing in the browser's canonical color form. The feature itself painted correctly.
+
+**Review gate (adversarial Workflow).** Geoff opted into the multi-agent find-and-verify review over the
+flat fan-out. Five dimensions (security plus the untrusted-content path, tidy correctness, Worker/wasm
+delivery, Svelte reactivity, DaisyUI/a11y) raised 14 findings; the adversarial verifier confirmed 11
+and refuted 3. All 11 were folded test-first (one was the same selection-offset bug surfaced by two
+dimensions). The four high-value catches: a `body.indexOf(selected)` selection-offset bug that silently
+corrupted an entry when the selection text repeated earlier; `numberStyle`/`measurements`/`timeFormat`
+normalizations swept by Accept-fixes without confirmation (no `matchNormalization` branch, so they
+defaulted to objective); a dead tidy abort signal passed in the SDK body instead of the options
+argument; and a dark-theme diff-run contrast failure (2.70:1) the daisyui reviewer measured and the fix
+locked to 5.89:1. The review earned its cost on a pass this size with new Worker, LLM, and
+untrusted-content surfaces.
+
+**Decisions locked.**
+- The selection range is its own seam (`registerGetSelectionRange` returning `{from,to}|null`), kept
+  separate from the string-returning `getSelection` that `WebLinkDialog` still consumes. Recovering a
+  document offset by text search is never correct when the text can repeat.
+- A config style normalization (Oxford comma, number style, measurements, time format, smart quotes,
+  dashes) is a JUDGMENT hunk: it defaults to undecided and is never swept by Accept-fixes. Only an
+  objective error (spelling, a plain typo) is pre-kept. The `matchNormalization` matcher is the gate.
+- The tidy abort signal belongs in the SDK's second options argument; the structural `TidyClient`
+  models `create(body, options)`.
+- The tidy-diff tint is a locked, measured token pair in `cairn-admin.css` (both themes), not an
+  ink self-mix, because a stacked tint must be measured against its real composite, dark mode included.
+
+**Carry-forwards.**
+- The live admin smoke is owed (the first real Anthropic Worker call, the first dictionary commit, the
+  first spellcheck Worker in a real consumer build). It rides the first site cutover, matching the media
+  precedent; the showcase has no real Worker, GitHub, or Anthropic.
+- Three normalization sub-cases are deliberately unmatched and stay judgment grammar hunks (so the
+  no-sweep safety invariant still holds, only the descriptive label is missed): compound spelled numbers
+  (`twenty-five`), a time reshape the diff splits across hunks (`5 PM` to `5 p.m.`), and units outside
+  the curated `UNIT_FORMS` set. Pass D could widen the matchers if real content shows the gap.
+- The adversarial verifier refuted three of the raised findings; those were dropped, not actioned.

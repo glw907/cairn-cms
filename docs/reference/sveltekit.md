@@ -228,6 +228,8 @@ declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutes
   indexRedirect: () => never;
   listLoad: (event: ContentEvent) => Promise<ListData>;
   mediaLibraryLoad: (event: ContentEvent) => Promise<MediaLibraryData>;
+  settingsLoad: (event: ContentEvent) => SettingsData;
+  settingsSave: (event: ContentEvent) => Promise<never>;
   createAction: (event: ContentEvent) => Promise<never>;
   editLoad: (event: ContentEvent) => Promise<EditData>;
   saveAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;

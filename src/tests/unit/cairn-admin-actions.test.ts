@@ -408,3 +408,55 @@ describe('editor actions', () => {
     expect(calls.some((c) => c.sql.includes('UPDATE editor SET role') && c.args[0] === 'owner' && c.args[1] === 'up@t')).toBe(true);
   });
 });
+
+describe('settings view (Task 15)', () => {
+  /** A runtime with tidy enabled, so the settings save reaches the commit gate rather than the
+   *  tidy-off 404. The nav menu carries the config path the save reads and commits. */
+  function tidyRuntime(): CairnRuntime {
+    return {
+      ...runtime(),
+      navMenu: { configPath: 'src/lib/site.config.yaml', menuName: 'primary', label: 'Nav', maxDepth: 2 },
+      tidy: { enabled: true, model: 'claude-sonnet-4-6' },
+    };
+  }
+
+  it('404s saveSettings posted outside the settings view (the viewAction gate)', async () => {
+    const admin = createCairnAdmin(tidyRuntime(), deps);
+    await expect(admin.actions.saveSettings(actionEvent('/admin/posts') as never)).rejects.toMatchObject({ status: 404 });
+  });
+
+  it('saveSettings on the settings view reaches settingsSave (commits the conventions, redirects saved)', async () => {
+    // commitFile uses the contents PUT, which the GithubDouble does not model, so this stubs fetch
+    // directly the way nav-routes-save does: the raw read returns the YAML, the PUT lands the commit.
+    vi.stubGlobal('fetch', vi.fn(async (_url: string, init?: RequestInit) => {
+      if (init?.method === 'PUT') return new Response(JSON.stringify({ commit: { sha: 'abc' } }), { status: 200 });
+      const accept = String((init?.headers as Record<string, string> | undefined)?.Accept ?? '');
+      if (accept.includes('raw')) return new Response('siteName: S\ntidy:\n  enabled: true\n', { status: 200 });
+      return new Response(JSON.stringify({ sha: 'old' }), { status: 200 });
+    }));
+    const admin = createCairnAdmin(tidyRuntime(), deps);
+    const event = actionEvent('/admin/settings', { form: { conventions: '{"fixes":true,"oxfordComma":"always"}' } });
+    await expectRedirect(admin.actions.saveSettings(event as never), '/admin/settings?saved=1');
+  });
+
+  it('saveSettings 404s when tidy is off, proving it reached settingsSave (the server half of the gate)', async () => {
+    // The default runtime has no tidy block, so the action 404s before any read.
+    const admin = createCairnAdmin(runtime(), deps);
+    const event = actionEvent('/admin/settings', { form: { conventions: '{"fixes":true}' } });
+    await expect(admin.actions.saveSettings(event as never)).rejects.toMatchObject({ status: 404 });
+  });
+
+  it('serves the settings view load: the layout plus the read-only developer facts', async () => {
+    new GithubDouble({ main: {} }).install();
+    const admin = createCairnAdmin(tidyRuntime(), deps);
+    const event = actionEvent('/admin/settings', { env: { ANTHROPIC_API_KEY: 'sk-test' } });
+    const data = (await admin.load({ ...event, setHeaders: () => {} } as never)) as {
+      view: string;
+      page: { enabled: boolean; tidyEnabled: boolean; keyConfigured: boolean; modelLabel: string };
+    };
+    expect(data.view).toBe('settings');
+    expect(data.page.enabled).toBe(true);
+    expect(data.page.keyConfigured).toBe(true);
+    expect(data.page.modelLabel).toBe('Claude Sonnet');
+  });
+});

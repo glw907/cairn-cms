@@ -77,6 +77,23 @@ function navData(): AdminData {
   };
 }
 
+function settingsData(): AdminData {
+  return {
+    view: 'settings',
+    layout: layout({ pathname: '/admin/settings' }),
+    page: {
+      enabled: true,
+      tidyEnabled: true,
+      keyConfigured: true,
+      model: 'claude-sonnet-4-6',
+      modelLabel: 'Claude Sonnet',
+      conventions: { fixes: true, enDashRanges: false, smartQuotes: false, brandCaps: false },
+      saved: false,
+      error: null,
+    },
+  };
+}
+
 function editData(): AdminData {
   return {
     view: 'edit',
@@ -236,6 +253,7 @@ describe('form-action contract', () => {
     ['edit', editData()],
     ['editors', editorsData()],
     ['nav', navData()],
+    ['settings', settingsData()],
   ];
 
   it.each(views)('the %s view posts only actions the dispatcher defines', async (_view, data) => {

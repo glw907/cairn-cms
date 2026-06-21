@@ -53,12 +53,14 @@ describe('parseAdminPath', () => {
     expect(parseAdminPath('/admin/media/anything', concepts)).toBeNull();
   });
 
-  it('reserves /admin/settings, even against a concept claiming the segment', () => {
-    expect(parseAdminPath('/admin/settings', concepts)).toBeNull();
-    // AdminLayout links the sidebar to /admin/settings, so a future concept named settings
-    // must never claim the URL.
+  it('treats settings as its own view, even against a concept claiming the segment', () => {
+    // settings is a first-class view like editors and nav (the tidy settings screen, Task 15), so it
+    // parses, and a deeper path 404s naturally (the two-segment branch never matches settings).
+    expect(parseAdminPath('/admin/settings', concepts)).toEqual({ view: 'settings' });
+    expect(parseAdminPath('/admin/settings/anything', concepts)).toBeNull();
+    // A future concept named settings must never claim the URL; the reserved segment wins.
     const withSettings = [...concepts, { ...posts, id: 'settings', label: 'Settings' }];
-    expect(parseAdminPath('/admin/settings', withSettings)).toBeNull();
+    expect(parseAdminPath('/admin/settings', withSettings)).toEqual({ view: 'settings' });
   });
 
   it('decodes each segment individually before matching', () => {

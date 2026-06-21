@@ -326,6 +326,32 @@ action.
 
 ---
 
+### `CairnTidySettings`
+
+```ts
+let { data }: { data: SettingsData };
+```
+
+The two-tier tidy settings screen. `data` is the `SettingsData` from the settings load: the
+read-only developer-tier facts (whether tidy is enabled, whether the API key is configured, and the
+model), the truthful gate flag, and the resolved editor-tier `conventions`. The editor tier (the
+per-convention check-and-tint toggles and the radiogroup variant choosers) renders only when tidy is
+enabled and the key is present; otherwise the screen shows the honest gate note with no disabled
+controls. Saving posts the named `?/saveSettings` action, which commits the conventions block to the
+same committed site-config YAML the nav editor writes.
+
+```svelte
+<script lang="ts">
+  import { CairnTidySettings } from '@glw907/cairn-cms/components';
+
+  let { data } = $props();
+</script>
+
+<CairnTidySettings {data} />
+```
+
+---
+
 ## Composed components
 
 These mount inside `EditPage` and its dialogs, so you don't wire them directly. They appear here

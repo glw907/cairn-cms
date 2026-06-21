@@ -15,6 +15,7 @@ import {
   type ListData,
   type EditData,
   type MediaLibraryData,
+  type SettingsData,
 } from './content-routes.js';
 import { createEditorRoutes } from './editors-routes.js';
 import { createNavRoutes, type NavLoadData } from './nav-routes.js';
@@ -55,7 +56,8 @@ export type AdminData =
   | { view: 'edit'; layout: LayoutData; page: EditData }
   | { view: 'editors'; layout: LayoutData; page: { editors: Editor[]; self: string } }
   | { view: 'nav'; layout: LayoutData; page: NavLoadData }
-  | { view: 'media'; layout: LayoutData; page: MediaLibraryData };
+  | { view: 'media'; layout: LayoutData; page: MediaLibraryData }
+  | { view: 'settings'; layout: LayoutData; page: SettingsData };
 
 export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {}) {
   // The runtime already composes the site name and the sender identity, so the magic-link
@@ -129,6 +131,11 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
         const [layout, page] = await Promise.all([content.layoutLoad(delegated), content.mediaLibraryLoad(delegated)]);
         return { view: 'media', layout, page };
       }
+      case 'settings': {
+        const delegated = contentEvent(event, {});
+        const [layout, page] = await Promise.all([content.layoutLoad(delegated), content.settingsLoad(delegated)]);
+        return { view: 'settings', layout, page };
+      }
     }
   }
 
@@ -148,9 +155,9 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
   }
 
   // The topbar posts publishAll from every authed admin page; login and confirm may not.
-  const authedViews = ['list', 'edit', 'editors', 'nav', 'media'] as const;
+  const authedViews = ['list', 'edit', 'editors', 'nav', 'media', 'settings'] as const;
   // An editor signs out from wherever they are, so logout accepts any parsed view.
-  const anyView = ['index', 'login', 'confirm', 'list', 'edit', 'editors', 'nav', 'media'] as const;
+  const anyView = ['index', 'login', 'confirm', 'list', 'edit', 'editors', 'nav', 'media', 'settings'] as const;
 
   /** The full admin action vocabulary, one named async function per action, so a site's
    *  catch-all route exports `admin.actions` directly. Each wrapper stays thin: parse,
@@ -166,6 +173,10 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
       if (!nav) throw error(404, 'Not found');
       return nav.navSave(contentEvent(event, {}));
     }),
+    // The tidy settings save (spec 2.8, Task 15): the editor commits the per-convention block to the
+    // committed YAML. Gated to the settings view, so it 404s elsewhere; the action itself 404s again
+    // when tidy is off, the server half of the truthful visibility gate.
+    saveSettings: viewAction(['settings'], (event) => content.settingsSave(contentEvent(event, {}))),
     upload: viewAction(['edit'], (event, view) => content.uploadAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     publish: viewAction(['edit'], (event, view) => content.publishAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     discard: viewAction(['edit'], (event, view) => content.discardAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),

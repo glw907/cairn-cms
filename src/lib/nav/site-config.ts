@@ -172,6 +172,70 @@ export function resolveTidyConventions(partial: Partial<TidyConventions> | undef
   };
 }
 
+// The allowed values for each multi-position style toggle, the single source the validator checks an
+// untrusted settings payload against. A value outside its list is rejected, so the committed YAML can
+// only ever carry a known variant the prompt builder understands.
+const OXFORD_COMMA_VALUES = ['always', 'complex-only', 'never'] as const;
+const NUMBER_STYLE_VALUES = ['under-ten', 'under-hundred', 'always-numerals'] as const;
+const MEASUREMENTS_VALUES = ['abbreviate', 'spell-out'] as const;
+const PERCENT_VALUES = ['sign', 'word'] as const;
+const EM_DASH_VALUES = ['spaced', 'closed'] as const;
+const ELLIPSIS_VALUES = ['single-char', 'three-dots'] as const;
+const TIME_FORMAT_VALUES = ['5 PM', '5pm', '5 p.m.'] as const;
+
+export class TidyConventionsError extends Error {
+  /** A malformed settings payload maps to the same diagnostic as a malformed config. */
+  readonly conditionId = 'config.site-config-invalid';
+
+  constructor(message: string) {
+    super(message);
+    this.name = 'TidyConventionsError';
+  }
+}
+
+/**
+ * Validate and normalize an untrusted conventions object (from the settings form) into a concrete
+ * TidyConventions. This input is committed to the repo, so every field is bounded to its known set:
+ * a boolean toggle must be a boolean, and a multi-position toggle must be one of its listed variants
+ * or absent (off). An unknown key is dropped rather than carried, so the committed block can never
+ * grow a junk key. Throws TidyConventionsError on a value outside its allowed set.
+ */
+export function validateTidyConventions(value: unknown): TidyConventions {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new TidyConventionsError('Tidy conventions must be an object');
+  }
+  const input = value as Record<string, unknown>;
+
+  function bool(key: string, fallback: boolean): boolean {
+    const v = input[key];
+    if (v === undefined) return fallback;
+    if (typeof v !== 'boolean') throw new TidyConventionsError(`${key} must be true or false`);
+    return v;
+  }
+  function variant<T extends string>(key: string, allowed: readonly T[]): T | undefined {
+    const v = input[key];
+    if (v === undefined || v === null || v === false) return undefined;
+    if (typeof v !== 'string' || !(allowed as readonly string[]).includes(v)) {
+      throw new TidyConventionsError(`${key} must be one of ${allowed.join(', ')}`);
+    }
+    return v as T;
+  }
+
+  return {
+    fixes: bool('fixes', true),
+    oxfordComma: variant('oxfordComma', OXFORD_COMMA_VALUES),
+    numberStyle: variant('numberStyle', NUMBER_STYLE_VALUES),
+    measurements: variant('measurements', MEASUREMENTS_VALUES),
+    percent: variant('percent', PERCENT_VALUES),
+    emDash: variant('emDash', EM_DASH_VALUES),
+    enDashRanges: bool('enDashRanges', false),
+    ellipsis: variant('ellipsis', ELLIPSIS_VALUES),
+    timeFormat: variant('timeFormat', TIME_FORMAT_VALUES),
+    smartQuotes: bool('smartQuotes', false),
+    brandCaps: bool('brandCaps', false),
+  };
+}
+
 /** The dialect string when a site sets none: US English, the only dictionary that ships today. */
 export const DEFAULT_DIALECT = 'en-US';
 
@@ -240,5 +304,29 @@ export function setMenu(raw: string, name: string, tree: NavNode[]): string {
     throw new SiteConfigError('Site config must be a mapping with a siteName');
   }
   doc.setIn(['menus', name], tree);
+  return doc.toString();
+}
+
+/**
+ * Write the editor-tier tidy conventions into the YAML site-config text and reserialize, preserving
+ * every other top-level key and the file's comments and key order (parseDocument round-trips both,
+ * the same machinery setMenu uses). Only the `tidy.conventions` block is touched: the developer-tier
+ * `tidy.enabled` and `tidy.model` are read-only in the screen, so this leaves them as they are and a
+ * save can never silently flip the deploy-time facts. A convention whose value is undefined (a
+ * collapsed multi-position toggle, off) is dropped, so the committed block carries only the on
+ * toggles, the same shape `resolveTidyConventions` fills the defaults back from on read.
+ */
+export function setTidy(raw: string, conventions: Partial<TidyConventions>): string {
+  const doc = parseDocument(raw);
+  if (doc.get('siteName') === undefined) {
+    throw new SiteConfigError('Site config must be a mapping with a siteName');
+  }
+  // Drop undefined-valued keys (a collapsed multi-position toggle) so the committed YAML carries only
+  // the enabled conventions; the resolver fills the rest back from defaults on read.
+  const block: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(conventions)) {
+    if (value !== undefined) block[key] = value;
+  }
+  doc.setIn(['tidy', 'conventions'], block);
   return doc.toString();
 }

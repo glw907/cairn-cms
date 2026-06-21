@@ -14,6 +14,7 @@ mount inside `AdminLayout`. No styling or wrapper elements of its own.
   import ManageEditors from './ManageEditors.svelte';
   import NavTree from './NavTree.svelte';
   import CairnMediaLibrary from './CairnMediaLibrary.svelte';
+  import CairnTidySettings from './CairnTidySettings.svelte';
   import type { AdminData } from '../sveltekit/cairn-admin.js';
   import type { ContentFormFailure } from '../sveltekit/content-routes.js';
   import type { ComponentRegistry } from '../render/registry.js';
@@ -69,6 +70,8 @@ mount inside `AdminLayout`. No styling or wrapper elements of its own.
       <NavTree data={data.page} />
     {:else if data.view === 'media'}
       <CairnMediaLibrary data={data.page} {form} />
+    {:else if data.view === 'settings'}
+      <CairnTidySettings data={data.page} />
     {/if}
   </AdminLayout>
 {/if}

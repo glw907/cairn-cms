@@ -16,13 +16,14 @@ export type AdminView =
   | { view: 'edit'; concept: ConceptDescriptor; id: string }
   | { view: 'editors' }
   | { view: 'nav' }
-  | { view: 'media' };
+  | { view: 'media' }
+  | { view: 'settings' };
 
 /**
  * Fixed first segments that never resolve as concepts. The engine only allows posts and pages
  * today, so no collision is possible, but the parser does not depend on that: a reserved
- * segment wins before concept lookup. `settings` has no view yet; AdminLayout already links
- * the sidebar to /admin/settings, so the URL is spoken for.
+ * segment wins before concept lookup. `settings`, `nav`, and `media` are decided as views below,
+ * so they are not in this no-view set.
  */
 const RESERVED_SEGMENTS = new Set(['login', 'auth', 'editors', 'nav', 'settings']);
 
@@ -62,6 +63,9 @@ export function parseAdminPath(
     // reserved-no-view set. /admin/media/<anything> 404s naturally (media is not a configured
     // concept), which is the correct shape.
     if (head === 'media') return { view: 'media' };
+    // settings is its own view, a peer of editors and nav. /admin/settings/<anything> 404s naturally
+    // (the two-segment branch never matches settings), which is the correct shape.
+    if (head === 'settings') return { view: 'settings' };
     if (RESERVED_SEGMENTS.has(head)) return null;
     const concept = findConcept(concepts, head);
     return concept ? { view: 'list', concept } : null;

@@ -10,14 +10,14 @@ import { deriveExcerpt } from '../content/excerpt.js';
 import { asString } from '../content/identity.js';
 import { isValidId, slugify, filenameFromId, composeDatedId, slugFromId, renameId } from '../content/ids.js';
 import { appCredentials, type GithubKeyEnv } from '../github/credentials.js';
-import { listMarkdown, readRaw, commitFiles, type FileChange } from '../github/repo.js';
+import { listMarkdown, readRaw, commitFile, commitFiles, type FileChange } from '../github/repo.js';
 import { branchHeadSha, createBranch, deleteBranch, listBranches } from '../github/branches.js';
 import { PENDING_PREFIX, pendingBranch, parsePendingBranch } from '../content/pending.js';
 import { cachedInstallationToken } from '../github/signing.js';
 import { emptyManifest, manifestEntryFromFile, parseManifest, serializeManifest, upsertEntry, removeEntry, inboundLinks, type Manifest, type LinkTarget, type InboundLink } from '../content/manifest.js';
 import { isConflict } from '../github/types.js';
 import { log } from '../log/index.js';
-import { dictionaryFileForDialect, DEFAULT_TIDY_MODEL, resolveTidyConventions } from '../nav/site-config.js';
+import { dictionaryFileForDialect, DEFAULT_TIDY_MODEL, resolveTidyConventions, parseSiteConfig, setTidy, validateTidyConventions, TidyConventionsError } from '../nav/site-config.js';
 import type { TidyConventions } from '../nav/site-config.js';
 import { buildTidyPrompt } from './tidy-prompt.js';
 // Server-only: the Anthropic SDK ships the API-key path and never reaches a browser bundle. It is
@@ -200,6 +200,43 @@ export interface MediaLibraryData {
   flashError: string | null;
 }
 
+/** The two-tier tidy settings load (spec 2.8, Task 15). The developer tier is read-only: `enabled`,
+ *  `keyConfigured`, and `model`/`modelLabel` are deploy-time facts the editor sees but cannot change.
+ *  The editor tier is the resolved `conventions` block, written back through the save. The visibility
+ *  gate is truthful: `enabled` is true only when `tidy.enabled` is set AND the API key is present, so
+ *  the screen renders the convention list only then and the honest gate note otherwise. The key is a
+ *  Worker secret, so `keyConfigured` is the presence of `ANTHROPIC_API_KEY` in the load's env, never
+ *  the key itself; nothing here returns or logs the secret. */
+export interface SettingsData {
+  /** The truthful gate: tidy is enabled AND the API key is present. The screen renders the editor
+   *  tier only when this is true, and the honest gate note (a labelled region, no disabled controls)
+   *  otherwise. */
+  enabled: boolean;
+  /** Whether `tidy.enabled` is set in the site config, independent of the key. The gate note's
+   *  checklist reads this to show which deploy-time step is still open. */
+  tidyEnabled: boolean;
+  /** Whether the API key secret is present in the Worker env. A presence flag, never the key. */
+  keyConfigured: boolean;
+  /** The model id (a developer-tier fact, read-only on the screen). */
+  model: string;
+  /** A plain-language label for the model id ("Claude Sonnet"), so the read-only fact is not a bare
+   *  jargon token. Falls back to the raw id for an unknown model. */
+  modelLabel: string;
+  /** The resolved editor-tier conventions: every field concrete, the screen's initial control state.
+   *  Present only when the gate is open; the gate state needs no conventions. */
+  conventions: TidyConventions;
+  /** The success flash a redirected save carries (`?saved=1`). */
+  saved: boolean;
+  /** A redirected save's validation or conflict error read from `?error=`. */
+  error: string | null;
+}
+
+/** A refused settings save: a conflict bounce or a malformed conventions payload. Just the one-line
+ *  summary; the save commits nothing on a refusal. */
+export interface SettingsSaveFailure {
+  error: string;
+}
+
 /** The structural event the content routes read; a real SvelteKit RequestEvent satisfies it. */
 export interface ContentEvent extends EventBase<GithubKeyEnv> {
   params: Record<string, string>;
@@ -271,6 +308,23 @@ export interface TidyFailure {
  *  platform timeout the action could not shape into a clean retry). 30s comfortably covers a proofread
  *  of the bounded input (see MAX_TIDY_CHARS) while leaving headroom under the platform limit. */
 const DEFAULT_TIDY_TIMEOUT_MS = 30_000;
+
+/** The fallback site-config path when no nav menu names one: the convention every scaffolded site
+ *  uses. The settings save edits the same committed YAML the nav editor does, so it resolves the path
+ *  from the configured nav menu first and falls back to this default. */
+const DEFAULT_SITE_CONFIG_PATH = 'src/lib/site.config.yaml';
+
+/** Plain-language labels for the known tidy models, so the read-only model fact reads as a name rather
+ *  than a bare id. An unknown id falls back to itself. */
+const TIDY_MODEL_LABELS: Record<string, string> = {
+  'claude-sonnet-4-6': 'Claude Sonnet',
+  'claude-haiku-4-5': 'Claude Haiku',
+};
+
+/** The display label for a tidy model id, falling back to the raw id for an unknown model. */
+function tidyModelLabel(model: string): string {
+  return TIDY_MODEL_LABELS[model] ?? model;
+}
 
 /** The input cap for a single tidy request: 24000 characters (~6k input tokens). A proofread runs at
  *  roughly input length, so this stays comfortably inside the 30s deadline; a longer entry refuses with
@@ -2338,6 +2392,97 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     return merged;
   }
 
+  /** The repo-relative site-config path the settings save reads and commits. It is the same committed
+   *  YAML the nav editor edits, so it comes from the configured nav menu first and falls back to the
+   *  scaffold default when no menu is configured. */
+  function siteConfigPath(): string {
+    return runtime.navMenu?.configPath ?? DEFAULT_SITE_CONFIG_PATH;
+  }
+
+  /** Read whether the Anthropic API key secret is present in the load's env. A presence flag for the
+   *  truthful visibility gate, never the key itself: the key is a Worker secret, so this only reports
+   *  that a non-empty `ANTHROPIC_API_KEY` exists and the value never leaves the server. */
+  function keyConfigured(event: ContentEvent): boolean {
+    const env = (event.platform?.env ?? {}) as Record<string, unknown>;
+    return typeof env.ANTHROPIC_API_KEY === 'string' && env.ANTHROPIC_API_KEY.length > 0;
+  }
+
+  /** Load the two-tier tidy settings (spec 2.8, Task 15). The developer tier (enabled, key, model) is
+   *  read-only; the editor tier is the resolved conventions block. The visibility gate is truthful: the
+   *  `enabled` flag is true only when `tidy.enabled` is set AND the key is present, so the screen renders
+   *  the convention list only then and the honest gate note otherwise. No secret is returned: only a
+   *  presence flag for the key. The conventions come straight from the runtime config (the same source
+   *  the tidy action's prompt reads), so the screen and the prompt can never diverge. */
+  function settingsLoad(event: ContentEvent): SettingsData {
+    requireSession(event);
+    const tidy = runtime.tidy;
+    const tidyEnabled = tidy?.enabled === true;
+    const keyPresent = keyConfigured(event);
+    const model = tidy?.model || DEFAULT_TIDY_MODEL;
+    return {
+      enabled: tidyEnabled && keyPresent,
+      tidyEnabled,
+      keyConfigured: keyPresent,
+      model,
+      modelLabel: tidyModelLabel(model),
+      conventions: resolveTidyConventions(tidy?.conventions),
+      saved: event.url.searchParams.get('saved') === '1',
+      error: event.url.searchParams.get('error'),
+    };
+  }
+
+  /** Save the editor-tier tidy conventions: validate the posted block, then read-modify-commit it into
+   *  the same committed YAML the nav editor writes, with the session editor as author. The transport is
+   *  the nav save's exactly: a form POST carrying the conventions JSON, the read-modify-commit through
+   *  `commitFile`, and a stale-SHA `isConflict` bounced back as a reload prompt. Only the conventions
+   *  block is written (setTidy leaves `tidy.enabled` and `tidy.model` untouched), so an editor's save can
+   *  never flip the developer-tier deploy facts. The save refuses before any commit when tidy is not
+   *  enabled, so the gate state's absent editor tier can never be saved past. */
+  async function settingsSave(event: ContentEvent): Promise<never> {
+    const editor = requireSession(event);
+    // The editor tier does not exist when tidy is off, so a save in that state is a 404 (no editable
+    // surface to commit), the server half of the truthful gate.
+    if (runtime.tidy?.enabled !== true) throw error(404, 'Tidy is not enabled for this site');
+
+    const form = await event.request.formData();
+    let conventions: TidyConventions;
+    try {
+      conventions = validateTidyConventions(JSON.parse(String(form.get('conventions') ?? '{}')));
+    } catch (err) {
+      const message = err instanceof TidyConventionsError ? err.message : 'Invalid tidy settings';
+      throw redirect(303, `/admin/settings?error=${encodeURIComponent(message)}`);
+    }
+
+    const path = siteConfigPath();
+    const token = await mintToken(event.platform?.env ?? {});
+    const raw = await readRaw(runtime.backend, path, token);
+    if (raw === null) throw error(404, 'Site config not found');
+    // Parse first so a malformed file fails before the write rather than committing onto a broken base.
+    parseSiteConfig(raw);
+
+    const commitFields = { concept: 'settings', id: 'tidy', editor: editor.email };
+    try {
+      await commitFile(
+        runtime.backend,
+        path,
+        setTidy(raw, conventions),
+        { message: 'Update tidy settings', author: { name: editor.displayName, email: editor.email } },
+        token,
+      );
+      log.info('commit.succeeded', commitFields);
+    } catch (err) {
+      if (isConflict(err)) {
+        log.warn('commit.failed', { ...commitFields, reason: 'conflict' });
+        const message = 'The site config changed since you opened it. Reload and reapply your edits.';
+        throw redirect(303, `/admin/settings?error=${encodeURIComponent(message)}`);
+      }
+      log.error('commit.failed', { ...commitFields, error: String(err) });
+      throw err;
+    }
+
+    throw redirect(303, '/admin/settings?saved=1');
+  }
+
   /** Add a word (or batch) to the git-committed personal dictionary (spec 1.6). The transport mirrors
    *  the media raw-body actions exactly: a `text/plain` POST, the CSRF token in `X-Cairn-CSRF` validated
    *  by validateCsrfHeader (CSRF first, then the session), and a small JSON body `{ word }` or
@@ -2517,7 +2662,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     return { corrected, model: message.model, usage: message.usage };
   }
 
-  return { layoutLoad, indexRedirect, listLoad, mediaLibraryLoad, createAction, editLoad, saveAction, publishAction, publishAllAction, discardAction, deleteAction, listDeleteAction, renameAction, uploadAction, mediaDeleteAction, mediaBulkDelete, mediaOrphanScan, mediaPurgeOrphans, mediaUpdateAction, mediaReplacePreview, mediaReplaceApply, mediaAltPreview, mediaAltApply, addDictionaryWord, tidyAction, mintToken };
+  return { layoutLoad, indexRedirect, listLoad, mediaLibraryLoad, settingsLoad, settingsSave, createAction, editLoad, saveAction, publishAction, publishAllAction, discardAction, deleteAction, listDeleteAction, renameAction, uploadAction, mediaDeleteAction, mediaBulkDelete, mediaOrphanScan, mediaPurgeOrphans, mediaUpdateAction, mediaReplacePreview, mediaReplaceApply, mediaAltPreview, mediaAltApply, addDictionaryWord, tidyAction, mintToken };
 }
 
 /** The cap, in characters, on the stored alt text. The human fields are display copy, not content,

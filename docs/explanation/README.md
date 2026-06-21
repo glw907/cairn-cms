@@ -8,3 +8,4 @@ links the [reference](../reference/README.md) for the exact API surface.
 - [Security model](./security-model.md): auth, the GitHub-App commit trust, render safety, and origin checks.
 - [Content model](./content-model.md): fixed concepts, URL identity, schema as the source of truth, and the content graph.
 - [Media storage](./media-storage.md): why media bytes live in R2 with a logical reference in git, content-hash identity, and on-demand transforms.
+- [The editor copy-edit](./editor-copyedit.md): why spellcheck stays local and markdown-aware, how tidy preserves voice with no house style, and why git is the durable record for both.

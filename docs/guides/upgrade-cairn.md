@@ -580,3 +580,28 @@ files, with a one-irreversible byte purge behind a typed-count confirm). Both re
 `main` and every open edit branch and refuse when usage cannot be verified. Consumers must: nothing.
 The surface is admin-side and additive, with no public surface change and no content-format change.
 The editor walkthrough is in [manage the media library](manage-the-media-library.md).
+
+## 0.60.0: the editor copy-edit, spellcheck and tidy, additive
+
+The editor gains a spellcheck that runs as you write and an opt-in tidy that proposes a
+voice-preserving light copy-edit you review before it lands. Spellcheck is on by default and runs
+locally, so no text leaves the browser. Tidy reads a draft once through the Anthropic API, computes
+the diff locally, and commits nothing on its own.
+
+Consumers must: nothing for an existing site. Both features are additive. Spellcheck replaces the
+browser's native spell checking with cairn's own (the editor now drops the native `spellcheck`,
+`autocorrect`, and `autocapitalize` attributes so a browser cannot rewrite a token), so an upgrading
+editor sees cairn's amber underline and its correction popover in place of the browser's right-click
+menu, with no config change. The dialect is declared once per site under `spellcheck.dialect` (default
+`en-us`), and an editor's personal additions commit to `src/content/.cairn/dictionary.txt`.
+
+Tidy is opt-in and gives a site nothing until a developer turns it on. To enable it, set
+`tidy.enabled: true` in the site config, add the `ANTHROPIC_API_KEY` Worker secret, and optionally
+pick a model (default `claude-sonnet-4-6`) and the `tidy.conventions` block. `cairn doctor` checks the
+key is configured once tidy is enabled. The developer setup is in
+[enable tidy](enable-tidy.md), and the editor walkthrough is in
+[write in the editor](write-in-the-editor.md).
+
+New dependencies are pulled in automatically with the version: `@codemirror/lint`,
+`@anthropic-ai/sdk`, and `spellchecker-wasm` with its bundled English dictionary asset (the spellcheck
+Worker and the word list ship from the packaged `dist`).

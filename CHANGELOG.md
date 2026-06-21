@@ -2,6 +2,53 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.60.0
+
+<!-- release-size: minor -->
+
+The editor learns to copy-edit. Two features land together on the markdown source: a spellcheck that
+runs as you write, and an opt-in tidy that reads a draft once with a language model and proposes a
+light copy-edit you review before any of it lands.
+
+Spellcheck is on by default. Misspelled words pick up a quiet amber underline, and the correction
+popover offers ranked suggestions, an add-to-dictionary action, and an ignore-for-this-session
+action, all keyboard-reachable. It runs locally on a Web Worker, so no text leaves the browser, and
+it reads the markdown structure: code, links, frontmatter, layout-block machinery, and `media:`
+tokens are never flagged. A second quiet layer catches the objective slips spellcheck misses: a
+doubled word, a double space inside a line, a stray run of punctuation. The dialect is declared once
+per site under `spellcheck.dialect` (default `en-us`), so a British site loads the British word list
+and "colour" reads as correct. The personal dictionary is a git-committed file at
+`src/content/.cairn/dictionary.txt`, so a word one editor adds is shared with the rest through the
+same commit pipeline the content uses.
+
+Tidy is opt-in and off until a developer enables it. When on, an editor runs it over the whole
+document or a selection, and cairn reads the draft once through the Anthropic API and computes the
+diff locally. The review is a step-in diff dialog: insertions show in green, deletions struck through
+in red, and the author's original stays in the buffer until they apply. Objective fixes come pre-kept;
+a judgment edit (a configured style normalization, a grammar reword) carries a review-this treatment
+and a plain-language reason, and it is not swept by Accept fixes until confirmed. The prompt is built
+from the site's own convention config and never harmonizes to the author's habits or guesses an
+undeclared style, so an author's voice is preserved. Output is validated as a proofread, not a
+restructure: a result that changes the heading structure, the frontmatter, a `media:` token, a code
+block, or more than a bounded fraction of the wording is discarded with an honest message and the
+document is left untouched. Conventions are edited in a two-tier settings screen and stored in the
+committed site config under `tidy.conventions`.
+
+New dependencies: `@codemirror/lint` (the surfacing layer for both spellcheck and the objective-error
+underlines), `@anthropic-ai/sdk` (the Worker-side tidy model call, guarded off the client), and
+`spellchecker-wasm` plus its bundled English dictionary asset (the spellcheck engine, delivered from
+the packaged `dist` so the Worker and the word list reach a consumer build).
+
+No consumer action is required for an existing site. Both features are additive. Spellcheck replaces
+the browser's native spell checking with cairn's own, so an upgrading editor sees the new amber
+underline and the in-editor correction popover in place of the browser's right-click menu, with no
+config change needed. Tidy gives a site nothing until a developer turns it on: set `tidy.enabled: true`
+in the site config, add the `ANTHROPIC_API_KEY` Worker secret, and optionally pick a model and
+conventions. `cairn doctor` checks that the key is configured once tidy is enabled. The editor
+walkthrough is in [write in the editor](docs/guides/write-in-the-editor.md), the developer setup is in
+[enable tidy and the editor copy-edit](docs/guides/enable-tidy.md), and the design rationale is in
+[the editor copy-edit](docs/explanation/editor-copyedit.md).
+
 ## 0.59.0
 
 <!-- release-size: minor -->

@@ -443,6 +443,48 @@ Recipes:
   type-to-confirm input). The error ink is the readable small-text counterpart to `--color-error`,
   which is tuned as a button fill and fails AA as small text; the locked contrast floors sit beside the
   token in `cairn-admin.css`.
+- **Tidy: the review-mode step-in diff (`TidyReview`).** The tidy copy-edit's review surface, a native
+  `<dialog class="modal">` opened with `showModal()`, so the focus trap, Escape, and inert background
+  come from the platform (the Dialog recipe). It opens only when tidy returns changes: a no-op shows a
+  quiet "Nothing to fix" and never opens an empty review, and a validation rejection shows the honest
+  message and opens nothing. While it is open the editor underneath is read-only, and the author's
+  original buffer text is never touched until Apply.
+  - **The diff run vocabulary.** Each change is one hunk in a unified-diff idiom: a deletion row gutter
+    `&minus;` over the struck original text, an insertion row gutter `+` over the proposed text, and one
+    unchanged context row above and below. Color rides a glyph, never hue alone: a deletion is
+    `--cairn-error-ink` (reserved exclusively for tidy deletions) struck through with `line-through`, and
+    an insertion is `--color-positive-ink` (the locked insertion-and-addition token, note it is
+    `--color-positive-ink`, NOT the nonexistent `--cairn-positive-ink`). The two tokens are a locked
+    pair, so a tidy deletion and a spellcheck underline (amber `--cairn-warning-ink`) are never the same
+    color.
+  - **The safety-ranked hunk treatment (decision 9).** Objective hunks (Spelling, Doubled word,
+    Whitespace, Punctuation) read quiet, open pre-kept, and are swept by Accept fixes. A judgment hunk
+    (a declared style normalization, a grammar reword) carries the review-this treatment: a
+    `--cairn-warning-ink` left edge (an inset shadow rail) and a faint warm wash on the head
+    (`color-mix` of the warning ink), opens undecided, and is NOT swept by Accept fixes until confirmed.
+    The category is inferred locally from the diff, never a model claim, and a normalization carries a
+    mandatory because-line computed from the convention config alone (a hunk with no computable rationale
+    is not offered). The same in-buffer decorations render through the `editor-tidy.ts` apply seam:
+    insertions as content-bearing mark decorations in `--color-positive-ink`, deletions as
+    strike-through over the original run in `--cairn-error-ink`.
+  - **The two live regions (the MediaPicker discipline).** One `role="status"` region carries the bulk
+    tally (kept / to review / skipping), updated only on a bulk action and debounced; a second
+    `aria-live="polite"` region narrates the single last per-hunk action. Keyboard step-through is
+    `j`/`k` (or `n`/`p`) to move and `a`/`r` to accept or reject the focused hunk.
+  - **Apply is one batched transaction.** Per-hunk Accept/Reject and the bulk Accept fixes / Reject all
+    only set disposition in the component's own state; nothing writes until Apply, which collects the
+    kept indexes into one `acceptMany`, a single undoable step (the session "Undo tidy"). An undecided
+    judgment hunk is never in the kept set. Cancel closes and writes nothing.
+- **The tidy settings screen reuses the shipped primitives, no new control.** The two-tier convention
+  screen (`CairnTidySettings`) renders each on/off convention as the shipped check-and-tint
+  `aria-pressed` button (the Segmented control and check-and-tint recipe), and each variant chooser as
+  the shipped pick-one (`role="radiogroup"` over `role="radio"` with `aria-checked`, roving tabindex,
+  the check glyph as the non-color cue, the same handler the Media Library triage uses). It adds no
+  DaisyUI `.toggle` and no new primitive. The truthful visibility gate is the load-bearing rule: when
+  tidy is not enabled (or the key is absent), the editor-tier convention section is ABSENT, not shown
+  disabled, replaced by a `role="region"` gate note with a read-only "what your developer needs to do"
+  checklist; no convention control sits in the tab order. The developer tier (the master switch, the
+  key presence, the model) is read-only, and the API key value never leaves the server.
 
 ## Chrome and spacing
 

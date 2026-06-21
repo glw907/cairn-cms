@@ -82,14 +82,59 @@ Typewriter scrolling keeps the line you are typing near the middle of the screen
 typewriter holds the paper still and moves the carriage. Your eyes stay in one place while the
 page scrolls underneath.
 
-## Help, word count, and spelling
+## Help and word count
 
 The bottom edge of the editor shows a running word count, and the Markdown help link beside it
 opens a one-screen cheat sheet of the formatting marks, handy when you would rather type `**bold**`
 than reach for the mouse.
 
-Spell checking is your browser's own. Misspelled words get the familiar squiggle, and a right-click
-offers corrections, the same as anywhere else you type.
+## Spell checking
+
+The editor checks your spelling as you write, and a misspelled word picks up a quiet amber underline.
+This is cairn's own checker, not your browser's, so it understands your page. It leaves your layout
+blocks, links, code, and the settings at the top of the page alone, and only marks the words a reader
+will actually see.
+
+Click an underlined word and a small menu opens with the corrections. Pick one and it replaces the
+word. The menu also offers two more choices:
+
+- Add to dictionary, for a word that is spelled right but the checker does not know, such as a name
+  or a place. The word stops being marked everywhere on the page, and cairn remembers it for next
+  time. Your additions are shared with your fellow editors, so a name one person adds is known to all.
+- Ignore, for a one-off you want left alone just for now. The word stops being marked until you reload
+  the page, and nothing is remembered.
+
+The same checker also catches a few slips that are not misspellings: a word typed twice in a row, a
+double space inside a line, a stray run of punctuation. They underline the same way, and clicking
+offers the fix.
+
+A toggle on the bottom edge of the editor turns spell checking off if you would rather write without
+it. The underlines vanish, and the editor remembers your choice for next time.
+
+## Tidy
+
+If your site has tidy turned on, a Tidy button sits in the editor and offers a light copy-edit of
+your writing. It fixes the small things (a typo, a doubled word, a spacing slip) and applies any
+writing conventions your site has set, such as the Oxford comma. It does not rewrite your sentences
+or change your voice. If your site has not turned tidy on, the button is not there, and your developer
+can enable it.
+
+Run Tidy over the whole page, or select a passage first to tidy just that part. cairn reads your draft
+and opens a review window showing every change it suggests: new words in green, removed words struck
+through in red. Nothing changes in your page yet. The plain fixes come pre-checked. A judgment call
+(a style change, a reworded phrase) is set aside for you to look at, with a short note saying why it
+is suggested.
+
+Go through the list with the keyboard (`j` and `k` to move, `a` and `r` to accept or reject the
+current one) or with the buttons. Accept fixes takes all the plain fixes in one go and leaves the
+judgment calls for you. When you are happy, Apply writes your accepted changes into the page as a
+single step, so one Undo takes them all back if you change your mind. Cancel closes the window and
+changes nothing.
+
+Sometimes tidy comes back with nothing to fix, and it says so without opening the review. Now and
+then it returns a result that changed more than the wording, and cairn discards it and tells you, so
+your text is never quietly rewritten. A tidy never publishes on its own; it only proposes edits to
+the page you are working on, and you still Save and Publish the usual way.
 
 ## Saving your work
 

@@ -94,6 +94,17 @@ logs `media.orphans_purged` with `purged` set to how many stored byte objects it
 one media record that names an irreversible action, since the purged bytes have no git history. The
 `hash` is the asset's content hash, which is its stable identity across these records.
 
+The `dictionary.*` and `tidy.*` families cover the editor copy-edit. A personal-dictionary add that
+commits logs `dictionary.added` with the added `words`, plus `retried: true` when the commit landed on
+the post-conflict retry. A second commit conflict gives up and logs `dictionary.add_conflict`; the
+client keeps the words pending and re-attempts on the next save, so the word is never lost. Tidy logs
+exactly one record per call. A call that returns a corrected document logs `tidy.done` with the `model`
+and the token `usage`. A deadline overrun, a client abort, or a model error logs `tidy.error` (with
+`aborted` set when the deadline or the client aborted the request), mapped to a retryable fail(502).
+When the model refuses, the record is `tidy.refused`, mapped to fail(422) with the author's text
+untouched, and an empty model result logs `tidy.empty`, mapped to fail(502). None of these records carries the document content
+or the API key; they carry the editor, the model, and the outcome.
+
 The `email` on `auth.link.requested` is the raw submitted address, logged before the allowlist
 check, so it is unvalidated request input. cairn lowercases it, trims it, and caps the logged value
 at 320 characters (the RFC 5321 maximum). Every other event that carries an `email` fires only for an

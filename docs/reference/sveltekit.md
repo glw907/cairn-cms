@@ -320,6 +320,35 @@ deletes the pending branch, returning to the edit page for a published entry (`?
 to the list for an entry that never published. `renameAction` refuses with a 409 while a pending
 branch exists, and a delete cascades to the pending branch after its own commit lands.
 
+The editor copy-edit adds two more actions, both fetch-style on the upload transport. `addDictionaryWord`
+commits an editor's personal-dictionary additions, and `tidyAction` runs the language-model tidy.
+Neither is a form submit; both follow the [admin fetch action](#writing-an-admin-fetch-action) contract
+below. Their request shapes and `fail` payloads:
+
+- **`addDictionaryWord`.** A `text/plain` POST carrying JSON `{ word }` or `{ words: string[] }`, the
+  CSRF token in `X-Cairn-CSRF`. It validates CSRF first, then the session, validates each word against
+  the one-line dictionary grammar (no whitespace or control bytes, length-bounded, batch-capped),
+  reads `src/content/.cairn/dictionary.txt` from the default branch, inserts the new words in sorted
+  order if absent (idempotent), and commits through the GitHub App pipeline. The commit is SHA-guarded:
+  a stale-SHA conflict re-reads at the new head, re-merges the same additions, and retries once. Success
+  returns `DictionaryAddResult` (`{ words }`, the merged canonical list, so the client drops the
+  now-committed words from its pending set). A refusal returns `DictionaryAddFailure` (`{ error }`):
+  `fail(403)` on a failed CSRF check, `fail(400)` on a body with no valid word, `fail(409)` when a
+  second commit conflict gives up (the client keeps the words pending and re-attempts on the next save,
+  so a word is never silently dropped).
+- **`tidyAction`.** A `text/plain` POST carrying JSON `{ text, scope }`, the CSRF token in
+  `X-Cairn-CSRF`. It validates CSRF first, then the session, refuses before any model call if tidy is
+  disabled or the key is missing, bounds the body, and only then builds the prompt and calls the model
+  under its own deadline. It commits nothing. Success returns `TidyResult`
+  (`{ corrected, model, usage }`, the corrected markdown plus the model id and token counts; the diff is
+  computed on the client). A refusal returns `TidyFailure` (`{ error }`): `fail(403)` on a failed CSRF
+  check, `fail(503)` when tidy is disabled or the API key is missing, `fail(413)` for an over-long body
+  (tidy a selection instead), `fail(502)` for a deadline overrun, a client abort, a model error, or an
+  empty result (all retryable), `fail(422)` for a model refusal, `fail(400)` for a malformed body. The
+  `TidyResult`, `TidyFailure`, `DictionaryAddResult`, and `DictionaryAddFailure` shapes are
+  admin-internal: the editor host reads them by `type`/`status` off the deserialized envelope, so they
+  are not exported on the `sveltekit` subpath and carry no Types row.
+
 Every action failure carries `error: string` as its one-line summary, alongside the payload that
 names what refused: a blocked save or publish returns `SaveFailure` (the broken links and the
 edited body), a refused delete returns `DeleteRefusal` (the inbound linkers and the entry id),

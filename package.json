@@ -58,6 +58,12 @@
       "svelte": "./dist/components/index.js",
       "default": "./dist/components/index.js"
     },
+    "./components/spellcheck-worker": {
+      "types": "./dist/components/spellcheck-worker.d.ts",
+      "default": "./dist/components/spellcheck-worker.js"
+    },
+    "./components/spellcheck-assets/spellchecker-wasm.wasm": "./dist/components/spellcheck-assets/spellchecker-wasm.wasm",
+    "./components/spellcheck-assets/dictionary-en-us.txt": "./dist/components/spellcheck-assets/dictionary-en-us.txt",
     "./render": {
       "types": "./dist/render/authoring.d.ts",
       "svelte": "./dist/render/authoring.js",
@@ -133,6 +139,7 @@
     "remark-parse": "^11.0.0",
     "remark-rehype": "^11.1.2",
     "remark-stringify": "^11.0.0",
+    "spellchecker-wasm": "^0.3.3",
     "unified": "^11.0.5",
     "unist-util-visit": "^5.1.0",
     "yaml": "^2"

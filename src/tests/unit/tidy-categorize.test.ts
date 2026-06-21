@@ -70,6 +70,73 @@ describe('categorize: judgment categories', () => {
 		expect(cat.kind).toBe('normalization');
 		if (cat.kind === 'normalization') expect(cat.convention).toBe('percent');
 	});
+
+	it('a spelled-number to numeral swap with numberStyle set is the numberStyle normalization', () => {
+		// The diff isolates the single number token; the swap is a config style choice, not a misspelling,
+		// so it must be a judgment normalization that defaults to undecided and is never swept.
+		const conv = resolveTidyConventions({ numberStyle: 'under-ten' });
+		const cat = only('we met fifteen people', 'we met 15 people', conv);
+		expect(cat.kind).toBe('normalization');
+		if (cat.kind === 'normalization') expect(cat.convention).toBe('numberStyle');
+		expect(isObjective(cat)).toBe(false);
+		expect(categoryLabel(cat)).toBe('Number style');
+	});
+
+	it('a numeral to spelled-number swap with numberStyle set is the numberStyle normalization', () => {
+		const conv = resolveTidyConventions({ numberStyle: 'under-ten' });
+		const cat = only('we met 15 people', 'we met fifteen people', conv);
+		expect(cat.kind).toBe('normalization');
+		if (cat.kind === 'normalization') expect(cat.convention).toBe('numberStyle');
+		expect(isObjective(cat)).toBe(false);
+	});
+
+	it('a unit abbreviation swap with measurements set is the measurements normalization', () => {
+		// "centimeters" to "cm" changes only the notation, the number untouched; a config style choice that
+		// must be held as a judgment normalization, not reported objective like a spelling fix.
+		const conv = resolveTidyConventions({ measurements: 'abbreviate' });
+		const cat = only('the trail is 15 centimeters wide', 'the trail is 15 cm wide', conv);
+		expect(cat.kind).toBe('normalization');
+		if (cat.kind === 'normalization') expect(cat.convention).toBe('measurements');
+		expect(isObjective(cat)).toBe(false);
+		expect(categoryLabel(cat)).toBe('Measurements');
+	});
+
+	it('a unit spell-out swap with measurements set is the measurements normalization', () => {
+		const conv = resolveTidyConventions({ measurements: 'spell-out' });
+		const cat = only('the trail is 15 cm wide', 'the trail is 15 centimeters wide', conv);
+		expect(cat.kind).toBe('normalization');
+		if (cat.kind === 'normalization') expect(cat.convention).toBe('measurements');
+		expect(isObjective(cat)).toBe(false);
+	});
+
+	it('a time reshape with timeFormat set is the timeFormat normalization', () => {
+		// "5pm" to "5 PM" reshapes one clock token; a config style choice held as a judgment normalization.
+		const conv = resolveTidyConventions({ timeFormat: '5 PM' });
+		const cat = only('we left at 5pm sharp', 'we left at 5 PM sharp', conv);
+		expect(cat.kind).toBe('normalization');
+		if (cat.kind === 'normalization') expect(cat.convention).toBe('timeFormat');
+		expect(isObjective(cat)).toBe(false);
+		expect(categoryLabel(cat)).toBe('Time format');
+	});
+});
+
+describe('categorize: a config-style swap is never a normalization when its setting is off', () => {
+	it('a spelled-number to numeral swap with numberStyle UNDEFINED is NOT a normalization', () => {
+		// The same number swap, but no authorizing setting. It must not be claimed as a numberStyle
+		// normalization; it falls through by shape, never to a normalization it cannot name.
+		const cat = only('we met fifteen people', 'we met 15 people', PLAIN);
+		expect(cat.kind).not.toBe('normalization');
+	});
+
+	it('a unit abbreviation swap with measurements UNDEFINED is NOT a normalization', () => {
+		const cat = only('the trail is 15 centimeters wide', 'the trail is 15 cm wide', PLAIN);
+		expect(cat.kind).not.toBe('normalization');
+	});
+
+	it('a time reshape with timeFormat UNDEFINED is NOT a normalization', () => {
+		const cat = only('we left at 5pm sharp', 'we left at 5 PM sharp', PLAIN);
+		expect(cat.kind).not.toBe('normalization');
+	});
 });
 
 describe('categorize: a normalization shape is never offered when the setting is off', () => {

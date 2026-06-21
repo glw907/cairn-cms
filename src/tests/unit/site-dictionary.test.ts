@@ -100,4 +100,16 @@ describe('isValidDictionaryWord', () => {
     expect(isValidDictionaryWord('a'.repeat(65))).toBe(false);
     expect(isValidDictionaryWord('a'.repeat(64))).toBe(true);
   });
+
+  it('rejects a word that starts with a comment marker', () => {
+    // A leading "#" would serialize to a line that parseDictionary re-reads as a comment, so the word
+    // would silently vanish on the next read. Reject it here so the parse/serialize round-trip stays
+    // total and a committed word can never be dropped.
+    expect(isValidDictionaryWord('#colour')).toBe(false);
+    expect(isValidDictionaryWord('#')).toBe(false);
+    // A "#" anywhere other than the start is fine: parseDictionary only drops a leading marker.
+    expect(isValidDictionaryWord('C#')).toBe(true);
+    // A rejected word can never be written: the merge backstop drops it too.
+    expect(mergeDictionaryWords([], ['#colour'])).toEqual([]);
+  });
 });

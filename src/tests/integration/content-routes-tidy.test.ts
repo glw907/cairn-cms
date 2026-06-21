@@ -152,21 +152,27 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
   });
 
   it('maps a deadline overrun (the abort) to the retryable fail(502)', async () => {
-    // Honor the abort signal the action passes: reject with an AbortError when it fires, the way the
-    // SDK surfaces a request timeout. The action's own deadline is what aborts here.
-    const create = vi.fn((params: { signal?: AbortSignal }) =>
-      new Promise((_resolve, reject) => {
-        params.signal?.addEventListener('abort', () => {
+    // The SDK signature is create(body, options): the abort signal rides the SECOND argument
+    // (RequestOptions), never the body. Honor it the way the SDK surfaces a request timeout: reject
+    // with an AbortError when it fires. The action's own deadline is what aborts here.
+    let sawSignal: AbortSignal | undefined;
+    const create = vi.fn((_body: unknown, options?: { signal?: AbortSignal }) => {
+      sawSignal = options?.signal;
+      return new Promise((_resolve, reject) => {
+        options?.signal?.addEventListener('abort', () => {
           const err = new Error('Request was aborted.');
           err.name = 'AbortError';
           reject(err);
         });
-      }),
-    ) as unknown as TidyClient['messages']['create'];
+      });
+    }) as unknown as TidyClient['messages']['create'];
     // A short deadline so the test does not wait the real 30s.
     const routes = createContentRoutes(runtime(), { anthropic: fakeAnthropic(create), tidyTimeoutMs: 20 });
     const res = (await routes.tidyAction(tidyEvent())) as TidyResult;
 
+    // The action reached the call with a real signal in the options argument, and the deadline mapped
+    // the abort to the retryable failure rather than hanging.
+    expect(sawSignal).toBeInstanceOf(AbortSignal);
     expect(res.status).toBe(502);
   });
 

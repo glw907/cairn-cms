@@ -107,6 +107,20 @@
   --cairn-error-tint: oklch(96% 0.03 25);
   --cairn-error-border: oklch(85% 0.06 25);
 
+  /* The tidy review diff tints (TidyReview). A deletion row and an insertion row each carry a faint
+     full-row tint, with a stronger run-highlight on the changed span; the changed-run TEXT is drawn in
+     --cairn-error-ink (deletion) or --color-positive-ink (insertion). Those inks were locked only
+     against base-100 and the fixed error/positive tints, never against the run-highlight stacked over
+     the row tint, so a self-mixed highlight pushed the text below 4.5:1 (WCAG 1.4.3). These are explicit
+     locked tones, not an ink-mix, so the stacked background is fixed and measurable. Locked (light):
+     deletion ink on the run tint measures 5.08:1 and on the row tint 5.81:1; insertion ink on the run
+     tint 4.98:1 and on the row tint 5.56:1. Do not lighten an ink or darken a tint without re-checking.
+     The +/- gutter glyph keeps the non-color cue, so hue is never the only signal. */
+  --cairn-tidy-del-row: oklch(96% 0.025 25);
+  --cairn-tidy-del-run: oklch(92% 0.05 25);
+  --cairn-tidy-add-row: oklch(96% 0.03 150);
+  --cairn-tidy-add-run: oklch(92% 0.06 150);
+
   /* Accessible muted text tones: >= 4.5:1 contrast on base-100/base-200. */
   --color-muted: oklch(48% 0.01 75);
   --color-subtle: oklch(42% 0.01 75);
@@ -219,6 +233,17 @@
   --cairn-error-ink: oklch(78% 0.15 25);
   --cairn-error-tint: oklch(28% 0.06 25);
   --cairn-error-border: oklch(40% 0.09 25);
+
+  /* The tidy review diff tints on dark, the counterpart to the light root's. On dark the inks are light,
+     so a self-mixed highlight lightens the row toward the ink and collapses contrast (the run text
+     measured ~2.7:1, well under the 4.5:1 floor); these explicit low-lightness tones keep the row dark
+     and the light ink readable. Locked (dark): deletion ink on the run tint measures 5.89:1 and on the
+     row tint 7.12:1; insertion ink on the run tint 6.48:1 and on the row tint 8.01:1. Do not darken an
+     ink or lighten a tint without re-checking. */
+  --cairn-tidy-del-row: oklch(26% 0.05 25);
+  --cairn-tidy-del-run: oklch(32% 0.07 25);
+  --cairn-tidy-add-row: oklch(26% 0.045 150);
+  --cairn-tidy-add-run: oklch(32% 0.06 150);
 
   /* Accessible muted text tones on the dark bases. */
   --color-muted: oklch(72% 0.01 75);

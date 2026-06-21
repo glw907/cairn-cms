@@ -2355,5 +2355,81 @@ describe('EditPage', () => {
       cancel?.click();
       vi.unstubAllGlobals();
     });
+
+    // Set a native DOM selection over the n-th occurrence of `word` in the editor; CodeMirror's DOM
+    // observer reads the selectionchange and syncs it into its own state, which the range seam reports.
+    function selectOccurrence(container: Element, word: string, occurrence: number) {
+      const content = container.querySelector<HTMLElement>('.cm-content')!;
+      const walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT);
+      let seen = 0;
+      let node: Text | null = null;
+      let start = -1;
+      while (walker.nextNode()) {
+        const text = walker.currentNode as Text;
+        let idx = (text.data ?? '').indexOf(word);
+        while (idx >= 0) {
+          seen += 1;
+          if (seen === occurrence) {
+            node = text;
+            start = idx;
+            break;
+          }
+          idx = text.data.indexOf(word, idx + word.length);
+        }
+        if (node) break;
+      }
+      if (!node || start < 0) throw new Error(`occurrence ${occurrence} of ${word} not found`);
+      const selection = window.getSelection()!;
+      const range = document.createRange();
+      range.setStart(node, start);
+      range.setEnd(node, start + word.length);
+      content.focus();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      document.dispatchEvent(new Event('selectionchange'));
+    }
+
+    it('maps a selection tidy onto the selected occurrence, not an identical earlier one', async () => {
+      // "colour" repeats; the author selects the SECOND one and tidies it to "color". The corrections
+      // must splice over the actually-selected occurrence (the later offset), never the first match.
+      const body = 'I like colour. I also like colour very much.';
+      stubTidyFetch('color');
+      const screen = render(EditPage, tidyProps({ body }) as never);
+      await expect.poll(() => screen.container.querySelector('.cm-content'), { timeout: 20000 }).not.toBeNull();
+      // CodeMirror renders "colour" verbatim (no syntax markers), so the text node carries both copies.
+      await expect.poll(() => screen.container.querySelector('.cm-content')?.textContent ?? '').toContain('colour');
+      selectOccurrence(screen.container, 'colour', 2);
+      await expect.poll(() => tidyButton(screen)).toBeTruthy();
+      tidyButton(screen)!.click();
+      await expect.poll(() => document.querySelector('[data-testid="tidy-review"]'), { timeout: 8000 }).not.toBeNull();
+      // Apply the review's one change in one batched transaction.
+      const apply = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-testid="tidy-review"] button')).find(
+        (b) => (b.textContent ?? '').trim().startsWith('Apply'),
+      );
+      apply?.click();
+      // Only the SECOND "colour" became "color"; the first is untouched. The wrong-offset bug spliced
+      // over the first, producing "I like color. I also like colour very much."
+      await expect
+        .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value)
+        .toBe('I like colour. I also like color very much.');
+      vi.unstubAllGlobals();
+    });
+
+    it('opens the no-op status dialog as a true modal (top layer, focus trap)', async () => {
+      // A status dialog rendered without showModal() gets no focus trap, no Escape, and leaves the
+      // background interactive. Promoting it to the top layer makes it match :modal, the platform cue
+      // that the focus trap and Escape are live.
+      const body = 'The body reads clean.';
+      stubTidyFetch(body);
+      const screen = render(EditPage, tidyProps({ body }) as never);
+      await expect.poll(() => screen.container.querySelector('.cm-content'), { timeout: 20000 }).not.toBeNull();
+      await expect.poll(() => tidyButton(screen)).toBeTruthy();
+      tidyButton(screen)!.click();
+      const noop = () => document.querySelector<HTMLDialogElement>('[data-testid="tidy-noop"]');
+      await expect.poll(noop, { timeout: 8000 }).not.toBeNull();
+      // showModal() puts the dialog in the top layer; it matches :modal only then.
+      await expect.poll(() => noop()!.matches(':modal')).toBe(true);
+      vi.unstubAllGlobals();
+    });
   });
 });

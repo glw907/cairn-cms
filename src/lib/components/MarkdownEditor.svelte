@@ -58,6 +58,10 @@ through the adapter's render. Swapping the editor stays a one-file change.
     registerImagePlaceholders?: (api: import('./editor-placeholder.js').ImagePlaceholderApi) => void;
     /** Receives a `() => string` returning the selected text; the web link dialog reads it. */
     registerGetSelection?: (get: () => string) => void;
+    /** Receives a `() => { from, to } | null` returning the selection's document offsets, or null when
+     *  the selection is empty (a bare caret). The tidy host reads it so a selection tidy maps onto the
+     *  exact selected span, never an identical-looking passage earlier in the document. */
+    registerGetSelectionRange?: (get: () => { from: number; to: number } | null) => void;
     /** Receives the tidy apply api (spec 2.5): the review surface drives the in-buffer decorations and
      *  the accept/reject state machine through it. The author's original stays in the buffer until an
      *  accept writes; a reject or reject-all leaves it byte-identical. */
@@ -135,6 +139,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
     registerFocusEditor,
     registerImagePlaceholders,
     registerGetSelection,
+    registerGetSelectionRange,
     registerTidy,
     registerUndo,
     registerFormat,
@@ -736,6 +741,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
     registerFocusEditor?.(focusEditor);
     registerImagePlaceholders?.(placeholderMod.imagePlaceholderApi(view));
     registerGetSelection?.(selectedText);
+    registerGetSelectionRange?.(selectedRange);
     registerTidy?.(tidyMod.tidyApi(view));
     registerUndo?.(() => {
       if (view) commandsMod.undo(view);
@@ -943,6 +949,14 @@ through the adapter's render. Swapping the editor stays a one-file change.
     if (!view) return '';
     const { from, to } = view.state.selection.main;
     return view.state.sliceDoc(from, to);
+  }
+
+  // The selection's document offsets, for the tidy host to scope a selection tidy to the exact span.
+  // Null when the selection is empty (a bare caret), which the host reads as document scope.
+  function selectedRange(): { from: number; to: number } | null {
+    if (!view) return null;
+    const { from, to } = view.state.selection.main;
+    return from === to ? null : { from, to };
   }
 
   // The caret's viewport coordinates, for the insert popover to anchor itself to the cursor. Null

@@ -61,6 +61,66 @@ function tokens(text: string): string[] {
 	return text.match(TOKEN) ?? [];
 }
 
+// The spelled-out number words the numberStyle convention recognizes against a numeral, the conservative
+// clear cases only. A swap is claimed as a numberStyle normalization only when one side is one of these
+// words and the other side is a plain integer numeral; a compound spelled number ("twenty-five") or any
+// word outside this set is left to the shape rules, never falsely claimed.
+const NUMBER_WORDS = new Set([
+	'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
+	'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen',
+	'nineteen', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety',
+	'hundred', 'thousand', 'million', 'billion',
+]);
+
+// The unit notation pairs the measurements convention recognizes: each spelled-out unit and its
+// abbreviation, in both singular and plural where the word inflects. A swap is claimed as a measurements
+// normalization only when one side is a known abbreviation and the other its spelled-out form, the number
+// untouched (the diff isolates the unit token). The list is deliberately a curated common set, so a unit
+// outside it is left to the shape rules rather than guessed at.
+const UNIT_FORMS: Array<{ abbr: string; words: string[] }> = [
+	{ abbr: 'cm', words: ['centimeter', 'centimeters', 'centimetre', 'centimetres'] },
+	{ abbr: 'mm', words: ['millimeter', 'millimeters', 'millimetre', 'millimetres'] },
+	{ abbr: 'm', words: ['meter', 'meters', 'metre', 'metres'] },
+	{ abbr: 'km', words: ['kilometer', 'kilometers', 'kilometre', 'kilometres'] },
+	{ abbr: 'in', words: ['inch', 'inches'] },
+	{ abbr: 'ft', words: ['foot', 'feet'] },
+	{ abbr: 'yd', words: ['yard', 'yards'] },
+	{ abbr: 'mi', words: ['mile', 'miles'] },
+	{ abbr: 'g', words: ['gram', 'grams', 'gramme', 'grammes'] },
+	{ abbr: 'kg', words: ['kilogram', 'kilograms', 'kilogramme', 'kilogrammes'] },
+	{ abbr: 'mg', words: ['milligram', 'milligrams'] },
+	{ abbr: 'lb', words: ['pound', 'pounds'] },
+	{ abbr: 'oz', words: ['ounce', 'ounces'] },
+	{ abbr: 'l', words: ['liter', 'liters', 'litre', 'litres'] },
+	{ abbr: 'ml', words: ['milliliter', 'milliliters', 'millilitre', 'millilitres'] },
+];
+
+// True when `a` and `b` are the two notations of one measurement unit (one the abbreviation, the other a
+// spelled-out form). Case-insensitive on the word side; the abbreviation is compared exactly so a stray
+// word like "in" the preposition is not mistaken for the inch abbreviation unless the other side is its
+// spelled-out unit. Order-independent: either side may be the abbreviation.
+function isUnitNotationPair(a: string, b: string): boolean {
+	for (const u of UNIT_FORMS) {
+		const aAbbr = a === u.abbr;
+		const bAbbr = b === u.abbr;
+		const aWord = u.words.includes(a.toLowerCase());
+		const bWord = u.words.includes(b.toLowerCase());
+		if ((aAbbr && bWord) || (bAbbr && aWord)) return true;
+	}
+	return false;
+}
+
+// The clock-time signature for a token: its digits and meridiem reduced to a canonical key, or null when
+// the token does not read as a time. Whitespace and the periods in "p.m." are dropped and the letters are
+// lowercased, so "5pm", "5 PM", and "5 p.m." all reduce to "5pm" and a reshape between any two of them is
+// recognized as the same time in a different format.
+function timeKey(token: string): string | null {
+	const compact = token.replace(/[\s.]/g, '').toLowerCase();
+	const m = /^(\d{1,2})(:\d{2})?(am|pm)$/.exec(compact);
+	if (!m) return null;
+	return `${m[1]}${m[2] ?? ''}${m[3]}`;
+}
+
 function words(text: string): string[] {
 	return tokens(text).filter((t) => /[A-Za-z0-9_]/.test(t));
 }
@@ -239,6 +299,37 @@ function matchNormalization(
 		removed.replace(/['"]/g, '') === added.replace(/[‘’“”]/g, '')
 	) {
 		return 'smartQuotes';
+	}
+
+	// Number style: a spelled-out number word swapped for a plain integer numeral, or back. The diff
+	// isolates the single number token, so the signature is one trimmed side a known number word and the
+	// other a digit run. Only the clear single-word cases are claimed; a compound spelled number is left to
+	// the shape rules. The always-numeral exception sets (ages, dates, measurements, percentages) are the
+	// model's job in the prompt; this categorizer only labels the swap that landed.
+	if (c.numberStyle !== undefined) {
+		const r = removed.trim().toLowerCase();
+		const a = added.trim().toLowerCase();
+		const wordToNumeral = NUMBER_WORDS.has(r) && /^\d+$/.test(a);
+		const numeralToWord = /^\d+$/.test(r) && NUMBER_WORDS.has(a);
+		if (wordToNumeral || numeralToWord) return 'numberStyle';
+	}
+
+	// Measurements: a unit abbreviation swapped for its spelled-out form, or back, the number untouched.
+	// The diff isolates the unit token, so the signature is the two trimmed sides forming one unit's
+	// notation pair. Notation only, never the system and never the number, exactly the convention's scope.
+	if (c.measurements !== undefined && isUnitNotationPair(removed.trim(), added.trim())) {
+		return 'measurements';
+	}
+
+	// Time format: a clock time reshaped between "5pm", "5 PM", and "5 p.m." styles. This claims only the
+	// case where the diff isolates the whole time as one change, so both sides reduce to the same time key.
+	// A reshape that adds or moves a space the diff splits into a separate whitespace and letter hunk
+	// (for example "5 PM" to "5 p.m."); that case is left to the shape rules, where it stays a judgment
+	// hunk that defaults to undecided, so it is still never swept by Accept-fixes.
+	if (c.timeFormat !== undefined) {
+		const rKey = timeKey(removed.trim());
+		const aKey = timeKey(added.trim());
+		if (rKey !== null && rKey === aKey && removed.trim() !== added.trim()) return 'timeFormat';
 	}
 
 	return null;

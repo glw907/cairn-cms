@@ -20,9 +20,12 @@ const HEADER = '# cairn personal dictionary: one word per line, sorted, kept in 
 const WORD_RE = /^[^\s\p{Cc}]+$/u;
 
 /** True when a word is a single valid dictionary line (no whitespace, no control characters, non-empty
- *  and within the length bound). The action uses this to reject untrusted input before the merge, so a
- *  newline or a control byte can never inject an extra line into the committed file. */
+ *  and within the length bound). A leading "#" is rejected: parseDictionary re-reads such a line as a
+ *  comment, so committing it would silently drop the word on the next read. The action uses this to
+ *  reject untrusted input before the merge, so a newline or a control byte can never inject an extra
+ *  line into the committed file. */
 export function isValidDictionaryWord(word: string, maxLength = 64): boolean {
+  if (word.startsWith('#')) return false;
   return word.length > 0 && word.length <= maxLength && WORD_RE.test(word);
 }
 

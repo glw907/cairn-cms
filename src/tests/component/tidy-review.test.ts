@@ -208,6 +208,55 @@ describe('TidyReview (real browser)', () => {
     await expect.poll(() => hunkEls(reviewContainer)[0]?.dataset.disposition).toBe('kept');
   });
 
+  it('keyboard step-through narrates the newly-focused hunk on every move (j/k/n/p)', async () => {
+    const { reviewContainer } = await mountReview(ORIGINAL, CORRECTED);
+    await expect.poll(() => hunkEls(reviewContainer).length).toBe(3);
+    const actionLive = reviewContainer.querySelector<HTMLElement>('[data-testid="tidy-action-live"]')!;
+    const dialog = reviewContainer.querySelector<HTMLElement>('[data-testid="tidy-review"]')!;
+    dialog.focus();
+    // The region is empty at rest; a move must announce the focused hunk with the "Focused" verb.
+    expect(actionLive.textContent).toBe('');
+    dialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'j', bubbles: true }));
+    await expect.poll(() => actionLive.textContent).toContain('Focused');
+    await expect.poll(() => actionLive.textContent).toContain('Hunk 2 of 3');
+    // n is the j synonym and moves on to the third hunk, announcing it.
+    dialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'n', bubbles: true }));
+    await expect.poll(() => actionLive.textContent).toContain('Hunk 3 of 3');
+    // k moves back to the second and announces it.
+    dialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', bubbles: true }));
+    await expect.poll(() => actionLive.textContent).toContain('Hunk 2 of 3');
+    // p is the k synonym and moves back to the first, announcing it.
+    dialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', bubbles: true }));
+    await expect.poll(() => actionLive.textContent).toContain('Hunk 1 of 3');
+  });
+
+  it('a repeated identical action re-announces (the live region text mutates each time)', async () => {
+    const { reviewContainer } = await mountReview(ORIGINAL, CORRECTED);
+    await expect.poll(() => hunkEls(reviewContainer).length).toBe(3);
+    const actionLive = reviewContainer.querySelector<HTMLElement>('[data-testid="tidy-action-live"]')!;
+    const tallyLive = reviewContainer.querySelector<HTMLElement>('[data-testid="tidy-tally-live"]')!;
+    // Reject the same hunk twice. The second identical action must still change the region text so an
+    // aria-live region re-announces (a byte-identical string would be ignored by a screen reader).
+    const firstHunk = judgmentHunks(reviewContainer)[0];
+    const reject = Array.from(firstHunk.querySelectorAll<HTMLButtonElement>('button')).find(
+      (b) => b.textContent?.trim() === 'Reject',
+    )!;
+    await userEvent.click(reject);
+    await expect.poll(() => actionLive.textContent).toContain('Skipped');
+    const first = actionLive.textContent;
+    await userEvent.click(reject);
+    await expect.poll(() => actionLive.textContent).not.toBe(first);
+    // The bulk tally region also mutates on a repeated identical bulk action.
+    const rejectAll = Array.from(reviewContainer.querySelectorAll<HTMLButtonElement>('button')).find(
+      (b) => b.textContent?.trim() === 'Reject all',
+    )!;
+    await userEvent.click(rejectAll);
+    await expect.poll(() => tallyLive.textContent).toContain('skipping');
+    const firstTally = tallyLive.textContent;
+    await userEvent.click(rejectAll);
+    await expect.poll(() => tallyLive.textContent).not.toBe(firstTally);
+  });
+
   it('a normalization names ONLY the config setting in its because-line', async () => {
     // Enable the Oxford comma, then feed a corrected text that adds a serial comma. The because-line
     // must name the setting and its variant, never a count of the author's own usage.

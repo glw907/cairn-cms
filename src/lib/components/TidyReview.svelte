@@ -136,9 +136,20 @@ must never make, so no such count exists.
   let focusedPos = $state(0);
 
   // The two live regions (the MediaPicker discipline). The tally region (role=status) speaks only on a
-  // bulk action; the action region (aria-live=polite) narrates the single last per-hunk action.
+  // bulk action; the action region (aria-live=polite) narrates the single per-hunk action and each
+  // cursor move. A live region re-announces only when its text changes, so a deterministic message
+  // (the same hunk, the same verb) would go silent on a repeat. Each writer appends an invisible
+  // incrementing nonce so the region text always mutates and the screen reader always speaks it.
   let tallyMessage = $state('');
   let actionMessage = $state('');
+  let announceNonce = 0;
+
+  // An invisible suffix that flips on every call, so a repeated identical announcement still changes
+  // the region text and re-fires the live region. It is a zero-width space, never voiced, so the heard
+  // sentence is unchanged. Each region keeps its own parity through the shared counter.
+  function nonce(): string {
+    return announceNonce++ % 2 === 0 ? '' : '​';
+  }
 
   const keptCount = $derived(hunks.filter((h) => dispositions[h.index] === 'kept').length);
   const reviewCount = $derived(hunks.filter((h) => dispositions[h.index] === 'undecided').length);
@@ -155,13 +166,15 @@ must never make, so no such count exists.
     overrides = { ...overrides, [index]: next };
   }
 
-  // Narrate a single per-hunk action in the polite region. The sentence carries the kind and text, and
-  // for a normalization appends the config-named rationale (never a usage count).
+  // Narrate one hunk in the polite region. The verb says what just happened to it ("Kept", "Skipped",
+  // or "Focused" as the cursor lands on it). The sentence carries the kind and the before/after text,
+  // and for a normalization appends the config-named rationale (never a usage count). The trailing
+  // nonce keeps a repeated identical action audible.
   function narrate(h: Hunk, verb: string) {
     const where = `Hunk ${hunks.indexOf(h) + 1} of ${hunks.length}`;
     const what = h.delRun.mid && h.addRun.mid ? `${h.delRun.mid.trim()} becomes ${h.addRun.mid.trim()}` : h.label;
     const why = h.because ? `, your ${h.because.label} setting is ${h.because.variant}` : '';
-    actionMessage = `${where}. ${h.label}. ${what}${why}. ${verb}.`;
+    actionMessage = `${where}. ${h.label}. ${what}${why}. ${verb}.${nonce()}`;
   }
 
   function acceptHunk(h: Hunk) {
@@ -181,13 +194,13 @@ must never make, so no such count exists.
     overrides = next;
     const n = hunks.filter((h) => h.objective).length;
     const stillReview = hunks.filter((h) => effectiveDisposition(h, next) === 'undecided').length;
-    tallyMessage = `${n} fixes kept. ${stillReview} still to review.`;
+    tallyMessage = `${n} fixes kept. ${stillReview} still to review.${nonce()}`;
   }
 
   // Reject all: mark every hunk rejected; no text is written. The tally region announces it.
   function rejectAll() {
     overrides = Object.fromEntries(hunks.map((h) => [h.index, 'rejected'] as const));
-    tallyMessage = `All ${hunks.length} changes skipping.`;
+    tallyMessage = `All ${hunks.length} changes skipping.${nonce()}`;
   }
 
   // Apply: write the kept hunks in ONE batched transaction through the apply seam, then close. The
@@ -213,15 +226,24 @@ must never make, so no such count exists.
     if (c) onshow(c.from, c.to);
   }
 
+  // Move the step-through cursor and announce the hunk it lands on. A screen-reader user pressing j/k
+  // hears the newly-focused hunk (kind plus before/after text, plus the because-line for a judgment
+  // hunk), the same spec invariant the per-hunk action narration holds. Without this a move was silent.
+  function moveFocus(next: number) {
+    focusedPos = next;
+    const h = hunks[focusedPos];
+    if (h) narrate(h, 'Focused');
+  }
+
   // Keyboard step-through on the hunk list (graft 3): j/k or n/p move; a/r accept/reject the focused
   // hunk; A accepts all objective; Escape cancels (the native dialog supplies Escape, handled below).
   function onListKeydown(e: KeyboardEvent) {
     const h = hunks[focusedPos];
     if (e.key === 'j' || e.key === 'n') {
-      focusedPos = Math.min(focusedPos + 1, hunks.length - 1);
+      moveFocus(Math.min(focusedPos + 1, hunks.length - 1));
       e.preventDefault();
     } else if (e.key === 'k' || e.key === 'p') {
-      focusedPos = Math.max(focusedPos - 1, 0);
+      moveFocus(Math.max(focusedPos - 1, 0));
       e.preventDefault();
     } else if (e.key === 'a' && !e.shiftKey) {
       if (h) acceptHunk(h);
@@ -312,7 +334,7 @@ must never make, so no such count exists.
             ? 'border-[color-mix(in_oklab,var(--cairn-warning-ink)_30%,var(--cairn-card-border))] shadow-[inset_3px_0_0_0_color-mix(in_oklab,var(--cairn-warning-ink)_55%,transparent)]'
             : 'border-[var(--cairn-card-border)]'} {decided === 'rejected' ? 'opacity-70' : ''} {i ===
           focusedPos
-            ? 'outline outline-2 outline-offset-1 outline-[color-mix(in_oklab,var(--color-primary)_60%,transparent)]'
+            ? 'outline outline-2 outline-offset-1 outline-[var(--color-primary)]'
             : ''}"
           data-testid="tidy-hunk"
           data-objective={h.objective}
@@ -338,7 +360,7 @@ must never make, so no such count exists.
             {/if}
             <button
               type="button"
-              class="inline-flex items-center gap-1 rounded px-1.5 py-1 font-mono text-[0.6875rem] text-[var(--color-muted)] underline decoration-[color-mix(in_oklab,currentColor_35%,transparent)] underline-offset-2 hover:bg-primary/[0.08] hover:text-primary"
+              class="inline-flex min-h-6 items-center gap-1 rounded px-1.5 py-1.5 font-mono text-[0.6875rem] text-[var(--color-muted)] underline decoration-[color-mix(in_oklab,currentColor_35%,transparent)] underline-offset-2 hover:bg-primary/[0.08] hover:text-primary"
               title="Show this line in the editor"
               onclick={() => showInText(h)}
             >
@@ -348,7 +370,7 @@ must never make, so no such count exists.
             <span class="inline-flex flex-none items-center overflow-hidden rounded-md border border-[var(--cairn-card-border)]" role="group" aria-label={actsLabel(h)}>
               <button
                 type="button"
-                class="inline-flex items-center gap-1 px-2.5 py-1.5 text-[0.6875rem] font-medium {decided ===
+                class="inline-flex min-h-6 items-center gap-1 px-2.5 py-1.5 text-[0.6875rem] font-medium {decided ===
                 'kept'
                   ? 'bg-[color-mix(in_oklab,var(--color-positive-ink)_13%,transparent)] text-[var(--color-positive-ink)]'
                   : 'text-[var(--color-muted)]'}"
@@ -359,7 +381,7 @@ must never make, so no such count exists.
               </button>
               <button
                 type="button"
-                class="inline-flex items-center gap-1 border-l border-[var(--cairn-card-border)] px-2.5 py-1.5 text-[0.6875rem] font-medium {decided ===
+                class="inline-flex min-h-6 items-center gap-1 border-l border-[var(--cairn-card-border)] px-2.5 py-1.5 text-[0.6875rem] font-medium {decided ===
                 'rejected'
                   ? 'bg-[color-mix(in_oklab,var(--cairn-error-ink)_12%,transparent)] text-[var(--cairn-error-ink)]'
                   : 'text-[var(--color-muted)]'}"
@@ -379,17 +401,17 @@ must never make, so no such count exists.
                 <span class="flex-1 whitespace-pre-wrap break-words px-1 py-0.5 text-[var(--color-muted)]">{h.contextBefore}</span>
               </div>
             {/if}
-            <div class="flex items-baseline bg-[color-mix(in_oklab,var(--cairn-error-ink)_9%,var(--color-base-100))]">
+            <div class="flex items-baseline bg-[var(--cairn-tidy-del-row)]">
               <span class="w-6 flex-none select-none text-center font-semibold text-[var(--cairn-error-ink)]" aria-hidden="true">&minus;</span>
               <span class="flex-1 whitespace-pre-wrap break-words px-1 py-0.5">{h.delRun.pre}<span
-                  class="rounded-sm bg-[color-mix(in_oklab,var(--cairn-error-ink)_18%,transparent)] px-px text-[var(--cairn-error-ink)] line-through decoration-1"
+                  class="rounded-sm bg-[var(--cairn-tidy-del-run)] px-px text-[var(--cairn-error-ink)] line-through decoration-1"
                   data-testid="tidy-del"
                 >{h.delRun.mid}</span>{h.delRun.post}</span>
             </div>
-            <div class="flex items-baseline bg-[color-mix(in_oklab,var(--color-positive-ink)_11%,var(--color-base-100))] {decided === 'rejected' ? 'opacity-70' : ''}">
+            <div class="flex items-baseline bg-[var(--cairn-tidy-add-row)] {decided === 'rejected' ? 'opacity-70' : ''}">
               <span class="w-6 flex-none select-none text-center font-semibold text-[var(--color-positive-ink)]" aria-hidden="true">+</span>
               <span class="flex-1 whitespace-pre-wrap break-words px-1 py-0.5">{h.addRun.pre}<span
-                  class="rounded-sm bg-[color-mix(in_oklab,var(--color-positive-ink)_20%,transparent)] px-px text-[var(--color-positive-ink)] {decided ===
+                  class="rounded-sm bg-[var(--cairn-tidy-add-run)] px-px text-[var(--color-positive-ink)] {decided ===
                   'rejected'
                     ? 'line-through opacity-70'
                     : ''}"

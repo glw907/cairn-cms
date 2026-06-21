@@ -253,13 +253,17 @@ export interface ContentEvent extends EventBase<GithubKeyEnv> {
  *  counts. */
 export interface TidyClient {
   messages: {
-    create(params: {
-      model: string;
-      max_tokens: number;
-      system: string;
-      messages: { role: 'user'; content: string }[];
-      signal?: AbortSignal;
-    }): Promise<{
+    create(
+      body: {
+        model: string;
+        max_tokens: number;
+        system: string;
+        messages: { role: 'user'; content: string }[];
+      },
+      // The SDK signature is create(body, options). The abort signal belongs in the second argument
+      // (RequestOptions), not the body, so the request actually cancels when the deadline fires.
+      options?: { signal?: AbortSignal },
+    ): Promise<{
       content: { type: string; text?: string }[];
       model: string;
       stop_reason: string | null;
@@ -2623,13 +2627,16 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     let message: Awaited<ReturnType<TidyClient['messages']['create']>>;
     try {
       const client = anthropicClient({ apiKey });
-      message = await client.messages.create({
-        model,
-        max_tokens: maxTokens,
-        system,
-        messages: [{ role: 'user', content: text }],
-        signal: controller.signal,
-      });
+      message = await client.messages.create(
+        {
+          model,
+          max_tokens: maxTokens,
+          system,
+          messages: [{ role: 'user', content: text }],
+        },
+        // The signal rides the request options, so the deadline timer above actually cancels the call.
+        { signal: controller.signal },
+      );
     } catch (err) {
       // A deadline overrun, a client abort, or a model error (rate limit, overload, 5xx) all map to the
       // retryable fail(502). The error string is not surfaced to the client (it may carry internal

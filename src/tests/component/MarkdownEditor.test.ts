@@ -1075,6 +1075,36 @@ describe('MarkdownEditor', () => {
     expect(getSelection!()).toBe('![](media:cat.0123456789abcdef)');
   });
 
+  it('reports the selection range through registerGetSelectionRange, and null when empty', async () => {
+    // The tidy host needs the selection's exact document offsets, not just its text, so a repeated
+    // passage maps a selection tidy onto the actually-selected occurrence. This seam returns the
+    // range; an empty selection (a bare caret) returns null so the host falls back to document scope.
+    const doc = 'colour and colour again';
+    let select: ((from: number, to: number) => void) | undefined;
+    let getSelectionRange: (() => { from: number; to: number } | null) | undefined;
+    render(MarkdownEditor, {
+      value: doc,
+      name: 'body',
+      registerSelectRange: (fn: (from: number, to: number) => void) => {
+        select = fn;
+      },
+      registerGetSelectionRange: (fn: () => { from: number; to: number } | null) => {
+        getSelectionRange = fn;
+      },
+    });
+    await expect.poll(() => typeof select).toBe('function');
+    await expect.poll(() => typeof getSelectionRange).toBe('function');
+    // The second "colour" begins at index 11, not the first at index 0.
+    const from = doc.lastIndexOf('colour');
+    const to = from + 'colour'.length;
+    select!(from, to);
+    await expect.poll(() => getSelectionRange!()?.from).toBe(from);
+    expect(getSelectionRange!()).toEqual({ from, to });
+    // Collapsing the selection to a bare caret reports null.
+    select!(to, to);
+    await expect.poll(() => getSelectionRange!()).toBeNull();
+  });
+
   it('offers and applies a cairn link through the [[ autocomplete', async () => {
     const targets: LinkTarget[] = [
       { concept: 'pages', id: 'about', permalink: '/about', title: 'About Us', draft: false },

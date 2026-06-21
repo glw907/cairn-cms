@@ -477,6 +477,10 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   // The editor's current selection, registered by MarkdownEditor on mount; the web link dialog
   // reads it for the Text field's default.
   let getSelection = $state.raw<() => string>(() => '');
+  // The editor's selection range, registered by MarkdownEditor on mount; tidy reads it for the exact
+  // selected span's offset so a selection tidy never maps onto an identical passage earlier in the
+  // document. Returns null when the selection is empty (a bare caret), which reads as document scope.
+  let getSelectionRange = $state.raw<() => { from: number; to: number } | null>(() => null);
   // The editor's selection transform, registered by MarkdownEditor on mount; a no-op until then.
   let format = $state.raw<(kind: FormatKind) => void>(() => {});
 
@@ -500,6 +504,23 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   // The in-flight controller, for Cancel and the bounded client timeout.
   let tidyController: AbortController | null = null;
 
+  // The three tidy status dialogs (working, no-op, message). Each is promoted to the top layer with
+  // showModal() the way TidyReview does, so the focus trap, Escape, and inert background come from the
+  // platform. The $effect below opens each when its flag flips and closes it when the flag clears; the
+  // {#if} mounts the element, so the ref is set before the effect reads it.
+  let tidyWorkingDialog = $state<HTMLDialogElement | null>(null);
+  let tidyNoopDialog = $state<HTMLDialogElement | null>(null);
+  let tidyMessageDialog = $state<HTMLDialogElement | null>(null);
+  $effect(() => {
+    if (tidyBusy) tidyWorkingDialog?.showModal();
+  });
+  $effect(() => {
+    if (tidyNoop) tidyNoopDialog?.showModal();
+  });
+  $effect(() => {
+    if (tidyMessage) tidyMessageDialog?.showModal();
+  });
+
   // True when tidy is enabled for the site (the developer-tier master switch). Gates the Tidy control.
   // The optional chain mirrors the component's tolerance of a partial data load: a degraded load that
   // omits the tidy block simply reads disabled rather than throwing.
@@ -516,11 +537,19 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     tidyNoop = false;
     tidyApplied = false;
     // Scope: a non-empty selection tidies that range; otherwise the whole body. The offset is where the
-    // selected text begins in the full document, so the diff positions map back.
+    // selected text begins in the full document, so the diff positions map back. The range seam carries
+    // the exact selection offsets, so a passage that repeats earlier in the body still maps the
+    // corrections onto the actually-selected occurrence. Fall back to the first textual match only when
+    // no range is available (offset 0 keeps document-scope tidy unchanged).
     const selected = getSelection();
-    const selection = body.indexOf(selected);
-    const useSelection = selected.length > 0 && selection >= 0;
-    const offset = useSelection ? selection : 0;
+    const range = getSelectionRange();
+    const useSelection = selected.length > 0;
+    let offset = 0;
+    if (range) {
+      offset = range.from;
+    } else if (useSelection) {
+      offset = Math.max(body.indexOf(selected), 0);
+    }
     const text = useSelection ? selected : body;
 
     tidyBusy = true;
@@ -1580,6 +1609,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
           registerSelectRange={(fn) => (selectRange = fn)}
           registerInsertLink={(fn) => (insertLink = fn)}
           registerGetSelection={(fn) => (getSelection = fn)}
+          registerGetSelectionRange={(fn) => (getSelectionRange = fn)}
           registerFormat={(fn) => (format = fn)}
           registerTidy={(api) => (tidyApi = api)}
           registerUndo={(fn) => (undoEditor = fn)}
@@ -2005,37 +2035,55 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
 <!-- The tidy working state: a cancelable dialog wired to the real abort (Task 11's AbortController
      plus the bounded client timeout). Shown while the model call is in flight. -->
 {#if tidyBusy}
-  <dialog class="modal modal-open" aria-labelledby="cairn-tidy-working-title" data-testid="tidy-working">
+  <dialog
+    class="modal"
+    aria-labelledby="cairn-tidy-working-title"
+    data-testid="tidy-working"
+    bind:this={tidyWorkingDialog}
+    onclose={cancelTidy}
+  >
     <div class="modal-box flex flex-col items-center gap-3 text-center">
       <span class="loading loading-spinner loading-lg text-primary" aria-hidden="true"></span>
       <h2 id="cairn-tidy-working-title" class="text-base font-semibold">Tidying your text</h2>
       <p class="max-w-prose text-sm text-[var(--color-muted)]">
         Claude is reading your draft for a light copy-edit. You will review every change before it lands.
       </p>
-      <button type="button" class="btn btn-sm" onclick={cancelTidy}>Cancel</button>
+      <button type="button" class="btn btn-sm" onclick={() => tidyWorkingDialog?.close()}>Cancel</button>
     </div>
   </dialog>
 {/if}
 
 <!-- The no-op confirmation: tidy found nothing to fix. Quiet, never an empty review. -->
 {#if tidyNoop}
-  <dialog class="modal modal-open" aria-labelledby="cairn-tidy-noop-title" data-testid="tidy-noop">
+  <dialog
+    class="modal"
+    aria-labelledby="cairn-tidy-noop-title"
+    data-testid="tidy-noop"
+    bind:this={tidyNoopDialog}
+    onclose={() => (tidyNoop = false)}
+  >
     <div class="modal-box flex flex-col items-center gap-3 text-center">
       <h2 id="cairn-tidy-noop-title" class="text-base font-semibold">Nothing to fix</h2>
       <p class="max-w-prose text-sm text-[var(--color-muted)]">Tidy read your text and found nothing to change.</p>
-      <button type="button" class="btn btn-sm btn-primary" onclick={() => (tidyNoop = false)}>Close</button>
+      <button type="button" class="btn btn-sm btn-primary" onclick={() => tidyNoopDialog?.close()}>Close</button>
     </div>
   </dialog>
 {/if}
 
 <!-- A refused, failed, or rejected tidy: the honest message; the document is unchanged. -->
 {#if tidyMessage}
-  <dialog class="modal modal-open" aria-labelledby="cairn-tidy-message-title" data-testid="tidy-message">
+  <dialog
+    class="modal"
+    aria-labelledby="cairn-tidy-message-title"
+    data-testid="tidy-message"
+    bind:this={tidyMessageDialog}
+    onclose={() => (tidyMessage = null)}
+  >
     <div class="modal-box flex flex-col gap-3">
       <h2 id="cairn-tidy-message-title" class="text-base font-semibold">Tidy could not run</h2>
       <p class="text-sm text-[var(--color-muted)]">{tidyMessage}</p>
       <div class="flex justify-end">
-        <button type="button" class="btn btn-sm btn-primary" onclick={() => (tidyMessage = null)}>Close</button>
+        <button type="button" class="btn btn-sm btn-primary" onclick={() => tidyMessageDialog?.close()}>Close</button>
       </div>
     </div>
   </dialog>

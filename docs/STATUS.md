@@ -35,7 +35,11 @@ cutover with the spellcheck/tidy (editor) release so it bumps once to the combin
 authoritative). Two features for the admin CodeMirror editor: a spellcheck (default, local, CM6
 `@codemirror/lint` plus a WASM dictionary, markdown-aware, dialect-aware) and tidy (opt-in, LLM, a
 voice-preserving light copy-edit with config-driven style normalization and a diff-review safety
-contract). Ships as `0.60.0` (a minor). Main-loop orchestrate-and-verify, test-first, one
+contract). This work IS `0.60.0`, and `0.60.0` is the next release: per Geoff it bundles the FULL
+spellcheck and prose-tidy work and ships only when that whole body of work is complete. Nothing ships to
+npm in the meantime, so the passes land on `main` unreleased and accumulate under `0.60.0`, and 907-life
+plus any other site cutovers ride that one `0.60.0` release once it cuts. Main-loop orchestrate-and-verify,
+test-first, one
 `cairn-implementer` per task, the full gate between dispatches, on a FRESH worktree off `main`. PHASE 1 is
 the worker-plus-wasm-plus-dictionary delivery spike as a go/no-go gate (nspell fallback) before the
 spellcheck engine is locked; the tidy apply state machine, the Worker action, the prompt, and the diff are

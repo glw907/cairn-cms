@@ -92,6 +92,15 @@ through the adapter's render. Swapping the editor stays a one-file change.
      *  source resolves it to a real asset URL and hands it to the spellcheck Worker's init. Defaults to
      *  US English. */
     spellcheckDictionary?: string;
+    /** Test-only seam for the spellcheck Worker. The real wasm and dictionary assets are resolved with
+     *  `import.meta.url` and do not load under the vitest browser dev server, so the component test
+     *  injects a deterministic fake Worker factory and asks the lint source to skip the `ready` wait.
+     *  When this is absent the production path is untouched: the real `new Worker(...)` and the real
+     *  asset resolution. Never set this outside a test. */
+    spellcheckTest?: {
+      createWorker?: () => import('./spellcheck.js').SpellWorker;
+      assumeReady?: boolean;
+    };
   }
 
   let {
@@ -117,6 +126,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
     surface = 'prose',
     spellcheck = true,
     spellcheckDictionary = 'dictionary-en-us.txt',
+    spellcheckTest,
   }: Props = $props();
 
   let host = $state<HTMLDivElement | null>(null);
@@ -544,7 +554,11 @@ through the adapter's render. Swapping the editor stays a one-file change.
       dictionaryFile: spellcheckDictionary,
       // Hand the lint source the editor's own CodeMirror module instances so its extension lands on the
       // same copies; a separate dynamic import can resolve to a different instance and break instanceof.
-      modules: { lint: lintMod, language: languageMod, view: viewMod },
+      modules: { lint: lintMod, language: languageMod, view: viewMod, state: stateMod },
+      // The test seam: a deterministic fake Worker and the skip-ready flag, both straight through to the
+      // lint source. Absent in production, where the real Worker and real asset resolution run.
+      createWorker: spellcheckTest?.createWorker,
+      assumeReady: spellcheckTest?.assumeReady,
     });
 
     view = new EditorView({

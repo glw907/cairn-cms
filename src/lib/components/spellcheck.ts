@@ -335,6 +335,7 @@ export function buildObjectiveDiagnostic(error: ObjectiveError): Diagnostic {
 let lintMod: typeof import('@codemirror/lint') | null = null;
 let langMod: typeof import('@codemirror/language') | null = null;
 let viewMod: typeof import('@codemirror/view') | null = null;
+let stateMod: typeof import('@codemirror/state') | null = null;
 
 /** The narrow Worker surface the lint source drives: it posts check, suggest, addWord, and ignoreWord
  *  messages and listens for the answers. A `suggest` answer is a one-shot, so the source removes its
@@ -408,6 +409,7 @@ export interface SpellcheckOptions {
     lint?: typeof import('@codemirror/lint');
     language?: typeof import('@codemirror/language');
     view?: typeof import('@codemirror/view');
+    state?: typeof import('@codemirror/state');
   };
 }
 
@@ -466,9 +468,19 @@ export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<
   lintMod = options.modules?.lint ?? lintMod ?? (await import('@codemirror/lint'));
   langMod = options.modules?.language ?? langMod ?? (await import('@codemirror/language'));
   viewMod = options.modules?.view ?? viewMod ?? (await import('@codemirror/view'));
+  stateMod = options.modules?.state ?? stateMod ?? (await import('@codemirror/state'));
   const { linter, forceLinting } = lintMod;
   const { syntaxTree } = langMod;
   const { EditorView } = viewMod;
+  const { StateEffect } = stateMod;
+
+  // A re-lint nudge for the no-doc-change case. Add-to-dictionary and ignore change the Worker's merged
+  // set but not the document, and @codemirror/lint's forceLinting() is a no-op when the editor is idle
+  // (its internal force() only fires when a lint is already scheduled). The linter's needsRefresh hook
+  // is the supported way to schedule a run on a state change that is not a doc edit: a callback
+  // dispatches this effect, needsRefresh sees it and schedules the lint, and forceLinting then runs it
+  // at once so the underlines clear immediately.
+  const relintEffect = StateEffect.define<null>();
 
   const createWorker = options.createWorker ?? createSpellWorker;
   const pendingAdditions = options.pendingAdditions ?? new Set<string>();
@@ -499,6 +511,16 @@ export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<
   // never collide on a shared counter.
   let suggestSeq = 0;
 
+  // Re-run the lint at once after a state change that is not a doc edit (the Worker became ready, or a
+  // word was added or ignored). The dispatched effect makes the linter's needsRefresh schedule a run,
+  // so the following forceLinting is no longer a no-op (its internal force() only fires on a scheduled
+  // lint), and the underlines repaint immediately.
+  function relint(): void {
+    if (!lastView) return;
+    lastView.dispatch({ effects: relintEffect.of(null) });
+    forceLinting(lastView);
+  }
+
   function ensureWorker(): SpellWorker {
     if (worker) return worker;
     worker = createWorker();
@@ -513,7 +535,7 @@ export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<
       // runs withheld; the latest-wins seq keeps the re-lint from racing an in-flight run.
       if (data.type === 'ready') {
         ready = true;
-        if (lastView) forceLinting(lastView);
+        relint();
         return;
       }
       // An init or lookup failure: log it and leave the editor usable (no underlines is the graceful
@@ -572,12 +594,12 @@ export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<
         // Task 9 to commit, and re-lint so every instance of the word clears at once.
         w.postMessage({ type: 'addWord', word });
         pendingAdditions.add(word.toLowerCase());
-        if (lastView) forceLinting(lastView);
+        relint();
       },
       onIgnoreWord(word) {
         // Session-only ignore, never persisted; re-lint so the underline clears everywhere.
         w.postMessage({ type: 'ignoreWord', word });
-        if (lastView) forceLinting(lastView);
+        relint();
       },
     };
     return Promise.all(
@@ -618,6 +640,12 @@ export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<
       pending.set(seq, { words, resolve });
       ensureWorker().postMessage({ type: 'check', seq, words: checkWords });
     });
+  }, {
+    // Schedule a fresh lint when relint() dispatches its effect. The hook covers the state changes that
+    // are not doc edits (the Worker became ready, a word was added or ignored); without it the linter
+    // only re-runs on a doc change, so an add-to-dictionary would never clear the standing underlines.
+    needsRefresh: (update) =>
+      update.transactions.some((tr) => tr.effects.some((e) => e.is(relintEffect))),
   });
 
   // The objective-error source: a second linter() over the SAME viewport-scoped prose spans the

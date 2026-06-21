@@ -18,6 +18,7 @@ import { emptyManifest, manifestEntryFromFile, parseManifest, serializeManifest,
 import { isConflict } from '../github/types.js';
 import { log } from '../log/index.js';
 import { dictionaryFileForDialect, DEFAULT_TIDY_MODEL, resolveTidyConventions } from '../nav/site-config.js';
+import type { TidyConventions } from '../nav/site-config.js';
 import { buildTidyPrompt } from './tidy-prompt.js';
 // Server-only: the Anthropic SDK ships the API-key path and never reaches a browser bundle. It is
 // imported only here (a Worker module no component imports statically), and the server-only-deps test
@@ -162,6 +163,11 @@ export interface EditData {
    *  unreadable (the editor degrades to dialect-only). The dialect dictionary and the session ignore
    *  list are the other two layers; only this one is committed. */
   siteDictionary: string[];
+  /** The editor-tier tidy facts the review surface needs (spec 2.5): whether tidy is enabled, the model
+   *  that runs (for the head pill), and the RESOLVED conventions (the only data source for a
+   *  normalization's because-line and the local category inference). The API key never appears here, it
+   *  is a Worker secret. `enabled` false hides the Tidy control. */
+  tidy: { enabled: boolean; model: string; conventions: TidyConventions };
 }
 
 /** One asset's where-used overlay, kept separate from MediaLibraryEntry so the picker's shared
@@ -884,6 +890,14 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       // so the editor seeds the Worker's personal layer with a clean list. A missing or unreadable file
       // is an empty list (the dialect-only fallback).
       siteDictionary: mergeDictionaryWords(parseDictionary(dictionaryRaw), []),
+      // The editor-tier tidy facts: the master switch, the model (for the head pill), and the resolved
+      // conventions (the because-line and category inference read only these). The API key is never
+      // exposed here. A site with no tidy block reads disabled with the default conventions.
+      tidy: {
+        enabled: runtime.tidy?.enabled ?? false,
+        model: runtime.tidy?.model || DEFAULT_TIDY_MODEL,
+        conventions: resolveTidyConventions(runtime.tidy?.conventions),
+      },
     };
   }
 

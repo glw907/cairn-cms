@@ -58,6 +58,13 @@ through the adapter's render. Swapping the editor stays a one-file change.
     registerImagePlaceholders?: (api: import('./editor-placeholder.js').ImagePlaceholderApi) => void;
     /** Receives a `() => string` returning the selected text; the web link dialog reads it. */
     registerGetSelection?: (get: () => string) => void;
+    /** Receives the tidy apply api (spec 2.5): the review surface drives the in-buffer decorations and
+     *  the accept/reject state machine through it. The author's original stays in the buffer until an
+     *  accept writes; a reject or reject-all leaves it byte-identical. */
+    registerTidy?: (api: import('./editor-tidy.js').TidyApi) => void;
+    /** Receives a `() => void` that undoes the last editor transaction; the "Undo tidy" chip calls it
+     *  to take the whole applied tidy back in one move (the apply lands as one history entry). */
+    registerUndo?: (undo: () => void) => void;
     /** Receives a `(kind) => void` that transforms the current selection; the host's toolbar calls it. */
     registerFormat?: (format: (kind: FormatKind) => void) => void;
     /** Reports the directive container at the caret (or null when outside any container) whenever
@@ -110,6 +117,10 @@ through the adapter's render. Swapping the editor stays a one-file change.
       createWorker?: () => import('./spellcheck.js').SpellWorker;
       assumeReady?: boolean;
     };
+    /** Tidy mode: while a tidy review is open the surface is read-only the way Preview disables the
+     *  toolbar, so the author cannot edit underneath a pending review. The host sets this when it opens
+     *  the review and clears it on apply or cancel. Off by default. */
+    tidyMode?: boolean;
   }
 
   let {
@@ -124,6 +135,8 @@ through the adapter's render. Swapping the editor stays a one-file change.
     registerFocusEditor,
     registerImagePlaceholders,
     registerGetSelection,
+    registerTidy,
+    registerUndo,
     registerFormat,
     onComponentAtCaret,
     onMediaImageAtCaret,
@@ -138,6 +151,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
     siteDictionary = [],
     pendingAdditions = new Set<string>(),
     spellcheckTest,
+    tidyMode = false,
   }: Props = $props();
 
   let host = $state<HTMLDivElement | null>(null);
@@ -165,6 +179,14 @@ through the adapter's render. Swapping the editor stays a one-file change.
   // and the on/off effect reconfigures against it.
   let spellcheckCompartment: import('@codemirror/state').Compartment | null = null;
   let spellcheckExt: import('@codemirror/state').Extension | null = null;
+  // The tidy decoration field lives in its own compartment (entering and leaving tidy is a reconfigure,
+  // not a rebuild) beside the media and fold decorations. A second compartment carries the read-only +
+  // edit-disable extension while a review is open, so the author cannot edit underneath a pending
+  // review (the same posture Preview takes on the toolbar). Both load with the other editor modules.
+  let tidyMod: typeof import('./editor-tidy.js') | null = null;
+  let tidyCompartment: import('@codemirror/state').Compartment | null = null;
+  let tidyReadonlyCompartment: import('@codemirror/state').Compartment | null = null;
+  let tidyReadonlyExt: import('@codemirror/state').Extension | null = null;
   // The posture themes, swapped through the surface compartment. Each owns its type step and
   // leading (the base theme deliberately sets neither on the content node, so the postures never
   // contest it on adoption order). Built in onMount beside the base theme.
@@ -184,6 +206,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
     const foldingMod = await import('./editor-folding.js');
     const placeholderMod = await import('./editor-placeholder.js');
     mediaMod = await import('./editor-media.js');
+    tidyMod = await import('./editor-tidy.js');
     const spellcheckMod = await import('./spellcheck.js');
 
     if (!host) return;
@@ -534,6 +557,37 @@ through the adapter's render. Swapping the editor stays a one-file change.
           '--cairn-directive-rail-3': 'var(--cairn-focus-dim-rail-3, 32%)',
           '--cairn-directive-rail-active': 'var(--cairn-focus-dim-rail-active, 36%)',
         },
+        // Tidy review decorations (spec 2.5). The author's original stays in the buffer; a deletion run
+        // strikes through in --cairn-error-ink (reserved for tidy deletions) and the proposed insertion
+        // shows as decoration content in --color-positive-ink (the locked addition token). The two are
+        // a locked pair: deletion red and insertion green never speak the same color, so the author sees
+        // exactly what tidy removes and what it adds. Both carry a non-color cue (the strike-through and
+        // the leading marker) so the change reads without hue alone.
+        '.cm-cairn-tidy-del': {
+          color: 'var(--cairn-error-ink, oklch(50% 0.19 25))',
+          textDecoration: 'line-through',
+          textDecorationThickness: '1px',
+          backgroundColor: 'color-mix(in oklab, var(--cairn-error-ink, oklch(50% 0.19 25)) 12%, transparent)',
+          borderRadius: '2px',
+        },
+        '.cm-cairn-tidy-del-marker': {
+          // A small leading wedge in the deletion ink, the non-color marker that pairs with the red.
+          display: 'inline-block',
+          width: '0',
+          borderLeft: '2px solid var(--cairn-error-ink, oklch(50% 0.19 25))',
+          height: '1em',
+          verticalAlign: '-0.15em',
+          marginRight: '1px',
+        },
+        '.cm-cairn-tidy-ins': {
+          color: 'var(--color-positive-ink, oklch(48% 0.12 150))',
+          backgroundColor: 'color-mix(in oklab, var(--color-positive-ink, oklch(48% 0.12 150)) 16%, transparent)',
+          borderRadius: '2px',
+          padding: '0 1px',
+          marginLeft: '2px',
+          // The non-color cue for an insertion: a leading caret glyph in the addition ink.
+          '&::before': { content: '"+"', fontSize: '0.8em', opacity: '0.7', marginRight: '1px' },
+        },
       },
       { dark: isDark },
     );
@@ -558,6 +612,12 @@ through the adapter's render. Swapping the editor stays a one-file change.
     surfaceCompartment = new stateMod.Compartment();
     mediaCompartment = new stateMod.Compartment();
     spellcheckCompartment = new stateMod.Compartment();
+    tidyCompartment = new stateMod.Compartment();
+    tidyReadonlyCompartment = new stateMod.Compartment();
+    // The read-only posture while a tidy review is open: EditorState.readOnly bars edits, and
+    // editable: false drops the contenteditable so the surface is inert under the review (the same
+    // posture Preview takes). The compartment starts empty and the tidyMode effect swaps this in.
+    tidyReadonlyExt = [stateMod.EditorState.readOnly.of(true), viewMod.EditorView.editable.of(false)];
     // Build the spellcheck extension once: the lint source resolves the dictionary asset URL from the
     // dialect-resolved filename and posts it to the Worker's init. The compartment starts with the
     // extension only when spellcheck is on, so a site that opens with it off never spins up the Worker.
@@ -613,6 +673,11 @@ through the adapter's render. Swapping the editor stays a one-file change.
           // The spellcheck and objective-error lint sources plus the locked amber underline theme, in
           // their own compartment so the footer toggle gates both surfaces at once. Empty when off.
           spellcheckCompartment.of(spellcheck ? spellcheckExt : []),
+          // The tidy decoration field, in its own compartment so entering and leaving a review is a
+          // reconfigure beside the media and fold decorations. The api the host drives is built below.
+          tidyCompartment.of(tidyMod.cairnTidy()),
+          // The read-only posture while a review is open, empty until the host sets tidyMode.
+          tidyReadonlyCompartment.of(tidyMode ? tidyReadonlyExt : []),
           // Paste and drop ingest: an image carried by either gesture is preventDefault'd and handed
           // to onImageIngest (the host opens the capture card with the bytes); a gesture carrying no
           // image falls through to CodeMirror's default. 2b is single-file per gesture (open risk 3),
@@ -671,6 +736,10 @@ through the adapter's render. Swapping the editor stays a one-file change.
     registerFocusEditor?.(focusEditor);
     registerImagePlaceholders?.(placeholderMod.imagePlaceholderApi(view));
     registerGetSelection?.(selectedText);
+    registerTidy?.(tidyMod.tidyApi(view));
+    registerUndo?.(() => {
+      if (view) commandsMod.undo(view);
+    });
     registerFormat?.(applyFormat);
     registerReplaceRange?.(replaceRange);
     registerSelectRange?.(selectRange);
@@ -727,6 +796,15 @@ through the adapter's render. Swapping the editor stays a one-file change.
     const on = spellcheck;
     if (!mounted || !view || !spellcheckCompartment || !spellcheckExt) return;
     view.dispatch({ effects: spellcheckCompartment.reconfigure(on ? spellcheckExt : []) });
+  });
+
+  // Reconfigure the read-only posture when tidyMode flips. On makes the surface inert under the open
+  // review (no edits beneath a pending review); off restores editing on apply or cancel. Reading the
+  // prop tracks it; the guard waits for the mounted editor and the resolved extension.
+  $effect(() => {
+    const on = tidyMode;
+    if (!mounted || !view || !tidyReadonlyCompartment || !tidyReadonlyExt) return;
+    view.dispatch({ effects: tidyReadonlyCompartment.reconfigure(on ? tidyReadonlyExt : []) });
   });
 
   // The last value handed to onComponentAtCaret, so the reporter fires only on a change. The

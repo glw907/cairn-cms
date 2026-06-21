@@ -60,6 +60,7 @@ function postProps(over = {}) {
       preview: null,
       spellcheckDictionary: 'dictionary-en-us.txt',
       siteDictionary: [],
+      tidy: { enabled: false, model: 'claude-sonnet-4-6', conventions: { fixes: true, enDashRanges: false, smartQuotes: false, brandCaps: false } },
       siteName: 'Test Site',
       ...over,
     },
@@ -2268,6 +2269,91 @@ describe('EditPage', () => {
         return label?.querySelector<HTMLInputElement>('input') ?? null;
       };
       await expect.poll(() => titleInput()?.value).toBe('Heads up');
+    });
+  });
+
+  describe('tidy (the host action driver)', () => {
+    // A tidy-enabled post fixture. The Tidy control renders only when data.tidy.enabled.
+    function tidyProps(over = {}) {
+      const base = postProps(over);
+      base.data.tidy = {
+        enabled: true,
+        model: 'claude-sonnet-4-6',
+        conventions: { fixes: true, enDashRanges: false, smartQuotes: false, brandCaps: false },
+      };
+      return base;
+    }
+    // Stub globalThis.fetch to return one SvelteKit action-result envelope carrying the corrected text.
+    function stubTidyFetch(corrected: string) {
+      const spy = vi.fn(async () => ({
+        type: 'basic',
+        status: 200,
+        text: async () =>
+          JSON.stringify({
+            type: 'success',
+            status: 200,
+            data: devalueStringify({ corrected, model: 'claude-sonnet-4-6', usage: {} }),
+          }),
+      }) as unknown as Response);
+      vi.stubGlobal('fetch', spy);
+      return spy;
+    }
+    const tidyButton = (screen: { container: Element }) =>
+      Array.from(screen.container.querySelectorAll<HTMLButtonElement>('button')).find(
+        (b) => b.getAttribute('aria-label') === 'Tidy',
+      );
+
+    it('a no-op (corrected equals the source) shows Nothing to fix and opens no review', async () => {
+      const body = 'The body reads clean.';
+      stubTidyFetch(body); // the model returned the text unchanged
+      const screen = render(EditPage, tidyProps({ body }) as never);
+      await expect.poll(() => screen.container.querySelector('.cm-content'), { timeout: 20000 }).not.toBeNull();
+      await expect.poll(() => tidyButton(screen)).toBeTruthy();
+      tidyButton(screen)!.click();
+      // The quiet no-op confirmation shows; no review dialog ever opens.
+      await expect.poll(() => document.querySelector('[data-testid="tidy-noop"]'), { timeout: 8000 }).not.toBeNull();
+      expect(document.querySelector('[data-testid="tidy-review"]')).toBeNull();
+      // The buffer is unchanged.
+      expect(screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value).toBe(body);
+      vi.unstubAllGlobals();
+    });
+
+    it('a validation rejection shows the honest message and dispatches no transaction', async () => {
+      // The corrected result relevels a heading (a restructure), which validateTidy rejects. The host
+      // must show the honest message and write nothing.
+      const body = '# Title\n\nA paragraph that is fine.';
+      stubTidyFetch('## Title\n\nA paragraph that is fine.');
+      const screen = render(EditPage, tidyProps({ body }) as never);
+      await expect.poll(() => screen.container.querySelector('.cm-content'), { timeout: 20000 }).not.toBeNull();
+      await expect.poll(() => tidyButton(screen)).toBeTruthy();
+      tidyButton(screen)!.click();
+      await expect.poll(() => document.querySelector('[data-testid="tidy-message"]'), { timeout: 8000 }).not.toBeNull();
+      expect(document.querySelector('[data-testid="tidy-message"]')?.textContent).toContain(
+        'changed more than the wording',
+      );
+      // No review opened, and the buffer is byte-identical (no transaction dispatched).
+      expect(document.querySelector('[data-testid="tidy-review"]')).toBeNull();
+      expect(screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value).toBe(body);
+      vi.unstubAllGlobals();
+    });
+
+    it('a clean validated result opens the review with the change set', async () => {
+      const body = 'We can accomodate the crowd.';
+      stubTidyFetch('We can accommodate the crowd.');
+      const screen = render(EditPage, tidyProps({ body }) as never);
+      await expect.poll(() => screen.container.querySelector('.cm-content'), { timeout: 20000 }).not.toBeNull();
+      await expect.poll(() => tidyButton(screen)).toBeTruthy();
+      tidyButton(screen)!.click();
+      await expect.poll(() => document.querySelector('[data-testid="tidy-review"]'), { timeout: 8000 }).not.toBeNull();
+      expect(document.querySelectorAll('[data-testid="tidy-hunk"]').length).toBeGreaterThan(0);
+      // The buffer still holds the original while the review is open (nothing written yet).
+      expect(screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value).toBe(body);
+      // Close it so the dialog does not leak into the next test.
+      const cancel = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-testid="tidy-review"] button')).find(
+        (b) => b.textContent?.trim() === 'Cancel',
+      );
+      cancel?.click();
+      vi.unstubAllGlobals();
     });
   });
 });

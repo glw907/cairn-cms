@@ -68,6 +68,7 @@ describe('CodeMirror stays off the server', () => {
     'editor-folding.ts',
     'editor-media.ts',
     'editor-placeholder.ts',
+    'editor-tidy.ts',
   ];
 
   it('only the dynamically-imported editor modules statically import an editor package', () => {

@@ -41,6 +41,10 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   import RenameDialog from './RenameDialog.svelte';
   import MarkdownHelpDialog from './MarkdownHelpDialog.svelte';
   import ShortcutsDialog from './ShortcutsDialog.svelte';
+  import TidyReview from './TidyReview.svelte';
+  import SparklesIcon from '@lucide/svelte/icons/sparkles';
+  import { validateTidy, TIDY_REJECTION_MESSAGE } from './tidy-validate.js';
+  import type { Change } from './tidy-diff.js';
   import { cairnLinkCompletionSource } from './link-completion.js';
   import {
     findMediaImagesNeedingAlt,
@@ -85,6 +89,11 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   }
 
   let { data, registry, render, icons, form }: Props = $props();
+
+  // The client-side tidy deadline (spec 2.1, Task 14): a slow call becomes a cancel/retry rather than a
+  // hung review. Set above the action's own 30s Worker deadline so the server's retryable fail lands
+  // first when the model is merely slow; this catches a stalled connection past that.
+  const TIDY_CLIENT_TIMEOUT_MS = 45_000;
 
   // The topbar context portal (AdminLayout owns the holder). The desk snippet below carries the
   // document's status and action clusters; this effect registers it into the band on mount and
@@ -300,7 +309,15 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   // Preview is read-only, so the insert controls the page renders into the toolbar disable with the
   // strip's own format buttons. Declared here (above the Edit-block derivations that read it) so it
   // is in scope before its first use.
-  const insertDisabled = $derived(mode === 'preview');
+  // Tidy mode disables the toolbar and makes the surface read-only while a review is open. The host
+  // sets it when the review opens and clears it on apply or cancel. Declared here so the insert-disable
+  // derivation below can read it.
+  let tidyMode = $state(false);
+  // The tidy request in-flight flag, so the Tidy control reads busy while a call runs.
+  let tidyBusy = $state(false);
+  // The insert controls disable in Preview (read-only) and while a tidy review is open (the author
+  // cannot edit underneath a pending review, the same posture Preview takes).
+  const insertDisabled = $derived(mode === 'preview' || tidyMode);
   let previewHtml = $state('');
   // True after a render call threw, so the preview pane can say so instead of going blank.
   let previewFailed = $state(false);
@@ -462,6 +479,148 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   let getSelection = $state.raw<() => string>(() => '');
   // The editor's selection transform, registered by MarkdownEditor on mount; a no-op until then.
   let format = $state.raw<(kind: FormatKind) => void>(() => {});
+
+  // The tidy apply seam, registered by MarkdownEditor on mount; the review surface drives the in-buffer
+  // decorations and the batched apply through it. Null until the editor mounts.
+  let tidyApi = $state.raw<import('./editor-tidy.js').TidyApi | null>(null);
+  // The editor's undo, registered on mount; the Undo-tidy chip calls it. A no-op until then.
+  let undoEditor = $state.raw<() => void>(() => {});
+  // The open review's data: the validated change set, the captured original it was diffed against, the
+  // scope, and the model. Null when no review is open. The diff positions index `tidyOriginal`, which
+  // for a selection tidy is the FULL document (the changes are offset back before they reach here).
+  let tidyReview = $state.raw<{ changes: Change[]; original: string; model: string } | null>(null);
+  // The error message a refused or failed tidy surfaces. The working state is cancelable through the
+  // AbortController; a validation rejection or an action failure lands here.
+  let tidyMessage = $state<string | null>(null);
+  // The no-op confirmation: a clean result (tidy found nothing to fix) shows "Nothing to fix" and never
+  // opens an empty review. Cleared on the next tidy run.
+  let tidyNoop = $state(false);
+  // The session-level "Undo tidy" affordance: surfaced right after Apply, dismissed on the next edit.
+  let tidyApplied = $state(false);
+  // The in-flight controller, for Cancel and the bounded client timeout.
+  let tidyController: AbortController | null = null;
+
+  // True when tidy is enabled for the site (the developer-tier master switch). Gates the Tidy control.
+  // The optional chain mirrors the component's tolerance of a partial data load: a degraded load that
+  // omits the tidy block simply reads disabled rather than throwing.
+  const tidyEnabled = $derived(data.tidy?.enabled ?? false);
+
+  /** Run tidy (spec 2.1, Task 11) over the whole document or the current selection. The action receives
+   *  only the selected text plus a scope flag; the diff is computed against that text and the changes'
+   *  ranges are offset back into the full document before they reach the apply seam. On success the
+   *  result is validated as a proofread (Task 13); a rejection shows the honest message and writes
+   *  nothing; a clean result shows "Nothing to fix"; otherwise the review opens. */
+  async function runTidy() {
+    if (!tidyEnabled || tidyBusy || tidyMode) return;
+    tidyMessage = null;
+    tidyNoop = false;
+    tidyApplied = false;
+    // Scope: a non-empty selection tidies that range; otherwise the whole body. The offset is where the
+    // selected text begins in the full document, so the diff positions map back.
+    const selected = getSelection();
+    const selection = body.indexOf(selected);
+    const useSelection = selected.length > 0 && selection >= 0;
+    const offset = useSelection ? selection : 0;
+    const text = useSelection ? selected : body;
+
+    tidyBusy = true;
+    tidyController = new AbortController();
+    // The bounded client timeout: a slow call becomes a cancel/retry rather than hanging the review.
+    const timer = setTimeout(() => tidyController?.abort(), TIDY_CLIENT_TIMEOUT_MS);
+    try {
+      const res = await fetch(`/admin/${data.conceptId}/${data.id}?/tidy`, {
+        method: 'POST',
+        redirect: 'manual',
+        headers: { 'Content-Type': 'text/plain', 'X-Cairn-CSRF': csrf?.() ?? '' },
+        body: JSON.stringify({ text, scope: useSelection ? 'selection' : 'document' }),
+        signal: tidyController.signal,
+      });
+      if (res.type === 'opaqueredirect' || res.status === 0) {
+        tidyMessage = 'Your session expired. Sign in again to tidy.';
+        return;
+      }
+      const result = deserialize(await res.text()) as
+        | { type: 'success'; data?: { corrected?: unknown; model?: unknown } }
+        | { type: 'failure'; data?: { error?: unknown } }
+        | { type: 'error' | 'redirect' };
+      if (result.type !== 'success') {
+        tidyMessage =
+          result.type === 'failure' && typeof result.data?.error === 'string' && result.data.error !== 'csrf'
+            ? result.data.error
+            : 'Tidy could not finish. Try again.';
+        return;
+      }
+      const corrected = typeof result.data?.corrected === 'string' ? result.data.corrected : '';
+      const model = typeof result.data?.model === 'string' ? result.data.model : data.tidy.model;
+      if (corrected.length === 0 || corrected === text) {
+        // A clean result: tidy found nothing to fix. Never open an empty review.
+        tidyNoop = true;
+        return;
+      }
+      // Validate the result as a proofread (Task 13). A rejection writes nothing and shows the message.
+      const validation = validateTidy(text, corrected);
+      if (!validation.ok) {
+        tidyMessage = TIDY_REJECTION_MESSAGE;
+        return;
+      }
+      if (validation.changes.length === 0) {
+        tidyNoop = true;
+        return;
+      }
+      // Offset the changes back into the full document (a selection tidy diffs the selected text). The
+      // captured original handed to the review is the full body, so every line label and context row is
+      // computed against the real document.
+      const changes: Change[] = validation.changes.map((c) => ({
+        ...c,
+        from: c.from + offset,
+        to: c.to + offset,
+      }));
+      tidyReview = { changes, original: body, model };
+      tidyMode = true;
+      tidyApi?.enter(changes);
+    } catch {
+      // An abort (Cancel or the client timeout) or a network/parse failure both map to the same
+      // retryable message; the buffer is untouched.
+      tidyMessage = tidyController?.signal.aborted ? null : 'Tidy could not finish. Try again.';
+    } finally {
+      clearTimeout(timer);
+      tidyController = null;
+      tidyBusy = false;
+    }
+  }
+
+  /** Cancel an in-flight tidy: abort the request and clear the working state. The buffer is untouched. */
+  function cancelTidy() {
+    tidyController?.abort();
+    tidyBusy = false;
+    tidyMessage = null;
+  }
+
+  /** Close the review: clear tidy mode and the review data. On apply the "Undo tidy" affordance shows
+   *  until the next edit; on cancel nothing changed. */
+  function closeTidyReview(applied: boolean) {
+    tidyMode = false;
+    tidyReview = null;
+    tidyApplied = applied;
+    // Record the body the apply produced, so the next edit (a different body) dismisses the Undo chip.
+    tidyAppliedBody = applied ? body : null;
+  }
+  // The body snapshot right after Apply; the Undo-tidy chip dismisses once the body diverges from it.
+  let tidyAppliedBody = $state<string | null>(null);
+  $effect(() => {
+    const current = body;
+    if (tidyApplied && tidyAppliedBody !== null && current !== tidyAppliedBody) {
+      tidyApplied = false;
+      tidyAppliedBody = null;
+    }
+  });
+  // Undo the whole applied tidy in one move (ordinary editor Undo of the one batched transaction). The
+  // chip names it so the author knows the whole tidy is one move back.
+  function undoTidy() {
+    undoEditor();
+    tidyApplied = false;
+    tidyAppliedBody = null;
+  }
 
   // The media insert seams, registered by MarkdownEditor on mount, mirroring the range holders
   // above. The popover drives the optimistic upload loop through them: the caret anchor, the focus
@@ -1053,6 +1212,15 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
         {#if dirty}<span class="h-1.5 w-1.5 shrink-0 rounded-full bg-warning" aria-hidden="true"></span>{/if}
         {saveState}
       </span>
+      {#if tidyApplied}
+        <!-- The session-level Undo tidy (graft 6): surfaced right after Apply, dismissed on the next
+             edit. Ordinary editor Undo covers it mechanically (the apply is one history entry); this
+             chip names it so the author knows the whole tidy is one move back. -->
+        <span class="flex items-center gap-2 border-l border-[var(--cairn-card-border)] pl-3 text-xs text-[var(--color-muted)]" data-testid="tidy-undo-chip">
+          <span class="inline-flex items-center gap-1 font-semibold text-[var(--color-positive-ink)]">Tidy applied</span>
+          <button type="button" class="underline decoration-[color-mix(in_oklab,currentColor_40%,transparent)] underline-offset-2 hover:text-primary" onclick={undoTidy}>Undo tidy</button>
+        </span>
+      {/if}
     </div>
 
     <div class="ml-auto flex items-center gap-2 border-l border-[var(--cairn-card-border)] pl-3">
@@ -1360,6 +1528,21 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
             </svg>
           </button>
+          {#if tidyEnabled}
+            <!-- Tidy (spec 2.1): the single desk entry point for the light copy-edit. A labelled
+                 accent-quiet action (something you invoke, not a format you toggle). Disabled in
+                 Preview, while a review is open, and while a request is in flight. -->
+            <button
+              type="button"
+              class="btn btn-sm btn-ghost gap-1.5"
+              aria-label="Tidy"
+              title="Tidy: a light copy-edit you review before it lands"
+              disabled={insertDisabled || tidyBusy}
+              onclick={runTidy}
+            >
+              <SparklesIcon class="h-4 w-4" aria-hidden="true" />Tidy
+            </button>
+          {/if}
           <!-- The Figure control: always rendered, enabled only when the caret sits on a media image
                (and the Write surface is up). It never mounts or unmounts on caret movement; only its
                enabled state changes (the Edit-block pattern). The unavailable state uses aria-disabled,
@@ -1398,6 +1581,9 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
           registerInsertLink={(fn) => (insertLink = fn)}
           registerGetSelection={(fn) => (getSelection = fn)}
           registerFormat={(fn) => (format = fn)}
+          registerTidy={(api) => (tidyApi = api)}
+          registerUndo={(fn) => (undoEditor = fn)}
+          {tidyMode}
           registerCaretCoords={(fn) => (caretCoords = fn)}
           registerFocusEditor={(fn) => (focusEditor = fn)}
           registerImagePlaceholders={(api) => (placeholders = api)}
@@ -1799,6 +1985,61 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
 />
 <MarkdownHelpDialog bind:this={helpDialog} />
 <ShortcutsDialog bind:this={shortcutsDialog} />
+
+<!-- The tidy review surface (spec 2.5). Mounted only while a review is open, keyed by the validated
+     change set so a fresh review remounts. It drives the in-buffer decorations and the batched apply
+     through tidyApi; the host clears tidy mode on close. -->
+{#if tidyReview && tidyApi}
+  <TidyReview
+    changes={tidyReview.changes}
+    original={tidyReview.original}
+    conventions={data.tidy.conventions}
+    model={tidyReview.model}
+    title={data.title}
+    api={tidyApi}
+    onclose={closeTidyReview}
+    onshow={(from, to) => selectRange(from, to)}
+  />
+{/if}
+
+<!-- The tidy working state: a cancelable dialog wired to the real abort (Task 11's AbortController
+     plus the bounded client timeout). Shown while the model call is in flight. -->
+{#if tidyBusy}
+  <dialog class="modal modal-open" aria-labelledby="cairn-tidy-working-title" data-testid="tidy-working">
+    <div class="modal-box flex flex-col items-center gap-3 text-center">
+      <span class="loading loading-spinner loading-lg text-primary" aria-hidden="true"></span>
+      <h2 id="cairn-tidy-working-title" class="text-base font-semibold">Tidying your text</h2>
+      <p class="max-w-prose text-sm text-[var(--color-muted)]">
+        Claude is reading your draft for a light copy-edit. You will review every change before it lands.
+      </p>
+      <button type="button" class="btn btn-sm" onclick={cancelTidy}>Cancel</button>
+    </div>
+  </dialog>
+{/if}
+
+<!-- The no-op confirmation: tidy found nothing to fix. Quiet, never an empty review. -->
+{#if tidyNoop}
+  <dialog class="modal modal-open" aria-labelledby="cairn-tidy-noop-title" data-testid="tidy-noop">
+    <div class="modal-box flex flex-col items-center gap-3 text-center">
+      <h2 id="cairn-tidy-noop-title" class="text-base font-semibold">Nothing to fix</h2>
+      <p class="max-w-prose text-sm text-[var(--color-muted)]">Tidy read your text and found nothing to change.</p>
+      <button type="button" class="btn btn-sm btn-primary" onclick={() => (tidyNoop = false)}>Close</button>
+    </div>
+  </dialog>
+{/if}
+
+<!-- A refused, failed, or rejected tidy: the honest message; the document is unchanged. -->
+{#if tidyMessage}
+  <dialog class="modal modal-open" aria-labelledby="cairn-tidy-message-title" data-testid="tidy-message">
+    <div class="modal-box flex flex-col gap-3">
+      <h2 id="cairn-tidy-message-title" class="text-base font-semibold">Tidy could not run</h2>
+      <p class="text-sm text-[var(--color-muted)]">{tidyMessage}</p>
+      <div class="flex justify-end">
+        <button type="button" class="btn btn-sm btn-primary" onclick={() => (tidyMessage = null)}>Close</button>
+      </div>
+    </div>
+  </dialog>
+{/if}
 <DeleteDialog
   bind:this={deleteDialog}
   trigger={false}

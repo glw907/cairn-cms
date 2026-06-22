@@ -27,9 +27,14 @@ check` 0/0, `npm test` exit 0, `npm run package` exit 0, the showcase build gree
 30/30. The full post-mortem, including the dead ends, is
 [`internal/2026-06-21-e2e-dist-svelte-build-failure.md`](internal/2026-06-21-e2e-dist-svelte-build-failure.md).
 
-**HELD for Geoff:** confirm the pushed branch's CI `e2e` run is green, merge `fix/e2e-dist-svelte-build`
-to `main`, then `gh release create v0.60.1 --target main` (OIDC trusted-publish, npm latest). Consider
-`npm deprecate @glw907/cairn-cms@0.60.0` (needs npm 2FA).
+A second, smaller fix rode the same branch: the spellcheck e2e specs got a larger test budget (90s,
+with 60s for the dictionary-load waits). Those specs had never run in CI before, because the build
+failed first, and CI's slower runner needs more time for the 1.5MB dictionary to stream into wasm
+before the lint underlines paint.
+
+**HELD for Geoff:** the pushed branch (PR #1) is CI-green; both `e2e` and `test` pass. Merge
+`fix/e2e-dist-svelte-build` to `main`, then `gh release create v0.60.1 --target main` (OIDC
+trusted-publish, npm latest). Consider `npm deprecate @glw907/cairn-cms@0.60.0` (needs npm 2FA).
 
 **Once `0.60.1` is green and released:** the per-site cutover (ecxc-ski, 907-life) with the owed LIVE
 ADMIN SMOKE (the first real Anthropic Worker call, the first dictionary commit), then the

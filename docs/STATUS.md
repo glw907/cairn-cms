@@ -11,7 +11,29 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-21, latest): the editor copy-edit + spellcheck pass (`0.60.0`) is COMPLETE on `feat/editor-copyedit`; HELD for merge, release, and push
+## Immediate next action (2026-06-21, latest): `0.60.0` is RELEASED but its consumer build is BROKEN; the e2e CI gate is RED. Fix forward to `0.60.1`.
+
+**OPEN BLOCKER.** `0.60.0` merged to `main` (`ffd4d92`), released, and published to npm (`latest`), but
+the `e2e` CI job fails: the showcase production build dies in rolldown's `vite-dynamic-import-vars`
+parsing the package's `dist/*.svelte` files while they still carry TypeScript (`registry?`, `origin?`).
+The `test` job (unit, integration, component) is green; only the consumer-build `e2e` fails, and it is
+deterministic. No production site is on `0.60.0` yet, so nothing live is broken, but the published
+package is suspect and the real sites consume cairn the same way the showcase does. **The full
+troubleshooting brief is [`docs/internal/2026-06-21-e2e-dist-svelte-build-failure.md`](docs/internal/2026-06-21-e2e-dist-svelte-build-failure.md)**;
+read it first. The prior session could not reproduce the failure locally despite matching the CI
+toolchain (node 22, npm 10.9.8, rolldown 1.0.3 and 1.1.2, clean `npm ci`). The recommended first move
+is a CI probe on a PR branch to capture the runner's resolved `vite`/`rolldown`/`esbuild` versions and
+the offending `dist` file as the runner sees it, then fix from evidence (leading suspect: the unpinned
+`npm install --prefix examples/showcase` in `.github/workflows/e2e.yml`). A partial fix is already on
+`main` (`7e20e49`, the static dictionary URL, real but not the cause). Verify any fix via CI (local
+builds pass regardless), then cut `0.60.1` (`gh release create v0.60.1 --target main`). See the
+`cairn-0.60-e2e-dist-build-failure` memory.
+
+**Once `0.60.1` is green and released:** the per-site cutover (ecxc-ski, 907-life) with the owed LIVE
+ADMIN SMOKE (the first real Anthropic Worker call, the first dictionary commit), then the
+`create-cairn-site` scaffolder and media Pass D.
+
+## Prior next action (2026-06-21): the editor copy-edit + spellcheck pass (`0.60.0`) is COMPLETE on `feat/editor-copyedit`; HELD for merge, release, and push
 
 **`0.60.0` is COMPLETE and unreleased on `feat/editor-copyedit`** (worktree
 `.claude/worktrees/editor-copyedit`). All 17 plan tasks landed test-first, the pass-end simplifier ran,

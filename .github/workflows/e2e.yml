@@ -14,6 +14,10 @@ jobs:
         with:
           node-version: 22
       - run: npm ci
-      - run: npm install --prefix examples/showcase
+      # The showcase lockfile is committed (not gitignored) and installed with `npm ci` so CI resolves
+      # the exact toolchain a developer reproduces locally. A floating `npm install` once drifted CI onto
+      # a Vite 8 / Rolldown build that no local run could reproduce; see the post-mortem at
+      # docs/internal/2026-06-21-e2e-dist-svelte-build-failure.md.
+      - run: npm ci --prefix examples/showcase
       - run: npx --prefix examples/showcase playwright install --with-deps chromium
       - run: npm --prefix examples/showcase run test:e2e

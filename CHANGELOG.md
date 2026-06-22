@@ -2,6 +2,19 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.60.1
+
+A packaging fix so the library bundles cleanly in a Vite 8 consumer. It supersedes `0.60.0`, whose
+consumer build failed on Vite 8 / Rolldown. `svelte-package` ships `.svelte` with `<script lang="ts">`
+and the TypeScript intact, and Rolldown parses that `<script>` as JavaScript before the Svelte plugin
+compiles the file, failing on a TypeScript optional parameter (`registry?: T` loses its type but keeps
+the `?`). The shipped `.svelte` now carry a plain-JavaScript `<script>` body. The `lang="ts"` tag
+stays, because the component markup still uses TypeScript that the Svelte compiler reads (typed
+`{#snippet}` parameters and `{@const x = y as T}` casts).
+
+No consumer action is required. The change is to the published `dist` only; the public API and the
+types are unchanged.
+
 ## 0.60.0
 
 <!-- release-size: minor -->

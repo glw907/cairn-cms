@@ -20,6 +20,10 @@ const SEED = '2026-06-copyedit';
 test('the worker lints the seeded misspellings, a suggestion applies, and an added word clears its underline', async ({
   page,
 }) => {
+  // The worker streams the 1.5MB en-US dictionary into wasm on first lint, which is slower on CI's
+  // runner than Playwright's default 30s test budget allows. Raise the whole-test ceiling so the
+  // dictionary load plus the suggestion and add-to-dictionary steps all fit.
+  test.setTimeout(90_000);
   await page.goto('/admin');
   await page.locator(`a[href="/admin/posts/${SEED}"]`).click();
   await expect(page).toHaveURL(new RegExp(`/admin/posts/${SEED}$`));
@@ -29,7 +33,7 @@ test('the worker lints the seeded misspellings, a suggestion applies, and an add
   const editor = page.locator('.cm-content');
   await expect(editor).toBeVisible();
   const underlines = page.locator('.cm-lintRange-info');
-  await expect(underlines).toHaveCount(2, { timeout: 30_000 });
+  await expect(underlines).toHaveCount(2, { timeout: 60_000 });
 
   // The underline is the locked amber, wavy: the theme paints --cairn-warning-ink in a wavy style.
   // The admin sheet defines the variable as an oklch color, and the browser reports the computed

@@ -125,6 +125,21 @@ an unverified destination, which is how the ecxc outage hid. The `cloudflare:ema
 destinations; do not confuse the two. Email Sending also needs Workers Paid plus dashboard
 onboarding.
 
+## Durable gotcha (Vite 8 ships TypeScript in dist `.svelte`)
+
+`svelte-package` ships `.svelte` with `<script lang="ts">` and the TypeScript intact. On Vite 8 /
+Rolldown, the builtin `dynamic-import-vars` parses that `<script>` as JavaScript before the consumer's
+Svelte plugin compiles the file, and it chokes on a TS optional parameter (`registry?: T` becomes invalid
+`registry?`), failing the consumer build. The fix is a post-package step,
+`scripts/transpile-dist-svelte.mjs` (wired into the `package` script), that transpiles each dist `.svelte`
+`<script>` body to plain JavaScript with esbuild `verbatimModuleSyntax` (which keeps value imports used
+only in the markup; the default elision breaks the component) and KEEPS the `lang="ts"` tag, because the
+markup still carries TypeScript the Svelte compiler must parse (typed `{#snippet}` parameters and
+`{@const x = y as T}` casts). Do not remove this step or strip `lang="ts"`. The showcase
+`package-lock.json` is committed and CI uses `npm ci` so the Vite 8 toolchain is reproducible; a
+gitignored lockfile once let CI float onto a build no local run could reproduce. Full post-mortem:
+[`docs/internal/2026-06-21-e2e-dist-svelte-build-failure.md`](docs/internal/2026-06-21-e2e-dist-svelte-build-failure.md).
+
 ## Credentials (machine-local, intentionally not in git)
 
 - **GITHUB_APP_ID:** `3847496`, in the encrypted registry (`~/.dotfiles/secrets/values.age`) and

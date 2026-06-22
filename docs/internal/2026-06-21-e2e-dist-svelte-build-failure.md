@@ -1,116 +1,111 @@
-# Troubleshooting: the e2e CI build fails parsing dist `.svelte` (0.60.0)
+# Post-mortem: the e2e build failed parsing dist `.svelte` on Vite 8 (0.60.0)
 
-Status: OPEN. Started 2026-06-21, after `0.60.0` published. This is a handoff brief for a fresh
-troubleshooting session. Read it first, then go straight to the CI probe (see "Recommended first
-step"). The failure only reproduces in CI, so do not expect a local repro to come easily; the prior
-session tried hard and could not.
+Status: RESOLVED 2026-06-21, fixed forward in 0.60.1. This took a long multi-session debugging effort,
+so the detail below exists to keep the next person from repeating it.
+
+## Summary
+
+The `e2e` CI job (the showcase production build) failed on `main` after 0.60.0 while every local build
+passed. The cause was an upstream Vite 8 / Rolldown incompatibility with the TypeScript that
+`@sveltejs/package` ships inside `.svelte` files, hidden by a CI toolchain no local run could reproduce.
+The fix is a post-package step that transpiles each shipped `.svelte` `<script>` to plain JavaScript,
+plus committing the showcase lockfile so CI is reproducible. No production site was affected; none had
+cut over to 0.60.0.
 
 ## The symptom
 
-The `e2e` CI job on `main` fails at the showcase production build (Playwright's `webServer` runs
-`npm run build`). The `test` job (unit, integration, component) passes; only `e2e` fails. The error:
+Playwright's `webServer` runs `npm run build` for the showcase. On Vite 8 that build failed with three
+errors from Rolldown's builtin dynamic-import-vars plugin, each parsing a cairn `.svelte` file from
+`dist/` and choking on a TypeScript optional parameter:
 
 ```
-[builtin:vite-dynamic-import-vars] plugin threw an error
-  Failed to parse code in '.../dist/components/MediaInsertPopover.svelte':
+[builtin:vite-dynamic-import-vars] Failed to parse code in 'dist/components/ComponentInsertDialog.svelte':
   "Expected `,` or `)` but found `?`"
-Build failed with 3 errors:
-  dist/components/ComponentInsertDialog.svelte:17  export function insertableDefs(registry?) {
-  dist/components/CairnMediaLibrary.svelte:222     function openAsset(asset, origin?) {
+  17 | export function insertableDefs(registry?) {
 ```
 
-The `?` is a TypeScript optional-parameter marker. In CI's `dist`, the type annotation is stripped
-(`registry?: ComponentRegistry` becomes `registry?`) but the `?` stays, which is invalid JS, and
-rolldown's `vite-dynamic-import-vars` parser dies on it. It is deterministic: a `gh run rerun` failed
-identically.
+The `?` is a TypeScript optional-parameter marker. The bundler stripped the `: ComponentRegistry` type
+but kept the `?`, leaving invalid JavaScript.
 
-## Blast radius
+## Why it did not reproduce locally (the trap that cost the most time)
 
-- No production site is on `0.60.0` (the per-site cutovers were not done), so nothing live is broken.
-- `0.60.0` is published to npm as `latest` and its consumer build is suspect. The real sites
-  (ecxc-ski, 907-life) consume cairn the same way the showcase does (`ssr.noExternal` plus the
-  `svelte` export condition over `dist/*.svelte`), so a real site build likely hits this too.
-- Supersede with a fixed `0.60.1` once e2e is green. Consider `npm deprecate @glw907/cairn-cms@0.60.0`
-  (needs Geoff's npm 2FA; a CLI token cannot do it).
+`examples/showcase/package-lock.json` was gitignored. CI checks out a fresh tree with no lockfile and
+ran `npm install --prefix examples/showcase`, which resolves the latest toolchain satisfying the `^`
+ranges. A developer's working tree keeps an on-disk lockfile, so `npm install` reuses it and pins an
+older, working toolchain. Deleting `node_modules` does not help, because the lockfile still pins the old
+versions. The reproduction recipe was to delete the lockfile too:
 
-## Ruled out (do not re-run these)
+```
+rm -rf examples/showcase/node_modules examples/showcase/package-lock.json
+npm ci                                   # root, so dist rebuilds with all deps (incl. spellchecker-wasm)
+npm install --prefix examples/showcase   # resolves the CI toolchain fresh
+npm --prefix examples/showcase run build # reproduces the failure
+```
 
-Every local build passes; the failure did not reproduce under any of:
+This is now closed. The lockfile is committed and CI uses `npm ci`, so CI and local resolve the same
+toolchain.
 
-- Node 22 (CI's version) and Node 24. Note: `nvm use 22` does not stick in the claude shell because a
-  non-nvm `node` sits ahead on PATH; invoke `~/.nvm/versions/node/v22.23.0/bin/node` or prepend it to
-  PATH explicitly.
-- npm 10.9.8 (CI's version, from Node 22).
-- rolldown 1.0.3 (the committed lockfile pin) and rolldown 1.1.2 (latest, force-installed).
-- A clean root `npm ci` plus a fresh `npm run package` (`dist` rebuilt from scratch).
-- A clean showcase `node_modules` plus `npm install --prefix examples/showcase`.
+## Root cause
 
-The decisive divergence: the local clean `dist/components/ComponentInsertDialog.svelte` is VALID,
-`<script lang="ts">` with the full type kept (`export function insertableDefs(registry?:
-ComponentRegistry): ComponentDef[]`). CI's `dist` shows the malformed `insertableDefs(registry?)`. So
-the same `svelte-package` (2.5.7) and the same source produce different `dist` output, or the consumer
-build produces that malformed intermediate, between this machine and the CI runner. That gap is the
-mystery.
+There are two layers of TypeScript in cairn's `.svelte` files, handled by different tools.
 
-Also note: `ComponentInsertDialog.svelte` and `CairnMediaLibrary.svelte` contain ZERO `import(` calls
-(only `MediaInsertPopover.svelte` has 2), yet CI parse-errors on all three. So `dynamic-import-vars` is
-parsing these files broadly, not because a glob from cairn's own code matched them.
+1. The `<script lang="ts">` body. `@sveltejs/package` ships `.svelte` with `lang="ts"` and the
+   TypeScript intact (its `strip_lang_tags` keeps the tag for Svelte 5). The consumer bundles these
+   files (`ssr.noExternal: ['@glw907/cairn-cms']`). On Vite 8, Rolldown's builtin dynamic-import-vars
+   parses the `<script>` as JavaScript before the Svelte plugin compiles the file, and it mis-strips a
+   TypeScript optional parameter, turning `registry?: T` into invalid `registry?`. This is the failure.
 
-## Key unknowns to chase (in order)
+2. The markup. cairn uses TypeScript in the template too: typed snippet parameters
+   (`{#snippet configureForm(def: ComponentDef)}`) and `{@const f = field as TextareaField}` casts. The
+   Svelte compiler handles this, but only when `lang="ts"` is present.
 
-1. What exact `vite`, `rolldown`, and `esbuild` versions does the CI runner resolve? The e2e workflow
-   uses `npm install --prefix examples/showcase` (NOT `npm ci`), so the showcase deps are unpinned and
-   may drift from the committed `examples/showcase/package-lock.json`. This is the leading suspect.
-2. Why does CI's `dist/*.svelte` differ from local (type stripped, `?` kept)? Is `svelte-package`
-   preprocessing differently in CI, or is the consumer's `vitePreprocess` producing that intermediate
-   before `dynamic-import-vars` runs?
-3. Why does `dynamic-import-vars` parse `.svelte` files that contain no dynamic import?
-4. What changed between `0.59.0` (e2e passed, CI run 27890571761) and `0.60.0` (e2e fails) to trigger
-   this? New in `0.60.0`: the spellcheck Web Worker (`new Worker(new URL('./spellcheck-worker.js',
-   import.meta.url), { type: 'module' })`), several `await import('@codemirror/...')` calls, the
-   worker's `await import('spellchecker-wasm/lib/browser/SpellcheckerWasm.js')`, and a templated
-   dictionary `new URL` that has since been removed.
+So the `<script>` TypeScript has to go, because the bundler sees it, and the `lang="ts"` tag has to stay,
+because the Svelte compiler needs it for the markup. Those two constraints together rule out the obvious
+fixes.
 
-## State so far
+The underlying bug is upstream, tracked in sveltejs/vite-plugin-svelte#1143 (a meta-issue for Vite 8 /
+Rolldown / Svelte) with related issues in oxc and rolldown. The maintainer's note there says plainly that
+Vite 8 plus Rolldown is not production-ready.
 
-- Partial fix pushed to `main`: `7e20e49` "Resolve the spellcheck dictionary URL with a static path".
-  It removed the only templated `new URL(./spellcheck-assets/${file})`, a real latent glob trigger,
-  but it is NOT the cause; e2e still fails after it (CI run 27919852421). Keep the fix; it is correct.
-- `0.60.0` is merged to `main` (`ffd4d92`), released, and on npm. The pass itself (Tasks 1 to 17,
-  simplify, adversarial review fold-in) is complete and committed.
-- The `feat/editor-copyedit` worktree still exists at `.claude/worktrees/editor-copyedit`, even with
-  `main` at `7e20e49`.
-- Relevant config: the library `svelte.config.js` has `preprocess: vitePreprocess()`. The showcase
-  `vite.config.ts` has `ssr: { noExternal: ['@glw907/cairn-cms'] }` and the `cairnManifest` plugin.
-  The e2e workflow is `.github/workflows/e2e.yml`.
+## The fix
 
-## Recommended first step: a CI probe for ground truth
+`scripts/transpile-dist-svelte.mjs` runs after `svelte-package` in the `package` script. For each
+`dist/**/*.svelte` it transpiles the `<script lang="ts">` body to JavaScript with esbuild and leaves the
+`lang="ts"` tag and the markup untouched. The transpile sets `verbatimModuleSyntax`, so only `import
+type` (and inline `type` specifiers) are removed and every value import is kept, including one referenced
+only in the markup. That detail is load-bearing: the default TypeScript import elision drops markup-only
+imports and breaks the component at runtime, which is the regression behind `vitePreprocess({ script:
+true })` on Vite 8 (sveltejs/vite-plugin-svelte#1313).
 
-Local cannot reproduce, so get the runner's truth in one round-trip. On a PR branch (the
-`pull_request` trigger runs e2e without touching `main`), add a temporary step before
-`test:e2e` that prints:
+The shipped `.svelte` now carries `<script lang="ts">` with a plain-JavaScript body. The bundler parses
+the body cleanly, and the Svelte compiler still has the tag it needs for the markup. cairn's import
+discipline (consistent `import type`) is what makes `verbatimModuleSyntax` safe, and `npm run check`
+enforces it.
 
-- `node -v`, `npm -v`
-- `npm --prefix examples/showcase ls vite rolldown esbuild @sveltejs/package svelte` (and the root)
-- the head of `dist/components/ComponentInsertDialog.svelte` as the runner sees it (confirm the
-  malformed `registry?`), and whether its `<script>` tag still carries `lang="ts"`
+CI is reproducible now too: `examples/showcase/package-lock.json` is committed and the workflow uses
+`npm ci --prefix examples/showcase`.
 
-That pins unknown 1 and 2 immediately. Then fix from evidence rather than guesswork.
+## Dead ends (do not retry these)
 
-## Candidate fixes (decide after the probe)
+- **Pin the showcase to an older toolchain.** Unreliable. The failure reproduces even on `vite@8.0.14` /
+  `rolldown@1.0.2`, the set a developer's on-disk lockfile had pinned green; the trigger is a drifting
+  transitive rather than a single version, and reconstructing the "green" set still failed.
+- **`vitePreprocess({ script: true })`.** It transpiles the `<script>` to JavaScript and the build goes
+  green, but it elides markup-only imports and breaks the editor at runtime; the component test suite
+  catches it.
+- **`build.dynamicImportVarsOptions.exclude`.** Vite 8 / Rolldown's builtin ignores it and the parse
+  error stays.
+- **Override `rolldown` to 1.1.2** (which does fix the parse bug). API-incompatible with the available
+  Vite 8 versions: `vite@8.0.x` imports `viteWasmFallbackPlugin` from `rolldown/experimental`, which
+  1.1.2 dropped. No published Vite pairs with a fixed Rolldown yet.
+- **Pin the showcase to stable Vite 7.** Out of scope, since cairn targets Vite 8, and Vite 7 hits the
+  same class of error from rollup's parser anyway.
 
-- If toolchain drift (unknown 1): switch the e2e workflow's `npm install --prefix examples/showcase`
-  to `npm ci`, and make sure `examples/showcase/package-lock.json` is committed and in sync. This is
-  the cheapest fix if a newer vite/rolldown/esbuild is the trigger.
-- If the package ships `.svelte` that a consumer's bundler cannot parse (unknown 2 and 3): the robust
-  package-level fix is to stop shipping TS that a non-svelte parser sees. Options: have `svelte-package`
-  emit fully JS-stripped `.svelte`, ensure the consumer's svelte transform runs before
-  `dynamic-import-vars`, or document a consumer `build.dynamicImportVarsOptions`/plugin-order tweak
-  (the prod sites would need it too, so a package-level fix is preferred).
-- Keep `7e20e49` regardless; the static dictionary URL is correct hygiene.
+## Watch items
 
-## How to verify a fix
-
-Local builds pass regardless, so they cannot confirm a fix. Use CI as the oracle: iterate on a PR
-branch until its `e2e` job is green, then merge to `main` and cut `0.60.1` (`gh release create v0.60.1
---target main`, which fires the OIDC publish). Do not cut the release until e2e is green.
+- When Rolldown ships a fix and a Vite release pairs with it, the transpile step can be revisited. It is
+  correct hygiene regardless, because a plain-JavaScript `<script>` body is bundler-agnostic. Do not
+  remove it without re-proving the showcase build on the then-current Vite 8 toolchain.
+- The markup TypeScript means `lang="ts"` must stay on the shipped `.svelte`. A consumer that runs
+  `vitePreprocess({ script: true })` over cairn's components would re-trigger the elision bug. That is
+  the upstream issue rather than cairn's, and it is why the tag cannot simply be stripped.

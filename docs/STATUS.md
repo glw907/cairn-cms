@@ -11,34 +11,31 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-21, latest): `0.60.1` fixes the e2e build; ready to merge and release.
+## Immediate next action (2026-06-22, latest): `0.60.1` is RELEASED; next is the per-site cutover to `^0.60.1`.
 
-**RESOLVED on `fix/e2e-dist-svelte-build`.** The `0.60.0` e2e failure (the showcase production build
-dying in Vite 8 / Rolldown's `dynamic-import-vars` on the package's TypeScript `dist/*.svelte`) is an
-upstream Vite 8 / Rolldown incompatibility, not a cairn bug. The bundler parses the shipped `.svelte`
-`<script>` as JavaScript before the Svelte plugin compiles it and mis-strips a TS optional parameter
-(`registry?: T` becomes invalid `registry?`). The fix is a post-package step,
-`scripts/transpile-dist-svelte.mjs`, that transpiles each shipped `.svelte` `<script>` body to plain
-JavaScript with esbuild (`verbatimModuleSyntax`, so markup-only value imports survive) while keeping the
-`lang="ts"` tag, because the markup still carries TypeScript the Svelte compiler must parse. The showcase
-lockfile is now committed and CI uses `npm ci`, so the toolchain is reproducible (the gitignored lockfile
-was why no local run could reproduce CI). Local verification on the current Vite 8 toolchain: `npm run
-check` 0/0, `npm test` exit 0, `npm run package` exit 0, the showcase build green, and Playwright e2e
-30/30. The full post-mortem, including the dead ends, is
-[`internal/2026-06-21-e2e-dist-svelte-build-failure.md`](internal/2026-06-21-e2e-dist-svelte-build-failure.md).
+**`0.60.1` RELEASED** (npm `latest`; PR #1 squash-merged to `main` as `735ea4c`; e2e + test green; the
+published tarball carries the fix). It fixes the `0.60.0` consumer-build failure: Vite 8 / Rolldown
+parsed the TypeScript in the shipped `dist/*.svelte` and failed on a TS optional parameter
+(`registry?: T` became invalid `registry?`), an upstream Vite 8 / Rolldown incompatibility rather than a
+cairn bug. The fix is a post-package step, `scripts/transpile-dist-svelte.mjs`, that transpiles each
+shipped `.svelte` `<script>` body to plain JavaScript (esbuild `verbatimModuleSyntax`, so markup-only
+value imports survive) while keeping the `lang="ts"` tag, because the markup still carries TypeScript the
+Svelte compiler reads. The showcase lockfile is committed and CI uses `npm ci` so the toolchain is
+reproducible, and the spellcheck e2e specs got a larger CI test budget. The full post-mortem and the dead
+ends are [`internal/2026-06-21-e2e-dist-svelte-build-failure.md`](internal/2026-06-21-e2e-dist-svelte-build-failure.md);
+the `cairn-pass` ritual now carries a consumer-build gate so this class of failure is caught before
+release.
 
-A second, smaller fix rode the same branch: the spellcheck e2e specs got a larger test budget (90s,
-with 60s for the dictionary-load waits). Those specs had never run in CI before, because the build
-failed first, and CI's slower runner needs more time for the 1.5MB dictionary to stream into wasm
-before the lint underlines paint.
-
-**HELD for Geoff:** the pushed branch (PR #1) is CI-green; both `e2e` and `test` pass. Merge
-`fix/e2e-dist-svelte-build` to `main`, then `gh release create v0.60.1 --target main` (OIDC
-trusted-publish, npm latest). Consider `npm deprecate @glw907/cairn-cms@0.60.0` (needs npm 2FA).
-
-**Once `0.60.1` is green and released:** the per-site cutover (ecxc-ski, 907-life) with the owed LIVE
-ADMIN SMOKE (the first real Anthropic Worker call, the first dictionary commit), then the
+**NEXT: migrate both sites to `^0.60.1`** (a site-pass per site, not a cairn-cms pass). `0.60.1` carries
+the full spellcheck + tidy work AND the held 907-life media cutover. Per site: bump `@glw907/cairn-cms`
+to `^0.60.1`, deploy, and run the owed LIVE ADMIN SMOKE the showcase cannot prove (the first real
+spellcheck Worker in a production consumer build, the first dictionary commit, and, where tidy is
+enabled, the first real Anthropic Worker call after setting the `ANTHROPIC_API_KEY` Worker secret). Log
+any cutover DX friction to each site's friction surface and cairn's `ROADMAP.md`. After the cutover: the
 `create-cairn-site` scaffolder and media Pass D.
+
+`0.60.0` is superseded but still on npm; deprecating it needs Geoff's npm 2FA (`npm deprecate
+'@glw907/cairn-cms@0.60.0' "superseded by 0.60.1; the 0.60.0 consumer build fails on Vite 8"`).
 
 ## Prior next action (2026-06-21): the editor copy-edit + spellcheck pass (`0.60.0`) is COMPLETE on `feat/editor-copyedit`; HELD for merge, release, and push
 

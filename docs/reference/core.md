@@ -61,6 +61,16 @@ export const cairn = defineAdapter({
 });
 ```
 
+#### `supportContact` (adapter member)
+
+A free-form string the in-admin help points a stuck editor to: an email address, a URL, or a name and
+instruction. `composeRuntime` passes it to the runtime untouched, and the help renders the hand-off
+only when it is set, so an unset contact yields no dead button. Optional.
+
+```ts
+supportContact: 'help@example.org',
+```
+
 #### `preview` (adapter member)
 
 ```ts
@@ -198,6 +208,12 @@ Declare a concept's fields once. The single declaration is the source of truth f
 the validator, and the inferred frontmatter type. `options.refine` runs after the per-field rules
 pass, for cross-field and body-dependent checks; it returns field-keyed errors to merge or nothing,
 and never transforms the data. See the `defineAdapter` snippet above for `defineFields` in use.
+
+Every field also accepts an optional `description`: one author-facing sentence the editor renders under
+the field in the Details panel, associated with the input through `aria-describedby`. It is not a
+validation rule. The `date` field shows a built-in publish-clarity default when its `description` is
+unset, so the date never reads as if it schedules publishing; a field `description` replaces that
+default, and the date hint cannot be suppressed entirely.
 
 #### `defineRegistry`
 

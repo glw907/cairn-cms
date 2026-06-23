@@ -2,6 +2,33 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.61.0
+
+<!-- release-size: minor -->
+
+The editor gains the groundwork for in-admin help. This pass adds the engine seams and one built-in
+clarity default the help layer will build on.
+
+A frontmatter field can now carry a `description`: one author-facing sentence shown under the field in
+the editor's Details panel and tied to the input with `aria-describedby`. Set it on any field in a
+concept's `defineFields` schema.
+
+The `date` field ships a built-in publish-clarity hint ("Sets the date for this post. Publishing is a
+separate step you choose.") when the field sets no `description`, so a new site gets the reassurance
+without writing per-field copy. A field-level `description` overrides it; the hint cannot be turned
+off, only replaced.
+
+The adapter gains an optional `supportContact`: an email, a URL, or a name and instruction the
+in-admin help points a stuck editor to. It passes through to the runtime untouched, and the help
+renders the hand-off only when it is set, so there is never a button to a blank contact.
+
+The admin design system documents the recipes the help shell will follow, including the non-modal help
+region, the single right-slide-over slot, the disclosure-button ARIA contract, the getting-started
+progress checklist, and the empty-state starter slot.
+
+No consumer action is required. Every change is additive: the new field and adapter members are
+optional, and a site that sets neither sees only the date field's new default hint.
+
 ## 0.60.1
 
 A packaging fix so the library bundles cleanly in a Vite 8 consumer. It supersedes `0.60.0`, whose

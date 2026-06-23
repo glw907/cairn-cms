@@ -486,6 +486,28 @@ Recipes:
   checklist; no convention control sits in the tab order. The developer tier (the master switch, the
   key presence, the model) is read-only, and the API key value never leaves the server.
 
+### Help surfaces
+
+- **A help or reference panel is a non-modal `role="region"` with an `aria-label`, no scrim.** It
+  reuses the details-slide-over geometry (`top:64px; right:0; bottom:0`, `19rem`, hairline-plus-shadow,
+  on `base-200`). Focus moves in on open and back to the trigger on close; a window Escape closes it;
+  it leaves the a11y tree and the tab order via the `hidden` attribute when closed. Only a destructive
+  or commit surface is a modal `<dialog>`. A help cheat sheet is not destructive, so it is non-modal.
+- **The right slide-over region holds one panel at a time.** Help and the Details panel claim the same
+  slot, so opening one closes the other. State this so two right panels never stack.
+- **The disclosure button for a slide-over** carries `aria-haspopup="dialog"` (or `aria-controls` for
+  the non-modal region) and an `aria-expanded` mirrored from open state, and a visible text label at
+  its primary home. A bare glyph is allowed only for a secondary, contextual instance, never as the
+  sole standing trigger.
+- **The getting-started progress recipe** is built from the existing segmented check-and-tint control
+  and the `--color-positive-ink` token: a short checklist, each item glyph-backed when done (never
+  color alone, WCAG 1.4.1), the count carried in text with the visual bar as `role="presentation"`.
+  Steps derive from observable content and publish state, so the recipe shows a real count, never a
+  stored one.
+- **The empty-state recipe gains an optional starter-content slot:** beside the create CTA, a site may
+  surface labeled, openable starter entries. The label marks them as starters so they read as
+  removable, not as the author's own work.
+
 ## Chrome and spacing
 
 - The sidebar and topbar form one flat header strip: both `h-16` (the topbar PINNED with

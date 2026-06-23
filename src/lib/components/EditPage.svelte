@@ -1345,6 +1345,15 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   </div>
 {/snippet}
 
+<!-- The author-facing hint under a Details field. The id pairs with the input's aria-describedby
+     (`<name>-hint`), so assistive tech announces the sentence without bloating the accessible name.
+     Each field branch decides whether and where to render it; this snippet holds the one shape. -->
+{#snippet fieldHint(name: string, text: string)}
+  <p id={`${name}-hint`} class="fld-hint mt-1 text-sm text-[var(--color-muted)]">
+    {text}
+  </p>
+{/snippet}
+
 <!-- The whole edit surface remounts when navigation lands on another entry (see the entryKey
      reset above); script-level state and the beforeNavigate registration sit outside the block,
      so only the template rebuilds. -->
@@ -1822,9 +1831,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
             <span class="text-sm font-medium">{f.label}</span>
             <textarea class="textarea textarea-sm" name={f.name} aria-label={f.label} aria-describedby={f.description ? `${f.name}-hint` : undefined} rows={f.rows ?? 3}>{str(data.frontmatter[f.name])}</textarea>
             {#if f.description}
-              <p id={`${f.name}-hint`} class="fld-hint mt-1 text-sm text-[var(--color-muted)]">
-                {f.description}
-              </p>
+              {@render fieldHint(f.name, f.description)}
             {/if}
           </label>
         {:else if field.type === 'date'}
@@ -1833,9 +1840,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
             <!-- A date field always carries a hint: the adapter's description when set, else the
                  built-in publish-clarity default. So aria-describedby always points at the paragraph. -->
             <input class="input input-sm" type="date" name={field.name} aria-label={field.label} aria-describedby={`${field.name}-hint`} value={str(data.frontmatter[field.name])} />
-            <p id={`${field.name}-hint`} class="fld-hint mt-1 text-sm text-[var(--color-muted)]">
-              {field.description ?? DATE_PUBLISH_HINT}
-            </p>
+            {@render fieldHint(field.name, field.description ?? DATE_PUBLISH_HINT)}
           </label>
         {:else if field.type === 'boolean'}
           <label class="label cursor-pointer justify-start gap-2">
@@ -1843,9 +1848,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
             <span class="text-sm">{field.label}</span>
           </label>
           {#if field.description}
-            <p id={`${field.name}-hint`} class="fld-hint mt-1 text-sm text-[var(--color-muted)]">
-              {field.description}
-            </p>
+            {@render fieldHint(field.name, field.description)}
           {/if}
         {:else if field.type === 'tags'}
           {@const f = field as TagsField}
@@ -1853,9 +1856,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
           <fieldset class="fieldset" aria-describedby={f.description ? `${f.name}-hint` : undefined}>
             <legend class="fieldset-legend">{f.label}</legend>
             {#if f.description}
-              <p id={`${f.name}-hint`} class="fld-hint mt-1 text-sm text-[var(--color-muted)]">
-                {f.description}
-              </p>
+              {@render fieldHint(f.name, f.description)}
             {/if}
             <div class="flex flex-wrap gap-2">
               {#each f.options as option (option)}
@@ -1886,9 +1887,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
               value={tagValue}
             />
             {#if f.description}
-              <p id={`${f.name}-hint`} class="fld-hint mt-1 text-sm text-[var(--color-muted)]">
-                {f.description}
-              </p>
+              {@render fieldHint(f.name, f.description)}
             {/if}
           </label>
         {:else if field.type === 'image'}
@@ -1910,9 +1909,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
             <span class="text-sm font-medium">{field.label}</span>
             <input class="input input-sm" name={field.name} aria-label={field.label} aria-describedby={field.description ? `${field.name}-hint` : undefined} value={str(data.frontmatter[field.name])} required={field.required} />
             {#if field.description}
-              <p id={`${field.name}-hint`} class="fld-hint mt-1 text-sm text-[var(--color-muted)]">
-                {field.description}
-              </p>
+              {@render fieldHint(field.name, field.description)}
             {/if}
           </label>
         {/if}

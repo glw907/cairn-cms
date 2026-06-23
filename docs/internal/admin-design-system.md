@@ -495,15 +495,20 @@ Recipes:
   or commit surface is a modal `<dialog>`. A help cheat sheet is not destructive, so it is non-modal.
 - **The right slide-over region holds one panel at a time.** Help and the Details panel claim the same
   slot, so opening one closes the other. State this so two right panels never stack.
-- **The disclosure button for a slide-over** carries `aria-haspopup="dialog"` (or `aria-controls` for
-  the non-modal region) and an `aria-expanded` mirrored from open state, and a visible text label at
-  its primary home. A bare glyph is allowed only for a secondary, contextual instance, never as the
-  sole standing trigger.
-- **The getting-started progress recipe** is built from the existing segmented check-and-tint control
-  and the `--color-positive-ink` token: a short checklist, each item glyph-backed when done (never
-  color alone, WCAG 1.4.1), the count carried in text with the visual bar as `role="presentation"`.
-  Steps derive from observable content and publish state, so the recipe shows a real count, never a
-  stored one.
+- **The disclosure button for a slide-over** mirrors `aria-expanded` from open state and carries a
+  visible text label at its primary home. The two surface types take different attributes: a trigger
+  that opens a modal `<dialog>` carries `aria-haspopup="dialog"`; a trigger for the non-modal
+  `role="region"` panel carries `aria-controls` pointing at the region and no `aria-haspopup`, because
+  `aria-haspopup="dialog"` would promise a dialog the region is not. A bare glyph is allowed only for a
+  secondary, contextual instance, never as the sole standing trigger.
+- **The getting-started progress recipe** borrows the check-and-tint look and the
+  `--color-positive-ink` token for a short checklist, each item glyph-backed when done (never color
+  alone, WCAG 1.4.1). The authoritative count lives in real adjacent text ("2 of 4 done"); the visual
+  bar is a decorative, non-focusable, non-interactive element marked `role="presentation"`. A focusable
+  or interactive node drops `role="presentation"` under the ARIA conflict rules, so echo the segmented
+  control's look on an inert element rather than reusing the interactive control as the bar. Steps
+  derive from observable content and publish state, so the recipe shows a real count, never a stored
+  one.
 - **The empty-state recipe gains an optional starter-content slot:** beside the create CTA, a site may
   surface labeled, openable starter entries. The label marks them as starters so they read as
   removable, not as the author's own work.

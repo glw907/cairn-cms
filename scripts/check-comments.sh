@@ -15,5 +15,8 @@ echo "== vale (em dash + lexicon on .ts comments) =="
 files="$(git ls-files 'src/lib/**/*.ts')"
 vale --minAlertLevel=error $files || fail=1
 
+echo "== svelte comment extractor (@component + script comments) =="
+node scripts/check-svelte-comments.mjs || fail=1
+
 [ "$fail" -eq 0 ] && echo "check:comments OK" || echo "check:comments FAILED"
 exit "$fail"

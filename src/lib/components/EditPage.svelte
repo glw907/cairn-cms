@@ -1346,8 +1346,10 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
 {/snippet}
 
 <!-- The author-facing hint under a Details field. The id pairs with the input's aria-describedby
-     (`<name>-hint`), so assistive tech announces the sentence without bloating the accessible name.
-     Each field branch decides whether and where to render it; this snippet holds the one shape. -->
+     (`<name>-hint`); its uniqueness rests on schema field names being unique within a concept, which
+     is also the loop key. So assistive tech announces the sentence without bloating the accessible
+     name. Each field branch decides whether and where to render it; this snippet holds the one shape.
+     The `fld-hint` class is a styling hook with no rule today; the Tailwind utilities do the work. -->
 {#snippet fieldHint(name: string, text: string)}
   <p id={`${name}-hint`} class="fld-hint mt-1 text-sm text-[var(--color-muted)]">
     {text}
@@ -1840,16 +1842,18 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
             <!-- A date field always carries a hint: the adapter's description when set, else the
                  built-in publish-clarity default. So aria-describedby always points at the paragraph. -->
             <input class="input input-sm" type="date" name={field.name} aria-label={field.label} aria-describedby={`${field.name}-hint`} value={str(data.frontmatter[field.name])} />
-            {@render fieldHint(field.name, field.description ?? DATE_PUBLISH_HINT)}
+            {@render fieldHint(field.name, field.description || DATE_PUBLISH_HINT)}
           </label>
         {:else if field.type === 'boolean'}
-          <label class="label cursor-pointer justify-start gap-2">
-            <input class="checkbox checkbox-sm" type="checkbox" name={field.name} aria-label={field.label} aria-describedby={field.description ? `${field.name}-hint` : undefined} checked={data.frontmatter[field.name] === true} />
-            <span class="text-sm">{field.label}</span>
-          </label>
-          {#if field.description}
-            {@render fieldHint(field.name, field.description)}
-          {/if}
+          <div class="flex flex-col gap-1">
+            <label class="label cursor-pointer justify-start gap-2">
+              <input class="checkbox checkbox-sm" type="checkbox" name={field.name} aria-label={field.label} aria-describedby={field.description ? `${field.name}-hint` : undefined} checked={data.frontmatter[field.name] === true} />
+              <span class="text-sm">{field.label}</span>
+            </label>
+            {#if field.description}
+              {@render fieldHint(field.name, field.description)}
+            {/if}
+          </div>
         {:else if field.type === 'tags'}
           {@const f = field as TagsField}
           {@const selected = (data.frontmatter[f.name] ?? []) as string[]}

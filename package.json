@@ -35,6 +35,7 @@
     "check:version": "node scripts/check-version.mjs",
     "check:prose": "node scripts/check-admin-prose.mjs",
     "lint": "eslint src/lib",
+    "check:comments": "bash scripts/check-comments.sh",
     "prepare": "npm run package",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest run",

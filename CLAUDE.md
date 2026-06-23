@@ -158,3 +158,17 @@ gitignored lockfile once let CI float onto a build no local run could reproduce.
   `93aa929d-0228-4f8b-8d1e-5e7e0d755617`. Bound as `AUTH_DB` per site. The rebuilt auth uses opaque
   D1-backed session rows, so a signing secret is needed only if the auth design calls for one. Set
   any such per-site secret (worker-only) at cutover.
+
+## Authoring
+
+Claude's drafting on this repo follows the workstation authoring charter at
+`~/.claude/docs/authoring-charter.md`. The TypeScript comment audience is wired through three
+layers: ESLint (`eslint.config.js`, `npm run lint`) enforces TSDoc structure on `src/lib`,
+forbidding `{type}` tags and invalid TSDoc and holding the canonical doc-block shape; Vale lints
+`.ts` comment prose through the vendored `glw907` overlay in `.vale/styles/glw907` (the in-tree
+`.vale.ini`), catching the em dash and the banned lexicon; the `ts-conventions` skill and the
+`ts-svelte-comments` register carry the semantic TS1 through TS15 tells. `npm run check:comments`
+runs the deterministic two, and CI installs the pinned Vale binary before it. Re-sync the overlay
+after a canonical change with `~/.dotfiles/scripts/glw907-vendor.sh ~/Projects/cairn-cms --sync`.
+This is separate from cairn's product prose tooling (`check:prose`, spellcheck, tidy), which
+serves editors, not Claude. The docs prose mapping arrives with the charter's prose arm.

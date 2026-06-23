@@ -4,8 +4,9 @@ An embedded, **magic-link**, GitHub-committing CMS for SvelteKit/Cloudflare site
 authors log in by email (no GitHub account, no password), edit raw markdown in a CodeMirror 6
 editor (client-only, behind the `MarkdownEditor` seam) with a live preview. Saving holds the edit
 on a per-entry `cairn/<concept>/<id>` branch, and a deliberate Publish copies it to `main` via a
-**GitHub App** (committer = `cairn-cms[bot]`, author = the editor), which auto-deploys. The library is design-agnostic. Each site supplies an adapter: the content
-contract, the slug codec, the frontmatter schema, and its own `renderPreview(md)`. Content is a
+**GitHub App** (committer = `cairn-cms[bot]`, author = the editor), which auto-deploys. The library is design-agnostic. Each site supplies an adapter: its GitHub and email
+config, the frontmatter field schema for each concept, and its own `render(md)`, the one renderer the
+editor preview and every public page call. Content is a
 fixed set of first-class concepts (Posts and Pages), not open-ended collections.
 
 This is a standalone repo at `~/Projects/cairn-cms`. It publishes to public npm as
@@ -20,7 +21,7 @@ the functional spec at `docs/superpowers/specs/2026-05-28-cairn-rebuild-function
 supersedes the older plan and architecture writeups (now under `docs/internal/history/`), which
 remain only as history. Read the spec at the start of a rebuild session.
 
-The rebuild ran as a numbered plan series, 00 (foundation) through 08 (scaffolder), each plan
+The rebuild ran as a numbered plan series, 00 (foundation) through 08 (cutover), each plan
 written just-in-time after the prior one landed, under `docs/superpowers/plans/`. Plans 00 through
 08 have landed and merged to `main`, and the package publishes to npm under `@glw907/cairn-cms`.
 Later engine work continues on feature worktrees off `main`, one worktree per pass, so `main` stays

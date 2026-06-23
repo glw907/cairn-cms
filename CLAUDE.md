@@ -172,3 +172,14 @@ runs the deterministic two, and CI installs the pinned Vale binary before it. Re
 after a canonical change with `~/.dotfiles/scripts/glw907-vendor.sh ~/Projects/cairn-cms --sync`.
 This is separate from cairn's product prose tooling (`check:prose`, spellcheck, tidy), which
 serves editors, not Claude. The docs prose mapping arrives with the charter's prose arm.
+
+The Svelte arm extends this: `scripts/check-svelte-comments.mjs` (in `check:comments`) extracts each
+component's `@component` block and `<script>`-block comments and lints them through `glw907` while
+never touching the markup product copy, and the `svelte-conventions` skill plus the S1 through S10
+catalogue carry the semantic tells. Apply the semantic lens (the `ts-conventions` / `svelte-conventions`
+skills) to comments in changed code, not as a retroactive sweep: a 2026-06-22 calibration trial found
+cairn's comments already strong, so a full-repo sweep was declined as not worth the token cost for the
+marginal gain. One calibration
+holds here: because `check:reference` and `jsdoc/require-jsdoc` want every export documented, the TS4
+"delete a reflexive export doc" tell applies to internal symbols only; an exported symbol keeps its
+minimal one-line doc.

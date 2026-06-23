@@ -150,7 +150,6 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   const bodyDirty = $derived(body !== (form?.body ?? data.body));
   let fieldsDirty = $state(false);
   const dirty = $derived(bodyDirty || fieldsDirty);
-  // What the header's save-state indicator says.
   const saveState = $derived(dirty ? 'Unsaved changes' : data.saved ? 'Saved' : '');
   function onFormInput(e: Event) {
     const target = e.target as Element | null;
@@ -1201,7 +1200,6 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     };
   });
 
-  // Coerce a frontmatter value to a string for text/date/textarea inputs.
   function str(v: unknown): string {
     return v == null ? '' : String(v);
   }

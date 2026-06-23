@@ -56,7 +56,6 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
   });
 
   const attributes = $derived(def.attributes ?? []);
-  // Non-repeatable slots render here; the repeatable list is handled separately.
   const flatSlots = $derived((def.slots ?? []).filter((s) => s.kind !== 'repeatable'));
   const repeatableSlots = $derived((def.slots ?? []).filter((s) => s.kind === 'repeatable'));
 

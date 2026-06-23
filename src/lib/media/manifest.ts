@@ -42,8 +42,7 @@ export function parseMediaManifest(json: unknown): MediaManifest {
  * Validate one posted value as a MediaEntry, returning it narrowed or undefined. The trust boundary
  *  for an optimistic record the client re-posts: the upload action server-owned each field at
  *  creation, but a re-post is untrusted, so every field is re-checked. A `hash` must be the 16-hex
- *  content-hash prefix; the string fields must be strings; `bytes` must be finite; `width`/`height`
- *  must each be a number or null; `createdAt` must be a string.
+ *  content-hash prefix.
  */
 function validateMediaEntry(value: unknown): MediaEntry | undefined {
   if (!value || typeof value !== 'object') return undefined;

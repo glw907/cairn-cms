@@ -42,6 +42,7 @@ export function composeRuntime({ adapter, siteConfig, extensions = [] }: Compose
     concepts: resolveConcepts(content, siteConfig),
     backend: adapter.backend,
     sender: adapter.sender,
+    supportContact: adapter.supportContact,
     render: adapter.render,
     manifestPath: adapter.manifestPath ?? 'src/content/.cairn/index.json',
     registry: adapter.registry,

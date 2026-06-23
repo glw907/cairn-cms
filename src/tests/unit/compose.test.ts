@@ -89,6 +89,18 @@ describe('composeRuntime resolvedAssets', () => {
   });
 });
 
+describe('composeRuntime supportContact', () => {
+  it('carries the adapter supportContact onto the runtime', () => {
+    expect(
+      composeRuntime({ adapter: { ...adapter(), supportContact: 'help@example.org' }, siteConfig: testSiteConfig }).supportContact,
+    ).toBe('help@example.org');
+  });
+
+  it('leaves supportContact undefined when the adapter omits it', () => {
+    expect(composeRuntime({ adapter: adapter(), siteConfig: testSiteConfig }).supportContact).toBeUndefined();
+  });
+});
+
 describe('composeRuntime mediaManifestPath', () => {
   it('defaults the media manifest path', () => {
     expect(composeRuntime({ adapter: adapter(), siteConfig: testSiteConfig }).mediaManifestPath).toBe('src/content/.cairn/media.json');

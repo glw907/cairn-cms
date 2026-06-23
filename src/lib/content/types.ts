@@ -270,6 +270,12 @@ export interface CairnAdapter {
   backend: BackendConfig;
   sender: SenderConfig;
   /**
+   * Optional contact a stuck editor is pointed to from the in-admin help (an email address, a URL,
+   *  or a name and instruction). The help renders the hand-off only when this is set. Plain string,
+   *  passed through verbatim.
+   */
+  supportContact?: string;
+  /**
    * The site's one renderer: the editor preview and every public page call it (design decision 4).
    *  `resolve` rewrites cairn: links to live permalinks; the build passes a site-resolver-backed
    *  one, the preview a manifest one. The trailing `resolveMedia` is additive and optional: the build
@@ -408,6 +414,8 @@ export interface CairnRuntime {
   concepts: ConceptDescriptor[];
   backend: BackendConfig;
   sender: SenderConfig;
+  /** The support contact passed through from the adapter; the in-admin help reads it. Optional. */
+  supportContact?: string;
   /**
    * The site's one renderer: the editor preview and every public page call it (design decision 4).
    *  The trailing `resolveMedia` is additive and optional: the build passes a site-resolver-backed

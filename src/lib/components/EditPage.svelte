@@ -1815,23 +1815,43 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
           {@const f = field as TextareaField}
           <label class="flex flex-col gap-1">
             <span class="text-sm font-medium">{f.label}</span>
-            <textarea class="textarea textarea-sm" name={f.name} aria-label={f.label} rows={f.rows ?? 3}>{str(data.frontmatter[f.name])}</textarea>
+            <textarea class="textarea textarea-sm" name={f.name} aria-label={f.label} aria-describedby={f.description ? `${f.name}-hint` : undefined} rows={f.rows ?? 3}>{str(data.frontmatter[f.name])}</textarea>
+            {#if f.description}
+              <p id={`${f.name}-hint`} class="fld-hint mt-1 text-sm text-[var(--color-muted)]">
+                {f.description}
+              </p>
+            {/if}
           </label>
         {:else if field.type === 'date'}
           <label class="flex flex-col gap-1">
             <span class="text-sm font-medium">{field.label}</span>
-            <input class="input input-sm" type="date" name={field.name} aria-label={field.label} value={str(data.frontmatter[field.name])} />
+            <input class="input input-sm" type="date" name={field.name} aria-label={field.label} aria-describedby={field.description ? `${field.name}-hint` : undefined} value={str(data.frontmatter[field.name])} />
+            {#if field.description}
+              <p id={`${field.name}-hint`} class="fld-hint mt-1 text-sm text-[var(--color-muted)]">
+                {field.description}
+              </p>
+            {/if}
           </label>
         {:else if field.type === 'boolean'}
           <label class="label cursor-pointer justify-start gap-2">
-            <input class="checkbox checkbox-sm" type="checkbox" name={field.name} aria-label={field.label} checked={data.frontmatter[field.name] === true} />
+            <input class="checkbox checkbox-sm" type="checkbox" name={field.name} aria-label={field.label} aria-describedby={field.description ? `${field.name}-hint` : undefined} checked={data.frontmatter[field.name] === true} />
             <span class="text-sm">{field.label}</span>
           </label>
+          {#if field.description}
+            <p id={`${field.name}-hint`} class="fld-hint mt-1 text-sm text-[var(--color-muted)]">
+              {field.description}
+            </p>
+          {/if}
         {:else if field.type === 'tags'}
           {@const f = field as TagsField}
           {@const selected = (data.frontmatter[f.name] ?? []) as string[]}
-          <fieldset class="fieldset">
+          <fieldset class="fieldset" aria-describedby={f.description ? `${f.name}-hint` : undefined}>
             <legend class="fieldset-legend">{f.label}</legend>
+            {#if f.description}
+              <p id={`${f.name}-hint`} class="fld-hint mt-1 text-sm text-[var(--color-muted)]">
+                {f.description}
+              </p>
+            {/if}
             <div class="flex flex-wrap gap-2">
               {#each f.options as option (option)}
                 <label class="label cursor-pointer justify-start gap-2">
@@ -1856,9 +1876,15 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
               class="input input-sm"
               name={f.name}
               aria-label={f.label}
+              aria-describedby={f.description ? `${f.name}-hint` : undefined}
               placeholder={f.placeholder}
               value={tagValue}
             />
+            {#if f.description}
+              <p id={`${f.name}-hint`} class="fld-hint mt-1 text-sm text-[var(--color-muted)]">
+                {f.description}
+              </p>
+            {/if}
           </label>
         {:else if field.type === 'image'}
           {@const heroValue = data.frontmatter[field.name] as ImageValue | undefined}
@@ -1877,7 +1903,12 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
         {:else}
           <label class="flex flex-col gap-1">
             <span class="text-sm font-medium">{field.label}</span>
-            <input class="input input-sm" name={field.name} aria-label={field.label} value={str(data.frontmatter[field.name])} required={field.required} />
+            <input class="input input-sm" name={field.name} aria-label={field.label} aria-describedby={field.description ? `${field.name}-hint` : undefined} value={str(data.frontmatter[field.name])} required={field.required} />
+            {#if field.description}
+              <p id={`${field.name}-hint`} class="fld-hint mt-1 text-sm text-[var(--color-muted)]">
+                {field.description}
+              </p>
+            {/if}
           </label>
         {/if}
       {/each}

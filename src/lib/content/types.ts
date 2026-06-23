@@ -22,6 +22,11 @@ interface FieldBase {
   label: string;
   /** A required field fails validation when empty (spec §7.4). */
   required?: boolean;
+  /**
+   * One author-facing sentence shown under the field in the editor, in plain end-user language.
+   * Optional; render nothing when absent. Not a validation rule.
+   */
+  description?: string;
 }
 
 /** A single-line text input. */

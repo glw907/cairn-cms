@@ -8,7 +8,7 @@ Two tiers with a truthful visibility gate:
     that tidy is enabled, a key is configured, and which model runs, but cannot edit any of it. The
     literal deploy-time tokens sit in a marked "For your developer" sub-block.
   - The EDITOR tier (the per-convention config) renders ONLY when tidy is enabled AND the key is
-    present (`data.enabled`). When tidy is not enabled, the editor tier is genuinely ABSENT, replaced
+    present (`data.enabled`). When tidy is not enabled, the editor tier is ABSENT, replaced
     by an honest labelled gate region with a read-only "what your developer needs to do" checklist and
     a "spellcheck still works" reassurance. No teasing disabled controls sit in the tab order.
 
@@ -515,7 +515,7 @@ home), diffable and shared across editors.
       </div>
     </form>
   {:else}
-    <!-- THE VISIBILITY GATE: tidy NOT enabled by the developer. The convention list is genuinely
+    <!-- THE VISIBILITY GATE: tidy NOT enabled by the developer. The convention list is
          absent, not disabled. One honest labelled region names the deploy-time task and who does it,
          with no disabled controls in the tab order. -->
     <div role="region" aria-label="Tidy is not set up" class="mt-6 flex flex-col items-center gap-3 rounded-2xl border border-[var(--cairn-card-border)] bg-base-100 p-10 text-center shadow-[var(--cairn-shadow)]">

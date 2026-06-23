@@ -423,3 +423,53 @@ daisyui-a11y. Friction-log entries: the advisory channel and the silent last-wri
 - **Type consistency.** `description` lands once on `FieldBase` and flows through the existing
   `fields` projection. `supportContact` lands on both `CairnAdapter` and `CairnRuntime` and is copied
   in `composeRuntime`. The names match across the tasks.
+
+---
+
+## Pass 1 post-mortem (2026-06-23)
+
+**Built.** All four tasks landed test-first on `feat/editor-help-foundation`, plus a simplifier
+refinement and the review fold-ins:
+
+- Task 1 (`a6187f3`): `FieldBase.description`, rendered as a per-field hint in the Details panel and
+  associated via `aria-describedby` across all six non-image inputs; new component test.
+- Task 2 (`f139d66`): `CairnAdapter.supportContact` + `CairnRuntime.supportContact`, copied through
+  `composeRuntime`; unit test.
+- Task 3 (`c3ff043`): the five `### Help surfaces` recipes in `admin-design-system.md`.
+- Task 4 (`00e85f4`): the built-in, overridable `DATE_PUBLISH_HINT` default on the date field; extended
+  test.
+- Simplify (`32c87e8`): the repeated hint markup factored into one `{#snippet fieldHint(name, text)}`.
+- Review fold-ins (`f05c0cf`, `8dd5996`): the boolean hint wrapped to nest with its control; the date
+  hint switched to `||` so an empty `description` falls back to the default; the disclosure-button and
+  progress recipes tightened so they do not mislead the Pass 2/3 implementer.
+- Docs and version: CHANGELOG `0.61.0` (minor), `core.md` reference for both new properties and the date
+  hint's non-suppressible behavior, a friction-log entry, and the version bump.
+
+**Verified.** `npm run check` 1133 files 0/0; `npm test` 216 files / 2433 tests exit 0;
+`check:docs`/`check:prose`/`check:version`/`check:reference`/`check:reference:signatures`/`check:package`
+all exit 0. Svelte reviewer: clean (one cosmetic nit folded as a comment). A11y reviewer: ship-ready,
+contrast AA in both themes (light 6.36/5.91:1, dark 6.63/7.87:1); two Medium and two Low/Nit folded in.
+
+**Decisions locked.** The date publish-clarity hint is non-suppressible by design: a field `description`
+replaces it, but there is no off switch, so every site gets the clarity. Documented in `core.md`.
+
+**The full-suite-flake investigation.** The first `npm test` exited 1 with 74 failures across 7
+component files, first read as a pre-existing environmental browser-harness flake. Isolation runs showed
+6 of 7 files passed alone; the seventh, `EditorToolbar.test.ts`, failed deterministically because it imports
+a built artifact (`dist/components/cairn-admin.css?inline`) and the worktree setup (symlinked
+`node_modules`, skipping `npm install`'s `prepare`/`package`) never built `dist`. The missing artifact
+threw a vite resolve error inside the shared browser dev server, which poisoned the component pool and
+cascaded into the other 67 "failed to fetch module" failures. Building `dist` (`npm run package`) fixed
+all of it; the suite then ran clean in about 75 seconds, down from a 17-minute thrash. Lesson: a cairn worktree set
+up by symlinking `node_modules` must also run `npm run package` before the component suite. Captured as
+the `cairn-worktree-needs-dist-build` memory.
+
+**Carried forward.**
+- The held release: `0.61.0` is committed on `feat/editor-help-foundation`, unmerged and unpushed; it
+  rolls into the next published release with any other held work (Geoff's call).
+- The full showcase e2e (the from-scratch consumer build) was deferred to release; `check:package`,
+  which runs the dist-`.svelte` transpile over the new typed snippet, stood in for this held pass.
+- New friction: the internal design docs have no blocking voice gate (`check:prose` scans only
+  components). Logged in `docs-friction-log.md`.
+- Pass 2 (the point-of-typing coach seam) and Pass 3 (advisory validation plus the cross-branch
+  address-uniqueness check) remain sketched in this plan for just-in-time detailing.

@@ -446,3 +446,22 @@ existing scaffolder and local-dev-mode candidates above.
   so the field hint has to pre-empt the fear ("it does not publish on its own"), and the need for that
   reassurance is a clarity signal. Candidate: a product look at the date field's label and affordance so the
   copy crutch is not load-bearing.
+
+### Editor-help foundation Pass 1 (2026-06-23)
+
+Pass 1 of the foundation plan closed four of the design-pass items above. The frontmatter
+field-description channel landed (`FieldBase.description`, rendered by the Details panel and wired to
+`aria-describedby`); the `supportContact` adapter field landed (carried through `composeRuntime`, the
+hand-off rendering only when set); the date-versus-publish ambiguity got a built-in, overridable
+publish-clarity default on the date field; and the design-system gaps closed as the `### Help surfaces`
+recipes (the single right-slide-over slot, the disclosure-button ARIA contract, the progress checklist,
+the starter-content slot, and the non-modal-region-versus-modal-dialog rule). One new friction
+surfaced:
+
+- **developer** (the internal design docs have no blocking voice gate, LOW): the Pass 1 plan named `npm
+  run check:prose` the voice gate for the new `admin-design-system.md` recipes, but
+  `scripts/check-admin-prose.mjs` extracts copy only from `src/lib/components/*.svelte`, so it never
+  reads the internal docs. A design-doc edit clears it trivially; the doc's voice rides on the advisory
+  Vale Google package through the on-save hook, with no blocking floor. Candidate: state plainly that
+  the internal design docs are Vale-advisory only, or extend a prose gate over `docs/internal/` if a
+  blocking floor is wanted.

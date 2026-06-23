@@ -11,32 +11,43 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-23, latest): execute Pass 1 of the editor-help foundation
+## Immediate next action (2026-06-23, latest): editor-help foundation Pass 1 is DONE, held as `0.61.0`; next is Pass 2 (or Geoff's other tracks)
 
-**A new engine initiative, built foundation-first.** The in-admin editor help ran a design pass
-(proposal, three mockups, a six-dimension adversarial critique, under
-`docs/internal/design/2026-06-23-editor-help-*`). It chose the architecture (a B-spine merge: a
-standing labeled Help home, a recede-on-desk slide-over, a foregrounded point-of-typing coach,
-derived-state onboarding) and surfaced a cluster of engine deficiencies the help depends on, recorded
-in `docs/internal/docs-friction-log.md`. Rather than build the help on faked capabilities, the seams
-come first.
+**Pass 1 of the editor-help foundation is COMPLETE** on `feat/editor-help-foundation` (worktree
+`.claude/worktrees/editor-help-foundation`), HELD for merge, release, and push (Geoff's call). It is
+versioned `0.61.0` (minor, additive, no consumer action). The branch landed all four tasks test-first,
+plus a simplifier refinement and the svelte and a11y review fold-ins:
 
-**NEXT: execute Pass 1 of the foundation plan**
-(`docs/superpowers/plans/2026-06-23-cairn-editor-help-foundation.md`). A three-pass series sized by
-blast radius. Pass 1 (contracts and conventions, detailed, four tasks): the frontmatter
-field-description channel, the `supportContact` adapter field, the design-system help recipes, and the
-date publish-clarity default. Passes 2 (the point-of-typing coach seam) and 3 (advisory validation plus
-the cross-branch address-uniqueness check) are sketched for just-in-time detailing. Method: main-loop
-orchestrate-and-verify, test-first, one `cairn-implementer` per task, the full gate between dispatches,
-on a FRESH worktree off `main`. Settled decisions: onboarding progress derives from observable content
-and publish state (no D1, no store; `localStorage` only for per-device UI dismissals); address collision
-warns and allows publish. After the foundation: the help pass (the Help shell, the help-content
-manifest, the corpus, the woven layer); the starter-content seed rides the `create-cairn-site`
-scaffolder. The prose corpus and a rev.2 mockup can run in parallel. See the
-`cairn-editor-help-initiative` memory.
+- `FieldBase.description` (`a6187f3`): a per-field author-facing hint, rendered in the Details panel and
+  wired to `aria-describedby`.
+- `CairnAdapter.supportContact` and `CairnRuntime.supportContact` (`f139d66`): carried through
+  `composeRuntime`; the help renders the hand-off only when set.
+- the five `### Help surfaces` recipes in `admin-design-system.md` (`c3ff043`).
+- the built-in, overridable `DATE_PUBLISH_HINT` default on the date field (`00e85f4`), non-suppressible
+  by design (a `description` replaces it).
+- the `fieldHint` snippet refactor (`32c87e8`) and the a11y review fold-ins (`f05c0cf`, `8dd5996`).
 
-**Other open tracks (Geoff's call on order):** the per-site cutover to `^0.60.1` (site-passes, below)
-and the `create-cairn-site` scaffolder and media Pass D.
+**Gate green at the tip:** `npm run check` 1133 files 0/0; `npm test` 216 files / 2433 tests exit 0;
+`check:docs`, `check:prose`, `check:version` (minor), `check:reference`, `check:reference:signatures`,
+and `check:package` all exit 0. Svelte reviewer clean; a11y reviewer ship-ready (contrast AA in both
+themes). The from-scratch showcase e2e was deferred to release; `check:package`'s dist-`.svelte`
+transpile over the new typed snippet stood in. Full post-mortem in the plan
+(`docs/superpowers/plans/2026-06-23-cairn-editor-help-foundation.md`).
+
+**HELD for Geoff (his call):** merge `feat/editor-help-foundation` to `main`; roll `0.61.0` into the next
+published release (with the held `0.60.1` site-cutover work and any other held passes); push; run the
+showcase e2e at release.
+
+**NEXT engine work: detail and execute Pass 2**, the point-of-typing coach seam in `MarkdownEditor`,
+sketched in the plan for just-in-time detailing. Pass 3 (advisory validation plus the cross-branch
+address-uniqueness check) follows. Settled decisions hold: onboarding progress derives from observable
+content and publish state (no D1, no store; `localStorage` only for per-device UI dismissals); address
+collision warns and allows publish. After the foundation: the help pass (the Help shell, the help-content
+manifest, the corpus, the woven layer); the starter-content seed rides the `create-cairn-site` scaffolder.
+See the `cairn-editor-help-initiative` memory.
+
+**Other open tracks (Geoff's call on order):** the per-site cutover to `^0.60.1` (site-passes, below),
+the `create-cairn-site` scaffolder, and media Pass D.
 
 ## Prior next action (2026-06-22): `0.60.1` is RELEASED; next is the per-site cutover to `^0.60.1`.
 

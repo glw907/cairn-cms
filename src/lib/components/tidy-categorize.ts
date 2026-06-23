@@ -13,9 +13,11 @@
 import type { Change } from './tidy-diff.js';
 import type { TidyConventions } from '../nav/site-config.js';
 
-/** A change's locally-inferred category. The first four are objective (safe to sweep); `normalization`
+/**
+ * A change's locally-inferred category. The first four are objective (safe to sweep); `normalization`
  *  and `grammar` are judgment (held undecided, never swept by Accept-fixes). `normalization` carries
- *  the convention key that authorized it, so the surface can name the setting and label the badge. */
+ *  the convention key that authorized it, so the surface can name the setting and label the badge.
+ */
 export type TidyCategory =
 	| { kind: 'spelling' }
 	| { kind: 'typo' }
@@ -24,9 +26,11 @@ export type TidyCategory =
 	| { kind: 'normalization'; convention: NormalizationKey }
 	| { kind: 'grammar' };
 
-/** True for the objective categories: the safe, pre-kept, Accept-fixes-swept rank. A judgment
+/**
+ * True for the objective categories: the safe, pre-kept, Accept-fixes-swept rank. A judgment
  *  category (`normalization` or `grammar`) returns false. The bulk action and the surface both read
- *  this, so the safety rank is one source of truth. */
+ *  this, so the safety rank is one source of truth.
+ */
 export function isObjective(category: TidyCategory): boolean {
 	return (
 		category.kind === 'spelling' ||
@@ -36,9 +40,11 @@ export function isObjective(category: TidyCategory): boolean {
 	);
 }
 
-/** The enabled-convention keys a normalization can be attributed to. Each maps to one config field on
+/**
+ * The enabled-convention keys a normalization can be attributed to. Each maps to one config field on
  *  TidyConventions and to a because-line. A change is only ever labelled a normalization when it matches
- *  one of these AND the config has the matching variant enabled; otherwise it is never a normalization. */
+ *  one of these AND the config has the matching variant enabled; otherwise it is never a normalization.
+ */
 export type NormalizationKey =
 	| 'oxfordComma'
 	| 'numberStyle'
@@ -133,9 +139,11 @@ function isPunctuationOnly(text: string): boolean {
 	return text.length > 0 && /^[^A-Za-z0-9_\s]+$/.test(text);
 }
 
-/** The word ending immediately before `offset` in `text`, skipping any whitespace just before the
+/**
+ * The word ending immediately before `offset` in `text`, skipping any whitespace just before the
  *  offset, or null when none. The doubled-word rule reads it to confirm the deleted word repeats the
- *  one before it. Pure text inspection, never a count. */
+ *  one before it. Pure text inspection, never a count.
+ */
 function precedingWord(text: string, offset: number): string | null {
 	let i = offset;
 	while (i > 0 && /\s/.test(text[i - 1])) i--;
@@ -144,8 +152,10 @@ function precedingWord(text: string, offset: number): string | null {
 	return j < i ? text.slice(j, i) : null;
 }
 
-/** The word starting immediately after `offset` in `text`, skipping any whitespace just after the
- *  offset, or null when none. The doubled-word rule reads it as the other half of the look-around. */
+/**
+ * The word starting immediately after `offset` in `text`, skipping any whitespace just after the
+ *  offset, or null when none. The doubled-word rule reads it as the other half of the look-around.
+ */
 function followingWord(text: string, offset: number): string | null {
 	let i = offset;
 	while (i < text.length && /\s/.test(text[i])) i++;
@@ -335,11 +345,13 @@ function matchNormalization(
 	return null;
 }
 
-/** The because-line data for a hunk: the convention's display name and the variant phrasing, both pure
+/**
+ * The because-line data for a hunk: the convention's display name and the variant phrasing, both pure
  *  strings derived from the config. The surface renders "Your <label> setting is <variant>, ..." from
  *  these. Only a normalization carries a because-line; an objective or grammar hunk returns null (a
  *  grammar hunk's rationale, when shown, is the local subject-verb note the surface composes, not a
- *  config citation). */
+ *  config citation).
+ */
 export interface BecauseLine {
 	/** The convention's display label, e.g. "Oxford-comma". */
 	label: string;
@@ -416,9 +428,11 @@ export function buildBecause(key: NormalizationKey, conventions: TidyConventions
 	}
 }
 
-/** The human badge label for a category, the word shown in the hunk's category pill. A normalization's
+/**
+ * The human badge label for a category, the word shown in the hunk's category pill. A normalization's
  *  label is the convention's display name (its comma style, its time format), never "consistency" and
- *  never a count. */
+ *  never a count.
+ */
 export function categoryLabel(category: TidyCategory): string {
 	switch (category.kind) {
 		case 'spelling':

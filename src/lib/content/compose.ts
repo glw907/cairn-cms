@@ -8,9 +8,11 @@ import { resolveConcepts } from './concepts.js';
 import { normalizeAssets } from '../media/config.js';
 import { dictionaryFileForDialect, type SiteConfig } from '../nav/site-config.js';
 
-/** The input to {@link composeRuntime}. `siteConfig` is required so the per-concept URL policy is
+/**
+ * The input to {@link composeRuntime}. `siteConfig` is required so the per-concept URL policy is
  *  always derived from one source and can never be silently dropped. `extensions` fold in after the
- *  adapter's concepts. */
+ *  adapter's concepts.
+ */
 export interface ComposeInput {
   adapter: CairnAdapter;
   siteConfig: SiteConfig;

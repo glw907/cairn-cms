@@ -7,7 +7,6 @@ import type { DeliveryBucket } from './media/delivery-bucket.js';
  *
  * The origin is always config-derived, never read from a request header, so a
  * forged Host header cannot redirect a magic link (spec 7.1, risk H3).
- *
  * @throws CairnError (`config.public-origin-invalid`) when `PUBLIC_ORIGIN` is unset or
  * empty, fails to parse as a URL, or uses http on a non-local host.
  */
@@ -41,7 +40,6 @@ export function requireOrigin(env: { PUBLIC_ORIGIN?: string }): string {
  *
  * The handlers read D1 off `event.platform.env`; without this a misconfigured binding
  * surfaces as a raw `TypeError` deep in a store call. This gives the failure a name.
- *
  * @throws CairnError (`config.bindings-missing`) when `AUTH_DB` is missing.
  */
 export function requireDb(env: { AUTH_DB?: D1Database }): D1Database {
@@ -65,7 +63,6 @@ export function requireDb(env: { AUTH_DB?: D1Database }): D1Database {
  * which is truthy but carries no callable `get`. Without that check the cast would succeed and the
  * first `bucket.get(...)` would throw an uncaught 500 rather than the drained 503 a missing binding
  * earns.
- *
  * @throws CairnError (`config.bindings-missing`) when the named binding is absent or not an R2 bucket.
  */
 export function requireBucket(env: Record<string, unknown>, bindingName: string): DeliveryBucket {

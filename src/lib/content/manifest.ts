@@ -20,9 +20,11 @@ export interface ManifestEntry {
   summary?: string;
   draft: boolean;
   links: CairnRef[];
-  /** The content hashes of the media this entry references (its hero plus its body images). The
+  /**
+   * The content hashes of the media this entry references (its hero plus its body images). The
    *  main side of the media where-used index. Additive and optional: an entry with no media omits
-   *  the key, and a manifest committed before this field still parses (absent reads as no refs). */
+   *  the key, and a manifest committed before this field still parses (absent reads as no refs).
+   */
   mediaRefs?: string[];
 }
 
@@ -42,9 +44,11 @@ export interface LinkTarget {
   draft: boolean;
 }
 
-/** Build one manifest entry from a content file. Drafts are included and flagged. The id, date, and
+/**
+ * Build one manifest entry from a content file. Drafts are included and flagged. The id, date, and
  *  permalink come from entryIdentity, the same source content-index uses, so a cairn: link resolves to
- *  one URL whether the admin preview reads the manifest or the public build reads the content index. */
+ *  one URL whether the admin preview reads the manifest or the public build reads the content index.
+ */
 export function manifestEntryFromFile(descriptor: ConceptDescriptor, file: { path: string; raw: string }): ManifestEntry {
   const { frontmatter, body } = parseMarkdown(file.raw);
   const { id, date, permalink } = entryIdentity(descriptor, file.path, frontmatter);
@@ -75,8 +79,10 @@ function compareRef(a: CairnRef, b: CairnRef): number {
   return a.concept.localeCompare(b.concept) || a.id.localeCompare(b.id);
 }
 
-/** Serialize canonically: entries sorted by concept then id, links sorted and deduped, a fixed key
- *  order, two-space pretty, and a trailing newline, so the committed file diffs cleanly in a PR. */
+/**
+ * Serialize canonically: entries sorted by concept then id, links sorted and deduped, a fixed key
+ *  order, two-space pretty, and a trailing newline, so the committed file diffs cleanly in a PR.
+ */
 export function serializeManifest(manifest: Manifest): string {
   const entries = [...manifest.entries].sort(compareRef).map((e) => ({
     id: e.id,
@@ -92,10 +98,12 @@ export function serializeManifest(manifest: Manifest): string {
   return `${JSON.stringify({ version: 1, entries }, null, 2)}\n`;
 }
 
-/** Parse a committed manifest. Throws on malformed JSON, a wrong version, or a malformed entry, so
+/**
+ * Parse a committed manifest. Throws on malformed JSON, a wrong version, or a malformed entry, so
  *  every reader (the save guard, the delete path, the preview) sees a well-formed graph or a clear
  *  error. The build regenerates the manifest, so a real file is always canonical; this guards a
- *  hand-edited or truncated one. */
+ *  hand-edited or truncated one.
+ */
 export function parseManifest(raw: string): Manifest {
   const data = JSON.parse(raw) as unknown;
   if (!data || typeof data !== 'object') {
@@ -163,9 +171,11 @@ export interface ManifestDiff {
 
 const keyOf = (e: ManifestEntry) => `${e.concept}/${e.id}`;
 
-/** Compare a built manifest against a committed one, keyed by concept+id (the same identity
+/**
+ * Compare a built manifest against a committed one, keyed by concept+id (the same identity
  *  upsertEntry and removeEntry use). A changed entry names the fields that differ. Pure, so it is
- *  unit-tested apart from any build. */
+ *  unit-tested apart from any build.
+ */
 export function diffManifests(built: Manifest, committed: Manifest): ManifestDiff {
   const builtByKey = new Map(built.entries.map((e) => [keyOf(e), e]));
   const committedByKey = new Map(committed.entries.map((e) => [keyOf(e), e]));
@@ -195,10 +205,12 @@ function formatDiff(d: ManifestDiff): string {
   return lines.join('\n');
 }
 
-/** Throw if the committed manifest drifts from what the corpus says. The canonical serialized form
+/**
+ * Throw if the committed manifest drifts from what the corpus says. The canonical serialized form
  *  is the fast-path equality guard, so semantic equality never spuriously fails. On a mismatch the
  *  error names the added, removed, and changed entries, so a raw-git content edit that leaves the
- *  committed manifest stale fails the build loudly with what drifted. */
+ *  committed manifest stale fails the build loudly with what drifted.
+ */
 export function verifyManifest(built: Manifest, committedRaw: string): void {
   const builtRaw = serializeManifest(built);
   if (committedRaw === builtRaw) return;
@@ -236,8 +248,10 @@ export function verifyManifest(built: Manifest, committedRaw: string): void {
   );
 }
 
-/** Replace the entry with the same concept and id, or add it. Order does not matter, since
- *  serializeManifest sorts. This is the save path's incremental patch. */
+/**
+ * Replace the entry with the same concept and id, or add it. Order does not matter, since
+ *  serializeManifest sorts. This is the save path's incremental patch.
+ */
 export function upsertEntry(manifest: Manifest, entry: ManifestEntry): Manifest {
   const entries = manifest.entries.filter((e) => !(e.concept === entry.concept && e.id === entry.id));
   entries.push(entry);
@@ -257,9 +271,11 @@ export interface InboundLink {
   permalink: string;
 }
 
-/** Every entry whose outbound edges point at the target, excluding the target itself. The delete
+/**
+ * Every entry whose outbound edges point at the target, excluding the target itself. The delete
  *  guard reads this to name "what links here"; the backlinks panel will reuse it. Pure over the
- *  manifest, so the request-time delete path and a unit test call it the same way. */
+ *  manifest, so the request-time delete path and a unit test call it the same way.
+ */
 export function inboundLinks(manifest: Manifest, concept: string, id: string): InboundLink[] {
   return manifest.entries
     .filter((e) => !(e.concept === concept && e.id === id))
@@ -267,8 +283,10 @@ export function inboundLinks(manifest: Manifest, concept: string, id: string): I
     .map((e) => ({ concept: e.concept, id: e.id, title: e.title, permalink: e.permalink }));
 }
 
-/** A resolver backed by manifest targets, for the admin preview. A miss returns undefined, so the
- *  render step marks the link broken rather than throwing. The build resolver throws instead. */
+/**
+ * A resolver backed by manifest targets, for the admin preview. A miss returns undefined, so the
+ *  render step marks the link broken rather than throwing. The build resolver throws instead.
+ */
 export function manifestLinkResolver(targets: { concept: string; id: string; permalink: string }[]): LinkResolve {
   const byKey = new Map(targets.map((t) => [`${t.concept}/${t.id}`, t.permalink]));
   return (ref) => byKey.get(`${ref.concept}/${ref.id}`);

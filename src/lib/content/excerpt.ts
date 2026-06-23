@@ -2,8 +2,10 @@
 // 5). A light markdown strip keeps summaries cheap, so a list card, an og:description, and a
 // summary-mode feed read one derived excerpt without a full render.
 
-/** Reduce markdown to readable plain text: drop fenced code, images, and markup; unwrap inline
- * code and links to their text; collapse whitespace. */
+/**
+ * Reduce markdown to readable plain text: drop fenced code, images, and markup; unwrap inline
+ * code and links to their text; collapse whitespace.
+ */
 function toPlainText(md: string): string {
   return md
     .replace(/```[\s\S]*?```/g, ' ')

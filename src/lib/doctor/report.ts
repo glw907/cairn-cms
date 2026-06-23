@@ -11,6 +11,9 @@ const TAG: Record<CheckResult['status'], string> = {
 	skip: 'SKIP',
 };
 
+/**
+ *
+ */
 export function formatReport(results: { check: DoctorCheck; result: CheckResult }[]): string {
 	const lines = results.map(
 		({ check, result }) => `${TAG[result.status]}  ${check.title}: ${result.detail}`

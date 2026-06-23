@@ -11,8 +11,10 @@ import type { SiteConfig } from '../nav/site-config.js';
 import type { CairnAdapter } from '../content/types.js';
 import type { SiteGlobs } from './site-indexes.js';
 
-/** Build the whole-corpus manifest from a site's adapter, config, and per-concept globs. Drafts are
- *  included and flagged, so the admin picker and the guards see the full graph. */
+/**
+ * Build the whole-corpus manifest from a site's adapter, config, and per-concept globs. Drafts are
+ *  included and flagged, so the admin picker and the guards see the full graph.
+ */
 export function buildSiteManifest<A extends CairnAdapter>(adapter: A, config: SiteConfig, globs: SiteGlobs<A>): Manifest {
   const globRecord = globs as Record<string, Record<string, string> | undefined>;
   const manifest = emptyManifest();

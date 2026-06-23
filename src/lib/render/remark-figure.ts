@@ -69,8 +69,10 @@ function trimLeadingNewline(children: PhrasingContent[]): PhrasingContent[] {
   return children;
 }
 
-/** Rewrite the reserved `figure` container directive into a placed <figure>. Every other directive
- *  is left to remarkDirectiveStamp, which already skips unregistered names. */
+/**
+ * Rewrite the reserved `figure` container directive into a placed <figure>. Every other directive
+ *  is left to remarkDirectiveStamp, which already skips unregistered names.
+ */
 export function remarkFigure() {
   return (tree: Root): void => {
     visit(tree, 'containerDirective', (node: ContainerDirective) => {

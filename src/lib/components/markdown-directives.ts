@@ -18,8 +18,8 @@ const INLINE = /(?<![:\w]):[\w-]+\[[^\]]*\](\{[^}]*\})?/g;
 const CODE_FENCE = /^\s{0,3}(`{3,}|~{3,})/;
 
 /**
- * The directive name from a container opener line (`:::callout{...}` -> `callout`,
- * `::::cta[Book]` -> `cta`), or null when the line is not a named container opener. Reads the
+ * The directive name from a container opener line (`:::callout{...}` gives `callout`,
+ * `::::cta[Book]` gives `cta`), or null when the line is not a named container opener. Reads the
  * same FENCE match the scan uses: group 2 is the name, empty on a bare closer, so a closer or a
  * non-fence line returns null.
  */
@@ -39,9 +39,11 @@ export function directiveLineKind(line: string): 'fence' | 'leaf' | null {
 export interface FenceScan {
   /** The 1-based container depth per line, or null outside any container. */
   depths: (number | null)[];
-  /** Whether a line opened or closed a container, or null for everything else. A fence-shaped
+  /**
+   * Whether a line opened or closed a container, or null for everything else. A fence-shaped
    *  line the code-block tracking disowned is null too, so the role array is the one source of
-   *  truth for pairing and no caller re-parses a line the scan already judged. */
+   *  truth for pairing and no caller re-parses a line the scan already judged.
+   */
   roles: ('opener' | 'closer' | null)[];
 }
 
@@ -161,8 +163,10 @@ export function containerRanges(scan: FenceScan): ContainerRange[] {
   return out;
 }
 
-/** The closed placement-role set for the reserved `figure` directive, mirroring remark-figure.ts.
- *  A class outside this set is the measure default, never passed through as a role. */
+/**
+ * The closed placement-role set for the reserved `figure` directive, mirroring remark-figure.ts.
+ *  A class outside this set is the measure default, never passed through as a role.
+ */
 const FIGURE_ROLES = new Set(['center', 'wide', 'full']);
 
 // The directive `{attrs}` brace, and the `.class` shorthands inside it. mdast-util-directive folds
@@ -174,7 +178,8 @@ const ATTR_BRACE = /\{([^}]*)\}/;
 const CLASS_SHORTHAND = /\.([\w-]+)/g;
 const CLASS_ATTR = /class\s*=\s*"([^"]*)"/;
 
-/** The figure placement role for a media token sitting on `lineIndex`, derived from the editor's
+/**
+ * The figure placement role for a media token sitting on `lineIndex`, derived from the editor's
  *  line scan without a remark parse (the chip rebuild runs on every doc and viewport change).
  *
  *  Returns the closed-set role (`center`/`wide`/`full`) when the innermost container holding the
@@ -216,7 +221,7 @@ export interface FenceToken {
 
 /**
  * Split a fence line into machinery and meaning. The colon run, the label's brackets, and the
- * whole {attrs} group are machinery; the directive name and the label text are meaning, the
+ * whole `{attrs}` group are machinery; the directive name and the label text are meaning, the
  * parts an editor reads. A bare closer is a single machinery span, and a non-fence line yields
  * no spans at all.
  */

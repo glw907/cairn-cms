@@ -7,9 +7,11 @@
 import type { AssetConfig } from '../content/types.js';
 import type { VariantSpec } from './transform-url.js';
 
-/** The resolved media config the engine serves from. When a site declares no assets block, media is
+/**
+ * The resolved media config the engine serves from. When a site declares no assets block, media is
  *  off and the value is `{ enabled: false }`; otherwise every field is filled from the AssetConfig
- *  or its default. */
+ *  or its default.
+ */
 export type ResolvedAssetConfig =
   | { enabled: false }
   | {
@@ -20,8 +22,10 @@ export type ResolvedAssetConfig =
       maxUploadBytes: number;
       allowedTypes: string[];
       variants: Record<string, VariantSpec>;
-      /** Whether Cloudflare Image Transformations are enabled for the zone. With it false, the media
-       *  resolver serves the bare full-size delivery path and ignores any preset. */
+      /**
+       * Whether Cloudflare Image Transformations are enabled for the zone. With it false, the media
+       *  resolver serves the bare full-size delivery path and ignores any preset.
+       */
       transformations: boolean;
     };
 
@@ -32,8 +36,10 @@ const DEFAULT_MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
 /** The default accepted upload MIME types: the common web image formats. */
 const DEFAULT_ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
 
-/** The built-in named transform presets. A site's `variants` merge over these, so a caller preset of
- *  the same name overrides the built-in. */
+/**
+ * The built-in named transform presets. A site's `variants` merge over these, so a caller preset of
+ *  the same name overrides the built-in.
+ */
 const BUILT_IN_PRESETS: Record<string, VariantSpec> = {
   thumb: { width: 320, height: 320, fit: 'cover' },
   inline: { width: 800 },
@@ -43,8 +49,10 @@ const BUILT_IN_PRESETS: Record<string, VariantSpec> = {
 
 /** The fit values Cloudflare Images accepts. A variant whose fit is set to anything else is rejected. */
 const FIT_VALUES: ReadonlySet<string> = new Set(['scale-down', 'contain', 'cover', 'crop', 'pad']);
-/** The named gravity keywords Cloudflare Images accepts. A gravity is also valid as a coordinate
- *  string; everything else is rejected. */
+/**
+ * The named gravity keywords Cloudflare Images accepts. A gravity is also valid as a coordinate
+ *  string; everything else is rejected.
+ */
 const GRAVITY_KEYWORDS: ReadonlySet<string> = new Set([
   'auto',
   'face',
@@ -57,9 +65,11 @@ const GRAVITY_KEYWORDS: ReadonlySet<string> = new Set([
 /** A gravity coordinate string, e.g. "0.5x0.5". */
 const GRAVITY_COORD_RE = /^\d+(\.\d+)?x\d+(\.\d+)?$/;
 
-/** Validate one variant's fit and gravity, throwing a cairn:-prefixed error naming the offending
+/**
+ * Validate one variant's fit and gravity, throwing a cairn:-prefixed error naming the offending
  *  preset and value. The type system collapses VariantSpec.gravity to string, so the gravity check
- *  is the only guard against a bogus value reaching the transform URL. */
+ *  is the only guard against a bogus value reaching the transform URL.
+ */
 function validateVariant(name: string, spec: VariantSpec): void {
   if (spec.fit !== undefined && !FIT_VALUES.has(spec.fit)) {
     throw new Error(`cairn: media variant "${name}" has an unknown fit "${spec.fit}"`);
@@ -73,10 +83,12 @@ function validateVariant(name: string, spec: VariantSpec): void {
   }
 }
 
-/** Validate a site's AssetConfig and resolve it into a ResolvedAssetConfig. An undefined block leaves
+/**
+ * Validate a site's AssetConfig and resolve it into a ResolvedAssetConfig. An undefined block leaves
  *  media off and returns `{ enabled: false }` rather than throwing. A declared block must name its R2
  *  bucket and carry a known urlForm and valid variant fit and gravity values; each failure throws a
- *  cairn:-prefixed error. The named variants merge over the built-in presets. */
+ *  cairn:-prefixed error. The named variants merge over the built-in presets.
+ */
 export function normalizeAssets(assets: AssetConfig | undefined): ResolvedAssetConfig {
   if (assets === undefined) return { enabled: false };
 

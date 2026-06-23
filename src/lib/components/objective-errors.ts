@@ -12,16 +12,20 @@ import type { Range } from './spellcheck.js';
 /** The three objective-error kinds, each its own check. */
 export type ObjectiveErrorKind = 'doubled-word' | 'double-space' | 'repeated-punct';
 
-/** A single deterministic edit that resolves one finding: replace [from, to) with `insert`. The lint
- *  source turns this into the diagnostic's quick-fix action. */
+/**
+ * A single deterministic edit that resolves one finding: replace [from, to) with `insert`. The lint
+ *  source turns this into the diagnostic's quick-fix action.
+ */
 export interface ObjectiveFix {
   from: number;
   to: number;
   insert: string;
 }
 
-/** One objective-error finding: the flagged range a reader sees underlined, the error kind, a plain
- *  message, and the one-edit fix. */
+/**
+ * One objective-error finding: the flagged range a reader sees underlined, the error kind, a plain
+ *  message, and the one-edit fix.
+ */
 export interface ObjectiveError {
   kind: ObjectiveErrorKind;
   /** The flagged range (absolute document offsets), the span the underline covers. */
@@ -59,15 +63,19 @@ const DOUBLE_SPACE = /[^\s] ( +)/g;
 // flagged because it is a legitimate construction; only a run of one identical mark counts.
 const REPEATED_PUNCT = /([!?,])\1+/g;
 
-/** Whether two matched word strings are the same word, case-insensitively. Both are already plain
- *  word runs from the same WORD pattern, so a locale-insensitive lowercase compare is enough. */
+/**
+ * Whether two matched word strings are the same word, case-insensitively. Both are already plain
+ *  word runs from the same WORD pattern, so a locale-insensitive lowercase compare is enough.
+ */
 function sameWord(a: string, b: string): boolean {
   return a.toLowerCase() === b.toLowerCase();
 }
 
-/** Run the three objective checks over one prose span [from, to), returning every finding with an
+/**
+ * Run the three objective checks over one prose span [from, to), returning every finding with an
  *  absolute range and fix. The doubled-word check is bounded to this span so a repeat that straddles
- *  a skipped region is never matched. */
+ *  a skipped region is never matched.
+ */
 function checkSpan(text: string, from: number, to: number): ObjectiveError[] {
   const out: ObjectiveError[] = [];
   const slice = text.slice(from, to);

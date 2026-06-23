@@ -3,6 +3,9 @@
 import { fail } from './types.js';
 import type { CheckResult, DoctorCheck, DoctorContext } from './types.js';
 
+/**
+ *
+ */
 export async function runDoctor(
 	checks: DoctorCheck[],
 	ctx: DoctorContext

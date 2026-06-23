@@ -4,10 +4,12 @@
 // are never stored twice. It mirrors the content manifest in ../content/manifest.ts, keyed by the
 // 16-hex content-hash prefix rather than concept and id.
 
-/** One stored asset's row: its content hash, its human layer, and its byte and pixel facts. The
+/**
+ * One stored asset's row: its content hash, its human layer, and its byte and pixel facts. The
  *  `contentType` is the stored MIME type, so the delivery route serves it verbatim rather than
  *  guessing from the extension. `width` and `height` are null when no dimensions are known (the
- *  client is the only dimension source and a Worker cannot re-derive them). */
+ *  client is the only dimension source and a Worker cannot re-derive them).
+ */
 export interface MediaEntry {
   hash: string;
   sha256: string;
@@ -26,19 +28,23 @@ export interface MediaEntry {
 /** The whole stored-asset record, keyed by the 16-hex content-hash prefix. */
 export type MediaManifest = Record<string, MediaEntry>;
 
-/** Parse a committed media manifest. Tolerant: an empty, missing, null, or non-object input yields
- *  an empty manifest, so a first ingest into a site with no manifest file reads a clean {}. A valid
- *  object is returned as the manifest. */
+/**
+ * Parse a committed media manifest. Tolerant: an empty, missing, null, or non-object input yields
+ *  an empty manifest, so a first ingest into a site with no manifest file reads a clean `{}`. A valid
+ *  object is returned as the manifest.
+ */
 export function parseMediaManifest(json: unknown): MediaManifest {
   if (!json || typeof json !== 'object' || Array.isArray(json)) return {};
   return json as MediaManifest;
 }
 
-/** Validate one posted value as a MediaEntry, returning it narrowed or undefined. The trust boundary
+/**
+ * Validate one posted value as a MediaEntry, returning it narrowed or undefined. The trust boundary
  *  for an optimistic record the client re-posts: the upload action server-owned each field at
  *  creation, but a re-post is untrusted, so every field is re-checked. A `hash` must be the 16-hex
  *  content-hash prefix; the string fields must be strings; `bytes` must be finite; `width`/`height`
- *  must each be a number or null; `createdAt` must be a string. */
+ *  must each be a number or null; `createdAt` must be a string.
+ */
 function validateMediaEntry(value: unknown): MediaEntry | undefined {
   if (!value || typeof value !== 'object') return undefined;
   const e = value as Record<string, unknown>;
@@ -67,12 +73,14 @@ function validateMediaEntry(value: unknown): MediaEntry | undefined {
   };
 }
 
-/** Parse the posted `media` field into a validated list of MediaEntry rows. The field arrives as a
+/**
+ * Parse the posted `media` field into a validated list of MediaEntry rows. The field arrives as a
  *  JSON string (the usual form-post shape), an already-parsed array, or junk. A string is JSON-parsed
  *  inside a try/catch that yields `[]` on a parse failure; a non-string array is taken directly;
  *  anything else yields `[]`. Each element is validated and a failing element is dropped, so a partly
  *  malformed post still lands its good rows. This is the trust boundary for the client's optimistic
- *  records. */
+ *  records.
+ */
 export function parseMediaEntries(value: unknown): MediaEntry[] {
   let raw: unknown = value;
   if (typeof value === 'string') {
@@ -91,28 +99,36 @@ export function parseMediaEntries(value: unknown): MediaEntry[] {
   return entries;
 }
 
-/** The dedup lookup: the entry stored under the content-hash prefix, or undefined when no bytes with
- *  that hash are stored yet. */
+/**
+ * The dedup lookup: the entry stored under the content-hash prefix, or undefined when no bytes with
+ *  that hash are stored yet.
+ */
 export function findByHash(manifest: MediaManifest, hash: string): MediaEntry | undefined {
   return manifest[hash];
 }
 
-/** Set the entry under its own hash, replacing any same-hash row. Returns a new manifest and leaves
- *  the input untouched, so a caller's prior manifest reference stays valid. The ingest path's patch. */
+/**
+ * Set the entry under its own hash, replacing any same-hash row. Returns a new manifest and leaves
+ *  the input untouched, so a caller's prior manifest reference stays valid. The ingest path's patch.
+ */
 export function upsertMediaEntry(manifest: MediaManifest, entry: MediaEntry): MediaManifest {
   return { ...manifest, [entry.hash]: entry };
 }
 
-/** Drop the entry under the given hash, returning a new manifest and leaving the input untouched.
+/**
+ * Drop the entry under the given hash, returning a new manifest and leaving the input untouched.
  *  Removing an absent hash is a no-op that still returns an equivalent new manifest. The safe-delete
- *  path's patch. */
+ *  path's patch.
+ */
 export function removeMediaEntry(manifest: MediaManifest, hash: string): MediaManifest {
   const { [hash]: _removed, ...rest } = manifest;
   return rest;
 }
 
-/** Serialize canonically: the top-level hash keys sorted ascending, two-space pretty, and a trailing
- *  newline, so the committed file diffs cleanly in a PR and a re-serialization is byte-identical. */
+/**
+ * Serialize canonically: the top-level hash keys sorted ascending, two-space pretty, and a trailing
+ *  newline, so the committed file diffs cleanly in a PR and a re-serialization is byte-identical.
+ */
 export function serializeMediaManifest(manifest: MediaManifest): string {
   const sorted: MediaManifest = {};
   for (const hash of Object.keys(manifest).sort()) {

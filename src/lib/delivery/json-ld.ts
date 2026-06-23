@@ -5,6 +5,9 @@
 // The line separator U+2028 and paragraph separator U+2029 get the same treatment: they are
 // legal inside a JSON string but unsafe in inline script text, where some parsers read them as
 // line terminators, so an author pasting one into frontmatter would corrupt the JSON-LD block.
+/**
+ *
+ */
 export function jsonLdScript(data: Record<string, unknown>): string {
   const json = JSON.stringify(data)
     .replace(/</g, '\\u003c')

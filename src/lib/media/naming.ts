@@ -7,13 +7,17 @@
 // slugifyFilename output always satisfies parseMediaToken's grammar (lowercase alphanumerics joined
 // by single internal hyphens, no leading or trailing hyphen), or is the literal `file`.
 
-/** Combining marks (Unicode block U+0300 to U+036F), left over after an NFD decompose, stripped to
+/**
+ * Combining marks (Unicode block U+0300 to U+036F), left over after an NFD decompose, stripped to
  *  fold an accented letter down to its ASCII base. Written as escapes because the literal marks are
- *  invisible in source. */
+ *  invisible in source.
+ */
 const COMBINING_MARKS = /[\u0300-\u036f]/g;
 
-/** Windows reserved device names. A bare match (case-insensitive) cannot survive as the slug, since
- *  it names a device rather than a file on that platform. */
+/**
+ * Windows reserved device names. A bare match (case-insensitive) cannot survive as the slug, since
+ *  it names a device rather than a file on that platform.
+ */
 const RESERVED = new Set([
   'con',
   'prn',
@@ -42,8 +46,10 @@ const RESERVED = new Set([
 /** The maximum slug length, applied before the reserved-name and empty fallbacks. */
 const MAX_SLUG = 80;
 
-/** A 16-character lowercase hex content-hash prefix, the bare-hash reference form. A slug that
- *  matches this shape would collide with `media:<hash>`, so slugifyFilename screens it. */
+/**
+ * A 16-character lowercase hex content-hash prefix, the bare-hash reference form. A slug that
+ *  matches this shape would collide with `media:<hash>`, so slugifyFilename screens it.
+ */
 const HASH_RE = /^[0-9a-f]{16}$/;
 
 /** A short alphanumeric extension (no dot), the only shape r2Key accepts, for example `webp`. */
@@ -69,10 +75,12 @@ export function shortHash(full: string): string {
   return full.slice(0, 16);
 }
 
-/** The strict ingest transform from a raw filename to a slug that satisfies the media: slug grammar,
+/**
+ * The strict ingest transform from a raw filename to a slug that satisfies the media: slug grammar,
  *  or the literal `file`. Drops the extension, lowercases, transliterates accents, collapses non-alphanumeric runs
  *  to a single hyphen, trims, caps at 80 chars, screens Windows reserved names, and falls back to
- *  `file` when nothing usable is left. */
+ *  `file` when nothing usable is left.
+ */
 export function slugifyFilename(name: string): string {
   const dot = name.lastIndexOf('.');
   const stem = dot === -1 ? name : name.slice(0, dot);
@@ -97,9 +105,11 @@ export function slugifyFilename(name: string): string {
   return slug;
 }
 
-/** The content-addressed R2 object key `media/<aa>/<shortHash>.<ext>`, fanned out on the first two
+/**
+ * The content-addressed R2 object key `media/<aa>/<shortHash>.<ext>`, fanned out on the first two
  *  hex chars of the short hash. No leading slash: this is an object key, not a URL. `ext` is bare
- *  (no dot), for example `webp`. */
+ *  (no dot), for example `webp`.
+ */
 export function r2Key(shortHash: string, ext: string): string {
   if (!HASH_RE.test(shortHash)) {
     throw new Error(`r2Key: hash must be 16 lowercase hex chars, got "${shortHash}"`);
@@ -110,10 +120,12 @@ export function r2Key(shortHash: string, ext: string): string {
   return `media/${shortHash.slice(0, 2)}/${shortHash}.${ext}`;
 }
 
-/** The public delivery URL path, with a leading slash, under the delivery base (`publicBase`,
+/**
+ * The public delivery URL path, with a leading slash, under the delivery base (`publicBase`,
  *  default `/media`). The `slug` form is human-readable (`<base>/<slug>.<shortHash>.<ext>`, or
  *  `<base>/<shortHash>.<ext>` when the slug is null); the `opaque` form mirrors the R2 fan-out
- *  (`<base>/<aa>/<shortHash>.<ext>`) and ignores the slug. */
+ *  (`<base>/<aa>/<shortHash>.<ext>`) and ignores the slug.
+ */
 export function publicPath(
   slug: string | null,
   shortHash: string,

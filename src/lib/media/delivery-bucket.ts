@@ -16,9 +16,11 @@ export interface DeliveryObject {
   httpEtag: string;
   /** The full object size in bytes, the denominator of a `Content-Range`. */
   size: number;
-  /** Present only on a ranged read: the served window, used to build the `Content-Range`. R2 fills
+  /**
+   * Present only on a ranged read: the served window, used to build the `Content-Range`. R2 fills
    *  both fields for a `bytes=start-end` request; each is typed optional so the route derives the
-   *  range bounds defensively against `size`. */
+   *  range bounds defensively against `size`.
+   */
   range?: { offset?: number; length?: number };
 }
 

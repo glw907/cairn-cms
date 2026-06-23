@@ -19,24 +19,30 @@ import { parseMediaToken } from '../media/reference.js';
 import { diffTokens, diffChanges } from './tidy-diff.js';
 import type { Change } from './tidy-diff.js';
 
-/** The reason a tidy result was rejected. Task 14 branches on this; every value maps to the one
+/**
+ * The reason a tidy result was rejected. Task 14 branches on this; every value maps to the one
  *  honest author-facing message, so the reason is for logging and tests, not the user surface.
  *  - `structure`: a directive opener/closer sequence, a heading count or level, or a fenced-code
  *    count diverged (the result restructured the document).
  *  - `frontmatter`: the frontmatter block is not byte-for-byte equal.
  *  - `media`: the multiset of `media:` hashes differs (a hash was altered, dropped, or invented).
  *  - `code`: a code span or fenced code block was edited.
- *  - `divergence`: the changed-token amount exceeds the length-aware bound (a wholesale rewrite). */
+ *  - `divergence`: the changed-token amount exceeds the length-aware bound (a wholesale rewrite).
+ */
 export type TidyRejectionReason = 'structure' | 'frontmatter' | 'media' | 'code' | 'divergence';
 
-/** The honest author-facing message a rejection maps to. The same message for every reason, by
+/**
+ * The honest author-facing message a rejection maps to. The same message for every reason, by
  *  design: an author does not need the validator's internal taxonomy, only that the result was
- *  discarded and their text is safe. */
+ *  discarded and their text is safe.
+ */
 export const TIDY_REJECTION_MESSAGE =
 	'Tidy returned a result that changed more than the wording, so it was discarded. Your text is unchanged.';
 
-/** The outcome of validating a tidy result. On success it carries the Task 12 change set the review
- *  surface accepts and rejects against; on failure it carries the typed reason and the message. */
+/**
+ * The outcome of validating a tidy result. On success it carries the Task 12 change set the review
+ *  surface accepts and rejects against; on failure it carries the typed reason and the message.
+ */
 export type TidyValidation =
 	| { ok: true; changes: Change[] }
 	| { ok: false; reason: TidyRejectionReason; message: string };
@@ -61,10 +67,12 @@ const DIVERGENCE_FRACTION = 0.5;
 // caught here too, redundantly with the code check, which is the right posture for a backstop.
 const MEDIA_TOKEN = /media:[A-Za-z0-9.-]+/g;
 
-/** The sorted multiset of valid media hashes in the text. Each `media:` occurrence is parsed; a
+/**
+ * The sorted multiset of valid media hashes in the text. Each `media:` occurrence is parsed; a
  *  malformed token (a broken hash, an illegal slug) parses to null and is dropped, so a tidy that
  *  CORRUPTED a hash drops it from the multiset and the comparison fails. Sorted so two multisets
- *  compare by value, order-independent. */
+ *  compare by value, order-independent.
+ */
 function mediaHashes(text: string): string[] {
 	const hashes: string[] = [];
 	for (const m of text.matchAll(MEDIA_TOKEN)) {
@@ -74,11 +82,13 @@ function mediaHashes(text: string): string[] {
 	return hashes.sort();
 }
 
-/** The directive structure signature: each opener or closer in document order, paired with the depth
+/**
+ * The directive structure signature: each opener or closer in document order, paired with the depth
  *  the fence scan assigned it. Two texts share a directive structure when these signatures are equal,
  *  so an added, removed, or relevelled container fails the comparison. A fence-shaped line inside a
  *  code block is already disowned by the scan (its role is null), so a documented `:::` example does
- *  not enter the signature. */
+ *  not enter the signature.
+ */
 function directiveSignature(text: string): string {
 	const { depths, roles } = fenceScan(text.split('\n'));
 	const parts: string[] = [];
@@ -88,10 +98,12 @@ function directiveSignature(text: string): string {
 	return parts.join(',');
 }
 
-/** The heading signature: every ATX heading's level in document order. Parsed as mdast so a `#`
+/**
+ * The heading signature: every ATX heading's level in document order. Parsed as mdast so a `#`
  *  inside a code block or an escaped one is never counted, and the level is the parser's own depth.
  *  Two texts share a heading structure when these are equal, so an added, removed, or relevelled
- *  heading fails the comparison. */
+ *  heading fails the comparison.
+ */
 function headingSignature(text: string): string {
 	const tree = unified().use(remarkParse).use(remarkGfm).parse(text);
 	const levels: number[] = [];
@@ -101,11 +113,13 @@ function headingSignature(text: string): string {
 	return levels.join(',');
 }
 
-/** Every code span and fenced or indented code block in the text, as a sorted multiset of values.
+/**
+ * Every code span and fenced or indented code block in the text, as a sorted multiset of values.
  *  Parsed as mdast so the comparison sees exactly what the parser treats as code, the same authority
  *  the media body scan uses. Sorted so the comparison is order-independent: the divergence and
  *  structure checks own ordering, this check owns the contents. A `code` node is a block, an
- *  `inlineCode` node is a span. */
+ *  `inlineCode` node is a span.
+ */
 function codeContents(text: string): string[] {
 	const tree = unified().use(remarkParse).use(remarkGfm).parse(text);
 	const values: string[] = [];

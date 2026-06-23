@@ -17,12 +17,18 @@ export const NO_ACCOUNT: CheckResult = skip(
 	'set CLOUDFLARE_API_TOKEN, and CLOUDFLARE_ACCOUNT_ID or a wrangler account_id, to run this check'
 );
 
+/**
+ *
+ */
 export function cfGet(ctx: DoctorContext, path: string): Promise<Response> {
 	return ctx.fetch(`${CF_API}${path}`, {
 		headers: { authorization: `Bearer ${ctx.cfToken}` },
 	});
 }
 
+/**
+ *
+ */
 export function cfPost(ctx: DoctorContext, path: string, body: unknown): Promise<Response> {
 	return ctx.fetch(`${CF_API}${path}`, {
 		method: 'POST',

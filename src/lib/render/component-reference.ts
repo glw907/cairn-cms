@@ -8,8 +8,10 @@ export interface ReferenceOptions {
   summary: string;
 }
 
-/** Build a self-contained markdown reference (the llms-full.txt shape) for a component registry, for
- *  authors and for pointing an LLM at one curated file. */
+/**
+ * Build a self-contained markdown reference (the llms-full.txt shape) for a component registry, for
+ *  authors and for pointing an LLM at one curated file.
+ */
 export function generateComponentReference(registry: ComponentRegistry, opts: ReferenceOptions): string {
   const sections = registry.defs.map((def) => componentSection(def));
   return `# ${opts.title}\n\n> ${opts.summary}\n\n${sections.join('\n\n')}\n`;

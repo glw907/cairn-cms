@@ -9,7 +9,7 @@ import { renderStaticAdminPage } from './static-admin-page.js';
 
 /**
  * Render the full HTML document for the HTTPS-required page.
- * @param httpsUrl The same request rebuilt over https, offered as the one-click recovery link.
+ * @param httpsUrl - The same request rebuilt over https, offered as the one-click recovery link.
  */
 export function httpsRequiredPage(httpsUrl: string): string {
   const href = escapeHtml(httpsUrl);

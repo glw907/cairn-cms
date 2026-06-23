@@ -23,9 +23,11 @@ import { filenameFromId } from '../content/ids.js';
 import { readRaw } from '../github/repo.js';
 import { buildUsageIndex } from './usage.js';
 
-/** One main entry the rewrite will touch: its identity, its file path, the transform's per-placement
+/**
+ * One main entry the rewrite will touch: its identity, its file path, the transform's per-placement
  *  diff, and the rewritten markdown a later apply commits. `P` is the transform's placement type
- *  (a RepointPlacement for replace, an AltPlacement for fill-alt). */
+ *  (a RepointPlacement for replace, an AltPlacement for fill-alt).
+ */
 export interface PlannedEntry<P = unknown> {
   /** The concept id, e.g. "posts". */
   concept: string;
@@ -39,9 +41,11 @@ export interface PlannedEntry<P = unknown> {
   newMarkdown: string;
 }
 
-/** One open edit branch that also references the asset, with the entries on it. Report-only: an apply
+/**
+ * One open edit branch that also references the asset, with the entries on it. Report-only: an apply
  *  rewrites main, never a branch, so the screen surfaces these as a delta the editor handles by
- *  republishing the draft. */
+ *  republishing the draft.
+ */
 export interface BranchRef {
   /** The cairn/* branch name. */
   branch: string;
@@ -49,8 +53,10 @@ export interface BranchRef {
   entries: { concept: string; id: string }[];
 }
 
-/** The preview plan: the main entries to rewrite, the report-only branch delta, and the distinct
- *  count of affected main entries (the entries the transform actually changed). */
+/**
+ * The preview plan: the main entries to rewrite, the report-only branch delta, and the distinct
+ *  count of affected main entries (the entries the transform actually changed).
+ */
 export interface RewritePlan<P = unknown> {
   entries: PlannedEntry<P>[];
   branchDelta: BranchRef[];

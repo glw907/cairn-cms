@@ -33,8 +33,10 @@ export interface TextField extends FieldBase {
   max?: number;
   /** Exact required character length. */
   length?: number;
-  /** A regular-expression source string the value must match. Stored as a string so the field
-   *  list stays plain serializable data; the validator compiles it. */
+  /**
+   * A regular-expression source string the value must match. Stored as a string so the field
+   *  list stays plain serializable data; the validator compiles it.
+   */
   pattern?: string;
 }
 /** A multi-line text input. */
@@ -103,8 +105,10 @@ export type FrontmatterField =
   | FreeTagsField
   | ImageField;
 
-/** The stored value of an `image` field: a `media:` reference, a screen-reader description, and an
- *  optional caption. */
+/**
+ * The stored value of an `image` field: a `media:` reference, a screen-reader description, and an
+ *  optional caption.
+ */
 export interface ImageValue {
   src: string;
   alt: string;
@@ -138,8 +142,10 @@ export interface ConceptConfig<S extends ConceptSchema = ConceptSchema> {
   singular?: string;
   /** The concept's schema: the form projection, the generated validator, and the inferred type. */
   schema: S;
-  /** Frontmatter keys to surface on each `ContentSummary.fields`, so a list card reads an authored
-   *  field without a per-entry detail read. Each key should also be declared in `schema`. */
+  /**
+   * Frontmatter keys to surface on each `ContentSummary.fields`, so a list card reads an authored
+   *  field without a per-entry detail read. Each key should also be declared in `schema`.
+   */
   summaryFields?: string[];
 }
 
@@ -191,28 +197,38 @@ export interface NavMenuConfig {
  * stylesheet.
  */
 export interface PreviewConfig {
-  /** Absolute or root-relative URLs of the site's compiled stylesheets, linked inside the
-   *  preview document. A Vite `?url` import of the site's CSS resolves the hashed asset URL. */
+  /**
+   * Absolute or root-relative URLs of the site's compiled stylesheets, linked inside the
+   *  preview document. A Vite `?url` import of the site's CSS resolves the hashed asset URL.
+   */
   stylesheets: string[];
   /** Class list applied to the preview document's body, for theme or typography roots. */
   bodyClass?: string;
-  /** Class list for a wrapper element around the rendered content, reproducing the site's
-   *  content container (a prose or measure class). Omitted renders the content bare. */
+  /**
+   * Class list for a wrapper element around the rendered content, reproducing the site's
+   *  content container (a prose or measure class). Omitted renders the content bare.
+   */
   containerClass?: string;
-  /** Per-concept overrides of bodyClass and containerClass, keyed by concept id. An entry's
+  /**
+   * Per-concept overrides of bodyClass and containerClass, keyed by concept id. An entry's
    *  preview resolves the override for its concept over the top-level values; stylesheets are
-   *  always shared. */
+   *  always shared.
+   */
   byConcept?: Record<string, { bodyClass?: string; containerClass?: string }>;
 }
 
-/** The flat preview shape `editLoad` ships to the edit page: the top-level `PreviewConfig`
- *  values with the entry's concept override applied, and no `byConcept` map. */
+/**
+ * The flat preview shape `editLoad` ships to the edit page: the top-level `PreviewConfig`
+ *  values with the entry's concept override applied, and no `byConcept` map.
+ */
 export type ResolvedPreview = Omit<PreviewConfig, 'byConcept'>;
 
-/** A site's media configuration (seam 4). A site sets this to turn on R2-backed media: uploads,
+/**
+ * A site's media configuration (seam 4). A site sets this to turn on R2-backed media: uploads,
  *  content-addressed storage, and Cloudflare Images variants. Omitting it leaves media off. The
  *  engine normalizes this into a `ResolvedAssetConfig` and merges the named variants over the
- *  built-in thumb, inline, card, and hero presets. */
+ *  built-in thumb, inline, card, and hero presets.
+ */
 export interface AssetConfig {
   /** The R2 bucket binding name on the Worker, e.g. "MEDIA_BUCKET". Required when a site declares media. */
   bucketBinding: string;
@@ -226,10 +242,12 @@ export interface AssetConfig {
   allowedTypes?: string[];
   /** Named transform presets, merged over the built-in thumb/inline/card/hero presets. */
   variants?: Record<string, VariantSpec>;
-  /** Whether Cloudflare Image Transformations are enabled for the zone (default false). The feature
+  /**
+   * Whether Cloudflare Image Transformations are enabled for the zone (default false). The feature
    *  is a per-zone setting that the dashboard or API turns on; it cannot be flipped from a Worker. With
    *  it off, the media resolver serves the bare full-size delivery path and ignores any preset, so
-   *  thumbnails stay correct (full-size-but-correct) rather than pointing at a dead /cdn-cgi/image URL. */
+   *  thumbnails stay correct (full-size-but-correct) rather than pointing at a dead /cdn-cgi/image URL.
+   */
   transformations?: boolean;
 }
 
@@ -246,10 +264,12 @@ export interface CairnAdapter {
   };
   backend: BackendConfig;
   sender: SenderConfig;
-  /** The site's one renderer: the editor preview and every public page call it (design decision 4).
+  /**
+   * The site's one renderer: the editor preview and every public page call it (design decision 4).
    *  `resolve` rewrites cairn: links to live permalinks; the build passes a site-resolver-backed
    *  one, the preview a manifest one. The trailing `resolveMedia` is additive and optional: the build
-   *  passes a site-resolver-backed media resolver, the preview a manifest-backed one. */
+   *  passes a site-resolver-backed media resolver, the preview a manifest-backed one.
+   */
   render(
     md: string,
     opts?: {
@@ -258,24 +278,32 @@ export interface CairnAdapter {
       resolveMedia?: import('../render/resolve-media.js').MediaResolve;
     },
   ): string | Promise<string>;
-  /** Repo-relative path to the committed content manifest. Defaults to src/content/.cairn/index.json
-   *  in composeRuntime. It sits outside any concept directory, so content enumeration never globs it. */
+  /**
+   * Repo-relative path to the committed content manifest. Defaults to src/content/.cairn/index.json
+   *  in composeRuntime. It sits outside any concept directory, so content enumeration never globs it.
+   */
   manifestPath?: string;
-  /** Repo-relative path to the committed media manifest. Defaults to src/content/.cairn/media.json,
-   *  applied in composeRuntime. Sits outside any concept directory, like the content manifest. */
+  /**
+   * Repo-relative path to the committed media manifest. Defaults to src/content/.cairn/media.json,
+   *  applied in composeRuntime. Sits outside any concept directory, like the content manifest.
+   */
   mediaManifestPath?: string;
-  /** Repo-relative path to the committed personal dictionary file. Defaults to
+  /**
+   * Repo-relative path to the committed personal dictionary file. Defaults to
    *  src/content/.cairn/dictionary.txt, applied in composeRuntime: the same `.cairn/` content root the
    *  manifests use, so the spec's `content/.cairn/dictionary.txt` resolves the same configurable way the
-   *  manifest paths do. One word per line, sorted, comment lines allowed (see site-dictionary.ts). */
+   *  manifest paths do. One word per line, sorted, comment lines allowed (see site-dictionary.ts).
+   */
   dictionaryPath?: string;
   /** Directive component registry; the renderer and the future palette derive from it (seam 3). */
   registry?: ComponentRegistry;
   /** The site's glyph name to SVG path-data map, for the admin icon picker and the renderer. */
   icons?: IconSet;
   navMenu?: NavMenuConfig;
-  /** The live site's content styling for the preview frame. The admin's chrome isolation keeps
-   *  the site's CSS out of the admin document, so the preview frame links these instead. */
+  /**
+   * The live site's content styling for the preview frame. The admin's chrome isolation keeps
+   *  the site's CSS out of the admin document, so the preview frame links these instead.
+   */
   preview?: PreviewConfig;
   assets?: AssetConfig;
 }
@@ -301,8 +329,10 @@ export interface ConceptDescriptor {
   /** Concept id, the key under `content`, e.g. "posts". */
   id: string;
   label: string;
-  /** The singular noun for the create affordances ("New post"); resolved from `ConceptConfig.singular`,
-   *  defaulting to `label` when the config omits it. */
+  /**
+   * The singular noun for the create affordances ("New post"); resolved from `ConceptConfig.singular`,
+   *  defaulting to `label` when the config omits it.
+   */
   singular: string;
   dir: string;
   routing: RoutingRule;
@@ -311,8 +341,10 @@ export interface ConceptDescriptor {
   /** Filename date-prefix granularity for a dated concept; resolved by `normalizeConcepts`. */
   datePrefix: DatePrefix;
   fields: FrontmatterField[];
-  /** Frontmatter keys the index copies onto each summary's `fields` record. `normalizeConcepts`
-   *  resolves it to `[]` when a concept omits `summaryFields`. */
+  /**
+   * Frontmatter keys the index copies onto each summary's `fields` record. `normalizeConcepts`
+   *  resolves it to `[]` when a concept omits `summaryFields`.
+   */
   summaryFields: string[];
   validate(frontmatter: Record<string, unknown>, body: string): ValidationResult;
 }
@@ -371,9 +403,11 @@ export interface CairnRuntime {
   concepts: ConceptDescriptor[];
   backend: BackendConfig;
   sender: SenderConfig;
-  /** The site's one renderer: the editor preview and every public page call it (design decision 4).
+  /**
+   * The site's one renderer: the editor preview and every public page call it (design decision 4).
    *  The trailing `resolveMedia` is additive and optional: the build passes a site-resolver-backed
-   *  media resolver, the preview a manifest-backed one. */
+   *  media resolver, the preview a manifest-backed one.
+   */
   render(
     md: string,
     opts?: {
@@ -385,15 +419,19 @@ export interface CairnRuntime {
   manifestPath: string;
   /** The repo-relative path to the committed media manifest, defaulted in composeRuntime. */
   mediaManifestPath: string;
-  /** The repo-relative path to the committed personal dictionary file (one word per line, sorted),
+  /**
+   * The repo-relative path to the committed personal dictionary file (one word per line, sorted),
    *  defaulted in composeRuntime to src/content/.cairn/dictionary.txt: the same `.cairn/` content root
    *  the manifests use. The edit load reads it and threads its words onto EditData; the
    *  addDictionaryWord action reads, merges, and commits it. Optional on the runtime so a hand-built
    *  runtime need not set it; composeRuntime always fills it, and the edit load and the action default
-   *  a missing value to the same content-root path. */
+   *  a missing value to the same content-root path.
+   */
   dictionaryPath?: string;
-  /** The adapter's asset config resolved once at compose: `{ enabled: false }` for a no-media site,
-   *  otherwise the filled config the upload, storage, delivery, and resolver paths read. */
+  /**
+   * The adapter's asset config resolved once at compose: `{ enabled: false }` for a no-media site,
+   *  otherwise the filled config the upload, storage, delivery, and resolver paths read.
+   */
   resolvedAssets: import('../media/config.js').ResolvedAssetConfig;
   registry?: ComponentRegistry;
   /** The site's glyph name to SVG path-data map, for the admin icon picker and the renderer. */
@@ -402,18 +440,22 @@ export interface CairnRuntime {
   /** The live site's content styling for the preview frame; passed through from the adapter. */
   preview?: PreviewConfig;
   assets?: AssetConfig;
-  /** The editor's spellcheck dictionary file, resolved once at compose from the site config's
+  /**
+   * The editor's spellcheck dictionary file, resolved once at compose from the site config's
    *  `spellcheck.dialect` (defaulting to US English). The edit load threads it onto EditData and the
    *  editor resolves it to a real asset URL on the main thread, so the Worker receives the URL and
    *  never reads config. Just the filename, e.g. "dictionary-en-us.txt". Optional on the runtime so a
    *  hand-built runtime need not set it; composeRuntime always fills it, and the edit load defaults a
-   *  missing value to the US English dictionary. */
+   *  missing value to the US English dictionary.
+   */
   spellcheckDictionary?: string;
-  /** The editor tidy (LLM copy-edit) settings, passed through from the site config. Optional on the
+  /**
+   * The editor tidy (LLM copy-edit) settings, passed through from the site config. Optional on the
    *  runtime so a hand-built runtime need not set it; composeRuntime threads it from
    *  `siteConfig.tidy`. The tidy action reads `enabled` and `model` at call time, and builds its prompt
    *  from `conventions`. Absent (or `enabled` false) means tidy is off, and the action refuses with a
-   *  fail(503) before any model call. */
+   *  fail(503) before any model call.
+   */
   tidy?: import('../nav/site-config.js').TidyConfig;
   /** Admin panels contributed by extensions (Mode 2). Empty until Plan 09 wires the dispatch route. */
   adminPanels?: AdminPanel[];

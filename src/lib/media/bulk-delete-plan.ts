@@ -8,16 +8,20 @@
 import type { UsageEntry, UsageIndex } from './usage.js';
 import type { MediaManifest } from './manifest.js';
 
-/** One selected hash that is not deleted, with why and (for the where-used) its usage rows. The rows
- *  are present only for 'still-referenced'; an 'uncommitted' skip carries an empty list. */
+/**
+ * One selected hash that is not deleted, with why and (for the where-used) its usage rows. The rows
+ *  are present only for 'still-referenced'; an 'uncommitted' skip carries an empty list.
+ */
 export interface BulkDeleteSkip {
   hash: string;
   reason: 'still-referenced' | 'uncommitted';
   usage: UsageEntry[];
 }
 
-/** The partitioned selection: the hashes safe to purge and the hashes held back. Both arrays keep the
- *  input order of `selected` so the screen reports them in the order the user picked. */
+/**
+ * The partitioned selection: the hashes safe to purge and the hashes held back. Both arrays keep the
+ *  input order of `selected` so the screen reports them in the order the user picked.
+ */
 export interface BulkDeletePlan {
   deletable: string[];
   skipped: BulkDeleteSkip[];

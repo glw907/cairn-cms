@@ -35,15 +35,19 @@ export interface AdminEvent extends EventBase<GithubKeyEnv & AuthEnv> {
   setHeaders(headers: Record<string, string>): void;
 }
 
-/** Injectable dependencies. Branding defaults from the runtime's siteName and sender, so a
+/**
+ * Injectable dependencies. Branding defaults from the runtime's siteName and sender, so a
  *  site overrides it only to change the magic-link email identity; `send` and `mintToken`
- *  are the same seams the underlying factories take. */
+ *  are the same seams the underlying factories take.
+ */
 export interface CairnAdminDeps {
   branding?: AuthBranding;
   send?: SendMagicLink;
   mintToken?: ContentRoutesDeps['mintToken'];
-  /** Build the Anthropic client for the tidy action. Forwarded to the content routes; a site that
-   *  enables tidy injects a stub here to avoid a real network call. Defaults to the real SDK client. */
+  /**
+   * Build the Anthropic client for the tidy action. Forwarded to the content routes; a site that
+   *  enables tidy injects a stub here to avoid a real network call. Defaults to the real SDK client.
+   */
   anthropic?: ContentRoutesDeps['anthropic'];
   /** The tidy action's own request deadline in milliseconds. Forwarded to the content routes. */
   tidyTimeoutMs?: ContentRoutesDeps['tidyTimeoutMs'];
@@ -64,6 +68,9 @@ export type AdminData =
   | { view: 'media'; layout: LayoutData; page: MediaLibraryData }
   | { view: 'settings'; layout: LayoutData; page: SettingsData };
 
+/**
+ *
+ */
 export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {}) {
   // The runtime already composes the site name and the sender identity, so the magic-link
   // branding needs no second copy of either unless a site overrides it.
@@ -82,11 +89,13 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
   // The nav surface exists only when the site configures a menu; without one its view is a 404.
   const nav = runtime.navMenu ? createNavRoutes(runtime, { mintToken: deps.mintToken }) : null;
 
-  /** Build the event a wrapped content load reads. The catch-all route carries only a rest
+  /**
+   * Build the event a wrapped content load reads. The catch-all route carries only a rest
    *  param, so `concept` and `id` are synthesized from the parsed view. The override names
    *  each field explicitly rather than spreading: a real RequestEvent's fields can sit behind
    *  getters a bare spread copies poorly, and the structural ContentEvent contract needs only
-   *  these. */
+   *  these.
+   */
   function contentEvent(event: AdminEvent, params: Record<string, string>): ContentEvent {
     return {
       url: event.url,
@@ -98,9 +107,11 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
     };
   }
 
-  /** Serve the admin view the pathname names, or a 404 for any shape the parser refuses.
+  /**
+   * Serve the admin view the pathname names, or a 404 for any shape the parser refuses.
    *  The authed views run the layout load and the view load concurrently; both mint a GitHub
-   *  token, and the installation-token cache coalesces the mints into one signing. */
+   *  token, and the installation-token cache coalesces the mints into one signing.
+   */
   async function load(event: AdminEvent): Promise<AdminData> {
     const view = parseAdminPath(event.url.pathname, runtime.concepts);
     if (!view) throw error(404, 'Not found');
@@ -148,9 +159,11 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
     }
   }
 
-  /** Wrap a delegate in the parse-and-check every action shares: parse the pathname exactly
+  /**
+   * Wrap a delegate in the parse-and-check every action shares: parse the pathname exactly
    *  as load does, 404 on a null parse or a view outside the allowed set, then hand the
-   *  narrowed view to the delegate. */
+   *  narrowed view to the delegate.
+   */
   function viewAction<V extends AdminView['view'], R>(
     allowed: readonly V[],
     delegate: (event: AdminEvent, view: Extract<AdminView, { view: V }>) => Promise<R>,
@@ -168,10 +181,12 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
   // An editor signs out from wherever they are, so logout accepts any parsed view.
   const anyView = ['index', 'login', 'confirm', 'list', 'edit', 'editors', 'nav', 'media', 'settings'] as const;
 
-  /** The full admin action vocabulary, one named async function per action, so a site's
+  /**
+   * The full admin action vocabulary, one named async function per action, so a site's
    *  catch-all route exports `admin.actions` directly. Each wrapper stays thin: parse,
    *  validate the view, synthesize the params the wrapped action reads, delegate. The
-   *  editor actions gate themselves with requireOwner, so no second gate is added here. */
+   *  editor actions gate themselves with requireOwner, so no second gate is added here.
+   */
   const actions = {
     request: viewAction(['login'], (event) => auth.requestAction(event)),
     confirm: viewAction(['confirm'], (event) => auth.confirmAction(event)),

@@ -33,6 +33,9 @@ function nestedSlots(def: ComponentDef): SlotDef[] {
   return (def.slots ?? []).filter((s) => s.name !== 'title' && s.name !== 'body');
 }
 
+/**
+ *
+ */
 export function serializeComponent(def: ComponentDef, values: ComponentValues): string {
   const fence = COLON.repeat(nestedSlots(def).length > 0 ? 4 : 3);
 
@@ -136,26 +139,33 @@ function rawKeysFromRoot(root: (RootContent & DirectiveNode) | undefined): strin
   return Object.keys(root?.attributes ?? {});
 }
 
-/** Parse a serialized component directive back into guided-form values, the inverse of
+/**
+ * Parse a serialized component directive back into guided-form values, the inverse of
  *  {@link serializeComponent}. The grammar is reversible, so the editor can round-trip a
- *  saved directive through the form. */
+ *  saved directive through the form.
+ */
 export async function parseComponent(markdown: string, def: ComponentDef): Promise<ComponentValues> {
   return valuesFromRoot(findComponentRoot(markdown, def), def);
 }
 
-/** The raw attribute keys present on the component's opening directive, read from the parsed tree
- *  (quote-aware, unlike a regex over the source). Used by validation to flag unknown keys. */
+/**
+ * The raw attribute keys present on the component's opening directive, read from the parsed tree
+ *  (quote-aware, unlike a regex over the source). Used by validation to flag unknown keys.
+ */
 export function parseRawAttributeKeys(markdown: string, def: ComponentDef): string[] {
   return rawKeysFromRoot(findComponentRoot(markdown, def));
 }
 
-/** The result of {@link componentRoundTripSafety}: whether re-opening a placed block into the
- *  guided form and re-serializing it is provably lossless. */
+/**
+ * The result of {@link componentRoundTripSafety}: whether re-opening a placed block into the
+ *  guided form and re-serializing it is provably lossless.
+ */
 export type RoundTripSafety =
   | { safe: true }
   | { safe: false; reason: 'unknown-attribute' | 'undeclared-child' | 'not-idempotent' | 'not-a-component' };
 
-/** Decide whether guided edit of this placed block is provably lossless. A block a person typed by
+/**
+ * Decide whether guided edit of this placed block is provably lossless. A block a person typed by
  *  hand can carry more than the schema models (an attribute the def does not list, a child container
  *  the def does not declare, slot content the form cannot represent stably), and parsing such a block
  *  into the form then re-serializing would silently drop it. The edit affordance is offered only when
@@ -165,7 +175,8 @@ export type RoundTripSafety =
  *  2. `unknown-attribute`: the block carries an attribute key the def does not declare.
  *  3. `undeclared-child`: the root has a direct child container directive that is not a declared
  *     nested slot. Such a child would otherwise fold into the body slot and move on re-serialize.
- *  4. `not-idempotent`: `parse -> serialize -> parse` does not recover the same values. */
+ *  4. `not-idempotent`: `parse -> serialize -> parse` does not recover the same values.
+ */
 export async function componentRoundTripSafety(markdown: string, def: ComponentDef): Promise<RoundTripSafety> {
   const root = findComponentRoot(markdown, def);
   if (!root) return { safe: false, reason: 'not-a-component' };
@@ -191,9 +202,11 @@ export async function componentRoundTripSafety(markdown: string, def: ComponentD
   return { safe: true };
 }
 
-/** Parse the component once and derive both the guided-form values and the raw attribute keys.
+/**
+ * Parse the component once and derive both the guided-form values and the raw attribute keys.
  *  Validation needs both, so this seam spares it the double parse that calling
- *  {@link parseComponent} and {@link parseRawAttributeKeys} separately would cost. */
+ *  {@link parseComponent} and {@link parseRawAttributeKeys} separately would cost.
+ */
 export async function parseComponentWithRawKeys(
   markdown: string,
   def: ComponentDef,

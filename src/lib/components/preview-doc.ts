@@ -32,8 +32,10 @@ export function previewDevice(id: PreviewDeviceId): PreviewDevice {
   return previewDevices.find((d) => d.id === id) ?? previewDevices[0];
 }
 
-/** A device's user-facing text, shared by the toolbar's menu items and the frame caption: the
- *  label with its width when one is fixed, so the value reaches assistive tech at pick time. */
+/**
+ * A device's user-facing text, shared by the toolbar's menu items and the frame caption: the
+ *  label with its width when one is fixed, so the value reaches assistive tech at pick time.
+ */
 export function deviceLabel(d: PreviewDevice): string {
   return d.width === null ? d.label : `${d.label} · ${d.width} px`;
 }

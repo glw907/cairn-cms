@@ -23,9 +23,11 @@ export interface AuthBranding {
   replyTo?: string;
 }
 
-/** The injected send. Production uses `cloudflareSend`; tests pass a sink. A thrown error's
+/**
+ * The injected send. Production uses `cloudflareSend`; tests pass a sink. A thrown error's
  *  text reaches the structured log (scrubbed and truncated), so a custom sender must not embed
- *  the message body or the magic link in what it throws. */
+ *  the message body or the magic link in what it throws.
+ */
 export type SendMagicLink = (env: AuthEnv, message: MagicLinkMessage) => Promise<void>;
 
 /** Build the confirmation email. The link is the only action; the copy stays plain. */

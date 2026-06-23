@@ -35,10 +35,12 @@ import type { MediaLibrary, MediaLibraryEntry } from '../media/library-entry.js'
 // validation, so a non-media or malformed URL is dropped after the match.
 const MEDIA_IMAGE = /!\[([^\]]*)\]\((media:[^\s)]+)\)/g;
 
-/** A matched media image in a line: the alt text and the URL token's character offsets within the
+/**
+ * A matched media image in a line: the alt text and the URL token's character offsets within the
  *  whole document, plus the parsed reference and the library entry (null when the hash is unknown).
  *  figureRole carries the enclosing `:::figure` placement (the closed-set role, or `'figure'` for
- *  the measure default), or null when the token is not in a figure: a bare token shows no role pill. */
+ *  the measure default), or null when the token is not in a figure: a bare token shows no role pill.
+ */
 interface MediaImageMatch {
   alt: string;
   from: number;
@@ -138,8 +140,10 @@ class MediaChipWidget extends WidgetType {
   }
 }
 
-/** Scan one line's text for media image tokens, mapping each to its document offsets and resolving its
- *  library entry. lineFrom is the line's document start, so the match offsets become absolute. */
+/**
+ * Scan one line's text for media image tokens, mapping each to its document offsets and resolving its
+ *  library entry. lineFrom is the line's document start, so the match offsets become absolute.
+ */
 function matchesInLine(text: string, lineFrom: number, library: MediaLibrary): MediaImageMatch[] {
   const out: MediaImageMatch[] = [];
   MEDIA_IMAGE.lastIndex = 0;
@@ -168,10 +172,12 @@ function matchesInLine(text: string, lineFrom: number, library: MediaLibrary): M
   return out;
 }
 
-/** Every media image match across the editor's visible ranges, in document order, each carrying its
+/**
+ * Every media image match across the editor's visible ranges, in document order, each carrying its
  *  enclosing figure role. One {@link fenceScan} over the whole document feeds the cheap per-token
  *  figure detection (no remark parse on the per-rebuild chip path); the visible lines are scanned
- *  for tokens, then each token's line index drives {@link figureRoleAtLine}. */
+ *  for tokens, then each token's line index drives {@link figureRoleAtLine}.
+ */
 function visibleMatches(view: EditorView, library: MediaLibrary): MediaImageMatch[] {
   const lines = view.state.doc.toString().split('\n');
   const scan = fenceScan(lines);
@@ -189,8 +195,10 @@ function visibleMatches(view: EditorView, library: MediaLibrary): MediaImageMatc
   return out;
 }
 
-/** Replace decorations for each visible media image's reference token: the chip widget over the URL
- *  token, the alt left untouched. The same spans seed the atomic-range set. */
+/**
+ * Replace decorations for each visible media image's reference token: the chip widget over the URL
+ *  token, the alt left untouched. The same spans seed the atomic-range set.
+ */
 function buildMediaDecorations(view: EditorView, library: MediaLibrary): DecorationSet {
   const builder = new RangeSetBuilder<Decoration>();
   for (const match of visibleMatches(view, library)) {
@@ -199,9 +207,11 @@ function buildMediaDecorations(view: EditorView, library: MediaLibrary): Decorat
   return builder.finish();
 }
 
-/** The atomic ranges for the visible media reference tokens: a caret or selection edit treats each
+/**
+ * The atomic ranges for the visible media reference tokens: a caret or selection edit treats each
  *  token as one unit, so a stray keystroke replaces the whole reference rather than corrupting a hex
- *  digit. Built from the same matches the decorations use, so the two never disagree. */
+ *  digit. Built from the same matches the decorations use, so the two never disagree.
+ */
 function buildAtomicRanges(view: EditorView, library: MediaLibrary): DecorationSet {
   const ranges: Range<Decoration>[] = [];
   for (const match of visibleMatches(view, library)) {

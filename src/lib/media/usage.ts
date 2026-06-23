@@ -46,14 +46,18 @@ export interface UsageEntry {
   origin: UsageOrigin;
 }
 
-/** Content hash to the distinct entries that reference it. A hash with no row is "no references
- *  found" (see the raw-HTML caveat above), never a proven orphan. */
+/**
+ * Content hash to the distinct entries that reference it. A hash with no row is "no references
+ *  found" (see the raw-HTML caveat above), never a proven orphan.
+ */
 export type UsageIndex = Map<string, UsageEntry[]>;
 
-/** Build options. `branches` lets a caller that already listed the open cairn/* branches pass them
+/**
+ * Build options. `branches` lets a caller that already listed the open cairn/* branches pass them
  *  in so the index does not list them a second time (the load path lists once for the media-union).
  *  `strict` flips the per-branch read from degrade-and-skip to fail-closed: a delete gate must not
- *  treat a transient branch-read failure as an absent reference, so it rethrows instead. */
+ *  treat a transient branch-read failure as an absent reference, so it rethrows instead.
+ */
 export interface BuildUsageOptions {
   /** The open cairn/* branch names, already listed. When present the index skips its own listing. */
   branches?: string[];

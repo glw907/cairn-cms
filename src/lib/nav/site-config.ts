@@ -81,14 +81,18 @@ export interface SiteConfig {
   menus?: Record<string, unknown>;
   /** Per-concept URL policy: the permalink pattern and date-prefix granularity, keyed by concept id. */
   content?: Record<string, ConceptUrlPolicy>;
-  /** The editor spellcheck settings. The dialect is declared once per site (spec 1.2), so a British
+  /**
+   * The editor spellcheck settings. The dialect is declared once per site (spec 1.2), so a British
    *  site loads the British word list and "colour" reads as correct. Today only US English ships, so an
-   *  unset or unknown dialect resolves to it. */
+   *  unset or unknown dialect resolves to it.
+   */
   spellcheck?: { dialect?: string };
-  /** The editor tidy (LLM copy-edit) settings. Opt-in at the site level (spec 2.8): tidy is a remote,
+  /**
+   * The editor tidy (LLM copy-edit) settings. Opt-in at the site level (spec 2.8): tidy is a remote,
    *  costly model call, so the whole block is optional and `enabled` defaults false. The model is a
    *  developer-tier fact; the `conventions` block is the editor-tier per-convention config that builds
-   *  the prompt's CONVENTIONS section. The Anthropic API key is a Worker secret, never config. */
+   *  the prompt's CONVENTIONS section. The Anthropic API key is a Worker secret, never config.
+   */
   tidy?: TidyConfig;
   [key: string]: unknown;
 }
@@ -117,14 +121,18 @@ export const DEFAULT_TIDY_MODEL = 'claude-sonnet-4-6';
  * Sentence spacing is dropped on purpose and regional spelling is `spellcheck.dialect`, not a toggle.
  */
 export interface TidyConventions {
-  /** The objective Fixes group (spelling, grammar, doubled words, whitespace, capitals, terminal
+  /**
+   * The objective Fixes group (spelling, grammar, doubled words, whitespace, capitals, terminal
    *  punctuation). Default on. The always-on core governs it; this toggle lets the screen turn the
-   *  group off. */
+   *  group off.
+   */
   fixes: boolean;
   /** Oxford comma position. Off when undefined; `always` | `complex-only` (AP) | `never`. */
   oxfordComma?: 'always' | 'complex-only' | 'never';
-  /** Number style threshold. Off when undefined; the always-numeral exception sets (ages, dates,
-   *  measurements, percentages) apply at any threshold. */
+  /**
+   * Number style threshold. Off when undefined; the always-numeral exception sets (ages, dates,
+   *  measurements, percentages) apply at any threshold.
+   */
   numberStyle?: 'under-ten' | 'under-hundred' | 'always-numerals';
   /** Measurement notation only (never the system, never the number). Off when undefined. */
   measurements?: 'abbreviate' | 'spell-out';

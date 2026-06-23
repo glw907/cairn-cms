@@ -14,6 +14,14 @@ const schema = defineFields([
   { name: 'summary', label: 'Summary', type: 'text', description: 'Shown in search results and when the post is shared.' },
 ]);
 
+// A concept whose Details panel carries two date fields with distinct names and non-overlapping
+// labels: one with no description (so it falls back to the built-in publish-clarity default) and one
+// whose site copy overrides it. Neither is named `title` or `draft`, so both land in the panel.
+const dateSchema = defineFields([
+  { name: 'date', label: 'Date', type: 'date' },
+  { name: 'deadline', label: 'Deadline', type: 'date', description: 'Custom date help.' },
+]);
+
 function props() {
   return {
     data: {
@@ -47,6 +55,18 @@ function props() {
   };
 }
 
+function dateProps() {
+  const base = props();
+  return {
+    ...base,
+    data: {
+      ...base.data,
+      fields: dateSchema.fields,
+      frontmatter: { date: '2026-05-01', deadline: '2026-05-08' },
+    },
+  };
+}
+
 describe('edit-page field hint', () => {
   it('renders a field description under the input and associates it for assistive tech', async () => {
     const page = render(EditPage, props());
@@ -62,5 +82,20 @@ describe('edit-page field hint', () => {
     // A field with no description renders no hint and sets no aria-describedby.
     const title = page.getByRole('textbox', { name: 'Title' });
     await expect.element(title).not.toHaveAttribute('aria-describedby');
+  });
+
+  it('gives a date field with no description a built-in publish-clarity default that site copy overrides', async () => {
+    const page = render(EditPage, dateProps());
+    // The Details fields live behind the slide-over; open it to reach the date inputs.
+    await page.getByRole('button', { name: 'Details' }).click();
+
+    // A date field with no description shows the built-in publish-clarity default.
+    const dateDefault = page.getByText('Sets the date for this post. Publishing is a separate step you choose.');
+    await expect.element(dateDefault).toBeInTheDocument();
+    const dateInput = page.getByLabelText('Date');
+    await expect.element(dateInput).toHaveAttribute('aria-describedby', expect.stringContaining('date'));
+
+    // A date field with a description shows the site's copy, not the default.
+    await expect.element(page.getByText('Custom date help.')).toBeInTheDocument();
   });
 });

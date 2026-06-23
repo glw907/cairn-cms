@@ -1214,6 +1214,11 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   const titleField = $derived(data.fields.find((f) => f.name === 'title'));
   const draftField = $derived(data.fields.find((f) => f.type === 'boolean' && f.name === 'draft'));
   const detailFields = $derived(data.fields.filter((f) => f !== titleField && f !== draftField));
+
+  // The built-in hint a date field carries when its adapter sets no description. The control reads as
+  // if it might schedule publishing, so this reassures the editor that the date is metadata and that
+  // publishing is the separate, deliberate step. A field-level description overrides it.
+  const DATE_PUBLISH_HINT = 'Sets the date for this post. Publishing is a separate step you choose.';
 </script>
 
 <!-- The desk controls live in the one header band: AdminLayout renders this snippet through the
@@ -1825,12 +1830,12 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
         {:else if field.type === 'date'}
           <label class="flex flex-col gap-1">
             <span class="text-sm font-medium">{field.label}</span>
-            <input class="input input-sm" type="date" name={field.name} aria-label={field.label} aria-describedby={field.description ? `${field.name}-hint` : undefined} value={str(data.frontmatter[field.name])} />
-            {#if field.description}
-              <p id={`${field.name}-hint`} class="fld-hint mt-1 text-sm text-[var(--color-muted)]">
-                {field.description}
-              </p>
-            {/if}
+            <!-- A date field always carries a hint: the adapter's description when set, else the
+                 built-in publish-clarity default. So aria-describedby always points at the paragraph. -->
+            <input class="input input-sm" type="date" name={field.name} aria-label={field.label} aria-describedby={`${field.name}-hint`} value={str(data.frontmatter[field.name])} />
+            <p id={`${field.name}-hint`} class="fld-hint mt-1 text-sm text-[var(--color-muted)]">
+              {field.description ?? DATE_PUBLISH_HINT}
+            </p>
           </label>
         {:else if field.type === 'boolean'}
           <label class="label cursor-pointer justify-start gap-2">

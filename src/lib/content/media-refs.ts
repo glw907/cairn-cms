@@ -20,11 +20,13 @@ import { visit } from 'unist-util-visit';
 import { parseMediaToken } from '../media/reference.js';
 import type { FrontmatterField, ImageValue } from './types.js';
 
-/** The content hashes one entry references, in first-occurrence order, deduped by hash. Reads the
+/**
+ * The content hashes one entry references, in first-occurrence order, deduped by hash. Reads the
  *  frontmatter hero `image.src` for each `image`-typed field plus every body image node. A
  *  non-media or malformed token is skipped, never thrown, so a stray `![](/x.png)` does not break
  *  the manifest build. The body is parsed as mdast, so a `media:` token inside a code span or fence
- *  is never matched. */
+ *  is never matched.
+ */
 export function extractMediaRefs(
   frontmatter: Record<string, unknown>,
   body: string,

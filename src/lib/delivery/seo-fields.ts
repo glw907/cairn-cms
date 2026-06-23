@@ -3,9 +3,11 @@
 // typed Record<string, unknown>; this reads the known head fields by name and coerces. Kept apart
 // from seo.ts (the head builder) so reading frontmatter and building the head stay distinct concerns.
 
-/** The head fields a concept can carry in frontmatter. Each is optional and omitted when absent.
+/**
+ * The head fields a concept can carry in frontmatter. Each is optional and omitted when absent.
  *  `author` is article-scoped downstream: the head builder emits `article:author` only for a dated
- *  entry, so an `author` on an undated Page is read here but not rendered. */
+ *  entry, so an `author` on an undated Page is read here but not rendered.
+ */
 export interface SeoFields {
   description?: string;
   image?: string;
@@ -15,11 +17,13 @@ export interface SeoFields {
 
 const KEYS = ['description', 'image', 'robots', 'author'] as const;
 
-/** Read the known SEO head fields off an entry's normalized frontmatter. Keeps a present string,
+/**
+ * Read the known SEO head fields off an entry's normalized frontmatter. Keeps a present string,
  *  trimmed, and omits an absent, empty, or non-string value. Trimming the stored value keeps a stray
  *  `robots: "  noindex  "` from reaching the head tag with surrounding whitespace. The field must be
  *  declared in the concept's schema to survive the validate-once read; an undeclared key is not on the
- *  normalized frontmatter. */
+ *  normalized frontmatter.
+ */
 export function readSeoFields(frontmatter: Record<string, unknown>): SeoFields {
   const fields: SeoFields = {};
   for (const key of KEYS) {
@@ -29,11 +33,13 @@ export function readSeoFields(frontmatter: Record<string, unknown>): SeoFields {
   return fields;
 }
 
-/** Resolve an author-supplied image path to an absolute URL against the site origin. An absolute or
+/**
+ * Resolve an author-supplied image path to an absolute URL against the site origin. An absolute or
  *  protocol-relative URL passes through; a root-relative path anchors to the origin; a malformed
  *  string returns undefined rather than throwing at build. The sites use a bare-domain origin, so a
  *  bare path also anchors to the origin root; against a sub-path origin it would resolve relative to
- *  that path, per the WHATWG URL rules. */
+ *  that path, per the WHATWG URL rules.
+ */
 export function resolveImageUrl(image: string, origin: string): string | undefined {
   try {
     const url = new URL(image, origin);

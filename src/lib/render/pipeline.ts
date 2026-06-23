@@ -19,28 +19,38 @@ import { defineRegistry, type ComponentRegistry } from './registry.js';
 import type { LinkResolve } from '../content/links.js';
 
 export interface RendererOptions {
-  /** Stamp a `data-rise` ordinal (0, 1, 2, …) on each top-level component so a site's
+  /**
+   * Stamp a `data-rise` ordinal (0, 1, 2, …) on each top-level component so a site's
    *  CSS can drive an entrance-cascade delay off it. Omit for no stagger. The ordinal
-   *  is inert, so a consumer's sanitize floor can keep `data-rise` and drop `style`. */
+   *  is inert, so a consumer's sanitize floor can keep `data-rise` and drop `style`.
+   */
   stagger?: boolean;
-  /** Extend the sanitize allowlist. Receives cairn's default schema (defaultSchema plus the
+  /**
+   * Extend the sanitize allowlist. Receives cairn's default schema (defaultSchema plus the
    *  directive markers and the common benign tags) and returns the schema to use. Add to the
    *  allowlist for the benign HTML a site's content needs; start from the argument so the
-   *  dangerous strip is preserved. */
+   *  dangerous strip is preserved.
+   */
   sanitizeSchema?: (defaults: Schema) => Schema;
-  /** Developer-only escape hatch: disable the sanitize floor entirely. This reintroduces the XSS
+  /**
+   * Developer-only escape hatch: disable the sanitize floor entirely. This reintroduces the XSS
    *  vector the floor closes, so it is only for a site whose content is fully developer-controlled.
-   *  It is a code-level adapter decision, never an editor-facing setting. */
+   *  It is a code-level adapter decision, never an editor-facing setting.
+   */
   unsafeDisableSanitize?: boolean;
-  /** The `rel` value forced on every `target="_blank"` anchor, applied last so it also covers
+  /**
+   * The `rel` value forced on every `target="_blank"` anchor, applied last so it also covers
    *  component-built anchors. Defaults to `'noopener noreferrer'`. Set a different string to change
-   *  it, or `false` to disable the injection (a site that owns its own anchor hardening). */
+   *  it, or `false` to disable the injection (a site that owns its own anchor hardening).
+   */
   anchorRel?: string | false;
 }
 
-/** Compose a site's render pipeline from its component registry: directive syntax to
+/**
+ * Compose a site's render pipeline from its component registry: directive syntax to
  *  stamped markers to registry-built hast. Returns `renderMarkdown` plus the remark/
- *  rehype plugin arrays (so the admin editor preview can reuse the exact same set). */
+ *  rehype plugin arrays (so the admin editor preview can reuse the exact same set).
+ */
 export function createRenderer(
   registry: ComponentRegistry = defineRegistry({ components: [] }),
   options: RendererOptions = {},

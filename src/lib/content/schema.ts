@@ -11,8 +11,10 @@ export interface StandardInput {
   body: string;
 }
 
-/** A minimal local copy of the Standard Schema v1 interface (https://standardschema.dev), so the
- *  schema is a drop-in where the ecosystem accepts a validator, with no runtime dependency. */
+/**
+ * A minimal local copy of the Standard Schema v1 interface (https://standardschema.dev), so the
+ *  schema is a drop-in where the ecosystem accepts a validator, with no runtime dependency.
+ */
 export interface StandardSchemaV1<Input = unknown, Output = Input> {
   readonly '~standard': {
     readonly version: 1;
@@ -25,9 +27,11 @@ type StandardResult<Output> =
   | { readonly value: Output; readonly issues?: undefined }
   | { readonly issues: ReadonlyArray<{ readonly message: string; readonly path?: ReadonlyArray<PropertyKey> }> };
 
-/** Map one field descriptor to the TS type of its normalized value. text, textarea, and date
+/**
+ * Map one field descriptor to the TS type of its normalized value. text, textarea, and date
  *  normalize to a string; a closed-vocabulary `tags` field to the option-union array; an `image`
- *  field to its nested object. */
+ *  field to its nested object.
+ */
 type FieldValue<K extends FrontmatterField> = K extends { type: 'boolean' }
   ? boolean
   : K extends { type: 'image' }
@@ -41,16 +45,20 @@ type FieldValue<K extends FrontmatterField> = K extends { type: 'boolean' }
 /** Flatten an intersection into a single readable object type. */
 type Prettify<T> = { [K in keyof T]: T[K] } & {};
 
-/** The normalized frontmatter type inferred from a field tuple. A field declared
- *  `required: true` is a required key; every other field is optional. */
+/**
+ * The normalized frontmatter type inferred from a field tuple. A field declared
+ *  `required: true` is a required key; every other field is optional.
+ */
 export type InferFields<F extends readonly FrontmatterField[]> = Prettify<
   { [K in F[number] as K extends { required: true } ? K['name'] : never]: FieldValue<K> } & {
     [K in F[number] as K extends { required: true } ? never : K['name']]?: FieldValue<K>;
   }
 >;
 
-/** A concept's schema: the plain-data field projection, the generated validator, and the
- *  Standard Schema conformance property. */
+/**
+ * A concept's schema: the plain-data field projection, the generated validator, and the
+ *  Standard Schema conformance property.
+ */
 export interface ConceptSchema<F extends readonly FrontmatterField[] = readonly FrontmatterField[]> {
   /** The declared fields as plain serializable data, for the editor form. */
   readonly fields: FrontmatterField[];
@@ -82,9 +90,11 @@ function applyRules(field: FrontmatterField, value: unknown, errors: Record<stri
   }
 }
 
-/** Options for `defineFields`. `refine` runs after the per-field rules pass, for cross-field and
+/**
+ * Options for `defineFields`. `refine` runs after the per-field rules pass, for cross-field and
  *  body-dependent checks. It is validation-only: it returns field-keyed errors to merge, or
- *  nothing, and never transforms the data. */
+ *  nothing, and never transforms the data.
+ */
 export interface DefineFieldsOptions<F extends readonly FrontmatterField[]> {
   refine?: (data: InferFields<F>, body: string) => Record<string, string> | undefined;
 }

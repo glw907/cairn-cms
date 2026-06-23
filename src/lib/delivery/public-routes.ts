@@ -25,12 +25,16 @@ export interface PublicRoutesDeps {
   description: string;
   /** Absolute feed URLs for the head's autodiscovery links. */
   feeds?: { rss?: string; json?: string };
-  /** A site-wide default OG image, used when an entry declares none. Resolved to absolute like the
-   *  canonical URL, so a relative path such as "/og/default.png" works. */
+  /**
+   * A site-wide default OG image, used when an entry declares none. Resolved to absolute like the
+   *  canonical URL, so a relative path such as "/og/default.png" works.
+   */
   defaultImage?: string;
-  /** Resolve a frontmatter `media:` hero reference to its delivery path. The site builds this from its
+  /**
+   * Resolve a frontmatter `media:` hero reference to its delivery path. The site builds this from its
    *  committed `media.json` exactly as it builds the body resolver (`makeMediaResolver`). When absent,
-   *  media is off and no `heroImage` projection is derived. */
+   *  media is off and no `heroImage` projection is derived.
+   */
   resolveMedia?: MediaResolve;
 }
 
@@ -58,11 +62,13 @@ export interface EntryData {
   seo: SeoMeta;
   newer?: ContentSummary;
   older?: ContentSummary;
-  /** The resolved hero image, a derived projection of the frontmatter `image` field. `url` is the
+  /**
+   * The resolved hero image, a derived projection of the frontmatter `image` field. `url` is the
    *  root-relative delivery path for an `<img>`, `absoluteUrl` the origin-anchored form for the
    *  og:image, and `alt`/`caption` carry from the stored object. The canonical token is untouched:
    *  `entry.frontmatter.image.src` stays the `media:` token. Undefined when no hero is set, media is
-   *  off, the reference does not parse, or the resolver finds no asset. */
+   *  off, the reference does not parse, or the resolver finds no asset.
+   */
   heroImage?: { url: string; absoluteUrl?: string; alt: string; caption?: string };
 }
 
@@ -70,7 +76,8 @@ export interface EntryData {
 export function createPublicRoutes(deps: PublicRoutesDeps) {
   const { site, render, origin, siteName, description, feeds, defaultImage, resolveMedia } = deps;
 
-  /** Derive the hero projection from an entry's frontmatter, without mutating it (locked decision 5).
+  /**
+   * Derive the hero projection from an entry's frontmatter, without mutating it (locked decision 5).
    *  The hero lives at the conventional `image` key as the validated nested object `{ src, alt, caption }`;
    *  only an image field's validate arm produces an object-with-string-`src` shape, so detecting that
    *  structure is enough (a text field stores a string, a tags field an array). Returns undefined when
@@ -81,7 +88,8 @@ export function createPublicRoutes(deps: PublicRoutesDeps) {
    *  and renders in the editor, but its delivery resolution is not wired here yet, since the field
    *  declarations are not reachable in the delivery read path. Honoring a renamed `seo`-flagged field
    *  (and a second image field per concept) at delivery is a carried follow-up; every consumer today
-   *  uses `image`. */
+   *  uses `image`.
+   */
   function deriveHeroImage(frontmatter: Record<string, unknown>): EntryData['heroImage'] {
     if (!resolveMedia) return undefined;
     const value = frontmatter.image;

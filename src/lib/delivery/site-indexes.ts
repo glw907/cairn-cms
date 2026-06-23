@@ -18,8 +18,10 @@ export type SiteGlobs<A extends CairnAdapter> = {
   [K in keyof A['content']]?: Record<string, string>;
 };
 
-/** The typed per-concept indexes plus the cross-concept `site` resolver. A concept literally named
- *  `site` is not supported, since `site` is the reserved resolver key. */
+/**
+ * The typed per-concept indexes plus the cross-concept `site` resolver. A concept literally named
+ *  `site` is not supported, since `site` is the reserved resolver key.
+ */
 export type SiteIndexes<A extends CairnAdapter> = {
   [K in keyof A['content']]: ContentIndex<
     NonNullable<A['content'][K]> extends ConceptConfig<infer S> ? Infer<S> : Record<string, unknown>

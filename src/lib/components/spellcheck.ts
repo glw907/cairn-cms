@@ -23,8 +23,10 @@ export interface Range {
   to: number;
 }
 
-/** A word extracted for lookup: the lowercased form the Worker checks, and its absolute range so a
- *  verdict maps straight back to an underline. */
+/**
+ * A word extracted for lookup: the lowercased form the Worker checks, and its absolute range so a
+ *  verdict maps straight back to an underline.
+ */
 export interface ExtractedWord {
   /** The lowercased word, as the engine's case-insensitive lookup expects. */
   text: string;
@@ -73,8 +75,10 @@ const SKIP_NODES = new Set<string>([
 // the form authors type directly in prose, so it is never split into "media" plus a flagged hash.
 const MEDIA_TOKEN = /media:[\w.-]+/g;
 
-/** Merge overlapping or touching ranges into a sorted, disjoint set, so the keep-span computation
- *  subtracts one clean list of skip regions. */
+/**
+ * Merge overlapping or touching ranges into a sorted, disjoint set, so the keep-span computation
+ *  subtracts one clean list of skip regions.
+ */
 function mergeRanges(ranges: Range[]): Range[] {
   if (ranges.length === 0) return [];
   const sorted = [...ranges].sort((a, b) => a.from - b.from || a.to - b.to);
@@ -88,9 +92,11 @@ function mergeRanges(ranges: Range[]): Range[] {
   return out;
 }
 
-/** Every absolute skip range in the document, from all three mechanisms, merged. This is the single
+/**
+ * Every absolute skip range in the document, from all three mechanisms, merged. This is the single
  *  skip authority the spec calls for: the tree decides node kind, frontmatterSpan covers the `---`
- *  region, and fenceTokens covers the directive machinery the tree parses as plain text. */
+ *  region, and fenceTokens covers the directive machinery the tree parses as plain text.
+ */
 function skipRanges(text: string, tree: Tree): Range[] {
   const skips: Range[] = [];
 
@@ -163,8 +169,10 @@ export function classifyProse(text: string, tree: Tree, from: number, to: number
   return out;
 }
 
-/** The prose ranges worth checking across the whole document. The lint source narrows this to the
- *  visible window; the unit test reads the whole-document set. */
+/**
+ * The prose ranges worth checking across the whole document. The lint source narrows this to the
+ *  visible window; the unit test reads the whole-document set.
+ */
 export function spellcheckRanges(text: string, tree: Tree): Range[] {
   return classifyProse(text, tree, 0, text.length);
 }
@@ -175,8 +183,10 @@ export function spellcheckRanges(text: string, tree: Tree): Range[] {
 const WORD = /[\p{L}\p{N}]+(?:[-'’][\p{L}\p{N}]+)*/gu;
 const ALL_DIGITS = /^\p{N}+$/u;
 
-/** Whether a word is worth a lookup. Words under three characters, pure numbers, and all-caps tokens
- *  are skipped to cut false positives (the conservative posture VSCode's spell checker takes). */
+/**
+ * Whether a word is worth a lookup. Words under three characters, pure numbers, and all-caps tokens
+ *  are skipped to cut false positives (the conservative posture VSCode's spell checker takes).
+ */
 function isCheckable(word: string): boolean {
   if (word.length < 3) return false;
   if (ALL_DIGITS.test(word)) return false;
@@ -207,8 +217,10 @@ export function extractWords(text: string, from: number, to: number): ExtractedW
 // wall of near-ties.
 const MAX_SUGGESTIONS = 5;
 
-/** The callbacks the management actions invoke. The lint source supplies these so the pure builder
- *  never touches the Worker or the re-lint mechanism: it only wires the buttons to these handlers. */
+/**
+ * The callbacks the management actions invoke. The lint source supplies these so the pure builder
+ *  never touches the Worker or the re-lint mechanism: it only wires the buttons to these handlers.
+ */
 export interface SpellDiagnosticActions {
   /** Add the word to the personal dictionary (posts addWord, records the pending addition, re-lints). */
   onAddWord(word: string): void;
@@ -217,7 +229,7 @@ export interface SpellDiagnosticActions {
 }
 
 /**
- * Build the correction popover for one misspelled word, as a @codemirror/lint Diagnostic whose
+ * Build the correction popover for one misspelled word, as a `@codemirror/lint` Diagnostic whose
  * `actions` CodeMirror renders as tooltip buttons (no custom popover code). The actions, in order:
  * up to five ranked suggestions (each replaces the word's range with one transaction), then "Add to
  * dictionary", then "Ignore". The severity is `info` so the underline is quiet, and the message names
@@ -290,7 +302,7 @@ export function arbitrateChecked(): SeqArbiter {
 }
 
 /**
- * Build the quick-fix popover for one objective-error finding, as a @codemirror/lint Diagnostic whose
+ * Build the quick-fix popover for one objective-error finding, as a `@codemirror/lint` Diagnostic whose
  * one `actions` entry applies the finding's deterministic fix. The severity is `info` so the underline
  * shares the spellcheck surface and the locked amber color (an editor reads spelling and these
  * mechanical errors as one "spellcheck" layer). The fix range is recomputed from the live diagnostic
@@ -337,17 +349,21 @@ let langMod: typeof import('@codemirror/language') | null = null;
 let viewMod: typeof import('@codemirror/view') | null = null;
 let stateMod: typeof import('@codemirror/state') | null = null;
 
-/** The narrow Worker surface the lint source drives: it posts check, suggest, addWord, and ignoreWord
+/**
+ * The narrow Worker surface the lint source drives: it posts check, suggest, addWord, and ignoreWord
  *  messages and listens for the answers. A `suggest` answer is a one-shot, so the source removes its
- *  own listener once it lands. A test injects a fake; production injects a real Worker. */
+ *  own listener once it lands. A test injects a fake; production injects a real Worker.
+ */
 export interface SpellWorker {
   postMessage(message: unknown): void;
   addEventListener(type: 'message', listener: (event: MessageEvent) => void): void;
   removeEventListener(type: 'message', listener: (event: MessageEvent) => void): void;
 }
 
-/** Construct the real spellcheck Worker, the spike's delivery shape. Kept behind the seam so the
- *  lint source never references `Worker` at module scope and a test can swap it. */
+/**
+ * Construct the real spellcheck Worker, the spike's delivery shape. Kept behind the seam so the
+ *  lint source never references `Worker` at module scope and a test can swap it.
+ */
 export function createSpellWorker(): SpellWorker {
   return new Worker(new URL('./spellcheck-worker.js', import.meta.url), {
     type: 'module',
@@ -368,21 +384,25 @@ export function resolveWasmUrl(): string {
   return new URL('./spellcheck-assets/spellchecker-wasm.wasm', import.meta.url).href;
 }
 
-/** Each shipped dictionary, mapped to a resolver that builds its asset URL with a LITERAL
+/**
+ * Each shipped dictionary, mapped to a resolver that builds its asset URL with a LITERAL
  *  `new URL(..., import.meta.url)`. The literal path is load-bearing. A templated `new URL` makes Vite
  *  and rolldown treat the directory as a glob and parse every sibling module to build it, including the
  *  `.svelte` components that still carry `lang="ts"` in `dist`, and the glob parser chokes on the TS
  *  syntax and breaks the consumer build. This set mirrors the dialect map in `nav/site-config.ts`; add
- *  one line per new shipped dialect dictionary. */
+ *  one line per new shipped dialect dictionary.
+ */
 const DICTIONARY_URLS: Record<string, () => string> = {
   'dictionary-en-us.txt': () =>
     new URL('./spellcheck-assets/dictionary-en-us.txt', import.meta.url).href,
 };
 
-/** The real dictionary asset URL for a dictionary filename, resolved module-relative. The caller
+/**
+ * The real dictionary asset URL for a dictionary filename, resolved module-relative. The caller
  *  passes the dialect-resolved filename (default `dictionary-en-us.txt`). `dictionaryFileForDialect`
  *  already collapses an unknown dialect to the default, so an unmapped name falls back the same way
- *  rather than pointing at an asset that does not ship. */
+ *  rather than pointing at an asset that does not ship.
+ */
 export function resolveDictionaryUrl(dictionaryFile: string): string {
   const resolve = DICTIONARY_URLS[dictionaryFile] ?? DICTIONARY_URLS['dictionary-en-us.txt'];
   return resolve();
@@ -391,39 +411,53 @@ export function resolveDictionaryUrl(dictionaryFile: string): string {
 /** How far past the visible viewport to lint, so a small scroll does not re-lint from scratch. */
 const VIEWPORT_MARGIN = 1000;
 
-/** Options for {@link cairnSpellcheck}, so the unit and component layers can inject a fake Worker
- *  factory in place of the real `new Worker(...)`. */
+/**
+ * Options for {@link cairnSpellcheck}, so the unit and component layers can inject a fake Worker
+ *  factory in place of the real `new Worker(...)`.
+ */
 export interface SpellcheckOptions {
   /** The Worker factory; defaults to {@link createSpellWorker}. Created lazily on the first lint. */
   createWorker?: () => SpellWorker;
-  /** The pending personal-dictionary additions, owned by the caller. When an author chooses "Add to
+  /**
+   * The pending personal-dictionary additions, owned by the caller. When an author chooses "Add to
    *  dictionary" the source posts addWord to the Worker (the underline clears at once) and records the
    *  word here. The set is the seam Task 9 commits to the git-backed dictionary file; this source only
-   *  fills it and never persists. A caller that does not pass one gets a fresh internal set. */
+   *  fills it and never persists. A caller that does not pass one gets a fresh internal set.
+   */
   pendingAdditions?: Set<string>;
-  /** The committed personal-dictionary words (spec 1.6) the source seeds the Worker's personal layer
+  /**
+   * The committed personal-dictionary words (spec 1.6) the source seeds the Worker's personal layer
    *  with, posted as one batch `addWord` right after `init`. The git-backed site dictionary is the
    *  durable layer; the editor reads it at load (EditData.siteDictionary) and hands it here, so a word
-   *  another editor committed answers correct from the first lint. Empty by default (dialect-only). */
+   *  another editor committed answers correct from the first lint. Empty by default (dialect-only).
+   */
   siteWords?: ReadonlyArray<string>;
-  /** The dialect-resolved dictionary filename, e.g. "dictionary-en-us.txt". The source resolves it to
-   *  a real asset URL and posts it in the Worker's `init`. Defaults to US English. */
+  /**
+   * The dialect-resolved dictionary filename, e.g. "dictionary-en-us.txt". The source resolves it to
+   *  a real asset URL and posts it in the Worker's `init`. Defaults to US English.
+   */
   dictionaryFile?: string;
-  /** Override the resolved wasm and dictionary URLs the source posts in `init`. The real resolution
+  /**
+   * Override the resolved wasm and dictionary URLs the source posts in `init`. The real resolution
    *  uses {@link resolveWasmUrl}/{@link resolveDictionaryUrl} (module-relative `import.meta.url`); a
    *  component test that injects a fake Worker can pass canned URLs so it never touches the asset
-   *  resolver. */
+   *  resolver.
+   */
   assetUrls?: { wasmUrl: string; dictionaryUrl: string };
-  /** Treat the Worker as ready without waiting for a `ready` message. The production path is strict
+  /**
+   * Treat the Worker as ready without waiting for a `ready` message. The production path is strict
    *  (it posts `init` and waits for `ready` before painting); a fake Worker in a test that does not
-   *  answer `ready` can set this so a lint run is not held back. Defaults to false. */
+   *  answer `ready` can set this so a lint run is not held back. Defaults to false.
+   */
   assumeReady?: boolean;
-  /** The already-loaded CodeMirror modules to reuse instead of importing them again. The editor
+  /**
+   * The already-loaded CodeMirror modules to reuse instead of importing them again. The editor
    *  component loads `@codemirror/view`/`@codemirror/language` for its own extensions, so passing them
    *  here keeps the lint source on the SAME module instances; a second dynamic import can resolve to a
    *  separate copy (the test bundler's dedup quirk), and CodeMirror's instanceof checks then reject the
    *  extension. When omitted, the source imports them itself (the standalone path). `@codemirror/lint`
-   *  is loaded here when not supplied, since the editor does not otherwise need it. */
+   *  is loaded here when not supplied, since the editor does not otherwise need it.
+   */
   modules?: {
     lint?: typeof import('@codemirror/lint');
     language?: typeof import('@codemirror/language');
@@ -469,7 +503,7 @@ function lockedUnderlineTheme(EditorViewMod: typeof import('@codemirror/view').E
 }
 
 /**
- * The @codemirror/lint linter() source, made markdown-aware by the Lezer tree. It runs over the
+ * The `@codemirror/lint` linter() source, made markdown-aware by the Lezer tree. It runs over the
  * visible viewport plus a margin (not the whole document), extracts the checkable words via the pure
  * classifier, posts them to the Worker keyed by a monotonic latest-wins seq, and maps the
  * `correct: false` answers back to ranges. Each wrong word becomes a correction popover: the source
@@ -590,10 +624,12 @@ export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<
     return worker;
   }
 
-  /** Fetch a single word's ranked suggestions over the Worker, a one-shot listener removed on the
+  /**
+   * Fetch a single word's ranked suggestions over the Worker, a one-shot listener removed on the
    *  answer. The suggest path is independent of the check seq, so a slow suggest never blocks a fresh
    *  check; an empty list (the engine returned nothing) still yields a popover with the two
-   *  management actions. */
+   *  management actions.
+   */
   function fetchSuggestions(w: SpellWorker, word: string): Promise<string[]> {
     suggestSeq += 1;
     const seq = suggestSeq;
@@ -609,8 +645,10 @@ export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<
     });
   }
 
-  /** Turn the wrong words into correction popovers, each carrying its ranked suggestions and the two
-   *  management actions. */
+  /**
+   * Turn the wrong words into correction popovers, each carrying its ranked suggestions and the two
+   *  management actions.
+   */
   async function buildDiagnostics(wrong: ExtractedWord[]): Promise<Diagnostic[]> {
     const w = ensureWorker();
     const callbacks: SpellDiagnosticActions = {

@@ -118,12 +118,16 @@ export function firstImageFile(dt: {
   return normalizeDataTransfer(dt)[0] ?? null;
 }
 
-/** The conservative canvas area budget, about 16.7M px (4096 x 4096). A source over this is scaled
- *  down before any `drawImage`, never clipped. */
+/**
+ * The conservative canvas area budget, about 16.7M px (4096 x 4096). A source over this is scaled
+ *  down before any `drawImage`, never clipped.
+ */
 export const MAX_AREA = 16_777_216;
 
-/** The conservative short-side budget. A source whose smaller dimension exceeds this is scaled down so
- *  the short side lands at the cap, even when its area is within MAX_AREA. */
+/**
+ * The conservative short-side budget. A source whose smaller dimension exceeds this is scaled down so
+ *  the short side lands at the cap, even when its area is within MAX_AREA.
+ */
 export const MAX_SHORT_SIDE = 4096;
 
 /**
@@ -151,9 +155,11 @@ export function budgetForDimensions(
   };
 }
 
-/** The ingest failure taxonomy. `decode-unsupported` is a format the browser and the HEIC decoder both
+/**
+ * The ingest failure taxonomy. `decode-unsupported` is a format the browser and the HEIC decoder both
  *  refuse; `transcode-failed` is a HEIC decode or a canvas re-encode that threw; `too-large` is a
- *  source still over budget after a transcode; `network` is the upload fetch rejecting. */
+ *  source still over budget after a transcode; `network` is the upload fetch rejecting.
+ */
 export type IngestFailureKind =
   | 'decode-unsupported'
   | 'transcode-failed'
@@ -254,8 +260,10 @@ export function buildUploadRequest(opts: UploadRequestOpts): { url: string; init
 // Browser-coupled glue (wired, proven live at 2b/site, not unit-tested here)
 // ---------------------------------------------------------------------------
 
-/** The structural shape of the heic-to module's `heicTo`, typed here so the dynamic import stays
- *  lazy. A HEIC blob in, a decoded image blob out (PNG, with the HEIF orientation already applied). */
+/**
+ * The structural shape of the heic-to module's `heicTo`, typed here so the dynamic import stays
+ *  lazy. A HEIC blob in, a decoded image blob out (PNG, with the HEIF orientation already applied).
+ */
 type HeicTo = (args: { blob: Blob; type: 'image/png' }) => Promise<Blob>;
 
 /** A decoded source plus its dimensions, the input to the upload step. */
@@ -373,8 +381,10 @@ export async function sendUpload(url: string, init: RequestInit): Promise<Respon
   }
 }
 
-/** Guard a drop target: cancel the browser's default open-the-file behavior on `dragover` and `drop`
- *  so a dropped image stays inside the editor rather than navigating the page to the file. */
+/**
+ * Guard a drop target: cancel the browser's default open-the-file behavior on `dragover` and `drop`
+ *  so a dropped image stays inside the editor rather than navigating the page to the file.
+ */
 export function guardDropTarget(event: DragEvent): void {
   event.preventDefault();
 }

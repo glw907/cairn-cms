@@ -4,6 +4,9 @@ import type { ComponentDef, ComponentValues } from './registry.js';
 /** A validation verdict: ok, or field-keyed error messages. */
 export type ComponentValidation = { ok: true } | { ok: false; errors: Record<string, string> };
 
+/**
+ *
+ */
 export async function validateComponent(markdown: string, def: ComponentDef): Promise<ComponentValidation> {
   const { values, rawKeys } = await parseComponentWithRawKeys(markdown, def);
   const errors: Record<string, string> = {};

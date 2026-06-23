@@ -15,8 +15,10 @@ export interface RawFile {
 
 /** The cheap, plain-data view of one entry, for lists, feeds, and the sitemap. */
 export interface ContentSummary {
-  /** The descriptor id this entry belongs to, e.g. "posts". Lets a list or page branch per
-   *  concept without re-deriving it from a proxy like `entry.date`. */
+  /**
+   * The descriptor id this entry belongs to, e.g. "posts". Lets a list or page branch per
+   *  concept without re-deriving it from a proxy like `entry.date`.
+   */
   concept: string;
   id: string;
   slug: string;
@@ -24,23 +26,29 @@ export interface ContentSummary {
   title: string;
   date?: string;
   updated?: string;
-  /** The entry's tags, always present as an array and empty when the file declares none. This is the
+  /**
+   * The entry's tags, always present as an array and empty when the file declares none. This is the
    *  read-model normalization. It differs on purpose from the validated `frontmatter.tags`, which the
    *  validator omits when empty, so a published file carries no `tags: []` noise. Read `tags` here for
-   *  a list; read `frontmatter.tags` only when you need the validated, possibly-absent value. */
+   *  a list; read `frontmatter.tags` only when you need the validated, possibly-absent value.
+   */
   tags: string[];
   excerpt: string;
   wordCount: number;
   draft: boolean;
-  /** The frontmatter keys the descriptor nominated via `summaryFields`, read off the validated,
+  /**
+   * The frontmatter keys the descriptor nominated via `summaryFields`, read off the validated,
    *  normalized frontmatter. Held in a separate record so a nominated key cannot collide with a
-   *  typed summary field. Empty when the concept declares no `summaryFields`. */
+   *  typed summary field. Empty when the concept declares no `summaryFields`.
+   */
   fields: Record<string, unknown>;
 }
 
-/** The detail view: a summary plus the frontmatter and the body to render. The frontmatter
+/**
+ * The detail view: a summary plus the frontmatter and the body to render. The frontmatter
  *  type defaults to `Record<string, unknown>`; the typed-reads pass infers it from the concept
- *  fields. Generic now so that change does not break this signature. */
+ *  fields. Generic now so that change does not break this signature.
+ */
 export interface ContentEntry<F = Record<string, unknown>> extends ContentSummary {
   frontmatter: F;
   body: string;

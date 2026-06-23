@@ -2,12 +2,17 @@ import type { Root, Element, ElementContent } from 'hast';
 import { h } from 'hastscript';
 import { dataAttrProp, type ComponentContext, type ComponentDef, type ComponentRegistry } from './registry.js';
 
+/**
+ *
+ */
 export function isElement(node: ElementContent | undefined): node is Element {
   return !!node && node.type === 'element';
 }
 
-/** Read a declared string attribute off the component context, returning undefined for a boolean or
- *  absent value. Replaces the `typeof ctx.attributes[key] === 'string'` narrowing a build repeats. */
+/**
+ * Read a declared string attribute off the component context, returning undefined for a boolean or
+ *  absent value. Replaces the `typeof ctx.attributes[key] === 'string'` narrowing a build repeats.
+ */
 export function strAttr(ctx: ComponentContext, key: string): string | undefined {
   const value = ctx.attributes[key];
   return typeof value === 'string' ? value : undefined;
@@ -16,6 +21,9 @@ export function strAttr(ctx: ComponentContext, key: string): string | undefined 
 // hast Properties values are PropertyValue (string | number | boolean | array | null).
 // Directive markers (dataPrimitive/dataRole/dataAttr<Key>) are always stamped as strings;
 // this reads them back with that guarantee instead of casting at each call site.
+/**
+ *
+ */
 export function strProp(node: Element, name: string): string | undefined {
   const value = node.properties?.[name];
   return typeof value === 'string' ? value : undefined;
@@ -35,10 +43,12 @@ export function cardShell(classes: string[], body: ElementContent[]): Element {
   return h('section', { className: classes }, [h('div', { className: ['card-body'] }, body)]);
 }
 
-/** Card head row: `<div class="ec-head">[icon]<hN class="card-title">{title}</hN></div>`.
+/**
+ * Card head row: `<div class="ec-head">[icon]<hN class="card-title">{title}</hN></div>`.
  *  Pass the title's inline children, an optional pre-built icon element, and an optional heading
  *  level (default 2). This factors the icon-plus-heading head that a titled component build would
- *  otherwise rebuild by hand (the shape the removed `splitHead` produced). */
+ *  otherwise rebuild by hand (the shape the removed `splitHead` produced).
+ */
 export function headRow(title: ElementContent[], icon?: Element, level: number = 2): Element {
   const children: ElementContent[] = [];
   if (icon) children.push(icon);
@@ -46,8 +56,10 @@ export function headRow(title: ElementContent[], icon?: Element, level: number =
   return h('div', { className: ['ec-head'] }, children);
 }
 
-/** Tag the first <ul> among children with `ec-grid` and strip its whitespace-only
- *  text nodes so the bare list serializes without newlines. Returns that <ul>. */
+/**
+ * Tag the first <ul> among children with `ec-grid` and strip its whitespace-only
+ *  text nodes so the bare list serializes without newlines. Returns that <ul>.
+ */
 export function markFirstList(children: ElementContent[]): Element | undefined {
   const ul = children.find((c) => isElement(c) && c.tagName === 'ul') as Element | undefined;
   if (ul) {
@@ -142,12 +154,14 @@ function transformNode(node: Element, registry: ComponentRegistry): Element {
   return def.build(ctx);
 }
 
-/** Rehype transformer: dispatch each stamped element through its registry `build`
+/**
+ * Rehype transformer: dispatch each stamped element through its registry `build`
  *  fn. When `stagger` is on, each top-level primitive gets a `data-rise` attribute
  *  carrying its document-order index (0, 1, 2, …); the site's CSS maps that ordinal
  *  to an entrance delay. The index is inert, so a consumer's sanitize floor can keep
  *  `data-rise` while dropping `style`. Nested primitives never get it. Non-primitive
- *  content (lede, intro paragraphs, the page-toc nav) passes through untouched. */
+ *  content (lede, intro paragraphs, the page-toc nav) passes through untouched.
+ */
 export function rehypeDispatch(registry: ComponentRegistry, stagger?: boolean) {
   return (tree: Root) => {
     let idx = 0;

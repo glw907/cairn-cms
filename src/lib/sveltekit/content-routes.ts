@@ -71,13 +71,17 @@ export interface LayoutData {
   navLabel: string | null;
   /** The admin theme resolved for SSR: the persisted cookie choice, or the light default. */
   theme: 'cairn-admin' | 'cairn-admin-dark';
-  /** The nav group labels the user has collapsed, from the persisted cookie. Read at SSR so a
-   *  collapsed group renders collapsed with no flash. Empty when none are collapsed. */
+  /**
+   * The nav group labels the user has collapsed, from the persisted cookie. Read at SSR so a
+   *  collapsed group renders collapsed with no flash. Empty when none are collapsed.
+   */
   collapsedNav: string[];
   /** The session's CSRF double-submit token, rendered as a hidden field in every admin form. */
   csrf: string;
-  /** Every entry with unpublished edits (a `cairn/` ref), for the topbar's publish-all action.
-   *  Null when GitHub is unreachable, so the topbar hides the action rather than lying. */
+  /**
+   * Every entry with unpublished edits (a `cairn/` ref), for the topbar's publish-all action.
+   *  Null when GitHub is unreachable, so the topbar hides the action rather than lying.
+   */
   pendingEntries: { concept: string; id: string }[] | null;
 }
 
@@ -89,8 +93,10 @@ export interface EntrySummary {
   draft: boolean;
   /** Publish state derived from the ref set: live as-is, live with pending edits, or branch-only. */
   status: 'published' | 'edited' | 'new';
-  /** The row's one-line summary: the manifest's indexed excerpt for a published row, the branch
-   *  frontmatter/body excerpt for a pending one, and null when neither yields text. */
+  /**
+   * The row's one-line summary: the manifest's indexed excerpt for a published row, the branch
+   *  frontmatter/body excerpt for a pending one, and null when neither yields text.
+   */
   summary: string | null;
 }
 
@@ -98,8 +104,10 @@ export interface EntrySummary {
 export interface ListData {
   conceptId: string;
   label: string;
-  /** The singular noun for the create affordances ("New post"); from the descriptor, which defaults
-   *  it to `label`. */
+  /**
+   * The singular noun for the create affordances ("New post"); from the descriptor, which defaults
+   *  it to `label`.
+   */
   singular: string;
   /** Posts carry a date in the new-entry form; pages do not (concept routing, spec §7.2). */
   dated: boolean;
@@ -130,13 +138,17 @@ export interface EditData {
   slug: string;
   /** The site's link targets, for the preview resolver and the link picker; from the committed manifest. */
   linkTargets: LinkTarget[];
-  /** The minimal media-resolver input the edit page builds its preview `resolveMedia` from, keyed by
-   *  the 16-hex content hash and parallel to `linkTargets`. Empty when media is off or the read fails. */
+  /**
+   * The minimal media-resolver input the edit page builds its preview `resolveMedia` from, keyed by
+   *  the 16-hex content hash and parallel to `linkTargets`. Empty when media is off or the read fails.
+   */
   mediaTargets: Record<string, { slug: string; ext: string; contentType: string }>;
-  /** The picker's human layer for each stored asset, keyed by the 16-hex content hash and projected
+  /**
+   * The picker's human layer for each stored asset, keyed by the 16-hex content hash and projected
    *  from the same committed media manifest read that populates `mediaTargets`. The `hash` field
    *  duplicates the key, so the picker can iterate `Object.values`. Empty when media is off or the
-   *  read fails (the same degradation path as `mediaTargets`). */
+   *  read fails (the same degradation path as `mediaTargets`).
+   */
   mediaLibrary: MediaLibrary;
   /** The entries that link to this one, for the delete guard. Empty when nothing links here. */
   inboundLinks: InboundLink[];
@@ -148,30 +160,40 @@ export interface EditData {
   publishedFlash: boolean;
   /** True after a discard redirect (`?discarded=1`), for the confirmation strip. */
   discardedFlash: boolean;
-  /** The adapter's preview knob resolved for this entry's concept (its `byConcept` override,
+  /**
+   * The adapter's preview knob resolved for this entry's concept (its `byConcept` override,
    *  when one exists, applied over the top-level values); null when the site sets none, which
-   *  leaves the frame rendering unstyled markup behind a hint. */
+   *  leaves the frame rendering unstyled markup behind a hint.
+   */
   preview: ResolvedPreview | null;
-  /** The spellcheck dictionary file for the site's configured dialect (default US English), resolved
+  /**
+   * The spellcheck dictionary file for the site's configured dialect (default US English), resolved
    *  once at compose. The editor resolves it to a real asset URL on the main thread and hands that URL
    *  to the spellcheck Worker's `init`, the same way `mediaLibrary` is threaded in. Just the filename,
-   *  e.g. "dictionary-en-us.txt". */
+   *  e.g. "dictionary-en-us.txt".
+   */
   spellcheckDictionary: string;
-  /** The committed personal-dictionary words for the site (spec 1.6): the durable, shared, reviewable
+  /**
+   * The committed personal-dictionary words for the site (spec 1.6): the durable, shared, reviewable
    *  layer the editor seeds the spellcheck Worker's personal set from, the way `mediaLibrary` is handed
    *  in. Read from the git-committed `dictionary.txt` at editor load; empty when the file is absent or
    *  unreadable (the editor degrades to dialect-only). The dialect dictionary and the session ignore
-   *  list are the other two layers; only this one is committed. */
+   *  list are the other two layers; only this one is committed.
+   */
   siteDictionary: string[];
-  /** The editor-tier tidy facts the review surface needs (spec 2.5): whether tidy is enabled, the model
+  /**
+   * The editor-tier tidy facts the review surface needs (spec 2.5): whether tidy is enabled, the model
    *  that runs (for the head pill), and the RESOLVED conventions (the only data source for a
    *  normalization's because-line and the local category inference). The API key never appears here, it
-   *  is a Worker secret. `enabled` false hides the Tidy control. */
+   *  is a Worker secret. `enabled` false hides the Tidy control.
+   */
   tidy: { enabled: boolean; model: string; conventions: TidyConventions };
 }
 
-/** One asset's where-used overlay, kept separate from MediaLibraryEntry so the picker's shared
- *  projection stays decoupled from the Library-only usage facts. */
+/**
+ * One asset's where-used overlay, kept separate from MediaLibraryEntry so the picker's shared
+ *  projection stays decoupled from the Library-only usage facts.
+ */
 export interface MediaUsageInfo {
   /** Distinct content entries that reference the asset (count by distinct concept+id). */
   count: number;
@@ -179,51 +201,69 @@ export interface MediaUsageInfo {
   entries: UsageEntry[];
 }
 
-/** The Media Library screen's data: the unioned assets, the per-hash usage overlay, and the
+/**
+ * The Media Library screen's data: the unioned assets, the per-hash usage overlay, and the
  *  degraded-load error. The usage overlay is keyed by content hash; an asset with no references
- *  simply has no key, which the screen renders as "no references found". */
+ *  simply has no key, which the screen renders as "no references found".
+ */
 export interface MediaLibraryData {
   assets: MediaLibraryEntry[];
   /** Per-hash usage overlay, kept separate from MediaLibraryEntry so the popover stays decoupled. */
   usage: Record<string, MediaUsageInfo>;
-  /** The degraded-load error: a failed token mint or media read. This slot is the failure of THIS
+  /**
+   * The degraded-load error: a failed token mint or media read. This slot is the failure of THIS
    *  load, distinct from a prior action's conflict error (see `flashError`), so a read failure and a
-   *  redirected commit conflict never overwrite each other. */
+   *  redirected commit conflict never overwrite each other.
+   */
   error: string | null;
-  /** The success flash a redirected action carries: `deleted` from `?deleted=1`, `updated` from
+  /**
+   * The success flash a redirected action carries: `deleted` from `?deleted=1`, `updated` from
    *  `?updated=1`, `replaced` from `?replaced=1`, `altPropagated` from `?altPropagated=1`,
    *  `bulkDeleted` from `?bulkDeleted=1`, `orphansPurged` from `?orphansPurged=1`, null otherwise.
-   *  The component renders a polite success strip for each. */
+   *  The component renders a polite success strip for each.
+   */
   flash: 'deleted' | 'updated' | 'replaced' | 'altPropagated' | 'bulkDeleted' | 'orphansPurged' | null;
-  /** A redirected action's conflict error read from `?error=` (a commit-conflict bounce). Kept in
-   *  its own slot rather than the degraded-load `error` above, so the two never collide. */
+  /**
+   * A redirected action's conflict error read from `?error=` (a commit-conflict bounce). Kept in
+   *  its own slot rather than the degraded-load `error` above, so the two never collide.
+   */
   flashError: string | null;
 }
 
-/** The two-tier tidy settings load (spec 2.8, Task 15). The developer tier is read-only: `enabled`,
+/**
+ * The two-tier tidy settings load (spec 2.8, Task 15). The developer tier is read-only: `enabled`,
  *  `keyConfigured`, and `model`/`modelLabel` are deploy-time facts the editor sees but cannot change.
  *  The editor tier is the resolved `conventions` block, written back through the save. The visibility
  *  gate is truthful: `enabled` is true only when `tidy.enabled` is set AND the API key is present, so
  *  the screen renders the convention list only then and the honest gate note otherwise. The key is a
  *  Worker secret, so `keyConfigured` is the presence of `ANTHROPIC_API_KEY` in the load's env, never
- *  the key itself; nothing here returns or logs the secret. */
+ *  the key itself; nothing here returns or logs the secret.
+ */
 export interface SettingsData {
-  /** The truthful gate: tidy is enabled AND the API key is present. The screen renders the editor
+  /**
+   * The truthful gate: tidy is enabled AND the API key is present. The screen renders the editor
    *  tier only when this is true, and the honest gate note (a labelled region, no disabled controls)
-   *  otherwise. */
+   *  otherwise.
+   */
   enabled: boolean;
-  /** Whether `tidy.enabled` is set in the site config, independent of the key. The gate note's
-   *  checklist reads this to show which deploy-time step is still open. */
+  /**
+   * Whether `tidy.enabled` is set in the site config, independent of the key. The gate note's
+   *  checklist reads this to show which deploy-time step is still open.
+   */
   tidyEnabled: boolean;
   /** Whether the API key secret is present in the Worker env. A presence flag, never the key. */
   keyConfigured: boolean;
   /** The model id (a developer-tier fact, read-only on the screen). */
   model: string;
-  /** A plain-language label for the model id ("Claude Sonnet"), so the read-only fact is not a bare
-   *  jargon token. Falls back to the raw id for an unknown model. */
+  /**
+   * A plain-language label for the model id ("Claude Sonnet"), so the read-only fact is not a bare
+   *  jargon token. Falls back to the raw id for an unknown model.
+   */
   modelLabel: string;
-  /** The resolved editor-tier conventions: every field concrete, the screen's initial control state.
-   *  Present only when the gate is open; the gate state needs no conventions. */
+  /**
+   * The resolved editor-tier conventions: every field concrete, the screen's initial control state.
+   *  Present only when the gate is open; the gate state needs no conventions.
+   */
   conventions: TidyConventions;
   /** The success flash a redirected save carries (`?saved=1`). */
   saved: boolean;
@@ -231,8 +271,10 @@ export interface SettingsData {
   error: string | null;
 }
 
-/** A refused settings save: a conflict bounce or a malformed conventions payload. Just the one-line
- *  summary; the save commits nothing on a refusal. */
+/**
+ * A refused settings save: a conflict bounce or a malformed conventions payload. Just the one-line
+ *  summary; the save commits nothing on a refusal.
+ */
 export interface SettingsSaveFailure {
   error: string;
 }
@@ -240,17 +282,21 @@ export interface SettingsSaveFailure {
 /** The structural event the content routes read; a real SvelteKit RequestEvent satisfies it. */
 export interface ContentEvent extends EventBase<GithubKeyEnv> {
   params: Record<string, string>;
-  /** SvelteKit's cookie jar. The layout load reads the persisted admin theme and issues the CSRF
-   *  token. Optional for non-route callers. */
+  /**
+   * SvelteKit's cookie jar. The layout load reads the persisted admin theme and issues the CSRF
+   *  token. Optional for non-route callers.
+   */
   cookies?: CookieJar;
 }
 
 /** Injectable dependencies; tests stub the token mint to avoid signing a real key. */
-/** The minimal Anthropic client surface the tidy action uses, typed structurally so the SDK's deep
+/**
+ * The minimal Anthropic client surface the tidy action uses, typed structurally so the SDK's deep
  *  generics never reach a public signature and so the integration test can inject a fake whose
  *  `messages.create` it stubs. The real factory builds `new Anthropic({ apiKey })`, which satisfies
  *  this shape. The success path reads only the text blocks, the model, the stop reason, and the usage
- *  counts. */
+ *  counts.
+ */
 export interface TidyClient {
   messages: {
     create(
@@ -273,53 +319,69 @@ export interface TidyClient {
 }
 
 export interface ContentRoutesDeps {
-  /** Mint a GitHub App installation token from the Worker env. Defaults to the real signer.
-   *  A bare string works too; the routes await whatever comes back. */
+  /**
+   * Mint a GitHub App installation token from the Worker env. Defaults to the real signer.
+   *  A bare string works too; the routes await whatever comes back.
+   */
   mintToken?: (env: GithubKeyEnv) => string | Promise<string>;
-  /** Build the Anthropic client for the tidy action from the resolved API key. Defaults to the real
+  /**
+   * Build the Anthropic client for the tidy action from the resolved API key. Defaults to the real
    *  SDK client. Injected in tests so `messages.create` is stubbed and no network call (or real key)
    *  is ever needed. The factory runs only after the key is read from the env, so a disabled or
-   *  unconfigured site never constructs a client. */
+   *  unconfigured site never constructs a client.
+   */
   anthropic?: (opts: { apiKey: string }) => TidyClient;
-  /** The tidy action's own request deadline in milliseconds, set shorter than the platform limit so a
+  /**
+   * The tidy action's own request deadline in milliseconds, set shorter than the platform limit so a
    *  slow model call becomes a clean retryable fail(502) rather than a platform timeout. Defaults to
-   *  {@link DEFAULT_TIDY_TIMEOUT_MS}. Overridable in tests to assert the deadline path without waiting. */
+   *  {@link DEFAULT_TIDY_TIMEOUT_MS}. Overridable in tests to assert the deadline path without waiting.
+   */
   tidyTimeoutMs?: number;
 }
 
-/** The successful tidy outcome (spec 2.1): the corrected markdown, the model that produced it, and the
+/**
+ * The successful tidy outcome (spec 2.1): the corrected markdown, the model that produced it, and the
  *  token usage. The diff is computed on the client (Task 12), so the server returns the plain text and
  *  commits nothing. Admin-internal: consumed by the editor's review surface, not on the package's
- *  sveltekit subpath, so it carries no reference page. */
+ *  sveltekit subpath, so it carries no reference page.
+ */
 export interface TidyResult {
   corrected: string;
   model: string;
   usage: { input_tokens: number; output_tokens: number };
 }
 
-/** A refused tidy: `fail(403)` on a failed CSRF check, `fail(503)` when tidy is disabled or the API
+/**
+ * A refused tidy: `fail(403)` on a failed CSRF check, `fail(503)` when tidy is disabled or the API
  *  key is missing, `fail(413)` for an over-long body, `fail(502)` for a deadline overrun, abort, or
  *  model error (all retryable), `fail(422)` for a model refusal, `fail(400)` for a malformed body. Just
- *  the one-line summary; the action commits nothing, so a refusal can never corrupt the entry. */
+ *  the one-line summary; the action commits nothing, so a refusal can never corrupt the entry.
+ */
 export interface TidyFailure {
   error: string;
 }
 
-/** The Worker-side request deadline for the tidy model call: 30 seconds. A tidy call to Sonnet on a
+/**
+ * The Worker-side request deadline for the tidy model call: 30 seconds. A tidy call to Sonnet on a
  *  full entry can run many seconds, so the action bounds it with an AbortSignal and maps the overrun to
  *  a retryable fail(502). This sits well under Cloudflare's per-request wall-clock ceiling (a Worker
  *  invocation can run far longer, but a single subrequest left open near that ceiling would surface as a
  *  platform timeout the action could not shape into a clean retry). 30s comfortably covers a proofread
- *  of the bounded input (see MAX_TIDY_CHARS) while leaving headroom under the platform limit. */
+ *  of the bounded input (see MAX_TIDY_CHARS) while leaving headroom under the platform limit.
+ */
 const DEFAULT_TIDY_TIMEOUT_MS = 30_000;
 
-/** The fallback site-config path when no nav menu names one: the convention every scaffolded site
+/**
+ * The fallback site-config path when no nav menu names one: the convention every scaffolded site
  *  uses. The settings save edits the same committed YAML the nav editor does, so it resolves the path
- *  from the configured nav menu first and falls back to this default. */
+ *  from the configured nav menu first and falls back to this default.
+ */
 const DEFAULT_SITE_CONFIG_PATH = 'src/lib/site.config.yaml';
 
-/** Plain-language labels for the known tidy models, so the read-only model fact reads as a name rather
- *  than a bare id. An unknown id falls back to itself. */
+/**
+ * Plain-language labels for the known tidy models, so the read-only model fact reads as a name rather
+ *  than a bare id. An unknown id falls back to itself.
+ */
 const TIDY_MODEL_LABELS: Record<string, string> = {
   'claude-sonnet-4-6': 'Claude Sonnet',
   'claude-haiku-4-5': 'Claude Haiku',
@@ -330,10 +392,12 @@ function tidyModelLabel(model: string): string {
   return TIDY_MODEL_LABELS[model] ?? model;
 }
 
-/** The input cap for a single tidy request: 24000 characters (~6k input tokens). A proofread runs at
+/**
+ * The input cap for a single tidy request: 24000 characters (~6k input tokens). A proofread runs at
  *  roughly input length, so this stays comfortably inside the 30s deadline; a longer entry refuses with
  *  fail(413) and the author tidies a selection instead. The cap is enforced BEFORE the model call, so an
- *  over-long body never spends a token or risks the deadline. */
+ *  over-long body never spends a token or risks the deadline.
+ */
 const MAX_TIDY_CHARS = 24_000;
 
 /** A blocked save or publish: `fail(400)` when the body links to a target absent from main. */
@@ -362,9 +426,11 @@ export interface RenameFailure {
   error: string;
 }
 
-/** A refused media delete: `fail(404)` for an asset not committed on the default branch, or
+/**
+ * A refused media delete: `fail(404)` for an asset not committed on the default branch, or
  *  `fail(409)` when a fresh usage read finds the asset still in use and the typed-slug override
- *  was not given. `fail(503)` covers media-off or a missing bucket binding. */
+ *  was not given. `fail(503)` covers media-off or a missing bucket binding.
+ */
 export interface MediaDeleteRefusal {
   /** The one-line human summary every action failure carries. */
   error: string;
@@ -376,16 +442,20 @@ export interface MediaDeleteRefusal {
   foundIn: number;
 }
 
-/** A refused media metadata edit: `fail(404)` for an asset not committed on the default branch, or
- *  `fail(400)` for an invalid slug. */
+/**
+ * A refused media metadata edit: `fail(404)` for an asset not committed on the default branch, or
+ *  `fail(400)` for an invalid slug.
+ */
 export interface MediaUpdateFailure {
   /** The one-line human summary every action failure carries. */
   error: string;
 }
 
-/** A refused media replace: `fail(409)` when a fresh usage read finds the asset still in use and the
+/**
+ * A refused media replace: `fail(409)` when a fresh usage read finds the asset still in use and the
  *  typed-slug override was not given, or `fail(503)` when usage cannot be verified (fail closed) or the
- *  bucket is unbound. Mirrors MediaDeleteRefusal: the asset hash, the where-used rows, and the count. */
+ *  bucket is unbound. Mirrors MediaDeleteRefusal: the asset hash, the where-used rows, and the count.
+ */
 export interface MediaReplaceFailure {
   error: string;
   hash: string;
@@ -393,57 +463,71 @@ export interface MediaReplaceFailure {
   foundIn: number;
 }
 
-/** A refused media alt-propagation: `fail(503)` when usage cannot be verified across main and every
+/**
+ * A refused media alt-propagation: `fail(503)` when usage cannot be verified across main and every
  *  open branch (fail closed), or the bucket is unbound. Just the one-line summary; alt fill has no
- *  typed-slug gate. */
+ *  typed-slug gate.
+ */
 export interface MediaAltPropagateFailure {
   error: string;
 }
 
-/** The personal-dictionary add outcome (spec 1.6): the merged, canonical sorted word list after the
+/**
+ * The personal-dictionary add outcome (spec 1.6): the merged, canonical sorted word list after the
  *  add landed. The client reconciles its pending-additions set against this (a word now in the list is
  *  committed and dropped from pending). Admin-internal: exported for the editor host's reconcile, not
- *  on the package's sveltekit subpath, so it carries no reference page. */
+ *  on the package's sveltekit subpath, so it carries no reference page.
+ */
 export interface DictionaryAddResult {
   words: string[];
 }
 
-/** A refused personal-dictionary add: `fail(403)` on a failed CSRF check, `fail(400)` on a body that
+/**
+ * A refused personal-dictionary add: `fail(403)` on a failed CSRF check, `fail(400)` on a body that
  *  carries no valid word. The client keeps its pending additions for the session and re-attempts on
- *  the next save, so the word is never silently dropped. Just the one-line summary. */
+ *  the next save, so the word is never silently dropped. Just the one-line summary.
+ */
 export interface DictionaryAddFailure {
   error: string;
 }
 
-/** A refused media bulk delete or orphan purge: `fail(503)` for the fail-closed strict-usage refusal
+/**
+ * A refused media bulk delete or orphan purge: `fail(503)` for the fail-closed strict-usage refusal
  *  (the whole batch refuses) or media-off / a missing bucket binding. The per-item outcomes ride the
- *  returned summary, not a fail. */
+ *  returned summary, not a fail.
+ */
 export interface MediaBulkFailure {
   error: string;
 }
 
-/** The bulk-delete outcome the component renders: the deleted hashes, the skipped rows from the
+/**
+ * The bulk-delete outcome the component renders: the deleted hashes, the skipped rows from the
  *  partition (with their reason and where-used), and any per-object R2 delete failure. Admin-internal,
- *  not on the package subpath, so no reference page. */
+ *  not on the package subpath, so no reference page.
+ */
 export interface MediaBulkDeleteResult {
   deleted: string[];
   skipped: BulkDeleteSkip[];
   failed: { hash: string; error: string }[];
 }
 
-/** The orphan-purge outcome: the purged R2 keys, the keys skipped because their hash was claimed by a
- *  manifest row since the scan, and any per-object delete failure. Admin-internal, no reference page. */
+/**
+ * The orphan-purge outcome: the purged R2 keys, the keys skipped because their hash was claimed by a
+ *  manifest row since the scan, and any per-object delete failure. Admin-internal, no reference page.
+ */
 export interface MediaOrphanPurgeResult {
   purged: string[];
   skippedClaimed: string[];
   failed: { key: string; error: string }[];
 }
 
-/** One entry the replace preview will rewrite, enriched with its display title and permalink from the
+/**
+ * One entry the replace preview will rewrite, enriched with its display title and permalink from the
  *  content manifest (the planner's PlannedEntry carries neither). The screen lists these as the
  *  confirm dialog's where-touched preview, and the apply re-derives its own plan rather than trusting
  *  this. Admin-internal: exported from content-routes for the bundled Media Library component, not
- *  added to the package's sveltekit subpath, so it carries no reference page. */
+ *  added to the package's sveltekit subpath, so it carries no reference page.
+ */
 export interface MediaReplacePreviewEntry {
   /** The concept id, e.g. "posts". */
   concept: string;
@@ -457,21 +541,25 @@ export interface MediaReplacePreviewEntry {
   placements: RepointPlacement[];
 }
 
-/** The replace preview plan: the affected main entries (enriched), the distinct affected count, and
+/**
+ * The replace preview plan: the affected main entries (enriched), the distinct affected count, and
  *  the report-only cross-branch delta (open cairn/* branches that reference the same bytes; an apply
- *  rewrites main only). Display-only: the apply re-derives a fresh plan and never trusts this. */
+ *  rewrites main only). Display-only: the apply re-derives a fresh plan and never trusts this.
+ */
 export interface MediaReplacePreviewPlan {
   affectedCount: number;
   entries: MediaReplacePreviewEntry[];
   branchDelta: BranchRef[];
 }
 
-/** One entry the alt-propagation preview reports, enriched with its display title and permalink from
+/**
+ * One entry the alt-propagation preview reports, enriched with its display title and permalink from
  *  the content manifest. Its placements carry every reference of the asset on this entry, each tagged
  *  with the bucket it falls in (a will-fill, a customized alt left as-is, or a decorative hero), so
  *  the screen can show what would change. Admin-internal: exported from content-routes for the bundled
  *  Media Library component, not added to the package's sveltekit subpath, so it carries no reference
- *  page. */
+ *  page.
+ */
 export interface MediaAltPreviewEntry {
   /** The concept id, e.g. "posts". */
   concept: string;
@@ -485,11 +573,13 @@ export interface MediaAltPreviewEntry {
   placements: AltPlacement[];
 }
 
-/** The alt-propagation preview plan: every entry that references the asset (enriched), the report-only
+/**
+ * The alt-propagation preview plan: every entry that references the asset (enriched), the report-only
  *  cross-branch delta, and the bucket counts aggregated across every placement. Display-only: the
  *  apply re-derives a fresh plan and never trusts this. The preview reports an entry even when its
  *  only placements are reported-but-unchanged (a kept custom alt, a decorative hero), so the screen
- *  can show every bucket; the apply commits only the entries it actually changes. */
+ *  can show every bucket; the apply commits only the entries it actually changes.
+ */
 export interface MediaAltPreviewPlan {
   entries: MediaAltPreviewEntry[];
   branchDelta: BranchRef[];
@@ -497,19 +587,23 @@ export interface MediaAltPreviewPlan {
   counts: { willFill: number; customized: number; decorativeSkipped: number };
 }
 
-/** What a route's single `form` export presents to a view component: whichever content action
+/**
+ * What a route's single `form` export presents to a view component: whichever content action
  *  last failed, merged with every field optional. `error` is always set on a failure; the richer
  *  keys identify which guard refused. The media refusals ride here too, so the Media Library's one
  *  `form` prop carries a `?/mediaDelete`, `?/mediaUpdate`, `?/mediaReplace`, or `?/mediaAltPropagate`
- *  refusal without a second type. */
+ *  refusal without a second type.
+ */
 export type ContentFormFailure = Partial<
   SaveFailure & DeleteRefusal & RenameFailure & MediaDeleteRefusal & MediaUpdateFailure & MediaReplaceFailure & MediaAltPropagateFailure & MediaBulkFailure & TidyFailure
 >;
 
-/** The successful upload's response (`uploadAction`). The server-owned `record` rides the editor's
+/**
+ * The successful upload's response (`uploadAction`). The server-owned `record` rides the editor's
  *  optimistic client state and commits with the entry at Save (the upload itself commits nothing).
  *  `reused` is true when identical bytes were already stored, so the second upload did no second put;
- *  `mismatch` flags an existing object whose stored content type differs from this sniff. */
+ *  `mismatch` flags an existing object whose stored content type differs from this sniff.
+ */
 export interface UploadResult {
   reference: string;
   record: MediaEntry;
@@ -517,9 +611,11 @@ export interface UploadResult {
   mismatch: boolean;
 }
 
-/** Resolve the effective preview for one concept: its `byConcept` override wins per key, with
+/**
+ * Resolve the effective preview for one concept: its `byConcept` override wins per key, with
  *  nullish coalescing so an override key that is present but undefined keeps the top-level value.
- *  Stylesheets are always shared, and the `byConcept` map never reaches the client. */
+ *  Stylesheets are always shared, and the `byConcept` map never reaches the client.
+ */
 function resolvePreview(preview: PreviewConfig | undefined, conceptId: string): ResolvedPreview | null {
   if (!preview) return null;
   const override = preview.byConcept?.[conceptId];
@@ -537,6 +633,9 @@ function conceptOf(runtime: CairnRuntime, params: Record<string, string>): Conce
   return concept;
 }
 
+/**
+ *
+ */
 export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDeps = {}) {
   const mintToken =
     deps.mintToken ?? ((env: GithubKeyEnv) => cachedInstallationToken(appCredentials(runtime.backend, env)));
@@ -548,16 +647,20 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     deps.anthropic ?? ((opts: { apiKey: string }) => new Anthropic({ apiKey: opts.apiKey }) as unknown as TidyClient);
   const tidyTimeoutMs = deps.tidyTimeoutMs ?? DEFAULT_TIDY_TIMEOUT_MS;
 
-  /** Main's manifest, parsed. A missing file starts empty (a fresh repo before the first commit).
-   *  Always read from main: pending branches carry no manifest copy. */
+  /**
+   * Main's manifest, parsed. A missing file starts empty (a fresh repo before the first commit).
+   *  Always read from main: pending branches carry no manifest copy.
+   */
   async function readManifest(token: string): Promise<Manifest> {
     const raw = await readRaw(runtime.backend, runtime.manifestPath, token);
     return raw === null ? emptyManifest() : parseManifest(raw);
   }
 
-  /** Parse a committed media.json body to a plain value for parseMediaManifest, degrading a missing
+  /**
+   * Parse a committed media.json body to a plain value for parseMediaManifest, degrading a missing
    *  or corrupt file to null (an empty manifest). The committed file is always our own serialization,
-   *  so the catch only guards a hand-edited or truncated file rather than a normal path. */
+   *  so the catch only guards a hand-edited or truncated file rather than a normal path.
+   */
   function parseMediaJson(raw: string | null): unknown {
     if (raw === null) return null;
     try {
@@ -567,11 +670,13 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     }
   }
 
-  /** The pending entry a `cairn/` ref names, or null for a ref the engine must ignore: a
+  /**
+   * The pending entry a `cairn/` ref names, or null for a ref the engine must ignore: a
    *  malformed name, an id that fails the slug rule (entry paths are built from it, so this is
    *  the path confinement), or a concept this site does not configure. Every ref consumer
    *  (the layout count, the list view, publish-all) applies this one predicate, so a stray
-   *  hand-pushed ref cannot inflate a count it can never clear or reach a contents read. */
+   *  hand-pushed ref cannot inflate a count it can never clear or reach a contents read.
+   */
   function pendingEntryOf(name: string): { concept: ConceptDescriptor; id: string } | null {
     const ref = parsePendingBranch(name);
     if (!ref || !isValidId(ref.id)) return null;
@@ -579,8 +684,10 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     return concept ? { concept, id: ref.id } : null;
   }
 
-  /** Layout load for every admin page: the nav, the user, the active path, the resolved theme,
-   *  and the pending entries behind the topbar's publish-all action. */
+  /**
+   * Layout load for every admin page: the nav, the user, the active path, the resolved theme,
+   *  and the pending entries behind the topbar's publish-all action.
+   */
   async function layoutLoad(event: ContentEvent): Promise<LayoutData> {
     const editor = requireSession(event);
     const cookieTheme = event.cookies?.get('cairn-admin-theme');
@@ -624,8 +731,10 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     throw redirect(307, `/admin/${first.id}`);
   }
 
-  /** Read a file's frontmatter for its list row, degrading to the id on any read failure. The
-   *  repo defaults to main; a pending entry (edited or branch-only) passes its pending branch. */
+  /**
+   * Read a file's frontmatter for its list row, degrading to the id on any read failure. The
+   *  repo defaults to main; a pending entry (edited or branch-only) passes its pending branch.
+   */
   async function summarize(
     file: { id: string; path: string },
     token: string,
@@ -647,9 +756,11 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     }
   }
 
-  /** Read an entry's list row from its pending branch, so a pending title or draft change shows
+  /**
+   * Read an entry's list row from its pending branch, so a pending title or draft change shows
    *  in the list instead of reading as a lost save. summarize degrades a failed or empty read to
-   *  an id-only row, so a ghost ref still lists. */
+   *  an id-only row, so a ghost ref still lists.
+   */
   function pendingRow(concept: ConceptDescriptor, id: string, status: EntrySummary['status'], token: string): Promise<EntrySummary> {
     return summarize({ id, path: `${concept.dir}/${filenameFromId(id)}` }, token, status, {
       ...runtime.backend,
@@ -657,8 +768,10 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     });
   }
 
-  /** The per-file crawl, kept only for a repo with no committed manifest yet: list main's files
-   *  and read each one for its row, with edited and new rows reading branch-first. */
+  /**
+   * The per-file crawl, kept only for a repo with no committed manifest yet: list main's files
+   *  and read each one for its row, with edited and new rows reading branch-first.
+   */
   async function crawlEntries(concept: ConceptDescriptor, pendingIds: Set<string>, token: string): Promise<EntrySummary[]> {
     const files = await listMarkdown(runtime.backend, concept.dir, token);
     const entries = await Promise.all(
@@ -672,12 +785,14 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     return [...entries, ...newRows];
   }
 
-  /** List a concept's entries with their publish status. Published rows project straight from
+  /**
+   * List a concept's entries with their publish status. Published rows project straight from
    *  main's manifest, which publish, delete, and rename keep atomically in sync with main, so
    *  the listing costs one manifest read plus one branch read per pending entry rather than one
    *  read per file. A manifest row with a pending ref is `edited` and reads branch-first; a ref
    *  with no manifest row appends a `new` row read from its branch. A listing failure degrades
-   *  to an inline error, not a thrown 500. */
+   *  to an inline error, not a thrown 500.
+   */
   async function listLoad(event: ContentEvent): Promise<ListData> {
     requireSession(event);
     const concept = conceptOf(runtime, event.params);
@@ -728,12 +843,14 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     }
   }
 
-  /** The admin Media Library load: union the media manifest across main and every open cairn/*
+  /**
+   * The admin Media Library load: union the media manifest across main and every open cairn/*
    *  branch (so a not-yet-published asset shows), project each row through the shared
    *  mediaLibraryEntry helper, and attach the cross-branch where-used overlay keyed by content
    *  hash. The assets union and the usage overlay degrade independently: a usage-build failure
    *  still lists the assets with an empty overlay, and a wholesale read failure degrades to the
-   *  assets gathered so far rather than a thrown 500, mirroring listLoad's posture. */
+   *  assets gathered so far rather than a thrown 500, mirroring listLoad's posture.
+   */
   async function mediaLibraryLoad(event: ContentEvent): Promise<MediaLibraryData> {
     requireSession(event);
     // Read the flash flags a redirected action carried back, mirroring listLoad's `?error`/
@@ -959,15 +1076,19 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     };
   }
 
-  /** The repo-relative personal-dictionary path, defaulting a hand-built runtime that omits it to the
-   *  same `.cairn/` content root the manifests use. composeRuntime always fills `dictionaryPath`. */
+  /**
+   * The repo-relative personal-dictionary path, defaulting a hand-built runtime that omits it to the
+   *  same `.cairn/` content root the manifests use. composeRuntime always fills `dictionaryPath`.
+   */
   function dictionaryFilePath(): string {
     return runtime.dictionaryPath ?? 'src/content/.cairn/dictionary.txt';
   }
 
-  /** Log a failed commit: a conflict is the expected last-writer-wins outcome, so it warns with a
+  /**
+   * Log a failed commit: a conflict is the expected last-writer-wins outcome, so it warns with a
    *  reason; any other error is unexpected and logs at error with the stringified cause. Publish
-   *  failures carry the same shape under their own event name. */
+   *  failures carry the same shape under their own event name.
+   */
   function logCommitFailed(
     fields: { concept: string; id: string; editor: string },
     err: unknown,
@@ -980,9 +1101,11 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     }
   }
 
-  /** The shared commit catch for the entry actions: log the failure, bounce a conflict back to
+  /**
+   * The shared commit catch for the entry actions: log the failure, bounce a conflict back to
    *  `page` with `message` as the inline error, and rethrow anything else. `query` keeps any extra
-   *  params the bounce must carry (saveAction's `&new=1`). */
+   *  params the bounce must carry (saveAction's `&new=1`).
+   */
   function commitFailure(
     fields: { concept: string; id: string; editor: string },
     err: unknown,
@@ -997,11 +1120,13 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     throw err;
   }
 
-  /** The held outcome of a validated save: everything publish needs to copy the same markdown
+  /**
+   * The held outcome of a validated save: everything publish needs to copy the same markdown
    *  to main without re-reading the branch. `branchSha` is the branch commit saveToBranch just
    *  made, the guard for the post-publish branch delete; `manifest` is main's manifest with
    *  this entry's row upserted from the new markdown (the same last-writer-wins manifest race
-   *  as delete and rename applies, caught by the build's fail-closed backstop). */
+   *  as delete and rename applies, caught by the build's fail-closed backstop).
+   */
   interface SaveHold {
     path: string;
     markdown: string;
@@ -1011,18 +1136,22 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     /** The draft-target tokens the body links to, for save's warning query. */
     draftLinks: string[];
     token: string;
-    /** The merged media.json change this save committed to the branch, when media is on and the
+    /**
+     * The merged media.json change this save committed to the branch, when media is on and the
      *  post carried records. Publish reuses it verbatim so the main commit promotes the exact same
      *  merged content (decision 1: the default-branch base is read once, here, not re-merged at
-     *  publish). Absent when media is off or no records were posted. */
+     *  publish). Absent when media is off or no records were posted.
+     */
     mediaChange?: FileChange;
   }
 
-  /** The shared core of save and publish: parse the posted form, validate the frontmatter,
+  /**
+   * The shared core of save and publish: parse the posted form, validate the frontmatter,
    *  guard the body's cairn links, ensure the pending branch, and commit the entry file there
    *  with the session editor as author. Returns the broken-link fail for the page to render,
    *  or the held state; throws the redirect bounces save has always thrown (invalid
-   *  frontmatter, a branch-commit conflict). Main stays untouched. */
+   *  frontmatter, a branch-commit conflict). Main stays untouched.
+   */
   async function saveToBranch(
     event: ContentEvent,
     editor: Editor,
@@ -1121,8 +1250,10 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     return { path, markdown, branch, branchSha, manifest: upserted, draftLinks, token, mediaChange };
   }
 
-  /** Save an edit: validate, then commit to the entry's pending branch with the session editor
-   *  as author. Main and its manifest stay untouched until publish. Fails safe on 409. */
+  /**
+   * Save an edit: validate, then commit to the entry's pending branch with the session editor
+   *  as author. Main and its manifest stay untouched until publish. Fails safe on 409.
+   */
   async function saveAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
     const editor = requireSession(event);
     const concept = conceptOf(runtime, event.params);
@@ -1138,12 +1269,14 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     throw redirect(303, `/admin/${concept.id}/${id}?${savedQuery}`);
   }
 
-  /** Publish an entry: validate and hold the posted form exactly like save (the branch gets the
+  /**
+   * Publish an entry: validate and hold the posted form exactly like save (the branch gets the
    *  same commit), then copy that markdown to main with the manifest row upserted in one atomic
    *  commit. Publish-what-you-see: the posted form is the published content, so text typed
    *  after the last save goes live too, and publish works regardless of prior branch state.
    *  The branch is deleted only when its head still matches the commit this action made; a
-   *  concurrent save moved it, so the entry stays pending and the next publish picks it up. */
+   *  concurrent save moved it, so the entry stays pending and the next publish picks it up.
+   */
   async function publishAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
     const editor = requireSession(event);
     const concept = conceptOf(runtime, event.params);
@@ -1185,10 +1318,12 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     throw redirect(303, `/admin/${concept.id}/${id}?published=1`);
   }
 
-  /** Publish every pending entry site-wide: one atomic commit on main carrying each branch's
+  /**
+   * Publish every pending entry site-wide: one atomic commit on main carrying each branch's
    *  entry file plus the manifest with every row upserted, then delete the consumed branches.
    *  Mounted on the concept list shim, but the topbar posts here from anywhere, so the route's
-   *  concept param is ignored and the redirect lands on the first configured concept. */
+   *  concept param is ignored and the redirect lands on the first configured concept.
+   */
   async function publishAllAction(event: ContentEvent): Promise<never> {
     const editor = requireSession(event);
     const first = runtime.concepts[0];
@@ -1274,8 +1409,10 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     throw redirect(303, `${listPage}?publishedAll=${published.length}`);
   }
 
-  /** Discard an entry's pending edits: delete the branch (tolerant of already-gone) and return to
-   *  the edit page when the entry lives on main, else to the list (the entry is gone entirely). */
+  /**
+   * Discard an entry's pending edits: delete the branch (tolerant of already-gone) and return to
+   *  the edit page when the entry lives on main, else to the list (the entry is gone entirely).
+   */
   async function discardAction(event: ContentEvent): Promise<never> {
     const editor = requireSession(event);
     const concept = conceptOf(runtime, event.params);
@@ -1291,11 +1428,13 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     throw redirect(303, `/admin/${concept.id}`);
   }
 
-  /** The shared delete core. Block-until-clean: refuse while inbound links exist (naming them), else
+  /**
+   * The shared delete core. Block-until-clean: refuse while inbound links exist (naming them), else
    *  commit the file removal and the manifest patch in one commit. The inbound recheck here is the
    *  authoritative gate, closing the load-to-delete race. Both the editor delete (id from params) and
    *  the list delete (id from the form body) call this with an already-validated id, so the guard is
-   *  enforced once. */
+   *  enforced once.
+   */
   async function deleteEntry(
     event: ContentEvent,
     concept: ConceptDescriptor,
@@ -1375,10 +1514,12 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     return deleteEntry(event, concept, id, editor);
   }
 
-  /** Rename an entry: change its slug, move the file, and rewrite every inbound cairn token in one
+  /**
+   * Rename an entry: change its slug, move the file, and rewrite every inbound cairn token in one
    *  atomic commit, so no internal link breaks. The collision check and the inbound recompute here
    *  are the authoritative gate. The same last-writer-wins manifest race as save and delete applies,
-   *  caught by the build's fail-closed backstop. */
+   *  caught by the build's fail-closed backstop.
+   */
   async function renameAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
     const editor = requireSession(event);
     const concept = conceptOf(runtime, event.params);
@@ -1606,7 +1747,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
   /** A 16-hex content-hash prefix, the immutable asset key. */
   const MEDIA_HASH_RE = /^[0-9a-f]{16}$/;
 
-  /** Safe-delete a committed media asset. The gate rechecks usage server-side against a FRESH index
+  /**
+   * Safe-delete a committed media asset. The gate rechecks usage server-side against a FRESH index
    *  read at delete time (never a client-passed count), mirroring deleteEntry's authoritative inbound
    *  recheck. An in-use asset refuses unless the form carries the typed-slug override (the in-use
    *  alertdialog's type-to-confirm). When confirmed, the order is load-bearing: commit the manifest
@@ -1623,7 +1765,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
    *  a referenced asset for an orphan. There is an inherent stale-read window between the recheck and
    *  the commit (no sha-guard ties them); it is bounded because the resolver and the route key on the
    *  hash, so a reference added in that window still resolves to bytes that may be gone, the same
-   *  delete-races-an-edit window every safe delete carries. */
+   *  delete-races-an-edit window every safe delete carries.
+   */
   async function mediaDeleteAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
     const editor = requireSession(event);
     const token = await mintToken(event.platform?.env ?? {});
@@ -1718,7 +1861,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     throw redirect(303, '/admin/media?deleted=1');
   }
 
-  /** Bulk safe-delete a multi-select of committed media assets. This is mediaDeleteAction extended to
+  /**
+   * Bulk safe-delete a multi-select of committed media assets. This is mediaDeleteAction extended to
    *  many items, with the same safety primitives and one rule that defines the batch: the gate is ONE
    *  shared strict cross-branch usage index built per batch, never N per-item reads (N strict reads
    *  would blow the workerd connection budget at many open branches). The fail-closed posture is for
@@ -1736,7 +1880,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
    *  leaves bytes with no row (a benign orphan) rather than a row pointing at deleted bytes. Each R2
    *  delete is best-effort and batch-resilient: a per-object error is reported in `failed` and never
    *  aborts the rest of the batch. The result is an itemized 207-style summary the component renders
-   *  (deleted / skipped with reasons / failed); there is no success redirect. */
+   *  (deleted / skipped with reasons / failed); there is no success redirect.
+   */
   async function mediaBulkDelete(event: ContentEvent): Promise<ReturnType<typeof fail> | MediaBulkDeleteResult> {
     const editor = requireSession(event);
     const token = await mintToken(event.platform?.env ?? {});
@@ -1828,7 +1973,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     return { deleted, skipped: plan.skipped, failed } satisfies MediaBulkDeleteResult;
   }
 
-  /** The on-demand orphan scan: a read-only reconcile of stored R2 bytes against the manifest, joined
+  /**
+   * The on-demand orphan scan: a read-only reconcile of stored R2 bytes against the manifest, joined
    *  with one strict cross-branch usage index for the broken-reference where-used. It runs only when
    *  requested, never on the loaded index, because it is heavier than the load path: a full R2 list
    *  plus a reconcile pass on top of the strict usage build.
@@ -1842,7 +1988,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
    *
    *  The result is the OrphanScan projection: orphanedBytes (stored keys with no manifest row, the
    *  purge surface) and brokenRefs (manifest rows whose bytes are gone, read-only, shown with their
-   *  where-used so an operator can re-ingest rather than purge a still-referenced record). */
+   *  where-used so an operator can re-ingest rather than purge a still-referenced record).
+   */
   async function mediaOrphanScan(event: ContentEvent): Promise<ReturnType<typeof fail> | OrphanScan> {
     requireSession(event);
     const token = await mintToken(event.platform?.env ?? {});
@@ -1878,7 +2025,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     return buildOrphanScan(reconcile, manifest, index);
   }
 
-  /** Purge orphaned R2 bytes: the one IRREVERSIBLE media action. Raw object bytes live only in R2, not
+  /**
+   * Purge orphaned R2 bytes: the one IRREVERSIBLE media action. Raw object bytes live only in R2, not
    *  in git, so a purged orphan cannot be recovered the way a deleted manifest row can be reverted in
    *  history. The whole action is built around that fact.
    *
@@ -1902,7 +2050,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
    *
    *  There is no commit. An orphan by definition has no manifest row to remove, so the purge deletes
    *  the R2 object directly. Each delete is best-effort and batch-resilient: a per-object error is
-   *  reported in `failed` and the loop continues; an absent object is a no-op (the R2 contract). */
+   *  reported in `failed` and the loop continues; an absent object is a no-op (the R2 contract).
+   */
   async function mediaPurgeOrphans(event: ContentEvent): Promise<ReturnType<typeof fail> | MediaOrphanPurgeResult> {
     const editor = requireSession(event);
     const token = await mintToken(event.platform?.env ?? {});
@@ -1975,10 +2124,12 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     return { purged, skippedClaimed, failed } satisfies MediaOrphanPurgeResult;
   }
 
-  /** Edit a committed asset's metadata: its display name, slug, and default alt. A single media.json
+  /**
+   * Edit a committed asset's metadata: its display name, slug, and default alt. A single media.json
    *  row commit, with NO reference rewrite: the resolver and the delivery route key on the hash, so a
    *  rename never breaks an existing `media:` reference. The default alt is the asset's value for the
-   *  next placement, never a propagating edit of the alt already committed in existing placements. */
+   *  next placement, never a propagating edit of the alt already committed in existing placements.
+   */
   async function mediaUpdateAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
     const editor = requireSession(event);
     const token = await mintToken(event.platform?.env ?? {});
@@ -2017,14 +2168,17 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     throw redirect(303, '/admin/media?updated=1');
   }
 
-  /** Build the canonical `media:` token for a replacement, treating a slug that fails the grammar (or
+  /**
+   * Build the canonical `media:` token for a replacement, treating a slug that fails the grammar (or
    *  an empty one) as absent so the bare-hash form is used. The slug is cosmetic: the resolver keys on
-   *  the hash, so a missing slug still resolves. Shared by the preview and apply token construction. */
+   *  the hash, so a missing slug still resolves. Shared by the preview and apply token construction.
+   */
   function replacementToken(slug: string, hash: string): string {
     return mediaToken({ slug: MEDIA_SLUG_RE.test(slug) ? slug : null, hash });
   }
 
-  /** Preview a replace-in-place: the display-only fetch action (the 2a transport). It plans the rewrite
+  /**
+   * Preview a replace-in-place: the display-only fetch action (the 2a transport). It plans the rewrite
    *  of every published main entry that references `oldHash` to the new asset's `media:` token, enriches
    *  each with its title and permalink, and returns the plan plus the report-only cross-branch delta.
    *  It commits nothing. The plan runs strict (fail-closed): an unverifiable usage read returns a 503
@@ -2034,7 +2188,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
    *  the `X-Cairn-CSRF` header (the raw-body transport, no form-CSRF), and a `MediaReplacePreviewPlan`
    *  returned as the 200 ActionResult the client reads. A refusal rides a `fail(status, ...)` envelope
    *  with the MediaReplaceFailure shape (the same fail shape the apply uses), so the client reads
-   *  `type`/`status` from the body, never the HTTP status. */
+   *  `type`/`status` from the body, never the HTTP status.
+   */
   async function mediaReplacePreview(event: ContentEvent): Promise<ReturnType<typeof fail> | MediaReplacePreviewPlan> {
     // CSRF first: this is a raw-body (JSON) POST, so the header witness is the authority, like the
     // upload action. A failed check refuses before the session read or any GitHub call.
@@ -2104,7 +2259,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     return { affectedCount: plan.affectedCount, entries, branchDelta: plan.branchDelta };
   }
 
-  /** Apply a replace-in-place: rewrite every published main entry that references the old asset to the
+  /**
+   * Apply a replace-in-place: rewrite every published main entry that references the old asset to the
    *  new asset's `media:` token, and add the new media.json row, in ONE atomic commit. The plan is
    *  re-derived here from a FRESH read (never a client-passed plan), so a concurrent edit between the
    *  preview and the apply is rewritten too. EVERY replace is gated behind the typed-slug confirm
@@ -2115,7 +2271,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
    *
    *  No R2 operation: the new bytes were already stored put-first by the upload action, and the old
    *  bytes are KEPT (the old row stays in media.json), so this action writes only to git and never
-   *  resolves the bucket binding. It guards `resolvedAssets.enabled` for the media-off case only. */
+   *  resolves the bucket binding. It guards `resolvedAssets.enabled` for the media-off case only.
+   */
   async function mediaReplaceApply(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
     const editor = requireSession(event);
     const token = await mintToken(event.platform?.env ?? {});
@@ -2216,7 +2373,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     throw redirect(303, '/admin/media?replaced=1');
   }
 
-  /** Preview an alt-propagation: the display-only fetch action (the 2a transport). It plans filling the
+  /**
+   * Preview an alt-propagation: the display-only fetch action (the 2a transport). It plans filling the
    *  asset's default alt across every published main entry that references it, bucketing each placement
    *  (a will-fill empty alt, a customized alt left as-is, a decorative hero skipped), and returns the
    *  enriched entries, the report-only cross-branch delta, and the bucket counts. It commits nothing.
@@ -2226,7 +2384,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
    *  Wire contract: a fetch POST with the JSON body `{ hash }`, the CSRF token in the `X-Cairn-CSRF`
    *  header (the raw-body transport, no form-CSRF), and a `MediaAltPreviewPlan` returned as the 200
    *  ActionResult the client reads. A refusal rides a `fail(status, ...)` envelope with the
-   *  MediaAltPropagateFailure shape, so the client reads `type`/`status` from the body. */
+   *  MediaAltPropagateFailure shape, so the client reads `type`/`status` from the body.
+   */
   async function mediaAltPreview(event: ContentEvent): Promise<ReturnType<typeof fail> | MediaAltPreviewPlan> {
     // CSRF first: a raw-body (JSON) POST, so the header witness is the authority, like the upload and
     // replace-preview actions. A failed check refuses before the session read or any GitHub call.
@@ -2295,14 +2454,16 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     return { entries, branchDelta: plan.branchDelta, counts };
   }
 
-  /** Apply an alt-propagation: fill the asset's default alt into every empty placement across the
+  /**
+   * Apply an alt-propagation: fill the asset's default alt into every empty placement across the
    *  published corpus (and, on the `overwrite` opt-in, customized placements too), in ONE atomic
    *  commit. The plan is re-derived from a FRESH read (never a client plan). Three deliberate
    *  differences from replace: there is NO typed-slug gate (alt fill is reversible and frequent), there
    *  is NO media.json change (the default alt is READ from the row, never rewritten there), and a
    *  decorative hero is never written regardless of `overwrite` (enforced inside fillAltForHash). A run
    *  that changes nothing commits nothing and still redirects (a no-op success). It fails the operation
-   *  closed on an unverifiable usage read, and writes only entry files in git (no R2 op). */
+   *  closed on an unverifiable usage read, and writes only entry files in git (no R2 op).
+   */
   async function mediaAltApply(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
     const editor = requireSession(event);
     const token = await mintToken(event.platform?.env ?? {});
@@ -2363,20 +2524,26 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     throw redirect(303, '/admin/media?altPropagated=1');
   }
 
-  /** The cap on a personal-dictionary word, matched by isValidDictionaryWord. A word is one line, so
+  /**
+   * The cap on a personal-dictionary word, matched by isValidDictionaryWord. A word is one line, so
    *  this bounds an abusive input; the real authority is the per-character validation, which rejects
-   *  whitespace and control bytes so a body can never inject an extra line into the committed file. */
+   *  whitespace and control bytes so a body can never inject an extra line into the committed file.
+   */
   const MAX_DICTIONARY_WORD = 64;
-  /** The cap on the words a single add request carries: an editor adds a handful at save time, never
-   *  a flood. Past this the body is treated as abusive and the surplus is dropped. */
+  /**
+   * The cap on the words a single add request carries: an editor adds a handful at save time, never
+   *  a flood. Past this the body is treated as abusive and the surplus is dropped.
+   */
   const MAX_DICTIONARY_BATCH = 100;
 
-  /** Read the committed personal dictionary, merge the validated additions in sorted order, and commit
+  /**
+   * Read the committed personal dictionary, merge the validated additions in sorted order, and commit
    *  the canonical file back. Shared by the first attempt and the post-conflict retry, so both re-read
    *  the head and re-merge the same additions; the merge is order-independent, so a concurrent editor's
    *  word that already landed is preserved and the result is the same sorted set regardless of order.
    *  Returns the merged word list. Throws CommitConflictError (via commitFiles) when the branch moves
-   *  under the commit, which the caller catches to retry once. */
+   *  under the commit, which the caller catches to retry once.
+   */
   async function mergeAndCommitDictionary(token: string, additions: string[], editor: Editor): Promise<string[]> {
     const path = dictionaryFilePath();
     // The existing file as its canonical sorted set, so a no-op add is detected against the same
@@ -2396,27 +2563,33 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     return merged;
   }
 
-  /** The repo-relative site-config path the settings save reads and commits. It is the same committed
+  /**
+   * The repo-relative site-config path the settings save reads and commits. It is the same committed
    *  YAML the nav editor edits, so it comes from the configured nav menu first and falls back to the
-   *  scaffold default when no menu is configured. */
+   *  scaffold default when no menu is configured.
+   */
   function siteConfigPath(): string {
     return runtime.navMenu?.configPath ?? DEFAULT_SITE_CONFIG_PATH;
   }
 
-  /** Read whether the Anthropic API key secret is present in the load's env. A presence flag for the
+  /**
+   * Read whether the Anthropic API key secret is present in the load's env. A presence flag for the
    *  truthful visibility gate, never the key itself: the key is a Worker secret, so this only reports
-   *  that a non-empty `ANTHROPIC_API_KEY` exists and the value never leaves the server. */
+   *  that a non-empty `ANTHROPIC_API_KEY` exists and the value never leaves the server.
+   */
   function keyConfigured(event: ContentEvent): boolean {
     const env = (event.platform?.env ?? {}) as Record<string, unknown>;
     return typeof env.ANTHROPIC_API_KEY === 'string' && env.ANTHROPIC_API_KEY.length > 0;
   }
 
-  /** Load the two-tier tidy settings (spec 2.8, Task 15). The developer tier (enabled, key, model) is
+  /**
+   * Load the two-tier tidy settings (spec 2.8, Task 15). The developer tier (enabled, key, model) is
    *  read-only; the editor tier is the resolved conventions block. The visibility gate is truthful: the
    *  `enabled` flag is true only when `tidy.enabled` is set AND the key is present, so the screen renders
    *  the convention list only then and the honest gate note otherwise. No secret is returned: only a
    *  presence flag for the key. The conventions come straight from the runtime config (the same source
-   *  the tidy action's prompt reads), so the screen and the prompt can never diverge. */
+   *  the tidy action's prompt reads), so the screen and the prompt can never diverge.
+   */
   function settingsLoad(event: ContentEvent): SettingsData {
     requireSession(event);
     const tidy = runtime.tidy;
@@ -2435,13 +2608,15 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     };
   }
 
-  /** Save the editor-tier tidy conventions: validate the posted block, then read-modify-commit it into
+  /**
+   * Save the editor-tier tidy conventions: validate the posted block, then read-modify-commit it into
    *  the same committed YAML the nav editor writes, with the session editor as author. The transport is
    *  the nav save's exactly: a form POST carrying the conventions JSON, the read-modify-commit through
    *  `commitFile`, and a stale-SHA `isConflict` bounced back as a reload prompt. Only the conventions
    *  block is written (setTidy leaves `tidy.enabled` and `tidy.model` untouched), so an editor's save can
    *  never flip the developer-tier deploy facts. The save refuses before any commit when tidy is not
-   *  enabled, so the gate state's absent editor tier can never be saved past. */
+   *  enabled, so the gate state's absent editor tier can never be saved past.
+   */
   async function settingsSave(event: ContentEvent): Promise<never> {
     const editor = requireSession(event);
     // The editor tier does not exist when tidy is off, so a save in that state is a 404 (no editable
@@ -2487,7 +2662,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     throw redirect(303, '/admin/settings?saved=1');
   }
 
-  /** Add a word (or batch) to the git-committed personal dictionary (spec 1.6). The transport mirrors
+  /**
+   * Add a word (or batch) to the git-committed personal dictionary (spec 1.6). The transport mirrors
    *  the media raw-body actions exactly: a `text/plain` POST, the CSRF token in `X-Cairn-CSRF` validated
    *  by validateCsrfHeader (CSRF first, then the session), and a small JSON body `{ word }` or
    *  `{ words }`. It reads the current file from the default branch, inserts the validated words in
@@ -2502,7 +2678,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
    *  Input validation is load-bearing here: this commits to the repo from request input, so every word
    *  is length-bounded and rejected if it carries whitespace or control characters (a word is one
    *  line), and the batch is capped. A body that yields no valid word refuses with a 400 and commits
-   *  nothing, so the committed file can never gain an injected or empty line. */
+   *  nothing, so the committed file can never gain an injected or empty line.
+   */
   async function addDictionaryWord(event: ContentEvent): Promise<ReturnType<typeof fail> | DictionaryAddResult> {
     // CSRF first: a raw-body (JSON) POST, so the header witness is the authority, like the upload and
     // media actions. A failed check refuses before the session read or any GitHub call.
@@ -2554,7 +2731,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     }
   }
 
-  /** Tidy: a light LLM copy-edit of the author's markdown (spec 2.1). The first remote model call in
+  /**
+   * Tidy: a light LLM copy-edit of the author's markdown (spec 2.1). The first remote model call in
    *  the library, so this is the highest-blast-radius server action: untrusted content and the Anthropic
    *  API key. The transport mirrors the media raw-body actions (a `text/plain` POST carrying JSON
    *  `{ text, scope }`, the CSRF token in `X-Cairn-CSRF`, the response deserialized by the client), with
@@ -2572,7 +2750,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
    *  prompt's injection framing (Task 10) treats it as data. The API key never leaves the action: it is
    *  not returned and not logged, and the log line carries no content. The action commits NOTHING, so a
    *  failed, aborted, or refused tidy can never corrupt the entry; the diff is computed on the client
-   *  (Task 12), so the server stays a thin model-call boundary. */
+   *  (Task 12), so the server stays a thin model-call boundary.
+   */
   async function tidyAction(event: ContentEvent): Promise<ReturnType<typeof fail> | TidyResult> {
     // CSRF first: a raw-body (JSON) POST, so the header witness is the authority. A failed check refuses
     // before the session read and before any model call.
@@ -2672,8 +2851,10 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
   return { layoutLoad, indexRedirect, listLoad, mediaLibraryLoad, settingsLoad, settingsSave, createAction, editLoad, saveAction, publishAction, publishAllAction, discardAction, deleteAction, listDeleteAction, renameAction, uploadAction, mediaDeleteAction, mediaBulkDelete, mediaOrphanScan, mediaPurgeOrphans, mediaUpdateAction, mediaReplacePreview, mediaReplaceApply, mediaAltPreview, mediaAltApply, addDictionaryWord, tidyAction, mintToken };
 }
 
-/** The cap, in characters, on the stored alt text. The human fields are display copy, not content,
- *  so a generous cap rejects only abuse-scale input. */
+/**
+ * The cap, in characters, on the stored alt text. The human fields are display copy, not content,
+ *  so a generous cap rejects only abuse-scale input.
+ */
 const MAX_ALT = 160;
 /** The cap, in characters, on the stored display name. */
 const MAX_DISPLAY_NAME = 120;
@@ -2682,8 +2863,10 @@ const MAX_ORIGINAL_FILENAME = 120;
 /** The largest pixel dimension kept; anything larger is treated as bogus and clamped to null. */
 const MAX_DIMENSION = 60000;
 
-/** Decode a percent-encoded header value, yielding `''` on a malformed sequence or an absent header,
- *  so a hostile `X-Cairn-*` value cannot throw past the gate. */
+/**
+ * Decode a percent-encoded header value, yielding `''` on a malformed sequence or an absent header,
+ *  so a hostile `X-Cairn-*` value cannot throw past the gate.
+ */
 function safeDecode(value: string | null): string {
   if (value === null) return '';
   try {
@@ -2693,40 +2876,52 @@ function safeDecode(value: string | null): string {
   }
 }
 
-/** The basename of a decoded filename: the final path segment after any `/` or `\`. A client value
- *  of `../../evil.png` yields `evil.png`, so no path component reaches the stored record. */
+/**
+ * The basename of a decoded filename: the final path segment after any `/` or `\`. A client value
+ *  of `../../evil.png` yields `evil.png`, so no path component reaches the stored record.
+ */
 function basename(name: string): string {
   const parts = name.split(/[/\\]/);
   return parts[parts.length - 1];
 }
 
-/** Sort key for a where-used row's origin: published rows rank before branch rows, so the in-use
- *  refusal lists "Published on the site" first, then the edit-branch references. */
+/**
+ * Sort key for a where-used row's origin: published rows rank before branch rows, so the in-use
+ *  refusal lists "Published on the site" first, then the edit-branch references.
+ */
 function originRank(entry: UsageEntry): number {
   return entry.origin.kind === 'published' ? 0 : 1;
 }
 
-/** A where-used row's branch name for the secondary sort (the empty string for a published row,
- *  which sorts ahead of any branch by `originRank` already). */
+/**
+ * A where-used row's branch name for the secondary sort (the empty string for a published row,
+ *  which sorts ahead of any branch by `originRank` already).
+ */
 function branchKey(entry: UsageEntry): string {
   return entry.origin.kind === 'branch' ? entry.origin.branch : '';
 }
 
-/** The distinct-entry count behind a where-used set: a published use and an edit-branch edit of the
- *  same entry are two rows but one distinct entry, so count by concept/id. */
+/**
+ * The distinct-entry count behind a where-used set: a published use and an edit-branch edit of the
+ *  same entry are two rows but one distinct entry, so count by concept/id.
+ */
 function distinctEntryCount(rows: UsageEntry[]): number {
   return new Set(rows.map((e) => `${e.concept}/${e.id}`)).size;
 }
 
-/** Strip control characters from a human field and cap it at `max` characters. Control characters
- *  (C0 and DEL) never belong in display copy and could corrupt a log line or a committed JSON. */
+/**
+ * Strip control characters from a human field and cap it at `max` characters. Control characters
+ *  (C0 and DEL) never belong in display copy and could corrupt a log line or a committed JSON.
+ */
 function sanitizeField(value: string, max: number): string {
-  // eslint-disable-next-line no-control-regex
+   
   return value.replace(/[\u0000-\u001f\u007f]/g, '').slice(0, max);
 }
 
-/** Parse an advisory pixel dimension header. A valid integer in `[1, MAX_DIMENSION]` is kept; an
- *  absent, non-numeric, or out-of-range value becomes null (MediaEntry dimensions are `number | null`). */
+/**
+ * Parse an advisory pixel dimension header. A valid integer in `[1, MAX_DIMENSION]` is kept; an
+ *  absent, non-numeric, or out-of-range value becomes null (MediaEntry dimensions are `number | null`).
+ */
 function clampDimension(value: string | null): number | null {
   if (value === null) return null;
   const n = Number(value);

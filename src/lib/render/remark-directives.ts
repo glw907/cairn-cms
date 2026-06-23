@@ -51,6 +51,9 @@ function restoreLiteral(node: TextDirective | LeafDirective): PhrasingContent[] 
 // component name, icon, and role. No structure is built here; the rehype
 // dispatcher rewrites the marked elements once their children are hast.
 // Text and leaf directives are restored to literal text (accidental prose colons).
+/**
+ *
+ */
 export function remarkDirectiveStamp(registry: ComponentRegistry) {
   const known = new Set(registry.names);
   return (tree: Root) => {

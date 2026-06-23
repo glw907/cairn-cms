@@ -21,15 +21,19 @@ function sectionFor(concept: string): { name: string; rank: number } {
   return CONCEPT_SECTIONS[concept] ?? { name: concept.charAt(0).toUpperCase() + concept.slice(1), rank: 2 };
 }
 
-/** The open `[[query` before the cursor, or null. The query stops at a closing bracket or a newline,
- *  so a finished `[[x]]` link and ordinary prose never trigger. `from` is the index of the `[[`. */
+/**
+ * The open `[[query` before the cursor, or null. The query stops at a closing bracket or a newline,
+ *  so a finished `[[x]]` link and ordinary prose never trigger. `from` is the index of the `[[`.
+ */
 export function matchCairnTrigger(before: string): { query: string; from: number } | null {
   const match = /\[\[([^[\]\n]*)$/.exec(before);
   return match ? { query: match[1], from: match.index } : null;
 }
 
-/** The completion options for a query: a case-insensitive title substring match, each option grouped
- *  by concept, a draft marked and a post date shown in the detail, and the apply text the full link. */
+/**
+ * The completion options for a query: a case-insensitive title substring match, each option grouped
+ *  by concept, a draft marked and a post date shown in the detail, and the apply text the full link.
+ */
 export function linkCompletions(targets: LinkTarget[], query: string): Completion[] {
   const q = query.trim().toLowerCase();
   const matched = q ? targets.filter((t) => t.title.toLowerCase().includes(q)) : targets;
@@ -41,9 +45,11 @@ export function linkCompletions(targets: LinkTarget[], query: string): Completio
   }));
 }
 
-/** A CodeMirror CompletionSource over the site's link targets, triggered by `[[`. It replaces the
+/**
+ * A CodeMirror CompletionSource over the site's link targets, triggered by `[[`. It replaces the
  *  whole `[[query` with the chosen link, and sets filter:false because linkCompletions already
- *  filtered by the query (CodeMirror would otherwise re-filter against the literal `[[query`). */
+ *  filtered by the query (CodeMirror would otherwise re-filter against the literal `[[query`).
+ */
 export function cairnLinkCompletionSource(targets: LinkTarget[]): CompletionSource {
   return async (context: CompletionContext): Promise<CompletionResult | null> => {
     const line = context.state.doc.lineAt(context.pos);

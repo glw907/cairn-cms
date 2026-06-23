@@ -49,10 +49,12 @@ interface Edit {
   kind: RepointPlacement['kind'];
 }
 
-/** Drop any span that overlaps a span already kept, in source order. A final safety net so two
+/**
+ * Drop any span that overlaps a span already kept, in source order. A final safety net so two
  *  splices can never target the same or overlapping bytes and clobber each other into a corrupt
  *  result, no matter how the locating arms behaved. A pure-insert span (`start === end`) overlaps
- *  another span only when it sits strictly inside it, so adjacent inserts and edits are kept. */
+ *  another span only when it sits strictly inside it, so adjacent inserts and edits are kept.
+ */
 function dropOverlappingEdits<T extends { start: number; end: number }>(edits: T[]): T[] {
   const kept: T[] = [];
   for (const e of edits) {
@@ -62,32 +64,40 @@ function dropOverlappingEdits<T extends { start: number; end: number }>(edits: T
   return kept;
 }
 
-/** A locating scan for candidate `media:` token substrings. Deliberately broad (it accepts
+/**
+ * A locating scan for candidate `media:` token substrings. Deliberately broad (it accepts
  *  uppercase and other out-of-grammar characters) so a malformed token is still found and then
  *  rejected by parseMediaToken, never silently skipped by the locator. The character class stops at
  *  whitespace, a quote, or any YAML or markdown delimiter, so a frontmatter value or an image
- *  destination ends the candidate. */
+ *  destination ends the candidate.
+ */
 const MEDIA_TOKEN_SCAN = /media:[A-Za-z0-9._-]+/g;
 
-/** Split a leading frontmatter block off the markdown. `fmBlock` is the `---` fenced block including
+/**
+ * Split a leading frontmatter block off the markdown. `fmBlock` is the `---` fenced block including
  *  both fences and the trailing newline (empty when there is none); `body` is everything after it.
  *  The block leads the document, so a frontmatter offset is already absolute and a body offset needs
- *  `fmBlock.length` added. Shared by every arm so they agree on the boundary. */
+ *  `fmBlock.length` added. Shared by every arm so they agree on the boundary.
+ */
 function splitFrontmatter(markdown: string): { fmBlock: string; body: string } {
   const m = markdown.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/);
   const fmBlock = m ? m[0] : '';
   return { fmBlock, body: markdown.slice(fmBlock.length) };
 }
 
-/** Parse a doc with the figure-aware pipeline, so the body arm agrees with what remarkFigure renders
- *  and can see the enclosing `:::figure` container. Mirrors parseFigureDoc in markdown-format.ts. */
+/**
+ * Parse a doc with the figure-aware pipeline, so the body arm agrees with what remarkFigure renders
+ *  and can see the enclosing `:::figure` container. Mirrors parseFigureDoc in markdown-format.ts.
+ */
 function parseFigureDoc(doc: string): Root {
   return unified().use(remarkParse).use(remarkGfm).use(remarkDirective).parse(doc) as Root;
 }
 
-/** Whether `target` sits inside a `figure`-named container directive. Walks the tree to find the
+/**
+ * Whether `target` sits inside a `figure`-named container directive. Walks the tree to find the
  *  ancestor, since unist-util-visit's per-call ancestors are not retained across the traversal.
- *  Mirrors enclosingFigure in markdown-format.ts, reduced to a boolean. */
+ *  Mirrors enclosingFigure in markdown-format.ts, reduced to a boolean.
+ */
 function inFigure(tree: Root, target: Image): boolean {
   let found = false;
   visit(tree, 'containerDirective', (dir: ContainerDirective) => {
@@ -99,16 +109,20 @@ function inFigure(tree: Root, target: Image): boolean {
   return found;
 }
 
-/** The split of fmBlock into its lines, each with its block-relative start and end offsets (the end
+/**
+ * The split of fmBlock into its lines, each with its block-relative start and end offsets (the end
  *  is the index of the trailing newline, or the block length for the last line). Block offsets are
- *  already absolute since the frontmatter leads the document. */
+ *  already absolute since the frontmatter leads the document.
+ */
 interface FmLine {
   start: number;
   end: number;
 }
 
-/** Split fmBlock into lines once, so the locator helpers walk a shared structure instead of
- *  re-scanning the block per call. */
+/**
+ * Split fmBlock into lines once, so the locator helpers walk a shared structure instead of
+ *  re-scanning the block per call.
+ */
 function fmLines(fmBlock: string): FmLine[] {
   const lines: FmLine[] = [];
   let pos = 0;
@@ -122,12 +136,14 @@ function fmLines(fmBlock: string): FmLine[] {
   return lines;
 }
 
-/** The inclusive line-index range `[lo, hi]` of the block-style mapping a top-level key opens: the
+/**
+ * The inclusive line-index range `[lo, hi]` of the block-style mapping a top-level key opens: the
  *  line `^<key>:` at indent 0 through the last line before the next top-level key (or the document
  *  end). A flow-style value (`key: { ... }` all on one line) yields a single-line range. Returns null
  *  when the key has no top-level line, which a malformed or non-canonical block can cause. Scoping the
  *  per-key search to this range is what lets two image fields that share one hash, or an image field
- *  whose hash also appears in a sibling text value, resolve to distinct, correct spans. */
+ *  whose hash also appears in a sibling text value, resolve to distinct, correct spans.
+ */
 function frontmatterKeyRange(lines: FmLine[], fmBlock: string, key: string): [number, number] | null {
   const opener = new RegExp(`^${escapeForRegExp(key)}:`);
   const topLevelKey = /^[^\s#][^:]*:/;
@@ -153,8 +169,10 @@ function frontmatterKeyRange(lines: FmLine[], fmBlock: string, key: string): [nu
   return [lo, hi];
 }
 
-/** A located `src:` line inside a block-style mapping: the line's start and end, its leading indent,
- *  and the exact `media:` token's block-relative offsets and text. */
+/**
+ * A located `src:` line inside a block-style mapping: the line's start and end, its leading indent,
+ *  and the exact `media:` token's block-relative offsets and text.
+ */
 interface SrcLineHit {
   lineStart: number;
   lineEnd: number;
@@ -164,10 +182,12 @@ interface SrcLineHit {
   token: string;
 }
 
-/** Find the block-style `src:` line within `[lo, hi]` whose value token parses to `hash`. The token
+/**
+ * Find the block-style `src:` line within `[lo, hi]` whose value token parses to `hash`. The token
  *  is located by the broad scan and validated through parseMediaToken (matching on hash), so a
  *  malformed token is found then rejected. Returns null for a flow-style value (no own `src:` line),
- *  which leaves that shape unanchorable rather than splicing a guessed span. */
+ *  which leaves that shape unanchorable rather than splicing a guessed span.
+ */
 function findSrcLineInRange(
   lines: FmLine[],
   fmBlock: string,
@@ -199,11 +219,13 @@ function findSrcLineInRange(
   return null;
 }
 
-/** The image-like top-level frontmatter keys whose `src` parses to `hash`, in source order. A key is
+/**
+ * The image-like top-level frontmatter keys whose `src` parses to `hash`, in source order. A key is
  *  image-like when its value is an object carrying a string `src`; this is the same shape
  *  extractMediaRefs reads, so a token in a plain-text value (a `title:`/`note:`) is never treated as a
  *  reference. The bucket-classifying data comes from gray-matter (which handles every quoting form);
- *  the byte edit is located structurally by the caller, keyed back to this key name. */
+ *  the byte edit is located structurally by the caller, keyed back to this key name.
+ */
 function imageFieldKeys(data: Record<string, unknown>, hash: string): { key: string; obj: Record<string, unknown> }[] {
   const out: { key: string; obj: Record<string, unknown> }[] = [];
   for (const [key, value] of Object.entries(data)) {
@@ -217,11 +239,13 @@ function imageFieldKeys(data: Record<string, unknown>, hash: string): { key: str
   return out;
 }
 
-/** Collect hero src-token edits inside the frontmatter block. Only an image-field `src:` line is
+/**
+ * Collect hero src-token edits inside the frontmatter block. Only an image-field `src:` line is
  *  rewritten: the structure is read via gray-matter (image-like keys), and each key's `src:` line is
  *  located structurally within that key's block. A `media:` token sitting in a plain-text value (a
  *  `title:` or `description:`) is on no `src:` line, so it is left untouched, keeping the byte-exact
- *  contract and agreeing with extractMediaRefs. A flow-style hero has no `src:` line and is skipped. */
+ *  contract and agreeing with extractMediaRefs. A flow-style hero has no `src:` line and is skipped.
+ */
 function frontmatterEdits(markdown: string, fmBlock: string, oldHash: string): Edit[] {
   if (fmBlock === '') return [];
   const data = matter(markdown).data as Record<string, unknown>;
@@ -237,10 +261,12 @@ function frontmatterEdits(markdown: string, fmBlock: string, oldHash: string): E
   return edits;
 }
 
-/** Locate the exact `media:` token substring inside one image node's source span. The destination
+/**
+ * Locate the exact `media:` token substring inside one image node's source span. The destination
  *  begins at the `](` that follows the alt text, so the search starts there to avoid a false match on
  *  a `media:`-like string inside the alt. Returns null when the token cannot be located, which leaves
- *  the image untouched rather than splicing a guessed range. */
+ *  the image untouched rather than splicing a guessed range.
+ */
 function locateImageToken(span: string, url: string): { start: number; end: number } | null {
   const destStart = span.indexOf('](');
   const from = destStart === -1 ? 0 : destStart + 2;
@@ -249,9 +275,11 @@ function locateImageToken(span: string, url: string): { start: number; end: numb
   return { start: at, end: at + url.length };
 }
 
-/** One body image whose url parses to the target hash, with its absolute node-span offsets (block
+/**
+ * One body image whose url parses to the target hash, with its absolute node-span offsets (block
  *  length added) and whether it sits inside a `:::figure`. The shared body-image find that both the
- *  token-rewrite and alt-fill arms walk, so they agree on what an image is and how a figure is named. */
+ *  token-rewrite and alt-fill arms walk, so they agree on what an image is and how a figure is named.
+ */
 interface MatchedBodyImage {
   node: Image;
   /** Absolute start offset of the `![...](...)` node in the whole markdown. */
@@ -261,9 +289,11 @@ interface MatchedBodyImage {
   kind: 'body' | 'figure';
 }
 
-/** Find every body image whose url parses to `hash`, in source order, with absolute offsets. Parses
+/**
+ * Find every body image whose url parses to `hash`, in source order, with absolute offsets. Parses
  *  with the figure-aware pipeline, so a `media:` token inside a code span or fence is not an image
- *  node and is correctly skipped, matching extractMediaRefs. */
+ *  node and is correctly skipped, matching extractMediaRefs.
+ */
 function matchedBodyImages(body: string, blockLength: number, hash: string): MatchedBodyImage[] {
   const tree = parseFigureDoc(body);
   const hits: MatchedBodyImage[] = [];
@@ -283,9 +313,11 @@ function matchedBodyImages(body: string, blockLength: number, hash: string): Mat
   return hits;
 }
 
-/** Collect body edits over the body slice. Each matching image is located within its own source span
+/**
+ * Collect body edits over the body slice. Each matching image is located within its own source span
  *  and recorded with an absolute offset. The kind is 'figure' when the image is inside a `:::figure`,
- *  else 'body'. */
+ *  else 'body'.
+ */
 function bodyEdits(body: string, blockLength: number, oldHash: string): Edit[] {
   const edits: Edit[] = [];
   for (const hit of matchedBodyImages(body, blockLength, oldHash)) {
@@ -337,13 +369,17 @@ export function repointMediaRef(markdown: string, oldHash: string, newToken: str
   return { markdown: out, placements };
 }
 
-/** Which alt bucket a placement falls in: an empty alt always gets filled, a non-empty (custom) alt is
- *  reported and only overwritten on opt-in, and a decorative hero is never touched. */
+/**
+ * Which alt bucket a placement falls in: an empty alt always gets filled, a non-empty (custom) alt is
+ *  reported and only overwritten on opt-in, and a decorative hero is never touched.
+ */
 export type AltBucket = 'will-fill' | 'customized' | 'decorative-skipped';
 
-/** One placement of the target hash and what the alt-fill does to it: which surface it lives on, its
+/**
+ * One placement of the target hash and what the alt-fill does to it: which surface it lives on, its
  *  bucket, the existing alt, and the alt after the transform (unchanged for a customized alt left as
- *  is and for a decorative hero). */
+ *  is and for a decorative hero).
+ */
 export interface AltPlacement {
   kind: 'body' | 'figure' | 'hero';
   bucket: AltBucket;
@@ -359,10 +395,12 @@ export interface AltFillResult {
   placements: AltPlacement[];
 }
 
-/** A placement plus its optional byte edit. `apply` is false for a reported-but-unchanged placement
+/**
+ * A placement plus its optional byte edit. `apply` is false for a reported-but-unchanged placement
  *  (a kept custom alt, a decorative hero), which carries a diff entry but no splice. When `apply` is
  *  true, `[start, end)` is the absolute source span to replace with `text` (a pure insert is
- *  `start === end`). Keeping the placement here keeps the diff and the edits in step. */
+ *  `start === end`). Keeping the placement here keeps the diff and the edits in step.
+ */
 interface AltEdit {
   apply: boolean;
   start: number;
@@ -371,25 +409,31 @@ interface AltEdit {
   placement: AltPlacement;
 }
 
-/** Classify an existing alt into its non-decorative bucket: an empty (or whitespace-only) alt is
+/**
+ * Classify an existing alt into its non-decorative bucket: an empty (or whitespace-only) alt is
  *  filled, a non-empty alt is a custom alt the caller may opt in to overwrite. Mirrors the empty-alt
- *  test findMediaImagesNeedingAlt uses. */
+ *  test findMediaImagesNeedingAlt uses.
+ */
 function classifyAlt(existing: string): 'will-fill' | 'customized' {
   return existing.trim() === '' ? 'will-fill' : 'customized';
 }
 
-/** Whether a bucket plus the overwrite choice means the alt text is actually rewritten. A will-fill
- *  always writes; a customized alt writes only on opt-in; a decorative hero never writes. */
+/**
+ * Whether a bucket plus the overwrite choice means the alt text is actually rewritten. A will-fill
+ *  always writes; a customized alt writes only on opt-in; a decorative hero never writes.
+ */
 function altIsEdited(bucket: AltBucket, overwrite: boolean): boolean {
   if (bucket === 'will-fill') return true;
   if (bucket === 'customized') return overwrite;
   return false;
 }
 
-/** Collect the body and figure alt edits over the body slice. The alt source span sits between `![`
+/**
+ * Collect the body and figure alt edits over the body slice. The alt source span sits between `![`
  *  and the `](` inside the image node's span, so the new alt (escaped the way insertImage escapes it,
  *  so a `]` cannot break the syntax) is spliced there. The existing alt is the parser's already
- *  unescaped `node.alt`. A body image has no decorative slot, so an empty alt is always will-fill. */
+ *  unescaped `node.alt`. A body image has no decorative slot, so an empty alt is always will-fill.
+ */
 function bodyAltEdits(body: string, blockLength: number, hash: string, defaultAlt: string, overwrite: boolean): AltEdit[] {
   const edits: AltEdit[] = [];
   for (const hit of matchedBodyImages(body, blockLength, hash)) {
@@ -426,18 +470,22 @@ function bodyAltEdits(body: string, blockLength: number, hash: string, defaultAl
   return edits;
 }
 
-/** Escape a literal string for safe interpolation into a RegExp source. A key name or an indent is
- *  matched literally, so its characters must not act as metacharacters. */
+/**
+ * Escape a literal string for safe interpolation into a RegExp source. A key name or an indent is
+ *  matched literally, so its characters must not act as metacharacters.
+ */
 function escapeForRegExp(literal: string): string {
   return literal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-/** Find a sibling key line (`alt:` or `decorative:`) at exactly `indent` within the inclusive
+/**
+ * Find a sibling key line (`alt:` or `decorative:`) at exactly `indent` within the inclusive
  *  line-index range `[lo, hi]` of one mapping. The range is the mapping's own block, so the search
  *  spans the whole mapping rather than a same-indent contiguous run: a blank line or a deeper-nested
  *  child between `src:` and `alt:` no longer hides the existing key (which would otherwise insert a
  *  duplicate key and break the YAML). Returns the key line's value span (after the key and its space,
- *  to end of line) or null when the mapping has no such key at that indent. */
+ *  to end of line) or null when the mapping has no such key at that indent.
+ */
 function findSiblingKeyValue(
   lines: FmLine[],
   fmBlock: string,
@@ -454,7 +502,8 @@ function findSiblingKeyValue(
   return null;
 }
 
-/** Collect the hero alt edits inside the frontmatter block. The image-field objects (and their
+/**
+ * Collect the hero alt edits inside the frontmatter block. The image-field objects (and their
  *  decorative and alt values) are read via gray-matter to classify the bucket robustly across quoting
  *  forms; the byte edit is then located structurally, scoped to each field's own mapping block, keyed
  *  back by the top-level field name. Iterating the fields in source order keeps the hero placements in
@@ -463,7 +512,8 @@ function findSiblingKeyValue(
  *  blank line or a nested child) has its value replaced; an absent one is inserted right after the
  *  `src:` line at the same indent. The new value is a JSON-quoted scalar, valid YAML that handles a
  *  colon, a quote, or an empty string. A flow-style hero (`image: { ... }`, no own `src:` line) is
- *  unanchorable, so it is reported from the gray-matter read but never spliced. */
+ *  unanchorable, so it is reported from the gray-matter read but never spliced.
+ */
 function heroAltEdits(
   markdown: string,
   fmBlock: string,

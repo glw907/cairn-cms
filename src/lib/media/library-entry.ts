@@ -39,9 +39,11 @@ export interface MediaLibraryEntry {
 /** The projected library keyed by the 16-hex content hash, exactly EditData's `mediaLibrary`. */
 export type MediaLibrary = Record<string, MediaLibraryEntry>;
 
-/** Project a stored MediaEntry to the picker's MediaLibraryEntry, copying every display field and
+/**
+ * Project a stored MediaEntry to the picker's MediaLibraryEntry, copying every display field and
  *  dropping the source-only sha256 and original filename. The single projection editLoad and
- *  mediaLibraryLoad both call, so the popover and the Library never diverge on the shared shape. */
+ *  mediaLibraryLoad both call, so the popover and the Library never diverge on the shared shape.
+ */
 export function mediaLibraryEntry(entry: MediaEntry): MediaLibraryEntry {
   return {
     hash: entry.hash,

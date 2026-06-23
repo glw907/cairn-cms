@@ -25,8 +25,10 @@ export interface DoctorArgs {
 	from?: string;
 	repo?: string;
 	sendTest?: string;
-	/** The live admin probe: a URL when --probe carried one, true for the bare flag (probe the
-	 *  PUBLIC_ORIGIN input), absent when the flag never appeared (the probe does not run). */
+	/**
+	 * The live admin probe: a URL when --probe carried one, true for the bare flag (probe the
+	 *  PUBLIC_ORIGIN input), absent when the flag never appeared (the probe does not run).
+	 */
 	probe?: string | true;
 }
 
@@ -91,12 +93,16 @@ export function contextFromEnv(
 	};
 }
 
-/** The lazy derivation sources the bin wires up: the adapter read through the consumer's own
+/**
+ * The lazy derivation sources the bin wires up: the adapter read through the consumer's own
  *  Vite resolution and the wrangler config's account_id. Each runs only when an input it feeds
- *  is still missing, so a doctor run with full flags touches neither. */
+ *  is still missing, so a doctor run with full flags touches neither.
+ */
 export interface DerivationSources {
-	/** Returns { owner, repo, from, mediaBucketBinding } off the adapter, or null when nothing is
-	 *  derivable. */
+	/**
+	 * Returns `{ owner, repo, from, mediaBucketBinding }` off the adapter, or null when nothing is
+	 *  derivable.
+	 */
 	adapterFacts: () => Promise<{
 		owner?: string;
 		repo?: string;

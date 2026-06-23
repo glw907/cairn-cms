@@ -20,10 +20,12 @@ import { Decoration, EditorView, WidgetType, type DecorationSet } from '@codemir
 import { StateEffect, StateField, RangeSet, type Extension, type Range } from '@codemirror/state';
 import type { Change } from './tidy-diff.js';
 
-/** A change plus its live disposition and current mapped span. `pending` is undecided-in-the-buffer:
+/**
+ * A change plus its live disposition and current mapped span. `pending` is undecided-in-the-buffer:
  *  it still carries decorations. `accepted` has been written (its edit dispatched), so it carries no
  *  decoration. `rejected` was dropped, so it also carries no decoration and never writes. The `from`
- *  and `to` are the change's current offsets, mapped across every accepted edit since tidy opened. */
+ *  and `to` are the change's current offsets, mapped across every accepted edit since tidy opened.
+ */
 interface TidyEntry {
 	index: number;
 	from: number;
@@ -171,21 +173,29 @@ const tidyField = StateField.define<TidyState>({
 	provide: (f) => EditorView.decorations.from(f, (v) => buildDecorations(v)),
 });
 
-/** The api the host drives over one editor view (spec 2.5). Mirrors imagePlaceholderApi: the host
+/**
+ * The api the host drives over one editor view (spec 2.5). Mirrors imagePlaceholderApi: the host
  *  registers it through registerTidy, and the review surface calls it as the author works the list.
- *  Every accept lands as a CodeMirror transaction; reject and reject-all write no text. */
+ *  Every accept lands as a CodeMirror transaction; reject and reject-all write no text.
+ */
 export interface TidyApi {
-	/** Open tidy with the validated change set: seed the field, show the decorations. The buffer is
-	 *  untouched; the originals stay until an accept writes. */
+	/**
+	 * Open tidy with the validated change set: seed the field, show the decorations. The buffer is
+	 *  untouched; the originals stay until an accept writes.
+	 */
 	enter(changes: Change[]): void;
-	/** Accept one change: dispatch its replacement over its current span in one transaction and mark it
-	 *  accepted. The other pending changes map across the edit. */
+	/**
+	 * Accept one change: dispatch its replacement over its current span in one transaction and mark it
+	 *  accepted. The other pending changes map across the edit.
+	 */
 	acceptOne(index: number): void;
 	/** Reject one change: mark it rejected so its decorations clear, leaving the original untouched. */
 	rejectOne(index: number): void;
-	/** Accept many changes (the bulk action) in ONE transaction: the whole edit is one undoable step.
+	/**
+	 * Accept many changes (the bulk action) in ONE transaction: the whole edit is one undoable step.
 	 *  The caller passes ONLY the indexes it has decided to keep; this never sweeps an index the caller
-	 *  did not name, which is how Accept-fixes confines itself to objective hunks. */
+	 *  did not name, which is how Accept-fixes confines itself to objective hunks.
+	 */
 	acceptMany(indexes: number[]): void;
 	/** Reject every remaining pending change, leaving the document byte-identical. */
 	rejectAll(): void;
@@ -193,15 +203,19 @@ export interface TidyApi {
 	exit(): void;
 }
 
-/** The tidy extension: the StateField holding the change set and its decorations. The host adds it to
+/**
+ * The tidy extension: the StateField holding the change set and its decorations. The host adds it to
  *  the initial editor state (in its own compartment beside media and folding), then builds the driving
- *  api with tidyApi once the view exists. */
+ *  api with tidyApi once the view exists.
+ */
 export function cairnTidy(): Extension {
 	return tidyField;
 }
 
-/** Build the api that drives tidy against one editor view. The host registers it through registerTidy;
- *  the review surface calls enter, the per-hunk and bulk accept/reject, and exit. */
+/**
+ * Build the api that drives tidy against one editor view. The host registers it through registerTidy;
+ *  the review surface calls enter, the per-hunk and bulk accept/reject, and exit.
+ */
 export function tidyApi(view: EditorView): TidyApi {
 	// Dispatch the named changes' replacements over their CURRENT mapped spans in one transaction, mark
 	// them accepted, and let the field map any remaining pending entries. The changes are read from the

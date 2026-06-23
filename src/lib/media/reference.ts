@@ -14,14 +14,18 @@ export interface MediaRef {
 /** A 16-character lowercase hex content-hash prefix. */
 const HASH_RE = /^[0-9a-f]{16}$/;
 
-/** The slug grammar from the Task 2 slugify transform: lowercase alphanumerics joined by single
+/**
+ * The slug grammar from the Task 2 slugify transform: lowercase alphanumerics joined by single
  *  internal hyphens, with no leading or trailing hyphen and no dot (the dot is the slug/hash
- *  separator). */
+ *  separator).
+ */
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-/** Parse a `media:<slug>.<hash>` href (or the bare `media:<hash>` form), or null for any other
+/**
+ * Parse a `media:<slug>.<hash>` href (or the bare `media:<hash>` form), or null for any other
  *  href or a malformed token. Splits on the last dot, so a slug that illegally contains a dot fails
- *  the slug grammar and returns null. */
+ *  the slug grammar and returns null.
+ */
 export function parseMediaToken(href: string): MediaRef | null {
   if (!href.startsWith('media:')) return null;
   const rest = href.slice('media:'.length);
@@ -33,8 +37,10 @@ export function parseMediaToken(href: string): MediaRef | null {
   return { slug, hash };
 }
 
-/** Write the canonical media: token for a ref. The inverse of parseMediaToken, so a parse then
- *  write round trip is stable: `media:<slug>.<hash>` when the slug is present, else `media:<hash>`. */
+/**
+ * Write the canonical media: token for a ref. The inverse of parseMediaToken, so a parse then
+ *  write round trip is stable: `media:<slug>.<hash>` when the slug is present, else `media:<hash>`.
+ */
 export function mediaToken(ref: MediaRef): string {
   return ref.slug === null ? `media:${ref.hash}` : `media:${ref.slug}.${ref.hash}`;
 }

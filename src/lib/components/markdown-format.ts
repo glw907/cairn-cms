@@ -59,8 +59,10 @@ const LINE: Record<LineKind, { prefix: (i: number) => string; exact?: RegExp; st
 const TABLE_GRID =
   '| Column 1 | Column 2 |\n| -------- | -------- |\n|          |          |\n|          |          |';
 
-/** Wrap the selection in `marker`, or unwrap when the markers are already there (inside or just
- *  outside the selection). The returned range covers the text without its markers either way. */
+/**
+ * Wrap the selection in `marker`, or unwrap when the markers are already there (inside or just
+ *  outside the selection). The returned range covers the text without its markers either way.
+ */
 function toggleWrap(doc: string, from: number, to: number, marker: string): FormatResult {
   const m = marker.length;
   const sel = doc.slice(from, to);
@@ -75,10 +77,12 @@ function toggleWrap(doc: string, from: number, to: number, marker: string): Form
   return { doc: next, from: from + m, to: to + m };
 }
 
-/** Apply a line-prefix kind to every selected line. When the kind toggles and every line already
+/**
+ * Apply a line-prefix kind to every selected line. When the kind toggles and every line already
  *  carries its marker, the markers come off; otherwise competing markers are replaced and each
  *  line gains the kind's prefix. The selection shifts with the first line's edit and stretches
- *  by the total length change, the same mechanics the original single-prefix version had. */
+ *  by the total length change, the same mechanics the original single-prefix version had.
+ */
 function applyLinePrefix(doc: string, from: number, to: number, kind: LineKind): FormatResult {
   const { prefix, exact, strip } = LINE[kind];
   const lineStart = doc.lastIndexOf('\n', from - 1) + 1; // 0 when the selection is on the first line
@@ -97,8 +101,10 @@ function applyLinePrefix(doc: string, from: number, to: number, kind: LineKind):
   };
 }
 
-/** Fence the selected lines in triple backticks on their own lines, or remove the fences when the
- *  lines just above and below the selection already are fences. */
+/**
+ * Fence the selected lines in triple backticks on their own lines, or remove the fences when the
+ *  lines just above and below the selection already are fences.
+ */
 function toggleCodeFence(doc: string, from: number, to: number): FormatResult {
   const lineStart = doc.lastIndexOf('\n', from - 1) + 1;
   const lineEndRaw = doc.indexOf('\n', to);
@@ -118,6 +124,9 @@ function toggleCodeFence(doc: string, from: number, to: number): FormatResult {
   return { doc: next, from: from + open.length, to: to + open.length };
 }
 
+/**
+ *
+ */
 export function applyMarkdownFormat(doc: string, from: number, to: number, kind: FormatKind): FormatResult {
   if (kind === 'bold' || kind === 'italic' || kind === 'code' || kind === 'strike') {
     return toggleWrap(doc, from, to, WRAP[kind]);
@@ -215,10 +224,12 @@ export function findMediaImagesNeedingAlt(doc: string): MediaImageNeedingAlt[] {
   return hits;
 }
 
-/** Concatenate a link node's text-child values. The parser has already unescaped them, so a source
+/**
+ * Concatenate a link node's text-child values. The parser has already unescaped them, so a source
  *  `Notes \[draft\]` yields `Notes [draft]`. Used instead of mdast-util-to-string, which is not a
  *  direct dependency. Non-text children (a nested emphasis, say) contribute no value, which is fine
- *  for the picker-produced links this fix targets. */
+ *  for the picker-produced links this fix targets.
+ */
 function linkText(node: Link): string {
   return node.children.map((c) => ('value' in c ? c.value : '')).join('');
 }
@@ -250,8 +261,10 @@ export function unwrapCairnLink(doc: string, href: string): string {
   return out;
 }
 
-/** The closed placement role set the figure render step honors. A role outside it is the measure
- *  default (null), so the control never writes one. Mirrors the set in render/remark-figure.ts. */
+/**
+ * The closed placement role set the figure render step honors. A role outside it is the measure
+ *  default (null), so the control never writes one. Mirrors the set in render/remark-figure.ts.
+ */
 export type FigureRole = 'center' | 'wide' | 'full';
 const FIGURE_ROLES = new Set<string>(['center', 'wide', 'full']);
 
@@ -281,15 +294,19 @@ export interface FigureAtImage {
   } | null;
 }
 
-/** Parse a doc with the figure-aware pipeline (the render step's grammar), so the editor transforms
- *  agree with what renders. Container directives need remark-directive on top of the markdown base. */
+/**
+ * Parse a doc with the figure-aware pipeline (the render step's grammar), so the editor transforms
+ *  agree with what renders. Container directives need remark-directive on top of the markdown base.
+ */
 function parseFigureDoc(doc: string): Root {
   return unified().use(remarkParse).use(remarkGfm).use(remarkDirective).parse(doc) as Root;
 }
 
-/** Find the media `image` node whose source range contains `pos`, or whose enclosing figure contains
+/**
+ * Find the media `image` node whose source range contains `pos`, or whose enclosing figure contains
  *  `pos`, along with its enclosing `figure` directive when there is one. Returns null when `pos` is
- *  not on a media image nor inside a figure that wraps one. */
+ *  not on a media image nor inside a figure that wraps one.
+ */
 function locateMediaImage(
   tree: Root,
   pos: number,
@@ -322,8 +339,10 @@ function locateMediaImage(
   return figureHit ?? bareHit;
 }
 
-/** The `figure`-named container directive that encloses `node`, or null. Walks the tree to find the
- *  ancestor, since unist-util-visit's per-call ancestors are not retained across the traversal. */
+/**
+ * The `figure`-named container directive that encloses `node`, or null. Walks the tree to find the
+ *  ancestor, since unist-util-visit's per-call ancestors are not retained across the traversal.
+ */
 function enclosingFigure(tree: Root, target: Image): ContainerDirective | null {
   let found: ContainerDirective | null = null;
   visit(tree, 'containerDirective', (dir: ContainerDirective) => {
@@ -337,26 +356,32 @@ function enclosingFigure(tree: Root, target: Image): ContainerDirective | null {
   return found;
 }
 
-/** Strip one leading backslash sitting immediately before a colon, the inverse of the fence-escape
+/**
+ * Strip one leading backslash sitting immediately before a colon, the inverse of the fence-escape
  *  wrapImageInFigure/updateFigure apply, so a caption that began with a directive-opening colon run
- *  round-trips to the author's original text. */
+ *  round-trips to the author's original text.
+ */
 function unescapeCaption(raw: string): string {
   return raw.replace(/^\\(?=:)/, '');
 }
 
-/** Collapse a raw caption source span to the single-line value the control edits: internal newlines
- *  to single spaces, trimmed, with the leading-colon fence escape stripped. */
+/**
+ * Collapse a raw caption source span to the single-line value the control edits: internal newlines
+ *  to single spaces, trimmed, with the leading-colon fence escape stripped.
+ */
 function finishCaption(raw: string): string {
   return unescapeCaption(raw.replace(/\s*\n\s*/g, ' ').trim());
 }
 
-/** Read the raw caption source from a figure directive, mirroring the render step's caption: the first
+/**
+ * Read the raw caption source from a figure directive, mirroring the render step's caption: the first
  *  text-bearing content after the image. The render step (remark-figure.ts) handles both caption
  *  forms, so the read must too. In the no-blank-line form the caption shares the image's paragraph,
  *  trailing the token, so it is read from the token end to that block's end; in the blank-line form it
  *  is the first text-bearing block after the image's paragraph. Only the first such content is the
  *  caption (a later block is a stray paragraph the render leaves outside the figcaption). Empty when
- *  the figure has no caption. */
+ *  the figure has no caption.
+ */
 function readCaption(doc: string, figure: ContainerDirective, image: Image): string {
   const imageStart = image.position?.start?.offset;
   const imageEnd = image.position?.end?.offset;
@@ -385,8 +410,10 @@ function readCaption(doc: string, figure: ContainerDirective, image: Image): str
   return '';
 }
 
-/** Whether a block's subtree carries any non-whitespace text, the caption-candidate test the render
- *  step uses (a bare image paragraph has no text node, so it is never read as a caption). */
+/**
+ * Whether a block's subtree carries any non-whitespace text, the caption-candidate test the render
+ *  step uses (a bare image paragraph has no text node, so it is never read as a caption).
+ */
 function blockHasText(node: RootContent): boolean {
   let found = false;
   visit(node, 'text', (text) => {
@@ -418,19 +445,23 @@ export function figureAtImage(doc: string, pos: number): FigureAtImage | null {
   return { imageFrom, imageTo, figure: { from, to, caption: readCaption(doc, dir, hit.image), role } };
 }
 
-/** Sanitize a caption into a single safe body line: collapse internal newlines to single spaces,
+/**
+ * Sanitize a caption into a single safe body line: collapse internal newlines to single spaces,
  *  trim, and neutralize ONLY the directive-fence hazard (a leading colon would open a directive at
  *  line start) by prefixing one backslash. The author's inline markdown is preserved otherwise, so
- *  emphasis and links survive. figureAtImage strips the backslash on read for a clean round-trip. */
+ *  emphasis and links survive. figureAtImage strips the backslash on read for a clean round-trip.
+ */
 function sanitizeCaption(caption: string): string {
   const line = caption.replace(/\s*\n\s*/g, ' ').trim();
   return line.startsWith(':') ? '\\' + line : line;
 }
 
-/** Build the canonical figure block source: the opener (with the role brace only for a non-null
+/**
+ * Build the canonical figure block source: the opener (with the role brace only for a non-null
  *  role), the image token verbatim on its own line, then a blank line and the sanitized caption when
  *  the caption is non-empty, and the closing fence. This is the blank-line form remarkFigure reads as
- *  its primary path, and it reads cleanly when hand-edited. */
+ *  its primary path, and it reads cleanly when hand-edited.
+ */
 function buildFigureBlock(imageSrc: string, caption: string, role: FigureRole | null): string {
   const opener = role ? `:::figure{.${role}}` : ':::figure';
   const cap = sanitizeCaption(caption);
@@ -466,9 +497,11 @@ export function wrapImageInFigure(
   return { doc: before + inserted + after, from: end, to: end };
 }
 
-/** The inner image token of the figure at `figureRange.from`, sliced verbatim from the source so it
+/**
+ * The inner image token of the figure at `figureRange.from`, sliced verbatim from the source so it
  *  is reused byte-for-byte (open risk 3). Empty when no media image is found there, which leaves the
- *  rebuild image-less rather than throwing. Shared by updateFigure and unwrapFigure. */
+ *  rebuild image-less rather than throwing. Shared by updateFigure and unwrapFigure.
+ */
 function figureImageSrc(doc: string, figureRange: { from: number; to: number }): string {
   const info = figureAtImage(doc, figureRange.from);
   return info ? doc.slice(info.imageFrom, info.imageTo) : '';

@@ -17,13 +17,17 @@ import type { ResolvedAssetConfig } from '../media/config.js';
 /** A 16-character lowercase hex content-hash prefix, validated before any R2 lookup. */
 const HASH_RE = /^[0-9a-f]{16}$/;
 
-/** The closed delivery extension allow-list. A filename ext outside this set is a 404 with no R2
- *  read, so the route can never serve a type it cannot vouch for. */
+/**
+ * The closed delivery extension allow-list. A filename ext outside this set is a 404 with no R2
+ *  read, so the route can never serve a type it cannot vouch for.
+ */
 const DELIVERY_EXTS: ReadonlySet<string> = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif']);
 
-/** The load-bearing XSS control: set on every non-404 response, so a served object can never run as
+/**
+ * The load-bearing XSS control: set on every non-404 response, so a served object can never run as
  *  active content. `Content-Type` comes from the stored, server-validated metadata via
- *  `writeHttpMetadata`; these override or add to it. */
+ *  `writeHttpMetadata`; these override or add to it.
+ */
 function applySecurityHeaders(headers: Headers, etag: string): void {
   headers.set('X-Content-Type-Options', 'nosniff');
   headers.set('Content-Disposition', 'inline');
@@ -36,8 +40,10 @@ function applySecurityHeaders(headers: Headers, etag: string): void {
   if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/octet-stream');
 }
 
-/** True when the returned object carries a body (a full or ranged read), narrowing it to the body
- *  variant. R2 returns a body-less object on an `If-None-Match` hit. */
+/**
+ * True when the returned object carries a body (a full or ranged read), narrowing it to the body
+ *  variant. R2 returns a body-less object on an `If-None-Match` hit.
+ */
 function hasBody(obj: DeliveryObject | DeliveryObjectBody): obj is DeliveryObjectBody {
   return 'body' in obj && (obj as DeliveryObjectBody).body != null;
 }
@@ -48,8 +54,7 @@ function hasBody(obj: DeliveryObject | DeliveryObjectBody): obj is DeliveryObjec
  * The handler validates the hash and extension before any R2 call, derives the object key from the
  * validated values only (never trusting the URL's fan-out), guards the Cloudflare Images self-loop,
  * and sets the security headers on every served response.
- *
- * @param resolved the adapter's resolved media config; when media is off the handler always 404s.
+ * @param resolved - the adapter's resolved media config; when media is off the handler always 404s.
  */
 export function createMediaRoute(resolved: ResolvedAssetConfig): RequestHandler {
   return async (event) => {

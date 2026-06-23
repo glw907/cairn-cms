@@ -23,8 +23,10 @@ export interface OrphanByteRow {
   hash: string;
 }
 
-/** A broken reference: a manifest row whose bytes are gone. Read-only, since purging it would drop a
- *  still-referenced asset's record; the screen shows where it is used so an operator can re-ingest. */
+/**
+ * A broken reference: a manifest row whose bytes are gone. Read-only, since purging it would drop a
+ *  still-referenced asset's record; the screen shows where it is used so an operator can re-ingest.
+ */
 export interface BrokenRefRow {
   /** The 16-hex content hash of the manifest row whose bytes are missing. */
   hash: string;

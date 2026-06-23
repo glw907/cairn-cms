@@ -8,16 +8,22 @@
 // nosniff, Content-Disposition: inline, a restrictive Content-Security-Policy) are the real XSS control
 // for the served bytes; sniffing here is the ingest gate, not the served-bytes defense.
 
-/** The leading ASCII whitespace bytes skipped before the deny-list's first-byte-is-`<` check:
- *  tab (0x09), newline (0x0A), carriage return (0x0D), and space (0x20). */
+/**
+ * The leading ASCII whitespace bytes skipped before the deny-list's first-byte-is-`<` check:
+ *  tab (0x09), newline (0x0A), carriage return (0x0D), and space (0x20).
+ */
 const WHITESPACE = new Set([0x09, 0x0a, 0x0d, 0x20]);
 
-/** The single byte `<` (0x3C). A payload whose first non-whitespace byte is `<` is markup (SVG, HTML,
- *  XML) and is denied regardless of its declared type or any site `allowedTypes`. */
+/**
+ * The single byte `<` (0x3C). A payload whose first non-whitespace byte is `<` is markup (SVG, HTML,
+ *  XML) and is denied regardless of its declared type or any site `allowedTypes`.
+ */
 const LT = 0x3c;
 
-/** Declared content types denied at the engine level, independent of any site `allowedTypes`. SVG and
- *  the markup types carry active content (script, foreignObject), so they never ingest as media. */
+/**
+ * Declared content types denied at the engine level, independent of any site `allowedTypes`. SVG and
+ *  the markup types carry active content (script, foreignObject), so they never ingest as media.
+ */
 const DENIED_TYPES = new Set(['image/svg+xml', 'image/svg', 'text/html', 'application/xml']);
 
 /** The ISO-BMFF major-brand codes (at bytes 8..11 of an `ftyp` box) that mean an AVIF image. */
@@ -26,8 +32,10 @@ const AVIF_BRANDS = new Set(['avif', 'avis']);
 /** The ISO-BMFF major-brand codes that mean a HEIF/HEIC image. */
 const HEIC_BRANDS = new Set(['heic', 'heix', 'heif', 'hevc', 'hevx', 'mif1', 'msf1']);
 
-/** True when every byte of `magic` matches `bytes` starting at `offset`. False if `bytes` is too
- *  short to hold the whole magic. */
+/**
+ * True when every byte of `magic` matches `bytes` starting at `offset`. False if `bytes` is too
+ *  short to hold the whole magic.
+ */
 function matches(bytes: Uint8Array, offset: number, magic: number[]): boolean {
   if (bytes.length < offset + magic.length) return false;
   for (let i = 0; i < magic.length; i++) {
@@ -36,8 +44,10 @@ function matches(bytes: Uint8Array, offset: number, magic: number[]): boolean {
   return true;
 }
 
-/** The four ASCII characters at bytes `offset..offset+3`, or null when the input is too short. Used to
- *  read an ISO-BMFF brand code as a string. */
+/**
+ * The four ASCII characters at bytes `offset..offset+3`, or null when the input is too short. Used to
+ *  read an ISO-BMFF brand code as a string.
+ */
 function ascii4(bytes: Uint8Array, offset: number): string | null {
   if (bytes.length < offset + 4) return null;
   return String.fromCharCode(bytes[offset], bytes[offset + 1], bytes[offset + 2], bytes[offset + 3]);
@@ -77,9 +87,11 @@ export function sniffMediaType(bytes: Uint8Array): string | null {
   return null;
 }
 
-/** The bare file extension (no dot) for each sniffed media type the upload path stores. The ext is
+/**
+ * The bare file extension (no dot) for each sniffed media type the upload path stores. The ext is
  *  derived from the server-sniffed type, never the client filename, so the stored key and the
- *  delivery extension allow-list always agree. An unmappable type returns null (the upload 415s). */
+ *  delivery extension allow-list always agree. An unmappable type returns null (the upload 415s).
+ */
 const EXT_BY_TYPE: Record<string, string> = {
   'image/jpeg': 'jpg',
   'image/png': 'png',
@@ -88,8 +100,10 @@ const EXT_BY_TYPE: Record<string, string> = {
   'image/avif': 'avif',
 };
 
-/** The storage extension for a sniffed media type, or null for a type the upload path does not store
- *  (HEIC, an unknown type). Driven by the sniffed type, so the key's ext is server-owned. */
+/**
+ * The storage extension for a sniffed media type, or null for a type the upload path does not store
+ *  (HEIC, an unknown type). Driven by the sniffed type, so the key's ext is server-owned.
+ */
 export function extForMediaType(type: string): string | null {
   return EXT_BY_TYPE[type] ?? null;
 }

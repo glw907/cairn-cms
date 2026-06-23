@@ -23,9 +23,11 @@ export interface PlatformContext<Env> {
   context?: { waitUntil(promise: Promise<unknown>): void };
 }
 
-/** The structural core every engine event type extends, parameterized by the Worker env the
+/**
+ * The structural core every engine event type extends, parameterized by the Worker env the
  *  surface reads. Each shared field is defined once here; the extensions add only what their
- *  surface needs (cookies, params, setHeaders). */
+ *  surface needs (cookies, params, setHeaders).
+ */
 export interface EventBase<Env> {
   url: URL;
   request: Request;

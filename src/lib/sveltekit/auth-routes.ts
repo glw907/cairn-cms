@@ -45,6 +45,9 @@ function scrubSendError(err: unknown): string {
     .slice(0, 300);
 }
 
+/**
+ *
+ */
 export function createAuthRoutes(config: AuthRoutesConfig) {
   const send = config.send ?? cloudflareSend;
 

@@ -16,11 +16,16 @@ export interface WranglerFacts {
 	publicOrigin?: string;
 	/** The top-level account_id, when declared; a fallback for CLOUDFLARE_ACCOUNT_ID. */
 	accountId?: string;
-	/** The declared r2_buckets binding names; the conditional media check matches the adapter's
-	 *  bucketBinding against this. Not part of the hard config.bindings check (decision 9). */
+	/**
+	 * The declared r2_buckets binding names; the conditional media check matches the adapter's
+	 *  bucketBinding against this. Not part of the hard config.bindings check (decision 9).
+	 */
 	r2Buckets: string[];
 }
 
+/**
+ *
+ */
 export async function readWranglerConfig(
 	readFile: DoctorContext['readFile']
 ): Promise<WranglerFacts | null> {

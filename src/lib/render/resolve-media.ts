@@ -15,18 +15,22 @@ import { log } from '../log/index.js';
 /** The VFile data key the renderer sets the per-call media resolver under. */
 export const MEDIA_RESOLVE = 'mediaResolve';
 
-/** Resolve a media reference to its delivery URL. `undefined` is a preview miss (the plugin marks
+/**
+ * Resolve a media reference to its delivery URL. `undefined` is a preview miss (the plugin marks
  *  the image broken); a resolver that throws is the build backstop (the error propagates out of
- *  render and fails the build), exactly like LinkResolve. */
+ *  render and fails the build), exactly like LinkResolve.
+ */
 export type MediaResolve = (ref: MediaRef) => string | undefined;
 
-/** Build the per-call media resolver, closing over the manifest and the resolved config. The
+/**
+ * Build the per-call media resolver, closing over the manifest and the resolved config. The
  *  returned resolver looks a ref's content hash up in the manifest and builds the canonical delivery
  *  path from the manifest entry's slug and ext, not the token's, so a rename never breaks the
  *  reference. With a preset and zone transformations on it returns the variant URL; without a preset,
  *  or when transformations are off, it returns the bare full-size path so a fresh zone with Image
  *  Transformations disabled serves correct thumbnails rather than dead /cdn-cgi/image URLs. It returns
- *  undefined when media is off or no entry carries the hash (the preview-miss backstop). */
+ *  undefined when media is off or no entry carries the hash (the preview-miss backstop).
+ */
 export function makeMediaResolver(
   manifest: MediaManifest,
   resolved: ResolvedAssetConfig,
@@ -49,11 +53,13 @@ export function makeMediaResolver(
   };
 }
 
-/** A resolver backed by the lean `mediaTargets` projection, for the admin preview. It mirrors
+/**
+ * A resolver backed by the lean `mediaTargets` projection, for the admin preview. It mirrors
  *  manifestLinkResolver: a hash present in the projection builds the slug delivery path
  *  (`/media/<slug>.<hash>.<ext>`); a miss returns undefined, so the render step marks the image
  *  broken rather than throwing. Pure over the projection, with no manifest and no config, so the
- *  edit page reaches it with the data it actually has. */
+ *  edit page reaches it with the data it actually has.
+ */
 export function manifestMediaResolver(
   targets: Record<string, { slug: string; ext: string; contentType: string }>,
 ): MediaResolve {
@@ -69,9 +75,11 @@ interface ImageNode {
   data?: { hProperties?: Record<string, unknown> };
 }
 
-/** Resolve media: image nodes against the VFile's resolver. A non-media src and a malformed token
+/**
+ * Resolve media: image nodes against the VFile's resolver. A non-media src and a malformed token
  *  pass through. A missing target is marked with the cairn-broken-media class (the resolver returns
- *  undefined) or, when the resolver throws, the error propagates and fails the build. */
+ *  undefined) or, when the resolver throws, the error propagates and fails the build.
+ */
 export function remarkResolveMedia() {
   return (tree: unknown, file: VFile): void => {
     const resolve = file.data[MEDIA_RESOLVE] as MediaResolve | undefined;

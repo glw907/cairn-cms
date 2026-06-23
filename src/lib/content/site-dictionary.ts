@@ -19,11 +19,13 @@ const HEADER = '# cairn personal dictionary: one word per line, sorted, kept in 
 // inbound words through this before a merge.
 const WORD_RE = /^[^\s\p{Cc}]+$/u;
 
-/** True when a word is a single valid dictionary line (no whitespace, no control characters, non-empty
+/**
+ * True when a word is a single valid dictionary line (no whitespace, no control characters, non-empty
  *  and within the length bound). A leading "#" is rejected: parseDictionary re-reads such a line as a
  *  comment, so committing it would silently drop the word on the next read. The action uses this to
  *  reject untrusted input before the merge, so a newline or a control byte can never inject an extra
- *  line into the committed file. */
+ *  line into the committed file.
+ */
 export function isValidDictionaryWord(word: string, maxLength = 64): boolean {
   if (word.startsWith('#')) return false;
   return word.length > 0 && word.length <= maxLength && WORD_RE.test(word);
@@ -47,8 +49,10 @@ export function parseDictionary(text: string | null): string[] {
   return words;
 }
 
-/** Case-insensitive, locale-stable comparator for the canonical sort. Words are compared lowercased
- *  so "Cairn" and "cairn" collapse to one entry, the same case-folding the Worker's merged set uses. */
+/**
+ * Case-insensitive, locale-stable comparator for the canonical sort. Words are compared lowercased
+ *  so "Cairn" and "cairn" collapse to one entry, the same case-folding the Worker's merged set uses.
+ */
 function byWord(a: string, b: string): number {
   return a.toLowerCase().localeCompare(b.toLowerCase());
 }

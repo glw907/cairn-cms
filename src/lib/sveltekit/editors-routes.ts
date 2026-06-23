@@ -23,6 +23,9 @@ function parseRole(value: FormDataEntryValue | null): Role {
   return value === 'owner' ? 'owner' : 'editor';
 }
 
+/**
+ *
+ */
 export function createEditorRoutes() {
   /** GET /admin/editors. Owner-only. Returns the allowlist and the acting owner's email. */
   async function editorsLoad(event: RequestContext): Promise<{ editors: Editor[]; self: string }> {

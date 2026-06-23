@@ -30,8 +30,10 @@ function cdataSafe(value: string): string {
   return value.replace(/]]>/g, ']]]]><![CDATA[>');
 }
 
-/** Parse a YYYY-MM-DD (or ISO) string as a UTC instant. Returns undefined for an absent or
- *  unparseable date, so a feed omits the date field rather than emit Invalid Date or throw. */
+/**
+ * Parse a YYYY-MM-DD (or ISO) string as a UTC instant. Returns undefined for an absent or
+ *  unparseable date, so a feed omits the date field rather than emit Invalid Date or throw.
+ */
 function parseFeedDate(date?: string): Date | undefined {
   if (!date) return undefined;
   const at = new Date(`${date.slice(0, 10)}T00:00:00.000Z`);

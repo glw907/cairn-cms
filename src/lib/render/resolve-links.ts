@@ -15,9 +15,11 @@ interface LinkNode {
   data?: { hProperties?: Record<string, unknown> };
 }
 
-/** Resolve cairn: link nodes against the VFile's resolver. A non-cairn href and a malformed token
+/**
+ * Resolve cairn: link nodes against the VFile's resolver. A non-cairn href and a malformed token
  *  pass through. A missing target is marked with the cairn-broken-link class (the resolver returns
- *  undefined) or, when the resolver throws, the error propagates and fails the build. */
+ *  undefined) or, when the resolver throws, the error propagates and fails the build.
+ */
 export function remarkResolveCairnLinks() {
   return (tree: unknown, file: VFile): void => {
     const resolve = file.data[CAIRN_RESOLVE] as LinkResolve | undefined;

@@ -20,7 +20,7 @@ function buf(bytes: Uint8Array): ArrayBuffer {
   return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
 }
 
-/** DER length octets for a value of `n` bytes (short form < 128, else long form). */
+/** DER length octets for a value of `n` bytes (short form `< 128`, else long form). */
 function derLength(n: number): number[] {
   if (n < 0x80) return [n];
   const out: number[] = [];
@@ -87,7 +87,7 @@ interface CachedToken {
  * Build an installation-token cache. A module-global instance memoizes the minted token per
  * installation for most of its one-hour life, so a warm Worker isolate reuses it across requests
  * instead of re-signing and re-calling GitHub on every list and commit. A cold isolate re-mints,
- * which is always safe. This mirrors the default of @octokit/auth-app, which caches installation
+ * which is always safe. This mirrors the default of `@octokit/auth-app`, which caches installation
  * tokens in memory and returns them until expiry. The TTL stays under GitHub's documented one-hour
  * lifetime, so a fixed margin avoids parsing the API expiry. The cache holds the in-flight
  * promise, not the resolved token, so a cold isolate's parallel loads coalesce into one mint;

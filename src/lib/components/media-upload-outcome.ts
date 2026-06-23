@@ -11,22 +11,28 @@ import type { UploadResult } from '../sveltekit/content-routes.js';
 import type { IngestFailureKind } from './client-ingest.js';
 import { mediaToken } from '../media/reference.js';
 
-/** A failure the card surfaces. The ingest taxonomy plus a `generic` catch-all for a refuse reason
- *  with no specific author-facing card (a binding-missing, a length-required, a parse miss). */
+/**
+ * A failure the card surfaces. The ingest taxonomy plus a `generic` catch-all for a refuse reason
+ *  with no specific author-facing card (a binding-missing, a length-required, a parse miss).
+ */
 export type UploadFailureKind = IngestFailureKind | 'generic';
 
-/** The outcome the popover acts on. `inserted` swaps the placeholder for the reference and records
+/**
+ * The outcome the popover acts on. `inserted` swaps the placeholder for the reference and records
  *  the entry; `failed` cancels the placeholder and shows the typed card; `session-expired` cancels
- *  the placeholder and tells the author to sign in again. */
+ *  the placeholder and tells the author to sign in again.
+ */
 export type UploadOutcome =
   | { kind: 'inserted'; reference: string; record: MediaEntry; reused: boolean }
   | { kind: 'failed'; failure: UploadFailureKind }
   | { kind: 'session-expired' };
 
-/** The shape the popover hands in: either a parsed SvelteKit action result (success or failure) or a
+/**
+ * The shape the popover hands in: either a parsed SvelteKit action result (success or failure) or a
  *  bare response signal for the redirect and network-error cases. The popover deserializes the body
  *  for the success and failure cases and passes the raw `response.type`/`response.status` for the
- *  redirect case, so this one mapper covers every branch. */
+ *  redirect case, so this one mapper covers every branch.
+ */
 export type UploadEnvelope =
   | { type: 'success'; status?: number; data: UploadResult }
   | { type: 'failure'; status?: number; data?: { error?: string } }

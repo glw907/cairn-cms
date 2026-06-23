@@ -12,12 +12,16 @@ import type {
   R2Range,
 } from '@cloudflare/workers-types';
 
-/** The narrow R2 surface the media pipeline uses. The engine depends on this, not on R2Bucket, so the
- *  multipart, list, and conditional-read surface R2 also carries never leaks into the media code. */
+/**
+ * The narrow R2 surface the media pipeline uses. The engine depends on this, not on R2Bucket, so the
+ *  multipart, list, and conditional-read surface R2 also carries never leaks into the media code.
+ */
 export interface MediaStore {
-  /** Store bytes under a content-addressed key, with the response HTTP metadata (the content type)
+  /**
+   * Store bytes under a content-addressed key, with the response HTTP metadata (the content type)
    *  and optional custom metadata (the upload stores the full sha256 here, so a short-hash collision
-   *  is detectable on a later dedup probe). */
+   *  is detectable on a later dedup probe).
+   */
   put(
     key: string,
     bytes: ArrayBuffer | Uint8Array,
@@ -26,10 +30,12 @@ export interface MediaStore {
   ): Promise<void>;
   /** The object's metadata, or null when no object lives at the key (the dedup probe). */
   head(key: string): Promise<R2Object | null>;
-  /** The object body for streaming to a delivery response, or null when the key is absent. The
+  /**
+   * The object body for streaming to a delivery response, or null when the key is absent. The
    *  delivery route passes `onlyIf` and `range` through for conditional and partial reads: an
    *  `onlyIf` etag match returns a body-less R2Object (the 304 shape), so the return widens to
-   *  `R2Object` alongside `R2ObjectBody`. */
+   *  `R2Object` alongside `R2ObjectBody`.
+   */
   get(
     key: string,
     opts?: { range?: R2Range; onlyIf?: R2Conditional },
@@ -38,9 +44,11 @@ export interface MediaStore {
   delete(key: string): Promise<void>;
 }
 
-/** Wrap an R2 bucket binding as a MediaStore. Each method delegates to the binding; put folds the
+/**
+ * Wrap an R2 bucket binding as a MediaStore. Each method delegates to the binding; put folds the
  *  HTTP and custom metadata into R2's options shape and drops the returned R2Object the pipeline does
- *  not read. */
+ *  not read.
+ */
 export function r2Store(bucket: R2Bucket): MediaStore {
   return {
     async put(key, bytes, httpMetadata, customMetadata) {

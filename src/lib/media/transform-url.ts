@@ -5,9 +5,11 @@
 // a CDN cache keys on it cleanly. The delivery path is appended unaltered, since it already carries
 // its own leading slash.
 
-/** A single image variant: the resize and format directives Cloudflare Images applies to the
+/**
+ * A single image variant: the resize and format directives Cloudflare Images applies to the
  *  original bytes. Every field is optional. width, height, quality, and fit are emitted only when
- *  set; format and gravity always appear, defaulting to auto. */
+ *  set; format and gravity always appear, defaulting to auto.
+ */
 export interface VariantSpec {
   /** Target width in pixels. */
   width?: number;
@@ -23,10 +25,12 @@ export interface VariantSpec {
   format?: 'auto' | 'webp' | 'avif' | string;
 }
 
-/** Build the on-demand Cloudflare Images transform URL for a delivery path. The options are
+/**
+ * Build the on-demand Cloudflare Images transform URL for a delivery path. The options are
  *  comma-joined in the stable order width, height, quality, fit, format, gravity, with width through
  *  fit emitted only when the spec sets them and format and gravity always present (defaulting to
- *  auto). The publicPath is appended unaltered, so the result is `/cdn-cgi/image/<options><publicPath>`. */
+ *  auto). The publicPath is appended unaltered, so the result is `/cdn-cgi/image/<options><publicPath>`.
+ */
 export function variantUrl(publicPath: string, spec: VariantSpec): string {
   const options: string[] = [];
   if (spec.width !== undefined) options.push(`width=${spec.width}`);
@@ -42,9 +46,11 @@ export function variantUrl(publicPath: string, spec: VariantSpec): string {
   return `/cdn-cgi/image/${options.join(',')}${source}`;
 }
 
-/** Build a variant URL from a named preset. Looks up presetName in variants and builds its spec with
+/**
+ * Build a variant URL from a named preset. Looks up presetName in variants and builds its spec with
  *  variantUrl. Throws a cairn:-prefixed error naming the unknown preset when the name is absent, so a
- *  typo in a preset name fails loudly rather than silently rendering an unsized image. */
+ *  typo in a preset name fails loudly rather than silently rendering an unsized image.
+ */
 export function presetUrl(
   publicPath: string,
   presetName: string,

@@ -93,8 +93,10 @@ export function createSiteResolver(concepts: ConceptIndex[], opts: { validate?: 
   };
 }
 
-/** A resolver backed by the site resolver, for the build. A miss throws, so a dangling cairn: token
- *  fails the prerender (the build backstop). The preview uses manifestLinkResolver, which marks. */
+/**
+ * A resolver backed by the site resolver, for the build. A miss throws, so a dangling cairn: token
+ *  fails the prerender (the build backstop). The preview uses manifestLinkResolver, which marks.
+ */
 export function buildLinkResolver(site: SiteResolver): LinkResolve {
   return (ref) => {
     const url = site.concept(ref.concept)?.byId(ref.id)?.permalink;

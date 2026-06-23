@@ -24,8 +24,10 @@ import {
 import { StateEffect, StateField, type Extension } from '@codemirror/state';
 import { insertImage as insertImageFormat } from './markdown-format.js';
 
-/** One active placeholder's data: its stable id, the object URL for the thumbnail, and the upload
- *  progress as a 0..1 fraction. The widget reads this to render the thumbnail and the bar. */
+/**
+ * One active placeholder's data: its stable id, the object URL for the thumbnail, and the upload
+ *  progress as a 0..1 fraction. The widget reads this to render the thumbnail and the bar.
+ */
 interface PlaceholderData {
   id: number;
   url: string;
@@ -87,8 +89,10 @@ class PlaceholderWidget extends WidgetType {
   }
 }
 
-/** The active placeholders as a decoration set plus the per-id position map, so a resolve can find
- *  the mapped position to insert at and the field can rebuild after a position shift. */
+/**
+ * The active placeholders as a decoration set plus the per-id position map, so a resolve can find
+ *  the mapped position to insert at and the field can rebuild after a position shift.
+ */
 interface PlaceholderState {
   set: DecorationSet;
   // Each active placeholder's current data and its mapped document position.
@@ -149,9 +153,11 @@ const placeholderField = StateField.define<PlaceholderState>({
   provide: (f) => EditorView.decorations.from(f, (v) => v.set),
 });
 
-/** The seam the host drives: begin lands a placeholder and returns its id; progress moves its bar;
+/**
+ * The seam the host drives: begin lands a placeholder and returns its id; progress moves its bar;
  *  resolveTo swaps it for the committed image text; cancel removes it leaving the source untouched.
- *  Mirrors the register-callback idiom MarkdownEditor uses for its other editor ops. */
+ *  Mirrors the register-callback idiom MarkdownEditor uses for its other editor ops.
+ */
 export interface ImagePlaceholderApi {
   /** Land an optimistic placeholder at the current caret from a local object URL; returns its id. */
   begin(objectUrl: string): number;

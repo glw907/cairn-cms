@@ -66,9 +66,11 @@ function nextPageUrl(link: string | null): string | null {
   return null;
 }
 
-/** Branch names under `prefix`, sorted. The matching-refs API paginates at 30 by default, so a
+/**
+ * Branch names under `prefix`, sorted. The matching-refs API paginates at 30 by default, so a
  *  site with 31+ pending entries would silently truncate; request the 100-per-page maximum and
- *  follow the Link rel="next" chain until exhausted. */
+ *  follow the Link rel="next" chain until exhausted.
+ */
 export async function listBranches(repo: RepoRef, prefix: string, token: string): Promise<string[]> {
   const names: string[] = [];
   let url: string | null = `${gitUrl(repo, `matching-refs/heads/${prefix}`)}?per_page=100`;

@@ -162,24 +162,25 @@ gitignored lockfile once let CI float onto a build no local run could reproduce.
 ## Authoring
 
 Claude's drafting on this repo follows the workstation authoring charter at
-`~/.claude/docs/authoring-charter.md`. The TypeScript comment audience is wired through three
-layers: ESLint (`eslint.config.js`, `npm run lint`) enforces TSDoc structure on `src/lib`,
-forbidding `{type}` tags and invalid TSDoc and holding the canonical doc-block shape; Vale lints
-`.ts` comment prose through the vendored `glw907` overlay in `.vale/styles/glw907` (the in-tree
-`.vale.ini`), catching the em dash and the banned lexicon; the `ts-conventions` skill and the
-`ts-svelte-comments` register carry the semantic TS1 through TS15 tells. `npm run check:comments`
-runs the deterministic two, and CI installs the pinned Vale binary before it. Re-sync the overlay
-after a canonical change with `~/.dotfiles/scripts/glw907-vendor.sh ~/Projects/cairn-cms --sync`.
-This is separate from cairn's product prose tooling (`check:prose`, spellcheck, tidy), which
-serves editors, not Claude. The docs prose mapping arrives with the charter's prose arm.
+`~/.claude/docs/authoring-charter.md`: every audience writes to a published external standard, with no
+house voice. Code comments follow TSDoc, enforced by ESLint (`eslint.config.js`, run by `npm run
+check:comments` over `src/lib`): `eslint-plugin-tsdoc` validates TSDoc syntax, `eslint-plugin-jsdoc`
+holds the doc-block shape and forbids `{type}` tags, `jsdoc/informative-docs` flags a comment that only
+restates the symbol name (the paraphrase tell), and a local `house/no-em-dash-in-comments` rule bans
+the em dash in comments (a keyboard, grep, and monospace hygiene rule TSDoc does not carry). Write the
+contract and the why, never the type the signature already states, and never a paraphrase of the code.
 
-The Svelte arm extends this: `scripts/check-svelte-comments.mjs` (in `check:comments`) extracts each
-component's `@component` block and `<script>`-block comments and lints them through `glw907` while
-never touching the markup product copy, and the `svelte-conventions` skill plus the S1 through S10
-catalogue carry the semantic tells. Apply the semantic lens (the `ts-conventions` / `svelte-conventions`
-skills) to comments in changed code, not as a retroactive sweep: a 2026-06-22 calibration trial found
-cairn's comments already strong, so a full-repo sweep was declined as not worth the token cost for the
-marginal gain. One calibration
-holds here: because `check:reference` and `jsdoc/require-jsdoc` want every export documented, the TS4
-"delete a reflexive export doc" tell applies to internal symbols only; an exported symbol keeps its
-minimal one-line doc.
+Developer documentation follows the Google Developer Documentation Style Guide, enforced by Vale's
+vendored Google package (the in-tree `.vale.ini` maps `docs/**`); the global `vale-hook` surfaces its
+findings on save, and the em dash is allowed there, since Google recommends it with no surrounding
+spaces. This is separate from cairn's product prose tooling (`check:prose`, spellcheck, tidy), which
+serves editors, not Claude.
+
+Svelte components follow the same TSDoc standard for their `<script>` comments and the Svelte
+`@component` convention for the component block. ESLint does not parse `.svelte` yet (the TypeScript
+sub-parser is unwired), so Svelte comments rely on the standard and a fresh-context review rather than
+a deterministic linter.
+
+One calibration holds: `check:reference` and `jsdoc/require-jsdoc` want every export documented, so an
+exported symbol keeps its minimal one-line doc even when self-evident; the write-only-when-it-helps
+judgment applies to internal symbols.

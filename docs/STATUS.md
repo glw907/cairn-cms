@@ -11,7 +11,34 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-22, latest): `0.60.1` is RELEASED; next is the per-site cutover to `^0.60.1`.
+## Immediate next action (2026-06-23, latest): execute Pass 1 of the editor-help foundation
+
+**A new engine initiative, built foundation-first.** The in-admin editor help ran a design pass
+(proposal, three mockups, a six-dimension adversarial critique, under
+`docs/internal/design/2026-06-23-editor-help-*`). It chose the architecture (a B-spine merge: a
+standing labeled Help home, a recede-on-desk slide-over, a foregrounded point-of-typing coach,
+derived-state onboarding) and surfaced a cluster of engine deficiencies the help depends on, recorded
+in `docs/internal/docs-friction-log.md`. Rather than build the help on faked capabilities, the seams
+come first.
+
+**NEXT: execute Pass 1 of the foundation plan**
+(`docs/superpowers/plans/2026-06-23-cairn-editor-help-foundation.md`). A three-pass series sized by
+blast radius. Pass 1 (contracts and conventions, detailed, four tasks): the frontmatter
+field-description channel, the `supportContact` adapter field, the design-system help recipes, and the
+date publish-clarity default. Passes 2 (the point-of-typing coach seam) and 3 (advisory validation plus
+the cross-branch address-uniqueness check) are sketched for just-in-time detailing. Method: main-loop
+orchestrate-and-verify, test-first, one `cairn-implementer` per task, the full gate between dispatches,
+on a FRESH worktree off `main`. Settled decisions: onboarding progress derives from observable content
+and publish state (no D1, no store; `localStorage` only for per-device UI dismissals); address collision
+warns and allows publish. After the foundation: the help pass (the Help shell, the help-content
+manifest, the corpus, the woven layer); the starter-content seed rides the `create-cairn-site`
+scaffolder. The prose corpus and a rev.2 mockup can run in parallel. See the
+`cairn-editor-help-initiative` memory.
+
+**Other open tracks (Geoff's call on order):** the per-site cutover to `^0.60.1` (site-passes, below)
+and the `create-cairn-site` scaffolder and media Pass D.
+
+## Prior next action (2026-06-22): `0.60.1` is RELEASED; next is the per-site cutover to `^0.60.1`.
 
 **`0.60.1` RELEASED** (npm `latest`; PR #1 squash-merged to `main` as `735ea4c`; e2e + test green; the
 published tarball carries the fix). It fixes the `0.60.0` consumer-build failure: Vite 8 / Rolldown

@@ -378,3 +378,71 @@ purge was smoked on a throwaway orphaned byte. Three DX findings:
   deletion). The lesson for the smoke procedure and for any operator verifying a purge: confirm a purge via
   the orphan scan (the Worker's list view), not a direct `wrangler r2 object get`, which can lag. Worth a
   one-line caveat in the media smoke recipe.
+
+### Editor in-admin help design pass (2026-06-23)
+
+Producing the in-admin editor help (the proposal, three option mockups, and a six-dimension adversarial
+critique, under `docs/internal/design/2026-06-23-editor-help-mockup-{a,b,c}.html`) surfaced a cluster of
+gaps the help had to compensate for. The critics converged on these independently. Several extend the
+existing scaffolder and local-dev-mode candidates above.
+
+- **editor/developer** (starter/seed content, HIGH): the strongest first-run activator across all three
+  mockups is an editable, labeled starter post in the empty state (the Ghost pattern), but the engine has
+  no mechanism to commit labeled starter `.md` entries on a fresh site or to distinguish them from authored
+  content in the list and usage model, so the empty state's primary action opens nothing on a real site.
+  Candidate: the P4 `create-cairn-site` scaffolder seeds concept-differentiated starters (a Post starter
+  and a Page starter), and the empty-state recipe gains a starter-content slot. Extends the scaffolder
+  seed candidates above.
+- **editor/developer** (per-editor onboarding-progress state, HIGH): the resumable getting-started checklist
+  implies persisted per-editor completion flags, but cairn's auth is opaque D1 session rows carrying no
+  profile state, so progress resets each login or device, and the mockups leak impossible states ("2 of 5
+  done" on an empty site). Onboarding-state is also conflated with content-emptiness, so a new editor on an
+  established site has no first-run path. Candidate: a per-editor progress record (a D1 row keyed by editor
+  and site) that separates per-editor first-run from per-site first-content, or scope progress to per-device
+  storage with copy that does not over-promise.
+- **developer** (frontmatter field-description channel, HIGH): schema-authored per-field help under the input
+  (the Sanity/Contentful pattern, the most broadly useful affordance the help revealed) needs an optional
+  author-language `description` per field on the adapter's frontmatter field contract, rendered by the Details
+  slide-over and wired to `aria-describedby`. Today the hints are hardcoded in the mockups, so a real custom
+  adapter renders fields with no hint. Candidate: add `description` to the field definition; the Details panel
+  renders it as the field hint with a programmatic association.
+- **developer/editor** (advisory validation and cross-branch address collision, MEDIUM-HIGH): the warnings an
+  author can publish past (no social image; "another post already uses this address") need a per-field advisory
+  channel distinct from the hard commit gates, and the address warning implies a slug-uniqueness check across
+  `main` and every open `cairn/*` branch (the media usage index already unions across branches; reuse that
+  shape). The underlying behavior, a later post silently shadowing an earlier one at the same URL, is a
+  last-write-wins gap the copy papers over. Candidate: an editor-side advisory-validation surface, a
+  cross-branch address check, and an explicit collision-resolution decision rather than silent last-write-wins.
+- **editor/developer** (no configured support-contact, MEDIUM): every self-serve path ends at "Email your
+  site admin," but no admin/owner contact is a configured field, so the hand-off is a button to a blank
+  mailto. Candidate: an optional `supportContact` in the site config; render the hand-off only when set, and
+  otherwise show self-serve copy, never a dead button.
+- **developer/editor** (point-of-typing coach seam, HIGH): cairn's signature differentiator, teaching markdown
+  where you type it, needs a CodeMirror seam that detects a first-formatting attempt per editor, renders a
+  pinned widget at the caret line, persists a fire-once "seen" flag, gives an Escape and next-keystroke dismiss
+  contract, and announces once through a debounced polite live region (the `MediaPicker`/settle-cue discipline).
+  None exists, so the coach would either nag on every `##` or clobber the live region on every keystroke.
+  Candidate: a writing-coach decoration-and-status seam in `MarkdownEditor`, modeled on the `MediaInsertPopover`
+  at-caret focus precedent.
+- **developer** (route-keyed help-content registry, MEDIUM): the on-this-screen context-following help degrades
+  to a static list without a concept/route-keyed content index. One help manifest keyed by concept/route would
+  also let the library, the slide-over, and the woven atoms render from a single source, which neutralizes the
+  three-surface drift risk the IA critic flagged. Candidate: a small help-content registry keyed by
+  concept/route.
+- **editor/developer** (no standing Help home or labeled utility slot, MEDIUM-HIGH): the admin shell has no
+  first-class, config-aware Help destination and no labeled utility region, so each mockup improvised one (a
+  floating launcher, a sidebar entry, or nothing, the last leaving help behind an unlabeled glyph). Candidate: a
+  first-class config-aware Help nav home, plus a documented disclosure-button-for-a-slide-over recipe in the
+  design system (promote the launcher's `aria-haspopup` plus `aria-expanded` pattern).
+- **developer** (design-system gaps the pass revealed, MEDIUM): the right slide-over region has no
+  single-occupancy rule, so Help and the Details panel both claim `top:64px; right:0` with nothing saying
+  opening one closes the other; there is no getting-started/progress recipe, so each mockup reinvented one; the
+  empty-state recipe has no starter-content slot; and no stated rule distinguishes a non-modal help region from
+  a modal dialog, which is why one mockup mislabeled non-modal panels as `role="dialog"`. Candidate: add a
+  right-region single-occupancy rule, a progress/checklist recipe (built from the segmented check-and-tint and
+  positive-ink tokens), an empty-state starter slot, and the rule that a help or reference panel is a non-modal
+  `role="region"` with no scrim while only a destructive or commit surface is a modal `<dialog>`.
+- **editor** (date-vs-publish ambiguity, LOW-MEDIUM): the date field reads as if it might schedule publishing,
+  so the field hint has to pre-empt the fear ("it does not publish on its own"), and the need for that
+  reassurance is a clarity signal. Candidate: a product look at the date field's label and affordance so the
+  copy crutch is not load-bearing.

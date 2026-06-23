@@ -1,0 +1,847 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Editor help, Direction A: Quiet and woven</title>
+<!--
+  Direction A: "Quiet and woven" (maximal restraint). Help is pushed almost entirely into the work
+  surface. There is NO standalone office Help view. Getting-started rides the teaching empty state, one
+  dismissible "New here? Start here" card, and a resumable progress chip. Daily reference is ONLY a
+  context-aware slide-over summoned by a quiet "?" (office topbar) and by the editor footer's existing
+  Markdown help link. Contextual help is woven at the point of typing and under the frontmatter field.
+
+  Tokens, type, radii, shadows, and recipes are copied from src/lib/components/cairn-admin.css and the
+  approved gold standard (2026-06-12-editor-shell-gold-standard.html). Inlined so the file is
+  self-contained. Intended faces: Bricolage Grotesque (display), IBM Plex Sans (body/UI), iA Writer
+  Mono (editor surface); system fallbacks below.
+-->
+<style>
+  /* ============================================================
+     TOKENS, copied verbatim from cairn-admin.css (the two theme roots).
+     Only the variables the mockup references are kept.
+     ============================================================ */
+  [data-theme='cairn-admin'] {
+    color-scheme: light;
+    --font-body: 'IBM Plex Sans Variable', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --font-display: 'Bricolage Grotesque Variable', var(--font-body);
+    --font-editor: 'iA Writer Mono', ui-monospace, monospace;
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
+    --color-base-100: oklch(99% 0.004 75);
+    --color-base-200: oklch(96.5% 0.006 75);
+    --color-base-300: oklch(89% 0.011 75);
+    --color-base-content: oklch(26% 0.014 75);
+
+    --color-primary: oklch(52% 0.2 293);
+    --color-primary-content: oklch(98% 0.012 293);
+    --color-accent: oklch(54% 0.16 300);
+    --color-accent-content: oklch(98% 0.012 300);
+
+    --cairn-directive-ink-2: oklch(50% 0.16 300);
+    --cairn-directive-ink-3: oklch(48% 0.16 300);
+    --cairn-directive-rail-1: 72%;
+    --cairn-directive-rail-2: 82%;
+    --cairn-directive-rail-3: 92%;
+    --cairn-directive-rail-active: 100%;
+    --cairn-directive-ink-active: oklch(46% 0.16 300);
+    --cairn-code-chip: oklch(94.5% 0.008 75);
+
+    --color-info: oklch(52% 0.12 240);
+    --color-info-content: oklch(98% 0.012 240);
+    --color-success: oklch(52% 0.12 150);
+    --color-warning: oklch(75% 0.15 70);
+    --color-warning-content: oklch(26% 0.05 70);
+    --cairn-warning-ink: oklch(50% 0.13 70);
+    --color-positive-ink: oklch(48% 0.12 150);
+    --color-error: oklch(56% 0.2 25);
+
+    --color-muted: oklch(48% 0.01 75);
+    --color-subtle: oklch(42% 0.01 75);
+
+    --radius-field: 0.625rem;
+    --radius-box: 1rem;
+
+    --cairn-shadow: 0 1px 2px oklch(28% 0.02 75 / 0.05), 0 8px 24px -6px oklch(28% 0.02 75 / 0.1);
+    --cairn-card-border: oklch(93% 0.008 75);
+  }
+
+  [data-theme='cairn-admin-dark'] {
+    color-scheme: dark;
+    --font-body: 'IBM Plex Sans Variable', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --font-display: 'Bricolage Grotesque Variable', var(--font-body);
+    --font-editor: 'iA Writer Mono', ui-monospace, monospace;
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
+    --color-base-100: oklch(24% 0.01 75);
+    --color-base-200: oklch(15.5% 0.009 75);
+    --color-base-300: oklch(30% 0.014 75);
+    --color-base-content: oklch(93% 0.006 75);
+
+    --color-primary: oklch(68% 0.18 293);
+    --color-primary-content: oklch(20% 0.04 293);
+    --color-accent: oklch(70% 0.14 300);
+    --color-accent-content: oklch(20% 0.04 300);
+
+    --cairn-directive-ink-2: oklch(74% 0.14 300);
+    --cairn-directive-ink-3: oklch(78% 0.14 300);
+    --cairn-directive-rail-1: 62%;
+    --cairn-directive-rail-2: 74%;
+    --cairn-directive-rail-3: 86%;
+    --cairn-directive-rail-active: 100%;
+    --cairn-directive-ink-active: oklch(82% 0.14 300);
+    --cairn-code-chip: oklch(29.5% 0.012 75);
+
+    --color-info: oklch(72% 0.12 240);
+    --color-info-content: oklch(20% 0.04 240);
+    --color-success: oklch(70% 0.12 150);
+    --color-warning: oklch(80% 0.14 70);
+    --color-warning-content: oklch(24% 0.05 70);
+    --cairn-warning-ink: oklch(80% 0.14 70);
+    --color-positive-ink: oklch(78% 0.12 150);
+    --color-error: oklch(70% 0.18 25);
+
+    --color-muted: oklch(72% 0.01 75);
+    --color-subtle: oklch(80% 0.008 75);
+
+    --radius-field: 0.625rem;
+    --radius-box: 1rem;
+
+    --cairn-shadow: 0 1px 2px oklch(0% 0 0 / 0.35), 0 8px 24px -6px oklch(0% 0 0 / 0.5);
+    --cairn-card-border: oklch(30% 0.014 75);
+  }
+
+  [data-theme] *, [data-theme] *::before, [data-theme] *::after { box-sizing: border-box; }
+
+  /* ============================================================
+     Page scaffolding (mockup chrome, not part of the admin).
+     ============================================================ */
+  body { margin: 0; background: #d8d4cf; }
+  .mock-label { font: 600 13px/1.4 system-ui; letter-spacing: .08em; text-transform: uppercase; color: #444; padding: 26px 24px 6px; }
+  .mock-note { font: 400 13px/1.55 system-ui; color: #5a5650; padding: 0 24px 12px; max-width: 80ch; }
+  .mock-note b { color: #2f2c28; font-weight: 600; }
+  .screen { border: 1px solid #aaa; margin: 0 16px 44px; box-shadow: 0 2px 14px rgba(0,0,0,.08); overflow: hidden; }
+  .grow { flex: 1 1 auto; }
+
+  .ground { background: var(--color-base-200); font-family: var(--font-body); color: var(--color-base-content); -webkit-font-smoothing: antialiased; }
+
+  /* ============================================================
+     OFFICE SHELL, from the gold standard (sidebar + topbar).
+     ============================================================ */
+  .shell { display: flex; min-height: 90vh; background: var(--color-base-200); }
+  .side { width: 14rem; flex: none; background: var(--color-base-100); border-right: 1px solid var(--cairn-card-border); display: flex; flex-direction: column; }
+  .side-brand { display: flex; align-items: center; gap: 10px; height: 64px; padding: 0 16px; border-bottom: 1px solid var(--cairn-card-border); }
+  .brand-tile { height: 32px; width: 32px; border-radius: .75rem; background: var(--color-primary); color: var(--color-primary-content); display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,.14); }
+  .brand-word { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; letter-spacing: -.01em; }
+  .side-nav { padding: 6px 10px; display: flex; flex-direction: column; gap: 1px; }
+  .nav-grp { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); padding: 16px 8px 5px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: .5rem; font-size: .875rem; font-weight: 500; color: var(--color-subtle); text-decoration: none; cursor: pointer; }
+  .nav-item:hover { background: color-mix(in oklab, var(--color-base-content) 5%, transparent); }
+  .nav-item.active { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); font-weight: 600; }
+  .nav-ico { width: 16px; height: 16px; flex: none; }
+
+  .main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+  .top { display: flex; align-items: center; height: 64px; background: var(--color-base-100); border-bottom: 1px solid var(--cairn-card-border); padding: 0 20px; gap: 12px; }
+  .palette { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; min-width: 17rem; border: 1px solid var(--cairn-card-border); border-radius: .625rem; background: var(--color-base-200); color: var(--color-muted); font: 400 .8125rem/1 var(--font-body); cursor: pointer; }
+  .palette svg { width: 15px; height: 15px; }
+  .palette .kbd-hint { margin-left: auto; }
+
+  .content { padding: 2rem 2.5rem; }
+  .office-col { max-width: 60rem; margin: 0 auto; width: 100%; }
+
+  /* the quiet help glyph: a bare square button in the topbar, the office home for the "?" */
+  .help-q { display: inline-flex; align-items: center; justify-content: center; height: 34px; width: 34px; border: 0; background: transparent; border-radius: .625rem; color: var(--color-muted); cursor: pointer; }
+  .help-q:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); color: var(--color-base-content); }
+  .help-q svg { width: 17px; height: 17px; }
+
+  /* page header */
+  .ofc-head { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+  .ofc-h1 { font-family: var(--font-display); font-size: 1.875rem; font-weight: 700; letter-spacing: -.025em; }
+  .eyebrow { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); }
+
+  /* ============================================================
+     KBD + shared bits
+     ============================================================ */
+  .kbd-hint { font: 400 .625rem/1 var(--font-body); border: 1px solid var(--cairn-card-border); border-radius: .25rem; padding: 2px 5px; text-decoration: none; display: inline-block; color: var(--color-muted); }
+  .keys { font-family: var(--font-editor); font-size: .6875rem; color: var(--color-muted); border: 1px solid var(--cairn-card-border); border-radius: .25rem; padding: 1px 6px; background: color-mix(in oklab, var(--color-base-content) 3%, transparent); white-space: nowrap; }
+  .ftr-link { color: var(--color-muted); text-decoration: underline; text-underline-offset: 2px; text-decoration-color: color-mix(in oklab, currentColor 40%, transparent); background: none; border: 0; font: inherit; cursor: pointer; }
+  .ftr-link:hover { color: var(--color-primary); }
+
+  /* ============================================================
+     GETTING-STARTED: the "New here? Start here" card + progress chip.
+     A single dismissible floating card; the only upfront help in the office.
+     ============================================================ */
+  .start-card { position: relative; background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: 1rem; box-shadow: var(--cairn-shadow); padding: 18px 20px; margin-bottom: 22px; display: flex; gap: 16px; align-items: flex-start; }
+  /* a quiet violet edge marks it as the welcome surface without shouting */
+  .start-card::before { content: ""; position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px; border-radius: 0 3px 3px 0; background: color-mix(in oklab, var(--color-primary) 55%, transparent); }
+  .start-mark { flex: none; height: 38px; width: 38px; border-radius: .75rem; background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); display: inline-flex; align-items: center; justify-content: center; }
+  .start-mark svg { width: 20px; height: 20px; }
+  .start-body { flex: 1 1 auto; min-width: 0; }
+  .start-title { font-family: var(--font-display); font-size: 1.0625rem; font-weight: 700; letter-spacing: -.01em; }
+  .start-sub { margin-top: 3px; font-size: .875rem; color: var(--color-muted); line-height: 1.5; }
+  .start-dismiss { flex: none; background: none; border: 0; cursor: pointer; padding: 5px; border-radius: .5rem; color: var(--color-muted); display: inline-flex; }
+  .start-dismiss:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); color: var(--color-base-content); }
+  .start-dismiss svg { width: 16px; height: 16px; }
+
+  /* the progress chip: <=5 outcome-anchored steps, resumable */
+  .steps { margin-top: 14px; display: flex; flex-direction: column; gap: 2px; }
+  .steps-meta { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+  .steps-count { font-size: .75rem; font-weight: 600; color: var(--color-primary); font-variant-numeric: tabular-nums; }
+  .steps-track { height: 4px; border-radius: 2px; background: color-mix(in oklab, var(--color-base-content) 8%, transparent); overflow: hidden; margin-bottom: 12px; }
+  .steps-fill { height: 100%; width: 40%; background: var(--color-primary); border-radius: 2px; }
+  .step { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: .5rem; font-size: .875rem; }
+  .step + .step { margin-top: 1px; }
+  .step-mk { flex: none; width: 18px; height: 18px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; }
+  .step-done .step-mk { background: var(--color-primary); color: var(--color-primary-content); }
+  .step-done .step-mk svg { width: 11px; height: 11px; }
+  .step-now .step-mk { border: 2px solid var(--color-primary); color: var(--color-primary); }
+  .step-now .step-mk::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--color-primary); }
+  .step-todo .step-mk { border: 2px solid color-mix(in oklab, var(--color-base-content) 18%, transparent); }
+  .step-done .step-lbl { color: var(--color-muted); }
+  .step-now { background: color-mix(in oklab, var(--color-primary) 7%, transparent); }
+  .step-now .step-lbl { font-weight: 600; }
+  .step-todo .step-lbl { color: var(--color-base-content); }
+  .step-resume { margin-left: auto; font-size: .75rem; font-weight: 600; color: var(--color-primary); }
+  .step-strike { text-decoration: line-through; text-decoration-color: color-mix(in oklab, var(--color-muted) 60%, transparent); }
+
+  /* ============================================================
+     EMPTY STATE (teaching), the design-system recipe + a sample-post offer.
+     The state owns the canvas (no card), centered.
+     ============================================================ */
+  .state-pad { display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; padding: 40px 24px 56px; }
+  .state-mark { color: var(--color-primary); opacity: .32; }
+  .state-h { font-family: var(--font-display); font-size: 1.375rem; font-weight: 700; letter-spacing: -.01em; color: var(--color-base-content); }
+  .state-sub { font-size: .9375rem; color: var(--color-muted); max-width: 44ch; line-height: 1.55; }
+  .state-cta { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
+  .state-teach { margin-top: 26px; width: 100%; max-width: 38rem; border-top: 1px solid var(--cairn-card-border); padding-top: 22px; text-align: left; }
+  .state-teach-h { font-size: .8125rem; font-weight: 600; color: var(--color-base-content); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .state-teach-h svg { width: 15px; height: 15px; color: var(--color-muted); }
+  .teach-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 28px; }
+  .teach-row { display: flex; align-items: baseline; gap: 10px; font-size: .8125rem; }
+  .teach-row code { font-family: var(--font-editor); font-size: .75rem; color: var(--color-accent); background: color-mix(in oklab, var(--color-accent) 8%, transparent); border-radius: .25rem; padding: 1px 6px; white-space: nowrap; }
+  .teach-row span { color: var(--color-muted); }
+  .teach-foot { margin-top: 14px; font-size: .8125rem; color: var(--color-muted); }
+  .teach-foot button { color: var(--color-primary); }
+
+  /* DaisyUI-ish button stand-ins (the gold standard relies on the compiled sheet; we approximate) */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 2.25rem; padding: 0 1rem; border-radius: var(--radius-field); font: 600 .875rem/1 var(--font-body); border: 1px solid transparent; cursor: pointer; white-space: nowrap; }
+  .btn svg { width: 1rem; height: 1rem; }
+  .btn-sm { height: 2rem; padding: 0 .8rem; font-size: .8125rem; }
+  .btn-primary { background: var(--color-primary); color: var(--color-primary-content); box-shadow: 0 1px 2px color-mix(in oklch, var(--color-primary) 22%, transparent), 0 6px 16px -5px color-mix(in oklch, var(--color-primary) 38%, transparent); }
+  .btn-primary:hover { box-shadow: 0 2px 4px color-mix(in oklch, var(--color-primary) 26%, transparent), 0 10px 24px -5px color-mix(in oklch, var(--color-primary) 48%, transparent); }
+  .btn-outline { background: transparent; border-color: color-mix(in oklab, var(--color-base-content) 22%, transparent); color: var(--color-base-content); }
+  .btn-outline:hover { background: color-mix(in oklab, var(--color-base-content) 5%, transparent); }
+  .btn-ghost { background: transparent; color: var(--color-base-content); }
+  .btn-ghost:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+
+  /* ============================================================
+     THE DESK BAND (gold standard, three clusters).
+     ============================================================ */
+  .band { display: flex; align-items: center; height: 64px; background: var(--color-base-100); border-bottom: 1px solid var(--cairn-card-border); padding: 0 20px 0 14px; }
+  .bnd-cluster { display: flex; align-items: center; gap: 4px; }
+  .bnd-sq { display: inline-flex; align-items: center; justify-content: center; height: 32px; width: 32px; border: 0; background: transparent; border-radius: .5rem; color: var(--color-subtle); cursor: pointer; }
+  .bnd-sq:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .bnd-sq svg { width: 1rem; height: 1rem; }
+  .bnd-btn { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border: 0; background: transparent; border-radius: .5rem; color: var(--color-subtle); font: 500 .875rem/1 var(--font-body); cursor: pointer; }
+  .bnd-btn:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .bnd-btn svg { width: 1rem; height: 1rem; }
+  .bnd-active { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); }
+  .crumb { display: flex; align-items: center; gap: 7px; font-size: .875rem; margin-left: 4px; }
+  .crumb a { color: var(--color-muted); text-decoration: none; cursor: pointer; }
+  .crumb a:hover { color: var(--color-primary); }
+  .crumb-sep { color: var(--color-muted); opacity: .45; }
+  .crumb-here { font-weight: 550; }
+  .bnd-status { display: flex; align-items: center; gap: 12px; margin-left: 18px; padding-left: 18px; border-left: 1px solid var(--cairn-card-border); }
+  .savestate { display: inline-flex; align-items: center; gap: 6px; font-size: .75rem; color: var(--color-muted); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-warning); }
+  .dot-ok { background: var(--color-success); }
+  .badge { display: inline-flex; align-items: center; height: 1.25rem; padding: 0 .5rem; border-radius: var(--radius-field); font: 500 .6875rem/1 var(--font-body); border: 1px solid transparent; }
+  .badge-ghost { background: color-mix(in oklab, var(--color-base-content) 7%, transparent); color: var(--color-muted); }
+  .bnd-div { width: 1px; height: 18px; background: var(--cairn-card-border); margin: 0 8px; }
+
+  /* ============================================================
+     THE PAGE + CARD + STRIP + MANUSCRIPT (gold standard).
+     ============================================================ */
+  .page { padding: 2rem 2.5rem; }
+  .col { max-width: 49rem; margin: 0 auto; width: 100%; }
+  .ttl-wrap { font-family: var(--font-editor); font-size: 1.0625rem; max-width: 72ch; margin: 0 auto 16px; padding: 0 1.25rem; }
+  .ttl { font-family: var(--font-display); font-size: 1.875rem; font-weight: 700; letter-spacing: -.025em; }
+
+  .card-ed { background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: 1rem; box-shadow: var(--cairn-shadow); overflow: hidden; }
+
+  .strip { display: flex; align-items: center; gap: 2px; padding: 6px 8px; border-bottom: 1px solid var(--cairn-card-border); }
+  .tb { display: inline-flex; align-items: center; justify-content: center; height: 30px; width: 30px; border: 0; background: transparent; border-radius: .5rem; color: var(--color-subtle); cursor: pointer; }
+  .tb:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .tb svg { width: 1rem; height: 1rem; }
+  .tdiv { width: 1px; height: 18px; background: var(--cairn-card-border); margin: 0 6px; flex: none; }
+
+  .seg { display: inline-flex; border: 1px solid var(--cairn-card-border); border-radius: .5rem; overflow: hidden; background: var(--color-base-100); }
+  .seg button { font: 400 .75rem/1 var(--font-body); border: 0; background: transparent; color: var(--color-muted); padding: 4px 10px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--cairn-card-border); }
+  .seg button[aria-pressed="true"] { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); font-weight: 500; }
+  .seg-tabs button { font-size: .8125rem; padding: 5px 12px; }
+  .chk { width: 11px; height: 11px; }
+
+  .ms { font-family: var(--font-editor); font-size: 1.0625rem; line-height: 1.9; max-width: 72ch; margin: 0 auto; padding: 2rem 1.25rem 2.5rem; min-height: 40vh; position: relative; }
+  .ln { min-height: 1.9em; }
+  .gap { min-height: 1.9em; }
+  .h2 { font-size: 1.5em; font-weight: 700; }
+  .h3 { font-size: 1.17em; font-weight: 700; }
+  .mk { color: var(--color-muted); font-weight: 400; }
+  .lk { color: var(--color-accent); }
+  .chip { background: var(--cairn-code-chip); border-radius: .25rem; padding: .05em .3em; }
+  .strike { text-decoration: line-through; }
+  .hang2 { padding-left: 2ch; text-indent: -2ch; }
+  .lb { color: var(--color-accent); }
+  .lb2 { color: var(--cairn-directive-ink-2); }
+  .caret { display: inline-block; width: 2px; height: 1.15em; background: var(--color-primary); vertical-align: -0.2em; animation: blink 1.1s step-end infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .rail1 { box-shadow: inset 2px 0 0 0 color-mix(in oklab, var(--color-accent) var(--cairn-directive-rail-1), transparent); padding-left: 1.75rem; }
+  .rail2a { box-shadow: inset 2px 0 0 0 color-mix(in oklab, var(--color-accent) var(--cairn-directive-rail-1), transparent),
+                        inset 8px 0 0 0 var(--color-base-100),
+                        inset 10px 0 0 0 color-mix(in oklab, var(--color-accent) var(--cairn-directive-rail-active), transparent);
+            padding-left: 1.75rem; }
+  .rail2a .lb2 { color: var(--cairn-directive-ink-active); }
+
+  /* the footer strip */
+  .ftr { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--cairn-card-border); padding: 5px 12px; font-size: .75rem; color: var(--color-muted); }
+  .ftr-right { display: flex; align-items: center; gap: 14px; }
+  .ftr-modes { display: flex; align-items: center; gap: 2px; }
+  .ftr-toggle { font: 400 .75rem/1 var(--font-body); border: 0; background: transparent; color: var(--color-muted); padding: 4px 8px; border-radius: .5rem; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+  .ftr-toggle:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .ftr-toggle[aria-pressed="true"] { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); font-weight: 500; }
+  /* the desk home for the "?": the existing Markdown help reference link, here shown active because
+     its slide-over is open */
+  .ftr-link.is-open { color: var(--color-primary); }
+  .ftr-link svg { width: 13px; height: 13px; vertical-align: -2px; margin-right: 3px; }
+
+  /* ============================================================
+     SIGNATURE 1: the point-of-typing markdown hint.
+     A quiet, anchored coachmark that teaches the mark the author is about to need. It is NOT a modal:
+     it is an inline whisper that appears beside the active line and dismisses on the next keystroke.
+     ============================================================ */
+  /* The whisper is anchored to its own active line (the .ln is position:relative), so it always sits
+     just beneath that line regardless of font metrics. In the real editor this is a CodeMirror widget
+     decoration pinned under the caret line; here it hangs off the line box. */
+  .typehint { position: absolute; left: 0; top: calc(100% + 6px); z-index: 4; pointer-events: none; }
+  .typehint-inner { display: inline-flex; align-items: center; gap: 9px; pointer-events: auto; background: var(--color-base-100); border: 1px solid color-mix(in oklab, var(--color-accent) 30%, transparent); border-left: 3px solid var(--color-accent); border-radius: .5rem; box-shadow: var(--cairn-shadow); padding: 7px 11px 7px 12px; font-family: var(--font-body); font-size: .8125rem; color: var(--color-base-content); line-height: 1.4; max-width: 52ch; }
+  .typehint-inner code { font-family: var(--font-editor); font-size: .75rem; color: var(--color-accent); background: color-mix(in oklab, var(--color-accent) 9%, transparent); border-radius: .25rem; padding: 1px 5px; }
+  .typehint-inner .th-dismiss { margin-left: 4px; background: none; border: 0; cursor: pointer; color: var(--color-muted); padding: 2px; border-radius: .25rem; display: inline-flex; }
+  .typehint-inner .th-dismiss:hover { background: color-mix(in oklab, var(--color-base-content) 8%, transparent); }
+  .typehint-inner .th-dismiss svg { width: 13px; height: 13px; }
+  .typehint-tip { position: absolute; left: 1.5ch; top: -5px; width: 9px; height: 9px; background: var(--color-base-100); border-left: 1px solid color-mix(in oklab, var(--color-accent) 30%, transparent); border-top: 1px solid color-mix(in oklab, var(--color-accent) 30%, transparent); transform: rotate(45deg); }
+
+  /* ============================================================
+     SIGNATURE 2: the context-aware reference slide-over.
+     Reuses the Details slide-over geometry (the gold standard's .panel) so it reads as native chrome.
+     role="region", top:64px, right:0, ~21rem, hairline + shadow, Escape closes.
+     ============================================================ */
+  .ref { position: absolute; top: 64px; right: 0; bottom: 0; width: 21rem; background: var(--color-base-100); border-left: 1px solid var(--cairn-card-border); box-shadow: var(--cairn-shadow); display: flex; flex-direction: column; font-family: var(--font-body); }
+  .ref-head { display: flex; align-items: center; justify-content: space-between; padding: 15px 16px 12px; border-bottom: 1px solid var(--cairn-card-border); }
+  .ref-head-l { display: flex; flex-direction: column; gap: 2px; }
+  .ref-title { font-family: var(--font-display); font-size: 1.0625rem; font-weight: 700; letter-spacing: -.01em; }
+  .ref-close { background: none; border: 0; cursor: pointer; padding: 5px; border-radius: .5rem; color: var(--color-muted); display: inline-flex; }
+  .ref-close:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); color: var(--color-base-content); }
+  .ref-close svg { width: 16px; height: 16px; }
+  .ref-search { margin: 12px 16px 4px; }
+  .ref-search label { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 10px; border: 1px solid var(--cairn-card-border); border-radius: var(--radius-field); background: var(--color-base-200); color: var(--color-muted); font-size: .8125rem; }
+  .ref-search svg { width: 14px; height: 14px; flex: none; }
+  .ref-search input { border: 0; background: none; outline: 0; font: inherit; color: var(--color-base-content); width: 100%; }
+  .ref-body { flex: 1 1 auto; overflow-y: auto; padding: 12px 16px 20px; }
+  .ref-grp { margin-top: 16px; }
+  .ref-grp:first-child { margin-top: 4px; }
+  .ref-grp-h { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); margin-bottom: 8px; }
+  .ref-item { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid color-mix(in oklab, var(--cairn-card-border) 55%, transparent); }
+  .ref-item:last-child { border-bottom: 0; }
+  .ref-item-l { min-width: 0; }
+  .ref-item-name { font-size: .8125rem; color: var(--color-base-content); }
+  .ref-item-eg { margin-top: 2px; font-family: var(--font-editor); font-size: .6875rem; color: var(--color-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ref-item code { font-family: var(--font-editor); font-size: .6875rem; color: var(--color-accent); background: color-mix(in oklab, var(--color-accent) 8%, transparent); border-radius: .25rem; padding: 1px 5px; }
+  .ref-result { font-size: .75rem; color: var(--color-muted); }
+  .ref-foot { padding: 12px 16px; border-top: 1px solid var(--cairn-card-border); font-size: .75rem; color: var(--color-muted); line-height: 1.5; }
+  .ref-foot a { color: var(--color-primary); }
+  .ref-feat { display: flex; align-items: center; gap: 9px; padding: 7px 0; font-size: .8125rem; }
+  .ref-feat svg { width: 15px; height: 15px; flex: none; color: var(--color-muted); }
+  .ref-feat .ref-feat-k { margin-left: auto; }
+
+  /* ============================================================
+     THE DETAILS SLIDE-OVER with a woven frontmatter hint (schema-authored help under the field).
+     ============================================================ */
+  .panel { position: absolute; top: 64px; right: 0; bottom: 0; width: 19rem; background: var(--color-base-100); border-left: 1px solid var(--cairn-card-border); box-shadow: var(--cairn-shadow); padding: 16px; font-family: var(--font-body); overflow-y: auto; }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .fld { display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; font-size: .875rem; }
+  .fld > span { font-weight: 500; }
+  .fld input, .fld textarea { border: 1px solid var(--cairn-card-border); border-radius: var(--radius-field); background: var(--color-base-100); color: var(--color-base-content); font: inherit; padding: 6px 9px; width: 100%; }
+  .fld textarea { resize: none; line-height: 1.45; }
+  /* the field hint: schema-authored, shown UNDER the input, quiet (Sanity/Contentful pattern) */
+  .fld-hint { font-size: .75rem; color: var(--color-muted); line-height: 1.45; margin-top: 1px; }
+  /* validation-as-warning you can publish past (never a hard gate) */
+  .fld-warn { display: flex; align-items: flex-start; gap: 6px; font-size: .75rem; color: var(--cairn-warning-ink); line-height: 1.45; margin-top: 4px; }
+  .fld-warn svg { width: 13px; height: 13px; flex: none; margin-top: 1px; }
+  .chkrow { display: flex; align-items: center; gap: 8px; font-size: .875rem; margin-top: 6px; cursor: pointer; }
+  .chkrow input { width: 15px; height: 15px; accent-color: var(--color-primary); }
+  .addr { display: flex; align-items: center; justify-content: space-between; font-size: .8125rem; margin-top: 6px; }
+  .addr code { font-family: var(--font-editor); font-size: .75rem; }
+
+  /* legend table for the closing note */
+  .legend { margin: 0 16px 44px; border: 1px solid #aaa; background: var(--color-base-100); }
+</style>
+</head>
+<body>
+
+<div class="mock-label" style="padding-top:30px; color:#2f2c28; font-size:15px;">Editor help · Direction A: &ldquo;Quiet and woven&rdquo;</div>
+<div class="mock-note" style="max-width:84ch;">
+  <b>The bet:</b> push help almost entirely into the work surface. There is no standalone office Help
+  view. Getting-started is carried by the teaching empty state, one dismissible &ldquo;New here? Start
+  here&rdquo; card, and a resumable progress chip. Daily reference is one context-aware slide-over,
+  summoned by a quiet &ldquo;?&rdquo; in the office topbar and by the editor footer&rsquo;s existing
+  Markdown help link. Two woven touches teach in place: a hint at the point of typing, and a field hint
+  under a frontmatter input. Every surface shows only this site&rsquo;s concepts (Posts and Pages) and
+  its enabled features, because the admin knows the config at runtime.
+</div>
+
+<!-- ============================================================
+     SCREEN 1 · Getting-started in the office (Posts, fresh site).
+     ============================================================ -->
+<div class="mock-label">Screen 1 &middot; Getting started (a fresh Posts list, light)</div>
+<div class="mock-note">The first time an author opens Posts. The empty state owns the canvas and teaches
+the few marks that matter, with a real sample post to open so the blank page never blocks them
+(<b>Ghost</b>). Above it sits the one piece of upfront help this direction allows: a dismissible
+&ldquo;New here?&rdquo; card carrying a resumable five-step chip in author language. The quiet
+&ldquo;?&rdquo; in the topbar is the only standing help control in the office.</div>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="shell">
+    <aside class="side">
+      <div class="side-brand">
+        <span class="brand-tile"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><ellipse cx="12" cy="18.2" rx="7" ry="2.5"/><ellipse cx="12" cy="13" rx="5.2" ry="2.1"/><ellipse cx="12" cy="8.6" rx="3.7" ry="1.7"/><ellipse cx="12" cy="5" rx="2" ry="1.2"/></svg></span>
+        <span class="brand-word">cairn</span>
+      </div>
+      <nav class="side-nav" aria-label="Sections">
+        <div class="nav-grp">Content</div>
+        <a class="nav-item active" aria-current="page"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>Posts</a>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>Pages</a>
+        <div class="nav-grp">Site</div>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 13v8"/><path d="M12 3v3"/><path d="M18 6H8.5a1 1 0 0 0-.7.3l-2.3 2.4a1 1 0 0 0 0 1.4l2.3 2.4a1 1 0 0 0 .7.3H18a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1Z"/></svg>Navigation</a>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>Settings</a>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Editors</a>
+      </nav>
+    </aside>
+    <div class="main">
+      <div class="top">
+        <button class="palette"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search and commands<span class="kbd-hint">Ctrl K</span></button>
+        <div class="grow"></div>
+        <button class="ftr-link">View site</button>
+        <button class="help-q" aria-label="Help" title="Help"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></button>
+      </div>
+      <main class="content">
+        <div class="office-col">
+
+          <!-- the one upfront help: dismissible, with the resumable chip -->
+          <section class="start-card" aria-label="Getting started">
+            <span class="start-mark"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><ellipse cx="12" cy="18.2" rx="7" ry="2.5"/><ellipse cx="12" cy="13" rx="5.2" ry="2.1"/><ellipse cx="12" cy="8.6" rx="3.7" ry="1.7"/><ellipse cx="12" cy="5" rx="2" ry="1.2"/></svg></span>
+            <div class="start-body">
+              <div class="start-title">New here? Start here</div>
+              <div class="start-sub">Write a post, save a private draft, then publish when it is ready. Saving keeps your work to yourself. Publishing puts it on the site.</div>
+              <div class="steps" role="group" aria-label="Setup progress">
+                <div class="steps-meta">
+                  <span class="steps-count">2 of 5 done</span>
+                </div>
+                <div class="steps-track" aria-hidden="true"><div class="steps-fill"></div></div>
+                <div class="step step-done"><span class="step-mk"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span><span class="step-lbl step-strike">Write your first post</span></div>
+                <div class="step step-done"><span class="step-mk"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span><span class="step-lbl step-strike">Save a draft</span></div>
+                <div class="step step-now"><span class="step-mk"></span><span class="step-lbl">Add a photo</span><a class="step-resume ftr-link" style="text-decoration:none;">Resume</a></div>
+                <div class="step step-todo"><span class="step-mk"></span><span class="step-lbl">Preview how it looks</span></div>
+                <div class="step step-todo"><span class="step-mk"></span><span class="step-lbl">Publish it</span></div>
+              </div>
+            </div>
+            <button class="start-dismiss" aria-label="Dismiss getting started" title="Dismiss"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+          </section>
+
+          <div class="ofc-head">
+            <h1 class="ofc-h1">Posts</h1>
+            <div class="grow"></div>
+          </div>
+
+          <!-- the teaching empty state owns the canvas -->
+          <div class="state-pad">
+            <span class="state-mark"><svg viewBox="0 0 24 24" width="60" height="60" fill="currentColor" aria-hidden="true"><ellipse cx="12" cy="18.2" rx="7" ry="2.5"/><ellipse cx="12" cy="13" rx="5.2" ry="2.1"/><ellipse cx="12" cy="8.6" rx="3.7" ry="1.7"/><ellipse cx="12" cy="5" rx="2" ry="1.2"/></svg></span>
+            <div class="state-h">No posts yet</div>
+            <div class="state-sub">Write your first one and it will show up here. You can save it as a private draft and publish it later.</div>
+            <div class="state-cta">
+              <button class="btn btn-primary"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Write your first post</button>
+              <button class="btn btn-ghost">Open a sample post</button>
+            </div>
+
+            <!-- teach the marks that matter, right where the work begins -->
+            <div class="state-teach">
+              <div class="state-teach-h"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>A few ways to format as you type</div>
+              <div class="teach-grid">
+                <div class="teach-row"><code>## Heading</code><span>a section title</span></div>
+                <div class="teach-row"><code>**bold**</code><span>strong text</span></div>
+                <div class="teach-row"><code>- item</code><span>a bullet list</span></div>
+                <div class="teach-row"><code>[text](url)</code><span>a link</span></div>
+              </div>
+              <div class="teach-foot">The editor has buttons for all of these. Open the full list any time from <button class="ftr-link" style="text-decoration:underline;">Markdown help</button> while you write.</div>
+            </div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ============================================================
+     SCREEN 2 · The daily-reference slide-over, ON A DESK ROUTE.
+     ============================================================ -->
+<div class="mock-label">Screen 2 &middot; The reference slide-over on a desk route (light)</div>
+<div class="mock-note">An open post (<code style="font-family:var(--font-editor);font-size:.75rem;">/admin/posts/getting-ready-for-spring</code>), so the chrome has receded:
+the sidebar is gone, the editor is the page. The author summoned the reference from the footer&rsquo;s
+<b>Markdown help</b> link, which is now lit. The panel slides in over the right edge with the same
+geometry as Details, so it reads as cairn&rsquo;s own chrome, never a docs pop-up. It lists this
+site&rsquo;s real marks and only the features this site has turned on. Escape closes it and returns
+focus to the link.</div>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="ground" style="position:relative; overflow:hidden;">
+    <div class="band">
+      <div class="bnd-cluster">
+        <button class="bnd-sq" aria-label="Open menu"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
+        <nav aria-label="Breadcrumb" class="crumb"><a>Posts</a><span class="crumb-sep">/</span><span class="crumb-here">Getting ready for spring</span></nav>
+      </div>
+      <div class="bnd-status">
+        <span class="badge badge-ghost">Edited</span>
+        <span class="savestate"><span class="dot"></span>Unsaved changes</span>
+      </div>
+      <div class="grow"></div>
+      <div class="bnd-cluster" style="gap:6px;">
+        <button class="bnd-btn"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M15 3v18"/></svg>Details</button>
+        <button class="bnd-sq" aria-label="More actions"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h.01"/><path d="M12 12h.01"/><path d="M19 12h.01"/></svg></button>
+        <div class="bnd-div" aria-hidden="true"></div>
+        <button class="btn btn-outline btn-sm">Publish</button>
+        <button class="btn btn-primary btn-sm">Save</button>
+      </div>
+    </div>
+    <main class="page" style="padding-right: 22rem;">
+      <div class="col">
+        <div class="ttl-wrap"><div class="ttl">Getting ready for spring</div></div>
+        <div class="card-ed">
+          <div class="strip">
+            <button class="tb" aria-label="Bold (Ctrl+B)" title="Bold (Ctrl+B)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8"/></svg></button>
+            <button class="tb" aria-label="Italic (Ctrl+I)" title="Italic (Ctrl+I)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 4h-9"/><path d="M14 20H5"/><path d="M15 4 9 20"/></svg></button>
+            <div class="tdiv" aria-hidden="true"></div>
+            <button class="tb" aria-label="Heading" title="Heading"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h8"/><path d="M4 18V6"/><path d="M12 18V6"/><path d="M21 18h-4c0-4 4-3 4-6 0-1.5-2-2.5-4-1"/></svg></button>
+            <button class="tb" aria-label="Bulleted list" title="Bulleted list"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg></button>
+            <button class="tb" aria-label="Quote" title="Quote"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1 1 1 0 0 0 1 1 4 4 0 0 0 4-4V5a2 2 0 0 0-2-2z"/><path d="M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1 1 1 0 0 0 1 1 4 4 0 0 0 4-4V5a2 2 0 0 0-2-2z"/></svg></button>
+            <button class="tb" aria-label="Inline code" title="Inline code"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 8-4 4 4 4"/><path d="m15 8 4 4-4 4"/></svg></button>
+            <div class="tdiv" aria-hidden="true"></div>
+            <button class="tb" aria-label="Insert block" title="Insert block"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 22V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1zM14 2v20M14 7h7a1 1 0 0 1 0 0v5h-7M14 12h8v9a1 1 0 0 1-1 1h-7"/></svg></button>
+            <button class="tb" aria-label="Web link (Ctrl+K)" title="Web link (Ctrl+K)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
+            <button class="tb" aria-label="Image" title="Image"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg></button>
+            <div class="grow"></div>
+            <span class="seg seg-tabs"><button aria-pressed="true">Write</button><button aria-pressed="false">Preview</button></span>
+          </div>
+          <div class="ms">
+            <div class="ln"><span class="h2"><span class="mk">##</span> Getting ready for spring</span></div>
+            <div class="ln gap"></div>
+            <div class="ln">The first melt is here, and the <span class="mk">**</span><b>trail crew</b><span class="mk">**</span> is already out. Read the <span class="mk">[</span><span class="lk">grooming report</span><span class="mk">](https://example.com/report)</span> before</div>
+            <div class="ln">you go; conditions change <span class="mk">*</span><i>every afternoon</i><span class="mk">*</span>.</div>
+            <div class="ln gap"></div>
+            <div class="ln"><span class="h3"><span class="mk">###</span> What to bring</span></div>
+            <div class="ln gap"></div>
+            <div class="ln hang2"><span class="mk">-</span> Skate skis or classic, waxed for <span class="mk">`</span><span class="chip">0 to -4 C</span><span class="mk">`</span></div>
+            <div class="ln hang2"><span class="mk">-</span> Water and a windproof layer, plus a wax kit for the drive home</div>
+            <div class="ln gap"></div>
+            <div class="ln hang2"><span class="mk">&gt;</span> <i>The lake loop is the season&rsquo;s best hour. Go at golden hour and thank us later.</i></div>
+            <div class="ln gap"></div>
+            <div class="ln rail1"><span class="mk">::::</span><span class="lb">split</span><span class="mk">[</span><span class="lb">Costs &amp; volunteers</span><span class="mk">]</span></div>
+            <div class="ln rail2a"><span class="mk">:::</span><span class="lb2">panel</span><span class="mk">{title="Day pass"}</span></div>
+            <div class="ln rail2a">Adults $10, kids free. Passes at the trailhead kiosk.</div>
+            <div class="ln rail2a"><span class="mk">:::</span></div>
+            <div class="ln rail1"><span class="mk">::::</span></div>
+          </div>
+          <div class="ftr">
+            <span>148 words</span>
+            <span class="ftr-right">
+              <span class="seg" role="group" aria-label="Editing surface">
+                <button aria-pressed="true"><svg class="chk" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Prose</button><button aria-pressed="false">Markup</button>
+              </span>
+              <span class="ftr-modes">
+                <button class="ftr-toggle" aria-pressed="false">Focus mode</button>
+                <button class="ftr-toggle" aria-pressed="false">Typewriter</button>
+              </span>
+              <button class="ftr-link is-open" aria-expanded="true"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>Markdown help</button>
+            </span>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- the context-aware reference slide-over (the signature) -->
+    <aside class="ref" role="region" aria-label="Markdown help">
+      <div class="ref-head">
+        <div class="ref-head-l">
+          <span class="eyebrow">Reference</span>
+          <span class="ref-title">Formatting</span>
+        </div>
+        <button class="ref-close" aria-label="Close help" title="Close (Esc)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+      </div>
+      <div class="ref-search">
+        <label><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input type="search" placeholder="Find a mark, like &ldquo;link&rdquo;" aria-label="Search formatting help" /></label>
+      </div>
+      <div class="ref-body">
+        <div class="ref-grp">
+          <div class="ref-grp-h">Text</div>
+          <div class="ref-item"><div class="ref-item-l"><div class="ref-item-name">Heading</div><div class="ref-item-eg">## A section title</div></div><code>##</code></div>
+          <div class="ref-item"><div class="ref-item-l"><div class="ref-item-name">Bold</div><div class="ref-item-eg">**important**</div></div><code>**</code></div>
+          <div class="ref-item"><div class="ref-item-l"><div class="ref-item-name">Italic</div><div class="ref-item-eg">*for emphasis*</div></div><code>*</code></div>
+          <div class="ref-item"><div class="ref-item-l"><div class="ref-item-name">Link</div><div class="ref-item-eg">[text](https://&hellip;)</div></div><code>[ ]( )</code></div>
+        </div>
+        <div class="ref-grp">
+          <div class="ref-grp-h">Lists and quotes</div>
+          <div class="ref-item"><div class="ref-item-l"><div class="ref-item-name">Bullet list</div><div class="ref-item-eg">- one item per line</div></div><code>-</code></div>
+          <div class="ref-item"><div class="ref-item-l"><div class="ref-item-name">Numbered list</div><div class="ref-item-eg">1. first step</div></div><code>1.</code></div>
+          <div class="ref-item"><div class="ref-item-l"><div class="ref-item-name">Quote</div><div class="ref-item-eg">&gt; a pulled-out line</div></div><code>&gt;</code></div>
+        </div>
+        <div class="ref-grp">
+          <!-- runtime-aware: this group shows the blocks THIS site enables, named in author language -->
+          <div class="ref-grp-h">Blocks on this site</div>
+          <div class="ref-feat"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>Photo<span class="ref-feat-k"><span class="keys">toolbar</span></span></div>
+          <div class="ref-feat"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>Side-by-side panel<span class="ref-feat-k"><span class="keys">Insert block</span></span></div>
+          <div class="ref-feat"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/></svg>Table<span class="ref-feat-k"><span class="keys">toolbar</span></span></div>
+        </div>
+      </div>
+      <div class="ref-foot">
+        Typing these always works. The toolbar buttons do the same thing, so you can pick whichever feels easier. <a>See all shortcuts</a>
+      </div>
+    </aside>
+  </div>
+</div></div>
+
+
+<!-- ============================================================
+     SCREEN 3 · Woven contextual help, TWO touches on one desk.
+     (a) the point-of-typing markdown hint  (b) the frontmatter field hint
+     ============================================================ -->
+<div class="mock-label">Screen 3 &middot; Help woven into the work (light)</div>
+<div class="mock-note">The pull-not-push idea, made literal. <b>Left, in the manuscript:</b> the author just typed
+<code style="font-family:var(--font-editor);font-size:.75rem;">##</code> to start a line, so a quiet whisper appears beside that line to confirm what it does. It is
+not a modal. It fades on the next keystroke and never blocks typing. No major editor teaches markdown at
+the moment of typing; this is cairn&rsquo;s opening. <b>Right, in Details:</b> each field carries a
+short hint under it (the <b>Sanity/Contentful</b> pattern), and a missing social image is a warning the
+author can publish straight past, never a gate.</div>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="ground" style="position:relative; overflow:hidden;">
+    <div class="band">
+      <div class="bnd-cluster">
+        <button class="bnd-sq" aria-label="Open menu"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
+        <nav aria-label="Breadcrumb" class="crumb"><a>Posts</a><span class="crumb-sep">/</span><span class="crumb-here">Getting ready for spring</span></nav>
+      </div>
+      <div class="bnd-status">
+        <span class="badge badge-ghost">Edited</span>
+        <span class="savestate"><span class="dot"></span>Unsaved changes</span>
+      </div>
+      <div class="grow"></div>
+      <div class="bnd-cluster" style="gap:6px;">
+        <button class="bnd-btn bnd-active"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M15 3v18"/></svg>Details</button>
+        <button class="bnd-sq" aria-label="More actions"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h.01"/><path d="M12 12h.01"/><path d="M19 12h.01"/></svg></button>
+        <div class="bnd-div" aria-hidden="true"></div>
+        <button class="btn btn-outline btn-sm">Publish</button>
+        <button class="btn btn-primary btn-sm">Save</button>
+      </div>
+    </div>
+    <main class="page" style="padding-right: 20rem;">
+      <div class="col">
+        <div class="ttl-wrap"><div class="ttl">Getting ready for spring</div></div>
+        <div class="card-ed">
+          <div class="strip">
+            <button class="tb" aria-label="Bold (Ctrl+B)" title="Bold (Ctrl+B)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8"/></svg></button>
+            <button class="tb" aria-label="Italic (Ctrl+I)" title="Italic (Ctrl+I)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 4h-9"/><path d="M14 20H5"/><path d="M15 4 9 20"/></svg></button>
+            <div class="tdiv" aria-hidden="true"></div>
+            <button class="tb" aria-label="Heading" title="Heading"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h8"/><path d="M4 18V6"/><path d="M12 18V6"/><path d="M21 18h-4c0-4 4-3 4-6 0-1.5-2-2.5-4-1"/></svg></button>
+            <button class="tb" aria-label="Bulleted list" title="Bulleted list"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg></button>
+            <button class="tb" aria-label="Quote" title="Quote"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1 1 1 0 0 0 1 1 4 4 0 0 0 4-4V5a2 2 0 0 0-2-2z"/><path d="M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1 1 1 0 0 0 1 1 4 4 0 0 0 4-4V5a2 2 0 0 0-2-2z"/></svg></button>
+            <button class="tb" aria-label="Inline code" title="Inline code"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 8-4 4 4 4"/><path d="m15 8 4 4-4 4"/></svg></button>
+            <div class="tdiv" aria-hidden="true"></div>
+            <button class="tb" aria-label="Insert block" title="Insert block"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 22V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1zM14 2v20M14 7h7a1 1 0 0 1 0 0v5h-7M14 12h8v9a1 1 0 0 1-1 1h-7"/></svg></button>
+            <button class="tb" aria-label="Web link (Ctrl+K)" title="Web link (Ctrl+K)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
+            <button class="tb" aria-label="Image" title="Image"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg></button>
+            <div class="grow"></div>
+            <span class="seg seg-tabs"><button aria-pressed="true">Write</button><button aria-pressed="false">Preview</button></span>
+          </div>
+          <div class="ms">
+            <div class="ln"><span class="h2"><span class="mk">##</span> Getting ready for spring</span></div>
+            <div class="ln gap"></div>
+            <div class="ln">The first melt is here, and the <span class="mk">**</span><b>trail crew</b><span class="mk">**</span> is already out. Read the <span class="mk">[</span><span class="lk">grooming report</span><span class="mk">](https://example.com/report)</span> before</div>
+            <div class="ln">you go; conditions change <span class="mk">*</span><i>every afternoon</i><span class="mk">*</span>.</div>
+            <div class="ln gap"></div>
+            <!-- the author just typed "## " on a fresh line; the whisper hangs off that line and
+                 confirms the mark, then fades on the next keystroke -->
+            <div class="ln" style="position:relative;"><span class="mk">##</span> What to bring<span class="caret"></span>
+              <div class="typehint" role="status">
+                <div class="typehint-inner">
+                  <span class="typehint-tip" aria-hidden="true"></span>
+                  <span><code>##</code> starts a heading. The rest of this line becomes a section title.</span>
+                  <button class="th-dismiss" aria-label="Dismiss tip" title="Dismiss"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+                </div>
+              </div>
+            </div>
+            <div class="ln gap" style="min-height: 4.5em;"></div>
+            <div class="ln gap"></div>
+            <div class="ln hang2"><span class="mk">-</span> Skate skis or classic, waxed for <span class="mk">`</span><span class="chip">0 to -4 C</span><span class="mk">`</span></div>
+            <div class="ln hang2"><span class="mk">-</span> Water and a windproof layer, plus a wax kit for the drive home</div>
+          </div>
+          <div class="ftr">
+            <span>132 words</span>
+            <span class="ftr-right">
+              <span class="seg" role="group" aria-label="Editing surface">
+                <button aria-pressed="true"><svg class="chk" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Prose</button><button aria-pressed="false">Markup</button>
+              </span>
+              <span class="ftr-modes">
+                <button class="ftr-toggle" aria-pressed="false">Focus mode</button>
+                <button class="ftr-toggle" aria-pressed="false">Typewriter</button>
+              </span>
+              <button class="ftr-link"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>Markdown help</button>
+            </span>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- the Details slide-over, with schema-authored field hints -->
+    <aside class="panel" role="region" aria-label="Entry details">
+      <div class="panel-head">
+        <span class="eyebrow">Details</span>
+        <button class="ref-close" aria-label="Close details" title="Close (Esc)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+      </div>
+      <label class="fld">
+        <span>Date</span>
+        <input value="06/01/2026" />
+        <span class="fld-hint">The day this post shows on the site. It does not publish on its own.</span>
+      </label>
+      <label class="fld">
+        <span>Summary</span>
+        <textarea rows="3">Trail report and what to bring for the first weeks of spring skiing.</textarea>
+        <span class="fld-hint">One or two sentences. This shows in the post list and in search results.</span>
+      </label>
+      <label class="fld">
+        <span>Social image</span>
+        <input placeholder="Choose an image" />
+        <span class="fld-hint">The picture shown when this post is shared on social media.</span>
+        <span class="fld-warn"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>No image set. You can still publish. Shares will use the site default.</span>
+      </label>
+      <div class="eyebrow" style="margin-top:6px;">Visibility</div>
+      <label class="chkrow"><input type="checkbox" /><span>Hide this post</span></label>
+      <span class="fld-hint" style="margin-top:4px;">A hidden post stays off the site until you show it again.</span>
+      <div class="eyebrow" style="margin-top:18px;">Web address</div>
+      <div class="addr"><code>/2026-06-getting-ready</code><a class="ftr-link" style="text-decoration:underline;">Change</a></div>
+    </aside>
+  </div>
+</div></div>
+
+
+<!-- ============================================================
+     SCREEN 4 · Dark sample: the reference slide-over resolves from the dark tokens.
+     ============================================================ -->
+<div class="mock-label">Screen 4 &middot; The reference slide-over, dark</div>
+<div class="mock-note">The same panel through the dark tokens. Everything resolves from the theme variables,
+so the help layer inherits the admin&rsquo;s dark mode with no extra work.</div>
+<div class="screen"><div data-theme="cairn-admin-dark">
+  <div class="ground" style="position:relative; overflow:hidden; min-height: 60vh;">
+    <div class="band">
+      <div class="bnd-cluster">
+        <button class="bnd-sq" aria-label="Open menu"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
+        <nav aria-label="Breadcrumb" class="crumb"><a>Posts</a><span class="crumb-sep">/</span><span class="crumb-here">Getting ready for spring</span></nav>
+      </div>
+      <div class="bnd-status">
+        <span class="badge badge-ghost">Edited</span>
+        <span class="savestate"><span class="dot"></span>Unsaved changes</span>
+      </div>
+      <div class="grow"></div>
+      <div class="bnd-cluster" style="gap:6px;">
+        <button class="bnd-btn"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M15 3v18"/></svg>Details</button>
+        <div class="bnd-div" aria-hidden="true"></div>
+        <button class="btn btn-outline btn-sm">Publish</button>
+        <button class="btn btn-primary btn-sm">Save</button>
+      </div>
+    </div>
+    <main class="page" style="padding-right: 22rem;">
+      <div class="col">
+        <div class="ttl-wrap"><div class="ttl">Getting ready for spring</div></div>
+        <div class="card-ed">
+          <div class="ms" style="min-height: 26vh; padding-top: 1.5rem;">
+            <div class="ln"><span class="h2"><span class="mk">##</span> Getting ready for spring</span></div>
+            <div class="ln gap"></div>
+            <div class="ln">The first melt is here, and the <span class="mk">**</span><b>trail crew</b><span class="mk">**</span> is already out. Read the <span class="mk">[</span><span class="lk">grooming report</span><span class="mk">](https://example.com/report)</span>.</div>
+            <div class="ln gap"></div>
+            <div class="ln hang2"><span class="mk">-</span> Skate skis or classic, waxed for <span class="mk">`</span><span class="chip">0 to -4 C</span><span class="mk">`</span></div>
+            <div class="ln hang2"><span class="mk">-</span> Water and a windproof layer, plus a wax kit</div>
+          </div>
+          <div class="ftr">
+            <span>132 words</span>
+            <span class="ftr-right">
+              <span class="seg" role="group" aria-label="Editing surface">
+                <button aria-pressed="true"><svg class="chk" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Prose</button><button aria-pressed="false">Markup</button>
+              </span>
+              <button class="ftr-link is-open" aria-expanded="true"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>Markdown help</button>
+            </span>
+          </div>
+        </div>
+      </div>
+    </main>
+    <aside class="ref" role="region" aria-label="Markdown help">
+      <div class="ref-head">
+        <div class="ref-head-l">
+          <span class="eyebrow">Reference</span>
+          <span class="ref-title">Formatting</span>
+        </div>
+        <button class="ref-close" aria-label="Close help" title="Close (Esc)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+      </div>
+      <div class="ref-search">
+        <label><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input type="search" placeholder="Find a mark, like &ldquo;link&rdquo;" aria-label="Search formatting help" /></label>
+      </div>
+      <div class="ref-body">
+        <div class="ref-grp">
+          <div class="ref-grp-h">Text</div>
+          <div class="ref-item"><div class="ref-item-l"><div class="ref-item-name">Heading</div><div class="ref-item-eg">## A section title</div></div><code>##</code></div>
+          <div class="ref-item"><div class="ref-item-l"><div class="ref-item-name">Bold</div><div class="ref-item-eg">**important**</div></div><code>**</code></div>
+          <div class="ref-item"><div class="ref-item-l"><div class="ref-item-name">Link</div><div class="ref-item-eg">[text](https://&hellip;)</div></div><code>[ ]( )</code></div>
+        </div>
+        <div class="ref-grp">
+          <div class="ref-grp-h">Blocks on this site</div>
+          <div class="ref-feat"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>Photo<span class="ref-feat-k"><span class="keys">toolbar</span></span></div>
+          <div class="ref-feat"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>Side-by-side panel<span class="ref-feat-k"><span class="keys">Insert block</span></span></div>
+        </div>
+      </div>
+      <div class="ref-foot">
+        Typing these always works. The toolbar buttons do the same thing. <a>See all shortcuts</a>
+      </div>
+    </aside>
+  </div>
+</div></div>
+
+
+<!-- ============================================================
+     CLOSING NOTE: how the direction answers the brief.
+     ============================================================ -->
+<div class="mock-label">How this direction holds the line</div>
+<div class="screen legend"><div data-theme="cairn-admin">
+  <div class="ground" style="padding: 22px 26px;">
+    <div style="max-width: 74ch; font-size: .9375rem; line-height: 1.65; color: var(--color-base-content);">
+      <p style="margin:0 0 14px;"><b style="font-family:var(--font-display);">Two anchored homes, almost no upfront help.</b></p>
+      <ul style="margin:0; padding-left: 1.1rem; color: var(--color-muted);">
+        <li style="margin-bottom:8px;"><b style="color:var(--color-base-content);">Getting started</b> lives in the teaching empty state, one dismissible card, and a resumable five-step chip. A real sample post defuses the blank page. Nothing tours, nothing chains coachmarks.</li>
+        <li style="margin-bottom:8px;"><b style="color:var(--color-base-content);">Daily reference</b> is one context-aware slide-over, summoned by the quiet &ldquo;?&rdquo; in the office and the editor&rsquo;s Markdown help link on the desk. It reuses the Details panel geometry, so it is cairn&rsquo;s chrome, not a docs site.</li>
+        <li style="margin-bottom:8px;"><b style="color:var(--color-base-content);">Woven help</b> teaches at the point of typing and under each field, and shows only this site&rsquo;s concepts and enabled blocks.</li>
+        <li><b style="color:var(--color-base-content);">Reassurance is true by design</b>: drafts are private until Publish, and Publish is reversible. The copy says so at the save and publish moments, never as filler.</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+</body>
+</html>

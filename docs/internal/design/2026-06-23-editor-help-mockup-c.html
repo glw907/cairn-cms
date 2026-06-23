@@ -1,0 +1,1205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Proposed design: the editor help companion (direction C)</title>
+<link rel="stylesheet" href="./cairn-admin.css" />
+<style>
+  /* ============================================================
+     Direction C, "Companion":: a docked, quiet "?" launcher that
+     expands into a help panel which follows the current screen.
+     Getting started is a pinned card; the reference + search live
+     inside it. On the desk the panel recedes to a slide-over with
+     only the small launcher, never stealing manuscript width.
+
+     Everything resolves from the real Warm Stone tokens in
+     cairn-admin.css. The chrome CSS below is copied from the
+     2026-06-12 editor-shell gold standard so the band, manuscript,
+     office shell, and recipes match that fidelity exactly. The
+     companion-specific rules start under the COMPANION banner.
+     ============================================================ */
+
+  body { margin: 0; background: #d8d4cf; }
+  .mock-label { font: 600 13px/1.4 system-ui; letter-spacing: .08em; text-transform: uppercase; color: #444; padding: 22px 24px 6px; }
+  .mock-note { font: 400 13px/1.5 system-ui; color: #666; padding: 0 24px 12px; max-width: 78ch; }
+  .screen { border: 1px solid #aaa; margin: 0 16px 44px; box-shadow: 0 2px 14px rgba(0,0,0,.08); position: relative; overflow: hidden; }
+  .grow { flex: 1 1 auto; }
+
+  .ground { background: var(--color-base-200); min-height: 94vh; font-family: var(--font-body); color: var(--color-base-content); -webkit-font-smoothing: antialiased; }
+
+  /* ---- office shell (sidebar + topbar) ---- */
+  .shell { display: flex; min-height: 90vh; background: var(--color-base-200); position: relative; }
+  .side { width: 14rem; flex: none; background: var(--color-base-100); border-right: 1px solid var(--cairn-card-border); display: flex; flex-direction: column; }
+  .side-brand { display: flex; align-items: center; gap: 10px; height: 64px; padding: 0 16px; border-bottom: 1px solid var(--cairn-card-border); }
+  .brand-tile { height: 32px; width: 32px; border-radius: .75rem; background: var(--color-primary); color: var(--color-primary-content); display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,.14); }
+  .brand-word { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; letter-spacing: -.01em; }
+  .side-nav { padding: 6px 10px; display: flex; flex-direction: column; gap: 1px; }
+  .nav-grp { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); padding: 16px 8px 5px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: .5rem; font-size: .875rem; font-weight: 500; color: var(--color-subtle); text-decoration: none; cursor: pointer; }
+  .nav-item:hover { background: color-mix(in oklab, var(--color-base-content) 5%, transparent); }
+  .nav-item.active { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); font-weight: 600; }
+  .nav-ico { width: 16px; height: 16px; flex: none; }
+
+  .main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+  .top { display: flex; align-items: center; height: 64px; background: var(--color-base-100); border-bottom: 1px solid var(--cairn-card-border); padding: 0 20px; gap: 12px; }
+  .palette { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; min-width: 17rem; border: 1px solid var(--cairn-card-border); border-radius: .625rem; background: var(--color-base-200); color: var(--color-muted); font: 400 .8125rem/1 var(--font-body); cursor: pointer; }
+  .palette svg { width: 15px; height: 15px; }
+  .palette .kbd-hint { margin-left: auto; }
+  .ftr-link { color: var(--color-muted); text-decoration: underline; text-underline-offset: 2px; text-decoration-color: color-mix(in oklab, currentColor 40%, transparent); background: none; border: 0; font: inherit; cursor: pointer; }
+  .ftr-link:hover { color: var(--color-primary); }
+  .kbd-hint { margin-left: 5px; font-size: .625rem; border: 1px solid var(--cairn-card-border); border-radius: .25rem; padding: 1px 4px; text-decoration: none; display: inline-block; color: var(--color-muted); }
+
+  .content { padding: 2rem 2.5rem; }
+  .office-col { max-width: 60rem; margin: 0 auto; width: 100%; }
+  .ofc-head { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+  .ofc-h1 { font-family: var(--font-display); font-size: 1.875rem; font-weight: 700; letter-spacing: -.025em; }
+  .eyebrow { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); }
+
+  /* empty state recipe */
+  .state-pad { display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; padding: 56px 24px; }
+  .state-fill { min-height: 56vh; justify-content: center; }
+  .state-h { font-weight: 600; color: var(--color-base-content); font-size: 1.0625rem; }
+  .state-sub { font-size: .875rem; color: var(--color-muted); max-width: 42ch; line-height: 1.55; }
+  .state-mark { color: var(--color-primary); opacity: .3; }
+
+  /* ---- the desk band: three clusters ---- */
+  .band { display: flex; align-items: center; height: 64px; background: var(--color-base-100); border-bottom: 1px solid var(--cairn-card-border); padding: 0 20px 0 14px; position: relative; z-index: 5; }
+  .bnd-cluster { display: flex; align-items: center; gap: 4px; }
+  .bnd-sq { display: inline-flex; align-items: center; justify-content: center; height: 32px; width: 32px; border: 0; background: transparent; border-radius: .5rem; color: var(--color-subtle); cursor: pointer; }
+  .bnd-sq:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .bnd-btn { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border: 0; background: transparent; border-radius: .5rem; color: var(--color-subtle); font: 500 .875rem/1 var(--font-body); cursor: pointer; }
+  .bnd-btn:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .crumb { display: flex; align-items: center; gap: 7px; font-size: .875rem; margin-left: 4px; }
+  .crumb a { color: var(--color-muted); text-decoration: none; cursor: pointer; }
+  .crumb a:hover { color: var(--color-primary); }
+  .crumb-sep { color: var(--color-muted); opacity: .45; }
+  .crumb-here { font-weight: 550; }
+  .bnd-status { display: flex; align-items: center; gap: 12px; margin-left: 18px; padding-left: 18px; border-left: 1px solid var(--cairn-card-border); }
+  .savestate { display: inline-flex; align-items: center; gap: 6px; font-size: .75rem; color: var(--color-muted); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-warning); }
+  .dot-ok { background: var(--color-success); }
+  .bnd-div { width: 1px; height: 18px; background: var(--cairn-card-border); margin: 0 8px; }
+
+  /* ---- the desk page + card ---- */
+  .page { padding: 2rem 2.5rem; }
+  .col { max-width: 49rem; margin: 0 auto; width: 100%; }
+  .ttl-wrap { font-family: var(--font-editor); font-size: 1.0625rem; max-width: 72ch; margin: 0 auto 16px; padding: 0 1.25rem; }
+  .ttl { font-family: var(--font-display); font-size: 1.875rem; font-weight: 700; letter-spacing: -.025em; }
+  .card-ed { background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: 1rem; box-shadow: var(--cairn-shadow); overflow: hidden; }
+  .strip { display: flex; align-items: center; gap: 2px; padding: 6px 8px; border-bottom: 1px solid var(--cairn-card-border); }
+  .tb { display: inline-flex; align-items: center; justify-content: center; height: 30px; width: 30px; border: 0; background: transparent; border-radius: .5rem; color: var(--color-subtle); cursor: pointer; }
+  .tb:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .tdiv { width: 1px; height: 18px; background: var(--cairn-card-border); margin: 0 6px; flex: none; }
+  .seg { display: inline-flex; border: 1px solid var(--cairn-card-border); border-radius: .5rem; overflow: hidden; background: var(--color-base-100); }
+  .seg button { font: 400 .75rem/1 var(--font-body); border: 0; background: transparent; color: var(--color-muted); padding: 4px 10px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--cairn-card-border); }
+  .seg button[aria-pressed="true"] { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); font-weight: 500; }
+  .seg-tabs button { font-size: .8125rem; padding: 5px 12px; }
+
+  /* the manuscript */
+  .ms { font-family: var(--font-editor); font-size: 1.0625rem; line-height: 1.9; max-width: 72ch; margin: 0 auto; padding: 2rem 1.25rem 2.5rem; min-height: 36vh; position: relative; }
+  .ln { min-height: 1.9em; }
+  .gap { min-height: 1.9em; }
+  .h2 { font-size: 1.5em; font-weight: 700; }
+  .h3 { font-size: 1.17em; font-weight: 700; }
+  .mk { color: var(--color-muted); font-weight: 400; }
+  .lk { color: var(--color-accent); }
+  .chip { background: var(--cairn-code-chip); border-radius: .25rem; padding: .05em .3em; }
+  .strike { text-decoration: line-through; }
+  .hang2 { padding-left: 2ch; text-indent: -2ch; }
+  .lb { color: var(--color-accent); }
+  .lb2 { color: var(--cairn-directive-ink-2); }
+  .rail1 { box-shadow: inset 2px 0 0 0 color-mix(in oklab, var(--color-accent) var(--cairn-directive-rail-1), transparent); padding-left: 1.75rem; }
+  .caret { display: inline-block; width: 1.5px; height: 1.15em; background: var(--color-primary); vertical-align: -.18em; margin: 0 -.5px; animation: blink 1.1s step-end infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* footer strip */
+  .ftr { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--cairn-card-border); padding: 5px 12px; font-size: .75rem; color: var(--color-muted); }
+  .ftr-right { display: flex; align-items: center; gap: 14px; }
+  .ftr-modes { display: flex; align-items: center; gap: 2px; }
+  .ftr-toggle { font: 400 .75rem/1 var(--font-body); border: 0; background: transparent; color: var(--color-muted); padding: 4px 8px; border-radius: .5rem; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+  .ftr-toggle:hover { background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .ftr-toggle[aria-pressed="true"] { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); font-weight: 500; }
+  .ftr-strip-link { color: var(--color-muted); text-decoration: underline; text-underline-offset: 2px; text-decoration-color: color-mix(in oklab, currentColor 40%, transparent); background: none; border: 0; font: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+  .ftr-strip-link:hover { color: var(--color-primary); }
+  .chk { width: 11px; height: 11px; }
+
+  /* the details slide-over (frontmatter fields) */
+  .panel { position: absolute; top: 64px; right: 0; bottom: 0; width: 19rem; background: var(--color-base-100); border-left: 1px solid var(--cairn-card-border); box-shadow: var(--cairn-shadow); padding: 16px; font-family: var(--font-body); z-index: 6; overflow-y: auto; }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .fld { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; font-size: .875rem; }
+  .fld > span { font-weight: 500; }
+  .chkrow { display: flex; align-items: center; gap: 8px; font-size: .875rem; margin-top: 6px; cursor: pointer; }
+  .addr { display: flex; align-items: center; justify-content: space-between; font-size: .8125rem; margin-top: 6px; }
+  .addr code { font-family: var(--font-editor); font-size: .75rem; }
+
+  /* =====================================================================
+     COMPANION: the help layer. Quiet, discoverable, pull-not-push.
+     ===================================================================== */
+
+  /* The launcher: a calm circular "?" docked bottom-right. At rest it is a
+     bordered base-100 disc (the floating-card materials, never a loud fill),
+     so it reads as a quiet affordance and not a nagging widget. */
+  .help-fab {
+    position: absolute; right: 22px; bottom: 22px; z-index: 20;
+    height: 44px; width: 44px; border-radius: 999px;
+    background: var(--color-base-100);
+    border: 1px solid var(--cairn-card-border);
+    box-shadow: var(--cairn-shadow);
+    color: var(--color-subtle);
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: color .15s ease, border-color .15s ease;
+  }
+  .help-fab:hover { color: var(--color-primary); border-color: color-mix(in oklab, var(--color-primary) 35%, var(--cairn-card-border)); }
+  .help-fab svg { width: 20px; height: 20px; }
+  .help-fab-label { /* paired text label on the office launcher, so first-run is legible */
+    position: absolute; right: 22px; bottom: 22px; z-index: 20;
+    display: inline-flex; align-items: center; gap: 8px;
+    height: 40px; padding: 0 14px 0 12px; border-radius: 999px;
+    background: var(--color-base-100); border: 1px solid var(--cairn-card-border);
+    box-shadow: var(--cairn-shadow); color: var(--color-subtle);
+    font: 500 .8125rem/1 var(--font-body); cursor: pointer;
+    transition: color .15s ease, border-color .15s ease;
+  }
+  .help-fab-label:hover { color: var(--color-primary); border-color: color-mix(in oklab, var(--color-primary) 35%, var(--cairn-card-border)); }
+  .help-fab-label svg { width: 17px; height: 17px; }
+
+  /* a first-run nudge: one small, dismissible speech bubble above the
+     launcher. Not a tour, not a coachmark chain. One line, one X, gone for good. */
+  .help-nudge {
+    position: absolute; right: 20px; bottom: 74px; z-index: 19;
+    width: 16rem; background: var(--color-base-100);
+    border: 1px solid var(--cairn-card-border); border-radius: .875rem;
+    box-shadow: var(--cairn-shadow); padding: 12px 13px 12px 14px;
+    font-family: var(--font-body);
+    display: flex; gap: 10px; align-items: flex-start;
+  }
+  .help-nudge p { margin: 0; font-size: .8125rem; line-height: 1.5; color: var(--color-base-content); }
+  .help-nudge-x { flex: none; background: none; border: 0; cursor: pointer; color: var(--color-muted); padding: 2px; margin: -2px -2px 0 0; border-radius: .375rem; }
+  .help-nudge-x:hover { color: var(--color-base-content); background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .help-nudge::after { /* the tail, pointing down at the launcher */
+    content: ""; position: absolute; right: 30px; bottom: -7px;
+    width: 12px; height: 12px; background: var(--color-base-100);
+    border-right: 1px solid var(--cairn-card-border); border-bottom: 1px solid var(--cairn-card-border);
+    transform: rotate(45deg);
+  }
+
+  /* The companion panel: the floating-card recipe, anchored bottom-right.
+     It is an overlay, never a fixed column that steals width. */
+  .companion {
+    position: absolute; right: 22px; bottom: 22px; z-index: 21;
+    width: 22rem; max-height: min(36rem, calc(100% - 44px));
+    background: var(--color-base-100);
+    border: 1px solid var(--cairn-card-border); border-radius: 1rem;
+    box-shadow: var(--cairn-shadow);
+    display: flex; flex-direction: column; overflow: hidden;
+    font-family: var(--font-body);
+  }
+  .comp-head { display: flex; align-items: center; gap: 10px; padding: 14px 14px 12px; border-bottom: 1px solid var(--cairn-card-border); }
+  .comp-title { font-family: var(--font-display); font-size: 1.0625rem; font-weight: 700; letter-spacing: -.01em; }
+  .comp-head-x { background: none; border: 0; cursor: pointer; color: var(--color-muted); padding: 4px; border-radius: .5rem; display: inline-flex; }
+  .comp-head-x:hover { color: var(--color-base-content); background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .comp-head-x svg { width: 16px; height: 16px; }
+  .comp-body { padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+
+  /* the search inside the panel: the office input vocabulary, full width */
+  .comp-search { display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 11px; border: 1px solid var(--cairn-card-border); border-radius: .625rem; background: var(--color-base-200); color: var(--color-muted); }
+  .comp-search svg { width: 15px; height: 15px; flex: none; }
+  .comp-search input { border: 0; background: none; outline: none; font: 400 .8125rem/1 var(--font-body); color: var(--color-base-content); width: 100%; }
+  .comp-search input::placeholder { color: var(--color-muted); }
+
+  /* the pinned getting-started card: a primary-tinted plate (the one accent
+     in the panel), with a small checklist of real first steps */
+  .gs-card { border-radius: .875rem; background: color-mix(in oklab, var(--color-primary) 6%, var(--color-base-100)); border: 1px solid color-mix(in oklab, var(--color-primary) 16%, transparent); padding: 13px 14px; }
+  .gs-eyebrow { display: flex; align-items: center; gap: 6px; font-size: .6875rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--color-primary); margin-bottom: 7px; }
+  .gs-eyebrow svg { width: 13px; height: 13px; }
+  .gs-head { font-size: .9375rem; font-weight: 650; color: var(--color-base-content); margin: 0 0 3px; }
+  .gs-sub { font-size: .8125rem; line-height: 1.5; color: var(--color-muted); margin: 0 0 11px; }
+  .gs-prog { display: flex; align-items: center; gap: 8px; margin-bottom: 11px; }
+  .gs-bar { flex: 1; height: 5px; border-radius: 999px; background: color-mix(in oklab, var(--color-primary) 18%, transparent); overflow: hidden; }
+  .gs-bar > i { display: block; height: 100%; width: 50%; border-radius: 999px; background: var(--color-primary); }
+  .gs-prog-num { font-size: .6875rem; font-weight: 600; color: var(--color-primary); font-variant-numeric: tabular-nums; }
+  .gs-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
+  .gs-step { display: flex; align-items: center; gap: 9px; padding: 5px 6px; border-radius: .5rem; font-size: .8125rem; color: var(--color-base-content); cursor: pointer; text-align: left; background: none; border: 0; width: 100%; font-family: var(--font-body); }
+  .gs-step:hover { background: color-mix(in oklab, var(--color-primary) 8%, transparent); }
+  .gs-tick { flex: none; height: 17px; width: 17px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; }
+  .gs-tick-done { background: var(--color-primary); color: var(--color-primary-content); }
+  .gs-tick-done svg { width: 11px; height: 11px; }
+  .gs-tick-todo { border: 1.5px solid color-mix(in oklab, var(--color-primary) 40%, transparent); }
+  .gs-step-done { color: var(--color-muted); text-decoration: line-through; text-decoration-color: color-mix(in oklab, var(--color-muted) 50%, transparent); }
+  .gs-step .gs-arr { margin-left: auto; color: var(--color-muted); opacity: 0; }
+  .gs-step:hover .gs-arr { opacity: .7; }
+  .gs-step .gs-arr svg { width: 14px; height: 14px; }
+
+  /* the reference list inside the panel */
+  .comp-section-lbl { font-size: .6875rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--color-muted); padding: 0 2px; }
+  .ref-list { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
+  .ref-item { display: flex; align-items: center; gap: 11px; padding: 8px 8px; border-radius: .625rem; cursor: pointer; text-align: left; background: none; border: 0; width: 100%; font-family: var(--font-body); }
+  .ref-item:hover { background: color-mix(in oklab, var(--color-base-content) 4%, transparent); }
+  .ref-ico { flex: none; height: 30px; width: 30px; border-radius: .5rem; background: color-mix(in oklab, var(--color-base-content) 5%, transparent); color: var(--color-subtle); display: inline-flex; align-items: center; justify-content: center; }
+  .ref-ico svg { width: 16px; height: 16px; }
+  .ref-txt { min-width: 0; }
+  .ref-h { font-size: .875rem; font-weight: 550; color: var(--color-base-content); }
+  .ref-d { font-size: .75rem; color: var(--color-muted); line-height: 1.4; margin-top: 1px; }
+  .ref-arr { margin-left: auto; color: var(--color-muted); opacity: 0; }
+  .ref-item:hover .ref-arr { opacity: .7; }
+  .ref-arr svg { width: 15px; height: 15px; }
+
+  /* the panel footer: the one quiet outbound line */
+  .comp-foot { border-top: 1px solid var(--cairn-card-border); padding: 10px 14px; display: flex; align-items: center; gap: 8px; font-size: .75rem; color: var(--color-muted); }
+  .comp-foot a { color: var(--color-muted); text-decoration: underline; text-underline-offset: 2px; text-decoration-color: color-mix(in oklab, currentColor 40%, transparent); cursor: pointer; }
+  .comp-foot a:hover { color: var(--color-primary); }
+
+  /* The desk slide-over: the same panel but a right edge-to-edge sheet, so on
+     the desk it opens over the recessed margin and never narrows the card. */
+  .help-slideover { position: absolute; top: 64px; right: 0; bottom: 0; width: 22rem; z-index: 21; background: var(--color-base-100); border-left: 1px solid var(--cairn-card-border); box-shadow: var(--cairn-shadow); display: flex; flex-direction: column; overflow: hidden; font-family: var(--font-body); }
+  .help-slideover .comp-body { flex: 1; }
+
+  /* dim scrim behind an open desk slide-over (light dismiss) */
+  .help-scrim { position: absolute; inset: 0; top: 64px; z-index: 20; background: color-mix(in oklab, var(--color-base-content) 8%, transparent); }
+
+  /* ---- the markdown cheat sheet (the re-openable reference, opened from the
+     panel's "Markdown basics" or the editor footer's Markdown help link).
+     A centered dialog over a scrim, the Dialog recipe. ---- */
+  .sheet-scrim { position: absolute; inset: 0; z-index: 30; background: color-mix(in oklab, var(--color-base-content) 22%, transparent); }
+  .sheet { position: absolute; left: 50%; top: 6vh; transform: translateX(-50%); width: 40rem; max-width: calc(100% - 32px); z-index: 31; background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: 1rem; box-shadow: var(--cairn-shadow); overflow: hidden; font-family: var(--font-body); }
+  .sheet-head { display: flex; align-items: center; gap: 10px; padding: 16px 18px 14px; border-bottom: 1px solid var(--cairn-card-border); }
+  .sheet-title { font-family: var(--font-display); font-size: 1.1875rem; font-weight: 700; letter-spacing: -.01em; }
+  .sheet-body { padding: 16px 18px 18px; max-height: 64vh; overflow-y: auto; }
+  .sheet-lead { font-size: .8125rem; color: var(--color-muted); margin: 0 0 14px; line-height: 1.5; max-width: 56ch; }
+  .cheat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; }
+  .cheat-row { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; padding: 7px 0; border-bottom: 1px solid color-mix(in oklab, var(--cairn-card-border) 60%, transparent); }
+  .cheat-you { font-size: .8125rem; color: var(--color-base-content); }
+  .cheat-type { font-family: var(--font-editor); font-size: .75rem; color: var(--color-muted); background: var(--cairn-code-chip); border-radius: .3rem; padding: 2px 7px; white-space: nowrap; }
+  .cheat-type b { color: var(--color-base-content); font-weight: 400; }
+  .sheet-foot { display: flex; align-items: center; gap: 7px; margin-top: 14px; font-size: .75rem; color: var(--color-muted); }
+
+  /* ---- the woven point-of-typing hint: a small ghost coachmark that appears
+     ONCE the first time an author types a markdown mark, teaching by letting
+     them do it (the Superhuman single-coachmark lineage). It is anchored under
+     the caret line, dismissible, and never blocks typing. ---- */
+  .poke { position: absolute; z-index: 14; width: 18rem; background: var(--color-base-100); border: 1px solid var(--cairn-card-border); border-radius: .75rem; box-shadow: var(--cairn-shadow); padding: 11px 12px; font-family: var(--font-body); }
+  .poke-row { display: flex; gap: 9px; align-items: flex-start; }
+  .poke-ico { flex: none; height: 24px; width: 24px; border-radius: .4rem; background: color-mix(in oklab, var(--color-primary) 12%, transparent); color: var(--color-primary); display: inline-flex; align-items: center; justify-content: center; }
+  .poke-ico svg { width: 14px; height: 14px; }
+  .poke p { margin: 0; font-size: .8125rem; line-height: 1.5; color: var(--color-base-content); }
+  .poke code { font-family: var(--font-editor); font-size: .75em; background: var(--cairn-code-chip); border-radius: .25rem; padding: .08em .35em; }
+  .poke-foot { display: flex; align-items: center; gap: 14px; margin-top: 9px; padding-left: 33px; }
+  .poke-link { background: none; border: 0; cursor: pointer; font: 500 .75rem/1 var(--font-body); color: var(--color-primary); padding: 0; }
+  .poke-link:hover { text-decoration: underline; text-underline-offset: 2px; }
+  .poke-dismiss { background: none; border: 0; cursor: pointer; font: 400 .75rem/1 var(--font-body); color: var(--color-muted); padding: 0; }
+  .poke-dismiss:hover { color: var(--color-base-content); }
+  .poke::after { content: ""; position: absolute; left: 34px; top: -7px; width: 12px; height: 12px; background: var(--color-base-100); border-left: 1px solid var(--cairn-card-border); border-top: 1px solid var(--cairn-card-border); transform: rotate(45deg); }
+
+  /* ---- the per-field frontmatter hint (the Sanity/Contentful schema-authored
+     help under the input). A quiet help line + an inline info affordance. ---- */
+  .fld-hint { font-size: .75rem; line-height: 1.45; color: var(--color-muted); margin-top: 1px; }
+  .fld-label-row { display: flex; align-items: center; gap: 6px; }
+  .fld-info { display: inline-flex; align-items: center; justify-content: center; height: 15px; width: 15px; border-radius: 999px; color: var(--color-muted); cursor: help; }
+  .fld-info svg { width: 13px; height: 13px; }
+  .fld-info:hover { color: var(--color-primary); }
+  .fld-warn { display: flex; align-items: flex-start; gap: 6px; margin-top: 6px; font-size: .75rem; line-height: 1.45; color: var(--cairn-warning-ink); }
+  .fld-warn svg { width: 13px; height: 13px; flex: none; margin-top: 1px; }
+
+  /* two-up split for the office screen (panel beside it) */
+  .twin { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+  .twin > div { position: relative; }
+  .twin > div + div { border-left: 1px solid #aaa; }
+</style>
+</head>
+<body>
+
+<div class="mock-label" style="padding-top:28px;">Direction C · "The help companion"</div>
+<div class="mock-note">A docked, quiet <b>?</b> launcher that expands into a help panel which follows the
+current screen. Getting started is a pinned card; the reference and a search live inside it. The launcher
+holds cairn's calm aesthetic, so it reads as an affordance, never a nagging widget. On the desk the panel
+recedes to a slide-over opened by a small launcher, and it never takes width from the manuscript. Every
+surface shows only this site's concepts (Posts, Pages) and its real features. All colors, type, radii, and
+shadows resolve from the Warm Stone tokens in cairn-admin.css.</div>
+
+
+<!-- ============================================================
+     SCREEN 1, OFFICE: the launcher (resting) + first-run nudge
+     ============================================================ -->
+<div class="mock-label">Screen 1 · The office launcher at rest, with the one-time nudge</div>
+<div class="mock-note">The everyday office (the Posts list). The launcher sits bottom-right as a quiet labeled
+pill, the floating-card materials with no loud fill. On a first visit only, one small dismissible bubble
+points at it: a single line, one X, then gone for good. No tour, no coachmark chain. The "Publish site"
+count and every list row are this site's real content.</div>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="shell">
+    <aside class="side">
+      <div class="side-brand">
+        <span class="brand-tile"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><ellipse cx="12" cy="18.2" rx="7" ry="2.5"/><ellipse cx="12" cy="13" rx="5.2" ry="2.1"/><ellipse cx="12" cy="8.6" rx="3.7" ry="1.7"/><ellipse cx="12" cy="5" rx="2" ry="1.2"/></svg></span>
+        <span class="brand-word">cairn</span>
+      </div>
+      <nav class="side-nav" aria-label="Sections">
+        <div class="nav-grp">Content</div>
+        <a class="nav-item active" aria-current="page"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>Posts</a>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>Pages</a>
+        <div class="nav-grp">Site</div>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 13v8"/><path d="M12 3v3"/><path d="M18 6H8.5a1 1 0 0 0-.7.3l-2.3 2.4a1 1 0 0 0 0 1.4l2.3 2.4a1 1 0 0 0 .7.3H18a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1Z"/></svg>Navigation</a>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>Settings</a>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Editors</a>
+      </nav>
+    </aside>
+    <div class="main">
+      <div class="top">
+        <button class="palette"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search and commands<span class="kbd-hint">Ctrl K</span></button>
+        <div class="grow"></div>
+        <button class="ftr-link">View site</button>
+        <button class="btn btn-primary btn-sm">Publish site (2)</button>
+      </div>
+      <main class="content">
+        <div class="office-col">
+          <div class="ofc-head">
+            <h1 class="ofc-h1">Posts</h1>
+            <div class="grow"></div>
+            <label class="input input-sm"><svg class="h-4 w-4 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input type="search" placeholder="Search posts" /></label>
+            <button class="btn btn-primary btn-sm"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>New post</button>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px; flex-wrap:wrap;">
+            <span class="seg" role="group" aria-label="Filter by publish state">
+              <button aria-pressed="true"><svg class="chk" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>All<span style="margin-left:7px; color:var(--color-primary); font-weight:500;">8</span></button>
+              <button aria-pressed="false">Pending edits<span style="margin-left:7px; color:var(--color-muted); font-weight:500;">2</span></button>
+              <button aria-pressed="false">Published<span style="margin-left:7px; color:var(--color-muted); font-weight:500;">6</span></button>
+            </span>
+          </div>
+
+          <div style="background:var(--color-base-100); border:1px solid var(--cairn-card-border); border-radius:1rem; box-shadow:var(--cairn-shadow); overflow:hidden;">
+            <div style="display:grid; grid-template-columns:1fr 7rem 7rem 2.5rem; gap:14px; align-items:center; padding:11px 18px; border-bottom:1px solid var(--cairn-card-border); background:color-mix(in oklab, var(--color-base-content) 1.5%, transparent);">
+              <span class="eyebrow">Title</span><span class="eyebrow">Date</span><span class="eyebrow">Status</span><span></span>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 7rem 7rem 2.5rem; gap:14px; align-items:center; padding:13px 18px; border-bottom:1px solid color-mix(in oklab, var(--cairn-card-border) 65%, transparent);"><div style="min-width:0;"><a style="font-size:.9375rem; font-weight:600; color:var(--color-base-content);">Getting ready for spring</a><div style="margin-top:3px; font-size:.8125rem; color:var(--color-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Trail report and what to bring for the first weeks of spring skiing.</div></div><div style="font-size:.8125rem; color:var(--color-muted);">Jun 1, 2026</div><div><span class="badge badge-sm font-medium" style="background:color-mix(in oklab, var(--color-primary) 12%, transparent); color:var(--color-primary); border-color:transparent;">Edited</span></div><div></div></div>
+            <div style="display:grid; grid-template-columns:1fr 7rem 7rem 2.5rem; gap:14px; align-items:center; padding:13px 18px; border-bottom:1px solid color-mix(in oklab, var(--cairn-card-border) 65%, transparent);"><div style="min-width:0;"><a style="font-size:.9375rem; font-weight:600; color:var(--color-base-content);">Trail conditions: the week of May 25</a><div style="margin-top:3px; font-size:.8125rem; color:var(--color-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Fresh corduroy on the lake loop, soft afternoons, and where the early melt is showing through.</div></div><div style="font-size:.8125rem; color:var(--color-muted);">May 25, 2026</div><div><span class="badge badge-ghost badge-sm font-medium">Published</span></div><div></div></div>
+            <div style="display:grid; grid-template-columns:1fr 7rem 7rem 2.5rem; gap:14px; align-items:center; padding:13px 18px; border-bottom:1px solid color-mix(in oklab, var(--cairn-card-border) 65%, transparent);"><div style="min-width:0;"><a style="font-size:.9375rem; font-weight:600; color:var(--color-base-content);">A new groomer joins the fleet</a><div style="margin-top:3px; font-size:.8125rem; color:var(--color-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">We added a second winch cat, so the steep pitch finally gets a proper nightly set before dawn.</div></div><div style="font-size:.8125rem; color:var(--color-muted);">May 20, 2026</div><div><span class="badge badge-info badge-sm font-medium">New</span></div><div></div></div>
+            <div style="display:grid; grid-template-columns:1fr 7rem 7rem 2.5rem; gap:14px; align-items:center; padding:13px 18px;"><div style="min-width:0;"><a style="font-size:.9375rem; font-weight:600; color:var(--color-base-content);">Spring volunteer day recap</a><div style="margin-top:3px; font-size:.8125rem; color:var(--color-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Forty of you turned out to pull brush and re-stake the corners. Here is how it went.</div></div><div style="font-size:.8125rem; color:var(--color-muted);">May 12, 2026</div><div><span class="badge badge-ghost badge-sm font-medium">Published</span></div><div></div></div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- the first-run nudge (one-time, dismissible) -->
+    <div class="help-nudge" role="status">
+      <p>New here? Open <b>Help</b> for a short setup checklist and how-tos.</p>
+      <button class="help-nudge-x" aria-label="Dismiss"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+    </div>
+
+    <!-- the launcher: labeled pill, quiet at rest -->
+    <button class="help-fab-label" aria-haspopup="dialog" aria-expanded="false">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+      Help
+    </button>
+  </div>
+</div></div>
+
+
+<!-- ============================================================
+     SCREEN 2, OFFICE: the expanded companion panel (the hub)
+     ============================================================ -->
+<div class="mock-label">Screen 2 · The companion open: pinned getting-started + reference + search</div>
+<div class="mock-note">One click opens the panel, the floating-card recipe anchored bottom-right (an overlay,
+never a column that reflows the office). At the top, a search over all help. Then the pinned getting-started
+card with a real checklist of this site's first steps and a progress bar. Below it the daily reference, the
+markdown cheat sheet first. Author language throughout: "Save keeps a private draft", never "commit". The
+panel is the Figma "?" hub crossed with Intercom's front-desk Home.</div>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="shell">
+    <aside class="side">
+      <div class="side-brand">
+        <span class="brand-tile"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><ellipse cx="12" cy="18.2" rx="7" ry="2.5"/><ellipse cx="12" cy="13" rx="5.2" ry="2.1"/><ellipse cx="12" cy="8.6" rx="3.7" ry="1.7"/><ellipse cx="12" cy="5" rx="2" ry="1.2"/></svg></span>
+        <span class="brand-word">cairn</span>
+      </div>
+      <nav class="side-nav" aria-label="Sections">
+        <div class="nav-grp">Content</div>
+        <a class="nav-item active" aria-current="page"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>Posts</a>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>Pages</a>
+        <div class="nav-grp">Site</div>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 13v8"/><path d="M12 3v3"/><path d="M18 6H8.5a1 1 0 0 0-.7.3l-2.3 2.4a1 1 0 0 0 0 1.4l2.3 2.4a1 1 0 0 0 .7.3H18a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1Z"/></svg>Navigation</a>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>Settings</a>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Editors</a>
+      </nav>
+    </aside>
+    <div class="main">
+      <div class="top">
+        <button class="palette"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search and commands<span class="kbd-hint">Ctrl K</span></button>
+        <div class="grow"></div>
+        <button class="ftr-link">View site</button>
+        <button class="btn btn-primary btn-sm">Publish site (2)</button>
+      </div>
+      <main class="content">
+        <div class="office-col">
+          <div class="ofc-head">
+            <h1 class="ofc-h1">Posts</h1>
+            <div class="grow"></div>
+            <button class="btn btn-primary btn-sm"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>New post</button>
+          </div>
+          <div style="background:var(--color-base-100); border:1px solid var(--cairn-card-border); border-radius:1rem; box-shadow:var(--cairn-shadow); overflow:hidden; opacity:.55;">
+            <div style="display:grid; grid-template-columns:1fr 7rem 7rem 2.5rem; gap:14px; align-items:center; padding:11px 18px; border-bottom:1px solid var(--cairn-card-border);"><span class="eyebrow">Title</span><span class="eyebrow">Date</span><span class="eyebrow">Status</span><span></span></div>
+            <div style="display:grid; grid-template-columns:1fr 7rem 7rem 2.5rem; gap:14px; align-items:center; padding:13px 18px; border-bottom:1px solid color-mix(in oklab, var(--cairn-card-border) 65%, transparent);"><div><a style="font-size:.9375rem; font-weight:600;">Getting ready for spring</a></div><div style="font-size:.8125rem; color:var(--color-muted);">Jun 1, 2026</div><div><span class="badge badge-sm font-medium" style="background:color-mix(in oklab, var(--color-primary) 12%, transparent); color:var(--color-primary); border-color:transparent;">Edited</span></div><div></div></div>
+            <div style="display:grid; grid-template-columns:1fr 7rem 7rem 2.5rem; gap:14px; align-items:center; padding:13px 18px; border-bottom:1px solid color-mix(in oklab, var(--cairn-card-border) 65%, transparent);"><div><a style="font-size:.9375rem; font-weight:600;">Trail conditions: the week of May 25</a></div><div style="font-size:.8125rem; color:var(--color-muted);">May 25, 2026</div><div><span class="badge badge-ghost badge-sm font-medium">Published</span></div><div></div></div>
+            <div style="display:grid; grid-template-columns:1fr 7rem 7rem 2.5rem; gap:14px; align-items:center; padding:13px 18px;"><div><a style="font-size:.9375rem; font-weight:600;">A new groomer joins the fleet</a></div><div style="font-size:.8125rem; color:var(--color-muted);">May 20, 2026</div><div><span class="badge badge-info badge-sm font-medium">New</span></div><div></div></div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- the companion panel, open -->
+    <div class="companion" role="dialog" aria-label="Help">
+      <div class="comp-head">
+        <span class="comp-title">Help</span>
+        <div class="grow"></div>
+        <button class="comp-head-x" aria-label="Close help"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+      </div>
+      <div class="comp-body">
+        <div class="comp-search">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="search" placeholder="Search help" aria-label="Search help" />
+        </div>
+
+        <div class="gs-card">
+          <div class="gs-eyebrow"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Getting started</div>
+          <p class="gs-head">Publish your first post</p>
+          <p class="gs-sub">Three short steps. Pick up where you left off any time.</p>
+          <div class="gs-prog">
+            <span class="gs-bar"><i></i></span>
+            <span class="gs-prog-num">1 of 3</span>
+          </div>
+          <div class="gs-list">
+            <button class="gs-step gs-step-done"><span class="gs-tick gs-tick-done"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>Write a post in markdown</button>
+            <button class="gs-step"><span class="gs-tick gs-tick-todo"></span>Save it as a private draft<span class="gs-arr"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span></button>
+            <button class="gs-step"><span class="gs-tick gs-tick-todo"></span>Publish to make it live<span class="gs-arr"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span></button>
+          </div>
+        </div>
+
+        <div>
+          <span class="comp-section-lbl">Reference</span>
+          <ul class="ref-list">
+            <li><button class="ref-item">
+              <span class="ref-ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg></span>
+              <span class="ref-txt"><span class="ref-h">Markdown basics</span><span class="ref-d">Headings, links, lists, and bold. The full cheat sheet.</span></span>
+              <span class="ref-arr"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+            </button></li>
+            <li><button class="ref-item">
+              <span class="ref-ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><path d="M12 20h.01"/></svg></span>
+              <span class="ref-txt"><span class="ref-h">Saving and publishing</span><span class="ref-d">Save keeps a private draft. Publish makes it live.</span></span>
+              <span class="ref-arr"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+            </button></li>
+            <li><button class="ref-item">
+              <span class="ref-ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg></span>
+              <span class="ref-txt"><span class="ref-h">Adding images</span><span class="ref-d">Upload a picture and write its description.</span></span>
+              <span class="ref-arr"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+            </button></li>
+            <li><button class="ref-item">
+              <span class="ref-ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span>
+              <span class="ref-txt"><span class="ref-h">Posts and Pages</span><span class="ref-d">When to use each, and how the address is set.</span></span>
+              <span class="ref-arr"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+            </button></li>
+          </ul>
+        </div>
+      </div>
+      <div class="comp-foot">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/></svg>
+        <span>Stuck on something? <a>Email your site owner</a></span>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ============================================================
+     SCREEN 3, OFFICE: the teaching empty state (fresh Posts list)
+     ============================================================ -->
+<div class="mock-label">Screen 3 · A fresh Posts list: the teaching empty state</div>
+<div class="mock-note">A concept with no entries owns the canvas (the brand-tile empty-state recipe), and adds
+two real starter posts the author can open and edit, the Ghost move that defuses the blank page. The starter
+content is plainly labeled, so it is never mistaken for the author's own work. The launcher stays docked; its
+getting-started card already knows step one is unstarted. No upfront modal, no tour.</div>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="shell">
+    <aside class="side">
+      <div class="side-brand">
+        <span class="brand-tile"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><ellipse cx="12" cy="18.2" rx="7" ry="2.5"/><ellipse cx="12" cy="13" rx="5.2" ry="2.1"/><ellipse cx="12" cy="8.6" rx="3.7" ry="1.7"/><ellipse cx="12" cy="5" rx="2" ry="1.2"/></svg></span>
+        <span class="brand-word">cairn</span>
+      </div>
+      <nav class="side-nav" aria-label="Sections">
+        <div class="nav-grp">Content</div>
+        <a class="nav-item active" aria-current="page"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>Posts</a>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>Pages</a>
+        <div class="nav-grp">Site</div>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 13v8"/><path d="M12 3v3"/><path d="M18 6H8.5a1 1 0 0 0-.7.3l-2.3 2.4a1 1 0 0 0 0 1.4l2.3 2.4a1 1 0 0 0 .7.3H18a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1Z"/></svg>Navigation</a>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>Settings</a>
+        <a class="nav-item"><svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Editors</a>
+      </nav>
+    </aside>
+    <div class="main">
+      <div class="top">
+        <button class="palette"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search and commands<span class="kbd-hint">Ctrl K</span></button>
+        <div class="grow"></div>
+        <button class="ftr-link">View site</button>
+        <button class="btn btn-primary btn-sm">Publish site (0)</button>
+      </div>
+      <main class="content">
+        <div class="office-col">
+          <div class="ofc-head"><h1 class="ofc-h1">Posts</h1></div>
+          <div class="state-pad state-fill">
+            <svg class="state-mark" viewBox="0 0 24 24" width="48" height="48" fill="currentColor" aria-hidden="true"><ellipse cx="12" cy="18.2" rx="7" ry="2.5"/><ellipse cx="12" cy="13" rx="5.2" ry="2.1"/><ellipse cx="12" cy="8.6" rx="3.7" ry="1.7"/><ellipse cx="12" cy="5" rx="2" ry="1.2"/></svg>
+            <div>
+              <p class="state-h">No posts yet</p>
+              <p class="state-sub">Stack your first one and it will show up here. Want a head start? Open one of these and make it your own.</p>
+            </div>
+            <button class="btn btn-primary btn-sm"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>New post</button>
+
+            <!-- the Ghost move: real, editable starter posts, plainly labeled -->
+            <div style="width:100%; max-width:38rem; margin-top:8px;">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:9px;">
+                <span class="eyebrow">Starter posts</span>
+                <span style="font-size:.75rem; color:var(--color-muted);">Open one to edit it, or delete it. Your call.</span>
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <button style="text-align:left; background:var(--color-base-100); border:1px solid var(--cairn-card-border); border-radius:.875rem; box-shadow:var(--cairn-shadow); padding:13px 14px; cursor:pointer; font-family:var(--font-body);">
+                  <div style="display:flex; align-items:center; gap:7px; margin-bottom:5px;"><span class="badge badge-info badge-sm font-medium">Starter</span></div>
+                  <div style="font-size:.9375rem; font-weight:600; color:var(--color-base-content);">Welcome to your new site</div>
+                  <div style="margin-top:3px; font-size:.8125rem; color:var(--color-muted); line-height:1.45;">A friendly first post that shows how headings, links, and lists look.</div>
+                </button>
+                <button style="text-align:left; background:var(--color-base-100); border:1px solid var(--cairn-card-border); border-radius:.875rem; box-shadow:var(--cairn-shadow); padding:13px 14px; cursor:pointer; font-family:var(--font-body);">
+                  <div style="display:flex; align-items:center; gap:7px; margin-bottom:5px;"><span class="badge badge-info badge-sm font-medium">Starter</span></div>
+                  <div style="font-size:.9375rem; font-weight:600; color:var(--color-base-content);">Writing in markdown</div>
+                  <div style="margin-top:3px; font-size:.8125rem; color:var(--color-muted); line-height:1.45;">A short post you can edit to learn the formatting as you go.</div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <button class="help-fab-label" aria-haspopup="dialog" aria-expanded="false">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+      Help
+    </button>
+  </div>
+</div></div>
+
+
+<!-- ============================================================
+     SCREEN 4, DESK: the receded launcher (resting)
+     ============================================================ -->
+<div class="mock-label">Screen 4 · The desk: the launcher recedes to a small "?" disc</div>
+<div class="mock-note">On a desk route the editor takes the shell. The companion drops its label and becomes a
+plain quiet "?" disc bottom-right, the same materials as the office launcher but smaller and wordless, so it
+sits at the edge of the manuscript without competing with it. The desk also keeps its own in-place help: the
+footer's <b>Markdown help</b> link (right of the writing-mode toggles) opens the same cheat sheet. Two doors
+to one reference.</div>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="ground">
+    <div class="band">
+      <div class="bnd-cluster">
+        <button class="bnd-sq" aria-label="Open menu"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
+        <nav aria-label="Breadcrumb" class="crumb"><a>Posts</a><span class="crumb-sep">/</span><span class="crumb-here">Getting ready for spring</span></nav>
+      </div>
+      <div class="bnd-status">
+        <span class="badge badge-ghost badge-sm">Edited</span>
+        <span class="savestate"><span class="dot"></span>Unsaved changes</span>
+      </div>
+      <div class="grow"></div>
+      <div class="bnd-cluster" style="gap:6px;">
+        <button class="bnd-btn"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M15 3v18"/></svg>Details</button>
+        <button class="bnd-sq" aria-label="More actions"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h.01"/><path d="M12 12h.01"/><path d="M19 12h.01"/></svg></button>
+        <div class="bnd-div" aria-hidden="true"></div>
+        <button class="btn btn-outline btn-sm">Publish</button>
+        <button class="btn btn-primary btn-sm">Save</button>
+      </div>
+    </div>
+    <main class="page">
+      <div class="col">
+        <div class="ttl-wrap"><div class="ttl">Getting ready for spring</div></div>
+        <div class="card-ed">
+          <div class="strip">
+            <button class="tb" aria-label="Bold" title="Bold (Ctrl+B)"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8"/></svg></button>
+            <button class="tb" aria-label="Italic" title="Italic (Ctrl+I)"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 4h-9"/><path d="M14 20H5"/><path d="M15 4 9 20"/></svg></button>
+            <div class="tdiv" aria-hidden="true"></div>
+            <button class="tb" aria-label="Heading" title="Heading"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h8"/><path d="M4 18V6"/><path d="M12 18V6"/><path d="M21 18h-4c0-4 4-3 4-6 0-1.5-2-2.5-4-1"/></svg></button>
+            <button class="tb" aria-label="Bulleted list" title="Bulleted list"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg></button>
+            <button class="tb" aria-label="Quote" title="Quote"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1 1 1 0 0 0 1 1 4 4 0 0 0 4-4V5a2 2 0 0 0-2-2z"/><path d="M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1 1 1 0 0 0 1 1 4 4 0 0 0 4-4V5a2 2 0 0 0-2-2z"/></svg></button>
+            <div class="tdiv" aria-hidden="true"></div>
+            <button class="tb" aria-label="Insert block" title="Insert block"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 22V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1zM14 2v20M14 7h7a1 1 0 0 1 0 0v5h-7M14 12h8v9a1 1 0 0 1-1 1h-7"/></svg></button>
+            <button class="tb" aria-label="Web link" title="Web link (Ctrl+K)"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
+            <button class="tb" aria-label="Image" title="Image"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg></button>
+            <div class="grow"></div>
+            <span class="seg seg-tabs"><button aria-pressed="true">Write</button><button aria-pressed="false">Preview</button></span>
+          </div>
+          <div class="ms">
+            <div class="ln"><span class="h2"><span class="mk">##</span> Getting ready for spring</span></div>
+            <div class="ln gap"></div>
+            <div class="ln">The first melt is here, and the <span class="mk">**</span><b>trail crew</b><span class="mk">**</span> is already out. Read the <span class="mk">[</span><span class="lk">grooming report</span><span class="mk">](https://example.com/report)</span> before</div>
+            <div class="ln">you go; conditions change <span class="mk">*</span><i>every afternoon</i><span class="mk">*</span>.</div>
+            <div class="ln gap"></div>
+            <div class="ln"><span class="h3"><span class="mk">###</span> What to bring</span></div>
+            <div class="ln gap"></div>
+            <div class="ln hang2"><span class="mk">-</span> Skate skis or classic, waxed for <span class="mk">`</span><span class="chip">0 to -4 C</span><span class="mk">`</span></div>
+            <div class="ln hang2"><span class="mk">-</span> Water and a windproof layer, plus a headlamp for the drive home</div>
+            <div class="ln gap"></div>
+            <div class="ln hang2"><span class="mk">&gt;</span> <i>The lake loop is the season's best hour. Go at golden hour and thank us later.</i></div>
+          </div>
+          <div class="ftr">
+            <span>132 words</span>
+            <span class="ftr-right">
+              <span class="seg" role="group" aria-label="Editing surface">
+                <button aria-pressed="true"><svg class="chk" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Prose</button><button aria-pressed="false">Markup</button>
+              </span>
+              <span class="ftr-modes">
+                <button class="ftr-toggle" aria-pressed="false">Focus mode</button>
+                <button class="ftr-toggle" aria-pressed="false">Typewriter</button>
+              </span>
+              <button class="ftr-strip-link" title="Markdown help">Markdown help</button>
+            </span>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- the receded desk launcher: wordless quiet disc -->
+    <button class="help-fab" aria-haspopup="dialog" aria-expanded="false" aria-label="Help">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+    </button>
+  </div>
+</div></div>
+
+
+<!-- ============================================================
+     SCREEN 5, DESK: the help slide-over (never steals width)
+     ============================================================ -->
+<div class="mock-label">Screen 5 · The desk slide-over: opens over the margin, the card holds its width</div>
+<div class="mock-note">Opening the desk launcher slides the panel in from the right edge as a sheet (the same panel,
+the details slide-over geometry), over a light scrim. The manuscript card keeps its centered width and never
+reflows; the panel covers only the recessed margin to its right. Same getting-started card, same reference. A
+backdrop click or Escape closes it and returns focus to the launcher. This is the rule that keeps the editor
+the page.</div>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="ground" style="position:relative; overflow:hidden;">
+    <div class="band">
+      <div class="bnd-cluster">
+        <button class="bnd-sq" aria-label="Open menu"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
+        <nav aria-label="Breadcrumb" class="crumb"><a>Posts</a><span class="crumb-sep">/</span><span class="crumb-here">Getting ready for spring</span></nav>
+      </div>
+      <div class="bnd-status">
+        <span class="badge badge-ghost badge-sm">Edited</span>
+        <span class="savestate"><span class="dot"></span>Unsaved changes</span>
+      </div>
+      <div class="grow"></div>
+      <div class="bnd-cluster" style="gap:6px;">
+        <button class="bnd-btn"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M15 3v18"/></svg>Details</button>
+        <button class="bnd-sq" aria-label="More actions"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h.01"/><path d="M12 12h.01"/><path d="M19 12h.01"/></svg></button>
+        <div class="bnd-div" aria-hidden="true"></div>
+        <button class="btn btn-outline btn-sm">Publish</button>
+        <button class="btn btn-primary btn-sm">Save</button>
+      </div>
+    </div>
+    <main class="page">
+      <div class="col">
+        <div class="ttl-wrap"><div class="ttl">Getting ready for spring</div></div>
+        <div class="card-ed">
+          <div class="strip">
+            <button class="tb" aria-label="Bold" title="Bold (Ctrl+B)"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8"/></svg></button>
+            <button class="tb" aria-label="Italic" title="Italic (Ctrl+I)"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 4h-9"/><path d="M14 20H5"/><path d="M15 4 9 20"/></svg></button>
+            <div class="tdiv" aria-hidden="true"></div>
+            <button class="tb" aria-label="Heading" title="Heading"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h8"/><path d="M4 18V6"/><path d="M12 18V6"/><path d="M21 18h-4c0-4 4-3 4-6 0-1.5-2-2.5-4-1"/></svg></button>
+            <button class="tb" aria-label="Bulleted list" title="Bulleted list"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg></button>
+            <button class="tb" aria-label="Quote" title="Quote"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1 1 1 0 0 0 1 1 4 4 0 0 0 4-4V5a2 2 0 0 0-2-2z"/><path d="M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1 1 1 0 0 0 1 1 4 4 0 0 0 4-4V5a2 2 0 0 0-2-2z"/></svg></button>
+            <div class="tdiv" aria-hidden="true"></div>
+            <button class="tb" aria-label="Insert block" title="Insert block"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 22V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1zM14 2v20M14 7h7a1 1 0 0 1 0 0v5h-7M14 12h8v9a1 1 0 0 1-1 1h-7"/></svg></button>
+            <button class="tb" aria-label="Web link" title="Web link (Ctrl+K)"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
+            <button class="tb" aria-label="Image" title="Image"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg></button>
+            <div class="grow"></div>
+            <span class="seg seg-tabs"><button aria-pressed="true">Write</button><button aria-pressed="false">Preview</button></span>
+          </div>
+          <div class="ms">
+            <div class="ln"><span class="h2"><span class="mk">##</span> Getting ready for spring</span></div>
+            <div class="ln gap"></div>
+            <div class="ln">The first melt is here, and the <span class="mk">**</span><b>trail crew</b><span class="mk">**</span> is already out. Read the <span class="mk">[</span><span class="lk">grooming report</span><span class="mk">](https://example.com/report)</span> before</div>
+            <div class="ln">you go; conditions change <span class="mk">*</span><i>every afternoon</i><span class="mk">*</span>.</div>
+            <div class="ln gap"></div>
+            <div class="ln"><span class="h3"><span class="mk">###</span> What to bring</span></div>
+            <div class="ln gap"></div>
+            <div class="ln hang2"><span class="mk">-</span> Skate skis or classic, waxed for <span class="mk">`</span><span class="chip">0 to -4 C</span><span class="mk">`</span></div>
+            <div class="ln hang2"><span class="mk">-</span> Water and a windproof layer, plus a headlamp for the drive home</div>
+          </div>
+          <div class="ftr">
+            <span>132 words</span>
+            <span class="ftr-right">
+              <span class="seg" role="group" aria-label="Editing surface">
+                <button aria-pressed="true"><svg class="chk" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Prose</button><button aria-pressed="false">Markup</button>
+              </span>
+              <span class="ftr-modes">
+                <button class="ftr-toggle" aria-pressed="false">Focus mode</button>
+                <button class="ftr-toggle" aria-pressed="false">Typewriter</button>
+              </span>
+              <button class="ftr-strip-link" title="Markdown help">Markdown help</button>
+            </span>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- the light-dismiss scrim + the slide-over -->
+    <div class="help-scrim"></div>
+    <aside class="help-slideover" role="dialog" aria-label="Help">
+      <div class="comp-head">
+        <span class="comp-title">Help</span>
+        <div class="grow"></div>
+        <button class="comp-head-x" aria-label="Close help"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+      </div>
+      <div class="comp-body">
+        <div class="comp-search">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="search" placeholder="Search help" aria-label="Search help" />
+        </div>
+        <div class="gs-card">
+          <div class="gs-eyebrow"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Getting started</div>
+          <p class="gs-head">Publish your first post</p>
+          <div class="gs-prog">
+            <span class="gs-bar"><i></i></span>
+            <span class="gs-prog-num">1 of 3</span>
+          </div>
+          <div class="gs-list">
+            <button class="gs-step gs-step-done"><span class="gs-tick gs-tick-done"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>Write a post in markdown</button>
+            <button class="gs-step"><span class="gs-tick gs-tick-todo"></span>Save it as a private draft<span class="gs-arr"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span></button>
+            <button class="gs-step"><span class="gs-tick gs-tick-todo"></span>Publish to make it live<span class="gs-arr"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span></button>
+          </div>
+        </div>
+        <div>
+          <span class="comp-section-lbl">Reference</span>
+          <ul class="ref-list">
+            <li><button class="ref-item">
+              <span class="ref-ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg></span>
+              <span class="ref-txt"><span class="ref-h">Markdown basics</span><span class="ref-d">Headings, links, lists, and bold.</span></span>
+              <span class="ref-arr"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+            </button></li>
+            <li><button class="ref-item">
+              <span class="ref-ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><path d="M12 20h.01"/></svg></span>
+              <span class="ref-txt"><span class="ref-h">Saving and publishing</span><span class="ref-d">Save keeps a private draft. Publish makes it live.</span></span>
+              <span class="ref-arr"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+            </button></li>
+            <li><button class="ref-item">
+              <span class="ref-ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg></span>
+              <span class="ref-txt"><span class="ref-h">Adding images</span><span class="ref-d">Upload a picture and write its description.</span></span>
+              <span class="ref-arr"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+            </button></li>
+          </ul>
+        </div>
+      </div>
+      <div class="comp-foot">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/></svg>
+        <span>Stuck on something? <a>Email your site owner</a></span>
+      </div>
+    </aside>
+  </div>
+</div></div>
+
+
+<!-- ============================================================
+     SCREEN 6, WOVEN: the markdown point-of-typing hint
+     ============================================================ -->
+<div class="mock-label">Screen 6 · Woven help, A: the markdown hint at the point of typing</div>
+<div class="mock-note">cairn's own opportunity, which no major editor takes. The first time an author types a markdown
+mark (here <code>##</code> at the start of a line), a small ghost coachmark appears under that line and teaches
+by letting them finish the gesture. It is anchored to the caret, never blocks typing, and offers two quiet
+choices: see the cheat sheet, or dismiss. It fires once, then never again. This is the Superhuman
+single-coachmark idea, pointed at markdown.</div>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="ground">
+    <div class="band">
+      <div class="bnd-cluster">
+        <button class="bnd-sq" aria-label="Open menu"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
+        <nav aria-label="Breadcrumb" class="crumb"><a>Posts</a><span class="crumb-sep">/</span><span class="crumb-here">A new groomer joins the fleet</span></nav>
+      </div>
+      <div class="bnd-status">
+        <span class="badge badge-info badge-sm">New</span>
+        <span class="savestate"><span class="dot"></span>Unsaved changes</span>
+      </div>
+      <div class="grow"></div>
+      <div class="bnd-cluster" style="gap:6px;">
+        <button class="bnd-btn"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M15 3v18"/></svg>Details</button>
+        <button class="bnd-sq" aria-label="More actions"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h.01"/><path d="M12 12h.01"/><path d="M19 12h.01"/></svg></button>
+        <div class="bnd-div" aria-hidden="true"></div>
+        <button class="btn btn-outline btn-sm">Publish</button>
+        <button class="btn btn-primary btn-sm">Save</button>
+      </div>
+    </div>
+    <main class="page">
+      <div class="col">
+        <div class="ttl-wrap"><div class="ttl">A new groomer joins the fleet</div></div>
+        <div class="card-ed">
+          <div class="strip">
+            <button class="tb" aria-label="Bold" title="Bold (Ctrl+B)"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8"/></svg></button>
+            <button class="tb" aria-label="Italic" title="Italic (Ctrl+I)"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 4h-9"/><path d="M14 20H5"/><path d="M15 4 9 20"/></svg></button>
+            <div class="tdiv" aria-hidden="true"></div>
+            <button class="tb" aria-label="Heading" title="Heading"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h8"/><path d="M4 18V6"/><path d="M12 18V6"/><path d="M21 18h-4c0-4 4-3 4-6 0-1.5-2-2.5-4-1"/></svg></button>
+            <button class="tb" aria-label="Bulleted list" title="Bulleted list"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg></button>
+            <button class="tb" aria-label="Quote" title="Quote"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1 1 1 0 0 0 1 1 4 4 0 0 0 4-4V5a2 2 0 0 0-2-2z"/><path d="M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1 1 1 0 0 0 1 1 4 4 0 0 0 4-4V5a2 2 0 0 0-2-2z"/></svg></button>
+            <div class="tdiv" aria-hidden="true"></div>
+            <button class="tb" aria-label="Insert block" title="Insert block"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 22V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1zM14 2v20M14 7h7a1 1 0 0 1 0 0v5h-7M14 12h8v9a1 1 0 0 1-1 1h-7"/></svg></button>
+            <button class="tb" aria-label="Web link" title="Web link (Ctrl+K)"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
+            <button class="tb" aria-label="Image" title="Image"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg></button>
+            <div class="grow"></div>
+            <span class="seg seg-tabs"><button aria-pressed="true">Write</button><button aria-pressed="false">Preview</button></span>
+          </div>
+          <div class="ms">
+            <!-- the author has just typed "## " at the start of a fresh line; the caret sits after it -->
+            <div class="ln" style="position:relative;"><span class="h2"><span class="mk">##</span> Meet the new winch cat<span class="caret"></span></span></div>
+            <div class="ln gap"></div>
+            <div class="ln" style="color:var(--color-muted); opacity:.55;">Start writing the post here.</div>
+
+            <!-- the woven point-of-typing hint, anchored under the heading line -->
+            <div class="poke" style="left:1.25rem; top:3.1em;">
+              <div class="poke-row">
+                <span class="poke-ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h8"/><path d="M4 18V6"/><path d="M12 18V6"/><path d="M21 18h-4c0-4 4-3 4-6 0-1.5-2-2.5-4-1"/></svg></span>
+                <p>Two <code>##</code> at the start of a line make a heading. One <code>#</code> is bigger; three <code>###</code> is smaller.</p>
+              </div>
+              <div class="poke-foot">
+                <button class="poke-link">See the cheat sheet</button>
+                <button class="poke-dismiss">Got it</button>
+              </div>
+            </div>
+          </div>
+          <div class="ftr">
+            <span>6 words</span>
+            <span class="ftr-right">
+              <span class="seg" role="group" aria-label="Editing surface">
+                <button aria-pressed="true"><svg class="chk" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Prose</button><button aria-pressed="false">Markup</button>
+              </span>
+              <span class="ftr-modes">
+                <button class="ftr-toggle" aria-pressed="false">Focus mode</button>
+                <button class="ftr-toggle" aria-pressed="false">Typewriter</button>
+              </span>
+              <button class="ftr-strip-link" title="Markdown help">Markdown help</button>
+            </span>
+          </div>
+        </div>
+      </div>
+    </main>
+    <button class="help-fab" aria-haspopup="dialog" aria-expanded="false" aria-label="Help">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+    </button>
+  </div>
+</div></div>
+
+
+<!-- ============================================================
+     SCREEN 7, WOVEN: the per-field frontmatter hint (details panel)
+     ============================================================ -->
+<div class="mock-label">Screen 7 · Woven help, B: the per-field hint in the details panel</div>
+<div class="mock-note">The second woven example, the schema-authored field help the field's own definition carries
+(the Sanity/Contentful pattern), shown right under the input where the decision is made. Each field states in
+author language what it does and where it shows. The "Address" field carries a validation-as-warning: it
+explains the clash and still lets the author publish past it (warning, never a block). No format rule is
+hidden in a placeholder. Shown as the details slide-over over the same desk.</div>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="ground" style="position:relative; overflow:hidden;">
+    <div class="band">
+      <div class="bnd-cluster">
+        <button class="bnd-sq" aria-label="Open menu"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
+        <nav aria-label="Breadcrumb" class="crumb"><a>Posts</a><span class="crumb-sep">/</span><span class="crumb-here">Getting ready for spring</span></nav>
+      </div>
+      <div class="bnd-status">
+        <span class="badge badge-ghost badge-sm">Edited</span>
+        <span class="savestate"><span class="dot"></span>Unsaved changes</span>
+      </div>
+      <div class="grow"></div>
+      <div class="bnd-cluster" style="gap:6px;">
+        <button class="bnd-btn" style="background:color-mix(in oklab, var(--color-primary) 10%, transparent); color:var(--color-primary);"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M15 3v18"/></svg>Details</button>
+        <button class="bnd-sq" aria-label="More actions"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h.01"/><path d="M12 12h.01"/><path d="M19 12h.01"/></svg></button>
+        <div class="bnd-div" aria-hidden="true"></div>
+        <button class="btn btn-outline btn-sm">Publish</button>
+        <button class="btn btn-primary btn-sm">Save</button>
+      </div>
+    </div>
+    <main class="page">
+      <div class="col" style="opacity:.97">
+        <div class="ttl-wrap"><div class="ttl">Getting ready for spring</div></div>
+        <div class="card-ed">
+          <div class="strip">
+            <button class="tb" aria-label="Bold" title="Bold (Ctrl+B)"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8"/></svg></button>
+            <button class="tb" aria-label="Italic" title="Italic (Ctrl+I)"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 4h-9"/><path d="M14 20H5"/><path d="M15 4 9 20"/></svg></button>
+            <div class="tdiv" aria-hidden="true"></div>
+            <button class="tb" aria-label="Heading" title="Heading"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h8"/><path d="M4 18V6"/><path d="M12 18V6"/><path d="M21 18h-4c0-4 4-3 4-6 0-1.5-2-2.5-4-1"/></svg></button>
+            <button class="tb" aria-label="Bulleted list" title="Bulleted list"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg></button>
+            <button class="tb" aria-label="Quote" title="Quote"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1 1 1 0 0 0 1 1 4 4 0 0 0 4-4V5a2 2 0 0 0-2-2z"/><path d="M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1 1 1 0 0 0 1 1 4 4 0 0 0 4-4V5a2 2 0 0 0-2-2z"/></svg></button>
+            <div class="grow"></div>
+            <span class="seg seg-tabs"><button aria-pressed="true">Write</button><button aria-pressed="false">Preview</button></span>
+          </div>
+          <div class="ms" style="min-height:30vh;">
+            <div class="ln"><span class="h2"><span class="mk">##</span> Getting ready for spring</span></div>
+            <div class="ln gap"></div>
+            <div class="ln">The first melt is here, and the <span class="mk">**</span><b>trail crew</b><span class="mk">**</span> is already out. Read the <span class="mk">[</span><span class="lk">grooming report</span><span class="mk">](https://example.com/report)</span> before</div>
+            <div class="ln">you go; conditions change <span class="mk">*</span><i>every afternoon</i><span class="mk">*</span>.</div>
+            <div class="ln gap"></div>
+            <div class="ln"><span class="h3"><span class="mk">###</span> What to bring</span></div>
+            <div class="ln gap"></div>
+            <div class="ln hang2"><span class="mk">-</span> Skate skis or classic, waxed for <span class="mk">`</span><span class="chip">0 to -4 C</span><span class="mk">`</span></div>
+          </div>
+          <div class="ftr">
+            <span>132 words</span>
+            <span class="ftr-right">
+              <span class="seg" role="group" aria-label="Editing surface">
+                <button aria-pressed="true"><svg class="chk" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Prose</button><button aria-pressed="false">Markup</button>
+              </span>
+              <button class="ftr-strip-link" title="Markdown help">Markdown help</button>
+            </span>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- the details slide-over with per-field hints -->
+    <aside class="panel" role="region" aria-label="Entry details">
+      <div class="panel-head">
+        <span class="eyebrow">Details</span>
+        <button class="bnd-sq" aria-label="Close details" style="height:24px;width:24px;">✕</button>
+      </div>
+
+      <label class="fld">
+        <div class="fld-label-row"><span>Description</span></div>
+        <textarea class="textarea textarea-sm" rows="3">Trail report and what to bring for the first weeks of spring skiing.</textarea>
+        <span class="fld-hint">A one-line summary. Shows under the title in search results and on social media.</span>
+      </label>
+
+      <label class="fld">
+        <div class="fld-label-row"><span>Social image</span>
+          <span class="fld-info" title="Shown when this post is shared on social media."><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+        </div>
+        <input class="input input-sm" placeholder="Choose or upload" />
+        <span class="fld-hint">The picture that appears when someone shares this post. A wide image works best.</span>
+      </label>
+
+      <label class="fld">
+        <div class="fld-label-row"><span>Author</span></div>
+        <input class="input input-sm" value="Trail crew" />
+        <span class="fld-hint">The name shown as the writer of this post.</span>
+      </label>
+
+      <div class="eyebrow" style="margin-top:18px;">Visibility</div>
+      <label class="chkrow"><input type="checkbox" class="checkbox checkbox-sm" /><span>Hidden</span></label>
+      <span class="fld-hint" style="margin-top:3px;">A hidden post stays out of your lists and menus. Anyone with the link can still open it.</span>
+
+      <div class="eyebrow" style="margin-top:18px;">Address</div>
+      <div class="addr" style="margin-bottom:2px;"><code>/2026-06-getting-ready</code><a class="lk" style="cursor:pointer;">Change</a></div>
+      <span class="fld-hint">The web address for this post. Changing it after publishing breaks old links.</span>
+      <div class="fld-warn">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+        <span>Another post already uses this address. You can still publish; the newer one will win.</span>
+      </div>
+    </aside>
+  </div>
+</div></div>
+
+
+<!-- ============================================================
+     SCREEN 8: the re-openable markdown cheat sheet (the reference)
+     ============================================================ -->
+<div class="mock-label">Screen 8 · The markdown cheat sheet (re-openable from the panel or the footer)</div>
+<div class="mock-note">The daily-reference payoff: a calm, scannable cheat sheet, opened from the panel's "Markdown
+basics" or the editor footer's "Markdown help". A centered dialog over a scrim (the Dialog recipe, sized to
+content under a cap). Two columns of "what you want" beside "what you type", with the type shown in the editor
+face. It is a reference to glance at and close, never a tour. Only the formatting this site supports is shown.</div>
+<div class="screen"><div data-theme="cairn-admin">
+  <div class="ground" style="position:relative; min-height:78vh;">
+    <!-- a hint of the desk behind the scrim -->
+    <div class="band">
+      <div class="bnd-cluster">
+        <button class="bnd-sq" aria-label="Open menu"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
+        <nav aria-label="Breadcrumb" class="crumb"><a>Posts</a><span class="crumb-sep">/</span><span class="crumb-here">Getting ready for spring</span></nav>
+      </div>
+      <div class="grow"></div>
+      <div class="bnd-cluster" style="gap:6px;">
+        <button class="btn btn-outline btn-sm">Publish</button>
+        <button class="btn btn-primary btn-sm">Save</button>
+      </div>
+    </div>
+
+    <div class="sheet-scrim"></div>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="cheat-title">
+      <div class="sheet-head">
+        <span class="sheet-title" id="cheat-title">Markdown basics</span>
+        <div class="grow"></div>
+        <button class="comp-head-x" aria-label="Close"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+      </div>
+      <div class="sheet-body">
+        <p class="sheet-lead">Markdown is plain text with a few marks for formatting. Type the marks on the left of each
+        row and they turn into the formatting on the right. You never have to memorize them; this sheet is always one click away.</p>
+        <div class="cheat-grid">
+          <div class="cheat-row"><span class="cheat-you">A big heading</span><span class="cheat-type"><b>#</b> Title</span></div>
+          <div class="cheat-row"><span class="cheat-you">Bold text</span><span class="cheat-type"><b>**</b>bold<b>**</b></span></div>
+          <div class="cheat-row"><span class="cheat-you">A section heading</span><span class="cheat-type"><b>##</b> Section</span></div>
+          <div class="cheat-row"><span class="cheat-you">Italic text</span><span class="cheat-type"><b>*</b>italic<b>*</b></span></div>
+          <div class="cheat-row"><span class="cheat-you">A smaller heading</span><span class="cheat-type"><b>###</b> Smaller</span></div>
+          <div class="cheat-row"><span class="cheat-you">A link</span><span class="cheat-type"><b>[</b>text<b>](</b>url<b>)</b></span></div>
+          <div class="cheat-row"><span class="cheat-you">A bullet list</span><span class="cheat-type"><b>-</b> item</span></div>
+          <div class="cheat-row"><span class="cheat-you">A quote</span><span class="cheat-type"><b>&gt;</b> quoted</span></div>
+          <div class="cheat-row"><span class="cheat-you">A numbered list</span><span class="cheat-type"><b>1.</b> item</span></div>
+          <div class="cheat-row" style="border-bottom:0;"><span class="cheat-you">A horizontal rule</span><span class="cheat-type"><b>---</b></span></div>
+        </div>
+        <div class="sheet-foot">
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+          <span>The toolbar above the editor inserts any of these for you. Typing the marks does the same thing.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ============================================================
+     SCREEN 9, DARK: the companion panel + desk slide-over
+     ============================================================ -->
+<div class="mock-label">Screen 9 · Dark theme: the panel (office) and the slide-over (desk)</div>
+<div class="mock-note">Both companion surfaces through the dark tokens; every color resolves from the theme
+variables, with no per-mode markup. Left, the office panel anchored bottom-right. Right, the desk slide-over
+over its scrim, the manuscript holding its width.</div>
+<div class="screen twin" data-theme="cairn-admin-dark">
+  <!-- LEFT: office panel, dark -->
+  <div style="background:var(--color-base-200); min-height:64vh;">
+    <div style="height:64px; background:var(--color-base-100); border-bottom:1px solid var(--cairn-card-border); display:flex; align-items:center; padding:0 20px; gap:12px;">
+      <button class="palette" style="min-width:13rem;"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search and commands<span class="kbd-hint">Ctrl K</span></button>
+      <div class="grow"></div>
+      <button class="btn btn-primary btn-sm">Publish site (2)</button>
+    </div>
+    <div style="padding:2rem 2rem;">
+      <h1 class="ofc-h1" style="margin-bottom:14px;">Posts</h1>
+      <div style="background:var(--color-base-100); border:1px solid var(--cairn-card-border); border-radius:1rem; box-shadow:var(--cairn-shadow); overflow:hidden; opacity:.5;">
+        <div style="padding:13px 18px; border-bottom:1px solid color-mix(in oklab, var(--cairn-card-border) 65%, transparent); font-size:.9375rem; font-weight:600;">Getting ready for spring</div>
+        <div style="padding:13px 18px; border-bottom:1px solid color-mix(in oklab, var(--cairn-card-border) 65%, transparent); font-size:.9375rem; font-weight:600;">Trail conditions: the week of May 25</div>
+        <div style="padding:13px 18px; font-size:.9375rem; font-weight:600;">A new groomer joins the fleet</div>
+      </div>
+    </div>
+
+    <div class="companion" role="dialog" aria-label="Help">
+      <div class="comp-head">
+        <span class="comp-title">Help</span>
+        <div class="grow"></div>
+        <button class="comp-head-x" aria-label="Close help"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+      </div>
+      <div class="comp-body">
+        <div class="comp-search">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="search" placeholder="Search help" aria-label="Search help" />
+        </div>
+        <div class="gs-card">
+          <div class="gs-eyebrow"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Getting started</div>
+          <p class="gs-head">Publish your first post</p>
+          <div class="gs-prog"><span class="gs-bar"><i></i></span><span class="gs-prog-num">1 of 3</span></div>
+          <div class="gs-list">
+            <button class="gs-step gs-step-done"><span class="gs-tick gs-tick-done"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>Write a post in markdown</button>
+            <button class="gs-step"><span class="gs-tick gs-tick-todo"></span>Save it as a private draft<span class="gs-arr"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span></button>
+            <button class="gs-step"><span class="gs-tick gs-tick-todo"></span>Publish to make it live<span class="gs-arr"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span></button>
+          </div>
+        </div>
+        <div>
+          <span class="comp-section-lbl">Reference</span>
+          <ul class="ref-list">
+            <li><button class="ref-item">
+              <span class="ref-ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg></span>
+              <span class="ref-txt"><span class="ref-h">Markdown basics</span><span class="ref-d">Headings, links, lists, and bold.</span></span>
+              <span class="ref-arr"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+            </button></li>
+            <li><button class="ref-item">
+              <span class="ref-ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><path d="M12 20h.01"/></svg></span>
+              <span class="ref-txt"><span class="ref-h">Saving and publishing</span><span class="ref-d">Save keeps a private draft. Publish makes it live.</span></span>
+              <span class="ref-arr"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+            </button></li>
+          </ul>
+        </div>
+      </div>
+      <div class="comp-foot">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/></svg>
+        <span>Stuck on something? <a>Email your site owner</a></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: desk slide-over, dark -->
+  <div style="background:var(--color-base-200); min-height:64vh; overflow:hidden;">
+    <div class="band" style="padding-right:20px;">
+      <div class="bnd-cluster">
+        <button class="bnd-sq" aria-label="Open menu"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
+        <nav aria-label="Breadcrumb" class="crumb"><a>Posts</a><span class="crumb-sep">/</span><span class="crumb-here">Getting ready for spring</span></nav>
+      </div>
+      <div class="grow"></div>
+      <div class="bnd-cluster" style="gap:6px;">
+        <button class="btn btn-outline btn-sm">Publish</button>
+        <button class="btn btn-primary btn-sm">Save</button>
+      </div>
+    </div>
+    <main class="page" style="padding:2rem 1.5rem;">
+      <div class="col">
+        <div class="ttl-wrap"><div class="ttl">Getting ready for spring</div></div>
+        <div class="card-ed">
+          <div class="strip">
+            <button class="tb" aria-label="Bold"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8"/></svg></button>
+            <button class="tb" aria-label="Italic"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 4h-9"/><path d="M14 20H5"/><path d="M15 4 9 20"/></svg></button>
+            <div class="grow"></div>
+            <span class="seg seg-tabs"><button aria-pressed="true">Write</button><button aria-pressed="false">Preview</button></span>
+          </div>
+          <div class="ms" style="min-height:24vh; font-size:1rem;">
+            <div class="ln"><span class="h2"><span class="mk">##</span> Getting ready for spring</span></div>
+            <div class="ln gap"></div>
+            <div class="ln">The first melt is here, and the <span class="mk">**</span><b>trail crew</b><span class="mk">**</span> is already out.</div>
+            <div class="ln gap"></div>
+            <div class="ln hang2"><span class="mk">-</span> Skate skis or classic, waxed for <span class="mk">`</span><span class="chip">0 to -4 C</span><span class="mk">`</span></div>
+          </div>
+          <div class="ftr">
+            <span>132 words</span>
+            <span class="ftr-right"><button class="ftr-strip-link">Markdown help</button></span>
+          </div>
+        </div>
+      </div>
+    </main>
+    <div class="help-scrim"></div>
+    <aside class="help-slideover" role="dialog" aria-label="Help">
+      <div class="comp-head">
+        <span class="comp-title">Help</span>
+        <div class="grow"></div>
+        <button class="comp-head-x" aria-label="Close help"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+      </div>
+      <div class="comp-body">
+        <div class="comp-search">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="search" placeholder="Search help" aria-label="Search help" />
+        </div>
+        <div class="gs-card">
+          <div class="gs-eyebrow"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Getting started</div>
+          <p class="gs-head">Publish your first post</p>
+          <div class="gs-prog"><span class="gs-bar"><i></i></span><span class="gs-prog-num">1 of 3</span></div>
+          <div class="gs-list">
+            <button class="gs-step gs-step-done"><span class="gs-tick gs-tick-done"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>Write a post in markdown</button>
+            <button class="gs-step"><span class="gs-tick gs-tick-todo"></span>Save it as a private draft<span class="gs-arr"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span></button>
+            <button class="gs-step"><span class="gs-tick gs-tick-todo"></span>Publish to make it live<span class="gs-arr"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span></button>
+          </div>
+        </div>
+        <div>
+          <span class="comp-section-lbl">Reference</span>
+          <ul class="ref-list">
+            <li><button class="ref-item">
+              <span class="ref-ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg></span>
+              <span class="ref-txt"><span class="ref-h">Markdown basics</span><span class="ref-d">Headings, links, lists, and bold.</span></span>
+              <span class="ref-arr"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+            </button></li>
+            <li><button class="ref-item">
+              <span class="ref-ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg></span>
+              <span class="ref-txt"><span class="ref-h">Adding images</span><span class="ref-d">Upload a picture and write its description.</span></span>
+              <span class="ref-arr"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+            </button></li>
+          </ul>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div style="height:36px;"></div>
+
+</body>
+</html>

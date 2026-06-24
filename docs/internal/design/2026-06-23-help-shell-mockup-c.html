@@ -1,0 +1,750 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>cairn admin · Help home as hub (variant C)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Figtree:wght@400..700&display=swap" rel="stylesheet" />
+<style>
+  /* ============================================================================
+     Variant C · The Help home as a composed HUB.
+     A self-contained render: Google Fonts for Bricolage Grotesque (display) and
+     Figtree (body/UI), the Warm Stone tokens in :root, every color derived from
+     them, all CSS and markup inline. Light theme only.
+
+     The signature is the COMPOSITION: a Help home that reads as a real, first-class
+     place. Three eyebrow-grouped regions (Getting started, Formatting, Get help) sit
+     on one calm column, and a quiet "more help" rail visibly leaves room to grow
+     toward the future contextual slide-over and the deeper corpus. The distinctiveness
+     lives in layout, not a new identity: every token, recipe, and voice rule is the
+     established admin design system.
+     ============================================================================ */
+
+  /* ---- Warm Stone tokens (light). Put on :root; derive every color from here. ---- */
+  :root, [data-theme='cairn-admin'] {
+    --color-base-100: oklch(99% 0.004 75);      /* page + card surface */
+    --color-base-200: oklch(96.5% 0.006 75);    /* recessed surface (content ground) */
+    --color-base-300: oklch(89% 0.011 75);      /* divider */
+    --color-base-content: oklch(26% 0.014 75);  /* primary ink */
+    --color-primary: oklch(52% 0.2 293);        /* violet, primary action + active */
+    --color-primary-content: oklch(98% 0.012 293);
+    --color-accent: oklch(54% 0.16 300);        /* links */
+    --color-muted: oklch(48% 0.01 75);          /* secondary ink */
+    --color-subtle: oklch(42% 0.01 75);         /* nav item text (stronger of the two) */
+    --color-positive-ink: oklch(48% 0.12 150);  /* done / check */
+    --cairn-card-border: oklch(93% 0.008 75);   /* theme-adaptive hairline */
+    --cairn-shadow: 0 1px 2px oklch(28% 0.02 75 / 0.05), 0 8px 24px -6px oklch(28% 0.02 75 / 0.1);
+    --cairn-code-chip: oklch(94.5% 0.008 75);
+
+    --font-display: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
+    --font-body: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+    /* the editor face is iA Writer Mono in product; the mockup borrows a mono stack
+       only for the formatting "Type this" samples, which echo the writing surface */
+    --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+
+    --radius-field: 0.625rem;
+    --radius-box: 1rem;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--color-base-200);
+    font-family: var(--font-body);
+    color: var(--color-base-content);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; border-radius: 4px; }
+  .grow { flex: 1 1 auto; }
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+
+  /* ===========================================================================
+     The admin shell (office context): left sidebar + slim topbar.
+     Chrome-isolated, self-styled. data-theme lives on a bare wrapper one level up.
+     =========================================================================== */
+  .shell {
+    display: flex;
+    min-height: 100vh;
+    background: var(--color-base-200);
+  }
+
+  /* ---- left office sidebar ---- */
+  .side {
+    width: 14rem;
+    flex: none;
+    background: var(--color-base-100);
+    border-right: 1px solid var(--cairn-card-border);
+    display: flex;
+    flex-direction: column;
+  }
+  .side-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 64px;
+    padding: 0 16px;
+    border-bottom: 1px solid var(--cairn-card-border);
+  }
+  .brand-tile {
+    height: 32px; width: 32px;
+    border-radius: 0.75rem;
+    background: var(--color-primary);
+    color: var(--color-primary-content);
+    display: inline-flex; align-items: center; justify-content: center;
+    box-shadow: 0 1px 2px oklch(28% 0.02 75 / 0.18);
+  }
+  .brand-tile svg { width: 18px; height: 18px; }
+  .brand-word {
+    font-family: var(--font-display);
+    font-size: 1.25rem; font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .side-nav { padding: 6px 10px; display: flex; flex-direction: column; gap: 1px; }
+  .nav-grp {
+    font-size: 0.6875rem; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--color-muted);
+    padding: 16px 8px 5px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 10px;
+    border-radius: 0.5rem;
+    font-size: 0.875rem; font-weight: 500;
+    color: var(--color-subtle);
+    text-decoration: none; cursor: pointer;
+    background: none; border: 0; width: 100%; text-align: left;
+    font-family: inherit;
+  }
+  .nav-item:hover { background: color-mix(in oklab, var(--color-base-content) 5%, transparent); }
+  .nav-item.active {
+    background: color-mix(in oklab, var(--color-primary) 10%, transparent);
+    color: var(--color-primary);
+    font-weight: 600;
+  }
+  .nav-ico { width: 16px; height: 16px; flex: none; }
+  /* Help pinned at the foot as a standing utility, below a divider, set apart from concepts */
+  .nav-foot {
+    margin-top: auto;
+    padding: 6px 10px 12px;
+    border-top: 1px solid var(--cairn-card-border);
+    display: flex; flex-direction: column; gap: 1px;
+  }
+
+  /* ---- main column ---- */
+  .main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+  .top {
+    display: flex; align-items: center;
+    height: 64px; min-height: 64px;
+    background: var(--color-base-100);
+    border-bottom: 1px solid var(--cairn-card-border);
+    padding: 0 20px; gap: 12px;
+  }
+  .palette {
+    display: inline-flex; align-items: center; gap: 8px;
+    height: 34px; padding: 0 12px;
+    min-width: 17rem;
+    border: 1px solid var(--cairn-card-border);
+    border-radius: var(--radius-field);
+    background: var(--color-base-200);
+    color: var(--color-muted);
+    font: 400 0.8125rem/1 var(--font-body);
+    cursor: pointer;
+  }
+  .palette svg { width: 15px; height: 15px; }
+  .kbd-hint {
+    margin-left: auto;
+    font-size: 0.625rem;
+    border: 1px solid var(--cairn-card-border);
+    border-radius: 0.25rem;
+    padding: 1px 5px;
+    color: var(--color-muted);
+  }
+  .top-link {
+    color: var(--color-muted);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-color: color-mix(in oklab, currentColor 40%, transparent);
+    background: none; border: 0;
+    font: 500 0.8125rem/1 var(--font-body);
+    cursor: pointer;
+  }
+  .top-link:hover { color: var(--color-primary); }
+
+  /* the standing primary action, with the scoped soft violet lift (no ad-hoc shadow) */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    height: 34px; padding: 0 14px;
+    border-radius: var(--radius-field);
+    border: 1px solid transparent;
+    font: 600 0.8125rem/1 var(--font-body);
+    cursor: pointer;
+    background: var(--color-base-100);
+    color: var(--color-base-content);
+    text-decoration: none;
+  }
+  .btn svg { width: 15px; height: 15px; }
+  .btn-ghost { border-color: var(--cairn-card-border); }
+  .btn-ghost:hover { border-color: color-mix(in oklab, var(--color-primary) 38%, var(--cairn-card-border)); color: var(--color-primary); }
+  .btn-primary {
+    background: var(--color-primary);
+    color: var(--color-primary-content);
+    box-shadow: 0 1px 2px oklch(52% 0.2 293 / 0.28), 0 6px 16px -6px oklch(52% 0.2 293 / 0.5);
+  }
+  .btn-primary:hover { background: oklch(48% 0.2 293); }
+  .btn-sm { height: 30px; padding: 0 12px; font-size: 0.78125rem; }
+
+  .content { padding: 2.5rem 2.5rem 3.5rem; }
+
+  /* ===========================================================================
+     The Help HOME (the composed hub).
+     One calm column. A page masthead, then three eyebrow-grouped regions on a soft
+     stagger, and a quiet "more help" rail that leaves visible room to grow.
+     =========================================================================== */
+  .hub { max-width: 64rem; margin: 0 auto; width: 100%; }
+
+  .eyebrow {
+    font-size: 0.6875rem; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--color-muted);
+  }
+
+  /* ---- masthead ---- */
+  .hub-head { margin-bottom: 30px; }
+  .hub-h1 {
+    font-family: var(--font-display);
+    font-size: 2rem; font-weight: 700;
+    letter-spacing: -0.025em;
+    margin: 5px 0 0;
+  }
+  .hub-lede {
+    font-size: 0.9375rem;
+    color: var(--color-muted);
+    margin: 8px 0 0;
+    max-width: 54ch;
+    line-height: 1.55;
+  }
+
+  /* the region header shared by all three: an eyebrow + a display title on one row,
+     with an optional trailing quiet meta. This is what makes the three read as peers. */
+  .region { margin-top: 34px; }
+  .region:first-of-type { margin-top: 0; }
+  .region-head {
+    display: flex; align-items: baseline; gap: 12px;
+    margin-bottom: 14px;
+  }
+  .region-eye {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 26px; width: 26px; flex: none;
+    border-radius: 0.5rem;
+    background: color-mix(in oklab, var(--color-primary) 9%, transparent);
+    color: var(--color-primary);
+    margin-right: 2px;
+  }
+  .region-eye svg { width: 15px; height: 15px; }
+  .region-titles { display: flex; flex-direction: column; gap: 2px; }
+  .region-h {
+    font-family: var(--font-display);
+    font-size: 1.25rem; font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+  .region-sub { font-size: 0.8125rem; color: var(--color-muted); line-height: 1.4; }
+  .region-meta {
+    margin-left: auto;
+    align-self: center;
+    font-size: 0.75rem; color: var(--color-muted);
+  }
+
+  /* the floating card recipe: rounded, hairline + soft shadow, on base-100 */
+  .card {
+    border: 1px solid var(--cairn-card-border);
+    border-radius: var(--radius-box);
+    background: var(--color-base-100);
+    box-shadow: var(--cairn-shadow);
+  }
+
+  /* ---------- REGION 1 · Getting started (derived progress) ---------- */
+  /* A short outcome checklist whose steps DERIVE from real content + publish state,
+     so the count is always honest. The bar is decorative (role=presentation, inert);
+     the authoritative count lives in adjacent real text. Each done item is glyph-backed
+     with a check (never color alone, WCAG 1.4.1). */
+  .start { padding: 22px 24px 20px; overflow: hidden;
+    background: linear-gradient(180deg, color-mix(in oklab, var(--color-primary) 3.5%, var(--color-base-100)), var(--color-base-100)); }
+  .start-top { display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+  .start-lead { flex: 1 1 18rem; min-width: 0; }
+  .start-h { font-family: var(--font-display); font-size: 1.0625rem; font-weight: 700; letter-spacing: -0.01em; }
+  .start-sub { font-size: 0.8125rem; color: var(--color-muted); margin-top: 3px; max-width: 44ch; line-height: 1.5; }
+
+  /* the progress readout: real count text + a decorative bar */
+  .prog { flex: 0 0 auto; min-width: 12rem; text-align: right; }
+  .prog-count { font-size: 0.8125rem; font-weight: 600; color: var(--color-base-content); }
+  .prog-count b { color: var(--color-positive-ink); }
+  .prog-bar {
+    height: 6px; border-radius: 999px;
+    background: color-mix(in oklab, var(--color-base-content) 8%, transparent);
+    overflow: hidden; margin-top: 7px;
+  }
+  .prog-bar > i {
+    display: block; height: 100%;
+    border-radius: 999px;
+    background: var(--color-primary);
+  }
+
+  .steps { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 8px; }
+  .step {
+    display: flex; align-items: center; gap: 13px;
+    padding: 11px 13px;
+    border: 1px solid var(--cairn-card-border);
+    border-radius: 0.75rem;
+    background: var(--color-base-100);
+  }
+  .step-box {
+    flex: none; height: 22px; width: 22px;
+    border-radius: 7px;
+    border: 1.5px solid color-mix(in oklab, var(--color-base-content) 22%, transparent);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: transparent;
+  }
+  .step-box svg { width: 13px; height: 13px; }
+  .step.is-done .step-box {
+    background: var(--color-positive-ink);
+    border-color: var(--color-positive-ink);
+    color: var(--color-primary-content);
+  }
+  .step-body { min-width: 0; }
+  .step-title { font-size: 0.875rem; font-weight: 600; color: var(--color-base-content); }
+  .step.is-done .step-title { color: var(--color-muted); }
+  .step-desc { font-size: 0.75rem; color: var(--color-muted); margin-top: 1px; line-height: 1.4; }
+  .step-act {
+    margin-left: auto; flex: none;
+    display: inline-flex; align-items: center; gap: 5px;
+    height: 30px; padding: 0 12px;
+    border: 1px solid var(--cairn-card-border);
+    border-radius: var(--radius-field);
+    background: var(--color-base-100);
+    font: 600 0.78125rem/1 var(--font-body);
+    color: var(--color-primary);
+    cursor: pointer; text-decoration: none;
+  }
+  .step-act:hover { border-color: color-mix(in oklab, var(--color-primary) 40%, var(--cairn-card-border)); background: color-mix(in oklab, var(--color-primary) 6%, transparent); }
+  .step-act svg { width: 13px; height: 13px; }
+  .step-done-tag {
+    margin-left: auto; flex: none;
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 0.75rem; font-weight: 600;
+    color: var(--color-positive-ink);
+  }
+  .step-done-tag svg { width: 13px; height: 13px; }
+  .start-foot {
+    margin-top: 14px;
+    display: flex; align-items: center; gap: 8px;
+    font-size: 0.75rem; color: var(--color-muted);
+  }
+  .start-foot button {
+    color: var(--color-muted);
+    background: none; border: 0; padding: 0; cursor: pointer;
+    font: inherit;
+    text-decoration: underline; text-underline-offset: 2px;
+  }
+  .start-foot button:hover { color: var(--color-base-content); }
+
+  /* ---------- REGION 2 · Formatting reference (Type this / What it makes) ---------- */
+  /* The markdown cheat sheet promoted from the editor Ctrl+/ dialog, as a calm,
+     scannable two-column pairing. Kept on one card, not a wall. */
+  .fmt { overflow: hidden; }
+  .fmt-colhead {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    padding: 11px 20px;
+    border-bottom: 1px solid var(--cairn-card-border);
+    background: color-mix(in oklab, var(--color-base-content) 1.5%, transparent);
+  }
+  .fmt-colhead span {
+    font-size: 0.6875rem; font-weight: 600;
+    letter-spacing: 0.07em; text-transform: uppercase;
+    color: var(--color-muted);
+  }
+  .fmt-list { list-style: none; margin: 0; padding: 4px 0; }
+  .fmt-row {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 18px; align-items: center;
+    padding: 9px 20px;
+  }
+  .fmt-row + .fmt-row { border-top: 1px solid color-mix(in oklab, var(--cairn-card-border) 70%, transparent); }
+  .fmt-type {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--color-base-content);
+  }
+  .fmt-type .mk { color: var(--color-muted); }
+  .fmt-type .chip {
+    background: var(--cairn-code-chip);
+    border-radius: 0.25rem;
+    padding: 0.05em 0.32em;
+  }
+  .fmt-makes { font-size: 0.875rem; color: var(--color-base-content); }
+  .fmt-makes .h { font-weight: 700; font-size: 1.0625rem; font-family: var(--font-display); letter-spacing: -0.01em; }
+  .fmt-makes b { font-weight: 700; }
+  .fmt-makes i { font-style: italic; }
+  .fmt-makes .lnk { color: var(--color-accent); text-decoration: underline; text-underline-offset: 2px; }
+  .fmt-makes .ic { background: var(--cairn-code-chip); border-radius: 0.25rem; padding: 0.05em 0.32em; font-family: var(--font-mono); font-size: 0.8125rem; }
+  .fmt-makes ul, .fmt-makes ol { margin: 0; padding-left: 1.15rem; }
+  .fmt-makes li { line-height: 1.5; }
+  .fmt-makes .q {
+    border-left: 3px solid color-mix(in oklab, var(--color-base-content) 20%, transparent);
+    padding-left: 9px; color: var(--color-muted); font-style: italic;
+  }
+  .fmt-foot {
+    padding: 11px 20px;
+    border-top: 1px solid var(--cairn-card-border);
+    display: flex; align-items: center; gap: 8px;
+    font-size: 0.8125rem; color: var(--color-muted);
+  }
+  .fmt-foot .kbd {
+    font-family: var(--font-mono); font-size: 0.6875rem;
+    border: 1px solid var(--cairn-card-border);
+    border-radius: 0.25rem; padding: 1px 6px;
+    color: var(--color-muted);
+    background: color-mix(in oklab, var(--color-base-content) 3%, transparent);
+  }
+
+  /* ---------- REGION 3 · Get help (support hand-off, set state) ---------- */
+  /* Rendered only when the site sets a supportContact. Shown here in the SET state:
+     a friendly contact card. Never a button to a blank contact. */
+  .help-card {
+    display: flex; align-items: center; gap: 16px;
+    padding: 18px 20px;
+  }
+  .help-avatar {
+    flex: none; height: 44px; width: 44px;
+    border-radius: 0.75rem;
+    background: color-mix(in oklab, var(--color-primary) 10%, transparent);
+    color: var(--color-primary);
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .help-avatar svg { width: 22px; height: 22px; }
+  .help-card-body { min-width: 0; }
+  .help-card-h { font-size: 0.9375rem; font-weight: 600; color: var(--color-base-content); }
+  .help-card-sub { font-size: 0.8125rem; color: var(--color-muted); margin-top: 2px; line-height: 1.45; max-width: 48ch; }
+  .help-card-act { margin-left: auto; flex: none; display: flex; align-items: center; gap: 10px; }
+
+  /* ---------- the "more help" rail (room to grow) ---------- */
+  /* This is the signature hook: a quiet, honest seam that shows the hub is the
+     standing destination and will hold the deeper help (the future slide-over and
+     corpus) without redesign. It reads as a calm footer note, never a dead button. */
+  .grow-rail {
+    margin-top: 30px;
+    border: 1px dashed var(--cairn-card-border);
+    border-radius: var(--radius-box);
+    background: color-mix(in oklab, var(--color-base-content) 1.5%, transparent);
+    padding: 16px 20px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .grow-rail-ico {
+    flex: none; height: 34px; width: 34px;
+    border-radius: 0.5rem;
+    background: var(--color-base-100);
+    border: 1px solid var(--cairn-card-border);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--color-muted);
+  }
+  .grow-rail-ico svg { width: 17px; height: 17px; }
+  .grow-rail-h { font-size: 0.875rem; font-weight: 600; color: var(--color-base-content); }
+  .grow-rail-sub { font-size: 0.8125rem; color: var(--color-muted); margin-top: 1px; line-height: 1.45; max-width: 56ch; }
+  .grow-rail-link {
+    margin-left: auto; flex: none;
+    display: inline-flex; align-items: center; gap: 5px;
+    font: 600 0.8125rem/1 var(--font-body);
+    color: var(--color-primary);
+    background: none; border: 0; padding: 0; cursor: pointer;
+  }
+  .grow-rail-link svg { width: 13px; height: 13px; }
+
+  /* ---------------- responsive ---------------- */
+  @media (max-width: 860px) {
+    .content { padding: 1.75rem 1.25rem 2.5rem; }
+    .side { display: none; }
+    .start-top { flex-direction: column; }
+    .prog { text-align: left; min-width: 0; width: 100%; }
+    .step-act, .step-done-tag { margin-left: 0; }
+    .step { flex-wrap: wrap; }
+    .help-card { flex-wrap: wrap; }
+    .help-card-act { margin-left: 0; width: 100%; }
+  }
+  @media (max-width: 560px) {
+    .fmt-colhead, .fmt-row { grid-template-columns: 1fr; gap: 6px; }
+    .fmt-colhead span:last-child { display: none; }
+    .grow-rail { flex-wrap: wrap; }
+    .grow-rail-link { margin-left: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- data-theme on a BARE wrapper, never on a styled element -->
+<div data-theme="cairn-admin">
+  <div class="shell">
+
+    <!-- ===================== left office sidebar ===================== -->
+    <aside class="side">
+      <div class="side-brand">
+        <span class="brand-tile" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="currentColor"><ellipse cx="12" cy="18.2" rx="7" ry="2.5"/><ellipse cx="12" cy="13" rx="5.2" ry="2.1"/><ellipse cx="12" cy="8.6" rx="3.7" ry="1.7"/><ellipse cx="12" cy="5" rx="2" ry="1.2"/></svg>
+        </span>
+        <span class="brand-word">cairn</span>
+      </div>
+      <nav class="side-nav" aria-label="Sections">
+        <div class="nav-grp">Content</div>
+        <a class="nav-item" href="#">
+          <svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+          Posts
+        </a>
+        <a class="nav-item" href="#">
+          <svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+          Pages
+        </a>
+        <a class="nav-item" href="#">
+          <svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>
+          Media
+        </a>
+      </nav>
+      <div class="nav-foot">
+        <a class="nav-item active" aria-current="page" href="#">
+          <svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+          Help
+        </a>
+      </div>
+    </aside>
+
+    <!-- ===================== main column ===================== -->
+    <div class="main">
+
+      <!-- slim topbar -->
+      <header class="top">
+        <button class="palette" type="button">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          Search and commands
+          <span class="kbd-hint">Ctrl K</span>
+        </button>
+        <div class="grow"></div>
+        <button class="top-link" type="button">View site</button>
+        <button class="btn btn-primary btn-sm" type="button">Publish site (2)</button>
+      </header>
+
+      <!-- the Help home -->
+      <main class="content">
+        <div class="hub">
+
+          <div class="hub-head">
+            <span class="eyebrow">Help</span>
+            <h1 class="hub-h1">Help</h1>
+            <p class="hub-lede">Everything you need to write, format, and publish, in one place. Come back any time. Nothing here will interrupt your work.</p>
+          </div>
+
+          <!-- =============== REGION 1 · Getting started =============== -->
+          <section class="region" aria-labelledby="r-start">
+            <div class="region-head">
+              <span class="region-eye" aria-hidden="true">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/><path d="M12 3a9 9 0 0 0 9 9 9 9 0 0 0-9 9 9 9 0 0 0-9-9 9 9 0 0 0 9-9z"/></svg>
+              </span>
+              <div class="region-titles">
+                <span class="eyebrow" id="r-start">Getting started</span>
+                <h2 class="region-h">Your first steps</h2>
+              </div>
+            </div>
+
+            <div class="card start">
+              <div class="start-top">
+                <div class="start-lead">
+                  <div class="start-h">From a blank site to your first published post</div>
+                  <p class="start-sub">Three small steps. They tick off on their own as you do them, so you always know where you stand.</p>
+                </div>
+                <!-- the count is the source of truth; the bar is decorative only -->
+                <div class="prog">
+                  <div class="prog-count"><b>1</b> of 3 done</div>
+                  <div class="prog-bar" role="presentation"><i style="width: 33.33%"></i></div>
+                </div>
+              </div>
+
+              <ol class="steps">
+                <!-- DONE: site has at least one post -->
+                <li class="step is-done">
+                  <span class="step-box" aria-hidden="true">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                  </span>
+                  <div class="step-body">
+                    <div class="step-title">Write your first post</div>
+                    <div class="step-desc">You have a post started. Open it any time to keep going.</div>
+                  </div>
+                  <span class="step-done-tag">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+                    Done
+                  </span>
+                </li>
+
+                <!-- TODO: nothing published yet -->
+                <li class="step">
+                  <span class="step-box" aria-hidden="true"></span>
+                  <div class="step-body">
+                    <div class="step-title">Publish it</div>
+                    <div class="step-desc">Publishing puts your post live on the site. You can change it and publish again any time.</div>
+                  </div>
+                  <a class="step-act" href="#">
+                    Go to Posts
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                  </a>
+                </li>
+
+                <!-- TODO: no page exists yet -->
+                <li class="step">
+                  <span class="step-box" aria-hidden="true"></span>
+                  <div class="step-body">
+                    <div class="step-title">Create a page</div>
+                    <div class="step-desc">A page is for things that stay put, like About or Contact. A post is for news and updates.</div>
+                  </div>
+                  <a class="step-act" href="#">
+                    Go to Pages
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                  </a>
+                </li>
+              </ol>
+
+              <div class="start-foot">
+                <span>These steps follow what is really on your site.</span>
+                <button type="button">Hide for now</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- =============== REGION 2 · Formatting reference =============== -->
+          <section class="region" aria-labelledby="r-fmt">
+            <div class="region-head">
+              <span class="region-eye" aria-hidden="true">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
+              </span>
+              <div class="region-titles">
+                <span class="eyebrow" id="r-fmt">Formatting</span>
+                <h2 class="region-h">How to format text</h2>
+              </div>
+              <span class="region-meta">Type the characters on the left</span>
+            </div>
+
+            <div class="card fmt">
+              <div class="fmt-colhead">
+                <span>Type this</span>
+                <span>What it makes</span>
+              </div>
+              <ul class="fmt-list">
+                <li class="fmt-row">
+                  <span class="fmt-type"><span class="mk">##&nbsp;</span>Heading</span>
+                  <span class="fmt-makes"><span class="h">A heading</span></span>
+                </li>
+                <li class="fmt-row">
+                  <span class="fmt-type"><span class="mk">**</span>bold<span class="mk">**</span></span>
+                  <span class="fmt-makes"><b>Bold text</b></span>
+                </li>
+                <li class="fmt-row">
+                  <span class="fmt-type"><span class="mk">*</span>italic<span class="mk">*</span></span>
+                  <span class="fmt-makes"><i>Italic text</i></span>
+                </li>
+                <li class="fmt-row">
+                  <span class="fmt-type"><span class="mk">[</span>text<span class="mk">](</span>url<span class="mk">)</span></span>
+                  <span class="fmt-makes">A <span class="lnk">link</span></span>
+                </li>
+                <li class="fmt-row">
+                  <span class="fmt-type"><span class="mk">[[</span>page-name<span class="mk">]]</span></span>
+                  <span class="fmt-makes">A link to one of your <span class="lnk">pages</span></span>
+                </li>
+                <li class="fmt-row">
+                  <span class="fmt-type"><span class="mk">-&nbsp;</span>item</span>
+                  <span class="fmt-makes"><ul><li>A bulleted list</li></ul></span>
+                </li>
+                <li class="fmt-row">
+                  <span class="fmt-type"><span class="mk">1.&nbsp;</span>item</span>
+                  <span class="fmt-makes"><ol><li>A numbered list</li></ol></span>
+                </li>
+                <li class="fmt-row">
+                  <span class="fmt-type"><span class="mk">&gt;&nbsp;</span>quote</span>
+                  <span class="fmt-makes"><span class="q">A quote</span></span>
+                </li>
+                <li class="fmt-row">
+                  <span class="fmt-type"><span class="chip"><span class="mk">`</span>code<span class="mk">`</span></span></span>
+                  <span class="fmt-makes">Inline <span class="ic">code</span></span>
+                </li>
+              </ul>
+              <div class="fmt-foot">
+                <span>This is always here. While you write, you can also open it from the editor with</span>
+                <span class="kbd">Ctrl /</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- =============== REGION 3 · Get help =============== -->
+          <!-- Rendered ONLY because this site set a supportContact. Shown in the SET state. -->
+          <section class="region" aria-labelledby="r-help">
+            <div class="region-head">
+              <span class="region-eye" aria-hidden="true">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              </span>
+              <div class="region-titles">
+                <span class="eyebrow" id="r-help">Get help</span>
+                <h2 class="region-h">Ask a person</h2>
+              </div>
+            </div>
+
+            <div class="card help-card">
+              <span class="help-avatar" aria-hidden="true">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </span>
+              <div class="help-card-body">
+                <div class="help-card-h">Dana set up this site</div>
+                <p class="help-card-sub">Stuck on something this help cannot answer, like a setting or who can sign in? Dana can help.</p>
+              </div>
+              <div class="help-card-act">
+                <a class="btn btn-ghost btn-sm" href="mailto:dana@example.org">
+                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                  Email Dana
+                </a>
+              </div>
+            </div>
+          </section>
+
+          <!-- =============== room to grow: the "more help" rail =============== -->
+          <!-- The signature hook. A calm, honest seam showing the hub is the standing
+               destination and will hold the deeper help (the contextual slide-over by
+               the editor, and a fuller guide corpus) without a redesign. Not a dead
+               button: it names what is coming and points at where help already lives. -->
+          <div class="grow-rail">
+            <span class="grow-rail-ico" aria-hidden="true">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+            </span>
+            <div class="grow">
+              <div class="grow-rail-h">Looking for help while you write?</div>
+              <p class="grow-rail-sub">The same formatting guide opens right beside the editor, so you never lose your place. More guides will land here as your site grows.</p>
+            </div>
+            <button class="grow-rail-link" type="button">
+              Open a post
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+            </button>
+          </div>
+
+        </div>
+      </main>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

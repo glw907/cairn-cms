@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Help home · variant A · First-run companion (checklist-forward)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Figtree:wght@400..700&display=swap" rel="stylesheet" />
+<style>
+  /* ============================================================
+     Help home, variant A: First-run companion (checklist-forward).
+
+     This file is self-contained: it carries its own Warm Stone token block (the real admin values,
+     not the compiled sheet) plus the two brand faces from Google Fonts, so it renders anywhere with
+     no other asset. Every color derives from the tokens in :root. The signature is the
+     getting-started checklist composed as the hero of an empty new site (0 of 3 done): a blank site
+     turned into a sense of momentum. The formatting reference and the get-help card recede below it
+     as quieter support.
+     ============================================================ */
+
+  :root,
+  [data-theme='cairn-admin'] {
+    --color-base-100: oklch(99% 0.004 75);        /* page + card surface */
+    --color-base-200: oklch(96.5% 0.006 75);      /* recessed surface (content ground) */
+    --color-base-300: oklch(89% 0.011 75);        /* divider */
+    --color-base-content: oklch(26% 0.014 75);    /* primary ink */
+    --color-primary: oklch(52% 0.2 293);          /* violet, primary action + active */
+    --color-primary-content: oklch(98% 0.012 293);
+    --color-accent: oklch(54% 0.16 300);          /* links */
+    --color-muted: oklch(48% 0.01 75);            /* secondary ink */
+    --color-subtle: oklch(42% 0.01 75);           /* nav item text */
+    --color-positive-ink: oklch(48% 0.12 150);    /* done / check */
+    --cairn-card-border: oklch(93% 0.008 75);
+    --cairn-shadow: 0 1px 2px oklch(28% 0.02 75 / 0.05), 0 8px 24px -6px oklch(28% 0.02 75 / 0.1);
+    --cairn-code-chip: oklch(94.5% 0.008 75);
+
+    --font-display: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
+    --font-body: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+    --radius-field: 0.625rem;
+    --radius-box: 1rem;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--color-base-200);
+    font-family: var(--font-body);
+    color: var(--color-base-content);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Visible keyboard focus everywhere. A focused text surface stays in keyboard modality, so this is
+     never quieted by :focus-visible alone. The ring clears the 3:1 non-text minimum on Warm Stone. */
+  :focus-visible {
+    outline: 2px solid color-mix(in oklab, var(--color-primary) 70%, transparent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  a:focus-visible,
+  button:focus-visible { outline-offset: 3px; }
+
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+
+  /* ---------- the office shell (sidebar + slim topbar) ---------- */
+  .shell {
+    display: flex;
+    min-height: 100vh;
+    background: var(--color-base-200);
+  }
+
+  .side {
+    width: 15rem;
+    flex: none;
+    background: var(--color-base-100);
+    border-right: 1px solid var(--cairn-card-border);
+    display: flex;
+    flex-direction: column;
+  }
+  .side-brand {
+    display: flex; align-items: center; gap: 10px;
+    height: 64px; padding: 0 16px;
+    border-bottom: 1px solid var(--cairn-card-border);
+  }
+  /* Brand mark: the cairn glyph in a filled app-icon tile, then the wordmark. */
+  .brand-tile {
+    height: 32px; width: 32px; border-radius: 0.75rem;
+    background: var(--color-primary); color: var(--color-primary-content);
+    display: inline-flex; align-items: center; justify-content: center;
+    box-shadow: 0 1px 2px oklch(28% 0.02 75 / 0.14);
+  }
+  .brand-tile svg { width: 19px; height: 19px; }
+  .brand-word {
+    font-family: var(--font-display);
+    font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em;
+  }
+
+  .side-nav { padding: 6px 10px; display: flex; flex-direction: column; gap: 1px; }
+  .nav-grp {
+    font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--color-muted); padding: 16px 8px 5px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 10px; border-radius: 0.5rem;
+    font-size: 0.875rem; font-weight: 500;
+    color: var(--color-subtle); text-decoration: none; cursor: pointer;
+  }
+  .nav-item:hover { background: color-mix(in oklab, var(--color-base-content) 5%, transparent); }
+  .nav-item.active {
+    background: color-mix(in oklab, var(--color-primary) 10%, transparent);
+    color: var(--color-primary); font-weight: 600;
+  }
+  .nav-ico { width: 16px; height: 16px; flex: none; }
+  /* Help sits below a divider at the foot as a standing utility, set apart from the content concepts. */
+  .nav-foot {
+    margin-top: auto; padding: 6px 10px 14px;
+    border-top: 1px solid var(--cairn-card-border);
+    display: flex; flex-direction: column; gap: 1px;
+  }
+
+  .main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+  .top {
+    display: flex; align-items: center;
+    height: 64px; min-height: 64px;
+    background: var(--color-base-100);
+    border-bottom: 1px solid var(--cairn-card-border);
+    padding: 0 20px; gap: 12px;
+  }
+  .palette {
+    display: inline-flex; align-items: center; gap: 8px;
+    height: 34px; padding: 0 12px; min-width: 17rem;
+    border: 1px solid var(--cairn-card-border); border-radius: 0.625rem;
+    background: var(--color-base-200); color: var(--color-muted);
+    font: 400 0.8125rem/1 var(--font-body); cursor: pointer;
+  }
+  .palette svg { width: 15px; height: 15px; }
+  .palette .kbd-hint { margin-left: auto; }
+  .kbd-hint {
+    font-size: 0.625rem; border: 1px solid var(--cairn-card-border); border-radius: 0.25rem;
+    padding: 1px 5px; color: var(--color-muted);
+  }
+  .grow { flex: 1 1 auto; }
+  .top-link {
+    color: var(--color-muted); text-decoration: underline; text-underline-offset: 2px;
+    text-decoration-color: color-mix(in oklab, currentColor 40%, transparent);
+    background: none; border: 0; font: inherit; cursor: pointer;
+  }
+  .top-link:hover { color: var(--color-primary); }
+
+  /* ---------- the content area (the calm Help home) ---------- */
+  .content { padding: 3rem 2.5rem 3.5rem; }
+  .help-col { max-width: 56rem; margin: 0 auto; width: 100%; }
+
+  .eyebrow {
+    font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--color-muted);
+  }
+  .help-h1 {
+    font-family: var(--font-display);
+    font-size: 1.875rem; font-weight: 700; letter-spacing: -0.025em;
+    margin: 5px 0 0;
+  }
+  .help-lede {
+    font-size: 0.9375rem; color: var(--color-muted);
+    margin: 8px 0 0; max-width: 52ch; line-height: 1.55;
+  }
+
+  /* ============================================================
+     THE HERO · the getting-started checklist as a composed first-run path.
+
+     On an empty new site this is the whole point of the screen. It is a single large floating card,
+     warmly tinted from base toward primary, so a blank site reads as composed rather than as a stub.
+     The cairn mark presides at the head (the empty-state recipe), the checklist sits centered beneath
+     a real-text count, and the visual bar is decorative. Each step links to the action that completes
+     it, and each step is DERIVED from observable content and publish state, so the count is always
+     real (here, a brand-new site, 0 of 3).
+     ============================================================ */
+  .hero {
+    margin-top: 28px;
+    border: 1px solid var(--cairn-card-border);
+    border-radius: var(--radius-box);
+    background:
+      radial-gradient(120% 90% at 50% -10%, color-mix(in oklab, var(--color-primary) 7%, var(--color-base-100)) 0%, var(--color-base-100) 60%);
+    box-shadow: var(--cairn-shadow);
+    overflow: hidden;
+  }
+  .hero-head {
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    padding: 40px 28px 8px;
+  }
+  /* The cairn mark presides, larger and softened, the way an empty state composes around it. */
+  .hero-mark {
+    color: var(--color-primary);
+    filter: drop-shadow(0 2px 6px color-mix(in oklab, var(--color-primary) 22%, transparent));
+    margin-bottom: 16px;
+  }
+  .hero-mark svg { width: 52px; height: 52px; display: block; }
+  .hero-eye { margin-bottom: 10px; }
+  .hero-h {
+    font-family: var(--font-display);
+    font-size: 1.625rem; font-weight: 700; letter-spacing: -0.02em;
+    margin: 0;
+  }
+  .hero-sub {
+    font-size: 0.9375rem; color: var(--color-muted);
+    margin: 8px 0 0; max-width: 46ch; line-height: 1.55;
+  }
+
+  /* the progress strip: real-text count first, then a decorative bar. */
+  .prog {
+    max-width: 30rem; margin: 22px auto 0; width: 100%;
+    padding: 0 28px;
+  }
+  .prog-row {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 12px; margin-bottom: 8px;
+  }
+  .prog-count { font-size: 0.8125rem; font-weight: 600; color: var(--color-base-content); }
+  .prog-rest { font-size: 0.75rem; color: var(--color-muted); }
+  /* The authoritative count lives in the text above; THIS bar is decorative only. role="presentation"
+     and no focusable child, per the progress recipe and the ARIA conflict rule. */
+  .prog-bar {
+    height: 6px; border-radius: 999px;
+    background: color-mix(in oklab, var(--color-base-content) 8%, transparent);
+    overflow: hidden;
+  }
+  .prog-bar > i {
+    display: block; height: 100%; border-radius: 999px;
+    background: var(--color-primary);
+    /* 0 of 3 done: a faint seed so the rail reads as a track, never as fake progress. */
+    width: 3%;
+    min-width: 6px;
+    background: color-mix(in oklab, var(--color-primary) 55%, var(--color-base-300));
+  }
+
+  /* the checklist: a short outcome list, each row a tappable card that links to its action. */
+  .checklist {
+    list-style: none; margin: 26px 0 0; padding: 14px;
+    display: flex; flex-direction: column; gap: 8px;
+    border-top: 1px solid var(--cairn-card-border);
+    background: color-mix(in oklab, var(--color-base-content) 1.5%, transparent);
+  }
+  .step {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px;
+    border: 1px solid var(--cairn-card-border);
+    border-radius: 0.75rem;
+    background: var(--color-base-100);
+    text-decoration: none; color: inherit; cursor: pointer;
+    transition: border-color 120ms ease, transform 120ms ease, box-shadow 120ms ease;
+  }
+  .step:hover {
+    border-color: color-mix(in oklab, var(--color-primary) 38%, var(--cairn-card-border));
+    transform: translateY(-1px);
+    box-shadow: var(--cairn-shadow);
+  }
+  /* the check box: glyph-backed when done, an empty ring when not. Never color alone (WCAG 1.4.1). */
+  .step-box {
+    flex: none; height: 26px; width: 26px; border-radius: 999px;
+    border: 2px solid color-mix(in oklab, var(--color-base-content) 22%, transparent);
+    background: var(--color-base-100);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: transparent;
+  }
+  .step-box svg { width: 14px; height: 14px; }
+  .step-body { flex: 1 1 auto; min-width: 0; }
+  .step-title { font-size: 0.9375rem; font-weight: 600; color: var(--color-base-content); }
+  .step-desc { font-size: 0.8125rem; color: var(--color-muted); margin-top: 2px; line-height: 1.45; }
+  .step-go {
+    flex: none; display: inline-flex; align-items: center; gap: 5px;
+    font-size: 0.8125rem; font-weight: 600; color: var(--color-primary);
+  }
+  .step-go svg { width: 14px; height: 14px; }
+
+  /* the done state: the box fills with positive-ink and carries the check glyph; the row settles. */
+  .step.is-done {
+    background: color-mix(in oklab, var(--color-positive-ink) 5%, var(--color-base-100));
+    border-color: color-mix(in oklab, var(--color-positive-ink) 26%, var(--cairn-card-border));
+  }
+  .step.is-done .step-box {
+    background: var(--color-positive-ink);
+    border-color: var(--color-positive-ink);
+    color: var(--color-primary-content);
+  }
+  .step.is-done .step-title { color: var(--color-muted); }
+  .step.is-done .step-go { color: var(--color-positive-ink); }
+  .step.is-done:hover { transform: none; box-shadow: none; }
+  .step-done-tag {
+    flex: none; display: inline-flex; align-items: center; gap: 5px;
+    font-size: 0.75rem; font-weight: 600; color: var(--color-positive-ink);
+  }
+  .step-done-tag svg { width: 13px; height: 13px; }
+
+  /* a quiet dismiss, so an author who knows their way can put the checklist away (per device). */
+  .hero-dismiss {
+    display: flex; justify-content: center;
+    padding: 12px 16px 18px;
+  }
+  .hero-dismiss button {
+    font-size: 0.75rem; color: var(--color-muted);
+    background: none; border: 0; padding: 4px 8px; cursor: pointer;
+    text-decoration: underline; text-underline-offset: 2px;
+  }
+  .hero-dismiss button:hover { color: var(--color-base-content); }
+
+  /* ---------- a divider between the hero and the quieter support below ---------- */
+  .help-section { margin-top: 40px; }
+  .section-head { margin-bottom: 16px; }
+  .section-h {
+    font-family: var(--font-display);
+    font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em;
+    margin: 4px 0 0;
+  }
+  .section-sub {
+    font-size: 0.875rem; color: var(--color-muted);
+    margin: 4px 0 0; max-width: 52ch; line-height: 1.5;
+  }
+
+  /* ============================================================
+     FORMATTING REFERENCE · the markdown cheat sheet, promoted from the editor Ctrl+/ dialog.
+     A scannable "Type this / What it makes" pairing in one calm card. Type-this samples are in the
+     editor face so they read as the literal characters; the result column is plain language.
+     ============================================================ */
+  .cheat {
+    border: 1px solid var(--cairn-card-border);
+    border-radius: var(--radius-box);
+    background: var(--color-base-100);
+    box-shadow: var(--cairn-shadow);
+    overflow: hidden;
+  }
+  .cheat-grid { display: grid; grid-template-columns: 1fr 1fr; }
+  .cheat-colhead {
+    font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--color-muted);
+    padding: 14px 20px 12px;
+    border-bottom: 1px solid var(--cairn-card-border);
+  }
+  .cheat-colhead.right { border-left: 1px solid var(--cairn-card-border); }
+  .cheat-row {
+    display: grid; grid-template-columns: subgrid; grid-column: 1 / -1;
+    align-items: center;
+  }
+  .cheat-row + .cheat-row .cheat-type,
+  .cheat-row + .cheat-row .cheat-makes { border-top: 1px solid color-mix(in oklab, var(--cairn-card-border) 70%, transparent); }
+  .cheat-type {
+    padding: 11px 20px;
+    font-family: 'iA Writer Mono', ui-monospace, 'SFMono-Regular', 'Cascadia Mono', monospace;
+    font-size: 0.8125rem; color: var(--color-base-content);
+  }
+  .cheat-type .mk { color: var(--color-muted); }
+  .cheat-makes {
+    padding: 11px 20px;
+    border-left: 1px solid var(--cairn-card-border);
+    font-size: 0.875rem; color: var(--color-base-content);
+  }
+  .cheat-makes .ex-h { font-weight: 700; font-size: 1.0625rem; }
+  .cheat-makes b { font-weight: 700; }
+  .cheat-makes i { font-style: italic; }
+  .cheat-makes .ex-link { color: var(--color-accent); text-decoration: underline; text-underline-offset: 2px; }
+  .cheat-makes .ex-code {
+    font-family: 'iA Writer Mono', ui-monospace, monospace; font-size: 0.8125rem;
+    background: var(--cairn-code-chip); border-radius: 0.25rem; padding: 0.05em 0.3em;
+  }
+  .cheat-makes .ex-quote {
+    border-left: 3px solid var(--color-base-300); padding-left: 10px; color: var(--color-muted); font-style: italic;
+  }
+  .cheat-makes .ex-list { color: var(--color-muted); }
+  .cheat-foot {
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--cairn-card-border);
+    background: color-mix(in oklab, var(--color-base-content) 1.5%, transparent);
+    padding: 11px 20px;
+    font-size: 0.8125rem; color: var(--color-muted);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .cheat-foot svg { width: 15px; height: 15px; flex: none; color: var(--color-muted); }
+  .cheat-foot kbd {
+    font-family: 'iA Writer Mono', ui-monospace, monospace; font-size: 0.6875rem;
+    border: 1px solid var(--cairn-card-border); border-radius: 0.25rem; padding: 1px 5px;
+    background: var(--color-base-100); color: var(--color-base-content);
+  }
+
+  /* ============================================================
+     GET HELP · the support hand-off. Shown ONLY when the site sets a supportContact; here the SET
+     state, a friendly contact card. Never a button to a blank contact.
+     ============================================================ */
+  .gethelp {
+    display: flex; align-items: center; gap: 16px;
+    padding: 18px 20px;
+    border: 1px solid var(--cairn-card-border);
+    border-radius: var(--radius-box);
+    background: var(--color-base-100);
+    box-shadow: var(--cairn-shadow);
+  }
+  .gethelp-ico {
+    flex: none; height: 44px; width: 44px; border-radius: 0.75rem;
+    background: color-mix(in oklab, var(--color-primary) 9%, transparent);
+    color: var(--color-primary);
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .gethelp-ico svg { width: 22px; height: 22px; }
+  .gethelp-body { flex: 1 1 auto; min-width: 0; }
+  .gethelp-h { font-size: 0.9375rem; font-weight: 600; color: var(--color-base-content); }
+  .gethelp-sub { font-size: 0.8125rem; color: var(--color-muted); margin-top: 2px; line-height: 1.45; }
+  .gethelp-sub b { color: var(--color-base-content); font-weight: 600; }
+
+  /* the primary action: a violet primary button with a soft lift (no ad-hoc shadow on top). */
+  .btn-primary {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    height: 38px; padding: 0 16px;
+    border: 0; border-radius: var(--radius-field);
+    background: var(--color-primary); color: var(--color-primary-content);
+    font: 600 0.875rem/1 var(--font-body); cursor: pointer;
+    box-shadow: 0 1px 2px oklch(28% 0.02 75 / 0.12), 0 6px 16px -6px color-mix(in oklab, var(--color-primary) 55%, transparent);
+    transition: filter 120ms ease;
+    text-decoration: none; white-space: nowrap;
+  }
+  .btn-primary:hover { filter: brightness(1.06); }
+  .btn-primary svg { width: 16px; height: 16px; }
+
+  .btn-ghost {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    height: 38px; padding: 0 14px;
+    border: 1px solid var(--cairn-card-border); border-radius: var(--radius-field);
+    background: var(--color-base-100); color: var(--color-base-content);
+    font: 500 0.875rem/1 var(--font-body); cursor: pointer;
+    text-decoration: none; white-space: nowrap;
+    transition: border-color 120ms ease, color 120ms ease;
+  }
+  .btn-ghost:hover {
+    border-color: color-mix(in oklab, var(--color-primary) 38%, var(--cairn-card-border));
+    color: var(--color-primary);
+  }
+
+  .btn-sm { height: 32px; padding: 0 12px; font-size: 0.8125rem; }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 860px) {
+    .side { display: none; }
+    .content { padding: 1.75rem 1.25rem 2.5rem; }
+    .cheat-grid { grid-template-columns: 1fr; }
+    .cheat-colhead.right { display: none; }
+    .cheat-makes { border-left: 0; border-top: 1px solid color-mix(in oklab, var(--cairn-card-border) 70%, transparent); padding-top: 4px; }
+    .cheat-row + .cheat-row .cheat-type { border-top: 2px solid var(--cairn-card-border); }
+    .cheat-row + .cheat-row .cheat-makes { border-top: 1px solid color-mix(in oklab, var(--cairn-card-border) 70%, transparent); }
+    .step { flex-wrap: wrap; }
+    .step-go { margin-left: 40px; }
+    .gethelp { flex-direction: column; align-items: flex-start; }
+  }
+
+  /* ---------- reduced motion respected ---------- */
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+    .step:hover { transform: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Wrap everything in a BARE data-theme div (the theme goes on a bare wrapper, never on a styled
+     element), the office shell one level in. -->
+<div data-theme="cairn-admin">
+  <div class="shell">
+
+    <!-- ============ the office sidebar ============ -->
+    <aside class="side">
+      <div class="side-brand">
+        <span class="brand-tile" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="currentColor"><ellipse cx="12" cy="18.2" rx="7" ry="2.5"/><ellipse cx="12" cy="13" rx="5.2" ry="2.1"/><ellipse cx="12" cy="8.6" rx="3.7" ry="1.7"/><ellipse cx="12" cy="5" rx="2" ry="1.2"/></svg>
+        </span>
+        <span class="brand-word">cairn</span>
+      </div>
+      <nav class="side-nav" aria-label="Sections">
+        <div class="nav-grp">Content</div>
+        <a class="nav-item" href="#posts">
+          <svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>Posts</a>
+        <a class="nav-item" href="#pages">
+          <svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>Pages</a>
+        <a class="nav-item" href="#media">
+          <svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>Media</a>
+      </nav>
+      <div class="nav-foot">
+        <a class="nav-item active" href="#help" aria-current="page">
+          <svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>Help</a>
+      </div>
+    </aside>
+
+    <!-- ============ the main area ============ -->
+    <div class="main">
+
+      <!-- the slim topbar -->
+      <div class="top">
+        <button class="palette" type="button">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          Search and commands<span class="kbd-hint">Ctrl K</span>
+        </button>
+        <div class="grow"></div>
+        <button class="top-link" type="button">View site</button>
+      </div>
+
+      <!-- the Help home content -->
+      <main class="content" id="help">
+        <div class="help-col">
+          <span class="eyebrow">Help</span>
+          <h1 class="help-h1">Welcome to your site</h1>
+          <p class="help-lede">This is the calm place to get your bearings. Start with the steps below. Everything here waits for you; it never interrupts your writing.</p>
+
+          <!-- ======== THE HERO: the getting-started checklist (0 of 3 done) ======== -->
+          <section class="hero" aria-labelledby="hero-h">
+            <div class="hero-head">
+              <span class="hero-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="currentColor"><ellipse cx="12" cy="18.2" rx="7" ry="2.5"/><ellipse cx="12" cy="13" rx="5.2" ry="2.1"/><ellipse cx="12" cy="8.6" rx="3.7" ry="1.7"/><ellipse cx="12" cy="5" rx="2" ry="1.2"/></svg>
+              </span>
+              <span class="eyebrow hero-eye">Get started</span>
+              <h2 class="hero-h" id="hero-h">Three steps to a live site</h2>
+              <p class="hero-sub">Your site is empty right now, and that is exactly the right place to begin. Each step takes you to where it happens.</p>
+            </div>
+
+            <!-- the progress strip: the count is in the text; the bar is decorative -->
+            <div class="prog">
+              <div class="prog-row">
+                <span class="prog-count">0 of 3 done</span>
+                <span class="prog-rest">Start with the first one</span>
+              </div>
+              <div class="prog-bar" role="presentation"><i></i></div>
+            </div>
+
+            <!-- the checklist. Each step links to its action and DERIVES its done state from content -->
+            <ol class="checklist">
+              <li>
+                <a class="step" href="#new-post">
+                  <span class="step-box" aria-hidden="true"></span>
+                  <span class="step-body">
+                    <span class="step-title">Write your first post</span>
+                    <span class="step-desc">Open a new post and type. It is plain text with a live preview beside it.</span>
+                  </span>
+                  <span class="step-go">Start a post<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+                </a>
+              </li>
+              <li>
+                <a class="step" href="#publish">
+                  <span class="step-box" aria-hidden="true"></span>
+                  <span class="step-body">
+                    <span class="step-title">Publish it</span>
+                    <span class="step-desc">Publishing puts your post on the live site. You can change it and publish again any time.</span>
+                  </span>
+                  <span class="step-go">How to publish<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+                </a>
+              </li>
+              <li>
+                <a class="step" href="#new-page">
+                  <span class="step-box" aria-hidden="true"></span>
+                  <span class="step-body">
+                    <span class="step-title">Create a page</span>
+                    <span class="step-desc">Pages are the standing parts of your site, like About or Contact. Posts are the dated ones.</span>
+                  </span>
+                  <span class="step-go">Add a page<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+                </a>
+              </li>
+            </ol>
+
+            <div class="hero-dismiss">
+              <button type="button">Hide these steps</button>
+            </div>
+          </section>
+
+          <!-- ======== FORMATTING REFERENCE: the markdown cheat sheet ======== -->
+          <section class="help-section" aria-labelledby="cheat-h">
+            <div class="section-head">
+              <span class="eyebrow">Formatting</span>
+              <h2 class="section-h" id="cheat-h">How to format text</h2>
+              <p class="section-sub">You write in plain text. A few characters change how it looks. Here is the whole set.</p>
+            </div>
+
+            <div class="cheat">
+              <div class="cheat-grid">
+                <div class="cheat-colhead" aria-hidden="true">Type this</div>
+                <div class="cheat-colhead right" aria-hidden="true">What it makes</div>
+
+                <div class="cheat-row">
+                  <div class="cheat-type"><span class="mk">##</span> Heading</div>
+                  <div class="cheat-makes"><span class="ex-h">A heading</span></div>
+                </div>
+                <div class="cheat-row">
+                  <div class="cheat-type"><span class="mk">**</span>bold<span class="mk">**</span></div>
+                  <div class="cheat-makes"><b>Bold text</b></div>
+                </div>
+                <div class="cheat-row">
+                  <div class="cheat-type"><span class="mk">*</span>italic<span class="mk">*</span></div>
+                  <div class="cheat-makes"><i>Italic text</i></div>
+                </div>
+                <div class="cheat-row">
+                  <div class="cheat-type"><span class="mk">[</span>text<span class="mk">](</span>url<span class="mk">)</span></div>
+                  <div class="cheat-makes"><a class="ex-link" href="#link">A link</a></div>
+                </div>
+                <div class="cheat-row">
+                  <div class="cheat-type"><span class="mk">[[</span>page-name<span class="mk">]]</span></div>
+                  <div class="cheat-makes"><a class="ex-link" href="#wikilink">A link to one of your pages</a></div>
+                </div>
+                <div class="cheat-row">
+                  <div class="cheat-type"><span class="mk">-</span> item</div>
+                  <div class="cheat-makes"><span class="ex-list">&bull;&nbsp;</span>A bulleted list</div>
+                </div>
+                <div class="cheat-row">
+                  <div class="cheat-type"><span class="mk">1.</span> item</div>
+                  <div class="cheat-makes"><span class="ex-list">1.&nbsp;</span>A numbered list</div>
+                </div>
+                <div class="cheat-row">
+                  <div class="cheat-type"><span class="mk">&gt;</span> quote</div>
+                  <div class="cheat-makes"><span class="ex-quote">A quote</span></div>
+                </div>
+                <div class="cheat-row">
+                  <div class="cheat-type"><span class="mk">`</span>code<span class="mk">`</span></div>
+                  <div class="cheat-makes"><span class="ex-code">code</span> in the middle of a line</div>
+                </div>
+
+                <div class="cheat-foot">
+                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                  <span>This same sheet opens in the editor any time. Press <kbd>Ctrl</kbd> <kbd>/</kbd> while you write.</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ======== GET HELP: the support hand-off (SET state) ======== -->
+          <section class="help-section" aria-labelledby="gethelp-h">
+            <div class="section-head">
+              <span class="eyebrow">Get help</span>
+              <h2 class="section-h" id="gethelp-h">Need a hand?</h2>
+              <p class="section-sub">If something here cannot do what you need, the person who set up your site can help.</p>
+            </div>
+
+            <div class="gethelp">
+              <span class="gethelp-ico" aria-hidden="true">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/></svg>
+              </span>
+              <div class="gethelp-body">
+                <div class="gethelp-h">Ask Dana Whitford</div>
+                <div class="gethelp-sub">They set up this site and can change things the editor cannot, like the menu and settings. Reach them at <b>dana@example.org</b>.</div>
+              </div>
+              <a class="btn-primary" href="mailto:dana@example.org">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                Email Dana
+              </a>
+            </div>
+          </section>
+
+        </div>
+      </main>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

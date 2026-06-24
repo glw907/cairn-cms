@@ -1,0 +1,811 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>cairn admin · Help home (rev.2, system-polished)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<!-- IBM Plex Sans is the SHIPPED admin body/UI face (Bricolage retired Figtree on 2026-06-12 so the
+     chrome shares the iA Writer Mono / IBM Plex superfamily skeleton). The Google CDN serves IBM Plex
+     Sans (not the variable file the admin self-hosts), which matches the shipped letterforms closely
+     enough for a mockup; the production admin loads 'IBM Plex Sans Variable' from src/lib/components/fonts/. -->
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  /* ============================================================================
+     Help home, rev.2 — SYSTEM-POLISHED.
+
+     This is the consistency-and-principles polish pass over the rev.2 synthesis: the
+     pass where it stops looking like a mockup and starts looking like cairn. The
+     composition, copy, IA, and a11y of rev.2 are kept; what changed is fidelity to the
+     real Warm Stone token source (src/lib/components/cairn-admin.css), the shipped type
+     system, the canonical component recipes, and the core cairn principles.
+
+     POLISH CHANGES FROM rev.2 (each measured against the design system / the real CSS):
+       Type   · the body/UI face is IBM Plex Sans, the SHIPPED admin face, not the
+                retired Figtree (design system "Type": body = IBM Plex Sans; Figtree was
+                retired 2026-06-12 with the editor-experience pass). A mockup on a retired
+                font would not read as the real admin.
+       Tokens · the primary CTA lift now DERIVES from var(--color-primary) through the
+                exact color-mix form the shipped .btn-primary rule uses (cairn-admin.css
+                @layer components), instead of hardcoding the oklch(52% 0.2 293) literal,
+                so the lift follows the token and never drifts off-palette.
+       Tokens · :focus-visible matches the shipped scoped rule exactly (a 2px solid
+                primary outline at offset 2px, no ad-hoc border-radius), kept universal
+                so a future role=region slide-over and any [tabindex] inherit the ring.
+       Tokens · color-scheme: light is declared on the theme root, as the real CSS does.
+       Restraint · ONE accessory removed: the violet-tinted person-icon tile in Get help.
+                The critique itself flagged "NO violet icon chips, which C overspent"; the
+                support card already carries an eyebrow, a display title, the contact name,
+                and the email CTA, so the decorative avatar was the one ornament to cut.
+                The section is now a calm text-plus-action row, truer to pull-not-push.
+
+     INHERITED FROM rev.2 (kept; already on-system):
+       - BASE = variant A: a real-sentence h1 in Bricolage, three eyebrow+display peers.
+       - Flat base-100 floating cards (hairline + soft shadow), never a gradient ground.
+       - "Type this" samples in var(--font-editor) = iA Writer Mono (the fidelity detail).
+       - The system type scale (h1 1.875rem, section heads 1.25rem).
+       - Derived getting-started progress: recede-and-omit, a real count in text, a
+         decorative role=presentation bar, a glyph-backed done state with a "Done" tag.
+       - The grouped two-column reference <table> with th scope=col.
+       - The support hand-off rendered only when supportContact is set; the unset
+         self-serve fallback documented in comments.
+
+     SHOWN STATE: the common standing state of a returning site, one post and nothing
+     published yet (1 of 3 done), so the screen is demonstrated as the place an author
+     comes back to. The empty 0-of-3 first-run shape and the omitted all-done shape are
+     documented in comments where they differ.
+     ============================================================================ */
+
+  /* The real Warm Stone light root, verbatim from src/lib/components/cairn-admin.css.
+     Only the tokens this screen actually uses are carried; every value is the source value. */
+  :root, [data-theme='cairn-admin'] {
+    color-scheme: light;
+
+    --color-base-100: oklch(99% 0.004 75);        /* page + card surface */
+    --color-base-200: oklch(96.5% 0.006 75);      /* recessed surface (content ground) */
+    --color-base-300: oklch(89% 0.011 75);        /* divider */
+    --color-base-content: oklch(26% 0.014 75);    /* primary ink */
+    --color-primary: oklch(52% 0.2 293);          /* violet, primary action + active ONLY */
+    --color-primary-content: oklch(98% 0.012 293);
+    --color-accent: oklch(54% 0.16 300);          /* links (locked AA margin on base-100 + 8% tint) */
+    --color-muted: oklch(48% 0.01 75);            /* secondary ink (labels, dates, hints) */
+    --color-subtle: oklch(42% 0.01 75);           /* nav item text (stronger of the two) */
+    --color-positive-ink: oklch(48% 0.12 150);    /* done / check, on-surface positive ink */
+    --cairn-card-border: oklch(93% 0.008 75);     /* theme-adaptive hairline */
+    --cairn-shadow: 0 1px 2px oklch(28% 0.02 75 / 0.05), 0 8px 24px -6px oklch(28% 0.02 75 / 0.1);
+    --cairn-code-chip: oklch(94.5% 0.008 75);
+
+    /* The shipped admin self-hosts these as variable / static faces. Names here resolve
+       to the Google-CDN families above and fall back to the platform UI / mono stacks so
+       the file stays self-contained off the network. A proportional face is NEVER a mono
+       fallback: --font-editor falls to a true monospace only. */
+    --font-display: 'Bricolage Grotesque', 'Bricolage Grotesque Variable', ui-sans-serif, system-ui, sans-serif;
+    --font-body: 'IBM Plex Sans', 'IBM Plex Sans Variable', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    /* The admin self-hosts iA Writer Mono as --font-editor on the CodeMirror surface. The
+       cheat sheet's "Type this" samples render in that same face, so they read as the literal
+       characters an author types. */
+    --font-editor: 'iA Writer Mono', ui-monospace, 'SFMono-Regular', 'Cascadia Mono', 'Menlo', 'Consolas', monospace;
+
+    --radius-field: 0.625rem;
+    --radius-box: 1rem;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--color-base-200);
+    color: var(--color-base-content);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* The shipped scoped focus ring, verbatim: one brand-violet 2px outline at offset 2px
+     across the admin (cairn-admin.css @layer components :focus-visible). It is intentionally
+     the bare :focus-visible selector (not only a/button/input), so a future focusable
+     role=region slide-over and any [tabindex] disclosure inherit the same clear ring. The
+     solid primary clears the 3:1 non-text floor with margin on base-100 (5.87:1) and stays
+     safe on the recessed base-200 this Help home sits on. */
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+  .grow { flex: 1 1 auto; }
+
+  /* ============================================================================
+     The office shell: left sidebar + slim topbar. Chrome-isolated and self-styled;
+     data-theme lives on a bare wrapper one level up.
+     ============================================================================ */
+  .shell { display: flex; min-height: 100vh; background: var(--color-base-200); }
+
+  .side {
+    width: 14rem; flex: none;
+    background: var(--color-base-100);
+    border-right: 1px solid var(--cairn-card-border);
+    display: flex; flex-direction: column;
+  }
+  .side-brand {
+    display: flex; align-items: center; gap: 10px;
+    height: 64px; min-height: 64px; padding: 0 16px;
+    border-bottom: 1px solid var(--cairn-card-border);
+  }
+  /* Brand mark: the cairn glyph in a filled app-icon tile. The lift is the recipe's flat
+     shadow-sm, warm-tinted to sit in the palette rather than a raw black drop, never a
+     colored halo; then the wordmark in the display face. */
+  .brand-tile {
+    height: 32px; width: 32px; border-radius: 0.75rem; flex: none;
+    background: var(--color-primary); color: var(--color-primary-content);
+    display: inline-flex; align-items: center; justify-content: center;
+    box-shadow: 0 1px 2px oklch(28% 0.02 75 / 0.18);
+  }
+  .brand-tile svg { width: 18px; height: 18px; }
+  .brand-word {
+    font-family: var(--font-display);
+    font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em;
+  }
+
+  .side-nav { padding: 6px 10px; display: flex; flex-direction: column; gap: 1px; }
+  .nav-grp {
+    font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--color-muted); padding: 16px 8px 5px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 10px; border-radius: 0.5rem;
+    font-size: 0.875rem; font-weight: 500;
+    color: var(--color-subtle); text-decoration: none; cursor: pointer;
+    background: none; border: 0; width: 100%; text-align: left; font-family: inherit;
+  }
+  .nav-item:hover { background: color-mix(in oklab, var(--color-base-content) 5%, transparent); }
+  .nav-item.active {
+    background: color-mix(in oklab, var(--color-primary) 10%, transparent);
+    color: var(--color-primary); font-weight: 600;
+  }
+  .nav-ico { width: 16px; height: 16px; flex: none; }
+  /* Help is a standing utility, pinned at the foot below a divider, set apart from the
+     content concepts, the always-there destination labeled in plain text. */
+  .nav-foot {
+    margin-top: auto; padding: 6px 10px 12px;
+    border-top: 1px solid var(--cairn-card-border);
+    display: flex; flex-direction: column; gap: 1px;
+  }
+
+  .main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+  .top {
+    display: flex; align-items: center; gap: 12px;
+    height: 64px; min-height: 64px; padding: 0 20px;
+    background: var(--color-base-100);
+    border-bottom: 1px solid var(--cairn-card-border);
+  }
+  .palette {
+    display: inline-flex; align-items: center; gap: 8px;
+    height: 34px; padding: 0 12px; min-width: 17rem;
+    border: 1px solid var(--cairn-card-border); border-radius: var(--radius-field);
+    background: var(--color-base-200); color: var(--color-muted);
+    font: 400 0.8125rem/1 var(--font-body); cursor: pointer;
+  }
+  .palette svg { width: 15px; height: 15px; flex: none; }
+  .palette .kbd { margin-left: auto; }
+  .kbd {
+    font-size: 0.625rem; border: 1px solid var(--cairn-card-border); border-radius: 0.25rem;
+    padding: 1px 5px; color: var(--color-muted);
+  }
+  .top-link {
+    color: var(--color-muted); text-decoration: underline; text-underline-offset: 2px;
+    text-decoration-color: color-mix(in oklab, currentColor 40%, transparent);
+    background: none; border: 0; font: 500 0.8125rem/1 var(--font-body); cursor: pointer;
+  }
+  .top-link:hover { color: var(--color-primary); }
+
+  /* The standing primary action: the canonical .btn-primary recipe. The violet fill plus the
+     soft scoped lift, and the lift DERIVES from the token through the same color-mix form the
+     shipped rule uses (cairn-admin.css: 22% close shadow + 38% wide shadow), so it tracks
+     --color-primary and never carries an off-palette literal. No ad-hoc shadow stacked on top. */
+  .btn-primary {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    height: 34px; padding: 0 14px;
+    border: 0; border-radius: var(--radius-field);
+    background: var(--color-primary); color: var(--color-primary-content);
+    font: 600 0.8125rem/1 var(--font-body); cursor: pointer;
+    box-shadow:
+      0 1px 2px color-mix(in oklch, var(--color-primary) 22%, transparent),
+      0 6px 16px -5px color-mix(in oklch, var(--color-primary) 38%, transparent);
+    text-decoration: none; white-space: nowrap;
+    transition: box-shadow 120ms ease;
+  }
+  .btn-primary:hover {
+    box-shadow:
+      0 2px 4px color-mix(in oklch, var(--color-primary) 26%, transparent),
+      0 10px 24px -5px color-mix(in oklch, var(--color-primary) 48%, transparent);
+  }
+  .btn-primary svg { width: 15px; height: 15px; }
+
+  /* A quiet bordered control (the get-help mailto). */
+  .btn-quiet {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    height: 36px; padding: 0 14px;
+    border: 1px solid var(--cairn-card-border); border-radius: var(--radius-field);
+    background: var(--color-base-100); color: var(--color-base-content);
+    font: 600 0.8125rem/1 var(--font-body); cursor: pointer;
+    text-decoration: none; white-space: nowrap;
+    transition: border-color 120ms ease, color 120ms ease;
+  }
+  .btn-quiet:hover {
+    border-color: color-mix(in oklab, var(--color-primary) 38%, var(--cairn-card-border));
+    color: var(--color-primary);
+  }
+  .btn-quiet svg { width: 15px; height: 15px; }
+
+  /* ============================================================================
+     The Help home content. One calm column: a masthead, then three eyebrow +
+     display sections as co-equal peers.
+     ============================================================================ */
+  .content { flex: 1 1 auto; padding: 2.75rem 2.5rem 3.5rem; overflow: auto; }
+  .help-col { max-width: 58rem; margin: 0 auto; width: 100%; }
+
+  .eyebrow {
+    font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--color-muted);
+  }
+
+  /* the masthead: a plain eyebrow over a real-sentence h1 at the canonical recipe, so
+     the page has one true Bricolage display beat and never repeats "Help" back at itself */
+  .page-head { margin-bottom: 30px; }
+  .page-h1 {
+    font-family: var(--font-display);
+    font-size: 1.875rem; font-weight: 700; letter-spacing: -0.025em;
+    margin: 5px 0 0;
+  }
+  .page-lede {
+    font-size: 0.9375rem; color: var(--color-muted);
+    margin: 8px 0 0; max-width: 54ch; line-height: 1.55;
+  }
+
+  /* the shared section-head rhythm: an eyebrow over a display title, with an optional
+     quiet trailing meta. This cadence (not a per-section icon) is what makes the three
+     sections read as co-equal peers. */
+  .section { margin-top: 36px; }
+  .section-head {
+    display: flex; align-items: baseline; gap: 14px;
+    margin-bottom: 16px;
+  }
+  .section-titles { display: flex; flex-direction: column; gap: 2px; }
+  .section-h {
+    font-family: var(--font-display);
+    font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em;
+    line-height: 1.12; margin: 0;
+  }
+  .section-meta {
+    margin-left: auto; align-self: center;
+    font-size: 0.75rem; color: var(--color-muted);
+  }
+
+  /* the floating-card recipe: rounded-box, hairline + soft shadow, on base-100. The soft
+     shadow carries the lift; never a tint or gradient. (rounded-box border bg-base-100 shadow) */
+  .card {
+    border: 1px solid var(--cairn-card-border);
+    border-radius: var(--radius-box);
+    background: var(--color-base-100);
+    box-shadow: var(--cairn-shadow);
+    overflow: hidden;
+  }
+
+  /* ============================================================================
+     SECTION 1 · GETTING STARTED (derived progress).
+
+     One flat floating card, a calm peer of the other two sections (not a gradient
+     hero, never a steady-state nag). Steps DERIVE from observable content and publish
+     state, so the count is always real. The shown state is a returning site: 1 post,
+     nothing published (1 of 3 done).
+
+     RECEDE-AND-OMIT (the pull-not-push doctrine):
+       - On a brand-new empty site the card reads "0 of 3 done" with a faint seed bar
+         that never reads as progress, the cairn mark presiding in the empty-state shape.
+       - As steps complete the card stays quiet and never grows louder.
+       - At 3 of 3 the whole <section> is OMITTED, never shown as a done checklist
+         greeting a fluent author. The formatting reference then stands as the resting
+         centerpiece.
+       - A per-device "Hide these steps" dismiss is the manual escape hatch (a localStorage
+         preference, the only thing the help home stores; progress derives from content).
+     ============================================================================ */
+  .start { padding: 22px 24px 18px; }
+  .start-top {
+    display: flex; align-items: flex-start; gap: 18px; flex-wrap: wrap;
+  }
+  .start-lead { flex: 1 1 20rem; min-width: 0; }
+  .start-lead-h {
+    font-size: 1rem; font-weight: 600; color: var(--color-base-content); letter-spacing: -0.005em;
+  }
+  .start-lead-sub {
+    font-size: 0.8125rem; color: var(--color-muted);
+    margin-top: 3px; max-width: 46ch; line-height: 1.5;
+  }
+
+  /* the progress readout: the authoritative count is in real adjacent text; the bar is
+     decorative (role=presentation, inert, no focusable child). This is the getting-started
+     progress recipe: the bar echoes the segmented-control look on an INERT element rather
+     than reusing the interactive control, so it stays a presentation node. */
+  .prog { flex: 0 0 auto; min-width: 11rem; text-align: right; }
+  .prog-count { font-size: 0.8125rem; font-weight: 600; color: var(--color-base-content); }
+  .prog-count b { color: var(--color-positive-ink); font-weight: 700; }
+  .prog-bar {
+    height: 6px; border-radius: 999px; margin-top: 8px;
+    background: color-mix(in oklab, var(--color-base-content) 8%, transparent);
+    overflow: hidden;
+  }
+  .prog-bar > i {
+    display: block; height: 100%; border-radius: 999px;
+    background: var(--color-primary);
+    /* On an empty 0-of-3 site this drops to a faint seed (width ~3%, min-width 6px, a
+       desaturated fill mixed toward base-300) so the rail reads as a track, never as
+       fake progress. */
+  }
+
+  /* the steps: quiet rows INSIDE the single card, never nested cards */
+  .steps { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 8px; }
+  .step {
+    display: flex; align-items: center; gap: 13px;
+    padding: 12px 14px;
+    border: 1px solid var(--cairn-card-border);
+    border-radius: 0.75rem;
+    background: var(--color-base-100);
+  }
+  /* the check box. The unchecked ring is content-42% (~3:1 on base-100), so the
+     "not done" state is perceivable on its own, not a too-faint hairline (WCAG 1.4.11
+     for a control that conveys state). */
+  .step-box {
+    flex: none; height: 24px; width: 24px; border-radius: 7px;
+    border: 2px solid color-mix(in oklab, var(--color-base-content) 42%, transparent);
+    background: var(--color-base-100);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: transparent;
+  }
+  .step-box svg { width: 13px; height: 13px; }
+  .step-body { flex: 1 1 auto; min-width: 0; }
+  .step-title { font-size: 0.9375rem; font-weight: 600; color: var(--color-base-content); }
+  .step-desc { font-size: 0.8125rem; color: var(--color-muted); margin-top: 2px; line-height: 1.45; }
+
+  /* a not-done step routes to where it completes through its own short action button, so
+     the accessible name is precise rather than a long wrapping link */
+  .step-act {
+    flex: none; margin-left: auto;
+    display: inline-flex; align-items: center; gap: 5px;
+    height: 30px; padding: 0 12px;
+    border: 1px solid var(--cairn-card-border); border-radius: var(--radius-field);
+    background: var(--color-base-100); color: var(--color-primary);
+    font: 600 0.78125rem/1 var(--font-body); cursor: pointer; text-decoration: none;
+    transition: border-color 120ms ease, background-color 120ms ease;
+  }
+  .step-act:hover {
+    border-color: color-mix(in oklab, var(--color-primary) 40%, var(--cairn-card-border));
+    background: color-mix(in oklab, var(--color-primary) 6%, transparent);
+  }
+  .step-act svg { width: 13px; height: 13px; }
+
+  /* the DONE state. The cue survives for sighted, low-vision, AND screen-reader users
+     without leaning on color: a filled glyph-backed box (positive-ink) plus a visible
+     "Done" text tag (WCAG 1.4.1, never color alone). A done step keeps a quiet "Open it"
+     affordance so the row grammar stays consistent (an affordance on every row). */
+  .step.is-done { background: color-mix(in oklab, var(--color-positive-ink) 4%, var(--color-base-100)); }
+  .step.is-done .step-box {
+    background: var(--color-positive-ink);
+    border-color: var(--color-positive-ink);
+    color: var(--color-primary-content);
+  }
+  .step.is-done .step-title { color: var(--color-muted); }
+  .step-done-tag {
+    flex: none; display: inline-flex; align-items: center; gap: 5px;
+    font-size: 0.75rem; font-weight: 600; color: var(--color-positive-ink);
+  }
+  .step-done-tag svg { width: 13px; height: 13px; }
+  .step-open {
+    flex: none;
+    display: inline-flex; align-items: center; gap: 5px;
+    font: 600 0.78125rem/1 var(--font-body); color: var(--color-muted);
+    background: none; border: 0; padding: 4px 6px; cursor: pointer;
+    text-decoration: underline; text-underline-offset: 2px;
+  }
+  .step-open:hover { color: var(--color-base-content); }
+
+  .start-foot {
+    margin-top: 16px;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    font-size: 0.75rem; color: var(--color-muted);
+  }
+  .start-foot button {
+    color: var(--color-muted); background: none; border: 0; padding: 0; cursor: pointer;
+    font: inherit; text-decoration: underline; text-underline-offset: 2px;
+  }
+  .start-foot button:hover { color: var(--color-base-content); }
+
+  /* ============================================================================
+     SECTION 2 · FORMATTING REFERENCE — the cheat sheet.
+
+     Promoted from the editor's Ctrl+/ dialog. A real semantic <table> with th scope=col,
+     so the "Type this / What it makes" pairing is exposed to assistive tech. Two grouped
+     reading columns (Text / Links and lists) so it scans as a calm desk and absorbs more
+     rows or a third group without a redesign. The "Type this" samples render in the iA
+     Writer Mono editor face (the load-bearing fidelity detail); the result column is plain
+     language with the heading example in the Bricolage display face. Locked to the brief's
+     exact required set of nine rows.
+     ============================================================================ */
+  .ref-card { margin-top: 0; }
+  .ref-cols { display: grid; grid-template-columns: 1fr 1fr; }
+  .ref-cols > table:first-child { border-right: 1px solid var(--cairn-card-border); }
+  .ref-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  .ref-table caption {
+    text-align: left;
+    font-size: 0.625rem; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase;
+    color: var(--color-muted);
+    padding: 16px 22px 6px;
+  }
+  /* the two column headers are real th scope=col, visually quiet but exposed to AT */
+  .ref-table thead th {
+    text-align: left; width: 50%;
+    font-size: 0.625rem; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase;
+    color: var(--color-muted); font-family: var(--font-body);
+    padding: 6px 22px 10px;
+    border-bottom: 1px solid color-mix(in oklab, var(--cairn-card-border) 70%, transparent);
+  }
+  .ref-table tbody tr + tr td,
+  .ref-table tbody tr + tr th {
+    border-top: 1px solid color-mix(in oklab, var(--cairn-card-border) 65%, transparent);
+  }
+  /* the "type this" cell: the editor face, markers muted, content inked */
+  .ref-table th[scope='row'] {
+    font-weight: 400; text-align: left;
+    padding: 10px 22px;
+    font-family: var(--font-editor);
+    font-size: 0.8125rem; line-height: 1.5; color: var(--color-base-content);
+    white-space: nowrap;
+  }
+  .ref-table th[scope='row'] .mk { color: var(--color-muted); }
+  /* the "what it makes" cell: the rendered result, body face */
+  .ref-table td {
+    padding: 10px 22px;
+    font-size: 0.875rem; line-height: 1.5; color: var(--color-base-content);
+  }
+  .mk-h { font-family: var(--font-display); font-weight: 700; font-size: 1.0625rem; letter-spacing: -0.01em; }
+  .mk-b { font-weight: 700; }
+  .mk-i { font-style: italic; }
+  .mk-link { color: var(--color-accent); text-decoration: underline; text-underline-offset: 2px; }
+  .mk-wikilink { color: var(--color-accent); text-decoration: underline; text-underline-offset: 2px; text-decoration-style: dotted; }
+  .mk-code {
+    font-family: var(--font-editor); font-size: 0.8125rem;
+    background: var(--cairn-code-chip); border-radius: 0.25rem; padding: 0.08em 0.36em;
+  }
+  .mk-list { margin: 0; padding-left: 1.15em; color: var(--color-base-content); }
+  .mk-list li { margin: 1px 0; }
+  .mk-quote {
+    display: inline-block; margin: 0; padding-left: 0.7em;
+    border-left: 2px solid color-mix(in oklab, var(--color-base-content) 24%, transparent);
+    color: var(--color-muted); font-style: italic;
+  }
+
+  /* the reference foot is the PRESENT, working "help while you write" pointer (never a
+     future promise): the same sheet opens beside the editor today. */
+  .ref-foot {
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 22px;
+    border-top: 1px solid var(--cairn-card-border);
+    background: color-mix(in oklab, var(--color-base-content) 1.5%, transparent);
+    font-size: 0.8125rem; color: var(--color-muted);
+  }
+  .ref-foot svg { width: 15px; height: 15px; flex: none; color: var(--color-muted); }
+  .ref-foot .kbd {
+    font-family: var(--font-editor); font-size: 0.6875rem;
+    border: 1px solid var(--cairn-card-border); border-radius: 0.25rem; padding: 1px 5px;
+    background: var(--color-base-100); color: var(--color-base-content);
+  }
+
+  /* ============================================================================
+     SECTION 3 · GET HELP — the support hand-off.
+
+     A real, clearly-bounded card (enough salience for the one section a stuck author most
+     needs), not a missable footer line. Rendered ONLY when the site sets a supportContact;
+     shown here in the SET state. When unset, this section becomes the self-serve line
+     documented below, never a button to a blank contact.
+
+     RESTRAINT: the violet person-icon tile that rev.2 carried here is removed. The critique
+     flagged "NO violet icon chips" as an overspend, and the card already states who set up
+     the site, what they can do, and how to reach them. It is a calm text-plus-action row now.
+     ============================================================================ */
+  .help-card { display: flex; align-items: center; gap: 16px; padding: 18px 20px; }
+  .help-card-body { flex: 1 1 auto; min-width: 0; }
+  .help-card-h { font-size: 0.9375rem; font-weight: 600; color: var(--color-base-content); }
+  .help-card-sub { font-size: 0.8125rem; color: var(--color-muted); margin-top: 2px; line-height: 1.45; max-width: 48ch; }
+  .help-card-sub b { color: var(--color-base-content); font-weight: 600; }
+
+  /* ---------------- responsive ---------------- */
+  @media (max-width: 900px) {
+    .ref-cols { grid-template-columns: 1fr; }
+    .ref-cols > table:first-child { border-right: 0; border-bottom: 1px solid var(--cairn-card-border); }
+  }
+  @media (max-width: 760px) {
+    .side { display: none; }
+    .content { padding: 1.75rem 1.25rem 2.5rem; }
+    .start-top { flex-direction: column; }
+    .prog { text-align: left; min-width: 0; width: 100%; }
+    .step { flex-wrap: wrap; }
+    .step-act, .step-done-tag, .step-open { margin-left: 37px; }
+    .ref-table th[scope='row'] { white-space: normal; }
+    .help-card { flex-direction: column; align-items: flex-start; }
+  }
+
+  /* ---------------- reduced motion respected ---------------- */
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- The theme goes on a BARE wrapper; the styled shell sits one level in. -->
+<div data-theme="cairn-admin">
+  <div class="shell">
+
+    <!-- ============ the office sidebar ============ -->
+    <aside class="side">
+      <div class="side-brand">
+        <span class="brand-tile" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="currentColor"><ellipse cx="12" cy="18.2" rx="7" ry="2.5"/><ellipse cx="12" cy="13" rx="5.2" ry="2.1"/><ellipse cx="12" cy="8.6" rx="3.7" ry="1.7"/><ellipse cx="12" cy="5" rx="2" ry="1.2"/></svg>
+        </span>
+        <span class="brand-word">cairn</span>
+      </div>
+      <nav class="side-nav" aria-label="Sections">
+        <div class="nav-grp">Content</div>
+        <a class="nav-item" href="#posts">
+          <svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+          Posts
+        </a>
+        <a class="nav-item" href="#pages">
+          <svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+          Pages
+        </a>
+        <a class="nav-item" href="#media">
+          <svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>
+          Media
+        </a>
+      </nav>
+      <!-- Help: a standing utility pinned at the foot, set apart from the concepts -->
+      <div class="nav-foot">
+        <a class="nav-item active" aria-current="page" href="#help">
+          <svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+          Help
+        </a>
+      </div>
+    </aside>
+
+    <!-- ============ the main area ============ -->
+    <div class="main">
+
+      <!-- the slim topbar -->
+      <header class="top">
+        <button class="palette" type="button">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          Search and commands
+          <span class="kbd">Ctrl K</span>
+        </button>
+        <span class="grow"></span>
+        <button class="top-link" type="button">View site</button>
+        <button class="btn-primary" type="button">Publish site (2)</button>
+      </header>
+
+      <!-- the Help home content -->
+      <main class="content" id="help">
+        <div class="help-col">
+
+          <!-- masthead: a real sentence h1, the page's single Bricolage display beat -->
+          <div class="page-head">
+            <span class="eyebrow">Help</span>
+            <h1 class="page-h1">Find your way around</h1>
+            <p class="page-lede">The place to get your bearings and look up how things work. It is always here when you need it.</p>
+          </div>
+
+          <!-- ============ SECTION 1 · getting started (1 of 3 done) ============ -->
+          <!--
+            DERIVED state: this site has 1 post and nothing published, so the card reads
+            "1 of 3 done" with "Write your first post" complete. On an empty site it reads
+            0 of 3 with a faint seed bar. At 3 of 3 the whole <section> is omitted (never
+            shown as a done checklist).
+          -->
+          <section class="section" aria-labelledby="start-eye">
+            <div class="section-head">
+              <div class="section-titles">
+                <span class="eyebrow" id="start-eye">Getting started</span>
+                <h2 class="section-h">Your first steps</h2>
+              </div>
+            </div>
+
+            <div class="card start">
+              <div class="start-top">
+                <div class="start-lead">
+                  <div class="start-lead-h">From a blank site to your first published post</div>
+                  <p class="start-lead-sub">Three small steps. Each one checks itself off as you do it, so the list always shows where you are.</p>
+                </div>
+                <!-- the count is the source of truth; the bar is decorative only -->
+                <div class="prog">
+                  <div class="prog-count"><b>1</b> of 3 done</div>
+                  <div class="prog-bar" role="presentation"><i style="width:33.33%"></i></div>
+                </div>
+              </div>
+
+              <ol class="steps">
+                <!-- DONE: the site has at least one post -->
+                <li class="step is-done">
+                  <span class="step-box" aria-hidden="true">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                  </span>
+                  <span class="step-body">
+                    <span class="step-title">Write your first post</span>
+                    <span class="step-desc">You have a post started. Open it any time to keep going.</span>
+                  </span>
+                  <span class="step-done-tag">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+                    Done
+                  </span>
+                  <a class="step-open" href="#open-post">Open it</a>
+                </li>
+
+                <!-- NOT DONE: nothing is published yet -->
+                <li class="step">
+                  <span class="step-box" aria-hidden="true"></span>
+                  <span class="step-body">
+                    <span class="step-title">Publish it</span>
+                    <span class="step-desc">Publishing puts your post on the live site. You can change it and publish again any time.</span>
+                  </span>
+                  <span class="sr-only">not done</span>
+                  <a class="step-act" href="#publish">
+                    Publish a post
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                  </a>
+                </li>
+
+                <!-- NOT DONE: no page exists yet -->
+                <li class="step">
+                  <span class="step-box" aria-hidden="true"></span>
+                  <span class="step-body">
+                    <span class="step-title">Create a page</span>
+                    <span class="step-desc">A page is for the parts that stay put, like About or Contact. A post is for news and updates.</span>
+                  </span>
+                  <span class="sr-only">not done</span>
+                  <a class="step-act" href="#new-page">
+                    Add a page
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                  </a>
+                </li>
+              </ol>
+
+              <div class="start-foot">
+                <span>These steps follow what is really on your site.</span>
+                <button type="button">Hide these steps</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- ============ SECTION 2 · formatting reference ============ -->
+          <section class="section" aria-labelledby="ref-eye">
+            <div class="section-head">
+              <div class="section-titles">
+                <span class="eyebrow" id="ref-eye">Formatting</span>
+                <h2 class="section-h">How to format text</h2>
+              </div>
+              <span class="section-meta">Type the characters on the left</span>
+            </div>
+
+            <div class="card ref-card">
+              <div class="ref-cols">
+
+                <!-- column one: the everyday text marks -->
+                <table class="ref-table">
+                  <caption>Text</caption>
+                  <thead>
+                    <tr><th scope="col">Type this</th><th scope="col">What it makes</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th scope="row"><span class="mk">## </span>Heading</th>
+                      <td><span class="mk-h">A heading</span></td>
+                    </tr>
+                    <tr>
+                      <th scope="row"><span class="mk">**</span>bold<span class="mk">**</span></th>
+                      <td><span class="mk-b">Bold text</span></td>
+                    </tr>
+                    <tr>
+                      <th scope="row"><span class="mk">*</span>italic<span class="mk">*</span></th>
+                      <td><span class="mk-i">Italic text</span></td>
+                    </tr>
+                    <tr>
+                      <th scope="row"><span class="mk">&gt; </span>quote</th>
+                      <td><span class="mk-quote">A quote</span></td>
+                    </tr>
+                    <tr>
+                      <th scope="row"><span class="mk">`</span>code<span class="mk">`</span></th>
+                      <td>Inline <span class="mk-code">code</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <!-- column two: links and lists -->
+                <table class="ref-table">
+                  <caption>Links and lists</caption>
+                  <thead>
+                    <tr><th scope="col">Type this</th><th scope="col">What it makes</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th scope="row"><span class="mk">[</span>text<span class="mk">](</span>url<span class="mk">)</span></th>
+                      <td>A <span class="mk-link">link</span></td>
+                    </tr>
+                    <tr>
+                      <th scope="row"><span class="mk">[[</span>page-name<span class="mk">]]</span></th>
+                      <td>A link to one of your <span class="mk-wikilink">pages</span></td>
+                    </tr>
+                    <tr>
+                      <th scope="row"><span class="mk">- </span>item</th>
+                      <td><ul class="mk-list"><li>A bulleted list</li></ul></td>
+                    </tr>
+                    <tr>
+                      <th scope="row"><span class="mk">1. </span>item</th>
+                      <td><ol class="mk-list"><li>A numbered list</li></ol></td>
+                    </tr>
+                  </tbody>
+                </table>
+
+              </div>
+
+              <p class="ref-foot">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                <span>This same sheet opens beside the editor while you write. Press <span class="kbd">Ctrl</span> <span class="kbd">/</span>.</span>
+              </p>
+            </div>
+          </section>
+
+          <!-- ============ SECTION 3 · get help (the SET state) ============ -->
+          <!--
+            Rendered ONLY because this site set a supportContact, shown in the SET state.
+            When unset, this section is the self-serve line instead, with no control:
+            "Check the formatting guide above, or ask whoever set up your site." Never a
+            button to a blank contact.
+
+            The decorative violet person-tile rev.2 carried is removed (the one accessory
+            cut for restraint); the card is a calm text-plus-action row.
+          -->
+          <section class="section" aria-labelledby="help-eye">
+            <div class="section-head">
+              <div class="section-titles">
+                <span class="eyebrow" id="help-eye">Get help</span>
+                <h2 class="section-h">Ask the person who set up your site</h2>
+              </div>
+            </div>
+
+            <div class="card help-card">
+              <div class="help-card-body">
+                <div class="help-card-h">Dana set up this site</div>
+                <p class="help-card-sub">They can change things you cannot change here, like the menu and who can sign in. Reach them at <b>dana@example.org</b>.</p>
+              </div>
+              <a class="btn-quiet" href="mailto:dana@example.org">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                Email Dana
+              </a>
+            </div>
+          </section>
+
+        </div>
+      </main>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

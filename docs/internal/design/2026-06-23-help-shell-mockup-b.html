@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>cairn admin · Help home — Quiet reference desk (variant B)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  /* =========================================================================
+     QUIET REFERENCE DESK — Help home, variant B.
+     Self-contained: Google Fonts above, Warm Stone tokens in :root below, all
+     CSS and markup inline. The composition idea: the formatting reference IS the
+     desk. It is the wide, carefully-set centerpiece a returning author comes back
+     to. The getting-started checklist is a slim strip on top that recedes as it
+     completes and vanishes once done. Get-help is a quiet footer line.
+     Restraint and precision in type and spacing carry the whole thing.
+     ========================================================================= */
+
+  :root, [data-theme='cairn-admin'] {
+    --color-base-100: oklch(99% 0.004 75);     /* page + card surface */
+    --color-base-200: oklch(96.5% 0.006 75);   /* recessed surface */
+    --color-base-300: oklch(89% 0.011 75);     /* divider */
+    --color-base-content: oklch(26% 0.014 75); /* primary ink */
+    --color-primary: oklch(52% 0.2 293);       /* violet, primary action + active */
+    --color-primary-content: oklch(98% 0.012 293);
+    --color-accent: oklch(54% 0.16 300);       /* links */
+    --color-muted: oklch(48% 0.01 75);         /* secondary ink */
+    --color-subtle: oklch(42% 0.01 75);
+    --color-positive-ink: oklch(48% 0.12 150); /* done / check */
+    --cairn-card-border: oklch(93% 0.008 75);
+    --cairn-shadow: 0 1px 2px oklch(28% 0.02 75 / 0.05), 0 8px 24px -6px oklch(28% 0.02 75 / 0.1);
+    --cairn-code-chip: oklch(94.5% 0.008 75);
+
+    --font-display: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
+    --font-body: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+    --radius-field: 0.625rem;
+    --radius-box: 1rem;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--color-base-200);
+    color: var(--color-base-content);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'kern';
+    text-rendering: optimizeLegibility;
+  }
+
+  /* focus is always visible, on a keyboard-modality hairline that clears 3:1 */
+  a:focus-visible, button:focus-visible, input:focus-visible {
+    outline: 2px solid color-mix(in oklab, var(--color-primary) 70%, transparent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+  }
+
+  /* ---------- the admin shell (office context) ---------- */
+  .shell { display: flex; min-height: 100vh; }
+
+  /* office sidebar */
+  .side {
+    width: 14rem; flex: none;
+    background: var(--color-base-100);
+    border-right: 1px solid var(--cairn-card-border);
+    display: flex; flex-direction: column;
+  }
+  .side-brand {
+    display: flex; align-items: center; gap: 10px;
+    height: 64px; min-height: 64px; padding: 0 16px;
+    border-bottom: 1px solid var(--cairn-card-border);
+  }
+  .brand-tile {
+    height: 32px; width: 32px; border-radius: 0.75rem; flex: none;
+    background: var(--color-primary); color: var(--color-primary-content);
+    display: inline-flex; align-items: center; justify-content: center;
+    box-shadow: 0 1px 2px oklch(28% 0.02 75 / 0.18);
+  }
+  .brand-tile svg { width: 18px; height: 18px; }
+  .brand-word {
+    font-family: var(--font-display); font-size: 1.25rem; font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .side-nav { padding: 6px 10px; display: flex; flex-direction: column; gap: 1px; }
+  .nav-grp {
+    font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--color-muted);
+    padding: 16px 8px 5px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 10px; border-radius: 0.5rem;
+    font-size: 0.875rem; font-weight: 500; color: var(--color-subtle);
+    text-decoration: none; cursor: pointer;
+    background: none; border: 0; width: 100%; text-align: left;
+    font-family: inherit;
+  }
+  .nav-item:hover { background: color-mix(in oklab, var(--color-base-content) 5%, transparent); }
+  .nav-item.active {
+    background: color-mix(in oklab, var(--color-primary) 10%, transparent);
+    color: var(--color-primary); font-weight: 600;
+  }
+  .nav-ico { width: 16px; height: 16px; flex: none; }
+  .nav-foot {
+    margin-top: auto; padding: 6px 10px 12px;
+    border-top: 1px solid var(--cairn-card-border);
+    display: flex; flex-direction: column; gap: 1px;
+  }
+
+  /* main column + slim topbar */
+  .main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+  .top {
+    display: flex; align-items: center; gap: 12px;
+    height: 64px; min-height: 64px; padding: 0 20px;
+    background: var(--color-base-100);
+    border-bottom: 1px solid var(--cairn-card-border);
+  }
+  .palette {
+    display: inline-flex; align-items: center; gap: 8px;
+    height: 34px; padding: 0 12px; min-width: 17rem;
+    border: 1px solid var(--cairn-card-border); border-radius: 0.625rem;
+    background: var(--color-base-200); color: var(--color-muted);
+    font: 400 0.8125rem/1 var(--font-body); cursor: pointer;
+  }
+  .palette svg { width: 15px; height: 15px; flex: none; }
+  .kbd {
+    margin-left: auto; font-size: 0.625rem;
+    border: 1px solid var(--cairn-card-border); border-radius: 0.25rem;
+    padding: 1px 4px; color: var(--color-muted);
+  }
+  .grow { flex: 1 1 auto; }
+  .top-link {
+    color: var(--color-muted); text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-color: color-mix(in oklab, currentColor 40%, transparent);
+    background: none; border: 0; font: 500 0.8125rem/1 var(--font-body); cursor: pointer;
+  }
+  .top-link:hover { color: var(--color-primary); }
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 6px;
+    height: 34px; padding: 0 14px; border: 0; border-radius: var(--radius-field);
+    background: var(--color-primary); color: var(--color-primary-content);
+    font: 600 0.8125rem/1 var(--font-body); cursor: pointer;
+    box-shadow: 0 1px 2px oklch(52% 0.2 293 / 0.18), 0 4px 12px -4px oklch(52% 0.2 293 / 0.4);
+  }
+  .btn-primary:hover { background: oklch(48% 0.2 293); }
+
+  /* ---------- the Help content area (recessed ground) ---------- */
+  .content { flex: 1 1 auto; padding: 2.25rem 2.5rem 2.5rem; overflow: auto; }
+  .desk { max-width: 60rem; margin: 0 auto; width: 100%; }
+
+  .eyebrow {
+    font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--color-muted);
+  }
+  .page-h1 {
+    font-family: var(--font-display); font-size: 1.875rem; font-weight: 700;
+    letter-spacing: -0.025em; margin: 5px 0 0;
+  }
+  .page-lede {
+    font-size: 0.9375rem; color: var(--color-muted);
+    margin: 7px 0 0; max-width: 54ch; line-height: 1.55;
+  }
+
+  /* =========================================================================
+     1 · THE GETTING-STARTED STRIP (recedes as it completes; gone when done).
+     A single slim horizontal band, not a card-heavy zone. It carries the
+     derived count in real text, three glyph-backed step pills, and a quiet
+     decorative bar. Steps derive from observable content and publish state.
+     ========================================================================= */
+  .start {
+    margin-top: 22px;
+    display: flex; align-items: center; gap: 20px;
+    padding: 13px 18px;
+    border: 1px solid var(--cairn-card-border); border-radius: 0.875rem;
+    background:
+      linear-gradient(180deg,
+        color-mix(in oklab, var(--color-primary) 3.5%, var(--color-base-100)),
+        var(--color-base-100));
+    box-shadow: var(--cairn-shadow);
+  }
+  .start-lead { flex: none; min-width: 9.5rem; }
+  .start-lead .eyebrow { display: block; }
+  .start-count {
+    font-size: 0.9375rem; font-weight: 600; color: var(--color-base-content);
+    margin-top: 3px;
+  }
+  .start-count b { color: var(--color-primary); font-weight: 700; }
+  /* the decorative progress bar: presentation only, never focusable */
+  .start-bar {
+    height: 4px; border-radius: 999px; margin-top: 8px; width: 100%;
+    background: color-mix(in oklab, var(--color-base-content) 9%, transparent);
+    overflow: hidden;
+  }
+  .start-bar > i {
+    display: block; height: 100%; border-radius: 999px;
+    background: var(--color-primary);
+  }
+
+  /* the three steps as a quiet inline row of pills */
+  .start-steps {
+    flex: 1 1 auto; display: flex; align-items: center; gap: 8px;
+    flex-wrap: wrap; min-width: 0;
+  }
+  .step {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 11px 6px 8px; border-radius: 999px;
+    border: 1px solid var(--cairn-card-border);
+    background: var(--color-base-100);
+    font: 500 0.8125rem/1 var(--font-body); color: var(--color-base-content);
+    text-decoration: none; cursor: pointer;
+  }
+  .step:hover {
+    border-color: color-mix(in oklab, var(--color-primary) 36%, var(--cairn-card-border));
+  }
+  .step-mark {
+    flex: none; height: 18px; width: 18px; border-radius: 50%;
+    border: 1.5px solid color-mix(in oklab, var(--color-base-content) 22%, transparent);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: transparent;
+  }
+  .step-mark svg { width: 11px; height: 11px; }
+  .step.is-done {
+    border-color: var(--cairn-card-border);
+    color: var(--color-muted);
+  }
+  .step.is-done .step-mark {
+    background: var(--color-positive-ink);
+    border-color: var(--color-positive-ink);
+    color: var(--color-base-100);
+  }
+  .step.is-done .step-label { text-decoration: line-through; text-decoration-color: color-mix(in oklab, var(--color-muted) 45%, transparent); }
+  .step-go { color: var(--color-muted); display: inline-flex; }
+  .step-go svg { width: 13px; height: 13px; }
+  .step.is-done .step-go { display: none; }
+  .start-dismiss {
+    flex: none; align-self: flex-start;
+    background: none; border: 0; padding: 4px;
+    color: var(--color-muted); cursor: pointer; border-radius: 0.375rem;
+    display: inline-flex;
+  }
+  .start-dismiss:hover { color: var(--color-base-content); background: color-mix(in oklab, var(--color-base-content) 6%, transparent); }
+  .start-dismiss svg { width: 15px; height: 15px; }
+
+  /* =========================================================================
+     2 · THE FORMATTING REFERENCE — the centerpiece desk.
+     A wide, precisely-set "Type this / What it makes" pairing. Two reading
+     columns of rows, each row a monospace sample on the left and the plain
+     result on the right. Calm, scannable, generous rhythm; this is the signature.
+     ========================================================================= */
+  .ref { margin-top: 34px; }
+  .ref-head {
+    display: flex; align-items: baseline; gap: 14px;
+    padding-bottom: 14px; margin-bottom: 0;
+    border-bottom: 1px solid var(--cairn-card-border);
+  }
+  .ref-h2 {
+    font-family: var(--font-display); font-size: 1.375rem; font-weight: 700;
+    letter-spacing: -0.02em; margin: 0;
+  }
+  .ref-sub { font-size: 0.8125rem; color: var(--color-muted); }
+  .ref-head .grow { min-width: 1px; }
+  .ref-openhint {
+    font-size: 0.75rem; color: var(--color-muted);
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .ref-openhint .kbd-inline {
+    font-family: 'Bricolage Grotesque', monospace;
+    font-size: 0.6875rem; color: var(--color-subtle);
+    border: 1px solid var(--cairn-card-border); border-radius: 0.25rem;
+    padding: 1px 5px; background: var(--color-base-100);
+  }
+
+  /* the reference floats as one quiet card; the grid inside is the desk */
+  .ref-card {
+    margin-top: 18px;
+    border: 1px solid var(--cairn-card-border); border-radius: var(--radius-box);
+    background: var(--color-base-100); box-shadow: var(--cairn-shadow);
+    overflow: hidden;
+  }
+  .ref-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  /* a hairline seam between the two reading columns */
+  .ref-grid > .ref-group:nth-child(odd) {
+    border-right: 1px solid var(--cairn-card-border);
+  }
+  .ref-group { padding: 4px 0; }
+  .ref-grouphead {
+    font-size: 0.625rem; font-weight: 600; letter-spacing: 0.09em;
+    text-transform: uppercase; color: var(--color-muted);
+    padding: 16px 22px 8px;
+  }
+
+  .ref-row {
+    display: grid; grid-template-columns: minmax(9.5rem, 0.95fr) 1fr;
+    align-items: baseline; gap: 16px;
+    padding: 9px 22px;
+  }
+  .ref-row + .ref-row {
+    border-top: 1px solid color-mix(in oklab, var(--cairn-card-border) 65%, transparent);
+  }
+  /* the "type this" cell: the editor face, markers muted, content inked */
+  .type {
+    font-family: 'Bricolage Grotesque', monospace; /* fallback only; overridden below */
+    font-size: 0.8125rem; line-height: 1.5; color: var(--color-base-content);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  /* render the samples in a true mono so they read as "what you type"; Figtree
+     is for the result side. A web mono via local stack keeps the file self-contained. */
+  .type, .type * {
+    font-family: ui-monospace, 'SFMono-Regular', 'Menlo', 'Cascadia Mono', 'Consolas', monospace;
+  }
+  .type .mk { color: var(--color-muted); }
+  .type .chip {
+    background: var(--cairn-code-chip); border-radius: 0.25rem; padding: 0.05em 0.32em;
+  }
+  /* the "what it makes" cell: the rendered result, in the body face */
+  .makes { font-size: 0.875rem; line-height: 1.5; color: var(--color-base-content); min-width: 0; }
+  .makes .m-h { font-weight: 700; font-size: 1.0625rem; letter-spacing: -0.01em; }
+  .makes b { font-weight: 700; }
+  .makes i { font-style: italic; }
+  .makes a, .makes .m-link {
+    color: var(--color-accent); text-decoration: underline;
+    text-underline-offset: 2px; cursor: pointer;
+  }
+  .makes .m-wikilink {
+    color: var(--color-accent); text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-style: dotted; cursor: pointer;
+  }
+  .makes .m-code {
+    font-family: ui-monospace, monospace; font-size: 0.8125rem;
+    background: var(--cairn-code-chip); border-radius: 0.25rem; padding: 0.08em 0.36em;
+  }
+  .makes .m-list { margin: 0; padding-left: 1.15em; }
+  .makes .m-list li { margin: 1px 0; }
+  .makes .m-quote {
+    margin: 0; padding-left: 0.7em;
+    border-left: 2px solid color-mix(in oklab, var(--color-base-content) 22%, transparent);
+    color: var(--color-muted); font-style: italic;
+  }
+  .makes .m-note { color: var(--color-muted); font-size: 0.8125rem; }
+
+  /* a quiet footnote under the reference card */
+  .ref-foot {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 12px; padding: 0 2px;
+    font-size: 0.8125rem; color: var(--color-muted);
+  }
+  .ref-foot svg { width: 14px; height: 14px; flex: none; color: var(--color-muted); }
+
+  /* =========================================================================
+     3 · GET HELP — the quiet footer.
+     A thin hand-off line, not a card. The set state: a friendly contact line.
+     Rendered only when the site set a supportContact.
+     ========================================================================= */
+  .gethelp {
+    margin-top: 30px; padding-top: 22px;
+    border-top: 1px solid var(--cairn-card-border);
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  }
+  .gethelp-ico {
+    flex: none; height: 36px; width: 36px; border-radius: 0.625rem;
+    background: color-mix(in oklab, var(--color-primary) 8%, transparent);
+    color: var(--color-primary);
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .gethelp-ico svg { width: 18px; height: 18px; }
+  .gethelp-text { flex: 1 1 16rem; min-width: 0; }
+  .gethelp-h { font-size: 0.875rem; font-weight: 600; color: var(--color-base-content); }
+  .gethelp-sub { font-size: 0.8125rem; color: var(--color-muted); margin-top: 1px; line-height: 1.5; }
+  .gethelp-sub a { color: var(--color-accent); text-decoration: underline; text-underline-offset: 2px; }
+  .gethelp-cta {
+    flex: none;
+    display: inline-flex; align-items: center; gap: 7px;
+    height: 36px; padding: 0 14px;
+    border: 1px solid var(--cairn-card-border); border-radius: var(--radius-field);
+    background: var(--color-base-100); color: var(--color-base-content);
+    font: 600 0.8125rem/1 var(--font-body); cursor: pointer; text-decoration: none;
+  }
+  .gethelp-cta:hover {
+    border-color: color-mix(in oklab, var(--color-primary) 38%, var(--cairn-card-border));
+    color: var(--color-primary);
+  }
+  .gethelp-cta svg { width: 15px; height: 15px; }
+
+  /* the self-serve fallback (shown only when no supportContact is set) */
+  .gethelp.is-selfserve .gethelp-ico {
+    background: color-mix(in oklab, var(--color-base-content) 4%, transparent);
+    color: var(--color-muted);
+  }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 940px) {
+    .ref-grid { grid-template-columns: 1fr; }
+    .ref-grid > .ref-group:nth-child(odd) { border-right: 0; }
+    .ref-grid > .ref-group + .ref-group { border-top: 1px solid var(--cairn-card-border); }
+  }
+  @media (max-width: 760px) {
+    .side { display: none; }
+    .content { padding: 1.5rem 1.25rem 2rem; }
+    .start { flex-direction: column; align-items: stretch; gap: 14px; }
+    .start-lead { min-width: 0; }
+    .ref-row { grid-template-columns: 1fr; gap: 6px; padding: 11px 18px; }
+    .type { white-space: normal; }
+    .gethelp { flex-direction: column; align-items: stretch; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- The theme goes on a bare wrapper; the styled shell sits one level in. -->
+<div data-theme="cairn-admin">
+  <div class="shell">
+
+    <!-- ============ office sidebar ============ -->
+    <aside class="side">
+      <div class="side-brand">
+        <span class="brand-tile" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="currentColor"><ellipse cx="12" cy="18.2" rx="7" ry="2.5"/><ellipse cx="12" cy="13" rx="5.2" ry="2.1"/><ellipse cx="12" cy="8.6" rx="3.7" ry="1.7"/><ellipse cx="12" cy="5" rx="2" ry="1.2"/></svg>
+        </span>
+        <span class="brand-word">cairn</span>
+      </div>
+      <nav class="side-nav" aria-label="Sections">
+        <div class="nav-grp">Content</div>
+        <a class="nav-item" href="#">
+          <svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+          Posts
+        </a>
+        <a class="nav-item" href="#">
+          <svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+          Pages
+        </a>
+        <a class="nav-item" href="#">
+          <svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>
+          Media
+        </a>
+      </nav>
+      <!-- Help is a standing utility, pinned at the foot, set apart from the content concepts -->
+      <div class="nav-foot">
+        <a class="nav-item active" aria-current="page" href="#">
+          <svg class="nav-ico" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+          Help
+        </a>
+      </div>
+    </aside>
+
+    <!-- ============ main column ============ -->
+    <div class="main">
+      <header class="top">
+        <button class="palette" type="button">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          Search and commands
+          <span class="kbd">Ctrl K</span>
+        </button>
+        <span class="grow"></span>
+        <button class="top-link" type="button">View site</button>
+        <button class="btn-primary" type="button">Publish site (2)</button>
+      </header>
+
+      <main class="content">
+        <div class="desk">
+          <span class="eyebrow">Help</span>
+          <h1 class="page-h1">Help</h1>
+          <p class="page-lede">The formatting reference is below, ready when you need it. New here? The few steps along the top get you to your first published post.</p>
+
+          <!-- ============ 1 · getting-started strip (recedes; gone when done) ============ -->
+          <!--
+            DERIVED state: this site has 1 post and nothing published yet, so the strip reads
+            "1 of 3 done" with "Write your first post" complete. On an all-done site this whole
+            <section> is omitted, never shown at 3 of 3. On an empty site it would read 0 of 3.
+          -->
+          <section class="start" aria-labelledby="start-h">
+            <div class="start-lead">
+              <span class="eyebrow" id="start-h">Getting started</span>
+              <div class="start-count"><b>1</b> of 3 done</div>
+              <div class="start-bar" role="presentation"><i style="width:33%"></i></div>
+            </div>
+            <div class="start-steps">
+              <a class="step is-done" href="#">
+                <span class="step-mark" aria-hidden="true"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                <span class="step-label">Write your first post</span>
+                <span class="sr-only">— done</span>
+                <span class="step-go" aria-hidden="true"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+              </a>
+              <a class="step" href="#">
+                <span class="step-mark" aria-hidden="true"></span>
+                <span class="step-label">Publish it</span>
+                <span class="step-go" aria-hidden="true"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+              </a>
+              <a class="step" href="#">
+                <span class="step-mark" aria-hidden="true"></span>
+                <span class="step-label">Create a page</span>
+                <span class="step-go" aria-hidden="true"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+              </a>
+            </div>
+            <button class="start-dismiss" type="button" aria-label="Hide getting started" title="Hide getting started">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+          </section>
+
+          <!-- ============ 2 · the formatting reference (the centerpiece) ============ -->
+          <section class="ref" aria-labelledby="ref-h">
+            <div class="ref-head">
+              <h2 class="ref-h2" id="ref-h">Formatting reference</h2>
+              <span class="grow"></span>
+              <span class="ref-openhint">
+                Also in the editor
+                <span class="kbd-inline">Ctrl /</span>
+              </span>
+            </div>
+
+            <div class="ref-card">
+              <div class="ref-grid">
+
+                <!-- column one: the everyday text marks -->
+                <div class="ref-group">
+                  <div class="ref-grouphead">Text</div>
+
+                  <div class="ref-row">
+                    <div class="type"><span class="mk">## </span>Heading</div>
+                    <div class="makes"><span class="m-h">Heading</span></div>
+                  </div>
+                  <div class="ref-row">
+                    <div class="type"><span class="mk">**</span>bold<span class="mk">**</span></div>
+                    <div class="makes"><b>bold</b> text</div>
+                  </div>
+                  <div class="ref-row">
+                    <div class="type"><span class="mk">*</span>italic<span class="mk">*</span></div>
+                    <div class="makes"><i>italic</i></div>
+                  </div>
+                  <div class="ref-row">
+                    <div class="type"><span class="mk">`</span>code<span class="mk">`</span></div>
+                    <div class="makes"><span class="m-code">code</span> in a line</div>
+                  </div>
+                  <div class="ref-row">
+                    <div class="type"><span class="mk">&gt; </span>quote</div>
+                    <div class="makes"><blockquote class="m-quote">quote</blockquote></div>
+                  </div>
+                </div>
+
+                <!-- column two: links and lists -->
+                <div class="ref-group">
+                  <div class="ref-grouphead">Links and lists</div>
+
+                  <div class="ref-row">
+                    <div class="type"><span class="mk">[</span>text<span class="mk">](</span>url<span class="mk">)</span></div>
+                    <div class="makes"><span class="m-link">text</span></div>
+                  </div>
+                  <div class="ref-row">
+                    <div class="type"><span class="mk">[[</span>page-name<span class="mk">]]</span></div>
+                    <div class="makes"><span class="m-wikilink">a page</span> on your site</div>
+                  </div>
+                  <div class="ref-row">
+                    <div class="type"><span class="mk">- </span>item</div>
+                    <div class="makes"><ul class="m-list"><li>item</li><li>item</li></ul></div>
+                  </div>
+                  <div class="ref-row">
+                    <div class="type"><span class="mk">1. </span>item</div>
+                    <div class="makes"><ol class="m-list"><li>item</li><li>item</li></ol></div>
+                  </div>
+                  <div class="ref-row">
+                    <div class="type"><span class="mk">---</span></div>
+                    <div class="makes"><span class="m-note">a line across the page</span></div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <p class="ref-foot">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+              Type the characters on the left. The editor shows the change as you write, and the preview tab shows the finished page.
+            </p>
+          </section>
+
+          <!-- ============ 3 · get help (quiet footer, the SET state) ============ -->
+          <!--
+            Rendered only when the site set a supportContact. Shown here in the set
+            state (an email) so the section reads. If unset, this becomes the self-serve
+            line: "Check the formatting reference above, or ask whoever set up your site."
+            Never a button to a blank contact.
+          -->
+          <section class="gethelp" aria-labelledby="help-h">
+            <span class="gethelp-ico" aria-hidden="true">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </span>
+            <div class="gethelp-text">
+              <div class="gethelp-h" id="help-h">Need a hand?</div>
+              <div class="gethelp-sub">Ask Dana, who set up this site. They can change settings the editor cannot reach.</div>
+            </div>
+            <a class="gethelp-cta" href="mailto:dana@example.org">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+              Email Dana
+            </a>
+          </section>
+
+        </div>
+      </main>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

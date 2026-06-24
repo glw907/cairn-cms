@@ -51,6 +51,24 @@ function multiRuntime(): CairnRuntime {
   return r;
 }
 
+/** A single undated pages concept, so an entry's address is its own path-derived permalink. */
+function pagesRuntime(): CairnRuntime {
+  return {
+    ...runtime(),
+    concepts: [
+      {
+        id: 'pages', label: 'Page', singular: 'Page', dir: 'src/content/pages',
+        routing: { routable: true, dated: false, inFeeds: false },
+        permalink: '/:slug',
+        datePrefix: 'day',
+        fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
+        summaryFields: [],
+        validate: () => ({ ok: true as const, data: {} }),
+      },
+    ],
+  };
+}
+
 const deps = { mintToken: () => Promise.resolve('test-token') };
 
 function actionEvent(id: string, form: Record<string, string> = {}) {
@@ -58,6 +76,16 @@ function actionEvent(id: string, form: Record<string, string> = {}) {
     url: new URL(`https://t.example/admin/posts/${id}`),
     params: { concept: 'posts', id },
     request: new Request(`https://t.example/admin/posts/${id}`, { method: 'POST', body: new URLSearchParams(form) }),
+    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+    platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
+  };
+}
+
+function pagesActionEvent(id: string, form: Record<string, string> = {}) {
+  return {
+    url: new URL(`https://t.example/admin/pages/${id}`),
+    params: { concept: 'pages', id },
+    request: new Request(`https://t.example/admin/pages/${id}`, { method: 'POST', body: new URLSearchParams(form) }),
     locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
   };
@@ -240,6 +268,71 @@ describe('publishAction', () => {
     expect(record?.id).toBe('2026-05-01-hi');
     expect(record?.editor).toBe('ed@t');
     expect(record?.batch).toBe(false);
+  });
+
+  it('logs publish.address_collision but still publishes when another entry holds the address', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    // A pages concept with an undated permalink, so the address is the entry's own path-derived
+    // permalink. Publishing pages/about-copy resolves to /about-copy; a different published entry
+    // "about" is manually pinned to that same /about-copy in the manifest, so the publish overrides it.
+    const rt = pagesRuntime();
+    const gh = new GithubDouble({
+      main: {
+        'src/content/pages/about.md': '---\ntitle: About\n---\nLive.',
+        [MANIFEST_PATH]: serializeManifest({
+          version: 1,
+          entries: [{ id: 'about', concept: 'pages', title: 'About', permalink: '/about-copy', draft: false, links: [] }],
+        }),
+      },
+      'cairn/pages/about-copy': { 'src/content/pages/about-copy.md': '---\ntitle: About copy\n---\npending body' },
+    });
+    gh.install();
+    const routes = createContentRoutes(rt, deps);
+
+    const location = await redirectedTo(
+      routes.publishAction(pagesActionEvent('about-copy', { title: 'About copy', body: 'about copy text' }) as never),
+    );
+    // The publish still commits: it redirects to the published page and the entry lands on main.
+    expect(location).toBe('/admin/pages/about-copy?published=1');
+    expect(gh.read('main', 'src/content/pages/about-copy.md')).toContain('about copy text');
+    const published = infoSpy.mock.calls
+      .map((c) => c[0] as { event?: string })
+      .find((r) => r.event === 'entry.published');
+    expect(published).toBeTruthy();
+
+    // A publish.address_collision warning is emitted naming the displaced entry.
+    const collision = warnSpy.mock.calls
+      .map((c) => c[0] as { event?: string; editor?: string; address?: string; displacedConcept?: string; displacedId?: string })
+      .find((r) => r.event === 'publish.address_collision');
+    expect(collision).toBeTruthy();
+    expect(collision?.address).toBe('/about-copy');
+    expect(collision?.displacedConcept).toBe('pages');
+    expect(collision?.displacedId).toBe('about');
+    expect(collision?.editor).toBe('ed@t');
+  });
+
+  it('emits no publish.address_collision when the address is free', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const rt = pagesRuntime();
+    const gh = new GithubDouble({
+      main: {
+        [MANIFEST_PATH]: serializeManifest({
+          version: 1,
+          entries: [{ id: 'about', concept: 'pages', title: 'About', permalink: '/about', draft: false, links: [] }],
+        }),
+      },
+      'cairn/pages/contact': { 'src/content/pages/contact.md': '---\ntitle: Contact\n---\nReach us.' },
+    });
+    gh.install();
+    const routes = createContentRoutes(rt, deps);
+
+    await redirectedTo(routes.publishAction(pagesActionEvent('contact', { title: 'Contact', body: 'reach us' }) as never));
+
+    const collision = warnSpy.mock.calls
+      .map((c) => c[0] as { event?: string })
+      .find((r) => r.event === 'publish.address_collision');
+    expect(collision).toBeUndefined();
   });
 
   it('logs publish.failed on a main-commit conflict, keeps the just-saved branch, and bounces', async () => {

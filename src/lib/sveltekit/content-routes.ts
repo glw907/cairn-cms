@@ -8,7 +8,7 @@ import { extractCairnLinks, formatCairnToken, rewriteCairnLink } from '../conten
 import { frontmatterFromForm, parseMarkdown, dateInputValue, serializeMarkdown } from '../content/frontmatter.js';
 import { deriveExcerpt } from '../content/excerpt.js';
 import { asString, entryIdentity } from '../content/identity.js';
-import { buildAddressIndex, addressCollision, type AdvisoryNotice } from '../content/advisories.js';
+import { buildAddressIndex, addressCollision, type AdvisoryNotice, type AddressEntry } from '../content/advisories.js';
 import { isValidId, slugify, filenameFromId, composeDatedId, slugFromId, renameId } from '../content/ids.js';
 import { appCredentials, type GithubKeyEnv } from '../github/credentials.js';
 import { listMarkdown, readRaw, commitFile, commitFiles, type FileChange } from '../github/repo.js';
@@ -1366,6 +1366,21 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     ];
     if (mediaChange) changes.push(mediaChange);
 
+    // The cross-branch address-collision re-check: warn-and-allow, last-write-wins, never a gate.
+    // Resolve this entry's own address the way editLoad does and look it up in the index built from
+    // the same manifest the publish carries. The read fails open: a thrown index build degrades to
+    // no event and the publish proceeds, so a transient GitHub error never blocks a publish.
+    let address = '';
+    let collision: AddressEntry | null = null;
+    try {
+      const { frontmatter } = parseMarkdown(markdown);
+      address = entryIdentity(concept, path, frontmatter).permalink;
+      const addressIndex = await buildAddressIndex(runtime.backend, token, runtime.concepts, manifest);
+      collision = addressCollision(addressIndex, { concept: concept.id, id }, address);
+    } catch {
+      collision = null;
+    }
+
     const commitFields = { concept: concept.id, id, editor: editor.email };
     try {
       await commitFiles(
@@ -1375,6 +1390,15 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
         token,
       );
       log.info('entry.published', { ...commitFields, batch: false });
+      // Only after the publish lands: a diagnostic that a live address now has a new owner.
+      if (collision) {
+        log.warn('publish.address_collision', {
+          editor: editor.email,
+          address,
+          displacedConcept: collision.concept,
+          displacedId: collision.id,
+        });
+      }
     } catch (err) {
       // The branch already holds the just-committed edits, so a conflict here loses nothing.
       commitFailure(commitFields, err, `/admin/${concept.id}/${id}`,

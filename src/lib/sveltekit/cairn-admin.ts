@@ -16,6 +16,7 @@ import {
   type EditData,
   type MediaLibraryData,
   type SettingsData,
+  type HelpData,
 } from './content-routes.js';
 import { createEditorRoutes } from './editors-routes.js';
 import { createNavRoutes, type NavLoadData } from './nav-routes.js';
@@ -66,7 +67,8 @@ export type AdminData =
   | { view: 'editors'; layout: LayoutData; page: { editors: Editor[]; self: string } }
   | { view: 'nav'; layout: LayoutData; page: NavLoadData }
   | { view: 'media'; layout: LayoutData; page: MediaLibraryData }
-  | { view: 'settings'; layout: LayoutData; page: SettingsData };
+  | { view: 'settings'; layout: LayoutData; page: SettingsData }
+  | { view: 'help'; layout: LayoutData; page: HelpData };
 
 /**
  *
@@ -155,6 +157,11 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
         const delegated = contentEvent(event, {});
         const [layout, page] = await Promise.all([content.layoutLoad(delegated), content.settingsLoad(delegated)]);
         return { view: 'settings', layout, page };
+      }
+      case 'help': {
+        const delegated = contentEvent(event, {});
+        const [layout, page] = await Promise.all([content.layoutLoad(delegated), content.helpLoad(delegated)]);
+        return { view: 'help', layout, page };
       }
     }
   }

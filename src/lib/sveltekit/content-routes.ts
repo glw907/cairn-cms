@@ -15,6 +15,8 @@ import { branchHeadSha, createBranch, deleteBranch, listBranches } from '../gith
 import { PENDING_PREFIX, pendingBranch, parsePendingBranch } from '../content/pending.js';
 import { cachedInstallationToken } from '../github/signing.js';
 import { emptyManifest, manifestEntryFromFile, parseManifest, serializeManifest, upsertEntry, removeEntry, inboundLinks, type Manifest, type LinkTarget, type InboundLink } from '../content/manifest.js';
+import { deriveGettingStarted, type GettingStarted } from '../content/getting-started.js';
+import { markdownReference, type MarkdownReferenceRow } from '../components/markdown-reference.js';
 import { isConflict } from '../github/types.js';
 import { log } from '../log/index.js';
 import { dictionaryFileForDialect, DEFAULT_TIDY_MODEL, resolveTidyConventions, parseSiteConfig, setTidy, validateTidyConventions, TidyConventionsError } from '../nav/site-config.js';
@@ -277,6 +279,14 @@ export interface SettingsData {
  */
 export interface SettingsSaveFailure {
   error: string;
+}
+
+/** The Help home's data: the derived getting-started progress, the full markdown reference (the
+ *  component curates by group), and the optional support hand-off (rendered only when set). */
+export interface HelpData {
+  gettingStarted: GettingStarted;
+  reference: MarkdownReferenceRow[];
+  supportContact?: string;
 }
 
 /** The structural event the content routes read; a real SvelteKit RequestEvent satisfies it. */
@@ -721,6 +731,33 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       collapsedNav,
       csrf: event.cookies ? issueCsrfToken({ url: event.url, cookies: event.cookies }) : '',
       pendingEntries,
+    };
+  }
+
+  /**
+   * Load the Help home: the getting-started progress derived from the committed manifest and the open
+   *  pending branches, the markdown reference, and the runtime's support contact. A GitHub failure
+   *  degrades to an empty corpus (0 of 3) rather than failing the screen, the same fail-safe layoutLoad uses.
+   */
+  async function helpLoad(event: ContentEvent): Promise<HelpData> {
+    requireSession(event);
+    let manifest = emptyManifest();
+    let pending: { concept: string; id: string }[] = [];
+    try {
+      const token = await mintToken(event.platform?.env ?? {});
+      manifest = await readManifest(token);
+      const names = await listBranches(runtime.backend, PENDING_PREFIX, token);
+      pending = names.flatMap((name) => {
+        const entry = pendingEntryOf(name);
+        return entry ? [{ concept: entry.concept.id, id: entry.id }] : [];
+      });
+    } catch (err) {
+      log.warn('github.unreachable', { scope: 'help', error: String(err) });
+    }
+    return {
+      gettingStarted: deriveGettingStarted(manifest, pending),
+      reference: markdownReference,
+      supportContact: runtime.supportContact,
     };
   }
 
@@ -2848,7 +2885,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     return { corrected, model: message.model, usage: message.usage };
   }
 
-  return { layoutLoad, indexRedirect, listLoad, mediaLibraryLoad, settingsLoad, settingsSave, createAction, editLoad, saveAction, publishAction, publishAllAction, discardAction, deleteAction, listDeleteAction, renameAction, uploadAction, mediaDeleteAction, mediaBulkDelete, mediaOrphanScan, mediaPurgeOrphans, mediaUpdateAction, mediaReplacePreview, mediaReplaceApply, mediaAltPreview, mediaAltApply, addDictionaryWord, tidyAction, mintToken };
+  return { layoutLoad, helpLoad, indexRedirect, listLoad, mediaLibraryLoad, settingsLoad, settingsSave, createAction, editLoad, saveAction, publishAction, publishAllAction, discardAction, deleteAction, listDeleteAction, renameAction, uploadAction, mediaDeleteAction, mediaBulkDelete, mediaOrphanScan, mediaPurgeOrphans, mediaUpdateAction, mediaReplacePreview, mediaReplaceApply, mediaAltPreview, mediaAltApply, addDictionaryWord, tidyAction, mintToken };
 }
 
 /**

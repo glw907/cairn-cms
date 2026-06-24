@@ -63,6 +63,19 @@ describe('parseAdminPath', () => {
     expect(parseAdminPath('/admin/settings', withSettings)).toEqual({ view: 'settings' });
   });
 
+  it('treats help as its own view, with a reserved segment a concept cannot claim', () => {
+    // help is a first-class view (the Help home, editor-help Pass 2), so it parses, and a deeper
+    // path 404s naturally. Unlike media and settings, help is also reserved, so a future concept
+    // named help can never claim the URL or reach the two-segment edit branch.
+    expect(parseAdminPath('/admin/help', concepts)).toEqual({ view: 'help' });
+    expect(parseAdminPath('/admin/help/', concepts)).toEqual({ view: 'help' });
+    // A sub-path under the reserved help segment does not resolve as a concept.
+    expect(parseAdminPath('/admin/help/anything', concepts)).toBeNull();
+    // A future concept named help must never claim the URL; the reserved segment wins.
+    const withHelp = [...concepts, { ...posts, id: 'help', label: 'Help' }];
+    expect(parseAdminPath('/admin/help', withHelp)).toEqual({ view: 'help' });
+  });
+
   it('decodes each segment individually before matching', () => {
     expect(parseAdminPath('/admin/%70osts/%61bout', concepts)).toEqual({
       view: 'edit',

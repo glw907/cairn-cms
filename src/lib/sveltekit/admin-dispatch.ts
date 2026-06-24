@@ -17,15 +17,18 @@ export type AdminView =
   | { view: 'editors' }
   | { view: 'nav' }
   | { view: 'media' }
-  | { view: 'settings' };
+  | { view: 'settings' }
+  | { view: 'help' };
 
 /**
  * Fixed first segments that never resolve as concepts. The engine only allows posts and pages
  * today, so no collision is possible, but the parser does not depend on that: a reserved
- * segment wins before concept lookup. `settings`, `nav`, and `media` are decided as views below,
- * so they are not in this no-view set.
+ * segment wins before concept lookup. `nav` and `media` are decided as views below, so they are
+ * not in this no-view set. `settings` and `help` are decided as views below AND kept here, so a
+ * deeper path (or a future concept claiming the segment) can never reach the two-segment edit
+ * branch through them.
  */
-const RESERVED_SEGMENTS = new Set(['login', 'auth', 'editors', 'nav', 'settings']);
+const RESERVED_SEGMENTS = new Set(['login', 'auth', 'editors', 'nav', 'settings', 'help']);
 
 /**
  * Parse a raw `URL.pathname` (the caller passes `event.url.pathname`, never a SvelteKit rest
@@ -66,6 +69,9 @@ export function parseAdminPath(
     // settings is its own view, a peer of editors and nav. /admin/settings/<anything> 404s naturally
     // (the two-segment branch never matches settings), which is the correct shape.
     if (head === 'settings') return { view: 'settings' };
+    // help is its own view (the Help home, editor-help Pass 2), decided here like settings. It is
+    // also in the reserved set so /admin/help/<anything> 404s and no concept can claim the segment.
+    if (head === 'help') return { view: 'help' };
     if (RESERVED_SEGMENTS.has(head)) return null;
     const concept = findConcept(concepts, head);
     return concept ? { view: 'list', concept } : null;

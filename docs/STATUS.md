@@ -11,24 +11,28 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-24, in flight): execute the address-check scope plan on `feat/edit-load-address-scope`
+## Immediate next action (2026-06-24, latest): the address-check scope pass is RELEASED as `0.62.2` (npm `latest`); next is the per-site cutover and the open engine tracks
 
-**Pass in flight:** the editor-help fan-out optimization, narrowing the cross-branch address check to the
-main arm at edit-load while keeping the full re-check at publish. It resolves the Pass 3 cloudflare
-MEDIUM-HIGH carry-forward (`buildAddressIndex` ran a `1 + N` GitHub fan-out on every editor open). Spec
+**The editor-help fan-out optimization is RELEASED.** GitHub release `v0.62.2` fired the OIDC
+trusted-publishing workflow, and npm `latest` moved `0.62.1` to `0.62.2`. The pass narrowed the editor's
+cross-branch address check to the main arm at edit-load (zero extra GitHub reads per editor open, down
+from `1 + N`) while keeping the full cross-branch re-check at publish. It resolves the Pass 3 cloudflare
+MEDIUM-HIGH carry-forward. Spec and plan:
 [`docs/superpowers/specs/2026-06-24-cairn-address-check-scope-design.md`](superpowers/specs/2026-06-24-cairn-address-check-scope-design.md),
-plan [`docs/superpowers/plans/2026-06-24-cairn-address-check-scope.md`](superpowers/plans/2026-06-24-cairn-address-check-scope.md).
+[`docs/superpowers/plans/2026-06-24-cairn-address-check-scope.md`](superpowers/plans/2026-06-24-cairn-address-check-scope.md)
+(post-mortem in the plan). Geoff settled Option A (main-arm at edit-load, full at publish), backed by
+cairn's build-time duplicate-permalink resolver as the hard backstop and the ecosystem norm of checking
+the published source. A patch bump, no public export change, no consumer action. A Workflow drove the
+three tasks; the main loop verified the gate first-hand (`check` 1146 0/0, full `npm test` 2466 EXIT=0,
+all doc gates, from-scratch consumer build) before the fast-forward merge to `main`.
 
-Geoff settled the one fork (Option A: main-arm at edit-load, full at publish) after weighing the
-ecosystem norm and cairn's own build-time duplicate-permalink resolver as the hard backstop. Method: a
-Workflow dispatches `cairn-implementer` per the plan's three tasks (extract `mainAddressIndex`, switch
-`editLoad`, docs + bump to `0.62.2`), test-first, on the worktree
-`/home/glw907/Projects/cairn-cms-edit-load-address-scope` (dist already built). Then the gate, the
-`cloudflare-workers-reviewer`, and an adversarial completeness check; the main loop verifies the gate
-first-hand and merges. A patch bump, no public export change, no consumer action.
-
-**On resume after a crash:** the spec and plan are committed on the branch (`d785956`). Continue from the
-plan's next unstarted task in the worktree, or re-run the workflow.
+**NEXT (Geoff's calls):**
+- **Per-site cutover** to `^0.62.2` (ecxc-ski, 907-life), one site-pass each. This carries the owed live
+  D1 admin smoke for the address advisory (the showcase has no D1 Worker).
+- **`create-cairn-site` scaffolder** and **media Pass D** (needs-alt at scale, dedupe/merge, AI auto-alt)
+  remain open.
+- **Option C** (drop the address branch arm entirely) stays the cleaner end state if the publish-path
+  branch warning proves to be noise.
 
 ---
 

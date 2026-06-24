@@ -140,3 +140,49 @@ git commit -m "docs: changelog, upgrade guide, friction log for the address-scop
 
 The publish-path branch arm (stays), live client-side recomputation (deferred), and dropping the branch
 arm entirely (Option C, revisit later).
+
+## Post-mortem (2026-06-24)
+
+The pass landed on `feat/edit-load-address-scope` (`ecd887a`, `767f587`, `128064c`, plus the review
+fold-in `63953fe`) and released as `0.62.2`. A Workflow drove the three tasks (one `cairn-implementer`
+each, sequential, since Task 2 depends on Task 1), then a parallel verify phase (full gate plus consumer
+build, `cloudflare-workers-reviewer`, an adversarial completeness check). The main loop verified the gate
+first-hand before merging.
+
+**Built.**
+
+- `mainAddressIndex(manifest)` (`ecd887a`): a synchronous reverse map over the manifest's resolved
+  permalinks. `buildAddressIndex` seeds from it and unions the unchanged branch arm, so its signature and
+  behavior, and the publish path, stay untouched.
+- The `editLoad` switch (`767f587`): the edit-load advisory builds from `mainAddressIndex(manifest)`,
+  removing the `listBranches` plus per-branch `readRaw` fan-out from every editor open (from `1 + N` extra
+  GitHub reads to zero). The misnamed `github.unreachable` edit-advisories log goes; the `try`/`catch`
+  stays as a degrade-to-no-advisory guard for a malformed-date `entryIdentity` throw. `publishAction`
+  keeps the full cross-branch `buildAddressIndex` and `publish.address_collision`.
+- Tests: a `mainAddressIndex` unit test, and a new editLoad test pinning that a branch-only collision is
+  silent at edit-load (it fails on the old builder, passes on the switch). The published-collision editLoad
+  test stays green; the branch case stays covered at publish.
+- Docs plus the bump to `0.62.2` (`128064c`): CHANGELOG, upgrade guide, and the Pass 3 fan-out
+  carry-forward flipped to resolved. `log-events.md` needed no edit (the `github.unreachable` row
+  enumerates only `scope: layout`, never `edit-advisories`).
+
+**Verification (first-hand from the worktree tip `63953fe`).** `npm run check` 1146 files 0/0; full
+`npm test` 223 files / 2466 tests EXIT=0; `check:comments` OK; `check:reference`,
+`check:reference:signatures`, `check:package`, `check:docs`, `check:version` (`OK (patch)`) all exit 0;
+the from-scratch consumer build (fresh showcase `npm install` plus `npm run build`) passed on the Vite 8 /
+Rolldown toolchain. The code-simplifier made one cosmetic refinement. Both reviewers returned ship-ready:
+one LOW (a stale module-comment qualifier) folded in, one LOW (the now-bare edit-load catch) left as
+correct fail-open behavior.
+
+**Decisions locked.** Option A: the main arm at edit-load, the full cross-branch check at publish. This
+supersedes the Pass 3 "full cross-branch at edit-load" decision. The branch arm survives only where its
+cost is justified, the infrequent deliberate publish. The build resolver (`delivery/site-resolver.ts`
+throws on a duplicate permalink) is the hard backstop, and the ecosystem norm (check the published source,
+never sibling drafts) backs the narrowing. A patch bump, no public export change, no consumer action.
+
+**Carry-forwards.** The live D1 admin smoke for the address advisory still rides the first site cutover
+(the showcase has no D1 Worker). Option C (dropping the branch arm entirely) stays the cleaner end state
+if the publish-path branch warning proves to be noise.
+
+**Released.** `0.62.2` rolled to npm `latest` through GitHub release `v0.62.2` (the OIDC publish workflow),
+merged to `main` fast-forward keeping the per-task history.

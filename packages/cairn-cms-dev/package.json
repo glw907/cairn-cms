@@ -1,0 +1,12 @@
+{
+  "name": "@glw907/cairn-cms-dev",
+  "version": "0.0.0",
+  "description": "Local-development fake backend for cairn-cms sites. Never install in production.",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": { "types": "./src/index.ts", "svelte": "./src/index.ts", "default": "./src/index.ts" }
+  },
+  "peerDependencies": { "@glw907/cairn-cms": "*", "@sveltejs/kit": "^2.61.0" },
+  "devDependencies": { "@glw907/cairn-cms": "file:../.." }
+}

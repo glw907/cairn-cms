@@ -21,7 +21,7 @@ export default defineConfig({
       {
         test: {
           name: 'unit',
-          include: ['src/tests/unit/**/*.test.ts'],
+          include: ['src/tests/unit/**/*.test.ts', 'packages/cairn-cms-dev/src/**/*.test.ts'],
           environment: 'node',
           // A few unit tests are CPU-bound (the admin CSS Tailwind+DaisyUI compile, the export
           // enumerator that parses the public surface, a runtime barrel import that vite compiles

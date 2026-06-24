@@ -3,6 +3,9 @@
   "version": "0.62.2",
   "description": "Embedded, magic-link, GitHub-committing CMS for SvelteKit/Cloudflare sites.",
   "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
   "sideEffects": [
     "**/*.svelte",
     "**/*.css"

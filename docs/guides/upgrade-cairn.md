@@ -605,3 +605,10 @@ key is configured once tidy is enabled. The developer setup is in
 New dependencies are pulled in automatically with the version: `@codemirror/lint`,
 `@anthropic-ai/sdk`, and `spellchecker-wasm` with its bundled English dictionary asset (the spellcheck
 Worker and the word list ship from the packaged `dist`).
+
+## 0.62.2: the edit-load address advisory checks published entries only
+
+The editor's address-collision advisory now compares against the published corpus on `main` and no
+longer reads sibling edit branches when an editor opens an entry. The publish-time re-check is
+unchanged and stays full cross-branch. Consumers must: nothing. The change is internal to the read
+path and additive in behavior.

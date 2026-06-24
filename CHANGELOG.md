@@ -2,6 +2,15 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.62.2
+
+The edit-load address-collision advisory now checks the published corpus only. It fires when an entry
+you are editing collides with an entry already published on `main`, and it no longer reads sibling
+`cairn/<concept>/<id>` branches when an editor opens an entry, so opening the editor adds no GitHub
+reads. The publish-time re-check is unchanged: it stays full cross-branch and still emits the
+`publish.address_collision` log event when a publish overrides another entry's address. No consumer
+action is required.
+
 ## 0.62.1
 
 The entry editor gains an advisory channel and its first notice: a cross-branch address-collision

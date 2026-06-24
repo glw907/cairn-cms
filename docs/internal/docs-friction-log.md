@@ -502,10 +502,13 @@ getting-started progress, and the pinned nav home). Two frictions surfaced, both
   the notice makes the last-write-wins outcome visible instead of silent, rather than gating Publish.
   The needs-alt notice folded into the same channel. Deferred from the resolution: a general per-field
   advisory adapter seam (a public contract for adapter-declared validators), and live client-side
-  recomputation as the author retypes the slug. New friction this pass surfaced: the cross-branch
-  fan-out now runs on every editor open, not just the Media Library load. The cloudflare review rated
-  it MEDIUM-HIGH for the hot path. The cost matches the already-shipping usage-index pattern and fails
-  open, so it is a follow-up, not a blocker. Candidate: gate edit-load on the cheap main-arm check
-  (zero extra reads, catches the published-collision case) and defer the full cross-branch fan-out to
-  the publish re-check, or parallelize the fan-out into the edit-load stage-1 batch and add the
-  `branches?` reuse option the `buildUsageIndex` template carries.
+  recomputation as the author retypes the slug.
+
+- **developer** (edit-load cross-branch fan-out on every editor open, MEDIUM-HIGH) RESOLVED by the
+  address-check scope pass (0.62.2): the address advisory's cross-branch fan-out at edit-load, which the
+  Pass 3 cloudflare review rated MEDIUM-HIGH for the hot path, is gone. Edit-load now builds the address
+  index from the main arm only (`mainAddressIndex`, synchronous, zero extra GitHub reads), so it catches
+  the published-collision case for free from the manifest it already holds. The full cross-branch
+  re-check stays at publish and still emits `publish.address_collision`. The deferred branch-only case
+  (a collision against an entry that exists only on a sibling edit branch) surfaces at publish rather
+  than edit-load, by design.

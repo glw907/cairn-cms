@@ -2,6 +2,22 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.62.1
+
+The entry editor gains an advisory channel and its first notice: a cross-branch address-collision
+warning. When another entry already resolves to the same public address, the editor shows a
+non-blocking warning that names that entry and links to it. The warning never blocks Publish. It makes
+the last-write-wins outcome visible instead of silent, since publishing replaces whatever currently
+lives at that address.
+
+The check runs at edit-load across `main` and every open `cairn/<concept>/<id>` branch. A publish
+re-checks the address and emits a `publish.address_collision` log event (level `warn`, fields `editor`,
+`address`, `displacedConcept`, `displacedId`) when it overrides one. The existing needs-alt notice now
+renders through the same advisory region, with its live count and per-row actions unchanged.
+
+This adds two exported types on `/sveltekit`, `AdvisoryNotice` and `AdvisoryAction`, the shape
+`EditData.advisories` carries. No consumer action is required.
+
 ## 0.62.0
 
 <!-- release-size: minor -->

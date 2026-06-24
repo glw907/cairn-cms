@@ -491,3 +491,21 @@ getting-started progress, and the pinned nav home). Two frictions surfaced, both
   so it falls back to a generic support button and a generic line about whoever set up the site.
   Candidate: a richer shape, a name plus a contact, if a personalized hand-off is worth the schema;
   weigh it against the one-string simplicity that needs none.
+
+## Resolved by editor-help Pass 3 (advisory validation, 0.62.1)
+
+- **developer/editor** (advisory validation and cross-branch address collision, MEDIUM-HIGH) RESOLVED:
+  the editor now carries an internal advisory channel (`AdvisoryNotice`, one render region) and its
+  first notice, the cross-branch address collision. The check builds an address index across `main`
+  and every open `cairn/*` branch (the `buildAddressIndex` builder mirrors the media usage index), runs
+  at edit-load, and re-checks at publish, emitting `publish.address_collision`. It is warn-and-allow:
+  the notice makes the last-write-wins outcome visible instead of silent, rather than gating Publish.
+  The needs-alt notice folded into the same channel. Deferred from the resolution: a general per-field
+  advisory adapter seam (a public contract for adapter-declared validators), and live client-side
+  recomputation as the author retypes the slug. New friction this pass surfaced: the cross-branch
+  fan-out now runs on every editor open, not just the Media Library load. The cloudflare review rated
+  it MEDIUM-HIGH for the hot path. The cost matches the already-shipping usage-index pattern and fails
+  open, so it is a follow-up, not a blocker. Candidate: gate edit-load on the cheap main-arm check
+  (zero extra reads, catches the published-collision case) and defer the full cross-branch fan-out to
+  the publish re-check, or parallelize the fan-out into the edit-load stage-1 batch and add the
+  `branches?` reuse option the `buildUsageIndex` template carries.

@@ -11,7 +11,7 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-23, latest): Pass 2 (the Help home) is COMPLETE and MERGED to `main` (`0.62.0`, unreleased + unpushed); next is the combined release, then Pass 3
+## Immediate next action (2026-06-23, latest): Pass 2 (the Help home) MERGED to `main` (`0.62.0`, held); Pass 3 (advisory validation) is DESIGNED and PLANNED; next is to execute the Pass 3 plan
 
 **Pass 2 of the editor-help initiative, the Help home, is COMPLETE and MERGED to `main`** (fast-forwarded
 to `ae6fb33` on 2026-06-23, keeping the per-task history; the `feat/editor-help-home` branch and its
@@ -37,17 +37,25 @@ scanning zero of `HelpHome`'s strings (an extractor strip-order bug, now fixed; 
 pass covered the still-unscanned script-array copy and caught two real tells). Full post-mortem in the plan
 (`docs/superpowers/plans/2026-06-23-cairn-help-home.md`).
 
-**NEXT (Geoff's call):** roll `0.62.0` into the combined release with the held `0.61.0` and `0.60.1`
+**NEXT: execute Pass 3, advisory validation** (`docs/superpowers/plans/2026-06-23-cairn-advisory-validation.md`,
+from the approved spec `docs/superpowers/specs/2026-06-23-cairn-advisory-validation-design.md`). Four
+test-first tasks: the advisory-notice shape plus the cross-branch address index (`content/advisories.ts`),
+the edit-load `address-collision` notice on `EditData` (plus the new `AdvisoryNotice`/`AdvisoryAction`
+exports), the publish-time re-check plus the `publish.address_collision` log event, and the unified
+`EditPage` advisory region that carries both the new notice and the existing needs-alt (regression-pinned).
+Method: main-loop orchestrate-and-verify, one `cairn-implementer` per task, the full gate between
+dispatches, on a fresh worktree off `main`, `npm run package` before `npm test`. Settled: warn-and-allow,
+last-write-wins, fail-open, a specific internal channel (no adapter seam), the check at edit-load (full
+cross-branch) with a publish re-check, full needs-alt unification. A patch bump.
+
+**Also held (Geoff's call):** roll `0.62.0` into the combined release with the held `0.61.0` and `0.60.1`
 site-cutover work, then push and cut the GitHub release (the changelog window since the last published
-tag, carrying every entry; the release fires the OIDC trusted-publishing workflow). The canonical live
-admin smoke (a real Worker plus D1, `/admin/help` rendering) rides the first site cutover; the showcase
-has no D1 Worker. Carry-forwards: the prose-gate script-data coverage gap and the
+tag; the release fires the OIDC trusted-publishing workflow). The canonical live admin smoke (a real
+Worker plus D1) for both the Help home and Pass 3's address advisory rides the first site cutover; the
+showcase has no D1 Worker. Carry-forwards: the prose-gate script-data coverage gap and the
 `supportContact`-bare-string personalization limit (both in the friction log), and the deferred
 editor-help slices (the recede-on-desk slide-over, the command-palette help, the corpus, starter-content)
 per the spec.
-
-A leftover from Pass 1: the `feat/editor-help-foundation` worktree and branch (at `6fc17c9`, fully in
-`main`'s history) are redundant and can be removed.
 
 **Pass 3 (SKETCHED, not planned):** advisory editor-time validation (warn and allow) plus a cross-branch
 address check, per the foundation plan's Pass 3 sketch. Detail and execute it next, off `main` (a fresh

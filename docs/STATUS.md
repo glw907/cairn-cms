@@ -11,11 +11,13 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-23, latest): Pass 1 DONE (held `0.61.0`); Pass 2 (the Help shell) is DESIGNED and PLANNED; next is to execute the Help home plan
+## Immediate next action (2026-06-23, latest): Pass 1 MERGED to main (`0.61.0`, unreleased); Pass 2 (the Help shell) is DESIGNED and PLANNED; next is to execute the Help home plan
 
-**Pass 1 of the editor-help foundation is COMPLETE** on `feat/editor-help-foundation` (worktree
-`.claude/worktrees/editor-help-foundation`), HELD for merge, release, and push (Geoff's call). It is
-versioned `0.61.0` (minor, additive, no consumer action). The branch landed all four tasks test-first,
+**Pass 1 of the editor-help foundation is COMPLETE and MERGED to `main`** (fast-forwarded to `6fc17c9`
+on 2026-06-23, keeping the per-task history; the `feat/editor-help-foundation` branch and its worktree are
+now redundant and can be removed). It is versioned `0.61.0` (minor, additive, no consumer action), and is
+UNRELEASED and UNPUSHED (`main` is ahead of `origin/main`), held for the combined release. The merge
+landed all four tasks test-first,
 plus a simplifier refinement and the svelte and a11y review fold-ins:
 
 - `FieldBase.description` (`a6187f3`): a per-field author-facing hint, rendered in the Details panel and
@@ -34,9 +36,9 @@ themes). The from-scratch showcase e2e was deferred to release; `check:package`'
 transpile over the new typed snippet stood in. Full post-mortem in the plan
 (`docs/superpowers/plans/2026-06-23-cairn-editor-help-foundation.md`).
 
-**HELD for Geoff (his call):** merge `feat/editor-help-foundation` to `main`; roll `0.61.0` into the next
-published release (with the held `0.60.1` site-cutover work and any other held passes); push; run the
-showcase e2e at release.
+**HELD for the combined release (Geoff's call):** `0.61.0` is merged to `main`, not released or pushed.
+Roll it into the next published release (with the held `0.60.1` site-cutover work, Pass 2, and any other
+held passes); push at release; run the from-scratch showcase e2e then.
 
 **Pass 2 PIVOTED, then was DESIGNED and PLANNED (2026-06-23).** Three prior-art adversarial passes
 discarded the "point-of-typing coach" (Clippy and coachmark banner-blindness), then a
@@ -51,8 +53,8 @@ committed.
 **NEXT: execute Pass 2, the Help home** (`docs/superpowers/plans/2026-06-23-cairn-help-home.md`). Five
 test-first tasks: the shared markdown-reference module, the getting-started derive function, the help
 admin view plus load plus `HelpData` contract, the `HelpHome` component, and the pinned Help nav home. Run
-on a fresh worktree branched off the foundation branch (Pass 2 builds on Pass 1's `supportContact` and
-field-hint seams), with `npm run package` before `npm test`. Method: main-loop orchestrate-and-verify, one
+on a fresh worktree off `main` (Pass 1's `supportContact` and field-hint seams are merged there now), with
+`npm run package` before `npm test`. Method: main-loop orchestrate-and-verify, one
 `cairn-implementer` per task, the full gate between dispatches. Settled decisions: progress derives from
 observable content and publish state (no D1, no store; `localStorage` only for the per-device dismiss);
 the Get-help unset state is the canonical default; the dismiss hides until un-hidden. Deferred: the

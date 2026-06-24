@@ -53,7 +53,7 @@ describe('EditPage advisory region', () => {
         kind: 'address-collision',
         severity: 'warn',
         message:
-          'Another page already uses the address /about. Publishing this one will replace it as the page visitors see.',
+          'Another page already uses the address /about. Publish this one and it replaces the other at that address.',
         actions: [{ label: 'Open About', href: '/admin/pages/about' }],
       },
     ];

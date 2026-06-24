@@ -1086,7 +1086,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
             {
               kind: 'address-collision',
               severity: 'warn',
-              message: `Another ${label} already uses the address ${identity.permalink}. Publishing this one will replace it as the page visitors see.`,
+              message: `Another ${label} already uses the address ${identity.permalink}. Publish this one and it replaces the other at that address.`,
               actions: [{ label: `Open ${other.title}`, href: `/admin/${other.concept}/${other.id}` }],
             },
           ];

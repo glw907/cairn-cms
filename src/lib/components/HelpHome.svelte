@@ -15,6 +15,7 @@ The content is one calm column: a masthead, then three co-equal eyebrow-plus-dis
     with no control; set renders the hand-off shaped by the contact (email, URL, or a note).
 -->
 <script lang="ts">
+  import type { MarkdownReferenceRow } from './markdown-reference.js';
   import type { HelpData } from '../sveltekit/content-routes.js';
 
   let { data }: { data: HelpData } = $props();
@@ -222,37 +223,27 @@ The content is one calm column: a masthead, then three co-equal eyebrow-plus-dis
         <span class="section-meta">Type the characters on the left</span>
       </div>
 
+      {#snippet refTable(caption: string, rows: MarkdownReferenceRow[])}
+        <table class="ref-table">
+          <caption>{caption}</caption>
+          <thead>
+            <tr><th scope="col">Type this</th><th scope="col">What it makes</th></tr>
+          </thead>
+          <tbody>
+            {#each rows as row (row.syntax)}
+              <tr>
+                <th scope="row">{row.syntax}</th>
+                <td>{row.makes}</td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      {/snippet}
+
       <div class="card ref-card">
         <div class="ref-cols">
-          <table class="ref-table">
-            <caption>Text</caption>
-            <thead>
-              <tr><th scope="col">Type this</th><th scope="col">What it makes</th></tr>
-            </thead>
-            <tbody>
-              {#each textRows as row (row.syntax)}
-                <tr>
-                  <th scope="row">{row.syntax}</th>
-                  <td>{row.makes}</td>
-                </tr>
-              {/each}
-            </tbody>
-          </table>
-
-          <table class="ref-table">
-            <caption>Links and lists</caption>
-            <thead>
-              <tr><th scope="col">Type this</th><th scope="col">What it makes</th></tr>
-            </thead>
-            <tbody>
-              {#each linkRows as row (row.syntax)}
-                <tr>
-                  <th scope="row">{row.syntax}</th>
-                  <td>{row.makes}</td>
-                </tr>
-              {/each}
-            </tbody>
-          </table>
+          {@render refTable('Text', textRows)}
+          {@render refTable('Links and lists', linkRows)}
         </div>
 
         <p class="ref-foot">

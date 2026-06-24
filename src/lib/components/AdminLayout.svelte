@@ -23,6 +23,7 @@ identical on every host regardless of the site's own theme.
   import ImageIcon from '@lucide/svelte/icons/image';
   import BlocksIcon from '@lucide/svelte/icons/blocks';
   import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
+  import HelpCircleIcon from '@lucide/svelte/icons/circle-help';
   import './cairn-admin.css';
 
   interface Props {
@@ -186,6 +187,7 @@ identical on every host regardless of the site's own theme.
 
   const paletteCommands = $derived<Command[]>([
     ...coreItems.map((item) => ({ label: item.label, icon: item.icon, href: item.href })),
+    { label: 'Help', icon: HelpCircleIcon, href: '/admin/help' },
     { label: 'View the live site', icon: ExternalLinkIcon, href: '/', external: true },
     theme === 'cairn-admin'
       ? { label: 'Switch to dark mode', icon: MoonIcon, action: toggleTheme }
@@ -476,6 +478,26 @@ identical on every host regardless of the site's own theme.
           {#each extensionGroups as group (group.name)}
             {@render navSection(group.name, group.items)}
           {/each}
+        </div>
+
+        <!-- Help is a standing utility destination, pinned at the foot of the nav and set apart from
+             the content concepts by a top hairline. It is always present, labeled in plain text, and
+             styled as a peer of the nav items above it. -->
+        <div class="flex-none border-t border-[var(--cairn-card-border)] px-2 py-2">
+          <ul class="menu menu-sm w-full gap-0.5 p-0">
+            <li>
+              <a
+                href="/admin/help"
+                class={isActive('/admin/help')
+                  ? 'bg-primary/10 font-semibold text-primary'
+                  : 'font-medium text-[var(--color-subtle)]'}
+                aria-current={isActive('/admin/help') ? 'page' : undefined}
+              >
+                <HelpCircleIcon class="h-4 w-4" aria-hidden="true" />
+                Help
+              </a>
+            </li>
+          </ul>
         </div>
 
         <div class="flex-none border-t border-[var(--cairn-card-border)] px-5 py-4">

@@ -485,3 +485,69 @@ additive). Append any friction to `docs/internal/docs-friction-log.md`.
   `HelpData.gettingStarted` (Task 3) and read by the component (Task 4). `HelpData` is defined once
   (Task 3) and consumed by the component (Task 4). The view string `'help'` matches across the parser,
   the union, the load, and the switch.
+
+---
+
+## Post-mortem (2026-06-23, executed)
+
+**Built and merge-ready on `feat/editor-help-home`** (worktree off `main` at `1f1d269`), held for merge
+and the combined release. Versioned `0.62.0` (minor: a new admin screen, the new `HelpHome` and
+`HelpData` exports, an additive `/admin/help` route; no consumer action). Eight commits, `e8a0356`
+through `6210dbc`.
+
+**What was built.** All five tasks landed test-first, each dispatched to `cairn-implementer` with the
+main loop reviewing the diff and verifying the gate between dispatches:
+
+- `markdown-reference.ts` (`e8a0356`): the shared cheat-sheet data module the editor's Ctrl+/ dialog and
+  the Help home both render, so the two cannot drift. The dialog now renders the array.
+- `getting-started.ts` (`0829e13`): the pure `deriveGettingStarted(manifest, pending)`. Progress derives
+  from the committed manifest and the open `cairn/` branches, never stored.
+- the `help` view, `helpLoad`, and `HelpData` (`ab6584c`): wired through the three admin seams (parser,
+  load dispatcher, the load itself), modeled on `settings`. `helpLoad` degrades to an empty corpus on a
+  GitHub failure rather than failing the screen.
+- `HelpHome.svelte` (`59482c6`): the screen. The masthead, the derived getting-started checklist
+  (recede-and-omit, the three-way done cue, the per-device localStorage dismiss), the formatting
+  reference table, and the support hand-off shaped to the contact (email/URL/note), set and unset.
+- the pinned Help nav home (`55ead5a`): a standing labeled destination at the foot of the office sidebar
+  with `aria-current`, plus a Ctrl+K palette command.
+
+**Verification (first-hand from the worktree).** `npm run check` 1143 files 0/0; `npm test` 221 files /
+2450 tests exit 0; `check:prose`, `check:reference`, `check:docs`, `check:package`, `check:version`
+(minor) all green. The from-scratch consumer build passed (`rm -rf` the showcase `node_modules` and
+lockfile, fresh `npm install` plus `npm run build`), proving the new typed `{#snippet refTable(caption,
+rows)}` param transpiles and bundles on Vite 8 / Rolldown. The showcase Playwright e2e ran 30 passed
+(`CI=1`, fresh server), exercising the admin shell and the new nav band in a real browser.
+
+**The review gate earned its place.** The code-simplifier collapsed the two duplicated reference tables
+into one `{#snippet refTable}` (mirroring `navSection`), a11y markup preserved byte-for-byte. The
+reviewer fan-out (svelte and daisyui-a11y) then caught two real defects the green gate had missed:
+
+- **A functional blocker (svelte-reviewer):** `'help'` was absent from the `authedViews` and `anyView`
+  action allow-lists in `cairn-admin.ts`, so the topbar Publish-site button and the Sign-out form both
+  404'd from `/admin/help`. Folded in with a regression test (`5f0fc13`).
+- **An a11y blocker (daisyui-a11y-reviewer):** `HelpHome` rooted on `<main>`, nesting a second `main`
+  inside `AdminLayout`'s. Changed to a `<div>`. The unchecked step-box ring measured 2.51:1 in the light
+  theme (below the 3:1 the comment claimed); raised to content-55% (about 3:1) (`5f0fc13`).
+
+**The prose-gate hole (found, half-fixed).** The admin-copy gate (`check:prose`) reported "clean (31
+components scanned)" while extracting zero strings from `HelpHome.svelte`. Root cause: the extractor
+stripped `<style>...</style>` before comments, so the `@component` doc comment's literal `<style>`
+mention anchored the non-greedy strip and swallowed the whole markup body. Fixed by stripping comments
+first (`e726bea`; blast radius one component). A structural hole remains: copy in `<script>` data arrays
+(the `steps`) and `.ts` data modules is still unscanned. The `prose-voice-reviewer` covered it for this
+pass and caught two real tells in the step copy (the "checks itself off" personification and a redundant
+post-definition), folded in (`6210dbc`). Both the gate hole and the script-data coverage gap are logged
+to the friction log, with the candidate fix (extend the extractor; fold `prose-voice-reviewer` into the
+pass-end gate for copy-heavy passes).
+
+**Decisions confirmed.** Progress derives from observable content and publish state (no D1, no store);
+`localStorage` holds only the per-device dismiss. The Get-help unset state is the canonical default. The
+support-contact hand-off keys off the bare string's shape. The `/admin/help` route is additive.
+
+**Carry-forwards.** (1) The canonical live admin smoke (a real Worker plus D1, `/admin/help` rendering)
+rides the first site cutover; the showcase has no D1 Worker, so the e2e covered the shell. (2) The
+prose-gate script-data coverage gap (friction log). (3) `supportContact` is a bare string, so the
+hand-off cannot personalize by name (friction log). (4) The deferred wikilink-highlight rider and the
+later editor-help slices (the recede-on-desk slide-over, the command-palette help, the corpus, the
+starter-content seed) remain per the spec. (5) A dedicated `/admin/help` e2e spec is a low-priority
+add.

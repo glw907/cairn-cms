@@ -11,7 +11,47 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-23, latest): Pass 1 MERGED to main (`0.61.0`, unreleased); Pass 2 (the Help shell) is DESIGNED and PLANNED; next is to execute the Help home plan
+## Immediate next action (2026-06-23, latest): Pass 2 (the Help home) is COMPLETE on `feat/editor-help-home` (`0.62.0`, unmerged + unreleased); next is the user's call on merge + the combined release
+
+**Pass 2 of the editor-help initiative, the Help home, is COMPLETE on `feat/editor-help-home`** (worktree
+`.claude/worktrees/editor-help-home`, branched off `main` at `1f1d269`). Eight commits (`e8a0356` through
+`6210dbc`), versioned `0.62.0` (minor: a new admin screen, the new `HelpHome` and `HelpData` exports, an
+additive `/admin/help` route; no consumer action). UNMERGED and UNRELEASED, held for the combined release.
+
+All five tasks landed test-first (one `cairn-implementer` per task, the main loop reviewing each diff and
+verifying the gate): the shared `markdown-reference.ts`, the pure `deriveGettingStarted`, the `help` view
+plus `helpLoad` plus `HelpData`, the `HelpHome` screen, and the pinned Help nav home. The Help home renders
+the masthead, the derived getting-started checklist (recede-and-omit, the three-way done cue, a per-device
+`localStorage` dismiss), the promoted formatting reference, and the support hand-off shaped to the contact.
+
+**Gate green at the tip (first-hand from the worktree):** `npm run check` 1143 files 0/0; `npm test` 221
+files / 2450 tests exit 0; `check:prose`, `check:reference`, `check:docs`, `check:package`, `check:version`
+(minor) all exit 0. The from-scratch consumer build passed (fresh showcase `npm install` plus `npm run
+build`), and the showcase Playwright e2e ran 30 passed (`CI=1`, fresh server). The code-simplifier
+collapsed the duplicated reference tables into one snippet. The svelte and a11y reviewers caught two real
+defects the green gate had missed, both folded in: a functional blocker (`'help'` was missing from the
+action allow-lists, so Publish-site and Sign-out 404'd from `/admin/help`) and an a11y blocker (a nested
+`<main>` landmark, plus a sub-3:1 step-box ring). A third find: `check:prose` reported "clean" while
+scanning zero of `HelpHome`'s strings (an extractor strip-order bug, now fixed; a `prose-voice-reviewer`
+pass covered the still-unscanned script-array copy and caught two real tells). Full post-mortem in the plan
+(`docs/superpowers/plans/2026-06-23-cairn-help-home.md`).
+
+**NEXT (Geoff's call):** merge `feat/editor-help-home` to `main` (the Pass 1 pattern: fast-forward, keep
+the per-task history, then remove the worktree), and roll `0.62.0` into the combined release with the held
+`0.61.0` and `0.60.1` site-cutover work. The canonical live admin smoke (a real Worker plus D1,
+`/admin/help` rendering) rides the first site cutover; the showcase has no D1 Worker. Carry-forwards: the
+prose-gate script-data coverage gap and the `supportContact`-bare-string personalization limit (both in the
+friction log), and the deferred editor-help slices (the recede-on-desk slide-over, the command-palette
+help, the corpus, starter-content) per the spec.
+
+**Pass 3 (SKETCHED, not planned):** advisory editor-time validation (warn and allow) plus a cross-branch
+address check, per the foundation plan's Pass 3 sketch. Detail and execute it next, off `main`, after the
+merge (a fresh worktree, `npm run package` before `npm test`). The `cairn-editor-help-initiative` memory
+carries the sketch.
+
+---
+
+## Prior next action (2026-06-23): Pass 1 MERGED to main (`0.61.0`, unreleased)
 
 **Pass 1 of the editor-help foundation is COMPLETE and MERGED to `main`** (fast-forwarded to `6fc17c9`
 on 2026-06-23, keeping the per-task history; the `feat/editor-help-foundation` branch and its worktree are

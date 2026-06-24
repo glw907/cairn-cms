@@ -439,6 +439,32 @@ describe('editLoad address-collision advisory', () => {
     const data = await routes.editLoad(pagesEvent('contact') as never);
     expect(data.advisories).toEqual([]);
   });
+
+  it('does not warn at edit-load for a collision that lives only on a sibling branch', async () => {
+    // The edit-load advisory checks the published corpus only. The edited post 2026-01-15-hello resolves
+    // to /posts/hello. A sibling cairn/* branch holds 2026-02-20-hello, which resolves to the same
+    // /posts/hello (the slug strips the YYYY-MM-DD- prefix), but it is absent from the manifest, so it is
+    // a branch-only collision. Edit-load stays silent; the publish-time re-check still detects it.
+    const manifest = serializeManifest({
+      version: 1,
+      entries: [
+        { id: '2026-01-15-hello', concept: 'posts', title: 'Hello', permalink: '/posts/hello', draft: false, links: [] },
+      ],
+    });
+    const gh = new GithubDouble({
+      main: {
+        'src/content/posts/2026-01-15-hello.md': '---\ntitle: Hello\ndate: 2026-01-15\n---\nLive.',
+        [MANIFEST_PATH]: manifest,
+      },
+      'cairn/posts/2026-02-20-hello': {
+        'src/content/posts/2026-02-20-hello.md': '---\ntitle: Hello again\ndate: 2026-02-20\n---\nPending.',
+      },
+    });
+    gh.install();
+    const routes = createContentRoutes(runtime(), deps);
+    const data = await routes.editLoad(editEvent('2026-01-15-hello') as never);
+    expect(data.advisories).toEqual([]);
+  });
 });
 
 describe('editLoad media targets', () => {

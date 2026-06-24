@@ -8,7 +8,7 @@ import { extractCairnLinks, formatCairnToken, rewriteCairnLink } from '../conten
 import { frontmatterFromForm, parseMarkdown, dateInputValue, serializeMarkdown } from '../content/frontmatter.js';
 import { deriveExcerpt } from '../content/excerpt.js';
 import { asString, entryIdentity } from '../content/identity.js';
-import { buildAddressIndex, addressCollision, type AdvisoryNotice, type AddressEntry } from '../content/advisories.js';
+import { buildAddressIndex, mainAddressIndex, addressCollision, type AdvisoryNotice, type AddressEntry } from '../content/advisories.js';
 import { isValidId, slugify, filenameFromId, composeDatedId, slugFromId, renameId } from '../content/ids.js';
 import { appCredentials, type GithubKeyEnv } from '../github/credentials.js';
 import { listMarkdown, readRaw, commitFile, commitFiles, type FileChange } from '../github/repo.js';
@@ -1072,14 +1072,16 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       inbound = inboundLinks(manifest, concept.id, id);
     }
 
-    // The cross-branch address-collision advisory: warn-and-allow, never a gate. Build it from the
-    // same manifest read above (no second read) and degrade to no notice on any read failure, so a
-    // transient GitHub error never blocks the editor. Skip the build with no manifest to index.
+    // The address-collision advisory: warn-and-allow, never a gate. At edit-load it checks the
+    // published corpus only, built synchronously from the same manifest read above (no extra GitHub
+    // read per editor open); publishAction re-checks the full cross-branch index before it lands. The
+    // try/catch degrades to no notice if entryIdentity throws on a malformed-date entry. Skip the build
+    // with no manifest to index.
     let advisories: AdvisoryNotice[] = [];
     if (manifest !== null) {
       try {
         const identity = entryIdentity(concept, path, parsed.frontmatter);
-        const addressIndex = await buildAddressIndex(runtime.backend, token, runtime.concepts, manifest);
+        const addressIndex = mainAddressIndex(manifest);
         const other = addressCollision(addressIndex, { concept: concept.id, id }, identity.permalink);
         if (other) {
           const otherConcept = findConcept(runtime.concepts, other.concept);
@@ -1093,8 +1095,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
             },
           ];
         }
-      } catch (err) {
-        log.warn('github.unreachable', { scope: 'edit-advisories', error: String(err) });
+      } catch {
+        // A malformed-date entry that cannot resolve its permalink degrades to no advisory, fail open.
       }
     }
 

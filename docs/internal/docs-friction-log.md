@@ -465,3 +465,29 @@ surfaced:
   Vale Google package through the on-save hook, with no blocking floor. Candidate: state plainly that
   the internal design docs are Vale-advisory only, or extend a prose gate over `docs/internal/` if a
   blocking floor is wanted.
+
+### Editor-help Pass 2: the Help home (2026-06-23)
+
+Pass 2 built the Help home (the `/admin/help` screen, the shared markdown reference, the derived
+getting-started progress, and the pinned nav home). Two frictions surfaced, both developer-facing.
+
+- **developer** (the admin prose gate had a silent coverage hole, MEDIUM, the sharp half now FIXED):
+  `scripts/check-admin-prose.mjs` reported `clean (31 components scanned)` while extracting **zero**
+  strings from `HelpHome.svelte`, the pass centerpiece. Two causes. First, a strip-order bug: the
+  extractor stripped `<style>...</style>` before comments, so the `@component` doc comment's literal
+  `<style>` mention anchored the non-greedy block strip and swallowed the whole markup body. Fixed this
+  pass by stripping comments first (blast radius was one component; only HelpHome's doc comment names
+  the tag). Second, a structural hole that remains: the gate strips `<script>` blocks and reads only
+  `*.svelte`, so copy held in script-level data arrays (HelpHome's `steps` titles and descriptions) and
+  in `.ts` data modules (`markdown-reference.ts`, `editor-shortcuts.ts`) is never scanned. The
+  `prose-voice-reviewer` agent caught two real tells in that unscanned step copy this pass, which the
+  mechanical gate could not have. Candidate: extend the extractor to scan string literals in
+  `<script>`/`.ts` copy modules, and fold a `prose-voice-reviewer` pass into the pass-end gate whenever
+  a pass adds substantial admin UI copy.
+- **developer** (`supportContact` is a bare string, so the help cannot personalize the hand-off, LOW):
+  the adapter's `supportContact` is one freeform string (an email, a URL, or a note). The design mockup
+  personalized the hand-off with a name plus an address, so it could greet the author by the site
+  owner's name and offer a named email button. With only a string the Get-help card cannot name anyone,
+  so it falls back to a generic support button and a generic line about whoever set up the site.
+  Candidate: a richer shape, a name plus a contact, if a personalized hand-off is worth the schema;
+  weigh it against the one-string simplicity that needs none.

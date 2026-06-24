@@ -350,6 +350,30 @@ same committed site-config YAML the nav editor writes.
 <CairnTidySettings {data} />
 ```
 
+### `HelpHome`
+
+```ts
+let { data }: { data: HelpData };
+```
+
+The Help home screen, the standing place an author goes to get their bearings. `data` is the
+`HelpData` from the help load: the getting-started progress derived from the committed manifest and
+the open edit branches, the markdown reference rows, and the optional support contact. It renders the
+masthead, a derived getting-started checklist (it drops away once the author finishes all three steps,
+and hides per device on request), the formatting reference, and the support hand-off (shown only when
+the adapter sets `supportContact`). It mounts inside `AdminLayout`, so it carries no theme wrapper of
+its own.
+
+```svelte
+<script lang="ts">
+  import { HelpHome } from '@glw907/cairn-cms/components';
+
+  let { data } = $props();
+</script>
+
+<HelpHome {data} />
+```
+
 ---
 
 ## Composed components

@@ -2,6 +2,32 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.62.0
+
+<!-- release-size: minor -->
+
+The admin gains a Help home, the pull half of the in-admin editor help. It is a standing screen at
+`/admin/help`, reached from a labeled Help home pinned at the foot of the office sidebar (and from the
+Ctrl+K command palette).
+
+The screen carries three sections. A getting-started checklist derives its progress from what is
+really on the site: writing a post, publishing one, and creating a page. The count is never stored, so
+it always reflects the corpus, and the whole section drops away once all three steps are done. A hide
+control tucks it away per device. A formatting reference promotes the editor's Ctrl+/ cheat sheet to a
+standing two-column table. A support hand-off points a stuck author at the site's `supportContact`,
+shaped to the contact (an email opens a `mailto`, a URL opens a link, anything else shows as a note),
+and it renders only when the adapter sets one.
+
+This adds two exports: the `HelpHome` component on the `/components` subpath and the `HelpData` type on
+`/sveltekit`. The new `/admin/help` route is additive.
+
+No consumer action is required. A site that sets no `supportContact` sees the Help home with a
+self-serve line in place of the contact hand-off.
+
+This release also fixes the admin-copy prose gate (`check:prose`): a component whose `@component` doc
+comment wrote the literal `<style>` tag had its whole markup silently skipped, so its copy was never
+scanned. The gate now strips comments before the script and style blocks.
+
 ## 0.61.0
 
 <!-- release-size: minor -->

@@ -50,8 +50,7 @@ The content is one calm column: a masthead, then three co-equal eyebrow-plus-dis
       title: 'Create a page',
       done: data.gettingStarted.createdPage,
       doneDesc: 'You have a page. Open it any time to keep going.',
-      todoDesc:
-        'A page is for the parts that stay put, like About or Contact. A post is for news and updates.',
+      todoDesc: 'A page is for the parts that stay put, like About or Contact.',
       actionLabel: 'Add a page',
       href: '/admin/pages',
     },
@@ -139,9 +138,7 @@ The content is one calm column: a masthead, then three co-equal eyebrow-plus-dis
                 </span>
               {/if}
               <div class="start-lead">
-                <p class="start-lead-sub">
-                  Three small steps. Each one checks itself off as you do it.
-                </p>
+                <p class="start-lead-sub">Three small steps to get going.</p>
               </div>
               <!-- the count is the source of truth; the bar is decorative only -->
               <div class="prog">

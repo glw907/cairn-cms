@@ -78,6 +78,9 @@ The one route answers every admin URL. `createCairnAdmin`'s load parses `event.u
 | `/admin/<concept>/<id>` | edit | The entry editor. |
 | `/admin/editors` | editors | The owner-gated editor management. |
 | `/admin/nav` | nav | The nav tree editor. A 404 unless the adapter configures `navMenu`. |
+| `/admin/media` | media | The media library. |
+| `/admin/settings` | settings | The tidy settings screen. |
+| `/admin/help` | help | The Help home: getting started, the formatting reference, and the support hand-off. |
 
 Any other shape is a 404, and one trailing slash is tolerated. Logout has no URL of its own; the
 admin shell posts it as the named `?/logout` action on whatever page the editor is on.

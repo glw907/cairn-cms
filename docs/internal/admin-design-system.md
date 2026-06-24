@@ -512,6 +512,26 @@ Recipes:
 - **The empty-state recipe gains an optional starter-content slot:** beside the create CTA, a site may
   surface labeled, openable starter entries. The label marks them as starters so they read as
   removable, not as the author's own work.
+- **The Help home recipe** (`HelpHome.svelte`) is one calm column inside `AdminLayout`: a masthead (a
+  plain eyebrow over a real-sentence h1, the page's single Bricolage display beat), then three co-equal
+  eyebrow-plus-display sections, getting started, formatting, and get help. The cadence carries the
+  equality (one section icon per section would break it), not a per-section accent. Because it mounts
+  inside `AdminLayout`, it roots on a bare `<div>`, never a second `<main>` (a nested `main` is a
+  duplicate landmark), and it carries no `data-theme` wrapper and imports no CSS; it consumes the Warm
+  Stone tokens through its scoped `<style>`. Getting started follows the preceding progress recipe
+  and recedes-and-omits: at 0 of 3 the cairn mark presides in the warmer empty-state shape with a faint
+  seed bar, at 1 or 2 a calm peer card, and at 3 of 3 the whole section is gone (never a done checklist
+  greeting a fluent author). The done cue reaches assistive tech three ways and never by color: a
+  filled glyph-backed box (decorative, `aria-hidden`), a visible "Done" tag, and an `sr-only` "not
+  done" on every open step. The unchecked step-box ring is `color-mix(in oklab,
+  var(--color-base-content) 55%, transparent)` (about 3:1 on base-100, the WCAG 1.4.11 floor for a
+  control conveying state, kept a thin ring so it never reads as filled). The formatting reference is a
+  real `<table>` with `th scope="col"` and `th scope="row"`, the syntax cells in `var(--font-editor)`,
+  rendered from the shared `markdown-reference.ts` source the editor's Ctrl+/ dialog also renders. The
+  get-help hand-off renders only when the adapter sets `supportContact`, shaped to the contact (an
+  email opens a `mailto`, a URL opens an external link with `rel="noopener"`, anything else shows as a
+  note); the unset state is the canonical default, a self-serve line with no control, never a button to
+  a blank contact.
 
 ## Chrome and spacing
 

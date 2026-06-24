@@ -7,7 +7,8 @@ import { findConcept } from '../content/concepts.js';
 import { extractCairnLinks, formatCairnToken, rewriteCairnLink } from '../content/links.js';
 import { frontmatterFromForm, parseMarkdown, dateInputValue, serializeMarkdown } from '../content/frontmatter.js';
 import { deriveExcerpt } from '../content/excerpt.js';
-import { asString } from '../content/identity.js';
+import { asString, entryIdentity } from '../content/identity.js';
+import { buildAddressIndex, addressCollision, type AdvisoryNotice } from '../content/advisories.js';
 import { isValidId, slugify, filenameFromId, composeDatedId, slugFromId, renameId } from '../content/ids.js';
 import { appCredentials, type GithubKeyEnv } from '../github/credentials.js';
 import { listMarkdown, readRaw, commitFile, commitFiles, type FileChange } from '../github/repo.js';
@@ -55,6 +56,10 @@ import type { Editor, Role } from '../auth/types.js';
 // R2Bucket is named only inside uploadAction to cast the raw binding for r2Store. It is a type-only
 // import that never appears in an exported signature, so it does not reach the public `.d.ts`.
 import type { R2Bucket } from '@cloudflare/workers-types';
+
+// The advisory notice types are defined alongside the cross-branch address index in the content
+// layer; re-export them here so EditData's advisories and the /sveltekit subpath carry one shape.
+export type { AdvisoryNotice, AdvisoryAction } from '../content/advisories.js';
 
 /** A sidebar concept entry: just enough to render the nav without shipping validators to the client. */
 export interface NavConcept {
@@ -190,6 +195,8 @@ export interface EditData {
    *  is a Worker secret. `enabled` false hides the Tidy control.
    */
   tidy: { enabled: boolean; model: string; conventions: TidyConventions };
+  /** Non-blocking editor advisories built server-side; today the cross-branch address collision. */
+  advisories: AdvisoryNotice[];
 }
 
 /**
@@ -1048,10 +1055,10 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     const parsed = raw === null ? { frontmatter: {}, body: '' } : parseMarkdown(raw);
     const title = typeof parsed.frontmatter.title === 'string' && parsed.frontmatter.title.trim() ? parsed.frontmatter.title : id;
 
+    const manifest = manifestRaw !== null ? parseManifest(manifestRaw) : null;
     let linkTargets: LinkTarget[] = [];
     let inbound: InboundLink[] = [];
-    if (manifestRaw !== null) {
-      const manifest = parseManifest(manifestRaw);
+    if (manifest !== null) {
       linkTargets = manifest.entries.map((e) => ({
         concept: e.concept,
         id: e.id,
@@ -1061,6 +1068,32 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
         draft: e.draft,
       }));
       inbound = inboundLinks(manifest, concept.id, id);
+    }
+
+    // The cross-branch address-collision advisory: warn-and-allow, never a gate. Build it from the
+    // same manifest read above (no second read) and degrade to no notice on any read failure, so a
+    // transient GitHub error never blocks the editor. Skip the build with no manifest to index.
+    let advisories: AdvisoryNotice[] = [];
+    if (manifest !== null) {
+      try {
+        const identity = entryIdentity(concept, path, parsed.frontmatter);
+        const addressIndex = await buildAddressIndex(runtime.backend, token, runtime.concepts, manifest);
+        const other = addressCollision(addressIndex, { concept: concept.id, id }, identity.permalink);
+        if (other) {
+          const otherConcept = findConcept(runtime.concepts, other.concept);
+          const label = otherConcept ? otherConcept.label : other.concept;
+          advisories = [
+            {
+              kind: 'address-collision',
+              severity: 'warn',
+              message: `Another ${label} already uses the address ${identity.permalink}. Publishing this one will replace it as the page visitors see.`,
+              actions: [{ label: `Open ${other.title}`, href: `/admin/${other.concept}/${other.id}` }],
+            },
+          ];
+        }
+      } catch (err) {
+        log.warn('github.unreachable', { scope: 'edit-advisories', error: String(err) });
+      }
     }
 
     // Project the one committed media manifest read two ways: the minimal resolver triple the preview
@@ -1110,6 +1143,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
         model: runtime.tidy?.model || DEFAULT_TIDY_MODEL,
         conventions: resolveTidyConventions(runtime.tidy?.conventions),
       },
+      advisories,
     };
   }
 

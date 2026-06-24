@@ -11,6 +11,8 @@ export type {
   EntrySummary,
   ListData,
   EditData,
+  AdvisoryNotice,
+  AdvisoryAction,
   HelpData,
   MediaUsageInfo,
   MediaLibraryData,

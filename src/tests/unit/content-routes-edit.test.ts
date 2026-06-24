@@ -365,6 +365,82 @@ describe('editLoad with a pending branch', () => {
   });
 });
 
+describe('editLoad address-collision advisory', () => {
+  // A pages concept with an undated permalink, so two entries can resolve to the same /about.
+  function pagesRuntime(): CairnRuntime {
+    return {
+      ...runtime(),
+      concepts: [
+        {
+          id: 'pages', label: 'Page', singular: 'Page', dir: 'src/content/pages',
+          routing: { routable: true, dated: false, inFeeds: false },
+          permalink: '/:slug',
+          datePrefix: 'day',
+          fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
+          summaryFields: [],
+          validate: () => ({ ok: true as const, data: {} }),
+        },
+      ],
+    };
+  }
+
+  function pagesEvent(id: string, search = '') {
+    return {
+      url: new URL(`https://t.example/admin/pages/${id}${search}`),
+      params: { concept: 'pages', id },
+      request: new Request('https://t.example'),
+      locals: { editor: { email: 'e@t', displayName: 'E', role: 'editor' as const } },
+      platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
+    };
+  }
+
+  it('warns when a different entry already resolves to the same address', async () => {
+    // A published entry id "about" sits at /about in the manifest. A different published entry
+    // "welcome" is manually configured to the same /about, so the edited "about" collides with it.
+    const manifest = serializeManifest({
+      version: 1,
+      entries: [
+        { id: 'about', concept: 'pages', title: 'About', permalink: '/about', draft: false, links: [] },
+        { id: 'welcome', concept: 'pages', title: 'Welcome', permalink: '/about', draft: false, links: [] },
+      ],
+    });
+    const gh = new GithubDouble({
+      main: {
+        'src/content/pages/about.md': '---\ntitle: About\n---\nLive.',
+        'src/content/pages/welcome.md': '---\ntitle: Welcome\n---\nHi.',
+        [MANIFEST_PATH]: manifest,
+      },
+    });
+    gh.install();
+    const routes = createContentRoutes(pagesRuntime(), deps);
+    const data = await routes.editLoad(pagesEvent('about') as never);
+    expect(data.advisories).toHaveLength(1);
+    const notice = data.advisories[0];
+    expect(notice.kind).toBe('address-collision');
+    expect(notice.severity).toBe('warn');
+    expect(notice.message).toContain('/about');
+    expect(notice.actions?.[0].href).toBe('/admin/pages/welcome');
+  });
+
+  it('returns an empty advisory list when the address is free', async () => {
+    const manifest = serializeManifest({
+      version: 1,
+      entries: [{ id: 'about', concept: 'pages', title: 'About', permalink: '/about', draft: false, links: [] }],
+    });
+    const gh = new GithubDouble({
+      main: {
+        'src/content/pages/about.md': '---\ntitle: About\n---\nLive.',
+        'src/content/pages/contact.md': '---\ntitle: Contact\n---\nReach us.',
+        [MANIFEST_PATH]: manifest,
+      },
+    });
+    gh.install();
+    const routes = createContentRoutes(pagesRuntime(), deps);
+    const data = await routes.editLoad(pagesEvent('contact') as never);
+    expect(data.advisories).toEqual([]);
+  });
+});
+
 describe('editLoad media targets', () => {
   const ENTRY_PATH = 'src/content/posts/2026-05-hello.md';
 

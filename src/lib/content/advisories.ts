@@ -1,7 +1,7 @@
 // cairn-cms: the entry editor's internal advisory channel (editor-help pass 3). An advisory is a
 // non-blocking, serializable notice that rides EditData across the SSR boundary, so it carries data
-// only and never a callback. Today's one notice is the cross-branch address collision: a warning,
-// not a gate, that another entry already resolves to the same public address (last-write-wins).
+// only and never a callback. Today's one notice is the address collision: a warning, not a gate,
+// that another entry already resolves to the same public address (last-write-wins).
 //
 // The address index mirrors buildUsageIndex (src/lib/media/usage.ts): a main arm that reads each
 // manifest entry's resolved permalink with no per-file read, and a branch arm that lists every open
@@ -71,7 +71,12 @@ function push(index: AddressIndex, permalink: string, entry: AddressEntry): void
 export function mainAddressIndex(manifest: Manifest): AddressIndex {
   const index: AddressIndex = new Map();
   for (const entry of manifest.entries) {
-    push(index, entry.permalink, { concept: entry.concept, id: entry.id, title: entry.title, source: 'main' });
+    push(index, entry.permalink, {
+      concept: entry.concept,
+      id: entry.id,
+      title: entry.title,
+      source: 'main',
+    });
   }
   return index;
 }

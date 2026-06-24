@@ -93,7 +93,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   /** One action row in an advisory notice: an `href` row renders a link, an `onAct` row a button. */
   type AdvisoryRow = { rowLabel?: string; rowCode?: boolean; label: string; href?: string; onAct?: () => void };
   /** A notice ready to render: the server advisory and the client needs-alt notice both map to this. */
-  type RenderNotice = { kind: string; message: string; detail?: string; count?: number; rows: AdvisoryRow[] };
+  type RenderNotice = { kind: string; message: string; detail?: string; rows: AdvisoryRow[] };
 
   // The client-side tidy deadline (spec 2.1, Task 14): a slow call becomes a cancel/retry rather than a
   // hung review. Set above the action's own 30s Worker deadline so the server's retryable fail lands
@@ -988,7 +988,6 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     ...data.advisories.map((notice) => ({
       kind: notice.kind,
       message: notice.message,
-      count: notice.count,
       rows: (notice.actions ?? []).map((action) => ({ label: action.label, href: action.href })),
     })),
     ...(needsAltCount
@@ -998,7 +997,6 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
             message: `${needsAltCount} ${needsAltCount === 1 ? 'image needs' : 'images need'} alt text`,
             detail:
               'Alt text describes an image for readers who cannot see it. Add it now, or save and come back to it.',
-            count: needsAltCount,
             rows: [
               ...needsAlt.map((item) => ({
                 rowLabel: item.ref,
@@ -1444,20 +1442,14 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     </ul>
   </div>
 {/if}
-<!-- The shared advisory region: one live-region surface for every non-blocking editor warning. It
+<!-- The shared advisory notices: one live-region surface for every non-blocking editor warning. It
      carries the server's address-collision advisory and the client-derived needs-alt notice through
-     one snippet. Each is a warning, never a block: the author can act on it or save without it. The
-     leading glyph carries the state alongside the message, so the caution reads without relying on
-     hue. A needs-alt row's jump runs an editor callback (selecting the image source, or focusing a
-     hero alt input); a server advisory's row is a link. The role="status" live region renders
-     unconditionally (present and empty at load), so when the first notice appears it announces; a
-     region conditionally mounted with its first content may not be observed by assistive tech (WCAG
-     4.1.3). The notices gate on their own presence, so an empty region shows nothing. A plain wrapper
-     (not display:contents) carries the role, since some assistive tech drops a role off a
-     display:contents box. -->
-<!-- The shared advisory notices: each renders as one alert-warning row carrying the caution glyph,
-     the message, the optional detail sentence, and a list of action rows. A row with an href is a
-     server advisory's link; a row with onAct is the needs-alt jump that runs an editor callback. -->
+     one snippet. Each renders as one alert-warning row: the caution glyph, the message, an optional
+     detail sentence, and a list of action rows. Each is a warning, never a block: the author can act
+     on it or save without it. The leading glyph carries the state alongside the message, so the
+     caution reads without relying on hue. A row with an href is a server advisory's link; a row with
+     onAct is the needs-alt jump that runs an editor callback (selecting the image source, or focusing
+     a hero alt input). -->
 {#snippet advisoryNotices(notices: RenderNotice[])}
   {#each notices as notice (notice.kind)}
     <div class="alert alert-warning mb-4 flex-col items-start text-sm">
@@ -1495,6 +1487,11 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     </div>
   {/each}
 {/snippet}
+<!-- The role="status" live region renders unconditionally (present and empty at load), so when the
+     first notice appears it announces; a region conditionally mounted with its first content may not
+     be observed by assistive tech (WCAG 4.1.3). The notices gate on their own presence, so an empty
+     region shows nothing. A plain wrapper (not display:contents) carries the role, since some
+     assistive tech drops a role off a display:contents box. -->
 <div role="status">
   {@render advisoryNotices(renderNotices)}
 </div>

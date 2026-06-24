@@ -37,8 +37,6 @@ export interface AdvisoryNotice {
   severity: 'warn';
   /** The notice text shown to the editor. */
   message: string;
-  /** An aggregating notice's running count, when it counts items (the client needs-alt notice). */
-  count?: number;
   /** The notice's offered actions, when any. */
   actions?: AdvisoryAction[];
 }

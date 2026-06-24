@@ -11,7 +11,32 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-24, latest): the address-check scope pass is RELEASED as `0.62.2` (npm `latest`); next is the per-site cutover and the open engine tracks
+## Immediate next action (2026-06-24, latest): execute the scaffolder Part A plan (the `@glw907/cairn-cms-dev` package)
+
+**The `create-cairn-site` scaffolder initiative is DESIGNED and PLANNED; Part A is ready to execute.** The
+design spec is `docs/superpowers/specs/2026-06-24-cairn-scaffolder-design.md` (a three-part initiative,
+written after a four-lens adversarial review: Part A the dev package, Part B the showcase-as-deployable
+template with a `frontend-design` pass and a first-class tokens layer, Part C the generator). The Part A
+plan is `docs/superpowers/plans/2026-06-24-cairn-scaffolder-part-a-dev-package.md`.
+
+**Execute Part A now.** It extracts the fake GitHub/D1/R2/Anthropic doubles and the magic-link auth
+bypass out of the engine and the showcase into a separate, fenced, fail-closed `@glw907/cairn-cms-dev`
+dev-only package (the dev-backend-out-of-the-engine reversal). Method: a fresh git worktree off `main`
+(`git worktree add ../cairn-cms-part-a -b feat/cairn-cms-dev main`, symlink node_modules), one
+`cairn-implementer` per task with the main loop reviewing each diff and verifying the gate; a real
+`npm install` after adding the workspace, `npm run package` before `npm test`. The mandatory exit gate is
+the `web-auth-security-reviewer` pass over the fence and the tripwire (Task 5). After Part A merges, the
+small pre-Part-B DX slot lands (the `AuthEnv` root re-export, the `media.json` graceful-degrade, the
+`runtime.publicMediaResolver` ergonomic) before Part B begins. See the spec's "Sequencing" section.
+
+**Held context:** the scaffolder design was settled in a long brainstorm (the
+`cairn-scaffolder-initiative` memory carries the decisions); this session cleared context after writing
+the Part A plan. The engine/DX/docs findings the design surfaced are logged in
+`docs/internal/docs-friction-log.md` under "Scaffolder design pass."
+
+---
+
+## Prior next action (2026-06-24): the address-check scope pass is RELEASED as `0.62.2` (npm `latest`); next is the per-site cutover and the open engine tracks
 
 **The editor-help fan-out optimization is RELEASED.** GitHub release `v0.62.2` fired the OIDC
 trusted-publishing workflow, and npm `latest` moved `0.62.1` to `0.62.2`. The pass narrowed the editor's

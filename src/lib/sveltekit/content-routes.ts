@@ -288,8 +288,10 @@ export interface SettingsSaveFailure {
   error: string;
 }
 
-/** The Help home's data: the derived getting-started progress, the full markdown reference (the
- *  component curates by group), and the optional support hand-off (rendered only when set). */
+/**
+ * The Help home's data: the derived getting-started progress, the full markdown reference (the
+ *  component curates by group), and the optional support hand-off (rendered only when set).
+ */
 export interface HelpData {
   gettingStarted: GettingStarted;
   reference: MarkdownReferenceRow[];

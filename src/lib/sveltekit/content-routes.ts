@@ -1377,8 +1377,11 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       address = entryIdentity(concept, path, frontmatter).permalink;
       const addressIndex = await buildAddressIndex(runtime.backend, token, runtime.concepts, manifest);
       collision = addressCollision(addressIndex, { concept: concept.id, id }, address);
-    } catch {
+    } catch (err) {
+      // Fail open, the same as editLoad: a thrown index build degrades to no event and the publish
+      // proceeds. Log it so a persistently failing advisory build is diagnosable, not invisible.
       collision = null;
+      log.warn('github.unreachable', { scope: 'publish-advisories', error: String(err) });
     }
 
     const commitFields = { concept: concept.id, id, editor: editor.email };

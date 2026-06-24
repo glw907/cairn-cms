@@ -1450,8 +1450,11 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
      caution reads without relying on hue. A row with an href is a server advisory's link; a row with
      onAct is the needs-alt jump that runs an editor callback (selecting the image source, or focusing
      a hero alt input). -->
+<!-- Keyed by index, not by notice.kind: the kind is a free string with no uniqueness constraint, so
+     two notices of one kind would otherwise throw each_key_duplicate. The list is append-only and
+     never reordered, so the index is a stable key here. -->
 {#snippet advisoryNotices(notices: RenderNotice[])}
-  {#each notices as notice (notice.kind)}
+  {#each notices as notice, i (i)}
     <div class="alert alert-warning mb-4 flex-col items-start text-sm">
       <p class="flex items-center gap-2 font-medium">
         <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">

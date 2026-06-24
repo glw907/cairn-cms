@@ -11,7 +11,7 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-23, latest): editor-help foundation Pass 1 is DONE, held as `0.61.0`; next is Pass 2 (or Geoff's other tracks)
+## Immediate next action (2026-06-23, latest): Pass 1 DONE (held `0.61.0`); Pass 2 (the Help shell) is DESIGNED and PLANNED; next is to execute the Help home plan
 
 **Pass 1 of the editor-help foundation is COMPLETE** on `feat/editor-help-foundation` (worktree
 `.claude/worktrees/editor-help-foundation`), HELD for merge, release, and push (Geoff's call). It is
@@ -38,13 +38,27 @@ transpile over the new typed snippet stood in. Full post-mortem in the plan
 published release (with the held `0.60.1` site-cutover work and any other held passes); push; run the
 showcase e2e at release.
 
-**NEXT engine work: detail and execute Pass 2**, the point-of-typing coach seam in `MarkdownEditor`,
-sketched in the plan for just-in-time detailing. Pass 3 (advisory validation plus the cross-branch
-address-uniqueness check) follows. Settled decisions hold: onboarding progress derives from observable
-content and publish state (no D1, no store; `localStorage` only for per-device UI dismissals); address
-collision warns and allows publish. After the foundation: the help pass (the Help shell, the help-content
-manifest, the corpus, the woven layer); the starter-content seed rides the `create-cairn-site` scaffolder.
-See the `cairn-editor-help-initiative` memory.
+**Pass 2 PIVOTED, then was DESIGNED and PLANNED (2026-06-23).** Three prior-art adversarial passes
+discarded the "point-of-typing coach" (Clippy and coachmark banner-blindness), then a
+selection-bar-plus-placeholder detour (the iA Writer minimalism and the placeholder anti-pattern), and
+landed on the Help shell the foundation was built for (WordPress's contextual Help tab, the command
+palette, progressive disclosure). A mockup-first design treatment ran as a Workflow: three frontend-design
+Help-home prototypes, a six-dimension adversarial critique, a rev.2 synthesis, and a Warm Stone
+consistency polish. The design record (`docs/internal/design/2026-06-23-help-shell-mockup-*.html`, the
+polished rev.2 canonical) and the spec (`docs/superpowers/specs/2026-06-23-help-shell-design.md`) are
+committed.
+
+**NEXT: execute Pass 2, the Help home** (`docs/superpowers/plans/2026-06-23-cairn-help-home.md`). Five
+test-first tasks: the shared markdown-reference module, the getting-started derive function, the help
+admin view plus load plus `HelpData` contract, the `HelpHome` component, and the pinned Help nav home. Run
+on a fresh worktree branched off the foundation branch (Pass 2 builds on Pass 1's `supportContact` and
+field-hint seams), with `npm run package` before `npm test`. Method: main-loop orchestrate-and-verify, one
+`cairn-implementer` per task, the full gate between dispatches. Settled decisions: progress derives from
+observable content and publish state (no D1, no store; `localStorage` only for the per-device dismiss);
+the Get-help unset state is the canonical default; the dismiss hides until un-hidden. Deferred: the
+wikilink-highlight rider (the `[[` autocomplete wrinkle) and the later slices (the screen-contextual
+slide-over with the keyed manifest, the command-palette help, the corpus, the starter-content seed on the
+scaffolder). See the `cairn-editor-help-initiative` and `cairn-ui-design-pass-methodology` memories.
 
 **Other open tracks (Geoff's call on order):** the per-site cutover to `^0.60.1` (site-passes, below),
 the `create-cairn-site` scaffolder, and media Pass D.

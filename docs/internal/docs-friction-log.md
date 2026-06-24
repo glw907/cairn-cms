@@ -512,3 +512,57 @@ getting-started progress, and the pinned nav home). Two frictions surfaced, both
   re-check stays at publish and still emits `publish.address_collision`. The deferred branch-only case
   (a collision against an entry that exists only on a sibling edit branch) surfaces at publish rather
   than edit-load, by design.
+
+## Scaffolder design pass: engine, DX, and docs findings (2026-06-24)
+
+The `create-cairn-site` design brainstorm and its four-lens adversarial review
+(`docs/superpowers/specs/2026-06-24-cairn-scaffolder-design.md`) surfaced these for later passes. The
+scaffolder fixes several by construction in its own template; the entries below are the ones that stand
+alone as engine or docs work. This is the first installment, per the standing decision that building the
+scaffolder audits the engine, the DX, and the docs outline; the build itself (Parts A, B, C) will add
+more.
+
+Engine and DX:
+
+- **developer** (the `AuthEnv` import-subpath trap): `app.d.ts` must import `AuthEnv` from `/sveltekit`,
+  not the root, and `skipLibCheck` hides a mistyped binding as a silent error type, the gap two site
+  retrofits hit. Candidate: re-export `AuthEnv` from the root, or ship a typed platform-env helper.
+- **developer** (`csrf.checkOrigin: false` deprecation noise): kit 2.61 deprecates `checkOrigin` for
+  `trustedOrigins`, prints a warning on every build, yet `false` is still required and `trustedOrigins`
+  cannot replace it. Track kit#15992; until then the deploy guide should name the warning as expected.
+- **developer** (`resolveMedia` plumbed by hand three times): the same `publicMediaResolver` is threaded
+  into the adapter `render` default, `createPublicRoutes`, and the `/media` route. A
+  `runtime.publicMediaResolver` ergonomic would subsume the three wire-points.
+- **developer** (the `media.json = {}` build footgun): a fresh media site crashes the build when
+  `src/content/.cairn/media.json` is absent, because the adapter imports it directly. The scaffolder
+  seeds it, but the engine could degrade a missing media manifest to empty instead of crashing.
+- **developer** (the showcase models a loose `app.d.ts`): it types `App.Platform.env` as
+  `Record<string, unknown>`, so the example never models the real `AuthEnv` production type. Folding the
+  showcase into the deployable template (the scaffolder's Part B) fixes this; noted so it is not lost.
+
+Docs and the developer-docs outline (candidates for the docs rewrite,
+`docs/superpowers/specs/2026-06-23-docs-rewrite-content-outline.md`):
+
+- **developer** (orphaned guide): `docs/guides/rotate-the-github-app-key.md` exists but is not linked from
+  `guides/README.md`. Link it or fold it into the GitHub-App guide.
+- **developer** (no quickstart distinct from the tutorial): the only on-ramp is the full ten-milestone
+  tutorial; the rewrite's Overview and a 60-second README quickstart have no current counterpart. The
+  scaffolder makes this acute, since the quickstart becomes "run `create-cairn-site`."
+- **developer** (no positioning page): there is no "is cairn right for you?" fit-and-comparison doc.
+- **developer/operator** (thin operability docs): no symptom-to-event-to-fix troubleshooting lookup, and
+  `read-cairn-logs.md` is a stub rather than a day-two "operate and diagnose a live site" guide.
+- **developer** (the tutorial rots and buries its hardest step): it pins `@0.26.0` against a 0.62.x
+  engine, and the dangerous Milestone-8 dev-backend step sits two-thirds in. Parts A and B dissolve that
+  step (the dev backend becomes a package, the showcase becomes the template), so the tutorial earns a
+  re-reproduction and a reorder.
+- **developer** (no "after scaffolding" content): once `create-cairn-site` lands, the tutorial and README
+  need a "what you got and what to change" orientation that nothing anticipates today.
+- **maintainer** (gate coverage holes): `check:reference` checks coverage, not signature currency (audit
+  that `check:reference:signatures` closes it); the admin-prose gate skips `.ts` data modules and
+  script-level arrays; `docs/internal` has no blocking voice gate.
+- **developer** (URL identity has no single home): the dated-slug, `datePrefix`, and YAML url-policy split
+  cannot be explained without pointing at three places. A consolidating helper and a consolidated
+  explanation are the strongest candidates.
+- **developer** (the root over-export vs the engine/site line): the root subpath over-exports against the
+  clean engine/site boundary the architecture draws, and reference pages document the same symbols in two
+  homes. The scaffolder's template-contract work touches this.

@@ -11,12 +11,13 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-23, latest): Pass 2 (the Help home) is COMPLETE on `feat/editor-help-home` (`0.62.0`, unmerged + unreleased); next is the user's call on merge + the combined release
+## Immediate next action (2026-06-23, latest): Pass 2 (the Help home) is COMPLETE and MERGED to `main` (`0.62.0`, unreleased + unpushed); next is the combined release, then Pass 3
 
-**Pass 2 of the editor-help initiative, the Help home, is COMPLETE on `feat/editor-help-home`** (worktree
-`.claude/worktrees/editor-help-home`, branched off `main` at `1f1d269`). Eight commits (`e8a0356` through
-`6210dbc`), versioned `0.62.0` (minor: a new admin screen, the new `HelpHome` and `HelpData` exports, an
-additive `/admin/help` route; no consumer action). UNMERGED and UNRELEASED, held for the combined release.
+**Pass 2 of the editor-help initiative, the Help home, is COMPLETE and MERGED to `main`** (fast-forwarded
+to `ae6fb33` on 2026-06-23, keeping the per-task history; the `feat/editor-help-home` branch and its
+worktree are removed). Ten commits (`e8a0356` through `ae6fb33`), versioned `0.62.0` (minor: a new admin
+screen, the new `HelpHome` and `HelpData` exports, an additive `/admin/help` route; no consumer action).
+UNRELEASED and UNPUSHED (`main` is ahead of `origin/main`), held for the combined release.
 
 All five tasks landed test-first (one `cairn-implementer` per task, the main loop reviewing each diff and
 verifying the gate): the shared `markdown-reference.ts`, the pure `deriveGettingStarted`, the `help` view
@@ -36,18 +37,22 @@ scanning zero of `HelpHome`'s strings (an extractor strip-order bug, now fixed; 
 pass covered the still-unscanned script-array copy and caught two real tells). Full post-mortem in the plan
 (`docs/superpowers/plans/2026-06-23-cairn-help-home.md`).
 
-**NEXT (Geoff's call):** merge `feat/editor-help-home` to `main` (the Pass 1 pattern: fast-forward, keep
-the per-task history, then remove the worktree), and roll `0.62.0` into the combined release with the held
-`0.61.0` and `0.60.1` site-cutover work. The canonical live admin smoke (a real Worker plus D1,
-`/admin/help` rendering) rides the first site cutover; the showcase has no D1 Worker. Carry-forwards: the
-prose-gate script-data coverage gap and the `supportContact`-bare-string personalization limit (both in the
-friction log), and the deferred editor-help slices (the recede-on-desk slide-over, the command-palette
-help, the corpus, starter-content) per the spec.
+**NEXT (Geoff's call):** roll `0.62.0` into the combined release with the held `0.61.0` and `0.60.1`
+site-cutover work, then push and cut the GitHub release (the changelog window since the last published
+tag, carrying every entry; the release fires the OIDC trusted-publishing workflow). The canonical live
+admin smoke (a real Worker plus D1, `/admin/help` rendering) rides the first site cutover; the showcase
+has no D1 Worker. Carry-forwards: the prose-gate script-data coverage gap and the
+`supportContact`-bare-string personalization limit (both in the friction log), and the deferred
+editor-help slices (the recede-on-desk slide-over, the command-palette help, the corpus, starter-content)
+per the spec.
+
+A leftover from Pass 1: the `feat/editor-help-foundation` worktree and branch (at `6fc17c9`, fully in
+`main`'s history) are redundant and can be removed.
 
 **Pass 3 (SKETCHED, not planned):** advisory editor-time validation (warn and allow) plus a cross-branch
-address check, per the foundation plan's Pass 3 sketch. Detail and execute it next, off `main`, after the
-merge (a fresh worktree, `npm run package` before `npm test`). The `cairn-editor-help-initiative` memory
-carries the sketch.
+address check, per the foundation plan's Pass 3 sketch. Detail and execute it next, off `main` (a fresh
+worktree, `npm run package` before `npm test`). The `cairn-editor-help-initiative` memory carries the
+sketch.
 
 ---
 

@@ -11,7 +11,28 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-24, latest): the editor-help window is RELEASED as `0.62.1` (npm `latest`); next is the per-site cutover and the open engine tracks
+## Immediate next action (2026-06-24, in flight): execute the address-check scope plan on `feat/edit-load-address-scope`
+
+**Pass in flight:** the editor-help fan-out optimization, narrowing the cross-branch address check to the
+main arm at edit-load while keeping the full re-check at publish. It resolves the Pass 3 cloudflare
+MEDIUM-HIGH carry-forward (`buildAddressIndex` ran a `1 + N` GitHub fan-out on every editor open). Spec
+[`docs/superpowers/specs/2026-06-24-cairn-address-check-scope-design.md`](superpowers/specs/2026-06-24-cairn-address-check-scope-design.md),
+plan [`docs/superpowers/plans/2026-06-24-cairn-address-check-scope.md`](superpowers/plans/2026-06-24-cairn-address-check-scope.md).
+
+Geoff settled the one fork (Option A: main-arm at edit-load, full at publish) after weighing the
+ecosystem norm and cairn's own build-time duplicate-permalink resolver as the hard backstop. Method: a
+Workflow dispatches `cairn-implementer` per the plan's three tasks (extract `mainAddressIndex`, switch
+`editLoad`, docs + bump to `0.62.2`), test-first, on the worktree
+`/home/glw907/Projects/cairn-cms-edit-load-address-scope` (dist already built). Then the gate, the
+`cloudflare-workers-reviewer`, and an adversarial completeness check; the main loop verifies the gate
+first-hand and merges. A patch bump, no public export change, no consumer action.
+
+**On resume after a crash:** the spec and plan are committed on the branch (`d785956`). Continue from the
+plan's next unstarted task in the worktree, or re-run the workflow.
+
+---
+
+## Prior next action (2026-06-24): the editor-help window is RELEASED as `0.62.1` (npm `latest`); next is the per-site cutover and the open engine tracks
 
 **The editor-help initiative is RELEASED.** GitHub release `v0.62.1` (tag on `c20731c`, target `main`)
 fired the OIDC trusted-publishing workflow (`publish.yml` run `28125474920`, success), and npm `latest`

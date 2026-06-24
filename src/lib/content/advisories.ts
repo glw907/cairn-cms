@@ -9,7 +9,8 @@
 // and resolves its permalink. The map is keyed by permalink, so every entry that resolves to a given
 // address shares one bucket. The build fails open: a branch read that throws, or a dated entry whose
 // permalink cannot resolve, is skipped rather than thrown, so a transient failure degrades to no
-// notice and never blocks the editor or the publish.
+// notice and never blocks the editor or the publish. The scope splits by call site: the main arm at
+// edit-load (synchronous, no extra GitHub read per open) and the full cross-branch check at publish.
 import type { ConceptDescriptor } from './types.js';
 import type { RepoRef } from '../github/types.js';
 import type { Manifest } from './manifest.js';
@@ -64,6 +65,18 @@ function push(index: AddressIndex, permalink: string, entry: AddressEntry): void
 }
 
 /**
+ * The address index over main only: a synchronous reverse map of each manifest entry's resolved
+ * permalink. No backend read, so an edit-load can build it for free from the manifest it already holds.
+ */
+export function mainAddressIndex(manifest: Manifest): AddressIndex {
+  const index: AddressIndex = new Map();
+  for (const entry of manifest.entries) {
+    push(index, entry.permalink, { concept: entry.concept, id: entry.id, title: entry.title, source: 'main' });
+  }
+  return index;
+}
+
+/**
  * Build the permalink-keyed address index over main (from each manifest entry's resolved permalink)
  * plus every open cairn/* branch (resolved from its edited markdown).
  *
@@ -77,18 +90,9 @@ export async function buildAddressIndex(
   concepts: ConceptDescriptor[],
   manifest: Manifest,
 ): Promise<AddressIndex> {
-  const index: AddressIndex = new Map();
-
-  // The main arm: the manifest already carries each entry's resolved permalink, so this is a pure
-  // reverse map with no per-file read.
-  for (const entry of manifest.entries) {
-    push(index, entry.permalink, {
-      concept: entry.concept,
-      id: entry.id,
-      title: entry.title,
-      source: 'main',
-    });
-  }
+  // The main arm: the manifest already carries each entry's resolved permalink, so seed from the
+  // synchronous main-only index and union the branch arm on top.
+  const index = mainAddressIndex(manifest);
 
   // The branch arm: read each open cairn/* branch's one edited file and resolve its permalink. The
   // path is derivable from the branch name, so no tree-listing is needed.

@@ -7,6 +7,7 @@ import { GithubDouble } from './_github-double.js';
 import {
   addressCollision,
   buildAddressIndex,
+  mainAddressIndex,
   type AddressIndex,
 } from '../../lib/content/advisories.js';
 import { serializeMarkdown } from '../../lib/content/frontmatter.js';
@@ -37,6 +38,44 @@ describe('addressCollision', () => {
   it('returns the first other entry when several share the address', () => {
     const hit = addressCollision(idx, { concept: 'pages', id: 'third' }, '/about');
     expect(hit?.id).toBe('about');
+  });
+});
+
+describe('mainAddressIndex', () => {
+  it('maps each manifest entry to its permalink, all sourced main', () => {
+    const index = mainAddressIndex({
+      version: 1,
+      entries: [
+        { id: 'about', concept: 'pages', title: 'About', permalink: '/about', draft: false, links: [] },
+        { id: 'contact', concept: 'pages', title: 'Contact', permalink: '/contact', draft: false, links: [] },
+      ],
+    });
+    expect(index.get('/about')).toEqual([{ concept: 'pages', id: 'about', title: 'About', source: 'main' }]);
+    expect(index.get('/contact')).toEqual([{ concept: 'pages', id: 'contact', title: 'Contact', source: 'main' }]);
+  });
+
+  it('buckets two entries that resolve to the same permalink, so the collision check sees the other', () => {
+    const index = mainAddressIndex({
+      version: 1,
+      entries: [
+        { id: 'about', concept: 'pages', title: 'About', permalink: '/about', draft: false, links: [] },
+        { id: 'about-copy', concept: 'pages', title: 'About copy', permalink: '/about', draft: false, links: [] },
+      ],
+    });
+    expect(index.get('/about')).toHaveLength(2);
+    expect(addressCollision(index, { concept: 'pages', id: 'about-copy' }, '/about')).toEqual({
+      concept: 'pages', id: 'about', title: 'About', source: 'main',
+    });
+  });
+
+  it('is synchronous: it builds from the manifest alone, no backend or token', () => {
+    // Calling it with the manifest as the only argument returns a Map, not a Promise.
+    const index = mainAddressIndex({
+      version: 1,
+      entries: [{ id: 'about', concept: 'pages', title: 'About', permalink: '/about', draft: false, links: [] }],
+    });
+    expect(index).toBeInstanceOf(Map);
+    expect(index.get('/about')).toHaveLength(1);
   });
 });
 

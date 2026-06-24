@@ -184,9 +184,9 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
   }
 
   // The topbar posts publishAll from every authed admin page; login and confirm may not.
-  const authedViews = ['list', 'edit', 'editors', 'nav', 'media', 'settings'] as const;
+  const authedViews = ['list', 'edit', 'editors', 'nav', 'media', 'settings', 'help'] as const;
   // An editor signs out from wherever they are, so logout accepts any parsed view.
-  const anyView = ['index', 'login', 'confirm', 'list', 'edit', 'editors', 'nav', 'media', 'settings'] as const;
+  const anyView = ['index', 'login', 'confirm', 'list', 'edit', 'editors', 'nav', 'media', 'settings', 'help'] as const;
 
   /**
    * The full admin action vocabulary, one named async function per action, so a site's

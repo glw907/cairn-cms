@@ -34,7 +34,7 @@ open(), so the component renders no trigger of its own.
         </tr>
       </thead>
       <tbody>
-        {#each markdownReference as row}
+        {#each markdownReference as row (row.syntax)}
           <tr><td><code>{row.syntax}</code></td><td>{row.makes}</td></tr>
         {/each}
       </tbody>

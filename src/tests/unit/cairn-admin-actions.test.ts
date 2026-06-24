@@ -124,6 +124,30 @@ describe('path validation', () => {
     const admin = createCairnAdmin(runtime(), deps);
     await expect(admin.actions.logout(actionEvent('/admin/bogus') as never)).rejects.toMatchObject({ status: 404 });
   });
+
+  // The Help screen is an authed non-desk route, so the topbar's Publish-site button (publishAll)
+  // and the sidebar's Sign-out form (logout) both render and post to /admin/help. Neither may 404
+  // from the view gate, which means 'help' must sit in both the authedViews and anyView allow-lists.
+  it('publishAll posted from the help path does not 404 (it reaches the action and redirects)', async () => {
+    const gh = new GithubDouble({
+      main: {},
+      'cairn/posts/2026-05-01-hi': { 'src/content/posts/2026-05-01-hi.md': '---\ntitle: Hi\ndate: 2026-05-01\n---\nbody' },
+    });
+    gh.install();
+    const admin = createCairnAdmin(runtime(), deps);
+    const event = actionEvent('/admin/help', { editor: { email: 'own@t', displayName: 'Own', role: 'owner' } });
+    await expectRedirect(admin.actions.publishAll(event as never), '/admin/posts?publishedAll=1');
+  });
+
+  it('logout posted from the help path does not 404 (it reaches the action and redirects)', async () => {
+    const { db } = fakeD1();
+    const admin = createCairnAdmin(runtime(), deps);
+    const event = actionEvent('/admin/help', {
+      env: { AUTH_DB: db },
+      cookies: { '__Host-cairn_session': 'sid' },
+    });
+    await expectRedirect(admin.actions.logout(event as never), '/admin/login');
+  });
 });
 
 describe('auth actions', () => {

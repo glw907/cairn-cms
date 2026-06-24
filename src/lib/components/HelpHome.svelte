@@ -95,7 +95,7 @@ The content is one calm column: a masthead, then three co-equal eyebrow-plus-dis
   }
 </script>
 
-<main class="cairn-help-content">
+<div class="cairn-help-content">
   <div class="help-col">
     <!-- masthead: a real-sentence h1, the page's single display beat -->
     <div class="page-head">
@@ -335,7 +335,7 @@ The content is one calm column: a masthead, then three co-equal eyebrow-plus-dis
       </div>
     </section>
   </div>
-</main>
+</div>
 
 <style>
   /* The Help home content column. The styles consume the Warm Stone tokens the AdminLayout theme
@@ -524,13 +524,14 @@ The content is one calm column: a masthead, then three co-equal eyebrow-plus-dis
     border-radius: 0.75rem;
     background: var(--color-base-100);
   }
-  /* the unchecked ring is content-42% (~3:1 on base-100), perceivable on its own (WCAG 1.4.11) */
+  /* the unchecked ring is content-55% (about 3:1 on base-100), a control state perceivable on its
+     own (WCAG 1.4.11), and kept a thin ring rather than a filled box so it never reads as checked */
   .step-box {
     flex: none;
     height: 24px;
     width: 24px;
     border-radius: 7px;
-    border: 2px solid color-mix(in oklab, var(--color-base-content) 42%, transparent);
+    border: 2px solid color-mix(in oklab, var(--color-base-content) 55%, transparent);
     background: var(--color-base-100);
     display: inline-flex;
     align-items: center;

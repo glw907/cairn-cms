@@ -90,6 +90,11 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
 
   let { data, registry, render, icons, form }: Props = $props();
 
+  /** One action row in an advisory notice: an `href` row renders a link, an `onAct` row a button. */
+  type AdvisoryRow = { rowLabel?: string; rowCode?: boolean; label: string; href?: string; onAct?: () => void };
+  /** A notice ready to render: the server advisory and the client needs-alt notice both map to this. */
+  type RenderNotice = { kind: string; message: string; detail?: string; count?: number; rows: AdvisoryRow[] };
+
   // The client-side tidy deadline (spec 2.1, Task 14): a slow call becomes a cancel/retry rather than a
   // hung review. Set above the action's own 30s Worker deadline so the server's retryable fail lands
   // first when the model is merely slow; this catches a stalled connection past that.
@@ -975,6 +980,43 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   const heroRows = $derived(imageFields.filter((f) => heroNeedsAlt[f.name]));
   const needsAltCount = $derived(needsAlt.length + heroRows.length);
 
+  // The advisory region renders two notice sources through one shape: the server's data-only
+  // advisories (an action carries an href) and the client-derived needs-alt notice (its rows carry
+  // callbacks the editor must run, so they cannot ride the serializable server shape). Both map into
+  // this local render type, where the snippet draws an href row as a link and an onAct row as a button.
+  const renderNotices = $derived<RenderNotice[]>([
+    ...data.advisories.map((notice) => ({
+      kind: notice.kind,
+      message: notice.message,
+      count: notice.count,
+      rows: (notice.actions ?? []).map((action) => ({ label: action.label, href: action.href })),
+    })),
+    ...(needsAltCount
+      ? [
+          {
+            kind: 'needs-alt',
+            message: `${needsAltCount} ${needsAltCount === 1 ? 'image needs' : 'images need'} alt text`,
+            detail:
+              'Alt text describes an image for readers who cannot see it. Add it now, or save and come back to it.',
+            count: needsAltCount,
+            rows: [
+              ...needsAlt.map((item) => ({
+                rowLabel: item.ref,
+                rowCode: true,
+                label: 'Add alt text',
+                onAct: () => selectRange(item.from, item.to),
+              })),
+              ...heroRows.map((hero) => ({
+                rowLabel: hero.label,
+                label: 'Add alt text',
+                onAct: () => heroFieldRefs[hero.name]?.focusAlt(),
+              })),
+            ],
+          },
+        ]
+      : []),
+  ]);
+
   // The delete guard's inbound linkers, from a refused delete (fail 409). Empty when the delete was
   // not refused. When set, a delete was blocked by a link that appeared since the page loaded.
   const deleteRefusedLinks = $derived(form?.inboundLinks ?? []);
@@ -1402,44 +1444,59 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     </ul>
   </div>
 {/if}
-<!-- The publish-time needs-alt notice: a non-blocking warning, never a block. Alt text is
-     accessibility debt, so the author can add it now or save without it; the count drops live as
-     each alt is filled and the notice clears at zero. The leading glyph carries the state alongside
-     the count, so the caution reads without relying on hue. Each row's jump control selects the
-     image in the source through the editor's select-range seam, landing the author on it to type
-     the alt. The role="status" live region renders unconditionally (present and empty at load), so
-     when the first debt appears its count change announces; a region conditionally mounted with its
-     first content may not be observed by assistive tech (WCAG 4.1.3). The visible alert chrome and
-     content gate on the count, so an empty region shows nothing. A plain wrapper (not display:contents)
-     carries the role, since some assistive tech drops a role off a display:contents box. -->
-<div role="status">
-  {#if needsAltCount}
+<!-- The shared advisory region: one live-region surface for every non-blocking editor warning. It
+     carries the server's address-collision advisory and the client-derived needs-alt notice through
+     one snippet. Each is a warning, never a block: the author can act on it or save without it. The
+     leading glyph carries the state alongside the message, so the caution reads without relying on
+     hue. A needs-alt row's jump runs an editor callback (selecting the image source, or focusing a
+     hero alt input); a server advisory's row is a link. The role="status" live region renders
+     unconditionally (present and empty at load), so when the first notice appears it announces; a
+     region conditionally mounted with its first content may not be observed by assistive tech (WCAG
+     4.1.3). The notices gate on their own presence, so an empty region shows nothing. A plain wrapper
+     (not display:contents) carries the role, since some assistive tech drops a role off a
+     display:contents box. -->
+<!-- The shared advisory notices: each renders as one alert-warning row carrying the caution glyph,
+     the message, the optional detail sentence, and a list of action rows. A row with an href is a
+     server advisory's link; a row with onAct is the needs-alt jump that runs an editor callback. -->
+{#snippet advisoryNotices(notices: RenderNotice[])}
+  {#each notices as notice (notice.kind)}
     <div class="alert alert-warning mb-4 flex-col items-start text-sm">
       <p class="flex items-center gap-2 font-medium">
         <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
         </svg>
-        <span>{needsAltCount} {needsAltCount === 1 ? 'image needs' : 'images need'} alt text</span>
+        <span>{notice.message}</span>
       </p>
-      <p>Alt text describes an image for readers who cannot see it. Add it now, or save and come back to it.</p>
-      <ul class="mt-1 w-full">
-        {#each needsAlt as item (item.from)}
-          <li class="flex items-center justify-between gap-2">
-            <code class="text-xs">{item.ref}</code>
-            <button type="button" class="btn btn-xs" onclick={() => selectRange(item.from, item.to)}>Add alt text</button>
-          </li>
-        {/each}
-        <!-- The frontmatter-hero rows: a hero has no body offset, so its action focuses the field's
-             own alt input rather than a source range. -->
-        {#each heroRows as hero (hero.name)}
-          <li class="flex items-center justify-between gap-2">
-            <span class="text-xs font-medium">{hero.label}</span>
-            <button type="button" class="btn btn-xs" onclick={() => heroFieldRefs[hero.name]?.focusAlt()}>Add alt text</button>
-          </li>
-        {/each}
-      </ul>
+      {#if notice.detail}
+        <p>{notice.detail}</p>
+      {/if}
+      {#if notice.rows.length}
+        <ul class="mt-1 w-full">
+          {#each notice.rows as row, i (i)}
+            <li class="flex items-center justify-between gap-2">
+              {#if row.rowLabel}
+                <!-- A body needs-alt row labels with its source reference in a code span; a hero row
+                     and any future labelled row use a plain label. -->
+                {#if row.rowCode}
+                  <code class="text-xs">{row.rowLabel}</code>
+                {:else}
+                  <span class="text-xs font-medium">{row.rowLabel}</span>
+                {/if}
+              {/if}
+              {#if row.href}
+                <a class="btn btn-xs" href={row.href}>{row.label}</a>
+              {:else}
+                <button type="button" class="btn btn-xs" onclick={row.onAct}>{row.label}</button>
+              {/if}
+            </li>
+          {/each}
+        </ul>
+      {/if}
     </div>
-  {/if}
+  {/each}
+{/snippet}
+<div role="status">
+  {@render advisoryNotices(renderNotices)}
 </div>
 {#if draftWarning}
   <div class="alert alert-warning mb-4 text-sm">

@@ -15,6 +15,7 @@ const data = {
   conceptId: 'posts', id: 'hello', label: 'Post', fields: [], frontmatter: {}, body: 'Start.',
   title: 'Hello', isNew: false, saved: false, error: null, linkTargets: [], mediaTargets: {}, mediaLibrary: {}, inboundLinks: [], siteName: 'Demo',
   tidy: { enabled: false, model: 'claude-sonnet-4-6', conventions: { fixes: true, enDashRanges: false, smartQuotes: false, brandCaps: false } },
+  advisories: [],
 };
 
 describe('EditPage guided insert', () => {

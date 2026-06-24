@@ -225,6 +225,7 @@ export const actions = {
 ```ts
 declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutesDeps): {
   layoutLoad: (event: ContentEvent) => Promise<LayoutData>;
+  helpLoad: (event: ContentEvent) => Promise<HelpData>;
   indexRedirect: () => never;
   listLoad: (event: ContentEvent) => Promise<ListData>;
   mediaLibraryLoad: (event: ContentEvent) => Promise<MediaLibraryData>;

@@ -148,9 +148,13 @@ const COPY_ATTRS = ['placeholder', 'aria-label', 'title', 'alt'];
  */
 function extractCopy(src) {
   const stripped = src
+    // Comments come out first. A doc comment that writes the literal `<style>` or `<script>` (the
+    // `@component` block routinely does) would otherwise anchor the block strips below: the
+    // non-greedy `<style[\s\S]*?</style>` would run from that mention to the real closing tag and
+    // swallow the whole markup body, silently voiding the file's prose coverage.
+    .replace(/<!--[\s\S]*?-->/g, '')
     .replace(/<script[\s\S]*?<\/script>/gi, '')
     .replace(/<style[\s\S]*?<\/style>/gi, '')
-    .replace(/<!--[\s\S]*?-->/g, '')
     .replace(/\{[^{}]*\}/g, ' '); // drop mustache interpolations, keeping surrounding text
 
   const found = [];

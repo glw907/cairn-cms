@@ -11,7 +11,50 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-23, latest): Pass 2 (the Help home) MERGED to `main` (`0.62.0`, held); Pass 3 (advisory validation) is DESIGNED and PLANNED; next is to execute the Pass 3 plan
+## Immediate next action (2026-06-24, latest): Pass 3 (advisory validation) COMPLETE on its worktree (`0.62.1`, held, unmerged); next is Geoff's call on the combined release and which track follows
+
+**Pass 3 of the editor-help initiative, advisory validation, is COMPLETE** on
+`feat/editor-help-advisory-validation` (seven commits `15604d0` through the STATUS/post-mortem commit),
+versioned `0.62.1` (a patch: it refines the existing `EditData` editor surface and adds one advisory, no
+new subsystem). It is UNMERGED, UNRELEASED, and UNPUSHED, held for the combined release.
+
+All four tasks landed test-first (one `cairn-implementer` per task, the main loop reviewing each diff and
+verifying the gate): the `content/advisories.ts` notice shape plus the cross-branch `buildAddressIndex`
+and `addressCollision`; `EditData.advisories` plus the edit-load `address-collision` notice (with the new
+`AdvisoryNotice`/`AdvisoryAction` exports on `/sveltekit`); the publish re-check plus the
+`publish.address_collision` log event; and the unified `EditPage` advisory region carrying both the new
+notice and the existing needs-alt (regression-pinned). The check runs at edit-load across `main` plus
+every open `cairn/*` branch and re-checks at publish; it is warn-and-allow, last-write-wins, fail-open.
+
+**Gate green at the tip (first-hand from the worktree):** `npm run check` 1146 files 0/0; `npm test` 223
+files / 2462 tests exit 0; `check:reference`, `check:package`, `check:docs`, `check:version` (`OK (patch)`)
+all exit 0. The from-scratch consumer build passed (fresh showcase `npm install` plus `npm run build`),
+proving the new dist `EditPage.svelte` typed snippet on the Vite 8 / Rolldown toolchain. The
+code-simplifier dropped the dead `count` field. All four reviewers ran: web-auth-security and daisyui-a11y
+clean/ship-ready, svelte's one Medium (the `notice.kind` each-key) folded in as index keying, and
+cloudflare's one Low (a `github.unreachable` log on the publish re-check catch) folded in.
+
+**Carry-forward from the cloudflare review (MEDIUM-HIGH, a follow-up not a blocker):** `buildAddressIndex`
+now runs a full cross-branch fan-out on every editor open, not just the Media Library load. The cost
+matches the already-shipping usage-index pattern and fails open. The cheapest fix that keeps the locked
+behavior is to gate edit-load on the cheap main-arm check first (zero extra reads, catches the
+published-collision case) and defer the full fan-out to the publish re-check; the alternative is to
+parallelize the fan-out into the edit-load stage-1 batch and add the `branches?` reuse option. This
+touches the spec's full-cross-branch-at-edit-load rule, so it is a deliberate next decision. Logged in the
+friction log and the plan post-mortem.
+
+**NEXT (Geoff's calls):** merge `feat/editor-help-advisory-validation` to `main` (fast-forward, keeping
+per-task history, the way `0.61.0` and `0.62.0` landed), then roll `0.62.1` into the combined release with
+the held `0.61.0`, `0.62.0`, and `0.60.1` site-cutover work: push `main` and cut the GitHub release (the
+changelog window since the last published tag; the release fires the OIDC trusted-publishing workflow).
+Add the upgrade-guide entries for the held additive passes (0.61.0, 0.62.0, 0.62.1) at that release. The
+canonical live admin smoke (a real Worker plus D1, a colliding entry on a sibling branch showing the
+advisory) rides the first site cutover; the showcase has no D1 Worker. Other open tracks: the per-site
+cutover, the `create-cairn-site` scaffolder, media Pass D, and the editor-help fan-out optimization above.
+
+---
+
+## Prior next action (2026-06-23): Pass 2 (the Help home) MERGED to `main` (`0.62.0`, held); Pass 3 (advisory validation) is DESIGNED and PLANNED; next is to execute the Pass 3 plan
 
 **Pass 2 of the editor-help initiative, the Help home, is COMPLETE and MERGED to `main`** (fast-forwarded
 to `ae6fb33` on 2026-06-23, keeping the per-task history; the `feat/editor-help-home` branch and its

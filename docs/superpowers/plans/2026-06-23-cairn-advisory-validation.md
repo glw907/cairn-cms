@@ -453,3 +453,85 @@ the resolved advisory-channel and now-visible-last-write-wins entries to
   (Task 2) is read by `EditPage` (Task 4), which maps it to the local `RenderNotice`. The collision result
   `AddressEntry` carries `concept`/`id`/`title`/`source`, the fields every consumer reads. The event name
   `publish.address_collision` matches across the union, the emit, and the reference table.
+
+---
+
+## Post-mortem (2026-06-24)
+
+**Status: COMPLETE on `feat/editor-help-advisory-validation`, versioned `0.62.1` (patch), held and
+unmerged.** Built test-first, one `cairn-implementer` per task, the main loop reviewing each diff and
+clearing the full gate between dispatches.
+
+**What was built.** The four tasks landed as planned:
+
+- `content/advisories.ts` (`15604d0`): the serializable `AdvisoryNotice`/`AdvisoryAction` shape, the
+  `AddressEntry`/`AddressIndex` types, the `buildAddressIndex` cross-branch builder (a faithful copy of
+  `buildUsageIndex`'s main-arm-plus-branch-arm shape, fail-open per branch), and the pure
+  `addressCollision` predicate. Six unit tests.
+- `EditData.advisories` and the edit-load notice (`affa263`): `editLoad` resolves the edited entry's
+  address with `entryIdentity`, builds the index from the manifest it already parsed, and returns one
+  `address-collision` notice on a hit. The build sits in a fail-open `try` that logs `github.unreachable`
+  and degrades to `[]`. `AdvisoryNotice`/`AdvisoryAction` re-exported on `/sveltekit` and documented.
+- The publish re-check (`2ed1bf4`): `publishAction` re-resolves the address, looks it up, and emits
+  `publish.address_collision` (warn) only after a successful publish. The read never gates: a thrown
+  index build degrades to no event. The event joined the `CairnLogEvent` union and the reference table.
+- The unified EditPage region (`96465d3`): one `{#snippet advisoryNotices}` inside the unconditional
+  `<div role="status">` renders both the server notice and the client needs-alt notice. needs-alt keeps
+  its live count, its `selectRange` body jumps, and its `focusAlt` hero rows, pinned by the existing
+  `EditPage.test.ts` needs-alt suite (174 component tests green) plus a new `edit-page-advisories.test.ts`.
+
+**Decisions held from the spec.** Warn-and-allow, last-write-wins, fail-open, a specific internal channel
+(no adapter seam), the check at edit-load across `main` plus every open `cairn/*` branch with a publish
+re-check, and the full needs-alt unification. A patch bump: this refines the existing `EditData` editor
+surface and adds one advisory, no new subsystem.
+
+**Note on where the collision fires.** `entryIdentity` derives the slug from the id, so two entries
+collide only when their resolved permalinks match. For a dated concept (posts) this is the natural case:
+`2026-01-01-hello` and `2026-02-02-hello` both resolve to `/news/hello`, so a new post reusing an older
+post's slug-body collides. For an undated concept (pages) a natural collision needs two entries with the
+same id, which cannot both exist, so the pages tests model the collision with a manifest-pinned address.
+The predicate is the same either way; Task 1's unit tests pin the dated case at the predicate level.
+
+**Simplifier.** Removed the dead `count` field from both the public `AdvisoryNotice` and the local
+`RenderNotice` (needs-alt embeds its count in the message; nothing read the field), and relocated the
+WCAG live-region rationale to sit with the `<div role="status">` it governs (`6766f0a`).
+
+**Review gate.** All four reviewers ran in parallel.
+- **web-auth-security: no findings.** The publish path's trust model is unchanged (guards first,
+  advisory-only, fail-open, no half-committed state reachable); no token or session id reaches any log;
+  the advisory's author-controlled `title` rides Svelte text interpolation, so no stored-XSS vector.
+- **daisyui-a11y: ship-ready.** The needs-alt behavior is accessibility-equivalent, the live region
+  renders unconditionally (WCAG 4.1.3), warning state is conveyed by text plus an `aria-hidden` glyph
+  (1.4.1), and the DaisyUI 5 / Tailwind 4 markup is correct. Two optional pre-existing Lows.
+- **svelte: one Medium, folded in.** The outer advisory `{#each}` keyed by `notice.kind` (a free string
+  with no uniqueness constraint) is now keyed by index (`52e04b5`).
+- **cloudflare-workers: one Low folded in, the High and Medium carried forward.** Folded: a
+  `github.unreachable` log on the publish re-check's catch, matching editLoad (`52e04b5`). Carried
+  forward (see below): the edit-load cross-branch fan-out cost and the missing `branches?` reuse option.
+
+**Verification evidence (first-hand from the worktree at the tip).**
+- `npm run check`: 1146 files, 0 errors, 0 warnings.
+- `npm test`: 223 files / 2462 tests, exit 0 (PIPESTATUS).
+- `check:reference`, `check:package`, `check:docs`, `check:version` (`OK (patch)`): all exit 0.
+- The from-scratch consumer build passed: a fresh showcase `npm install` plus `npm run build` (exit 0)
+  built the new dist `EditPage.svelte` typed snippet on the Vite 8 / Rolldown toolchain. The committed
+  showcase lockfile was restored after.
+
+**Carry-forwards.**
+- **Live admin smoke** (a real Worker plus D1, a colliding entry on a sibling branch showing the
+  advisory at `/admin/<concept>/<id>`) rides the first site cutover; the showcase has no D1 Worker.
+- **The edit-load cross-branch fan-out cost** (cloudflare review, MEDIUM-HIGH): `buildAddressIndex` now
+  lists branches and reads one file per open `cairn/*` branch on every editor open, not just the Media
+  Library load. The cost matches the already-shipping usage-index pattern and fails open, so it is a
+  follow-up, not a blocker. The cheapest fix that keeps the locked behavior is to gate edit-load on the
+  main-arm check first (zero extra reads, catches the published-collision case, the common and important
+  one) and defer the full cross-branch fan-out to the publish re-check; the alternative is to parallelize
+  the fan-out into the edit-load stage-1 batch and add the `branches?` reuse option `buildUsageIndex`
+  carries. This touches the spec's full-cross-branch-at-edit-load rule, so it is a deliberate next
+  decision, not a hurried fold-in on a held pass. Logged in the friction log.
+- **Deferred per the spec:** a general per-field advisory adapter seam, live client-side recomputation of
+  the collision as the author retypes the slug, and the later editor-help slices.
+
+**Release.** `0.62.1` rolls into the combined release with the held `0.61.0`, `0.62.0`, and `0.60.1`
+site-cutover work. Add the upgrade-guide entries for the held additive passes (0.61.0, 0.62.0, 0.62.1) at
+that release.

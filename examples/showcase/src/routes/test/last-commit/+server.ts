@@ -3,7 +3,7 @@
 // in a real deploy. The E2E hits this to assert the editor is the commit author and the
 // committer is absent.
 import { json, error } from '@sveltejs/kit';
-import { lastRecordedCommit } from '$lib/fake-github.js';
+import { lastRecordedCommit } from '@glw907/cairn-cms-dev';
 
 export function GET() {
   if (process.env.SHOWCASE_FAKE_BACKEND !== '1') {

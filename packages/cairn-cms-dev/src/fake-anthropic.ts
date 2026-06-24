@@ -7,7 +7,7 @@
 // the prompt and returns a Message-shaped object. The action reads the user message's text, so the
 // stub keys its reply off that text rather than the prompt.
 import type { ContentRoutesDeps } from '@glw907/cairn-cms/sveltekit';
-import { SEED_EDITOR } from '$lib/fake-github.js';
+import { SEED_EDITOR } from './fake-github.js';
 
 /** Build the fake client factory the showcase passes to createCairnAdmin's `anthropic` dep. The
  *  factory ignores the key (it never calls the network) and returns one client per tidy request. */

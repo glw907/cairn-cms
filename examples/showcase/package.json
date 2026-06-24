@@ -14,6 +14,7 @@
     "@glw907/cairn-cms": "file:../.."
   },
   "devDependencies": {
+    "@glw907/cairn-cms-dev": "file:../../packages/cairn-cms-dev",
     "@playwright/test": "^1.60.0",
     "@sveltejs/adapter-node": "^5",
     "@sveltejs/kit": "^2",

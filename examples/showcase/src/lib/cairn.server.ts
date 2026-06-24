@@ -4,7 +4,7 @@
 import { composeRuntime } from '@glw907/cairn-cms';
 import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
 import { cairn, siteConfig } from '$lib/cairn.config.js';
-import { createFakeAnthropic } from '$lib/fake-anthropic.js';
+import { createFakeAnthropic } from '@glw907/cairn-cms-dev';
 
 export const runtime = composeRuntime({ adapter: cairn, siteConfig });
 

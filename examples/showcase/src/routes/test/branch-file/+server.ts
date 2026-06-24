@@ -3,7 +3,7 @@
 // has no surface in a real deploy. The media-slice E2E reads the `media.json` committed alongside
 // the body (the last-commit recorder captures only the `.md` entry).
 import { json, error } from '@sveltejs/kit';
-import { committedFile } from '$lib/fake-github.js';
+import { committedFile } from '@glw907/cairn-cms-dev';
 
 export function GET({ url }) {
   if (process.env.SHOWCASE_FAKE_BACKEND !== '1') {

@@ -10,6 +10,7 @@ import rehypeSanitize from 'rehype-sanitize';
 import type { Schema } from 'hast-util-sanitize';
 import { VFile } from 'vfile';
 import { buildSanitizeSchema, rehypeAnchorRel, rehypeSinkGuard } from './sanitize-schema.js';
+import { rehypeCairnHighlight } from './highlight.js';
 import { remarkDirectiveStamp } from './remark-directives.js';
 import { remarkFigure } from './remark-figure.js';
 import { remarkResolveCairnLinks, CAIRN_RESOLVE } from './resolve-links.js';
@@ -74,6 +75,12 @@ export function createRenderer(
     ...floor,
     [rehypeDispatch, registry, options.stagger],
     rehypeSlug,
+    // Build-time syntax highlighting. It emits class-only output (the cairn-tok-* ramp, no inline
+    // style), so it is class-driven like the rest of the pipeline and needs no special placement
+    // relative to the sanitize floor or the sink guard: the token classes survive the floor because
+    // `className` is already allowed on `*`. It runs unconditionally (a code fence is content, not a
+    // sink) and ships no client highlighter (Shiki is build-only behind a dynamic import).
+    rehypeCairnHighlight,
   ];
   if (rel !== false) rehypePlugins.push([rehypeAnchorRel, rel]);
   // The sink guard runs last, over the fully-built tree, so it neutralizes a sink a component

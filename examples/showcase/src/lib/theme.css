@@ -167,8 +167,9 @@
   /* The single owl-selector rhythm variable; headings, figures, and pre override it locally. */
   --flow-space: 1.35em;
 
-  /* The code-block ramp. Each token reads a role, so a re-skin recolors code with no edit; the
-     engine's build-time highlighter (Task 3) emits exactly these variable names. */
+  /* The code-block ramp. Each token reads a role, so a re-skin recolors code with no edit. The
+     engine's build-time highlighter emits the .cairn-tok-* token classes (a fixed contract it
+     owns); the @layer components rules below bind each class to one of these role variables. */
   --cairn-code-bg: var(--color-base-200);
   --cairn-code-border: var(--color-base-300);
   --cairn-code-ink: var(--color-base-content);
@@ -222,5 +223,36 @@
     --cairn-cta-border: var(--color-base-300);
     --cairn-cta-btn-bg: var(--color-primary);
     --cairn-cta-btn-content: var(--color-primary-content);
+  }
+}
+
+@layer components {
+  /* The engine's build-time highlighter owns the .cairn-tok-* class contract (the engine names the
+     classes; the site colors them). Each rule binds one token class to a --cairn-code-* role
+     variable, so the syntax palette re-skins with the rest of the theme and no value is hard-coded.
+     The pre.shiki surround reads the same ramp. Task 5 refines the prose code-block treatment;
+     these rules make the highlighted tokens resolve to colors today. */
+  pre.shiki {
+    background-color: var(--cairn-code-bg);
+    color: var(--cairn-code-ink);
+    border: 1px solid var(--cairn-code-border);
+  }
+  .cairn-tok-keyword {
+    color: var(--cairn-code-keyword);
+  }
+  .cairn-tok-string {
+    color: var(--cairn-code-string);
+  }
+  .cairn-tok-comment {
+    color: var(--cairn-code-comment);
+  }
+  .cairn-tok-function {
+    color: var(--cairn-code-function);
+  }
+  .cairn-tok-number {
+    color: var(--cairn-code-number);
+  }
+  .cairn-tok-punct {
+    color: var(--cairn-code-punct);
   }
 }

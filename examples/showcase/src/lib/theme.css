@@ -1,7 +1,226 @@
-/* The public theme entry: Tailwind 4 + DaisyUI 5 + the cairn public token layer. This is the file a
-   scaffolded site owner edits to re-skin (Task 2 fills the @plugin block and the cairn tokens). It is
-   linked by the (site) layout and by the editor preview config, so the reader and the author see the
-   same surface. */
+/* ============================================================================
+   cairn public theme — the one file a site owner edits to re-skin.
+
+   RE-SKIN RECIPE (the committed N). The whole surface, chrome and article alike,
+   reads the role tokens in the two theme blocks below, so editing them re-skins
+   everything. The prose reading surface is included at zero extra edits.
+
+     1. The brand accent: edit `--color-primary` (and its dark sibling). To stay
+        contrast-stable, ROTATE THE HUE only — change the third oklch value (the
+        248 here) and hold the lightness and chroma. `--color-primary-content`
+        (the text on the accent) keeps its light/dark value.
+     2. The paper and ink: `--color-base-100` (paper) and `--color-base-content`
+        (ink), plus the `-200`/`-300` steps, light and dark.
+     3. Secondary, accent, neutral, and the four status hues follow the same
+        pattern if you want them on-brand; most owners leave them.
+     4. The faces: swap `--font-display` and `--font-body` in the :root block.
+     5. Optional fine-tuning: the one type ratio lives in the `--cairn-step-*`
+        clamps; the one space-scale step in `--cairn-space-*`.
+
+   About fourteen role values cover a full re-brand. Every prose element, the
+   code highlighter, the chrome, and the components recolor from that one set,
+   because none of them hard-codes a colour; they all read these tokens. The CI
+   contrast gate (`check:public-tokens`) proves the re-skinned theme still clears
+   AA in both sRGB and P3.
+
+   This file is linked by the (site) layout and by the editor preview config, so
+   the reader and the author see the same surface. The token grammar matches the
+   admin's Warm Stone system (`src/lib/components/cairn-admin.css`); only the
+   palette differs.
+   ============================================================================ */
 @import 'tailwindcss';
-@plugin 'daisyui';
-/* The @plugin "daisyui/theme" { ... } oklch block and the cairn type/space/measure tokens land in Task 2. */
+/* themes: false drops DaisyUI's built-in light/dark themes so they do not claim :root; the two
+   cairn themes below are the only ones, exactly as the admin sheet runs only its own. */
+@plugin "daisyui" {
+  themes: false;
+}
+
+/* The light theme (default). DaisyUI 5 reads these role tokens at point of use,
+   so every `bg-base-100` / `text-primary` utility and every component tracks them. */
+@plugin "daisyui/theme" {
+  name: "cairn";
+  default: true;
+  prefersdark: false;
+  color-scheme: light;
+
+  /* warm-stone paper under warm slate ink (warm-balanced, never cream) */
+  --color-base-100: oklch(98.4% 0.0035 80);
+  --color-base-200: oklch(96.4% 0.005 80);
+  --color-base-300: oklch(90.8% 0.006 78);
+  --color-base-content: oklch(25% 0.014 70);
+  /* the one brand accent: a deep, confident ink-blue. Re-skin by rotating the hue. */
+  --color-primary: oklch(45% 0.1 248);
+  --color-primary-content: oklch(99% 0.01 248);
+  --color-secondary: oklch(50% 0.02 75);
+  --color-secondary-content: oklch(99% 0.005 75);
+  --color-accent: oklch(52% 0.07 235);
+  --color-accent-content: oklch(99% 0.01 235);
+  /* the warm near-black used for the inverted CTA house-ad in light mode */
+  --color-neutral: oklch(27% 0.013 72);
+  --color-neutral-content: oklch(97% 0.003 75);
+  /* status fills (dark-enough for near-white content, except warning which takes dark ink) */
+  --color-info: oklch(62% 0.1 235);
+  --color-info-content: oklch(99% 0.01 235);
+  --color-success: oklch(60% 0.12 150);
+  --color-success-content: oklch(99% 0.01 150);
+  --color-warning: oklch(80% 0.13 78);
+  --color-warning-content: oklch(28% 0.05 78);
+  --color-error: oklch(58% 0.19 27);
+  --color-error-content: oklch(99% 0.01 27);
+
+  /* modest, stone-grade geometry (not zero broadsheet, not bubbly); depth/noise off by default */
+  --radius-selector: 0.28rem;
+  --radius-field: 0.4rem;
+  --radius-box: 0.625rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+/* The dark sibling, applied automatically under prefers-color-scheme: dark. Same hues, warm
+   throughout (a warm dark stone, not a cool one), so light and dark read as one theme. Status
+   fills lift to a lighter tone and take dark content, the admin's dark convention. */
+@plugin "daisyui/theme" {
+  name: "cairn-dark";
+  default: false;
+  prefersdark: true;
+  color-scheme: dark;
+
+  --color-base-100: oklch(24% 0.01 78);
+  --color-base-200: oklch(20% 0.01 78);
+  --color-base-300: oklch(32% 0.012 78);
+  --color-base-content: oklch(92% 0.007 80);
+  --color-primary: oklch(74% 0.1 248);
+  --color-primary-content: oklch(22% 0.03 248);
+  --color-secondary: oklch(72% 0.02 75);
+  --color-secondary-content: oklch(22% 0.01 75);
+  --color-accent: oklch(76% 0.08 235);
+  --color-accent-content: oklch(22% 0.03 235);
+  --color-neutral: oklch(86% 0.006 75);
+  --color-neutral-content: oklch(22% 0.01 75);
+  --color-info: oklch(70% 0.1 235);
+  --color-info-content: oklch(24% 0.04 235);
+  --color-success: oklch(66% 0.12 150);
+  --color-success-content: oklch(24% 0.04 150);
+  --color-warning: oklch(82% 0.13 78);
+  --color-warning-content: oklch(25% 0.05 78);
+  --color-error: oklch(66% 0.17 27);
+  --color-error-content: oklch(24% 0.05 27);
+
+  --radius-selector: 0.28rem;
+  --radius-field: 0.4rem;
+  --radius-box: 0.625rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+/* ----------------------------------------------------------------------------
+   The cairn-authored token layer. DaisyUI's theme blocks above hold only the
+   role and geometry tokens; these custom properties add what DaisyUI does not
+   cover and the field leaves generic: the editorial type scale, the fluid space
+   scale, the reading measure, the prose rhythm, and the code ramp. They read the
+   DaisyUI roles where relevant, so a re-skin of the roles carries them too.
+
+   Constant tokens and the LIGHT on-surface inks sit on :root; the DARK siblings
+   sit under the same prefers-color-scheme query DaisyUI uses for `cairn-dark`, so
+   the inks switch in lockstep with the roles. (A manual dark toggle in a later
+   pass adds a [data-theme] scope for these.)
+   ---------------------------------------------------------------------------- */
+:root {
+  /* The editorial pairing. Self-hosted in the chrome task; system fallbacks hold until then. */
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-body: 'Source Sans 3', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Source Code Pro', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Fluid type scale, Utopia-style; about a 1.24 ratio, clamp() so display scales while body holds. */
+  --cairn-step--1: clamp(0.84rem, 0.81rem + 0.14vw, 0.92rem);  /* caption, meta */
+  --cairn-step-0: clamp(1.06rem, 1.01rem + 0.27vw, 1.22rem);   /* body, 17 to 19.5px */
+  --cairn-step-1: clamp(1.27rem, 1.19rem + 0.43vw, 1.53rem);   /* lead, h4 */
+  --cairn-step-2: clamp(1.52rem, 1.39rem + 0.66vw, 1.91rem);   /* h3, index title */
+  --cairn-step-3: clamp(1.83rem, 1.63rem + 1vw, 2.39rem);      /* h2 */
+  --cairn-step-4: clamp(2.19rem, 1.9rem + 1.45vw, 2.98rem);    /* section display, stat */
+  --cairn-step-5: clamp(2.3rem, 1.82rem + 2.1vw, 3.6rem);      /* h1, masthead */
+  --cairn-leading-body: 1.65;
+  --cairn-leading-snug: 1.4;
+  --cairn-leading-tight: 1.12;
+  --cairn-tracking-tight: -0.011em;
+  --cairn-tracking-eyebrow: 0.12em;
+
+  /* The reading measure, about 66ch; structural, so figures and pull-quotes break past it. */
+  --cairn-measure: 44rem;
+  --cairn-measure-wide: 58rem;
+
+  /* Fluid space scale (Utopia 3xs to 2xl). */
+  --cairn-space-3xs: clamp(0.31rem, 0.3rem + 0.05vw, 0.34rem);
+  --cairn-space-2xs: clamp(0.5rem, 0.48rem + 0.11vw, 0.56rem);
+  --cairn-space-xs: clamp(0.75rem, 0.72rem + 0.16vw, 0.84rem);
+  --cairn-space-s: clamp(1rem, 0.96rem + 0.22vw, 1.13rem);
+  --cairn-space-m: clamp(1.5rem, 1.43rem + 0.33vw, 1.69rem);
+  --cairn-space-l: clamp(2rem, 1.91rem + 0.43vw, 2.25rem);
+  --cairn-space-xl: clamp(3rem, 2.83rem + 0.87vw, 3.5rem);
+  --cairn-space-2xl: clamp(4rem, 3.74rem + 1.3vw, 4.75rem);
+  /* The single owl-selector rhythm variable; headings, figures, and pre override it locally. */
+  --flow-space: 1.35em;
+
+  /* The code-block ramp. Each token reads a role, so a re-skin recolors code with no edit; the
+     engine's build-time highlighter (Task 3) emits exactly these variable names. */
+  --cairn-code-bg: var(--color-base-200);
+  --cairn-code-border: var(--color-base-300);
+  --cairn-code-ink: var(--color-base-content);
+  --cairn-code-comment: var(--cairn-muted);
+  --cairn-code-keyword: var(--color-primary);
+  --cairn-code-string: var(--cairn-success-ink);
+  --cairn-code-function: var(--cairn-info-ink);
+  --cairn-code-number: var(--cairn-warning-ink);
+  --cairn-code-punct: var(--cairn-muted);
+
+  /* On-surface inks (light). A fill tone fails as small text, the admin's lesson, so the muted
+     text and each status word read a darker ink than the matching `-content` fill pair. */
+  --cairn-muted: oklch(46% 0.013 72);
+  --cairn-success-ink: oklch(45% 0.1 150);
+  --cairn-warning-ink: oklch(52% 0.11 70);
+  --cairn-error-ink: oklch(50% 0.17 27);
+  --cairn-info-ink: oklch(48% 0.1 235);
+
+  /* Elevation (light): a near-invisible hairline plus a soft shadow carry a floating card. */
+  --cairn-card-border: color-mix(in oklab, var(--color-base-content) 9%, transparent);
+  --cairn-shadow: 0 1px 2px color-mix(in oklab, var(--color-base-content) 6%, transparent),
+    0 6px 20px -8px color-mix(in oklab, var(--color-base-content) 12%, transparent);
+
+  /* The CTA panel pair. It never reads `--color-neutral` directly, which inverts to a light value
+     in dark mode. Light: the warm near-black house-ad with a paper button. */
+  --cairn-cta-bg: var(--color-neutral);
+  --cairn-cta-content: var(--color-neutral-content);
+  --cairn-cta-border: transparent;
+  --cairn-cta-btn-bg: var(--color-base-100);
+  --cairn-cta-btn-content: var(--color-base-content);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* On-surface inks (dark) lift with the surface, keeping AA on the dark bases. */
+    --cairn-muted: oklch(70% 0.012 76);
+    --cairn-success-ink: oklch(78% 0.11 150);
+    --cairn-warning-ink: oklch(82% 0.12 76);
+    --cairn-error-ink: oklch(76% 0.14 27);
+    --cairn-info-ink: oklch(80% 0.1 235);
+
+    /* Elevation (dark): a defined border carries the card since a shadow barely shows. */
+    --cairn-card-border: color-mix(in oklab, var(--color-base-content) 16%, transparent);
+    --cairn-shadow: 0 1px 2px color-mix(in oklab, black 40%, transparent),
+      0 8px 24px -10px color-mix(in oklab, black 55%, transparent);
+
+    /* The CTA inverts intentionally: a recessed bordered panel with a solid primary button, so it
+       never becomes the brightest slab on a dark page. */
+    --cairn-cta-bg: var(--color-base-200);
+    --cairn-cta-content: var(--color-base-content);
+    --cairn-cta-border: var(--color-base-300);
+    --cairn-cta-btn-bg: var(--color-primary);
+    --cairn-cta-btn-content: var(--color-primary-content);
+  }
+}

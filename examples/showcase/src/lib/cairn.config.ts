@@ -4,13 +4,6 @@ import { createRenderer, defineRegistry, defineFields, defineAdapter, glyph, par
 import { cardShell, headRow, iconSpan, strAttr } from '@glw907/cairn-cms/render';
 import { normalizeAssets, makeMediaResolver, readCommittedManifest } from '@glw907/cairn-cms/media';
 import type { ComponentDef, IconSet } from '@glw907/cairn-cms';
-// The committed media manifest the public render resolver reads. A bare {} until an editor uploads.
-// Read through import.meta.glob so a fresh site with no committed media.json degrades to {} rather
-// than failing the build: a static import of a missing file is a build-time module-not-found, but a
-// glob with no match returns {}, and readCommittedManifest parses that to an empty manifest.
-const mediaManifest = readCommittedManifest(
-  import.meta.glob('../content/.cairn/media.json', { eager: true, import: 'default' }),
-);
 import { h } from 'hastscript';
 import type { ElementContent } from 'hast';
 import siteYaml from './site.config.yaml?raw';
@@ -93,6 +86,14 @@ const registry = defineRegistry({ components: [callout, alert] });
 
 // The real render path: parse markdown through the engine so registered components render.
 const { renderMarkdown } = createRenderer(registry);
+
+// The committed media manifest the public render resolver reads. A bare {} until an editor uploads.
+// Read through import.meta.glob so a fresh site with no committed media.json degrades to {} rather
+// than failing the build: a static import of a missing file is a build-time module-not-found, but a
+// glob with no match returns {}, and readCommittedManifest parses that to an empty manifest.
+const mediaManifest = readCommittedManifest(
+  import.meta.glob('../content/.cairn/media.json', { eager: true, import: 'default' }),
+);
 
 // The default public media resolver, backing the public build over the committed manifest. The
 // preview path injects its own resolveMedia from the edit page's mediaTargets; this default keeps a

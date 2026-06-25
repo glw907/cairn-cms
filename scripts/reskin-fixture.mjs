@@ -1,0 +1,135 @@
+// cairn-cms: the re-skin fixture. It proves the headline B2 claim that editing only the documented N
+// role values re-skins the whole surface and AA still holds, the field's only complete and gated
+// re-skin recipe.
+//
+// It copies theme.css, rotates the `--color-primary` hue by a large amount in BOTH the light and the
+// dark theme block (holding lightness and chroma, the contrast-stable recolor rule), then runs the
+// SAME dual-gamut contrast check the live gate runs (imported from check-public-tokens.mjs) on the
+// rewritten theme and asserts every pair still clears AA. It also proves the prose reading surface has
+// no second colour source: prose.css carries no colour literal, and every colour-bearing property
+// reads a `--color-*`/`--cairn-*` token, so the prose re-skins from the same set at zero extra edits.
+//
+// Wired as `npm run test:reskin`. Exits non-zero if the rotated theme drops a pair or prose holds a
+// second colour source.
+import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
+import { resolve, dirname, join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { fileURLToPath } from 'node:url';
+import { checkThemeContrast, formatContrastTable } from './check-public-tokens.mjs';
+
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const THEME_CSS = resolve(ROOT, 'examples/showcase/src/lib/theme.css');
+const PROSE_CSS = resolve(ROOT, 'examples/showcase/src/lib/prose.css');
+
+// The hue rotation the fixture applies to the brand accent. A large turn (well past a hue step) makes
+// the re-skin unmistakable while the contrast-stable recipe holds lightness and chroma fixed.
+const HUE_ROTATION = 120;
+
+/**
+ * Rewrite the theme by rotating `--color-primary`'s hue by {@link HUE_ROTATION} in every daisyUI theme
+ * block, holding lightness and chroma. This edits ONLY the documented brand-accent role, the headline
+ * lever of the re-skin recipe; `--color-primary-content` and every other token are untouched, which is
+ * exactly the recipe's promise. The regex matches `--color-primary:` (never `--color-primary-content:`,
+ * which has more characters before the colon) and rewrites the third oklch term.
+ * @param {string} css the contents of theme.css
+ * @returns {{ rewritten: string, edits: number }}
+ */
+function rotatePrimaryHue(css) {
+  let edits = 0;
+  const rewritten = css.replace(
+    /(--color-primary:\s*oklch\(\s*[\d.]+%?\s+[\d.]+\s+)([\d.]+)(\s*(?:\/[^)]*)?\))/g,
+    (_match, head, hue, tail) => {
+      edits += 1;
+      const rotated = ((Number(hue) + HUE_ROTATION) % 360 + 360) % 360;
+      return `${head}${rotated}${tail}`;
+    },
+  );
+  return { rewritten, edits };
+}
+
+/**
+ * Prove the prose reading surface has no second colour source: no colour literal, and every
+ * colour-bearing property reads a `--color-*`/`--cairn-*` token. A line that assigns a colour property
+ * yet references no such token (and is not a bare reset or keyword) is a second source.
+ * @returns {string[]} the violation lines, empty when the prose reads only the tokens
+ */
+function checkProseSecondSource() {
+  const lines = readFileSync(PROSE_CSS, 'utf8').split('\n');
+  /** @type {string[]} */
+  const violations = [];
+  // A literal colour anywhere in prose.css is a second source outright.
+  const literal = /#[0-9a-fA-F]{3,8}\b|(?:rgba?|hsla?|oklch)\s*\(/;
+  // The colour-bearing property declarations. `border`/`border-<side>` shorthands carry a colour;
+  // the non-colour border longhands (radius, collapse, spacing, width, style, image) are excluded by
+  // the negative lookahead, so a `border-radius: var(--radius-box)` is not mistaken for a colour.
+  const colorProp = /(?:^|[\s{;])(?:color|background|background-color|border-color|(?:border|border-top|border-right|border-bottom|border-left)(?:-color)?|outline|outline-color|fill|accent-color|caret-color):(?!\s)/;
+  const nonColorBorderLonghand = /(?:^|[\s{;])border-(?:radius|collapse|spacing|width|style|image):/;
+  // A value that is a non-colour reset or keyword (a width-only border, transparent, inherit, etc.).
+  const nonColorValue = /:\s*(?:0|none|inherit|transparent|currentColor)\s*;?\s*$/;
+
+  lines.forEach((raw, i) => {
+    const line = raw.trim();
+    if (literal.test(line)) {
+      violations.push(`prose.css:${i + 1}  colour literal (second source): ${line}`);
+      return;
+    }
+    if (nonColorBorderLonghand.test(raw)) return;
+    if (colorProp.test(raw) && !nonColorValue.test(raw)) {
+      // The property carries a real colour; it must read a token. color-mix arguments read tokens too.
+      if (!/var\(--(?:color|cairn)-/.test(raw)) {
+        violations.push(`prose.css:${i + 1}  colour not from a token: ${line}`);
+      }
+    }
+  });
+  return violations;
+}
+
+function main() {
+  let failed = false;
+
+  // 1. Re-skin: copy theme.css to a temp file, rotate the brand accent in the copy, then run the
+  //    same contrast gate against the rewritten file read back from disk, so the fixture validates the
+  //    on-disk re-skinned theme, not just an in-memory string.
+  const original = readFileSync(THEME_CSS, 'utf8');
+  const { rewritten, edits } = rotatePrimaryHue(original);
+  const dir = mkdtempSync(join(tmpdir(), 'cairn-reskin-'));
+  const fixturePath = join(dir, 'theme.reskin.css');
+  writeFileSync(fixturePath, rewritten, 'utf8');
+
+  console.log(`Re-skin fixture: rotated --color-primary hue by ${HUE_ROTATION} in ${edits} theme block(s).`);
+  if (edits < 2) {
+    console.error(`Re-skin fixture: FAIL (expected to rotate the accent in both the light and dark block, edited ${edits}).`);
+    failed = true;
+  }
+
+  const rows = checkThemeContrast(readFileSync(fixturePath, 'utf8'));
+  console.log('');
+  console.log(formatContrastTable(rows));
+  const contrastFailures = rows.filter((r) => !r.pass);
+  if (contrastFailures.length) {
+    console.error('');
+    console.error(`Re-skin contrast: FAIL (${contrastFailures.length} pair(s) below AA after the hue rotation)`);
+    for (const r of contrastFailures) {
+      console.error(`  ${r.theme} ${r.label}: sRGB ${r.srgb.toFixed(2)}, P3 ${r.p3.toFixed(2)} (need ${r.threshold.toFixed(1)})`);
+    }
+    failed = true;
+  } else {
+    console.log('');
+    console.log(`Re-skin contrast: PASS (the hue-rotated theme clears AA on all ${rows.length} pairs in both gamuts)`);
+  }
+
+  // 2. Prove the prose surface has no second colour source.
+  const proseViolations = checkProseSecondSource();
+  console.log('');
+  if (proseViolations.length) {
+    console.error('Prose single-source: FAIL (a prose colour does not read a token)');
+    for (const v of proseViolations) console.error(`  ${v}`);
+    failed = true;
+  } else {
+    console.log('Prose single-source: PASS (prose.css reads only --color-*/--cairn-* tokens; no second colour source)');
+  }
+
+  process.exit(failed ? 1 : 0);
+}
+
+main();

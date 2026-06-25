@@ -78,10 +78,13 @@
   /* the warm near-black used for the inverted CTA house-ad in light mode */
   --color-neutral: oklch(27% 0.013 72);
   --color-neutral-content: oklch(97% 0.003 75);
-  /* status fills (dark-enough for near-white content, except warning which takes dark ink) */
-  --color-info: oklch(62% 0.1 235);
+  /* status fills (dark-enough for near-white content, except warning which takes dark ink). The
+     info and success lightnesses are pinned at the AA floor the dual-gamut gate (check:public-tokens)
+     measures for their near-white -content: info L=55% holds 4.6:1, success L=54% holds 4.7:1, both
+     in sRGB and P3. Hue and chroma are held, so the contrast-stable recolor recipe still applies. */
+  --color-info: oklch(55% 0.1 235);
   --color-info-content: oklch(99% 0.01 235);
-  --color-success: oklch(60% 0.12 150);
+  --color-success: oklch(54% 0.12 150);
   --color-success-content: oklch(99% 0.01 150);
   --color-warning: oklch(80% 0.13 78);
   --color-warning-content: oklch(28% 0.05 78);

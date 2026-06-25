@@ -34,8 +34,6 @@ export interface DevBackendOptions {
  * @param options - {@link DevBackendOptions}; `seedContent` is the Part B content-seeding hook.
  * @returns a SvelteKit `Handle` that installs the dev backend per request path.
  */
-// `options` is the typed Part B content-seeding seam (DevBackendOptions.seedContent); Part A reads
-// none of it yet and keeps the media-only seed below.
 export function devBackendHandle(options?: DevBackendOptions): Handle {
   installFakeGitHub();
   // Seed the Media Library fixtures into the in-memory repo so /admin/media has a realistic set.

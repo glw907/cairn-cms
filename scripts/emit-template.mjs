@@ -4,7 +4,6 @@
 // against npm-packed tarballs to prove the scaffolded output still builds (the rot gate). Part C's
 // generator reuses the manifest and this transform.
 import { cp, readFile, writeFile, rm, mkdir } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
 import path from 'node:path';
 
 /**
@@ -57,8 +56,9 @@ export async function emitTemplate({ from, to, engineSpec, devSpec, name = 'cair
     path.join(to, 'package.json'),
     JSON.stringify(transformPackageJson(pkg, { name, engineSpec, devSpec }), null, 2) + '\n',
   );
-  // The lockfile is showcase-specific (file:../.. paths); the emitted site resolves fresh on install.
-  if (existsSync(path.join(to, 'package-lock.json'))) await rm(path.join(to, 'package-lock.json'));
+  // The lockfile is showcase-specific (file:../.. paths); the emitted site resolves fresh on
+  // install. force ignores its absence, so no existence check is needed.
+  await rm(path.join(to, 'package-lock.json'), { force: true });
   return to;
 }
 

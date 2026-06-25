@@ -54,17 +54,18 @@ export function devBackendHandle(options?: DevBackendOptions): Handle {
     const isMedia = path === '/media' || path.startsWith('/media/');
     if (isAdmin || isMedia) {
       // The binding doubles ride platform.env the way the Cloudflare adapter would supply the real
-      // ones. App.Platform is the bare default under adapter-node, hence the cast; the engine reads
-      // the env structurally at runtime. AUTH_DB is admin-only; MEDIA_BUCKET serves both the upload
-      // action under /admin and the delivery route under /media. ANTHROPIC_API_KEY is a dummy
-      // presence flag: the tidy action refuses before building a client when it is absent, so the
-      // value is set even though the fake client (fake-anthropic.ts) never reads it.
+      // ones. The template's App.Platform also declares context and caches, which the dev routes
+      // never touch, so this partial value casts through unknown; the engine reads the env
+      // structurally at runtime. AUTH_DB is admin-only; MEDIA_BUCKET serves both the upload action
+      // under /admin and the delivery route under /media. ANTHROPIC_API_KEY is a dummy presence
+      // flag: the tidy action refuses before building a client when it is absent, so the value is
+      // set even though the fake client (fake-anthropic.ts) never reads it.
       event.platform = {
         env: {
           ...(isAdmin ? { AUTH_DB: fakeAuthDb, ANTHROPIC_API_KEY: 'sk-showcase-stub' } : {}),
           MEDIA_BUCKET: fakeR2,
         },
-      } as App.Platform;
+      } as unknown as App.Platform;
     }
     if (isAdmin) {
       // Editor shape: { email, displayName, role }, the engine's Editor type (src/lib/auth/types.ts).

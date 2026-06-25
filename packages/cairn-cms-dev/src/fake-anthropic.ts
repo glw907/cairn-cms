@@ -9,12 +9,19 @@
 import type { ContentRoutesDeps } from '@glw907/cairn-cms/sveltekit';
 import { SEED_EDITOR } from './fake-github.js';
 
+// The body the engine's tidy action sends to messages.create, derived from the client contract so
+// the stub stays in lockstep with it. ContentRoutesDeps['anthropic'] is the optional client factory;
+// its return is the structural TidyClient, whose messages.create takes this body as its first argument.
+type TidyCreateBody = Parameters<
+  ReturnType<NonNullable<ContentRoutesDeps['anthropic']>>['messages']['create']
+>[0];
+
 /** Build the fake client factory the showcase passes to createCairnAdmin's `anthropic` dep. The
  *  factory ignores the key (it never calls the network) and returns one client per tidy request. */
 export function createFakeAnthropic(): ContentRoutesDeps['anthropic'] {
   return () => ({
     messages: {
-      async create(params) {
+      async create(params: TidyCreateBody) {
         // The user message carries the buffer the editor sent. When it is the seed entry's body,
         // return the canned correction; otherwise echo it back so tidy reports "Nothing to fix"
         // rather than inventing edits.

@@ -4,7 +4,6 @@
     "src/routes/spike",
     "src/routes/(site)/calendar",
     "e2e",
-    "playwright.config.ts",
-    "src/content/.cairn/index.json"
+    "playwright.config.ts"
   ]
 }

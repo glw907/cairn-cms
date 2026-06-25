@@ -11,11 +11,11 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-24, latest): Part A MERGED and the pre-Part-B DX slot COMPLETE (`0.64.0`, held); next is Part B
+## Immediate next action (2026-06-24, latest): Part A + the pre-Part-B DX slot MERGED to `main` (`0.64.0`, held); next is Part B
 
-**Part A (`@glw907/cairn-cms-dev`) is MERGED to `main` as `0.63.0`, and the pre-Part-B DX slot is
-COMPLETE on `feat/pre-part-b-dx` as `0.64.0` (held, merge-ready).** Both are unpublished; `main` is ahead
-of `origin` and not yet pushed. Post-mortem for the slot:
+**Part A (`@glw907/cairn-cms-dev`, `0.63.0`) and the pre-Part-B DX slot (`0.64.0`) are both MERGED to
+`main` (the `feat/cairn-cms-dev` and `feat/pre-part-b-dx` branches and worktrees are removed).** Both are
+unpublished; `main` is ahead of `origin` by both windows and not yet pushed. Post-mortem for the slot:
 `docs/superpowers/plans/2026-06-24-cairn-pre-part-b-dx-slot.md`.
 
 **The DX slot reshaped all three spec items.** (1) The `AuthEnv` root re-export was already done

@@ -6,11 +6,13 @@
      rather than a static import, so the editor's preview frame can link the very same asset (the
      header comment in site.css explains why the static import would break that). -->
 <script lang="ts">
+  import themeCss from '$lib/theme.css?url';
   import siteCss from '$lib/site.css?url';
   let { children } = $props();
 </script>
 
 <svelte:head>
+  <link rel="stylesheet" href={themeCss} />
   <link rel="stylesheet" href={siteCss} />
 </svelte:head>
 

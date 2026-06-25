@@ -1,0 +1,7 @@
+/* The public theme entry: Tailwind 4 + DaisyUI 5 + the cairn public token layer. This is the file a
+   scaffolded site owner edits to re-skin (Task 2 fills the @plugin block and the cairn tokens). It is
+   linked by the (site) layout and by the editor preview config, so the reader and the author see the
+   same surface. */
+@import 'tailwindcss';
+@plugin 'daisyui';
+/* The @plugin "daisyui/theme" { ... } oklch block and the cairn type/space/measure tokens land in Task 2. */

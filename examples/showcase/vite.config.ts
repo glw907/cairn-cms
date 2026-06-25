@@ -1,9 +1,11 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
+import tailwindcss from '@tailwindcss/vite';
 import { cairnManifest } from '@glw907/cairn-cms/vite';
 
 export default defineConfig({
   plugins: [
+    tailwindcss(),
     sveltekit(),
     cairnManifest({
       configModule: '/src/lib/cairn.config.ts',

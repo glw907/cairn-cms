@@ -14,6 +14,9 @@
     "@glw907/cairn-cms": "file:../.."
   },
   "devDependencies": {
+    "@fontsource-variable/fraunces": "^5.2.5",
+    "@fontsource-variable/source-code-pro": "^5.2.5",
+    "@fontsource-variable/source-sans-3": "^5.2.5",
     "@glw907/cairn-cms-dev": "file:../../packages/cairn-cms-dev",
     "@playwright/test": "^1.60.0",
     "@sveltejs/adapter-cloudflare": "^7",

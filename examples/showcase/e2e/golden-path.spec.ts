@@ -80,12 +80,16 @@ test('the redesigned editor: hoisted title, toolbar bold, preview round-trip, st
   const frame = page.frameLocator('#cairn-pane-preview iframe[title="Page preview"]');
   await expect(frame.locator('strong')).toHaveText('A line to embolden.');
 
-  // The adapter's preview knob is wired: the frame document links the site stylesheet (the build
-  // names the emitted asset after the chunk importing it, so pin only the .css href), the content
-  // sits inside the site's own container at its real measure (site.css caps .site-main at 48rem),
-  // and the no-knob hint never renders.
-  await expect(frame.locator('link[rel="stylesheet"]')).toHaveAttribute('href', /\.css/);
-  await expect(frame.locator('.site-main')).toHaveCSS('max-width', '768px');
+  // The adapter's preview knob is wired: the frame document links both public stylesheets (the theme
+  // sheet and the site sheet, the preview parity the reading surface needs; the build names each
+  // emitted asset after its importing chunk, so pin only the .css extension), the content sits inside
+  // the site's own container at its real measure (site.css caps .site-main at var(--cairn-measure),
+  // 44rem = 704px), and the no-knob hint never renders.
+  const previewSheets = frame.locator('link[rel="stylesheet"]');
+  await expect(previewSheets).toHaveCount(2);
+  await expect(previewSheets.first()).toHaveAttribute('href', /\.css/);
+  await expect(previewSheets.last()).toHaveAttribute('href', /\.css/);
+  await expect(frame.locator('.site-main')).toHaveCSS('max-width', '704px');
   await expect(page.getByText('Preview shows unstyled markup')).toHaveCount(0);
 
   // The width menu sizes the frame: pick Phone (each item names its width for assistive tech)

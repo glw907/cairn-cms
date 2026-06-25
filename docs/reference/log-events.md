@@ -32,6 +32,7 @@ redaction stance.
 | `media.delivery_failed` | warn | The delivery route cannot serve the bytes because the Worker has no media bucket bound. | `reason`, `binding` |
 | `media.orphan_reconcile` | info | The reconcile read finishes, comparing stored R2 keys against the manifest hashes. | `orphaned`, `missing` |
 | `media.resolve_missing` | warn | A `media:` reference resolves against the manifest and finds no entry for its hash. | `hash` |
+| `media.resolver_absent` | warn | A public route factory is built with media configured on but no `resolveMedia` wired, so public images would render as bare `media:` tokens. Fires once at construction. | `enabled` (always `true`) |
 | `media.deleted` | info | An asset's bytes and manifest row are removed. | `editor`, `hash` |
 | `media.delete_blocked` | warn | A delete is refused because the asset is still referenced. | `editor`, `hash`, `foundIn` (the count of referencing entries) |
 | `media.replaced` | info | A replace-in-place rewrites every referencing entry to the new asset and adds its manifest row. | `editor`, `oldHash`, `newHash`, `affected` (the count of rewritten entries) |
@@ -86,7 +87,12 @@ expected bucket binding, and the route drains a 503. The reconcile read logs
 `media.orphan_reconcile` once it has compared the stored R2 keys against the manifest hashes; its two
 counts, `orphaned` and `missing`, size each orphan direction, and it carries no key list or byte
 count. A `media:` reference that resolves to no manifest entry logs `media.resolve_missing` with the
-unresolved `hash`, which is how a broken reference surfaces in a build or a preview. A delete logs
+unresolved `hash`, which is how a broken reference surfaces in a build or a preview. A public route
+factory built with media on but no resolver wired logs `media.resolver_absent` once at construction,
+with `enabled: true`; it names a forgotten wire-point, the site configured media but a public route's
+`createPublicRoutes` received no `resolveMedia`, so its hero and body images would render as bare
+`media:` tokens. The record does not name a concept or a path, since the fault is the wiring, not any
+one entry. A delete logs
 `media.deleted` once the bytes and the manifest row are gone. When the asset is still referenced, the
 delete is refused and logs `media.delete_blocked` instead, with `foundIn` set to how many entries
 still point at it. A replace-in-place logs `media.replaced` once the commit lands, naming the

@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { createPublicRoutes } from '../../lib/delivery/public-routes.js';
+import { log } from '../../lib/log/index.js';
 import { createSiteResolver } from '../../lib/delivery/site-resolver.js';
 import { createContentIndex } from '../../lib/delivery/content-index.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
@@ -228,5 +229,45 @@ describe('createPublicRoutes', () => {
     expect(ok.html).toContain('href="/about"');
 
     await expect(linkRoutes('[gone](cairn:pages/missing)').entryLoad({ url: new URL('https://example.com/home') })).rejects.toThrow(/cairn:pages\/missing|not found/);
+  });
+});
+
+describe('createPublicRoutes media.resolver_absent', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  function build(deps: { assetsEnabled?: boolean; withResolver?: boolean }) {
+    return createPublicRoutes({
+      site,
+      render: (md) => `<r>${md.trim()}</r>`,
+      origin: 'https://example.com',
+      siteName: 'Test',
+      description: 'Test description.',
+      ...(deps.assetsEnabled !== undefined ? { assetsEnabled: deps.assetsEnabled } : {}),
+      ...(deps.withResolver ? { resolveMedia: () => undefined } : {}),
+    });
+  }
+
+  it('warns once at construction when media is on but no resolver was wired', () => {
+    const warnSpy = vi.spyOn(log, 'warn').mockImplementation(() => {});
+    build({ assetsEnabled: true });
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    const [event, fields] = warnSpy.mock.calls[0];
+    expect(event).toBe('media.resolver_absent');
+    expect(fields).toEqual({ enabled: true });
+    // The record carries the configured-on flag only, never a token or a session.
+    expect(Object.keys(fields ?? {})).toEqual(['enabled']);
+  });
+
+  it('does not warn when a resolver is wired (the correctly configured case)', () => {
+    const warnSpy = vi.spyOn(log, 'warn').mockImplementation(() => {});
+    build({ assetsEnabled: true, withResolver: true });
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  it('does not warn when media is off (assetsEnabled false or absent)', () => {
+    const warnSpy = vi.spyOn(log, 'warn').mockImplementation(() => {});
+    build({ assetsEnabled: false });
+    build({});
+    expect(warnSpy).not.toHaveBeenCalled();
   });
 });

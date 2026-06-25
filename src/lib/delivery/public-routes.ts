@@ -13,6 +13,7 @@ import { buildLinkResolver } from './site-resolver.js';
 import type { LinkResolve } from '../content/links.js';
 import type { MediaResolve } from '../render/resolve-media.js';
 import { parseMediaToken } from '../media/reference.js';
+import { log } from '../log/index.js';
 
 /** Injected dependencies for the public loaders. */
 export interface PublicRoutesDeps {
@@ -36,6 +37,14 @@ export interface PublicRoutesDeps {
    *  media is off and no `heroImage` projection is derived.
    */
   resolveMedia?: MediaResolve;
+  /**
+   * Whether the site configured media on, read from `runtime.resolvedAssets.enabled`. It exists only
+   *  to diagnose a forgotten wire-point: media on but no `resolveMedia` reached this factory, which
+   *  renders public hero and body images as bare `media:` tokens. When true and `resolveMedia` is
+   *  absent, the factory emits `media.resolver_absent` once at construction. It does not change
+   *  resolution; `resolveMedia` alone still gates the hero projection.
+   */
+  assetsEnabled?: boolean;
 }
 
 /** The archive and tag list data: summaries the template renders. */
@@ -74,7 +83,16 @@ export interface EntryData {
 
 /** Build the public loaders for a site's unified index. */
 export function createPublicRoutes(deps: PublicRoutesDeps) {
-  const { site, render, origin, siteName, description, feeds, defaultImage, resolveMedia } = deps;
+  const { site, render, origin, siteName, description, feeds, defaultImage, resolveMedia, assetsEnabled } = deps;
+
+  // Diagnose a forgotten wire-point: media is configured on but no resolver reached this factory, so
+  // every public hero and body `media:` token renders bare (the ecxc 0.57.0 finding). The condition
+  // is a property of the wiring, not of any one load, so it is checked once here at construction
+  // rather than per entryLoad or per image, which keeps the warning loud-once and out of the
+  // prerender hot path. Resolution is unchanged; resolveMedia alone still gates the hero projection.
+  if (assetsEnabled && !resolveMedia) {
+    log.warn('media.resolver_absent', { enabled: true });
+  }
 
   /**
    * Derive the hero projection from an entry's frontmatter, without mutating it (locked decision 5).

@@ -326,6 +326,52 @@ describe('missing AUTH_DB binding (operator fault)', () => {
   });
 });
 
+describe('dev-backend flag in a deployed runtime (fail-closed tripwire)', () => {
+  // AUTH_DB is bound so a refusal proves the tripwire fires before the bindings/session logic, not
+  // because a binding is missing. The string '1' is the Worker-var form the dev backend sets.
+  function devBackendEvent(pathname: string, flag: string | boolean): RequestContext {
+    const url = `https://test.dev${pathname}`;
+    return {
+      url: new URL(url),
+      request: new Request(url),
+      cookies: makeCookies(),
+      locals: {},
+      platform: { env: { AUTH_DB: db, CAIRN_DEV_BACKEND: flag } },
+      setHeaders: () => {},
+    };
+  }
+
+  it('refuses with 503, never resolves, and logs guard.rejected reason=dev_backend_in_prod', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    let resolved = false;
+    const res = await handle({
+      event: devBackendEvent('/admin', '1'),
+      resolve: async () => {
+        resolved = true;
+        return OK;
+      },
+    });
+    expect(resolved).toBe(false);
+    expect(res.status).toBe(503);
+    const records = errorSpy.mock.calls.map(
+      (c) => c[0] as { event?: string; reason?: string; path?: string },
+    );
+    expect(
+      records.some(
+        (r) => r.event === 'guard.rejected' && r.reason === 'dev_backend_in_prod' && r.path === '/admin',
+      ),
+    ).toBe(true);
+    vi.restoreAllMocks();
+  });
+
+  it('trips on the boolean true form as well', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const res = await handle({ event: devBackendEvent('/admin', true), resolve: async () => OK });
+    expect(res.status).toBe(503);
+    vi.restoreAllMocks();
+  });
+});
+
 describe('guard rejection logging', () => {
   it('logs guard.rejected reason=origin for a non-admin cross-origin form POST', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});

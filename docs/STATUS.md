@@ -11,7 +11,40 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-24, latest): scaffolder Part A is COMPLETE and merge-ready (`0.63.0`, held); next is the pre-Part-B DX slot
+## Immediate next action (2026-06-24, latest): Part A MERGED and the pre-Part-B DX slot COMPLETE (`0.64.0`, held); next is Part B
+
+**Part A (`@glw907/cairn-cms-dev`) is MERGED to `main` as `0.63.0`, and the pre-Part-B DX slot is
+COMPLETE on `feat/pre-part-b-dx` as `0.64.0` (held, merge-ready).** Both are unpublished; `main` is ahead
+of `origin` and not yet pushed. Post-mortem for the slot:
+`docs/superpowers/plans/2026-06-24-cairn-pre-part-b-dx-slot.md`.
+
+**The DX slot reshaped all three spec items.** (1) The `AuthEnv` root re-export was already done
+(2026-06-13); the stale friction-log bullet is retired. (2) The `media.json` build crash is fixed by
+`readCommittedManifest` (exported from `/media`): the showcase reads the manifest through
+`import.meta.glob`, so a missing file degrades to `{}` instead of failing the build (a manifest-less
+build now verifiably succeeds), removing the seed-empty-file workaround the template would have baked.
+(3) **`runtime.publicMediaResolver` was dropped** after an adversarial review (verified first-hand)
+showed it inverts the prerender/Worker boundary and that the "three wire-points" was a miscount (two,
+already sharing one `cairn.config` export). The real wart, silent broken images (the ecxc 0.57.0 HIGH
+finding), is fixed instead by a `media.resolver_absent` warn event, armed in the showcase via a new
+`assetsEnabled` dep. All additive, no consumer action.
+
+**Verified:** `check` 1147 files 0/0, `npm test` 2482 EXIT 0, all doc gates; the manifest-less showcase
+build succeeds; the default `build/` carries no dev-backend bypass (Part A non-regression).
+
+**NEXT: Part B,** the showcase-to-deployable-template factoring, with the `frontend-design` pass and the
+first-class tokens layer (its own adversarial review). It is the large, design-led heart of the
+scaffolder; a context clear before it is the natural boundary. See the scaffolder spec's Part B section.
+
+**Carry-forwards:** merge both feature branches and push `main` when ready (origin is behind by the Part
+A + DX windows); the real sites (ecxc-ski, 907-life) thread `assetsEnabled` to arm the
+`media.resolver_absent` diagnostic at their next cutover; the owed live D1 admin smoke for the Part A
+tripwire (no D1 Worker in the showcase); and the dev-package gate coverage (`check:dev-package`) Part C
+needs before it publishes `@glw907/cairn-cms-dev`. All in `docs/internal/docs-friction-log.md`.
+
+---
+
+## Prior next action (2026-06-24): scaffolder Part A is COMPLETE and merge-ready (`0.63.0`, held); next is the pre-Part-B DX slot
 
 **Part A (the `@glw907/cairn-cms-dev` dev package) is done on `feat/cairn-cms-dev`, all gates green,
 security-reviewed, and ready to fast-forward to `main` as `0.63.0` (held, unpublished).** It extracts the

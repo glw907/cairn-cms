@@ -593,3 +593,23 @@ it).
   when dead-code elimination removes the importing branch; the adapter's Rollup pass prunes it from
   `build/`. The "no bypass in the build" grep must target the deployable `build/`, which the `e2e.yml`
   gate now does. The docs rewrite should explain this where it documents the fence.
+
+## Pre-Part-B DX slot resolutions (2026-06-24)
+
+The DX slot (post-mortem `docs/superpowers/plans/2026-06-24-cairn-pre-part-b-dx-slot.md`, shipped
+`0.64.0`) closed three of the items above.
+
+- The `media.json = {}` build footgun is fixed. `readCommittedManifest` (exported from `/media`) reads
+  the manifest through `import.meta.glob`, which returns `{}` for a missing file, so a fresh site no
+  longer crashes the build, and no seed-empty-file workaround is needed.
+- The `runtime.publicMediaResolver` ergonomic is dropped, not built. An adversarial review, verified
+  first-hand, found it would invert the prerender/Worker boundary and that the "three wire-points" was a
+  miscount: two, both prerender-side, already sharing one `cairn.config` export. The real wart it pointed
+  at, silently broken public images (the ecxc 0.57.0 cutover finding), is fixed instead by a
+  `media.resolver_absent` warn event, emitted at `createPublicRoutes` construction on
+  `assetsEnabled && !resolveMedia` and armed in the showcase. Do not re-propose the runtime member.
+- The `AuthEnv` import-subpath trap was already resolved on 2026-06-13; the stale duplicate bullet is
+  retired.
+
+Carry-forward: the production sites (ecxc-ski, 907-life) thread `assetsEnabled` into `createPublicRoutes`
+to arm the `media.resolver_absent` diagnostic at their next cutover.

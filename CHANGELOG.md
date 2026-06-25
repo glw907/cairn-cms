@@ -2,6 +2,28 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.64.0
+
+<!-- release-size: minor -->
+
+A small pre-Part-B DX pass fixes two engine warts the scaffolder's template would otherwise bake in,
+and retires a third item that was already resolved.
+
+`readCommittedManifest`, exported from `/media`, reads a committed media manifest from an
+`import.meta.glob` result and degrades a missing file to an empty manifest. A fresh site with no
+`src/content/.cairn/media.json` no longer fails its build: the static import that crashed gives way to
+the glob, which returns `{}` for no match. The showcase reads its manifest this way.
+
+A new `media.resolver_absent` log event (level `warn`) makes a silently-broken public-image setup
+diagnosable. The public route emits it once, at construction, when media is configured on but no
+`resolveMedia` reached it, so a forgotten resolver wiring becomes a queryable Workers Logs event
+instead of a bare `media:` token on every hero image. `PublicRoutesDeps` gains an optional
+`assetsEnabled` flag a site threads from its resolved asset config.
+
+No consumer action is required. A site that wants the no-crash manifest read can adopt
+`readCommittedManifest`, and a site that wants the resolver diagnostic threads `assetsEnabled` into
+`createPublicRoutes`.
+
 ## 0.63.0
 
 <!-- release-size: minor -->

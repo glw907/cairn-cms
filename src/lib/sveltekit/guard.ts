@@ -41,14 +41,14 @@ export function createAuthGuard() {
   return async function handle({ event, resolve }: HandleInput): Promise<Response> {
     const { pathname } = event.url;
 
-    // Fail closed if the dev-backend flag is set in a deployed runtime. A correct production build
-    // already eliminated the dev backend (the consumer gates it on the build-foldable `dev`), so a
-    // set flag signals a polluted environment; refuse loudly rather than run the production guard
-    // under a dangerous flag.
-    if (
-      event.platform?.env?.CAIRN_DEV_BACKEND === '1' ||
-      event.platform?.env?.CAIRN_DEV_BACKEND === true
-    ) {
+    // Fail closed if the dev-backend flag is set in a deployed runtime. Read both env sources: a
+    // Cloudflare Worker var lands on platform.env, an adapter-node OS var on process.env. A correct
+    // production build already eliminated the dev backend (the consumer gates it on the build-foldable
+    // `dev`), so a set flag signals a polluted environment; refuse loudly.
+    const platformFlag = event.platform?.env?.CAIRN_DEV_BACKEND;
+    const processFlag =
+      typeof process !== 'undefined' ? process.env?.CAIRN_DEV_BACKEND : undefined;
+    if (platformFlag === '1' || platformFlag === true || processFlag === '1') {
       log.error('guard.rejected', { reason: 'dev_backend_in_prod', path: pathname });
       return new Response(
         'cairn: the dev backend flag is set in a deployed environment. Unset CAIRN_DEV_BACKEND.',

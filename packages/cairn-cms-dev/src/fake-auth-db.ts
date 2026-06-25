@@ -53,6 +53,8 @@ export function createFakeAuthDb(): FakeAuthDb {
 
     // resolveSession: the fixture hook injects locals.editor directly and the engine guard is
     // not installed in dev, so no session row ever exists. Answer null rather than throwing.
+    // The fake db grants nothing on its own; the owner identity is minted by devBackendHandle's
+    // locals.editor write, not by this null session lookup.
     if (sql.includes('FROM session s JOIN editor e')) return none;
 
     // findEditor

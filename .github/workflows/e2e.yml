@@ -30,7 +30,7 @@ jobs:
         # .svelte-kit/output: the latter always carries a dead, unreferenced split chunk for the
         # gated dynamic import, which the adapter prunes from the deployable bundle.
         run: |
-          if grep -rl -e 'editor@showcase.test' -e 'installFakeGitHub' -e 'devBackendHandle' -e 'cairn-cms-dev' examples/showcase/build 2>/dev/null; then
+          if grep -rl -e 'editor@showcase.test' -e 'installFakeGitHub' -e 'devBackendHandle' -e 'cairn-cms-dev' -e 'dev-token' -e 'sk-showcase-stub' -e 'createFakeAuthDb' -e 'createFakeR2' -e 'createFakeAnthropic' -e 'lastRecordedCommit' examples/showcase/build 2>/dev/null; then
             echo "FAIL: dev-backend artifact in the default build/"; exit 1
           fi
           echo "OK: no dev-backend artifact in the default build/"

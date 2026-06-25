@@ -1,0 +1,752 @@
+<!doctype html>
+<html lang="en" data-variant="quarry" data-mode="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>cairn public theme — B2 design exploration</title>
+<!--
+  B2 Phase A rev.1 — four neutral-leaning directions for the public reading surface, rendered as one
+  markup in four swappable token sets. Same content, four skins: the comparison the GATE 1 adversarial
+  critique chews on, and a live proof of the one-token-set re-skin claim. Switch with ?v=<variant>&m=<mode>
+  (variant: quarry|newsprint|slate|patina; mode: light|dark) or the on-page switcher. Not shipped CSS;
+  the settled values feed Task 2 (the DaisyUI oklch theme) and Task 5 (the bespoke prose surface).
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..600&family=Source+Sans+3:ital,wght@0,400..700;1,400..600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400..700;1,8..60,400..600&family=Work+Sans:ital,wght@0,400..700;1,400..600&family=Source+Code+Pro:wght@400..600&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================================
+   CONSTANT TOKENS — the cairn-authored layer (type scale, space, measure, flow,
+   geometry, status, code bindings). Identical across variants; only the DaisyUI
+   role palette and the three font families change per variant. The shared CSS
+   below reads ONLY these tokens and the role tokens, never a literal.
+   ============================================================================ */
+:root {
+  /* Fluid type scale — Utopia-style named steps, ~1.24 ratio, clamp() so display
+     scales with the viewport while body holds a readable size. */
+  --cairn-step--1: clamp(0.84rem, 0.81rem + 0.14vw, 0.92rem);  /* caption, meta */
+  --cairn-step-0:  clamp(1.06rem, 1.01rem + 0.27vw, 1.22rem);  /* body 17–19.5px */
+  --cairn-step-1:  clamp(1.27rem, 1.19rem + 0.43vw, 1.53rem);  /* lead, h4 */
+  --cairn-step-2:  clamp(1.52rem, 1.39rem + 0.66vw, 1.91rem);  /* h3, index title */
+  --cairn-step-3:  clamp(1.83rem, 1.63rem + 1.0vw, 2.39rem);   /* h2 */
+  --cairn-step-4:  clamp(2.19rem, 1.9rem + 1.45vw, 2.98rem);   /* section display */
+  --cairn-step-5:  clamp(2.3rem, 1.82rem + 2.1vw, 3.6rem);     /* h1, masthead — floor pulled down so mobile H1 does not eat the first screen */
+
+  --cairn-leading-body: 1.65;
+  --cairn-leading-snug: 1.4;
+  --cairn-leading-tight: 1.12;
+  --cairn-tracking-tight: -0.011em;
+  --cairn-tracking-eyebrow: 0.12em;
+
+  /* The measure: the reading column cap, ~66–70ch at the body size. Structural, not
+     left to the page wrapper. Figures and pull-quotes break past it. */
+  --cairn-measure: 44rem;
+  --cairn-measure-wide: 58rem;   /* the shell the column sits in; the `wide` breakout band */
+
+  /* Fluid space scale (Utopia 3xs–3xl). */
+  --cairn-space-3xs: clamp(0.31rem, 0.3rem + 0.05vw, 0.34rem);
+  --cairn-space-2xs: clamp(0.5rem, 0.48rem + 0.11vw, 0.56rem);
+  --cairn-space-xs:  clamp(0.75rem, 0.72rem + 0.16vw, 0.84rem);
+  --cairn-space-s:   clamp(1rem, 0.96rem + 0.22vw, 1.13rem);
+  --cairn-space-m:   clamp(1.5rem, 1.43rem + 0.33vw, 1.69rem);
+  --cairn-space-l:   clamp(2rem, 1.91rem + 0.43vw, 2.25rem);
+  --cairn-space-xl:  clamp(3rem, 2.83rem + 0.87vw, 3.5rem);
+  --cairn-space-2xl: clamp(4rem, 3.74rem + 1.3vw, 4.75rem);
+
+  /* The single vertical-rhythm variable the prose owl-selector reads; headings,
+     figures, and pre override it locally. Anchored to the body line-height. */
+  --flow-space: 1.35em;
+
+  /* Geometry — modest, stone-grade radii. Not zero (broadsheet), not bubbly. */
+  --radius-box: 0.625rem;     /* cards, figures, code blocks */
+  --radius-field: 0.4rem;     /* inputs, buttons */
+  --radius-selector: 0.28rem; /* chips, tags */
+  --border: 1px;
+
+  /* Code-block ramp — every token reads a role, so recoloring the theme recolors
+     code with no edit. Task 3's Shiki theme emits these variable names. */
+  --cairn-code-bg: var(--color-base-200);
+  --cairn-code-border: var(--color-base-300);
+  --cairn-code-ink: var(--color-base-content);
+  --cairn-code-comment: var(--cairn-muted);
+  --cairn-code-keyword: var(--color-primary);
+  --cairn-code-string: var(--color-success-ink);
+  --cairn-code-function: var(--color-info-ink);
+  --cairn-code-number: var(--color-warning-ink);
+  --cairn-code-punct: var(--cairn-muted);
+
+  /* Status — light. On-surface "ink" tokens are distinct from the fill tones, the
+     admin's lesson: a fill tone fails as small text. Constant across variants. */
+  --color-success: oklch(60% 0.12 150);
+  --color-success-content: oklch(99% 0.01 150);
+  --color-success-ink: oklch(45% 0.1 150);
+  --color-warning: oklch(80% 0.13 78);
+  --color-warning-content: oklch(28% 0.05 78);
+  --color-warning-ink: oklch(52% 0.11 70);
+  --color-error: oklch(58% 0.19 27);
+  --color-error-content: oklch(99% 0.01 27);
+  --color-error-ink: oklch(50% 0.17 27);
+  --color-info: oklch(62% 0.1 235);
+  --color-info-content: oklch(99% 0.01 235);
+  --color-info-ink: oklch(48% 0.1 235);
+
+  /* The theme-adaptive card hairline + lift. In light a near-invisible border and a
+     soft shadow carry the card; dark redefines both. */
+  --cairn-card-border: color-mix(in oklab, var(--color-base-content) 9%, transparent);
+  --cairn-shadow: 0 1px 2px color-mix(in oklab, var(--color-base-content) 6%, transparent),
+                  0 6px 20px -8px color-mix(in oklab, var(--color-base-content) 12%, transparent);
+
+  /* CTA panel — its own pair so it never reads `--color-neutral`, which INVERTS to a light
+     value in dark mode (the rev.1 bug). Light: the warm near-black house-ad. Dark: a recessed
+     bordered panel with a solid primary button, so it never becomes the brightest slab. */
+  --cairn-cta-bg: var(--color-neutral);
+  --cairn-cta-content: var(--color-neutral-content);
+  --cairn-cta-border: transparent;
+  --cairn-cta-btn-bg: var(--color-base-100);
+  --cairn-cta-btn-content: var(--color-base-content);
+}
+
+/* Status, dark — applies across variants. */
+:root[data-mode="dark"] {
+  --color-success: oklch(66% 0.12 150);
+  --color-success-ink: oklch(78% 0.11 150);
+  --color-warning: oklch(82% 0.13 78);
+  --color-warning-ink: oklch(82% 0.12 76);
+  --color-error: oklch(66% 0.17 27);
+  --color-error-ink: oklch(76% 0.14 27);
+  --color-info: oklch(70% 0.1 235);
+  --color-info-ink: oklch(80% 0.1 235);
+  --cairn-card-border: color-mix(in oklab, var(--color-base-content) 16%, transparent);
+  --cairn-shadow: 0 1px 2px color-mix(in oklab, black 40%, transparent),
+                  0 8px 24px -10px color-mix(in oklab, black 55%, transparent);
+  --cairn-cta-bg: var(--color-base-200);
+  --cairn-cta-content: var(--color-base-content);
+  --cairn-cta-border: var(--color-base-300);
+  --cairn-cta-btn-bg: var(--color-primary);
+  --cairn-cta-btn-content: var(--color-primary-content);
+}
+
+/* ============================================================================
+   VARIANT PALETTES — each a complete DaisyUI 5 role set in oklch (light + dark)
+   plus the three font families. Role names only; never appearance names.
+   ============================================================================ */
+
+/* — QUARRY (warmed, rev.2) — warm-stone paper (the bar's warm-tinted ground, low chroma so it
+   is warm-balanced white, never cream), warm slate ink, a deepened confident ink-blue accent in
+   the same family as the info status. The recommended re-skins-anywhere editorial default. */
+:root[data-variant="quarry"] {
+  --color-base-100: oklch(98.4% 0.0035 80);
+  --color-base-200: oklch(96.4% 0.005 80);
+  --color-base-300: oklch(90.8% 0.006 78);
+  --color-base-content: oklch(25% 0.014 70);
+  --cairn-muted: oklch(46% 0.013 72);
+  --color-primary: oklch(45% 0.1 248);
+  --color-primary-content: oklch(99% 0.01 248);
+  --color-secondary: oklch(50% 0.02 75);
+  --color-secondary-content: oklch(99% 0.005 75);
+  --color-accent: oklch(52% 0.07 235);
+  --color-accent-content: oklch(99% 0.01 235);
+  --color-neutral: oklch(27% 0.013 72);
+  --color-neutral-content: oklch(97% 0.003 75);
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Source Sans 3', system-ui, sans-serif;
+  --font-mono: 'Source Code Pro', ui-monospace, monospace;
+}
+:root[data-variant="quarry"][data-mode="dark"] {
+  --color-base-100: oklch(24% 0.01 78);
+  --color-base-200: oklch(20% 0.01 78);
+  --color-base-300: oklch(32% 0.012 78);
+  --color-base-content: oklch(92% 0.007 80);
+  --cairn-muted: oklch(70% 0.012 76);
+  --color-primary: oklch(74% 0.1 248);
+  --color-primary-content: oklch(22% 0.03 248);
+  --color-secondary: oklch(72% 0.02 75);
+  --color-secondary-content: oklch(22% 0.01 75);
+  --color-accent: oklch(76% 0.08 235);
+  --color-accent-content: oklch(22% 0.03 235);
+  --color-neutral: oklch(86% 0.006 75);
+  --color-neutral-content: oklch(22% 0.01 75);
+}
+
+/* — NEWSPRINT — warm-balanced off-white (newsprint, not cream), graphite ink, a
+   near-monochrome accent. Type carries everything; maximally re-skinnable. */
+:root[data-variant="newsprint"] {
+  --color-base-100: oklch(98.2% 0.004 85);
+  --color-base-200: oklch(96.1% 0.006 85);
+  --color-base-300: oklch(90.3% 0.008 82);
+  --color-base-content: oklch(27% 0.008 78);
+  --cairn-muted: oklch(48% 0.01 80);
+  --color-primary: oklch(34% 0.013 78);
+  --color-primary-content: oklch(98% 0.004 85);
+  --color-secondary: oklch(52% 0.015 80);
+  --color-secondary-content: oklch(99% 0.004 85);
+  --color-accent: oklch(44% 0.02 78);
+  --color-accent-content: oklch(98% 0.004 85);
+  --color-neutral: oklch(30% 0.01 78);
+  --color-neutral-content: oklch(97% 0.004 85);
+  --font-display: 'Source Serif 4', Georgia, serif;
+  --font-body: 'Work Sans', system-ui, sans-serif;
+  --font-mono: 'Source Code Pro', ui-monospace, monospace;
+}
+:root[data-variant="newsprint"][data-mode="dark"] {
+  --color-base-100: oklch(23% 0.008 80);
+  --color-base-200: oklch(19.5% 0.008 80);
+  --color-base-300: oklch(31% 0.01 80);
+  --color-base-content: oklch(91% 0.008 85);
+  --cairn-muted: oklch(70% 0.01 82);
+  --color-primary: oklch(86% 0.01 85);
+  --color-primary-content: oklch(22% 0.01 80);
+  --color-secondary: oklch(74% 0.012 82);
+  --color-secondary-content: oklch(22% 0.01 80);
+  --color-accent: oklch(80% 0.014 84);
+  --color-accent-content: oklch(22% 0.01 80);
+  --color-neutral: oklch(86% 0.008 85);
+  --color-neutral-content: oklch(22% 0.01 80);
+}
+
+/* — SLATE — true-neutral cool-grey paper, near-black ink, ONE restrained warm
+   clay/ochre signal. The 2026 "neutral ground + single warm accent" look. The
+   accent takes dark ink as its content (white fails AA on warm mid-tones). */
+:root[data-variant="slate"] {
+  --color-base-100: oklch(97.9% 0.0012 250);
+  --color-base-200: oklch(95.9% 0.0016 250);
+  --color-base-300: oklch(90% 0.0022 250);
+  --color-base-content: oklch(24% 0.005 250);
+  --cairn-muted: oklch(46% 0.006 250);
+  --color-primary: oklch(56% 0.088 60);
+  --color-primary-content: oklch(22% 0.03 60);
+  --color-secondary: oklch(52% 0.012 250);
+  --color-secondary-content: oklch(99% 0.004 250);
+  --color-accent: oklch(60% 0.075 52);
+  --color-accent-content: oklch(22% 0.03 52);
+  --color-neutral: oklch(27% 0.006 250);
+  --color-neutral-content: oklch(97% 0.002 250);
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Work Sans', system-ui, sans-serif;
+  --font-mono: 'Source Code Pro', ui-monospace, monospace;
+}
+:root[data-variant="slate"][data-mode="dark"] {
+  --color-base-100: oklch(23.5% 0.004 250);
+  --color-base-200: oklch(19.5% 0.004 250);
+  --color-base-300: oklch(32% 0.006 250);
+  --color-base-content: oklch(91% 0.004 250);
+  --cairn-muted: oklch(70% 0.006 250);
+  --color-primary: oklch(74% 0.092 62);
+  --color-primary-content: oklch(22% 0.03 60);
+  --color-secondary: oklch(72% 0.012 250);
+  --color-secondary-content: oklch(22% 0.01 250);
+  --color-accent: oklch(78% 0.08 56);
+  --color-accent-content: oklch(22% 0.03 56);
+  --color-neutral: oklch(86% 0.004 250);
+  --color-neutral-content: oklch(22% 0.006 250);
+}
+
+/* — PATINA — warm-balanced stone, warm slate ink, a low-chroma teal-green patina
+   (lichen on stone). Distinctive but restrained; the subject-grounded option. */
+:root[data-variant="patina"] {
+  --color-base-100: oklch(98.4% 0.003 110);
+  --color-base-200: oklch(96.3% 0.005 110);
+  --color-base-300: oklch(90.4% 0.006 125);
+  --color-base-content: oklch(26% 0.012 80);
+  --cairn-muted: oklch(46% 0.011 110);
+  --color-primary: oklch(50% 0.062 190);
+  --color-primary-content: oklch(99% 0.01 190);
+  --color-secondary: oklch(52% 0.018 95);
+  --color-secondary-content: oklch(99% 0.005 95);
+  --color-accent: oklch(56% 0.06 165);
+  --color-accent-content: oklch(99% 0.01 165);
+  --color-neutral: oklch(28% 0.012 95);
+  --color-neutral-content: oklch(97% 0.003 95);
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Source Sans 3', system-ui, sans-serif;
+  --font-mono: 'Source Code Pro', ui-monospace, monospace;
+}
+:root[data-variant="patina"][data-mode="dark"] {
+  --color-base-100: oklch(24% 0.01 150);
+  --color-base-200: oklch(20% 0.01 150);
+  --color-base-300: oklch(32% 0.012 160);
+  --color-base-content: oklch(92% 0.007 110);
+  --cairn-muted: oklch(70% 0.011 130);
+  --color-primary: oklch(74% 0.08 188);
+  --color-primary-content: oklch(21% 0.03 188);
+  --color-secondary: oklch(72% 0.018 95);
+  --color-secondary-content: oklch(21% 0.01 95);
+  --color-accent: oklch(78% 0.07 165);
+  --color-accent-content: oklch(21% 0.03 165);
+  --color-neutral: oklch(86% 0.006 95);
+  --color-neutral-content: oklch(22% 0.01 95);
+}
+
+/* ============================================================================
+   SHARED STRUCTURE — reads only role + cairn tokens. This is the craft layer:
+   the same across all four variants, so palette is the only thing that changes.
+   ============================================================================ */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--color-base-100);
+  color: var(--color-base-content);
+  font-family: var(--font-body);
+  font-size: var(--cairn-step-0);
+  line-height: var(--cairn-leading-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: clip;
+  transition: background 0.2s, color 0.2s;
+}
+:where(a) { color: var(--color-primary); text-underline-offset: 0.16em; text-decoration-thickness: 0.06em; }
+:where(a:hover) { text-decoration-thickness: 0.11em; }
+:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; border-radius: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+.skip-link {
+  position: absolute; left: var(--cairn-space-s); top: -3rem;
+  background: var(--color-primary); color: var(--color-primary-content);
+  padding: 0.5rem 0.9rem; border-radius: var(--radius-field); z-index: 50;
+  font-family: var(--font-body); font-weight: 600; text-decoration: none;
+  transition: top 0.15s;
+}
+.skip-link:focus { top: var(--cairn-space-s); }
+
+/* — chrome — */
+.cairn-mark { display: inline-block; fill: currentColor; }
+.site-header {
+  position: sticky; top: 0; z-index: 20;
+  background: color-mix(in oklab, var(--color-base-100) 88%, transparent);
+  backdrop-filter: saturate(1.4) blur(8px);
+  border-bottom: var(--border) solid var(--cairn-card-border);
+}
+.site-header__inner {
+  max-width: var(--cairn-measure-wide); margin-inline: auto;
+  padding: var(--cairn-space-xs) var(--cairn-space-m);
+  display: flex; align-items: center; justify-content: space-between; gap: var(--cairn-space-m);
+}
+.brand { display: inline-flex; align-items: center; gap: 0.55rem; text-decoration: none; color: var(--color-base-content); }
+.brand .cairn-mark { width: 1.55rem; height: 1.55rem; color: var(--color-primary); }
+.brand__word { font-family: var(--font-display); font-weight: 600; font-size: var(--cairn-step-1); letter-spacing: var(--cairn-tracking-tight); }
+.site-nav { display: flex; align-items: center; gap: var(--cairn-space-s); font-size: var(--cairn-step--1); }
+.site-nav a { color: var(--cairn-muted); text-decoration: none; font-weight: 500; padding: 0.3rem 0.1rem; letter-spacing: 0.01em; }
+.site-nav a:hover { color: var(--color-base-content); }
+.site-nav a[aria-current] { color: var(--color-primary); font-weight: 600; }
+
+.shell { max-width: var(--cairn-measure-wide); margin-inline: auto; padding: 0 var(--cairn-space-m); }
+
+/* — home: masthead + archival index — */
+.masthead { padding: var(--cairn-space-2xl) 0 var(--cairn-space-xl); max-width: var(--cairn-measure); }
+.masthead__title { font-family: var(--font-display); font-weight: 600; font-size: var(--cairn-step-5); line-height: var(--cairn-leading-tight); letter-spacing: var(--cairn-tracking-tight); margin: 0 0 var(--cairn-space-s); }
+.masthead__lead { font-size: var(--cairn-step-1); line-height: var(--cairn-leading-snug); color: var(--cairn-muted); margin: 0; max-width: 38rem; }
+.eyebrow { font-size: var(--cairn-step--1); font-weight: 600; text-transform: uppercase; letter-spacing: var(--cairn-tracking-eyebrow); color: var(--cairn-muted); }
+
+.index { border-top: var(--border) solid var(--color-base-300); padding-top: var(--cairn-space-s); margin-bottom: var(--cairn-space-2xl); }
+.index__head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: var(--cairn-space-xs); }
+.index__count { font-size: var(--cairn-step--1); color: var(--cairn-muted); font-variant-numeric: tabular-nums; }
+.entry { display: grid; grid-template-columns: 7.5rem 1fr; gap: var(--cairn-space-m); padding: var(--cairn-space-m) 0; border-bottom: var(--border) solid var(--cairn-card-border); align-items: start; }
+.entry__date { font-size: var(--cairn-step--1); color: var(--cairn-muted); font-variant-numeric: tabular-nums; padding-top: 0.5rem; letter-spacing: 0.01em; }
+.entry__title { font-family: var(--font-display); font-weight: 600; font-size: var(--cairn-step-2); line-height: var(--cairn-leading-snug); letter-spacing: var(--cairn-tracking-tight); margin: 0 0 0.35rem; }
+.entry__title a { color: inherit; text-decoration: none; }
+.entry__title a:hover { color: var(--color-primary); }
+.entry__excerpt { margin: 0; color: var(--cairn-muted); font-size: var(--cairn-step-0); line-height: var(--cairn-leading-snug); }
+.entry__tags { margin-top: 0.6rem; display: flex; gap: 0.4rem; flex-wrap: wrap; }
+@media (max-width: 34rem) { .entry { grid-template-columns: 1fr; gap: 0.4rem; } .entry__date { padding-top: 0; } }
+
+/* — the reading surface — */
+.article { padding-bottom: var(--cairn-space-2xl); }
+.article__header { max-width: var(--cairn-measure); padding: var(--cairn-space-xl) 0 var(--cairn-space-l); }
+.article__meta { display: flex; gap: 0.6rem; align-items: center; color: var(--cairn-muted); font-size: var(--cairn-step--1); margin-bottom: var(--cairn-space-s); }
+.article__meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.6; }
+.article__title { font-family: var(--font-display); font-weight: 600; font-size: var(--cairn-step-5); line-height: var(--cairn-leading-tight); letter-spacing: var(--cairn-tracking-tight); margin: 0; }
+
+.prose { max-width: var(--cairn-measure); }
+.prose > * + * { margin-top: var(--flow-space); }
+.prose p { margin-block: 0; }
+.prose .lead { font-size: var(--cairn-step-1); line-height: var(--cairn-leading-snug); color: color-mix(in oklab, var(--color-base-content) 86%, transparent); --flow-space: var(--cairn-space-m); }
+.prose h2 { font-family: var(--font-display); font-weight: 600; font-size: var(--cairn-step-3); line-height: var(--cairn-leading-tight); letter-spacing: var(--cairn-tracking-tight); --flow-space: var(--cairn-space-xl); margin-bottom: 0; }
+.prose h2 + * { margin-top: var(--cairn-space-xs); }
+.prose h3 { font-family: var(--font-display); font-weight: 600; font-size: var(--cairn-step-2); line-height: var(--cairn-leading-snug); --flow-space: var(--cairn-space-l); }
+.prose h3 + * { margin-top: var(--cairn-space-xs); }
+.prose strong { font-weight: 650; }
+.prose a { font-weight: 500; }
+
+.prose blockquote { margin-inline: 0; padding-left: var(--cairn-space-m); border-left: 3px solid var(--color-primary); color: color-mix(in oklab, var(--color-base-content) 88%, transparent); font-style: italic; }
+.prose blockquote p { font-size: var(--cairn-step-1); line-height: var(--cairn-leading-snug); }
+.prose blockquote cite { display: block; margin-top: 0.6rem; font-style: normal; font-size: var(--cairn-step--1); color: var(--cairn-muted); }
+
+/* hanging pull-quote — display face, breaks left into the margin on wide screens */
+.pullquote { font-family: var(--font-display); font-weight: 500; font-size: var(--cairn-step-3); line-height: var(--cairn-leading-tight); letter-spacing: var(--cairn-tracking-tight); color: var(--color-base-content); --flow-space: var(--cairn-space-xl); }
+.pullquote::before { content: "\201C"; color: var(--color-primary); }
+@media (min-width: 64rem) {
+  /* a real hang: the whole quote outdents into the left margin so the gesture reads */
+  .pullquote { width: calc(var(--cairn-measure) + 4.5rem); margin-left: -4.5rem; text-align: left; }
+}
+
+.prose :not(pre) > code { font-family: var(--font-mono); font-size: 0.88em; background: var(--color-base-200); border: var(--border) solid var(--color-base-300); border-radius: var(--radius-selector); padding: 0.1em 0.36em; }
+.prose pre { font-family: var(--font-mono); background: var(--cairn-code-bg); border: var(--border) solid var(--cairn-code-border); border-radius: var(--radius-box); padding: var(--cairn-space-s) var(--cairn-space-m); overflow-x: auto; font-size: var(--cairn-step--1); line-height: 1.6; --flow-space: var(--cairn-space-m); }
+.prose pre code { font-family: inherit; color: var(--cairn-code-ink); }
+.tok-com { color: var(--cairn-code-comment); font-style: italic; }
+.tok-key { color: var(--cairn-code-keyword); }
+.tok-str { color: var(--cairn-code-string); }
+.tok-fn  { color: var(--cairn-code-function); }
+.tok-num { color: var(--cairn-code-number); }
+.tok-pun { color: var(--cairn-code-punct); }
+
+.prose ul, .prose ol { padding-left: 1.3em; }
+.prose li + li { margin-top: 0.4rem; }
+.prose ul { list-style: none; padding-left: 1.4em; }
+.prose ul > li { position: relative; }
+.prose ul > li::before { content: ""; position: absolute; left: -1.1em; top: 0.62em; width: 0.4em; height: 0.4em; border-radius: 1px; background: var(--color-primary); transform: rotate(45deg); }
+.prose ol { list-style: none; counter-reset: ol; padding-left: 1.8em; }
+.prose ol > li { counter-increment: ol; position: relative; }
+.prose ol > li::before { content: counter(ol); position: absolute; left: -1.8em; top: 0; font-family: var(--font-display); font-weight: 600; color: var(--color-primary); font-variant-numeric: tabular-nums; }
+.task-list { list-style: none; padding-left: 0; }
+.task-list li { display: flex; gap: 0.6rem; align-items: baseline; }
+.task-list .box { width: 1.05em; height: 1.05em; border: 1.5px solid var(--color-base-300); border-radius: 0.25em; flex: none; position: relative; top: 0.16em; }
+.task-list .box.on { background: var(--color-primary); border-color: var(--color-primary); }
+.task-list .box.on::after { content: "\2713"; color: var(--color-primary-content); font-size: 0.8em; position: absolute; inset: 0; display: grid; place-items: center; }
+
+.prose table { width: 100%; border-collapse: collapse; font-size: var(--cairn-step--1); --flow-space: var(--cairn-space-m); }
+.prose thead th { text-align: left; font-family: var(--font-body); font-weight: 600; border-bottom: 2px solid var(--color-base-300); padding: 0.55rem 0.7rem; }
+.prose tbody td { padding: 0.55rem 0.7rem; border-bottom: var(--border) solid var(--cairn-card-border); }
+.prose tbody tr:nth-child(even) { background: color-mix(in oklab, var(--color-base-200) 60%, transparent); }
+
+.prose hr { border: 0; --flow-space: var(--cairn-space-xl); text-align: center; }
+.prose hr::after { content: ""; display: inline-block; width: 1.4rem; height: 1.4rem; background: var(--color-base-300); mask: var(--cairn-mark-url) center / contain no-repeat; -webkit-mask: var(--cairn-mark-url) center / contain no-repeat; }
+
+/* figure placement contract — center / wide / full, breaking past the measure */
+.prose figure { --flow-space: var(--cairn-space-l); margin: 0; }
+.prose figure img { display: block; width: 100%; height: auto; border-radius: var(--radius-box); background: var(--color-base-200); }
+.prose figcaption { margin-top: 0.6rem; font-size: var(--cairn-step--1); line-height: 1.5; color: var(--cairn-muted); }
+.cairn-place-center { text-align: center; }
+.cairn-place-center img { max-width: min(100%, 22rem); margin-inline: auto; }
+.cairn-place-wide { width: min(var(--cairn-measure-wide), 100vw - 3rem); position: relative; left: 50%; transform: translateX(-50%); }
+.cairn-place-full { width: 100vw; position: relative; left: 50%; transform: translateX(-50%); }
+.cairn-place-full img { border-radius: 0; }
+.cairn-place-full figcaption { max-width: var(--cairn-measure); margin-inline: auto; padding: 0 var(--cairn-space-m); }
+
+.colophon { max-width: var(--cairn-measure); text-align: center; padding-top: var(--cairn-space-xl); }
+.colophon .cairn-mark { width: 1.5rem; height: 1.5rem; color: var(--color-base-300); }
+
+/* — directive components (engine render output) — */
+.callout { --flow-space: var(--cairn-space-m); border: var(--border) solid var(--cairn-card-border); border-left: 3px solid var(--color-primary); border-radius: var(--radius-box); padding: var(--cairn-space-s) var(--cairn-space-m); background: color-mix(in oklab, var(--color-primary) 5%, var(--color-base-100)); }
+.callout-note    { border-left-color: var(--color-info-ink); background: color-mix(in oklab, var(--color-info) 10%, var(--color-base-100)); }
+.callout-tip     { border-left-color: var(--color-success-ink); background: color-mix(in oklab, var(--color-success) 7%, var(--color-base-100)); }
+.callout-warning { border-left-color: var(--color-warning-ink); background: color-mix(in oklab, var(--color-warning) 9%, var(--color-base-100)); }
+.callout__title { font-weight: 650; display: flex; align-items: center; gap: 0.5rem; margin: 0 0 0.3rem; }
+.callout-note .callout__title { color: var(--color-info-ink); }
+.callout-tip .callout__title { color: var(--color-success-ink); }
+.callout-warning .callout__title { color: var(--color-warning-ink); }
+.callout__title svg { width: 1.1em; height: 1.1em; }
+.callout p { margin: 0; }
+.callout ul { margin: 0.5rem 0 0; }
+
+/* — UI component catalog (DaisyUI primitives styled on the tokens) — */
+.section { padding: var(--cairn-space-2xl) 0; border-top: var(--border) solid var(--color-base-300); }
+.section__label { margin-bottom: var(--cairn-space-m); }
+.cluster { display: flex; flex-wrap: wrap; gap: var(--cairn-space-s); align-items: center; }
+.stack { display: flex; flex-direction: column; gap: var(--cairn-space-m); }
+.btn { font-family: var(--font-body); font-weight: 600; font-size: var(--cairn-step--1); border-radius: var(--radius-field); padding: 0.6rem 1.1rem; border: var(--border) solid transparent; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 0.45rem; line-height: 1; }
+.btn-primary { background: var(--color-primary); color: var(--color-primary-content); }
+.btn-primary:hover { background: color-mix(in oklab, var(--color-primary) 88%, black); }
+.btn-outline { background: transparent; color: var(--color-primary); border-color: color-mix(in oklab, var(--color-primary) 45%, transparent); }
+.btn-outline:hover { background: color-mix(in oklab, var(--color-primary) 8%, transparent); }
+.btn-ghost { background: transparent; color: var(--color-base-content); }
+.btn-ghost:hover { background: var(--color-base-200); }
+
+.tag { font-size: var(--cairn-step--1); font-weight: 500; padding: 0.18rem 0.6rem; border-radius: var(--radius-selector); background: var(--color-base-200); border: var(--border) solid var(--color-base-300); color: var(--cairn-muted); }
+.badge-primary { background: color-mix(in oklab, var(--color-primary) 12%, transparent); border-color: transparent; color: var(--color-primary); }
+
+.card { background: var(--color-base-100); border: var(--border) solid var(--cairn-card-border); border-radius: var(--radius-box); box-shadow: var(--cairn-shadow); padding: var(--cairn-space-m); max-width: 22rem; }
+.card__kicker { margin-bottom: 0.5rem; }
+.card h4 { font-family: var(--font-display); font-weight: 600; font-size: var(--cairn-step-1); margin: 0 0 0.4rem; letter-spacing: var(--cairn-tracking-tight); }
+.card p { margin: 0 0 var(--cairn-space-s); color: var(--cairn-muted); font-size: var(--cairn-step-0); }
+
+details.accordion { border: var(--border) solid var(--cairn-card-border); border-radius: var(--radius-box); padding: 0.2rem var(--cairn-space-m); max-width: var(--cairn-measure); }
+details.accordion + details.accordion { margin-top: var(--cairn-space-2xs); }
+details.accordion summary { cursor: pointer; font-weight: 600; padding: var(--cairn-space-s) 0; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+details.accordion summary::-webkit-details-marker { display: none; }
+details.accordion summary::after { content: "+"; color: var(--color-primary); font-size: 1.3em; }
+details.accordion[open] summary::after { content: "\2212"; }
+details.accordion p { margin: 0 0 var(--cairn-space-s); color: var(--cairn-muted); }
+
+.tabs { display: flex; gap: 0.2rem; border-bottom: var(--border) solid var(--color-base-300); }
+.tabs button { font-family: var(--font-body); font-size: var(--cairn-step--1); font-weight: 600; background: none; border: 0; border-bottom: 2px solid transparent; padding: 0.6rem 0.9rem; color: var(--cairn-muted); cursor: pointer; }
+.tabs button[aria-selected="true"] { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+
+.cta { background: var(--cairn-cta-bg); color: var(--cairn-cta-content); border: var(--border) solid var(--cairn-cta-border); border-radius: var(--radius-box); padding: var(--cairn-space-xl); text-align: center; max-width: var(--cairn-measure); }
+.cta h3 { font-family: var(--font-display); font-weight: 600; font-size: var(--cairn-step-3); margin: 0 0 0.5rem; letter-spacing: var(--cairn-tracking-tight); }
+.cta p { margin: 0 0 var(--cairn-space-m); opacity: 0.85; }
+.cta .btn-primary { background: var(--cairn-cta-btn-bg); color: var(--cairn-cta-btn-content); }
+
+.stat { display: inline-flex; flex-direction: column; gap: 0.2rem; }
+.stat__num { font-family: var(--font-display); font-weight: 600; font-size: var(--cairn-step-4); line-height: 1; color: var(--color-primary); font-variant-numeric: tabular-nums; }
+.stat__label { font-size: var(--cairn-step--1); color: var(--cairn-muted); }
+
+/* — footer — */
+.site-footer { border-top: var(--border) solid var(--color-base-300); background: var(--color-base-200); margin-top: var(--cairn-space-2xl); }
+.site-footer__inner { max-width: var(--cairn-measure-wide); margin-inline: auto; padding: var(--cairn-space-xl) var(--cairn-space-m); display: flex; flex-wrap: wrap; gap: var(--cairn-space-m); justify-content: space-between; align-items: center; }
+.site-footer .brand .cairn-mark { color: var(--cairn-muted); }
+.site-footer .brand__word { color: var(--cairn-muted); }
+.site-footer nav { display: flex; gap: var(--cairn-space-s); font-size: var(--cairn-step--1); }
+.site-footer nav a { color: var(--cairn-muted); text-decoration: none; }
+.site-footer nav a:hover { color: var(--color-base-content); }
+.site-footer__fine { width: 100%; font-size: var(--cairn-step--1); color: var(--cairn-muted); border-top: var(--border) solid var(--cairn-card-border); padding-top: var(--cairn-space-s); }
+
+/* — the variant switcher / label (mockup chrome, not part of the design) — */
+.switcher { position: fixed; right: 0.8rem; bottom: 0.8rem; z-index: 100; background: var(--color-base-100); border: var(--border) solid var(--color-base-300); border-radius: var(--radius-box); box-shadow: var(--cairn-shadow); padding: 0.5rem 0.7rem; font-family: var(--font-body); font-size: 0.78rem; max-width: 16rem; }
+.switcher b { font-weight: 700; }
+.switcher .row { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-top: 0.35rem; }
+.switcher button { font: inherit; cursor: pointer; border: var(--border) solid var(--color-base-300); background: var(--color-base-200); color: var(--color-base-content); border-radius: 0.3rem; padding: 0.18rem 0.45rem; }
+.switcher button.active { background: var(--color-primary); color: var(--color-primary-content); border-color: var(--color-primary); }
+@media print { .switcher { display: none; } }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="cairn-mark" viewBox="0 0 24 24">
+    <ellipse cx="12" cy="20.5" rx="8" ry="2.4" />
+    <ellipse cx="11.4" cy="14.8" rx="6" ry="2.3" />
+    <ellipse cx="12.4" cy="9.6" rx="4.3" ry="2.1" />
+    <ellipse cx="11.9" cy="4.8" rx="2.6" ry="1.9" />
+  </symbol>
+  <symbol id="ic-warn" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2 1 21h22L12 2Zm0 6 .01 7M12 17v.01" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="ic-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 11v5M12 8v.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="ic-tip" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5.9 1 .9 1.8v.3h5.2v-.3c0-.8.3-1.3.9-1.8A6 6 0 0 0 12 3ZM9.5 19h5M10.5 21.5h3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+<header class="site-header">
+  <div class="site-header__inner">
+    <a class="brand" href="#"><svg class="cairn-mark"><use href="#cairn-mark"/></svg><span class="brand__word">Field Notes</span></a>
+    <nav class="site-nav" aria-label="Primary">
+      <a href="#" aria-current="page">Writing</a>
+      <a href="#">Archive</a>
+      <a href="#">About</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="shell">
+
+  <!-- HOME — masthead + archival index -->
+  <section class="masthead">
+    <p class="eyebrow" style="margin:0 0 var(--cairn-space-s)">A cairn site</p>
+    <h1 class="masthead__title">Notes from the trail, stacked one stone at a time.</h1>
+    <p class="masthead__lead">A small field journal about building things slowly and writing them down. Markdown in, a published page out. No dashboard to learn.</p>
+  </section>
+
+  <section class="index" aria-label="Writing">
+    <div class="index__head">
+      <p class="eyebrow" style="margin:0">Writing</p>
+      <span class="index__count">3 entries</span>
+    </div>
+    <article class="entry">
+      <div class="entry__date">15 Jan 2026</div>
+      <div>
+        <h2 class="entry__title"><a href="#article">How a cairn marks the way</a></h2>
+        <p class="entry__excerpt">Every page you publish is one stone on the pile. Here is how the markup, the components, and the theme fit together.</p>
+        <div class="entry__tags"><span class="tag">guide</span><span class="tag">markdown</span></div>
+      </div>
+    </article>
+    <article class="entry">
+      <div class="entry__date">20 Feb 2026</div>
+      <div>
+        <h2 class="entry__title"><a href="#">Weights, measures, and a readable column</a></h2>
+        <p class="entry__excerpt">Why the text sits at sixty-six characters and the figures break past it, and how the rhythm holds from a single variable.</p>
+        <div class="entry__tags"><span class="tag">typography</span></div>
+      </div>
+    </article>
+    <article class="entry">
+      <div class="entry__date">10 Mar 2026</div>
+      <div>
+        <h2 class="entry__title"><a href="#">Change the brand in fourteen lines</a></h2>
+        <p class="entry__excerpt">One token file holds the whole look. Edit the colours, keep the prose, and the article re-skins with the chrome.</p>
+        <div class="entry__tags"><span class="tag">theming</span><span class="tag">oklch</span></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ARTICLE — the reading surface, every element -->
+  <article class="article" id="article">
+    <header class="article__header">
+      <div class="article__meta"><span>15 January 2026</span><span class="dot"></span><span>by the Trailkeeper</span><span class="dot"></span><span>6 min</span></div>
+      <h1 class="article__title">How a cairn marks the way</h1>
+    </header>
+
+    <div class="prose">
+      <p class="lead">A cairn is a pile of stones that marks a path. You add one stone, the next walker adds another, and over a season the route becomes legible to anyone who follows. A site works the same way: each post is a stone, and the theme is the shape they take together.</p>
+
+      <p>This page is written in plain Markdown. The heading you just read, the list below, the quote, the code, and the small note boxes are all ordinary text in a file. The editor renders them, the public page renders them the same way, and nothing here was hand-placed in a layout tool.</p>
+
+      <h2>The manuscript leads</h2>
+      <p>Good reading is mostly restraint. The column holds at about sixty-six characters so your eye finds the next line without hunting, the body sits near nineteen pixels, and the space above a heading is larger than the space below it, so a heading <em>belongs</em> to the text it introduces. You can read this for an hour.</p>
+
+      <blockquote>
+        <p>Type is a beautiful group of letters, not a group of beautiful letters.</p>
+        <cite>Matthew Carter</cite>
+      </blockquote>
+
+      <p>When a single line deserves to ring out, it can step into the margin as a pull-quote without leaving the flow of the text:</p>
+
+      <p class="pullquote">Restraint is not the absence of a choice. It is the one choice you trust enough to repeat.</p>
+
+      <h3>Code, set for reading</h3>
+      <p>Inline bits like <code>render(md)</code> sit in a tinted chip. Fenced blocks are highlighted at build time, so the page ships no highlighter and the colours track the theme:</p>
+      <pre><code><span class="tok-com">// the one renderer the editor preview and every page call</span>
+<span class="tok-key">export function</span> <span class="tok-fn">render</span>(md<span class="tok-pun">:</span> <span class="tok-key">string</span>) {
+  <span class="tok-key">return</span> <span class="tok-fn">pipeline</span>(md, { highlight<span class="tok-pun">:</span> <span class="tok-num">true</span>, theme<span class="tok-pun">:</span> <span class="tok-str">'cairn'</span> });
+}</code></pre>
+
+      <h3>Lists and tasks</h3>
+      <ul>
+        <li>Stones are chosen, not poured. Each post earns its place.</li>
+        <li>The marker is read at a glance, so the hierarchy has to be obvious.</li>
+        <li>It lasts a season, so the design should not date in one.</li>
+      </ul>
+      <ol>
+        <li>Write the Markdown.</li>
+        <li>Preview it against the real theme.</li>
+        <li>Publish, and the page deploys itself.</li>
+      </ol>
+      <ul class="task-list">
+        <li><span class="box on"></span> Pick the two type faces</li>
+        <li><span class="box on"></span> Set the oklch palette</li>
+        <li><span class="box"></span> Rotate the accent to your brand</li>
+      </ul>
+
+      <figure class="cairn-place-wide">
+        <img src="https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=1200&q=70" alt="A stone cairn on a misty ridge" />
+        <figcaption>A waymark on the route. Figures can break past the reading column to a wider band, then the caption returns to the measure.</figcaption>
+      </figure>
+
+      <h2>Components you can adopt</h2>
+      <p>The starter ships a few useful blocks. They are Markdown directives, so an author reaches for them without touching code, and they are styled from the same tokens as everything else.</p>
+
+      <div class="callout callout-note">
+        <p class="callout__title"><svg viewBox="0 0 24 24"><use href="#ic-info"/></svg> Note</p>
+        <p>A callout draws the reader to one idea. This is the <code>note</code> tone.</p>
+      </div>
+      <div class="callout callout-tip">
+        <p class="callout__title"><svg viewBox="0 0 24 24"><use href="#ic-tip"/></svg> Tip</p>
+        <p>Use a tip for the thing you wish someone had told you first.</p>
+      </div>
+      <div class="callout callout-warning">
+        <p class="callout__title"><svg viewBox="0 0 24 24"><use href="#ic-warn"/></svg> Heads up</p>
+        <p>A warning is for the step that is easy to get wrong. Read it before you go on.</p>
+      </div>
+
+      <h3>A small table</h3>
+      <table>
+        <thead><tr><th>Token</th><th>Role</th><th>Edits to re-skin</th></tr></thead>
+        <tbody>
+          <tr><td><code>--color-primary</code></td><td>the one accent</td><td>1 line</td></tr>
+          <tr><td><code>--color-base-100</code></td><td>the paper</td><td>1 line</td></tr>
+          <tr><td><code>--font-display</code></td><td>the headings</td><td>1 line</td></tr>
+        </tbody>
+      </table>
+
+      <hr />
+      <p>That is the whole idea. Stack the stones, keep the path legible, and let the next walker read it at a glance.</p>
+      <div class="colophon"><svg class="cairn-mark"><use href="#cairn-mark"/></svg></div>
+    </div>
+  </article>
+
+  <!-- COMPONENT CATALOG -->
+  <section class="section">
+    <p class="eyebrow section__label">Components — the B2 core set</p>
+    <div class="stack">
+      <div class="cluster">
+        <button class="btn btn-primary">Read the guide</button>
+        <button class="btn btn-outline">Browse archive</button>
+        <button class="btn btn-ghost">About</button>
+        <span class="tag">guide</span>
+        <span class="tag badge-primary">featured</span>
+      </div>
+
+      <div class="cluster" style="align-items:flex-start">
+        <div class="card">
+          <p class="eyebrow card__kicker">Field note</p>
+          <h4>Reading the manuscript</h4>
+          <p>A site-owned card. You edit this component in place; nothing essential hides in a package.</p>
+          <button class="btn btn-outline">Open</button>
+        </div>
+        <div class="cta">
+          <h3>Start writing today</h3>
+          <p>Your first post is one Markdown file away.</p>
+          <button class="btn btn-primary">New post</button>
+        </div>
+      </div>
+
+      <div style="max-width:var(--cairn-measure); width:100%">
+        <div class="tabs" role="tablist">
+          <button role="tab" aria-selected="true">Overview</button>
+          <button role="tab" aria-selected="false">Markup</button>
+          <button role="tab" aria-selected="false">Theme</button>
+        </div>
+      </div>
+
+      <details class="accordion" open>
+        <summary>How does publishing work?</summary>
+        <p>Saving holds your edit on a branch. Publish copies it to the main branch, which deploys the site.</p>
+      </details>
+      <details class="accordion">
+        <summary>Can I change the look?</summary>
+        <p>Yes. One token file owns the whole theme. Edit about fourteen colour values and the prose re-skins with the chrome.</p>
+      </details>
+
+      <div class="cluster" style="gap:var(--cairn-space-2xl)">
+        <div class="stat"><span class="stat__num">14</span><span class="stat__label">lines to re-skin</span></div>
+        <div class="stat"><span class="stat__num">0</span><span class="stat__label">JS on the reading route</span></div>
+        <div class="stat"><span class="stat__num">66ch</span><span class="stat__label">the measure</span></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="site-footer__inner">
+    <a class="brand" href="#"><svg class="cairn-mark"><use href="#cairn-mark"/></svg><span class="brand__word">Field Notes</span></a>
+    <nav aria-label="Footer"><a href="#">Writing</a><a href="#">Archive</a><a href="#">About</a><a href="#">Feed</a></nav>
+    <p class="site-footer__fine">Built with cairn. Content under CC BY 4.0. The manuscript is the source of truth.</p>
+  </div>
+</footer>
+
+<div class="switcher" aria-hidden="true">
+  <b id="sw-name">Quarry</b> · <span id="sw-desc">cool limestone · ink-blue</span>
+  <div class="row" id="sw-variants"></div>
+  <div class="row" id="sw-modes"></div>
+</div>
+
+<script>
+  // Mockup chrome: set the cairn-mark mask url for the hr ornament, read ?v=&m= from the URL,
+  // and wire the switcher. None of this is part of the design under review.
+  const META = {
+    quarry:    ['Quarry+', 'warm stone · deep ink-blue'],
+    newsprint: ['Newsprint', 'warm near-mono · graphite'],
+    slate:     ['Slate', 'true-neutral · warm ochre'],
+    patina:    ['Patina', 'warm stone · teal-green'],
+  };
+  const root = document.documentElement;
+  const params = new URLSearchParams(location.search);
+  if (params.get('v') && META[params.get('v')]) root.dataset.variant = params.get('v');
+  if (params.get('m')) root.dataset.mode = params.get('m');
+
+  const markSvg = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cellipse cx='12' cy='20.5' rx='8' ry='2.4'/%3E%3Cellipse cx='11.4' cy='14.8' rx='6' ry='2.3'/%3E%3Cellipse cx='12.4' cy='9.6' rx='4.3' ry='2.1'/%3E%3Cellipse cx='11.9' cy='4.8' rx='2.6' ry='1.9'/%3E%3C/svg%3E\")";
+  root.style.setProperty('--cairn-mark-url', markSvg);
+
+  function sync() {
+    const v = root.dataset.variant, m = root.dataset.mode || 'light';
+    document.getElementById('sw-name').textContent = META[v][0];
+    document.getElementById('sw-desc').textContent = META[v][1] + ' · ' + m;
+    document.querySelectorAll('#sw-variants button').forEach(b => b.classList.toggle('active', b.dataset.v === v));
+    document.querySelectorAll('#sw-modes button').forEach(b => b.classList.toggle('active', b.dataset.m === m));
+  }
+  const vc = document.getElementById('sw-variants');
+  Object.keys(META).forEach(v => { const b = document.createElement('button'); b.dataset.v = v; b.textContent = META[v][0]; b.onclick = () => { root.dataset.variant = v; sync(); }; vc.appendChild(b); });
+  const mc = document.getElementById('sw-modes');
+  ['light','dark'].forEach(m => { const b = document.createElement('button'); b.dataset.m = m; b.textContent = m; b.onclick = () => { root.dataset.mode = m; sync(); }; mc.appendChild(b); });
+  sync();
+</script>
+</body>
+</html>

@@ -312,3 +312,169 @@ designed for the full set, not retrofitted.
   is a Part C scaffolder deliverable, not B2.
 - Home is mocked in B2 to stress the tokens on a composed page and implemented in B3. The defaults surface
   (archive, tags, search, 404, sample content) is B3; the options and first-run are B4.
+
+---
+
+# Settled design (B2 output)
+
+The frontend-design loop (Phase A) and GATE 1 settled the concrete design. Tasks 2 through 6 read their
+values here. The working mockup that produced these values, with a live light/dark and four-variant
+switcher, is [`docs/internal/design/2026-06-25-b2-public-theme-mockups.html`](../../internal/design/2026-06-25-b2-public-theme-mockups.html);
+it is the public counterpart to the admin's `editor-shell-gold-standard.html`.
+
+## The decision and its provenance
+
+The chosen direction is **"the Marker": a manuscript on warm stone.** Four neutral-leaning directions
+(Quarry, Newsprint, Slate, Patina) were rendered as one markup in four token sets and judged by two
+independent adversarial critics (a visual critique and an a11y/contrast review with real WCAG math).
+They converged: Slate's warm-ochre accent failed the AA floor (4.51 on paper, 3.63 on its button), and
+Newsprint's zero-brand-color default read as a placeholder the bar prohibits. The winner is **Quarry
+warmed**: the universal ink-blue accent re-grounded onto warm-stone paper, with the editorial display
+face the critique judged the only one to clear the "excellent finished product" bar. The accent was
+confirmed by the user (deep ink-blue over the teal alternate) on 2026-06-25.
+
+## Faces (self-hosted, OFL, subsettable)
+
+| Role | Face | Use | Notes |
+| --- | --- | --- | --- |
+| `--font-display` | **Fraunces** (variable, opsz + wght + ital) | h1/h2/h3, the masthead, entry titles, pull-quotes, the brand wordmark, the CTA heading, stat numbers | Weight ~600 at a display optical size; never the 900 "chonky" weight that became the cliché. Distinct from the admin's Bricolage Grotesque. |
+| `--font-body` | **Source Sans 3** (variable wght + ital) | body, UI, lead, captions, nav, footer | Legibility-grade humanist sans; warmer and more compact at the 66ch measure than Work Sans. Distinct from the admin's IBM Plex Sans. `strong` at weight 650. |
+| `--font-mono` | **Source Code Pro** | inline code, code blocks | One Source superfamily carries reading and code; Fraunces is the editorial voice. Distinct from the editor's iA Writer Mono. |
+
+The pairing ships preloaded as the default first paint (CLS-safe via a metrics-matched fallback, the
+performance dimension). Fraunces + ink-blue reads as deliberate editorial; the named AI-default cluster
+is Fraunces + **terracotta**, which the chosen blue avoids.
+
+## Color: the oklch role tokens
+
+DaisyUI 5 `@plugin "daisyui/theme"` role names, light and a dark sibling (`prefersdark: true`, wired to
+`color-scheme`). Role names only, never appearance names. Light and dark are symmetric (both warm).
+
+### Brand and base (per-theme)
+
+| Token | Light | Dark |
+| --- | --- | --- |
+| `--color-base-100` (paper) | `oklch(98.4% 0.0035 80)` | `oklch(24% 0.01 78)` |
+| `--color-base-200` (recessed, code panel) | `oklch(96.4% 0.005 80)` | `oklch(20% 0.01 78)` |
+| `--color-base-300` (borders, chips) | `oklch(90.8% 0.006 78)` | `oklch(32% 0.012 78)` |
+| `--color-base-content` (ink) | `oklch(25% 0.014 70)` | `oklch(92% 0.007 80)` |
+| `--cairn-muted` (meta, captions, nav, excerpts) | `oklch(46% 0.013 72)` | `oklch(70% 0.012 76)` |
+| `--color-primary` (the one accent) | `oklch(45% 0.1 248)` | `oklch(74% 0.1 248)` |
+| `--color-primary-content` | `oklch(99% 0.01 248)` | `oklch(22% 0.03 248)` |
+| `--color-secondary` | `oklch(50% 0.02 75)` | `oklch(72% 0.02 75)` |
+| `--color-secondary-content` | `oklch(99% 0.005 75)` | `oklch(22% 0.01 75)` |
+| `--color-accent` | `oklch(52% 0.07 235)` | `oklch(76% 0.08 235)` |
+| `--color-accent-content` | `oklch(99% 0.01 235)` | `oklch(22% 0.03 235)` |
+| `--color-neutral` | `oklch(27% 0.013 72)` | `oklch(86% 0.006 75)` |
+| `--color-neutral-content` | `oklch(97% 0.003 75)` | `oklch(22% 0.01 75)` |
+
+### Status (shared across the theme, light / dark)
+
+Each status hue carries a fill `-content` and a separate on-surface `-ink` token, the admin's lesson
+that a fill tone fails as small text.
+
+| Token | Light | Dark |
+| --- | --- | --- |
+| `--color-success` / `-content` / `-ink` | `oklch(60% 0.12 150)` / `oklch(99% 0.01 150)` / `oklch(45% 0.1 150)` | `oklch(66% 0.12 150)` / same / `oklch(78% 0.11 150)` |
+| `--color-warning` / `-content` / `-ink` | `oklch(80% 0.13 78)` / `oklch(28% 0.05 78)` / `oklch(52% 0.11 70)` | `oklch(82% 0.13 78)` / same / `oklch(82% 0.12 76)` |
+| `--color-error` / `-content` / `-ink` | `oklch(58% 0.19 27)` / `oklch(99% 0.01 27)` / `oklch(50% 0.17 27)` | `oklch(66% 0.17 27)` / same / `oklch(76% 0.14 27)` |
+| `--color-info` / `-content` / `-ink` | `oklch(62% 0.1 235)` / `oklch(99% 0.01 235)` / `oklch(48% 0.1 235)` | `oklch(70% 0.1 235)` / same / `oklch(80% 0.1 235)` |
+
+### Elevation and the CTA pair (the load-bearing rules)
+
+- `--cairn-card-border`: `color-mix(in oklab, var(--color-base-content) 9%, transparent)` light,
+  `16%` dark. `--cairn-shadow`: a soft two-layer shadow (base-content at 6%/12% light; black at 40%/55%
+  dark). A floating card uses both, never a flat `base-300` border (the admin convention).
+- **The CTA panel uses its own token pair, never `--color-neutral` directly.** `--color-neutral`
+  inverts to a light value in dark mode, which turned the CTA into a bright slab (the GATE-1 bug). The
+  pair: light `--cairn-cta-bg: var(--color-neutral)` (the warm near-black house-ad) with a
+  `base-100` button; dark `--cairn-cta-bg: var(--color-base-200)` with a `base-300` border and a solid
+  `primary` button. This rule is load-bearing for Task 4/5; do not paint a CTA from `neutral`.
+
+## The cairn-authored tokens (constant across any re-skin)
+
+```css
+/* Fluid type scale, Utopia-style; ~1.24 ratio, clamp() */
+--cairn-step--1: clamp(0.84rem, 0.81rem + 0.14vw, 0.92rem);   /* caption, meta */
+--cairn-step-0:  clamp(1.06rem, 1.01rem + 0.27vw, 1.22rem);   /* body 17–19.5px */
+--cairn-step-1:  clamp(1.27rem, 1.19rem + 0.43vw, 1.53rem);   /* lead, h4 */
+--cairn-step-2:  clamp(1.52rem, 1.39rem + 0.66vw, 1.91rem);   /* h3, index title */
+--cairn-step-3:  clamp(1.83rem, 1.63rem + 1.0vw, 2.39rem);    /* h2 */
+--cairn-step-4:  clamp(2.19rem, 1.9rem + 1.45vw, 2.98rem);    /* section display, stat */
+--cairn-step-5:  clamp(2.3rem, 1.82rem + 2.1vw, 3.6rem);      /* h1, masthead (floor pulled for mobile) */
+--cairn-leading-body: 1.65;   --cairn-leading-snug: 1.4;   --cairn-leading-tight: 1.12;
+--cairn-tracking-tight: -0.011em;   --cairn-tracking-eyebrow: 0.12em;
+
+/* Measure: the reading column cap (~66ch), structural. Figures and pull-quotes break past it. */
+--cairn-measure: 44rem;   --cairn-measure-wide: 58rem;
+
+/* Fluid space scale (Utopia 3xs–2xl) */
+--cairn-space-3xs: clamp(0.31rem, 0.3rem + 0.05vw, 0.34rem);
+--cairn-space-2xs: clamp(0.5rem, 0.48rem + 0.11vw, 0.56rem);
+--cairn-space-xs:  clamp(0.75rem, 0.72rem + 0.16vw, 0.84rem);
+--cairn-space-s:   clamp(1rem, 0.96rem + 0.22vw, 1.13rem);
+--cairn-space-m:   clamp(1.5rem, 1.43rem + 0.33vw, 1.69rem);
+--cairn-space-l:   clamp(2rem, 1.91rem + 0.43vw, 2.25rem);
+--cairn-space-xl:  clamp(3rem, 2.83rem + 0.87vw, 3.5rem);
+--cairn-space-2xl: clamp(4rem, 3.74rem + 1.3vw, 4.75rem);
+--flow-space: 1.35em;   /* the single owl-selector rhythm var; headings/figures/pre override locally */
+
+/* Geometry: modest, stone-grade radii (not zero broadsheet, not bubbly) */
+--radius-box: 0.625rem;   --radius-field: 0.4rem;   --radius-selector: 0.28rem;   --border: 1px;
+
+/* Code-block ramp: every token reads a role, so a re-skin recolors code with no edit.
+   Task 3's Shiki theme emits these CSS-variable names. */
+--cairn-code-bg: var(--color-base-200);       --cairn-code-border: var(--color-base-300);
+--cairn-code-ink: var(--color-base-content);  --cairn-code-comment: var(--cairn-muted);
+--cairn-code-keyword: var(--color-primary);   --cairn-code-string: var(--color-success-ink);
+--cairn-code-function: var(--color-info-ink); --cairn-code-number: var(--color-warning-ink);
+--cairn-code-punct: var(--cairn-muted);
+```
+
+## Layouts
+
+- **Chrome (Task 4).** Sticky header on a translucent `base-100` (`color-mix … 88%` + `backdrop-filter`)
+  with a `--cairn-card-border` hairline bottom: the cairn brand mark (primary) plus the Fraunces
+  wordmark left, the primary nav right (`--cairn-muted`, hover to `base-content`, `aria-current` to
+  `primary` plus weight 600). Footer on `base-200`: the brand, a footer nav, and a fine-print line over a
+  hairline. Skip link, `header`/`nav`/`main`/`footer` landmarks, a consistent `:focus-visible` (2px
+  primary, 2px offset).
+- **Reading surface (Task 5).** A centred column at `--cairn-measure` inside the `--cairn-measure-wide`
+  shell. Vertical rhythm from `--flow-space` via the owl selector; headings bind to the text they
+  introduce (large space above, tight below). Elements: lead paragraph (step-1, 86% ink); h2 (Fraunces
+  step-3) / h3 (Fraunces step-2); blockquote with a 3px `primary` left rule, italic; a hanging pull-quote
+  (Fraunces step-3) that outdents 4.5rem into the left margin past `64rem`; inline code as a `base-200`
+  chip with a `base-300` border; the code block on `--cairn-code-*`; figures on the existing
+  `center`/`wide`/`full` contract with `--cairn-muted` captions and full-bleed breakout (`overflow-x:
+  clip` keeps no scrollbar); diamond `ul` markers and Fraunces numbered `ol` markers; bordered, zebra
+  (`base-200`) tables; the `hr` as a centred cairn mark in `base-300`; the end-of-article colophon mark.
+- **Home (Task 6).** A masthead (eyebrow, Fraunces step-5 title, step-1 muted lead) over an "archival
+  index": a `base-300` top rule, an eyebrow plus a tabular entry count, then dated rows (a 7.5rem date
+  column, a Fraunces step-2 title, a muted excerpt, tag chips), each over a hairline. Collapses to one
+  column below 34rem.
+- **Components (Task 5/7 catalog).** Buttons (`btn-primary` solid, `btn-outline`, `btn-ghost`), tags and
+  a `badge-primary` tint, a floating card, a native `<details>` accordion (`+`/`−` marker), a tab bar,
+  the CTA (per the token-pair rule above), and a stat (Fraunces number + muted label).
+
+## Carry-forward punch-list (Tasks 2, 5, 7)
+
+These are the GATE-1 findings the build must honour; the dual-gamut culori gate (Task 7) is the final
+authority on AA, and the values above are GATE-1-clean by hand math but must pass that gate.
+
+- **Contrast guardrails.** Keep `--color-accent` and `--color-secondary` off small text (they are
+  large-text-only in some hues). The culori gate must check every role/`-content` pair plus the
+  on-surface `-ink` tokens, in sRGB and P3.
+- **Harmonise the info status with the brand blue.** The note callout should read as the brand's own
+  note; nudge `--color-info`/`-ink` toward the brand hue (248) so it does not read as an "almost the
+  same" second blue (Task 2 tuning).
+- **Confirm the code panel reads on warm paper.** Warm `base-200` against warm `base-100` is a smaller
+  delta than the cool version; nudge `base-200` if `pre` stops reading as a panel.
+- **Real semantics in the build.** GFM task lists render real `<input type="checkbox" disabled>`; style
+  the real control and keep the check glyph (non-colour cue). The tabs are either the full APG pattern
+  (`aria-controls` → `tabpanel`, roving tabindex, arrow keys) or plain links; do not ship half-roled
+  tabs. Callout titles keep a mandatory text label, and the decorative SVG is `aria-hidden`.
+- **Sticky-header offsets.** Add `scroll-padding-top` equal to the header height so a focused in-page
+  anchor is not obscured. Verify the focus ring at 3:1 against `base-200` and the callout tints, not only
+  `base-100`.
+- **Motion.** Gate every transition behind `prefers-reduced-motion`, including any future `<details>`
+  open transition, JS scroll, and the CSS `@view-transition`.

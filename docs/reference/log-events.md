@@ -26,7 +26,7 @@ redaction stance.
 | `publish.failed` | warn or error | A publish commit fails, with the `commit.failed` shape. | `concept`, `id`, `editor`, `reason` or `error` |
 | `publish.address_collision` | warn | A publish proceeds while another entry already resolves to the same address (last-write-wins, now visible). | `editor`, `address`, `displacedConcept`, `displacedId` |
 | `github.unreachable` | warn | The admin layout's pending-entries read fails because GitHub does not answer. | `scope` (`layout`), `error` |
-| `guard.rejected` | warn or error | The admin guard refuses a request before `resolve()`. `error` with `reason: "bindings"` when any admin request, the public login and auth paths included, finds no `AUTH_DB` binding; `warn` otherwise. | `reason` (`csrf`, `origin`, `https`, or `bindings`), `path`, `conditionId` on `bindings` |
+| `guard.rejected` | warn or error | The admin guard refuses a request before `resolve()`. `error` with `reason: "bindings"` when any admin request, the public login and auth paths included, finds no `AUTH_DB` binding, or `reason: "dev_backend_in_prod"` (a 503) when `CAIRN_DEV_BACKEND` is set in a deployed runtime; `warn` otherwise. | `reason` (`csrf`, `origin`, `https`, `bindings`, or `dev_backend_in_prod`), `path`, `conditionId` on `bindings` |
 | `media.uploaded` | info | New bytes are stored to R2 and the manifest row is written. | `editor`, `hash`, `bytes`, `ext` |
 | `media.upload_failed` | warn or error | An upload fails: oversize, the wrong type, a network error, or a missing binding. | `editor`, `reason`, `code` (optional) |
 | `media.delivery_failed` | warn | The delivery route cannot serve the bytes because the Worker has no media bucket bound. | `reason`, `binding` |
@@ -60,6 +60,11 @@ out, which makes this record the only sign of the fault; its `conditionId` is al
 `guard.rejected` with `reason: "bindings"`, the Worker deployed without an `AUTH_DB` binding, so
 the guard serves the branded condition page on every admin path, the login page included, instead
 of a sign-in flow that could never succeed; the `conditionId` field is `config.bindings-missing`.
+
+On `guard.rejected` with `reason: "dev_backend_in_prod"`, a deployed runtime carries the
+`CAIRN_DEV_BACKEND` flag. A production build fences out the dev backend (the
+`@glw907/cairn-cms-dev` package), so the flag marks a polluted environment. The guard refuses with a 503 instead of
+running the production guard under a dangerous flag, and the record carries the request `path`.
 
 `github.unreachable` fires when the admin layout cannot read the pending-entries state, usually a
 revoked installation, a bad credential, or a GitHub outage. The shell degrades rather than fails:

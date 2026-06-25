@@ -44,7 +44,7 @@ const callout: ComponentDef = {
       h('ul', { className: ['callout-points'] }, ctx.items('points').map((item: ElementContent[]) => h('li', item))),
     ]),
   attributes: [
-    { key: 'tone', label: 'Tone', type: 'select', required: true, options: ['note', 'warning'] },
+    { key: 'tone', label: 'Tone', type: 'select', required: true, options: ['note', 'tip', 'warning'] },
     { key: 'icon', label: 'Icon', type: 'icon' },
   ],
   slots: [

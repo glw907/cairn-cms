@@ -47,6 +47,21 @@
       "summary": "Proving the component slot render path in the real build.",
       "draft": false,
       "links": []
+    },
+    {
+      "id": "2026-04-05-the-reading-surface",
+      "concept": "posts",
+      "title": "The reading surface",
+      "date": "2026-04-05",
+      "permalink": "/posts/the-reading-surface",
+      "summary": "A working tour of every element this theme styles, written as the markdown an author actually types.",
+      "draft": false,
+      "links": [
+        {
+          "concept": "pages",
+          "id": "about"
+        }
+      ]
     }
   ]
 }

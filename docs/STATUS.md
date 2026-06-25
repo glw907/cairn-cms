@@ -11,6 +11,25 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
+## Immediate next action (2026-06-25, latest): Part B1 (the factoring) is COMPLETE on `feat/scaffolder-b1-factoring`; B2 (the design foundation) is next
+
+**Part B1 (the factoring) is done on the `feat/scaffolder-b1-factoring` worktree.** The showcase is now
+the single deployable `cairn-starter` reference: it builds on `@sveltejs/adapter-cloudflare` ^7 with a
+real `wrangler.jsonc` (D1 `AUTH_DB`, `EMAIL`, R2 `MEDIA_BUCKET`, observability) and the `0000_auth`
+migration, `app.d.ts` carries the real `AuthEnv` `Platform.env`, `npm run dev` serves `/admin` again
+(vite `dedupe` + `fs.allow`), and a `.cairn-template.json` emission manifest names the `test`/`spike`/
+`calendar` demo routes and the e2e harness it drops. A new `scaffold.yml` CI job packs the engine and
+dev package, emits the template against the tarballs, and installs, type-checks, and builds it every
+commit (the rot gate); the e2e elimination grep retargets to the deployable `.svelte-kit/cloudflare/`
+Worker. Plan and post-mortem:
+`docs/superpowers/plans/2026-06-25-cairn-scaffolder-part-b1-factoring.md`.
+
+**NEXT: Part B2, the design foundation.** The first and largest `frontend-design` run establishes the
+visual language on the chrome and the article reading surface, and the first-class tokens/theme layer
+codifies it on DaisyUI 5's theme system. Home is mocked against the tokens here, then implemented in B3.
+Two gates run in order: the visual-design critique, then the tokens adversarial review. B2 is the natural
+context-clear boundary. See the scaffolder spec's "Sub-pass sequencing" (B2).
+
 ## Immediate next action (2026-06-25, latest): Part B decomposed into four sub-passes; B1 (the factoring) is planned and ready to execute
 
 **Part B is sequenced into four linear sub-passes** in the scaffolder spec

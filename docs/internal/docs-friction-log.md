@@ -613,3 +613,32 @@ The DX slot (post-mortem `docs/superpowers/plans/2026-06-24-cairn-pre-part-b-dx-
 
 Carry-forward: the production sites (ecxc-ski, 907-life) thread `assetsEnabled` into `createPublicRoutes`
 to arm the `media.resolver_absent` diagnostic at their next cutover.
+
+## Scaffolder Part B1 pass: resolutions (2026-06-25)
+
+Part B1 (the factoring) made the showcase the single deployable `cairn-starter` reference. Plan and
+post-mortem: `docs/superpowers/plans/2026-06-25-cairn-scaffolder-part-b1-factoring.md`.
+
+- **developer** (the showcase's `npm run dev` failed): resolved. `resolve.dedupe: ['@sveltejs/kit']`
+  and `server.fs.allow: ['..', '../..']` in the showcase `vite.config.ts` let `/admin` serve in dev
+  (a 307 to `/admin/posts`, not a 500). Closes the Part A finding above.
+- **developer** (the showcase modeled a loose `app.d.ts`): resolved. `app.d.ts` now carries the real
+  `AuthEnv` `Platform.env` (the D1, R2, and Email bindings, the origin, and the GitHub App vars) in
+  place of `Record<string, unknown>`, and the showcase builds on `@sveltejs/adapter-cloudflare` with a
+  real `wrangler.jsonc` and the `0000_auth` migration. The accurate strict `Platform` (it also declares
+  `context` and `caches`) turned the dev backend's platform fabrication into a non-overlapping cast, now
+  routed through `unknown`, and a latent implicit-any in the fake Anthropic body is typed from the
+  client contract.
+- **maintainer** (the dev package had no gate coverage): partly addressed. The new `scaffold.yml` emits
+  the template against packed tarballs and runs its `npm run check`, which type-checks the dev package's
+  shipped TypeScript source in a fresh install. This pass it caught both dev-source type errors above. A
+  dedicated `check:dev-package` is still owed before Part C publishes the package.
+- **developer** (the deployable output moved): the dev-backend-elimination grep now targets the
+  adapter-cloudflare Worker at `.svelte-kit/cloudflare/`, replacing `build/`, in both `e2e.yml` and the
+  new `scaffold.yml`.
+- **developer** (the emitted template was not standalone): the showcase resolved `@types/node` only
+  through its symlinked dev tree and excluded the committed content manifest, so a fresh tarball emit
+  failed `npm run check` (44 Node-globals errors) then the build (the `cairn-manifest` plugin verifies
+  `src/content/.cairn/index.json` in `buildStart`). Fixed by declaring `@types/node` and shipping the
+  manifest. Note for the emitter: `npm pack` of the engine runs its `prepare` build hook, whose stdout
+  precedes the tarball name, so the name capture needs `tail -n1`.

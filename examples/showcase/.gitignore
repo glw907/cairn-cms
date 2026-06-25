@@ -2,5 +2,7 @@ node_modules
 .svelte-kit
 build
 .wrangler
+.dev.vars
+.dev.vars.*
 test-results
 playwright-report

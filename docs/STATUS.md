@@ -11,7 +11,40 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-24, latest): execute the scaffolder Part A plan (the `@glw907/cairn-cms-dev` package)
+## Immediate next action (2026-06-24, latest): scaffolder Part A is COMPLETE and merge-ready (`0.63.0`, held); next is the pre-Part-B DX slot
+
+**Part A (the `@glw907/cairn-cms-dev` dev package) is done on `feat/cairn-cms-dev`, all gates green,
+security-reviewed, and ready to fast-forward to `main` as `0.63.0` (held, unpublished).** It extracts the
+fake GitHub/D1/R2/Anthropic doubles and the magic-link auth bypass out of the engine and the showcase
+into a fenced, fail-closed dev-only package consumed as a `devDependency` (the
+dev-backend-out-of-the-engine reversal). The engine gained a `dev_backend_in_prod` tripwire (503, reads
+both `platform.env` and `process.env`); the showcase activates the backend behind a build-foldable
+`(dev || import.meta.env.VITE_CAIRN_E2E === '1') && process.env.CAIRN_DEV_BACKEND === '1'` gate, and its
+e2e stays on `build && preview` with `VITE_CAIRN_E2E=1` opting the backend in. Eight commits on the
+branch; plan and post-mortem at
+`docs/superpowers/plans/2026-06-24-cairn-scaffolder-part-a-dev-package.md`.
+
+**Verified.** A default `npm run build` leaves `examples/showcase/build/` free of every dev-backend symbol
+across both risk tiers (a ten-needle grep, empty: the Reversal 1 security property). The e2e is 30/30.
+The engine gate is green (`check` 1147 files 0/0, `npm test` 2477 EXIT 0, `check:comments` and the four
+doc gates clean). The `web-auth-security-reviewer` exit gate found no Critical (the auth-bypass tier is
+contained) and its five findings are folded and re-verified.
+
+**NEXT: the pre-Part-B DX slot, then Part B.** The slot lands the `AuthEnv` root re-export (so a generated
+`app.d.ts` imports cleanly), the `media.json` graceful-degrade (so the template ships no
+seed-an-empty-file workaround), and the `runtime.publicMediaResolver` ergonomic (wire the resolver once,
+not three times). See the spec's "Sequencing and the pre-Part-B DX slot" section. Brainstorm the slot's
+open calls, then plan it.
+
+**Carry-forwards:** the owed live D1 admin smoke (the tripwire's `platform.env` path and the bypass
+against a real Worker, riding the first per-site cutover); the dev-package gate-coverage gap (`check:*`
+scope to `src/lib`, so the package is ungated, and Part C, which publishes it, needs a
+`check:dev-package`); the broken showcase `npm run dev` (the `file:../..` dist needs vite `dedupe` and a
+wider `fs.allow`, for Part B). All in `docs/internal/docs-friction-log.md` under "Scaffolder Part A pass."
+
+---
+
+## Prior next action (2026-06-24): execute the scaffolder Part A plan (the `@glw907/cairn-cms-dev` package)
 
 **The `create-cairn-site` scaffolder initiative is DESIGNED and PLANNED; Part A is ready to execute.** The
 design spec is `docs/superpowers/specs/2026-06-24-cairn-scaffolder-design.md` (a three-part initiative,

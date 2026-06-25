@@ -2,6 +2,26 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.63.0
+
+<!-- release-size: minor -->
+
+The local-development fake backend moves out of the engine and the showcase into a separate, dev-only
+package, `@glw907/cairn-cms-dev`, the first part of the `create-cairn-site` scaffolder. The package
+holds the in-memory GitHub, R2, D1, and Anthropic doubles and a blessed `devBackendHandle()` that
+installs them and an owner-session bypass, so a site runs `/admin` locally with no cloud accounts. A
+consumer installs it as a `devDependency` and activates it from `hooks.server.ts` behind a
+build-foldable `dev` gate, so a production build eliminates it from the bundle.
+
+The auth guard gains a fail-closed tripwire. If `CAIRN_DEV_BACKEND` is set in a deployed runtime, the
+guard refuses the request with a 503 and logs `guard.rejected` with `reason: "dev_backend_in_prod"`.
+It reads the flag from both the Worker `platform.env` and `process.env`, so it fires on Cloudflare and
+adapter-node alike. `AuthEnv` carries a new optional `CAIRN_DEV_BACKEND?: string | boolean` field for
+it.
+
+No consumer action is required. The tripwire fires only when the flag is set, and the new package is
+opt-in for sites that want the local dev backend.
+
 ## 0.62.2
 
 The edit-load address-collision advisory now checks the published corpus only. It fires when an entry

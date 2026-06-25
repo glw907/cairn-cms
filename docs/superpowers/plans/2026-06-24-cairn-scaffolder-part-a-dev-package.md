@@ -413,3 +413,64 @@ See the design spec's "Sequencing and the pre-Part-B DX slot" and "Part B" secti
   `/sveltekit` export of `createAuthGuard` and the `svelte` export condition; and matching the guard
   test's log-capture harness. None blocks the design; each is a "read the real code first" step already
   called out in the relevant task.
+
+---
+
+## Post-mortem (2026-06-24)
+
+**Shipped as `0.63.0` (held, unpublished).** Part A extracts the local-dev fake backend and the
+magic-link auth bypass out of the engine and the showcase into a fenced, dev-only package
+`@glw907/cairn-cms-dev`, consumed as a `devDependency`. Eight commits on `feat/cairn-cms-dev`: the
+workspace scaffold, the four fakes moved in, the `devBackendHandle` factory, the engine tripwire, the
+showcase fence plus the e2e, the reference/README docs, the security-review fold, and the
+code-simplifier polish, then the release consolidation.
+
+**What was built.** A `packages/cairn-cms-dev` workspace package holding the four fakes (GitHub, R2, D1,
+Anthropic doubles) and a blessed `devBackendHandle(options?: { seedContent?: boolean })` factory that
+installs them and mints an owner session. The engine's `createAuthGuard` gained a fail-closed
+`dev_backend_in_prod` tripwire (503), and `AuthEnv` a `CAIRN_DEV_BACKEND?: string | boolean` field. The
+showcase activates the backend behind a build-foldable gate and runs its e2e on a production build that
+opts the backend in.
+
+**Verified (evidence).** Engine gate green at the tip: `npm run check` 1147 files 0/0, `npm test` 229
+files / 2477 tests EXIT 0, `check:comments` clean, all four doc gates (`check:reference`,
+`check:reference:signatures`, `check:docs`, `check:package`) exit 0. The security property is proven
+first-hand: a default `npm run build` of the committed code leaves `examples/showcase/build/` free of
+every dev-backend symbol across both risk tiers (a ten-needle grep, empty). The showcase e2e is 30/30 on
+the `build && preview` flow. The `web-auth-security-reviewer` exit gate found no Critical and confirmed
+the auth-bypass tier contained; its five findings were folded and re-verified.
+
+**Decisions locked.**
+- The dev-backend-out-of-the-engine reversal (spec Reversal 1) is implemented: the bypass lives in a
+  `devDependency`, never the engine or the showcase's committed source.
+- **The fence is build-foldable, and the showcase e2e stays on a production build.** The plan's
+  `dev && CAIRN_DEV_BACKEND` fence broke the existing `build && preview` e2e, since a production build
+  folds `dev` to false and eliminates the backend, so the admin specs lost their bypass. Running the e2e
+  in `vite dev` (the first resolution) dead-ended on the showcase's `file:../..` dist consumption (a dual
+  `@sveltejs/kit` instance makes `/admin` return a 500; `server.fs.allow` blocks engine assets). Geoff chose Path B:
+  the fence is `(dev || import.meta.env.VITE_CAIRN_E2E === '1') && process.env.CAIRN_DEV_BACKEND === '1'`,
+  the e2e build sets `VITE_CAIRN_E2E=1` to opt the backend in, and a default build leaves it out. This
+  keeps the e2e's production-build coverage (the 0.60.0 lesson) and avoids the dev-server rabbit hole.
+  `VITE_CAIRN_E2E` is showcase-test infrastructure; Part C strips it from the emitted template.
+- **Every consumer import of the dev package is dynamic and build-gated, not just `hooks.server.ts`.**
+  The package's flat `export *` barrel means one static import pulls the whole bypass into the build;
+  three showcase modules (`cairn.server.ts`, two `/test/*` routes) did exactly that and were caught by
+  the elimination grep, then converted to `await import()` inside the gate.
+- **The elimination grep targets the deployable `build/`, not `.svelte-kit/output`.** Vite emits a dead,
+  unreferenced split chunk for a dynamic-import target in the intermediate; the adapter prunes it from
+  the deployable. The `e2e.yml` gate greps `build/`.
+- **The tripwire reads both env sources.** The security review found it inert on adapter-node (it read
+  only `platform.env`, but the showcase and template set the flag in `process.env`); it now checks both,
+  so it fires on Cloudflare and node alike.
+
+**Carry-forwards.**
+- **Owed live D1 admin smoke.** The showcase has no D1 Worker, so the tripwire's `platform.env` path and
+  the bypass are covered only by the unit and integration tests and the e2e. A real-Worker smoke (the
+  tripwire refusing a deployed admin with the flag set) rides the first per-site cutover.
+- **Dev-package gate coverage (Part C).** The `check:*` gates scope to `src/lib`; the dev package's types
+  and comments are ungated (Task 3 used an ad-hoc `tsc -p`). Part C, which publishes the package, needs a
+  `check:dev-package`. In the friction log.
+- **The showcase's `npm run dev` is broken (Part B).** The `file:../..` dist needs
+  `resolve.dedupe: ['@sveltejs/kit']` and a wider `server.fs.allow`. In the friction log.
+- **Pre-Part-B DX slot is next:** the `AuthEnv` root re-export, the `media.json` graceful-degrade, and the
+  `runtime.publicMediaResolver` ergonomic, before Part B's showcase-to-template factoring.

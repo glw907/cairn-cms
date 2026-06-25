@@ -566,3 +566,29 @@ Docs and the developer-docs outline (candidates for the docs rewrite,
 - **developer** (the root over-export vs the engine/site line): the root subpath over-exports against the
   clean engine/site boundary the architecture draws, and reference pages document the same symbols in two
   homes. The scaffolder's template-contract work touches this.
+
+## Scaffolder Part A pass: execution findings (2026-06-24)
+
+Building the `@glw907/cairn-cms-dev` package surfaced these, beyond the design-pass findings that
+precede this section. The stale-tutorial dev-backend step already appears there (Parts A and B dissolve
+it).
+
+- **maintainer** (the dev package has no gate coverage): `check:comments`, `check:reference`, and
+  `check:reference:signatures` all scope to `src/lib`, so the dev package's TSDoc, exports, and types
+  pass through ungated. Part A's Task 3 caught two latent type errors in the moved fakes only with an
+  ad-hoc `tsc -p packages/cairn-cms-dev`. Candidate: a `check:dev-package` (or wider gates) that runs
+  `tsc --noEmit` and the comment lint over `packages/**`. Part C, which publishes the package, needs this.
+- **developer** (the showcase's `npm run dev` fails): the showcase consumes the engine through a
+  `file:../..` dist symlink, and in dev mode Vite resolves a second `@sveltejs/kit` instance, so a thrown
+  `redirect` fails the showcase's `instanceof Redirect` check and `/admin` returns a 500;
+  `server.fs.allow` also rejects the engine's `dist` client assets. The proven fix adds
+  `resolve.dedupe: ['@sveltejs/kit']` and `server.fs.allow: ['..', '../..']` to the showcase
+  `vite.config.ts`. The e2e runs on `build && preview` and never hit this; the Part A dev-mode e2e
+  exploration surfaced it. Candidate for Part B (a developer's first hour should include a working
+  `npm run dev`).
+- **developer** (verify dev-backend elimination on the deployable, not the build intermediate): Vite
+  emits a split chunk for a dynamic-import target during graph construction, so
+  `.svelte-kit/output/server/chunks/` carries a dead, unreferenced chunk with the dev-backend code even
+  when dead-code elimination removes the importing branch; the adapter's Rollup pass prunes it from
+  `build/`. The "no bypass in the build" grep must target the deployable `build/`, which the `e2e.yml`
+  gate now does. The docs rewrite should explain this where it documents the fence.

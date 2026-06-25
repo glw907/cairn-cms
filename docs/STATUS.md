@@ -11,7 +11,38 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-25, latest): Part B1 (the factoring) is COMPLETE on `feat/scaffolder-b1-factoring`; B2 (the design foundation) is next
+## Immediate next action (2026-06-25, latest): Part B2 (the design foundation) is PLANNED and ready to execute; B1 is MERGED to `main`
+
+**Part B1 merged to `main` and pushed** (origin at `85b3f5b`; the `feat/scaffolder-b1-factoring` worktree
+and branch are removed). **Part B2 (the design foundation) is planned:**
+`docs/superpowers/plans/2026-06-25-cairn-scaffolder-part-b2-design-foundation.md`, anchored on the design
+bar `docs/superpowers/specs/2026-06-25-cairn-b2-design-bar.md` (distilled from a 13-reference best-of
+review).
+
+**Settled direction:** a distinct editorial display face over a legibility-grade humanist sans body (mono
+only for code), and a warm paper-and-ink oklch ground with one restrained accent. The exact faces and
+values are the frontend-design loop's output. **Non-negotiable principles:** the shipped default is the
+product (most users keep it), 2026-modern not trendy, evidence-grounded UI/UX, the prose is the
+documentation and shows every markdown element, and the template anticipates the common site-building UI
+components and demos every one on a growing `/styleguide` (B2 ships the system and core set; B3 and B4 add
+the feature and option components to the same demo).
+
+**What B2 builds:** the DaisyUI 5 oklch token layer (the re-skin surface, the public analog of the admin's
+Warm Stone), the restyled chrome, a bespoke token-bound reading surface (every element reads the same
+roles, so one edit re-skins chrome and article together), build-time Shiki highlighting moved into the
+engine render pipeline (the one engine change), a `/styleguide` proof route, and Home mocked against the
+tokens (implemented in B3). Five differentiators and two ordered gates (the visual-design critique, then
+the token-layer adversarial review). The public side gets Tailwind + DaisyUI for the first time.
+
+**NEXT: execute B2** in a worktree off `main`
+(`git worktree add ../cairn-cms-part-b2 -b feat/scaffolder-b2-design-foundation main`, symlink
+`node_modules`, `npm run package`, `npm ci --prefix examples/showcase`), running Phase A (the
+frontend-design loop, main-loop) and GATE 1 first, then the `cairn-implementer` tasks, then GATE 2. B2 is
+the natural context-clear boundary; this session's brainstorm produced the plan and the bar.
+
+---
+
+## Prior next action (2026-06-25): Part B1 (the factoring) COMPLETE and merged to `main`
 
 **Part B1 (the factoring) is done on the `feat/scaffolder-b1-factoring` worktree.** The showcase is now
 the single deployable `cairn-starter` reference: it builds on `@sveltejs/adapter-cloudflare` ^7 with a

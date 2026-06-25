@@ -1,7 +1,7 @@
 // Showcase fixture: a deterministic Anthropic client for the tidy action. It returns a CANNED
 // corrected string for the seeded copy-edit entry so the review diff is stable across runs, and no
 // network call or real key is ever made. The real SDK client is used in production; this is injected
-// only through createCairnAdmin's `anthropic` dep when SHOWCASE_FAKE_BACKEND is set.
+// only through createCairnAdmin's `anthropic` dep when CAIRN_DEV_BACKEND is set.
 //
 // The TidyClient contract (src/lib/sveltekit/content-routes.ts) is structural: messages.create takes
 // the prompt and returns a Message-shaped object. The action reads the user message's text, so the

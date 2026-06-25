@@ -3,15 +3,23 @@
 // composeRuntime per route.
 import { composeRuntime } from '@glw907/cairn-cms';
 import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
+import type { ContentRoutesDeps } from '@glw907/cairn-cms/sveltekit';
+import { dev } from '$app/environment';
 import { cairn, siteConfig } from '$lib/cairn.config.js';
-import { createFakeAnthropic } from '@glw907/cairn-cms-dev';
 
 export const runtime = composeRuntime({ adapter: cairn, siteConfig });
 
-// Under the fake backend the tidy action calls a deterministic stub instead of the real Anthropic
-// SDK, so the showcase tidy E2E never makes a network call or needs a real key. A real deployment
-// leaves this unset and the content routes build the real client from ANTHROPIC_API_KEY.
-const anthropic = process.env.SHOWCASE_FAKE_BACKEND === '1' ? createFakeAnthropic() : undefined;
+// Under the dev backend the tidy action calls a deterministic stub instead of the real Anthropic
+// SDK, so the showcase tidy E2E never makes a network call or needs a real key. The import sits
+// behind a build-foldable gate (a dev build, or the e2e's VITE_CAIRN_E2E=1 build) and is dynamic,
+// so a default production build folds it out (DCE), keeping the dev package's bypass barrel out of
+// the deployed bundle. A real deployment leaves anthropic unset and the content routes build the
+// real client from ANTHROPIC_API_KEY.
+let anthropic: ContentRoutesDeps['anthropic'] | undefined;
+if ((dev || import.meta.env.VITE_CAIRN_E2E === '1') && process.env.CAIRN_DEV_BACKEND === '1') {
+  const { createFakeAnthropic } = await import('@glw907/cairn-cms-dev');
+  anthropic = createFakeAnthropic();
+}
 
 // The dev-token stub pairs with the fake GitHub double in fake-github.ts and must never reach
 // a deployed site; a real site mints installation tokens from its GitHub App key. /admin/editors

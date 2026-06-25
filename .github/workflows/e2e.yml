@@ -20,4 +20,18 @@ jobs:
       # docs/internal/2026-06-21-e2e-dist-svelte-build-failure.md.
       - run: npm ci --prefix examples/showcase
       - run: npx --prefix examples/showcase playwright install --with-deps chromium
+      # A DEFAULT build (no VITE_CAIRN_E2E) proves the fence holds: the build-foldable gate folds
+      # away, so the dev backend and its owner-session bypass are eliminated from the deployable
+      # bundle. test:e2e's own webServer then does the flagged build (VITE_CAIRN_E2E=1) + preview to
+      # run the specs, so this default-build grep must run first.
+      - run: npm --prefix examples/showcase run build
+      - name: Assert the dev backend is eliminated from the default build
+        # Grep examples/showcase/build (the adapter-node server that actually deploys), not
+        # .svelte-kit/output: the latter always carries a dead, unreferenced split chunk for the
+        # gated dynamic import, which the adapter prunes from the deployable bundle.
+        run: |
+          if grep -rl -e 'editor@showcase.test' -e 'installFakeGitHub' -e 'devBackendHandle' -e 'cairn-cms-dev' examples/showcase/build 2>/dev/null; then
+            echo "FAIL: dev-backend artifact in the default build/"; exit 1
+          fi
+          echo "OK: no dev-backend artifact in the default build/"
       - run: npm --prefix examples/showcase run test:e2e

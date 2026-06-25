@@ -1,7 +1,7 @@
 // A dev-only AUTH_DB double for the showcase, the auth-store sibling of fake-github.ts. It
 // implements just the D1Database surface src/lib/auth/store.ts touches (prepare(sql).bind()
 // with first/run/all, plus batch) over an in-memory editors map, so /admin/editors works under
-// SHOWCASE_FAKE_BACKEND=1 without a real D1 binding. Installed from hooks.server.ts as
+// CAIRN_DEV_BACKEND=1 without a real D1 binding. Installed from hooks.server.ts as
 // platform.env.AUTH_DB; never part of the published engine.
 //
 // Dispatch is on the store's exact SQL strings, matched as normalized substrings. Unknown SQL

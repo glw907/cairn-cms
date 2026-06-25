@@ -24,6 +24,17 @@ commit (the rot gate); the e2e elimination grep retargets to the deployable `.sv
 Worker. Plan and post-mortem:
 `docs/superpowers/plans/2026-06-25-cairn-scaffolder-part-b1-factoring.md`.
 
+**Verified.** `npm test` 2482 EXIT 0; `check` 1147 0/0; `check:comments`, `check:docs`, and `test:emit`
+(2/2) clean; the showcase check has 0 errors in `src/` and the showcase e2e is 30/30 on adapter-cloudflare;
+the local emitted-template dry-run installs, checks 0/0 (443 files), and builds a clean Worker. The
+`cloudflare-workers-reviewer` gate approved; its `.dev.vars` gitignore finding is fixed.
+
+**Carry-forwards (Part C and later B-series).** Part C should set `remote: true` on the `EMAIL` binding
+(the template ships it off, correct for the test harness) and template `compatibility_date` to the scaffold
+moment; a dedicated `check:dev-package` is still owed before Part C publishes `@glw907/cairn-cms-dev` (the
+new emitted-template check gives indirect type coverage). The merge of `feat/scaffolder-b1-factoring` to
+`main` and the push of the held window await the user's go-ahead.
+
 **NEXT: Part B2, the design foundation.** The first and largest `frontend-design` run establishes the
 visual language on the chrome and the article reading surface, and the first-class tokens/theme layer
 codifies it on DaisyUI 5's theme system. Home is mocked against the tokens here, then implemented in B3.

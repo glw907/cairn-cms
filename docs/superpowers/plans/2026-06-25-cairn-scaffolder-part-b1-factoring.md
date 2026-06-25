@@ -615,3 +615,32 @@ The `cloudflare-workers-reviewer` gate runs over `wrangler.jsonc`, the adapter c
 - **Dual-resolution.** Realized as the emit transform (Task 4) plus the CI tarball install (Task 5): `file:../..` in-repo, a packed tarball standing in for the npm range in CI. The Part C generator substitutes the real version range, reading the same `.cairn-template.json`.
 - **Out of scope (later sub-passes).** Editorial design, tokens, DaisyUI/Tailwind on the public side (B2); the feature pages and sample content (B3); the four options and the empty state (B4). B1 changes no public CSS and adds no public page.
 - **Empirical risk.** Task 2 Step 1 carries the one unverified mechanism (the e2e under `vite preview` on adapter-cloudflare); 907-life proves `vite preview` works for a cairn adapter-cloudflare site, and the dev backend's `event.platform` fabrication is confirmed in `handle.ts:62`. The documented fallback is a `wrangler dev` webServer.
+
+## Post-mortem (2026-06-25)
+
+**Outcome.** Part B1 landed on `feat/scaffolder-b1-factoring` (off `main` at `ff5d262`), all gates green and held unpushed. The showcase is now the single deployable `cairn-starter` reference: `@sveltejs/adapter-cloudflare` ^7 with a real `wrangler.jsonc`, the real `AuthEnv` `app.d.ts`, a working `npm run dev`, the `.cairn-template.json` emission manifest, and a `scaffold.yml` CI job that emits and builds the scaffolded output every commit.
+
+**Commits, in order:**
+- `5312b66` Task 1: adapter-cloudflare + wrangler.jsonc + 0000_auth migration + app.d.ts
+- `6fb9133` dev-package type fix (the strict `App.Platform` consequence, below)
+- `3441429` Task 2: e2e green on adapter-cloudflare, elimination grep retargeted to `.svelte-kit/cloudflare`
+- `623c131` gitignore `.wrangler`
+- `22dee6d` Task 3: `npm run dev` (vite `dedupe` + `fs.allow`)
+- `5ef9a5a` Task 4: emission manifest + `emit-template.mjs` (+ unit test)
+- `c96626b` showcase standalone fixes (`@types/node` + ship the content manifest)
+- `5c3bfa5` Task 5: `scaffold.yml`
+- `ea80b89` Task 6: friction log + STATUS
+- `20cdad4` gitignore `.dev.vars` (cloudflare-workers-reviewer W1)
+- `2ff4c90` code-simplifier: drop the redundant `existsSync` guard in the emitter
+
+**Verified (final gate).** `npm test` 2482 EXIT 0; `npm run check` 1147 0/0; `check:comments` OK; `check:docs` OK; `test:emit` 2/2; showcase check 0 errors in `src/` (the residual out-of-`src/` errors are worktree-symlink dual-copy noise, absent in a fresh install); showcase e2e 30/30 on adapter-cloudflare (no `wrangler dev` fallback needed); the local emitted-template dry-run: install OK, `npm run check` 0/0 (443 files), build OK, `_worker.js` emitted, the ten-needle dev-backend grep clean. `cloudflare-workers-reviewer`: approve.
+
+**Three things the plan under-specified, resolved in the main loop:**
+1. **The strict `app.d.ts` broke the dev backend's platform cast.** The accurate `App.Platform` (`env` plus `context` plus `caches`) made `event.platform = { env } as App.Platform` a non-overlapping cast. Fixed with `as unknown as App.Platform` in `handle.ts`, and a latent implicit-any in `fake-anthropic.ts` typed from the client contract. The dev package ships raw TypeScript, so these are checked wherever it is imported (an isolated `tsc` test confirmed errors in `node_modules/*.ts` are reported); the Task 5 emitted-template check is the gate that now covers it.
+2. **The emitted template was not standalone (Task 5 dry-run, red first, the plan's anticipated risk).** Two gaps the showcase's symlinked dev tree masked: no declared `@types/node` (44 Node-globals errors on a fresh install), and the committed content manifest `src/content/.cairn/index.json` was excluded though the `cairn-manifest` plugin *reads and verifies* it in `buildStart` (committed source, not a regenerated artifact). Fixed by declaring `@types/node` (matching the engine's `^22.19.19`) and removing the manifest from the exclude list. Also hardened the `npm pack` capture: the engine's `prepare` build hook prints to stdout, so the tarball name needs `tail -n1` (in `scaffold.yml` and the dry-run).
+3. **`.wrangler` and `.dev.vars` were not gitignored.** The adapter-cloudflare swap generates `.wrangler`; the template's `.gitignore` propagates to scaffolded sites, so `.dev.vars` (the GitHub App key) needed an ignore (cloudflare-workers-reviewer W1).
+
+**Carry-forwards (Part C / later B-series):**
+- The `EMAIL` binding ships without `remote = true` (correct for the test harness, which fakes mail; a scaffolded site wants it on). Part C should set `remote: true` on `EMAIL` (reviewer W2).
+- `compatibility_date` is frozen at `2026-05-28`; Part C should template it to the scaffold moment (reviewer W3).
+- A dedicated `check:dev-package` gate is still owed before Part C publishes `@glw907/cairn-cms-dev` (Part A finding); the emitted-template check now gives indirect type coverage.

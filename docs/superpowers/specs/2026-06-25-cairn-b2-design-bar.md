@@ -331,7 +331,8 @@ They converged: Slate's warm-ochre accent failed the AA floor (4.51 on paper, 3.
 Newsprint's zero-brand-color default read as a placeholder the bar prohibits. The winner is **Quarry
 warmed**: the universal ink-blue accent re-grounded onto warm-stone paper, with the editorial display
 face the critique judged the only one to clear the "excellent finished product" bar. The accent was
-confirmed by the user (deep ink-blue over the teal alternate) on 2026-06-25.
+confirmed by the user (deep ink-blue over the teal alternate) on 2026-06-25, and the theme is named
+**Waymark** (the brand name, parallel to the admin's "Warm Stone"; the DaisyUI theme id stays `cairn`).
 
 ## Faces (self-hosted, OFL, subsettable)
 
@@ -375,10 +376,14 @@ that a fill tone fails as small text.
 
 | Token | Light | Dark |
 | --- | --- | --- |
-| `--color-success` / `-content` / `-ink` | `oklch(60% 0.12 150)` / `oklch(99% 0.01 150)` / `oklch(45% 0.1 150)` | `oklch(66% 0.12 150)` / same / `oklch(78% 0.11 150)` |
+| `--color-success` / `-content` / `-ink` | `oklch(54% 0.12 150)` / `oklch(99% 0.01 150)` / `oklch(45% 0.1 150)` | `oklch(66% 0.12 150)` / same / `oklch(78% 0.11 150)` |
 | `--color-warning` / `-content` / `-ink` | `oklch(80% 0.13 78)` / `oklch(28% 0.05 78)` / `oklch(52% 0.11 70)` | `oklch(82% 0.13 78)` / same / `oklch(82% 0.12 76)` |
 | `--color-error` / `-content` / `-ink` | `oklch(58% 0.19 27)` / `oklch(99% 0.01 27)` / `oklch(50% 0.17 27)` | `oklch(66% 0.17 27)` / same / `oklch(76% 0.14 27)` |
-| `--color-info` / `-content` / `-ink` | `oklch(62% 0.1 235)` / `oklch(99% 0.01 235)` / `oklch(48% 0.1 235)` | `oklch(70% 0.1 235)` / same / `oklch(80% 0.1 235)` |
+| `--color-info` / `-content` / `-ink` | `oklch(55% 0.1 235)` / `oklch(99% 0.01 235)` / `oklch(48% 0.1 235)` | `oklch(70% 0.1 235)` / same / `oklch(80% 0.1 235)` |
+
+(The light `success` and `info` fills were darkened from their GATE-1 values to `54%` and `55%` so
+white `-content` clears the dual-gamut AA gate; the dual-gamut gate, Task 7a, caught that the GATE-1
+hand math had passed them at 3.65 and 3.47.)
 
 ### Elevation and the CTA pair (the load-bearing rules)
 

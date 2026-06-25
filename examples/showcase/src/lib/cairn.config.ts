@@ -2,10 +2,15 @@
 // a render that runs the engine pipeline, and a backend the dev GitHub double answers for.
 import { createRenderer, defineRegistry, defineFields, defineAdapter, glyph, parseSiteConfig } from '@glw907/cairn-cms';
 import { cardShell, headRow, iconSpan, strAttr } from '@glw907/cairn-cms/render';
-import { normalizeAssets, makeMediaResolver } from '@glw907/cairn-cms/media';
+import { normalizeAssets, makeMediaResolver, readCommittedManifest } from '@glw907/cairn-cms/media';
 import type { ComponentDef, IconSet } from '@glw907/cairn-cms';
 // The committed media manifest the public render resolver reads. A bare {} until an editor uploads.
-import mediaManifest from '../content/.cairn/media.json';
+// Read through import.meta.glob so a fresh site with no committed media.json degrades to {} rather
+// than failing the build: a static import of a missing file is a build-time module-not-found, but a
+// glob with no match returns {}, and readCommittedManifest parses that to an empty manifest.
+const mediaManifest = readCommittedManifest(
+  import.meta.glob('../content/.cairn/media.json', { eager: true, import: 'default' }),
+);
 import { h } from 'hastscript';
 import type { ElementContent } from 'hast';
 import siteYaml from './site.config.yaml?raw';

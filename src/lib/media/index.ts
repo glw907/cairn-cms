@@ -8,6 +8,7 @@
 export { normalizeAssets, type ResolvedAssetConfig } from './config.js';
 export {
   parseMediaManifest,
+  readCommittedManifest,
   findByHash,
   upsertMediaEntry,
   removeMediaEntry,

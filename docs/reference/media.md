@@ -59,6 +59,18 @@ declare function parseMediaManifest(json: unknown): MediaManifest;
 Parse a committed manifest. Tolerant: an empty, missing, null, or non-object input yields an empty
 manifest, so a first ingest into a site with no manifest file reads a clean `{}`.
 
+### `readCommittedManifest`
+
+```ts
+declare function readCommittedManifest(globResult: Record<string, unknown>): MediaManifest;
+```
+
+Read the committed manifest from an `import.meta.glob` eager result, degrading a missing file to an
+empty manifest. A static import of an absent `media.json` fails the Vite build before any runtime
+degrade can run, so a fresh site can't build. A glob with no match returns `{}` instead of throwing.
+The consumer passes `import.meta.glob('<path-to-media.json>', { eager: true, import: 'default' })`,
+and this helper extracts the single matched value and parses it.
+
 ### `parseMediaEntries`
 
 ```ts

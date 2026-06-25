@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   parseMediaManifest,
+  readCommittedManifest,
   parseMediaEntries,
   findByHash,
   upsertMediaEntry,
@@ -54,6 +55,20 @@ describe('parseMediaManifest', () => {
     expect(parseMediaManifest('not an object')).toEqual({});
     expect(parseMediaManifest(42)).toEqual({});
     expect(parseMediaManifest([ENTRY_A, ENTRY_B])).toEqual({});
+  });
+});
+
+describe('readCommittedManifest', () => {
+  it('parses the single value of a one-entry glob result', () => {
+    // import.meta.glob({ eager: true, import: 'default' }) yields a path-keyed map whose one
+    // value is the default-exported manifest object.
+    const manifest = { [ENTRY_A.hash]: ENTRY_A, [ENTRY_B.hash]: ENTRY_B };
+    const globResult = { '../content/.cairn/media.json': manifest };
+    expect(readCommittedManifest(globResult)).toEqual(manifest);
+  });
+  it('returns {} for an empty glob result (the missing-file case)', () => {
+    // A glob with no match returns {}, never throwing, so a fresh site with no media.json degrades.
+    expect(readCommittedManifest({})).toEqual({});
   });
 });
 

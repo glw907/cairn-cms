@@ -39,6 +39,20 @@ export function parseMediaManifest(json: unknown): MediaManifest {
 }
 
 /**
+ * Read the committed media manifest from an `import.meta.glob` eager result, degrading a missing
+ *  file to an empty manifest. A static import of an absent `media.json` fails the Vite build before
+ *  any runtime degrade can run, so a fresh site with no manifest cannot build. A glob result is the
+ *  build-safe read: `import.meta.glob` returns `{}` when nothing matches rather than throwing, and
+ *  this helper extracts the single matched value and parses it, so a missing file reads a clean `{}`.
+ * @param globResult - The eager glob result for the committed manifest, an empty object when the
+ *  file is absent. The consumer passes
+ *  `import.meta.glob('<path-to-media.json>', { eager: true, import: 'default' })`.
+ */
+export function readCommittedManifest(globResult: Record<string, unknown>): MediaManifest {
+  return parseMediaManifest(Object.values(globResult)[0]);
+}
+
+/**
  * Validate one posted value as a MediaEntry, returning it narrowed or undefined. The trust boundary
  *  for an optimistic record the client re-posts: the upload action server-owned each field at
  *  creation, but a re-post is untrusted, so every field is re-checked. A `hash` must be the 16-hex

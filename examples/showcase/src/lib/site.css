@@ -2,7 +2,9 @@
    The reading-column container and the cairn figure-placement contract for the public (site) pages.
    The chrome (header, nav, footer) moved to owned token-driven components (SiteHeader.svelte,
    SiteFooter.svelte); this sheet now carries only the centered `.site-main` measure and the figure
-   role classes, on the public theme's tokens (theme.css), so they re-skin with the rest.
+   role classes, on the public theme's tokens (theme.css), so they re-skin with the rest. The bespoke
+   article surface (every prose element) lives in prose.css, which theme.css @import-s; this sheet
+   keeps only the layout container and the figure-placement geometry the article sits inside.
 
    The sheet is referenced only through Vite ?url imports: the (site) layout links the resolved URL,
    and the adapter's preview knob hands the same URL to the editor's preview frame. The preview's

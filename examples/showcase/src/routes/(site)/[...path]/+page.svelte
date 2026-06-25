@@ -7,7 +7,10 @@
 
 <CairnHead seo={data.seo} />
 
-<article>
+<!-- The bespoke reading surface. The `.prose` container caps the column at the measure and binds every
+     element to the theme tokens (prose.css, @import-ed into theme.css). The hero figure leads the
+     article on the same surface; the engine's rendered markdown follows the title. -->
+<article class="prose">
   {#if data.heroImage}
     <!-- The site template owns the hero layout: the engine ships the resolved data, this renders it.
          The root-relative url feeds the img; the absolute form is the og:image (in the head above). -->

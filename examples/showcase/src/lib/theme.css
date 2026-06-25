@@ -41,6 +41,14 @@
 @import '@fontsource-variable/source-sans-3/index.css';
 @import '@fontsource-variable/source-code-pro/index.css';
 
+/* The bespoke reading surface (Task 5), kept in its own file but pulled in here so it ships in this
+   one sheet. theme.css is the single stylesheet the (site) layout and the editor preview config both
+   link, so importing prose.css here is what carries the article surface to BOTH the reader and the
+   author (the parity rule) at zero extra wiring. prose.css reads only the tokens defined below; it
+   adds no second color source. Its rules are @layer components, the same layer as the token bindings
+   at the foot of this file, so they resolve in the documented cascade order. */
+@import './prose.css';
+
 /* themes: false drops DaisyUI's built-in light/dark themes so they do not claim :root; the two
    cairn themes below are the only ones, exactly as the admin sheet runs only its own. */
 @plugin "daisyui" {

@@ -1,0 +1,408 @@
+/* ============================================================================
+   cairn bespoke reading surface — the signature B2 deliverable.
+
+   The article's prose, every element bound to the DaisyUI roles and the cairn
+   tokens in theme.css, so one token edit re-skins the chrome AND the article in
+   lockstep. This is NOT @tailwindcss/typography: it is a hand-authored surface
+   scoped to a `.prose` container, where each element (heading, lead, blockquote,
+   pull-quote, code, list, table, figure, hr) is a crafted, tokenized treatment.
+
+   What lives where:
+     - theme.css owns the tokens, and already colors the code block: it styles
+       `pre.shiki` (bg/border/ink) and binds the engine's `.cairn-tok-*` syntax
+       classes to the `--cairn-code-*` ramp under @layer components. This sheet
+       only adds the code block's spacing, measure, and overflow, never a color.
+     - site.css owns the figure-placement geometry (`.cairn-place-center/wide/full`
+       breakout) scoped to `.site-main`; the article sits inside `.site-main`, so
+       those rules still apply. This sheet adds only the figure flow rhythm.
+     - This sheet is reached by BOTH the public page and the editor preview frame,
+       because it is @import-ed into theme.css, the one sheet the (site) layout and
+       the preview config both link (the parity rule; see site.css's header).
+
+   The directive components (the engine's render output) are styled here too. They
+   carry the real engine class names, NOT the mockup's BEM names: a callout is
+   `.callout > .callout-title + .callout-body + .callout-points`, an alert is
+   `.alert > .card-body > (.ec-head > .card-title) + .alert-body`. Every rule is
+   scoped under `.prose` so it beats DaisyUI's own `.alert`/`.card` component
+   classes (theme.css bundles DaisyUI for the public layer) on specificity.
+
+   The whole file is @layer components, the same layer theme.css uses, so the
+   `.prose` scope is what wins over DaisyUI, not a layer race.
+   ============================================================================ */
+@layer components {
+  /* --------------------------------------------------------------------------
+     The column and the rhythm. The measure is capped structurally on the
+     container (the layout caps it too; this makes the prose surface honest on
+     its own). All vertical rhythm flows from one --flow-space owl selector;
+     headings, the lead, figures, code, tables, and the hr override it locally.
+     -------------------------------------------------------------------------- */
+  .prose {
+    max-width: var(--cairn-measure);
+  }
+  .prose > * + * {
+    margin-top: var(--flow-space);
+  }
+  .prose p {
+    margin-block: 0;
+  }
+
+  /* The article title on the display face: large space below it is unnecessary
+     because the lead binds to it; tight leading reads as a masthead. */
+  .prose > h1 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: var(--cairn-step-5);
+    line-height: var(--cairn-leading-tight);
+    letter-spacing: var(--cairn-tracking-tight);
+    margin: 0;
+  }
+  .prose > h1 + * {
+    margin-top: var(--cairn-space-m);
+  }
+
+  /* The lead paragraph: step-1, slightly recessed ink, a touch more air above. */
+  .prose .lead {
+    font-size: var(--cairn-step-1);
+    line-height: var(--cairn-leading-snug);
+    color: color-mix(in oklab, var(--color-base-content) 86%, transparent);
+    --flow-space: var(--cairn-space-m);
+  }
+
+  /* The heading-binding rhythm: large space ABOVE a heading, tight BELOW it, so a
+     heading belongs to the text it introduces (the typography criterion). */
+  .prose h2 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: var(--cairn-step-3);
+    line-height: var(--cairn-leading-tight);
+    letter-spacing: var(--cairn-tracking-tight);
+    --flow-space: var(--cairn-space-xl);
+    margin-bottom: 0;
+  }
+  .prose h2 + * {
+    margin-top: var(--cairn-space-xs);
+  }
+  .prose h3 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: var(--cairn-step-2);
+    line-height: var(--cairn-leading-snug);
+    --flow-space: var(--cairn-space-l);
+  }
+  .prose h3 + * {
+    margin-top: var(--cairn-space-xs);
+  }
+  .prose strong {
+    font-weight: 650;
+  }
+  .prose a {
+    font-weight: 500;
+  }
+
+  /* --------------------------------------------------------------------------
+     Blockquote: a 3px accent left rule, italic, slightly recessed ink. The
+     optional <cite> reads as muted meta on its own line.
+     -------------------------------------------------------------------------- */
+  .prose blockquote {
+    margin-inline: 0;
+    padding-left: var(--cairn-space-m);
+    border-left: 3px solid var(--color-primary);
+    color: color-mix(in oklab, var(--color-base-content) 88%, transparent);
+    font-style: italic;
+  }
+  .prose blockquote p {
+    font-size: var(--cairn-step-1);
+    line-height: var(--cairn-leading-snug);
+  }
+  .prose blockquote cite {
+    display: block;
+    margin-top: 0.6rem;
+    font-style: normal;
+    font-size: var(--cairn-step--1);
+    color: var(--cairn-muted);
+  }
+
+  /* A hanging pull-quote on the display face. On wide screens the whole quote
+     outdents into the left margin past 64rem so the gesture reads. A sample post
+     (Part 2) applies the `.pullquote` class to a single emphatic line. */
+  .prose .pullquote {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: var(--cairn-step-3);
+    line-height: var(--cairn-leading-tight);
+    letter-spacing: var(--cairn-tracking-tight);
+    color: var(--color-base-content);
+    --flow-space: var(--cairn-space-xl);
+  }
+  .prose .pullquote::before {
+    content: '\201C';
+    color: var(--color-primary);
+  }
+  @media (min-width: 64rem) {
+    .prose .pullquote {
+      width: calc(var(--cairn-measure) + 4.5rem);
+      margin-left: -4.5rem;
+      text-align: left;
+    }
+  }
+
+  /* --------------------------------------------------------------------------
+     Code. Inline code is a tinted bordered chip (base-200 ground, base-300
+     border). The fenced block reads its colors from theme.css's pre.shiki +
+     .cairn-tok-* bindings; this only sets the block's measure, spacing, leading,
+     and horizontal overflow. The :not(pre) guard keeps the chip off block code.
+     -------------------------------------------------------------------------- */
+  .prose :not(pre) > code {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    background: var(--color-base-200);
+    border: var(--border) solid var(--color-base-300);
+    border-radius: var(--radius-selector);
+    padding: 0.1em 0.36em;
+  }
+  .prose pre {
+    font-family: var(--font-mono);
+    border-radius: var(--radius-box);
+    padding: var(--cairn-space-s) var(--cairn-space-m);
+    overflow-x: auto;
+    font-size: var(--cairn-step--1);
+    line-height: 1.6;
+    --flow-space: var(--cairn-space-m);
+  }
+  .prose pre code {
+    font-family: inherit;
+  }
+
+  /* --------------------------------------------------------------------------
+     Lists. Unordered: a small accent diamond marker. Ordered: a display-face
+     number in the accent. Tighter spacing between list items than between blocks.
+     -------------------------------------------------------------------------- */
+  .prose ul,
+  .prose ol {
+    padding-left: 1.3em;
+  }
+  .prose li + li {
+    margin-top: 0.4rem;
+  }
+  .prose ul {
+    list-style: none;
+    padding-left: 1.4em;
+  }
+  .prose ul > li {
+    position: relative;
+  }
+  .prose ul > li::before {
+    content: '';
+    position: absolute;
+    left: -1.1em;
+    top: 0.62em;
+    width: 0.4em;
+    height: 0.4em;
+    border-radius: 1px;
+    background: var(--color-primary);
+    transform: rotate(45deg);
+  }
+  .prose ol {
+    list-style: none;
+    counter-reset: ol;
+    padding-left: 1.8em;
+  }
+  .prose ol > li {
+    counter-increment: ol;
+    position: relative;
+  }
+  .prose ol > li::before {
+    content: counter(ol);
+    position: absolute;
+    left: -1.8em;
+    top: 0;
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: var(--color-primary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* GFM task lists render real <input type=checkbox disabled>. Drop the markers
+     (the checkbox is the bullet), tint the control with the accent, and keep the
+     native check glyph as the non-color cue (an accessibility requirement). */
+  .prose .contains-task-list {
+    list-style: none;
+    padding-left: 0;
+  }
+  .prose .task-list-item {
+    position: relative;
+  }
+  .prose .task-list-item::before {
+    content: none;
+  }
+  .prose .task-list-item input[type='checkbox'] {
+    margin-right: 0.55rem;
+    width: 1.05em;
+    height: 1.05em;
+    accent-color: var(--color-primary);
+    vertical-align: -0.16em;
+  }
+
+  /* --------------------------------------------------------------------------
+     Table: a bordered head rule and zebra body rows, at the caption size.
+     -------------------------------------------------------------------------- */
+  .prose table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--cairn-step--1);
+    --flow-space: var(--cairn-space-m);
+  }
+  .prose thead th {
+    text-align: left;
+    font-family: var(--font-body);
+    font-weight: 600;
+    border-bottom: 2px solid var(--color-base-300);
+    padding: 0.55rem 0.7rem;
+  }
+  .prose tbody td {
+    padding: 0.55rem 0.7rem;
+    border-bottom: var(--border) solid var(--cairn-card-border);
+  }
+  .prose tbody tr:nth-child(even) {
+    background: color-mix(in oklab, var(--color-base-200) 60%, transparent);
+  }
+
+  /* --------------------------------------------------------------------------
+     Horizontal rule as a centered cairn mark in base-300, not a line. The mark
+     is an inline data-URI mask, so no JS and no extra asset are needed.
+     -------------------------------------------------------------------------- */
+  .prose hr {
+    border: 0;
+    --flow-space: var(--cairn-space-xl);
+    text-align: center;
+  }
+  .prose hr::after {
+    content: '';
+    display: inline-block;
+    width: 1.4rem;
+    height: 1.4rem;
+    background: var(--color-base-300);
+    --cairn-mark-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cellipse cx='12' cy='20.5' rx='8' ry='2.4'/%3E%3Cellipse cx='11.4' cy='14.8' rx='6' ry='2.3'/%3E%3Cellipse cx='12.4' cy='9.6' rx='4.3' ry='2.1'/%3E%3Cellipse cx='11.9' cy='4.8' rx='2.6' ry='1.9'/%3E%3C/svg%3E");
+    mask: var(--cairn-mark-url) center / contain no-repeat;
+    -webkit-mask: var(--cairn-mark-url) center / contain no-repeat;
+  }
+
+  /* --------------------------------------------------------------------------
+     Figures. The placement geometry (center/wide/full breakout) and the caption
+     styling live in site.css scoped to .site-main, and the article sits inside
+     it, so those apply. This only gives a figure its own flow rhythm. The hero
+     figure (frontmatter image) is a leading figure with no placement class.
+     -------------------------------------------------------------------------- */
+  .prose figure {
+    --flow-space: var(--cairn-space-l);
+  }
+
+  /* --------------------------------------------------------------------------
+     Directive components (engine render output). Real engine class names, scoped
+     under .prose to beat DaisyUI's own .alert / .card on specificity.
+     -------------------------------------------------------------------------- */
+
+  /* Callout: a bordered card with an accent left rule and a faint tinted ground.
+     Tones note / tip / warning are pre-styled though the registry emits only
+     note and warning today (Part 2 may add the rest). The title is the inline
+     `.callout-title`; the body is `.callout-body`; the optional points list is a
+     sibling `.callout-points` ul, not nested. */
+  .prose .callout {
+    --flow-space: var(--cairn-space-m);
+    border: var(--border) solid var(--cairn-card-border);
+    border-left: 3px solid var(--color-primary);
+    border-radius: var(--radius-box);
+    padding: var(--cairn-space-s) var(--cairn-space-m);
+    background: color-mix(in oklab, var(--color-primary) 5%, var(--color-base-100));
+  }
+  .prose .callout-note {
+    border-left-color: var(--color-info-ink);
+    background: color-mix(in oklab, var(--color-info) 10%, var(--color-base-100));
+  }
+  .prose .callout-tip {
+    border-left-color: var(--color-success-ink);
+    background: color-mix(in oklab, var(--color-success) 7%, var(--color-base-100));
+  }
+  .prose .callout-warning {
+    border-left-color: var(--color-warning-ink);
+    background: color-mix(in oklab, var(--color-warning) 9%, var(--color-base-100));
+  }
+  .prose .callout-title {
+    font-weight: 650;
+    margin: 0 0 0.3rem;
+  }
+  .prose .callout-note .callout-title {
+    color: var(--color-info-ink);
+  }
+  .prose .callout-tip .callout-title {
+    color: var(--color-success-ink);
+  }
+  .prose .callout-warning .callout-title {
+    color: var(--color-warning-ink);
+  }
+  .prose .callout-body > * {
+    margin: 0;
+  }
+  .prose .callout-body > * + * {
+    margin-top: var(--cairn-space-2xs);
+  }
+  .prose .callout-points {
+    margin: 0.5rem 0 0;
+  }
+
+  /* Alert: the second directive, built from the cairn render helpers (a section
+     with a card-body, an ec-head holding an optional icon and the card-title,
+     and an alert-body). DaisyUI's .alert grid is overridden here. Roles note /
+     caution; caution leans on the warning ink so it reads as a caution. */
+  .prose .alert {
+    display: block;
+    grid-template-columns: none;
+    --flow-space: var(--cairn-space-m);
+    border: var(--border) solid var(--cairn-card-border);
+    border-left: 3px solid var(--color-info-ink);
+    border-radius: var(--radius-box);
+    padding: 0;
+    background: color-mix(in oklab, var(--color-info) 8%, var(--color-base-100));
+    color: var(--color-base-content);
+  }
+  .prose .alert-caution {
+    border-left-color: var(--color-warning-ink);
+    background: color-mix(in oklab, var(--color-warning) 9%, var(--color-base-100));
+  }
+  .prose .alert .card-body {
+    padding: var(--cairn-space-s) var(--cairn-space-m);
+  }
+  .prose .alert .ec-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.3rem;
+  }
+  .prose .alert .card-title {
+    font-family: var(--font-body);
+    font-weight: 650;
+    font-size: var(--cairn-step-0);
+    margin: 0;
+    color: var(--color-info-ink);
+  }
+  .prose .alert-caution .card-title {
+    color: var(--color-warning-ink);
+  }
+  .prose .alert .ec-icon {
+    display: inline-flex;
+    color: var(--color-info-ink);
+  }
+  .prose .alert-caution .ec-icon {
+    color: var(--color-warning-ink);
+  }
+  .prose .alert .ec-glyph {
+    width: 1.1em;
+    height: 1.1em;
+  }
+  .prose .alert-body > * {
+    margin: 0;
+  }
+  .prose .alert-body > * + * {
+    margin-top: var(--cairn-space-2xs);
+  }
+}

@@ -1,0 +1,42 @@
+name: scaffold
+
+on:
+  push:
+    branches: [main, rebuild]
+  pull_request:
+
+jobs:
+  scaffold:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm ci
+      # Build and pack the engine and the dev backend into tarballs the emitted template installs,
+      # which mirrors a scaffolded user's npm-range resolution without needing the registry.
+      - run: npm run package
+      - name: Pack the engine and dev backend
+        id: pack
+        # npm pack runs the engine's `prepare` build hook, whose stdout banners precede the tarball
+        # name; --silent does not suppress lifecycle stdout, so take the last line as the filename.
+        run: |
+          ENGINE_TGZ="$PWD/$(npm pack --silent | tail -n1)"
+          DEV_TGZ="$PWD/$(npm pack --silent ./packages/cairn-cms-dev | tail -n1)"
+          echo "engine=$ENGINE_TGZ" >> "$GITHUB_OUTPUT"
+          echo "dev=$DEV_TGZ" >> "$GITHUB_OUTPUT"
+      - name: Emit the scaffolded template
+        run: node scripts/emit-template.mjs /tmp/cairn-emitted "file:${{ steps.pack.outputs.engine }}" "file:${{ steps.pack.outputs.dev }}" emitted-site
+      - name: Install, typecheck, and build the emitted template
+        working-directory: /tmp/cairn-emitted
+        run: |
+          npm install
+          npm run check
+          npm run build
+      - name: Assert the dev backend is eliminated from the emitted Worker
+        run: |
+          if grep -rl -e 'editor@showcase.test' -e 'installFakeGitHub' -e 'devBackendHandle' -e 'cairn-cms-dev' -e 'dev-token' -e 'sk-showcase-stub' -e 'createFakeAuthDb' -e 'createFakeR2' -e 'createFakeAnthropic' -e 'lastRecordedCommit' /tmp/cairn-emitted/.svelte-kit/cloudflare 2>/dev/null; then
+            echo "FAIL: dev-backend artifact in the emitted Worker"; exit 1
+          fi
+          echo "OK: emitted template builds clean"

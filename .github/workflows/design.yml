@@ -1,0 +1,38 @@
+name: design
+
+# The B2 design gate: the public-theme token gates and the styleguide accessibility e2e. It is scoped
+# to the design dimension (the no-literals + dual-gamut contrast gate, the one-edit re-skin fixture,
+# and axe over /styleguide in both schemes). The full showcase e2e lives in e2e.yml; this job runs
+# only the styleguide spec so a token or a11y regression fails fast and on its own signal.
+
+on:
+  push:
+    branches: [main, rebuild]
+  pull_request:
+
+jobs:
+  design:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          # Pin Node 22 LTS to match the other workflows (vitest-pool-workers has a console bug on 24).
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Build the engine dist the showcase resolves through, so the token gates and the e2e read the
+      # current render output (the styleguide renders prose through the packaged engine).
+      - run: npm run package
+      # The token gates: no literal colors or hard-coded font-sizes in the public components or the
+      # prose surface, every role/-content pair clears AA in both sRGB and P3, and the one-edit re-skin
+      # (a hue rotation of the brand accent) still holds AA with the prose surface reading the same set.
+      - run: npm run check:public-tokens
+      - run: npm run test:reskin
+      # The styleguide accessibility e2e. The showcase lockfile is committed and installed with `npm ci`
+      # so CI resolves the exact toolchain a developer reproduces locally. The styleguide spec's own
+      # webServer builds (VITE_CAIRN_E2E=1) and serves the showcase, then axe scans /styleguide in both
+      # color schemes and a rendered article, and the skip-link and reduced-motion floors are checked.
+      - run: npm ci --prefix examples/showcase
+      - run: npx --prefix examples/showcase playwright install --with-deps chromium
+      - run: npm --prefix examples/showcase run test:e2e -- styleguide

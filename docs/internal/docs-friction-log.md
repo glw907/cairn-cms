@@ -524,9 +524,10 @@ more.
 
 Engine and DX:
 
-- **developer** (the `AuthEnv` import-subpath trap): `app.d.ts` must import `AuthEnv` from `/sveltekit`,
-  not the root, and `skipLibCheck` hides a mistyped binding as a silent error type, the gap two site
-  retrofits hit. Candidate: re-export `AuthEnv` from the root, or ship a typed platform-env helper.
+- **developer** (the `AuthEnv` import-subpath trap) RESOLVED (2026-06-13): `AuthEnv` ships from both the
+  root and `/sveltekit`, the deploy guide shows the verbatim `app.d.ts` block importing it from
+  `/sveltekit`, and both reference pages carry the entry. This duplicated the accurate 2026-06-12 entry
+  above, so no further engine work.
 - **developer** (`csrf.checkOrigin: false` deprecation noise): kit 2.61 deprecates `checkOrigin` for
   `trustedOrigins`, prints a warning on every build, yet `false` is still required and `trustedOrigins`
   cannot replace it. Track kit#15992; until then the deploy guide should name the warning as expected.

@@ -11,7 +11,35 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-24, latest): Part A + the pre-Part-B DX slot MERGED to `main` (`0.64.0`, held); next is Part B
+## Immediate next action (2026-06-25, latest): Part B decomposed into four sub-passes; B1 (the factoring) is planned and ready to execute
+
+**Part B is sequenced into four linear sub-passes** in the scaffolder spec
+(`docs/superpowers/specs/2026-06-24-cairn-scaffolder-design.md`, "Sub-pass sequencing"): B1 the factoring,
+B2 the design foundation (the first-class tokens layer), B3 the defaults surface, B4 the options and first
+run. The split between the last two follows the CI matrix axis (the always-present defaults versus the
+configurable options). The `frontend-design` loop researches against best-in-class starters from other
+systems (Astro, Ghost, shadcn's Taxonomy, Tailwind Plus, Next) and against Svelte/SvelteKit and DaisyUI
+templates, and the tokens layer is authored on DaisyUI 5's oklch theme system. The ecxc and 907 sites are
+demoted to a requirements cross-check, not the design source.
+
+**B1 (the factoring) is planned:**
+`docs/superpowers/plans/2026-06-25-cairn-scaffolder-part-b1-factoring.md`. It swaps the showcase from
+`adapter-node` to `adapter-cloudflare` with a real `wrangler.jsonc` (modeled on the live 907-life site),
+keeps the e2e green through the dev backend's fabricated `platform.env` (retargeting the elimination grep
+to `.svelte-kit/cloudflare/`), gives `app.d.ts` the real `AuthEnv` `Platform.env` type, fixes the broken
+`npm run dev`, separates the `test`/`spike`/`calendar` demo routes via a `.cairn-template.json` emission
+manifest, and adds a CI job that emits and builds the scaffolded output every commit. Six tasks; the
+`cloudflare-workers-reviewer` gate covers the wrangler config and bindings.
+
+**NEXT: execute the B1 plan** in a worktree off `main`
+(`git worktree add ../cairn-cms-part-b1 -b feat/scaffolder-b1-factoring main`, symlink `node_modules`,
+`npm run package` before `npm test`), dispatching `cairn-implementer` per task with the main loop reviewing
+each diff and verifying the gate. B2 (the design-led foundation) is the natural context-clear boundary
+after B1.
+
+---
+
+## Immediate next action (2026-06-24): Part A + the pre-Part-B DX slot MERGED to `main` (`0.64.0`, held); next is Part B
 
 **Part A (`@glw907/cairn-cms-dev`, `0.63.0`) and the pre-Part-B DX slot (`0.64.0`) are both MERGED to
 `main` (the `feat/cairn-cms-dev` and `feat/pre-part-b-dx` branches and worktrees are removed).** Both are

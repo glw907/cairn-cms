@@ -168,10 +168,16 @@ makes it a front door worth starting from.
 the emitted set, dual-resolution, and CI that builds the scaffolded output every commit.
 
 **The design pass.** The broader look and every high-impact page get a `frontend-design` pass, run
-through the repo's mockup-first methodology (deficiency research from the ecxc and 907 hand-migrations and
-the friction log, then mockups, adversarial critique, rev.2). The high-impact pages: home, the article
-(the prose showcase), the news archive, search, tag pages, the contact page, the 404, and the editor's
-first-run empty state. DaisyUI and Tailwind carry the chrome and the theme system, led by editorial
+through the repo's mockup-first methodology (design research, then mockups, adversarial critique, rev.2).
+The high-impact pages: home, the article (the prose showcase), the news archive, search, tag pages, the
+contact page, the 404, and the editor's first-run empty state. The design research is anchored on
+best-in-class starters from other systems (Astro's themes and Starlight, Ghost's Casper, shadcn's
+Taxonomy, Tailwind Plus editorial templates, Next's blog-starter) and on Svelte/SvelteKit and DaisyUI
+templates, plus the friction log. It is not anchored on the ecxc and 907 sites. A starter's bar is set by
+other starters, and those two are bespoke instances whose one-off `app.css` is the opposite of the
+documented, re-skinnable token system this builds. They are demoted to a requirements cross-check on the
+page set (both grew an archive and tags) and remain the source of the engine and DX friction already in
+the log. DaisyUI and Tailwind carry the chrome and the theme system, led by editorial
 typography so the reading surface reads as intentional design, not a component demo. The public theme is
 the designer's own re-skin surface, structurally separate from the admin's Warm Stone.
 
@@ -179,7 +185,11 @@ the designer's own re-skin surface, structurally separate from the admin's Warm 
 system, held to the highest polish: a coherent color system (gamut-safe oklch, AA contrast, dark mode), a
 real modular type scale, a spacing rhythm, all centralized as documented tokens with a re-skin recipe
 ("change your brand in these N lines") and inline token docs. Whether cairn sites are easy to make
-beautiful is decided here, so it earns its own quality bar and acceptance criteria.
+beautiful is decided here, so it earns its own quality bar and acceptance criteria. DaisyUI 5's theme
+system carries this layer, since its built-in themes are already role-named gamut-safe oklch variables.
+The re-skin recipe then maps onto editing the `@plugin "daisyui/theme"` block, so the layer rests on an
+externally documented spine rather than an invented one, structurally separate from the admin's scoped
+Warm Stone theme.
 
 This layer gets its own adversarial review, run separately from the visual-design critique and after it,
 because the two ask different questions. The visual critique asks whether the design is good; the token
@@ -214,6 +224,40 @@ labeled file with a doc comment a non-cairn-expert can follow; the default publi
 and a taste critique; the tokens layer re-skins to a new brand by editing only the documented token set;
 and the editor's empty state guides the first post. The a11y/taste/DX review gate runs against these
 before it ships.
+
+**Sub-pass sequencing.** Part B splits along its verification surfaces into four linear sub-passes, each
+its own just-in-time plan. The split between the last two follows the CI matrix axis (the always-present
+defaults versus the configurable options), so it stays principled rather than arbitrary.
+
+1. **B1, the factoring.** Infrastructure, no design. Swap `adapter-node` for `adapter-cloudflare`; add a
+   real `wrangler.jsonc` from the root `wrangler.test.jsonc` shape (D1 `AUTH_DB`, `EMAIL`, R2, the
+   `0000_auth` migration, observability); give `app.d.ts` the real `AuthEnv` `Platform.env` type in place
+   of the loose `Record<string, unknown>`; separate the `test`, `spike`, and `calendar` demo routes from
+   the emitted set; stand up dual-resolution (`file:../..` in-repo, an npm range for a scaffolded user);
+   fix the broken showcase `npm run dev` (the `file:../..` dual-`@sveltejs/kit` issue in the friction
+   log); and add the CI that builds the scaffolded output every commit (the rot gate). Verified by a
+   build, a wrangler dry-run, CI green, the e2e still green, and a `build/` free of the dev backend. Gate:
+   `cloudflare-workers-reviewer`.
+2. **B2, the design foundation.** The first and largest `frontend-design` run establishes the visual
+   language on the chrome and the article reading surface, and the first-class tokens/theme layer
+   codifies it on DaisyUI 5's theme system. Home is mocked here to stress the tokens against a composed
+   page, then implemented in B3. Two gates run in order, the visual-design critique first and the tokens
+   adversarial review after.
+3. **B3, the defaults surface.** Every page a scaffolded site always gets: home, the paginated news
+   archive, tag pages, Pagefind search behind `CairnSearch`, the SEO kit, a styled 404, sample content,
+   and the a11y floor. Each high-impact page gets a lighter per-page mockup pass on the B2 foundation.
+   Gates: the taste critique, `svelte-reviewer`, `daisyui-a11y-reviewer`, and `/code-review`.
+4. **B4, the options and first run.** The four configurable options plus onboarding: the contact form
+   (the `EMAIL` binding and Turnstile), Cloudflare Web Analytics, media-on-default (a hero and an inline
+   figure through the fake R2), the public dark-mode toggle, and the editor's first-run empty state. The
+   CI matrix is fully exercised here. Gates: `cloudflare-workers-reviewer` for the contact action, the
+   reviewers above, and the full developer-first-hour and editor-first-post dogfood walkthroughs as the
+   closing gate.
+
+The `frontend-design` loop runs inside each design sub-pass, the foundation first and each surface after,
+rather than as one mockup set up front, so each pass stays right-sized and every mockup gets implemented
+and validated against real data in the same pass. The tokens and the shared components are the cohesion
+mechanism that keeps the per-surface designs coherent.
 
 ### Part C: `@glw907/create-cairn-site` (the generator)
 

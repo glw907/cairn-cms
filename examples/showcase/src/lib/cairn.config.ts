@@ -98,10 +98,12 @@ const { renderMarkdown } = createRenderer(registry);
 // preview path injects its own resolveMedia from the edit page's mediaTargets; this default keeps a
 // published `media:` reference from throwing when no per-call resolver is supplied. Exported so the
 // public route can inject the same resolver for the frontmatter hero, one source of truth.
-export const publicMediaResolver = makeMediaResolver(
-  mediaManifest,
-  normalizeAssets({ bucketBinding: 'MEDIA_BUCKET' }),
-);
+const resolvedAssets = normalizeAssets({ bucketBinding: 'MEDIA_BUCKET' });
+export const publicMediaResolver = makeMediaResolver(mediaManifest, resolvedAssets);
+
+// Whether media is configured on. The public route threads it as `assetsEnabled` so the engine logs
+// `media.resolver_absent` if a future edit drops the resolveMedia wiring while media stays on.
+export const mediaEnabled = resolvedAssets.enabled;
 
 export const cairn = defineAdapter({
   siteName: 'Cairn Showcase',

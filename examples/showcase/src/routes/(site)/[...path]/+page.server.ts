@@ -1,7 +1,7 @@
 import type { PageServerLoad, EntryGenerator } from './$types';
 import { createPublicRoutes } from '@glw907/cairn-cms/delivery';
 import { site, ORIGIN, SITE_DESCRIPTION } from '$lib/content';
-import { cairn, publicMediaResolver } from '$lib/cairn.config';
+import { cairn, publicMediaResolver, mediaEnabled } from '$lib/cairn.config';
 
 export const prerender = true;
 
@@ -16,6 +16,9 @@ const routes = createPublicRoutes({
   // The same resolver the body render path uses, injected so the read path resolves the frontmatter
   // `image` hero into the `heroImage` projection the template and the SEO head read.
   resolveMedia: publicMediaResolver,
+  // Arms the engine's media.resolver_absent diagnostic: with media on, dropping resolveMedia above
+  // logs a warning instead of silently shipping broken hero images.
+  assetsEnabled: mediaEnabled,
 });
 
 export const entries: EntryGenerator = () => routes.entries();

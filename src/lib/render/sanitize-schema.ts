@@ -1,6 +1,7 @@
 import { defaultSchema, type Schema } from 'hast-util-sanitize';
 import type { Root, Element } from 'hast';
 import { visit } from 'unist-util-visit';
+import { toString } from 'hast-util-to-string';
 import { dataAttrProp, type ComponentRegistry } from './registry.js';
 
 // The fixed directive markers the stamp writes and the dispatch reads. They are inert data
@@ -64,6 +65,36 @@ export function rehypeAnchorRel(rel: string) {
       if (node.tagName === 'a' && node.properties?.target === '_blank') {
         node.properties.rel = rel;
       }
+    });
+  };
+}
+
+/**
+ * Give every GFM task-list checkbox an accessible name from its item text. remark-gfm emits a real
+ * `<input type="checkbox" disabled>` with no label, which axe's `label` rule flags as a critical
+ * violation even though the control is read-only; the visible label is the surrounding `<li>` text,
+ * not associated programmatically. This sets `aria-label` on each task-list checkbox to its item's
+ * text so the name travels with the control, keeping the engine's real disabled input (the bar's
+ * non-color cue) while clearing the violation on every site. It must run after the sanitize floor,
+ * which does not allow `aria-label`, so the attribute is added once the floor has run.
+ */
+export function rehypeTaskListA11y() {
+  return (tree: Root) => {
+    visit(tree, 'element', (node: Element) => {
+      const className = node.properties?.className;
+      const isTaskItem =
+        node.tagName === 'li' && Array.isArray(className) && className.includes('task-list-item');
+      if (!isTaskItem) return;
+      const checkbox = node.children.find(
+        (child): child is Element =>
+          child.type === 'element' &&
+          child.tagName === 'input' &&
+          child.properties?.type === 'checkbox',
+      );
+      if (!checkbox) return;
+      const label = toString(node).trim();
+      // Only when there is text to name it; an empty item leaves the box unnamed rather than blank.
+      if (label) (checkbox.properties ??= {})['ariaLabel'] = label;
     });
   };
 }

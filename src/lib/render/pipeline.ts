@@ -9,7 +9,7 @@ import rehypeStringify from 'rehype-stringify';
 import rehypeSanitize from 'rehype-sanitize';
 import type { Schema } from 'hast-util-sanitize';
 import { VFile } from 'vfile';
-import { buildSanitizeSchema, rehypeAnchorRel, rehypeSinkGuard } from './sanitize-schema.js';
+import { buildSanitizeSchema, rehypeAnchorRel, rehypeSinkGuard, rehypeTaskListA11y } from './sanitize-schema.js';
 import { rehypeCairnHighlight } from './highlight.js';
 import { remarkDirectiveStamp } from './remark-directives.js';
 import { remarkFigure } from './remark-figure.js';
@@ -75,6 +75,10 @@ export function createRenderer(
     ...floor,
     [rehypeDispatch, registry, options.stagger],
     rehypeSlug,
+    // Name each GFM task-list checkbox from its item text. It runs after the sanitize floor (which
+    // does not allow aria-label) so the added attribute survives, and is content-not-sink, so it is
+    // not gated by unsafeDisableSanitize.
+    rehypeTaskListA11y,
     // Build-time syntax highlighting. It emits class-only output (the cairn-tok-* ramp, no inline
     // style), so it is class-driven like the rest of the pipeline and needs no special placement
     // relative to the sanitize floor or the sink guard: the token classes survive the floor because

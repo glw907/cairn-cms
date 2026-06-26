@@ -15,12 +15,13 @@ export function compilePattern(source: string, label: string): RegExp {
 /** Return the first string-length violation message, or null when the value satisfies the bounds. */
 export function stringLengthError(
   value: string,
-  c: { min?: number; max?: number; length?: number },
+  constraints: { min?: number; max?: number; length?: number },
   label: string,
 ): string | null {
-  if (c.min != null && value.length < c.min) return `${label} must be at least ${c.min} characters`;
-  if (c.max != null && value.length > c.max) return `${label} must be at most ${c.max} characters`;
-  if (c.length != null && value.length !== c.length) return `${label} must be exactly ${c.length} characters`;
+  const { min, max, length } = constraints;
+  if (min != null && value.length < min) return `${label} must be at least ${min} characters`;
+  if (max != null && value.length > max) return `${label} must be at most ${max} characters`;
+  if (length != null && value.length !== length) return `${label} must be exactly ${length} characters`;
   return null;
 }
 
@@ -31,8 +32,9 @@ export function patternError(value: string, compiled: RegExp | undefined, label:
 }
 
 /** Return the first date-bounds violation message, or null when the value is within the bounds. */
-export function dateBoundsError(value: string, c: { min?: string; max?: string }, label: string): string | null {
-  if (c.min != null && value < c.min) return `${label} must be on or after ${c.min}`;
-  if (c.max != null && value > c.max) return `${label} must be on or before ${c.max}`;
+export function dateBoundsError(value: string, constraints: { min?: string; max?: string }, label: string): string | null {
+  const { min, max } = constraints;
+  if (min != null && value < min) return `${label} must be on or after ${min}`;
+  if (max != null && value > max) return `${label} must be on or before ${max}`;
   return null;
 }

@@ -110,6 +110,18 @@ function coerceImage(
   if (field.required && src === '') errors[key] = `${field.label} is required`;
 }
 
+// Coerce a raw value to the trimmed string the empty check and constraints run on. A parsed value may
+// arrive from parseMarkdown, not only a form string: a Date on a date or datetime field, a JS number on
+// a number field. A finite 0 coerces to '0', never read as empty, since 0 is a real number a YAML scalar
+// carries; a NaN or non-finite number stays '' and routes to the number error in validateField.
+function coerceToText(type: FieldDescriptor['type'], value: unknown): string {
+  if (type === 'date' && value instanceof Date) return dateInputValue(value);
+  if (type === 'datetime' && value instanceof Date) return value.toISOString();
+  if (type === 'number' && typeof value === 'number' && Number.isFinite(value)) return String(value);
+  if (typeof value === 'string') return value.trim();
+  return '';
+}
+
 // Validate one descriptor against its raw value, writing into `data` or `errors`. Empty or absent is
 // "not provided" and is read BEFORE type coercion, uniformly: a required field errors, an optional
 // field drops (no key, no error). Only a non-empty value is coerced. boolean is the exception: true
@@ -135,11 +147,10 @@ function validateField(
   // dropping to [] and reading as "required" while present. An empty string or a non-string-non-array
   // stays the empty list.
   if (field.type === 'multiselect') {
-    const raw = Array.isArray(value)
-      ? value.map(String)
-      : typeof value === 'string' && value.trim() !== ''
-        ? [value.trim()]
-        : [];
+    let raw: string[];
+    if (Array.isArray(value)) raw = value.map(String);
+    else if (typeof value === 'string' && value.trim() !== '') raw = [value.trim()];
+    else raw = [];
     const list = raw.map((v) => v.trim()).filter((v) => v !== '');
     if (field.required && list.length === 0) {
       errors[key] = `${field.label} is required`;
@@ -163,21 +174,10 @@ function validateField(
     return;
   }
 
-  // Every other type is "not provided when empty" first, then coerced. A parsed value, not only a form
-  // string, may arrive from parseMarkdown: a Date on a date or datetime field, a JS number on a number
-  // field. Coerce each to its string form BEFORE the empty check so a real parsed value is not read as
-  // empty. A finite 0 must coerce to '0', never read as empty, since 0 is a real number a YAML scalar
-  // carries; a NaN or non-finite number stays '' and routes to the number error below.
-  const text =
-    field.type === 'date' && value instanceof Date
-      ? dateInputValue(value)
-      : field.type === 'datetime' && value instanceof Date
-        ? value.toISOString()
-        : field.type === 'number' && typeof value === 'number' && Number.isFinite(value)
-          ? String(value)
-          : typeof value === 'string'
-            ? value.trim()
-            : '';
+  // Every other type is "not provided when empty" first, then coerced. `coerceToText` turns a parsed
+  // value into its string form BEFORE the empty check, so a real parsed value (a Date on a date or
+  // datetime field, a number on a number field) is not read as empty.
+  const text = coerceToText(field.type, value);
   if (text === '') {
     if (field.required) errors[key] = `${field.label} is required`;
     return;

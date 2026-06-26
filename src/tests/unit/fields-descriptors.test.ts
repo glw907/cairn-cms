@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { fields } from '../../lib/content/fields.js';
+import type { ImageValue } from '../../lib/content/fields.js';
 
 describe('fields string leaves', () => {
   it('text() returns a plain serializable descriptor', () => {
@@ -47,5 +48,15 @@ describe('fields date/datetime/boolean', () => {
   it('datetime and boolean are labeled leaves', () => {
     expect(fields.datetime({ label: 'Publish at' })).toEqual({ type: 'datetime', label: 'Publish at' });
     expect(fields.boolean({ label: 'Draft' })).toEqual({ type: 'boolean', label: 'Draft' });
+  });
+});
+
+describe('fields.image', () => {
+  it('is a rich leaf carrying the seo flag', () => {
+    expect(fields.image({ label: 'Hero', seo: true })).toEqual({ type: 'image', label: 'Hero', seo: true });
+  });
+  it('re-exports the ImageValue shape', () => {
+    const v: ImageValue = { src: 'media:abc', alt: 'A photo', caption: 'c', decorative: false };
+    expect(v.src).toBe('media:abc');
   });
 });

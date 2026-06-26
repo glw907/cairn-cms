@@ -1,3 +1,6 @@
+/** The stored value of an image field; re-exported so this module owns the image shape too. */
+export type { ImageValue } from './types.js';
+
 /** Common to every field descriptor: the form label and the universal options. */
 export interface FieldBase {
   /** Form label. */
@@ -72,6 +75,12 @@ export interface DatetimeField extends FieldBase {
 export interface BooleanField extends FieldBase {
   type: 'boolean';
 }
+/** A hero image whose stored value is the nested ImageValue object. */
+export interface ImageField extends FieldBase {
+  type: 'image';
+  /** Whether this field feeds the social-card image. */
+  seo?: boolean;
+}
 /** The plain-data descriptor union the form, validator, and inference all read. Grows per task. */
 export type FieldDescriptor =
   | TextField
@@ -83,7 +92,8 @@ export type FieldDescriptor =
   | EmailField
   | DateField
   | DatetimeField
-  | BooleanField;
+  | BooleanField
+  | ImageField;
 
 /** The constructor namespace a concept declares its fields with. */
 export const fields = {
@@ -107,4 +117,6 @@ export const fields = {
   datetime: (o: Omit<DatetimeField, 'type'>): DatetimeField => ({ type: 'datetime', ...o }),
   /** A boolean checkbox field. */
   boolean: (o: Omit<BooleanField, 'type'>): BooleanField => ({ type: 'boolean', ...o }),
+  /** An image field whose value is the nested ImageValue object. */
+  image: (o: Omit<ImageField, 'type'>): ImageField => ({ type: 'image', ...o }),
 };

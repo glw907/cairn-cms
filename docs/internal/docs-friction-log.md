@@ -33,6 +33,11 @@ radius); and the golden-path E2E selector/double rot (fixed in `ba25359`).
   the editor link-picker narrowing.
 - Engine DX (additive): re-export `AuthEnv` from `/sveltekit`; an optional concept `singular` label
   for the create affordances; render attribute-sink hardening (defence-in-depth, security-reviewed).
+
+**Resolved 2026-06-26 (verification sweep):** the automated admin-render DOM check, the manifest bin's
+`cwd`-vs-`config.root` fix, the editor link-picker narrowing, and render attribute-sink hardening all
+shipped. The `singular` create label and the `supportContact` base field shipped too (only a richer
+`supportContact` shape remains, tracked below). These no longer read as open work.
 - Docs: the preview dual-emission note; doctor self-derivation tied to the `cairnManifest` plugin; the
   `app.d.ts` Platform block verbatim; the `prerender.handleHttpError` flag in the delivery docs; an
   interim `SECURITY.md` contact; steer manifest regeneration to the `cairn-manifest` bin (907's
@@ -424,6 +429,8 @@ existing scaffolder and local-dev-mode candidates above.
   None exists, so the coach would either nag on every `##` or clobber the live region on every keystroke.
   Candidate: a writing-coach decoration-and-status seam in `MarkdownEditor`, modeled on the `MediaInsertPopover`
   at-caret focus precedent.
+  - **Resolved 2026-06-26: KILLED.** The 2026-06-23 help-shell adversarial review discarded the
+    point-of-typing coach as the Clippy pattern. Do not resurface it from this entry.
 - **developer** (route-keyed help-content registry, MEDIUM): the on-this-screen context-following help degrades
   to a static list without a concept/route-keyed content index. One help manifest keyed by concept/route would
   also let the library, the slide-over, and the woven atoms render from a single source, which neutralizes the

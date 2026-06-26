@@ -27,6 +27,7 @@ jobs:
       - run: npm run check:docs
       - run: npm run check:prose
       - run: npm run check:version
+      - run: npm run check:dev-package
       - name: Install Vale 3.15.1
         run: |
           curl -sfL https://github.com/errata-ai/vale/releases/download/v3.15.1/vale_3.15.1_Linux_64-bit.tar.gz \

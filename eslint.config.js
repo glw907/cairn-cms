@@ -27,10 +27,15 @@ const houseComments = {
   },
 };
 
+// The comment gate covers src/lib and the dev-package source (packages/cairn-cms-dev/src), so the
+// TSDoc and em-dash rules reach both. check:comments lints src/lib; check:dev-package lints the
+// dev-package paths against this same config.
+const COMMENT_GLOBS = ['src/lib/**/*.ts', 'packages/cairn-cms-dev/src/**/*.ts'];
+
 export default [
-  { files: ['src/lib/**/*.ts'], ...jsdoc.configs['flat/recommended-typescript-error'] },
+  { files: COMMENT_GLOBS, ...jsdoc.configs['flat/recommended-typescript-error'] },
   {
-    files: ['src/lib/**/*.ts'],
+    files: COMMENT_GLOBS,
     languageOptions: { parser: tseslint.parser },
     plugins: { jsdoc, tsdoc, house: houseComments },
     rules: {

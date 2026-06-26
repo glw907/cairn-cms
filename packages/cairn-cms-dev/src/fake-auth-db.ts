@@ -37,6 +37,7 @@ export interface FakeAuthDb {
   batch(statements: FakeStatement[]): Promise<unknown[]>;
 }
 
+/** Build the in-memory D1 stand-in the showcase binds as AUTH_DB, seeded with a demo allowlist. */
 export function createFakeAuthDb(): FakeAuthDb {
   // Seeded allowlist: the fake session's editor (hooks.server.ts) as owner, plus one plain
   // editor so the list view renders more than the acting owner's own row.

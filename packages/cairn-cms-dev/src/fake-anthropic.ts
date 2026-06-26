@@ -16,8 +16,10 @@ type TidyCreateBody = Parameters<
   ReturnType<NonNullable<ContentRoutesDeps['anthropic']>>['messages']['create']
 >[0];
 
-/** Build the fake client factory the showcase passes to createCairnAdmin's `anthropic` dep. The
- *  factory ignores the key (it never calls the network) and returns one client per tidy request. */
+/**
+ * Build the fake client factory the showcase passes to createCairnAdmin's `anthropic` dep. The
+ * factory ignores the key (it never calls the network) and returns one client per tidy request.
+ */
 export function createFakeAnthropic(): ContentRoutesDeps['anthropic'] {
   return () => ({
     messages: {

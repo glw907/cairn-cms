@@ -81,13 +81,16 @@ function json(payload: unknown, status = 200): Response {
   });
 }
 
+/** Read back the last commit the fake recorded, or null before any commit lands. */
 export function lastRecordedCommit(): RecordedCommit | null {
   return lastCommit;
 }
 
-/** Read one file's content off a branch's in-memory tree, or null when absent. The media slice's
- *  E2E reads the committed `media.json` this way: the last-commit recorder captures only the `.md`
- *  entry, so the manifest committed in the same atomic commit needs its own read. */
+/**
+ * Read one file's content off a branch's in-memory tree, or null when absent. The media slice's
+ * E2E reads the committed `media.json` this way: the last-commit recorder captures only the `.md`
+ * entry, so the manifest committed in the same atomic commit needs its own read.
+ */
 export function committedFile(branch: string, path: string): string | null {
   return branches.get(branch)?.get(path) ?? null;
 }
@@ -111,22 +114,26 @@ export function committedFile(branch: string, path: string): string | null {
 /** The seed post the other specs edit, listed in the seeded content manifest so listLoad keeps it. */
 const SEED_POST_ID = '2026-06-hello';
 
-/** The branch-only asset's open edit branch and the entry that references it. A distinct id so it
- *  never collides with the seed post or the per-run posts the other specs create. */
+/**
+ * The branch-only asset's open edit branch and the entry that references it. A distinct id so it
+ * never collides with the seed post or the per-run posts the other specs create.
+ */
 const SEED_BRANCH = 'cairn/posts/2026-05-draft-gallery';
 const SEED_BRANCH_ENTRY = 'src/content/posts/2026-05-draft-gallery.md';
 
-/** The editor copy-edit seed entry (Task 16), backing spellcheck.spec.ts and tidy.spec.ts. Its body
- *  carries two real en-US misspellings the dictionary flags ("recieve", "teh") so the spellcheck
- *  underline is deterministic, and the canned tidy response (fake-anthropic.ts) corrects exactly those
- *  two words so the review diff is two clean single-word hunks. A distinct id from every other spec's
- *  entry, so editing it never perturbs the media fixtures. */
+/**
+ * The editor copy-edit seed entry (Task 16), backing spellcheck.spec.ts and tidy.spec.ts. Its body
+ * carries two real en-US misspellings the dictionary flags ("recieve", "teh") so the spellcheck
+ * underline is deterministic, and the canned tidy response (fake-anthropic.ts) corrects exactly those
+ * two words so the review diff is two clean single-word hunks. A distinct id from every other spec's
+ * entry, so editing it never perturbs the media fixtures.
+ */
 export const SEED_EDITOR = {
   id: '2026-06-copyedit',
   path: 'src/content/posts/2026-06-copyedit.md',
   title: 'Copy-edit demo',
   body: 'Please recieve this draft. It has teh same idea.',
-  /** The deterministic corrected body the stubbed model returns: recieve -> receive, teh -> the. */
+  /** The deterministic corrected body the stubbed model returns: "recieve" to "receive", "teh" to "the". */
   corrected: 'Please receive this draft. It has the same idea.',
 } as const;
 
@@ -153,17 +160,21 @@ export const SEED_MEDIA = {
 // Both entries are added to main's content manifest with mediaRefs pointing at the asset, so the usage
 // index (which the planner builds from mediaRefs) selects them, then reads their markdown to rewrite it.
 
-/** The Pass B asset's hash, slug, and stored default alt, exported so the spec asserts the alt the
- *  push propagates and the hash the replace repoints away from. A distinct 16-hex hash from the four. */
+/**
+ * The Pass B asset's hash, slug, and stored default alt, exported so the spec asserts the alt the
+ * push propagates and the hash the replace repoints away from. A distinct 16-hex hash from the four.
+ */
 export const PASS_B_MEDIA = {
   hash: 'cccc4444dddd5555',
   slug: 'first-light',
   alt: 'Dawn light over the tracks',
 } as const;
 
-/** The two main entries that reference the Pass B asset, exported so the spec reads their committed
- *  markdown back through the /test/branch-file fixture after each round-trip. `emptyAlt` carries an
- *  empty alt (the will-fill bucket); `customAlt` carries a custom alt (the customized bucket). */
+/**
+ * The two main entries that reference the Pass B asset, exported so the spec reads their committed
+ * markdown back through the /test/branch-file fixture after each round-trip. `emptyAlt` carries an
+ * empty alt (the will-fill bucket); `customAlt` carries a custom alt (the customized bucket).
+ */
 export const PASS_B_ENTRIES = {
   emptyAlt: {
     id: '2026-06-first-empty',
@@ -202,26 +213,32 @@ export const PASS_C_UNREF = {
   alt: 'A spare frame nothing points at',
 } as const;
 
-/** The orphaned byte: bytes in R2 under its key, but no media.json row and no reference. The purge
- *  target. Exported as a hash so the spec can build the key and assert the scan lists it. */
+/**
+ * The orphaned byte: bytes in R2 under its key, but no media.json row and no reference. The purge
+ * target. Exported as a hash so the spec can build the key and assert the scan lists it.
+ */
 export const PASS_C_ORPHAN_BYTE = {
   hash: 'eeee7777ffff8888',
 } as const;
 
-/** The broken-reference row: a media.json row on main whose R2 bytes are absent and which nothing
- *  references. The read-only Broken references readout target, keyed by its slug. */
+/**
+ * The broken-reference row: a media.json row on main whose R2 bytes are absent and which nothing
+ * references. The read-only Broken references readout target, keyed by its slug.
+ */
 export const PASS_C_MISSING = {
   hash: 'ffff8888aaaa9999',
   slug: 'pass-c-broken',
   alt: 'A record whose file is gone',
 } as const;
 
-/** The R2 object keys (media/<aa>/<hash>.<ext>) every seeded asset resolves through, so hooks.server.ts
- *  seeds the matching bytes. Kept here so the key derivation lives next to the manifest seed. Includes
- *  the Pass B asset so its thumbnail resolves in the replace dialog, the unreferenced Pass C asset so
- *  its tile thumbnail resolves, and the Pass C orphaned byte (whose key has NO media.json row, so the
- *  scan finds it). PASS_C_MISSING is deliberately ABSENT: its row exists but its bytes do not, which is
- *  what makes it a broken reference. */
+/**
+ * The R2 object keys (media/&lt;aa&gt;/&lt;hash&gt;.&lt;ext&gt;) every seeded asset resolves through, so
+ * hooks.server.ts seeds the matching bytes. Kept here so the key derivation lives next to the manifest
+ * seed. Includes the Pass B asset so its thumbnail resolves in the replace dialog, the unreferenced
+ * Pass C asset so its tile thumbnail resolves, and the Pass C orphaned byte (whose key has NO media.json
+ * row, so the scan finds it). PASS_C_MISSING is deliberately ABSENT: its row exists but its bytes do
+ * not, which is what makes it a broken reference.
+ */
 export const SEED_MEDIA_KEYS = [
   ...[...Object.values(SEED_MEDIA), PASS_B_MEDIA, PASS_C_UNREF, PASS_C_ORPHAN_BYTE].map(
     (m) => `media/${m.hash.slice(0, 2)}/${m.hash}.png`,
@@ -247,8 +264,10 @@ function mediaRow(slug: string, hash: string, alt: string): Record<string, unkno
 
 let mediaSeeded = false;
 
-/** Seed the Media Library fixtures into the in-memory repo. Idempotent: a reused dev server (the
- *  Playwright reuseExistingServer path) calls this once per process. */
+/**
+ * Seed the Media Library fixtures into the in-memory repo. Idempotent: a reused dev server (the
+ * Playwright reuseExistingServer path) calls this once per process.
+ */
 export function seedMediaLibrary(): void {
   if (mediaSeeded) return;
   mediaSeeded = true;
@@ -369,6 +388,7 @@ export function seedMediaLibrary(): void {
   heads.set(SEED_BRANCH, nextSha());
 }
 
+/** Patch globalThis.fetch so GitHub API calls hit the in-memory repo. Idempotent per process. */
 export function installFakeGitHub(): void {
   if (installed) return;
   installed = true;

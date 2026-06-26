@@ -30,7 +30,6 @@ export interface DevBackendOptions {
  * requests in the dev session). The returned handle supplies the binding doubles on `platform.env`
  * for /admin and /media requests and mints an owner editor on /admin, leaving every other path
  * untouched.
- *
  * @param options - {@link DevBackendOptions}; `seedContent` is the Part B content-seeding hook.
  * @returns a SvelteKit `Handle` that installs the dev backend per request path.
  */

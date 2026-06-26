@@ -35,6 +35,17 @@ references next).
 the sharpest piece of the series). Brainstorm the open design decisions first, then write the plan. See
 [[cairn-site-contract-v2-opportunity]].
 
+**Carry-forward routing (from the cutover post-mortem's six DX items).** References OWNS #1: a `form →
+frontmatterFromForm → serialize → parse → formValues` round-trip property test is a required deliverable for
+the new reference field (the cutover nearly shipped a silent datetime round-trip loss; the reference value
+round-trips a richer payload). Items #2 (atomic-fixture coupling — a non-issue here, references is additive
+not a breaking reshape), #3 (wire/document each new descriptor flag's consumer; `taxonomy` stays reserved),
+#4a (a field e2e must open the Details slide-over first), and #5 (watch `ConceptDescriptor`'s request-time
+surface) ride along as references-plan notes, no separate work. #4b (the Details panel defaults closed and
+buries fields) is deferred to the `object`/`array` phase, where nesting makes it bite, and is noted in
+ROADMAP's Next tier. #6 (the worktree dual vite/kit install collision) is a standalone ~20-minute infra fix
+filed in ROADMAP's "Small DX debt"; slot it at the top of the next worktree setup, not into references.
+
 ---
 
 ### Prior: BOTH hardening passes DONE (Plan 1 = 0.67.0, Plan 2 = 0.68.0), merged to `main` and PUBLISHED

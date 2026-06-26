@@ -15,20 +15,23 @@ here, so this file stays a forward view.
 
 ## Now
 
-- **Contract v2 cutover (the breaking pass).** Make `fieldset` the engine's only validator: wire
-  `fields.*`/`fieldset` into the live editor, validator, delivery, and manifest, migrate the showcase off
-  `defineFields`, and remove `FrontmatterField`/`defineFields`/`validate.ts`. Both pre-cutover hardening
-  passes shipped (`0.67.0` validator parity, `0.68.0` engine-misc), so the engine is hardened for it. The
-  cutover is gated on a brainstorm before the plan, since it is breaking and high-blast-radius. Spec:
+- **Contract v2 references (phase 2).** Lift the rename-safe `cairn:<concept>/<id>` content graph out of
+  prose body links into a frontmatter `fields.reference` field: a searchable editor picker over the target
+  concept, build-time integrity (dangling fails the build, delete refuses while referenced, rename repoints
+  across open branches), and delivery resolution to the target's permalink and summary. The category's
+  biggest gap and cairn's biggest opportunity. Phase 1 (the cutover) shipped as `0.69.0` (merged, held
+  unpublished). Carry the cutover's load-bearing carry-forward into the plan: a `form → frontmatterFromForm
+  → serialize → parse → formValues` round-trip property test is a required deliverable for the reference
+  field (the cutover nearly shipped a silent datetime round-trip loss). Spec:
   `docs/superpowers/specs/2026-06-25-cairn-contract-v2-design.md`.
 
 ## Next
 
-- **The Contract v2 plan series (after the cutover).** References first: lift the rename-safe
-  `cairn:<concept>/<id>` graph out of prose body links into a frontmatter reference field, the category's
-  biggest gap and cairn's biggest opportunity. Then a bounded one-level `object`/`array` primitive with
-  adapter and component-system unification, then the `Backend` seam (a GitHub-App default that folds in
-  `@glw907/cairn-cms-dev`), then render-as-component with opt-in islands.
+- **The Contract v2 plan series (after references).** A bounded one-level `object`/`array` primitive with
+  adapter and component-system unification (and, since nested repeatable rows make the editor's Details
+  slide-over heavy, a look at that panel, which defaults closed and buries every non-title field as the
+  vocabulary grows), then the `Backend` seam (a GitHub-App default that folds in `@glw907/cairn-cms-dev`),
+  then render-as-component with opt-in islands.
 - **The `create-cairn-site` scaffolder.** Sequenced after Contract v2 phases 1-2 so it bakes the template
   against v2. The pre-B3 engine/DX slot lands first (remove the calendar route, the GitHub-App "appId is
   config, not secret" trap, the doctor that greens while the deploy fails, and the other first-hour DX
@@ -52,9 +55,11 @@ here, so this file stays a forward view.
 - **Remaining media work.** Media Pass D and the Media Library direct upload, plus the owed live
   bulk-delete admin smoke. Passes 1-3c and A-C shipped across `0.57.0`-`0.59.0`.
 - **Small DX debt.** Fix the flaky spellcheck `e2e` so it stops blocking releases (a settle-aware
-  assertion, not a single `toHaveCount`), and give the component picker dialog a `sm:`-breakpoint
-  bottom-sheet so it is not an unconditional `85vh` on a short viewport. Both are in
-  `docs/internal/docs-friction-log.md`.
+  assertion, not a single `toHaveCount`), give the component picker dialog a `sm:`-breakpoint bottom-sheet
+  so it is not an unconditional `85vh` on a short viewport, and resolve the worktree dual vite/kit install
+  collision (the showcase typecheck throws ~12 dependency-`.d.ts` errors under a symlinked-`node_modules`
+  worktree, so the local consumer-build proof currently leans on the e2e build; CI's real checkout is
+  clean). The first two are in `docs/internal/docs-friction-log.md`.
 - **Migrate cairn's CSRF-disable before SvelteKit removes `checkOrigin`.** cairn's admin CSRF ownership
   depends on `csrf: { checkOrigin: false }`, deprecated in SvelteKit 2.61. `trustedOrigins` cannot replace
   it: a missing-`Origin` POST is always forbidden, and the check runs before the `handle` hook. The

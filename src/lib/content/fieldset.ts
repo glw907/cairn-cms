@@ -135,8 +135,9 @@ function validateField(
       errors[key] = `${field.label} is required`;
       return;
     }
-    if (field.options) {
-      const unknown = list.find((v) => !field.options!.includes(v));
+    const { options } = field;
+    if (options) {
+      const unknown = list.find((v) => !options.includes(v));
       if (unknown !== undefined) {
         errors[key] = `${field.label} contains an unknown value: ${unknown}`;
         return;

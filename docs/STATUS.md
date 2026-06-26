@@ -11,7 +11,7 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-25, latest): Contract v2 Plan 1 MERGED to main; NEXT = brainstorm + draft the cutover (Plan 2)
+## Immediate next action (2026-06-26, latest): engine hardening BEFORE the cutover; NEXT = execute hardening Plan 1 (validator parity) via a workflow in a fresh session
 
 **Contract v2 Plan 1 (the additive `fields.*` field foundation) is merged to `main`** (2026-06-25,
 fast-forward to `75f91e2`; unpushed, no npm publish yet; the worktree and branch are removed). All 10
@@ -35,28 +35,49 @@ with opt-in islands, and a `Backend` seam (25 verified review findings, all inco
 Contract v2 phases 1-2 land BEFORE the scaffolder's B3, so B3 bakes the template against v2; the
 showcase migrates as the first v2 consumer.
 
-**Carry-forwards the cutover (Plan 2) MUST fold in (from the Plan 1 review and post-mortem):**
-1. **Constraint parity (HIGH).** The `fieldset` validator does not yet enforce text
-   `min`/`max`/`length`/`pattern` or date `min`/`max`; reach parity with v1's `applyRules`/
-   `compilePatterns` (plus loud declaration-time pattern compilation and a parity test matrix) before the
-   new validator can replace `defineFields`.
-2. **Parsed-YAML input symmetry (MED).** The `number`/`datetime` arms read only form-string input; mirror
-   the `date` arm's parsed-`Date` handling for a numeric or ISO value.
-3. **The multiselect scalar drop.** Decide coerce-a-scalar-to-a-single-element-list vs a "must be a list"
-   error (today a scalar `tags: news` drops silently or reports a misleading "required").
-4. **Collapse the parallel validators.** Share one coercion core between `fieldset` and v1's `validate.ts`.
+**Decision (2026-06-26): engine hardening lands BEFORE the Contract v2 cutover** (Geoff's call: land the
+breaking cutover on a hardened engine, no hurry to cut over). A two-agent verification sweep produced the
+scope, pruning five already-shipped items (the manifest-bin `config.root` fix, the render attribute-sink
+hardening, the admin-render DOM gate, the editor link-picker narrowing, the create-form slug preview) and
+catching a stale friction-log entry that resurfaced a killed feature (the point-of-typing writing coach,
+discarded 2026-06-23 as the Clippy pattern). The hardening is two passes; the spec is
+`docs/superpowers/specs/2026-06-26-cairn-engine-hardening-design.md`.
 
-**NEXT.** Brainstorm the open cutover decisions with Geoff (the migration sequence, whether the showcase
-migrates in the same plan, generating the editor form from descriptors, and how to land the constraint-
-parity carry-forward), then draft Contract v2 Plan 2, the cutover: wire `fields.*`/`fieldset` into the
-live editor form, the validator, delivery, and the manifest, migrate the showcase concepts off
-`defineFields`, remove `FrontmatterField`/`defineFields`/`validate.ts`, and fold in the four carry-forwards
-above. Plan series after the cutover: references → object/array + adapter + component unification →
-backend → render + islands.
+- **Hardening Plan 1 (the cutover's spine): validator/fields parity + unification.** Folds in the four
+  Plan 1 carry-forwards: text/date constraint parity through a shared `field-rules` module both validators
+  call (HIGH, the new validator cannot replace `defineFields` until it matches), parsed-YAML input
+  symmetry, the multiselect lone-scalar coercion (decided: coerce to a single-element list), and the
+  validator unification, gated by a v1-vs-v2 parity matrix. Plan:
+  `docs/superpowers/plans/2026-06-26-cairn-engine-hardening-validator-parity.md`.
+- **Hardening Plan 2: engine-misc.** The independent items: the component picker 85vh cap, the error
+  live-region re-announce, `ComponentDef.icon` guidance + engine default icons, the rehype-dispatch JSDoc,
+  the admin-prose gate blind spot, the owed `check:dev-package` gate, the friction-log prune, and the
+  lockfile version sync. Plan:
+  `docs/superpowers/plans/2026-06-26-cairn-engine-hardening-engine-misc.md`.
 
-**Version note:** Contract v2 Plan 1 took `0.66.0` (the lead initiative). The deferred pre-B3 engine/DX
-slot, previously earmarked `0.66.0`, re-numbers to the next free minor when it resumes after the contract
-stabilizes.
+**NEXT (fresh session, the user is clearing context): execute hardening Plan 1 via a workflow.** Resume
+prompt to paste in a new session launched in `~/Projects/cairn-cms`:
+
+> Execute Engine Hardening Plan 1, the validator/fields parity + unification:
+> `docs/superpowers/plans/2026-06-26-cairn-engine-hardening-validator-parity.md` (spec:
+> `docs/superpowers/specs/2026-06-26-cairn-engine-hardening-design.md`). First of two pre-cutover
+> hardening passes. Execute via a workflow: create a worktree off `main`
+> (`git worktree add ../cairn-cms-hardening -b feat/engine-hardening-validator-parity main`), symlink
+> `node_modules`, `npm run package`, then run Part A as a sequential pipeline (each task test-first, Task 6
+> the parity matrix as the verify stage), full gate per task. `cairn-pass` is the entry point. After it
+> lands, draft + execute hardening Plan 2 (engine-misc, parallelizable), then the Contract v2 cutover.
+
+**After the hardening: the Contract v2 cutover** wires `fields.*`/`fieldset` into the live editor,
+validator, delivery, and manifest, migrates the showcase off `defineFields`, and removes
+`FrontmatterField`/`defineFields`/`validate.ts`. Plan series after the cutover: references → object/array +
+adapter + component unification → backend → render + islands.
+
+**Version note:** Plan 1 took `0.66.0`. The hardening passes take the next minors; the deferred pre-B3
+engine/DX slot re-numbers when it resumes after the contract stabilizes.
+
+**Infra (2026-06-26):** Vale is scoped to published docs only (the in-tree `.vale.ini` excludes
+`docs/superpowers/**`, `docs/internal/**`, STATUS, and the loose feedback notes; the global `vale-hook`
+also skips any `superpowers/` path), so planning docs no longer burn tokens on advisory findings.
 
 ---
 

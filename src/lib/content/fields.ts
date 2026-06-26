@@ -21,8 +21,15 @@ export interface TextareaField extends FieldBase {
   type: 'textarea';
   rows?: number; min?: number; max?: number; length?: number; pattern?: string;
 }
+/** A numeric input. */
+export interface NumberField extends FieldBase {
+  type: 'number';
+  min?: number; max?: number;
+  /** Constrain the value to whole numbers. */
+  integer?: boolean;
+}
 /** The plain-data descriptor union the form, validator, and inference all read. Grows per task. */
-export type FieldDescriptor = TextField | TextareaField;
+export type FieldDescriptor = TextField | TextareaField | NumberField;
 
 /** The constructor namespace a concept declares its fields with. */
 export const fields = {
@@ -30,4 +37,6 @@ export const fields = {
   text: (o: Omit<TextField, 'type'>): TextField => ({ type: 'text', ...o }),
   /** A multi-line text field. */
   textarea: (o: Omit<TextareaField, 'type'>): TextareaField => ({ type: 'textarea', ...o }),
+  /** A numeric field. */
+  number: (o: Omit<NumberField, 'type'>): NumberField => ({ type: 'number', ...o }),
 };

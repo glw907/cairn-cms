@@ -13,3 +13,10 @@ describe('fields string leaves', () => {
     expect(d).toEqual({ type: 'textarea', label: 'Summary', rows: 4, max: 200 });
   });
 });
+
+describe('fields.number', () => {
+  it('returns a numeric descriptor with bounds', () => {
+    expect(fields.number({ label: 'Rating', min: 1, max: 5, integer: true }))
+      .toEqual({ type: 'number', label: 'Rating', min: 1, max: 5, integer: true });
+  });
+});

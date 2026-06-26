@@ -55,7 +55,7 @@ The seams are where your code plugs in:
 
 - The adapter contract, the single `CairnAdapter` object the engine consumes.
 - The slug codec, which maps a content id to a public URL and back.
-- The frontmatter schema, one `defineFields` declaration per concept that drives the editor
+- The frontmatter schema, one `fieldset` declaration per concept that drives the editor
   form, the validator, and the inferred frontmatter type at once.
 - The `render` method, your one markdown-to-HTML function, which the editor preview and every
   public page call.

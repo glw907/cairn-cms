@@ -64,20 +64,21 @@ build, never a wrong or silently defaulted URL.
 
 ## Schema as the source of truth
 
-You declare a concept's frontmatter shape once, with `defineFields`. That single declaration does
-three jobs. It generates the editor form your author fills in, it validates each save, and the rest
-of the engine infers the concept's frontmatter type from it. There is no second place to keep in
-sync, so a field cannot exist in the form yet be missing from the type, or be validated one way and
-typed another.
+You declare a concept's frontmatter shape once, with `fieldset` and the `fields.*` constructors.
+Each key in the record is the frontmatter key, and its value is a field descriptor. That single
+declaration does three jobs. It generates the editor form your author fills in, it validates each
+save, and the rest of the engine infers the concept's frontmatter type from it. There is no second
+place to keep in sync, so a field cannot exist in the form yet be missing from the type, or be
+validated one way and typed another.
 
 The declaration conforms to Standard Schema (the shared validation interface), so you can hand a
 cairn field set to any Standard-Schema-aware tool and validate with a familiar contract. cairn owns
 the primitive rather than wrapping a third-party schema library, which keeps the form, the
 validator, and the inferred type reading from one declaration the engine fully controls.
 
-`defineFields` is documented in [`core.md`](../reference/core.md#definefields). Every frontmatter
-key your site reads must therefore be declared in the schema, because the schema is the only source
-the form and the type come from.
+`fieldset` and the `fields` constructors are documented in [`core.md`](../reference/core.md#fields).
+Every frontmatter key your site reads must therefore be declared in the schema, because the schema is
+the only source the form and the type come from.
 
 ## The content graph
 

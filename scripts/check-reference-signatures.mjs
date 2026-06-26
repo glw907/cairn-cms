@@ -25,7 +25,7 @@ const ALLOWLIST = /** @type {Set<string>} */ (
     // four factory blocks below, so the facade block stays readable.
     '/sveltekit#createCairnAdmin',
     // The page writes the bare `ConceptConfig`; the real type resolves the default type argument to
-    // `ConceptConfig<ConceptSchema<readonly FrontmatterField[]>>`. The default carries no reader
+    // `ConceptConfig<Fieldset<Record<string, FieldDescriptor>>>`. The default carries no reader
     // value here, so the page omits it.
     '.#normalizeConcepts',
     // The page writes the bare `Fieldset` parameter; the real type resolves its default type

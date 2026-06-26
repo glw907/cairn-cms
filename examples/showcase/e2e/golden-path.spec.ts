@@ -453,6 +453,51 @@ test('the component round-trips: place a callout, the caret enables Edit block, 
   await expect(editor.locator('.cm-line', { hasText: '::::callout[' })).toHaveCount(1);
 });
 
+test('the v2 status select round-trips: set it, save, reload, the value persists', async ({ page }) => {
+  // A unique slug per run so a reused local server (reuseExistingServer) does not collide.
+  const slug = `status-roundtrip-${Date.now()}`;
+
+  await page.goto('/admin/posts');
+
+  // Create the entry. The status field declares default: 'draft', so the editor opens prefilled.
+  await page.locator('header').getByRole('button', { name: 'New Posts' }).click();
+  const createDialog = page.locator('dialog[aria-labelledby="cairn-create-dialog-title"]');
+  await expect(createDialog).toBeVisible();
+  await createDialog.locator('input[name="title"]').fill('Status Roundtrip');
+  await createDialog.locator('input[name="slug"]').fill(slug);
+  await createDialog.getByRole('button', { name: 'Create' }).click();
+  await expect(page).toHaveURL(/new=1/, { timeout: 10_000 });
+  const id = new URL(page.url()).pathname.split('/').pop() ?? '';
+
+  // The status select renders from the v2 fields.select arm, labelled by its field label, and the
+  // default seeds it to draft on a fresh entry.
+  const statusSelect = page.getByRole('combobox', { name: 'Status' });
+  await expect(statusSelect).toBeVisible();
+  await expect(statusSelect).toHaveValue('draft');
+
+  // Required title plus a body so the save validates and commits the branch.
+  await page.locator('input[name="title"]').fill('Status Roundtrip');
+  const editor = page.locator('.cm-content');
+  await editor.click();
+  await page.keyboard.type('A body for the status round-trip.');
+  await expect(page.locator('input[name="body"]')).toHaveValue('A body for the status round-trip.', {
+    timeout: 2000,
+  });
+
+  // Change the select to published and save. The frontmatter encode (frontmatterFromForm) writes
+  // the chosen value, and the commit carries it.
+  await statusSelect.selectOption('published');
+  await page.locator('.navbar').getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page).toHaveURL(/saved=1/, { timeout: 10_000 });
+
+  // Reload the editor from the list. The load reads the committed frontmatter back through
+  // formValues, and the select renders its persisted value: the new arm round-tripped end to end.
+  await page.goto(`/admin/posts/${id}`);
+  const reloadedSelect = page.getByRole('combobox', { name: 'Status' });
+  await expect(reloadedSelect).toBeVisible();
+  await expect(reloadedSelect).toHaveValue('published');
+});
+
 test('a non-cairn feature coexists with the admin (Mode 1)', async ({ page }) => {
   await page.goto('/calendar');
   await expect(page.getByRole('heading', { name: 'Calendar' })).toBeVisible();

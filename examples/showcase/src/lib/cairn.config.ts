@@ -1,6 +1,6 @@
 // The showcase's adapter: the single seam the engine consumes. It declares one post-like concept,
 // a render that runs the engine pipeline, and a backend the dev GitHub double answers for.
-import { createRenderer, defineRegistry, defineFields, defineAdapter, glyph, parseSiteConfig } from '@glw907/cairn-cms';
+import { createRenderer, defineRegistry, fieldset, fields, defineAdapter, glyph, parseSiteConfig } from '@glw907/cairn-cms';
 import { cardShell, headRow, iconSpan, strAttr } from '@glw907/cairn-cms/render';
 import { normalizeAssets, makeMediaResolver, readCommittedManifest } from '@glw907/cairn-cms/media';
 import type { ComponentDef, IconSet } from '@glw907/cairn-cms';
@@ -116,23 +116,26 @@ export const cairn = defineAdapter({
       dir: 'src/content/posts',
       label: 'Posts',
       summaryFields: ['description'],
-      schema: defineFields([
-        { type: 'text', name: 'title', label: 'Title', required: true },
-        { type: 'date', name: 'date', label: 'Date' },
+      schema: fieldset({
+        title: fields.text({ label: 'Title', required: true }),
+        date: fields.date({ label: 'Date' }),
         // The post files carry a description the SEO head reads; declare it so it survives the
         // validate-once read. Every frontmatter key a site reads must be in its schema.
-        { type: 'textarea', name: 'description', label: 'Description' },
-        { type: 'image', name: 'image', label: 'Hero image' },
-        { type: 'text', name: 'author', label: 'Author' },
-      ]),
+        description: fields.textarea({ label: 'Description' }),
+        image: fields.image({ label: 'Hero image', seo: true }),
+        author: fields.text({ label: 'Author' }),
+        // A closed select exercising a brand-new v2 scalar arm end to end: the editor renders a
+        // <select>, the value round-trips through save and reload (the golden-path e2e pins it).
+        status: fields.select({ label: 'Status', options: ['draft', 'published'], default: 'draft' }),
+      }),
     },
     pages: {
       dir: 'src/content/pages',
       label: 'Pages',
-      schema: defineFields([
-        { type: 'text', name: 'title', label: 'Title', required: true },
-        { type: 'text', name: 'robots', label: 'Robots' },
-      ]),
+      schema: fieldset({
+        title: fields.text({ label: 'Title', required: true }),
+        robots: fields.text({ label: 'Robots' }),
+      }),
     },
   },
   backend: { owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' },

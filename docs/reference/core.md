@@ -6,7 +6,7 @@ and GitHub App primitives. You import it at `src/lib/cairn.config.ts` and in you
 delivery code.
 
 ```ts
-import { defineAdapter, defineFields, createRenderer } from '@glw907/cairn-cms';
+import { defineAdapter, fieldset, fields, createRenderer } from '@glw907/cairn-cms';
 import type { CairnAdapter, ComponentDef } from '@glw907/cairn-cms';
 ```
 
@@ -46,11 +46,11 @@ export const cairn = defineAdapter({
       dir: 'src/content/posts',
       label: 'Posts',
       summaryFields: ['description'],
-      schema: defineFields([
-        { type: 'text', name: 'title', label: 'Title', required: true },
-        { type: 'date', name: 'date', label: 'Date' },
-        { type: 'textarea', name: 'description', label: 'Description' },
-      ]),
+      schema: fieldset({
+        title: fields.text({ label: 'Title', required: true }),
+        date: fields.date({ label: 'Date' }),
+        description: fields.textarea({ label: 'Description' }),
+      }),
     },
   },
   backend: { owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' },
@@ -195,26 +195,6 @@ URL, and a variant becomes a `/cdn-cgi/image/<options>/...` transform over that 
 reserved seam, so it is additive: a site that declares no `assets` is unchanged, and the author-facing
 upload surface lands in a later phase on this substrate.
 
-#### `defineFields`
-
-```ts
-declare function defineFields<const F extends readonly FrontmatterField[]>(
-  fields: F,
-  options?: DefineFieldsOptions<F>,
-): ConceptSchema<F>;
-```
-
-Declare a concept's fields once. The single declaration is the source of truth for the editor form,
-the validator, and the inferred frontmatter type. `options.refine` runs after the per-field rules
-pass, for cross-field and body-dependent checks; it returns field-keyed errors to merge or nothing,
-and never transforms the data. See the `defineAdapter` snippet above for `defineFields` in use.
-
-Every field also accepts an optional `description`: one author-facing sentence the editor renders under
-the field in the Details panel, associated with the input through `aria-describedby`. It is not a
-validation rule. The `date` field shows a built-in publish-clarity default when its `description` is
-unset, so the date never reads as if it schedules publishing; a field `description` replaces that
-default, and the date hint cannot be suppressed entirely.
-
 #### `defineRegistry`
 
 ```ts
@@ -271,19 +251,26 @@ The concept-fixed routing table, keyed by concept id (spec section 7.2). Posts a
 entries; pages are plain navigable structure. It is not adapter config, and production passes it as
 the default `routing` to `normalizeConcepts`.
 
-### Fields (Contract v2)
+### Fields
 
-The additive v2 field vocabulary. A concept declares its fields with the `fields` constructor
-namespace, then bundles them into a `fieldset`. This supersedes `defineFields` at the contract-v2
-cutover; until then both paths coexist, and the descriptors a fieldset carries are plain data the
-editor form reads the same way.
+The field vocabulary. A concept declares its fields with the `fields` constructor namespace, then
+bundles them into a `fieldset`. The fieldset is the single source of truth for the editor form, the
+validator, and the inferred frontmatter type, and the descriptors it carries are plain data.
 
 #### `fields`
 
 `fields` is the constructor namespace, one function per field type (`text`, `textarea`, `number`,
 `select`, `multiselect`, `url`, `email`, `date`, `datetime`, `boolean`, `image`). Each one takes the
 field's options and returns a plain-data descriptor; a `select` or `multiselect` preserves its
-literal option list so the inferred type narrows to that union.
+literal option list so the inferred type narrows to that union. A closed `multiselect` (an `options`
+list) renders as checkboxes; a `creatable: true` multiselect renders as an open tag input and accepts
+an optional `placeholder`.
+
+Every constructor also accepts an optional `help`: one author-facing sentence the editor renders under
+the field in the Details panel, associated with the input through `aria-describedby`. It is not a
+validation rule. The `date` field shows a built-in publish-clarity default when its `help` is unset,
+so the date never reads as if it schedules publishing; a field `help` replaces that default, and the
+date hint cannot be suppressed entirely.
 
 ```ts
 const set = fieldset({
@@ -305,7 +292,7 @@ Build a fieldset from a key-to-descriptor record. The returned schema carries th
 plain data for the editor form, a server-derived validator that coerces each value to its type and
 returns field-keyed errors or normalized data, and a Standard Schema conformance property whose
 issues map each error to a single-segment path. The validator enforces each descriptor's declared
-constraints, matching `defineFields`: a `text` or `textarea` field's `min`, `max`, `length`, and
+constraints: a `text` or `textarea` field's `min`, `max`, `length`, and
 `pattern`, and a `date` field's `min` and `max`. A malformed `pattern` throws at the `fieldset()`
 call, not on a later save. The validator reads a parsed value as well as a form string, so a numeric
 `number`, a `Date` on a `datetime` field, and a lone scalar on a `multiselect` all normalize.
@@ -658,7 +645,7 @@ public origin from config. The feed, sitemap, robots, SEO, and pagination builde
 #### `frontmatterFromForm` and `dateInputValue`
 
 ```ts
-declare function frontmatterFromForm(fields: FrontmatterField[], form: FormData): Record<string, unknown>;
+declare function frontmatterFromForm(fields: NamedField[], form: FormData): Record<string, unknown>;
 declare function dateInputValue(value: unknown): string;
 declare function requireOrigin(env: { PUBLIC_ORIGIN?: string }): string;
 ```
@@ -711,21 +698,21 @@ function signatures above reference these.
 | `ComposeInput` | `interface ComposeInput` | The input to `composeRuntime`: adapter, siteConfig, extensions. |
 | `AdminPanel` | `interface AdminPanel` | A site-defined admin screen contributed by an extension (Mode 2). |
 | `FieldTypeDef` | `interface FieldTypeDef` | A custom frontmatter field type contributed by an extension (Mode 2). |
-| `FrontmatterField` | `type FrontmatterField` | The discriminated union the per-concept frontmatter form is generated from. |
 | `FieldType` | `type FieldType` | A component attribute or item field input type: text, select, icon, boolean. |
+| `NamedField` | `type NamedField` | A field descriptor with its frontmatter key re-attached as `name`, the normalized shape `ConceptDescriptor.fields` carries. |
 | `TextField` | `interface TextField` | A single-line text field with length and pattern rules. |
 | `TextareaField` | `interface TextareaField` | A multi-line text field with rows, length, and pattern rules. |
+| `NumberField` | `interface NumberField` | A numeric field with `min`, `max`, and an `integer` flag. |
+| `SelectField` | `interface SelectField` | A single-choice field over a closed `options` list. |
+| `MultiselectField` | `interface MultiselectField` | A multi-choice field: a closed `options` list renders checkboxes; `creatable: true` opens a tag input with an optional `placeholder`. |
+| `UrlField` | `interface UrlField` | A URL field validated for a well-formed absolute URL. |
+| `EmailField` | `interface EmailField` | An email field validated for a well-formed address. |
 | `DateField` | `interface DateField` | A `YYYY-MM-DD` date field with min and max. |
+| `DatetimeField` | `interface DatetimeField` | A naive-local `YYYY-MM-DDTHH:mm` minute-precision datetime field. |
 | `BooleanField` | `interface BooleanField` | A checkbox field; absent means false. |
-| `TagsField` | `interface TagsField` | A closed-vocabulary tag set rendered as checkboxes. |
-| `FreeTagsField` | `interface FreeTagsField` | Free-form tags edited as one comma-separated input. |
 | `ImageField` | `interface ImageField` | A hero image set in frontmatter, with an optional `seo` flag for the social card. |
 | `ImageValue` | `interface ImageValue` | The stored value of an `image` field: a `media:` src, an alt, and an optional caption. |
 | `ValidationResult` | `type ValidationResult` | A validator's verdict: normalized data, or field-keyed errors. |
-| `ConceptSchema` | `interface ConceptSchema<F>` | A concept's schema: fields, validator, and Standard Schema conformance. |
-| `DefineFieldsOptions` | `interface DefineFieldsOptions<F>` | Options for `defineFields`, carrying the `refine` cross-field check. |
-| `Infer` | `type Infer<S>` | Extract the inferred frontmatter type from a `ConceptSchema`. |
-| `InferFields` | `type InferFields<F>` | The normalized frontmatter type inferred from a field tuple. |
 | `StandardInput` | `interface StandardInput` | The validate input the adapter takes: raw frontmatter and the body. |
 | `StandardSchemaV1` | `interface StandardSchemaV1<I, O>` | A local copy of the Standard Schema v1 interface, for ecosystem interop. |
 | `DatePrefix` | `type DatePrefix` | Filename date-prefix granularity for a dated concept: year, month, day. |

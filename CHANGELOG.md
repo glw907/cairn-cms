@@ -2,6 +2,41 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.69.0
+
+<!-- release-size: minor -->
+
+**Breaking.** The Contract v2 `fieldset` field system is now the one live field system. A concept's
+`schema` is a `fieldset({...})` record built from the `fields.*` constructors, replacing the v1
+`defineFields([...])` array. The two prior systems no longer coexist: v1 is removed.
+
+A concept declares its fields with `fieldset` and the `fields.*` constructors. The record key is the
+frontmatter key, so the per-field `name` property is gone. The eleven scalar constructors are `text`,
+`textarea`, `number`, `select`, `multiselect`, `url`, `email`, `date`, `datetime`, `boolean`, and
+`image`. A `select` takes a closed `options` list. A `multiselect` with an `options` list renders as
+checkboxes, and a `multiselect` with `creatable: true` renders as an open tag input that accepts an
+optional `placeholder`. A `datetime` field is naive-local, minute-precision (`YYYY-MM-DDTHH:mm`). The
+editor renders an arm per scalar, a fresh entry opens prefilled from each field's `default` (a `date`
+field's `'today'` resolves against a request-time clock), and the save path round-trips every arm.
+
+The barrel reclaims its v2 names. It exports the eleven `*Field` interfaces, `NamedField`, `fields`,
+`fieldset`, `initialValues`, `Fieldset`, `InferFieldset`, `FieldsetOptions`, and `BehaviorTable`, and
+drops `defineFields`, `ConceptSchema`, `Infer`, `InferFields`, `DefineFieldsOptions`,
+`FrontmatterField`, `TagsField`, and `FreeTagsField`.
+
+Consumers must:
+
+1. Move `schema` from `defineFields([...])` (an array) to `fieldset({...})` (a record).
+2. Drop the per-field `name` property. The record key is now the frontmatter key.
+3. Rename field help from `description` to `help`.
+4. Move a closed `tags` field to `fields.multiselect({ options: [...] })`.
+5. Move an open `freetags` field to `fields.multiselect({ creatable: true })`. Its `placeholder`
+   is preserved through the new optional `placeholder`.
+6. Preserve each field's frontmatter key, especially `tags`, or tag pages and feeds read empty.
+7. Extract a frontmatter type with `InferFieldset` (the v1 `Infer` is gone). The v2 `*Field`
+   interfaces carry the v2 shape: no `name`, and `help` not `description`.
+8. ecxc-ski and 907-life stay pinned to the prior version range until they cut over.
+
 ## 0.68.0
 
 <!-- release-size: minor -->

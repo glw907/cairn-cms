@@ -652,3 +652,23 @@ the `.ts` copy modules, a `check:dev-package` gate covers `packages/**` in CI, a
 its resolved items. Consumers must: nothing. The accessibility fixes and the icon fallback are additive;
 a site using the registry's `defaultIcon` may now resolve an engine default glyph where it previously got
 none.
+
+## 0.69.0: the Contract v2 `fieldset` field system goes live (breaking)
+
+The `fieldset` field system replaces the v1 `defineFields` array. A concept's `schema` is now a
+`fieldset({...})` record built from the `fields.*` constructors, the record key is the frontmatter key,
+and the prior v1 surface is removed. The editor renders an arm per scalar, a fresh entry opens prefilled
+from each field's `default`, and the save path round-trips every arm. Consumers must, in order:
+
+1. Move `schema` from `defineFields([...])` (an array) to `fieldset({...})` (a record).
+2. Drop the per-field `name` property. The record key is now the frontmatter key.
+3. Rename field help from `description` to `help`.
+4. Move a closed `tags` field to `fields.multiselect({ options: [...] })`.
+5. Move an open `freetags` field to `fields.multiselect({ creatable: true })`. Its `placeholder`
+   is preserved through the new optional `placeholder`.
+6. Preserve each field's frontmatter key, especially `tags`, or tag pages and feeds read empty.
+7. Extract a frontmatter type with `InferFieldset` (the v1 `Infer` is gone). The barrel no longer
+   exports `defineFields`, `ConceptSchema`, `FrontmatterField`, `TagsField`, `FreeTagsField`,
+   `InferFields`, or `DefineFieldsOptions`. The v2 `*Field` interfaces carry the v2 shape: no `name`,
+   and `help` not `description`.
+8. ecxc-ski and 907-life stay pinned to the prior version range until they cut over.

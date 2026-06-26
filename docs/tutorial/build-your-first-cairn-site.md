@@ -109,10 +109,10 @@ If you started the dev server at this point, you would get an empty SvelteKit si
 
 The adapter is the one seam the engine consumes. It declares your content concepts, each concept's fields, how markdown renders, and the GitHub backend that commits edits. You write it once, at `src/lib/cairn.config.ts`.
 
-`Field Notes` has two concepts, the same two cairn ships first. `posts` are dated and `pages` are not. Each concept declares its fields with `defineFields`. Create `src/lib/cairn.config.ts`:
+`Field Notes` has two concepts, the same two cairn ships first. `posts` are dated and `pages` are not. Each concept declares its fields with `fieldset` and the `fields.*` constructors. Create `src/lib/cairn.config.ts`:
 
 ```ts
-import { defineAdapter, defineFields } from '@glw907/cairn-cms';
+import { defineAdapter, fieldset, fields } from '@glw907/cairn-cms';
 
 export const cairn = defineAdapter({
   siteName: 'Field Notes',
@@ -121,19 +121,19 @@ export const cairn = defineAdapter({
       dir: 'src/content/posts',
       label: 'Posts',
       summaryFields: ['description'],
-      schema: defineFields([
-        { type: 'text', name: 'title', label: 'Title', required: true },
-        { type: 'date', name: 'date', label: 'Date', required: true },
-        { type: 'textarea', name: 'description', label: 'Description' },
-      ]),
+      schema: fieldset({
+        title: fields.text({ label: 'Title', required: true }),
+        date: fields.date({ label: 'Date', required: true }),
+        description: fields.textarea({ label: 'Description' }),
+      }),
     },
     pages: {
       dir: 'src/content/pages',
       label: 'Pages',
-      schema: defineFields([
-        { type: 'text', name: 'title', label: 'Title', required: true },
-        { type: 'textarea', name: 'description', label: 'Description' },
-      ]),
+      schema: fieldset({
+        title: fields.text({ label: 'Title', required: true }),
+        description: fields.textarea({ label: 'Description' }),
+      }),
     },
   },
   backend: { owner: 'you', repo: 'field-notes', branch: 'main', appId: '1', installationId: '2' },
@@ -145,7 +145,7 @@ Three pieces are still missing from this adapter (the `render` method, the compo
 
 The `summaryFields: ['description']` line tells the home list and the SEO head which field to read for a post's summary. The `description` field feeds both.
 
-One declaration carries a lot of weight here. The array you pass to `defineFields` drives the editor form an author fills in, the validator that checks a save, and the inferred frontmatter type the rest of the engine reads, all from this one source. There is no second place to keep in sync. The rule that follows is that every frontmatter key your site reads must be declared in the schema. For the field types and the exact signatures, see [`defineAdapter` and `defineFields`](../reference/core.md#defineadapter) in the core reference. For the task on its own, the [adapter and schema guide](../guides/define-an-adapter-and-schema.md) covers it.
+One declaration carries a lot of weight here. The record you pass to `fieldset` drives the editor form an author fills in, the validator that checks a save, and the inferred frontmatter type the rest of the engine reads, all from this one source. Each key is the frontmatter key, and its value is a `fields.*` descriptor. There is no second place to keep in sync. The rule that follows is that every frontmatter key your site reads must be declared in the schema. For the field types and the exact signatures, see [`defineAdapter`](../reference/core.md#defineadapter) and [`fieldset`](../reference/core.md#fieldset) in the core reference. For the task on its own, the [adapter and schema guide](../guides/define-an-adapter-and-schema.md) covers it.
 
 Notice what the adapter does not carry. The slug codec and the per-concept date granularity, `datePrefix`, do not live on the adapter. They live in the site's YAML url policy, which you set in milestone 6, so the site owner controls the permalink shape without touching code. For the id-to-slug split behind that, see [URL identity](../explanation/content-model.md#url-identity).
 
@@ -198,7 +198,7 @@ Your site has content now, and still no way to turn a markdown body into the HTM
 Build the renderer near the top of `src/lib/cairn.config.ts`, then point `render` at it:
 
 ```ts
-import { createRenderer, defineAdapter, defineFields } from '@glw907/cairn-cms';
+import { createRenderer, defineAdapter, fieldset, fields } from '@glw907/cairn-cms';
 
 const { renderMarkdown } = createRenderer();
 
@@ -234,7 +234,7 @@ A component is a named block an author inserts in markdown that the registry tur
 A component is one object that declares its `attributes`, its `slots`, and a `build(ctx)` function. `build` returns the hast for the block, reading attribute values off `ctx.attributes` and slot content off `ctx.slot(name)`. The `callout` has a `tone` attribute that switches its style, an `icon` attribute the editor's icon picker fills, a required inline `title`, and a markdown `body`. Add it to `src/lib/cairn.config.ts`, above the renderer:
 
 ```ts
-import { createRenderer, defineRegistry, defineAdapter, defineFields } from '@glw907/cairn-cms';
+import { createRenderer, defineRegistry, defineAdapter, fieldset, fields } from '@glw907/cairn-cms';
 import type { ComponentDef, IconSet } from '@glw907/cairn-cms';
 import { h } from 'hastscript';
 
@@ -325,7 +325,7 @@ The `posts` policy sets `datePrefix: day`, so a post's id keeps its full `2026-0
 The adapter reads that YAML and exports the parsed config. Open `src/lib/cairn.config.ts`, import the YAML as raw text, and parse it with `parseSiteConfig`:
 
 ```ts
-import { createRenderer, defineRegistry, defineAdapter, defineFields, parseSiteConfig } from '@glw907/cairn-cms';
+import { createRenderer, defineRegistry, defineAdapter, fieldset, fields, parseSiteConfig } from '@glw907/cairn-cms';
 import siteYaml from './site.config.yaml?raw';
 
 // ... the icons, the callout, the registry, the renderer, and the cairn adapter from milestones 4 and 5

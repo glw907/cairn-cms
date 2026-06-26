@@ -704,3 +704,15 @@ load-bearing carry-forwards for the contract-v2 cutover.
   the non-colliding subset (`fields`, `fieldset`, `initialValues`, `FieldDescriptor`, `Fieldset`,
   `InferFieldset`, `FieldsetOptions`, `BehaviorTable`). The individual `*Field` interfaces and the bare
   `Infer` wait for the cutover to remove the v1 vocabulary and free the names.
+
+## Triage (2026-06-26, hardening Plan 2 review)
+
+- **editor** (the component picker dialog has no small-viewport bottom sheet, LOW): hardening Plan 2
+  capped the picker dialog at an unconditional `85vh` (matching the `TidyReview` precedent), with the body
+  as the scroll container. The design-system dialog-sizing recipe allows a full-height or bottom-sheet
+  treatment at the small viewport, which the Media Library slide-over already uses
+  (`CairnMediaLibrary.svelte`); the picker omits it, so the two-pane configure form (guided fields plus
+  the preview iframe) gets tight on a short phone-landscape window. Not a failure: the inner body scrolls.
+  Candidate: a `sm:`-breakpoint bottom-sheet relaxation on the picker box in a later admin-a11y pass,
+  carried with B4's manual dark-toggle and the styleguide a11y polish. Surfaced by the
+  `daisyui-a11y-reviewer` at the Plan 2 review gate.

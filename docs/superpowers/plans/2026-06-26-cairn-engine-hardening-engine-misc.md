@@ -214,3 +214,61 @@ dispatch; the doc gates and the `daisyui-a11y-reviewer` + `svelte-reviewer` fan-
 pass-end review gate. The worktree needs `npm run package` before `npm test`. This pass follows Plan 1
 (validator parity); the Contract v2 cutover follows both and is gated on Geoff's review (it is breaking and
 high-blast-radius).
+
+---
+
+## Post-mortem (2026-06-26, shipped as 0.68.0)
+
+**What was built.** All eight engine-misc items landed on the `feat/engine-hardening-engine-misc`
+worktree. The picker dialog caps at 85vh as a flex column with a scrolling body (Task 1); a repeated
+content-lifecycle error in `ConceptList` re-announces through one polite live region via a zero-width
+nonce, with the visible boxes dropping `role="alert"` (Task 2); the component registry ships a
+module-private `DEFAULT_ICON_BY_ROLE` fallback consulted by `defaultIcon` only for a def with an icon
+field, plus the "logically representative, prefer distinct" guidance (Task 3); the two `rehype-dispatch`
+helpers gained real JSDoc (Task 4); the admin-prose gate scans the two `.ts` copy modules through a fixed
+allowlist (Task 5); a new `check:dev-package` gate type-checks and comment-lints `packages/**` in CI,
+which surfaced and fixed 21 real TSDoc errors plus 4 missing docs in the dev-package (Task 6); the
+friction log marks its killed and shipped items resolved (Task 7); and the version bumped to 0.68.0 with
+the lockfile self-version synced from its 0.64.0 lag (Task 8).
+
+**Execution note (the hang).** The pass started as a sequential `cairn-implementer` workflow chain, but
+the Task 2 agent stalled for hours: its first live-region `$effect` looped (`effect_update_depth_exceeded`,
+an unconditional state-write), and the agent got stuck retrying the failing browser component tests. The
+workflow was stopped and recovery moved to the main loop. The loop was fixed by bumping the nonce only on
+a changed submit identity, guarded by a plain non-reactive `lastSubmit`. The remaining tasks ran as
+monitored one-at-a-time dispatches (Tasks 3, 5, 6) plus direct main-loop edits for the trivial ones (4, 7,
+8), which avoided the unmonitored-hang risk. Lesson: a browser-component task in a fire-and-forget chain
+can hang unbounded on a reactivity bug; keep those dispatches monitored.
+
+**Review gate.** `svelte-reviewer` confirmed the anti-loop `$effect` guard and the nonce pattern are sound
+Svelte 5 (no blockers). `daisyui-a11y-reviewer` caught one real blocker the Task 1 component test missed:
+the cap lived in a `@layer components` `.cairn-pk-box` rule, which loses the cascade to DaisyUI's
+`@layer utilities` `.modal-box { max-height: 100vh }`, so the cap never bound. Fixed by moving the cap to
+Tailwind utilities on the box (`flex max-h-[85vh] flex-col overflow-hidden`), matching the shipped
+`TidyReview.svelte` precedent, verified against the compiled dist CSS. Both reviewers' smaller findings
+(an inert `aria-label` on the roleless refusal banner, a stale comment) were folded, and the refusal
+announcement now carries the blocker count so a screen reader hears the magnitude. A `code-simplifier`
+pass extracted one shared `lettersOnly` helper in the prose gate.
+
+**What was verified (evidence).** `npm test` exit 0 (2533 tests, 238 files); `npm run check` 0/0;
+`check:comments`, `check:prose` (clean, 33 components), `check:dev-package` (0), and the doc gates
+(`check:reference`, `check:reference:signatures`, `check:package`, `check:docs`, `check:version` minor)
+all green. Re-gated after the review fixes and the simplifier dedup.
+
+**Decisions locked.** The icon fallback is module-private (not exported), so `defaultIcon`'s signature is
+unchanged and the reference gates need no edit; the glyph keys are a documented convention a site's IconSet
+may satisfy. The picker cap matches the `TidyReview` utility-class pattern deliberately, since beating a
+DaisyUI utilities-layer default needs a utilities-layer rule (a scoped design-token override still belongs
+in `@layer components`; this is the exception). Roles stay free strings (no union).
+
+**Carry-forwards.** The a11y reviewer's should-fix: the picker cap is an unconditional 85vh with no
+small-viewport bottom-sheet relaxation (the `TidyReview` precedent it matches is also unconditional). The
+inner body scrolls, so it is functional, not a failure; the bottom-sheet treatment the Media Library
+slide-over uses is the richer fix. Logged to the friction log for a later admin-a11y pass.
+
+**Commits.** `0a96192` (Task 1), `6999354` (Task 2 + loop fix), `4293a6f` (Task 4), `86cfccb` (Task 7),
+`89e7d24` (Task 3), `4e9455e` (Task 5), `9d9ec27` (Task 6), `03e48c8` (Task 8 + changelog), `2438119`
+(review fixes: cap cascade + a11y), `9319537` (simplifier dedup).
+
+**Blockers.** None. Next: the Contract v2 cutover, drafted and gated on Geoff's review (breaking,
+high-blast-radius; no hurry per Geoff).

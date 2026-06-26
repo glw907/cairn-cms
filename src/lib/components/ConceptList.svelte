@@ -201,11 +201,14 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
       : '',
   );
 
-  // The one lifecycle error to announce (the visible alerts below keep their own styling and roles).
-  // A blocked delete leads, then a form error, then a load error, since the refusal is the most
-  // recent and most actionable outcome of the last submit.
+  // The one lifecycle error to announce (the visible alerts below keep their own styling). A blocked
+  // delete leads, then a form error, then a load error, since the refusal is the most recent and most
+  // actionable outcome of the last submit. The refusal announcement carries the blocker count, so a
+  // screen reader hears the magnitude (matching the visible banner) before navigating to the list.
   const lifecycleError = $derived(
-    deleteRefused ? `This ${data.label.toLowerCase()} could not be deleted.` : (data.formError ?? data.error ?? ''),
+    deleteRefused
+      ? `This ${data.label.toLowerCase()} could not be deleted. ${deleteRefused.inboundLinks.length} ${deleteRefused.inboundLinks.length === 1 ? 'page links' : 'pages link'} to it.`
+      : (data.formError ?? data.error ?? ''),
   );
 
   // The polite live region's text re-announces only when it changes, so a repeated identical error
@@ -270,8 +273,9 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
 
 {#if deleteRefused}
   <!-- A `?/delete` was refused: name the blockers up front, matching the editor's refusal banner,
-       so the author sees why without re-opening a dialog. The polite region above announces it. -->
-  <div aria-label="This {data.label.toLowerCase()} could not be deleted" class="alert alert-error mb-4 flex-col items-start text-sm">
+       so the author sees why without re-opening a dialog. The polite region above announces it, so
+       the box itself carries no role or label (a bare div with an aria-label gets no accessible name). -->
+  <div class="alert alert-error mb-4 flex-col items-start text-sm">
     <p class="font-medium">This {data.label.toLowerCase()} could not be deleted.</p>
     <p>{deleteRefused.inboundLinks.length} {deleteRefused.inboundLinks.length === 1 ? 'page links' : 'pages link'} to it. Remove or repoint the {deleteRefused.inboundLinks.length === 1 ? 'link' : 'links'} listed below, then delete again.</p>
     <ul class="mt-1 w-full">

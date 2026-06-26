@@ -118,10 +118,12 @@ describe('ComponentInsertDialog catalog', () => {
     const reg = defineRegistry({ components: [schemaDef, alertDef, gridDef] });
     const screen = render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons } as never);
     await screen.getByRole('button', { name: /insert block/i }).click();
-    // The box carries the capped-height hook, and the catalog body is the scroll container so the
-    // header holds while the list scrolls within the 85vh cap.
+    // The box caps at 85vh via a Tailwind utility (the utilities layer beats DaisyUI's modal-box
+    // 100vh; a components-layer rule would not), and the catalog body is the scroll container so the
+    // header holds while the list scrolls within the cap.
     const box = document.querySelector('.modal-box');
-    expect(box?.classList.contains('cairn-pk-box')).toBe(true);
+    expect(box?.className).toMatch(/max-h-\[85vh\]/);
+    expect(box?.className).toMatch(/overflow-hidden/);
     const list = document.querySelector('[data-cairn-pk-list]');
     expect(list?.className).toMatch(/overflow-y-auto/);
   });

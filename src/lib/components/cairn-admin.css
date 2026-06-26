@@ -380,17 +380,6 @@
   :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) :is(a, button, input, textarea, select, summary, [tabindex]) {
     scroll-margin-top: 5.5rem;
   }
-
-  /* The component picker dialog box caps at 85vh and becomes the scroll container, per the
-     design system's dialog-sizing recipe (admin-design-system.md). The box is a flex column so
-     its header (eyebrow, title, Back, and the search input) holds while only the catalog body
-     scrolls, framing the overlay above and below rather than taking the page over. The cap
-     yields to a content-shorter box, so a small catalog stays compact. */
-  :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-pk-box {
-    display: flex;
-    flex-direction: column;
-    max-height: 85vh;
-  }
 }
 
 /* DaisyUI v5's .menu quiets keyboard focus on its items (`outline-style: none` on

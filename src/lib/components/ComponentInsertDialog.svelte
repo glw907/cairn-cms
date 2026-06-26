@@ -317,7 +317,11 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
 
 {#if defs.length > 0}
   <dialog class="modal" aria-labelledby="cairn-insert-dialog-title" bind:this={dialog} onclose={onClose} oncancel={onCancel}>
-    <div class="modal-box cairn-pk-box {twoPane ? 'max-w-3xl' : ''}">
+    <!-- The box caps at 85vh and is a flex column so its header holds while only the body scrolls,
+         per the design system's dialog-sizing recipe. The cap rides Tailwind utilities (the utilities
+         layer) so it beats DaisyUI's `.modal-box` max-height: 100vh; a components-layer rule loses the
+         cascade. overflow-hidden keeps the box from being a second scroll container. Matches TidyReview. -->
+    <div class="modal-box flex max-h-[85vh] flex-col overflow-hidden {twoPane ? 'max-w-3xl' : ''}">
       <!-- The shared header: at the configure step it carries the Back control and the
            "Insert > group" eyebrow breadcrumb above the component label; while browsing it is the
            plain "Insert a component" title. It holds (flex-none) while the body scrolls, per the

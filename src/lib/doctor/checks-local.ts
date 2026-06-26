@@ -8,7 +8,7 @@ import { requireOrigin } from '../env.js';
 import { parseSiteConfig, urlPolicyFrom } from '../nav/site-config.js';
 import type { SiteConfig } from '../nav/site-config.js';
 import { normalizeConcepts } from '../content/concepts.js';
-import { defineFields } from '../content/schema.js';
+import { fieldset } from '../content/fieldset.js';
 import type { ConceptConfig } from '../content/types.js';
 
 const NO_WRANGLER: CheckResult = skip('no wrangler.jsonc or wrangler.toml found');
@@ -162,7 +162,7 @@ export const configSiteConfig: DoctorCheck = {
 			// adapter), so the dated rules apply faithfully here. What a CLI cannot check without
 			// evaluating the adapter is whether each policy key names a concept the site declares.
 			const synthetic = Object.fromEntries(
-				Object.keys(policy).map((id): [string, ConceptConfig] => [id, { dir: '', schema: defineFields([]) }])
+				Object.keys(policy).map((id): [string, ConceptConfig] => [id, { dir: '', schema: fieldset({}) }])
 			);
 			normalizeConcepts(synthetic, policy);
 			return pass('parsed and URL policy validated (the adapter concept set is not checkable from the CLI)');

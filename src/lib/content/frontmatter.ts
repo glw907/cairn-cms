@@ -3,11 +3,24 @@
 // on-disk write/read pair. Kept as one seam so a site owns its serialization contract
 // (quoting, key order) without the save endpoint reaching for gray-matter directly.
 import matter from 'gray-matter';
-import type { FrontmatterField, ImageValue } from './types.js';
+import type { ImageValue, NamedField } from './types.js';
+
+/**
+ * True when a multiselect field is a closed checkbox group: it declares an options vocabulary and is
+ *  not author-extendable. The save decoder and the editor render arm both call this, so the
+ *  closed-versus-open multiselect decision can never drift between decode and display.
+ */
+export function isClosedMultiselect(field: {
+  type: string;
+  options?: readonly string[];
+  creatable?: boolean;
+}): boolean {
+  return field.type === 'multiselect' && !!field.options && !field.creatable;
+}
 
 /** Decode submitted form data into raw frontmatter, one rule per field type. */
 export function frontmatterFromForm(
-  fields: FrontmatterField[],
+  fields: NamedField[],
   form: FormData,
 ): Record<string, unknown> {
   const data: Record<string, unknown> = {};
@@ -16,19 +29,21 @@ export function frontmatterFromForm(
       case 'boolean':
         data[field.name] = form.get(field.name) === 'on';
         break;
-      case 'tags':
-        data[field.name] = form.getAll(field.name).map(String);
-        break;
-      case 'freetags':
-        // One comma-separated input to trimmed, de-duplicated, non-empty tags.
-        data[field.name] = [
-          ...new Set(
-            String(form.get(field.name) ?? '')
-              .split(',')
-              .map((tag) => tag.trim())
-              .filter(Boolean),
-          ),
-        ];
+      case 'multiselect':
+        if (isClosedMultiselect(field)) {
+          // A closed vocabulary submits one form value per checked box.
+          data[field.name] = form.getAll(field.name).map(String);
+        } else {
+          // An open or creatable set is one comma-separated input to trimmed, de-duplicated tags.
+          data[field.name] = [
+            ...new Set(
+              String(form.get(field.name) ?? '')
+                .split(',')
+                .map((tag) => tag.trim())
+                .filter(Boolean),
+            ),
+          ];
+        }
         break;
       case 'image': {
         // The hero submits three sub-fields under one key. An empty src means no hero, so omit the
@@ -70,6 +85,30 @@ export function dateInputValue(value: unknown): string {
   }
   if (typeof value === 'string') {
     const match = value.match(/^\d{4}-\d{2}-\d{2}/);
+    return match ? match[0] : '';
+  }
+  return '';
+}
+
+/**
+ * Coerce a frontmatter datetime value to the naive-local, minute-precision `YYYY-MM-DDTHH:mm` an
+ * `<input type="datetime-local">` wants. A datetime is round-tripped as TEXT, so a stored value is
+ * already this string; the `Date` branch is the fallback for a value gray-matter parsed into a JS
+ * `Date` from an unquoted full-ISO scalar. UTC getters read the value back as it was written,
+ * avoiding a local-timezone shift.
+ */
+export function datetimeInputValue(value: unknown): string {
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return '';
+    const yyyy = value.getUTCFullYear().toString().padStart(4, '0');
+    const mm = (value.getUTCMonth() + 1).toString().padStart(2, '0');
+    const dd = value.getUTCDate().toString().padStart(2, '0');
+    const hh = value.getUTCHours().toString().padStart(2, '0');
+    const min = value.getUTCMinutes().toString().padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+  }
+  if (typeof value === 'string') {
+    const match = value.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/);
     return match ? match[0] : '';
   }
   return '';

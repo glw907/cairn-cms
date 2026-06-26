@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import CairnAdmin from '../../lib/components/CairnAdmin.svelte';
 import { createCairnAdmin, type AdminData } from '../../lib/sveltekit/cairn-admin.js';
-import type { CairnRuntime, FrontmatterField } from '../../lib/content/types.js';
+import type { CairnRuntime, NamedField } from '../../lib/content/types.js';
+import { fieldset } from '../../lib/content/fieldset.js';
 import type { LinkTarget } from '../../lib/content/manifest.js';
 
 function layout(over = {}) {
@@ -102,7 +103,7 @@ function editData(): AdminData {
       conceptId: 'posts',
       id: '2026-05-hello',
       label: 'Posts',
-      fields: [{ type: 'text', name: 'title', label: 'Title', required: true }] satisfies FrontmatterField[],
+      fields: [{ type: 'text', name: 'title', label: 'Title', required: true }] satisfies NamedField[],
       frontmatter: { title: 'Hello' },
       body: 'The body.',
       title: 'Hello',
@@ -220,8 +221,8 @@ describe('form-action contract', () => {
     return {
       siteName: 'Test Site',
       concepts: [
-        { id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts', routing: { routable: true, dated: true, inFeeds: true }, permalink: '/posts/:slug', datePrefix: 'day', fields: [], summaryFields: [], validate: ok },
-        { id: 'pages', label: 'Pages', singular: 'Pages', dir: 'src/content/pages', routing: { routable: true, dated: false, inFeeds: false }, permalink: '/:slug', datePrefix: 'day', fields: [], summaryFields: [], validate: ok },
+        { id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts', routing: { routable: true, dated: true, inFeeds: true }, permalink: '/posts/:slug', datePrefix: 'day', fields: [], schema: fieldset({}), summaryFields: [], validate: ok },
+        { id: 'pages', label: 'Pages', singular: 'Pages', dir: 'src/content/pages', routing: { routable: true, dated: false, inFeeds: false }, permalink: '/:slug', datePrefix: 'day', fields: [], schema: fieldset({}), summaryFields: [], validate: ok },
       ],
       backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
       sender: { from: 'cms@test' },

@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { composeRuntime } from '../../lib/content/compose.js';
 import type { CairnAdapter, CairnExtension, ConceptConfig } from '../../lib/content/types.js';
-import { defineFields } from '../../lib/content/schema.js';
+import { fields } from '../../lib/content/fields.js';
+import { fieldset } from '../../lib/content/fieldset.js';
 import { testAdapter, testSiteConfig } from './_content-fixture.js';
 import { siteDescriptors } from '../../lib/delivery/site-descriptors.js';
 
@@ -18,7 +19,7 @@ describe('composeRuntime', () => {
   it('folds an extension concept in after the adapter concepts', () => {
     const fragments: ConceptConfig = {
       dir: 'src/content/fragments',
-      schema: defineFields([{ type: 'text', name: 'title', label: 'Title' }]),
+      schema: fieldset({ title: fields.text({ label: 'Title' }) }),
     };
     const extension: CairnExtension = { content: { fragments } };
     const runtime = composeRuntime({ adapter: testAdapter, siteConfig: testSiteConfig, extensions: [extension] });

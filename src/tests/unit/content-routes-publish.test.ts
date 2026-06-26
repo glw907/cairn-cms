@@ -7,6 +7,7 @@ import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { parseManifest, serializeManifest } from '../../lib/content/manifest.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
+import { fieldset } from '../../lib/content/fieldset.js';
 
 const MANIFEST_PATH = 'src/content/.cairn/index.json';
 const ENTRY_PATH = 'src/content/posts/2026-05-01-hi.md';
@@ -23,6 +24,7 @@ function runtime(): CairnRuntime {
         permalink: '/posts/:slug',
         datePrefix: 'day',
         fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
+        schema: fieldset({}),
         summaryFields: [],
         validate: () => ({ ok: true as const, data: { title: 'Hi' } }),
       },
@@ -45,6 +47,7 @@ function multiRuntime(): CairnRuntime {
     permalink: '/:slug',
     datePrefix: 'day',
     fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
+    schema: fieldset({}),
     summaryFields: [],
     validate: () => ({ ok: true as const, data: { title: 'About' } }),
   });
@@ -62,6 +65,7 @@ function pagesRuntime(): CairnRuntime {
         permalink: '/:slug',
         datePrefix: 'day',
         fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
+        schema: fieldset({}),
         summaryFields: [],
         validate: () => ({ ok: true as const, data: {} }),
       },

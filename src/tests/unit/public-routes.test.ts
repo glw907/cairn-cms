@@ -4,15 +4,16 @@ import { log } from '../../lib/log/index.js';
 import { createSiteResolver } from '../../lib/delivery/site-resolver.js';
 import { createContentIndex } from '../../lib/delivery/content-index.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
-import { defineFields } from '../../lib/content/schema.js';
+import { fields } from '../../lib/content/fields.js';
+import { fieldset } from '../../lib/content/fieldset.js';
 import { createRenderer } from '../../lib/render/pipeline.js';
 import { defineRegistry } from '../../lib/render/registry.js';
 
 const [posts] = normalizeConcepts(
-  { posts: { dir: 'p', schema: defineFields([]) } },
+  { posts: { dir: 'p', schema: fieldset({}) } },
   { posts: { permalink: '/:year/:month/:day/:slug', datePrefix: 'day' } },
 );
-const [pages] = normalizeConcepts({ pages: { dir: 'g', schema: defineFields([]) } });
+const [pages] = normalizeConcepts({ pages: { dir: 'g', schema: fieldset({}) } });
 
 const site = createSiteResolver([
   { descriptor: posts, index: createContentIndex([
@@ -60,7 +61,7 @@ describe('createPublicRoutes', () => {
 
   it('entryLoad derives a heroImage projection from a frontmatter media: reference', async () => {
     const [heroPages] = normalizeConcepts({
-      pages: { dir: 'g', schema: defineFields([{ type: 'image', name: 'image', label: 'Hero' }]) },
+      pages: { dir: 'g', schema: fieldset({ image: fields.image({ label: 'Hero' }) }) },
     });
     const heroSite = createSiteResolver([
       { descriptor: heroPages, index: createContentIndex([
@@ -91,7 +92,7 @@ describe('createPublicRoutes', () => {
 
   it('entryLoad leaves heroImage undefined for an unresolved hash, and when media is off', async () => {
     const [heroPages] = normalizeConcepts({
-      pages: { dir: 'g', schema: defineFields([{ type: 'image', name: 'image', label: 'Hero' }]) },
+      pages: { dir: 'g', schema: fieldset({ image: fields.image({ label: 'Hero' }) }) },
     });
     const heroIndex = () => createContentIndex([
       { path: '/g/hero.md', raw: '---\ntitle: Hero\nimage:\n  src: "media:a.0123456789abcdef"\n  alt: x\n---\n\nHero body.' },
@@ -123,7 +124,7 @@ describe('createPublicRoutes', () => {
 
   it('entryLoad emits og:image from a resolved structured hero plus twitter:image:alt', async () => {
     const [heroPages] = normalizeConcepts({
-      pages: { dir: 'g', schema: defineFields([{ type: 'image', name: 'image', label: 'Hero' }]) },
+      pages: { dir: 'g', schema: fieldset({ image: fields.image({ label: 'Hero' }) }) },
     });
     const heroSite = createSiteResolver([
       { descriptor: heroPages, index: createContentIndex([
@@ -148,7 +149,7 @@ describe('createPublicRoutes', () => {
 
   it('entryLoad keeps the back-compat string image (origin-anchored, no twitter:image:alt)', async () => {
     const [stringPages] = normalizeConcepts({
-      pages: { dir: 'g', schema: defineFields([{ type: 'text', name: 'image', label: 'Social image' }]) },
+      pages: { dir: 'g', schema: fieldset({ image: fields.text({ label: 'Social image' }) }) },
     });
     const stringSite = createSiteResolver([
       { descriptor: stringPages, index: createContentIndex([
@@ -170,7 +171,7 @@ describe('createPublicRoutes', () => {
 
   it('entryLoad emits no og:image when the only image-shaped field is under another key and no default', async () => {
     const [coverPages] = normalizeConcepts({
-      pages: { dir: 'g', schema: defineFields([{ type: 'image', name: 'cover', label: 'Cover' }]) },
+      pages: { dir: 'g', schema: fieldset({ cover: fields.image({ label: 'Cover' }) }) },
     });
     const coverSite = createSiteResolver([
       { descriptor: coverPages, index: createContentIndex([
@@ -193,7 +194,7 @@ describe('createPublicRoutes', () => {
 
   it('entryLoad emits no og:image when a structured hero does not resolve', async () => {
     const [heroPages] = normalizeConcepts({
-      pages: { dir: 'g', schema: defineFields([{ type: 'image', name: 'image', label: 'Hero' }]) },
+      pages: { dir: 'g', schema: fieldset({ image: fields.image({ label: 'Hero' }) }) },
     });
     const heroSite = createSiteResolver([
       { descriptor: heroPages, index: createContentIndex([

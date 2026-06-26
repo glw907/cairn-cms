@@ -5,7 +5,7 @@
 // lower-level escape hatch. It imports only pure content and delivery code, so the delivery
 // bundle stays backend-free.
 import type { CairnAdapter, ConceptConfig } from '../content/types.js';
-import type { Infer } from '../content/schema.js';
+import type { InferFieldset } from '../content/fieldset.js';
 import type { SiteConfig } from '../nav/site-config.js';
 import { siteDescriptors } from './site-descriptors.js';
 import { createContentIndex, fromGlob } from './content-index.js';
@@ -24,7 +24,7 @@ export type SiteGlobs<A extends CairnAdapter> = {
  */
 export type SiteIndexes<A extends CairnAdapter> = {
   [K in keyof A['content']]: ContentIndex<
-    NonNullable<A['content'][K]> extends ConceptConfig<infer S> ? Infer<S> : Record<string, unknown>
+    NonNullable<A['content'][K]> extends ConceptConfig<infer S> ? InferFieldset<S> : Record<string, unknown>
   >;
 } & { readonly site: SiteResolver };
 

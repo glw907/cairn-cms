@@ -3,8 +3,14 @@
 // (id, label, directory, concept-fixed routing, fields, validator) the admin reads. A
 // future Fragments concept attaches by adding one key under `content` and one routing
 // entry, with no reshape here.
-import type { ConceptConfig, ConceptDescriptor, ConceptUrlPolicy, RoutingRule } from './types.js';
+import type { ConceptConfig, ConceptDescriptor, ConceptUrlPolicy, NamedField, RoutingRule } from './types.js';
+import type { Fieldset } from './fieldset.js';
 import { urlPolicyFrom, type SiteConfig } from '../nav/site-config.js';
+
+/** Re-attach each fieldset record key to its descriptor as `name`, the normalized `NamedField[]`. */
+function namedFields(schema: Fieldset): NamedField[] {
+  return Object.entries(schema.fields).map(([name, descriptor]) => ({ name, ...descriptor }));
+}
 
 /**
  * Concept-fixed routing, keyed by concept id (spec §7.2). Posts are dated feed entries;
@@ -90,7 +96,7 @@ export function normalizeConcepts(
   for (const [id, config] of Object.entries(content)) {
     if (!config) continue;
     const summaryFields = config.summaryFields ?? [];
-    const declared = new Set(config.schema.fields.map((field) => field.name));
+    const declared = new Set(Object.keys(config.schema.fields));
     const undeclared = summaryFields.find((key) => !declared.has(key));
     if (undeclared !== undefined) {
       throw new Error(
@@ -109,7 +115,8 @@ export function normalizeConcepts(
       routing: conceptRouting,
       permalink: policy.permalink ?? defaultPermalink(id),
       datePrefix: policy.datePrefix ?? 'day',
-      fields: config.schema.fields,
+      fields: namedFields(config.schema),
+      schema: config.schema,
       summaryFields,
       validate: config.schema.validate,
     });

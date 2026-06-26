@@ -1,11 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { permalink } from '../../lib/content/permalink.js';
 import type { ConceptDescriptor } from '../../lib/content/types.js';
+import { fieldset } from '../../lib/content/fieldset.js';
 
 const base: Omit<ConceptDescriptor, 'permalink'> = {
   id: 'posts', label: 'Posts', singular: 'Posts', dir: 'd', datePrefix: 'day',
   routing: { routable: true, dated: true, inFeeds: true },
-  fields: [], summaryFields: [], validate: () => ({ ok: true, data: {} }),
+  fields: [], schema: fieldset({}), summaryFields: [], validate: () => ({ ok: true, data: {} }),
 };
 const desc = (permalink: string): ConceptDescriptor => ({ ...base, permalink });
 

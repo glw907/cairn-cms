@@ -3,24 +3,24 @@ import { render } from 'vitest-browser-svelte';
 // EditPage's lifecycle controls render into the topbar context portal; EditPageDesk joins EditPage
 // to that band the way CairnAdmin/AdminLayout do, the same harness the EditPage component tests use.
 import EditPage from './EditPageDesk.svelte';
-import { defineFields } from '../../lib/content/schema.js';
+import type { NamedField } from '../../lib/content/types.js';
 import type { LinkTarget } from '../../lib/content/manifest.js';
 
-// A concept whose Details panel carries a text field with an author-facing description and a second
-// text field with none. `summary` lands in the Details panel (only the field named `title` hoists to
-// the document title), so opening the panel reveals its input and the rendered hint.
-const schema = defineFields([
+// A concept whose Details panel carries a text field with author-facing help and a second text field
+// with none. `summary` lands in the Details panel (only the field named `title` hoists to the
+// document title), so opening the panel reveals its input and the rendered hint.
+const schema: NamedField[] = [
   { name: 'title', label: 'Title', type: 'text' },
-  { name: 'summary', label: 'Summary', type: 'text', description: 'Shown in search results and when the post is shared.' },
-]);
+  { name: 'summary', label: 'Summary', type: 'text', help: 'Shown in search results and when the post is shared.' },
+];
 
 // A concept whose Details panel carries two date fields with distinct names and non-overlapping
-// labels: one with no description (so it falls back to the built-in publish-clarity default) and one
-// whose site copy overrides it. Neither is named `title` or `draft`, so both land in the panel.
-const dateSchema = defineFields([
+// labels: one with no help (so it falls back to the built-in publish-clarity default) and one whose
+// site copy overrides it. Neither is named `title` or `draft`, so both land in the panel.
+const dateSchema: NamedField[] = [
   { name: 'date', label: 'Date', type: 'date' },
-  { name: 'deadline', label: 'Deadline', type: 'date', description: 'Custom date help.' },
-]);
+  { name: 'deadline', label: 'Deadline', type: 'date', help: 'Custom date help.' },
+];
 
 function props() {
   return {
@@ -28,7 +28,7 @@ function props() {
       conceptId: 'posts',
       id: '2026-05-hello',
       label: 'Posts',
-      fields: schema.fields,
+      fields: schema,
       frontmatter: { title: 'Hello', summary: 'A short summary.' },
       body: 'The body.',
       title: 'Hello',
@@ -62,7 +62,7 @@ function dateProps() {
     ...base,
     data: {
       ...base.data,
-      fields: dateSchema.fields,
+      fields: dateSchema,
       frontmatter: { date: '2026-05-01', deadline: '2026-05-08' },
     },
   };

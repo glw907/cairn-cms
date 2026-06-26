@@ -1,6 +1,7 @@
 import { describe, it, expect, expectTypeOf } from 'vitest';
 import { defineAdapter } from '../../lib/content/adapter.js';
-import { defineFields, type Infer } from '../../lib/content/schema.js';
+import { fields } from '../../lib/content/fields.js';
+import { fieldset, type InferFieldset } from '../../lib/content/fieldset.js';
 import type { CairnAdapter } from '../../lib/content/types.js';
 
 const adapter = defineAdapter({
@@ -8,10 +9,10 @@ const adapter = defineAdapter({
   content: {
     posts: {
       dir: 'src/content/posts',
-      schema: defineFields([
-        { name: 'title', type: 'text', label: 'Title', required: true },
-        { name: 'date', type: 'date', label: 'Date' },
-      ]),
+      schema: fieldset({
+        title: fields.text({ label: 'Title', required: true }),
+        date: fields.date({ label: 'Date' }),
+      }),
     },
   },
   backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
@@ -22,7 +23,7 @@ const adapter = defineAdapter({
 describe('defineAdapter', () => {
   it('returns the adapter unchanged at runtime', () => {
     expect(adapter.content.posts?.dir).toBe('src/content/posts');
-    expect(adapter.content.posts?.schema.fields.map((f) => f.name)).toEqual(['title', 'date']);
+    expect(Object.keys(adapter.content.posts?.schema.fields ?? {})).toEqual(['title', 'date']);
   });
 
   it('is assignable to CairnAdapter', () => {
@@ -30,7 +31,7 @@ describe('defineAdapter', () => {
   });
 
   it('preserves the concrete schema type for inference', () => {
-    expectTypeOf<Infer<typeof adapter.content.posts.schema>>().toEqualTypeOf<{
+    expectTypeOf<InferFieldset<typeof adapter.content.posts.schema>>().toEqualTypeOf<{
       title: string;
       date?: string;
     }>();

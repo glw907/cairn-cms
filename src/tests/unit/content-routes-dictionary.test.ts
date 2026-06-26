@@ -12,6 +12,7 @@ import type { DictionaryAddResult, DictionaryAddFailure } from '../../lib/svelte
 import { parseDictionary, serializeDictionary } from '../../lib/content/site-dictionary.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { CookieJar } from '../../lib/sveltekit/types.js';
+import { fieldset } from '../../lib/content/fieldset.js';
 
 const DICT_PATH = 'src/content/.cairn/dictionary.txt';
 const CSRF = 'csrf-token-value-0123456789abcdef';
@@ -24,7 +25,7 @@ function runtime(over: Partial<CairnRuntime> = {}): CairnRuntime {
       {
         id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts',
         routing: { routable: true, dated: true, inFeeds: true },
-        permalink: '/posts/:slug', datePrefix: 'day', fields: [], summaryFields: [], validate: ok,
+        permalink: '/posts/:slug', datePrefix: 'day', fields: [], schema: fieldset({}), summaryFields: [], validate: ok,
       },
     ],
     backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },

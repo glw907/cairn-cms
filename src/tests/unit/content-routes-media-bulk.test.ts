@@ -13,6 +13,7 @@ import { parseMediaManifest, serializeMediaManifest, type MediaEntry, type Media
 import { r2Key } from '../../lib/media/naming.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { ResolvedAssetConfig } from '../../lib/media/config.js';
+import { fieldset } from '../../lib/content/fieldset.js';
 
 const MANIFEST_PATH = 'src/content/.cairn/index.json';
 const MEDIA_PATH = 'src/content/.cairn/media.json';
@@ -41,6 +42,7 @@ function runtime(): CairnRuntime {
           { type: 'text', name: 'title', label: 'Title', required: true },
           { type: 'image', name: 'image', label: 'Hero', seo: true },
         ],
+        schema: fieldset({}),
         summaryFields: [],
         validate: () => ({ ok: true as const, data: { title: 'Hi' } }),
       },

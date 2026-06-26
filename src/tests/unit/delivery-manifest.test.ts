@@ -3,14 +3,15 @@ import { buildSiteManifest } from '../../lib/delivery/manifest.js';
 import { buildLinkResolver } from '../../lib/delivery/site-resolver.js';
 import { createSiteIndexes } from '../../lib/delivery/site-indexes.js';
 import { defineAdapter } from '../../lib/content/adapter.js';
-import { defineFields } from '../../lib/content/schema.js';
+import { fields } from '../../lib/content/fields.js';
+import { fieldset } from '../../lib/content/fieldset.js';
 import type { SiteConfig } from '../../lib/nav/site-config.js';
 
 const adapter = defineAdapter({
   siteName: 'T',
   content: {
-    posts: { dir: 'src/content/posts', label: 'Posts', schema: defineFields([{ type: 'text', name: 'title', label: 'Title' }, { type: 'date', name: 'date', label: 'Date' }]) },
-    pages: { dir: 'src/content/pages', label: 'Pages', schema: defineFields([{ type: 'text', name: 'title', label: 'Title' }]) },
+    posts: { dir: 'src/content/posts', label: 'Posts', schema: fieldset({ title: fields.text({ label: 'Title' }), date: fields.date({ label: 'Date' }) }) },
+    pages: { dir: 'src/content/pages', label: 'Pages', schema: fieldset({ title: fields.text({ label: 'Title' }) }) },
   },
   backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
   sender: { from: 'a@b.c' },
@@ -31,8 +32,8 @@ const globs = {
 const requiredTitleAdapter = defineAdapter({
   siteName: 'T',
   content: {
-    posts: { dir: 'src/content/posts', label: 'Posts', schema: defineFields([{ type: 'text', name: 'title', label: 'Title', required: true }, { type: 'date', name: 'date', label: 'Date' }]) },
-    pages: { dir: 'src/content/pages', label: 'Pages', schema: defineFields([{ type: 'text', name: 'title', label: 'Title' }]) },
+    posts: { dir: 'src/content/posts', label: 'Posts', schema: fieldset({ title: fields.text({ label: 'Title', required: true }), date: fields.date({ label: 'Date' }) }) },
+    pages: { dir: 'src/content/pages', label: 'Pages', schema: fieldset({ title: fields.text({ label: 'Title' }) }) },
   },
   backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
   sender: { from: 'a@b.c' },

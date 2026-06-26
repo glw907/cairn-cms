@@ -14,6 +14,7 @@ import { serializeMarkdown } from '../../lib/content/frontmatter.js';
 import type { ConceptDescriptor } from '../../lib/content/types.js';
 import type { RepoRef } from '../../lib/github/types.js';
 import type { Manifest, ManifestEntry } from '../../lib/content/manifest.js';
+import { fieldset } from '../../lib/content/fieldset.js';
 
 const idx: AddressIndex = new Map([
   ['/news/hello', [{ concept: 'posts', id: '2026-01-01-hello', title: 'Hello', source: 'main' }]],
@@ -92,6 +93,7 @@ function postsConcept(): ConceptDescriptor {
     permalink: '/news/:slug',
     datePrefix: 'day',
     fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
+    schema: fieldset({}),
     summaryFields: [],
     validate: () => ({ ok: true as const, data: { title: 'Hi' } }),
   };

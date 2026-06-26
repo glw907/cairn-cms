@@ -3,11 +3,12 @@ import matter from 'gray-matter';
 import {
   frontmatterFromForm,
   dateInputValue,
+  datetimeInputValue,
   isCalendarDate,
   serializeMarkdown,
   parseMarkdown,
 } from '../../lib/content/frontmatter.js';
-import type { FrontmatterField } from '../../lib/content/types.js';
+import type { NamedField } from '../../lib/content/types.js';
 import { postFields, pageFields } from './_content-fixture.js';
 
 describe('frontmatterFromForm', () => {
@@ -40,16 +41,36 @@ describe('frontmatterFromForm', () => {
     expect(data.tags).toEqual([]);
   });
 
-  it('splits, trims, and de-duplicates a free-form tags field', () => {
-    const fields: FrontmatterField[] = [{ type: 'freetags', name: 'tags', label: 'Tags' }];
+  it('reads a closed multiselect from getAll', () => {
+    const fields: NamedField[] = [
+      { type: 'multiselect', name: 'tags', label: 'Tags', options: ['training', 'racing'] },
+    ];
+    const form = new FormData();
+    form.append('tags', 'training');
+    form.append('tags', 'racing');
+    expect(frontmatterFromForm(fields, form)).toEqual({ tags: ['training', 'racing'] });
+  });
+
+  it('comma-splits an open multiselect (no options), trimming and de-duplicating', () => {
+    const fields: NamedField[] = [{ type: 'multiselect', name: 'tags', label: 'Tags' }];
     const form = new FormData();
     form.set('tags', ' alpha , beta,alpha , , gamma ');
 
     expect(frontmatterFromForm(fields, form)).toEqual({ tags: ['alpha', 'beta', 'gamma'] });
   });
 
-  it('treats an empty free-form tags input as an empty list', () => {
-    const fields: FrontmatterField[] = [{ type: 'freetags', name: 'tags', label: 'Tags' }];
+  it('comma-splits a creatable multiselect even when it carries options', () => {
+    const fields: NamedField[] = [
+      { type: 'multiselect', name: 'tags', label: 'Tags', options: ['training'], creatable: true },
+    ];
+    const form = new FormData();
+    form.set('tags', 'training, ad-hoc');
+
+    expect(frontmatterFromForm(fields, form)).toEqual({ tags: ['training', 'ad-hoc'] });
+  });
+
+  it('treats an empty multiselect input as an empty list', () => {
+    const fields: NamedField[] = [{ type: 'multiselect', name: 'tags', label: 'Tags' }];
     expect(frontmatterFromForm(fields, new FormData())).toEqual({ tags: [] });
   });
 
@@ -66,7 +87,7 @@ describe('frontmatterFromForm', () => {
   });
 
   it('assembles an image field from its src, alt, and caption sub-fields', () => {
-    const fields: FrontmatterField[] = [{ type: 'image', name: 'image', label: 'Hero' }];
+    const fields: NamedField[] = [{ type: 'image', name: 'image', label: 'Hero' }];
     const form = new FormData();
     form.set('image.src', 'media:a.0123456789abcdef');
     form.set('image.alt', 'A snowy ridge');
@@ -78,7 +99,7 @@ describe('frontmatterFromForm', () => {
   });
 
   it('omits an empty caption from an image field', () => {
-    const fields: FrontmatterField[] = [{ type: 'image', name: 'image', label: 'Hero' }];
+    const fields: NamedField[] = [{ type: 'image', name: 'image', label: 'Hero' }];
     const form = new FormData();
     form.set('image.src', 'media:a.0123456789abcdef');
     form.set('image.alt', 'A snowy ridge');
@@ -90,7 +111,7 @@ describe('frontmatterFromForm', () => {
   });
 
   it('omits the whole image key when src is empty', () => {
-    const fields: FrontmatterField[] = [{ type: 'image', name: 'image', label: 'Hero' }];
+    const fields: NamedField[] = [{ type: 'image', name: 'image', label: 'Hero' }];
     const form = new FormData();
     form.set('image.src', '');
     form.set('image.alt', 'orphaned alt');
@@ -100,7 +121,7 @@ describe('frontmatterFromForm', () => {
   });
 
   it('commits the decorative flag with an empty alt when the form marks it decorative', () => {
-    const fields: FrontmatterField[] = [{ type: 'image', name: 'image', label: 'Hero' }];
+    const fields: NamedField[] = [{ type: 'image', name: 'image', label: 'Hero' }];
     const form = new FormData();
     form.set('image.src', 'media:a.0123456789abcdef');
     form.set('image.alt', '');
@@ -112,7 +133,7 @@ describe('frontmatterFromForm', () => {
   });
 
   it('omits the decorative key for a described hero with no decorative flag', () => {
-    const fields: FrontmatterField[] = [{ type: 'image', name: 'image', label: 'Hero' }];
+    const fields: NamedField[] = [{ type: 'image', name: 'image', label: 'Hero' }];
     const form = new FormData();
     form.set('image.src', 'media:a.0123456789abcdef');
     form.set('image.alt', 'A snowy ridge');
@@ -123,7 +144,7 @@ describe('frontmatterFromForm', () => {
   });
 
   it('omits the decorative key for a left-blank hero with no decorative flag', () => {
-    const fields: FrontmatterField[] = [{ type: 'image', name: 'image', label: 'Hero' }];
+    const fields: NamedField[] = [{ type: 'image', name: 'image', label: 'Hero' }];
     const form = new FormData();
     form.set('image.src', 'media:a.0123456789abcdef');
     form.set('image.alt', '');
@@ -134,7 +155,7 @@ describe('frontmatterFromForm', () => {
   });
 
   it('stores image alt verbatim, with no markdown escaping', () => {
-    const fields: FrontmatterField[] = [{ type: 'image', name: 'image', label: 'Hero' }];
+    const fields: NamedField[] = [{ type: 'image', name: 'image', label: 'Hero' }];
     const form = new FormData();
     form.set('image.src', 'media:a.0123456789abcdef');
     form.set('image.alt', 'A [bracketed] *starred* alt');
@@ -214,5 +235,36 @@ describe('serialize and parse', () => {
     const parsed = parseMarkdown(out);
     expect(parsed.frontmatter).toEqual(data);
     expect((parsed.frontmatter.image as { caption?: string }).caption).toBeUndefined();
+  });
+
+  it('round-trips a datetime value as a naive-local string through the full save-load cycle', () => {
+    // A datetime is stored as TEXT, so the YYYY-MM-DDTHH:mm string must survive
+    // frontmatterFromForm -> serializeMarkdown -> parseMarkdown -> formValues without
+    // re-parsing into a JS Date and going blank.
+    const fields: NamedField[] = [{ type: 'datetime', name: 'when', label: 'When' }];
+    const form = new FormData();
+    form.set('when', '2026-06-26T14:30');
+
+    const decoded = frontmatterFromForm(fields, form);
+    expect(decoded.when).toBe('2026-06-26T14:30');
+
+    const out = serializeMarkdown(decoded, '');
+    const parsed = parseMarkdown(out);
+    // The stored value reads back to the same naive-local string the input wants, never blank.
+    expect(datetimeInputValue(parsed.frontmatter.when)).toBe('2026-06-26T14:30');
+  });
+});
+
+describe('datetimeInputValue', () => {
+  it('passes a naive-local YYYY-MM-DDTHH:mm string through', () => {
+    expect(datetimeInputValue('2026-06-26T14:30')).toBe('2026-06-26T14:30');
+  });
+  it('formats a Date with UTC getters, no timezone shift', () => {
+    expect(datetimeInputValue(new Date('2026-06-26T14:30:00.000Z'))).toBe('2026-06-26T14:30');
+  });
+  it('returns empty for a missing or invalid value', () => {
+    expect(datetimeInputValue(undefined)).toBe('');
+    expect(datetimeInputValue(new Date('nonsense'))).toBe('');
+    expect(datetimeInputValue('not a datetime')).toBe('');
   });
 });

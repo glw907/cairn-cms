@@ -62,7 +62,7 @@ const DIVERGENCE_FRACTION = 0.5;
 // text rather than going through extractMediaRefs for two reasons. First, a true MULTISET is the
 // invariant a backstop wants: extractMediaRefs dedups by hash, so a doubled token collapsing to one
 // would read as equal, and the validator must catch a dropped duplicate. Second, the raw scan covers
-// the whole text including frontmatter without threading the concept's FrontmatterField[] to the call
+// the whole text including frontmatter without threading the concept's NamedField[] to the call
 // site, which the validator otherwise has no reason to know. A token mangled inside a code fence is
 // caught here too, redundantly with the code check, which is the right posture for a backstop.
 const MEDIA_TOKEN = /media:[A-Za-z0-9.-]+/g;

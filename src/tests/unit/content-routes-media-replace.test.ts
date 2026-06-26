@@ -19,6 +19,7 @@ import { mediaToken } from '../../lib/media/reference.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { ResolvedAssetConfig } from '../../lib/media/config.js';
 import type { CookieJar } from '../../lib/sveltekit/types.js';
+import { fieldset } from '../../lib/content/fieldset.js';
 
 const MANIFEST_PATH = 'src/content/.cairn/index.json';
 const MEDIA_PATH = 'src/content/.cairn/media.json';
@@ -47,6 +48,7 @@ function runtime(over: Partial<CairnRuntime> = {}): CairnRuntime {
           { type: 'text', name: 'title', label: 'Title', required: true },
           { type: 'image', name: 'image', label: 'Hero', seo: true },
         ],
+        schema: fieldset({}),
         summaryFields: [],
         validate: () => ({ ok: true as const, data: { title: 'Hi' } }),
       },

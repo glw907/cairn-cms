@@ -95,3 +95,94 @@ describe('fieldset multiselect lone scalar', () => {
     expect(req.validate({ tags: '' }, '').ok).toBe(false);
   });
 });
+
+// The image-object normalization matrix, ported from the v1 validate suite (the v2 coerceImage is
+// the same logic): a well-formed object normalizes, a missing alt defaults to empty, a blank caption
+// drops, the decorative flag carries only when an explicit true, and a malformed value drops the key.
+describe('fieldset image field (v1 parity)', () => {
+  const fs = fieldset({ image: fields.image({ label: 'Hero' }) });
+
+  it('normalizes a valid object and carries a non-empty caption', () => {
+    expect(fs.validate({ image: { src: 'media:a.0123456789abcdef', alt: 'x', caption: 'A line.' } }, '')).toEqual({
+      ok: true,
+      data: { image: { src: 'media:a.0123456789abcdef', alt: 'x', caption: 'A line.' } },
+    });
+  });
+
+  it('defaults a missing alt to an empty string and never fails on empty alt', () => {
+    expect(fs.validate({ image: { src: 'media:a.0123456789abcdef' } }, '')).toEqual({
+      ok: true,
+      data: { image: { src: 'media:a.0123456789abcdef', alt: '' } },
+    });
+  });
+
+  it('omits an empty or whitespace caption', () => {
+    expect(fs.validate({ image: { src: 'media:a.0123456789abcdef', alt: 'x', caption: '   ' } }, '')).toEqual({
+      ok: true,
+      data: { image: { src: 'media:a.0123456789abcdef', alt: 'x' } },
+    });
+  });
+
+  it('keeps the decorative key only for an explicit true', () => {
+    expect(fs.validate({ image: { src: 'media:a.0123456789abcdef', alt: '', decorative: true } }, '')).toEqual({
+      ok: true,
+      data: { image: { src: 'media:a.0123456789abcdef', alt: '', decorative: true } },
+    });
+    expect(fs.validate({ image: { src: 'media:a.0123456789abcdef', alt: 'x', decorative: false } }, '')).toEqual({
+      ok: true,
+      data: { image: { src: 'media:a.0123456789abcdef', alt: 'x' } },
+    });
+    expect(fs.validate({ image: { src: 'media:a.0123456789abcdef', alt: 'x', decorative: 'true' } }, '')).toEqual({
+      ok: true,
+      data: { image: { src: 'media:a.0123456789abcdef', alt: 'x' } },
+    });
+  });
+
+  it('drops the key for an empty, absent, or malformed value without throwing', () => {
+    expect((fs.validate({ image: { src: '', alt: 'x' } }, '') as { data: object }).data).toEqual({});
+    expect((fs.validate({}, '') as { data: object }).data).toEqual({});
+    expect(fs.validate({ image: 'a string' }, '')).toEqual({ ok: true, data: {} });
+    expect(fs.validate({ image: { alt: 'no src' } }, '')).toEqual({ ok: true, data: {} });
+    expect(fs.validate({ image: { src: 42 } }, '')).toEqual({ ok: true, data: {} });
+  });
+
+  it('enforces required on a missing src, never on a missing alt', () => {
+    const req = fieldset({ image: fields.image({ label: 'Hero', required: true }) });
+    expect(req.validate({}, '').ok).toBe(false);
+    expect(req.validate({ image: { src: '', alt: 'x' } }, '').ok).toBe(false);
+    expect(req.validate({ image: 'a string' }, '').ok).toBe(false);
+    expect(req.validate({ image: { src: 'media:a.0123456789abcdef', alt: '' } }, '')).toEqual({
+      ok: true,
+      data: { image: { src: 'media:a.0123456789abcdef', alt: '' } },
+    });
+  });
+});
+
+// The refine cross-field path, ported from the v1 defineFields suite.
+describe('fieldset refine', () => {
+  const fs = fieldset(
+    {
+      title: fields.text({ label: 'Title', required: true }),
+      date: fields.date({ label: 'Date', required: true }),
+      updated: fields.date({ label: 'Updated' }),
+    },
+    {
+      refine: (data) => {
+        const date = data.date as string | undefined;
+        const updated = data.updated as string | undefined;
+        if (updated && date && updated < date) return { updated: 'Updated cannot precede the date' };
+        return undefined;
+      },
+    },
+  );
+
+  it('returns a refine error when the cross-field rule fails', () => {
+    const r = fs.validate({ title: 'x', date: '2026-02-01', updated: '2026-01-01' }, '');
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors.updated).toMatch(/cannot precede/);
+  });
+
+  it('passes when refine returns nothing', () => {
+    expect(fs.validate({ title: 'x', date: '2026-02-01', updated: '2026-02-02' }, '').ok).toBe(true);
+  });
+});

@@ -9,14 +9,7 @@ export { buildMagicLinkMessage, cloudflareSend } from './email.js';
 export type {
   CairnAdapter,
   ConceptConfig,
-  FrontmatterField,
-  TextField,
-  TextareaField,
-  DateField,
-  BooleanField,
-  TagsField,
-  FreeTagsField,
-  ImageField,
+  NamedField,
   ImageValue,
   ValidationResult,
   BackendConfig,
@@ -42,15 +35,24 @@ export {
   serializeMarkdown,
   parseMarkdown,
 } from './content/frontmatter.js';
-export { defineFields } from './content/schema.js';
 export { defineAdapter } from './content/adapter.js';
-export type { ConceptSchema, Infer, InferFields, DefineFieldsOptions } from './content/schema.js';
 export type { StandardInput, StandardSchemaV1 } from './content/standard-schema.js';
-// The Contract v2 field vocabulary, additive beside `defineFields`. The individual *Field
-// interfaces and the bare `Infer` stay module-local: the old `FrontmatterField` model above
-// already exports those names, and the cutover plan frees them.
+// The Contract v2 field vocabulary: the one live field system.
 export { fields } from './content/fields.js';
-export type { FieldDescriptor } from './content/fields.js';
+export type {
+  FieldDescriptor,
+  TextField,
+  TextareaField,
+  NumberField,
+  SelectField,
+  MultiselectField,
+  UrlField,
+  EmailField,
+  DateField,
+  DatetimeField,
+  BooleanField,
+  ImageField,
+} from './content/fields.js';
 export { fieldset, initialValues } from './content/fieldset.js';
 export type { Fieldset, InferFieldset, FieldsetOptions, BehaviorTable } from './content/fieldset.js';
 export {

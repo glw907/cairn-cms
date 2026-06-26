@@ -1,12 +1,12 @@
-// cairn-cms: the fieldset primitive (Contract v2). A key-to-descriptor record becomes a schema
-// carrying the descriptors as plain data, a server-derived validator, and the Standard Schema
-// conformance property. The validator coerces per type, drops an empty optional field, and returns
-// field-keyed errors or normalized data. This is the additive v2 path alongside `defineFields`; the
-// inferred-type and default-resolution arms land in later tasks, and the cutover is a later plan.
+// cairn-cms: the fieldset primitive (Contract v2), the one live field system. A key-to-descriptor
+// record becomes a schema carrying the descriptors as plain data, a server-derived validator, and the
+// Standard Schema conformance property. The validator coerces per type, drops an empty optional field,
+// and returns field-keyed errors or normalized data. The adapter contract, the editor form, the
+// delivery inference, and the media extractor all read this.
 import type { FieldDescriptor, ImageValue } from './fields.js';
 import type { ValidationResult } from './types.js';
 import type { StandardInput, StandardSchemaV1 } from './standard-schema.js';
-import { dateInputValue, isCalendarDate } from './frontmatter.js';
+import { datetimeInputValue, dateInputValue, isCalendarDate } from './frontmatter.js';
 import { compilePattern, dateBoundsError, patternError, stringLengthError } from './field-rules.js';
 
 /** Accept any URL using http or https with a non-empty rest, mirroring the conservative form check. */
@@ -72,14 +72,14 @@ type Prettify<T> = { [K in keyof T]: T[K] } & {};
  * The normalized frontmatter type inferred from a fieldset's descriptor record. A descriptor
  *  declared `required: true` is a required key; every other descriptor is optional.
  */
-type Infer<R extends Record<string, FieldDescriptor>> = Prettify<
+type InferRecord<R extends Record<string, FieldDescriptor>> = Prettify<
   { -readonly [K in keyof R as R[K] extends { required: true } ? K : never]: ValueOf<R[K]> } & {
     -readonly [K in keyof R as R[K] extends { required: true } ? never : K]?: ValueOf<R[K]>;
   }
 >;
 
 /** Extract the inferred frontmatter type from a `Fieldset`. */
-export type InferFieldset<S> = S extends Fieldset<infer R> ? Infer<R> : never;
+export type InferFieldset<S> = S extends Fieldset<infer R> ? InferRecord<R> : never;
 
 // Coerce one image value to the stored `{ src, alt, caption?, decorative? }` shape, ported from
 // validate.ts. Default a missing alt to empty (alt is debt, never a save block), trim and drop a
@@ -116,7 +116,7 @@ function coerceImage(
 // carries; a NaN or non-finite number stays '' and routes to the number error in validateField.
 function coerceToText(type: FieldDescriptor['type'], value: unknown): string {
   if (type === 'date' && value instanceof Date) return dateInputValue(value);
-  if (type === 'datetime' && value instanceof Date) return value.toISOString();
+  if (type === 'datetime' && value instanceof Date) return datetimeInputValue(value);
   if (type === 'number' && typeof value === 'number' && Number.isFinite(value)) return String(value);
   if (typeof value === 'string') return value.trim();
   return '';

@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { extractMediaRefs } from '../../lib/content/media-refs.js';
-import type { FrontmatterField } from '../../lib/content/types.js';
+import type { NamedField } from '../../lib/content/types.js';
 
-const imageField: FrontmatterField = { name: 'image', label: 'Hero', type: 'image' };
+const imageField: NamedField = { name: 'image', label: 'Hero', type: 'image' };
 
 describe('extractMediaRefs', () => {
   it('returns the hero hash from a frontmatter image.src', () => {

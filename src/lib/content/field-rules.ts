@@ -1,7 +1,6 @@
-// cairn-cms: the shared field constraint rules. Both the v1 `defineFields` validator and the v2
-// `fieldset` validator call these pure helpers, so the two validators cannot drift on the
-// constraint wording or the first-failing-rule-wins order. No I/O and no clock reads, so the
-// rules stay deterministic on Workers.
+// cairn-cms: the shared field constraint rules the `fieldset` validator calls. They live apart from
+// the validator as pure helpers, so the constraint wording and the first-failing-rule-wins order are
+// stated once. No I/O and no clock reads, so the rules stay deterministic on Workers.
 
 /** Compile a field pattern once, throwing a labeled error when the source is not a valid regex. */
 export function compilePattern(source: string, label: string): RegExp {

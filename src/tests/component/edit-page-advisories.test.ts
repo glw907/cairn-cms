@@ -3,7 +3,7 @@ import { render } from 'vitest-browser-svelte';
 // EditPage's lifecycle controls render into the topbar context portal, not a header of its own, so
 // this harness mounts it joined to that band the same way EditPage.test.ts does.
 import EditPage from './EditPageDesk.svelte';
-import type { FrontmatterField } from '../../lib/content/types.js';
+import type { NamedField } from '../../lib/content/types.js';
 import type { LinkTarget } from '../../lib/content/manifest.js';
 import type { AdvisoryNotice } from '../../lib/content/advisories.js';
 
@@ -17,7 +17,7 @@ function postProps(over = {}) {
         { type: 'text', name: 'title', label: 'Title', required: true },
         { type: 'date', name: 'date', label: 'Date' },
         { type: 'boolean', name: 'draft', label: 'Draft' },
-      ] satisfies FrontmatterField[],
+      ] satisfies NamedField[],
       frontmatter: { title: 'Hello', date: '2026-05-01', draft: false },
       body: 'The body.',
       title: 'Hello',

@@ -4,6 +4,7 @@ import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { CommitConflictError } from '../../lib/github/types.js';
 import { manifestEntryFromFile, serializeManifest } from '../../lib/content/manifest.js';
 import type { CairnRuntime, ValidationResult } from '../../lib/content/types.js';
+import { fieldset } from '../../lib/content/fieldset.js';
 
 function runtime(validate: (fm: Record<string, unknown>, body: string) => ValidationResult): CairnRuntime {
   return {
@@ -15,6 +16,7 @@ function runtime(validate: (fm: Record<string, unknown>, body: string) => Valida
         permalink: '/posts/:slug',
         datePrefix: 'day',
         fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
+        schema: fieldset({}),
         summaryFields: [],
         validate,
       },

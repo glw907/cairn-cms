@@ -2,7 +2,8 @@ import { describe, it, expect, expectTypeOf } from 'vitest';
 import { createSiteIndexes } from '../../lib/delivery/site-indexes.js';
 import type { SiteGlobs } from '../../lib/delivery/site-indexes.js';
 import { defineAdapter } from '../../lib/content/adapter.js';
-import { defineFields } from '../../lib/content/schema.js';
+import { fields } from '../../lib/content/fields.js';
+import { fieldset } from '../../lib/content/fieldset.js';
 import { parseSiteConfig } from '../../lib/nav/site-config.js';
 import type { CairnAdapter } from '../../lib/content/types.js';
 
@@ -11,14 +12,14 @@ const adapter = defineAdapter({
   content: {
     posts: {
       dir: 'src/content/posts',
-      schema: defineFields([
-        { name: 'title', type: 'text', label: 'Title', required: true },
-        { name: 'date', type: 'date', label: 'Date' },
-      ]),
+      schema: fieldset({
+        title: fields.text({ label: 'Title', required: true }),
+        date: fields.date({ label: 'Date' }),
+      }),
     },
     pages: {
       dir: 'src/content/pages',
-      schema: defineFields([{ name: 'title', type: 'text', label: 'Title', required: true }]),
+      schema: fieldset({ title: fields.text({ label: 'Title', required: true }) }),
     },
   },
   backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
@@ -77,7 +78,7 @@ describe('createSiteIndexes build-time guards', () => {
       content: {
         site: {
           dir: 'src/content/site',
-          schema: defineFields([{ name: 'title', type: 'text', label: 'Title', required: true }]),
+          schema: fieldset({ title: fields.text({ label: 'Title', required: true }) }),
         },
       } as CairnAdapter['content'],
       backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },

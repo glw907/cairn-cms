@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { entryIdentity, asDate, asString, asTags } from '../../lib/content/identity.js';
 import type { ConceptDescriptor } from '../../lib/content/types.js';
-import { defineFields } from '../../lib/content/schema.js';
+import { fields } from '../../lib/content/fields.js';
+import { fieldset } from '../../lib/content/fieldset.js';
 
 // A minimal descriptor for the identity unit. Only id, routing, permalink, and datePrefix matter here.
 function descriptor(over: Partial<ConceptDescriptor> = {}): ConceptDescriptor {
@@ -13,7 +14,8 @@ function descriptor(over: Partial<ConceptDescriptor> = {}): ConceptDescriptor {
     routing: { routable: true, dated: true, inFeeds: true },
     permalink: '/posts/:slug',
     datePrefix: 'day',
-    fields: defineFields([{ type: 'text', name: 'title', label: 'Title' }]).fields,
+    fields: [{ type: 'text', name: 'title', label: 'Title' }],
+    schema: fieldset({ title: fields.text({ label: 'Title' }) }),
     summaryFields: [],
     validate: () => ({ ok: true, data: {} }),
     ...over,

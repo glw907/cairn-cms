@@ -1,21 +1,25 @@
 import { describe, it, expect } from 'vitest';
-import type { FrontmatterField, ValidationResult } from '../../lib/content/types.js';
+import type { NamedField, ValidationResult } from '../../lib/content/types.js';
 import { testAdapter, postFields } from './_content-fixture.js';
 
 // A switch over the discriminant; if the union is wrong this fails to type-check under
 // `npm run check`. The runtime body just proves each arm is reachable.
-function widgetFor(field: FrontmatterField): string {
+function widgetFor(field: NamedField): string {
   switch (field.type) {
     case 'text':
     case 'textarea':
     case 'date':
+    case 'datetime':
+    case 'number':
+    case 'url':
+    case 'email':
       return 'input';
+    case 'select':
+      return `select:${field.options.length}`;
     case 'boolean':
       return 'checkbox';
-    case 'tags':
-      return `checkboxes:${field.options.length}`;
-    case 'freetags':
-      return 'csv';
+    case 'multiselect':
+      return field.options ? `multiselect:${field.options.length}` : 'csv';
     case 'image':
       return 'image';
   }
@@ -28,7 +32,7 @@ describe('adapter contract types', () => {
   });
 
   it('narrows each field type to its widget', () => {
-    expect(postFields.map(widgetFor)).toEqual(['input', 'input', 'input', 'checkboxes:2', 'checkbox']);
+    expect(postFields.map(widgetFor)).toEqual(['input', 'input', 'input', 'multiselect:2', 'checkbox']);
   });
 
   it('discriminates a ValidationResult', () => {

@@ -3,20 +3,21 @@ import { createPublicRoutes } from '../../lib/delivery/public-routes.js';
 import { createContentIndex, fromGlob } from '../../lib/delivery/content-index.js';
 import { createSiteResolver } from '../../lib/delivery/site-resolver.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
-import { defineFields } from '../../lib/content/schema.js';
+import { fields } from '../../lib/content/fields.js';
+import { fieldset } from '../../lib/content/fieldset.js';
 
 const [posts] = normalizeConcepts(
   {
     posts: {
       dir: 'src/content/posts',
-      schema: defineFields([
-        { type: 'text', name: 'title', label: 'Title', required: true },
-        { type: 'date', name: 'date', label: 'Date' },
-        { type: 'textarea', name: 'description', label: 'Description' },
-        { type: 'text', name: 'image', label: 'Social image' },
-        { type: 'text', name: 'robots', label: 'Robots' },
-        { type: 'text', name: 'author', label: 'Author' },
-      ]),
+      schema: fieldset({
+        title: fields.text({ label: 'Title', required: true }),
+        date: fields.date({ label: 'Date' }),
+        description: fields.textarea({ label: 'Description' }),
+        image: fields.text({ label: 'Social image' }),
+        robots: fields.text({ label: 'Robots' }),
+        author: fields.text({ label: 'Author' }),
+      }),
     },
   },
   { posts: { permalink: '/:year/:month/:day/:slug' } },
@@ -24,10 +25,10 @@ const [posts] = normalizeConcepts(
 const [pages] = normalizeConcepts({
   pages: {
     dir: 'src/content/pages',
-    schema: defineFields([
-      { type: 'text', name: 'title', label: 'Title', required: true },
-      { type: 'text', name: 'robots', label: 'Robots' },
-    ]),
+    schema: fieldset({
+      title: fields.text({ label: 'Title', required: true }),
+      robots: fields.text({ label: 'Robots' }),
+    }),
   },
 });
 

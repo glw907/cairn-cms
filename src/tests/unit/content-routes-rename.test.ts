@@ -3,6 +3,7 @@ import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { parseManifest } from '../../lib/content/manifest.js';
 import type { CairnRuntime, ValidationResult } from '../../lib/content/types.js';
+import { fieldset } from '../../lib/content/fieldset.js';
 
 // The posts concept uses a day prefix, so a fixture id is 2026-05-01-<slug> and its slug strips to
 // <slug>. The pages concept is non-dated, so its id is its whole slug and a linker page can point at
@@ -17,6 +18,7 @@ function runtime(validate: (fm: Record<string, unknown>, body: string) => Valida
         permalink: '/posts/:slug',
         datePrefix: 'day',
         fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
+        schema: fieldset({}),
         summaryFields: [],
         validate,
       },
@@ -26,6 +28,7 @@ function runtime(validate: (fm: Record<string, unknown>, body: string) => Valida
         permalink: '/:slug',
         datePrefix: 'day',
         fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
+        schema: fieldset({}),
         summaryFields: [],
         validate,
       },

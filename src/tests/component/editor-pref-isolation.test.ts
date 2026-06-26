@@ -11,7 +11,7 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import EditPage from './EditPageDesk.svelte';
-import type { FrontmatterField } from '../../lib/content/types.js';
+import type { NamedField } from '../../lib/content/types.js';
 import type { LinkTarget } from '../../lib/content/manifest.js';
 
 function postProps() {
@@ -20,7 +20,7 @@ function postProps() {
       conceptId: 'posts',
       id: '2026-05-hello',
       label: 'Posts',
-      fields: [{ type: 'text', name: 'title', label: 'Title', required: true }] satisfies FrontmatterField[],
+      fields: [{ type: 'text', name: 'title', label: 'Title', required: true }] satisfies NamedField[],
       frontmatter: { title: 'Hello', date: '2026-05-01', draft: false },
       body: 'The body.',
       title: 'Hello',

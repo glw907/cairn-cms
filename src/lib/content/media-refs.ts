@@ -18,7 +18,7 @@ import remarkParse from 'remark-parse';
 import remarkGfm from 'remark-gfm';
 import { visit } from 'unist-util-visit';
 import { parseMediaToken } from '../media/reference.js';
-import type { FrontmatterField, ImageValue } from './types.js';
+import type { ImageValue, NamedField } from './types.js';
 
 /**
  * The content hashes one entry references, in first-occurrence order, deduped by hash. Reads the
@@ -30,7 +30,7 @@ import type { FrontmatterField, ImageValue } from './types.js';
 export function extractMediaRefs(
   frontmatter: Record<string, unknown>,
   body: string,
-  fields: FrontmatterField[],
+  fields: NamedField[],
 ): string[] {
   const seen = new Set<string>();
   const hashes: string[] = [];

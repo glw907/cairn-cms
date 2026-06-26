@@ -10,106 +10,10 @@
 import type { ComponentRegistry } from '../render/registry.js';
 import type { IconSet } from '../render/glyph.js';
 import type { DatePrefix } from './ids.js';
-import type { ConceptSchema } from './schema.js';
+import type { Fieldset } from './fieldset.js';
 import type { FieldDescriptor } from './fields.js';
 import type { LinkResolve } from './links.js';
 import type { VariantSpec } from '../media/transform-url.js';
-
-/** Common to every frontmatter field: the frontmatter key, the form label, and whether it is required. */
-interface FieldBase {
-  /** Frontmatter key and form input name. */
-  name: string;
-  /** Form label. */
-  label: string;
-  /** A required field fails validation when empty (spec §7.4). */
-  required?: boolean;
-  /**
-   * One author-facing sentence shown under the field in the editor, in plain end-user language.
-   * Optional; render nothing when absent. Not a validation rule.
-   */
-  description?: string;
-}
-
-/** A single-line text input. */
-export interface TextField extends FieldBase {
-  type: 'text';
-  /** Minimum character length of a non-empty value. */
-  min?: number;
-  /** Maximum character length. */
-  max?: number;
-  /** Exact required character length. */
-  length?: number;
-  /**
-   * A regular-expression source string the value must match. Stored as a string so the field
-   *  list stays plain serializable data; the validator compiles it.
-   */
-  pattern?: string;
-}
-/** A multi-line text input. */
-export interface TextareaField extends FieldBase {
-  type: 'textarea';
-  /** Visible rows; the editor picks a default when omitted. */
-  rows?: number;
-  /** Minimum character length of a non-empty value. */
-  min?: number;
-  /** Maximum character length. */
-  max?: number;
-  /** Exact required character length. */
-  length?: number;
-  /** A regular-expression source string the value must match. */
-  pattern?: string;
-}
-/** A `YYYY-MM-DD` date input. */
-export interface DateField extends FieldBase {
-  type: 'date';
-  /** Earliest allowed date, as `YYYY-MM-DD`. */
-  min?: string;
-  /** Latest allowed date, as `YYYY-MM-DD`. */
-  max?: string;
-}
-/** A checkbox; absent means false. */
-export interface BooleanField extends FieldBase {
-  type: 'boolean';
-}
-/** A closed-vocabulary tag set, rendered as checkboxes (ecnordic). */
-export interface TagsField extends FieldBase {
-  type: 'tags';
-  /** The controlled vocabulary. */
-  options: readonly string[];
-}
-/** Free-form tags, edited as one comma-separated input (907). */
-export interface FreeTagsField extends FieldBase {
-  type: 'freetags';
-  placeholder?: string;
-}
-/**
- * A hero image set in frontmatter. The stored value is the nested object
- * `{ src: string; alt: string; caption?: string }`, where `src` is a 2b `media:` reference, `alt`
- * is the screen-reader description, and `caption` is an optional line the site template may show.
- * One image serves two jobs: the template's lead image and the social-card image. The field feeding
- * the social card is the `seo`-flagged one, defaulting to the field named `image`; a concept declares
- * at most one SEO image field.
- */
-export interface ImageField extends FieldBase {
-  type: 'image';
-  /** Whether this field feeds the social-card image. The field named `image` defaults to true. */
-  seo?: boolean;
-}
-
-/**
- * The discriminated union the per-concept frontmatter form is generated from. A scalar field type
- * is one variant here plus one decode arm in `frontmatterFromForm` and one in `validateFields`. The
- * structured `image` field additionally needs a read-back arm in `formValues` and a type-inference
- * arm in `schema.ts`, since its value is a nested object rather than a single string.
- */
-export type FrontmatterField =
-  | TextField
-  | TextareaField
-  | DateField
-  | BooleanField
-  | TagsField
-  | FreeTagsField
-  | ImageField;
 
 /**
  * The stored value of an `image` field: a `media:` reference, a screen-reader description, and an
@@ -142,19 +46,19 @@ export type NamedField = FieldDescriptor & { name: string };
 
 /**
  * Per-site configuration for one content concept (spec §8). One `schema`, built with
- * `defineFields`, is the single source of truth for the editor form, the validator, and the
- * inferred frontmatter type. Generic over the schema so a concept's concrete type survives for
+ * `fieldset`, is the single source of truth for the editor form, the validator, and the
+ * inferred frontmatter type. Generic over the fieldset so a concept's concrete type survives for
  * typed reads. Concept-fixed behavior such as routability is not here; it lives in the engine's
  * routing table (`CONCEPT_ROUTING`).
  */
-export interface ConceptConfig<S extends ConceptSchema = ConceptSchema> {
+export interface ConceptConfig<S extends Fieldset = Fieldset> {
   /** Repo-relative content directory, e.g. "src/content/posts". */
   dir: string;
   /** Sidebar label; defaults from the concept id when omitted. */
   label?: string;
   /** The singular noun for the create affordances ("New post"); defaults to `label` when omitted. */
   singular?: string;
-  /** The concept's schema: the form projection, the generated validator, and the inferred type. */
+  /** The concept's fieldset: the form projection, the generated validator, and the inferred type. */
   schema: S;
   /**
    * Frontmatter keys to surface on each `ContentSummary.fields`, so a list card reads an authored
@@ -360,7 +264,17 @@ export interface ConceptDescriptor {
   permalink: string;
   /** Filename date-prefix granularity for a dated concept; resolved by `normalizeConcepts`. */
   datePrefix: DatePrefix;
-  fields: FrontmatterField[];
+  /**
+   * The concept's fields in normalized form: each descriptor with its record key re-attached as
+   *  `name`, derived by `normalizeConcepts` from the concept's `fieldset` record. Every consumer
+   *  (the editor form, the form decoder, the media extractor) iterates this array and reads `name`.
+   */
+  fields: NamedField[];
+  /**
+   * The concept's source fieldset, carried through so `editLoad` can resolve a create-form's
+   *  initial values (a `default: 'today'` date) against a request-time clock via `initialValues`.
+   */
+  schema: Fieldset;
   /**
    * Frontmatter keys the index copies onto each summary's `fields` record. `normalizeConcepts`
    *  resolves it to `[]` when a concept omits `summaryFields`.

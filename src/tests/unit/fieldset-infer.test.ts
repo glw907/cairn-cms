@@ -19,4 +19,15 @@ describe('Infer', () => {
       tags?: ('a' | 'b')[];
     }>();
   });
+
+  it('infers an image field as an optional nested object', () => {
+    const withHero = fieldset({
+      title: fields.text({ label: 'Title', required: true }),
+      image: fields.image({ label: 'Hero' }),
+    });
+    expectTypeOf<InferFieldset<typeof withHero>>().toEqualTypeOf<{
+      title: string;
+      image?: { src: string; alt: string; caption?: string; decorative?: boolean };
+    }>();
+  });
 });

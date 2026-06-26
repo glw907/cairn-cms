@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { manifestEntryFromFile, serializeManifest, parseManifest, emptyManifest, verifyManifest, upsertEntry, removeEntry, manifestLinkResolver, inboundLinks } from '../../lib/content/manifest.js';
 import type { ManifestEntry } from '../../lib/content/manifest.js';
 import type { ConceptDescriptor } from '../../lib/content/types.js';
+import { fieldset } from '../../lib/content/fieldset.js';
 
 const posts: ConceptDescriptor = {
   id: 'posts',
@@ -12,6 +13,7 @@ const posts: ConceptDescriptor = {
   permalink: '/:year/:month/:slug',
   datePrefix: 'day',
   fields: [],
+  schema: fieldset({}),
   summaryFields: [],
   validate: () => ({ ok: true, data: {} }),
 };
@@ -72,6 +74,7 @@ describe('manifestEntryFromFile', () => {
       permalink: '/:slug',
       datePrefix: 'day',
       fields: [],
+      schema: fieldset({}),
       summaryFields: [],
       validate: () => ({ ok: true, data: {} }),
     };

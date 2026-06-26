@@ -2,12 +2,13 @@ import { describe, it, expect } from 'vitest';
 import { createContentIndex, fromGlob } from '../../lib/delivery/content-index.js';
 import { createSiteResolver } from '../../lib/delivery/site-resolver.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
-import { defineFields } from '../../lib/content/schema.js';
+import { fields } from '../../lib/content/fields.js';
+import { fieldset } from '../../lib/content/fieldset.js';
 
 const descriptor = normalizeConcepts({
   posts: {
     dir: 'src/content/posts',
-    schema: defineFields([{ type: 'text', name: 'title', label: 'Title', required: true }]),
+    schema: fieldset({ title: fields.text({ label: 'Title', required: true }) }),
   },
 })[0];
 

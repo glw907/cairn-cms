@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { CONCEPT_ROUTING, normalizeConcepts, findConcept } from '../../lib/content/concepts.js';
 import type { ConceptConfig, RoutingRule } from '../../lib/content/types.js';
-import { defineFields } from '../../lib/content/schema.js';
+import { fields } from '../../lib/content/fields.js';
+import { fieldset } from '../../lib/content/fieldset.js';
 import { testAdapter } from './_content-fixture.js';
 
 describe('normalizeConcepts', () => {
@@ -35,12 +36,24 @@ describe('normalizeConcepts', () => {
     expect(descriptors.map((c) => c.id)).toEqual(['posts']);
   });
 
+  it('derives the fields array as named descriptors from the fieldset record', () => {
+    const [posts] = normalizeConcepts(testAdapter.content);
+    expect(posts.fields.map((f) => f.name)).toEqual(['title', 'date', 'description', 'tags', 'draft']);
+    const title = posts.fields[0];
+    expect(title).toMatchObject({ name: 'title', type: 'text', label: 'Title', required: true });
+  });
+
+  it('carries the source fieldset through onto the descriptor', () => {
+    const [posts] = normalizeConcepts(testAdapter.content);
+    expect(posts.schema).toBe(testAdapter.content.posts?.schema);
+  });
+
   // Seam 1 contract: a third concept attaches by adding one key under `content` and one
   // routing entry, with no reshape of the normalizer.
   it('attaches a Fragments concept additively without reshaping the contract', () => {
     const fragments: ConceptConfig = {
       dir: 'src/content/fragments',
-      schema: defineFields([{ type: 'text', name: 'title', label: 'Title' }]),
+      schema: fieldset({ title: fields.text({ label: 'Title' }) }),
     };
     const routing: Record<string, RoutingRule> = {
       ...CONCEPT_ROUTING,
@@ -55,7 +68,7 @@ describe('normalizeConcepts', () => {
   });
 });
 
-const cfg = { dir: 'd', schema: defineFields([]) };
+const cfg = { dir: 'd', schema: fieldset({}) };
 
 describe('normalizeConcepts URL policy', () => {
   it('defaults permalink and datePrefix when no policy is given', () => {
@@ -80,18 +93,18 @@ describe('normalizeConcepts URL policy', () => {
     const [withFields] = normalizeConcepts({
       posts: {
         dir: 'p',
-        schema: defineFields([
-          { type: 'text', name: 'title', label: 'Title' },
-          { type: 'textarea', name: 'description', label: 'Description' },
-          { type: 'text', name: 'heroImage', label: 'Hero image' },
-        ]),
+        schema: fieldset({
+          title: fields.text({ label: 'Title' }),
+          description: fields.textarea({ label: 'Description' }),
+          heroImage: fields.text({ label: 'Hero image' }),
+        }),
         summaryFields: ['description', 'heroImage'],
       },
     });
     expect(withFields.summaryFields).toEqual(['description', 'heroImage']);
 
     const [withoutFields] = normalizeConcepts({
-      pages: { dir: 'g', schema: defineFields([{ type: 'text', name: 'title', label: 'Title' }]) },
+      pages: { dir: 'g', schema: fieldset({ title: fields.text({ label: 'Title' }) }) },
     });
     expect(withoutFields.summaryFields).toEqual([]);
   });
@@ -101,21 +114,21 @@ describe('normalizeConcepts URL policy', () => {
       normalizeConcepts({
         posts: {
           dir: 'p',
-          schema: defineFields([{ type: 'text', name: 'title', label: 'Title' }]),
+          schema: fieldset({ title: fields.text({ label: 'Title' }) }),
           summaryFields: ['description'],
         },
       }),
     ).toThrow('cairn: concept "posts" summaryFields key "description" is not a declared field');
   });
 
-  it('accepts a summaryFields key that names a declared field', () => {
+  it('accepts a summaryFields key that names a declared field, guarding the Set-of-keys derivation', () => {
     const [descriptor] = normalizeConcepts({
       posts: {
         dir: 'p',
-        schema: defineFields([
-          { type: 'text', name: 'title', label: 'Title' },
-          { type: 'textarea', name: 'description', label: 'Description' },
-        ]),
+        schema: fieldset({
+          title: fields.text({ label: 'Title' }),
+          description: fields.textarea({ label: 'Description' }),
+        }),
         summaryFields: ['description'],
       },
     });

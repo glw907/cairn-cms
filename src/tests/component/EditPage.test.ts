@@ -20,7 +20,7 @@ vi.mock('../../lib/components/client-ingest.js', async () => {
 // mounts EditPage joined to that band the way CairnAdmin/AdminLayout do, so a standalone render
 // still exercises the desk controls. The band carries data-testid="cairn-band".
 import EditPage from './EditPageDesk.svelte';
-import type { FrontmatterField } from '../../lib/content/types.js';
+import type { NamedField } from '../../lib/content/types.js';
 import type { LinkTarget } from '../../lib/content/manifest.js';
 import { createRenderer } from '../../lib/render/pipeline.js';
 import { defineRegistry, type ComponentDef } from '../../lib/render/registry.js';
@@ -40,7 +40,7 @@ function postProps(over = {}) {
         { type: 'text', name: 'title', label: 'Title', required: true },
         { type: 'date', name: 'date', label: 'Date' },
         { type: 'boolean', name: 'draft', label: 'Draft' },
-      ] satisfies FrontmatterField[],
+      ] satisfies NamedField[],
       frontmatter: { title: 'Hello', date: '2026-05-01', draft: false },
       body: 'The body.',
       title: 'Hello',
@@ -76,7 +76,7 @@ function pageProps() {
     data: {
       ...base.data,
       conceptId: 'pages',
-      fields: [{ type: 'text', name: 'title', label: 'Title', required: true }] satisfies FrontmatterField[],
+      fields: [{ type: 'text', name: 'title', label: 'Title', required: true }] satisfies NamedField[],
       frontmatter: { title: 'About' },
     },
   };
@@ -1518,7 +1518,7 @@ describe('EditPage', () => {
       fields: [
         { type: 'text', name: 'title', label: 'Title', required: true },
         { type: 'text', name: 'author', label: 'Author', required: true },
-      ] satisfies FrontmatterField[],
+      ] satisfies NamedField[],
       frontmatter: { title: 'Hello', author: '' },
     });
     const screen = render(EditPage, { ...props });
@@ -1591,7 +1591,7 @@ describe('EditPage', () => {
 
   it('renders no document-title input for an adapter without a title field', async () => {
     const props = postProps({
-      fields: [{ type: 'date', name: 'date', label: 'Date' }] satisfies FrontmatterField[],
+      fields: [{ type: 'date', name: 'date', label: 'Date' }] satisfies NamedField[],
       frontmatter: { date: '2026-05-01' },
     });
     const screen = render(EditPage, props);

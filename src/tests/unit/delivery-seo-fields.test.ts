@@ -1,6 +1,7 @@
 import { describe, it, expect, expectTypeOf } from 'vitest';
 import { readSeoFields, resolveImageUrl } from '../../lib/delivery/seo-fields.js';
-import { defineFields, type Infer } from '../../lib/content/schema.js';
+import { fields } from '../../lib/content/fields.js';
+import { fieldset, type InferFieldset } from '../../lib/content/fieldset.js';
 
 describe('readSeoFields', () => {
   it('keeps present string head fields', () => {
@@ -52,11 +53,11 @@ describe('resolveImageUrl', () => {
 
 describe('a declared SEO field reaches the inferred type', () => {
   it('infers image as an optional string', () => {
-    const schema = defineFields([
-      { type: 'text', name: 'title', label: 'Title', required: true },
-      { type: 'text', name: 'image', label: 'Social image' },
-    ]);
-    expectTypeOf<Infer<typeof schema>>().toEqualTypeOf<{ title: string; image?: string }>();
-    expect(schema.fields.map((f) => f.name)).toEqual(['title', 'image']);
+    const schema = fieldset({
+      title: fields.text({ label: 'Title', required: true }),
+      image: fields.text({ label: 'Social image' }),
+    });
+    expectTypeOf<InferFieldset<typeof schema>>().toEqualTypeOf<{ title: string; image?: string }>();
+    expect(Object.keys(schema.fields)).toEqual(['title', 'image']);
   });
 });

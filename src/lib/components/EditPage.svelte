@@ -62,7 +62,9 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   import { parseComponent, componentRoundTripSafety } from '../render/component-grammar.js';
   import type { IconSet } from '../render/glyph.js';
   import type { ContentFormFailure, EditData } from '../sveltekit/content-routes.js';
-  import type { TextareaField, TagsField, FreeTagsField, ImageValue } from '../content/types.js';
+  import type { ImageValue, NamedField } from '../content/types.js';
+  import type { TextareaField, NumberField, SelectField, MultiselectField } from '../content/fields.js';
+  import { isClosedMultiselect } from '../content/frontmatter.js';
   import type { LinkResolve } from '../content/links.js';
   import { manifestLinkResolver } from '../content/manifest.js';
   import type { MediaResolve } from '../render/resolve-media.js';
@@ -1885,39 +1887,99 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
       <legend class="sr-only">Details</legend>
       {#each detailFields as field (field.name)}
         {#if field.type === 'textarea'}
-          {@const f = field as TextareaField}
+          {@const f = field as NamedField & TextareaField}
           <label class="flex flex-col gap-1">
             <span class="text-sm font-medium">{f.label}</span>
-            <textarea class="textarea textarea-sm" name={f.name} aria-label={f.label} aria-describedby={f.description ? `${f.name}-hint` : undefined} rows={f.rows ?? 3}>{str(data.frontmatter[f.name])}</textarea>
-            {#if f.description}
-              {@render fieldHint(f.name, f.description)}
+            <textarea class="textarea textarea-sm" name={f.name} aria-label={f.label} aria-describedby={f.help ? `${f.name}-hint` : undefined} rows={f.rows ?? 3}>{str(data.frontmatter[f.name])}</textarea>
+            {#if f.help}
+              {@render fieldHint(f.name, f.help)}
+            {/if}
+          </label>
+        {:else if field.type === 'number'}
+          {@const f = field as NamedField & NumberField}
+          <label class="flex flex-col gap-1">
+            <span class="text-sm font-medium">{f.label}</span>
+            <input
+              class="input input-sm"
+              type="number"
+              name={f.name}
+              aria-label={f.label}
+              aria-describedby={f.help ? `${f.name}-hint` : undefined}
+              min={f.min}
+              max={f.max}
+              step={f.integer ? 1 : undefined}
+              value={str(data.frontmatter[f.name])}
+              required={f.required}
+            />
+            {#if f.help}
+              {@render fieldHint(f.name, f.help)}
+            {/if}
+          </label>
+        {:else if field.type === 'select'}
+          {@const f = field as NamedField & SelectField}
+          <label class="flex flex-col gap-1">
+            <span class="text-sm font-medium">{f.label}</span>
+            <select class="select select-sm" name={f.name} aria-label={f.label} aria-describedby={f.help ? `${f.name}-hint` : undefined} required={f.required}>
+              <!-- A leading empty option submits '' (the key is dropped on save); a required select
+                   leaves it unselected so an unset value fails the required check with a clear message. -->
+              <option value="" selected={str(data.frontmatter[f.name]) === ''}>&mdash; none &mdash;</option>
+              {#each f.options as option (option)}
+                <option value={option} selected={str(data.frontmatter[f.name]) === option}>{option}</option>
+              {/each}
+            </select>
+            {#if f.help}
+              {@render fieldHint(f.name, f.help)}
+            {/if}
+          </label>
+        {:else if field.type === 'url'}
+          <label class="flex flex-col gap-1">
+            <span class="text-sm font-medium">{field.label}</span>
+            <input class="input input-sm" type="url" name={field.name} aria-label={field.label} aria-describedby={field.help ? `${field.name}-hint` : undefined} value={str(data.frontmatter[field.name])} required={field.required} />
+            {#if field.help}
+              {@render fieldHint(field.name, field.help)}
+            {/if}
+          </label>
+        {:else if field.type === 'email'}
+          <label class="flex flex-col gap-1">
+            <span class="text-sm font-medium">{field.label}</span>
+            <input class="input input-sm" type="email" name={field.name} aria-label={field.label} aria-describedby={field.help ? `${field.name}-hint` : undefined} value={str(data.frontmatter[field.name])} required={field.required} />
+            {#if field.help}
+              {@render fieldHint(field.name, field.help)}
+            {/if}
+          </label>
+        {:else if field.type === 'datetime'}
+          <label class="flex flex-col gap-1">
+            <span class="text-sm font-medium">{field.label}</span>
+            <input class="input input-sm" type="datetime-local" name={field.name} aria-label={field.label} aria-describedby={field.help ? `${field.name}-hint` : undefined} value={str(data.frontmatter[field.name])} required={field.required} />
+            {#if field.help}
+              {@render fieldHint(field.name, field.help)}
             {/if}
           </label>
         {:else if field.type === 'date'}
           <label class="flex flex-col gap-1">
             <span class="text-sm font-medium">{field.label}</span>
-            <!-- A date field always carries a hint: the adapter's description when set, else the
+            <!-- A date field always carries a hint: the adapter's help when set, else the
                  built-in publish-clarity default. So aria-describedby always points at the paragraph. -->
             <input class="input input-sm" type="date" name={field.name} aria-label={field.label} aria-describedby={`${field.name}-hint`} value={str(data.frontmatter[field.name])} />
-            {@render fieldHint(field.name, field.description || DATE_PUBLISH_HINT)}
+            {@render fieldHint(field.name, field.help || DATE_PUBLISH_HINT)}
           </label>
         {:else if field.type === 'boolean'}
           <div class="flex flex-col gap-1">
             <label class="label cursor-pointer justify-start gap-2">
-              <input class="checkbox checkbox-sm" type="checkbox" name={field.name} aria-label={field.label} aria-describedby={field.description ? `${field.name}-hint` : undefined} checked={data.frontmatter[field.name] === true} />
+              <input class="checkbox checkbox-sm" type="checkbox" name={field.name} aria-label={field.label} aria-describedby={field.help ? `${field.name}-hint` : undefined} checked={data.frontmatter[field.name] === true} />
               <span class="text-sm">{field.label}</span>
             </label>
-            {#if field.description}
-              {@render fieldHint(field.name, field.description)}
+            {#if field.help}
+              {@render fieldHint(field.name, field.help)}
             {/if}
           </div>
-        {:else if field.type === 'tags'}
-          {@const f = field as TagsField}
+        {:else if field.type === 'multiselect' && isClosedMultiselect(field)}
+          {@const f = field as NamedField & MultiselectField & { options: readonly string[] }}
           {@const selected = (data.frontmatter[f.name] ?? []) as string[]}
-          <fieldset class="fieldset" aria-describedby={f.description ? `${f.name}-hint` : undefined}>
+          <fieldset class="fieldset" aria-describedby={f.help ? `${f.name}-hint` : undefined}>
             <legend class="fieldset-legend">{f.label}</legend>
-            {#if f.description}
-              {@render fieldHint(f.name, f.description)}
+            {#if f.help}
+              {@render fieldHint(f.name, f.help)}
             {/if}
             <div class="flex flex-wrap gap-2">
               {#each f.options as option (option)}
@@ -1934,8 +1996,8 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
               {/each}
             </div>
           </fieldset>
-        {:else if field.type === 'freetags'}
-          {@const f = field as FreeTagsField}
+        {:else if field.type === 'multiselect'}
+          {@const f = field as NamedField & MultiselectField}
           {@const tagValue = ((data.frontmatter[f.name] ?? []) as string[]).join(', ')}
           <label class="flex flex-col gap-1">
             <span class="text-sm font-medium">{f.label}</span>
@@ -1943,12 +2005,12 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
               class="input input-sm"
               name={f.name}
               aria-label={f.label}
-              aria-describedby={f.description ? `${f.name}-hint` : undefined}
+              aria-describedby={f.help ? `${f.name}-hint` : undefined}
               placeholder={f.placeholder}
               value={tagValue}
             />
-            {#if f.description}
-              {@render fieldHint(f.name, f.description)}
+            {#if f.help}
+              {@render fieldHint(f.name, f.help)}
             {/if}
           </label>
         {:else if field.type === 'image'}
@@ -1968,9 +2030,9 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
         {:else}
           <label class="flex flex-col gap-1">
             <span class="text-sm font-medium">{field.label}</span>
-            <input class="input input-sm" name={field.name} aria-label={field.label} aria-describedby={field.description ? `${field.name}-hint` : undefined} value={str(data.frontmatter[field.name])} required={field.required} />
-            {#if field.description}
-              {@render fieldHint(field.name, field.description)}
+            <input class="input input-sm" name={field.name} aria-label={field.label} aria-describedby={field.help ? `${field.name}-hint` : undefined} value={str(data.frontmatter[field.name])} required={field.required} />
+            {#if field.help}
+              {@render fieldHint(field.name, field.help)}
             {/if}
           </label>
         {/if}

@@ -5,6 +5,8 @@ import { serializeManifest } from '../../lib/content/manifest.js';
 import { serializeMarkdown, frontmatterFromForm } from '../../lib/content/frontmatter.js';
 import { serializeMediaManifest, type MediaEntry } from '../../lib/media/manifest.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
+import { fields } from '../../lib/content/fields.js';
+import { fieldset } from '../../lib/content/fieldset.js';
 import type { ResolvedAssetConfig } from '../../lib/media/config.js';
 
 const MANIFEST_PATH = 'src/content/.cairn/index.json';
@@ -12,6 +14,10 @@ const MEDIA_PATH = 'src/content/.cairn/media.json';
 
 function runtime(): CairnRuntime {
   const ok = () => ({ ok: true as const, data: {} });
+  const postsSchema = fieldset({
+    title: fields.text({ label: 'Title', required: true }),
+    date: fields.date({ label: 'Date' }),
+  });
   return {
     siteName: 'T',
     concepts: [
@@ -24,6 +30,7 @@ function runtime(): CairnRuntime {
           { type: 'text', name: 'title', label: 'Title', required: true },
           { type: 'date', name: 'date', label: 'Date' },
         ],
+        schema: postsSchema,
         summaryFields: [],
         validate: ok,
       },
@@ -363,6 +370,23 @@ describe('editLoad with a pending branch', () => {
     expect(data.body).toBe('New body.');
     expect(data.title).toBe('Fresh');
   });
+
+  it('prefills a fresh entry from a date field default of "today"', async () => {
+    const withDefault = runtime();
+    withDefault.concepts[0].schema = fieldset({
+      title: fields.text({ label: 'Title', required: true }),
+      date: fields.date({ label: 'Date', default: 'today' }),
+    });
+    withDefault.concepts[0].fields = [
+      { type: 'text', name: 'title', label: 'Title', required: true },
+      { type: 'date', name: 'date', label: 'Date', default: 'today' },
+    ];
+    editFetch(null);
+    const routes = createContentRoutes(withDefault, deps);
+    const data = await routes.editLoad(editEvent('2026-05-fresh', '?new=1') as never);
+    const today = new Date().toISOString().slice(0, 10);
+    expect(data.frontmatter.date).toBe(today);
+  });
 });
 
 describe('editLoad address-collision advisory', () => {
@@ -377,6 +401,7 @@ describe('editLoad address-collision advisory', () => {
           permalink: '/:slug',
           datePrefix: 'day',
           fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
+          schema: fieldset({ title: fields.text({ label: 'Title', required: true }) }),
           summaryFields: [],
           validate: () => ({ ok: true as const, data: {} }),
         },

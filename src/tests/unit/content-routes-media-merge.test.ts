@@ -15,6 +15,7 @@ import {
 } from '../../lib/media/manifest.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { ResolvedAssetConfig } from '../../lib/media/config.js';
+import { fieldset } from '../../lib/content/fieldset.js';
 
 const MANIFEST_PATH = 'src/content/.cairn/index.json';
 const MEDIA_PATH = 'src/content/.cairn/media.json';
@@ -40,6 +41,7 @@ function runtime(assets: ResolvedAssetConfig): CairnRuntime {
         permalink: '/posts/:slug',
         datePrefix: 'day',
         fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
+        schema: fieldset({}),
         summaryFields: [],
         validate: () => ({ ok: true as const, data: { title: 'Hi' } }),
       },

@@ -1,18 +1,19 @@
 import { describe, it, expect } from 'vitest';
 import { createContentIndex, fromGlob } from '../../lib/delivery/content-index.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
-import { defineFields } from '../../lib/content/schema.js';
+import { fields } from '../../lib/content/fields.js';
+import { fieldset } from '../../lib/content/fieldset.js';
 import type { ContentIndex, RawFile } from '../../lib/delivery/content-index.js';
 
 const [posts] = normalizeConcepts({
   posts: {
     dir: 'd',
-    schema: defineFields([
-      { type: 'text', name: 'title', label: 'Title' },
-      { type: 'date', name: 'date', label: 'Date' },
-      { type: 'tags', name: 'tags', label: 'Tags', options: ['a'] },
-      { type: 'boolean', name: 'draft', label: 'Draft' },
-    ]),
+    schema: fieldset({
+      title: fields.text({ label: 'Title' }),
+      date: fields.date({ label: 'Date' }),
+      tags: fields.multiselect({ label: 'Tags', options: ['a'] }),
+      draft: fields.boolean({ label: 'Draft' }),
+    }),
   },
 });
 
@@ -80,10 +81,10 @@ describe('content index slug', () => {
       {
         posts: {
           dir: 'd',
-          schema: defineFields([
-            { type: 'text', name: 'title', label: 'Title' },
-            { type: 'date', name: 'date', label: 'Date' },
-          ]),
+          schema: fieldset({
+            title: fields.text({ label: 'Title' }),
+            date: fields.date({ label: 'Date' }),
+          }),
         },
       },
       { posts: { permalink: '/:year/:month/:day/:slug', datePrefix: 'day' } },
@@ -102,12 +103,12 @@ describe('summary fields', () => {
   const [withSummary] = normalizeConcepts({
     posts: {
       dir: 'p',
-      schema: defineFields([
-        { type: 'text', name: 'title', label: 'Title' },
-        { type: 'date', name: 'date', label: 'Date' },
-        { type: 'textarea', name: 'description', label: 'Description' },
-        { type: 'text', name: 'image', label: 'Image' },
-      ]),
+      schema: fieldset({
+        title: fields.text({ label: 'Title' }),
+        date: fields.date({ label: 'Date' }),
+        description: fields.textarea({ label: 'Description' }),
+        image: fields.text({ label: 'Image' }),
+      }),
       summaryFields: ['description', 'image'],
     },
   });
@@ -131,7 +132,7 @@ describe('summary fields', () => {
   });
 
   it('yields an empty fields object when summaryFields is unset', () => {
-    const [plain] = normalizeConcepts({ pages: { dir: 'g', schema: defineFields([{ type: 'text', name: 'title', label: 'Title' }]) } });
+    const [plain] = normalizeConcepts({ pages: { dir: 'g', schema: fieldset({ title: fields.text({ label: 'Title' }) }) } });
     const plainIndex = createContentIndex([{ path: '/g/about.md', raw: '---\ntitle: About\n---\n\nAbout.' }], plain);
     expect(plainIndex.all()[0].fields).toEqual({});
   });
@@ -145,7 +146,7 @@ describe('fromGlob', () => {
 
 describe('createContentIndex validate-once reads', () => {
   const [trimmed] = normalizeConcepts({
-    posts: { dir: 'd', schema: defineFields([{ type: 'text', name: 'title', label: 'Title', required: true }]) },
+    posts: { dir: 'd', schema: fieldset({ title: fields.text({ label: 'Title', required: true }) }) },
   });
 
   it('stores the normalized data on the detail frontmatter', () => {
@@ -172,10 +173,10 @@ describe('createContentIndex degrades a date-token permalink miss to a problem',
     {
       posts: {
         dir: 'd',
-        schema: defineFields([
-          { type: 'text', name: 'title', label: 'Title', required: true },
-          { type: 'date', name: 'date', label: 'Date', required: true },
-        ]),
+        schema: fieldset({
+          title: fields.text({ label: 'Title', required: true }),
+          date: fields.date({ label: 'Date', required: true }),
+        }),
       },
     },
     { posts: { permalink: '/:year/:month/:day/:slug', datePrefix: 'day' } },
@@ -201,7 +202,7 @@ describe('createContentIndex degrades a date-token permalink miss to a problem',
 
 describe('createContentIndex excludes invalid entries from the typed read', () => {
   const [posts] = normalizeConcepts({
-    posts: { dir: 'd', schema: defineFields([{ type: 'text', name: 'title', label: 'Title', required: true }]) },
+    posts: { dir: 'd', schema: fieldset({ title: fields.text({ label: 'Title', required: true }) }) },
   });
 
   it('keeps an invalid non-draft entry out of every read but records it', () => {

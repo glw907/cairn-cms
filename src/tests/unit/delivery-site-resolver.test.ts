@@ -2,13 +2,13 @@ import { describe, it, expect } from 'vitest';
 import { createSiteResolver } from '../../lib/delivery/site-resolver.js';
 import { createContentIndex } from '../../lib/delivery/content-index.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
-import { defineFields } from '../../lib/content/schema.js';
+import { fieldset } from '../../lib/content/fieldset.js';
 
 const [posts] = normalizeConcepts(
-  { posts: { dir: 'p', schema: defineFields([]) } },
+  { posts: { dir: 'p', schema: fieldset({}) } },
   { posts: { permalink: '/:year/:month/:day/:slug', datePrefix: 'day' } },
 );
-const [pages] = normalizeConcepts({ pages: { dir: 'g', schema: defineFields([]) } });
+const [pages] = normalizeConcepts({ pages: { dir: 'g', schema: fieldset({}) } });
 
 function site() {
   return createSiteResolver([
@@ -48,11 +48,11 @@ describe('createSiteResolver', () => {
 
   it('throws on a permalink collision across concepts, naming both ids', () => {
     const [p2] = normalizeConcepts(
-      { pages: { dir: 'g', schema: defineFields([]) } },
+      { pages: { dir: 'g', schema: fieldset({}) } },
       { pages: { permalink: '/dup' } },
     );
     const [q2] = normalizeConcepts(
-      { posts: { dir: 'p', schema: defineFields([]) } },
+      { posts: { dir: 'p', schema: fieldset({}) } },
       { posts: { permalink: '/dup' } },
     );
     expect(() =>

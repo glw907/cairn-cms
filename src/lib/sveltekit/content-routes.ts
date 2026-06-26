@@ -5,7 +5,8 @@
 import { redirect, error, fail } from '@sveltejs/kit';
 import { findConcept } from '../content/concepts.js';
 import { extractCairnLinks, formatCairnToken, rewriteCairnLink } from '../content/links.js';
-import { frontmatterFromForm, parseMarkdown, dateInputValue, serializeMarkdown } from '../content/frontmatter.js';
+import { frontmatterFromForm, parseMarkdown, dateInputValue, datetimeInputValue, serializeMarkdown } from '../content/frontmatter.js';
+import { initialValues } from '../content/fieldset.js';
 import { deriveExcerpt } from '../content/excerpt.js';
 import { asString, entryIdentity } from '../content/identity.js';
 import { buildAddressIndex, mainAddressIndex, addressCollision, type AdvisoryNotice, type AddressEntry } from '../content/advisories.js';
@@ -51,7 +52,7 @@ import type { BranchRef } from '../media/rewrite-plan.js';
 import { planBulkDelete } from '../media/bulk-delete-plan.js';
 import type { BulkDeleteSkip } from '../media/bulk-delete-plan.js';
 import type { CookieJar, EventBase } from './types.js';
-import type { CairnRuntime, ConceptDescriptor, FrontmatterField, PreviewConfig, ResolvedPreview } from '../content/types.js';
+import type { CairnRuntime, ConceptDescriptor, NamedField, PreviewConfig, ResolvedPreview } from '../content/types.js';
 import type { Editor, Role } from '../auth/types.js';
 // R2Bucket is named only inside uploadAction to cast the raw binding for r2Store. It is a type-only
 // import that never appears in an exported signature, so it does not reach the public `.d.ts`.
@@ -132,7 +133,7 @@ export interface EditData {
   conceptId: string;
   id: string;
   label: string;
-  fields: FrontmatterField[];
+  fields: NamedField[];
   frontmatter: Record<string, unknown>;
   body: string;
   title: string;
@@ -1002,13 +1003,16 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
   }
 
   /** Coerce parsed frontmatter to the form-ready values the editor inputs expect. */
-  function formValues(fields: FrontmatterField[], frontmatter: Record<string, unknown>): Record<string, unknown> {
+  function formValues(fields: NamedField[], frontmatter: Record<string, unknown>): Record<string, unknown> {
     const out: Record<string, unknown> = {};
     for (const field of fields) {
       const value = frontmatter[field.name];
       if (field.type === 'date') out[field.name] = dateInputValue(value);
+      // A datetime round-trips as text; a value gray-matter parsed into a Date reformats to the
+      // naive-local minute-precision string the datetime-local input wants.
+      else if (field.type === 'datetime') out[field.name] = datetimeInputValue(value);
       else if (field.type === 'boolean') out[field.name] = value === true;
-      else if (field.type === 'tags' || field.type === 'freetags') out[field.name] = Array.isArray(value) ? value.map(String) : [];
+      else if (field.type === 'multiselect') out[field.name] = Array.isArray(value) ? value.map(String) : [];
       // A hero is a nested object; the default String() arm would corrupt it to '[object Object]'.
       // Hand the stored object back as-is so the editor reads .src/.alt/.caption on open.
       else if (field.type === 'image') out[field.name] = value !== null && typeof value === 'object' ? value : undefined;
@@ -1055,6 +1059,11 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     const published = mainRaw !== null;
 
     const parsed = raw === null ? { frontmatter: {}, body: '' } : parseMarkdown(raw);
+    // A fresh entry opens prefilled from each field's `default`, resolving a `'today'` date against a
+    // request-time clock. The defaults sit under the empty parsed frontmatter, never over a real read.
+    const loadFrontmatter = isNew
+      ? { ...initialValues(concept.schema, new Date()), ...parsed.frontmatter }
+      : parsed.frontmatter;
     const title = typeof parsed.frontmatter.title === 'string' && parsed.frontmatter.title.trim() ? parsed.frontmatter.title : id;
 
     const manifest = manifestRaw !== null ? parseManifest(manifestRaw) : null;
@@ -1115,7 +1124,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       id,
       label: concept.label,
       fields: concept.fields,
-      frontmatter: formValues(concept.fields, parsed.frontmatter),
+      frontmatter: formValues(concept.fields, loadFrontmatter),
       body: parsed.body,
       title,
       isNew,

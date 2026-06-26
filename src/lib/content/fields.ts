@@ -44,6 +44,8 @@ export interface MultiselectField extends FieldBase {
   options?: readonly string[];
   /** Allow the author to add values not in the list. */
   creatable?: boolean;
+  /** Placeholder text for the open/creatable comma-separated input (freetags parity). */
+  placeholder?: string;
   /** Mark the field as a site-wide taxonomy whose values pool across entries. */
   taxonomy?: boolean;
 }

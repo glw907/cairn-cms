@@ -89,6 +89,28 @@ and the per-plan post-mortems, not in the roadmap.
 Two production sites depend on the package, so a stale doc costs real users. Treat the docs update as
 part of the work, not a chore after it. See the `docs-is-a-pass-dimension` memory.
 
+## Watch items (conditional follow-ups)
+
+A watch item is a follow-up defined by its trigger, not its action, so manage it by what can detect that
+trigger, and promote it to an automated tripwire whenever the trigger is machine-detectable. Claude cannot
+self-trigger between sessions; only a gate, a hook, or a scheduled routine can, so prose in a backlog is the
+weakest form and the fallback, never the default. Match the mechanism to the trigger:
+
+- A **code condition** ("a banned API reappears", "a structure grows past a bound") becomes a gate or test
+  (this repo already runs many: `check:reference`, `check:version`) or a `settings.json` hook. Converting a
+  watch into a failing test is the gold standard: it cannot be forgotten.
+- An **external or time trigger** (an upstream deprecation lands, a dependency majors) becomes a scheduled
+  cloud agent through the `schedule` skill, which pings only when the condition trips. The standing example
+  is the SvelteKit `checkOrigin` removal (kit#15992): a routine watches it rather than a ROADMAP line
+  betting someone re-reads it in time.
+- A **next-time-you-touch-X** note becomes a co-located `// WATCH:` comment on the code itself, so the next
+  editor sees it in context; mirror it to a memory only when it must survive a file move.
+- A **trend tied to a milestone** becomes a ROADMAP entry in the tier where it bites, arriving with the work
+  rather than floating in "someday".
+
+STATUS carry-forwards hold only the active initiative's watches and must churn, not accumulate (the
+append-only-backlog rot this file warns about elsewhere).
+
 ## Admin interface design
 
 Before any work on the `/admin` interface (the `src/lib/components/*.svelte` admin components or

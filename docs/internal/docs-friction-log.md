@@ -716,3 +716,12 @@ load-bearing carry-forwards for the contract-v2 cutover.
   Candidate: a `sm:`-breakpoint bottom-sheet relaxation on the picker box in a later admin-a11y pass,
   carried with B4's manual dark-toggle and the styleguide a11y polish. Surfaced by the
   `daisyui-a11y-reviewer` at the Plan 2 review gate.
+- **developer** (the spellcheck e2e flakes and blocks releases, MEDIUM): the showcase e2e
+  `spellcheck.spec.ts` "a misspelled word clears its underline" asserts `toHaveCount(2)` on the underline
+  decorations and intermittently reads `0`, which fails the whole `e2e` CI job. It flaked on the `0.68.0`
+  publish push (a re-run passed) and earlier on the docs-only `0.62.2` commit, which cannot break a build,
+  so the failure is timing, not a regression: the CodeMirror lint decorations have not settled (the WASM
+  dictionary load plus the worker-lint roundtrip) by the time the assertion runs. A flaky release gate
+  erodes trust in the gate and costs a re-run on every publish. Candidate: make the assertion wait for the
+  lint to settle (poll or `toPass` on the decoration count, or await the spellcheck settle-cue the editor
+  already emits) rather than asserting once. Surfaced at the `0.68.0` release gate.

@@ -7,6 +7,7 @@ import type { FieldDescriptor, ImageValue } from './fields.js';
 import type { ValidationResult } from './types.js';
 import type { StandardInput, StandardSchemaV1 } from './schema.js';
 import { dateInputValue, isCalendarDate } from './frontmatter.js';
+import { compilePattern, patternError, stringLengthError } from './field-rules.js';
 
 /** Accept any URL using http or https with a non-empty rest, mirroring the conservative form check. */
 const URL_RE = /^https?:\/\/\S+$/;
@@ -120,6 +121,7 @@ function validateField(
   value: unknown,
   data: Record<string, unknown>,
   errors: Record<string, string>,
+  patterns: Map<string, RegExp>,
 ): void {
   // boolean: presence is the value; an unchecked or absent box omits the key (no draft: false noise).
   if (field.type === 'boolean') {
@@ -198,9 +200,24 @@ function validateField(
       else data[key] = text;
       break;
     }
-    default:
-      // text, textarea, datetime: a trimmed non-empty string stored as is.
+    default: {
+      // text, textarea, datetime: a trimmed non-empty string. text and textarea also enforce the
+      // string-length and pattern constraints (v1 parity); datetime stays a plain string for now,
+      // since its bounds are out of scope this pass and v1 has no datetime equivalent to match.
+      if (field.type === 'text' || field.type === 'textarea') {
+        const lengthError = stringLengthError(text, field, field.label);
+        if (lengthError != null) {
+          errors[key] = lengthError;
+          break;
+        }
+        const formatError = patternError(text, patterns.get(key), field.label);
+        if (formatError != null) {
+          errors[key] = formatError;
+          break;
+        }
+      }
       data[key] = text;
+    }
   }
 }
 
@@ -213,11 +230,19 @@ export function fieldset<const R extends Record<string, FieldDescriptor>>(
   record: R,
   options: FieldsetOptions = {},
 ): Fieldset<R> {
+  // Compile each text/textarea pattern once at construction, so a malformed pattern fails loudly here
+  // (mirroring v1's compilePatterns) rather than on every save. Keyed by field name for validateField.
+  const patterns = new Map<string, RegExp>();
+  for (const [key, field] of Object.entries(record)) {
+    if ((field.type === 'text' || field.type === 'textarea') && field.pattern != null) {
+      patterns.set(key, compilePattern(field.pattern, field.label));
+    }
+  }
   const validate = (frontmatter: Record<string, unknown>, body: string): ValidationResult => {
     const data: Record<string, unknown> = {};
     const errors: Record<string, string> = {};
     for (const [key, field] of Object.entries(record)) {
-      validateField(key, field, frontmatter[key], data, errors);
+      validateField(key, field, frontmatter[key], data, errors, patterns);
     }
     if (Object.keys(errors).length > 0) return { ok: false, errors };
     const refined = options.refine?.(data, body);

@@ -48,3 +48,21 @@ describe('fieldset.validate edge cases', () => {
     expect(edge.validate({ contact: 'a@b.c' }, '')).toEqual({ ok: true, data: { contact: 'a@b.c' } });
   });
 });
+
+describe('fieldset text constraints (v1 parity)', () => {
+  const fs = fieldset({
+    title: fields.text({ label: 'Title', max: 5 }),
+    code:  fields.text({ label: 'Code', pattern: '^[A-Z]{3}$' }),
+  });
+  it('enforces max length (the old fixture masked this)', () => {
+    expect(fs.validate({ title: 'toolong' }, '').ok).toBe(false);
+    expect(fs.validate({ title: 'ok' }, '')).toEqual({ ok: true, data: { title: 'ok' } });
+  });
+  it('enforces a pattern', () => {
+    expect(fs.validate({ code: 'abc' }, '').ok).toBe(false);
+    expect(fs.validate({ code: 'ABC' }, '')).toEqual({ ok: true, data: { code: 'ABC' } });
+  });
+  it('throws on a bad pattern at fieldset() construction', () => {
+    expect(() => fieldset({ x: fields.text({ label: 'X', pattern: '(' }) })).toThrow(/X/);
+  });
+});

@@ -16,12 +16,27 @@
      4. The faces: swap `--font-display` and `--font-body` in the :root block.
      5. Optional fine-tuning: the one type ratio lives in the `--cairn-step-*`
         clamps; the one space-scale step in `--cairn-space-*`.
+     6. The status-ink seam. Retuning a status FILL above (the `--color-info`,
+        `--color-success`, `--color-warning` in the two `@plugin` blocks) is only
+        half of that status: the callout and alert titles and left rules, and the
+        code highlighter's string / function / number colours, read a SEPARATE
+        on-surface ink token, `--cairn-<status>-ink`, defined in the :root and the
+        dark `prefers-color-scheme` block below. A fill is too light to read as
+        small text, so the ink is a darker tone of the SAME hue. When you retune a
+        status hue, retune its matching `--cairn-<status>-ink` (light AND dark) to
+        the same hue, or the directive text and the code colours desync from the
+        fills.
 
-   About fourteen role values cover a full re-brand. Every prose element, the
-   code highlighter, the chrome, and the components recolor from that one set,
-   because none of them hard-codes a colour; they all read these tokens. The CI
-   contrast gate (`check:public-tokens`) proves the re-skinned theme still clears
-   AA in both sRGB and P3.
+   About fourteen role values cover the brand-and-base headline: a new accent and
+   a new paper-and-ink, the change most owners make. That set is `--color-primary`
+   and `-content`, the three `--color-base-*` steps, and `--color-base-content`,
+   light and dark. A FULL status rebrand is more, because each status carries both
+   a fill (the `@plugin` block) and an on-surface ink (the `--cairn-*-ink` layer,
+   step 6). Every prose element, the code highlighter, the chrome, and the
+   components recolor from these tokens, because none of them hard-codes a colour;
+   they all read them. The CI contrast gate (`check:public-tokens`) proves the
+   re-skinned theme still clears AA in both sRGB and P3, and its token-resolution
+   check fails the build if a rule references a token no block defines.
 
    This file is linked by the (site) layout and by the editor preview config, so
    the reader and the author see the same surface. The token grammar matches the
@@ -206,10 +221,13 @@
   --cairn-code-punct: var(--cairn-muted);
 
   /* On-surface inks (light). A fill tone fails as small text, the admin's lesson, so the muted
-     text and each status word read a darker ink than the matching `-content` fill pair. */
+     text and each status word read a darker ink than the matching `-content` fill pair. Each status
+     ink holds its fill's hue (the warning ink at 76, aligned to the warning fill and its dark
+     sibling), so the directive titles and the code colours track the fills under a re-skin; the
+     re-skin recipe at the top of this file (step 6) names this seam. */
   --cairn-muted: oklch(46% 0.013 72);
   --cairn-success-ink: oklch(45% 0.1 150);
-  --cairn-warning-ink: oklch(52% 0.11 70);
+  --cairn-warning-ink: oklch(52% 0.11 76);
   --cairn-error-ink: oklch(50% 0.17 27);
   --cairn-info-ink: oklch(48% 0.1 235);
 

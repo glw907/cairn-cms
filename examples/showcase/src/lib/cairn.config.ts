@@ -78,7 +78,9 @@ const alert: ComponentDef = {
     { key: 'icon', label: 'Icon', type: 'icon' },
   ],
   slots: [
-    { name: 'title', label: 'Title', kind: 'inline' },
+    // The title is required: headRow always emits an <h2>, so a titleless alert would render an empty
+    // heading (axe empty-heading). Mirror the callout, whose title is required for the same reason.
+    { name: 'title', label: 'Title', kind: 'inline', required: true },
     { name: 'body', label: 'Body', kind: 'markdown' },
   ],
 };

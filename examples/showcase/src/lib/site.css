@@ -14,6 +14,17 @@
    client and server builds, so the server-resolved ?url would 404 in the browser. Referenced only as
    an asset, both builds emit site.<hash>.css under one content hash, and the URL holds. */
 
+/* The sticky-header scroll offset. SiteHeader is `sticky top-0`, so an in-page anchor jump or a
+   focused heading would otherwise land under the band (WCAG 2.4.11, focus not obscured). This sizes
+   the gap to the header from the same tokens the header uses (the step-1 wordmark plus its vertical
+   `--cairn-space-xs` padding, plus a 1rem cushion that covers the wordmark's line-height slack and the
+   brand mark, which runs a touch taller than the text), so the offset re-skins with the type scale.
+   At a 1280px desktop viewport the rendered header is about 65px (~4rem) and this resolves to about
+   67px (~4.2rem), so a jumped-to or focused heading clears the band with a little air. */
+html {
+  scroll-padding-top: calc(var(--cairn-step-1) + 2 * var(--cairn-space-xs) + 1rem);
+}
+
 /* The centered reading column at the measure. The chrome components hold the wider shell; this caps
    the article body and is the container the editor preview frame reproduces. */
 .site-main {

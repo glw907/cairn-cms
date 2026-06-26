@@ -23,6 +23,7 @@ import { parse, converter, toGamut, wcagLuminance } from 'culori';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SHOWCASE_SRC = resolve(ROOT, 'examples/showcase/src');
 const THEME_CSS = resolve(ROOT, 'examples/showcase/src/lib/theme.css');
+const PROSE_CSS = resolve(ROOT, 'examples/showcase/src/lib/prose.css');
 
 // ============================================================================
 // (a) The no-literals grep.
@@ -215,6 +216,8 @@ const ROLE_TOKENS = [
   'color-primary-content',
   'color-secondary',
   'color-secondary-content',
+  'color-accent',
+  'color-accent-content',
   'color-neutral',
   'color-neutral-content',
   'color-success',
@@ -286,6 +289,7 @@ export function themePairs(t) {
     { label: 'primary on base-100 (link/ring)', fg: t['color-primary'], bg: base, threshold: 4.5 },
     { label: 'primary-content on primary', fg: t['color-primary-content'], bg: t['color-primary'], threshold: 4.5 },
     { label: 'secondary-content on secondary', fg: t['color-secondary-content'], bg: t['color-secondary'], threshold: 4.5 },
+    { label: 'accent-content on accent', fg: t['color-accent-content'], bg: t['color-accent'], threshold: 4.5 },
     { label: 'neutral-content on neutral', fg: t['color-neutral-content'], bg: t['color-neutral'], threshold: 4.5 },
     { label: 'success-content on success', fg: t['color-success-content'], bg: t['color-success'], threshold: 4.5 },
     { label: 'warning-content on warning', fg: t['color-warning-content'], bg: t['color-warning'], threshold: 4.5 },
@@ -342,6 +346,117 @@ export function formatContrastTable(rows) {
 }
 
 // ============================================================================
+// (c) Token resolution. A reference to a custom property that no block defines
+// resolves to nothing (the `var()` has no fallback), so a colour or a rule
+// silently drops. This check proves every `--token` the reading surface and the
+// code ramp reference is actually defined, turning a dangling reference (the
+// `--color-info-ink` that shipped because the prose single-source check is a
+// prefix match) into a red gate.
+// ============================================================================
+
+// DaisyUI generates the full role set as custom properties at point of use, but a theme file writes
+// only the roles it overrides. A reference to a generated role is therefore valid even when the theme
+// file does not declare it, so the resolution check seeds the defined set with the complete role list.
+export const DAISYUI_GENERATED_ROLES = [
+  'base-100',
+  'base-200',
+  'base-300',
+  'base-content',
+  'primary',
+  'primary-content',
+  'secondary',
+  'secondary-content',
+  'accent',
+  'accent-content',
+  'neutral',
+  'neutral-content',
+  'info',
+  'info-content',
+  'success',
+  'success-content',
+  'warning',
+  'warning-content',
+  'error',
+  'error-content',
+].map((r) => `--color-${r}`);
+
+/**
+ * Every custom property NAME declared in a CSS string: a `--token:` declaration at a property
+ * position. A `var(--token)` reference inside a value is not a declaration (the token sits in parens
+ * with no trailing colon), so it is not collected, which is what lets a reference go undefined.
+ * @param {string} css
+ * @returns {Set<string>}
+ */
+export function collectDefinedTokens(css) {
+  /** @type {Set<string>} */
+  const defined = new Set();
+  for (const m of css.matchAll(/(--[a-z0-9-]+)\s*:/gi)) {
+    defined.add(m[1]);
+  }
+  return defined;
+}
+
+/**
+ * Every custom property a CSS string references through `var(--token)`. The matched token may carry a
+ * fallback (`var(--token, ...)`); only the leading name is collected, since the resolution check asks
+ * whether that name is defined.
+ * @param {string} css
+ * @returns {Set<string>}
+ */
+export function collectReferencedTokens(css) {
+  /** @type {Set<string>} */
+  const referenced = new Set();
+  for (const m of css.matchAll(/var\(\s*(--[a-z0-9-]+)/gi)) {
+    referenced.add(m[1]);
+  }
+  return referenced;
+}
+
+/**
+ * The `--cairn-code-*` ramp body of theme.css, the run of declarations that bind the code highlighter
+ * to the role tokens. Its `var()` references are checked for resolution alongside the prose surface,
+ * because a dangling code ramp token drops a syntax colour the same way a dangling prose token drops a
+ * directive rule.
+ * @param {string} css the contents of theme.css
+ * @returns {string}
+ */
+function codeRampBody(css) {
+  const lines = css.split('\n').filter((l) => /--cairn-code-[a-z]+\s*:/.test(l));
+  return lines.join('\n');
+}
+
+/**
+ * The token-resolution check. Collects every `var(--token)` referenced in the prose surface and in
+ * theme.css's code ramp, collects every token DEFINED across theme.css and prose.css (the `:root`, the
+ * dark media block, and the two `@plugin "daisyui/theme"` geometry blocks all declare with `--x:`, so
+ * a whole-file declaration scan captures them) unioned with DaisyUI's generated role set, and returns
+ * the references that resolve to nothing. An empty result means every reference is defined.
+ * @param {string} themeCss the contents of theme.css
+ * @param {string} proseCss the contents of prose.css
+ * @returns {{ token: string, source: string }[]}
+ */
+export function checkTokenResolution(themeCss, proseCss) {
+  const defined = new Set([
+    ...collectDefinedTokens(themeCss),
+    ...collectDefinedTokens(proseCss),
+    ...DAISYUI_GENERATED_ROLES,
+  ]);
+  /** @type {{ token: string, source: string }[]} */
+  const dangling = [];
+  /** @type {[string, string][]} */
+  const sources = [
+    ['prose.css', proseCss],
+    ['theme.css code ramp', codeRampBody(themeCss)],
+  ];
+  for (const [source, css] of sources) {
+    for (const token of collectReferencedTokens(css)) {
+      if (!defined.has(token)) dangling.push({ token, source });
+    }
+  }
+  return dangling;
+}
+
+// ============================================================================
 // Runner.
 // ============================================================================
 
@@ -376,6 +491,19 @@ function main() {
   } else {
     console.log('');
     console.log(`Contrast check: PASS (${rows.length} pairs clear AA in both sRGB and P3)`);
+  }
+
+  // (c) Token resolution.
+  const dangling = checkTokenResolution(css, readFileSync(PROSE_CSS, 'utf8'));
+  console.log('');
+  if (dangling.length) {
+    console.error(`Token-resolution check: FAIL (${dangling.length} reference(s) resolve to no definition)`);
+    for (const d of dangling) {
+      console.error(`  ${d.source}: var(${d.token}) is referenced but never defined`);
+    }
+    failed = true;
+  } else {
+    console.log('Token-resolution check: PASS (every var(--token) in prose.css and the code ramp is defined)');
   }
 
   process.exit(failed ? 1 : 0);

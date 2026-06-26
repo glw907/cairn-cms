@@ -31,9 +31,21 @@
 
   <SiteHeader />
 
-  <main id="main" class="site-main">
+  <!-- `tabindex="-1"` makes the skip-link target programmatically focusable, so activating "Skip to
+       content" moves keyboard focus here, not only the scroll position (WCAG 2.4.1; Firefox and Safari
+       move focus to a non-interactive target only when it is focusable). The focus is programmatic, so
+       the ring is suppressed below; real controls keep their `:focus-visible` rings. -->
+  <main id="main" tabindex="-1" class="site-main">
     {@render children()}
   </main>
 
   <SiteFooter />
 </div>
+
+<style>
+  /* The skip-link target is focused programmatically, never tabbed to, so it shows no focus ring. This
+     does not touch `:focus-visible` on real controls (links, buttons), which keep their rings. */
+  main:focus {
+    outline: none;
+  }
+</style>

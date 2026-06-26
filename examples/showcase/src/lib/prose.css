@@ -98,6 +98,16 @@
   .prose a {
     font-weight: 500;
   }
+  /* The reading-surface focus ring, matching the chrome and the styleguide (2px primary, 2px offset).
+     A tinted callout ground shares the primary hue, so the same-hue ring can wash out against it; a
+     4px page-coloured halo under the ring keeps it readable on every ground (the focus-visible
+     criterion). */
+  .prose a:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: 2px;
+    box-shadow: 0 0 0 4px var(--color-base-100);
+  }
 
   /* --------------------------------------------------------------------------
      Blockquote: a 3px accent left rule, italic, slightly recessed ink. The
@@ -316,15 +326,15 @@
     background: color-mix(in oklab, var(--color-primary) 5%, var(--color-base-100));
   }
   .prose .callout-note {
-    border-left-color: var(--color-info-ink);
+    border-left-color: var(--cairn-info-ink);
     background: color-mix(in oklab, var(--color-info) 10%, var(--color-base-100));
   }
   .prose .callout-tip {
-    border-left-color: var(--color-success-ink);
+    border-left-color: var(--cairn-success-ink);
     background: color-mix(in oklab, var(--color-success) 7%, var(--color-base-100));
   }
   .prose .callout-warning {
-    border-left-color: var(--color-warning-ink);
+    border-left-color: var(--cairn-warning-ink);
     background: color-mix(in oklab, var(--color-warning) 9%, var(--color-base-100));
   }
   .prose .callout-title {
@@ -332,13 +342,13 @@
     margin: 0 0 0.3rem;
   }
   .prose .callout-note .callout-title {
-    color: var(--color-info-ink);
+    color: var(--cairn-info-ink);
   }
   .prose .callout-tip .callout-title {
-    color: var(--color-success-ink);
+    color: var(--cairn-success-ink);
   }
   .prose .callout-warning .callout-title {
-    color: var(--color-warning-ink);
+    color: var(--cairn-warning-ink);
   }
   .prose .callout-body > * {
     margin: 0;
@@ -359,14 +369,14 @@
     grid-template-columns: none;
     --flow-space: var(--cairn-space-m);
     border: var(--border) solid var(--cairn-card-border);
-    border-left: 3px solid var(--color-info-ink);
+    border-left: 3px solid var(--cairn-info-ink);
     border-radius: var(--radius-box);
     padding: 0;
     background: color-mix(in oklab, var(--color-info) 8%, var(--color-base-100));
     color: var(--color-base-content);
   }
   .prose .alert-caution {
-    border-left-color: var(--color-warning-ink);
+    border-left-color: var(--cairn-warning-ink);
     background: color-mix(in oklab, var(--color-warning) 9%, var(--color-base-100));
   }
   .prose .alert .card-body {
@@ -383,17 +393,17 @@
     font-weight: 650;
     font-size: var(--cairn-step-0);
     margin: 0;
-    color: var(--color-info-ink);
+    color: var(--cairn-info-ink);
   }
   .prose .alert-caution .card-title {
-    color: var(--color-warning-ink);
+    color: var(--cairn-warning-ink);
   }
   .prose .alert .ec-icon {
     display: inline-flex;
-    color: var(--color-info-ink);
+    color: var(--cairn-info-ink);
   }
   .prose .alert-caution .ec-icon {
-    color: var(--color-warning-ink);
+    color: var(--cairn-warning-ink);
   }
   .prose .alert .ec-glyph {
     width: 1.1em;

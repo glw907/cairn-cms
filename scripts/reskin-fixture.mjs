@@ -8,14 +8,18 @@
 // rewritten theme and asserts every pair still clears AA. It also proves the prose reading surface has
 // no second colour source: prose.css carries no colour literal, and every colour-bearing property
 // reads a `--color-*`/`--cairn-*` token, so the prose re-skins from the same set at zero extra edits.
+// Finally it proves every token the prose surface and the code ramp REFERENCE is actually defined: a
+// reference that reads the right NAMESPACE but no real token (a `var(--color-info-ink)` where only
+// `--cairn-info-ink` exists) passes the single-source prefix match yet resolves to nothing, so the
+// resolution check is what turns a dangling reference into a red gate.
 //
-// Wired as `npm run test:reskin`. Exits non-zero if the rotated theme drops a pair or prose holds a
-// second colour source.
+// Wired as `npm run test:reskin`. Exits non-zero if the rotated theme drops a pair, prose holds a
+// second colour source, or a referenced token has no definition.
 import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { checkThemeContrast, formatContrastTable } from './check-public-tokens.mjs';
+import { checkThemeContrast, formatContrastTable, checkTokenResolution } from './check-public-tokens.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const THEME_CSS = resolve(ROOT, 'examples/showcase/src/lib/theme.css');
@@ -127,6 +131,20 @@ function main() {
     failed = true;
   } else {
     console.log('Prose single-source: PASS (prose.css reads only --color-*/--cairn-* tokens; no second colour source)');
+  }
+
+  // 3. Prove every token the prose surface and the code ramp reference is defined. The single-source
+  //    check above only proves a colour reads SOME `--color-*`/`--cairn-*` token; a reference to a
+  //    token that no block defines reads the right namespace yet resolves to nothing. This runs against
+  //    the live on-disk theme and prose (the hue rotation changes only a value, never a token name).
+  const dangling = checkTokenResolution(original, readFileSync(PROSE_CSS, 'utf8'));
+  console.log('');
+  if (dangling.length) {
+    console.error(`Token resolution: FAIL (${dangling.length} reference(s) resolve to no definition)`);
+    for (const d of dangling) console.error(`  ${d.source}: var(${d.token}) is referenced but never defined`);
+    failed = true;
+  } else {
+    console.log('Token resolution: PASS (every var(--token) in prose.css and the code ramp is defined)');
   }
 
   process.exit(failed ? 1 : 0);

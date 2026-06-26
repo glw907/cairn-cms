@@ -11,7 +11,25 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-26, latest): BOTH hardening passes DONE (Plan 1 = 0.67.0, Plan 2 = 0.68.0), merged to `main`; NEXT = draft the Contract v2 cutover and gate it on Geoff's review
+## Immediate next action (2026-06-26, latest): Contract v2 cutover PLANNED + review-gate PASSED; EXECUTE `docs/superpowers/plans/2026-06-26-cairn-contract-v2-cutover.md` on a worktree off `main`
+
+**The Contract v2 cutover is drafted, the review gate is passed (Geoff 2026-06-26), and execution is starting.**
+Plan: `docs/superpowers/plans/2026-06-26-cairn-contract-v2-cutover.md` (11 tasks, target **0.69.0**,
+breaking-within-0.x). Authored from a planning workflow (8 seam-specs → 3-lens adversarial hazard sweep →
+Opus synthesis). **Method:** main-loop orchestrate-and-verify on a feature worktree off `main`, test-first.
+The load-bearing wrinkle the hazard sweep forced: **the cutover is one atomic compile unit — tasks 4-9 do
+NOT gate green individually** (retyping `ConceptConfig.schema`→`Fieldset` + deleting the v1 union breaks
+every `src/lib` consumer and the shared test fixture at once, and `check` is 0-warnings, so no mid-migration
+green state exists). Protocol: tasks 1-3 are additive and gated; tasks 4-9 are one atomic change set (write
+the new v2 tests red, migrate every source + test consumer in lockstep, delete `schema.ts`/`validate.ts`
+only after their last consumer, gate ONCE at task 9); tasks 10-11 rebuild dist + migrate the showcase, then
+the single full gate + docs. Decision approved at the gate: datetime ships naive-local (`YYYY-MM-DDTHH:mm`,
+round-tripped as quoted text); the rest of the locked decisions in the plan's "Locked decisions" section
+stand. See [[cairn-site-contract-v2-opportunity]].
+
+---
+
+### Prior: BOTH hardening passes DONE (Plan 1 = 0.67.0, Plan 2 = 0.68.0), merged to `main` and PUBLISHED
 
 **Both pre-cutover engine-hardening passes are done, merged to `main`, and PUBLISHED.** `0.68.0` is live
 on npm as `@glw907/cairn-cms@0.68.0` (`latest`), rolling up the held `0.63.0`-`0.68.0` window (dev-package

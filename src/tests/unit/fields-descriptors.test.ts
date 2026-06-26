@@ -20,3 +20,14 @@ describe('fields.number', () => {
       .toEqual({ type: 'number', label: 'Rating', min: 1, max: 5, integer: true });
   });
 });
+
+describe('fields select/multiselect', () => {
+  it('select carries a closed option list', () => {
+    expect(fields.select({ label: 'Status', options: ['draft', 'published'], default: 'draft' }))
+      .toEqual({ type: 'select', label: 'Status', options: ['draft', 'published'], default: 'draft' });
+  });
+  it('multiselect supports creatable and the taxonomy marker', () => {
+    expect(fields.multiselect({ label: 'Topics', creatable: true, taxonomy: true }))
+      .toEqual({ type: 'multiselect', label: 'Topics', creatable: true, taxonomy: true });
+  });
+});

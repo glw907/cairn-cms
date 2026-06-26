@@ -28,8 +28,24 @@ export interface NumberField extends FieldBase {
   /** Constrain the value to whole numbers. */
   integer?: boolean;
 }
+/** A single-choice input over a closed option list. */
+export interface SelectField extends FieldBase {
+  type: 'select';
+  /** The closed set of allowed values. */
+  options: readonly string[];
+}
+/** A multiple-choice input. */
+export interface MultiselectField extends FieldBase {
+  type: 'multiselect';
+  /** The allowed values; omitted leaves the set open. */
+  options?: readonly string[];
+  /** Allow the author to add values not in the list. */
+  creatable?: boolean;
+  /** Mark the field as a site-wide taxonomy whose values pool across entries. */
+  taxonomy?: boolean;
+}
 /** The plain-data descriptor union the form, validator, and inference all read. Grows per task. */
-export type FieldDescriptor = TextField | TextareaField | NumberField;
+export type FieldDescriptor = TextField | TextareaField | NumberField | SelectField | MultiselectField;
 
 /** The constructor namespace a concept declares its fields with. */
 export const fields = {
@@ -39,4 +55,8 @@ export const fields = {
   textarea: (o: Omit<TextareaField, 'type'>): TextareaField => ({ type: 'textarea', ...o }),
   /** A numeric field. */
   number: (o: Omit<NumberField, 'type'>): NumberField => ({ type: 'number', ...o }),
+  /** A single-choice field over a closed option list. */
+  select: (o: Omit<SelectField, 'type'>): SelectField => ({ type: 'select', ...o }),
+  /** A multiple-choice field. */
+  multiselect: (o: Omit<MultiselectField, 'type'>): MultiselectField => ({ type: 'multiselect', ...o }),
 };

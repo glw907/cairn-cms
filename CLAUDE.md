@@ -78,6 +78,14 @@ friction that writing a doc surfaces, from the developer and editor perspectives
 [`ROADMAP.md`](ROADMAP.md) and [`docs/STATUS.md`](docs/STATUS.md). This repo keeps no separate backlog
 file.
 
+[`ROADMAP.md`](ROADMAP.md) is itself a pass dimension, not a write-once file. A pass that ships a
+roadmap item marks it done and removes it from the live tiers, and a pass that surfaces a new direction
+files it into the right tier, the same way the pass updates its reference docs. The friction log and the
+roadmap both drift heavy when work is only ever added, never pruned (the engine-hardening initiative had
+to prune a stale friction log that resurfaced a killed feature), so a pass that removes or renames a
+backlog item is not done until the roadmap stops listing it. Shipped history lives in `docs/STATUS.md`
+and the per-plan post-mortems, not in the roadmap.
+
 Two production sites depend on the package, so a stale doc costs real users. Treat the docs update as
 part of the work, not a chore after it. See the `docs-is-a-pass-dimension` memory.
 

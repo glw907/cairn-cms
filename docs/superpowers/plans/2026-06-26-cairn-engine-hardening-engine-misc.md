@@ -1,9 +1,12 @@
 # Engine hardening, Plan 2: engine-misc hardening
 
-> **For agentic workers:** Execute task-by-task. Execution is a workflow in a fresh session. These tasks
-> are independent (each touches distinct files), so the workflow runs them in PARALLEL with a final
-> barrier gate, EXCEPT Task 6 touches `package.json`, so serialize anything else that touches it. The main
-> loop reviews the aggregate diff and clears the full gate before merging. Steps use checkbox (`- [ ]`).
+> **For agentic workers:** Execute task-by-task. Execution is a workflow in this session, on one feature
+> worktree off `main`. The tasks are independent (each touches a distinct file), so the order is free, but
+> they run as a sequential `cairn-implementer` chain: one verified dispatch at a time in the shared
+> worktree, never concurrent commits (a shared git index cannot take parallel commits). The two
+> version-sensitive tasks (Task 6 the `check:dev-package` script, Task 8 the lockfile + 0.68.0 bump) run
+> last. The main loop reviews each diff and clears the full gate before the next dispatch. Steps use
+> checkbox (`- [ ]`).
 
 **Goal:** Clear the verified engine-misc hardening backlog: an accessibility and design-system fix, a
 component-authoring DX gap, three gate/doc-hygiene items, and a cosmetic sync, each surfaced and located
@@ -22,10 +25,11 @@ deliverable with its own verification surface.
 - Every exported symbol gets a minimal one-line TSDoc; no `{type}` tags; no em dash in comments.
 - `.svelte` and CSS changes follow `docs/internal/admin-design-system.md`: `data-theme` on a bare
   wrapper, scoped overrides in `@layer components`, the dialog-sizing recipe.
-- The full gate before "done" (run once at the barrier, after all tasks): `npm run check` 0/0, `npm test`
-  exit 0, `npm run check:comments`, and the doc gates (`check:reference`, `check:reference:signatures`,
-  `check:package`, `check:docs`). For the `/admin` UI tasks (1-2), fan out `daisyui-a11y-reviewer` and
-  `svelte-reviewer` at the review gate.
+- The full gate before each task is "done": the task's targeted test (or named gate) passes, `npm run
+  check` 0/0, `npm test` exit 0, and `npm run check:comments`. The doc gates (`check:reference`,
+  `check:reference:signatures`, `check:package`, `check:docs`, `check:version`) and the
+  `daisyui-a11y-reviewer` + `svelte-reviewer` fan-out for the `/admin` UI tasks (1-2) run at the pass-end
+  review gate.
 - The worktree needs `npm run package` before `npm test`. A graph-changing `package.json` edit (Task 6
   adds a script, not a dependency) needs no lockfile regeneration; Task 8 owns the lockfile version sync.
 
@@ -168,19 +172,23 @@ log no longer resurfaces dead work (the writing-coach entry at `:420-426` being 
 
 ---
 
-### Task 8: Sync the lockfile version
+### Task 8: Bump to 0.68.0 and sync the lockfile self-version
 
 **Files:**
-- Modify: `examples/showcase/package-lock.json` is NOT this; the ROOT `package-lock.json` self-version
+- Modify: `package.json` (`version` → `0.68.0`)
+- Modify: the ROOT `package-lock.json` self-version (NOT `examples/showcase/package-lock.json`): the
+  top-level `version` (~line 3) and `packages[""].version` (~line 10), both lagging at `0.64.0`
 
-**Verification:** the root `package-lock.json` root `version` and `packages[""].version` read `0.66.0`,
-matching `package.json`; `npm ci` still resolves (the dependency graph is unchanged).
+**Verification:** `npm run check:version` reports OK (a clean minor bump from `0.67.0`); `npm run
+check:package` passes; `git diff package-lock.json` shows only the two self-version lines changed.
 
-- [ ] **Step 1** Set the two `version` fields in the root `package-lock.json` (top-level and
-  `packages[""]`) from `0.64.0` to `0.66.0`. Do NOT regenerate the lockfile (the graph is current); edit
-  only the two self-version strings.
-- [ ] **Step 2** Run `npm ci --dry-run` (or confirm `npm ci` resolves) to verify the lock is still valid.
-- [ ] **Step 3: Commit** — `git commit -m "chore: sync package-lock self-version to 0.66.0"`
+- [ ] **Step 1** Set `package.json` `"version"` to `"0.68.0"`. Set the two self-version fields in the root
+  `package-lock.json` (the top-level `version` and `packages[""].version`) from `0.64.0` to `0.68.0`. Do
+  NOT regenerate the lockfile and do NOT run `npm install` (it would disturb the symlinked
+  `node_modules`); the graph is unchanged, so edit only the three self-version strings.
+- [ ] **Step 2** Run `npm run check:version` (expect OK, minor) and `npm run check:package`. Confirm `git
+  diff package-lock.json` touches only the two self-version lines.
+- [ ] **Step 3: Commit** — `git commit -m "build: bump to 0.68.0 and sync the lockfile self-version"`
 
 ---
 
@@ -199,8 +207,10 @@ matching `package.json`; `npm ci` still resolves (the dependency graph is unchan
 
 ## Execution
 
-A workflow in a fresh session. The tasks are independent, so run them in parallel (each on distinct
-files), then a single barrier gate: `npm run check` 0/0, `npm test` exit 0, `check:comments`, the four doc
-gates, and the `daisyui-a11y-reviewer` + `svelte-reviewer` fan-out for Tasks 1-2. Serialize Task 6
-against any other `package.json` writer. This pass follows Plan 1 (validator parity); the Contract v2
-cutover follows both.
+A workflow in this session, on one worktree off `main`. The tasks are independent but run as a sequential
+`cairn-implementer` chain (one verified dispatch at a time; a shared worktree cannot take concurrent
+commits), with the version-sensitive Tasks 6 and 8 last. Each task clears the full gate before the next
+dispatch; the doc gates and the `daisyui-a11y-reviewer` + `svelte-reviewer` fan-out (Tasks 1-2) run at the
+pass-end review gate. The worktree needs `npm run package` before `npm test`. This pass follows Plan 1
+(validator parity); the Contract v2 cutover follows both and is gated on Geoff's review (it is breaking and
+high-blast-radius).

@@ -11,20 +11,38 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-26, latest): engine hardening BEFORE the cutover; NEXT = execute hardening Plan 1 (validator parity) via a workflow in a fresh session
+## Immediate next action (2026-06-26, latest): hardening Plan 1 (validator parity) DONE as 0.67.0; NEXT = draft + execute hardening Plan 2 (engine-misc) via a workflow
 
-**Contract v2 Plan 1 (the additive `fields.*` field foundation) is merged to `main`** (2026-06-25,
-fast-forward to `75f91e2`; unpushed, no npm publish yet; the worktree and branch are removed). All 10
-tasks landed, plus a simplify, a fresh-review fix, and the release docs (13 commits). The additive vocabulary is the 11
-plain-data descriptors with generic literal-preserving constructors, `fieldset()` with a server-derived
-validator and Standard Schema, the `Infer`/`InferFieldset` inference, `initialValues` with injected-clock
-`'today'` resolution, and 8 root-barrel exports documented in `core.md`. It sits beside v1 `defineFields`;
-nothing is wired live. The engine bumps to `0.66.0`. Plan + post-mortem:
+**Hardening Plan 1 (validator/fields parity + unification) is done on the
+`feat/engine-hardening-validator-parity` worktree, merged to `main`** (fast-forward; unpushed, no npm
+publish yet). The two validators now single-source their constraint logic in the internal
+`src/lib/content/field-rules.ts` (`compilePattern`, `stringLengthError`, `patternError`,
+`dateBoundsError`). v1's `applyRules`/`compilePatterns` delegate to it unchanged; v2's `fieldset`
+validator gained text `min`/`max`/`length`/`pattern`, date `min`/`max`, declaration-time pattern compile,
+parsed-YAML symmetry (numeric `number` with finite `0`, `Date` on `datetime`), and multiselect
+lone-scalar coercion. A v1-vs-v2 parity matrix (`validator-parity.test.ts`) proves the two agree on the
+overlapping types and guards against future drift. Still additive, nothing wired live. The engine bumps
+to `0.67.0`. Plan + post-mortem:
+`docs/superpowers/plans/2026-06-26-cairn-engine-hardening-validator-parity.md`.
+
+**Verified.** `npm test` exit 0 (2524); `npm run check` 0/0; `check:comments`, `check:reference`,
+`check:reference:signatures`, `check:package`, `check:docs`, `check:version` (minor) all green. The
+code-simplifier extracted `coerceToText` and destructured the constraint helpers (behavior unchanged); the
+gate stayed green after.
+
+**NEXT: draft + execute hardening Plan 2 (engine-misc, parallelizable), then the Contract v2 cutover.**
+The Plan 2 items (each independent, located by the verification sweep): the component picker 85vh cap, the
+error live-region re-announce, `ComponentDef.icon` guidance + engine default icons, the rehype-dispatch
+JSDoc, the admin-prose gate blind spot, the owed `check:dev-package` gate, the friction-log prune, and the
+lockfile version sync. Spec: `docs/superpowers/specs/2026-06-26-cairn-engine-hardening-design.md` (Pass 2
+section). Plan to write just-in-time:
+`docs/superpowers/plans/2026-06-26-cairn-engine-hardening-engine-misc.md`. Because its items are mostly
+independent, Plan 2 runs with more parallelism than Plan 1's sequential chain.
+
+**The prior Contract v2 Plan 1 (the additive `fields.*` field foundation)** merged to `main` 2026-06-25
+(`75f91e2`) as `0.66.0`: the 11 plain-data descriptors, `fieldset()` with a server-derived validator and
+Standard Schema, `Infer`/`InferFieldset`, `initialValues`, and 8 root-barrel exports. Plan + post-mortem:
 `docs/superpowers/plans/2026-06-25-cairn-contract-v2-field-foundation.md`.
-
-**Verified.** `npm test` exit 0 (2508); `npm run check` 0/0; `check:comments`, `check:reference`,
-`check:reference:signatures`, `check:package`, `check:docs`, `check:version` (minor) all green. A
-fresh-eyes review caught and fixed two validator gaps (non-finite numbers, multi-at-sign emails).
 
 **Design context (unchanged).** A pre-pass adversarial review (nine-tool sentiment sweep) became the full
 Contract v2 design: the composable `fields.*` vocabulary, references on the id-stable content graph,
@@ -43,37 +61,23 @@ catching a stale friction-log entry that resurfaced a killed feature (the point-
 discarded 2026-06-23 as the Clippy pattern). The hardening is two passes; the spec is
 `docs/superpowers/specs/2026-06-26-cairn-engine-hardening-design.md`.
 
-- **Hardening Plan 1 (the cutover's spine): validator/fields parity + unification.** Folds in the four
-  Plan 1 carry-forwards: text/date constraint parity through a shared `field-rules` module both validators
-  call (HIGH, the new validator cannot replace `defineFields` until it matches), parsed-YAML input
-  symmetry, the multiselect lone-scalar coercion (decided: coerce to a single-element list), and the
-  validator unification, gated by a v1-vs-v2 parity matrix. Plan:
+- **Hardening Plan 1 (the cutover's spine): validator/fields parity + unification.** DONE as `0.67.0`
+  (see the immediate-next-action block above). Plan + post-mortem:
   `docs/superpowers/plans/2026-06-26-cairn-engine-hardening-validator-parity.md`.
-- **Hardening Plan 2: engine-misc.** The independent items: the component picker 85vh cap, the error
+- **Hardening Plan 2: engine-misc.** NEXT. The independent items: the component picker 85vh cap, the error
   live-region re-announce, `ComponentDef.icon` guidance + engine default icons, the rehype-dispatch JSDoc,
   the admin-prose gate blind spot, the owed `check:dev-package` gate, the friction-log prune, and the
-  lockfile version sync. Plan:
+  lockfile version sync. Plan to write just-in-time:
   `docs/superpowers/plans/2026-06-26-cairn-engine-hardening-engine-misc.md`.
-
-**NEXT (fresh session, the user is clearing context): execute hardening Plan 1 via a workflow.** Resume
-prompt to paste in a new session launched in `~/Projects/cairn-cms`:
-
-> Execute Engine Hardening Plan 1, the validator/fields parity + unification:
-> `docs/superpowers/plans/2026-06-26-cairn-engine-hardening-validator-parity.md` (spec:
-> `docs/superpowers/specs/2026-06-26-cairn-engine-hardening-design.md`). First of two pre-cutover
-> hardening passes. Execute via a workflow: create a worktree off `main`
-> (`git worktree add ../cairn-cms-hardening -b feat/engine-hardening-validator-parity main`), symlink
-> `node_modules`, `npm run package`, then run Part A as a sequential pipeline (each task test-first, Task 6
-> the parity matrix as the verify stage), full gate per task. `cairn-pass` is the entry point. After it
-> lands, draft + execute hardening Plan 2 (engine-misc, parallelizable), then the Contract v2 cutover.
 
 **After the hardening: the Contract v2 cutover** wires `fields.*`/`fieldset` into the live editor,
 validator, delivery, and manifest, migrates the showcase off `defineFields`, and removes
 `FrontmatterField`/`defineFields`/`validate.ts`. Plan series after the cutover: references → object/array +
 adapter + component unification → backend → render + islands.
 
-**Version note:** Plan 1 took `0.66.0`. The hardening passes take the next minors; the deferred pre-B3
-engine/DX slot re-numbers when it resumes after the contract stabilizes.
+**Version note:** Contract v2 Plan 1 took `0.66.0`; hardening Plan 1 took `0.67.0`. Hardening Plan 2 takes
+the next minor; the deferred pre-B3 engine/DX slot re-numbers when it resumes after the contract
+stabilizes.
 
 **Infra (2026-06-26):** Vale is scoped to published docs only (the in-tree `.vale.ini` excludes
 `docs/superpowers/**`, `docs/internal/**`, STATUS, and the loose feedback notes; the global `vale-hook`

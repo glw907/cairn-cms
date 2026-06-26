@@ -629,3 +629,14 @@ validator with Standard Schema conformance and an inferred type. The new root-ba
 `fields`, `fieldset`, `initialValues`, `FieldDescriptor`, `Fieldset`, `InferFieldset`, `FieldsetOptions`,
 and `BehaviorTable`. Consumers must: nothing. The vocabulary doesn't yet wire into the adapter or
 editor. The contract-v2 cutover, a later breaking release, names the migration off `defineFields` then.
+
+## 0.67.0: the `fieldset` validator reaches `defineFields` constraint parity
+
+The Contract v2 `fieldset` validator now enforces the constraints it previously accepted but ignored: a
+`text` or `textarea` field's `min`, `max`, `length`, and `pattern`, and a `date` field's `min` and
+`max`, with the same messages `defineFields` produces. A malformed `pattern` fails at `fieldset()` call
+time rather than on every save. The validator also accepts a parsed value, not only a form string (a
+numeric `number`, a `Date` on a `datetime` field), and a `multiselect` given a lone scalar coerces it to
+a single-element list. Consumers must: nothing. The `fieldset` surface is still additive and not yet
+wired live, and the change brings it in line with the long-standing `defineFields` checks. A site already
+relying on `fieldset` directly sees stricter, correct validation it would have wanted.

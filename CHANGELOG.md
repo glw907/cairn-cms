@@ -2,6 +2,26 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.67.0
+
+<!-- release-size: minor -->
+
+The Contract v2 `fieldset` validator reaches constraint parity with `defineFields`, the first of two
+pre-cutover engine-hardening passes. Both validators now call one shared constraint module, so they
+cannot drift, and a v1-vs-v2 parity matrix proves they agree on the overlapping field types.
+
+The `fieldset` validator gains the checks it lacked. A `text` or `textarea` field now enforces its
+`min`, `max`, `length`, and `pattern`, and a `date` field enforces its `min` and `max`, with the same
+messages `defineFields` produces. A malformed `pattern` now fails at `fieldset()` call time, not on
+every save, the way `defineFields` already compiled patterns at declaration. The validator also reads a
+parsed value, not only a form string: a numeric `number` (a finite `0` included), a `Date` on a
+`datetime` field, the way the `date` field already coerced a parsed `Date`. A `multiselect` given a lone
+scalar (a single hand-edited `tags: news`) coerces it to a single-element list rather than dropping it
+or reporting a misleading "required".
+
+No consumer action is required. The `fieldset` surface is still additive and not yet wired into the
+adapter or editor, and the new behavior brings it in line with the long-standing `defineFields` checks.
+
 ## 0.66.0
 
 <!-- release-size: minor -->

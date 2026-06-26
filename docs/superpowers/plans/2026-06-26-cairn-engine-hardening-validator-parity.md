@@ -311,3 +311,39 @@ A workflow in a fresh session (after a context clear). Part A is sequential (the
 Task 6 as the verify stage. The worktree needs `npm run package` before `npm test`, and a graph-changing
 `package.json` edit (none expected here) commits its regenerated lockfile in the same commit. After this
 plan lands, Plan 2 (engine-misc hardening) is written just-in-time.
+
+---
+
+## Post-mortem (2026-06-26, shipped as 0.67.0)
+
+**What was built.** All six tasks landed as a sequential `cairn-implementer` workflow chain on the
+`feat/engine-hardening-validator-parity` worktree, each test-first with the full gate per task, plus a
+code-simplifier pass and the docs. The v1 and v2 validators now single-source their constraint logic in
+`src/lib/content/field-rules.ts` (`compilePattern`, `stringLengthError`, `patternError`,
+`dateBoundsError`, four pure functions). v1's `applyRules`/`compilePatterns` delegate to it with no
+behavior change; v2's `fieldset` validator gained text `min`/`max`/`length`/`pattern`, date `min`/`max`,
+declaration-time pattern compilation (a malformed pattern throws at `fieldset()`), parsed-YAML symmetry
+(a numeric `number` with a finite `0`, a `Date` on a `datetime`), and multiselect lone-scalar coercion
+(`'news'` becomes `['news']`). The `validator-parity.test.ts` matrix feeds equivalent v1 and v2 schemas
+identical inputs over the overlapping types and asserts identical results; it passed first run.
+
+**What was verified (evidence).** `npm test` exit 0 (2524 tests, 237 files); `npm run check` 0/0;
+`check:comments` OK; the three new test files 22/22. Doc gates: `check:reference`,
+`check:reference:signatures`, `check:package`, `check:docs`, `check:version` (minor) all exit 0. Gate
+re-run after the simplifier refinements stayed green. The worktree `ERR_MODULE_NOT_FOUND` on the showcase
+svelte.config adapter is the documented symlinked-`node_modules` artifact, not a type error; `check` still
+reports 0/0 on `src`.
+
+**Decisions locked.** The shared module is internal (no package export), so `check:reference` does not
+require it and its API stays free to grow; the constraint wording is the public-observable contract the
+parity matrix guards. One intentional v1-vs-v2 difference remains and is correct: the construction-time
+bad-pattern error shows `field.name` in v1 (its descriptors carry a `name`) and `field.label` in v2 (its
+descriptors are keyed by record key and carry a `label`). This is a developer-facing config throw, not a
+validation result, so it sits outside the parity matrix (which compares `validate()` output) by design.
+Datetime bounds stay deferred: v1 has no datetime equivalent to reach parity against.
+
+**Commits.** `791d65c` (field-rules + v1 delegation), `38e1671` (v2 text length/pattern), `265a89d` (v2
+date bounds), `7c5525d` (parsed-YAML symmetry), `d85921a` (multiselect scalar), `fe71394` (parity
+matrix), `3d7fee2` (simplifier refinements), plus the docs/version commit.
+
+**Blockers.** None. Next: hardening Plan 2 (engine-misc, parallelizable), then the Contract v2 cutover.

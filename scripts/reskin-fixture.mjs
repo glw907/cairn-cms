@@ -19,7 +19,12 @@ import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { checkThemeContrast, formatContrastTable, checkTokenResolution } from './check-public-tokens.mjs';
+import {
+  checkThemeContrast,
+  formatContrastTable,
+  checkTokenResolution,
+  COLOR_LITERAL,
+} from './check-public-tokens.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const THEME_CSS = resolve(ROOT, 'examples/showcase/src/lib/theme.css');
@@ -61,8 +66,6 @@ function checkProseSecondSource() {
   const lines = readFileSync(PROSE_CSS, 'utf8').split('\n');
   /** @type {string[]} */
   const violations = [];
-  // A literal colour anywhere in prose.css is a second source outright.
-  const literal = /#[0-9a-fA-F]{3,8}\b|(?:rgba?|hsla?|oklch)\s*\(/;
   // The colour-bearing property declarations. `border`/`border-<side>` shorthands carry a colour;
   // the non-colour border longhands (radius, collapse, spacing, width, style, image) are excluded by
   // the negative lookahead, so a `border-radius: var(--radius-box)` is not mistaken for a colour.
@@ -73,7 +76,7 @@ function checkProseSecondSource() {
 
   lines.forEach((raw, i) => {
     const line = raw.trim();
-    if (literal.test(line)) {
+    if (COLOR_LITERAL.test(line)) {
       violations.push(`prose.css:${i + 1}  colour literal (second source): ${line}`);
       return;
     }

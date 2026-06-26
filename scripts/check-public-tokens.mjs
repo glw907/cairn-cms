@@ -32,8 +32,9 @@ const PROSE_CSS = resolve(ROOT, 'examples/showcase/src/lib/prose.css');
 // A literal colour in any of CSS's literal colour syntaxes. `oklch(` is matched with its trailing `c`
 // so the legitimate `color-mix(in oklab, <token>, ...)` colour-space keyword (which carries no literal)
 // is NOT flagged. A `var(--...)` reference and a DaisyUI/Tailwind semantic utility carry no literal and
-// so never match. The `#hex` form matches 3, 4, 6, or 8 hex digits at a token boundary.
-const COLOR_LITERAL = /#[0-9a-fA-F]{3,8}\b|(?:rgba?|hsla?|oklch)\s*\(/;
+// so never match. The `#hex` form matches 3, 4, 6, or 8 hex digits at a token boundary. Exported so the
+// re-skin fixture's prose single-source check applies the identical literal rule.
+export const COLOR_LITERAL = /#[0-9a-fA-F]{3,8}\b|(?:rgba?|hsla?|oklch)\s*\(/;
 
 // A hard-coded ABSOLUTE font-size: a Tailwind arbitrary text-size utility whose bracket holds a bare
 // px or rem number (matched by ARBITRARY_FONT_SIZE), or a `font-size:` declaration whose value is an

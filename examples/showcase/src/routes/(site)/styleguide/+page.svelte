@@ -130,35 +130,26 @@ or extend it; nothing here is a literal a re-skin would miss.
       <code>theme.css</code>; every surface reads them, so the whole site recolors together.
     </p>
 
+    <!-- One swatch grid per role group, each a labeled chip painted from its own token. -->
+    {#snippet swatchGrid(items: Swatch[])}
+      <div class="sg-swatches">
+        {#each items as s (s.token)}
+          <figure class="sg-swatch">
+            <div class="sg-chip" style="background: var({s.token})"></div>
+            <figcaption class="sg-swatch-label">{s.label}</figcaption>
+          </figure>
+        {/each}
+      </div>
+    {/snippet}
+
     <h3 class="sg-h3">Base ladder</h3>
-    <div class="sg-swatches">
-      {#each baseLadder as s (s.token)}
-        <figure class="sg-swatch">
-          <div class="sg-chip" style="background: var({s.token})"></div>
-          <figcaption class="sg-swatch-label">{s.label}</figcaption>
-        </figure>
-      {/each}
-    </div>
+    {@render swatchGrid(baseLadder)}
 
     <h3 class="sg-h3">Brand and neutral</h3>
-    <div class="sg-swatches">
-      {#each brandRoles as s (s.token)}
-        <figure class="sg-swatch">
-          <div class="sg-chip" style="background: var({s.token})"></div>
-          <figcaption class="sg-swatch-label">{s.label}</figcaption>
-        </figure>
-      {/each}
-    </div>
+    {@render swatchGrid(brandRoles)}
 
     <h3 class="sg-h3">Status fills and their content</h3>
-    <div class="sg-swatches">
-      {#each statusRoles as s (s.token)}
-        <figure class="sg-swatch">
-          <div class="sg-chip" style="background: var({s.token})"></div>
-          <figcaption class="sg-swatch-label">{s.label}</figcaption>
-        </figure>
-      {/each}
-    </div>
+    {@render swatchGrid(statusRoles)}
 
     <h3 class="sg-h3">On-surface inks</h3>
     <p class="sg-note">

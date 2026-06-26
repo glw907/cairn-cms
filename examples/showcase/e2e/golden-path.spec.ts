@@ -469,6 +469,9 @@ test('the v2 status select round-trips: set it, save, reload, the value persists
   await expect(page).toHaveURL(/new=1/, { timeout: 10_000 });
   const id = new URL(page.url()).pathname.split('/').pop() ?? '';
 
+  // Every field but the title lives behind the Details slide-over (closed by default), so open it.
+  await page.getByRole('button', { name: 'Details' }).click();
+
   // The status select renders from the v2 fields.select arm, labelled by its field label, and the
   // default seeds it to draft on a fresh entry.
   const statusSelect = page.getByRole('combobox', { name: 'Status' });
@@ -493,6 +496,7 @@ test('the v2 status select round-trips: set it, save, reload, the value persists
   // Reload the editor from the list. The load reads the committed frontmatter back through
   // formValues, and the select renders its persisted value: the new arm round-tripped end to end.
   await page.goto(`/admin/posts/${id}`);
+  await page.getByRole('button', { name: 'Details' }).click();
   const reloadedSelect = page.getByRole('combobox', { name: 'Status' });
   await expect(reloadedSelect).toBeVisible();
   await expect(reloadedSelect).toHaveValue('published');

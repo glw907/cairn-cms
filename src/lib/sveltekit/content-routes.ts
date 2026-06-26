@@ -1016,7 +1016,9 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       // A hero is a nested object; the default String() arm would corrupt it to '[object Object]'.
       // Hand the stored object back as-is so the editor reads .src/.alt/.caption on open.
       else if (field.type === 'image') out[field.name] = value !== null && typeof value === 'object' ? value : undefined;
-      else out[field.name] = typeof value === 'string' ? value : value == null ? '' : String(value);
+      // Every other type is a plain string input: a nullish value reads as empty, anything else
+      // stringifies (a string passes through unchanged).
+      else out[field.name] = value == null ? '' : String(value);
     }
     return out;
   }

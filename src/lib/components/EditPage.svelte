@@ -1922,7 +1922,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
             <select class="select select-sm" name={f.name} aria-label={f.label} aria-describedby={f.help ? `${f.name}-hint` : undefined} required={f.required}>
               <!-- A leading empty option submits '' (the key is dropped on save); a required select
                    leaves it unselected so an unset value fails the required check with a clear message. -->
-              <option value="" selected={str(data.frontmatter[f.name]) === ''}>&mdash; none &mdash;</option>
+              <option value="">&mdash; none &mdash;</option>
               {#each f.options as option (option)}
                 <option value={option} selected={str(data.frontmatter[f.name]) === option}>{option}</option>
               {/each}
@@ -2006,7 +2006,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
               name={f.name}
               aria-label={f.label}
               aria-describedby={f.help ? `${f.name}-hint` : undefined}
-              placeholder={f.placeholder}
+              placeholder={f.placeholder ?? (f.help ? undefined : 'Separate values with commas')}
               value={tagValue}
             />
             {#if f.help}

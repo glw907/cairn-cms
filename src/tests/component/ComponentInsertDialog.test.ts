@@ -114,6 +114,18 @@ describe('ComponentInsertDialog catalog', () => {
     await expect.element(screen.getByText(/^Callout$/)).toBeInTheDocument();
   });
 
+  it('caps the dialog box height per the design system', async () => {
+    const reg = defineRegistry({ components: [schemaDef, alertDef, gridDef] });
+    const screen = render(ComponentInsertDialog, { registry: reg, insert: () => {}, icons } as never);
+    await screen.getByRole('button', { name: /insert block/i }).click();
+    // The box carries the capped-height hook, and the catalog body is the scroll container so the
+    // header holds while the list scrolls within the 85vh cap.
+    const box = document.querySelector('.modal-box');
+    expect(box?.classList.contains('cairn-pk-box')).toBe(true);
+    const list = document.querySelector('[data-cairn-pk-list]');
+    expect(list?.className).toMatch(/overflow-y-auto/);
+  });
+
   it('inserts a template-only def directly', async () => {
     const insert = vi.fn();
     const screen = render(ComponentInsertDialog, { registry, insert, icons } as never);

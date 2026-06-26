@@ -317,11 +317,12 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
 
 {#if defs.length > 0}
   <dialog class="modal" aria-labelledby="cairn-insert-dialog-title" bind:this={dialog} onclose={onClose} oncancel={onCancel}>
-    <div class="modal-box {twoPane ? 'max-w-3xl' : ''}">
+    <div class="modal-box cairn-pk-box {twoPane ? 'max-w-3xl' : ''}">
       <!-- The shared header: at the configure step it carries the Back control and the
            "Insert > group" eyebrow breadcrumb above the component label; while browsing it is the
-           plain "Insert a component" title. -->
-      <div class="mb-3 flex items-center gap-3">
+           plain "Insert a component" title. It holds (flex-none) while the body scrolls, per the
+           design system's dialog-sizing recipe. -->
+      <div class="mb-3 flex flex-none items-center gap-3">
         {#if picked && !editing}
           <button type="button" class="btn btn-ghost btn-sm btn-square" aria-label="Back to components" onclick={back}>
             <svg class="h-4 w-4" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M165.7 202.3a8 8 0 0 1-11.4 11.4l-80-80a8 8 0 0 1 0-11.4l80-80a8 8 0 0 1 11.4 11.4L91.3 128Z" /></svg>
@@ -339,6 +340,9 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
       </div>
 
       {#if picked}
+        <!-- The configure body is the box's scroll container (flex-1, min-h-0): the shared header
+             above holds while the form scrolls within the 85vh cap. -->
+        <div class="-mr-1 flex min-h-0 flex-1 flex-col overflow-y-auto pr-1">
         {#key picked}
           {#if twoPane}
             <!-- Two panes: the form on the left, the live preview on the right. Below the breakpoint
@@ -395,9 +399,10 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
             {@render configureForm(picked)}
           {/if}
         {/key}
+        </div>
       {:else}
         {#if showSearch}
-          <div class="mb-3 flex items-center gap-2 rounded-field border border-[var(--cairn-card-border)] bg-base-100 px-3 py-2">
+          <div class="mb-3 flex flex-none items-center gap-2 rounded-field border border-[var(--cairn-card-border)] bg-base-100 px-3 py-2">
             <svg class="ec-glyph h-4 w-4 text-[var(--color-muted)]" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M229.7 218.3 179.6 168.2A92.2 92.2 0 1 0 168.2 179.6l50.1 50.1a8 8 0 0 0 11.4-11.4ZM40 112a72 72 0 1 1 72 72 72.1 72.1 0 0 1-72-72Z" /></svg>
             <input
               type="search"
@@ -421,8 +426,10 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
             <button type="button" class="text-[0.8125rem] font-medium text-primary underline [text-underline-offset:2px]" onclick={() => (query = '')}>Clear search</button>
           </div>
         {:else}
-          <!-- One scroll region holds every group, so the arrow keys roam the whole catalog. -->
-          <div data-cairn-pk-list>
+          <!-- One scroll region holds every group, so the arrow keys roam the whole catalog. It
+               is the box's scroll container (flex-1, min-h-0): the header above holds while the
+               list scrolls within the 85vh cap. -->
+          <div data-cairn-pk-list class="-mr-1 min-h-0 flex-1 overflow-y-auto pr-1">
             {#each groups as group (group.heading)}
               <div class="mt-3 first:mt-0">
                 {#if group.heading}

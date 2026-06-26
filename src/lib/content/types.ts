@@ -11,6 +11,7 @@ import type { ComponentRegistry } from '../render/registry.js';
 import type { IconSet } from '../render/glyph.js';
 import type { DatePrefix } from './ids.js';
 import type { ConceptSchema } from './schema.js';
+import type { FieldDescriptor } from './fields.js';
 import type { LinkResolve } from './links.js';
 import type { VariantSpec } from '../media/transform-url.js';
 
@@ -130,6 +131,14 @@ export interface ImageValue {
 export type ValidationResult =
   | { ok: true; data: Record<string, unknown> }
   | { ok: false; errors: Record<string, string> };
+
+/**
+ * A field descriptor with its frontmatter key re-attached as `name`. This is the normalized form
+ *  `ConceptDescriptor.fields` carries: `normalizeConcepts` derives it from a concept's `fieldset`
+ *  record so every consumer (the editor form, the form decoder, the media extractor) iterates an
+ *  array and reads `name` rather than the keyed record.
+ */
+export type NamedField = FieldDescriptor & { name: string };
 
 /**
  * Per-site configuration for one content concept (spec §8). One `schema`, built with

@@ -5,7 +5,7 @@
 // inferred-type and default-resolution arms land in later tasks, and the cutover is a later plan.
 import type { FieldDescriptor, ImageValue } from './fields.js';
 import type { ValidationResult } from './types.js';
-import type { StandardInput, StandardSchemaV1 } from './schema.js';
+import type { StandardInput, StandardSchemaV1 } from './standard-schema.js';
 import { dateInputValue, isCalendarDate } from './frontmatter.js';
 import { compilePattern, dateBoundsError, patternError, stringLengthError } from './field-rules.js';
 
@@ -244,6 +244,20 @@ function validateField(
   }
 }
 
+// At most one image field may feed the social card, so the og:image is unambiguous. A v2 fieldset
+// marks that field with an explicit `seo: true`; there is no field-name default, since the record key
+// is arbitrary. Two seo images is a site config error, so fail loudly at declaration (v1 parity).
+function checkSeoImageFields(record: Record<string, FieldDescriptor>): void {
+  const seo = Object.entries(record).filter(([, field]) => field.type === 'image' && field.seo === true);
+  if (seo.length > 1) {
+    const names = seo.map(([key]) => `"${key}"`).join(', ');
+    throw new Error(
+      `cairn: a concept declares at most one SEO image field, but found ${seo.length} (${names}). ` +
+        'Set seo: false on all but one, or rename the extra image fields so only one feeds the social card.',
+    );
+  }
+}
+
 /**
  * Build a fieldset from a key-to-descriptor record. The returned schema carries the descriptors, a
  *  server-derived validator that coerces per type and returns field-keyed errors or normalized data,
@@ -253,6 +267,7 @@ export function fieldset<const R extends Record<string, FieldDescriptor>>(
   record: R,
   options: FieldsetOptions = {},
 ): Fieldset<R> {
+  checkSeoImageFields(record);
   // Compile each text/textarea pattern once at construction, so a malformed pattern fails loudly here
   // (mirroring v1's compilePatterns) rather than on every save. Keyed by field name for validateField.
   const patterns = new Map<string, RegExp>();

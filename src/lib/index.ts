@@ -44,7 +44,8 @@ export {
 } from './content/frontmatter.js';
 export { defineFields } from './content/schema.js';
 export { defineAdapter } from './content/adapter.js';
-export type { ConceptSchema, Infer, InferFields, DefineFieldsOptions, StandardInput, StandardSchemaV1 } from './content/schema.js';
+export type { ConceptSchema, Infer, InferFields, DefineFieldsOptions } from './content/schema.js';
+export type { StandardInput, StandardSchemaV1 } from './content/standard-schema.js';
 // The Contract v2 field vocabulary, additive beside `defineFields`. The individual *Field
 // interfaces and the bare `Infer` stay module-local: the old `FrontmatterField` model above
 // already exports those names, and the cutover plan frees them.

@@ -5,28 +5,7 @@
 import { compilePattern, dateBoundsError, patternError, stringLengthError } from './field-rules.js';
 import type { FrontmatterField, ImageValue, ValidationResult } from './types.js';
 import { validateFields } from './validate.js';
-
-/** The validate input the cairn adapter takes: the raw frontmatter and the body. */
-export interface StandardInput {
-  frontmatter: Record<string, unknown>;
-  body: string;
-}
-
-/**
- * A minimal local copy of the Standard Schema v1 interface (https://standardschema.dev), so the
- *  schema is a drop-in where the ecosystem accepts a validator, with no runtime dependency.
- */
-export interface StandardSchemaV1<Input = unknown, Output = Input> {
-  readonly '~standard': {
-    readonly version: 1;
-    readonly vendor: string;
-    readonly validate: (value: unknown) => StandardResult<Output>;
-    readonly types?: { readonly input: Input; readonly output: Output };
-  };
-}
-type StandardResult<Output> =
-  | { readonly value: Output; readonly issues?: undefined }
-  | { readonly issues: ReadonlyArray<{ readonly message: string; readonly path?: ReadonlyArray<PropertyKey> }> };
+import type { StandardInput, StandardSchemaV1 } from './standard-schema.js';
 
 /**
  * Map one field descriptor to the TS type of its normalized value. text, textarea, and date

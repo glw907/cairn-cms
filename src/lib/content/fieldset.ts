@@ -155,14 +155,21 @@ function validateField(
     return;
   }
 
-  // Every other type is "not provided when empty" first, then coerced. A Date arrives from
-  // parseMarkdown on a date field; coerce it to YYYY-MM-DD so a real parsed date is not read as empty.
+  // Every other type is "not provided when empty" first, then coerced. A parsed value, not only a form
+  // string, may arrive from parseMarkdown: a Date on a date or datetime field, a JS number on a number
+  // field. Coerce each to its string form BEFORE the empty check so a real parsed value is not read as
+  // empty. A finite 0 must coerce to '0', never read as empty, since 0 is a real number a YAML scalar
+  // carries; a NaN or non-finite number stays '' and routes to the number error below.
   const text =
     field.type === 'date' && value instanceof Date
       ? dateInputValue(value)
-      : typeof value === 'string'
-        ? value.trim()
-        : '';
+      : field.type === 'datetime' && value instanceof Date
+        ? value.toISOString()
+        : field.type === 'number' && typeof value === 'number' && Number.isFinite(value)
+          ? String(value)
+          : typeof value === 'string'
+            ? value.trim()
+            : '';
   if (text === '') {
     if (field.required) errors[key] = `${field.label} is required`;
     return;

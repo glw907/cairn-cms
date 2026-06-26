@@ -75,3 +75,11 @@ describe('fieldset date bounds (v1 parity)', () => {
     expect(fs.validate({ d: '2020-06-01' }, '')).toEqual({ ok: true, data: { d: '2020-06-01' } });
   });
 });
+
+describe('fieldset parsed-YAML input symmetry', () => {
+  const fs = fieldset({ n: fields.number({ label: 'N', min: 0 }), t: fields.datetime({ label: 'T' }) });
+  it('accepts a parsed numeric value, not only a form string', () => {
+    expect(fs.validate({ n: 5 }, '')).toEqual({ ok: true, data: { n: 5 } });  // a number, not '5'
+    expect(fs.validate({ n: 0 }, '')).toEqual({ ok: true, data: { n: 0 } });  // 0 is a real value, not empty
+  });
+});

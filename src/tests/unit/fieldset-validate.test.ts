@@ -28,3 +28,23 @@ describe('fieldset.validate', () => {
     expect(issues[0].path).toEqual(['title']);
   });
 });
+
+describe('fieldset.validate edge cases', () => {
+  const edge = fieldset({
+    n: fields.number({ label: 'N' }), // unbounded, so no max masks a non-finite value
+    contact: fields.email({ label: 'Contact' }),
+  });
+
+  it('rejects a non-finite number', () => {
+    expect(edge.validate({ n: 'Infinity' }, '').ok).toBe(false);
+    expect(edge.validate({ n: '-Infinity' }, '').ok).toBe(false);
+    expect(edge.validate({ n: '1e400' }, '').ok).toBe(false); // overflows to Infinity
+    expect(edge.validate({ n: '42' }, '')).toEqual({ ok: true, data: { n: 42 } });
+  });
+
+  it('rejects an email with more than one at-sign', () => {
+    expect(edge.validate({ contact: 'a@@b.c' }, '').ok).toBe(false);
+    expect(edge.validate({ contact: 'a@b@c.d' }, '').ok).toBe(false);
+    expect(edge.validate({ contact: 'a@b.c' }, '')).toEqual({ ok: true, data: { contact: 'a@b.c' } });
+  });
+});

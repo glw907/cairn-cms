@@ -10,8 +10,8 @@ import { dateInputValue, isCalendarDate } from './frontmatter.js';
 
 /** Accept any URL using http or https with a non-empty rest, mirroring the conservative form check. */
 const URL_RE = /^https?:\/\/\S+$/;
-/** Accept a single address conservatively: one at-sign and a dotted domain, nothing more. */
-const EMAIL_RE = /^\S+@\S+\.\S+$/;
+/** Accept a single address conservatively: exactly one at-sign and a dotted domain, nothing more. */
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 /**
  * The behavior table co-bundled with a fieldset, keyed by field name. It holds function-valued
@@ -169,7 +169,9 @@ function validateField(
   switch (field.type) {
     case 'number': {
       const n = Number(text);
-      if (Number.isNaN(n)) errors[key] = `${field.label} must be a number`;
+      // Reject NaN and the non-finite values Number() yields for "Infinity"/"1e400", which an
+      // isNaN check alone would pass through and commit as a YAML .inf scalar.
+      if (!Number.isFinite(n)) errors[key] = `${field.label} must be a number`;
       else if (field.integer && !Number.isInteger(n)) errors[key] = `${field.label} must be a whole number`;
       else if (field.min != null && n < field.min) errors[key] = `${field.label} must be at least ${field.min}`;
       else if (field.max != null && n > field.max) errors[key] = `${field.label} must be at most ${field.max}`;

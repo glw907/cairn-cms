@@ -70,6 +70,19 @@ describe('ConceptList', () => {
     expect(alert?.getAttribute('role')).toBeNull();
   });
 
+  it('re-announces a repeated identical lifecycle error in a polite live region', async () => {
+    const screen = render(ConceptList, { data: data({ formError: 'Save failed.' }) });
+    const region = () => screen.container.querySelectorAll('[aria-live="polite"]')[1];
+    // The polite region carries the error text (the visible alert keeps its styling without a role).
+    expect(region().textContent ?? '').toContain('Save failed.');
+    const first = region().textContent ?? '';
+    // A second submit fails the same way: a fresh data object with the identical error string. A live
+    // region re-announces only when its text mutates, so the region text must change across the repeat.
+    await screen.rerender({ data: data({ formError: 'Save failed.' }) });
+    expect(region().textContent ?? '').toContain('Save failed.');
+    expect(region().textContent).not.toBe(first);
+  });
+
   it('hides the publish-all flash when zero entries were published', async () => {
     // A racing second admin can land first, leaving this redirect with publishedAll=0.
     const screen = render(ConceptList, { data: data({ publishedAll: 0 }) });
@@ -115,7 +128,10 @@ describe('ConceptList', () => {
 
   it('shows an inline error when listing failed', async () => {
     const screen = render(ConceptList, { data: data({ error: 'Could not load this content type from GitHub.', entries: [] }) });
-    await expect.element(screen.getByText(/could not load/i)).toBeInTheDocument();
+    // The visible inline alert carries the error, and the polite live region also announces it, so
+    // scope the assertion to the visible alert to avoid matching both.
+    const visible = screen.container.querySelector('.alert-warning');
+    expect(visible?.textContent ?? '').toContain('Could not load this content type from GitHub.');
   });
 
   it('opens a create dialog from the header New button and auto-derives the slug', async () => {
@@ -231,11 +247,13 @@ describe('ConceptList', () => {
       ],
     };
     const screen = render(ConceptList, { data: data(), form });
-    // The visible refusal alert names the blocker count and the linking entry, scoped to the
-    // banner so the assertion does not also match the entry's own list row.
-    const alert = screen.getByRole('alert', { name: /could not be deleted/i });
-    await expect.element(alert).toBeInTheDocument();
-    await expect.element(alert.getByRole('link', { name: 'Post 03' })).toBeInTheDocument();
+    // The visible refusal banner names the blocker count and the linking entry. It no longer carries
+    // role="alert" (one polite live region announces the lifecycle errors now), so scope the assertion
+    // to the .alert-error banner element rather than the alert role, which also keeps it off the
+    // entry's own list row.
+    const banner = screen.container.querySelector('.alert-error');
+    expect(banner?.textContent ?? '').toMatch(/could not be deleted/i);
+    expect(banner?.querySelector('a')?.textContent ?? '').toContain('Post 03');
   });
 
   // Task 7: the self-describing row and the gold-standard dressing.

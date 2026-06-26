@@ -200,6 +200,35 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
       ? `Published ${data.publishedAll} ${data.publishedAll === 1 ? 'entry' : 'entries'}.`
       : '',
   );
+
+  // The one lifecycle error to announce (the visible alerts below keep their own styling and roles).
+  // A blocked delete leads, then a form error, then a load error, since the refusal is the most
+  // recent and most actionable outcome of the last submit.
+  const lifecycleError = $derived(
+    deleteRefused ? `This ${data.label.toLowerCase()} could not be deleted.` : (data.formError ?? data.error ?? ''),
+  );
+
+  // The polite live region's text re-announces only when it changes, so a repeated identical error
+  // (a second submit failing the same way) would go silent. An invisible nonce flips on every fresh
+  // error so the region text always mutates and the screen reader speaks again (the MediaPicker
+  // discipline). The nonce is a zero-width space, never voiced, so the heard sentence is unchanged.
+  let announceNonce = $state(0);
+  function nonce(): string {
+    return announceNonce % 2 === 0 ? '' : '​';
+  }
+  // Each submit hands a fresh `form` (or `data` on a load) object, so the nonce bumps once per submit,
+  // keying the re-announce to the submit rather than to a string change the live region would swallow.
+  // The guard reads a plain non-reactive `lastSubmit`, so the bump fires only when the submit identity
+  // changes, never on the re-render the bump itself causes; that is what keeps the effect from looping.
+  let lastSubmit: unknown;
+  $effect(() => {
+    const submit = form ?? data;
+    if (submit !== lastSubmit) {
+      lastSubmit = submit;
+      if (lifecycleError) announceNonce++;
+    }
+  });
+  const liveError = $derived(lifecycleError ? `${lifecycleError}${nonce()}` : '');
 </script>
 
 <!-- The non-color selected cue for the triage controls (WCAG 1.4.1): a small check glyph that
@@ -225,20 +254,24 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
      {#if}-gated role element inserted fresh is announced inconsistently, so the visible alert
      below keeps its styling without a role and the message is announced once. -->
 <div class="sr-only" aria-live="polite">{publishedAllMessage}</div>
+<!-- One persistent polite region announces the lifecycle errors, re-announcing a repeat through the
+     nonce. The visible alerts below keep their styling and drop the live `role` (a fresh-inserted
+     role element announces inconsistently and clobbers a repeat), so the message is announced once. -->
+<div class="sr-only" aria-live="polite">{liveError}</div>
 {#if publishedAllMessage}
   <div class="alert alert-success mb-4 text-sm">{publishedAllMessage}</div>
 {/if}
 {#if data.formError}
-  <div role="alert" class="alert alert-error mb-4 text-sm">{data.formError}</div>
+  <div class="alert alert-error mb-4 text-sm">{data.formError}</div>
 {/if}
 {#if data.error}
-  <div role="alert" class="alert alert-warning mb-4 text-sm">{data.error}</div>
+  <div class="alert alert-warning mb-4 text-sm">{data.error}</div>
 {/if}
 
 {#if deleteRefused}
   <!-- A `?/delete` was refused: name the blockers up front, matching the editor's refusal banner,
-       so the author sees why without re-opening a dialog. -->
-  <div role="alert" aria-label="This {data.label.toLowerCase()} could not be deleted" class="alert alert-error mb-4 flex-col items-start text-sm">
+       so the author sees why without re-opening a dialog. The polite region above announces it. -->
+  <div aria-label="This {data.label.toLowerCase()} could not be deleted" class="alert alert-error mb-4 flex-col items-start text-sm">
     <p class="font-medium">This {data.label.toLowerCase()} could not be deleted.</p>
     <p>{deleteRefused.inboundLinks.length} {deleteRefused.inboundLinks.length === 1 ? 'page links' : 'pages link'} to it. Remove or repoint the {deleteRefused.inboundLinks.length === 1 ? 'link' : 'links'} listed below, then delete again.</p>
     <ul class="mt-1 w-full">

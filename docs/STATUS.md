@@ -11,7 +11,58 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-25, latest): Part B2 (the design foundation) is PLANNED and ready to execute; B1 is MERGED to `main`
+## Immediate next action (2026-06-25, latest): Part B2 (Waymark) is COMPLETE; next is the pre-B3 engine/DX slot, then B3
+
+**Part B2 is done on the `feat/scaffolder-b2-design-foundation` worktree** (held, unmerged, unpushed). The
+showcase is now Waymark, the public reading theme: a DaisyUI 5 oklch token layer (warm-stone paper, warm
+slate ink, a deep ink-blue accent; Fraunces + Source Sans 3 + Source Code Pro, self-hosted via
+Fontsource), a bespoke token-bound reading surface (`prose.css`), owned chrome components, a composed
+Home, a `/styleguide` proof route, and build-time Shiki highlighting moved into the engine render
+pipeline (the one published engine change: role-bound `.cairn-tok-*` classes, no client highlighter). The
+engine bumps to `0.65.0`. The design-system reference is `docs/internal/public-design-system.md`.
+
+**Both gates ran.** GATE 1 settled the direction from four rendered options against a 13-reference bar.
+GATE 2, a multi-agent adversarial workflow, caught two real blockers the CI gates missed (12 dangling
+`--color-*-ink` references that flattened the callout/alert surface, and the re-skin gate's prefix-match
+blindness to a dangling token); both folded, plus a token-resolution gate added. The decisive re-skin
+proof passed: rotating only `--color-primary` recolors chrome and article together, AA holds in both
+gamuts. Three CI gates back it (`check:public-tokens` no-literals + dual-gamut + resolution, `test:reskin`,
+the `design.yml` workflow).
+
+**Verified.** `npm test` EXIT 0 (2486); `check` 0/0; `check:comments`, `check:public-tokens`,
+`test:reskin`, `check:docs` clean; the showcase check 0-in-`src`; the showcase e2e green (golden-path 10/10
++ the styleguide a11y spec); the emitted-template rot gate builds clean. Plan and post-mortem:
+`docs/superpowers/plans/2026-06-25-cairn-scaffolder-part-b2-design-foundation.md`. The merge of
+`feat/scaffolder-b2-design-foundation` to `main` and the push await the user's go-ahead.
+
+**Carry-forwards.** The `hello-hero` hero-byte seed and the plain-URL `<figcaption>` lift are now Tasks 3
+and 1 of the engine/DX slot below. Still open past the slot: B4's manual dark toggle adds a `[data-theme]`
+scope for the `--cairn-*` customs, and minor a11y/perf polish (styleguide heading nesting, APG Home/End on
+the tablist, hero-image CLS dimensions, a font/sheet preload, the sticky-header translucent-background
+contrast spot-check).
+
+**NEXT: the pre-B3 engine/DX slot**, then B3. Plan:
+`docs/superpowers/plans/2026-06-25-cairn-pre-b3-engine-dx-slot.md` (8 tasks, target `0.66.0`). It clears
+the engine, dev-package, and first-hour DX warts a read-based dogfood found before B3 bakes the template:
+the `remark-figure` plain-URL `<figcaption>` gap (Task 1), the Ctrl+K/Ctrl+B editor double-fire (Task 2),
+the `hello-hero` hero-byte seed (Task 3), removing the calendar entirely (Task 4: route, nav, exclude
+entry, and the Mode-1 e2e), the showcase README plus a `CAIRN_DEV_BACKEND=1` dev script (Task 5), the
+GitHub-App identity trap (Task 6: appId/installationId are `backend` config, not Worker secrets, and the
+doctor must self-test the runtime source), the owed `check:dev-package` gate (Task 7), and the tutorial
+Milestone 8 rewrite around the dev package (Task 8). Precondition: merge B2 to `main` first, then branch
+the slot off `main` (`git worktree add ../cairn-cms-dx-slot -b feat/pre-b3-engine-dx-slot main`). Method:
+main-loop orchestrate-and-verify, `cairn-implementer` per task, full gate between dispatches; the tasks
+are mostly independent, so the slot is workflow-parallelizable on opt-in.
+
+**After the slot: Part B3, the defaults surface.** The production Home, the paginated archive, tag pages,
+Pagefind search, the SEO kit, the styled error page, and the self-documenting sample content, on the
+Waymark foundation. The B3/B4 split is the CI-matrix axis (defaults vs options). B3 also re-establishes
+the Mode-1 coexistence e2e (lost with the calendar) against a real site-owned page. See the scaffolder
+spec's "Sub-pass sequencing".
+
+---
+
+## Immediate next action (2026-06-25): Part B2 (the design foundation) is PLANNED and ready to execute; B1 is MERGED to `main`
 
 **Part B1 merged to `main` and pushed** (origin at `85b3f5b`; the `feat/scaffolder-b1-factoring` worktree
 and branch are removed). **Part B2 (the design foundation) is planned:**

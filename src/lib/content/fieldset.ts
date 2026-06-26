@@ -1,0 +1,199 @@
+// cairn-cms: the fieldset primitive (Contract v2). A key-to-descriptor record becomes a schema
+// carrying the descriptors as plain data, a server-derived validator, and the Standard Schema
+// conformance property. The validator coerces per type, drops an empty optional field, and returns
+// field-keyed errors or normalized data. This is the additive v2 path alongside `defineFields`; the
+// inferred-type and default-resolution arms land in later tasks, and the cutover is a later plan.
+import type { FieldDescriptor, ImageValue } from './fields.js';
+import type { ValidationResult } from './types.js';
+import type { StandardInput, StandardSchemaV1 } from './schema.js';
+import { dateInputValue, isCalendarDate } from './frontmatter.js';
+
+/** Accept any URL using http or https with a non-empty rest, mirroring the conservative form check. */
+const URL_RE = /^https?:\/\/\S+$/;
+/** Accept a single address conservatively: one at-sign and a dotted domain, nothing more. */
+const EMAIL_RE = /^\S+@\S+\.\S+$/;
+
+/**
+ * The behavior table co-bundled with a fieldset, keyed by field name. It holds function-valued
+ *  behavior a descriptor cannot carry as plain data (a cross-field validator, an array itemLabel).
+ *  Scalars have no behavior, so the table is empty for now and reserved for later co-bundled functions.
+ */
+export type BehaviorTable = Record<string, never>;
+
+/**
+ * Options for `fieldset`. `refine` runs after the per-field coercion and constraints pass, for
+ *  cross-field and body-dependent checks. It is validation-only: it returns field-keyed errors to
+ *  merge, or nothing, and never transforms the data. Server-only, since it may carry closures.
+ */
+export interface FieldsetOptions {
+  refine?: (data: Record<string, unknown>, body: string) => Record<string, string> | undefined;
+}
+
+/**
+ * A concept's fieldset: the plain-data descriptors, the co-bundled behavior table, the server-derived
+ *  validator, and the Standard Schema conformance property.
+ */
+export interface Fieldset<R extends Record<string, FieldDescriptor> = Record<string, FieldDescriptor>> {
+  /** The declared descriptors as plain serializable data, for the editor form. */
+  readonly fields: R;
+  /** Function-valued behavior keyed by field name; empty for a scalar-only fieldset. */
+  readonly behavior: BehaviorTable;
+  /** Validate raw frontmatter, returning field-keyed errors or the normalized data. */
+  validate(frontmatter: Record<string, unknown>, body: string): ValidationResult;
+  /** Standard Schema v1 conformance, for ecosystem interop. A thin adapter over `validate`. */
+  readonly '~standard': StandardSchemaV1<StandardInput, Record<string, unknown>>['~standard'];
+}
+
+// Coerce one image value to the stored `{ src, alt, caption?, decorative? }` shape, ported from
+// validate.ts. Default a missing alt to empty (alt is debt, never a save block), trim and drop a
+// blank caption, keep decorative only when an explicit true, and drop the whole key when src is empty.
+// A required image with an empty src is the one error this arm raises.
+function coerceImage(
+  field: Extract<FieldDescriptor, { type: 'image' }>,
+  key: string,
+  value: unknown,
+  data: Record<string, unknown>,
+  errors: Record<string, string>,
+): void {
+  let src = '';
+  if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+    const obj = value as Record<string, unknown>;
+    src = typeof obj.src === 'string' ? obj.src.trim() : '';
+    if (src !== '') {
+      const normalized: ImageValue = {
+        src,
+        alt: typeof obj.alt === 'string' ? obj.alt : '',
+      };
+      const caption = typeof obj.caption === 'string' ? obj.caption.trim() : '';
+      if (caption !== '') normalized.caption = caption;
+      if (obj.decorative === true) normalized.decorative = true;
+      data[key] = normalized;
+    }
+  }
+  if (field.required && src === '') errors[key] = `${field.label} is required`;
+}
+
+// Validate one descriptor against its raw value, writing into `data` or `errors`. Empty or absent is
+// "not provided" and is read BEFORE type coercion, uniformly: a required field errors, an optional
+// field drops (no key, no error). Only a non-empty value is coerced. boolean is the exception: true
+// stores true, anything else omits the key. number relies on the empty-first drop so an empty optional
+// number never becomes Number('') === 0.
+function validateField(
+  key: string,
+  field: FieldDescriptor,
+  value: unknown,
+  data: Record<string, unknown>,
+  errors: Record<string, string>,
+): void {
+  // boolean: presence is the value; an unchecked or absent box omits the key (no draft: false noise).
+  if (field.type === 'boolean') {
+    if (value === true) data[key] = true;
+    return;
+  }
+
+  // multiselect: a string array; drop empties, reject an unknown value when options is closed. An empty
+  // list omits the key (a required empty errors); the array path is the one non-string coercion.
+  if (field.type === 'multiselect') {
+    const list = (Array.isArray(value) ? value.map(String) : []).map((v) => v.trim()).filter((v) => v !== '');
+    if (field.required && list.length === 0) {
+      errors[key] = `${field.label} is required`;
+      return;
+    }
+    if (field.options) {
+      const unknown = list.find((v) => !field.options!.includes(v));
+      if (unknown !== undefined) {
+        errors[key] = `${field.label} contains an unknown value: ${unknown}`;
+        return;
+      }
+    }
+    if (list.length > 0) data[key] = list;
+    return;
+  }
+
+  // image: the nested object arm, dropping the key on empty src.
+  if (field.type === 'image') {
+    coerceImage(field, key, value, data, errors);
+    return;
+  }
+
+  // Every other type is "not provided when empty" first, then coerced. A Date arrives from
+  // parseMarkdown on a date field; coerce it to YYYY-MM-DD so a real parsed date is not read as empty.
+  const text =
+    field.type === 'date' && value instanceof Date
+      ? dateInputValue(value)
+      : typeof value === 'string'
+        ? value.trim()
+        : '';
+  if (text === '') {
+    if (field.required) errors[key] = `${field.label} is required`;
+    return;
+  }
+
+  switch (field.type) {
+    case 'number': {
+      const n = Number(text);
+      if (Number.isNaN(n)) errors[key] = `${field.label} must be a number`;
+      else if (field.integer && !Number.isInteger(n)) errors[key] = `${field.label} must be a whole number`;
+      else if (field.min != null && n < field.min) errors[key] = `${field.label} must be at least ${field.min}`;
+      else if (field.max != null && n > field.max) errors[key] = `${field.label} must be at most ${field.max}`;
+      else data[key] = n;
+      break;
+    }
+    case 'select': {
+      if (!field.options.includes(text)) errors[key] = `${field.label} contains an unknown value: ${text}`;
+      else data[key] = text;
+      break;
+    }
+    case 'url': {
+      if (!URL_RE.test(text)) errors[key] = `${field.label} is not a valid URL`;
+      else data[key] = text;
+      break;
+    }
+    case 'email': {
+      if (!EMAIL_RE.test(text)) errors[key] = `${field.label} is not a valid email address`;
+      else data[key] = text;
+      break;
+    }
+    case 'date': {
+      if (!isCalendarDate(text)) errors[key] = `${field.label} must be a valid date (YYYY-MM-DD)`;
+      else data[key] = text;
+      break;
+    }
+    default:
+      // text, textarea, datetime: a trimmed non-empty string stored as is.
+      data[key] = text;
+  }
+}
+
+/**
+ * Build a fieldset from a key-to-descriptor record. The returned schema carries the descriptors, a
+ *  server-derived validator that coerces per type and returns field-keyed errors or normalized data,
+ *  and the Standard Schema conformance property whose issues map each error to a single-segment path.
+ */
+export function fieldset<R extends Record<string, FieldDescriptor>>(
+  record: R,
+  options: FieldsetOptions = {},
+): Fieldset<R> {
+  const validate = (frontmatter: Record<string, unknown>, body: string): ValidationResult => {
+    const data: Record<string, unknown> = {};
+    const errors: Record<string, string> = {};
+    for (const [key, field] of Object.entries(record)) {
+      validateField(key, field, frontmatter[key], data, errors);
+    }
+    if (Object.keys(errors).length > 0) return { ok: false, errors };
+    const refined = options.refine?.(data, body);
+    return refined && Object.keys(refined).length > 0 ? { ok: false, errors: refined } : { ok: true, data };
+  };
+  const standard: StandardSchemaV1<StandardInput, Record<string, unknown>>['~standard'] = {
+    version: 1,
+    vendor: 'cairn',
+    validate: (value) => {
+      const { frontmatter = {}, body = '' } = (value ?? {}) as Partial<StandardInput>;
+      const result = validate(frontmatter ?? {}, body ?? '');
+      return result.ok
+        ? { value: result.data }
+        : { issues: Object.entries(result.errors).map(([key, message]) => ({ message, path: [key] })) };
+    },
+  };
+  return { fields: record, behavior: {}, validate, '~standard': standard };
+}

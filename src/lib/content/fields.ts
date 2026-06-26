@@ -44,8 +44,23 @@ export interface MultiselectField extends FieldBase {
   /** Mark the field as a site-wide taxonomy whose values pool across entries. */
   taxonomy?: boolean;
 }
+/** A URL input whose format the validator enforces. */
+export interface UrlField extends FieldBase {
+  type: 'url';
+}
+/** An email-address input whose format the validator enforces. */
+export interface EmailField extends FieldBase {
+  type: 'email';
+}
 /** The plain-data descriptor union the form, validator, and inference all read. Grows per task. */
-export type FieldDescriptor = TextField | TextareaField | NumberField | SelectField | MultiselectField;
+export type FieldDescriptor =
+  | TextField
+  | TextareaField
+  | NumberField
+  | SelectField
+  | MultiselectField
+  | UrlField
+  | EmailField;
 
 /** The constructor namespace a concept declares its fields with. */
 export const fields = {
@@ -59,4 +74,8 @@ export const fields = {
   select: (o: Omit<SelectField, 'type'>): SelectField => ({ type: 'select', ...o }),
   /** A multiple-choice field. */
   multiselect: (o: Omit<MultiselectField, 'type'>): MultiselectField => ({ type: 'multiselect', ...o }),
+  /** A URL field. */
+  url: (o: Omit<UrlField, 'type'>): UrlField => ({ type: 'url', ...o }),
+  /** An email-address field. */
+  email: (o: Omit<EmailField, 'type'>): EmailField => ({ type: 'email', ...o }),
 };

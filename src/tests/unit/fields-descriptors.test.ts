@@ -31,3 +31,10 @@ describe('fields select/multiselect', () => {
       .toEqual({ type: 'multiselect', label: 'Topics', creatable: true, taxonomy: true });
   });
 });
+
+describe('fields url/email', () => {
+  it('url and email are labeled leaves', () => {
+    expect(fields.url({ label: 'Website' })).toEqual({ type: 'url', label: 'Website' });
+    expect(fields.email({ label: 'Contact' })).toEqual({ type: 'email', label: 'Contact' });
+  });
+});

@@ -15,7 +15,7 @@
 //
 //   node scripts/check-admin-prose.mjs          scan and fail on a hit
 //   node scripts/check-admin-prose.mjs --list    print every extracted string, grouped by file
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -64,6 +64,7 @@ function emDashCount(text) {
 }
 
 // (kind, regex, hint). High-precision; ported from prose-guard's STRUCTURAL.
+/** @type {Array<[string, RegExp, string]>} */
 const STRUCTURAL = [
   ['negative antithesis',
     /\b(it|this|that)'?s?\s+(not|isn'?t)\b[^.!?;]{3,60}[,;]\s+(it|this|that|but)'?s?\b/i,
@@ -87,7 +88,7 @@ const STRUCTURAL = [
  * @param {string} line
  * @returns {Array<{kind: string, hint: string}>}
  */
-function scan(line) {
+export function scan(line) {
   const issues = [];
   // General/marketing prose: an occasional em dash is human; flag a spray, and flag a
   // clause followed by a short tacked-on fragment after a dash.
@@ -146,7 +147,7 @@ const COPY_ATTRS = ['placeholder', 'aria-label', 'title', 'alt'];
  * @param {string} src
  * @returns {string[]}
  */
-function extractCopy(src) {
+export function extractCopy(src) {
   const stripped = src
     // Comments come out first. A doc comment that writes the literal `<style>` or `<script>` (the
     // `@component` block routinely does) would otherwise anchor the block strips below: the
@@ -175,6 +176,36 @@ function extractCopy(src) {
   return [...new Set(found.filter((s) => /[A-Za-z]/.test(s)))];
 }
 
+// --- Extracting the user-facing copy from a .ts copy module. ---
+
+// A fixed allowlist of `.ts` modules that hold author-visible copy as string-array data. A `.ts`
+// module is opt-in by name so type-only and logic modules are never scanned. Both modules below
+// declare the copy the editor's help dialogs render, copy a Svelte markup scan never reaches.
+const TS_COPY_MODULES = ['markdown-reference.ts', 'editor-shortcuts.ts'];
+
+/**
+ * Pull the user-facing strings out of a `.ts` copy module: every single-quoted, double-quoted, and
+ * backtick literal. Line and block comments are removed first so a TSDoc gloss never reads as copy.
+ * @param {string} src
+ * @returns {string[]}
+ */
+export function extractTsCopy(src) {
+  const stripped = src
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/\/\/[^\n]*/g, ' ');
+
+  const found = [];
+  // Each quote style, captured non-greedily; escaped quotes inside a string are rare in this copy
+  // and a split match still yields scannable text, so a simple class suffices.
+  for (const rx of [/'([^'\\]*)'/g, /"([^"\\]*)"/g, /`([^`\\]*)`/g]) {
+    for (const m of stripped.matchAll(rx)) {
+      const v = m[1].replace(/\s+/g, ' ').trim();
+      if (v) found.push(v);
+    }
+  }
+  return [...new Set(found.filter((s) => /[A-Za-z]/.test(s)))];
+}
+
 // --- Driver. ---
 
 // The admin component files, sorted, as plain names under COMPONENTS_DIR.
@@ -185,11 +216,21 @@ function componentFiles() {
     .sort();
 }
 
+// Read one scanned file's extracted copy, choosing the extractor by extension.
+/**
+ * @param {string} file
+ * @returns {string[]}
+ */
+function copyForFile(file) {
+  const src = readFileSync(join(COMPONENTS_DIR, file), 'utf8');
+  return file.endsWith('.ts') ? extractTsCopy(src) : extractCopy(src);
+}
+
 // Print every extracted string, grouped by file, then exit 0. Backs the `--list` flag.
 /** @param {string[]} files */
 function listCopy(files) {
   for (const file of files) {
-    const copy = extractCopy(readFileSync(join(COMPONENTS_DIR, file), 'utf8'));
+    const copy = copyForFile(file);
     if (copy.length === 0) continue;
     console.log(`\n${file}`);
     for (const s of copy) console.log(`  ${s}`);
@@ -202,7 +243,7 @@ function listCopy(files) {
 function scanCopy(files) {
   let hits = 0;
   for (const file of files) {
-    const copy = extractCopy(readFileSync(join(COMPONENTS_DIR, file), 'utf8'));
+    const copy = copyForFile(file);
     for (const s of copy) {
       for (const issue of scan(s)) {
         hits += 1;
@@ -220,6 +261,16 @@ function scanCopy(files) {
   console.log(`admin-copy prose gate: clean (${files.length} components scanned).`);
 }
 
-const files = componentFiles();
-if (process.argv.includes('--list')) listCopy(files);
-else scanCopy(files);
+function main() {
+  // The Svelte components plus the named `.ts` copy modules, the latter checked for existence so a
+  // rename surfaces here rather than silently dropping its coverage.
+  const tsModules = TS_COPY_MODULES.filter((f) => existsSync(join(COMPONENTS_DIR, f)));
+  const files = [...componentFiles(), ...tsModules];
+  if (process.argv.includes('--list')) listCopy(files);
+  else scanCopy(files);
+}
+
+// Run as a script, not on import (the unit test imports the extractors directly).
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main();
+}

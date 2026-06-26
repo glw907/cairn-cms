@@ -44,6 +44,42 @@ export interface Fieldset<R extends Record<string, FieldDescriptor> = Record<str
   readonly '~standard': StandardSchemaV1<StandardInput, Record<string, unknown>>['~standard'];
 }
 
+/**
+ * Map one field descriptor to the TS type of its normalized value. number is number, boolean is
+ *  boolean, image is the nested ImageValue object; a select with a literal option list is that
+ *  option union, a multiselect with one is that union array (else string[]); everything else is a
+ *  string.
+ */
+type ValueOf<D extends FieldDescriptor> = D extends { type: 'number' }
+  ? number
+  : D extends { type: 'boolean' }
+    ? boolean
+    : D extends { type: 'image' }
+      ? ImageValue
+      : D extends { type: 'select'; options: readonly (infer O extends string)[] }
+        ? O
+        : D extends { type: 'multiselect'; options: readonly (infer O extends string)[] }
+          ? O[]
+          : D extends { type: 'multiselect' }
+            ? string[]
+            : string;
+
+/** Flatten an intersection into a single readable object type. */
+type Prettify<T> = { [K in keyof T]: T[K] } & {};
+
+/**
+ * The normalized frontmatter type inferred from a fieldset's descriptor record. A descriptor
+ *  declared `required: true` is a required key; every other descriptor is optional.
+ */
+type Infer<R extends Record<string, FieldDescriptor>> = Prettify<
+  { -readonly [K in keyof R as R[K] extends { required: true } ? K : never]: ValueOf<R[K]> } & {
+    -readonly [K in keyof R as R[K] extends { required: true } ? never : K]?: ValueOf<R[K]>;
+  }
+>;
+
+/** Extract the inferred frontmatter type from a `Fieldset`. */
+export type InferFieldset<S> = S extends Fieldset<infer R> ? Infer<R> : never;
+
 // Coerce one image value to the stored `{ src, alt, caption?, decorative? }` shape, ported from
 // validate.ts. Default a missing alt to empty (alt is debt, never a save block), trim and drop a
 // blank caption, keep decorative only when an explicit true, and drop the whole key when src is empty.
@@ -170,7 +206,7 @@ function validateField(
  *  server-derived validator that coerces per type and returns field-keyed errors or normalized data,
  *  and the Standard Schema conformance property whose issues map each error to a single-segment path.
  */
-export function fieldset<R extends Record<string, FieldDescriptor>>(
+export function fieldset<const R extends Record<string, FieldDescriptor>>(
   record: R,
   options: FieldsetOptions = {},
 ): Fieldset<R> {

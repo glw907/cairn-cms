@@ -95,28 +95,33 @@ export type FieldDescriptor =
   | BooleanField
   | ImageField;
 
-/** The constructor namespace a concept declares its fields with. */
+/**
+ * The constructor namespace a concept declares its fields with. Each constructor captures its
+ * argument with a `const` type parameter and intersects it onto the descriptor, so the call-site
+ * literals (`required: true`, a `select`/`multiselect` `options` union) survive into the descriptor
+ * type for `Infer` to read. The runtime value is unchanged: still `{ type, ...o }`.
+ */
 export const fields = {
   /** A single-line text field. */
-  text: (o: Omit<TextField, 'type'>): TextField => ({ type: 'text', ...o }),
+  text: <const O extends Omit<TextField, 'type'>>(o: O): TextField & O => ({ type: 'text', ...o }),
   /** A multi-line text field. */
-  textarea: (o: Omit<TextareaField, 'type'>): TextareaField => ({ type: 'textarea', ...o }),
+  textarea: <const O extends Omit<TextareaField, 'type'>>(o: O): TextareaField & O => ({ type: 'textarea', ...o }),
   /** A numeric field. */
-  number: (o: Omit<NumberField, 'type'>): NumberField => ({ type: 'number', ...o }),
-  /** A single-choice field over a closed option list. */
-  select: (o: Omit<SelectField, 'type'>): SelectField => ({ type: 'select', ...o }),
-  /** A multiple-choice field. */
-  multiselect: (o: Omit<MultiselectField, 'type'>): MultiselectField => ({ type: 'multiselect', ...o }),
+  number: <const O extends Omit<NumberField, 'type'>>(o: O): NumberField & O => ({ type: 'number', ...o }),
+  /** A single-choice field over a closed option list, preserving the literal option union. */
+  select: <const O extends Omit<SelectField, 'type'>>(o: O): SelectField & O => ({ type: 'select', ...o }),
+  /** A multiple-choice field, preserving the literal option union when one is given. */
+  multiselect: <const O extends Omit<MultiselectField, 'type'>>(o: O): MultiselectField & O => ({ type: 'multiselect', ...o }),
   /** A URL field. */
-  url: (o: Omit<UrlField, 'type'>): UrlField => ({ type: 'url', ...o }),
+  url: <const O extends Omit<UrlField, 'type'>>(o: O): UrlField & O => ({ type: 'url', ...o }),
   /** An email-address field. */
-  email: (o: Omit<EmailField, 'type'>): EmailField => ({ type: 'email', ...o }),
+  email: <const O extends Omit<EmailField, 'type'>>(o: O): EmailField & O => ({ type: 'email', ...o }),
   /** A calendar-date field. */
-  date: (o: Omit<DateField, 'type'>): DateField => ({ type: 'date', ...o }),
+  date: <const O extends Omit<DateField, 'type'>>(o: O): DateField & O => ({ type: 'date', ...o }),
   /** A date-and-time field. */
-  datetime: (o: Omit<DatetimeField, 'type'>): DatetimeField => ({ type: 'datetime', ...o }),
+  datetime: <const O extends Omit<DatetimeField, 'type'>>(o: O): DatetimeField & O => ({ type: 'datetime', ...o }),
   /** A boolean checkbox field. */
-  boolean: (o: Omit<BooleanField, 'type'>): BooleanField => ({ type: 'boolean', ...o }),
+  boolean: <const O extends Omit<BooleanField, 'type'>>(o: O): BooleanField & O => ({ type: 'boolean', ...o }),
   /** An image field whose value is the nested ImageValue object. */
-  image: (o: Omit<ImageField, 'type'>): ImageField => ({ type: 'image', ...o }),
+  image: <const O extends Omit<ImageField, 'type'>>(o: O): ImageField & O => ({ type: 'image', ...o }),
 };

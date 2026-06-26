@@ -130,9 +130,17 @@ function validateField(
   }
 
   // multiselect: a string array; drop empties, reject an unknown value when options is closed. An empty
-  // list omits the key (a required empty errors); the array path is the one non-string coercion.
+  // list omits the key (a required empty errors); the array path is the one non-string coercion. A lone
+  // non-empty scalar (a single tag a YAML scalar carries) coerces to a single-element list, rather than
+  // dropping to [] and reading as "required" while present. An empty string or a non-string-non-array
+  // stays the empty list.
   if (field.type === 'multiselect') {
-    const list = (Array.isArray(value) ? value.map(String) : []).map((v) => v.trim()).filter((v) => v !== '');
+    const raw = Array.isArray(value)
+      ? value.map(String)
+      : typeof value === 'string' && value.trim() !== ''
+        ? [value.trim()]
+        : [];
+    const list = raw.map((v) => v.trim()).filter((v) => v !== '');
     if (field.required && list.length === 0) {
       errors[key] = `${field.label} is required`;
       return;

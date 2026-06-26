@@ -83,3 +83,15 @@ describe('fieldset parsed-YAML input symmetry', () => {
     expect(fs.validate({ n: 0 }, '')).toEqual({ ok: true, data: { n: 0 } });  // 0 is a real value, not empty
   });
 });
+
+describe('fieldset multiselect lone scalar', () => {
+  const fs = fieldset({ tags: fields.multiselect({ label: 'Tags' }) });
+  const req = fieldset({ tags: fields.multiselect({ label: 'Tags', required: true }) });
+  it('coerces a lone scalar to a single-element list', () => {
+    expect(fs.validate({ tags: 'news' }, '')).toEqual({ ok: true, data: { tags: ['news'] } });
+  });
+  it('a present scalar satisfies required (no misleading "is required")', () => {
+    expect(req.validate({ tags: 'news' }, '')).toEqual({ ok: true, data: { tags: ['news'] } });
+    expect(req.validate({ tags: '' }, '').ok).toBe(false);
+  });
+});

@@ -11,11 +11,11 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-25, latest): Contract v2 Plan 1 is DONE on its worktree; NEXT = merge, then draft the cutover (Plan 2)
+## Immediate next action (2026-06-25, latest): Contract v2 Plan 1 MERGED to main; NEXT = brainstorm + draft the cutover (Plan 2)
 
-**Contract v2 Plan 1 (the additive `fields.*` field foundation) is complete on the
-`feat/contract-v2-field-foundation` worktree** (held, unmerged, unpushed). All 10 tasks landed, plus a
-simplify, a fresh-review fix, and the release docs (13 commits). The additive vocabulary is the 11
+**Contract v2 Plan 1 (the additive `fields.*` field foundation) is merged to `main`** (2026-06-25,
+fast-forward to `75f91e2`; unpushed, no npm publish yet; the worktree and branch are removed). All 10
+tasks landed, plus a simplify, a fresh-review fix, and the release docs (13 commits). The additive vocabulary is the 11
 plain-data descriptors with generic literal-preserving constructors, `fieldset()` with a server-derived
 validator and Standard Schema, the `Infer`/`InferFieldset` inference, `initialValues` with injected-clock
 `'today'` resolution, and 8 root-barrel exports documented in `core.md`. It sits beside v1 `defineFields`;
@@ -46,14 +46,13 @@ showcase migrates as the first v2 consumer.
    error (today a scalar `tags: news` drops silently or reports a misleading "required").
 4. **Collapse the parallel validators.** Share one coercion core between `fieldset` and v1's `validate.ts`.
 
-**NEXT (two steps).** (1) Merge `feat/contract-v2-field-foundation` to `main` (fast-forward; the worktree
-is gate-clean, and this STATUS plus the post-mortem ride in the merge). (2) Draft Contract v2 Plan 2, the
-cutover: wire `fields.*`/`fieldset` into the live editor form, the validator, delivery, and the manifest,
-migrate the showcase concepts off `defineFields`, remove `FrontmatterField`/`defineFields`/`validate.ts`,
-and fold in the four carry-forwards above. Brainstorm the open cutover decisions with Geoff first (the
-migration sequence, whether the showcase migrates in the same plan, generating the editor form from
-descriptors), then write the plan. Plan series after the cutover: references → object/array + adapter +
-component unification → backend → render + islands.
+**NEXT.** Brainstorm the open cutover decisions with Geoff (the migration sequence, whether the showcase
+migrates in the same plan, generating the editor form from descriptors, and how to land the constraint-
+parity carry-forward), then draft Contract v2 Plan 2, the cutover: wire `fields.*`/`fieldset` into the
+live editor form, the validator, delivery, and the manifest, migrate the showcase concepts off
+`defineFields`, remove `FrontmatterField`/`defineFields`/`validate.ts`, and fold in the four carry-forwards
+above. Plan series after the cutover: references → object/array + adapter + component unification →
+backend → render + islands.
 
 **Version note:** Contract v2 Plan 1 took `0.66.0` (the lead initiative). The deferred pre-B3 engine/DX
 slot, previously earmarked `0.66.0`, re-numbers to the next free minor when it resumes after the contract

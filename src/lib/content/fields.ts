@@ -52,6 +52,26 @@ export interface UrlField extends FieldBase {
 export interface EmailField extends FieldBase {
   type: 'email';
 }
+/** A calendar-date input. */
+export interface DateField extends FieldBase {
+  type: 'date';
+  /** Earliest allowed date as YYYY-MM-DD. */
+  min?: string;
+  /** Latest allowed date as YYYY-MM-DD. */
+  max?: string;
+}
+/** A date-and-time input. */
+export interface DatetimeField extends FieldBase {
+  type: 'datetime';
+  /** Earliest allowed moment as an ISO string. */
+  min?: string;
+  /** Latest allowed moment as an ISO string. */
+  max?: string;
+}
+/** A checkbox; absent means false. */
+export interface BooleanField extends FieldBase {
+  type: 'boolean';
+}
 /** The plain-data descriptor union the form, validator, and inference all read. Grows per task. */
 export type FieldDescriptor =
   | TextField
@@ -60,7 +80,10 @@ export type FieldDescriptor =
   | SelectField
   | MultiselectField
   | UrlField
-  | EmailField;
+  | EmailField
+  | DateField
+  | DatetimeField
+  | BooleanField;
 
 /** The constructor namespace a concept declares its fields with. */
 export const fields = {
@@ -78,4 +101,10 @@ export const fields = {
   url: (o: Omit<UrlField, 'type'>): UrlField => ({ type: 'url', ...o }),
   /** An email-address field. */
   email: (o: Omit<EmailField, 'type'>): EmailField => ({ type: 'email', ...o }),
+  /** A calendar-date field. */
+  date: (o: Omit<DateField, 'type'>): DateField => ({ type: 'date', ...o }),
+  /** A date-and-time field. */
+  datetime: (o: Omit<DatetimeField, 'type'>): DatetimeField => ({ type: 'datetime', ...o }),
+  /** A boolean checkbox field. */
+  boolean: (o: Omit<BooleanField, 'type'>): BooleanField => ({ type: 'boolean', ...o }),
 };

@@ -38,3 +38,14 @@ describe('fields url/email', () => {
     expect(fields.email({ label: 'Contact' })).toEqual({ type: 'email', label: 'Contact' });
   });
 });
+
+describe('fields date/datetime/boolean', () => {
+  it('date carries YYYY-MM-DD bounds', () => {
+    expect(fields.date({ label: 'Date', min: '2020-01-01' }))
+      .toEqual({ type: 'date', label: 'Date', min: '2020-01-01' });
+  });
+  it('datetime and boolean are labeled leaves', () => {
+    expect(fields.datetime({ label: 'Publish at' })).toEqual({ type: 'datetime', label: 'Publish at' });
+    expect(fields.boolean({ label: 'Draft' })).toEqual({ type: 'boolean', label: 'Draft' });
+  });
+});

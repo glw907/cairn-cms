@@ -2,9 +2,7 @@ import type { Root, Element, ElementContent } from 'hast';
 import { h } from 'hastscript';
 import { dataAttrProp, type ComponentContext, type ComponentDef, type ComponentRegistry } from './registry.js';
 
-/**
- *
- */
+/** Narrow a hast node to an Element, false for a text node, a comment, or undefined. */
 export function isElement(node: ElementContent | undefined): node is Element {
   return !!node && node.type === 'element';
 }
@@ -21,9 +19,7 @@ export function strAttr(ctx: ComponentContext, key: string): string | undefined 
 // hast Properties values are PropertyValue (string | number | boolean | array | null).
 // Directive markers (dataPrimitive/dataRole/dataAttr<Key>) are always stamped as strings;
 // this reads them back with that guarantee instead of casting at each call site.
-/**
- *
- */
+/** Read a hast element property as a string, or undefined when it is absent or non-string. */
 export function strProp(node: Element, name: string): string | undefined {
   const value = node.properties?.[name];
   return typeof value === 'string' ? value : undefined;

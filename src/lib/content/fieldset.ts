@@ -7,7 +7,7 @@ import type { FieldDescriptor, ImageValue } from './fields.js';
 import type { ValidationResult } from './types.js';
 import type { StandardInput, StandardSchemaV1 } from './schema.js';
 import { dateInputValue, isCalendarDate } from './frontmatter.js';
-import { compilePattern, patternError, stringLengthError } from './field-rules.js';
+import { compilePattern, dateBoundsError, patternError, stringLengthError } from './field-rules.js';
 
 /** Accept any URL using http or https with a non-empty rest, mirroring the conservative form check. */
 const URL_RE = /^https?:\/\/\S+$/;
@@ -196,8 +196,16 @@ function validateField(
       break;
     }
     case 'date': {
-      if (!isCalendarDate(text)) errors[key] = `${field.label} must be a valid date (YYYY-MM-DD)`;
-      else data[key] = text;
+      if (!isCalendarDate(text)) {
+        errors[key] = `${field.label} must be a valid date (YYYY-MM-DD)`;
+        break;
+      }
+      const boundsError = dateBoundsError(text, field, field.label);
+      if (boundsError != null) {
+        errors[key] = boundsError;
+        break;
+      }
+      data[key] = text;
       break;
     }
     default: {

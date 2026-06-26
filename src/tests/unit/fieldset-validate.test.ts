@@ -66,3 +66,12 @@ describe('fieldset text constraints (v1 parity)', () => {
     expect(() => fieldset({ x: fields.text({ label: 'X', pattern: '(' }) })).toThrow(/X/);
   });
 });
+
+describe('fieldset date bounds (v1 parity)', () => {
+  const fs = fieldset({ d: fields.date({ label: 'D', min: '2020-01-01', max: '2020-12-31' }) });
+  it('rejects a date outside the bounds', () => {
+    expect(fs.validate({ d: '2019-06-01' }, '').ok).toBe(false);
+    expect(fs.validate({ d: '2021-06-01' }, '').ok).toBe(false);
+    expect(fs.validate({ d: '2020-06-01' }, '')).toEqual({ ok: true, data: { d: '2020-06-01' } });
+  });
+});

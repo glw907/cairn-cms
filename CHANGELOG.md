@@ -2,6 +2,33 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.68.0
+
+<!-- release-size: minor -->
+
+The second pre-cutover engine-hardening pass clears eight engine-misc items: two admin accessibility
+fixes, an engine default-icon fallback, and gate, doc, and tooling hygiene.
+
+The component picker dialog now caps its height at 85vh and scrolls its catalog within a held header
+and footer, so a long catalog no longer takes the page over. A repeated content-lifecycle error in the
+concept list now re-announces to a screen reader: the errors route through one polite live region that
+re-speaks an identical message through an invisible nonce, and the visible alerts drop their redundant
+`role` so the message announces once.
+
+The component registry ships a default role-to-glyph fallback for the conventional admonition roles
+(`note`, `tip`, `important`, `warning`, `caution`, `info`, `danger`). A component that declares an icon
+field but no `defaultIconByRole` entry for a role now resolves the engine default, which a site's icon
+set styles; a component's own `defaultIconByRole` still wins. The `ComponentDef.icon` and
+`defaultIconByRole` guidance now states the "logically representative, prefer distinct" rule.
+
+Three gates and one doc tightened: the admin-prose gate now scans the `.ts` copy modules it skipped, a
+new `check:dev-package` gate type-checks and comment-lints `packages/**` in CI, the two
+`rehype-dispatch` helpers gained real doc contracts, and the friction log marks its killed and shipped
+items resolved so it stops resurfacing dead work.
+
+No consumer action is required. The accessibility fixes and the icon fallback are additive; a site using
+the registry's `defaultIcon` may now see an engine default glyph where it previously saw none.
+
 ## 0.67.0
 
 <!-- release-size: minor -->

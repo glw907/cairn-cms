@@ -640,3 +640,15 @@ numeric `number`, a `Date` on a `datetime` field), and a `multiselect` given a l
 a single-element list. Consumers must: nothing. The `fieldset` surface is still additive and not yet
 wired live, and the change brings it in line with the long-standing `defineFields` checks. A site already
 relying on `fieldset` directly sees stricter, correct validation it would have wanted.
+
+## 0.68.0: engine-misc hardening (accessibility, default icons, gates)
+
+The second hardening pass clears eight engine-misc items. The component picker dialog caps at 85vh and
+scrolls its catalog within a held header and footer; a repeated content-lifecycle error in the concept
+list now re-announces to a screen reader through one polite live region. The component registry ships a
+default role-to-glyph fallback for the conventional admonition roles, which a component's own
+`defaultIconByRole` overrides. Internal gate and doc hygiene rounds it out: the admin-prose gate scans
+the `.ts` copy modules, a `check:dev-package` gate covers `packages/**` in CI, and the friction log marks
+its resolved items. Consumers must: nothing. The accessibility fixes and the icon fallback are additive;
+a site using the registry's `defaultIcon` may now resolve an engine default glyph where it previously got
+none.

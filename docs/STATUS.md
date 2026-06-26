@@ -13,8 +13,11 @@ library's own development proves changes against `examples/showcase`.
 
 ## Immediate next action (2026-06-26, latest): BOTH hardening passes DONE (Plan 1 = 0.67.0, Plan 2 = 0.68.0), merged to `main`; NEXT = draft the Contract v2 cutover and gate it on Geoff's review
 
-**Both pre-cutover engine-hardening passes are done and merged to `main`** (fast-forward; unpushed, no npm
-publish yet). The engine is at `0.68.0`.
+**Both pre-cutover engine-hardening passes are done, merged to `main`, and PUBLISHED.** `0.68.0` is live
+on npm as `@glw907/cairn-cms@0.68.0` (`latest`), rolling up the held `0.63.0`-`0.68.0` window (dev-package
+split, pre-B DX slot, Waymark showcase, Contract v2 foundation, both hardening passes) in one release;
+`main` is pushed and GitHub Release `v0.68.0` is cut (Google-style notes). All four CI jobs green (the
+spellcheck `e2e` flaked once, a re-run passed; logged to the friction log).
 
 **Hardening Plan 2 (engine-misc) DONE as `0.68.0`.** All eight items: the picker dialog 85vh cap (flex
 column, scrolling body, cap on Tailwind utilities so it beats DaisyUI's `.modal-box` 100vh, matching

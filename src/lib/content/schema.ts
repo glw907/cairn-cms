@@ -2,6 +2,7 @@
 // declaration yields a plain-data field projection for the editor form, a generated validator,
 // and an inferred frontmatter type. Plan 1 builds the additive primitive; the adapter-contract
 // cutover and the typed reads are Plan 2.
+import { compilePattern, dateBoundsError, patternError, stringLengthError } from './field-rules.js';
 import type { FrontmatterField, ImageValue, ValidationResult } from './types.js';
 import { validateFields } from './validate.js';
 
@@ -77,16 +78,15 @@ export type Infer<S> = S extends ConceptSchema<infer F> ? InferFields<F> : never
 function applyRules(field: FrontmatterField, value: unknown, errors: Record<string, string>, patterns: Map<string, RegExp>): void {
   if (typeof value !== 'string' || value === '') return;
   if (field.type === 'text' || field.type === 'textarea') {
-    if (field.min != null && value.length < field.min) errors[field.name] = `${field.label} must be at least ${field.min} characters`;
-    else if (field.max != null && value.length > field.max) errors[field.name] = `${field.label} must be at most ${field.max} characters`;
-    else if (field.length != null && value.length !== field.length) errors[field.name] = `${field.label} must be exactly ${field.length} characters`;
-    else if (field.pattern != null) {
-      const re = patterns.get(field.name);
-      if (re && !re.test(value)) errors[field.name] = `${field.label} is not in the expected format`;
+    const lengthError = stringLengthError(value, field, field.label);
+    if (lengthError != null) errors[field.name] = lengthError;
+    else {
+      const formatError = patternError(value, patterns.get(field.name), field.label);
+      if (formatError != null) errors[field.name] = formatError;
     }
   } else if (field.type === 'date') {
-    if (field.min != null && value < field.min) errors[field.name] = `${field.label} must be on or after ${field.min}`;
-    else if (field.max != null && value > field.max) errors[field.name] = `${field.label} must be on or before ${field.max}`;
+    const boundsError = dateBoundsError(value, field, field.label);
+    if (boundsError != null) errors[field.name] = boundsError;
   }
 }
 
@@ -105,11 +105,7 @@ function compilePatterns(fields: FrontmatterField[]): Map<string, RegExp> {
   const compiled = new Map<string, RegExp>();
   for (const field of fields) {
     if ((field.type === 'text' || field.type === 'textarea') && field.pattern != null) {
-      try {
-        compiled.set(field.name, new RegExp(field.pattern));
-      } catch (cause) {
-        throw new Error(`cairn: field "${field.name}" has an invalid pattern: ${field.pattern}`, { cause });
-      }
+      compiled.set(field.name, compilePattern(field.pattern, field.name));
     }
   }
   return compiled;

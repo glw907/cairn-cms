@@ -30,6 +30,69 @@ describe('defineRegistry', () => {
   });
 });
 
+describe('defaultIcon engine fallback', () => {
+  it('falls back to the engine default for a known role when the def sets no defaultIconByRole', () => {
+    const reg = defineRegistry({
+      components: [
+        {
+          name: 'admonition',
+          label: '',
+          description: '',
+          build: () => ({ type: 'element', tagName: 'div', properties: {}, children: [] }),
+          attributes: [{ key: 'icon', label: 'Icon', type: 'icon' }],
+        },
+      ],
+    });
+    expect(reg.defaultIcon('admonition', 'warning')).toBe('warning');
+  });
+
+  it("lets a def's own defaultIconByRole override the engine default for the same role", () => {
+    const reg = defineRegistry({
+      components: [
+        {
+          name: 'admonition',
+          label: '',
+          description: '',
+          build: () => ({ type: 'element', tagName: 'div', properties: {}, children: [] }),
+          defaultIconByRole: { warning: 'siren' },
+          attributes: [{ key: 'icon', label: 'Icon', type: 'icon' }],
+        },
+      ],
+    });
+    expect(reg.defaultIcon('admonition', 'warning')).toBe('siren');
+  });
+
+  it('returns undefined for an unknown role even with an icon field', () => {
+    const reg = defineRegistry({
+      components: [
+        {
+          name: 'admonition',
+          label: '',
+          description: '',
+          build: () => ({ type: 'element', tagName: 'div', properties: {}, children: [] }),
+          attributes: [{ key: 'icon', label: 'Icon', type: 'icon' }],
+        },
+      ],
+    });
+    expect(reg.defaultIcon('admonition', 'nope')).toBeUndefined();
+  });
+
+  it('returns undefined for a known role when the def has no icon field', () => {
+    const reg = defineRegistry({
+      components: [
+        {
+          name: 'plain',
+          label: '',
+          description: '',
+          build: () => ({ type: 'element', tagName: 'div', properties: {}, children: [] }),
+          attributes: [{ key: 'x', label: 'X', type: 'text' }],
+        },
+      ],
+    });
+    expect(reg.defaultIcon('plain', 'warning')).toBeUndefined();
+  });
+});
+
 describe('registry.iconField', () => {
   it('returns the first declared icon field (first-wins)', () => {
     const reg = defineRegistry({

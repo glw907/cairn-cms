@@ -86,7 +86,12 @@ export interface ComponentDef {
    *  result, so a build fn stays free of any motion concern.
    */
   build: (ctx: ComponentContext) => Element;
-  /** Optional role-to-default-icon, e.g. `{ caution: 'warning' }`. */
+  /**
+   * Optional role-to-default-icon, e.g. `{ caution: 'warning' }`. Maps a free-string role to a
+   *  glyph key in the site IconSet; choose a logically representative glyph and prefer glyphs
+   *  distinct across roles so the picker stays scannable. Overrides the engine
+   *  {@link DEFAULT_ICON_BY_ROLE} fallback for the roles it names.
+   */
   defaultIconByRole?: Record<string, string>;
   /** One line on when to reach for this component; feeds the picker and the reference file. */
   use?: string;
@@ -94,7 +99,10 @@ export interface ComponentDef {
   attributes?: AttributeField[];
   /** The named content regions this component accepts. */
   slots?: SlotDef[];
-  /** A glyph key from the site IconSet, shown beside the label in the picker. */
+  /**
+   * A glyph key from the site IconSet, shown beside the label in the picker. Choose a logically
+   *  representative glyph and prefer glyphs distinct across components so the picker stays scannable.
+   */
   icon?: string;
   /** A category heading for the picker. Components order by declaration within a group. */
   group?: string;
@@ -138,6 +146,20 @@ function findIconField(def: ComponentDef): AttributeField | undefined {
 }
 
 /**
+ * The engine's role-to-glyph-key fallback for the conventional admonition roles, which a site's
+ *  IconSet may satisfy. A component's own {@link ComponentDef.defaultIconByRole} overrides it.
+ */
+const DEFAULT_ICON_BY_ROLE: Record<string, string> = {
+  note: 'info',
+  tip: 'lightbulb',
+  important: 'star',
+  warning: 'warning',
+  caution: 'alert-triangle',
+  info: 'info',
+  danger: 'flame',
+};
+
+/**
  * Build a registry from a site's component definitions. The single source the render
  * pipeline (directive stamp plus rehype dispatch) and the editor palette both read.
  */
@@ -159,7 +181,12 @@ export function defineRegistry({ components }: { components: ComponentDef[] }): 
     defs: components,
     names: components.map((c) => c.name),
     get: (name) => byName.get(name),
-    defaultIcon: (name, role) => (role ? byName.get(name)?.defaultIconByRole?.[role] : undefined),
+    defaultIcon: (name, role) => {
+      if (!role) return undefined;
+      const def = byName.get(name);
+      if (!def || !findIconField(def)) return undefined;
+      return def.defaultIconByRole?.[role] ?? DEFAULT_ICON_BY_ROLE[role];
+    },
     iconField: (name) => {
       const def = byName.get(name);
       return def ? findIconField(def) : undefined;

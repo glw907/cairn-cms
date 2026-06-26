@@ -271,6 +271,64 @@ The concept-fixed routing table, keyed by concept id (spec section 7.2). Posts a
 entries; pages are plain navigable structure. It is not adapter config, and production passes it as
 the default `routing` to `normalizeConcepts`.
 
+### Fields (Contract v2)
+
+The additive v2 field vocabulary. A concept declares its fields with the `fields` constructor
+namespace, then bundles them into a `fieldset`. This supersedes `defineFields` at the contract-v2
+cutover; until then both paths coexist, and the descriptors a fieldset carries are plain data the
+editor form reads the same way.
+
+#### `fields`
+
+`fields` is the constructor namespace, one function per field type (`text`, `textarea`, `number`,
+`select`, `multiselect`, `url`, `email`, `date`, `datetime`, `boolean`, `image`). Each one takes the
+field's options and returns a plain-data descriptor; a `select` or `multiselect` preserves its
+literal option list so the inferred type narrows to that union.
+
+```ts
+const set = fieldset({
+  title: fields.text({ label: 'Title', required: true }),
+  status: fields.select({ label: 'Status', options: ['draft', 'published'], default: 'draft' }),
+});
+```
+
+#### `fieldset`
+
+```ts
+declare function fieldset<const R extends Record<string, FieldDescriptor>>(
+  record: R,
+  options?: FieldsetOptions,
+): Fieldset<R>;
+```
+
+Build a fieldset from a key-to-descriptor record. The returned schema carries the descriptors as
+plain data for the editor form, a server-derived validator that coerces each value to its type and
+returns field-keyed errors or normalized data, and a Standard Schema conformance property whose
+issues map each error to a single-segment path. `options.refine` runs after the per-field rules
+pass, for cross-field and body-dependent checks.
+
+#### `initialValues`
+
+```ts
+declare function initialValues(fieldset: Fieldset, now?: Date): Record<string, unknown>;
+```
+
+Resolve each descriptor's `default` to a form-initial value, so a fresh entry opens prefilled. The
+`'today'` sentinel on a date field resolves through `now` to its `YYYY-MM-DD` form; an empty-string
+or `false` default is omitted, so an untouched field commits no key. With no `now`, a `'today'`
+default is omitted rather than read off a real clock, keeping the call deterministic and
+Workers-safe.
+
+#### Field types
+
+`FieldDescriptor` is the plain-data descriptor union the form, validator, and inference all read.
+`Fieldset` is the schema a `fieldset` call returns, carrying the descriptors, the behavior table,
+the validator, and the Standard Schema property. `InferFieldset` extracts the normalized
+frontmatter type from a `Fieldset`, where a descriptor declared `required: true` is a required key.
+`FieldsetOptions` carries the `refine` cross-field check. `BehaviorTable` is the per-field
+function-valued behavior co-bundled with a fieldset, empty for a scalar-only fieldset and reserved
+for later composite fields.
+
 ### Render
 
 The render pipeline turns markdown into HTML, dispatching registered components and resolving

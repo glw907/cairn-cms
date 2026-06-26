@@ -28,6 +28,10 @@ const ALLOWLIST = /** @type {Set<string>} */ (
     // `ConceptConfig<ConceptSchema<readonly FrontmatterField[]>>`. The default carries no reader
     // value here, so the page omits it.
     '.#normalizeConcepts',
+    // The page writes the bare `Fieldset` parameter; the real type resolves its default type
+    // argument to `Fieldset<Record<string, FieldDescriptor>>`. The default carries no reader value
+    // here, so the page omits it, mirroring `normalizeConcepts`.
+    '.#initialValues',
   ])
 );
 

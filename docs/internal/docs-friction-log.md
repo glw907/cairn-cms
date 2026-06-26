@@ -666,3 +666,34 @@ post-mortem: `docs/superpowers/plans/2026-06-25-cairn-scaffolder-part-b1-factori
   renders. Separately, the engine's `remark-figure` lifts only `media:` images into a semantic
   `<figcaption>`; a plain-URL figure in sample content gets the placement class but a sibling `<p>`
   caption, so true figure semantics in the demo also want seeded media bytes.
+
+## Contract v2 Plan 1, the `fields.*` foundation (2026-06-25)
+
+The additive field vocabulary surfaced these, all developer-perspective; the validator items are the
+load-bearing carry-forwards for the contract-v2 cutover.
+
+- **developer** (the validator needs constraint parity before it can replace `defineFields`): `fieldset`'s
+  derived validator coerces per type and checks number bounds, select membership, url and email format,
+  date validity, and the image shape, but it does not yet enforce text `min`/`max`/`length`/`pattern` or
+  date `min`/`max` the way the v1 `applyRules`/`compilePatterns` does. The cutover must reach parity, with
+  a parity test matrix and the loud declaration-time pattern compilation that fails a bad pattern at
+  config time. Triaged to the cutover plan.
+- **developer** (the validator reads only form-string input for `number` and `datetime`): the `date` arm
+  coerces a parsed `Date` from `parseMarkdown`, but the `number` and `datetime` arms read only strings, so
+  re-validating a parsed entry whose value is a real number or an ISO datetime drops the key. The cutover
+  should mirror the date arm's parsed-value handling. Triaged to the cutover plan.
+- **developer** (a non-array `multiselect` value is silently dropped): a hand-edited scalar `tags: news`
+  (a string, not a list) coerces to an empty list, so an optional field drops it with no error and a
+  required field reports "is required" although a value was present. This is a faithful carry-forward of
+  the v1 tag arm; the cutover should decide between coercing a lone scalar to a single-element list
+  (forgiving, matches author intent) and a distinct "must be a list" error. Triaged to the cutover plan.
+- **developer** (the reference gate keys a page to an export subpath, so an additive root-barrel surface
+  cannot own a page): the new `fields.*` exports are documented as a `core.md` section rather than a
+  dedicated `fields.md`, because `check:reference` maps the root barrel `.` to `core.md`. Candidate for
+  the cutover: give the vocabulary its own `./fields` subpath and reference page, or keep growing
+  `core.md`.
+- **developer** (the additive-beside-cutover phase carries a barrel name-collision tax): the v2
+  `TextField`/`DateField`/`Infer` names collide with the still-present v1 exports, so Plan 1 exports only
+  the non-colliding subset (`fields`, `fieldset`, `initialValues`, `FieldDescriptor`, `Fieldset`,
+  `InferFieldset`, `FieldsetOptions`, `BehaviorTable`). The individual `*Field` interfaces and the bare
+  `Infer` wait for the cutover to remove the v1 vocabulary and free the names.

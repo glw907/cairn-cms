@@ -2,6 +2,27 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.66.0
+
+<!-- release-size: minor -->
+
+Contract v2 begins with an additive `fields.*` field vocabulary, exported beside the existing
+`defineFields` model. The new surface is opt-in and does not yet wire into the adapter or editor, so a
+site on the current field model is unaffected.
+
+A concept can declare its fields as a record of `fields.*` constructors, each returning a plain-data
+descriptor. The scalars are `text`, `textarea`, `number`, `select`, `multiselect`, `url`, `email`,
+`date`, `datetime`, and `boolean`, with `image` as the rich leaf. `fieldset(record)` derives a
+server-side validator from those descriptors, returning field-keyed errors or normalized data, and
+exposes Standard Schema v1 at its boundary. `InferFieldset` reads the inferred frontmatter type from a
+fieldset, and `initialValues` resolves each field's `default` for the editor form, including the
+`'today'` sentinel on a date field through an injected clock. The new root-barrel exports are `fields`,
+`fieldset`, `initialValues`, and the types `FieldDescriptor`, `Fieldset`, `InferFieldset`,
+`FieldsetOptions`, and `BehaviorTable`.
+
+No consumer action is required. The vocabulary is a foundation; the contract-v2 cutover, a later
+breaking release, migrates concepts off `defineFields` and carries the "Consumers must:" line then.
+
 ## 0.65.0
 
 <!-- release-size: minor -->

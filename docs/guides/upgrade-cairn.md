@@ -620,3 +620,12 @@ client highlighter. GFM task-list checkboxes gain an `aria-label` from their ite
 nothing. A site renders both automatically. To color the highlighted tokens, add a `--cairn-code-*` ramp
 to your theme and style the `.cairn-tok-*` classes from it; the Waymark showcase template is the
 reference.
+
+## 0.66.0: the additive `fields.*` field vocabulary
+
+Contract v2 begins with an additive field vocabulary beside the existing `defineFields` model. A concept
+can declare its fields as a record of `fields.*` constructors, and `fieldset(record)` derives a
+validator with Standard Schema conformance and an inferred type. The new root-barrel exports are
+`fields`, `fieldset`, `initialValues`, `FieldDescriptor`, `Fieldset`, `InferFieldset`, `FieldsetOptions`,
+and `BehaviorTable`. Consumers must: nothing. The vocabulary doesn't yet wire into the adapter or
+editor. The contract-v2 cutover, a later breaking release, names the migration off `defineFields` then.

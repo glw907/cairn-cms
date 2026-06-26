@@ -141,6 +141,16 @@ export function scan(line) {
 const COPY_ATTRS = ['placeholder', 'aria-label', 'title', 'alt'];
 
 /**
+ * Keep only the extracted strings carrying a letter, de-duplicated. The shared tail both
+ * extractors apply to their raw matches before returning.
+ * @param {string[]} found
+ * @returns {string[]}
+ */
+function lettersOnly(found) {
+  return [...new Set(found.filter((s) => /[A-Za-z]/.test(s)))];
+}
+
+/**
  * Pull the user-facing strings out of one component's source: the markup text nodes plus the
  * static values of the copy-bearing attributes. Script and style blocks, comments, and `{...}`
  * expressions are removed first so only literal author-visible copy remains.
@@ -172,8 +182,7 @@ export function extractCopy(src) {
     const v = m[1].replace(/\s+/g, ' ').trim();
     if (v) found.push(v);
   }
-  // Keep only strings that carry a letter, and de-duplicate.
-  return [...new Set(found.filter((s) => /[A-Za-z]/.test(s)))];
+  return lettersOnly(found);
 }
 
 // --- Extracting the user-facing copy from a .ts copy module. ---
@@ -203,7 +212,7 @@ export function extractTsCopy(src) {
       if (v) found.push(v);
     }
   }
-  return [...new Set(found.filter((s) => /[A-Za-z]/.test(s)))];
+  return lettersOnly(found);
 }
 
 // --- Driver. ---

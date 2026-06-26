@@ -32,8 +32,9 @@ the `design.yml` workflow).
 **Verified.** `npm test` EXIT 0 (2486); `check` 0/0; `check:comments`, `check:public-tokens`,
 `test:reskin`, `check:docs` clean; the showcase check 0-in-`src`; the showcase e2e green (golden-path 10/10
 + the styleguide a11y spec); the emitted-template rot gate builds clean. Plan and post-mortem:
-`docs/superpowers/plans/2026-06-25-cairn-scaffolder-part-b2-design-foundation.md`. The merge of
-`feat/scaffolder-b2-design-foundation` to `main` and the push await the user's go-ahead.
+`docs/superpowers/plans/2026-06-25-cairn-scaffolder-part-b2-design-foundation.md`. Merged to `main`
+2026-06-25 (fast-forward to `b098984`); local `main` is 17 commits ahead of `origin/main`, not pushed
+(no npm publish yet).
 
 **Carry-forwards.** The `hello-hero` hero-byte seed and the plain-URL `<figcaption>` lift are now Tasks 3
 and 1 of the engine/DX slot below. Still open past the slot: B4's manual dark toggle adds a `[data-theme]`
@@ -49,8 +50,8 @@ the `hello-hero` hero-byte seed (Task 3), removing the calendar entirely (Task 4
 entry, and the Mode-1 e2e), the showcase README plus a `CAIRN_DEV_BACKEND=1` dev script (Task 5), the
 GitHub-App identity trap (Task 6: appId/installationId are `backend` config, not Worker secrets, and the
 doctor must self-test the runtime source), the owed `check:dev-package` gate (Task 7), and the tutorial
-Milestone 8 rewrite around the dev package (Task 8). Precondition: merge B2 to `main` first, then branch
-the slot off `main` (`git worktree add ../cairn-cms-dx-slot -b feat/pre-b3-engine-dx-slot main`). Method:
+Milestone 8 rewrite around the dev package (Task 8). B2 is merged to `main`, so branch the slot off
+`main` directly (`git worktree add ../cairn-cms-dx-slot -b feat/pre-b3-engine-dx-slot main`). Method:
 main-loop orchestrate-and-verify, `cairn-implementer` per task, full gate between dispatches; the tasks
 are mostly independent, so the slot is workflow-parallelizable on opt-in.
 

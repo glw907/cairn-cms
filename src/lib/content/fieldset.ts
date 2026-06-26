@@ -233,3 +233,24 @@ export function fieldset<const R extends Record<string, FieldDescriptor>>(
   };
   return { fields: record, behavior: {}, validate, '~standard': standard };
 }
+
+/**
+ * Resolve each descriptor's `default` to a form-initial value, so a fresh entry opens prefilled. The
+ *  `'today'` sentinel on a date field resolves through the passed `now` to its `YYYY-MM-DD` form; an
+ *  empty-string or `false` default is omitted, so an untouched field commits no key (the
+ *  minimal-frontmatter invariant). With no `now`, a `'today'` default is omitted rather than read off
+ *  a real clock, since library code must stay deterministic and Workers-safe.
+ */
+export function initialValues(fieldset: Fieldset, now?: Date): Record<string, unknown> {
+  const values: Record<string, unknown> = {};
+  for (const [key, field] of Object.entries(fieldset.fields)) {
+    const value = field.default;
+    if (value === undefined || value === '' || value === false) continue;
+    if (field.type === 'date' && value === 'today') {
+      if (now) values[key] = now.toISOString().slice(0, 10);
+      continue;
+    }
+    values[key] = value;
+  }
+  return values;
+}

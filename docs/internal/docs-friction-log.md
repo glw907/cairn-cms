@@ -642,3 +642,27 @@ post-mortem: `docs/superpowers/plans/2026-06-25-cairn-scaffolder-part-b1-factori
   `src/content/.cairn/index.json` in `buildStart`). Fixed by declaring `@types/node` and shipping the
   manifest. Note for the emitter: `npm pack` of the engine runs its `prepare` build hook, whose stdout
   precedes the tarball name, so the name capture needs `tail -n1`.
+
+## Triage (2026-06-25, Part B2, the Waymark design foundation)
+
+- **developer** (the on-surface ink tokens are a separate, easy-to-miss layer): the public theme names
+  its status inks `--cairn-{info,success,warning}-ink`, distinct from the DaisyUI `--color-*` fills, and
+  `prose.css` first referenced the wrong prefix (`--color-*-ink`). A bare `var()` with no fallback fails
+  silently, so the callout and alert accents flattened to body ink with no error, and the dual-gamut and
+  single-source gates were both blind to it (an undefined `var()` is not a literal, and the single-source
+  check was a prefix match). Fixed by a token-resolution gate that fails on any prose or code-ramp
+  `var(--token)` no block defines, and by a re-skin recipe step naming the fill-versus-ink seam.
+  Carry-forward: the recipe's "fourteen values" headline is honest only for a brand-and-base re-skin; a
+  full status rebrand is more, so the recipe now scopes the count.
+- **developer** (a literal in a comment can reach the compiled CSS): an arbitrary-value Tailwind
+  font-size class, a bracketed `text-` utility wrapping a CSS variable, written out in full inside a
+  script comment, was auto-scanned by `@tailwindcss/postcss` (in `build-admin-css.mjs`, which scans
+  beyond its explicit `@source`) and compiled into the admin sheet as an invalid `font-size` rule,
+  breaking `npm run package`. Reword such patterns so the scanner cannot extract a complete class. This
+  entry avoids writing the literal, for the same reason.
+- **developer** (a showcase wart the template would bake): the `hello` seed post's `media:` hero resolves
+  its DOM and URL (the e2e asserts both) but its bytes are not seeded in `@glw907/cairn-cms-dev`, so the
+  image returns a 404 in a bare preview. Seed the hash in the dev package's `SEED_MEDIA` so the template's hero
+  renders. Separately, the engine's `remark-figure` lifts only `media:` images into a semantic
+  `<figcaption>`; a plain-URL figure in sample content gets the placement class but a sibling `<p>`
+  caption, so true figure semantics in the demo also want seeded media bytes.

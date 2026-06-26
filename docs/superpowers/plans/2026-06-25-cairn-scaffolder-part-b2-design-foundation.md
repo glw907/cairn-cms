@@ -492,3 +492,66 @@ updates the spec/STATUS/memory, and merges `feat/scaffolder-b2-design-foundation
   running the async render: Task 3 pins it with a test and the no-client-highlighter grep. Second, the
   public Tailwind/DaisyUI build inside the emitted template (the B1 rot gate): Task 1 Step 5 and the final
   gate run the emit dry-run, so a public-theme build break is caught before merge.
+
+---
+
+## Post-mortem (2026-06-25)
+
+**Shipped.** Part B2, the Waymark public design foundation, on `feat/scaffolder-b2-design-foundation`
+(held, unmerged). The showcase is the deployable Waymark starter: a DaisyUI 5 oklch token layer (warm-stone
+paper, warm slate ink, a deep ink-blue accent; Fraunces + Source Sans 3 + Source Code Pro, self-hosted via
+Fontsource and loaded through `theme.css` for preview parity), a bespoke token-bound reading surface
+(`prose.css`, every element on the roles), owned chrome components, a composed Home, a `/styleguide` proof
+route, and build-time Shiki highlighting moved into the engine render pipeline (the one published engine
+change, emitting role-bound `.cairn-tok-*` classes, no client highlighter). Three CI gates back the re-skin
+claim. The engine bumps to `0.65.0`; the design-system reference is `docs/internal/public-design-system.md`.
+
+**The design (Phase A and GATE 1).** Four neutral-leaning directions (Quarry, Newsprint, Slate, Patina) were
+rendered as one markup in four token sets and judged by two adversarial critics (a visual critique and an
+a11y/contrast review with real WCAG math). They converged: Slate failed AA (its warm-ochre accent cannot
+serve link and button with one content token), and Newsprint's zero-brand-color default read as a placeholder
+the bar prohibits. The winner was Quarry warmed (deep ink-blue on warm stone, Fraunces over Source Sans 3).
+The user chose the ink-blue accent and named the theme Waymark.
+
+**Two engine changes (the plan expected one).** The highlighter (Task 3) was planned. A second engine change
+emerged at Task 7: axe found a critical `label` violation (remark-gfm task-list checkboxes have no accessible
+name), and the fix belongs at the render layer (the ownership seam), so `rehypeTaskListA11y` names each
+checkbox from its item text. Both live in `src/lib/render/`, both non-breaking.
+
+**The class-based highlighter (the user's steer).** Task 3 was first specced as inline-style output placed
+after the sink guard (the plan's test wanted `var(--cairn-code-*)` in the HTML, but the guard strips inline
+styles). The user steered to class-based output: the highlighter emits `.cairn-tok-*` classes, the engine
+owns the class contract (like `.cairn-place-*`), and the site styles them from `--cairn-code-*`. That
+dissolved the sink-guard contradiction instead of working around it, and removed a fragile ordering invariant.
+
+**GATE 2 earned its keep (a workflow).** The user opted into a multi-agent adversarial workflow. It caught
+two real blockers the CI gates and the main-loop review both missed: prose.css referenced 12 dangling
+`--color-*-ink` tokens (the right prefix is `--cairn-*-ink`), so the callout and alert status accents fell
+back to body ink; and the re-skin fixture's single-source check was a prefix match, blind to a dangling
+token, so it certified the broken surface green. Both folded, plus a token-resolution gate, the
+focus-management a11y fixes (scroll-padding-top, `<main tabindex=-1>`, the `.prose a` ring), and accent added
+to the contrast gate. The decisive re-skin proof passed analytically and visually (rotating only
+`--color-primary` recolors chrome and article together, AA holds in both gamuts; the status callouts keep
+their status colors). The dual-gamut gate had already (Task 7a) caught two contrast bugs the GATE-1 hand
+math passed.
+
+**Locked decisions.** The theme is Waymark (brand name; the DaisyUI id stays `cairn`/`cairn-dark`).
+`themes: false` drops the built-in DaisyUI themes. The on-surface inks are `--cairn-*-ink`, a separate layer
+from the status fills (recipe step 6 documents the seam). The highlighter is class-based and build-only (the
+reading route is server-rendered; Shiki is a lazy chunk in the admin preview only). `theme.css` is the one
+linked sheet (it `@import`s `prose.css` and the fonts) for preview parity.
+
+**Verified.** npm test 2486 EXIT 0; check 0/0; check:comments, check:public-tokens (30 pairs both gamuts plus
+resolution), test:reskin, check:docs, check:version clean; the showcase check 0-in-`src`; the showcase e2e
+green (golden-path 10/10 after fixing a Task-1 preview-stylesheet regression, the styleguide a11y spec 5/5);
+the emitted-template rot gate builds clean. code-simplifier de-duped the no-literals regex and snippeted the
+styleguide swatch grid.
+
+**Carry-forwards.** Seed the hello-hero media bytes in `@glw907/cairn-cms-dev`; lift plain-URL figures into a
+semantic `<figcaption>` (engine `remark-figure` is `media:`-only); B4's manual dark toggle adds a
+`[data-theme]` scope for the `--cairn-*` customs; minor a11y and perf polish (styleguide heading nesting, APG
+Home/End, hero-image CLS dimensions, a font and stylesheet `preload`, the sticky-header contrast spot-check);
+the owed `check:dev-package` gate. A small engine and DX slot before B3 is recommended for the
+fix-before-bake items.
+
+**Next.** Part B3, the defaults surface (or the recommended engine and DX slot first).

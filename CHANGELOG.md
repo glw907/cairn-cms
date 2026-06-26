@@ -2,6 +2,30 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.65.0
+
+<!-- release-size: minor -->
+
+Build-time syntax highlighting moves into the engine render pipeline, and the public side gains the
+Waymark design foundation in the showcase template (the scaffolder's Part B2).
+
+Fenced code is now highlighted at build time. The render pipeline runs Shiki at build and SSR and
+emits role-bound `.cairn-tok-*` token classes with no inline style and no client highlighter, so the
+reading route ships no highlighter JavaScript and the colors come from the site's theme. The engine
+owns the `.cairn-tok-*` class contract (the way it owns `.cairn-place-*` for figures); a site styles
+the classes from its own `--cairn-code-*` variables. Adds `shiki` and `hast-util-to-string` to the
+engine's dependencies.
+
+GFM task-list checkboxes now carry an `aria-label` from their item text, so a screen reader names the
+read-only control. This clears an axe `label` violation on every site while keeping the real disabled
+input the design calls for.
+
+No consumer action is required. A site gets highlighting automatically; to color the tokens, style the
+`.cairn-tok-*` classes from a `--cairn-code-*` ramp (the Waymark showcase template does this, bound to
+the DaisyUI roles). The broader Waymark design foundation (the oklch token layer, the bespoke reading
+surface, the chrome, the `/styleguide` route, and the dual-gamut contrast, token-resolution, and
+re-skin CI gates) ships in `examples/showcase`, the deployable starter, not the published engine.
+
 ## 0.64.0
 
 <!-- release-size: minor -->

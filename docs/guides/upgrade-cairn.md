@@ -612,3 +612,11 @@ The editor's address-collision advisory now compares against the published corpu
 longer reads sibling edit branches when an editor opens an entry. The publish-time re-check is
 unchanged and stays full cross-branch. Consumers must: nothing. The change is internal to the read
 path and additive in behavior.
+
+## 0.65.0: build-time syntax highlighting and labeled task-list checkboxes
+
+Fenced code blocks are now highlighted at build time, emitting `.cairn-tok-*` token classes with no
+client highlighter. GFM task-list checkboxes gain an `aria-label` from their item text. Consumers must:
+nothing. A site renders both automatically. To color the highlighted tokens, add a `--cairn-code-*` ramp
+to your theme and style the `.cairn-tok-*` classes from it; the Waymark showcase template is the
+reference.

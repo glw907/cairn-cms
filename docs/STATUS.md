@@ -11,7 +11,30 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-25, latest): Part B2 (Waymark) is COMPLETE; next is the pre-B3 engine/DX slot, then B3
+## Immediate next action (2026-06-25, latest): Contract v2 — execute Plan 1 (the `fields.*` field foundation)
+
+**Contract v2 is the new lead initiative, ahead of the scaffolder.** A pre-pass adversarial review of the
+site contract (grounded in a nine-tool sentiment sweep) became a full Contract v2 design: a composable
+`fields.*` primitive vocabulary, references on the id-stable content graph, one-level `object`/`array`, an
+open concept model, a namespaced adapter, an entry-aware string renderer with opt-in islands, and a
+`Backend` seam. A multi-agent workflow adversarially reviewed the design (25 verified findings, all
+incorporated). Spec: `docs/superpowers/specs/2026-06-25-cairn-contract-v2-design.md`. Source review:
+`docs/internal/2026-06-25-site-contract-adversarial-review.md`.
+
+**Sequencing decision (confirmed 2026-06-25):** Contract v2 phases 1-2 land BEFORE the scaffolder's B3,
+so B3 bakes the template against v2, not v1. The pre-B3 engine/DX slot (`0.66.0`) and B3 resume once the
+contract stabilizes; the showcase migrates as the first v2 consumer.
+
+**NEXT: execute Contract v2 Plan 1**, the additive `fields.*` field-system foundation (10 tasks, built
+alongside the existing `FrontmatterField` union, no live cutover yet). Plan:
+`docs/superpowers/plans/2026-06-25-cairn-contract-v2-field-foundation.md`. Branch a worktree off `main`
+(`git worktree add ../cairn-cms-contract-v2 -b feat/contract-v2-field-foundation main`). Method: main-loop
+orchestrate-and-verify, `cairn-implementer` per task, full gate between dispatches. Plan series after:
+cutover → references → object/array + adapter + component unification → backend → render + islands.
+
+---
+
+### Prior context: Part B2 (Waymark) is COMPLETE; the scaffolder slot and B3 are deferred behind Contract v2
 
 **Part B2 is done on the `feat/scaffolder-b2-design-foundation` worktree** (held, unmerged, unpushed). The
 showcase is now Waymark, the public reading theme: a DaisyUI 5 oklch token layer (warm-stone paper, warm
@@ -42,7 +65,7 @@ scope for the `--cairn-*` customs, and minor a11y/perf polish (styleguide headin
 the tablist, hero-image CLS dimensions, a font/sheet preload, the sticky-header translucent-background
 contrast spot-check).
 
-**NEXT: the pre-B3 engine/DX slot**, then B3. Plan:
+**DEFERRED behind Contract v2 (resumes after phases 1-2): the pre-B3 engine/DX slot**, then B3. Plan:
 `docs/superpowers/plans/2026-06-25-cairn-pre-b3-engine-dx-slot.md` (8 tasks, target `0.66.0`). It clears
 the engine, dev-package, and first-hour DX warts a read-based dogfood found before B3 bakes the template:
 the `remark-figure` plain-URL `<figcaption>` gap (Task 1), the Ctrl+K/Ctrl+B editor double-fire (Task 2),

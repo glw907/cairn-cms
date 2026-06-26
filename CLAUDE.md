@@ -172,9 +172,12 @@ the em dash in comments (a keyboard, grep, and monospace hygiene rule TSDoc does
 contract and the why, never the type the signature already states, and never a paraphrase of the code.
 
 Developer documentation follows the Google Developer Documentation Style Guide, enforced by Vale's
-vendored Google package (the in-tree `.vale.ini` maps `docs/**`); the global `vale-hook` surfaces its
-findings on save, and the em dash is allowed there, since Google recommends it with no surrounding
-spaces. This is separate from cairn's product prose tooling (`check:prose`, spellcheck, tidy), which
+vendored Google package over the published doc arms only (the in-tree `.vale.ini` scopes Google to
+`reference`/`guides`/`explanation`/`tutorial` plus the docs index, and excludes the internal planning
+docs, since the Google standard governs published documentation, not write-once specs, plans,
+post-mortems, the rolling STATUS, or the friction log); the global `vale-hook` surfaces its findings on
+save and itself skips any `superpowers/` path, and the em dash is allowed there, since Google recommends
+it with no surrounding spaces. This is separate from cairn's product prose tooling (`check:prose`, spellcheck, tidy), which
 serves editors, not Claude.
 
 Svelte components follow the same TSDoc standard for their `<script>` comments and the Svelte

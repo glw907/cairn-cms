@@ -11,21 +11,29 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-26, latest): Contract v2 cutover PLANNED + review-gate PASSED; EXECUTE `docs/superpowers/plans/2026-06-26-cairn-contract-v2-cutover.md` on a worktree off `main`
+## Immediate next action (2026-06-26, latest): Contract v2 cutover DONE + MERGED to `main` (0.69.0, HELD UNPUBLISHED); NEXT = draft the references plan (phase 2 of the v2 series)
 
-**The Contract v2 cutover is drafted, the review gate is passed (Geoff 2026-06-26), and execution is starting.**
-Plan: `docs/superpowers/plans/2026-06-26-cairn-contract-v2-cutover.md` (11 tasks, target **0.69.0**,
-breaking-within-0.x). Authored from a planning workflow (8 seam-specs → 3-lens adversarial hazard sweep →
-Opus synthesis). **Method:** main-loop orchestrate-and-verify on a feature worktree off `main`, test-first.
-The load-bearing wrinkle the hazard sweep forced: **the cutover is one atomic compile unit — tasks 4-9 do
-NOT gate green individually** (retyping `ConceptConfig.schema`→`Fieldset` + deleting the v1 union breaks
-every `src/lib` consumer and the shared test fixture at once, and `check` is 0-warnings, so no mid-migration
-green state exists). Protocol: tasks 1-3 are additive and gated; tasks 4-9 are one atomic change set (write
-the new v2 tests red, migrate every source + test consumer in lockstep, delete `schema.ts`/`validate.ts`
-only after their last consumer, gate ONCE at task 9); tasks 10-11 rebuild dist + migrate the showcase, then
-the single full gate + docs. Decision approved at the gate: datetime ships naive-local (`YYYY-MM-DDTHH:mm`,
-round-tripped as quoted text); the rest of the locked decisions in the plan's "Locked decisions" section
-stand. See [[cairn-site-contract-v2-opportunity]].
+**The Contract v2 cutover is complete and merged to `main`** (commits `35d5417`..`3c22d10`, version **0.69.0**,
+breaking-within-0.x). `fieldset()`/`fields.*` is now the one live field system; v1 (`defineFields`,
+`FrontmatterField`, `validate.ts`) is removed. The editor gained number/select/url/email/datetime arms and a
+unified multiselect; the showcase migrated and added a `status` select; the docs and CHANGELOG carry the
+breaking `Consumers must:` block. Plan + post-mortem:
+`docs/superpowers/plans/2026-06-26-cairn-contract-v2-cutover.md`.
+
+**Held unpublished by decision (Geoff 2026-06-26): do NOT publish 0.69.0 until the whole Contract v2
+initiative is complete.** `main` is pushed but no GitHub Release / npm publish is cut; the held window now
+spans 0.69.0 onward and will roll into one release when references → object/array + adapter + unify → backend
+→ render + islands all land. The two sites (ecxc-ski, 907-life) stay on the prior published range until then.
+
+**Verified.** `npm run check` 0/0; `npm test` exit 0 (2513); `check:comments` + the four doc gates +
+`check:version` (minor) green; the from-scratch consumer-build showcase e2e 36/36; code-simplifier +
+`svelte-reviewer` + `daisyui-a11y-reviewer` clean. Six engine/DX carry-forwards are recorded in the plan's
+post-mortem (the standing-round-trip-test requirement for new field types is the load-bearing one for
+references next).
+
+**NEXT: draft the references plan** (phase 2: the frontmatter reference field on the id-stable content graph,
+the sharpest piece of the series). Brainstorm the open design decisions first, then write the plan. See
+[[cairn-site-contract-v2-opportunity]].
 
 ---
 

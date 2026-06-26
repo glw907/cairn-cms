@@ -532,3 +532,52 @@ Per the workstation default, this runs same-session orchestrate-and-verify: disp
 0/0, `npm test` exit 0) before the next dispatch. Upshift a single dispatch to `model: opus` only for a
 task whose logic this plan does not fully specify; here Task 7 (the validator) and Task 8 (the inference
 types) are the most intricate but are specified, so Sonnet should suffice with main-loop review.
+
+---
+
+## Post-mortem (2026-06-25)
+
+**Built.** All 10 tasks landed on `feat/contract-v2-field-foundation` off `main`. The additive `fields.*`
+vocabulary is complete: the 11 plain-data descriptors (`text`, `textarea`, `number`, `select`,
+`multiselect`, `url`, `email`, `date`, `datetime`, `boolean`, `image`) with generic literal-preserving
+constructors, the `FieldDescriptor` union, `fieldset()` with its server-derived validator and Standard
+Schema adapter, the `ValueOf`/`Infer`/`InferFieldset` inference, `initialValues` with injected-clock
+`'today'` resolution, and the eight root-barrel exports documented in `core.md`. It sits beside the v1
+`defineFields`/`FrontmatterField` model with no cutover; nothing is wired live yet.
+
+**Verified.** `npm test` exit 0 at 2508 (2486 at the branch point; the new field suites plus the review
+fix add the rest). `npm run check` 0/0; `check:comments`, `check:reference`, `check:reference:signatures`,
+`check:package`, `check:docs`, and `check:version` (minor) all green. Thirteen commits: ten task commits,
+one simplify, one review fix, one release-docs. The engine bumps to `0.66.0`.
+
+**Decisions locked.**
+- The constructors capture the whole argument with a `const` type parameter (`<const O extends
+  Omit<XField, 'type'>>(o: O): XField & O`), not just `options`. That was the only way to preserve both
+  `required: true` and the literal `options` union into `Infer`; `npm run check`'s `toEqualTypeOf`
+  assertion is the proof. The runtime stays plain `{ type, ...o }` data. (Task 8, found by the Opus
+  dispatch beyond the plan's `options`-only sketch.)
+- The additive public surface is the non-colliding subset only. The v2 `*Field`/`Infer` names collide
+  with the still-present v1 barrel exports, so the individual `*Field` interfaces and the bare `Infer`
+  stay module-local until the cutover frees the names. `InferFieldset` is the public inference entry.
+- The v2 vocabulary is documented in `core.md`, not a standalone `fields.md`, because the reference gate
+  keys a page to an export subpath and these are root-barrel exports.
+
+**Carry-forwards to the cutover plan (load-bearing).**
+1. **Constraint parity (HIGH).** The validator does not yet enforce text `min`/`max`/`length`/`pattern`
+   or date `min`/`max`, where v1's `applyRules`/`compilePatterns` does. The cutover must reach parity,
+   with a parity test matrix and loud declaration-time pattern compilation, before it can replace
+   `defineFields`.
+2. **Parsed-YAML input symmetry (MED).** The `number`/`datetime` arms read only form-string input; the
+   `date` arm handles a parsed `Date`. Mirror that for a numeric or ISO value at the cutover.
+3. **The multiselect scalar drop.** A hand-edited scalar `tags: news` coerces to an empty list, dropping
+   silently (or a misleading "required" error). Decide coerce-to-single-element vs a "must be a list"
+   error at the cutover.
+4. **Collapse the parallel validators.** Share one coercion core between `fieldset` and v1's
+   `validate.ts` rather than keep both in lockstep; the non-finite-number gap a fresh review caught is
+   exactly the divergence a shared core prevents.
+
+**Review.** A fresh-eyes adversarial review caught two real gaps the suite missed: the `number` arm
+accepted non-finite values (`Number.isNaN` passes `Infinity`, which commits a YAML `.inf` scalar; fixed
+with `Number.isFinite`), and the email regex accepted multi-at-sign garbage (tightened to exclude `@` per
+segment). Both fixed with tests. The `~standard` adapter, the `coerceImage` port from `validate.ts`, and
+the type soundness were confirmed correct.

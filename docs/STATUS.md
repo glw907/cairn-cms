@@ -11,26 +11,53 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-25, latest): Contract v2 — execute Plan 1 (the `fields.*` field foundation)
+## Immediate next action (2026-06-25, latest): Contract v2 Plan 1 is DONE on its worktree; NEXT = merge, then draft the cutover (Plan 2)
 
-**Contract v2 is the new lead initiative, ahead of the scaffolder.** A pre-pass adversarial review of the
-site contract (grounded in a nine-tool sentiment sweep) became a full Contract v2 design: a composable
-`fields.*` primitive vocabulary, references on the id-stable content graph, one-level `object`/`array`, an
-open concept model, a namespaced adapter, an entry-aware string renderer with opt-in islands, and a
-`Backend` seam. A multi-agent workflow adversarially reviewed the design (25 verified findings, all
-incorporated). Spec: `docs/superpowers/specs/2026-06-25-cairn-contract-v2-design.md`. Source review:
-`docs/internal/2026-06-25-site-contract-adversarial-review.md`.
+**Contract v2 Plan 1 (the additive `fields.*` field foundation) is complete on the
+`feat/contract-v2-field-foundation` worktree** (held, unmerged, unpushed). All 10 tasks landed, plus a
+simplify, a fresh-review fix, and the release docs (13 commits). The additive vocabulary is the 11
+plain-data descriptors with generic literal-preserving constructors, `fieldset()` with a server-derived
+validator and Standard Schema, the `Infer`/`InferFieldset` inference, `initialValues` with injected-clock
+`'today'` resolution, and 8 root-barrel exports documented in `core.md`. It sits beside v1 `defineFields`;
+nothing is wired live. The engine bumps to `0.66.0`. Plan + post-mortem:
+`docs/superpowers/plans/2026-06-25-cairn-contract-v2-field-foundation.md`.
 
-**Sequencing decision (confirmed 2026-06-25):** Contract v2 phases 1-2 land BEFORE the scaffolder's B3,
-so B3 bakes the template against v2, not v1. The pre-B3 engine/DX slot (`0.66.0`) and B3 resume once the
-contract stabilizes; the showcase migrates as the first v2 consumer.
+**Verified.** `npm test` exit 0 (2508); `npm run check` 0/0; `check:comments`, `check:reference`,
+`check:reference:signatures`, `check:package`, `check:docs`, `check:version` (minor) all green. A
+fresh-eyes review caught and fixed two validator gaps (non-finite numbers, multi-at-sign emails).
 
-**NEXT: execute Contract v2 Plan 1**, the additive `fields.*` field-system foundation (10 tasks, built
-alongside the existing `FrontmatterField` union, no live cutover yet). Plan:
-`docs/superpowers/plans/2026-06-25-cairn-contract-v2-field-foundation.md`. Branch a worktree off `main`
-(`git worktree add ../cairn-cms-contract-v2 -b feat/contract-v2-field-foundation main`). Method: main-loop
-orchestrate-and-verify, `cairn-implementer` per task, full gate between dispatches. Plan series after:
-cutover → references → object/array + adapter + component unification → backend → render + islands.
+**Design context (unchanged).** A pre-pass adversarial review (nine-tool sentiment sweep) became the full
+Contract v2 design: the composable `fields.*` vocabulary, references on the id-stable content graph,
+one-level `object`/`array`, an open concept model, a namespaced adapter, an entry-aware string renderer
+with opt-in islands, and a `Backend` seam (25 verified review findings, all incorporated). Spec:
+`docs/superpowers/specs/2026-06-25-cairn-contract-v2-design.md`. Source review:
+`docs/internal/2026-06-25-site-contract-adversarial-review.md`. Sequencing (confirmed 2026-06-25):
+Contract v2 phases 1-2 land BEFORE the scaffolder's B3, so B3 bakes the template against v2; the
+showcase migrates as the first v2 consumer.
+
+**Carry-forwards the cutover (Plan 2) MUST fold in (from the Plan 1 review and post-mortem):**
+1. **Constraint parity (HIGH).** The `fieldset` validator does not yet enforce text
+   `min`/`max`/`length`/`pattern` or date `min`/`max`; reach parity with v1's `applyRules`/
+   `compilePatterns` (plus loud declaration-time pattern compilation and a parity test matrix) before the
+   new validator can replace `defineFields`.
+2. **Parsed-YAML input symmetry (MED).** The `number`/`datetime` arms read only form-string input; mirror
+   the `date` arm's parsed-`Date` handling for a numeric or ISO value.
+3. **The multiselect scalar drop.** Decide coerce-a-scalar-to-a-single-element-list vs a "must be a list"
+   error (today a scalar `tags: news` drops silently or reports a misleading "required").
+4. **Collapse the parallel validators.** Share one coercion core between `fieldset` and v1's `validate.ts`.
+
+**NEXT (two steps).** (1) Merge `feat/contract-v2-field-foundation` to `main` (fast-forward; the worktree
+is gate-clean, and this STATUS plus the post-mortem ride in the merge). (2) Draft Contract v2 Plan 2, the
+cutover: wire `fields.*`/`fieldset` into the live editor form, the validator, delivery, and the manifest,
+migrate the showcase concepts off `defineFields`, remove `FrontmatterField`/`defineFields`/`validate.ts`,
+and fold in the four carry-forwards above. Brainstorm the open cutover decisions with Geoff first (the
+migration sequence, whether the showcase migrates in the same plan, generating the editor form from
+descriptors), then write the plan. Plan series after the cutover: references → object/array + adapter +
+component unification → backend → render + islands.
+
+**Version note:** Contract v2 Plan 1 took `0.66.0` (the lead initiative). The deferred pre-B3 engine/DX
+slot, previously earmarked `0.66.0`, re-numbers to the next free minor when it resumes after the contract
+stabilizes.
 
 ---
 

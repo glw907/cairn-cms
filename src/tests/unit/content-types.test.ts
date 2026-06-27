@@ -22,6 +22,10 @@ function widgetFor(field: NamedField): string {
       return field.options ? `multiselect:${field.options.length}` : 'csv';
     case 'image':
       return 'image';
+    case 'reference':
+      return `reference:${field.concept}`;
+    case 'array':
+      return `array:${field.item.type}`;
   }
 }
 

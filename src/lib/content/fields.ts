@@ -83,6 +83,20 @@ export interface ImageField extends FieldBase {
   /** Whether this field feeds the social-card image. */
   seo?: boolean;
 }
+/** A single edge to one entry of a named concept, stored as that target's permanent id. */
+export interface ReferenceField extends FieldBase {
+  type: 'reference';
+  /** The concept whose entries this field references. */
+  concept: string;
+}
+/** A repeatable field whose stored value is a list of its item's values. */
+export interface ArrayField extends FieldBase {
+  type: 'array';
+  /** The descriptor each list element conforms to. This phase accepts only a reference item. */
+  item: FieldDescriptor;
+  /** A label for one row, shown beside the add and remove controls. */
+  itemLabel?: string;
+}
 /** The plain-data descriptor union the form, validator, and inference all read. Grows per task. */
 export type FieldDescriptor =
   | TextField
@@ -95,7 +109,9 @@ export type FieldDescriptor =
   | DateField
   | DatetimeField
   | BooleanField
-  | ImageField;
+  | ImageField
+  | ReferenceField
+  | ArrayField;
 
 /**
  * The constructor namespace a concept declares its fields with. Each constructor captures its
@@ -126,4 +142,14 @@ export const fields = {
   boolean: <const O extends Omit<BooleanField, 'type'>>(o: O): BooleanField & O => ({ type: 'boolean', ...o }),
   /** An image field whose value is the nested ImageValue object. */
   image: <const O extends Omit<ImageField, 'type'>>(o: O): ImageField & O => ({ type: 'image', ...o }),
+  /** A single reference field storing one target entry's permanent id. */
+  reference: <const O extends Omit<ReferenceField, 'type'>>(o: O): ReferenceField & O => ({ type: 'reference', ...o }),
+  /**
+   * A repeatable field over one item descriptor, preserving the item type for inference. This phase
+   *  accepts only a reference item; `fieldset` rejects any other at declaration.
+   */
+  array: <const I extends FieldDescriptor, const O extends Omit<ArrayField, 'type' | 'item'>>(
+    item: I,
+    o?: O,
+  ): ArrayField & { item: I } & O => ({ type: 'array', item, ...(o as O) }),
 };

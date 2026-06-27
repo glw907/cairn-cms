@@ -52,6 +52,8 @@ export type {
   DatetimeField,
   BooleanField,
   ImageField,
+  ReferenceField,
+  ArrayField,
 } from './content/fields.js';
 export { fieldset, initialValues } from './content/fieldset.js';
 export type { Fieldset, InferFieldset, FieldsetOptions, BehaviorTable } from './content/fieldset.js';

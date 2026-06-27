@@ -135,6 +135,32 @@ export function isCalendarDate(s: string): boolean {
   );
 }
 
+/**
+ * Canonicalize one raw reference value to its target id. A Date (a YAML-parsed unquoted date-shaped id)
+ * becomes its UTC-sliced `YYYY-MM-DD` string, so a stored id never depends on the reader's timezone; a
+ * string is trimmed; anything else is the empty string. `validate`, `extractReferenceEdges`, and
+ * `formValues` all read through this, so a hand-edited or rewriter-emitted value canonicalizes identically.
+ */
+export function referenceIdFromValue(value: unknown): string {
+  if (value instanceof Date) return dateInputValue(value);
+  if (typeof value === 'string') return value.trim();
+  return '';
+}
+
+/**
+ * Canonicalize a raw `array(reference)` value to its list of target ids. An array maps each element
+ * through `referenceIdFromValue`; a lone non-empty scalar is one element (a single id a YAML scalar
+ * carries, never dropped to an empty list); anything else is empty. Empty ids are dropped.
+ */
+export function referenceIdsFromValue(value: unknown): string[] {
+  const list = Array.isArray(value)
+    ? value.map(referenceIdFromValue)
+    : typeof value === 'string' && value.trim() !== ''
+      ? [referenceIdFromValue(value)]
+      : [];
+  return list.filter((id) => id !== '');
+}
+
 /** Coerce parsed frontmatter to the form-ready values the editor inputs expect, one rule per field type. */
 export function formValues(
   fields: NamedField[],

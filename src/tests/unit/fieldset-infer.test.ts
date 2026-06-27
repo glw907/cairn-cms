@@ -30,4 +30,15 @@ describe('Infer', () => {
       image?: { src: string; alt: string; caption?: string; decorative?: boolean };
     }>();
   });
+
+  it('infers a reference as string and an array(reference) as an optional string[]', () => {
+    const withRefs = fieldset({
+      author: fields.reference({ concept: 'pages', label: 'Author', required: true }),
+      related: fields.array(fields.reference({ concept: 'posts', label: 'Post' }), { label: 'Related' }),
+    });
+    expectTypeOf<InferFieldset<typeof withRefs>>().toEqualTypeOf<{
+      author: string;
+      related?: string[];
+    }>();
+  });
 });

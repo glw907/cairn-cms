@@ -6,8 +6,9 @@
 import type { FieldDescriptor, ImageValue } from './fields.js';
 import type { ValidationResult } from './types.js';
 import type { StandardInput, StandardSchemaV1 } from './standard-schema.js';
-import { datetimeInputValue, dateInputValue, isCalendarDate } from './frontmatter.js';
+import { datetimeInputValue, dateInputValue, isCalendarDate, referenceIdsFromValue } from './frontmatter.js';
 import { compilePattern, dateBoundsError, patternError, stringLengthError } from './field-rules.js';
+import { isValidId } from './ids.js';
 
 /** Accept any URL using http or https with a non-empty rest, mirroring the conservative form check. */
 const URL_RE = /^https?:\/\/\S+$/;
@@ -57,13 +58,15 @@ type ValueOf<D extends FieldDescriptor> = D extends { type: 'number' }
     ? boolean
     : D extends { type: 'image' }
       ? ImageValue
-      : D extends { type: 'select'; options: readonly (infer O extends string)[] }
-        ? O
-        : D extends { type: 'multiselect'; options: readonly (infer O extends string)[] }
-          ? O[]
-          : D extends { type: 'multiselect' }
-            ? string[]
-            : string;
+      : D extends { type: 'array'; item: infer I extends FieldDescriptor }
+        ? ValueOf<I>[]
+        : D extends { type: 'select'; options: readonly (infer O extends string)[] }
+          ? O
+          : D extends { type: 'multiselect'; options: readonly (infer O extends string)[] }
+            ? O[]
+            : D extends { type: 'multiselect' }
+              ? string[]
+              : string;
 
 /** Flatten an intersection into a single readable object type. */
 type Prettify<T> = { [K in keyof T]: T[K] } & {};
@@ -174,6 +177,26 @@ function validateField(
     return;
   }
 
+  // array(reference): an early branch, NOT a post-coerce switch case. coerceToText returns '' for an
+  // array, so the empty-first drop below would silently lose an optional list or falsely error a
+  // required one. The canonicalizer coerces a lone scalar to one element and a Date element to its id.
+  // Each element must pass isValidId (the item's reference rule this phase); a required empty list
+  // errors; the key is stored only when the list is non-empty.
+  if (field.type === 'array') {
+    const list = referenceIdsFromValue(value);
+    if (field.required && list.length === 0) {
+      errors[key] = `${field.label} is required`;
+      return;
+    }
+    const invalid = list.find((id) => !isValidId(id));
+    if (invalid !== undefined) {
+      errors[key] = `${field.label} is not a valid reference`;
+      return;
+    }
+    if (list.length > 0) data[key] = list;
+    return;
+  }
+
   // Every other type is "not provided when empty" first, then coerced. `coerceToText` turns a parsed
   // value into its string form BEFORE the empty check, so a real parsed value (a Date on a date or
   // datetime field, a number on a number field) is not read as empty.
@@ -223,6 +246,13 @@ function validateField(
       data[key] = text;
       break;
     }
+    case 'reference': {
+      // A scalar edge: the empty-first drop above already handled an absent optional, so a non-empty
+      // value must be a valid id. An invalid token is a corrupted edge, not a coercible value.
+      if (!isValidId(text)) errors[key] = `${field.label} is not a valid reference`;
+      else data[key] = text;
+      break;
+    }
     default: {
       // text, textarea, datetime: a trimmed non-empty string. text and textarea also enforce the
       // string-length and pattern constraints (v1 parity); datetime stays a plain string for now,
@@ -258,6 +288,21 @@ function checkSeoImageFields(record: Record<string, FieldDescriptor>): void {
   }
 }
 
+// This phase ships array(reference) only: an array's item must be a reference descriptor. A non-reference
+// item (a text or select item) is a phase-2 capability the validator and editor do not yet implement, so
+// fail loudly at declaration rather than silently mishandling its elements at save. Phase 2 generalizes
+// the array item with no API change, and this guard relaxes then.
+function checkArrayItems(record: Record<string, FieldDescriptor>): void {
+  for (const [key, field] of Object.entries(record)) {
+    if (field.type === 'array' && field.item.type !== 'reference') {
+      throw new Error(
+        `cairn: the array field "${key}" must hold only reference items this phase, but its item is ` +
+          `"${field.item.type}". Use fields.array(fields.reference({ concept })) for now.`,
+      );
+    }
+  }
+}
+
 /**
  * Build a fieldset from a key-to-descriptor record. The returned schema carries the descriptors, a
  *  server-derived validator that coerces per type and returns field-keyed errors or normalized data,
@@ -268,6 +313,7 @@ export function fieldset<const R extends Record<string, FieldDescriptor>>(
   options: FieldsetOptions = {},
 ): Fieldset<R> {
   checkSeoImageFields(record);
+  checkArrayItems(record);
   // Compile each text/textarea pattern once at construction, so a malformed pattern fails loudly here
   // (mirroring v1's compilePatterns) rather than on every save. Keyed by field name for validateField.
   const patterns = new Map<string, RegExp>();

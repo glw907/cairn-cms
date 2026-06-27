@@ -711,6 +711,8 @@ function signatures above reference these.
 | `DatetimeField` | `interface DatetimeField` | A naive-local `YYYY-MM-DDTHH:mm` minute-precision datetime field. |
 | `BooleanField` | `interface BooleanField` | A checkbox field; absent means false. |
 | `ImageField` | `interface ImageField` | A hero image set in frontmatter, with an optional `seo` flag for the social card. |
+| `ReferenceField` | `interface ReferenceField` | A single typed edge to one entry of a named `concept`, stored as that target's permanent id. |
+| `ArrayField` | `interface ArrayField` | A repeatable field over one `item` descriptor; this phase accepts only a reference item. |
 | `ImageValue` | `interface ImageValue` | The stored value of an `image` field: a `media:` src, an alt, and an optional caption. |
 | `ValidationResult` | `type ValidationResult` | A validator's verdict: normalized data, or field-keyed errors. |
 | `StandardInput` | `interface StandardInput` | The validate input the adapter takes: raw frontmatter and the body. |

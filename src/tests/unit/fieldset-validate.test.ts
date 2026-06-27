@@ -158,6 +158,43 @@ describe('fieldset image field (v1 parity)', () => {
   });
 });
 
+describe('fieldset reference and array(reference)', () => {
+  const fs = fieldset({
+    author: fields.reference({ concept: 'pages', label: 'Author', required: true }),
+    related: fields.array(fields.reference({ concept: 'posts', label: 'Post' }), { label: 'Related' }),
+  });
+
+  it('validates reference and array(reference) ids', () => {
+    expect(fs.validate({ author: 'jane-doe', related: ['a-post', 'b-post'] }, '')).toEqual({
+      ok: true,
+      data: { author: 'jane-doe', related: ['a-post', 'b-post'] },
+    });
+    expect(fs.validate({ author: '', related: [] }, '')).toEqual({ ok: false, errors: { author: 'Author is required' } });
+    expect(fs.validate({ author: 'Not An Id' }, '')).toEqual({
+      ok: false,
+      errors: { author: 'Author is not a valid reference' },
+    });
+  });
+
+  it('coerces a lone scalar in an array slot to a single-element list', () => {
+    expect(fs.validate({ author: 'jane-doe', related: 'b-post' }, '')).toEqual({
+      ok: true,
+      data: { author: 'jane-doe', related: ['b-post'] },
+    });
+  });
+
+  it('coerces a YAML-parsed Date element to its canonical id, never TZ-shifted garbage', () => {
+    expect(fs.validate({ author: 'jane-doe', related: [new Date('2026-01-02T00:00:00Z')] }, '')).toEqual({
+      ok: true,
+      data: { author: 'jane-doe', related: ['2026-01-02'] },
+    });
+  });
+
+  it('rejects an array of a non-reference item this phase', () => {
+    expect(() => fieldset({ tags: fields.array(fields.text({ label: 'Tag' })) })).toThrow(/only reference items/);
+  });
+});
+
 // The refine cross-field path, ported from the v1 defineFields suite.
 describe('fieldset refine', () => {
   const fs = fieldset(

@@ -135,6 +135,30 @@ export function isCalendarDate(s: string): boolean {
   );
 }
 
+/** Coerce parsed frontmatter to the form-ready values the editor inputs expect, one rule per field type. */
+export function formValues(
+  fields: NamedField[],
+  frontmatter: Record<string, unknown>,
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const field of fields) {
+    const value = frontmatter[field.name];
+    if (field.type === 'date') out[field.name] = dateInputValue(value);
+    // A datetime round-trips as text; a value gray-matter parsed into a Date reformats to the
+    // naive-local minute-precision string the datetime-local input wants.
+    else if (field.type === 'datetime') out[field.name] = datetimeInputValue(value);
+    else if (field.type === 'boolean') out[field.name] = value === true;
+    else if (field.type === 'multiselect') out[field.name] = Array.isArray(value) ? value.map(String) : [];
+    // A hero is a nested object; the default String() arm would corrupt it to '[object Object]'.
+    // Hand the stored object back as-is so the editor reads .src/.alt/.caption on open.
+    else if (field.type === 'image') out[field.name] = value !== null && typeof value === 'object' ? value : undefined;
+    // Every other type is a plain string input: a nullish value reads as empty, anything else
+    // stringifies (a string passes through unchanged).
+    else out[field.name] = value == null ? '' : String(value);
+  }
+  return out;
+}
+
 /** Reassemble a markdown file from frontmatter and body for committing. */
 export function serializeMarkdown(frontmatter: object, body: string): string {
   return matter.stringify(body, frontmatter);

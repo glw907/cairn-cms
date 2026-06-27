@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import matter from 'gray-matter';
 import {
   frontmatterFromForm,
+  formValues,
   dateInputValue,
   datetimeInputValue,
   isCalendarDate,
@@ -252,6 +253,44 @@ describe('serialize and parse', () => {
     const parsed = parseMarkdown(out);
     // The stored value reads back to the same naive-local string the input wants, never blank.
     expect(datetimeInputValue(parsed.frontmatter.when)).toBe('2026-06-26T14:30');
+  });
+});
+
+describe('formValues', () => {
+  it('coerces each field type to its input-ready form value', () => {
+    const fields: NamedField[] = [
+      { type: 'text', name: 'title', label: 'Title' },
+      { type: 'date', name: 'date', label: 'Date' },
+      { type: 'datetime', name: 'when', label: 'When' },
+      { type: 'boolean', name: 'draft', label: 'Draft' },
+      { type: 'multiselect', name: 'tags', label: 'Tags' },
+      { type: 'image', name: 'image', label: 'Hero' },
+    ];
+    const frontmatter = {
+      title: 'First Snow',
+      date: new Date('2026-01-05T00:00:00.000Z'),
+      when: new Date('2026-06-26T14:30:00.000Z'),
+      draft: true,
+      tags: ['training', 'racing'],
+      image: { src: 'media:a.0123456789abcdef', alt: 'A ridge' },
+    };
+
+    expect(formValues(fields, frontmatter)).toEqual({
+      title: 'First Snow',
+      date: '2026-01-05',
+      when: '2026-06-26T14:30',
+      draft: true,
+      tags: ['training', 'racing'],
+      image: { src: 'media:a.0123456789abcdef', alt: 'A ridge' },
+    });
+  });
+
+  it('normalizes a nullish text value to an empty string and an absent multiselect to an empty list', () => {
+    const fields: NamedField[] = [
+      { type: 'text', name: 'title', label: 'Title' },
+      { type: 'multiselect', name: 'tags', label: 'Tags' },
+    ];
+    expect(formValues(fields, {})).toEqual({ title: '', tags: [] });
   });
 });
 

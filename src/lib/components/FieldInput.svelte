@@ -10,12 +10,16 @@ nested decode in `frontmatter.ts` reads the value back from the right slot. Each
 from `frontmatter[field.name]`, so a nested caller passes the row or object slice as `frontmatter`
 and the leaf key as `field.name`, leaving the reads unchanged.
 
-The `object` and non-reference `array` arms are not handled here yet; they fall through to the text
-fallback until the repeatable-row editor wires them.
+An `object` field renders a labeled `ObjectGroupField`, and a non-reference `array` renders a
+`RepeatableField`; both recurse one level back through this dispatcher for their leaves, which the
+one-level nesting cap (the declaration guard) bounds so the recursion terminates. An
+`array(reference)` stays on `ReferenceField`.
 -->
 <script lang="ts">
   import MediaHeroField from './MediaHeroField.svelte';
   import ReferenceField from './ReferenceField.svelte';
+  import ObjectGroupField from './ObjectGroupField.svelte';
+  import RepeatableField from './RepeatableField.svelte';
   import { isClosedMultiselect } from '../content/frontmatter.js';
   import type { NamedField } from '../content/types.js';
   import type { ImageValue } from '../content/types.js';
@@ -224,6 +228,10 @@ fallback until the repeatable-row editor wires them.
   <ReferenceField {field} value={(frontmatter[field.name] ?? '') as string} {targets} ondirty={markFieldsDirty} />
 {:else if field.type === 'array' && field.item.type === 'reference'}
   <ReferenceField {field} value={(frontmatter[field.name] ?? []) as string[]} {targets} ondirty={markFieldsDirty} />
+{:else if field.type === 'object'}
+  <ObjectGroupField {field} {name} frontmatter={(frontmatter[field.name] ?? {}) as Record<string, unknown>} {markFieldsDirty} {mediaLibrary} {conceptId} {id} {heroFieldRefs} {targets} {onuploaded} {onheroneedsalt} />
+{:else if field.type === 'array' && field.item.type !== 'reference'}
+  <RepeatableField {field} {name} rows={(frontmatter[field.name] ?? []) as unknown[]} {markFieldsDirty} {mediaLibrary} {conceptId} {id} {heroFieldRefs} {targets} {onuploaded} {onheroneedsalt} />
 {:else}
   <label class="flex flex-col gap-1">
     <span class="text-sm font-medium">{field.label}</span>

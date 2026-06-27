@@ -117,3 +117,31 @@ describe('EditPage v2 field arms', () => {
     await expect.element(page.getByLabelText('Keywords')).toHaveValue('alpha, beta');
   });
 });
+
+// A single array(object) field, landing in the Details panel because it is not named title or draft.
+const containerFields: NamedField[] = [
+  {
+    type: 'array',
+    name: 'faq',
+    label: 'FAQ',
+    itemLabel: 'question',
+    item: { type: 'object', fields: { question: { type: 'text', label: 'Question' }, answer: { type: 'textarea', label: 'Answer' } } },
+  },
+];
+
+function containerProps() {
+  const p = props();
+  return { ...p, data: { ...p.data, fields: containerFields, frontmatter: { faq: [{ question: 'How?', answer: 'Like this.' }] } } };
+}
+
+describe('EditPage container field arms', () => {
+  it('renders a RepeatableField for an array(object) field in the Details panel', async () => {
+    const page = render(EditPage, containerProps());
+    await openDetails(page);
+    await expect.element(page.getByRole('button', { name: /add faq/i })).toBeInTheDocument();
+    // The single seeded row shows its itemLabel value as the collapsed summary.
+    const toggle = document.querySelector('[data-cairn-row-toggle]');
+    expect(toggle).not.toBeNull();
+    expect(toggle?.textContent).toContain('How?');
+  });
+});

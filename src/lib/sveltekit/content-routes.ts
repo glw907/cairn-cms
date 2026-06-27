@@ -1709,7 +1709,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     // Cross-branch reference gate (fail-closed). A reference index unions main's published edges and
     // every open cairn/* branch; if it cannot be built (a transient branch read failure), refuse
     // rather than rename a still-referenced target and strand the inbound edge.
-    let refIndex;
+    let refIndex: Awaited<ReturnType<typeof buildReferenceIndex>>;
     try {
       refIndex = await buildReferenceIndex(runtime.backend, token, runtime.concepts, manifest, { strict: true });
     } catch {

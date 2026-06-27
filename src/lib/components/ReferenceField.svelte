@@ -11,7 +11,7 @@ component owns the cardinality, the chips, and the hidden inputs the form submit
 <script lang="ts">
   import { untrack } from 'svelte';
   import type { LinkTarget } from '../content/manifest.js';
-  import type { ReferenceField, ArrayField } from '../content/fields.js';
+  import type { ReferenceField } from '../content/fields.js';
   import type { NamedField } from '../content/types.js';
   import EntryPicker from './EntryPicker.svelte';
 
@@ -28,11 +28,13 @@ component owns the cardinality, the chips, and the hidden inputs the form submit
 
   // The descriptor's concept, read from the single reference or the array's reference item, so the
   // picker scopes to the right concept and a chip resolves its title within that concept's targets.
-  const concept = $derived(
-    field.type === 'array'
-      ? ((field as NamedField & ArrayField).item as ReferenceField).concept
-      : (field as NamedField & ReferenceField).concept,
-  );
+  // Narrow on field.type so the access needs no cast; the array item is always a reference here
+  // (fieldset's checkArrayItems enforces it at declaration), so the one cast names that guarantee.
+  const concept = $derived.by(() => {
+    if (field.type === 'array') return (field.item as ReferenceField).concept;
+    if (field.type === 'reference') return field.concept;
+    return '';
+  });
 
   // The single reference's current id, seeded once from the prop and owned thereafter (untrack marks
   // the read a deliberate one-time seed, not a reactive dependency). Updated on pick.

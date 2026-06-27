@@ -259,20 +259,20 @@ export function verifyManifest(built: Manifest, committedRaw: string): void {
     version: 1,
     entries: built.entries.map((b) => {
       const c = committedByKey.get(keyOf(b));
-      let normalized = b;
-      if (normalized.mediaRefs && c && c.mediaRefs === undefined) {
-        const { mediaRefs: _dropped, ...rest } = normalized;
-        normalized = rest;
+      let entry = b;
+      if (entry.mediaRefs && c && c.mediaRefs === undefined) {
+        const { mediaRefs: _dropped, ...rest } = entry;
+        entry = rest;
       }
       // references is additive: a site whose committed manifest predates the field must still build,
       // even when its content carries reference edges. Drop the built entry's references only when the
       // committed counterpart omits the key, so an un-regenerated site matches while a regenerated one
       // (committed carries references) still detects real drift in that field.
-      if (normalized.references && c && c.references === undefined) {
-        const { references: _dropped, ...rest } = normalized;
-        normalized = rest;
+      if (entry.references && c && c.references === undefined) {
+        const { references: _dropped, ...rest } = entry;
+        entry = rest;
       }
-      return normalized;
+      return entry;
     }),
   };
   const normalizedRaw = serializeManifest(normalized);

@@ -25,6 +25,19 @@ export const CONCEPT_ROUTING: Readonly<Record<string, RoutingRule>> = {
 /** Routing for a concept with no table entry: a plain, non-feed, routable page. */
 const DEFAULT_ROUTING: RoutingRule = { routable: true, dated: false, inFeeds: false };
 
+/** The named routing shorthands, each expanding to a concrete rule. */
+const ROUTING_SHORTHANDS: Readonly<Record<'feed' | 'page' | 'embedded', RoutingRule>> = {
+  feed: { routable: true, dated: true, inFeeds: true },
+  page: { routable: true, dated: false, inFeeds: false },
+  embedded: { routable: false, dated: false, inFeeds: false },
+};
+
+/** Expand a concept's routing shorthand to a concrete rule. The single resolution point: omitted is `page`. */
+export function resolveRouting(routing: ConceptConfig['routing']): RoutingRule {
+  if (routing === undefined) return ROUTING_SHORTHANDS.page;
+  return typeof routing === 'string' ? ROUTING_SHORTHANDS[routing] : routing;
+}
+
 /** Title-case a concept id for the default sidebar label, e.g. "posts" to "Posts". */
 function defaultLabel(id: string): string {
   return id.charAt(0).toUpperCase() + id.slice(1);
@@ -47,7 +60,7 @@ const DATE_PREFIXES = new Set<string>(['year', 'month', 'day']);
  * here rather than emitting a wrong or defaulted URL at render. The permalink must be root-relative and
  * use only known tokens, a date token requires a dated concept, and the datePrefix must be in range.
  */
-function validateUrlPolicy(id: string, policy: ConceptUrlPolicy, dated: boolean): void {
+export function validateUrlPolicy(id: string, policy: ConceptUrlPolicy, dated: boolean): void {
   if (policy.permalink !== undefined) {
     const pattern = policy.permalink;
     if (!pattern.startsWith('/')) {

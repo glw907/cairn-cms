@@ -75,7 +75,6 @@ export interface SiteConfig {
   siteName: string;
   description?: string;
   author?: string;
-  url?: string;
   locale?: string;
   /** Named navigation menus, each a NavNode[] (normalized by extractMenu). */
   menus?: Record<string, unknown>;

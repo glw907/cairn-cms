@@ -70,6 +70,15 @@ export interface ConceptConfig<S extends Fieldset = Fieldset> {
   /** The concept's fieldset: the form projection, the generated validator, and the inferred type. */
   schema: S;
   /**
+   * This concept's routing. A named shorthand (`'feed'` dated and in feeds, `'page'` a routable
+   *  static page, `'embedded'` not routable) or an explicit rule. Omitted means `'page'`.
+   */
+  routing?: 'feed' | 'page' | 'embedded' | RoutingRule;
+  /** The permalink pattern, root-relative, e.g. `/blog/:year/:slug`. Defaults by concept id. */
+  permalink?: string;
+  /** Date-prefix granularity for a dated concept's id-to-slug stripping. Defaults to `day`. */
+  datePrefix?: DatePrefix;
+  /**
    * Frontmatter keys to surface on each `ContentSummary.fields`, so a list card reads an authored
    *  field without a per-entry detail read. Each key should also be declared in `schema`.
    */

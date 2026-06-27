@@ -103,6 +103,23 @@ export function normalizeConcepts(
         `cairn: concept "${id}" summaryFields key "${undeclared}" is not a declared field`,
       );
     }
+    // A reference (or array of reference) field names the concept it targets. Validate that concept at
+    // declaration, so a typo fails loudly here rather than at the build's verifyReferences gate (or, in
+    // the editor picker, as a silently empty target list). The check is the field descriptor's concept
+    // against the declared content keys, the same set the URL-policy check uses.
+    for (const [name, descriptor] of Object.entries(config.schema.fields)) {
+      const targetConcept =
+        descriptor.type === 'reference'
+          ? descriptor.concept
+          : descriptor.type === 'array' && descriptor.item.type === 'reference'
+            ? descriptor.item.concept
+            : undefined;
+      if (targetConcept !== undefined && !declaredConcepts.has(targetConcept)) {
+        throw new Error(
+          `cairn: concept "${id}" reference field "${name}" names concept "${targetConcept}", which is not declared under content`,
+        );
+      }
+    }
     const conceptRouting = routing[id] ?? DEFAULT_ROUTING;
     const policy = urlPolicy[id] ?? {};
     validateUrlPolicy(id, policy, conceptRouting.dated);

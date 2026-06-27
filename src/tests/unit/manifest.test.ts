@@ -1,8 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { manifestEntryFromFile, serializeManifest, parseManifest, emptyManifest, verifyManifest, upsertEntry, removeEntry, manifestLinkResolver, inboundLinks, inboundReferences } from '../../lib/content/manifest.js';
+import { manifestEntryFromFile, serializeManifest, parseManifest, emptyManifest, verifyManifest, verifyReferences, upsertEntry, removeEntry, manifestLinkResolver, inboundLinks, inboundReferences } from '../../lib/content/manifest.js';
 import type { ManifestEntry } from '../../lib/content/manifest.js';
 import type { ConceptDescriptor } from '../../lib/content/types.js';
 import { fieldset } from '../../lib/content/fieldset.js';
+import { extractReferenceEdges } from '../../lib/content/references.js';
+import { parseMarkdown } from '../../lib/content/frontmatter.js';
 
 const posts: ConceptDescriptor = {
   id: 'posts',
@@ -454,5 +456,82 @@ describe('inboundReferences', () => {
   });
   it('returns an empty list when nothing references the target', () => {
     expect(inboundReferences(manifest, 'posts', 'nobody')).toEqual([]);
+  });
+});
+
+describe('verifyReferences', () => {
+  it('throws on a dangling edge, naming the source entry, the field, and the missing target', () => {
+    const manifest = {
+      version: 1 as const,
+      entries: [
+        { id: 'a', concept: 'posts', title: 'Post A', permalink: '/a', draft: false, links: [], references: [
+          { field: 'author', concept: 'pages', id: 'ghost' },
+        ] },
+        { id: 'about', concept: 'pages', title: 'About', permalink: '/about', draft: false, links: [] },
+      ],
+    };
+    expect(() => verifyReferences(manifest)).toThrow(/posts\/a/);
+    expect(() => verifyReferences(manifest)).toThrow(/author/);
+    expect(() => verifyReferences(manifest)).toThrow(/pages\/ghost/);
+  });
+
+  it('passes when every edge resolves to an existing (concept, id) target', () => {
+    const manifest = {
+      version: 1 as const,
+      entries: [
+        { id: 'a', concept: 'posts', title: 'Post A', permalink: '/a', draft: false, links: [], references: [
+          { field: 'author', concept: 'pages', id: 'jane' },
+          { field: 'related', concept: 'posts', id: 'b' },
+        ] },
+        { id: 'b', concept: 'posts', title: 'Post B', permalink: '/b', draft: false, links: [] },
+        { id: 'jane', concept: 'pages', title: 'Jane', permalink: '/jane', draft: false, links: [] },
+      ],
+    };
+    expect(() => verifyReferences(manifest)).not.toThrow();
+  });
+
+  it('matches the (concept, id) pair, so a same-id target in another concept does not satisfy the edge', () => {
+    // posts/about exists but pages/about does not; an edge to pages/about must still dangle.
+    const manifest = {
+      version: 1 as const,
+      entries: [
+        { id: 'a', concept: 'posts', title: 'Post A', permalink: '/a', draft: false, links: [], references: [
+          { field: 'author', concept: 'pages', id: 'about' },
+        ] },
+        { id: 'about', concept: 'posts', title: 'About Post', permalink: '/about', draft: false, links: [] },
+      ],
+    };
+    expect(() => verifyReferences(manifest)).toThrow(/pages\/about/);
+  });
+
+  it('catches a concept-change re-resolution: the stored id re-pairs with the descriptor current concept', () => {
+    // extractReferenceEdges takes the target concept from the descriptor, never the stored value, so a
+    // bare `author: jane-doe` re-pairs with whatever concept the schema currently declares. jane-doe is
+    // a `posts` entry, so a descriptor pointing `author` at posts resolves; flipping it to pages (where
+    // jane-doe does not exist) re-pairs the SAME stored value to a dangling pages/jane-doe edge. This is
+    // the spec's bounded "no schema-change data loss" case: the build, not the content edit, catches it.
+    const frontmatter = parseMarkdown('---\nauthor: jane-doe\n---\nbody\n').frontmatter;
+    const targets = [
+      { id: 'jane-doe', concept: 'posts', title: 'Jane Doe', permalink: '/jane-doe', draft: false, links: [] },
+    ];
+    const buildManifest = (authorConcept: string) => ({
+      version: 1 as const,
+      entries: [
+        {
+          id: 'a',
+          concept: 'posts',
+          title: 'Post A',
+          permalink: '/a',
+          draft: false,
+          links: [],
+          references: extractReferenceEdges(frontmatter, [
+            { name: 'author', type: 'reference' as const, concept: authorConcept, label: 'Author' },
+          ]),
+        },
+        ...targets,
+      ],
+    });
+    expect(() => verifyReferences(buildManifest('posts'))).not.toThrow();
+    expect(() => verifyReferences(buildManifest('pages'))).toThrow(/pages\/jane-doe/);
   });
 });

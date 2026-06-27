@@ -290,6 +290,28 @@ export function verifyManifest(built: Manifest, committedRaw: string): void {
 }
 
 /**
+ * Throw if any entry's reference edge points at a target absent from the corpus. The match is the
+ *  `(concept, id)` pair, never id alone, since ids are unique only within a concept. The error names
+ *  the source entry, the field the edge was declared on, and the missing target, so a build failure
+ *  reads as a content fix. References have no prerender backstop the way body links do, so this build
+ *  gate is the only integrity authority; it runs inside the generated virtual-module source (where the
+ *  built manifest is in scope), beside `verifyManifest`.
+ */
+export function verifyReferences(manifest: Manifest): void {
+  const present = new Set(manifest.entries.map(keyOf));
+  for (const entry of manifest.entries) {
+    for (const edge of entry.references ?? []) {
+      const target = `${edge.concept}/${edge.id}`;
+      if (!present.has(target)) {
+        throw new Error(
+          `content reference is dangling: ${entry.concept}/${entry.id} field "${edge.field}" points at ${target}, which does not exist.`,
+        );
+      }
+    }
+  }
+}
+
+/**
  * Replace the entry with the same concept and id, or add it. Order does not matter, since
  *  serializeManifest sorts. This is the save path's incremental patch.
  */

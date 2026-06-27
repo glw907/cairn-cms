@@ -53,11 +53,17 @@ function virtualSource(opts: CairnManifestOptions, mode: 'verify' | 'write'): st
     .join('\n');
   // In write mode the committed file may not exist yet, so do not import it.
   const committedImport = mode === 'verify' ? `import committed from ${JSON.stringify(manifestPath + '?raw')};` : '';
+  // In verify mode, run verifyReferences after verifyManifest, inside the generated source where the
+  // built manifest is in scope. References have no prerender backstop, so this build gate is their only
+  // integrity authority; it cannot move to the verifyManifestFromVite TS call site, where `built` does
+  // not exist (it lives only in this evaluated string).
   const resultExpr =
-    mode === 'write' ? 'serializeManifest(built)' : '(verifyManifest(built, committed), "ok")';
+    mode === 'write'
+      ? 'serializeManifest(built)'
+      : '(verifyManifest(built, committed), verifyReferences(built), "ok")';
   return `
 import { buildSiteManifest } from '@glw907/cairn-cms/delivery/data';
-import { serializeManifest, verifyManifest } from '@glw907/cairn-cms';
+import { serializeManifest, verifyManifest, verifyReferences } from '@glw907/cairn-cms';
 import { cairn, siteConfig } from ${JSON.stringify(opts.configModule)};
 ${committedImport}
 const globs = {

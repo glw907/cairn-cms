@@ -76,6 +76,7 @@ export {
   parseManifest,
   emptyManifest,
   verifyManifest,
+  verifyReferences,
   diffManifests,
   upsertEntry,
   removeEntry,

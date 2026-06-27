@@ -544,6 +544,7 @@ declare function parseManifest(raw: string): Manifest;
 declare function serializeManifest(manifest: Manifest): string;
 declare function emptyManifest(): Manifest;
 declare function verifyManifest(built: Manifest, committedRaw: string): void;
+declare function verifyReferences(manifest: Manifest): void;
 declare function diffManifests(built: Manifest, committed: Manifest): ManifestDiff;
 declare function upsertEntry(manifest: Manifest, entry: ManifestEntry): Manifest;
 declare function removeEntry(manifest: Manifest, concept: string, id: string): Manifest;
@@ -553,9 +554,11 @@ declare function inboundLinks(manifest: Manifest, concept: string, id: string): 
 `parseManifest` reads a committed manifest, throwing on a malformed or wrong-version file.
 `serializeManifest` writes the canonical, sorted, deduped form that diffs cleanly. `emptyManifest`
 is the starting point when no file exists. `verifyManifest` throws when the committed manifest drifts
-from the corpus, so a raw-git edit fails the build loudly. `diffManifests` reports the drift.
-`upsertEntry` and `removeEntry` are the save and delete patches. `inboundLinks` lists every entry
-that links at a target, for the delete guard.
+from the corpus, so a raw-git edit fails the build loudly. `verifyReferences` throws when any
+frontmatter reference edge points at a missing target, naming the source entry, the field, and the
+missing target; references have no prerender backstop, so this build gate is their only integrity
+authority. `diffManifests` reports the drift. `upsertEntry` and `removeEntry` are the save and delete
+patches. `inboundLinks` lists every entry that links at a target, for the delete guard.
 
 ```ts
 verifyManifest(built, committedRaw); // throws on drift

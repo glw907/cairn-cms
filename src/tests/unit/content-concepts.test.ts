@@ -135,6 +135,49 @@ describe('normalizeConcepts URL policy', () => {
     expect(descriptor.summaryFields).toEqual(['description']);
   });
 
+  it('throws when a reference field names a concept not declared under content', () => {
+    expect(() =>
+      normalizeConcepts({
+        posts: {
+          dir: 'p',
+          schema: fieldset({
+            title: fields.text({ label: 'Title' }),
+            author: fields.reference({ concept: 'nope', label: 'Author' }),
+          }),
+        },
+      }),
+    ).toThrow('cairn: concept "posts" reference field "author" names concept "nope", which is not declared under content');
+  });
+
+  it('throws when an array(reference) field names a concept not declared under content', () => {
+    expect(() =>
+      normalizeConcepts({
+        posts: {
+          dir: 'p',
+          schema: fieldset({
+            title: fields.text({ label: 'Title' }),
+            related: fields.array(fields.reference({ concept: 'nope', label: 'Post' }), { label: 'Related' }),
+          }),
+        },
+      }),
+    ).toThrow('cairn: concept "posts" reference field "related" names concept "nope", which is not declared under content');
+  });
+
+  it('accepts a reference field whose concept is a declared key', () => {
+    expect(() =>
+      normalizeConcepts({
+        posts: {
+          dir: 'p',
+          schema: fieldset({
+            title: fields.text({ label: 'Title' }),
+            author: fields.reference({ concept: 'pages', label: 'Author' }),
+          }),
+        },
+        pages: { dir: 'g', schema: fieldset({ title: fields.text({ label: 'Title' }) }) },
+      }),
+    ).not.toThrow();
+  });
+
   it('throws when the URL policy names a concept that is not declared', () => {
     expect(() => normalizeConcepts({ posts: cfg }, { events: { permalink: '/:slug' } })).toThrow(
       'cairn: URL policy names concept "events", which is not declared under content',

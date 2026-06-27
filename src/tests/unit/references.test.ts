@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { rewriteFrontmatterReference } from '../../lib/content/references.js';
+import { rewriteFrontmatterReference, extractReferenceEdges } from '../../lib/content/references.js';
 import { parseMarkdown } from '../../lib/content/frontmatter.js';
+import type { NamedField } from '../../lib/content/types.js';
 
 const doc = (fm: string) => `---\n${fm}\n---\nBody text mentioning author elsewhere.\n`;
 
@@ -110,5 +111,59 @@ describe('rewriteFrontmatterReference', () => {
     expect(rewriteFrontmatterReference('No frontmatter.\n', 'author', 'a', 'b')).toBe(
       'No frontmatter.\n',
     );
+  });
+});
+
+describe('extractReferenceEdges', () => {
+  const fields: NamedField[] = [
+    { name: 'author', type: 'reference', concept: 'pages', label: 'Author' },
+    {
+      name: 'related',
+      type: 'array',
+      item: { type: 'reference', concept: 'posts', label: '' },
+      label: 'Related',
+    },
+  ];
+
+  it('extracts scalar and array edges with the descriptor concept', () => {
+    expect(
+      extractReferenceEdges({ author: 'jane-doe', related: ['a-post', 'b-post'] }, fields),
+    ).toEqual([
+      { field: 'author', concept: 'pages', id: 'jane-doe' },
+      { field: 'related', concept: 'posts', id: 'a-post' },
+      { field: 'related', concept: 'posts', id: 'b-post' },
+    ]);
+  });
+
+  it('coerces a scalar value of an array field to ONE edge, never char-by-char', () => {
+    expect(extractReferenceEdges({ related: 'b-post' }, fields)).toEqual([
+      { field: 'related', concept: 'posts', id: 'b-post' },
+    ]);
+  });
+
+  it('canonicalizes a Date element to its id edge', () => {
+    expect(
+      extractReferenceEdges({ related: [new Date('2026-01-02T00:00:00Z')] }, fields),
+    ).toEqual([{ field: 'related', concept: 'posts', id: '2026-01-02' }]);
+  });
+
+  it('skips a malformed id (scalar or element), never per-character edges', () => {
+    expect(extractReferenceEdges({ author: 'Not An Id', related: 'Not An Id' }, fields)).toEqual([]);
+  });
+
+  it('a rename-to-true survives the rewriter into a live edge (the silent-drop regression)', () => {
+    // The rewriter re-quotes, so the rewritten frontmatter reparses author as the STRING 'true',
+    // which the extractor keeps rather than dropping a YAML boolean.
+    const out = rewriteFrontmatterReference(
+      '---\nauthor: jane-doe\n---\nbody\n',
+      'author',
+      'jane-doe',
+      'true',
+    );
+    expect(extractReferenceEdges(parseMarkdown(out).frontmatter, fields)).toContainEqual({
+      field: 'author',
+      concept: 'pages',
+      id: 'true',
+    });
   });
 });

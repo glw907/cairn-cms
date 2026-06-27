@@ -698,3 +698,29 @@ deferred, all enforced at the `fieldset()` call. The barrel adds the `ObjectFiel
 interfaces. Consumers must: nothing. The container shapes are additive; the shipped `array(reference)` and
 reference editor are unchanged, and a site that declares no container field is unchanged. To adopt them,
 see [Structured fields](./structured-fields.md).
+
+## 0.72.0: the adapter restructure and the concept model (breaking)
+
+`CairnAdapter` moved from flat keys into six groups, and a concept now owns its URL policy. Apply each
+action below; the six-group shape is in [Define an adapter and
+schema](./define-an-adapter-and-schema.md).
+
+Consumers must: regroup the adapter. `sender` becomes `email`. The `render` method, the `registry`, and the
+`icons` move under `rendering` as `rendering.{render,components,icons}` (`registry` is renamed to
+`components`). `assets` becomes `media`. The `navMenu`, the `preview`, and the `supportContact` move under
+`editor` as `editor.{nav,preview,supportContact}` (`navMenu` is renamed to `nav`). `content` and `backend`
+keep their names.
+
+Consumers must: rename each concept's `schema:` member to `fields:`, and wrap each concept in
+`defineConcept` so its URL policy validates at declaration.
+
+Consumers must: move the per-concept URL policy out of the YAML site-config and onto the concept. Set each
+concept's `routing` (the `'feed'`, `'page'`, or `'embedded'` shorthand), `permalink`, and `datePrefix`
+inside its `defineConcept` call, then delete the YAML `content:` block. A leftover `content:` block now
+throws at `parseSiteConfig`, pointing here, so this is not optional for a site that carried one. A site
+whose posts used a non-default `datePrefix` (for example `month`) must transcribe it, or every post URL
+silently shifts.
+
+Consumers must: move `siteName` out of the adapter. It stays in the YAML site-config, the one home for it,
+and `composeRuntime` reads it from there. Any code that read `cairn.siteName` reads `siteConfig.siteName`
+instead.

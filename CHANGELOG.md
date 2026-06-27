@@ -2,6 +2,40 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.72.0
+
+<!-- release-size: minor -->
+
+The adapter restructure and the open concept model (Contract v2 phase 3b). `CairnAdapter` moves from 17
+flat keys into six subsystem groups: `content`, `backend`, `email` (was `sender`), `rendering` (the one
+`render`, plus `components` (was `registry`) and `icons`), `media` (was `assets`), and `editor` (the
+`preview`, the `nav` (was `navMenu`), and the `supportContact`). `content` opens to an arbitrary
+`Record<string, ConceptConfig>`, so a site declares any concept by adding one key. `CairnRuntime` stays
+flat; `composeRuntime` is the one place that maps the adapter groups onto it.
+
+A concept now owns its URL policy. `defineConcept` is a typed concept factory, the concept-level companion
+to `defineAdapter`, that preserves the fieldset type and validates the concept's `permalink` and
+`datePrefix` at declaration, so a bad shape throws at module load. Each concept declares its `routing` (the
+`'feed'`, `'page'`, or `'embedded'` shorthand, or an explicit rule), `permalink`, and `datePrefix` on the
+concept itself, and `ConceptConfig.schema` is renamed to `fields`. The engine drops the `CONCEPT_ROUTING`
+table (routing is concept-declared) and the `urlPolicyFrom` helper (URL policy left the YAML).
+
+The YAML site-config no longer carries a per-concept `content:` URL-policy block. `parseSiteConfig`
+hard-errors on a leftover `content:` block, pointing to `defineConcept`, so a half-migrated site cannot
+silently default-corrupt its permalinks. `siteName` moves out of the adapter and stays in the YAML, the one
+home for it; `composeRuntime` reads it from there. The dead `SiteConfig.url` field is removed.
+
+This is breaking within the `0.x` window. Consumers must: regroup the adapter into
+`content`/`backend`/`email`/`rendering`/`media`/`editor` (`sender`→`email`,
+`render`/`registry`/`icons`→`rendering.{render,components,icons}`, `assets`→`media`,
+`navMenu`/`preview`/`supportContact`→`editor.{nav,preview,supportContact}`). Consumers must: rename each
+concept's `schema:` to `fields:` and declare it through `defineConcept`. Consumers must: move
+`permalink`/`datePrefix` from the YAML `content:` block onto the concept via `defineConcept` (a leftover
+YAML `content:` block now throws), and declare each concept's routing with the routing shorthand. Consumers
+must: move `siteName` out of the adapter into the YAML site-config. See [Upgrading
+cairn](docs/guides/upgrade-cairn.md) for the per-change actions, and [Define an adapter and
+schema](docs/guides/define-an-adapter-and-schema.md) for the six-group shape.
+
 ## 0.71.0
 
 <!-- release-size: minor -->

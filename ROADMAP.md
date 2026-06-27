@@ -15,10 +15,11 @@ here, so this file stays a forward view.
 
 ## Now
 
-- **The Contract v2 plan series.** Phase 3a (object/array containers) shipped as `0.71.0` (held unpublished).
-  Next is phase 3b (the adapter restructure into six subsystem groups plus the concept model: `defineConcept`,
-  an open `content` record, declared routing, URL policy home), then 3c (the field-system unification onto
-  `fields.*`), then the `Backend` seam, then render-as-component with opt-in islands. Spec:
+- **The Contract v2 plan series.** Phase 3b (the adapter restructure into six subsystem groups plus the
+  concept model: `defineConcept`, an open `content` record, concept-declared routing and URL policy,
+  `siteName` de-duplication) shipped as `0.72.0` (held unpublished). Next is phase 3c (the field-system
+  unification onto `fields.*`: `defineComponent`, the directive attributes onto `fields.*`, the
+  data-vs-behavior split), then the `Backend` seam, then render-as-component with opt-in islands. Spec:
   `docs/superpowers/specs/2026-06-25-cairn-contract-v2-design.md`.
 
 ## Next
@@ -74,6 +75,18 @@ here, so this file stays a forward view.
   collision (the showcase typecheck throws ~12 dependency-`.d.ts` errors under a symlinked-`node_modules`
   worktree, so the local consumer-build proof currently leans on the e2e build; CI's real checkout is
   clean). The first two are in `docs/internal/docs-friction-log.md`.
+- **Engine-provided `inFeeds`/`routable` feed and sitemap views.** Phase 3b makes `routing.inFeeds`,
+  `routable`, and `dated` concept-declared but keeps `inFeeds` a consumer-read hint: no engine code filters
+  on it, so a site's feed and sitemap routes still hand-pick their concepts. Lands in the render/delivery
+  phase, where the delivery surface exposes a feed view (the `inFeeds` concepts) and a sitemap view (the
+  `routable` concepts) so a consumer stops re-deriving membership.
+- **Watch: transcribe the site URL policies into `defineConcept` at each v2 cutover.** When ecxc-ski and
+  907-life cut over to the v2 adapter, move each site's YAML `content:` URL policy onto its concepts via
+  `defineConcept` (ecxc-ski: posts `/:year/:month/:slug`, `datePrefix: month`; 907-life: posts
+  `/:year/:month/:day/:slug`, `datePrefix: day`), delete the YAML `content:` block and the dead `url:` key,
+  and verify the live permalinks. The phase 3b hard-error in `parseSiteConfig` makes a missed transcription
+  fail loud rather than silently default `datePrefix` to `day` and shift every post URL. Tied to each site's
+  v2 cutover pass.
 - **Migrate cairn's CSRF-disable before SvelteKit removes `checkOrigin`.** cairn's admin CSRF ownership
   depends on `csrf: { checkOrigin: false }`, deprecated in SvelteKit 2.61. `trustedOrigins` cannot replace
   it: a missing-`Origin` POST is always forbidden, and the check runs before the `handle` hook. The

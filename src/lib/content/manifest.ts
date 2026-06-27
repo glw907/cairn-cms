@@ -8,6 +8,7 @@ import { deriveExcerpt } from './excerpt.js';
 import { entryIdentity, asString } from './identity.js';
 import { extractCairnLinks, type CairnRef, type LinkResolve } from './links.js';
 import { extractMediaRefs } from './media-refs.js';
+import { extractReferenceEdges, type ReferenceEdge } from './references.js';
 import type { ConceptDescriptor } from './types.js';
 
 /** One entry's projection: its identity, routing, draft flag, and outbound cairn: edges. */
@@ -26,6 +27,13 @@ export interface ManifestEntry {
    *  the key, and a manifest committed before this field still parses (absent reads as no refs).
    */
   mediaRefs?: string[];
+  /**
+   * The typed frontmatter reference edges this entry declares (`{ field, concept, id }` each). The
+   *  main side of the cross-branch reference index and the reverse `inboundReferences` reader.
+   *  Additive and optional: an entry with no reference fields omits the key, and a manifest committed
+   *  before this field still parses (absent reads as no edges).
+   */
+  references?: ReferenceEdge[];
 }
 
 /** The whole corpus as one committed file. `version` guards a future shape migration. */
@@ -55,6 +63,9 @@ export function manifestEntryFromFile(descriptor: ConceptDescriptor, file: { pat
   // Set mediaRefs only when non-empty, so an image-free entry's row stays byte-identical to before
   // (matching the optional-spread for date and summary).
   const mediaRefs = extractMediaRefs(frontmatter, body, descriptor.fields);
+  // Set references only when non-empty, mirroring mediaRefs, so a reference-free entry's row stays
+  // byte-identical to a manifest committed before this field.
+  const references = extractReferenceEdges(frontmatter, descriptor.fields);
   return {
     id,
     concept: descriptor.id,
@@ -67,6 +78,7 @@ export function manifestEntryFromFile(descriptor: ConceptDescriptor, file: { pat
     draft: frontmatter.draft === true,
     links: extractCairnLinks(body),
     ...(mediaRefs.length ? { mediaRefs } : {}),
+    ...(references.length ? { references } : {}),
   };
 }
 
@@ -77,6 +89,10 @@ export function emptyManifest(): Manifest {
 
 function compareRef(a: CairnRef, b: CairnRef): number {
   return a.concept.localeCompare(b.concept) || a.id.localeCompare(b.id);
+}
+
+function compareEdge(a: ReferenceEdge, b: ReferenceEdge): number {
+  return a.field.localeCompare(b.field) || a.concept.localeCompare(b.concept) || a.id.localeCompare(b.id);
 }
 
 /**
@@ -94,6 +110,9 @@ export function serializeManifest(manifest: Manifest): string {
     draft: e.draft,
     links: [...e.links].sort(compareRef).map((r) => ({ concept: r.concept, id: r.id })),
     ...(e.mediaRefs && e.mediaRefs.length ? { mediaRefs: [...e.mediaRefs].sort() } : {}),
+    ...(e.references && e.references.length
+      ? { references: [...e.references].sort(compareEdge).map((r) => ({ field: r.field, concept: r.concept, id: r.id })) }
+      : {}),
   }));
   return `${JSON.stringify({ version: 1, entries }, null, 2)}\n`;
 }
@@ -128,6 +147,7 @@ export function parseManifest(raw: string): Manifest {
       (e.date === undefined || typeof e.date === 'string') &&
       (e.summary === undefined || typeof e.summary === 'string') &&
       (e.mediaRefs === undefined || Array.isArray(e.mediaRefs)) &&
+      (e.references === undefined || Array.isArray(e.references)) &&
       Array.isArray(e.links);
     if (!ok) {
       throw new Error(`content manifest: malformed entry ${JSON.stringify(e)}`);
@@ -139,6 +159,18 @@ export function parseManifest(raw: string): Manifest {
       for (const hash of e.mediaRefs as unknown[]) {
         if (typeof hash !== 'string') {
           throw new Error(`content manifest: malformed mediaRefs element ${JSON.stringify(hash)} in entry ${JSON.stringify(e)}`);
+        }
+      }
+    }
+    // references is additive and optional: an entry without it parses (the field reads as absent), so
+    // a manifest committed before this field still builds. When present, validate each edge's shape,
+    // mirroring the link-element validation, so a hand-edited file fails loudly rather than dropping a
+    // malformed edge to undefined.
+    if (e.references !== undefined) {
+      for (const edge of e.references as unknown[]) {
+        const r = edge as Record<string, unknown> | null;
+        if (!r || typeof r !== 'object' || typeof r.field !== 'string' || typeof r.concept !== 'string' || typeof r.id !== 'string') {
+          throw new Error(`content manifest: malformed reference ${JSON.stringify(edge)} in entry ${JSON.stringify(e)}`);
         }
       }
     }
@@ -227,11 +259,20 @@ export function verifyManifest(built: Manifest, committedRaw: string): void {
     version: 1,
     entries: built.entries.map((b) => {
       const c = committedByKey.get(keyOf(b));
-      if (b.mediaRefs && c && c.mediaRefs === undefined) {
-        const { mediaRefs: _dropped, ...rest } = b;
-        return rest;
+      let normalized = b;
+      if (normalized.mediaRefs && c && c.mediaRefs === undefined) {
+        const { mediaRefs: _dropped, ...rest } = normalized;
+        normalized = rest;
       }
-      return b;
+      // references is additive: a site whose committed manifest predates the field must still build,
+      // even when its content carries reference edges. Drop the built entry's references only when the
+      // committed counterpart omits the key, so an un-regenerated site matches while a regenerated one
+      // (committed carries references) still detects real drift in that field.
+      if (normalized.references && c && c.references === undefined) {
+        const { references: _dropped, ...rest } = normalized;
+        normalized = rest;
+      }
+      return normalized;
     }),
   };
   const normalizedRaw = serializeManifest(normalized);
@@ -281,6 +322,40 @@ export function inboundLinks(manifest: Manifest, concept: string, id: string): I
     .filter((e) => !(e.concept === concept && e.id === id))
     .filter((e) => e.links.some((l) => l.concept === concept && l.id === id))
     .map((e) => ({ concept: e.concept, id: e.id, title: e.title, permalink: e.permalink }));
+}
+
+/** One inbound referencer: its identity plus the distinct fields through which it references the target. */
+export interface InboundReference {
+  concept: string;
+  id: string;
+  title: string;
+  permalink: string;
+  /** The distinct fields whose reference edges point at the target, in first-seen order. */
+  fields: string[];
+}
+
+/**
+ * Every entry holding a reference edge at the target, excluding the target itself. The match is the
+ *  `(concept, id)` pair, never id alone, since ids are unique only within a concept (the same keyOf
+ *  identity upsertEntry and removeEntry use). Each referencer carries the distinct fields through
+ *  which it points at the target, for the rename repoint and the delete refusal. Pure over the
+ *  manifest, so the request-time paths and a unit test call it the same way.
+ */
+export function inboundReferences(manifest: Manifest, concept: string, id: string): InboundReference[] {
+  const out: InboundReference[] = [];
+  for (const e of manifest.entries) {
+    if (e.concept === concept && e.id === id) continue;
+    const fields: string[] = [];
+    for (const edge of e.references ?? []) {
+      if (edge.concept === concept && edge.id === id && !fields.includes(edge.field)) {
+        fields.push(edge.field);
+      }
+    }
+    if (fields.length > 0) {
+      out.push({ concept: e.concept, id: e.id, title: e.title, permalink: e.permalink, fields });
+    }
+  }
+  return out;
 }
 
 /**

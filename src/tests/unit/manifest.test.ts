@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { manifestEntryFromFile, serializeManifest, parseManifest, emptyManifest, verifyManifest, upsertEntry, removeEntry, manifestLinkResolver, inboundLinks } from '../../lib/content/manifest.js';
+import { manifestEntryFromFile, serializeManifest, parseManifest, emptyManifest, verifyManifest, upsertEntry, removeEntry, manifestLinkResolver, inboundLinks, inboundReferences } from '../../lib/content/manifest.js';
 import type { ManifestEntry } from '../../lib/content/manifest.js';
 import type { ConceptDescriptor } from '../../lib/content/types.js';
 import { fieldset } from '../../lib/content/fieldset.js';
@@ -63,6 +63,28 @@ describe('manifestEntryFromFile', () => {
     // The serialized row of an image-free entry carries no mediaRefs key.
     expect(serializeManifest({ version: 1, entries: [noMedia] })).not.toContain('mediaRefs');
   });
+  it('records reference edges from a reference-bearing entry, omitting the key when none', () => {
+    const refPosts: ConceptDescriptor = {
+      ...posts,
+      fields: [
+        { name: 'author', label: 'Author', type: 'reference', concept: 'pages' },
+        { name: 'related', label: 'Related', type: 'array', item: { label: '', type: 'reference', concept: 'posts' } },
+      ],
+    };
+    const withRefs = manifestEntryFromFile(refPosts, {
+      path: 'src/content/posts/2026-01-16-linked.md',
+      raw: '---\ntitle: Linked\ndate: 2026-01-16\nauthor: jane-doe\nrelated:\n  - a-post\n  - b-post\n---\n\nBody.\n',
+    });
+    expect(withRefs.references).toEqual([
+      { field: 'author', concept: 'pages', id: 'jane-doe' },
+      { field: 'related', concept: 'posts', id: 'a-post' },
+      { field: 'related', concept: 'posts', id: 'b-post' },
+    ]);
+
+    const noRefs = manifestEntryFromFile(posts, file);
+    expect(noRefs.references).toBeUndefined();
+    expect(serializeManifest({ version: 1, entries: [noRefs] })).not.toContain('references');
+  });
   it('derives a summary from the description, else the body', () => {
     // A non-dated descriptor, so the slug permalink resolves from the file stem alone.
     const pages: ConceptDescriptor = {
@@ -114,6 +136,28 @@ describe('serializeManifest / parseManifest', () => {
   });
   it('emptyManifest round-trips', () => {
     expect(parseManifest(serializeManifest(emptyManifest()))).toEqual({ version: 1, entries: [] });
+  });
+  it('emits a sorted references block only when non-empty', () => {
+    const out = serializeManifest({ version: 1, entries: [
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], references: [
+        { field: 'related', concept: 'posts', id: 'z-post' },
+        { field: 'author', concept: 'pages', id: 'jane' },
+        { field: 'related', concept: 'posts', id: 'a-post' },
+      ] },
+    ] });
+    expect(out).toContain('references');
+    const parsed = parseManifest(out);
+    // Sorted by field, then concept, then id.
+    expect(parsed.entries[0].references).toEqual([
+      { field: 'author', concept: 'pages', id: 'jane' },
+      { field: 'related', concept: 'posts', id: 'a-post' },
+      { field: 'related', concept: 'posts', id: 'z-post' },
+    ]);
+
+    const empty = serializeManifest({ version: 1, entries: [
+      { id: 'b', concept: 'posts', title: 'B', permalink: '/b', draft: false, links: [], references: [] },
+    ] });
+    expect(empty).not.toContain('references');
   });
   it('omits an empty summary (no churn) and round-trips a present one', () => {
     const present = parseManifest(serializeManifest({ version: 1, entries: [
@@ -187,6 +231,28 @@ describe('parseManifest hardening', () => {
     const raw = JSON.stringify({ version: 1, entries: [{ id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], mediaRefs: [123] }] });
     expect(() => parseManifest(raw)).toThrow(/entry|mediaRefs/i);
   });
+  it('leniently accepts an entry with no references key (a manifest predating the field)', () => {
+    const old = parseManifest(JSON.stringify({ version: 1, entries: [
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [] },
+    ] }));
+    expect(old.entries[0].references).toBeUndefined();
+  });
+  it('round-trips a present references and validates each edge shape', () => {
+    const out = serializeManifest({ version: 1, entries: [
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], references: [{ field: 'author', concept: 'pages', id: 'jane' }] },
+    ] });
+    expect(out).toContain('references');
+    const parsed = parseManifest(out);
+    expect(parsed.entries[0].references).toEqual([{ field: 'author', concept: 'pages', id: 'jane' }]);
+  });
+  it('rejects a references element that is not an object', () => {
+    const raw = JSON.stringify({ version: 1, entries: [{ id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], references: ['nope'] }] });
+    expect(() => parseManifest(raw)).toThrow(/entry|reference/i);
+  });
+  it('rejects a references element missing id', () => {
+    const raw = JSON.stringify({ version: 1, entries: [{ id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], references: [{ field: 'author', concept: 'pages' }] }] });
+    expect(() => parseManifest(raw)).toThrow(/entry|reference/i);
+  });
 });
 
 const entryA: ManifestEntry = { id: 'a', concept: 'pages', title: 'A', permalink: '/a', draft: false, links: [] };
@@ -243,6 +309,39 @@ describe('verifyManifest', () => {
     ] });
     expect(() => verifyManifest(built, committedWithStaleRefs)).toThrow(/stale/);
   });
+  it('d.1: does NOT red when the built manifest carries references but the committed one omits them', () => {
+    // Back-compat: a site whose committed manifest predates references must build even when its
+    // content carries reference edges. The built side carries references; the committed side has no
+    // references key. verifyManifest treats the built references as absent for that entry.
+    const built = { version: 1 as const, entries: [
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], references: [{ field: 'author', concept: 'pages', id: 'jane' }] },
+    ] };
+    const committedNoReferences = serializeManifest({ version: 1, entries: [
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [] },
+    ] });
+    expect(() => verifyManifest(built, committedNoReferences)).not.toThrow();
+  });
+  it('d.2: still reds on real other-field drift even with the references leniency in place', () => {
+    // The references leniency must not blind verify to a genuine change: a changed title still fails
+    // even when the committed side omits references.
+    const built = { version: 1 as const, entries: [
+      { id: 'a', concept: 'posts', title: 'A renamed', permalink: '/a', draft: false, links: [], references: [{ field: 'author', concept: 'pages', id: 'jane' }] },
+    ] };
+    const committedNoReferences = serializeManifest({ version: 1, entries: [
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [] },
+    ] });
+    expect(() => verifyManifest(built, committedNoReferences)).toThrow(/stale/);
+  });
+  it('d.3: reds when a regenerated committed manifest drifts in references', () => {
+    // Once a site regenerates (committed carries references), a real references drift is detected.
+    const built = { version: 1 as const, entries: [
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], references: [{ field: 'author', concept: 'pages', id: 'jane' }] },
+    ] };
+    const committedWithStaleReferences = serializeManifest({ version: 1, entries: [
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], references: [{ field: 'author', concept: 'pages', id: 'joan' }] },
+    ] });
+    expect(() => verifyManifest(built, committedWithStaleReferences)).toThrow(/stale/);
+  });
 });
 
 describe('upsertEntry / removeEntry', () => {
@@ -295,5 +394,65 @@ describe('inboundLinks', () => {
   });
   it('returns an empty list when nothing links to the target', () => {
     expect(inboundLinks(manifest, 'posts', 'b')).toEqual([]);
+  });
+});
+
+describe('inboundReferences', () => {
+  const manifest = {
+    version: 1 as const,
+    entries: [
+      { id: 'about', concept: 'pages', title: 'About', permalink: '/about', draft: false, links: [] },
+      { id: 'about', concept: 'posts', title: 'About Post', permalink: '/about-post', draft: false, links: [] },
+      { id: 'a', concept: 'posts', title: 'Post A', permalink: '/a', draft: false, links: [], references: [
+        { field: 'related', concept: 'posts', id: 'about' },
+        { field: 'author', concept: 'pages', id: 'jane' },
+      ] },
+      { id: 'b', concept: 'posts', title: 'Post B', permalink: '/b', draft: false, links: [], references: [
+        { field: 'related', concept: 'posts', id: 'about' },
+        { field: 'editor', concept: 'pages', id: 'jane' },
+      ] },
+    ],
+  };
+  it('matches the (concept, id) pair, never id alone (no cross-concept phantom)', () => {
+    // pages/about and posts/about coexist; the post references posts/about via related, so a query
+    // for pages/about must be empty.
+    expect(inboundReferences(manifest, 'pages', 'about')).toEqual([]);
+  });
+  it('returns the entries holding an edge at the target pair', () => {
+    expect(inboundReferences(manifest, 'posts', 'about').map((e) => e.id).sort()).toEqual(['a', 'b']);
+  });
+  it('carries each linker identity and the distinct fields through which it references', () => {
+    expect(inboundReferences(manifest, 'pages', 'jane')).toEqual([
+      { concept: 'posts', id: 'a', title: 'Post A', permalink: '/a', fields: ['author'] },
+      { concept: 'posts', id: 'b', title: 'Post B', permalink: '/b', fields: ['editor'] },
+    ]);
+  });
+  it('excludes a self-reference', () => {
+    const selfManifest = {
+      version: 1 as const,
+      entries: [
+        { id: 'a', concept: 'posts', title: 'Post A', permalink: '/a', draft: false, links: [], references: [
+          { field: 'related', concept: 'posts', id: 'a' },
+        ] },
+      ],
+    };
+    expect(inboundReferences(selfManifest, 'posts', 'a')).toEqual([]);
+  });
+  it('dedupes the fields when an entry references the target through one field twice', () => {
+    const dupeManifest = {
+      version: 1 as const,
+      entries: [
+        { id: 'a', concept: 'posts', title: 'Post A', permalink: '/a', draft: false, links: [], references: [
+          { field: 'related', concept: 'posts', id: 'x' },
+          { field: 'related', concept: 'posts', id: 'x' },
+        ] },
+      ],
+    };
+    expect(inboundReferences(dupeManifest, 'posts', 'x')).toEqual([
+      { concept: 'posts', id: 'a', title: 'Post A', permalink: '/a', fields: ['related'] },
+    ]);
+  });
+  it('returns an empty list when nothing references the target', () => {
+    expect(inboundReferences(manifest, 'posts', 'nobody')).toEqual([]);
   });
 });

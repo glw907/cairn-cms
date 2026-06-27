@@ -83,7 +83,8 @@ export {
   manifestLinkResolver,
   inboundLinks,
 } from './content/manifest.js';
-export type { Manifest, ManifestEntry, ManifestDiff, ManifestEntryDiff, LinkTarget, InboundLink } from './content/manifest.js';
+export type { Manifest, ManifestEntry, ManifestDiff, ManifestEntryDiff, LinkTarget, InboundLink, InboundReference } from './content/manifest.js';
+export type { ReferenceEdge } from './content/references.js';
 // Render engine (Plan 04): generic directive pipeline; sites own the component registry.
 export { defineRegistry, emptyValues } from './render/registry.js';
 export type {

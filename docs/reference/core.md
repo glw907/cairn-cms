@@ -275,12 +275,14 @@ validator, and the inferred frontmatter type, and the descriptors it carries are
 #### `fields`
 
 `fields` is the constructor namespace, one function per field type. The leaf constructors are `text`,
-`textarea`, `number`, `select`, `multiselect`, `url`, `email`, `date`, `datetime`, `boolean`, `image`,
-and `reference`. The container constructors are `object` (a labeled group of leaves) and `array` (a
-repeatable list over one item). Each one takes the field's options and returns a plain-data
+`textarea`, `number`, `select`, `multiselect`, `url`, `email`, `date`, `datetime`, `boolean`, `icon`,
+`image`, and `reference`. The container constructors are `object` (a labeled group of leaves) and
+`array` (a repeatable list over one item). Each one takes the field's options and returns a plain-data
 descriptor; a `select` or `multiselect` preserves its literal option list so the inferred type
 narrows to that union. A closed `multiselect` (an `options` list) renders as checkboxes; a
 `creatable: true` multiselect renders as an open tag input and accepts an optional `placeholder`.
+`fields.icon` declares a glyph chosen from the adapter's icon set, and its stored value is the glyph's
+name string.
 
 `fields.object({ fields })` groups leaf fields under one frontmatter key, storing a nested object. Its
 `label` is optional, because an `object` inside an `array` is labeled by the array. `fields.array(item,

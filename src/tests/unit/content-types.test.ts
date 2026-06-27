@@ -13,6 +13,7 @@ function widgetFor(field: NamedField): string {
     case 'number':
     case 'url':
     case 'email':
+    case 'icon':
       return 'input';
     case 'select':
       return `select:${field.options.length}`;

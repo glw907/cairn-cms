@@ -77,6 +77,10 @@ export interface DatetimeField extends FieldBase {
 export interface BooleanField extends FieldBase {
   type: 'boolean';
 }
+/** A glyph chosen from the adapter's icon set; the stored value is the glyph's name. */
+export interface IconField extends FieldBase {
+  type: 'icon';
+}
 /** A hero image whose stored value is the nested ImageValue object. */
 export interface ImageField extends FieldBase {
   type: 'image';
@@ -120,6 +124,7 @@ export type FieldDescriptor =
   | DateField
   | DatetimeField
   | BooleanField
+  | IconField
   | ImageField
   | ObjectField
   | ReferenceField
@@ -152,6 +157,8 @@ export const fields = {
   datetime: <const O extends Omit<DatetimeField, 'type'>>(o: O): DatetimeField & O => ({ type: 'datetime', ...o }),
   /** A boolean checkbox field. */
   boolean: <const O extends Omit<BooleanField, 'type'>>(o: O): BooleanField & O => ({ type: 'boolean', ...o }),
+  /** An icon field whose value is a glyph name from the adapter's icon set. */
+  icon: <const O extends Omit<IconField, 'type'>>(o: O): IconField & O => ({ type: 'icon', ...o }),
   /** An image field whose value is the nested ImageValue object. */
   image: <const O extends Omit<ImageField, 'type'>>(o: O): ImageField & O => ({ type: 'image', ...o }),
   /** A group of leaf fields, preserving each leaf's type for inference. Label is optional (the array labels a row group). */

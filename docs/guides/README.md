@@ -16,6 +16,7 @@ Task-oriented guides for a returning adopter. Each answers one question and link
 - [Define an adapter and schema](./define-an-adapter-and-schema.md): the concepts, the slug codec, and the fields.
 - [Configure rendering](./configure-rendering.md): markdown to delivered HTML, the registry, and the sanitize floor.
 - [Wire the delivery surface](./wire-the-delivery-surface.md): the read model, the permalink route, the feeds, and the manifest.
+- [Link content with references](./link-content-with-references.md): declare a reference field, pick a target in the editor, and render the resolved target.
 - [Enable tidy and the editor copy-edit](./enable-tidy.md): the spellcheck dialect, turning tidy on with the `ANTHROPIC_API_KEY` secret, and the convention config.
 
 ## Edit content

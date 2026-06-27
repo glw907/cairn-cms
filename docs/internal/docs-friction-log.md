@@ -725,3 +725,26 @@ load-bearing carry-forwards for the contract-v2 cutover.
   erodes trust in the gate and costs a re-run on every publish. Candidate: make the assertion wait for the
   lint to settle (poll or `toPass` on the decoration count, or await the spellcheck settle-cue the editor
   already emits) rather than asserting once. Surfaced at the `0.68.0` release gate.
+
+## Contract v2 references (2026-06-26)
+
+- **developer** (`resolveReferences` and `ResolvedReference` document on `/delivery/data`, not
+  `/delivery`, LOW): the reference resolver lives in `site-resolver.ts` and re-exports through both the
+  node-safe `/delivery/data` surface and the `/delivery` barrel. The reference plan named `delivery.md` as
+  the doc home, but the `check:reference` coverage gate routes the two symbols to `delivery-data.md`,
+  because `/delivery`'s coverage entry excludes the names `data.d.ts` re-exports (so the barrel page does
+  not re-document the whole data surface). The gate is the authority and is correct: the symbol's true home
+  is the page for the subpath that defines it. The plan's prose was the looser pointer. No fix owed, but a
+  reference-field author following the plan verbatim would have put the section on the wrong page and failed
+  the gate, so the routing rule (a re-exported symbol documents on its defining subpath's page) is worth the
+  note. Surfaced writing the reference page.
+- **developer** (the `delivery-*` cold-import split tests flake under full-suite load, MEDIUM, test-infra
+  WATCH): the unit tests that spawn a fresh Node process to prove a `/delivery/data` subpath imports the
+  dist build without pulling `@sveltejs/kit` or Svelte into the graph (`delivery-data-dist-spawn.test.ts`,
+  alongside the in-process `delivery-data-split.test.ts` and `delivery-entry-boundary.test.ts`) read a cold
+  dist import and can time out or flake when the full unit-plus-integration-plus-component suite runs them
+  under concurrent load (the dist build and the spawn contend for IO). They pass run in isolation. This is a
+  test-harness timing concern, not a product bug: the split itself holds (the coverage and package gates
+  prove the boundary statically). Watch item: if the flake recurs at a release gate, raise the spawn timeout
+  or serialize these cold-import specs into their own non-concurrent project. Surfaced running the reference
+  pass full suite.

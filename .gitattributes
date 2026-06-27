@@ -1,0 +1,4 @@
+# Normalize markdown content to LF on commit, defense-in-depth for the frontmatter
+# reference rewriter's CRLF handling. The rewriter preserves CRLF byte for byte, so this
+# keeps the corpus uniform rather than relying on it.
+*.md text eol=lf

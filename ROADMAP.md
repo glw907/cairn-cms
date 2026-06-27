@@ -15,19 +15,21 @@ here, so this file stays a forward view.
 
 ## Now
 
-- **Contract v2 references (phase 2).** Lift the rename-safe `cairn:<concept>/<id>` content graph out of
-  prose body links into a frontmatter `fields.reference` field: a searchable editor picker over the target
-  concept, build-time integrity (dangling fails the build, delete refuses while referenced, rename repoints
-  across open branches), and delivery resolution to the target's permalink and summary. The category's
-  biggest gap and cairn's biggest opportunity. Phase 1 (the cutover) shipped as `0.69.0` (merged, held
-  unpublished). Carry the cutover's load-bearing carry-forward into the plan: a `form → frontmatterFromForm
-  → serialize → parse → formValues` round-trip property test is a required deliverable for the reference
-  field (the cutover nearly shipped a silent datetime round-trip loss). Spec:
+- **The Contract v2 plan series (after references).** The next phase after the reference field, leading
+  the `object`/`array` and backend work below. Spec:
   `docs/superpowers/specs/2026-06-25-cairn-contract-v2-design.md`.
 
 ## Next
 
-- **The Contract v2 plan series (after references).** A bounded one-level `object`/`array` primitive with
+- **Taxonomy and tag delivery.** Consume the `taxonomy` marker reserved by the reference field so a
+  `multiselect` or a reference-shaped tag field drives first-class tag pages and feeds: a tag index, a
+  per-tag archive, and tag-aware delivery resolution. The reference pass reserved and documented the marker;
+  this pass wires it into the delivery surface.
+- **Body-link cross-branch delete protection.** Lift the body-link delete guard from its current main-only
+  posture to the strict, fail-closed cross-branch reference index that the reference delete and rename gates
+  now use, so deleting a body-linked target refuses across every open branch the same way a referenced
+  target does. The reference pass left this asymmetry deliberate (locked decision 9); this closes it.
+- **The Contract v2 object and array primitive.** A bounded one-level `object`/`array` primitive with
   adapter and component-system unification (and, since nested repeatable rows make the editor's Details
   slide-over heavy, a look at that panel, which defaults closed and buries every non-title field as the
   vocabulary grows), then the `Backend` seam (a GitHub-App default that folds in `@glw907/cairn-cms-dev`),

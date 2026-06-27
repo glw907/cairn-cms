@@ -2,6 +2,33 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.70.0
+
+<!-- release-size: minor -->
+
+Reference fields. A concept can now declare a typed frontmatter edge to another entry with the new
+`fields.reference({ concept })` constructor, and a repeatable list of edges with
+`fields.array(fields.reference({ concept }))`. The stored value is the target's permanent id, so a
+target rename or slug change never breaks the link. The editor renders a picker over the target
+concept's entries in the Details panel, single as a combobox and many as a removable chip list.
+
+The graph stays correct end to end. Renaming a target repoints every inbound reference on `main` in
+one commit and refuses when a third-party open branch holds an inbound reference. Deleting a target
+refuses, fail-closed across every open branch, when anything still references it. The build's new
+`verifyReferences` gate fails on a dangling edge, naming the source entry, the field, and the missing
+target; references carry no prerender backstop, so this build gate is their only integrity authority.
+A save to a draft or absent target warns but never blocks. The public read model resolves an edge to
+its target's identity through the new `resolveReferences` on `/delivery`, so a route renders a
+reference as a link.
+
+The barrel adds `fields.reference`, `fields.array`, the `ReferenceField` and `ArrayField` interfaces,
+`ReferenceEdge`, `InboundReference`, `ResolvedReference`, and `verifyReferences`; `/delivery`
+re-exports `resolveReferences`.
+
+This release is additive. No consumer action is required: the new field types sit beside the existing
+vocabulary, and a site that declares no reference field is unchanged. To adopt references, see
+[Link content with references](docs/guides/link-content-with-references.md).
+
 ## 0.69.0
 
 <!-- release-size: minor -->

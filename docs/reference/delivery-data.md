@@ -284,6 +284,34 @@ Build a `cairn:` link resolver backed by the site resolver, for the build. It li
 miss throws, so a dangling `cairn:` token fails the prerender. The feed routes above use it to turn
 an internal link into an absolute URL.
 
+### `resolveReferences`
+
+```ts
+function resolveReferences(
+  site: SiteResolver,
+  descriptor: ConceptDescriptor,
+  frontmatter: Record<string, unknown>,
+): Record<string, ResolvedReference | ResolvedReference[]>;
+```
+
+Resolve an entry's `reference` and `array(reference)` frontmatter edges to their target identities,
+keyed by the field name, so a public route renders a reference as a link to its target's page. A
+`reference` field resolves to one [`ResolvedReference`](#types) and an `array(reference)`
+field to a `ResolvedReference[]` in edge order. The resolution lives on the cross-concept resolver
+because only that layer reaches another concept's entries: a post's `author` edge targets a `pages`
+entry the posts index alone can't read. The resolver drops an id with no live target rather than
+throwing. The build's `verifyReferences` gate already fails a true dangling edge, so an unresolved id
+at request time is a mid-flight or draft target. A route reads the resolved map alongside the entry
+and renders each target as a link.
+
+```ts
+import { resolveReferences } from '@glw907/cairn-cms/delivery';
+import { site } from '$lib/content';
+
+const refs = resolveReferences(site, postsDescriptor, entry.frontmatter);
+const author = refs.author as ResolvedReference | undefined;
+```
+
 ---
 
 ## Pure helpers
@@ -388,3 +416,4 @@ descriptors feed `createContentIndex` and `createSiteResolver` when you assemble
 | `SeoInput` | `interface SeoInput { title; description; canonicalUrl; siteName; type?; published?; modified?; feeds?; image?; imageAlt?; robots?; author? }` | The inputs for the head builder, all URLs absolute. `imageAlt` becomes `twitter:image:alt` when `image` is set. |
 | `SeoMeta` | `interface SeoMeta { title; meta; links; jsonLd }` | The plain-data head: a title, meta tags, link tags, and one JSON-LD object. |
 | `SeoFields` | `interface SeoFields { description?; image?; robots?; author? }` | The optional SEO head fields a concept can carry in frontmatter. |
+| `ResolvedReference` | `interface ResolvedReference { id; concept; title; permalink; summary? }` | A reference edge resolved to its target's identity, for a public route to render a linked target. |

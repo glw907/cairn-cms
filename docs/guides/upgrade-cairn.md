@@ -672,3 +672,16 @@ from each field's `default`, and the save path round-trips every arm. Consumers 
    `InferFields`, or `DefineFieldsOptions`. The v2 `*Field` interfaces carry the v2 shape: no `name`,
    and `help` not `description`.
 8. ecxc-ski and 907-life stay pinned to the prior version range until they cut over.
+
+## 0.70.0: reference fields, additive
+
+A concept can declare a typed frontmatter edge to another entry with `fields.reference({ concept })`, and
+a list of edges with `fields.array(fields.reference({ concept }))`. The stored value is the target's
+permanent id, so a rename or slug change never breaks the link. The editor renders a picker over the
+target concept in the Details panel, renaming a target repoints its inbound references on `main`, deleting
+a referenced target refuses fail-closed across open branches, and the build's `verifyReferences` gate fails
+on a dangling edge. The public read model resolves an edge to its target's identity through the new
+`resolveReferences` on `/delivery`. The barrel adds `fields.reference`, `fields.array`, `ReferenceField`,
+`ArrayField`, `ReferenceEdge`, `InboundReference`, `ResolvedReference`, and `verifyReferences`. Consumers
+must: nothing. References are additive; a site that declares no reference field is unchanged. To adopt them,
+see [Link content with references](./link-content-with-references.md).

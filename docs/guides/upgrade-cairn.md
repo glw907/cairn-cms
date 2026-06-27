@@ -685,3 +685,16 @@ on a dangling edge. The public read model resolves an edge to its target's ident
 `ArrayField`, `ReferenceEdge`, `InboundReference`, `ResolvedReference`, and `verifyReferences`. Consumers
 must: nothing. References are additive; a site that declares no reference field is unchanged. To adopt them,
 see [Link content with references](./link-content-with-references.md).
+
+## 0.71.0: structured fields, additive
+
+A concept can declare an `object` group with `fields.object({ fields })`, and a generalized `array` that
+now repeats any leaf or a flat `object` of leaves, not only a reference. The editor renders an `object` as
+a labeled group and a non-reference `array` as a repeatable-row editor with add, remove, and reorder; the
+optional `itemLabel` names each row. Validation and inference recurse one level, with a nested failure
+located by the additive `issues` array on `ValidationResult`. Containers nest one level only, no field key
+may contain a dot, and a `reference` inside an `object` and an `seo` image inside any container are
+deferred, all enforced at the `fieldset()` call. The barrel adds the `ObjectField` and `ValidationIssue`
+interfaces. Consumers must: nothing. The container shapes are additive; the shipped `array(reference)` and
+reference editor are unchanged, and a site that declares no container field is unchanged. To adopt them,
+see [Structured fields](./structured-fields.md).

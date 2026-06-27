@@ -2,6 +2,42 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.71.0
+
+<!-- release-size: minor -->
+
+Structured fields. A concept can now declare an `object` group and a generalized `array` list beside its
+leaf fields. `fields.object({ fields })` groups leaf fields under one frontmatter key, stored as a nested
+object, with an optional `label`. `fields.array(item, options?)` now repeats any leaf (a scalar, an
+`image`, or a `reference`) or a flat `object` of leaves, where it previously accepted only a reference
+item. Together they cover a labeled meta group, a repeatable gallery, and a list of small records such as
+an FAQ.
+
+The editor renders an `object` as a labeled group and a non-reference `array` as a repeatable-row editor
+with add, remove, and reorder, keyed so an in-progress edit survives a reorder or a remove. The optional
+`itemLabel` names each row from one leaf field key. An `array` of references keeps the reference picker
+unchanged. The save round-trips the whole structure: a clean row persists in order, an all-empty row is
+pruned.
+
+Validation and inference recurse exactly one level. `InferFieldset` infers an `object` as a record of its
+leaf value types and an `array` as a list of its item type. The validator reports a nested failure through
+the additive `issues` array on `ValidationResult`, each a `ValidationIssue` located by a multi-segment
+path (a row index, a leaf sub-key), while the flat `errors` map stays keyed by the top-level field for
+back-compat.
+
+Containers nest one level only, enforced loudly at the `fieldset()` call. An `object` holds only leaves,
+an `array` holds a leaf or a flat `object`, no field key may contain a dot, and a `reference` inside an
+`object` and an `seo` image inside any container are deferred. Model a row that wants its own structure as
+its own concept and link to it with a reference.
+
+The barrel adds the `ObjectField` and `ValidationIssue` interfaces; `fields.object` joins the `fields`
+namespace and `fields.array` relaxes its item rule.
+
+This release is additive. No consumer action is required: the container shapes sit beside the existing
+vocabulary, the shipped `array(reference)` and reference editor are unchanged, and a site that declares no
+container field is unchanged. To adopt them, see [Structured
+fields](docs/guides/structured-fields.md).
+
 ## 0.70.0
 
 <!-- release-size: minor -->

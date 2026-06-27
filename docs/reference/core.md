@@ -259,12 +259,42 @@ validator, and the inferred frontmatter type, and the descriptors it carries are
 
 #### `fields`
 
-`fields` is the constructor namespace, one function per field type (`text`, `textarea`, `number`,
-`select`, `multiselect`, `url`, `email`, `date`, `datetime`, `boolean`, `image`). Each one takes the
-field's options and returns a plain-data descriptor; a `select` or `multiselect` preserves its
-literal option list so the inferred type narrows to that union. A closed `multiselect` (an `options`
-list) renders as checkboxes; a `creatable: true` multiselect renders as an open tag input and accepts
-an optional `placeholder`.
+`fields` is the constructor namespace, one function per field type. The leaf constructors are `text`,
+`textarea`, `number`, `select`, `multiselect`, `url`, `email`, `date`, `datetime`, `boolean`, `image`,
+and `reference`. The container constructors are `object` (a labeled group of leaves) and `array` (a
+repeatable list over one item). Each one takes the field's options and returns a plain-data
+descriptor; a `select` or `multiselect` preserves its literal option list so the inferred type
+narrows to that union. A closed `multiselect` (an `options` list) renders as checkboxes; a
+`creatable: true` multiselect renders as an open tag input and accepts an optional `placeholder`.
+
+`fields.object({ fields })` groups leaf fields under one frontmatter key, storing a nested object. Its
+`label` is optional, because an `object` inside an `array` is labeled by the array. `fields.array(item,
+options?)` declares a repeatable list: the `item` is any leaf (a scalar, an `image`, or a `reference`)
+or a flat `object` of leaves. An `array` of references renders the reference picker; an `array` of any
+other item renders the repeatable-row editor with add, remove, and reorder. The optional
+`itemLabel` names a row from one leaf field key.
+
+```ts
+const set = fieldset({
+  // a repeatable group of flat rows; the array labels the group, the object carries no label
+  faq: fields.array(
+    fields.object({ fields: { question: fields.text({ label: 'Question', required: true }), answer: fields.textarea({ label: 'Answer' }) } }),
+    { label: 'FAQ', itemLabel: 'question' },
+  ),
+  // a repeatable list of a single leaf
+  gallery: fields.array(fields.image({ label: 'Image' }), { label: 'Gallery' }),
+  // a labeled group under one key
+  meta: fields.object({ label: 'Meta', fields: { note: fields.text({ label: 'Note' }) } }),
+});
+```
+
+Containers nest one level only. An `object` holds leaves, never another container. An `array` holds a
+leaf or a flat `object`, never another `array` and never an `object` of objects. A `reference` inside
+an `object` and an `seo` image inside any container are not supported yet, and a deeper nesting, a
+nested reference, or a nested `seo` image throws at the `fieldset()` call. No field key may contain a
+dot, top-level or nested, because the editor addresses a nested value by a dotted path. See
+[Structured fields](../guides/structured-fields.md) and [The one-level nesting
+cap](../explanation/structured-fields.md) for the why and the escape hatch.
 
 Every constructor also accepts an optional `help`: one author-facing sentence the editor renders under
 the field in the Details panel, associated with the input through `aria-describedby`. It is not a
@@ -297,6 +327,11 @@ constraints: a `text` or `textarea` field's `min`, `max`, `length`, and
 call, not on a later save. The validator reads a parsed value as well as a form string, so a numeric
 `number`, a `Date` on a `datetime` field, and a lone scalar on a `multiselect` all normalize.
 `options.refine` runs after the per-field rules pass, for cross-field and body-dependent checks.
+
+The validator recurses one level into an `object` and an `array`, so a clean nested value normalizes
+and a nested failure reports. On failure the result carries the flat `errors` map keyed by the
+top-level field, plus an additive `issues` array of `ValidationIssue`, each located by a
+multi-segment path (a row index, a leaf sub-key) so the form routes a nested error to its input.
 
 #### `initialValues`
 
@@ -714,10 +749,12 @@ function signatures above reference these.
 | `DatetimeField` | `interface DatetimeField` | A naive-local `YYYY-MM-DDTHH:mm` minute-precision datetime field. |
 | `BooleanField` | `interface BooleanField` | A checkbox field; absent means false. |
 | `ImageField` | `interface ImageField` | A hero image set in frontmatter, with an optional `seo` flag for the social card. |
+| `ObjectField` | `interface ObjectField` | A group of leaf fields stored as a nested object; the `label` is optional, since an array labels a row group. Holds only leaves, one level deep. |
 | `ReferenceField` | `interface ReferenceField` | A single typed edge to one entry of a named `concept`, stored as that target's permanent id. |
-| `ArrayField` | `interface ArrayField` | A repeatable field over one `item` descriptor; this phase accepts only a reference item. |
+| `ArrayField` | `interface ArrayField` | A repeatable field over one `item` descriptor: any leaf (scalar, `image`, `reference`) or a flat `object` of leaves. |
 | `ImageValue` | `interface ImageValue` | The stored value of an `image` field: a `media:` src, an alt, and an optional caption. |
-| `ValidationResult` | `type ValidationResult` | A validator's verdict: normalized data, or field-keyed errors. |
+| `ValidationResult` | `type ValidationResult` | A validator's verdict: normalized data, or field-keyed `errors` plus the additive located `issues`. |
+| `ValidationIssue` | `interface ValidationIssue` | One validation failure located by a `path` (a top-level key, then a row index and/or a leaf sub-key) and its message. |
 | `StandardInput` | `interface StandardInput` | The validate input the adapter takes: raw frontmatter and the body. |
 | `StandardSchemaV1` | `interface StandardSchemaV1<I, O>` | A local copy of the Standard Schema v1 interface, for ecosystem interop. |
 | `DatePrefix` | `type DatePrefix` | Filename date-prefix granularity for a dated concept: year, month, day. |

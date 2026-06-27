@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { rewriteFrontmatterReference, extractReferenceEdges } from '../../lib/content/references.js';
-import { parseMarkdown } from '../../lib/content/frontmatter.js';
+import { parseMarkdown, serializeMarkdown } from '../../lib/content/frontmatter.js';
 import type { NamedField } from '../../lib/content/types.js';
 
 const doc = (fm: string) => `---\n${fm}\n---\nBody text mentioning author elsewhere.\n`;
@@ -112,6 +112,32 @@ describe('rewriteFrontmatterReference', () => {
       'No frontmatter.\n',
     );
   });
+
+  // A significant id (`123`, `true`, `null`, `2026`, `2026-01-02`) is committed single-quoted by
+  // serializeMarkdown. The token regex matches inside the existing quotes, so a naive splice nests a
+  // fresh quote pair and js-yaml throws for the whole file. These cover the real on-disk quoted form,
+  // rebuilt with serializeMarkdown so the input reflects what is actually committed.
+  const significantIds = ['123', 'true', 'null', '2026', '2026-01-02'];
+  const body = 'Body text.\n';
+
+  for (const oldId of significantIds) {
+    for (const newId of [...significantIds.filter((id) => id !== oldId), 'plain-id']) {
+      it(`rewrites a quoted scalar reference '${oldId}' to '${newId}' without nesting quotes`, () => {
+        const input = serializeMarkdown({ author: oldId }, body);
+        const out = rewriteFrontmatterReference(input, 'author', oldId, newId);
+        const reparsed = parseMarkdown(out);
+        expect(reparsed.frontmatter.author).toBe(newId);
+        expect(typeof reparsed.frontmatter.author).toBe('string');
+      });
+
+      it(`rewrites a quoted block-sequence reference '${oldId}' to '${newId}' without nesting quotes`, () => {
+        const input = serializeMarkdown({ related: [oldId] }, body);
+        const out = rewriteFrontmatterReference(input, 'related', oldId, newId);
+        const reparsed = parseMarkdown(out);
+        expect(reparsed.frontmatter.related).toEqual([newId]);
+      });
+    }
+  }
 });
 
 describe('extractReferenceEdges', () => {

@@ -1753,31 +1753,46 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     let next = removeEntry(manifest, concept.id, id);
     next = upsertEntry(next, manifestEntryFromFile(concept, { path: newPath, raw: movedRaw }));
 
-    // Rewrite every inbound linker's body and re-derive its row, so its outbound edge points at the
-    // new id. A linker missing from the repo is skipped; the build backstop catches any drift.
+    // Repoint every inbound linker so its outbound edges point at the new id, both body `cairn:` links
+    // and frontmatter reference fields. One entry can hold BOTH kinds at the same target, and the Git
+    // Trees API resolves a duplicate path to the LAST entry, so a separate FileChange per kind would let
+    // the second clobber the first. Union the two inbound sets keyed by linker PATH, read each file once
+    // from main, apply every rewrite to the SAME buffer, then push ONE FileChange per path and re-derive
+    // its row from the merged buffer. inboundReferences reads the committed (last-writer-wins stale)
+    // manifest, so a real inbound edge not yet recorded there is left to verifyReferences at the deploy
+    // gate; third-party open-branch inbounds were already refused above, so these are main-only.
+    interface InboundRepoint {
+      concept: string;
+      id: string;
+      hasLink: boolean;
+      fields: string[];
+    }
+    const repoints = new Map<string, InboundRepoint>();
+    const linkerPathFor = (linkerConcept: ConceptDescriptor, linkerId: string): string =>
+      `${linkerConcept.dir}/${filenameFromId(linkerId)}`;
     for (const linker of inboundLinks(manifest, concept.id, id)) {
       const linkerConcept = findConcept(runtime.concepts, linker.concept);
       if (!linkerConcept) continue;
-      const linkerPath = `${linkerConcept.dir}/${filenameFromId(linker.id)}`;
-      const linkerRaw = await readRaw(runtime.backend, linkerPath, token);
-      if (linkerRaw === null) continue;
-      const rewritten = rewriteCairnLink(linkerRaw, oldHref, newHref);
-      changes.push({ path: linkerPath, content: rewritten });
-      next = upsertEntry(next, manifestEntryFromFile(linkerConcept, { path: linkerPath, raw: rewritten }));
+      const path = linkerPathFor(linkerConcept, linker.id);
+      const existing = repoints.get(path);
+      if (existing) existing.hasLink = true;
+      else repoints.set(path, { concept: linker.concept, id: linker.id, hasLink: true, fields: [] });
     }
-
-    // Repoint every published (main) inbound reference: rewrite each linker's referencing frontmatter
-    // fields to the new id and re-derive its row. inboundReferences reads the committed (last-writer-wins
-    // stale) manifest, so a real inbound edge not yet recorded there is left to verifyReferences at the
-    // deploy gate, the same trade the body-link loop above accepts. Third-party open-branch inbounds were
-    // already refused above, so these are main-only by construction.
     for (const linker of inboundReferences(manifest, concept.id, id)) {
       const linkerConcept = findConcept(runtime.concepts, linker.concept);
       if (!linkerConcept) continue;
-      const linkerPath = `${linkerConcept.dir}/${filenameFromId(linker.id)}`;
+      const path = linkerPathFor(linkerConcept, linker.id);
+      const existing = repoints.get(path);
+      if (existing) existing.fields = [...new Set([...existing.fields, ...linker.fields])];
+      else repoints.set(path, { concept: linker.concept, id: linker.id, hasLink: false, fields: linker.fields });
+    }
+    for (const [linkerPath, repoint] of repoints) {
+      const linkerConcept = findConcept(runtime.concepts, repoint.concept);
+      if (!linkerConcept) continue;
       let linkerRaw = await readRaw(runtime.backend, linkerPath, token);
       if (linkerRaw === null) continue;
-      for (const field of linker.fields) {
+      if (repoint.hasLink) linkerRaw = rewriteCairnLink(linkerRaw, oldHref, newHref);
+      for (const field of repoint.fields) {
         linkerRaw = rewriteFrontmatterReference(linkerRaw, field, id, newId);
       }
       changes.push({ path: linkerPath, content: linkerRaw });

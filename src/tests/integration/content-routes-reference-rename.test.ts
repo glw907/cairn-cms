@@ -232,4 +232,43 @@ describe('renameAction: reference repoint and cross-branch refusal (Task 12)', (
     expect(() => verifyReferences(builtManifest)).toThrow(/linker/);
     expect(() => verifyReferences(builtManifest)).toThrow(/author/);
   });
+
+  it('(f) repoints BOTH a body link AND a frontmatter reference in one linker (neither clobbered)', async () => {
+    // One linker holds a `[](cairn:posts/target)` body link AND a `related: [target]` reference to the
+    // same target. The two inbound passes both push a FileChange for this path; the Git Trees API keeps
+    // the LAST entry, so a per-path merge is required or the reference pass clobbers the body-link
+    // rewrite (or vice versa). Assert the single committed file has BOTH repointed.
+    const manifest = JSON.stringify({
+      version: 1,
+      entries: [
+        entry('posts', 'target'),
+        {
+          id: 'linker', concept: 'posts', title: 'linker', permalink: '/posts/linker', draft: false,
+          links: [{ concept: 'posts', id: 'target' }],
+          references: [{ field: 'related', concept: 'posts', id: 'target' }],
+        },
+      ],
+    });
+    const gh = new GithubDouble({
+      main: {
+        [MANIFEST_PATH]: manifest,
+        [TARGET_PATH]: '---\ntitle: Target\n---\nbody',
+        'src/content/posts/linker.md':
+          '---\ntitle: Linker\nrelated:\n  - target\n---\nSee [the post](cairn:posts/target).\n',
+      },
+    });
+    const out = await rename(gh, 'target', 'renamed');
+    expect(out.location).toBe('/admin/posts/renamed?renamed=1');
+    const linkerFile = gh.read('main', 'src/content/posts/linker.md')!;
+    // Both the body link and the frontmatter reference repointed to the new id; neither clobbered.
+    expect(linkerFile).toContain('cairn:posts/renamed');
+    expect(linkerFile).not.toContain('cairn:posts/target');
+    expect(linkerFile).toContain('- renamed');
+    expect(linkerFile).not.toContain('- target');
+    // The re-derived manifest row carries the new id in BOTH links and references.
+    const committed = parseManifest(gh.read('main', MANIFEST_PATH)!);
+    const linkerRow = committed.entries.find((e) => e.id === 'linker')!;
+    expect(linkerRow.links).toEqual([{ concept: 'posts', id: 'renamed' }]);
+    expect(linkerRow.references).toEqual([{ field: 'related', concept: 'posts', id: 'renamed' }]);
+  });
 });

@@ -37,6 +37,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   import MediaInsertPopover from './MediaInsertPopover.svelte';
   import MediaHeroField from './MediaHeroField.svelte';
   import MediaFigureControl from './MediaFigureControl.svelte';
+  import ReferenceField from './ReferenceField.svelte';
   import DeleteDialog from './DeleteDialog.svelte';
   import RenameDialog from './RenameDialog.svelte';
   import MarkdownHelpDialog from './MarkdownHelpDialog.svelte';
@@ -2027,6 +2028,10 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
             ondirty={markFieldsDirty}
             onneedsaltchange={(n) => (heroNeedsAlt = { ...heroNeedsAlt, [field.name]: n })}
           />
+        {:else if field.type === 'reference'}
+          <ReferenceField {field} value={(data.frontmatter[field.name] ?? '') as string} targets={data.linkTargets} />
+        {:else if field.type === 'array'}
+          <ReferenceField {field} value={(data.frontmatter[field.name] ?? []) as string[]} targets={data.linkTargets} />
         {:else}
           <label class="flex flex-col gap-1">
             <span class="text-sm font-medium">{field.label}</span>

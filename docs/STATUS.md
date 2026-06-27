@@ -11,7 +11,7 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-26, latest): Contract v2 cutover DONE + MERGED to `main` (0.69.0, HELD UNPUBLISHED); NEXT = draft the references plan (phase 2 of the v2 series)
+## Immediate next action (2026-06-26, latest): Contract v2 references plan DRAFTED + hazard-swept (21 findings folded); NEXT = execute it (phase 2, 16 tasks, incremental, on a worktree off `main`)
 
 **The Contract v2 cutover is complete and merged to `main`** (commits `35d5417`..`3c22d10`, version **0.69.0**,
 breaking-within-0.x). `fieldset()`/`fields.*` is now the one live field system; v1 (`defineFields`,
@@ -31,8 +31,15 @@ spans 0.69.0 onward and will roll into one release when references → object/ar
 post-mortem (the standing-round-trip-test requirement for new field types is the load-bearing one for
 references next).
 
-**NEXT: draft the references plan** (phase 2: the frontmatter reference field on the id-stable content graph,
-the sharpest piece of the series). Brainstorm the open design decisions first, then write the plan. See
+**NEXT: execute the references plan** — `docs/superpowers/plans/2026-06-26-cairn-contract-v2-references.md`
+(phase 2: the frontmatter reference field on the id-stable content graph, the sharpest piece of the series),
+target **0.70.0** (additive, minor; held-unpublished window continues). DRAFTED via brainstorm (two forks
+settled: single + many `array(reference())`; taxonomy deferred and queued in ROADMAP) then hazard-swept by a
+5-lens adversarial workflow (21 confirmed findings folded in, 2 blockers: the rename refuse-predicate and the
+read-model resolution layer; plus the load-bearing `verifyReferences` virtual-module wiring fix and the
+rewriter re-quote of a YAML-significant id). 16 tasks, INCREMENTAL (each gates green, NOT atomic like the
+cutover); execute task-by-task via `cairn-implementer` (Sonnet), test-first, full gate per task, on a worktree
+off `main`; upshift Task 2 (the surgical rewriter) and Task 12 (rename) to `model: opus`. See
 [[cairn-site-contract-v2-opportunity]].
 
 **Carry-forward routing (from the cutover post-mortem's six DX items).** References OWNS #1: a `form →

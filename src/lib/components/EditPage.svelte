@@ -35,9 +35,9 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   import LinkPicker from './LinkPicker.svelte';
   import WebLinkDialog from './WebLinkDialog.svelte';
   import MediaInsertPopover from './MediaInsertPopover.svelte';
-  import MediaHeroField from './MediaHeroField.svelte';
+  import FieldInput from './FieldInput.svelte';
+  import type MediaHeroField from './MediaHeroField.svelte';
   import MediaFigureControl from './MediaFigureControl.svelte';
-  import ReferenceField from './ReferenceField.svelte';
   import DeleteDialog from './DeleteDialog.svelte';
   import RenameDialog from './RenameDialog.svelte';
   import MarkdownHelpDialog from './MarkdownHelpDialog.svelte';
@@ -63,9 +63,6 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   import { parseComponent, componentRoundTripSafety } from '../render/component-grammar.js';
   import type { IconSet } from '../render/glyph.js';
   import type { ContentFormFailure, EditData } from '../sveltekit/content-routes.js';
-  import type { ImageValue, NamedField } from '../content/types.js';
-  import type { TextareaField, NumberField, SelectField, MultiselectField } from '../content/fields.js';
-  import { isClosedMultiselect } from '../content/frontmatter.js';
   import type { LinkResolve } from '../content/links.js';
   import { manifestLinkResolver } from '../content/manifest.js';
   import type { MediaResolve } from '../render/resolve-media.js';
@@ -1267,11 +1264,6 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   const titleField = $derived(data.fields.find((f) => f.name === 'title'));
   const draftField = $derived(data.fields.find((f) => f.type === 'boolean' && f.name === 'draft'));
   const detailFields = $derived(data.fields.filter((f) => f !== titleField && f !== draftField));
-
-  // The built-in hint a date field carries when its adapter sets no description. The control reads as
-  // if it might schedule publishing, so this reassures the editor that the date is metadata and that
-  // publishing is the separate, deliberate step. A field-level description overrides it.
-  const DATE_PUBLISH_HINT = 'Sets the date for this post. Publishing is a separate step you choose.';
 </script>
 
 <!-- The desk controls live in the one header band: AdminLayout renders this snippet through the
@@ -1396,17 +1388,6 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
       </div>
     </div>
   </div>
-{/snippet}
-
-<!-- The author-facing hint under a Details field. The id pairs with the input's aria-describedby
-     (`<name>-hint`); its uniqueness rests on schema field names being unique within a concept, which
-     is also the loop key. So assistive tech announces the sentence without bloating the accessible
-     name. Each field branch decides whether and where to render it; this snippet holds the one shape.
-     The `fld-hint` class is a styling hook with no rule today; the Tailwind utilities do the work. -->
-{#snippet fieldHint(name: string, text: string)}
-  <p id={`${name}-hint`} class="fld-hint mt-1 text-sm text-[var(--color-muted)]">
-    {text}
-  </p>
 {/snippet}
 
 <!-- The whole edit surface remounts when navigation lands on another entry (see the entryKey
@@ -1902,160 +1883,18 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
            the screen-reader grouping but hides visually, the way the mockup carries it once. -->
       <legend class="sr-only">Details</legend>
       {#each detailFields as field (field.name)}
-        {#if field.type === 'textarea'}
-          {@const f = field as NamedField & TextareaField}
-          <label class="flex flex-col gap-1">
-            <span class="text-sm font-medium">{f.label}</span>
-            <textarea class="textarea textarea-sm" name={f.name} aria-label={f.label} aria-describedby={f.help ? `${f.name}-hint` : undefined} rows={f.rows ?? 3}>{str(data.frontmatter[f.name])}</textarea>
-            {#if f.help}
-              {@render fieldHint(f.name, f.help)}
-            {/if}
-          </label>
-        {:else if field.type === 'number'}
-          {@const f = field as NamedField & NumberField}
-          <label class="flex flex-col gap-1">
-            <span class="text-sm font-medium">{f.label}</span>
-            <input
-              class="input input-sm"
-              type="number"
-              name={f.name}
-              aria-label={f.label}
-              aria-describedby={f.help ? `${f.name}-hint` : undefined}
-              min={f.min}
-              max={f.max}
-              step={f.integer ? 1 : undefined}
-              value={str(data.frontmatter[f.name])}
-              required={f.required}
-            />
-            {#if f.help}
-              {@render fieldHint(f.name, f.help)}
-            {/if}
-          </label>
-        {:else if field.type === 'select'}
-          {@const f = field as NamedField & SelectField}
-          <label class="flex flex-col gap-1">
-            <span class="text-sm font-medium">{f.label}</span>
-            <select class="select select-sm" name={f.name} aria-label={f.label} aria-describedby={f.help ? `${f.name}-hint` : undefined} required={f.required}>
-              <!-- A leading empty option submits '' (the key is dropped on save); a required select
-                   leaves it unselected so an unset value fails the required check with a clear message. -->
-              <option value="">&mdash; none &mdash;</option>
-              {#each f.options as option (option)}
-                <option value={option} selected={str(data.frontmatter[f.name]) === option}>{option}</option>
-              {/each}
-            </select>
-            {#if f.help}
-              {@render fieldHint(f.name, f.help)}
-            {/if}
-          </label>
-        {:else if field.type === 'url'}
-          <label class="flex flex-col gap-1">
-            <span class="text-sm font-medium">{field.label}</span>
-            <input class="input input-sm" type="url" name={field.name} aria-label={field.label} aria-describedby={field.help ? `${field.name}-hint` : undefined} value={str(data.frontmatter[field.name])} required={field.required} />
-            {#if field.help}
-              {@render fieldHint(field.name, field.help)}
-            {/if}
-          </label>
-        {:else if field.type === 'email'}
-          <label class="flex flex-col gap-1">
-            <span class="text-sm font-medium">{field.label}</span>
-            <input class="input input-sm" type="email" name={field.name} aria-label={field.label} aria-describedby={field.help ? `${field.name}-hint` : undefined} value={str(data.frontmatter[field.name])} required={field.required} />
-            {#if field.help}
-              {@render fieldHint(field.name, field.help)}
-            {/if}
-          </label>
-        {:else if field.type === 'datetime'}
-          <label class="flex flex-col gap-1">
-            <span class="text-sm font-medium">{field.label}</span>
-            <input class="input input-sm" type="datetime-local" name={field.name} aria-label={field.label} aria-describedby={field.help ? `${field.name}-hint` : undefined} value={str(data.frontmatter[field.name])} required={field.required} />
-            {#if field.help}
-              {@render fieldHint(field.name, field.help)}
-            {/if}
-          </label>
-        {:else if field.type === 'date'}
-          <label class="flex flex-col gap-1">
-            <span class="text-sm font-medium">{field.label}</span>
-            <!-- A date field always carries a hint: the adapter's help when set, else the
-                 built-in publish-clarity default. So aria-describedby always points at the paragraph. -->
-            <input class="input input-sm" type="date" name={field.name} aria-label={field.label} aria-describedby={`${field.name}-hint`} value={str(data.frontmatter[field.name])} />
-            {@render fieldHint(field.name, field.help || DATE_PUBLISH_HINT)}
-          </label>
-        {:else if field.type === 'boolean'}
-          <div class="flex flex-col gap-1">
-            <label class="label cursor-pointer justify-start gap-2">
-              <input class="checkbox checkbox-sm" type="checkbox" name={field.name} aria-label={field.label} aria-describedby={field.help ? `${field.name}-hint` : undefined} checked={data.frontmatter[field.name] === true} />
-              <span class="text-sm">{field.label}</span>
-            </label>
-            {#if field.help}
-              {@render fieldHint(field.name, field.help)}
-            {/if}
-          </div>
-        {:else if field.type === 'multiselect' && isClosedMultiselect(field)}
-          {@const f = field as NamedField & MultiselectField & { options: readonly string[] }}
-          {@const selected = (data.frontmatter[f.name] ?? []) as string[]}
-          <fieldset class="fieldset" aria-describedby={f.help ? `${f.name}-hint` : undefined}>
-            <legend class="fieldset-legend">{f.label}</legend>
-            {#if f.help}
-              {@render fieldHint(f.name, f.help)}
-            {/if}
-            <div class="flex flex-wrap gap-2">
-              {#each f.options as option (option)}
-                <label class="label cursor-pointer justify-start gap-2">
-                  <input
-                    class="checkbox checkbox-sm"
-                    type="checkbox"
-                    name={f.name}
-                    value={option}
-                    checked={selected.includes(option)}
-                  />
-                  <span class="text-sm">{option}</span>
-                </label>
-              {/each}
-            </div>
-          </fieldset>
-        {:else if field.type === 'multiselect'}
-          {@const f = field as NamedField & MultiselectField}
-          {@const tagValue = ((data.frontmatter[f.name] ?? []) as string[]).join(', ')}
-          <label class="flex flex-col gap-1">
-            <span class="text-sm font-medium">{f.label}</span>
-            <input
-              class="input input-sm"
-              name={f.name}
-              aria-label={f.label}
-              aria-describedby={f.help ? `${f.name}-hint` : undefined}
-              placeholder={f.placeholder ?? (f.help ? undefined : 'Separate values with commas')}
-              value={tagValue}
-            />
-            {#if f.help}
-              {@render fieldHint(f.name, f.help)}
-            {/if}
-          </label>
-        {:else if field.type === 'image'}
-          {@const heroValue = data.frontmatter[field.name] as ImageValue | undefined}
-          <MediaHeroField
-            bind:this={heroFieldRefs[field.name]}
-            field={{ name: field.name, label: field.label }}
-            value={heroValue}
-            decorative={heroValue?.decorative ?? false}
-            mediaLibrary={mediaLibrary}
-            conceptId={data.conceptId}
-            id={data.id}
-            onuploaded={(record) => (uploadedRecords = [...uploadedRecords, record])}
-            ondirty={markFieldsDirty}
-            onneedsaltchange={(n) => (heroNeedsAlt = { ...heroNeedsAlt, [field.name]: n })}
-          />
-        {:else if field.type === 'reference'}
-          <ReferenceField {field} value={(data.frontmatter[field.name] ?? '') as string} targets={data.linkTargets} ondirty={markFieldsDirty} />
-        {:else if field.type === 'array' && field.item.type === 'reference'}
-          <ReferenceField {field} value={(data.frontmatter[field.name] ?? []) as string[]} targets={data.linkTargets} ondirty={markFieldsDirty} />
-        {:else}
-          <label class="flex flex-col gap-1">
-            <span class="text-sm font-medium">{field.label}</span>
-            <input class="input input-sm" name={field.name} aria-label={field.label} aria-describedby={field.help ? `${field.name}-hint` : undefined} value={str(data.frontmatter[field.name])} required={field.required} />
-            {#if field.help}
-              {@render fieldHint(field.name, field.help)}
-            {/if}
-          </label>
-        {/if}
+        <FieldInput
+          {field}
+          frontmatter={data.frontmatter}
+          targets={data.linkTargets}
+          markFieldsDirty={markFieldsDirty}
+          mediaLibrary={mediaLibrary}
+          conceptId={data.conceptId}
+          id={data.id}
+          heroFieldRefs={heroFieldRefs}
+          onuploaded={(record) => (uploadedRecords = [...uploadedRecords, record])}
+          onheroneedsalt={(name, n) => (heroNeedsAlt = { ...heroNeedsAlt, [name]: n })}
+        />
       {/each}
       </fieldset>
       {/if}

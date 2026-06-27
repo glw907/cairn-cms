@@ -134,6 +134,21 @@ export const cairn = defineAdapter({
         // A closed select exercising a brand-new v2 scalar arm end to end: the editor renders a
         // <select>, the value round-trips through save and reload (the golden-path e2e pins it).
         status: fields.select({ label: 'Status', options: ['draft', 'published'], default: 'draft' }),
+        // A repeatable flat object: array(object) exercising the v2 container editor end to end. The
+        // object carries no label of its own (the array labels the group, itemLabel summarizes a row),
+        // and the container e2e pins the add/reorder/remove and the save-and-reload round-trip.
+        faq: fields.array(
+          fields.object({
+            fields: {
+              question: fields.text({ label: 'Question', required: true }),
+              answer: fields.textarea({ label: 'Answer', required: true }),
+            },
+          }),
+          { label: 'FAQ', itemLabel: 'question' },
+        ),
+        // A repeatable image: array(image) exercising the leaf-array editor arm, each row a hero-style
+        // image field whose structured value round-trips through save and reload.
+        gallery: fields.array(fields.image({ label: 'Image' }), { label: 'Gallery' }),
       }),
     },
     pages: {

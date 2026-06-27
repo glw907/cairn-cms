@@ -11,69 +11,65 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-27, latest): Contract v2 phase 3b (adapter restructure + concept model) SHIPPED as 0.72.0 (held); NEXT = phase 3c (the field-system unification onto `fields.*`)
+## Immediate next action (2026-06-27, latest): Contract v2 phase 3c (field-system unification) SHIPPED as 0.73.0 (held); NEXT = the `Backend` seam
 
-**Contract v2 phase 3b (adapter restructure + concept model) is complete and merged to `main`** as **0.72.0**
-(breaking within 0.x, minor). `CairnAdapter` is now six subsystem groups (`content`, `backend`, `email` (was
-`sender`), `rendering.{render, components (was registry), icons}`, `media` (was `assets`), `editor.{preview, nav
-(was navMenu), supportContact}`); `content` opened to an arbitrary `Record<string, ConceptConfig>`;
-`ConceptConfig.schema` renamed to `fields`; and each concept declares its own routing and URL policy
-(`routing`/`permalink`/`datePrefix`) on the concept. New: `defineConcept` (a typed concept factory that
-validates its URL policy at declaration) and `resolveRouting` (the single shorthand expander, internal). Removed:
-`CONCEPT_ROUTING`, `urlPolicyFrom`, `SiteConfig.url`, `SiteConfig.content`. `parseSiteConfig` hard-errors on a
-stale `content:` block (the half-migrated-site tripwire). `siteName` is YAML-canonical; `composeRuntime` reads it
-from `siteConfig`. **`CairnRuntime` stayed FLAT** (sweep B1); `composeRuntime` is the one mapping site, and the
-public delivery signatures kept their `siteConfig` param (R4). Plan + post-mortem:
-`docs/superpowers/plans/2026-06-27-cairn-contract-v2-adapter-concept.md`.
+**Contract v2 phase 3c (field-system unification) is complete** as **0.73.0** (breaking within 0.x, minor). The
+two parallel field systems collapse into one: a directive component's `attributes` are a `fields.*` record
+(`Record<string, FieldDescriptor>`, scalar leaves only) instead of an `AttributeField[]` array; `defineComponent`
+supersedes the bare `ComponentDef` literal, building the attribute validator from the descriptors via `fieldset()`
+and validating the component at declaration (the component-level companion to `defineConcept`); the cross-field
+attribute validator moved off the descriptor into the co-bundled `behavior` table with a `validate(value, siblings)`
+signature; and `fields.icon()` is a first-class descriptor for concepts and components alike. `AttributeField` and
+`FieldType` are deleted. Plan + post-mortem:
+`docs/superpowers/plans/2026-06-27-cairn-contract-v2-field-unification.md`. (Phase 3b, the adapter restructure into
+six groups + the open concept model, shipped just before as 0.72.0; its post-mortem is in
+`docs/superpowers/plans/2026-06-27-cairn-contract-v2-adapter-concept.md`.)
 
-**Held unpublished (Geoff): do NOT publish until the whole Contract v2 series is complete.** `main` carries the
-work but no GitHub Release / npm publish is cut; the held window now spans **0.69.0 through 0.72.0** and rolls
-into one release when references → object/array → adapter/concept → backend → render + islands all land. The two
-sites (ecxc-ski, 907-life) stay on the prior published range until then.
+**Held unpublished (Geoff): do NOT publish until the whole Contract v2 series is complete.** No GitHub Release /
+npm publish is cut; the held window now spans **0.69.0 through 0.73.0** and rolls into one release when references →
+object/array → adapter/concept → field-unification → backend → render + islands all land. The two sites (ecxc-ski,
+907-life) stay on the prior published range until then.
 
-**Verified.** `npm run check` 1202 files 0/0; `npm test` exit 0 (**2691**, unchanged from the 3a baseline, a
-clean migration); `check:comments` + the four doc gates + `check:version` (minor → 0.72.0); and the load-bearing
-proof, a from-scratch consumer build (`rm -rf examples/showcase/{node_modules,package-lock.json}`, fresh install,
-`npm run build`) plus the **39-test Playwright e2e**, both green. Executed main-loop orchestrate-and-verify on a
-feature BRANCH off `main`: Task 1 additive (gated `cairn-implementer`, commit `6010cc3`); Tasks 2-8 one atomic
-compile unit gated once (commit `2e184fb`); Task 9 the release (commit `849a3aa`). The pre-folded addendum R1-R7
-carried the pass. `svelte-reviewer` came back clean (confirmed the highest-risk `registry={cairn.rendering.
-components}` prop mapping is right); `code-simplifier` applied 2 refinements (a backwards `ConceptUrlPolicy`
-TSDoc, and hoisting the three artifact-path constants in `compose.ts`).
+**Verified.** `npm run check` 1205 files 0/0; `npm test` exit 0 at **2704** (2076 unit+integration, 628 component);
+`check:comments` + the four doc gates + `check:version` (minor → 0.73.0); and the load-bearing proof, a from-scratch
+consumer build (`rm -rf examples/showcase/{node_modules,package-lock.json}`, fresh install, `npm run build`) plus
+the **39-test Playwright e2e**, both green and re-run green after the a11y follow-up. Executed main-loop
+orchestrate-and-verify on `contract-v2-3c-field-unification` (off the 3b tip): Tasks 1-2 additive gated
+`cairn-implementer` (`4c52b53b`, `b5d97e80`); Tasks 3-9 one atomic compile unit (engine/forms/showcase migrated in
+the main loop, the ~17-file test migration dispatched to a `cairn-implementer` with a transcription-level semantic
+spec), gated once (`dbab089`); Task 10 the release (`00c59e9`); the pass-end review fold (`36c5cd8`).
 
-**Durable lesson (the silent-routing trap).** The old id-keyed `CONCEPT_ROUTING` auto-dated every concept named
-`posts`. With routing now concept-declared, a `posts` concept that omits `routing` defaults to the non-dated
-`'page'` rule, so a migrated test or site that relied on the implicit dated behavior breaks SILENTLY (a
-date-token permalink stops resolving, a date-stripped slug stops stripping). Every dated `posts` concept must
-declare `routing: 'feed'`; the gate caught two misses. The same trap waits at each site cutover (the ROADMAP
-watch tracks it).
+**Durable lessons (3c).** (1) The dispatch-and-verify discipline caught a real engine defect the type system half-hid:
+the `FieldDescriptor` union's `ObjectField`/`ArrayField` carry an OPTIONAL `label`, so after the attribute retype
+`field.label` is `string | undefined` even though `checkComponentAttributes` rejects those types at runtime;
+`ComponentInsertDialog`'s `emptyRequired` pushed it into a `string[]` and svelte-check failed. The test-migration
+implementer correctly STOPPED and reported it rather than weakening a test; fixed with `field.label ?? name`. Keep
+the "report an apparent engine bug, don't fix it in a scoped dispatch" rule. (2) Unifying onto the shared `fieldset`
+validator changed error-message SEMANTICS, not just punctuation: an unknown select value loses its option list
+(generic `contains an unknown value`), a custom per-attribute pattern message is gone (generic `is not in the
+expected format`; a custom message must move to `behavior.validate`), and the throw-containment warning names the
+field not the component. Accepted the generic messages. (3) The retroactive tightening is intended and in the
+changelog: components now format-check every attribute value, so a hand-authored directive that previously saved a
+malformed value (a non-numeric `number`) now fails the save-path `validateComponent`.
 
-**NEXT: execute phase 3c, the field-system unification onto `fields.*`.** Plan WRITTEN + adversarially reviewed
-(2026-06-27): `docs/superpowers/plans/2026-06-27-cairn-contract-v2-field-unification.md` (target **0.73.0**,
-breaking-within-0.x; held window becomes 0.69.0-0.73.0). It folds the directive component attribute system onto
-`fields.*` (`defineComponent` supersedes the `ComponentDef` literal; `attributes` becomes a key→`FieldDescriptor`
-record, scalar leaves only; `AttributeField`/`FieldType` deleted), adds `fields.icon()` first-class (research:
-no git-based peer ships one; cairn already owns the picker), unifies the validator (`defineComponent` builds a
-real `fieldset()` so a component attribute and a concept field validate through identical code), and realizes the
-data-vs-behavior split via the expanded `BehaviorTable` (`{ validate?, itemLabel? }`). Execution shape mirrors 3b:
-Tasks 1-2 additive/gated; Tasks 3-9 ONE atomic compile unit gated once at Task 9; Task 10 the release. The
-four-lens adversarial review is folded as addendum A1-A14 (the module-cycle and `IconField` exhaustiveness bets
-held; the gate-failing gaps are all folded; the addendum SUPERSEDES affected task steps). **Geoff's calls
-(2026-06-27): `fields.icon()` first-class; the symmetric `itemLabel`-as-function half CUT (A14, the uncontrolled-
-row live-data gap) and re-scoped to ROADMAP, so 3c ships only the cheap server-side per-field `behavior.validate`
-symmetry; icons are the exception not every component carries, and an icon field's required-ness varies per
-declaration.** Then the `Backend` seam, then render-as-component with opt-in islands. Spec:
+**NEXT: the `Backend` seam** (then render-as-component with opt-in islands; islands are phase 4, a separate
+brainstorm). The field system is now unified, so the remaining v2 work is the backend abstraction and the render
+seam. No plan written yet; brainstorm the `Backend` seam scope before authoring it. Spec:
 `docs/superpowers/specs/2026-06-25-cairn-contract-v2-design.md`. See [[cairn-site-contract-v2-opportunity]].
-NOTE: 3b is implemented on its feature branch but NOT yet merged to `main` (main's tip is the 3b plan commit), so
-3c branches off the 3b tip (`contract-v2-3c-field-unification`); merge 3b → `main` at Geoff's discretion.
+**Branch state:** neither 3b nor 3c is merged to `main` (main's tip is the 3c plan commit); both live on
+`contract-v2-3c-field-unification` (3c branched off the 3b tip, so the branch carries both). Merge to `main` at
+Geoff's discretion.
 
-**Carry-forwards (filed in ROADMAP):** the engine-provided `inFeeds`/`routable` feed and sitemap views (decision
-7, render/delivery phase, since 3b leaves `inFeeds` a consumer-read hint); the per-site URL-policy transcription
-watch (ecxc-ski `/:year/:month/:slug` `month`, 907-life `/:year/:month/:day/:slug` `day`) for each site's v2
-cutover. Still queued from earlier v2 phases: nested references inside containers, the object-nested seo image,
-the nested-image needs-alt advisory, `itemLabel`-as-function + cross-field row validators (3c), taxonomy/tag
-delivery, and the body-link cross-branch delete. The live `wrangler dev` admin smoke stays owed at the next site
-cutover (the passing from-scratch e2e covers this surface meanwhile).
+**Carry-forwards (filed in ROADMAP).** New from 3c: the `itemLabel`-as-function concept-array-editor pass (CUT this
+pass per A14, re-scoped for the live-row snapshot the uncontrolled rows need; the cheap server-side per-field
+`behavior.validate` half shipped); merge the two form renderers (`ComponentForm`/`FieldInput`, decision 9);
+build-time icon-name validation against the set (decision 1); empty-icon-set as a doctor-detectable config error
+(A7). Still carried: the silent-routing trap watch (every dated `posts` concept must declare `routing: 'feed'`, the
+same trap waits at each site cutover); the per-site URL-policy transcription watch (ecxc-ski `/:year/:month/:slug`
+`month`, 907-life `/:year/:month/:day/:slug` `day`); the engine-provided `inFeeds`/`routable` feed and sitemap
+views; nested references inside containers; the object-nested seo image; the nested-image needs-alt advisory;
+taxonomy/tag delivery; and the body-link cross-branch delete. The live `wrangler dev` admin smoke stays owed at the
+next site cutover (the passing from-scratch e2e covers the `/admin` icon-field surface meanwhile).
 
 ---
 

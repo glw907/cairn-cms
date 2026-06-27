@@ -581,3 +581,71 @@ const alert = defineComponent({
 - **Type consistency:** `defineComponent<const D extends ComponentDef>(def: D): D & { attributeSchema: Fieldset }` (A1); `ComponentDef.attributes?: Record<string, FieldDescriptor>`; `ComponentDef.behavior?: BehaviorTable`; `ComponentDef.attributeSchema?: Fieldset`; `SlotDef.itemFields?: Record<string, FieldDescriptor>`; `ComponentRegistry.iconField(name: string): string | undefined`; `FieldBehavior { validate?, itemLabel? }`; `BehaviorTable = Record<string, FieldBehavior>`; `IconField { type: 'icon' }`; `fields.icon(o)`.
 - **No placeholders:** every code step shows the code or the exact transformation with line refs; the atomic-unit boundary and the single gate are explicit; the test-migration set is the explore-derived floor with the mechanical derivation rule.
 - **Adversarial review: DONE** (four-lens find-then-verify, folded as addendum A1-A14). The module cycle and `IconField` exhaustiveness bets held; the gate-failing gaps (the `defineComponent` return type, the `FieldType` barrel + `slot.itemFields` + `emptyRequired` misses, the `inputType` reuse defect, the wider `icons` threading, the retroactive validation tightening, the docs set) are all folded. The addendum supersedes the affected task steps.
+
+---
+
+## Post-mortem (2026-06-27)
+
+**Shipped as `0.73.0`, held unpublished** (Contract v2 window now `0.69.0`-`0.73.0`). The two parallel
+field systems are collapsed into one: a directive component's attributes are a `fields.*` record,
+`defineComponent` supersedes the `ComponentDef` literal and builds the attribute validator from the
+descriptors via `fieldset()`, the cross-field validator moved into the co-bundled `behavior` table, and
+`fields.icon()` is first-class for concepts and components. `AttributeField`/`FieldType` deleted.
+
+**Execution.** Tasks 1-2 (additive) ran as gated `cairn-implementer` dispatches (commits `4c52b53b`,
+`b5d97e80`), each green on its own. Tasks 3-9 ran as one atomic compile unit: the engine, the render
+pipeline, the three editor `.svelte` forms, and the showcase config were migrated in the main loop, then
+the ~17-file test migration was dispatched to a `cairn-implementer` with a transcription-level spec
+embedding every non-mechanical assertion change (the heavy `component-validate.test.ts` reworks, the A8/A9
+error-string semantics, the `(value, siblings)` behavior signature). The atomic unit committed once at
+`dbab089`. Task 10 was the release commit `00c59e9`. The pass-end review gate produced one more commit,
+`36c5cd8`.
+
+**Verified.** `npm run check` 1205 files 0/0; `npm test` exit 0 at **2704** (2076 unit+integration, 628
+component); `check:comments`; the four doc gates (`check:reference`, `check:reference:signatures`,
+`check:package`, `check:docs`); `check:version` minor → `0.73.0`; and the load-bearing proof, a
+from-scratch consumer build (`rm -rf examples/showcase/{node_modules,package-lock.json}`, fresh install,
+`npm run build`) plus the 39-test Playwright e2e, both green and re-run green after the a11y follow-up.
+
+**The one engine defect the gate caught.** The test-migration implementer correctly stopped on a real
+defect rather than weakening a test: `ComponentInsertDialog.svelte` `emptyRequired` pushed `field.label`
+(now `string | undefined`, because the `FieldDescriptor` union's `ObjectField`/`ArrayField` carry an
+optional `label`) into a `string[]`. `checkComponentAttributes` rejects those types at runtime so the
+value is always present, but svelte-check cannot see that. Fixed with `field.label ?? name`. The
+dispatch-and-verify discipline (implementer reports an apparent engine bug, main loop owns the fix) worked
+exactly as intended.
+
+**Decisions locked.**
+- `defineComponent<const D extends ComponentDef>(def: D): D & { attributeSchema: Fieldset }` (A1): the
+  augmented return type, not a bare `D`, so every `def.attributeSchema` read type-checks.
+- Error-message semantics changed, not just punctuation (A9): an unknown select value reports the generic
+  `${label} contains an unknown value: …` (the option list is dropped); a pattern mismatch reports the
+  generic `${label} is not in the expected format` (the custom per-attribute message is gone, moved to
+  `behavior.validate`); the throw-containment warning names the field, not the component, since the
+  unified `fieldset` validator does not know the component name. Accepted the generic messages (the plan's
+  recommendation) rather than enriching the shared validator.
+- Attribute validation retroactively tightened (A8): components now format-check every value through the
+  shared `fieldset` validator, so a hand-authored directive that previously saved with a malformed value (a
+  non-numeric `number` attribute) now fails the save-path `validateComponent`. Intended; in the changelog.
+- `IconField` is barrel-exported and documented in `core.md`, mirroring its `*Field` siblings (A13).
+- `itemLabel`-as-function CUT (A14): the cheap server-side per-field `behavior.validate` half shipped in
+  Task 2; the client-side function form hit the uncontrolled-row live-data blocker and is re-scoped to a
+  ROADMAP concept-array-editor pass that can design the live-row snapshot.
+
+**Review gate.** `svelte-reviewer`: no blocker, no warning; the array-to-record retype, the `{#each}`
+keying by attribute name, the `onChange` param rename that avoids shadowing the outer `name`, and the deep
+`icons` thread (`EditPage → FieldInput → RepeatableField → ObjectGroupField → FieldInput`) are all correct.
+Two suggestions on one seam (the FieldInput icon arm's absent-`IconSet` handling diverged from
+ComponentForm). `daisyui-a11y-reviewer`: two warnings, both on the new FieldInput icon arm — it dropped
+`field.help`/`aria-describedby` and gave a required icon field no programmatic required signal. Both folded
+into `36c5cd8`: IconPicker gained a `describedby` prop and emits `aria-required` (improving both forms),
+and the FieldInput icon arm now renders the help hint and guards with `&& icons` so an absent set degrades
+to the text fallback. The empty-icon-set case is confirmed a sane announced-but-empty radiogroup, not a
+silent trap (already filed to ROADMAP as a doctor-detectable config error).
+
+**Owed.** The live `wrangler dev` admin smoke against a real Worker stays owed to the next site cutover;
+the passing from-scratch e2e covers the `/admin` icon-field surface meanwhile.
+
+**Carry-forwards filed to ROADMAP.** The `itemLabel`-as-function concept-array-editor pass (re-scoped for
+the live-row snapshot); merge the two form renderers (`ComponentForm`/`FieldInput`, decision 9); build-time
+icon-name validation against the set (decision 1); empty-icon-set as a doctor-detectable config error (A7).

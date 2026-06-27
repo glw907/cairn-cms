@@ -5,7 +5,8 @@
 import { redirect, error, fail } from '@sveltejs/kit';
 import { findConcept } from '../content/concepts.js';
 import { extractCairnLinks, formatCairnToken, rewriteCairnLink } from '../content/links.js';
-import { extractReferenceEdges } from '../content/references.js';
+import { extractReferenceEdges, rewriteFrontmatterReference } from '../content/references.js';
+import { buildReferenceIndex } from '../content/reference-index.js';
 import { frontmatterFromForm, formValues, parseMarkdown, dateInputValue, serializeMarkdown } from '../content/frontmatter.js';
 import { initialValues } from '../content/fieldset.js';
 import { deriveExcerpt } from '../content/excerpt.js';
@@ -17,7 +18,7 @@ import { listMarkdown, readRaw, commitFile, commitFiles, type FileChange } from 
 import { branchHeadSha, createBranch, deleteBranch, listBranches } from '../github/branches.js';
 import { PENDING_PREFIX, pendingBranch, parsePendingBranch } from '../content/pending.js';
 import { cachedInstallationToken } from '../github/signing.js';
-import { emptyManifest, manifestEntryFromFile, parseManifest, serializeManifest, upsertEntry, removeEntry, inboundLinks, type Manifest, type LinkTarget, type InboundLink } from '../content/manifest.js';
+import { emptyManifest, manifestEntryFromFile, parseManifest, serializeManifest, upsertEntry, removeEntry, inboundLinks, inboundReferences, type Manifest, type LinkTarget, type InboundLink } from '../content/manifest.js';
 import { deriveGettingStarted, type GettingStarted } from '../content/getting-started.js';
 import { markdownReference, type MarkdownReferenceRow } from '../components/markdown-reference.js';
 import { isConflict } from '../github/types.js';
@@ -1672,12 +1673,46 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     ]);
     if (entryRaw === null) throw error(404, 'Entry not found');
 
+    // Cross-branch reference gate (fail-closed). A reference index unions main's published edges and
+    // every open cairn/* branch; if it cannot be built (a transient branch read failure), refuse
+    // rather than rename a still-referenced target and strand the inbound edge.
+    let refIndex;
+    try {
+      refIndex = await buildReferenceIndex(runtime.backend, token, runtime.concepts, manifest, { strict: true });
+    } catch {
+      return fail(409, { error: 'Could not verify references. Try again.' } satisfies RenameFailure);
+    }
+
+    // Refuse when a THIRD-PARTY open branch holds an inbound reference (symmetric with the pending-edits
+    // guard). The strict index unions main and every branch, so filter before refusing: gate
+    // origin.kind === 'branch' FIRST (a published row has no .branch, so a bare branch-name compare would
+    // trip on every main-side inbound and over-refuse), then exclude the entry's OWN pending branch
+    // (already refused above and absent by construction here). Published (main) inbound rows are NOT
+    // refused; they are repointed below.
+    const ownBranch = pendingBranch(concept.id, id);
+    const conflictBranches = (refIndex.get(`${concept.id}/${id}`) ?? [])
+      .filter((row) => row.origin.kind === 'branch' && row.origin.branch !== ownBranch)
+      .map((row) => `${row.concept}/${row.id}`);
+    if (conflictBranches.length > 0) {
+      const names = [...new Set(conflictBranches)].join(', ');
+      return fail(409, { error: `Another editor has unpublished edits referencing this entry: ${names}. Ask them to publish or discard, then rename.` } satisfies RenameFailure);
+    }
+
     const oldHref = formatCairnToken({ concept: concept.id, id });
     const newHref = formatCairnToken({ concept: concept.id, id: newId });
 
-    // The moved file keeps its content, except a self-token rewrite. Re-derive its manifest row from
-    // the new path so the row carries the new id and permalink by construction.
-    const movedRaw = rewriteCairnLink(entryRaw, oldHref, newHref);
+    // The moved file keeps its content, except a self-token rewrite and a self-reference rewrite.
+    let movedRaw = rewriteCairnLink(entryRaw, oldHref, newHref);
+    // The moved entry is excluded from inboundReferences, so it must repoint its OWN frontmatter
+    // self-references (e.g. `related` listing its own old id), or the re-derived row would carry the
+    // old id and verifyReferences would flag a dangling edge at the deploy gate.
+    for (const f of concept.fields) {
+      if (f.type === 'reference' || (f.type === 'array' && f.item.type === 'reference')) {
+        movedRaw = rewriteFrontmatterReference(movedRaw, f.name, id, newId);
+      }
+    }
+    // Re-derive its manifest row from the new path so the row carries the new id and permalink by
+    // construction (and the rewritten self-reference edge at the new id).
     const changes: FileChange[] = [
       { path: oldPath, content: null },
       { path: newPath, content: movedRaw },
@@ -1696,6 +1731,24 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       const rewritten = rewriteCairnLink(linkerRaw, oldHref, newHref);
       changes.push({ path: linkerPath, content: rewritten });
       next = upsertEntry(next, manifestEntryFromFile(linkerConcept, { path: linkerPath, raw: rewritten }));
+    }
+
+    // Repoint every published (main) inbound reference: rewrite each linker's referencing frontmatter
+    // fields to the new id and re-derive its row. inboundReferences reads the committed (last-writer-wins
+    // stale) manifest, so a real inbound edge not yet recorded there is left to verifyReferences at the
+    // deploy gate, the same trade the body-link loop above accepts. Third-party open-branch inbounds were
+    // already refused above, so these are main-only by construction.
+    for (const linker of inboundReferences(manifest, concept.id, id)) {
+      const linkerConcept = findConcept(runtime.concepts, linker.concept);
+      if (!linkerConcept) continue;
+      const linkerPath = `${linkerConcept.dir}/${filenameFromId(linker.id)}`;
+      let linkerRaw = await readRaw(runtime.backend, linkerPath, token);
+      if (linkerRaw === null) continue;
+      for (const field of linker.fields) {
+        linkerRaw = rewriteFrontmatterReference(linkerRaw, field, id, newId);
+      }
+      changes.push({ path: linkerPath, content: linkerRaw });
+      next = upsertEntry(next, manifestEntryFromFile(linkerConcept, { path: linkerPath, raw: linkerRaw }));
     }
 
     changes.push({ path: runtime.manifestPath, content: serializeManifest(next) });

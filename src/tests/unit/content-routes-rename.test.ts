@@ -81,6 +81,8 @@ function renameFetch(files: Map<string, string | null>) {
     }
     // The pending-branch probe (a slashed name arrives percent-encoded) answers 404: no branch.
     if (method === 'GET' && url.includes('/git/ref/heads/cairn%2F')) return new Response('Not Found', { status: 404 });
+    // The cross-branch reference index lists open cairn/* branches: none in these scenarios.
+    if (method === 'GET' && url.includes('/git/matching-refs/')) return json([]);
     if (method === 'GET' && url.includes('/git/ref/')) return json({ object: { sha: 'head1' } });
     if (method === 'GET' && url.includes('/git/commits/')) return json({ tree: { sha: 'basetree' } });
     if (method === 'POST' && url.endsWith('/git/trees')) return json({ sha: 'newtree' });

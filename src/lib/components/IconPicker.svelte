@@ -21,9 +21,11 @@ IconSet path data, matching the renderer's 256-unit viewBox.
     onChange: (name: string) => void;
     /** The group's accessible name, threaded from the field label. Defaults to Icon. */
     label?: string;
+    /** The id of a describing element (a field hint), for the radiogroup's `aria-describedby`. */
+    describedby?: string;
   }
 
-  let { icons, value, required, onChange, label = 'Icon' }: Props = $props();
+  let { icons, value, required, onChange, label = 'Icon', describedby }: Props = $props();
 
   // The radiogroup container, used to move focus with the selection per the ARIA radiogroup pattern.
   let group: HTMLDivElement;
@@ -62,7 +64,7 @@ IconSet path data, matching the renderer's 256-unit viewBox.
   }
 </script>
 
-<div class="flex flex-wrap gap-2" role="radiogroup" aria-label={label} bind:this={group}>
+<div class="flex flex-wrap gap-2" role="radiogroup" aria-label={label} aria-required={required ? 'true' : undefined} aria-describedby={describedby} bind:this={group}>
   {#if !required}
     <button
       type="button"

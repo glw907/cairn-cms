@@ -231,12 +231,13 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
   <ObjectGroupField {field} {name} frontmatter={(frontmatter[field.name] ?? {}) as Record<string, unknown>} {markFieldsDirty} {mediaLibrary} {conceptId} {id} {heroFieldRefs} {targets} {onuploaded} {onheroneedsalt} {icons} />
 {:else if field.type === 'array' && field.item.type !== 'reference'}
   <RepeatableField {field} {name} rows={(frontmatter[field.name] ?? []) as unknown[]} {markFieldsDirty} {mediaLibrary} {conceptId} {id} {heroFieldRefs} {targets} {onuploaded} {onheroneedsalt} {icons} />
-{:else if field.type === 'icon'}
+{:else if field.type === 'icon' && icons}
   <div class="flex flex-col gap-1">
     <span class="text-sm font-medium">{field.label}</span>
     <IconPicker
-      icons={icons ?? {}}
+      {icons}
       label={field.label}
+      describedby={field.help ? `${field.name}-hint` : undefined}
       value={typeof frontmatter[field.name] === 'string' ? (frontmatter[field.name] as string) : ''}
       required={field.required ?? false}
       onChange={(glyph) => {
@@ -244,6 +245,9 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
         markFieldsDirty();
       }}
     />
+    {#if field.help}
+      {@render fieldHint(field.name, field.help)}
+    {/if}
   </div>
 {:else}
   <!-- The plain single-line text input arm: url, email, datetime, and the text fallback. They share

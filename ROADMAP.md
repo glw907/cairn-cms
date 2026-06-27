@@ -16,10 +16,10 @@ here, so this file stays a forward view.
 ## Now
 
 - **The Contract v2 plan series.** Phase 3b (the adapter restructure into six subsystem groups plus the
-  concept model: `defineConcept`, an open `content` record, concept-declared routing and URL policy,
-  `siteName` de-duplication) shipped as `0.72.0` (held unpublished). Next is phase 3c (the field-system
-  unification onto `fields.*`: `defineComponent`, the directive attributes onto `fields.*`, the
-  data-vs-behavior split), then the `Backend` seam, then render-as-component with opt-in islands. Spec:
+  concept model) shipped as `0.72.0`, and phase 3c (the field-system unification onto `fields.*`:
+  `defineComponent`, the directive attributes onto `fields.*`, the server-side per-field `behavior.validate`,
+  `fields.icon()` first-class) shipped as `0.73.0`, both held unpublished. Next is the `Backend` seam, then
+  render-as-component with opt-in islands. Spec:
   `docs/superpowers/specs/2026-06-25-cairn-contract-v2-design.md`.
 
 ## Next
@@ -54,9 +54,26 @@ here, so this file stays a forward view.
 - **Details panel default-open heaviness.** The Details slide-over defaults closed and buries every non-title
   field as the vocabulary grows; phase 3a's repeatable rows collapse per row, but the panel itself is
   unrevisited. Look at its default and grouping now that containers add fields.
-- **`itemLabel` as a function and cross-field row validators.** The array `itemLabel` is a serializable
-  field-key string this phase; a derived label and a per-row cross-field validator ride the data-versus-behavior
-  split that lands in phase 3c (the `BehaviorTable` seam already exists in `fieldset.ts`).
+- **`itemLabel` as a function (concept-array editor with a live-row snapshot).** Phase 3c shipped the cheap
+  half of the data-versus-behavior split: the per-field `behavior.validate` runs server-side through the
+  unified `fieldset` validator for concepts and component attributes alike. The function-valued `itemLabel`
+  was cut (3c plan A14): it must run client-side in `RepeatableField` as the author types, but the rows are
+  intentionally uncontrolled (`row.value` is stale between edits by design, to avoid edit loss), so feeding a
+  live `itemLabel(item, index)` the row's current values needs a per-keystroke row-input snapshot plus a new
+  client behavior channel (a `CairnAdmin` prop and scaffolder wiring). A focused concept-array-editor pass can
+  design that live-row snapshot properly. The string `itemLabel` (a sub-field key) still covers the common case.
+- **Merge the two form renderers.** Phase 3c unified the field vocabulary and the validation core, but
+  `ComponentForm.svelte` and `FieldInput.svelte` still keep separate per-type switches and each wires the
+  IconPicker itself (3c decision 9). Merging them onto one leaf-field renderer removes that duplication. The
+  3a multi-instance focus risk is the hazard to design around, so it is a deliberate later refactor, not a
+  drive-by.
+- **Build-time icon-name validation against the set.** An icon value is a glyph name from the adapter's
+  `rendering.icons`, but the `fieldset` validator only enforces required and non-empty (3c decision 1); it does
+  not check the name against the set (the directive icon is not set-validated today either). A build-time check
+  that a frontmatter or attribute icon name resolves in the declared set would catch a typo before delivery.
+- **Empty-icon-set is a doctor-detectable config error.** A required `fields.icon()` field declared while the
+  adapter ships no `rendering.icons` renders an unsavable picker with zero choices (3c A7). `cairn-doctor`
+  could detect this configuration mismatch and report it rather than leaving the editor stuck at runtime.
 - **Editor-help later slices.** The screen-contextual slide-over, a route- and concept-keyed help-content
   registry, and a standing Help home with a labeled launcher. The foundation shipped in `0.61.0`-`0.62.1`.
 - **Per-field advisory seam plus live slug recompute.** An editor-side advisory-validation surface, and a

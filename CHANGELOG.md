@@ -2,6 +2,38 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.73.0
+
+<!-- release-size: minor -->
+
+The field-system unification (Contract v2 phase 3c). A directive component's attributes adopt the same
+`fields.*` vocabulary a concept schema uses, so the two parallel field systems collapse into one.
+`defineComponent` supersedes the bare `ComponentDef` object literal: it builds the attribute validator from
+the `fields.*` descriptors and validates the component at declaration, the component-level companion to
+`defineConcept`. A component attribute and a concept field now validate through identical `fieldset` code, so
+a component reaches the full leaf vocabulary it never had, including `number` bounds and `url`, `email`, and
+`date` formats. The `AttributeField` and `FieldType` types are removed.
+
+A new `fields.icon()` descriptor is first-class for both concepts and components. Its value is a glyph name
+from the adapter's icon set, and the editor renders the icon picker for it in a concept form as well as a
+component form. Most components and concepts declare no icon field; it is the exception, not a field every
+block carries.
+
+Function-valued attribute behavior moves off the descriptor into a co-bundled `behavior` table, keyed by
+attribute name, the same `BehaviorTable` a concept fieldset accepts. A cross-field rule is
+`behavior.validate(value, siblings)`, where `siblings` is the raw attribute record.
+
+This is breaking within the `0.x` window. Consumers must: declare each component's `attributes` as a
+`fields.*` record (was an `AttributeField[]` array), and a repeatable slot's `itemFields` the same way.
+Consumers must: wrap each component in `defineComponent({ ... })` so it carries the `attributeSchema` that
+`validateComponent` runs. Consumers must: move any cross-field attribute `validate` into the component's
+`behavior` table with the `validate(value, siblings)` signature, reading `siblings.min` rather than the old
+`all.attributes.min`. Consumers must: replace a `pattern: { source, message }` attribute with
+`fields.text({ pattern })` plus a `behavior.validate` for a custom message. Attribute validation now
+format-checks every value, so a hand-authored directive that previously saved with a malformed value (a
+non-numeric `number` attribute, say) now fails the save-path `validateComponent`. See [Upgrading
+cairn](docs/guides/upgrade-cairn.md) for the per-change actions.
+
 ## 0.72.0
 
 <!-- release-size: minor -->

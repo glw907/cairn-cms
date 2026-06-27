@@ -116,10 +116,10 @@ Consumers must: replace any direct `rehypeDispatch` use with `createRenderer`.
 Two additions need no migration. `headRow` takes a configurable heading level that defaults to 2, and
 `registry.iconField(name)` reads a component's icon field.
 
-`defineRegistry` now fails a component that declares `defaultIconByRole` with no `type:'icon'` attribute.
+`defineRegistry` now fails a component that declares `defaultIconByRole` with no icon attribute.
 This catches a configuration that built before but never rendered its default icon, since the default only
 reaches the output through an icon attribute. Consumers must: if `defineRegistry` reports the icon guard,
-give the offending component a `type:'icon'` attribute or remove its `defaultIconByRole`.
+give the offending component an icon attribute or remove its `defaultIconByRole`.
 
 ## 0.31.0: the admin ships its own stylesheet
 
@@ -724,3 +724,31 @@ silently shifts.
 Consumers must: move `siteName` out of the adapter. It stays in the YAML site-config, the one home for it,
 and `composeRuntime` reads it from there. Any code that read `cairn.siteName` reads `siteConfig.siteName`
 instead.
+
+## 0.73.0: component attributes adopt the `fields.*` vocabulary (breaking)
+
+A directive component's attributes moved from the bespoke `AttributeField[]` array to the same `fields.*`
+field system a concept schema uses, and `defineComponent` supersedes the bare `ComponentDef` object
+literal. The `AttributeField` and `FieldType` types are removed. A new `fields.icon()` descriptor joins
+the vocabulary for concepts and components alike; declaring one needs no migration.
+
+Consumers must: declare each component's `attributes` as a `fields.*` record keyed by attribute name, not
+an `AttributeField[]` array. So `[{ key: 'tone', label: 'Tone', type: 'select', options: [...] }]` becomes
+`{ tone: fields.select({ label: 'Tone', options: [...] }) }`. A repeatable slot's `itemFields` folds the
+same way.
+
+Consumers must: wrap each component definition in `defineComponent({ ... })` so it builds its attribute
+validator and validates at declaration. A bare object literal no longer carries the `attributeSchema` that
+`validateComponent` runs.
+
+Consumers must: move any cross-field attribute `validate` off the descriptor and into the component's
+`behavior` table, keyed by attribute name. The signature is `validate(value, siblings)`, where `siblings`
+is the raw attribute record, so a rule reads `siblings.min` rather than the old `all.attributes.min`.
+
+Consumers must: replace a `pattern: { source, message }` attribute with `fields.text({ pattern: source })`.
+The custom per-attribute pattern message is gone; the generic format message applies, or a
+`behavior.validate` carries a custom one.
+
+Attribute validation now format-checks every value through the shared `fieldset` validator, so a
+hand-authored directive that previously saved with a malformed value (`count="abc"` on a `number`
+attribute, say) now fails the save-path `validateComponent`. This tightening is intended.

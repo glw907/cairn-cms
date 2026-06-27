@@ -255,6 +255,17 @@ function oneLeafFormValue(field: FieldDescriptor, value: unknown): unknown {
   return formValues([{ ...field, name: '_' } as NamedField], { _: value })._;
 }
 
+/**
+ * Coerce a raw multiselect value to the string[] the editor's tag/checkbox inputs read. An array maps
+ *  each element through String; a lone non-empty scalar (a single tag a YAML scalar carries) is one
+ *  element rather than dropping to []; anything else is the empty list.
+ */
+function multiselectFormValue(value: unknown): string[] {
+  if (Array.isArray(value)) return value.map(String);
+  if (typeof value === 'string' && value.trim() !== '') return [value.trim()];
+  return [];
+}
+
 /** Coerce parsed frontmatter to the form-ready values the editor inputs expect, one rule per field type. */
 export function formValues(
   fields: NamedField[],
@@ -268,7 +279,7 @@ export function formValues(
     // naive-local minute-precision string the datetime-local input wants.
     else if (field.type === 'datetime') out[field.name] = datetimeInputValue(value);
     else if (field.type === 'boolean') out[field.name] = value === true;
-    else if (field.type === 'multiselect') out[field.name] = Array.isArray(value) ? value.map(String) : (typeof value === 'string' && value.trim() !== '' ? [value.trim()] : []);
+    else if (field.type === 'multiselect') out[field.name] = multiselectFormValue(value);
     // A hero is a nested object; the default String() arm would corrupt it to '[object Object]'.
     // Hand the stored object back as-is so the editor reads .src/.alt/.caption on open.
     else if (field.type === 'image') out[field.name] = value !== null && typeof value === 'object' ? value : undefined;

@@ -203,6 +203,7 @@ whose `oninput` bubbles. An always-mounted polite live region announces add and 
   {#if rows.length}
     <ul class="flex flex-col gap-2">
       {#each rows as row, i (row.id)}
+        {@const rowSummary = summaryFor(row.value, i, row.id)}
         <li
           class="rounded-[var(--radius-field)] border border-[var(--color-base-300)]"
           data-cairn-row={row.id}
@@ -221,13 +222,13 @@ whose `oninput` bubbles. An always-mounted polite live region announces add and 
               {:else}
                 <ChevronRightIcon class="h-4 w-4 shrink-0" aria-hidden="true" />
               {/if}
-              <span class="truncate">{summaryFor(row.value, i, row.id)}</span>
+              <span class="truncate">{rowSummary}</span>
             </button>
             <button
               type="button"
               class="btn btn-ghost btn-sm btn-square"
               data-cairn-row-up
-              aria-label={`Move ${summaryFor(row.value, i, row.id)} up`}
+              aria-label={`Move ${rowSummary} up`}
               disabled={i === 0}
               onclick={() => move(i, -1)}
             >
@@ -237,7 +238,7 @@ whose `oninput` bubbles. An always-mounted polite live region announces add and 
               type="button"
               class="btn btn-ghost btn-sm btn-square"
               data-cairn-row-down
-              aria-label={`Move ${summaryFor(row.value, i, row.id)} down`}
+              aria-label={`Move ${rowSummary} down`}
               disabled={i === rows.length - 1}
               onclick={() => move(i, 1)}
             >
@@ -247,7 +248,7 @@ whose `oninput` bubbles. An always-mounted polite live region announces add and 
               type="button"
               class="btn btn-ghost btn-sm btn-square"
               data-cairn-row-remove
-              aria-label={`Remove ${summaryFor(row.value, i, row.id)}`}
+              aria-label={`Remove ${rowSummary}`}
               onclick={() => remove(i)}
             >
               <Trash2Icon class="h-4 w-4" aria-hidden="true" />

@@ -21,8 +21,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
   import ObjectGroupField from './ObjectGroupField.svelte';
   import RepeatableField from './RepeatableField.svelte';
   import { isClosedMultiselect } from '../content/frontmatter.js';
-  import type { NamedField } from '../content/types.js';
-  import type { ImageValue } from '../content/types.js';
+  import type { ImageValue, NamedField } from '../content/types.js';
   import type { TextareaField, NumberField, SelectField, MultiselectField } from '../content/fields.js';
   import type { LinkTarget } from '../content/manifest.js';
   import type { MediaEntry } from '../media/manifest.js';
@@ -69,6 +68,22 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
 
   function str(v: unknown): string {
     return v == null ? '' : String(v);
+  }
+
+  // The HTML input type for a plain single-line text input arm (url, email, datetime, and the text
+  // fallback). datetime maps to the datetime-local control; everything else carries no type attribute
+  // so the browser defaults to a text input.
+  function inputType(fieldType: string): 'url' | 'email' | 'datetime-local' | undefined {
+    switch (fieldType) {
+      case 'url':
+        return 'url';
+      case 'email':
+        return 'email';
+      case 'datetime':
+        return 'datetime-local';
+      default:
+        return undefined;
+    }
   }
 
   // The built-in hint a date field carries when its adapter sets no description. The control reads as
@@ -126,30 +141,6 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
     </select>
     {#if f.help}
       {@render fieldHint(f.name, f.help)}
-    {/if}
-  </label>
-{:else if field.type === 'url'}
-  <label class="flex flex-col gap-1">
-    <span class="text-sm font-medium">{field.label}</span>
-    <input class="input input-sm" type="url" {name} aria-label={field.label} aria-describedby={field.help ? `${field.name}-hint` : undefined} value={str(frontmatter[field.name])} required={field.required} />
-    {#if field.help}
-      {@render fieldHint(field.name, field.help)}
-    {/if}
-  </label>
-{:else if field.type === 'email'}
-  <label class="flex flex-col gap-1">
-    <span class="text-sm font-medium">{field.label}</span>
-    <input class="input input-sm" type="email" {name} aria-label={field.label} aria-describedby={field.help ? `${field.name}-hint` : undefined} value={str(frontmatter[field.name])} required={field.required} />
-    {#if field.help}
-      {@render fieldHint(field.name, field.help)}
-    {/if}
-  </label>
-{:else if field.type === 'datetime'}
-  <label class="flex flex-col gap-1">
-    <span class="text-sm font-medium">{field.label}</span>
-    <input class="input input-sm" type="datetime-local" {name} aria-label={field.label} aria-describedby={field.help ? `${field.name}-hint` : undefined} value={str(frontmatter[field.name])} required={field.required} />
-    {#if field.help}
-      {@render fieldHint(field.name, field.help)}
     {/if}
   </label>
 {:else if field.type === 'date'}
@@ -236,9 +227,11 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
 {:else if field.type === 'array' && field.item.type !== 'reference'}
   <RepeatableField {field} {name} rows={(frontmatter[field.name] ?? []) as unknown[]} {markFieldsDirty} {mediaLibrary} {conceptId} {id} {heroFieldRefs} {targets} {onuploaded} {onheroneedsalt} />
 {:else}
+  <!-- The plain single-line text input arm: url, email, datetime, and the text fallback. They share
+       one shape and differ only in the input type inputType() resolves. -->
   <label class="flex flex-col gap-1">
     <span class="text-sm font-medium">{field.label}</span>
-    <input class="input input-sm" {name} aria-label={field.label} aria-describedby={field.help ? `${field.name}-hint` : undefined} value={str(frontmatter[field.name])} required={field.required} />
+    <input class="input input-sm" type={inputType(field.type)} {name} aria-label={field.label} aria-describedby={field.help ? `${field.name}-hint` : undefined} value={str(frontmatter[field.name])} required={field.required} />
     {#if field.help}
       {@render fieldHint(field.name, field.help)}
     {/if}

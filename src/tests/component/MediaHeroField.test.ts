@@ -151,16 +151,27 @@ describe('MediaHeroField persists the decorative choice', () => {
 });
 
 describe('MediaHeroField empty state', () => {
-  it('shows the dropzone and the unify line, with no hidden src value', async () => {
-    const screen = mount();
-    await expect.element(screen.getByRole('button', { name: /add a hero image/i })).toBeInTheDocument();
+  it('shows the dropzone and the lead line for a lead hero, with no hidden src value', async () => {
+    const screen = mount({ lead: true });
+    await expect.element(screen.getByRole('button', { name: /add hero image/i })).toBeInTheDocument();
     expect(screen.container.textContent ?? '').toMatch(/shown when the post is shared/i);
     expect(hiddenValues(screen.container).src).toBe('');
   });
 
+  it('drops the lead line for a non-lead image (a gallery or nested item)', async () => {
+    const screen = mount();
+    await expect.element(screen.getByRole('button', { name: /add hero image/i })).toBeInTheDocument();
+    expect(screen.container.textContent ?? '').not.toMatch(/shown when the post is shared/i);
+  });
+
+  it('derives the empty-state CTA from the field label', async () => {
+    const screen = mount({ field: { name: 'gallery', label: 'Photo' } });
+    await expect.element(screen.getByRole('button', { name: /add photo/i })).toBeInTheDocument();
+  });
+
   it('opens the chooser dialog showing upload and the picker', async () => {
     const screen = mount();
-    await screen.getByRole('button', { name: /add a hero image/i }).click();
+    await screen.getByRole('button', { name: /add hero image/i }).click();
     await tick();
     // The chooser leads with an upload control and the library combobox below.
     await expect.element(screen.getByRole('button', { name: /choose a file/i })).toBeInTheDocument();
@@ -172,7 +183,7 @@ describe('MediaHeroField pick and confirm', () => {
   it('picks a library asset, describes it, sets a caption, and confirms into the hidden inputs', async () => {
     const ondirty = vi.fn();
     const screen = mount({ ondirty });
-    await screen.getByRole('button', { name: /add a hero image/i }).click();
+    await screen.getByRole('button', { name: /add hero image/i }).click();
     await tick();
     // Pick the alt-bearing asset; the placement view seeds Describe with the manifest alt.
     await screen.getByRole('option', { name: /first light/i }).click();
@@ -197,7 +208,7 @@ describe('MediaHeroField pick and confirm', () => {
 
   it('confirms a decorative pick with an empty alt hidden input', async () => {
     const screen = mount();
-    await screen.getByRole('button', { name: /add a hero image/i }).click();
+    await screen.getByRole('button', { name: /add hero image/i }).click();
     await tick();
     await screen.getByRole('option', { name: /valley ridge/i }).click();
     await tick();
@@ -225,7 +236,7 @@ describe('MediaHeroField remove', () => {
     expect(hiddenValues(screen.container).src).toBe('');
     expect(ondirty).toHaveBeenCalled();
     // The empty dropzone returns.
-    await expect.element(screen.getByRole('button', { name: /add a hero image/i })).toBeInTheDocument();
+    await expect.element(screen.getByRole('button', { name: /add hero image/i })).toBeInTheDocument();
   });
 });
 

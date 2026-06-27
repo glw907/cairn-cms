@@ -96,12 +96,42 @@ whose `oninput` bubbles. An always-mounted polite live region announces add and 
   // The Add button, the last link in the remove focus chain (when no row remains to focus).
   let addButton = $state<HTMLButtonElement | null>(null);
 
+  // This instance's outer fieldset. Every focus query scopes to it, so two RepeatableField lists on
+  // one page (the showcase posts concept renders both an array(object) and an array(image)) never
+  // move focus into the other list. A document-wide query would index across both row sets.
+  let root = $state<HTMLFieldSetElement | null>(null);
+
   const isObjectItem = $derived(field.item.type === 'object');
   const rowLabel = $derived(field.label ?? field.name);
 
-  // The collapsed summary for a row: its itemLabel sub-field value for an object row, or the leaf
-  // value itself, falling back to a positional placeholder when empty.
-  function summaryFor(value: unknown, index: number): string {
+  // The live itemLabel text per row id, tracked so a collapsed row's summary follows the author's
+  // edits. The row inputs stay uncontrolled (the keyed envelope owns the seed; writing row.value on
+  // every keystroke risks edit loss), so this mirrors only the summary-label field, read on input.
+  let summaries = $state<Record<number, string>>({});
+
+  // The form name of a row's itemLabel field: the object sub-field path, or the leaf row path itself.
+  function summaryNameFor(index: number): string {
+    return isObjectItem && field.itemLabel != null
+      ? `${name}.${index}.${field.itemLabel}`
+      : `${name}.${index}`;
+  }
+
+  // Mirror a row's itemLabel value into the live summary map when its input fires. A non-summary
+  // input in the row is ignored, so the collapsed label tracks only the label field.
+  function onRowInput(row: Row, index: number, event: Event) {
+    const target = event.target as HTMLInputElement;
+    if (target.name === summaryNameFor(index)) {
+      summaries = { ...summaries, [row.id]: target.value };
+    }
+  }
+
+  // The collapsed summary for a row: the live itemLabel text when the author has edited it, else its
+  // seeded itemLabel value (object row) or the leaf value, falling back to a positional placeholder.
+  function summaryFor(value: unknown, index: number, rowId: number): string {
+    if (rowId in summaries) {
+      const live = summaries[rowId].trim();
+      if (live !== '') return live;
+    }
     let text = '';
     if (isObjectItem && field.itemLabel != null && value !== null && typeof value === 'object') {
       text = String((value as Record<string, unknown>)[field.itemLabel] ?? '').trim();
@@ -128,8 +158,11 @@ whose `oninput` bubbles. An always-mounted polite live region announces add and 
     markFieldsDirty();
     announcement = 'Row added';
     await tick();
-    const firstInput = document.querySelector<HTMLElement>(
-      `[data-cairn-row="${row.id}"] input, [data-cairn-row="${row.id}"] textarea, [data-cairn-row="${row.id}"] select`,
+    // Land focus on the first operable control in the new row's EDIT BODY (not the row header's
+    // toggle/move/remove chrome). The selector spans an array(image) row too, whose MediaHeroField
+    // empty state is a <button> dropzone with only hidden inputs.
+    const firstInput = root?.querySelector<HTMLElement>(
+      `[data-cairn-row="${row.id}"] [data-cairn-row-body] :is(input:not([type=hidden]),textarea,select,button)`,
     );
     firstInput?.focus();
   }
@@ -140,27 +173,41 @@ whose `oninput` bubbles. An always-mounted polite live region announces add and 
     announcement = 'Row removed';
     await tick();
     // Focus chain: the next row's remove control, else the previous row's, else the Add button.
-    const removeButtons = document.querySelectorAll<HTMLElement>('[data-cairn-row-remove]');
+    const removeButtons = root?.querySelectorAll<HTMLElement>('[data-cairn-row-remove]') ?? [];
     if (removeButtons[index]) removeButtons[index].focus();
     else if (removeButtons[index - 1]) removeButtons[index - 1].focus();
     else addButton?.focus();
   }
 
-  function move(index: number, dir: 1 | -1) {
+  async function move(index: number, dir: 1 | -1) {
     const target = index + dir;
     if (target < 0 || target >= rows.length) return;
     rows = sortItems(rows, index, target);
     markFieldsDirty();
+    await tick();
+    // Keep keyboard focus on the moved row after a reorder. The arrow that fired the move can become
+    // disabled at the first or last boundary, so focus the opposite-direction arrow, falling back to
+    // the row toggle. Both queries scope to this instance's fieldset.
+    const movedRow = root?.querySelectorAll<HTMLElement>('[data-cairn-row]')[target];
+    const opposite = dir === 1 ? '[data-cairn-row-up]' : '[data-cairn-row-down]';
+    const focusTarget =
+      movedRow?.querySelector<HTMLElement>(`${opposite}:not([disabled])`) ??
+      movedRow?.querySelector<HTMLElement>('[data-cairn-row-toggle]');
+    focusTarget?.focus();
   }
 </script>
 
-<fieldset class="m-0 flex min-w-0 flex-col gap-2 border-0 p-0">
+<fieldset bind:this={root} class="m-0 flex min-w-0 flex-col gap-2 border-0 p-0">
   <legend class="text-sm font-medium">{rowLabel}</legend>
 
   {#if rows.length}
     <ul class="flex flex-col gap-2">
       {#each rows as row, i (row.id)}
-        <li class="rounded-[var(--radius-field)] border border-[var(--color-base-300)]" data-cairn-row={row.id}>
+        <li
+          class="rounded-[var(--radius-field)] border border-[var(--color-base-300)]"
+          data-cairn-row={row.id}
+          oninput={(e) => onRowInput(row, i, e)}
+        >
           <div class="flex items-center gap-1 p-1">
             <button
               type="button"
@@ -174,13 +221,13 @@ whose `oninput` bubbles. An always-mounted polite live region announces add and 
               {:else}
                 <ChevronRightIcon class="h-4 w-4 shrink-0" aria-hidden="true" />
               {/if}
-              <span class="truncate">{summaryFor(row.value, i)}</span>
+              <span class="truncate">{summaryFor(row.value, i, row.id)}</span>
             </button>
             <button
               type="button"
               class="btn btn-ghost btn-sm btn-square"
               data-cairn-row-up
-              aria-label={`Move ${summaryFor(row.value, i)} up`}
+              aria-label={`Move ${summaryFor(row.value, i, row.id)} up`}
               disabled={i === 0}
               onclick={() => move(i, -1)}
             >
@@ -190,7 +237,7 @@ whose `oninput` bubbles. An always-mounted polite live region announces add and 
               type="button"
               class="btn btn-ghost btn-sm btn-square"
               data-cairn-row-down
-              aria-label={`Move ${summaryFor(row.value, i)} down`}
+              aria-label={`Move ${summaryFor(row.value, i, row.id)} down`}
               disabled={i === rows.length - 1}
               onclick={() => move(i, 1)}
             >
@@ -200,14 +247,14 @@ whose `oninput` bubbles. An always-mounted polite live region announces add and 
               type="button"
               class="btn btn-ghost btn-sm btn-square"
               data-cairn-row-remove
-              aria-label={`Remove ${summaryFor(row.value, i)}`}
+              aria-label={`Remove ${summaryFor(row.value, i, row.id)}`}
               onclick={() => remove(i)}
             >
               <Trash2Icon class="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
           {#if expanded[row.id]}
-            <div class="flex flex-col gap-3 border-t border-[var(--color-base-300)] p-3">
+            <div data-cairn-row-body class="flex flex-col gap-3 border-t border-[var(--color-base-300)] p-3">
               {#if field.item.type === 'object'}
                 <ObjectGroupField
                   field={{ ...(field.item as ObjectField), name: field.name }}

@@ -61,11 +61,11 @@ test('Part A: set a hero through the field, the hidden inputs carry the structur
   const details = page.getByRole('region', { name: 'Entry details' });
   await expect(details).toBeVisible();
 
-  // 2. The hero field's empty state is a dropzone button labelled "Add a hero image". Activate it to
-  //    open the field dialog. The dialog's accessible name tracks its current view ("Add a hero
-  //    image" in the chooser, "Hero image" in the placement view), so locate it by its stable
-  //    labelledby id prefix rather than a name that changes mid-flow.
-  await details.getByRole('button', { name: 'Add a hero image' }).click();
+  // 2. The hero field's empty state is a dropzone button whose label derives from the field label
+  //    ("Add hero image"). Activate it to open the field dialog. The dialog's accessible name tracks
+  //    its current view ("Add hero image" in the chooser, "Hero image" in the placement view), so
+  //    locate it by its stable labelledby id prefix rather than a name that changes mid-flow.
+  await details.getByRole('button', { name: 'Add hero image' }).click();
   const dialog = page.locator('dialog[aria-labelledby^="cairn-hero-title"]');
   await expect(dialog).toBeVisible();
   // Upload a real PNG through the chooser's file input (set the bytes directly, as media-insert does).

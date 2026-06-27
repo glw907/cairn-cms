@@ -122,16 +122,16 @@ test('the gallery array(image) round-trips: add an image row, save, reload, the 
     timeout: 2000,
   });
 
-  // Open Details, then add a gallery row. The row auto-expands to its image (hero-style) field, whose
-  // empty state is the "Add a hero image" dropzone.
+  // Open Details, then add a gallery row. The row auto-expands to its image field, whose empty state
+  // is a dropzone CTA derived from the field label ("Add image" for the gallery item).
   await page.getByRole('button', { name: 'Details', exact: true }).click();
   await page.getByRole('button', { name: 'Add Gallery' }).click();
 
-  // The row's image field dialog: upload a real PNG, describe it, and confirm. The post's top-level
-  // hero `image` field also renders an "Add a hero image" dropzone, so scope to the gallery row. The
-  // dialog's labelledby id prefix is stable across its views.
+  // The row's image field dialog: upload a real PNG, describe it, and confirm. The CTA derives from
+  // the field label, so the gallery item reads "Add image" (the top-level hero reads "Add hero
+  // image"); scope to the gallery row anyway. The dialog's labelledby id prefix is stable.
   const galleryRow = page.locator('[data-cairn-row]').first();
-  await galleryRow.getByRole('button', { name: 'Add a hero image' }).click();
+  await galleryRow.getByRole('button', { name: 'Add image' }).click();
   // Two hero dialogs share the labelledby prefix (the top-level hero plus this row's); the one we
   // opened carries the [open] attribute.
   const dialog = page.locator('dialog[aria-labelledby^="cairn-hero-title"][open]');

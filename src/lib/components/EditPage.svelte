@@ -970,7 +970,10 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   // author can act on or leave; the count drops and the notice clears as each alt is filled.
   const needsAlt = $derived(findMediaImagesNeedingAlt(body));
 
-  // The declared image (hero) fields, for labelling the needs-alt notice's frontmatter rows.
+  // The declared image (hero) fields, for labelling the needs-alt notice's frontmatter rows. Only
+  // top-level image fields are enumerated. A nested image (an array(image) gallery item or an object
+  // image sub-field) is intentionally out of scope for the needs-alt notice this phase, the recorded
+  // carry-forward, so the flat top-level scan is deliberate, not an oversight.
   const imageFields = $derived(
     data.fields.filter((f) => f.type === 'image').map((f) => ({ name: f.name, label: f.label })),
   );

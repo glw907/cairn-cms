@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { page } from 'vitest/browser';
 import RepeatableField from '../../lib/components/RepeatableField.svelte';
+import TwoRepeatableFields from './TwoRepeatableFields.svelte';
 import type { NamedField } from '../../lib/content/types.js';
 import type { ArrayField } from '../../lib/content/fields.js';
 
@@ -134,5 +135,49 @@ describe('RepeatableField', () => {
     render(RepeatableField, { field: faq, name: 'faq', rows: [], ...shared() });
     const region = document.querySelector('[role="status"][aria-live="polite"]');
     expect(region).not.toBeNull();
+  });
+});
+
+describe('RepeatableField scopes focus to its own instance', () => {
+  // Two lists on one page, the showcase posts shape: an array(object) FAQ and a second array. A
+  // structural mutation in the second list must move focus within the second list, never the first.
+  function twoLists() {
+    return {
+      fieldA: faq,
+      rowsA: [{ q: 'first', a: '' }, { q: 'second', a: '' }],
+      fieldB: { ...faq, name: 'gallery', label: 'Gallery', itemLabel: 'q' } as NamedField & ArrayField,
+      rowsB: [{ q: 'g-one', a: '' }, { q: 'g-two', a: '' }],
+    };
+  }
+
+  /** The fieldset for a given harness list slot. */
+  function listFor(slot: 'a' | 'b'): HTMLElement {
+    return document.querySelector(`[data-list="${slot}"] fieldset`) as HTMLElement;
+  }
+
+  it('focuses the second list on Add in the second list', async () => {
+    render(TwoRepeatableFields, twoLists() as never);
+    const listB = listFor('b');
+    // The Add button is the trailing button in the list; query by its text.
+    const addBtns = Array.from(listB.querySelectorAll<HTMLButtonElement>('button')).filter((b) =>
+      /add gallery/i.test(b.textContent ?? ''),
+    );
+    expect(addBtns.length).toBe(1);
+    addBtns[0].click();
+    await expect.poll(() => listB.querySelectorAll('[data-cairn-row-remove]').length).toBe(3);
+    // Focus lands inside the second list, not the first.
+    expect(listB.contains(document.activeElement)).toBe(true);
+    expect(listFor('a').contains(document.activeElement)).toBe(false);
+  });
+
+  it('keeps focus in the second list on a remove in the second list', async () => {
+    render(TwoRepeatableFields, twoLists() as never);
+    const listB = listFor('b');
+    const firstRemoveB = listB.querySelector<HTMLButtonElement>('[data-cairn-row-remove]')!;
+    firstRemoveB.focus();
+    firstRemoveB.click();
+    await expect.poll(() => listB.querySelectorAll('[data-cairn-row-remove]').length).toBe(1);
+    expect(listB.contains(document.activeElement)).toBe(true);
+    expect(listFor('a').contains(document.activeElement)).toBe(false);
   });
 });

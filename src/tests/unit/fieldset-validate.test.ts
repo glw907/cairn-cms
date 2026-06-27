@@ -189,10 +189,6 @@ describe('fieldset reference and array(reference)', () => {
       data: { author: 'jane-doe', related: ['2026-01-02'] },
     });
   });
-
-  it('rejects an array of a non-reference item this phase', () => {
-    expect(() => fieldset({ tags: fields.array(fields.text({ label: 'Tag' })) })).toThrow(/only reference items/);
-  });
 });
 
 // The refine cross-field path, ported from the v1 defineFields suite.

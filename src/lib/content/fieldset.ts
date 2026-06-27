@@ -58,7 +58,9 @@ type ValueOf<D extends FieldDescriptor> = D extends { type: 'number' }
     ? boolean
     : D extends { type: 'image' }
       ? ImageValue
-      : D extends { type: 'array'; item: infer I extends FieldDescriptor }
+      : D extends { type: 'object'; fields: infer F extends Record<string, FieldDescriptor> }
+        ? InferRecord<F>
+        : D extends { type: 'array'; item: infer I extends FieldDescriptor }
         ? ValueOf<I>[]
         : D extends { type: 'select'; options: readonly (infer O extends string)[] }
           ? O
@@ -71,13 +73,20 @@ type ValueOf<D extends FieldDescriptor> = D extends { type: 'number' }
 /** Flatten an intersection into a single readable object type. */
 type Prettify<T> = { [K in keyof T]: T[K] } & {};
 
+/** Drop an index signature so a captured literal record infers its own keys only, not `[x: string]`. */
+type RemoveIndex<T> = {
+  [K in keyof T as string extends K ? never : number extends K ? never : K]: T[K];
+};
+
 /**
  * The normalized frontmatter type inferred from a fieldset's descriptor record. A descriptor
- *  declared `required: true` is a required key; every other descriptor is optional.
+ *  declared `required: true` is a required key; every other descriptor is optional. The captured
+ *  literal record carries an index signature (the constructor's `Record<string, FieldDescriptor>`
+ *  intersected with the literal), so strip it first or every nested key would also infer `[x: string]`.
  */
-type InferRecord<R extends Record<string, FieldDescriptor>> = Prettify<
-  { -readonly [K in keyof R as R[K] extends { required: true } ? K : never]: ValueOf<R[K]> } & {
-    -readonly [K in keyof R as R[K] extends { required: true } ? never : K]?: ValueOf<R[K]>;
+type InferRecord<RR extends Record<string, FieldDescriptor>, R = RemoveIndex<RR>> = Prettify<
+  { -readonly [K in keyof R as R[K] extends { required: true } ? K : never]: ValueOf<R[K] extends FieldDescriptor ? R[K] : never> } & {
+    -readonly [K in keyof R as R[K] extends { required: true } ? never : K]?: ValueOf<R[K] extends FieldDescriptor ? R[K] : never>;
   }
 >;
 
@@ -288,17 +297,40 @@ function checkSeoImageFields(record: Record<string, FieldDescriptor>): void {
   }
 }
 
-// This phase ships array(reference) only: an array's item must be a reference descriptor. A non-reference
-// item (a text or select item) is a phase-2 capability the validator and editor do not yet implement, so
-// fail loudly at declaration rather than silently mishandling its elements at save. Phase 2 generalizes
-// the array item with no API change, and this guard relaxes then.
-function checkArrayItems(record: Record<string, FieldDescriptor>): void {
+// A leaf is any non-container descriptor. A container (object, array) may hold leaves one level deep only.
+function isLeaf(field: FieldDescriptor): boolean {
+  return field.type !== 'object' && field.type !== 'array';
+}
+
+// Enforce the one-level nesting cap, the no-reference-in-object deferral, and the no-dot-in-key rule, all
+// loudly at declaration. A deeper nesting, a nested reference, or a dotted key would otherwise mis-save or
+// mis-decode at the edge, so fail here.
+function checkContainerNesting(record: Record<string, FieldDescriptor>): void {
+  const checkKey = (k: string, where: string): void => {
+    if (k.includes('.')) throw new Error(`cairn: ${where} "${k}" must not contain a dot; field keys address the nested form by dotted path.`);
+  };
+  const checkObjectLeaves = (fieldsRecord: Record<string, FieldDescriptor>, where: string): void => {
+    for (const [k, leaf] of Object.entries(fieldsRecord)) {
+      checkKey(k, where);
+      if (!isLeaf(leaf)) {
+        throw new Error(`cairn: ${where} "${k}" must be a leaf field; containers nest one level only.`);
+      }
+      if (leaf.type === 'reference') {
+        throw new Error(`cairn: ${where} "${k}" is a reference; a reference inside an object is not supported this phase. Model it as the parent's own concept, or use a top-level array(reference).`);
+      }
+    }
+  };
   for (const [key, field] of Object.entries(record)) {
-    if (field.type === 'array' && field.item.type !== 'reference') {
-      throw new Error(
-        `cairn: the array field "${key}" must hold only reference items this phase, but its item is ` +
-          `"${field.item.type}". Use fields.array(fields.reference({ concept })) for now.`,
-      );
+    checkKey(key, 'the field');
+    if (field.type === 'object') {
+      checkObjectLeaves(field.fields, `the object field "${key}" sub-field`);
+    } else if (field.type === 'array') {
+      const item = field.item;
+      if (item.type === 'object') {
+        checkObjectLeaves(item.fields, `the array field "${key}" row sub-field`);
+      } else if (!isLeaf(item)) {
+        throw new Error(`cairn: the array field "${key}" item must be a leaf or a flat object; an array of arrays is not allowed.`);
+      }
     }
   }
 }
@@ -313,7 +345,7 @@ export function fieldset<const R extends Record<string, FieldDescriptor>>(
   options: FieldsetOptions = {},
 ): Fieldset<R> {
   checkSeoImageFields(record);
-  checkArrayItems(record);
+  checkContainerNesting(record);
   // Compile each text/textarea pattern once at construction, so a malformed pattern fails loudly here
   // (mirroring v1's compilePatterns) rather than on every save. Keyed by field name for validateField.
   const patterns = new Map<string, RegExp>();

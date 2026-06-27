@@ -37,3 +37,29 @@ describe('fieldset SEO-image guard', () => {
     ).not.toThrow();
   });
 });
+
+describe('fieldset container-nesting guard', () => {
+  it('rejects an object nested in an object', () => {
+    expect(() => fieldset({
+      a: fields.object({ fields: { b: fields.object({ fields: { c: fields.text({ label: 'C' }) } }) } }),
+    })).toThrow(/one level|leaf field/i);
+  });
+
+  it('rejects an array of arrays', () => {
+    expect(() => fieldset({ a: fields.array(fields.array(fields.text({ label: 'T' }))) })).toThrow(/leaf or a flat object/i);
+  });
+
+  it('rejects a reference inside an object (deferred this phase)', () => {
+    expect(() => fieldset({
+      a: fields.object({ fields: { author: fields.reference({ concept: 'pages', label: 'Author' }) } }),
+    })).toThrow(/reference/i);
+  });
+
+  it('rejects a field key containing a dot', () => {
+    expect(() => fieldset({ 'og.image': fields.text({ label: 'X' }) })).toThrow(/dot/i);
+  });
+
+  it('still accepts a top-level array of references', () => {
+    expect(() => fieldset({ related: fields.array(fields.reference({ concept: 'posts', label: '' })) })).not.toThrow();
+  });
+});

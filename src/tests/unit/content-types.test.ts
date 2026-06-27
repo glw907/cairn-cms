@@ -24,6 +24,8 @@ function widgetFor(field: NamedField): string {
       return 'image';
     case 'reference':
       return `reference:${field.concept}`;
+    case 'object':
+      return `object:${Object.keys(field.fields).length}`;
     case 'array':
       return `array:${field.item.type}`;
   }

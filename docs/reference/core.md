@@ -368,9 +368,11 @@ Workers-safe.
 `Fieldset` is the schema a `fieldset` call returns, carrying the descriptors, the behavior table,
 the validator, and the Standard Schema property. `InferFieldset` extracts the normalized
 frontmatter type from a `Fieldset`, where a descriptor declared `required: true` is a required key.
-`FieldsetOptions` carries the `refine` cross-field check. `BehaviorTable` is the per-field
-function-valued behavior co-bundled with a fieldset, empty for a scalar-only fieldset and reserved
-for later composite fields.
+`FieldsetOptions` carries the `refine` cross-field check and the `behavior` table. `BehaviorTable`
+is the per-field function-valued behavior co-bundled with a fieldset, keyed by field name and empty
+for a behavior-free fieldset. `FieldBehavior` is one field's entry in that table: an optional
+`validate` that runs cross-field after per-field coercion (returning an error string or `null`) and
+an optional `itemLabel` that derives an array row's label.
 
 ### Render
 

@@ -58,7 +58,7 @@ export type {
   ArrayField,
 } from './content/fields.js';
 export { fieldset, initialValues } from './content/fieldset.js';
-export type { Fieldset, InferFieldset, FieldsetOptions, BehaviorTable } from './content/fieldset.js';
+export type { Fieldset, InferFieldset, FieldsetOptions, BehaviorTable, FieldBehavior } from './content/fieldset.js';
 export {
   isValidId,
   idFromFilename,

@@ -6,6 +6,7 @@ import type {
   InferFieldset,
   FieldsetOptions,
   BehaviorTable,
+  FieldBehavior,
   NamedField,
   ImageValue,
   TextField,
@@ -42,7 +43,8 @@ describe('v2 field vocabulary package exports', () => {
     expectTypeOf<InferFieldset<typeof set>>().toEqualTypeOf<{ title: string }>();
     expectTypeOf<FieldDescriptor>().toMatchTypeOf<{ label?: string }>();
     expectTypeOf<FieldsetOptions>().toMatchTypeOf<{ refine?: unknown }>();
-    expectTypeOf<BehaviorTable>().toEqualTypeOf<Record<string, never>>();
+    expectTypeOf<BehaviorTable>().toEqualTypeOf<Record<string, FieldBehavior>>();
+    expectTypeOf<FieldBehavior>().toMatchTypeOf<{ validate?: unknown }>();
   });
 
   it('reclaims the v2 *Field interfaces, NamedField, and ImageValue from the main entry', () => {

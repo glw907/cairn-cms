@@ -16,11 +16,19 @@ const URL_RE = /^https?:\/\/\S+$/;
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 /**
- * The behavior table co-bundled with a fieldset, keyed by field name. It holds function-valued
- *  behavior a descriptor cannot carry as plain data (a cross-field validator, an array itemLabel).
- *  Scalars have no behavior, so the table is empty for now and reserved for later co-bundled functions.
+ * Function-valued behavior a field descriptor cannot carry as plain data, keyed by field name. A
+ *  `validate` runs cross-field after per-field coercion; an `itemLabel` derives an array row's label.
+ *  Resident in the app bundle, never in the `load` payload.
  */
-export type BehaviorTable = Record<string, never>;
+export interface FieldBehavior {
+  /** A cross-field validator: returns an error string, or null when valid. `siblings` is the raw input record. */
+  validate?(value: unknown, siblings: Record<string, unknown>): string | null;
+  /** Derive an array row's label from its item value and zero-based index. */
+  itemLabel?(item: Record<string, unknown>, index: number): string | undefined;
+}
+
+/** The behavior table co-bundled with a fieldset, keyed by field name. Empty for a behavior-free fieldset. */
+export type BehaviorTable = Record<string, FieldBehavior>;
 
 /**
  * Options for `fieldset`. `refine` runs after the per-field coercion and constraints pass, for
@@ -29,6 +37,8 @@ export type BehaviorTable = Record<string, never>;
  */
 export interface FieldsetOptions {
   refine?: (data: Record<string, unknown>, body: string) => Record<string, string> | undefined;
+  /** Function-valued per-field behavior, keyed by field name. Each key must name a declared field. */
+  behavior?: BehaviorTable;
 }
 
 /**
@@ -369,6 +379,9 @@ export function fieldset<const R extends Record<string, FieldDescriptor>>(
 ): Fieldset<R> {
   checkSeoImageFields(record);
   checkContainerNesting(record);
+  for (const key of Object.keys(options.behavior ?? {})) {
+    if (!(key in record)) throw new Error(`cairn: behavior names "${key}", which is not a declared field.`);
+  }
   // Compile each text/textarea pattern once at construction, so a malformed pattern fails loudly here
   // (mirroring v1's compilePatterns) rather than on every save. Keyed by the structural path
   // ('faq.code', 'address.zip') so a nested leaf's compiled pattern is found regardless of row index,
@@ -395,6 +408,15 @@ export function fieldset<const R extends Record<string, FieldDescriptor>>(
       const outcome = validateField([key], field, frontmatter[key], patterns);
       issues.push(...outcome.issues);
       if ('value' in outcome) data[key] = outcome.value;
+      if (outcome.issues.length === 0 && options.behavior?.[key]?.validate) {
+        let message: string | null = null;
+        try {
+          message = options.behavior[key].validate!('value' in outcome ? outcome.value : undefined, frontmatter);
+        } catch (err) {
+          console.warn(`cairn: behavior.validate for field "${key}" threw; treating it as valid.`, err);
+        }
+        if (typeof message === 'string') issues.push({ path: [key], message });
+      }
     }
     if (issues.length > 0) {
       // Back-compat: derive the flat errors map from the located issues, keying each top-level field by
@@ -423,7 +445,7 @@ export function fieldset<const R extends Record<string, FieldDescriptor>>(
         : { issues: result.issues ?? Object.entries(result.errors).map(([key, message]) => ({ message, path: [key] })) };
     },
   };
-  return { fields: record, behavior: {}, validate, '~standard': standard };
+  return { fields: record, behavior: options.behavior ?? {}, validate, '~standard': standard };
 }
 
 /**

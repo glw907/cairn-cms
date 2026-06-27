@@ -11,35 +11,38 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-26, latest): Contract v2 references plan DRAFTED + hazard-swept (21 findings folded); NEXT = execute it (phase 2, 16 tasks, incremental, on a worktree off `main`)
+## Immediate next action (2026-06-26, latest): Contract v2 references SHIPPED as 0.70.0 (merged to `main`, pushed, HELD UNPUBLISHED); NEXT = phase 3 (`object`/`array` + adapter restructure + field-system unification)
 
-**The Contract v2 cutover is complete and merged to `main`** (commits `35d5417`..`3c22d10`, version **0.69.0**,
-breaking-within-0.x). `fieldset()`/`fields.*` is now the one live field system; v1 (`defineFields`,
-`FrontmatterField`, `validate.ts`) is removed. The editor gained number/select/url/email/datetime arms and a
-unified multiselect; the showcase migrated and added a `status` select; the docs and CHANGELOG carry the
-breaking `Consumers must:` block. Plan + post-mortem:
-`docs/superpowers/plans/2026-06-26-cairn-contract-v2-cutover.md`.
+**Contract v2 phase 2 (references) is complete and merged to `main`** as **0.70.0** (additive, minor). The
+frontmatter `reference`/`array(reference)` field is live on the id-stable content graph: typed descriptors + a
+shared canonicalizer, the schema-driven manifest edge graph (`references` + `inboundReferences`), the strict
+fail-closed cross-branch `buildReferenceIndex`, the build-time `verifyReferences` gate (wired into the vite
+virtual module, the only integrity authority), the surgical rename rewriter, the `EntryPicker`/`ReferenceField`
+editor arm, the save warning, the rename/delete integrity gates, and `resolveReferences` read-model resolution
+at the site-resolver layer. The showcase migrated and exercises it end to end. Plan + post-mortem:
+`docs/superpowers/plans/2026-06-26-cairn-contract-v2-references.md`.
 
-**Held unpublished by decision (Geoff 2026-06-26): do NOT publish 0.69.0 until the whole Contract v2
-initiative is complete.** `main` is pushed but no GitHub Release / npm publish is cut; the held window now
-spans 0.69.0 onward and will roll into one release when references → object/array + adapter + unify → backend
-→ render + islands all land. The two sites (ecxc-ski, 907-life) stay on the prior published range until then.
+**Held unpublished (Geoff): do NOT publish until the whole Contract v2 series is complete.** `main` is pushed
+but no GitHub Release / npm publish is cut; the held window spans **0.69.0 through 0.70.0** and rolls into one
+release when references → object/array + adapter + unify → backend → render + islands all land. The two sites
+(ecxc-ski, 907-life) stay on the prior published range until then.
 
-**Verified.** `npm run check` 0/0; `npm test` exit 0 (2513); `check:comments` + the four doc gates +
-`check:version` (minor) green; the from-scratch consumer-build showcase e2e 36/36; code-simplifier +
-`svelte-reviewer` + `daisyui-a11y-reviewer` clean. Six engine/DX carry-forwards are recorded in the plan's
-post-mortem (the standing-round-trip-test requirement for new field types is the load-bearing one for
-references next).
+**Verified.** `npm run check` 0/0; `npm test` exit 0 (**2651**, from a 2513 baseline); `check:comments` + the
+four doc gates + `check:version` (minor → 0.70.0); the from-scratch consumer-build showcase e2e **37/37**.
+code-simplifier (3 refinements) + four reviewers (`svelte`, `web-auth-security`, `cloudflare-workers`,
+`daisyui-a11y`) ran; the pass-end fan-out caught **three blockers the hazard sweep, the implementers, the e2e,
+and 2592 tests all missed** (two commit-pipeline content-corruption bugs — the rewriter nesting quotes on an
+already-quoted id, and rename clobbering a body-link repoint for a combined linker — plus a
+reference-only-edit save bug), all fixed test-first and re-verified. The six cutover carry-forwards are
+resolved (the round-trip-test requirement landed as the two-sided round-trip; the rest as references notes).
 
-**NEXT: execute the references plan** — `docs/superpowers/plans/2026-06-26-cairn-contract-v2-references.md`
-(phase 2: the frontmatter reference field on the id-stable content graph, the sharpest piece of the series),
-target **0.70.0** (additive, minor; held-unpublished window continues). DRAFTED via brainstorm (two forks
-settled: single + many `array(reference())`; taxonomy deferred and queued in ROADMAP) then hazard-swept by a
-5-lens adversarial workflow (21 confirmed findings folded in, 2 blockers: the rename refuse-predicate and the
-read-model resolution layer; plus the load-bearing `verifyReferences` virtual-module wiring fix and the
-rewriter re-quote of a YAML-significant id). 16 tasks, INCREMENTAL (each gates green, NOT atomic like the
-cutover); execute task-by-task via `cairn-implementer` (Sonnet), test-first, full gate per task, on a worktree
-off `main`; upshift Task 2 (the surgical rewriter) and Task 12 (rename) to `model: opus`. See
+**NEXT: phase 3 — `object`/`array` containers + the adapter restructure + the field-system unification.** The
+sharpest piece (references) is done; phase 3 generalizes `array` beyond references (a flat `object`, arrays of
+leaves and flat objects, the repeatable-row editor), restructures the adapter into the six subsystem groups,
+and unifies the directive-attribute field system onto `fields.*`. A NEW design needing its own brainstorm.
+Carry-forwards from references queued in ROADMAP: the taxonomy/tag-delivery pass (consumes the reserved
+`taxonomy` marker) and the body-link cross-branch delete follow-up. Spec (the `object`/`array`, adapter, and
+concept-model sections): `docs/superpowers/specs/2026-06-25-cairn-contract-v2-design.md`. See
 [[cairn-site-contract-v2-opportunity]].
 
 **Carry-forward routing (from the cutover post-mortem's six DX items).** References OWNS #1: a `form →

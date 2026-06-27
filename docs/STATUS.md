@@ -11,50 +11,62 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-26, latest): Contract v2 references SHIPPED as 0.70.0 (merged to `main`, pushed, HELD UNPUBLISHED); NEXT = phase 3 (`object`/`array` + adapter restructure + field-system unification)
+## Immediate next action (2026-06-27, latest): Contract v2 phase 3a (object/array containers) SHIPPED as 0.71.0 (merged to `main`, pushed, HELD UNPUBLISHED); NEXT = phase 3b (adapter restructure + concept model), a fresh-session brainstorm
 
-**Contract v2 phase 2 (references) is complete and merged to `main`** as **0.70.0** (additive, minor). The
-frontmatter `reference`/`array(reference)` field is live on the id-stable content graph: typed descriptors + a
-shared canonicalizer, the schema-driven manifest edge graph (`references` + `inboundReferences`), the strict
-fail-closed cross-branch `buildReferenceIndex`, the build-time `verifyReferences` gate (wired into the vite
-virtual module, the only integrity authority), the surgical rename rewriter, the `EntryPicker`/`ReferenceField`
-editor arm, the save warning, the rename/delete integrity gates, and `resolveReferences` read-model resolution
-at the site-resolver layer. The showcase migrated and exercises it end to end. Plan + post-mortem:
-`docs/superpowers/plans/2026-06-26-cairn-contract-v2-references.md`.
+**Contract v2 phase 3a (object/array containers) is complete and merged to `main`** as **0.71.0** (additive,
+minor). `fields.object()` and the generalized `fields.array` (a leaf or a flat object) ship capped at one level
+by `checkContainerNesting`, with a recursive `fieldset` validator emitting multi-segment `ValidationIssue`
+paths (the back-compat flat `errors` map kept), the `RemoveIndex`/`InferRecord` inference fix, the nested form
+round-trip (`decodeField`/`decodeRows`, the `formValues` container arms, the top-level arms untouched for
+back-compat), the `seo`-top-level-only guard, the extracted name-prefixable `FieldInput` dispatcher, and the
+keyed `RepeatableField` + `ObjectGroupField` editors. `ObjectField` and `ValidationIssue` are now root-barrel
+exports. Plan + post-mortem: `docs/superpowers/plans/2026-06-26-cairn-contract-v2-containers.md`.
 
 **Held unpublished (Geoff): do NOT publish until the whole Contract v2 series is complete.** `main` is pushed
-but no GitHub Release / npm publish is cut; the held window spans **0.69.0 through 0.70.0** and rolls into one
-release when references → object/array + adapter + unify → backend → render + islands all land. The two sites
-(ecxc-ski, 907-life) stay on the prior published range until then.
+but no GitHub Release / npm publish is cut; the held window now spans **0.69.0 through 0.71.0** and rolls into
+one release when references → object/array → backend → render + islands all land. The two sites (ecxc-ski,
+907-life) stay on the prior published range until then.
 
-**Verified.** `npm run check` 0/0; `npm test` exit 0 (**2651**, from a 2513 baseline); `check:comments` + the
-four doc gates + `check:version` (minor → 0.70.0); the from-scratch consumer-build showcase e2e **37/37**.
-code-simplifier (3 refinements) + four reviewers (`svelte`, `web-auth-security`, `cloudflare-workers`,
-`daisyui-a11y`) ran; the pass-end fan-out caught **three blockers the hazard sweep, the implementers, the e2e,
-and 2592 tests all missed** (two commit-pipeline content-corruption bugs — the rewriter nesting quotes on an
-already-quoted id, and rename clobbering a body-link repoint for a combined linker — plus a
-reference-only-edit save bug), all fixed test-first and re-verified. The six cutover carry-forwards are
-resolved (the round-trip-test requirement landed as the two-sided round-trip; the rest as references notes).
+**Verified.** `npm run check` 1200 files 0/0; `npm test` exit 0 (**2689**, from a 2651 baseline); `check:comments`
++ the four doc gates + `check:version` (minor → 0.71.0); the from-scratch consumer-build showcase e2e
+(`array(object)` FAQ + `array(image)` gallery, add/reorder/remove/save/reload). Executed test-first via
+`cairn-implementer` (Sonnet; the validator on opus) across two gated workflows on a feature BRANCH, not a
+worktree, so the headless workflow agents kept the default cwd and could not mis-target `main`.
+**Both adversarial reviews paid off:** the pre-plan three-lens sweep caught seven blocker-level design defects,
+all folded into the plan before any code; the pass-end three-lens fan-out caught a real blocker the seven
+points, the implementers, and 2685 passing tests all missed — `RepeatableField`'s focus queries ran against
+`document`, so with two arrays on one page (the showcase's FAQ + gallery) add/remove/reorder jumped focus to
+the wrong list (WCAG 2.4.3); fixed with instance-`root` scoping and a two-instance regression test, plus the
+misleading gallery hero copy (a `lead` prop + label-derived copy). code-simplifier applied 4 refinements.
 
-**NEXT: phase 3 — `object`/`array` containers + the adapter restructure + the field-system unification.** The
-sharpest piece (references) is done; phase 3 generalizes `array` beyond references (a flat `object`, arrays of
-leaves and flat objects, the repeatable-row editor), restructures the adapter into the six subsystem groups,
-and unifies the directive-attribute field system onto `fields.*`. A NEW design needing its own brainstorm.
-Carry-forwards from references queued in ROADMAP: the taxonomy/tag-delivery pass (consumes the reserved
-`taxonomy` marker) and the body-link cross-branch delete follow-up. Spec (the `object`/`array`, adapter, and
-concept-model sections): `docs/superpowers/specs/2026-06-25-cairn-contract-v2-design.md`. See
-[[cairn-site-contract-v2-opportunity]].
+**NEXT: phase 3b — the adapter restructure + the concept model.** Phase 3 runs as a 3a→3b→3c series (Geoff's
+call, sized by verification surface); 3a (containers) is done. 3b restructures `CairnAdapter`/`CairnRuntime`
+into the six subsystem groups and opens the concept model: `defineConcept`, an open `content` record, declared
+routing replacing the hardcoded `CONCEPT_ROUTING` table, URL policy home from the YAML into `defineConcept`,
+and the `siteName` de-duplication. The open-concept machinery already exists in `composeRuntime` via
+`CairnExtension`; only the adapter's `content` type is closed. A NEW design needing its own fresh-session
+brainstorm. Then 3c: the field-system unification (`defineComponent`, the directive attributes onto `fields.*`,
+the data-vs-behavior split). Spec (the adapter + concept-model sections):
+`docs/superpowers/specs/2026-06-25-cairn-contract-v2-design.md`. See [[cairn-site-contract-v2-opportunity]].
 
-**Carry-forward routing (from the cutover post-mortem's six DX items).** References OWNS #1: a `form →
-frontmatterFromForm → serialize → parse → formValues` round-trip property test is a required deliverable for
-the new reference field (the cutover nearly shipped a silent datetime round-trip loss; the reference value
-round-trips a richer payload). Items #2 (atomic-fixture coupling — a non-issue here, references is additive
-not a breaking reshape), #3 (wire/document each new descriptor flag's consumer; `taxonomy` stays reserved),
-#4a (a field e2e must open the Details slide-over first), and #5 (watch `ConceptDescriptor`'s request-time
-surface) ride along as references-plan notes, no separate work. #4b (the Details panel defaults closed and
-buries fields) is deferred to the `object`/`array` phase, where nesting makes it bite, and is noted in
-ROADMAP's Next tier. #6 (the worktree dual vite/kit install collision) is a standalone ~20-minute infra fix
-filed in ROADMAP's "Small DX debt"; slot it at the top of the next worktree setup, not into references.
+**3a carry-forwards (filed in ROADMAP):** nested references inside containers (the corruption-prone nested-YAML
+rename rewriter); the object-nested seo image (when delivery seo resolution walks the schema, not a hardcoded
+key list); the nested-image needs-alt advisory; and `itemLabel`-as-function + cross-field row validators (the
+3c behavior-table split). Still queued from references: taxonomy/tag-delivery and the body-link cross-branch
+delete. The live `wrangler dev` admin smoke is covered for this surface by the passing showcase e2e and stays
+owed at the next site cutover.
+
+---
+
+### Prior: Contract v2 phase 2 (references) SHIPPED as 0.70.0 (merged, pushed, held unpublished)
+
+The frontmatter `reference`/`array(reference)` field landed on the id-stable content graph: typed descriptors +
+a shared canonicalizer, the schema-driven manifest edge graph (`references` + `inboundReferences`), the strict
+fail-closed cross-branch `buildReferenceIndex`, the build-time `verifyReferences` gate (the only integrity
+authority), the surgical rename rewriter, the `EntryPicker`/`ReferenceField` editor arm, the rename/delete
+integrity gates, and `resolveReferences` at the site-resolver layer. Verified at 2651 tests; the pass-end
+fan-out caught three commit-pipeline content-corruption/save blockers the hazard sweep and 2592 tests missed,
+all fixed. Plan + post-mortem: `docs/superpowers/plans/2026-06-26-cairn-contract-v2-references.md`.
 
 ---
 

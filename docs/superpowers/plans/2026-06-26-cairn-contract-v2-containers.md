@@ -1281,3 +1281,59 @@ git commit -m "docs(fields): document object/array containers; bump to 0.71.0"
   tasks 1, 2, 3, 5, 7. The decoder (Task 3) and the editor (Task 7) agree on the hidden-input naming and the
   drop-empty-row semantic; the validator (Task 2) and the form (Task 3) agree that a missing optional omits
   the key.
+
+---
+
+## Post-mortem (2026-06-27)
+
+**Shipped as 0.71.0 (additive, held unpublished), merged to `main`.** All nine plan tasks landed, plus a
+pass-end review-fix commit and a code-simplifier commit. The full gate is green independently of the agents:
+`npm run check` 1200 files 0 errors / 0 warnings, `npm test` exit 0 at **2689 tests** (from a 2651 baseline,
++38), all four doc gates plus `check:comments` and `check:version`. The showcase e2e exercises `array(object)`
+(an FAQ) and `array(image)` (a gallery) end to end against a from-scratch consumer build, including
+add, reorder, remove, save, and reload.
+
+**What was built.** `fields.object()` and the relaxed `fields.array` (a leaf or a flat object), capped at one
+level by `checkContainerNesting`; the recursive `fieldset` validator returning a `FieldOutcome` with
+multi-segment `ValidationIssue` paths and a back-compat flat `errors` map; the `RemoveIndex`/`InferRecord`
+inference fix; the nested form round-trip (`decodeField`/`decodeRows`, the `formValues` container arms, the
+top-level arms preserved); the `seo`-top-level-only guard; the extracted name-prefixable `FieldInput`
+dispatcher; the keyed `RepeatableField` + `ObjectGroupField` editors; the docs; the 0.71.0 bump plus the root
+lockfile self-version sync. `ObjectField` and `ValidationIssue` are now root-barrel exports.
+
+**Execution.** Test-first via `cairn-implementer` (Sonnet; the validator on opus) across two gated workflows
+(logic core tasks 1-4, then editor + showcase + docs tasks 5, 7, 8, 9), each task self-clearing the full gate
+and the workflow halting on any failure. Run on a feature branch in the main checkout, not a worktree, so the
+headless workflow agents kept the default cwd and could not mis-target `main` (the `cd`-into-worktree
+permission-prompt trap a worktree would have hit). The mockup (Task 6) was satisfied by the plan's pinned a11y
+contract plus `admin-design-system.md` and the a11y reviewer, not a separate skill pass.
+
+**The two-stage adversarial review earned its place again.** The pre-plan three-lens review (round-trip, types,
+Svelte) caught seven blocker-level design defects before any code (the `InferRecord` index-signature
+pollution, the optional-`label` compile error, the top-level-decode-contract regression, the keyed-row data
+loss, the nested-image `MediaHeroField` wiring), all folded into the plan. The pass-end three-lens review then
+caught a real blocker the seven hardened design points, the implementers, and 2685 passing tests all missed:
+`RepeatableField`'s focus queries ran against `document`, so with two lists on one page (the showcase's FAQ +
+gallery) add/remove/reorder moved focus into the wrong list (WCAG 2.4.3). Fixed by scoping every focus query
+to the instance's `root` fieldset, proven by a two-instance regression test. The pass-end review also confirmed
+the name round-trip, the keyed envelope, `markFieldsDirty`, and the recursion termination sound, and flagged
+the misleading gallery hero copy (fixed: a `lead` prop plus label-derived copy). **Durable lesson reaffirmed:
+the pre-plan sweep hardens the design; the pass-end fan-out catches the multi-instance and integration bug a
+single-component test cannot. Both are necessary, and a workflow runs each as an independent fan-out.**
+
+**Decisions locked.** Containers hold scalars and image only this phase; a `reference` inside a container, an
+object-nested `seo` image, and a nested-image needs-alt advisory are deferred. `ObjectField.label` is optional
+(the array labels a row group). Field keys may not contain a dot. Row keys use a seed-time counter, not
+`randomUUID` (SSR hydration). The collapsed-row summary tracks live edits via a separate `summaries` map,
+never by controlling the inputs. The Svelte 5 callback-ref form for `bind:this` does not compile, so the
+benign `binding_property_non_reactive` warning on `heroFieldRefs[name]` stays with a comment.
+
+**Carry-forwards (filed in ROADMAP):** nested references inside containers (the corruption-prone nested-YAML
+rename rewriter); the object-nested seo image (when delivery seo resolution walks the schema rather than a
+hardcoded key list); the nested-image needs-alt advisory; and `itemLabel`-as-function plus cross-field row
+validators (the 3c behavior-table split). The live `wrangler dev` admin smoke is covered for this surface by
+the passing showcase e2e and stays owed at the next site cutover.
+
+**Next: 3b** — the adapter restructure into six subsystem groups plus the concept model (`defineConcept`, open
+`content`, declared routing, URL policy home from the YAML), a fresh-session brainstorm. The open-concept
+machinery already exists in `composeRuntime` via `CairnExtension`; only the adapter's `content` type is closed.

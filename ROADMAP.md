@@ -15,8 +15,10 @@ here, so this file stays a forward view.
 
 ## Now
 
-- **The Contract v2 plan series (after references).** The next phase after the reference field, leading
-  the `object`/`array` and backend work below. Spec:
+- **The Contract v2 plan series.** Phase 3a (object/array containers) shipped as `0.71.0` (held unpublished).
+  Next is phase 3b (the adapter restructure into six subsystem groups plus the concept model: `defineConcept`,
+  an open `content` record, declared routing, URL policy home), then 3c (the field-system unification onto
+  `fields.*`), then the `Backend` seam, then render-as-component with opt-in islands. Spec:
   `docs/superpowers/specs/2026-06-25-cairn-contract-v2-design.md`.
 
 ## Next
@@ -29,11 +31,11 @@ here, so this file stays a forward view.
   posture to the strict, fail-closed cross-branch reference index that the reference delete and rename gates
   now use, so deleting a body-linked target refuses across every open branch the same way a referenced
   target does. The reference pass left this asymmetry deliberate (locked decision 9); this closes it.
-- **The Contract v2 object and array primitive.** A bounded one-level `object`/`array` primitive with
-  adapter and component-system unification (and, since nested repeatable rows make the editor's Details
-  slide-over heavy, a look at that panel, which defaults closed and buries every non-title field as the
-  vocabulary grows), then the `Backend` seam (a GitHub-App default that folds in `@glw907/cairn-cms-dev`),
-  then render-as-component with opt-in islands.
+- **Nested references inside a container.** Lift the reference field into an `object` or `array(object)` leaf;
+  phase 3a deferred containers to scalars and image only. Needs the frontmatter-edge extractor to descend into
+  object leaves, the byte-preserving rename rewriter to address a nested YAML path (the corruption-prone part
+  the references fan-out caught bugs in), and the cross-branch index plus rename and delete gates to cover the
+  nested edges.
 - **The `create-cairn-site` scaffolder.** Sequenced after Contract v2 phases 1-2 so it bakes the template
   against v2. The pre-B3 engine/DX slot lands first (remove the calendar route, the GitHub-App "appId is
   config, not secret" trap, the doctor that greens while the deploy fails, and the other first-hour DX
@@ -44,6 +46,16 @@ here, so this file stays a forward view.
 
 - **Frontmatter field `description` channel.** Schema-authored per-field help rendered under the input,
   so the Details panel stops showing fields with no hint. Dovetails with the Contract v2 field work.
+- **Nested-image delivery: seo and needs-alt.** Allow `seo: true` on an image inside a top-level `object`
+  (phase 3a forbids it because `seo-fields.ts` reads a hardcoded key list, not the schema), and surface a
+  nested image's missing alt in the editor's needs-alt advisory (3a's notice enumerates top-level images
+  only). Both unlock when delivery seo resolution walks the concept schema, a fit for the 3b concept work.
+- **Details panel default-open heaviness.** The Details slide-over defaults closed and buries every non-title
+  field as the vocabulary grows; phase 3a's repeatable rows collapse per row, but the panel itself is
+  unrevisited. Look at its default and grouping now that containers add fields.
+- **`itemLabel` as a function and cross-field row validators.** The array `itemLabel` is a serializable
+  field-key string this phase; a derived label and a per-row cross-field validator ride the data-versus-behavior
+  split that lands in phase 3c (the `BehaviorTable` seam already exists in `fieldset.ts`).
 - **Editor-help later slices.** The screen-contextual slide-over, a route- and concept-keyed help-content
   registry, and a standing Help home with a labeled launcher. The foundation shipped in `0.61.0`-`0.62.1`.
 - **Per-field advisory seam plus live slug recompute.** An editor-side advisory-validation surface, and a

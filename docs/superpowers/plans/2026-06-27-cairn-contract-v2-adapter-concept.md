@@ -475,3 +475,44 @@ Document the contract (the routing shorthands, the URL-policy fields, the declar
 - **Spec coverage:** the concept model (`defineConcept`, open `content`, declared routing, URL-policy-home) is Tasks 1/2/3; the adapter restructure (six groups, siteName de-dup, path knobs, `SiteConfig.url`) is Tasks 2/3/5/Task1-Step6; the doctor/YAML consistency retirement is Task 5; docs are Task 8; the version + release mechanics are Task 9. The render `islands` group and the `backend`/`rendering` seam redesigns are explicitly out (later phases).
 - **Type consistency:** `defineConcept<const C extends ConceptConfig>(concept: C): C`; `resolveRouting(routing): RoutingRule`; `normalizeConcepts(content)`; `resolveConcepts(content)`; `ConceptConfig.fields` (was `schema`); `ConceptDescriptor.fields`/`ConceptDescriptor.schema` unchanged; runtime keys flat and unchanged. The adapter groups: `content`, `backend`, `email`, `rendering.{render,components,icons}`, `media`, `editor.{preview,nav,supportContact}`.
 - **No placeholders:** every code step shows the code; every migration step names the files/lines; the atomic-unit boundary and the single gate are explicit.
+
+---
+
+## Post-mortem (executed 2026-06-27, shipped 0.72.0, held unpublished)
+
+**Built.** The full phase-3b restructure as planned. `CairnAdapter` is six groups
+(`content`/`backend`/`email`/`rendering`/`media`/`editor`); `content` is an open
+`Record<string, ConceptConfig>`; `ConceptConfig.schema` renamed to `fields`; routing and URL policy
+(`routing`/`permalink`/`datePrefix`) moved onto the concept. New: `defineConcept` (validates the URL
+policy at declaration) and `resolveRouting` (the single shorthand expander). Removed: `CONCEPT_ROUTING`,
+`urlPolicyFrom`, `SiteConfig.url`, `SiteConfig.content`. `parseSiteConfig` hard-errors on a stale
+`content:` block. `siteName` is YAML-canonical; `composeRuntime` reads it from `siteConfig`. `CairnRuntime`
+stayed flat; `composeRuntime` is the one mapping site (R4 kept the public delivery signatures).
+
+**Verified.** `npm run check` 1202 files 0/0; `npm test` exit 0 at **2691** (unchanged count, a clean
+migration); `check:comments` OK; the four doc gates + `check:version` (minor → 0.72.0); and the
+load-bearing proof, a from-scratch consumer build (`rm -rf examples/showcase/{node_modules,
+package-lock.json}`, fresh install, `npm run build`) plus the **39-test Playwright e2e**, both green. The
+`svelte-reviewer` pass-end review came back clean (it confirmed the highest-risk spot, the
+`registry={cairn.rendering.components}` prop mapping, is wired right). `code-simplifier` applied two
+refinements (a backwards `ConceptUrlPolicy` TSDoc the migration had left, and hoisting the three
+convention-defaulted artifact paths in `compose.ts` to named constants).
+
+**Execution shape.** Task 1 (additive) ran as a gated `cairn-implementer` dispatch (commit `6010cc3`).
+Tasks 2-8 ran as one atomic compile unit in the main loop, gated once (commit `2e184fb`); Task 9 the
+release (commit `849a3aa`). The addendum R1-R7 (folded from a pre-implementation adversarial workflow)
+carried the pass: the complete grep-derived test set, the positional-arg fold-in rule, the full docs set,
+the keep-the-public-delivery-signatures call, and the dist-rebuild-before-gate step were all load-bearing.
+
+**Durable lesson (the silent-routing trap).** The old `CONCEPT_ROUTING` table auto-dated every concept
+named `posts` by id. With routing now concept-declared, a `posts` concept that omits `routing` defaults to
+the non-dated `'page'` rule, so any migrated test (or site) that relied on the implicit dated behavior
+breaks silently: a date-token permalink stops resolving and a date-stripped slug stops stripping. The
+fixture rule (every dated `posts` concept must declare `routing: 'feed'`) and the gate caught two such
+misses (`content-permalink-parity`, and the `_content-fixture` itself). The same trap waits at each site
+cutover; the ROADMAP watch tracks it.
+
+**Carry-forwards.** All filed in ROADMAP: the engine-provided `inFeeds`/`routable` feed and sitemap views
+(decision 7, render/delivery phase); and the per-site URL-policy transcription watch (ecxc-ski
+`/:year/:month/:slug` `month`, 907-life `/:year/:month/:day/:slug` `day`) for each site's v2 cutover. Next
+v2 pass is 3c (the field-system unification onto `fields.*`).

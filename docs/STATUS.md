@@ -11,54 +11,55 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-27, latest): Contract v2 phase 3b (adapter restructure + concept model) PLAN WRITTEN + adversarially reviewed (findings folded); NEXT = EXECUTE the 3b plan
+## Immediate next action (2026-06-27, latest): Contract v2 phase 3b (adapter restructure + concept model) SHIPPED as 0.72.0 (held); NEXT = phase 3c (the field-system unification onto `fields.*`)
 
-**Contract v2 phase 3a (object/array containers) is complete and merged to `main`** as **0.71.0** (additive,
-minor). `fields.object()` and the generalized `fields.array` (a leaf or a flat object) ship capped at one level
-by `checkContainerNesting`, with a recursive `fieldset` validator emitting multi-segment `ValidationIssue`
-paths (the back-compat flat `errors` map kept), the `RemoveIndex`/`InferRecord` inference fix, the nested form
-round-trip (`decodeField`/`decodeRows`, the `formValues` container arms, the top-level arms untouched for
-back-compat), the `seo`-top-level-only guard, the extracted name-prefixable `FieldInput` dispatcher, and the
-keyed `RepeatableField` + `ObjectGroupField` editors. `ObjectField` and `ValidationIssue` are now root-barrel
-exports. Plan + post-mortem: `docs/superpowers/plans/2026-06-26-cairn-contract-v2-containers.md`.
+**Contract v2 phase 3b (adapter restructure + concept model) is complete and merged to `main`** as **0.72.0**
+(breaking within 0.x, minor). `CairnAdapter` is now six subsystem groups (`content`, `backend`, `email` (was
+`sender`), `rendering.{render, components (was registry), icons}`, `media` (was `assets`), `editor.{preview, nav
+(was navMenu), supportContact}`); `content` opened to an arbitrary `Record<string, ConceptConfig>`;
+`ConceptConfig.schema` renamed to `fields`; and each concept declares its own routing and URL policy
+(`routing`/`permalink`/`datePrefix`) on the concept. New: `defineConcept` (a typed concept factory that
+validates its URL policy at declaration) and `resolveRouting` (the single shorthand expander, internal). Removed:
+`CONCEPT_ROUTING`, `urlPolicyFrom`, `SiteConfig.url`, `SiteConfig.content`. `parseSiteConfig` hard-errors on a
+stale `content:` block (the half-migrated-site tripwire). `siteName` is YAML-canonical; `composeRuntime` reads it
+from `siteConfig`. **`CairnRuntime` stayed FLAT** (sweep B1); `composeRuntime` is the one mapping site, and the
+public delivery signatures kept their `siteConfig` param (R4). Plan + post-mortem:
+`docs/superpowers/plans/2026-06-27-cairn-contract-v2-adapter-concept.md`.
 
-**Held unpublished (Geoff): do NOT publish until the whole Contract v2 series is complete.** `main` is pushed
-but no GitHub Release / npm publish is cut; the held window now spans **0.69.0 through 0.71.0** and rolls into
-one release when references → object/array → backend → render + islands all land. The two sites (ecxc-ski,
-907-life) stay on the prior published range until then.
+**Held unpublished (Geoff): do NOT publish until the whole Contract v2 series is complete.** `main` carries the
+work but no GitHub Release / npm publish is cut; the held window now spans **0.69.0 through 0.72.0** and rolls
+into one release when references → object/array → adapter/concept → backend → render + islands all land. The two
+sites (ecxc-ski, 907-life) stay on the prior published range until then.
 
-**Verified.** `npm run check` 1200 files 0/0; `npm test` exit 0 (**2689**, from a 2651 baseline); `check:comments`
-+ the four doc gates + `check:version` (minor → 0.71.0); the from-scratch consumer-build showcase e2e
-(`array(object)` FAQ + `array(image)` gallery, add/reorder/remove/save/reload). Executed test-first via
-`cairn-implementer` (Sonnet; the validator on opus) across two gated workflows on a feature BRANCH, not a
-worktree, so the headless workflow agents kept the default cwd and could not mis-target `main`.
-**Both adversarial reviews paid off:** the pre-plan three-lens sweep caught seven blocker-level design defects,
-all folded into the plan before any code; the pass-end three-lens fan-out caught a real blocker the seven
-points, the implementers, and 2685 passing tests all missed — `RepeatableField`'s focus queries ran against
-`document`, so with two arrays on one page (the showcase's FAQ + gallery) add/remove/reorder jumped focus to
-the wrong list (WCAG 2.4.3); fixed with instance-`root` scoping and a two-instance regression test, plus the
-misleading gallery hero copy (a `lead` prop + label-derived copy). code-simplifier applied 4 refinements.
+**Verified.** `npm run check` 1202 files 0/0; `npm test` exit 0 (**2691**, unchanged from the 3a baseline, a
+clean migration); `check:comments` + the four doc gates + `check:version` (minor → 0.72.0); and the load-bearing
+proof, a from-scratch consumer build (`rm -rf examples/showcase/{node_modules,package-lock.json}`, fresh install,
+`npm run build`) plus the **39-test Playwright e2e**, both green. Executed main-loop orchestrate-and-verify on a
+feature BRANCH off `main`: Task 1 additive (gated `cairn-implementer`, commit `6010cc3`); Tasks 2-8 one atomic
+compile unit gated once (commit `2e184fb`); Task 9 the release (commit `849a3aa`). The pre-folded addendum R1-R7
+carried the pass. `svelte-reviewer` came back clean (confirmed the highest-risk `registry={cairn.rendering.
+components}` prop mapping is right); `code-simplifier` applied 2 refinements (a backwards `ConceptUrlPolicy`
+TSDoc, and hoisting the three artifact-path constants in `compose.ts`).
 
-**NEXT: EXECUTE the phase 3b plan** at `docs/superpowers/plans/2026-06-27-cairn-contract-v2-adapter-concept.md`.
-The plan is written and was adversarially reviewed by a find-then-verify workflow (18 confirmed findings, all
-folded into its **Review addendum R1-R7**: the complete grep-derived test-migration set, the positional-arg
-fold-in rule, the full published-docs set, the keep-the-public-delivery-signatures call, the dist-rebuild-before-
-gate step, and the precise barrel lines). **Method:** main-loop orchestrate-and-verify on a feature BRANCH off
-`main` (not a worktree, so any headless workflow agents keep the default cwd, per the 3a lesson); Task 1 is
-additive and gates green alone; Tasks 2-8 are ONE atomic compile unit gated once; Task 9 is the `0.72.0` bump +
-dist rebuild + from-scratch e2e. The held window becomes `0.69.0`-`0.72.0`. **Scope correction (sweep B1):** the
-restructure is `CairnAdapter`-only; `CairnRuntime` stays FLAT (the spec shows only the adapter in six groups;
-regrouping the runtime is ~5x blast radius with no payoff), and `composeRuntime` is the one mapping site. Then
-3c: the field-system unification (`defineComponent`, the directive attributes onto `fields.*`, the
-data-vs-behavior split). Spec (the adapter + concept-model sections):
-`docs/superpowers/specs/2026-06-25-cairn-contract-v2-design.md`. See [[cairn-site-contract-v2-opportunity]].
+**Durable lesson (the silent-routing trap).** The old id-keyed `CONCEPT_ROUTING` auto-dated every concept named
+`posts`. With routing now concept-declared, a `posts` concept that omits `routing` defaults to the non-dated
+`'page'` rule, so a migrated test or site that relied on the implicit dated behavior breaks SILENTLY (a
+date-token permalink stops resolving, a date-stripped slug stops stripping). Every dated `posts` concept must
+declare `routing: 'feed'`; the gate caught two misses. The same trap waits at each site cutover (the ROADMAP
+watch tracks it).
 
-**3a carry-forwards (filed in ROADMAP):** nested references inside containers (the corruption-prone nested-YAML
-rename rewriter); the object-nested seo image (when delivery seo resolution walks the schema, not a hardcoded
-key list); the nested-image needs-alt advisory; and `itemLabel`-as-function + cross-field row validators (the
-3c behavior-table split). Still queued from references: taxonomy/tag-delivery and the body-link cross-branch
-delete. The live `wrangler dev` admin smoke is covered for this surface by the passing showcase e2e and stays
-owed at the next site cutover.
+**NEXT: phase 3c, the field-system unification onto `fields.*`** (`defineComponent`, the directive attributes
+onto `fields.*`, the data-vs-behavior split). Then the `Backend` seam, then render-as-component with opt-in
+islands. Spec: `docs/superpowers/specs/2026-06-25-cairn-contract-v2-design.md`. See
+[[cairn-site-contract-v2-opportunity]]. Draft the 3c plan just-in-time (no plan written yet).
+
+**Carry-forwards (filed in ROADMAP):** the engine-provided `inFeeds`/`routable` feed and sitemap views (decision
+7, render/delivery phase, since 3b leaves `inFeeds` a consumer-read hint); the per-site URL-policy transcription
+watch (ecxc-ski `/:year/:month/:slug` `month`, 907-life `/:year/:month/:day/:slug` `day`) for each site's v2
+cutover. Still queued from earlier v2 phases: nested references inside containers, the object-nested seo image,
+the nested-image needs-alt advisory, `itemLabel`-as-function + cross-field row validators (3c), taxonomy/tag
+delivery, and the body-link cross-branch delete. The live `wrangler dev` admin smoke stays owed at the next site
+cutover (the passing from-scratch e2e covers this surface meanwhile).
 
 ---
 

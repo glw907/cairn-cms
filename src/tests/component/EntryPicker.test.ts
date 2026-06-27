@@ -15,6 +15,9 @@ function open(
     choose: (t: LinkTarget) => void;
     conceptFilter: string;
     selectedIds: string[];
+    heading: string;
+    searchLabel: string;
+    emptyText: string;
   }> = {},
 ) {
   const picked: LinkTarget[] = [];
@@ -23,6 +26,9 @@ function open(
     choose: props.choose ?? ((t) => picked.push(t)),
     conceptFilter: props.conceptFilter,
     selectedIds: props.selectedIds,
+    heading: props.heading,
+    searchLabel: props.searchLabel,
+    emptyText: props.emptyText,
   });
   return { screen, picked };
 }
@@ -63,6 +69,17 @@ describe('EntryPicker', () => {
     const text = screen.container.querySelector('dialog')!.textContent ?? '';
     expect(text).toContain('Waxing Guide');
     expect(text).not.toContain('About Us');
+  });
+
+  it('renders a passed heading as the dialog title and focuses the search box on open', async () => {
+    const { screen } = open({ heading: 'Choose Author' });
+    await screen.getByRole('button', { name: /link to page/i }).click();
+    // The passed heading becomes the dialog title.
+    await expect.element(screen.getByRole('heading', { name: 'Choose Author' })).toBeInTheDocument();
+    // open() moves focus from the dialog's first focusable (the Close button) to the search input,
+    // so a keyboard or screen-reader user lands ready to type (WCAG 2.4.3).
+    const searchBox = screen.container.querySelector<HTMLInputElement>('input[type="search"]')!;
+    await expect.poll(() => document.activeElement === searchBox).toBe(true);
   });
 
   it('marks an already-selected row', async () => {

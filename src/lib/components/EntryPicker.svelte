@@ -23,11 +23,28 @@ dialog's a11y conventions.
     /** Render the built-in trigger button. False mounts only the dialog, for a host that supplies its
      *  own trigger and opens the dialog through the exported open(). */
     trigger?: boolean;
+    /** The dialog title. Defaults to the editor link control's wording; a reference field passes a
+     *  concept-appropriate heading. */
+    heading?: string;
+    /** The search input's accessible name. Defaults to the link control's wording. */
+    searchLabel?: string;
+    /** The empty-state text shown when no target matches. Defaults to the link control's wording. */
+    emptyText?: string;
   }
 
-  let { targets, choose, conceptFilter, selectedIds = [], trigger = true }: Props = $props();
+  let {
+    targets,
+    choose,
+    conceptFilter,
+    selectedIds = [],
+    trigger = true,
+    heading: dialogHeading = 'Link to a page',
+    searchLabel = 'Search pages and posts',
+    emptyText = 'No pages or posts to link to.',
+  }: Props = $props();
 
   let dialog = $state<HTMLDialogElement | null>(null);
+  let searchInput = $state<HTMLInputElement | null>(null);
   let query = $state('');
 
   // Group filtered targets by concept, Pages first then Posts then any other concept, so the list
@@ -65,6 +82,10 @@ dialog's a11y conventions.
   export function open() {
     query = '';
     dialog?.showModal();
+    // showModal() lands focus on the first focusable element (the header Close button), so move it
+    // to the search box the picker exists for (WCAG 2.4.3). A microtask defers past the dialog's own
+    // focus handling, matching RenameDialog.
+    queueMicrotask(() => searchInput?.focus());
   }
   function close() {
     dialog?.close();
@@ -85,7 +106,7 @@ dialog's a11y conventions.
 <dialog class="modal" aria-labelledby="cairn-entry-picker-title" bind:this={dialog}>
   <div class="modal-box">
     <div class="mb-3 flex items-center justify-between">
-      <h2 id="cairn-entry-picker-title" class="text-base font-semibold">Link to a page</h2>
+      <h2 id="cairn-entry-picker-title" class="text-base font-semibold">{dialogHeading}</h2>
       <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={close}>✕</button>
     </div>
 
@@ -93,19 +114,25 @@ dialog's a11y conventions.
       type="search"
       class="input input-bordered mb-3 w-full"
       placeholder="Search by title"
-      aria-label="Search pages and posts"
+      aria-label={searchLabel}
+      bind:this={searchInput}
       bind:value={query}
     />
 
     {#if groups.length === 0}
-      <p class="text-sm text-[var(--color-muted)]">No pages or posts to link to.</p>
+      <p class="text-sm text-[var(--color-muted)]">{emptyText}</p>
     {:else}
       {#each groups as group (group.concept)}
         <h3 class="mt-2 mb-1 text-xs font-semibold tracking-wide text-[var(--color-muted)] uppercase">{group.heading}</h3>
         <ul class="menu w-full">
           {#each group.items as target (`${target.concept}/${target.id}`)}
             <li>
-              <button type="button" aria-disabled={isSelected(target)} onclick={() => pick(target)}>
+              <button
+                type="button"
+                aria-disabled={isSelected(target)}
+                aria-label={isSelected(target) ? `${target.title} (already selected)` : target.title}
+                onclick={() => pick(target)}
+              >
                 <span class="flex flex-col items-start">
                   <span class="font-medium">{target.title}</span>
                   <span class="text-xs text-[var(--color-muted)]">

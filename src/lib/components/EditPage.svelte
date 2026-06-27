@@ -2044,9 +2044,9 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
             onneedsaltchange={(n) => (heroNeedsAlt = { ...heroNeedsAlt, [field.name]: n })}
           />
         {:else if field.type === 'reference'}
-          <ReferenceField {field} value={(data.frontmatter[field.name] ?? '') as string} targets={data.linkTargets} />
-        {:else if field.type === 'array'}
-          <ReferenceField {field} value={(data.frontmatter[field.name] ?? []) as string[]} targets={data.linkTargets} />
+          <ReferenceField {field} value={(data.frontmatter[field.name] ?? '') as string} targets={data.linkTargets} ondirty={markFieldsDirty} />
+        {:else if field.type === 'array' && field.item.type === 'reference'}
+          <ReferenceField {field} value={(data.frontmatter[field.name] ?? []) as string[]} targets={data.linkTargets} ondirty={markFieldsDirty} />
         {:else}
           <label class="flex flex-col gap-1">
             <span class="text-sm font-medium">{field.label}</span>

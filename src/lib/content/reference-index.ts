@@ -109,8 +109,10 @@ export async function buildReferenceIndex(
   // branch name, so no tree-listing is needed. The branch list is reused when the caller passes it.
   const names = opts.branches ?? (await listBranches(repo, PENDING_PREFIX, token));
   // Read the branches in parallel rather than one at a time, so the latency floor is one round trip
-  // instead of N. workerd self-throttles to 6 simultaneous outbound connections, so this batch stays
-  // under the limit.
+  // instead of N. workerd self-throttles to 6 simultaneous outbound connections, so this batch and
+  // the load path's media-union and linker reads each stay under the limit; do NOT run this fan-out
+  // concurrently with those (a future combined safety gate must not wrap them in one Promise.all),
+  // since the merged fan-out would queue behind that throttle.
   const perBranch = await Promise.all(
     names.map(async (name): Promise<{ key: string; entry: ReferenceUsageEntry }[]> => {
       // Resolve the branch name to a configured entry with the same guard the branch tooling uses: a

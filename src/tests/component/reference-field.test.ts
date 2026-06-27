@@ -112,4 +112,21 @@ describe('ReferenceField editor arm', () => {
     const inputs = hiddenInputs(page, 'related');
     expect(inputs.map((i) => i.value)).toEqual(['b-post']);
   });
+
+  it('marks the form dirty and enables Save when a reference is picked on an existing entry', async () => {
+    // An existing entry (not ?new=1), so Save starts disabled until a real edit. A reference change
+    // writes to a hidden input, whose programmatic value change does not fire the form's oninput, so
+    // the field must signal dirty through ondirty for Save to enable.
+    const page = render(EditPage, props({ author: 'jane-doe' }));
+    const save = () =>
+      page.container.querySelector<HTMLButtonElement>(
+        '[data-testid="cairn-band"] button[type="submit"][form="cairn-edit-form"]:not([formaction]):not(.sr-only)',
+      )!;
+    expect(save().disabled).toBe(true);
+    await openDetails(page);
+    // Open the picker and pick a different page; the dirty signal must flip Save on.
+    await page.getByRole('button', { name: /^author$/i }).click();
+    await page.getByRole('button', { name: /John Roe/ }).click();
+    await expect.poll(() => save().disabled).toBe(false);
+  });
 });

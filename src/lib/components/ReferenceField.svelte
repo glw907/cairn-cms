@@ -22,9 +22,13 @@ component owns the cardinality, the chips, and the hidden inputs the form submit
     value: string | string[];
     /** The site's link targets, from the committed manifest (editLoad ships them). */
     targets: LinkTarget[];
+    /** Called when the committed ids change (a pick, an add, or a remove), so the host sets
+     *  fieldsDirty. The hidden-input writes do not fire the form's oninput, so the field signals
+     *  dirty explicitly, the same way MediaHeroField does. */
+    ondirty?: () => void;
   }
 
-  let { field, value, targets }: Props = $props();
+  let { field, value, targets, ondirty }: Props = $props();
 
   // The descriptor's concept, read from the single reference or the array's reference item, so the
   // picker scopes to the right concept and a chip resolves its title within that concept's targets.
@@ -52,12 +56,17 @@ component owns the cardinality, the chips, and the hidden inputs the form submit
 
   function chooseSingle(target: LinkTarget) {
     singleId = target.id;
+    ondirty?.();
   }
   function chooseMany(target: LinkTarget) {
-    if (!ids.includes(target.id)) ids = [...ids, target.id];
+    if (!ids.includes(target.id)) {
+      ids = [...ids, target.id];
+      ondirty?.();
+    }
   }
   function remove(id: string) {
     ids = ids.filter((x) => x !== id);
+    ondirty?.();
   }
 </script>
 
@@ -83,7 +92,17 @@ component owns the cardinality, the chips, and the hidden inputs the form submit
       </button>
     </div>
   </fieldset>
-  <EntryPicker bind:this={picker} {targets} choose={chooseMany} conceptFilter={concept} selectedIds={ids} trigger={false} />
+  <EntryPicker
+    bind:this={picker}
+    {targets}
+    choose={chooseMany}
+    conceptFilter={concept}
+    selectedIds={ids}
+    trigger={false}
+    heading={`Choose ${field.label}`}
+    searchLabel={`Search ${concept}`}
+    emptyText={`No ${concept} to choose.`}
+  />
 {:else}
   <div class="flex flex-col gap-1">
     <span class="text-sm font-medium">{field.label}</span>
@@ -94,5 +113,14 @@ component owns the cardinality, the chips, and the hidden inputs the form submit
       <input type="hidden" name={field.name} value={singleId} />
     {/if}
   </div>
-  <EntryPicker bind:this={picker} {targets} choose={chooseSingle} conceptFilter={concept} trigger={false} />
+  <EntryPicker
+    bind:this={picker}
+    {targets}
+    choose={chooseSingle}
+    conceptFilter={concept}
+    trigger={false}
+    heading={`Choose ${field.label}`}
+    searchLabel={`Search ${concept}`}
+    emptyText={`No ${concept} to choose.`}
+  />
 {/if}

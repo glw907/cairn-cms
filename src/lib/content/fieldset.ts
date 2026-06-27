@@ -293,14 +293,30 @@ function validateField(
 // At most one image field may feed the social card, so the og:image is unambiguous. A v2 fieldset
 // marks that field with an explicit `seo: true`; there is no field-name default, since the record key
 // is arbitrary. Two seo images is a site config error, so fail loudly at declaration (v1 parity).
+// The delivery seo reader resolves the social card off a hardcoded top-level key list, so a nested
+// seo image cannot resolve at delivery; this phase forbids seo: true inside any container and defers
+// nested seo to the pass that generalizes delivery seo resolution.
 function checkSeoImageFields(record: Record<string, FieldDescriptor>): void {
-  const seo = Object.entries(record).filter(([, field]) => field.type === 'image' && field.seo === true);
+  const seo: string[] = [];
+  for (const [key, field] of Object.entries(record)) {
+    if (field.type === 'image' && field.seo === true) seo.push(`"${key}"`);
+    else if (field.type === 'object') {
+      for (const [leafKey, leaf] of Object.entries(field.fields)) {
+        if (leaf.type === 'image' && leaf.seo === true) {
+          throw new Error(`cairn: the image "${key}.${leafKey}" sets seo: true, but a nested seo image is not supported this phase. Put the social-card image at the top level.`);
+        }
+      }
+    } else if (field.type === 'array') {
+      const item = field.item;
+      const nested = (item.type === 'image' && item.seo === true)
+        || (item.type === 'object' && Object.values(item.fields).some((l) => l.type === 'image' && l.seo === true));
+      if (nested) {
+        throw new Error(`cairn: the array field "${key}" declares an seo image, but an array would mean one social card per row. Put seo: true on a top-level image.`);
+      }
+    }
+  }
   if (seo.length > 1) {
-    const names = seo.map(([key]) => `"${key}"`).join(', ');
-    throw new Error(
-      `cairn: a concept declares at most one SEO image field, but found ${seo.length} (${names}). ` +
-        'Set seo: false on all but one, or rename the extra image fields so only one feeds the social card.',
-    );
+    throw new Error(`cairn: a concept declares at most one SEO image field, but found ${seo.length} (${seo.join(', ')}). Set seo: false on all but one.`);
   }
 }
 

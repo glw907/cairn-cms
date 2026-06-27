@@ -36,6 +36,25 @@ describe('fieldset SEO-image guard', () => {
       }),
     ).not.toThrow();
   });
+
+  it('still allows one top-level seo image', () => {
+    expect(() => fieldset({ hero: fields.image({ label: 'Hero', seo: true }) })).not.toThrow();
+  });
+
+  it('forbids an seo image inside an object (deferred this phase)', () => {
+    expect(() => fieldset({ box: fields.object({ fields: { pic: fields.image({ label: 'Pic', seo: true }) } }) })).toThrow(/seo/i);
+  });
+
+  it('forbids an seo image inside an array', () => {
+    expect(() => fieldset({ gallery: fields.array(fields.image({ label: 'Shot', seo: true })) })).toThrow(/seo/i);
+  });
+
+  it('still rejects two top-level seo images', () => {
+    expect(() => fieldset({
+      a: fields.image({ label: 'A', seo: true }),
+      b: fields.image({ label: 'B', seo: true }),
+    })).toThrow(/at most one/i);
+  });
 });
 
 describe('fieldset container-nesting guard', () => {

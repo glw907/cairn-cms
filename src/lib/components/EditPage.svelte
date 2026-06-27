@@ -1064,6 +1064,14 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     return drafts ? drafts.split(',').filter(Boolean).join(', ') : '';
   });
 
+  // A save whose frontmatter references an absent or draft target carries ?refs=<concept/id list>,
+  // the advisory reference warning the save threads through (mirroring ?drafts=). It never blocks the
+  // save; the build's verifyReferences is the integrity authority, so this is informational only.
+  const referenceWarning = $derived.by(() => {
+    const refs = page.url.searchParams.get('refs');
+    return refs ? refs.split(',').filter(Boolean).join(', ') : '';
+  });
+
   // The one transient feedback strip under the sticky header. The redirect flags are mutually
   // exclusive in practice; the chain picks one so a surprise overlap still renders a single strip.
   // A saved flash with a draft warning yields to the warning alert below, the prior behavior.
@@ -1081,9 +1089,11 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   // notices (the flash, plus the draft notice the strip yields to); an assertive region carries
   // the errors. The visible banners below keep their styling but drop their roles, so a message
   // is announced once.
-  const politeMessage = $derived(
-    draftWarning ? `Saved. This page links to unpublished pages: ${draftWarning}.` : flash,
-  );
+  const politeMessage = $derived.by(() => {
+    if (draftWarning) return `Saved. This page links to unpublished pages: ${draftWarning}.`;
+    if (referenceWarning) return `Saved. This page references unpublished entries: ${referenceWarning}.`;
+    return flash;
+  });
   const assertiveMessage = $derived.by(() => {
     if (data.error) return data.error;
     if (formError) return formError;
@@ -1504,6 +1514,11 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
 {#if draftWarning}
   <div class="alert alert-warning mb-4 text-sm">
     Saved. Note: this page links to unpublished {draftWarning.includes(',') ? 'pages' : 'a page'} ({draftWarning}), which will 404 until published.
+  </div>
+{/if}
+{#if referenceWarning}
+  <div class="alert alert-warning mb-4 text-sm">
+    Saved. Note: this page references {referenceWarning.includes(',') ? 'entries' : 'an entry'} ({referenceWarning}) not yet published, which the build will flag until published.
   </div>
 {/if}
 

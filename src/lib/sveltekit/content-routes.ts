@@ -5,6 +5,7 @@
 import { redirect, error, fail } from '@sveltejs/kit';
 import { findConcept } from '../content/concepts.js';
 import { extractCairnLinks, formatCairnToken, rewriteCairnLink } from '../content/links.js';
+import { extractReferenceEdges } from '../content/references.js';
 import { frontmatterFromForm, formValues, parseMarkdown, dateInputValue, serializeMarkdown } from '../content/frontmatter.js';
 import { initialValues } from '../content/fieldset.js';
 import { deriveExcerpt } from '../content/excerpt.js';
@@ -1200,6 +1201,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     manifest: Manifest;
     /** The draft-target tokens the body links to, for save's warning query. */
     draftLinks: string[];
+    /** The absent-or-draft reference targets, for save's non-blocking reference warning. */
+    referenceWarnings: string[];
     token: string;
     /**
      * The merged media.json change this save committed to the branch, when media is on and the
@@ -1288,6 +1291,18 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       } satisfies SaveFailure);
     }
 
+    // Frontmatter reference warning: classify each typed reference edge against the same upserted
+    // manifest. This is best-effort against the committed (possibly stale) main manifest and advisory
+    // like draftLinks, NEVER the integrity guarantee; references have no prerender re-resolve backstop,
+    // so verifyReferences at the build is the only authority. A reference NEVER blocks the save: unlike
+    // a body link, an absent or draft target only warns, since the build gate fails a true dangling.
+    const referenceWarnings: string[] = [];
+    for (const edge of extractReferenceEdges(result.data, concept.fields)) {
+      if (edge.concept === concept.id && edge.id === id) continue;
+      const target = byKey.get(`${edge.concept}/${edge.id}`);
+      if (!target || target.draft) referenceWarnings.push(`${edge.concept}/${edge.id}`);
+    }
+
     // Ensure the entry's pending branch exists (cut lazily from main's head on first save), then
     // commit only the entry file there. Main stays untouched until publish, so the branch differs
     // from main at exactly this entry's path.
@@ -1312,7 +1327,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       commitFailure(commitFields, err, `/admin/${concept.id}/${id}`,
         'This file changed since you opened it. Reload and reapply your edits.', { query: suffix });
     }
-    return { path, markdown, branch, branchSha, manifest: upserted, draftLinks, token, mediaChange };
+    return { path, markdown, branch, branchSha, manifest: upserted, draftLinks, referenceWarnings, token, mediaChange };
   }
 
   /**
@@ -1328,9 +1343,11 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     if (!isValidId(id)) throw error(400, 'Invalid entry id');
     const held = await saveToBranch(event, editor, concept, id);
     if (!('branchSha' in held)) return held;
-    const savedQuery = held.draftLinks.length
+    let savedQuery = held.draftLinks.length
       ? `saved=1&drafts=${encodeURIComponent(held.draftLinks.join(','))}`
       : 'saved=1';
+    if (held.referenceWarnings.length)
+      savedQuery += `&refs=${encodeURIComponent(held.referenceWarnings.join(','))}`;
     throw redirect(303, `/admin/${concept.id}/${id}?${savedQuery}`);
   }
 

@@ -4,6 +4,7 @@
 // (quoting, key order) without the save endpoint reaching for gray-matter directly.
 import matter from 'gray-matter';
 import type { ImageValue, NamedField } from './types.js';
+import type { FieldDescriptor } from './fields.js';
 
 /**
  * True when a multiselect field is a closed checkbox group: it declares an options vocabulary and is
@@ -16,6 +17,65 @@ export function isClosedMultiselect(field: {
   creatable?: boolean;
 }): boolean {
   return field.type === 'multiselect' && !!field.options && !field.creatable;
+}
+
+// Decode one field addressed by `name`, for NESTED use (object leaves, array rows). Returns undefined
+// when empty so the caller omits the key; this nested contract differs from the top-level arms, which
+// preserve '' / [] for back-compat. Recurses one level for an object item.
+function decodeField(name: string, field: FieldDescriptor, form: FormData): unknown {
+  switch (field.type) {
+    case 'boolean':
+      return form.get(name) === 'on' ? true : undefined;
+    case 'multiselect': {
+      const list = isClosedMultiselect(field)
+        ? form.getAll(name).map(String)
+        : [...new Set(String(form.get(name) ?? '').split(',').map((t) => t.trim()).filter(Boolean))];
+      return list.length > 0 ? list : undefined;
+    }
+    case 'image': {
+      const src = String(form.get(`${name}.src`) ?? '').trim();
+      if (src === '') return undefined;
+      const value: ImageValue = { src, alt: String(form.get(`${name}.alt`) ?? '') };
+      const caption = String(form.get(`${name}.caption`) ?? '').trim();
+      if (caption !== '') value.caption = caption;
+      if (String(form.get(`${name}.decorative`) ?? '') === 'true') value.decorative = true;
+      return value;
+    }
+    case 'object': {
+      const obj: Record<string, unknown> = {};
+      for (const [leafKey, leaf] of Object.entries(field.fields)) {
+        const v = decodeField(`${name}.${leafKey}`, leaf, form);
+        if (v !== undefined) obj[leafKey] = v;
+      }
+      return Object.keys(obj).length > 0 ? obj : undefined;
+    }
+    default: {
+      // text, textarea, number-as-string, url, email, date, datetime: a trimmed non-empty string.
+      const s = String(form.get(name) ?? '').trim();
+      return s === '' ? undefined : s;
+    }
+  }
+}
+
+// Enumerate array rows by any present name.<i>.* key, decode each item, and drop a row that decodes to
+// empty (minimal-frontmatter). A row with any non-default content emits at least one key (a text leaf
+// submits even when empty; a checked boolean submits its key), so a present-but-meaningful row is always
+// seen; a fully all-default row carries no data and is correctly pruned. Output order follows ascending
+// index, which the editor's keyed rows keep in sync.
+function decodeRows(name: string, item: FieldDescriptor, form: FormData): unknown[] {
+  const indices = new Set<number>();
+  const prefix = `${name}.`;
+  for (const k of form.keys()) {
+    if (!k.startsWith(prefix)) continue;
+    const n = Number(k.slice(prefix.length).split('.')[0]);
+    if (Number.isInteger(n)) indices.add(n);
+  }
+  const rows: unknown[] = [];
+  for (const i of [...indices].sort((a, b) => a - b)) {
+    const v = decodeField(`${name}.${i}`, item, form);
+    if (v !== undefined) rows.push(v);
+  }
+  return rows;
 }
 
 /** Decode submitted form data into raw frontmatter, one rule per field type. */
@@ -72,10 +132,20 @@ export function frontmatterFromForm(
         break;
       }
       case 'array': {
-        // One submitted id per selected element. Drop empties and omit the key on an empty list,
-        // so a cleared array leaves no dead key in committed frontmatter.
-        const ids = form.getAll(field.name).map(String).map((id) => id.trim()).filter(Boolean);
-        if (ids.length > 0) data[field.name] = ids;
+        if (field.item.type === 'reference') {
+          // One submitted id per selected element. Drop empties and omit the key on an empty list,
+          // so a cleared array leaves no dead key in committed frontmatter.
+          const ids = form.getAll(field.name).map(String).map((id) => id.trim()).filter(Boolean);
+          if (ids.length > 0) data[field.name] = ids;
+          break;
+        }
+        const rows = decodeRows(field.name, field.item, form);
+        if (rows.length > 0) data[field.name] = rows;
+        break;
+      }
+      case 'object': {
+        const obj = decodeField(field.name, field, form);
+        if (obj !== undefined) data[field.name] = obj;
         break;
       }
       default:
@@ -175,6 +245,16 @@ export function referenceIdsFromValue(value: unknown): string[] {
   return list.filter((id) => id !== '');
 }
 
+/** The NamedField[] shape formValues iterates, derived from a container's keyed sub-field record. */
+function namedLeaves(record: Record<string, FieldDescriptor>): NamedField[] {
+  return Object.entries(record).map(([name, f]) => ({ ...f, name }));
+}
+
+/** The form value for one leaf array element, reusing the per-type rules so dates/images/etc. coerce identically. */
+function oneLeafFormValue(field: FieldDescriptor, value: unknown): unknown {
+  return formValues([{ ...field, name: '_' } as NamedField], { _: value })._;
+}
+
 /** Coerce parsed frontmatter to the form-ready values the editor inputs expect, one rule per field type. */
 export function formValues(
   fields: NamedField[],
@@ -188,16 +268,32 @@ export function formValues(
     // naive-local minute-precision string the datetime-local input wants.
     else if (field.type === 'datetime') out[field.name] = datetimeInputValue(value);
     else if (field.type === 'boolean') out[field.name] = value === true;
-    else if (field.type === 'multiselect') out[field.name] = Array.isArray(value) ? value.map(String) : [];
+    else if (field.type === 'multiselect') out[field.name] = Array.isArray(value) ? value.map(String) : (typeof value === 'string' && value.trim() !== '' ? [value.trim()] : []);
     // A hero is a nested object; the default String() arm would corrupt it to '[object Object]'.
     // Hand the stored object back as-is so the editor reads .src/.alt/.caption on open.
     else if (field.type === 'image') out[field.name] = value !== null && typeof value === 'object' ? value : undefined;
     // A reference canonicalizes through the shared coercer: a YAML-parsed Date becomes its UTC-sliced
     // id, never String(Date) timezone garbage.
     else if (field.type === 'reference') out[field.name] = referenceIdFromValue(value);
-    // An array(reference) canonicalizes likewise: a lone scalar becomes a single-element list rather
-    // than dropping to [], and each element is UTC-sliced.
-    else if (field.type === 'array') out[field.name] = referenceIdsFromValue(value);
+    // An object recurses one level into a nested form-ready record.
+    else if (field.type === 'object') {
+      const raw = value !== null && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+      out[field.name] = formValues(namedLeaves(field.fields), raw);
+    }
+    else if (field.type === 'array') {
+      // An array(reference) canonicalizes through the shared coercer: a lone scalar becomes a
+      // single-element list rather than dropping to [], and each element is UTC-sliced.
+      if (field.item.type === 'reference') out[field.name] = referenceIdsFromValue(value);
+      else {
+        const elements = Array.isArray(value) ? value : [];
+        const item = field.item;
+        out[field.name] = elements.map((el) =>
+          item.type === 'object'
+            ? formValues(namedLeaves(item.fields), el !== null && typeof el === 'object' ? (el as Record<string, unknown>) : {})
+            : oneLeafFormValue(item, el),
+        );
+      }
+    }
     // Every other type is a plain string input: a nullish value reads as empty, anything else
     // stringifies (a string passes through unchanged).
     else out[field.name] = value == null ? '' : String(value);

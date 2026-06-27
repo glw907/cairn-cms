@@ -48,10 +48,24 @@ date-token permalink stops resolving, a date-stripped slug stops stripping). Eve
 declare `routing: 'feed'`; the gate caught two misses. The same trap waits at each site cutover (the ROADMAP
 watch tracks it).
 
-**NEXT: phase 3c, the field-system unification onto `fields.*`** (`defineComponent`, the directive attributes
-onto `fields.*`, the data-vs-behavior split). Then the `Backend` seam, then render-as-component with opt-in
-islands. Spec: `docs/superpowers/specs/2026-06-25-cairn-contract-v2-design.md`. See
-[[cairn-site-contract-v2-opportunity]]. Draft the 3c plan just-in-time (no plan written yet).
+**NEXT: execute phase 3c, the field-system unification onto `fields.*`.** Plan WRITTEN + adversarially reviewed
+(2026-06-27): `docs/superpowers/plans/2026-06-27-cairn-contract-v2-field-unification.md` (target **0.73.0**,
+breaking-within-0.x; held window becomes 0.69.0-0.73.0). It folds the directive component attribute system onto
+`fields.*` (`defineComponent` supersedes the `ComponentDef` literal; `attributes` becomes a key→`FieldDescriptor`
+record, scalar leaves only; `AttributeField`/`FieldType` deleted), adds `fields.icon()` first-class (research:
+no git-based peer ships one; cairn already owns the picker), unifies the validator (`defineComponent` builds a
+real `fieldset()` so a component attribute and a concept field validate through identical code), and realizes the
+data-vs-behavior split via the expanded `BehaviorTable` (`{ validate?, itemLabel? }`). Execution shape mirrors 3b:
+Tasks 1-2 additive/gated; Tasks 3-9 ONE atomic compile unit gated once at Task 9; Task 10 the release. The
+four-lens adversarial review is folded as addendum A1-A14 (the module-cycle and `IconField` exhaustiveness bets
+held; the gate-failing gaps are all folded; the addendum SUPERSEDES affected task steps). **Geoff's calls
+(2026-06-27): `fields.icon()` first-class; the symmetric `itemLabel`-as-function half CUT (A14, the uncontrolled-
+row live-data gap) and re-scoped to ROADMAP, so 3c ships only the cheap server-side per-field `behavior.validate`
+symmetry; icons are the exception not every component carries, and an icon field's required-ness varies per
+declaration.** Then the `Backend` seam, then render-as-component with opt-in islands. Spec:
+`docs/superpowers/specs/2026-06-25-cairn-contract-v2-design.md`. See [[cairn-site-contract-v2-opportunity]].
+NOTE: 3b is implemented on its feature branch but NOT yet merged to `main` (main's tip is the 3b plan commit), so
+3c branches off the 3b tip (`contract-v2-3c-field-unification`); merge 3b → `main` at Geoff's discretion.
 
 **Carry-forwards (filed in ROADMAP):** the engine-provided `inFeeds`/`routable` feed and sitemap views (decision
 7, render/delivery phase, since 3b leaves `inFeeds` a consumer-read hint); the per-site URL-policy transcription

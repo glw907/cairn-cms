@@ -731,6 +731,7 @@ function signatures above reference these.
 | `InboundLink` | `interface InboundLink` | One inbound linker: enough to name it and link to its edit page. |
 | `ReferenceEdge` | `interface ReferenceEdge` | One typed frontmatter reference edge: the field, the target concept, and the target id. |
 | `InboundReference` | `interface InboundReference` | One inbound referencer: its identity plus the distinct fields through which it references the target. |
+| `ResolvedReference` | `interface ResolvedReference` | A reference edge resolved to its target's identity (id, concept, title, permalink, optional summary), for a route to render a linked target. |
 | `ComponentDef` | `interface ComponentDef` | A site component: how it inserts (editor) and how it renders (rehype). The optional `icon` and `group` place its picker row, `hidden` keeps it off the top-level picker, and `preview` is a sample that seeds the guided form and opts the configure step into the two-pane live preview. |
 | `ComponentRegistry` | `interface ComponentRegistry` | The single source the render pipeline and the editor palette both read. |
 | `ComponentValues` | `interface ComponentValues` | Guided-form values for one component: attribute and slot values. |

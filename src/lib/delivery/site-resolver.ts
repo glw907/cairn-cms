@@ -6,6 +6,7 @@
 import type { ConceptDescriptor } from '../content/types.js';
 import type { ContentEntry, ContentIndex, ContentSummary } from './content-index.js';
 import type { LinkResolve } from '../content/links.js';
+import { extractReferenceEdges, type ReferenceEdge } from '../content/references.js';
 
 /** One concept's descriptor paired with its built index. */
 export interface ConceptIndex {
@@ -91,6 +92,69 @@ export function createSiteResolver(concepts: ConceptIndex[], opts: { validate?: 
       return concepts.flatMap(({ index }) => index.all());
     },
   };
+}
+
+/**
+ * A reference edge resolved to its target's identity, for a public route to render a linked target.
+ *  It reuses the target entry's own summary fields rather than re-deriving them, so a linked author
+ *  card reads the same title and permalink the target's own page does. `summary` is the target's
+ *  excerpt when present.
+ */
+export interface ResolvedReference {
+  id: string;
+  concept: string;
+  title: string;
+  permalink: string;
+  summary?: string;
+}
+
+/** Project a resolved target entry into the identity a public route renders for a reference. */
+function projectReference(edge: ReferenceEdge, target: ContentSummary): ResolvedReference {
+  const resolved: ResolvedReference = {
+    id: edge.id,
+    concept: edge.concept,
+    title: target.title,
+    permalink: target.permalink,
+  };
+  if (target.excerpt) resolved.summary = target.excerpt;
+  return resolved;
+}
+
+/**
+ * Resolve a concept's `reference` and `array(reference)` frontmatter edges to their target identities,
+ * keyed by the field name, so a public route renders a reference as a link to its target's page. The
+ * resolution lives here because only the cross-concept resolver reaches a different concept's entries:
+ * a posts entry's `author` edge targets a pages entry, which the posts index alone cannot read. A
+ * single `reference` field resolves to one `ResolvedReference`, an `array(reference)` to a
+ * `ResolvedReference[]` in edge order. An id with no live target is dropped rather than thrown: the
+ * build's `verifyReferences` gate already fails a true dangling edge, so an unresolved id at request
+ * time is a mid-flight or draft target, not a hard error. Resolve per call, since the target entries
+ * exist only after every per-concept index is unioned into the resolver.
+ */
+export function resolveReferences(
+  site: SiteResolver,
+  descriptor: ConceptDescriptor,
+  frontmatter: Record<string, unknown>,
+): Record<string, ResolvedReference | ResolvedReference[]> {
+  const edges = extractReferenceEdges(frontmatter, descriptor.fields);
+  const resolved: Record<string, ResolvedReference | ResolvedReference[]> = {};
+  for (const field of descriptor.fields) {
+    const isSingle = field.type === 'reference';
+    const isArray = field.type === 'array' && field.item.type === 'reference';
+    if (!isSingle && !isArray) continue;
+    const fieldEdges = edges.filter((edge) => edge.field === field.name);
+    const hits: ResolvedReference[] = [];
+    for (const edge of fieldEdges) {
+      const target = site.concept(edge.concept)?.byId(edge.id);
+      if (target) hits.push(projectReference(edge, target));
+    }
+    if (isSingle) {
+      if (hits.length > 0) resolved[field.name] = hits[0];
+    } else {
+      resolved[field.name] = hits;
+    }
+  }
+  return resolved;
 }
 
 /**

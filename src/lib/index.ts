@@ -86,6 +86,10 @@ export {
 } from './content/manifest.js';
 export type { Manifest, ManifestEntry, ManifestDiff, ManifestEntryDiff, LinkTarget, InboundLink, InboundReference } from './content/manifest.js';
 export type { ReferenceEdge } from './content/references.js';
+// The read-model resolution of a reference edge to its target's identity lives at the cross-concept
+// site-resolver layer (a per-concept index cannot reach a different concept's entries). The resolver
+// function ships from the /delivery subpath; this is the type a route reads off the resolved map.
+export type { ResolvedReference } from './delivery/site-resolver.js';
 // Render engine (Plan 04): generic directive pipeline; sites own the component registry.
 export { defineRegistry, emptyValues } from './render/registry.js';
 export type {

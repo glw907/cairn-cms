@@ -83,6 +83,17 @@ export interface ImageField extends FieldBase {
   /** Whether this field feeds the social-card image. */
   seo?: boolean;
 }
+/** A group of leaf fields, stored as a nested object. Holds only leaves (no nested container). */
+export interface ObjectField extends Omit<FieldBase, 'label'> {
+  type: 'object';
+  /**
+   * Optional group label. An object inside an array is labeled by the array (and summarized per row by
+   *  itemLabel), so it may omit this; a top-level object supplies it for the group legend.
+   */
+  label?: string;
+  /** The leaf fields this group holds, keyed by frontmatter sub-key. */
+  fields: Record<string, FieldDescriptor>;
+}
 /** A single edge to one entry of a named concept, stored as that target's permanent id. */
 export interface ReferenceField extends FieldBase {
   type: 'reference';
@@ -92,7 +103,7 @@ export interface ReferenceField extends FieldBase {
 /** A repeatable field whose stored value is a list of its item's values. */
 export interface ArrayField extends FieldBase {
   type: 'array';
-  /** The descriptor each list element conforms to. This phase accepts only a reference item. */
+  /** The descriptor each list element conforms to: a leaf, or a flat object of leaves. */
   item: FieldDescriptor;
   /** A label for one row, shown beside the add and remove controls. */
   itemLabel?: string;
@@ -110,6 +121,7 @@ export type FieldDescriptor =
   | DatetimeField
   | BooleanField
   | ImageField
+  | ObjectField
   | ReferenceField
   | ArrayField;
 
@@ -142,11 +154,15 @@ export const fields = {
   boolean: <const O extends Omit<BooleanField, 'type'>>(o: O): BooleanField & O => ({ type: 'boolean', ...o }),
   /** An image field whose value is the nested ImageValue object. */
   image: <const O extends Omit<ImageField, 'type'>>(o: O): ImageField & O => ({ type: 'image', ...o }),
+  /** A group of leaf fields, preserving each leaf's type for inference. Label is optional (the array labels a row group). */
+  object: <const F extends Record<string, FieldDescriptor>, const O extends Omit<ObjectField, 'type' | 'fields'>>(
+    o: { fields: F } & O,
+  ): ObjectField & { fields: F } & O => ({ type: 'object', ...o }),
   /** A single reference field storing one target entry's permanent id. */
   reference: <const O extends Omit<ReferenceField, 'type'>>(o: O): ReferenceField & O => ({ type: 'reference', ...o }),
   /**
-   * A repeatable field over one item descriptor, preserving the item type for inference. This phase
-   *  accepts only a reference item; `fieldset` rejects any other at declaration.
+   * A repeatable field over one item descriptor, preserving the item type for inference. The item is
+   *  a leaf, or a flat object of leaves; `fieldset` rejects deeper nesting at declaration.
    */
   array: <const I extends FieldDescriptor, const O extends Omit<ArrayField, 'type' | 'item'>>(
     item: I,

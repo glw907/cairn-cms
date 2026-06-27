@@ -16,7 +16,8 @@ describe('fieldset.validate', () => {
   });
   it('flags a missing required field by key', () => {
     const r = fs.validate({ title: '' }, '');
-    expect(r).toEqual({ ok: false, errors: { title: 'Title is required' } });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors).toEqual({ title: 'Title is required' });
   });
   it('enforces number bounds, select membership, and url format', () => {
     expect(fs.validate({ title: 'Hi', count: '9' }, '').ok).toBe(false);
@@ -169,11 +170,12 @@ describe('fieldset reference and array(reference)', () => {
       ok: true,
       data: { author: 'jane-doe', related: ['a-post', 'b-post'] },
     });
-    expect(fs.validate({ author: '', related: [] }, '')).toEqual({ ok: false, errors: { author: 'Author is required' } });
-    expect(fs.validate({ author: 'Not An Id' }, '')).toEqual({
-      ok: false,
-      errors: { author: 'Author is not a valid reference' },
-    });
+    const missing = fs.validate({ author: '', related: [] }, '');
+    expect(missing.ok).toBe(false);
+    if (!missing.ok) expect(missing.errors).toEqual({ author: 'Author is required' });
+    const invalid = fs.validate({ author: 'Not An Id' }, '');
+    expect(invalid.ok).toBe(false);
+    if (!invalid.ok) expect(invalid.errors).toEqual({ author: 'Author is not a valid reference' });
   });
 
   it('coerces a lone scalar in an array slot to a single-element list', () => {
@@ -189,9 +191,40 @@ describe('fieldset reference and array(reference)', () => {
       data: { author: 'jane-doe', related: ['2026-01-02'] },
     });
   });
+});
 
-  it('rejects an array of a non-reference item this phase', () => {
-    expect(() => fieldset({ tags: fields.array(fields.text({ label: 'Tag' })) })).toThrow(/only reference items/);
+describe('fieldset.validate nested containers', () => {
+  it('reports a nested required error with a multi-segment path', () => {
+    const fs = fieldset({
+      faq: fields.array(fields.object({ fields: { q: fields.text({ label: 'Question', required: true }), a: fields.textarea({ label: 'Answer' }) } }), { label: 'FAQ' }),
+    });
+    const r = fs.validate({ faq: [{ q: '', a: 'an answer' }] }, '');
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.issues).toEqual([{ path: ['faq', 0, 'q'], message: 'Question is required' }]);
+      expect(r.errors.faq).toBe('Question is required'); // back-compat: top-level key carries the first message
+    }
+  });
+
+  it('validates and stores a clean array of objects', () => {
+    const fs = fieldset({ faq: fields.array(fields.object({ fields: { q: fields.text({ label: 'Q', required: true }), a: fields.textarea({ label: 'A' }) } })) });
+    const r = fs.validate({ faq: [{ q: 'one', a: 'two' }, { q: 'three' }] }, '');
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.data.faq).toEqual([{ q: 'one', a: 'two' }, { q: 'three' }]);
+  });
+
+  it('reports an object leaf error with a two-segment path', () => {
+    const fs = fieldset({ meta: fields.object({ fields: { count: fields.number({ label: 'Count', integer: true }) } }) });
+    const r = fs.validate({ meta: { count: '1.5' } }, '');
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.issues).toEqual([{ path: ['meta', 'count'], message: 'Count must be a whole number' }]);
+  });
+
+  it('reports an array-of-leaf element error with an index path', () => {
+    const fs = fieldset({ links: fields.array(fields.url({ label: 'Link' })) });
+    const r = fs.validate({ links: ['https://ok.example', 'not-a-url'] }, '');
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.issues).toEqual([{ path: ['links', 1], message: 'Link is not a valid URL' }]);
   });
 });
 

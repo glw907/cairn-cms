@@ -12,6 +12,7 @@ export type {
   NamedField,
   ImageValue,
   ValidationResult,
+  ValidationIssue,
   BackendConfig,
   SenderConfig,
   NavMenuConfig,
@@ -52,6 +53,7 @@ export type {
   DatetimeField,
   BooleanField,
   ImageField,
+  ObjectField,
   ReferenceField,
   ArrayField,
 } from './content/fields.js';

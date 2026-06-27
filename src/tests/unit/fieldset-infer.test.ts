@@ -41,4 +41,30 @@ describe('Infer', () => {
       related?: string[];
     }>();
   });
+
+  it('infers a flat object as a record of its leaf value types', () => {
+    const fs = fieldset({
+      address: fields.object({ fields: { street: fields.text({ label: 'Street', required: true }), zip: fields.text({ label: 'Zip' }) } }),
+    });
+    expectTypeOf<InferFieldset<typeof fs>>().toEqualTypeOf<{ address?: { street: string; zip?: string } }>();
+  });
+
+  it('infers an array of flat objects', () => {
+    const fs = fieldset({
+      faq: fields.array(fields.object({ fields: { q: fields.text({ label: 'Q', required: true }), a: fields.textarea({ label: 'A' }) } }), { label: 'FAQ' }),
+    });
+    expectTypeOf<InferFieldset<typeof fs>>().toEqualTypeOf<{ faq?: { q: string; a?: string }[] }>();
+  });
+
+  it('infers an array of a non-reference leaf', () => {
+    const fs = fieldset({ aliases: fields.array(fields.text({ label: 'Alias' }), { label: 'Aliases' }) });
+    expectTypeOf<InferFieldset<typeof fs>>().toEqualTypeOf<{ aliases?: string[] }>();
+  });
+
+  it('preserves a nested literal option union and a top-level object label', () => {
+    const fs = fieldset({
+      meta: fields.object({ label: 'Meta', fields: { kind: fields.select({ label: 'Kind', options: ['a', 'b'] }) } }),
+    });
+    expectTypeOf<InferFieldset<typeof fs>>().toEqualTypeOf<{ meta?: { kind?: 'a' | 'b' } }>();
+  });
 });

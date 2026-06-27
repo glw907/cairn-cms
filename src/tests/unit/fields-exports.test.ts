@@ -40,7 +40,7 @@ describe('v2 field vocabulary package exports', () => {
     });
     expectTypeOf(set).toMatchTypeOf<Fieldset>();
     expectTypeOf<InferFieldset<typeof set>>().toEqualTypeOf<{ title: string }>();
-    expectTypeOf<FieldDescriptor>().toMatchTypeOf<{ label: string }>();
+    expectTypeOf<FieldDescriptor>().toMatchTypeOf<{ label?: string }>();
     expectTypeOf<FieldsetOptions>().toMatchTypeOf<{ refine?: unknown }>();
     expectTypeOf<BehaviorTable>().toEqualTypeOf<Record<string, never>>();
   });

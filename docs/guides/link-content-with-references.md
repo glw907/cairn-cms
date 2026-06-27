@@ -43,8 +43,8 @@ export const cairn = defineAdapter({
 ```
 
 The `concept` value must be a key under `content`. The build fails at the adapter declaration when it names a
-concept your site doesn't enable, so a typo surfaces at build, not at a save. This phase accepts only a
-reference item inside `fields.array`; an array of any other item type throws at the `fieldset()` call. For the
+concept your site doesn't enable, so a typo surfaces at build, not at a save. An `array` also holds a leaf or
+a flat `object` of leaves for non-reference data; see [Structured fields](./structured-fields.md). For the
 full signatures, see [`fields.reference` and `fields.array`](../reference/core.md#field-types).
 
 ## Pick a target in the editor

@@ -60,6 +60,10 @@ popover's runUpload but resolves to this field, not an editor placeholder.
     /** Whether the initial hero is an explicit decorative choice (an empty alt that is not debt).
      *  Defaults false; a fresh field with an empty alt reads as needs-alt. */
     decorative?: boolean;
+    /** Whether this image leads the page and becomes the social card (a top-level SEO hero). When
+     *  false (a gallery or nested image item), the empty state drops the hero-only social-card line
+     *  and the copy reads neutrally. Defaults false. */
+    lead?: boolean;
     /** The merged committed-plus-uploaded media library, keyed by content hash. */
     mediaLibrary: Record<string, MediaLibraryEntry>;
     /** The concept the entry belongs to (the upload action's route param). */
@@ -83,6 +87,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
     field,
     value,
     decorative: decorativeInitial = false,
+    lead = false,
     mediaLibrary,
     conceptId,
     id,
@@ -442,13 +447,15 @@ popover's runUpload but resolves to this field, not an editor placeholder.
         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21" /></svg>
       </span>
       <span class="flex min-w-0 flex-col gap-px">
-        <span class="text-[0.8125rem] font-medium">Add a hero image</span>
+        <span class="text-[0.8125rem] font-medium">Add {field.label.toLowerCase()}</span>
         <span class="text-[0.6875rem] text-[var(--color-muted)]">Drop an image here, or pick from the library</span>
       </span>
     </button>
-    <p class="text-[0.6875rem] leading-snug text-[var(--color-muted)]">
-      This image leads the page, and it is the picture shown when the post is shared.
-    </p>
+    {#if lead}
+      <p class="text-[0.6875rem] leading-snug text-[var(--color-muted)]">
+        This image leads the page, and it is the picture shown when the post is shared.
+      </p>
+    {/if}
   {/if}
 
   <!-- The committed value rides four named hidden inputs the save path's decode arm reads. They sit
@@ -468,7 +475,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
   <div class="modal-box max-w-md">
     <div class="mb-3 flex items-center justify-between gap-2">
       <h2 id={titleId} class="text-[0.9375rem] font-semibold">
-        {view === 'chooser' ? 'Add a hero image' : 'Hero image'}
+        {view === 'chooser' ? `Add ${field.label.toLowerCase()}` : field.label}
       </h2>
       <button type="button" class="btn btn-ghost btn-xs btn-square" aria-label="Close" onclick={closeDialog}>
         <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg>

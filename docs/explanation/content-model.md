@@ -47,20 +47,18 @@ for anyone browsing the directory; what your site reads and renders is the front
 Each concept sets its own **datePrefix**, declaring whether its dates run to the year, the month, or
 the day. That granularity decides how much of the leading date the slug strips.
 
-The URL itself is not built from the id alone. The URL policy lives in your YAML site config (so you
-control the permalink shape without touching code), and a site-level catch-all `byPermalink` route
-serves the resolved URL. A single URL therefore draws on the frontmatter date, the per-concept
-`datePrefix`, and the YAML url policy the catch-all route reads, three places for one address. That
-spread is real complexity, and it is why this section earns a diagram in the reference rather than a
-one-liner. The id helpers and `permalink` are documented in
-[`core.md`](../reference/core.md#id-helpers).
+The URL itself is not built from the id alone. Each concept declares its own URL policy, its
+`permalink` pattern and `datePrefix`, through `defineConcept`, and a site-level catch-all
+`byPermalink` route serves the resolved URL. A single URL draws on the frontmatter date and the
+concept's declared policy, both of which live on the concept, the one home for the address. The id
+helpers and `permalink` are documented in [`core.md`](../reference/core.md#id-helpers).
 
-cairn validates the URL policy at build, so a wrong shape fails the build instead of emitting a
-defaulted URL. A permalink pattern must be root-relative (it starts with `/`) and may use only the
-tokens `:slug`, `:year`, `:month`, and `:day`. A date token is valid only on a dated concept, and a
-`datePrefix` must be `year`, `month`, or `day`. Key a URL policy to a concept your site does not
-declare under `content` and that fails the build too. A malformed policy throws a named error at
-build, never a wrong or silently defaulted URL.
+cairn validates the URL policy at the concept declaration, so a wrong shape throws at module load
+instead of emitting a defaulted URL. A permalink pattern must be root-relative (it starts with `/`)
+and may use only the tokens `:slug`, `:year`, `:month`, and `:day`. A date token is valid only on a
+dated concept, and a `datePrefix` must be `year`, `month`, or `day`. `defineConcept` runs that check
+for every concept, so a malformed policy throws a named error before any content loads, never a wrong
+or silently defaulted URL.
 
 ## Schema as the source of truth
 

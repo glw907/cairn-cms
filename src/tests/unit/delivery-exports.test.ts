@@ -21,8 +21,7 @@ describe('delivery exports', () => {
     }
   });
 
-  it('keeps the URL-policy helpers on the root entry', () => {
-    expect(typeof (root as Record<string, unknown>).urlPolicyFrom).toBe('function');
+  it('keeps parseSiteConfig on the root entry', () => {
     expect(typeof (root as Record<string, unknown>).parseSiteConfig).toBe('function');
   });
 

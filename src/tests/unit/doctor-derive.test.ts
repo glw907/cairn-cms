@@ -179,7 +179,7 @@ describe('readAdapterFacts', () => {
 			'vite.config.ts': PLUGIN_CONFIG,
 			'src/lib/cairn.config.ts': `export const cairn = {
 	backend: { owner: 'acme', repo: 'site', branch: 'main' },
-	sender: { from: 'cms@acme.test' },
+	email: { from: 'cms@acme.test' },
 };
 export const siteConfig = {};
 `,
@@ -196,8 +196,8 @@ export const siteConfig = {};
 			'vite.config.ts': PLUGIN_CONFIG,
 			'src/lib/cairn.config.ts': `export const cairn = {
 	backend: { owner: 'acme', repo: 'site', branch: 'main' },
-	sender: { from: 'cms@acme.test' },
-	assets: { bucketBinding: 'MEDIA_BUCKET' },
+	email: { from: 'cms@acme.test' },
+	media: { bucketBinding: 'MEDIA_BUCKET' },
 };
 export const siteConfig = {};
 `,

@@ -9,7 +9,7 @@
 import { describe, it, expect, afterAll } from 'vitest';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { verifyManifestFromVite, buildManifestFromVite } from '../../lib/vite/index.js';
+import { verifyManifestFromVite, buildManifestFromVite, readAdapterFacts } from '../../lib/vite/index.js';
 
 // The temp project's nested Vite must resolve `@glw907/cairn-cms` (and its subpaths), which the
 // generated virtual module imports. That package lives only in the repo's own node_modules (a
@@ -33,19 +33,20 @@ export default {
 
 const ADAPTER = `import { defineAdapter, fieldset, fields, parseSiteConfig } from '@glw907/cairn-cms';
 export const cairn = defineAdapter({
-  siteName: 'Test',
-  render: (md) => md,
+  rendering: { render: (md) => md },
+  email: { from: 'cms@test.example' },
+  media: { bucketBinding: 'MEDIA_BUCKET' },
   content: {
     posts: {
       dir: 'src/content/posts',
-      schema: fieldset({
+      fields: fieldset({
         title: fields.text({ label: 'Title', required: true }),
         author: fields.reference({ concept: 'pages', label: 'Author' }),
       }),
     },
     pages: {
       dir: 'src/content/pages',
-      schema: fieldset({ title: fields.text({ label: 'Title', required: true }) }),
+      fields: fieldset({ title: fields.text({ label: 'Title', required: true }) }),
     },
   },
 });
@@ -108,5 +109,19 @@ describe('verifyReferences wired into the manifest build', () => {
     });
     await seedManifest(dir);
     await expect(verifyManifestFromVite(OPTS, dir)).resolves.toBeUndefined();
+  }, 30000);
+});
+
+// The type checker cannot parse the string-templated adapter-facts virtual module, so this end-to-end
+// read against a v2-shaped adapter (email/media groups) is the net that the moved reads still resolve.
+describe('readAdapterFacts reads the v2 adapter groups', () => {
+  it('derives from off cairn.email and mediaBucketBinding off cairn.media', async () => {
+    const dir = tempProject({
+      'vite.config.ts': PLUGIN_CONFIG,
+      'src/lib/cairn.config.ts': ADAPTER,
+    });
+    const facts = await readAdapterFacts(dir);
+    expect(facts?.from).toBe('cms@test.example');
+    expect(facts?.mediaBucketBinding).toBe('MEDIA_BUCKET');
   }, 30000);
 });

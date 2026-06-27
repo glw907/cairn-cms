@@ -1,6 +1,6 @@
 // The showcase's adapter: the single seam the engine consumes. It declares one post-like concept,
 // a render that runs the engine pipeline, and a backend the dev GitHub double answers for.
-import { createRenderer, defineRegistry, fieldset, fields, defineAdapter, glyph, parseSiteConfig } from '@glw907/cairn-cms';
+import { createRenderer, defineRegistry, fieldset, fields, defineAdapter, defineConcept, glyph, parseSiteConfig } from '@glw907/cairn-cms';
 import { cardShell, headRow, iconSpan, strAttr } from '@glw907/cairn-cms/render';
 import { normalizeAssets, makeMediaResolver, readCommittedManifest } from '@glw907/cairn-cms/media';
 import type { ComponentDef, IconSet } from '@glw907/cairn-cms';
@@ -110,13 +110,13 @@ export const publicMediaResolver = makeMediaResolver(mediaManifest, resolvedAsse
 export const mediaEnabled = resolvedAssets.enabled;
 
 export const cairn = defineAdapter({
-  siteName: 'Cairn Showcase',
   content: {
-    posts: {
+    posts: defineConcept({
       dir: 'src/content/posts',
       label: 'Posts',
       summaryFields: ['description'],
-      schema: fieldset({
+      routing: 'feed',
+      fields: fieldset({
         title: fields.text({ label: 'Title', required: true }),
         date: fields.date({ label: 'Date' }),
         // The post files carry a description the SEO head reads; declare it so it survives the
@@ -150,30 +150,35 @@ export const cairn = defineAdapter({
         // image field whose structured value round-trips through save and reload.
         gallery: fields.array(fields.image({ label: 'Image' }), { label: 'Gallery' }),
       }),
-    },
-    pages: {
+    }),
+    pages: defineConcept({
       dir: 'src/content/pages',
       label: 'Pages',
-      schema: fieldset({
+      routing: 'page',
+      fields: fieldset({
         title: fields.text({ label: 'Title', required: true }),
         robots: fields.text({ label: 'Robots' }),
       }),
-    },
+    }),
   },
   backend: { owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' },
-  sender: { from: 'cms@showcase.test' },
+  email: { from: 'cms@showcase.test' },
   // The media R2 binding. The fake R2 double rides platform.env in dev; a real site binds it in
   // wrangler.jsonc and mounts the /media delivery route.
-  assets: { bucketBinding: 'MEDIA_BUCKET' },
-  // Render through the engine so registered components (the callout) produce their markup. The
-  // default media resolver backs the public build; the preview path injects its own resolveMedia.
-  render: (md, opts) => renderMarkdown(md, { ...opts, resolveMedia: opts?.resolveMedia ?? publicMediaResolver }),
-  navMenu: { configPath: 'src/lib/site.config.yaml', menuName: 'primary', label: 'Navigation', maxDepth: 2 },
-  // The preview knob: the (site) layout renders entries inside <main class="site-main">, so the
-  // frame links site.css and reproduces that container for a design-accurate proof.
-  preview: { stylesheets: [themeCss, siteCss], containerClass: 'site-main' },
-  registry,
-  icons,
+  media: { bucketBinding: 'MEDIA_BUCKET' },
+  rendering: {
+    // Render through the engine so registered components (the callout) produce their markup. The
+    // default media resolver backs the public build; the preview path injects its own resolveMedia.
+    render: (md, opts) => renderMarkdown(md, { ...opts, resolveMedia: opts?.resolveMedia ?? publicMediaResolver }),
+    components: registry,
+    icons,
+  },
+  editor: {
+    nav: { configPath: 'src/lib/site.config.yaml', menuName: 'primary', label: 'Navigation', maxDepth: 2 },
+    // The preview knob: the (site) layout renders entries inside <main class="site-main">, so the
+    // frame links site.css and reproduces that container for a design-accurate proof.
+    preview: { stylesheets: [themeCss, siteCss], containerClass: 'site-main' },
+  },
 });
 
 export const siteConfig = parseSiteConfig(siteYaml);

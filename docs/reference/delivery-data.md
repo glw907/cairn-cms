@@ -168,12 +168,12 @@ export const GET: RequestHandler = async () => {
       url: ORIGIN + p.permalink,
       date: p.date,
       summary: p.excerpt,
-      contentHtml: await cairn.render(posts!.byId(p.id)!.body, { resolve }),
+      contentHtml: await cairn.rendering.render(posts!.byId(p.id)!.body, { resolve }),
       tags: p.tags,
     })),
   );
   return rssResponse(
-    { title: cairn.siteName, description: SITE_DESCRIPTION, siteUrl: ORIGIN, feedUrl: ORIGIN + '/feed.xml' },
+    { title: siteConfig.siteName, description: SITE_DESCRIPTION, siteUrl: ORIGIN, feedUrl: ORIGIN + '/feed.xml' },
     items,
   );
 };
@@ -247,7 +247,7 @@ const seo = buildSeoMeta({
   title: entry.title,
   description: entry.excerpt,
   canonicalUrl: ORIGIN + entry.permalink,
-  siteName: cairn.siteName,
+  siteName: siteConfig.siteName,
   type: 'article',
   published: entry.date,
 });

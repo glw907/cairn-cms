@@ -8,20 +8,16 @@ import { fieldset } from '../../lib/content/fieldset.js';
 import type { SiteConfig } from '../../lib/nav/site-config.js';
 
 const adapter = defineAdapter({
-  siteName: 'T',
   content: {
-    posts: { dir: 'src/content/posts', label: 'Posts', schema: fieldset({ title: fields.text({ label: 'Title' }), date: fields.date({ label: 'Date' }) }) },
-    pages: { dir: 'src/content/pages', label: 'Pages', schema: fieldset({ title: fields.text({ label: 'Title' }) }) },
+    posts: { dir: 'src/content/posts', label: 'Posts', routing: 'feed', permalink: '/:year/:month/:slug', datePrefix: 'day', fields: fieldset({ title: fields.text({ label: 'Title' }), date: fields.date({ label: 'Date' }) }) },
+    pages: { dir: 'src/content/pages', label: 'Pages', permalink: '/:slug', fields: fieldset({ title: fields.text({ label: 'Title' }) }) },
   },
   backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
-  sender: { from: 'a@b.c' },
-  render: (md) => md,
+  email: { from: 'a@b.c' },
+  rendering: { render: (md) => md },
 });
 
-const config: SiteConfig = {
-  siteName: 'T',
-  content: { posts: { permalink: '/:year/:month/:slug', datePrefix: 'day' }, pages: { permalink: '/:slug' } },
-};
+const config: SiteConfig = { siteName: 'T' };
 
 const globs = {
   posts: { '/src/content/posts/2026-01-04-guide.md': '---\ntitle: Guide\ndate: 2026-01-04\n---\n\n[about](cairn:pages/about)\n' },
@@ -30,14 +26,13 @@ const globs = {
 
 // A posts concept whose validate requires a non-empty title, so an empty-title file fails.
 const requiredTitleAdapter = defineAdapter({
-  siteName: 'T',
   content: {
-    posts: { dir: 'src/content/posts', label: 'Posts', schema: fieldset({ title: fields.text({ label: 'Title', required: true }), date: fields.date({ label: 'Date' }) }) },
-    pages: { dir: 'src/content/pages', label: 'Pages', schema: fieldset({ title: fields.text({ label: 'Title' }) }) },
+    posts: { dir: 'src/content/posts', label: 'Posts', routing: 'feed', permalink: '/:year/:month/:slug', datePrefix: 'day', fields: fieldset({ title: fields.text({ label: 'Title', required: true }), date: fields.date({ label: 'Date' }) }) },
+    pages: { dir: 'src/content/pages', label: 'Pages', permalink: '/:slug', fields: fieldset({ title: fields.text({ label: 'Title' }) }) },
   },
   backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
-  sender: { from: 'a@b.c' },
-  render: (md) => md,
+  email: { from: 'a@b.c' },
+  rendering: { render: (md) => md },
 });
 
 describe('buildSiteManifest', () => {

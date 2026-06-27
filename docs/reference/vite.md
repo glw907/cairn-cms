@@ -134,4 +134,4 @@ interface AdapterFacts {
 ```
 
 What `readAdapterFacts` returns: `cairn.backend.owner`, `cairn.backend.repo`, and
-`cairn.sender.from`, each present only when the adapter declares it as a string.
+`cairn.email.from`, each present only when the adapter declares it as a string.

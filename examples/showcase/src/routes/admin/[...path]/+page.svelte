@@ -20,4 +20,4 @@ preview pane, insert palette, and guided form fields.
   let { data, form }: Props = $props();
 </script>
 
-<CairnAdmin {data} {form} render={cairn.render} registry={cairn.registry} icons={cairn.icons} />
+<CairnAdmin {data} {form} render={cairn.rendering.render} registry={cairn.rendering.components} icons={cairn.rendering.icons} />

@@ -19,7 +19,7 @@ export async function POST({ request }) {
     // One-row manifest from the posted record, overlaid onto the (empty) committed manifest.
     const manifest = { [record.hash]: record };
     const resolveMedia = makeMediaResolver(manifest, normalizeAssets({ bucketBinding: 'MEDIA_BUCKET' }));
-    const html = await cairn.render(body, { resolveMedia });
+    const html = await cairn.rendering.render(body, { resolveMedia });
     return json({ html });
   }
   error(404, 'Not found');

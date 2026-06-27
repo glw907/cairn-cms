@@ -26,7 +26,7 @@ export const cairn = defineAdapter({
     posts: {
       dir: 'src/content/posts',
       label: 'Posts',
-      schema: fieldset({
+      fields: fieldset({
         title: fields.text({ label: 'Title', required: true }),
         author: fields.reference({ concept: 'pages', label: 'Author' }),
         related: fields.array(fields.reference({ concept: 'posts' }), { label: 'Related posts' }),
@@ -35,9 +35,9 @@ export const cairn = defineAdapter({
     pages: {
       dir: 'src/content/pages',
       label: 'Pages',
-      schema: fieldset({ title: fields.text({ label: 'Title', required: true }) }),
+      fields: fieldset({ title: fields.text({ label: 'Title', required: true }) }),
     },
-    // ...backend, sender, render...
+    // ...backend, email, rendering...
   },
 });
 ```

@@ -8,10 +8,18 @@ import { resolveConcepts } from './concepts.js';
 import { normalizeAssets } from '../media/config.js';
 import { dictionaryFileForDialect, type SiteConfig } from '../nav/site-config.js';
 
+// The internal artifact paths the adapter does not carry. They share the `.cairn/` content root the
+// manifests use, so `composeRuntime` defaults them by convention rather than reading them off config.
+// The personal dictionary sits beside the manifests, so the spec's `content/.cairn/dictionary.txt`
+// resolves the same configurable way the manifest paths do.
+const CONTENT_MANIFEST_PATH = 'src/content/.cairn/index.json';
+const MEDIA_MANIFEST_PATH = 'src/content/.cairn/media.json';
+const DICTIONARY_PATH = 'src/content/.cairn/dictionary.txt';
+
 /**
- * The input to {@link composeRuntime}. `siteConfig` is required so the per-concept URL policy is
- *  always derived from one source and can never be silently dropped. `extensions` fold in after the
- *  adapter's concepts.
+ * The input to {@link composeRuntime}. `siteConfig` is required: it is the canonical home for the
+ *  site name, the spellcheck dialect, and the tidy block, so they can never be silently dropped.
+ *  `extensions` fold in after the adapter's concepts.
  */
 export interface ComposeInput {
   adapter: CairnAdapter;
@@ -20,13 +28,14 @@ export interface ComposeInput {
 }
 
 /**
- * Fold an adapter and any extensions into the composed runtime (seam 2). The per-concept URL policy
- * is derived from the site config, the same source the delivery path uses, so the runtime and
- * delivery permalinks cannot diverge. Extension concepts merge after the adapter's. The asset slot
+ * Fold an adapter and any extensions into the composed runtime (seam 2). This is the one place the
+ * grouped adapter maps onto the flat runtime, and the one place the internal manifest and dictionary
+ * paths default by convention. Each concept declares its own routing and URL policy, so the runtime
+ * and delivery permalinks cannot diverge. Extension concepts merge after the adapter's. The media slot
  * (seam 4) passes through untouched.
  */
 export function composeRuntime({ adapter, siteConfig, extensions = [] }: ComposeInput): CairnRuntime {
-  if (!siteConfig) throw new Error('composeRuntime needs a site config to derive the URL policy');
+  if (!siteConfig) throw new Error('composeRuntime needs a site config for the site name and editor settings');
   const content: Record<string, ConceptConfig | undefined> = { ...adapter.content };
   const adminPanels: AdminPanel[] = [];
   const fieldTypes: FieldTypeDef[] = [];
@@ -38,23 +47,21 @@ export function composeRuntime({ adapter, siteConfig, extensions = [] }: Compose
     if (extension.fieldTypes) fieldTypes.push(...extension.fieldTypes);
   }
   return {
-    siteName: adapter.siteName,
-    concepts: resolveConcepts(content, siteConfig),
+    siteName: siteConfig.siteName,
+    concepts: resolveConcepts(content),
     backend: adapter.backend,
-    sender: adapter.sender,
-    supportContact: adapter.supportContact,
-    render: adapter.render,
-    manifestPath: adapter.manifestPath ?? 'src/content/.cairn/index.json',
-    registry: adapter.registry,
-    icons: adapter.icons,
-    navMenu: adapter.navMenu,
-    preview: adapter.preview,
-    assets: adapter.assets,
-    resolvedAssets: normalizeAssets(adapter.assets),
-    mediaManifestPath: adapter.mediaManifestPath ?? 'src/content/.cairn/media.json',
-    // The personal dictionary sits beside the manifests under the same `.cairn/` content root, so the
-    // spec's `content/.cairn/dictionary.txt` resolves the same configurable way the manifest paths do.
-    dictionaryPath: adapter.dictionaryPath ?? 'src/content/.cairn/dictionary.txt',
+    sender: adapter.email,
+    supportContact: adapter.editor?.supportContact,
+    render: adapter.rendering.render,
+    manifestPath: CONTENT_MANIFEST_PATH,
+    registry: adapter.rendering.components,
+    icons: adapter.rendering.icons,
+    navMenu: adapter.editor?.nav,
+    preview: adapter.editor?.preview,
+    assets: adapter.media,
+    resolvedAssets: normalizeAssets(adapter.media),
+    mediaManifestPath: MEDIA_MANIFEST_PATH,
+    dictionaryPath: DICTIONARY_PATH,
     // The spellcheck dictionary is resolved once here from the site config's dialect (default US),
     // so the runtime and the editor never re-derive it. The site config is the one home for the
     // dialect; the editor resolves this filename to a real asset URL on the main thread.

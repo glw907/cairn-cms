@@ -64,9 +64,8 @@ export const handle: Handle = ({ event, resolve }) => guard({ event, resolve });
 `;
 
 const GOOD_SITE_CONFIG = `siteName: Test Site
-content:
-  posts:
-    permalink: /posts/:year/:slug
+menus:
+  primary: []
 `;
 
 function ctx(files: Record<string, string>, extra: Partial<DoctorContext> = {}): DoctorContext {
@@ -385,18 +384,11 @@ describe('config.site-config', () => {
 		expect(result.detail).toContain('Site config must be a YAML mapping');
 	});
 
-	it('fails with the engine validator message on a bad permalink', async () => {
-		const yaml = `siteName: Test\ncontent:\n  posts:\n    permalink: posts/:slug\n`;
+	it('fails on a stale per-concept content block, pointing to defineConcept (Contract v2)', async () => {
+		const yaml = `siteName: Test\ncontent:\n  posts:\n    permalink: /:year/:month/:slug\n`;
 		const result = await configSiteConfig.run(ctx({ 'site.config.yaml': yaml }));
 		expect(result.status).toBe('fail');
-		expect(result.detail).toContain('must start with "/"');
-	});
-
-	it('fails when a non-dated concept uses a date token', async () => {
-		const yaml = `siteName: Test\ncontent:\n  pages:\n    permalink: /:year/:slug\n`;
-		const result = await configSiteConfig.run(ctx({ 'site.config.yaml': yaml }));
-		expect(result.status).toBe('fail');
-		expect(result.detail).toContain('date token');
+		expect(result.detail).toContain('defineConcept');
 	});
 
 	it('finds the config at the src/lib conventional location', async () => {

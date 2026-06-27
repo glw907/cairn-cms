@@ -12,7 +12,7 @@ interface PostFm {
 const descriptor = normalizeConcepts({
   posts: {
     dir: 'src/content/posts',
-    schema: fieldset({
+    fields: fieldset({
       title: fields.text({ label: 'Title' }),
       description: fields.textarea({ label: 'Description' }),
     }),

@@ -6,10 +6,15 @@ import { fields } from '../../lib/content/fields.js';
 import { fieldset } from '../../lib/content/fieldset.js';
 
 describe('permalink parity: content index and manifest agree', () => {
-  const [descriptor] = normalizeConcepts(
-    { posts: { dir: 'p', schema: fieldset({ title: fields.text({ label: 'Title' }) }) } },
-    { posts: { permalink: '/posts/:slug', datePrefix: 'day' } },
-  );
+  const [descriptor] = normalizeConcepts({
+    posts: {
+      dir: 'p',
+      routing: 'feed',
+      permalink: '/posts/:slug',
+      datePrefix: 'day',
+      fields: fieldset({ title: fields.text({ label: 'Title' }) }),
+    },
+  });
   const file = { path: 'p/2026-05-01-hello.md', raw: '---\ntitle: Hello\n---\nbody\n' };
 
   it('produces one permalink for the same dated entry', () => {

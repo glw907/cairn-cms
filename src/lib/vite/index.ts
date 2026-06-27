@@ -248,11 +248,11 @@ export interface AdapterFacts {
   owner?: string;
   /** `cairn.backend.repo`. */
   repo?: string;
-  /** `cairn.sender.from`. */
+  /** `cairn.email.from`. */
   from?: string;
   /**
-   * `cairn.assets.bucketBinding`, the media R2 binding name; undefined when the adapter declares no
-   *  assets. The doctor's conditional media-bucket check reads it.
+   * `cairn.media.bucketBinding`, the media R2 binding name; undefined when the adapter declares no
+   *  media. The doctor's conditional media-bucket check reads it.
    */
   mediaBucketBinding?: string;
 }
@@ -267,13 +267,13 @@ function adapterFactsSource(opts: CairnManifestOptions): string {
   return `
 import { cairn } from ${JSON.stringify(opts.configModule)};
 const backend = cairn?.backend ?? {};
-const sender = cairn?.sender ?? {};
-const assets = cairn?.assets ?? {};
+const email = cairn?.email ?? {};
+const media = cairn?.media ?? {};
 const facts = {};
 if (typeof backend.owner === 'string') facts.owner = backend.owner;
 if (typeof backend.repo === 'string') facts.repo = backend.repo;
-if (typeof sender.from === 'string') facts.from = sender.from;
-if (typeof assets.bucketBinding === 'string') facts.mediaBucketBinding = assets.bucketBinding;
+if (typeof email.from === 'string') facts.from = email.from;
+if (typeof media.bucketBinding === 'string') facts.mediaBucketBinding = media.bucketBinding;
 export const result = JSON.stringify(facts);
 `;
 }

@@ -54,11 +54,11 @@ export type ValidationResult =
 export type NamedField = FieldDescriptor & { name: string };
 
 /**
- * Per-site configuration for one content concept (spec §8). One `schema`, built with
+ * Per-site configuration for one content concept (spec §8). One `fields` fieldset, built with
  * `fieldset`, is the single source of truth for the editor form, the validator, and the
  * inferred frontmatter type. Generic over the fieldset so a concept's concrete type survives for
- * typed reads. Concept-fixed behavior such as routability is not here; it lives in the engine's
- * routing table (`CONCEPT_ROUTING`).
+ * typed reads. A concept also declares its own routing and URL policy here (`routing`, `permalink`,
+ * `datePrefix`), resolved by `normalizeConcepts`.
  */
 export interface ConceptConfig<S extends Fieldset = Fieldset> {
   /** Repo-relative content directory, e.g. "src/content/posts". */
@@ -68,7 +68,7 @@ export interface ConceptConfig<S extends Fieldset = Fieldset> {
   /** The singular noun for the create affordances ("New post"); defaults to `label` when omitted. */
   singular?: string;
   /** The concept's fieldset: the form projection, the generated validator, and the inferred type. */
-  schema: S;
+  fields: S;
   /**
    * This concept's routing. A named shorthand (`'feed'` dated and in feeds, `'page'` a routable
    *  static page, `'embedded'` not routable) or an explicit rule. Omitted means `'page'`.
@@ -80,16 +80,16 @@ export interface ConceptConfig<S extends Fieldset = Fieldset> {
   datePrefix?: DatePrefix;
   /**
    * Frontmatter keys to surface on each `ContentSummary.fields`, so a list card reads an authored
-   *  field without a per-entry detail read. Each key should also be declared in `schema`.
+   *  field without a per-entry detail read. Each key should also be declared in `fields`.
    */
   summaryFields?: string[];
 }
 
 /**
- * A concept's URL policy, set per concept in the YAML site-config (not the adapter). `permalink` is
- * a `/`-prefixed pattern of literal segments and the tokens `:slug`, `:year`, `:month`, `:day`.
- * `datePrefix` is the filename date-prefix granularity for a dated concept. Both default in
- * `normalizeConcepts` when omitted.
+ * A concept's URL policy, declared on the adapter concept itself (`ConceptConfig.permalink` and
+ * `ConceptConfig.datePrefix`) since Contract v2. `permalink` is a `/`-prefixed pattern of literal
+ * segments and the tokens `:slug`, `:year`, `:month`, `:day`. `datePrefix` is the filename
+ * date-prefix granularity for a dated concept. Both default in `normalizeConcepts` when omitted.
  */
 export interface ConceptUrlPolicy {
   permalink?: string;
@@ -187,67 +187,58 @@ export interface AssetConfig {
   transformations?: boolean;
 }
 
-/** The single seam the engine consumes. A site implements this at `src/lib/cairn.config.ts`. */
+/**
+ * The single seam the engine consumes. A site implements this at `src/lib/cairn.config.ts`, in six
+ * subsystem groups (spec §8): the content concepts, the commit backend, the magic-link sender, the
+ * render subsystem, the optional media stack, and the admin-experience knobs. The internal manifest
+ * and dictionary paths are not here; `composeRuntime` defaults them by convention.
+ */
 export interface CairnAdapter {
-  siteName: string;
-  /**
-   * Which content concepts this site enables. A future `fragments?` key attaches here with
-   * no reshape of the contract (seam 1). A site never has two of the same concept.
-   */
-  content: {
-    posts?: ConceptConfig;
-    pages?: ConceptConfig;
-  };
+  /** The site's concepts, keyed by id. Posts and pages are the documented defaults; a site may add more. */
+  content: Record<string, ConceptConfig>;
+  /** The commit backend (the GitHub App today). */
   backend: BackendConfig;
-  sender: SenderConfig;
-  /**
-   * Optional contact a stuck editor is pointed to from the in-admin help (an email address, a URL,
-   *  or a name and instruction). The help renders the hand-off only when this is set. Plain string,
-   *  passed through verbatim.
-   */
-  supportContact?: string;
-  /**
-   * The site's one renderer: the editor preview and every public page call it (design decision 4).
-   *  `resolve` rewrites cairn: links to live permalinks; the build passes a site-resolver-backed
-   *  one, the preview a manifest one. The trailing `resolveMedia` is additive and optional: the build
-   *  passes a site-resolver-backed media resolver, the preview a manifest-backed one.
-   */
-  render(
-    md: string,
-    opts?: {
-      stagger?: boolean;
-      resolve?: LinkResolve;
-      resolveMedia?: import('../render/resolve-media.js').MediaResolve;
-    },
-  ): string | Promise<string>;
-  /**
-   * Repo-relative path to the committed content manifest. Defaults to src/content/.cairn/index.json
-   *  in composeRuntime. It sits outside any concept directory, so content enumeration never globs it.
-   */
-  manifestPath?: string;
-  /**
-   * Repo-relative path to the committed media manifest. Defaults to src/content/.cairn/media.json,
-   *  applied in composeRuntime. Sits outside any concept directory, like the content manifest.
-   */
-  mediaManifestPath?: string;
-  /**
-   * Repo-relative path to the committed personal dictionary file. Defaults to
-   *  src/content/.cairn/dictionary.txt, applied in composeRuntime: the same `.cairn/` content root the
-   *  manifests use, so the spec's `content/.cairn/dictionary.txt` resolves the same configurable way the
-   *  manifest paths do. One word per line, sorted, comment lines allowed (see site-dictionary.ts).
-   */
-  dictionaryPath?: string;
-  /** Directive component registry; the renderer and the future palette derive from it (seam 3). */
-  registry?: ComponentRegistry;
-  /** The site's glyph name to SVG path-data map, for the admin icon picker and the renderer. */
-  icons?: IconSet;
-  navMenu?: NavMenuConfig;
-  /**
-   * The live site's content styling for the preview frame. The admin's chrome isolation keeps
-   *  the site's CSS out of the admin document, so the preview frame links these instead.
-   */
-  preview?: PreviewConfig;
-  assets?: AssetConfig;
+  /** The magic-link sender. */
+  email: SenderConfig;
+  /** The render subsystem: the one renderer, its directive vocabulary, and its icons. */
+  rendering: {
+    /**
+     * The one renderer the editor preview and every public page call (design decision 4). `resolve`
+     *  rewrites cairn: links to live permalinks; the build passes a site-resolver-backed one, the
+     *  preview a manifest one. The trailing `resolveMedia` is additive and optional: the build passes a
+     *  site-resolver-backed media resolver, the preview a manifest-backed one.
+     */
+    render(
+      md: string,
+      opts?: {
+        stagger?: boolean;
+        resolve?: LinkResolve;
+        resolveMedia?: import('../render/resolve-media.js').MediaResolve;
+      },
+    ): string | Promise<string>;
+    /** Directive component registry; the renderer and the insert palette derive from it (seam 3). */
+    components?: ComponentRegistry;
+    /** The site's glyph name to SVG path-data map, for the admin icon picker and the renderer. */
+    icons?: IconSet;
+  };
+  /** R2-backed media (seam 4): the bucket binding and image variants. Absent leaves media off. */
+  media?: AssetConfig;
+  /** Admin-experience knobs: the preview frame, the nav menu, and the editor support contact. */
+  editor?: {
+    /**
+     * The live site's content styling for the preview frame. The admin's chrome isolation keeps
+     *  the site's CSS out of the admin document, so the preview frame links these instead.
+     */
+    preview?: PreviewConfig;
+    /** Which git-committed YAML menu the nav editor manages. */
+    nav?: NavMenuConfig;
+    /**
+     * Optional contact a stuck editor is pointed to from the in-admin help (an email address, a URL,
+     *  or a name and instruction). The help renders the hand-off only when this is set. Plain string,
+     *  passed through verbatim.
+     */
+    supportContact?: string;
+  };
 }
 
 /**

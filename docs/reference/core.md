@@ -6,7 +6,7 @@ and GitHub App primitives. You import it at `src/lib/cairn.config.ts` and in you
 delivery code.
 
 ```ts
-import { defineAdapter, fieldset, fields, createRenderer } from '@glw907/cairn-cms';
+import { defineAdapter, defineConcept, fieldset, fields, createRenderer } from '@glw907/cairn-cms';
 import type { CairnAdapter, ComponentDef } from '@glw907/cairn-cms';
 ```
 
@@ -34,34 +34,59 @@ and the GitHub backend.
 declare function defineAdapter<const A extends CairnAdapter>(adapter: A): A;
 ```
 
-Declare a site's adapter while preserving each concept's concrete schema type for typed reads. The
-return value is the adapter itself, narrowed.
+Declare a site's adapter while preserving each concept's concrete fieldset type for typed reads. The
+return value is the adapter itself, narrowed. The adapter has six groups: `content`, `backend`,
+`email`, `rendering`, `media`, and `editor`.
 
 ```ts
 // examples/showcase/src/lib/cairn.config.ts
 export const cairn = defineAdapter({
-  siteName: 'Cairn Showcase',
   content: {
-    posts: {
+    posts: defineConcept({
       dir: 'src/content/posts',
       label: 'Posts',
       summaryFields: ['description'],
-      schema: fieldset({
+      routing: 'feed',
+      fields: fieldset({
         title: fields.text({ label: 'Title', required: true }),
         date: fields.date({ label: 'Date' }),
         description: fields.textarea({ label: 'Description' }),
       }),
-    },
+    }),
   },
   backend: { owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' },
-  sender: { from: 'cms@showcase.test' },
-  render: (md, opts) => renderMarkdown(md, opts),
-  registry,
-  icons,
+  email: { from: 'cms@showcase.test' },
+  rendering: {
+    render: (md, opts) => renderMarkdown(md, opts),
+    components: registry,
+    icons,
+  },
 });
 ```
 
-#### `supportContact` (adapter member)
+#### `defineConcept`
+
+```ts
+declare function defineConcept<const C extends ConceptConfig>(concept: C): C;
+```
+
+Declare one concept while preserving its fieldset type for typed reads, the concept-level companion
+to `defineAdapter`. It also validates the concept's URL policy at declaration, so a bad `permalink` or
+`datePrefix` throws at module load rather than at a defaulted render. A concept declares its routing
+with `routing` (the `'feed'`, `'page'`, or `'embedded'` shorthand, or an explicit `RoutingRule`) and
+its URL policy with `permalink` and `datePrefix`; an omitted `routing` is `'page'`.
+
+```ts
+posts: defineConcept({
+  dir: 'src/content/posts',
+  routing: 'feed',
+  permalink: '/:year/:month/:slug',
+  datePrefix: 'month',
+  fields: fieldset({ title: fields.text({ label: 'Title', required: true }) }),
+}),
+```
+
+#### `supportContact` (adapter `editor` member)
 
 A free-form string the in-admin help points a stuck editor to: an email address, a URL, or a name and
 instruction. `composeRuntime` passes it to the runtime untouched, and the help renders the hand-off
@@ -71,7 +96,7 @@ only when it is set, so an unset contact yields no dead button. Optional.
 supportContact: 'help@example.org',
 ```
 
-#### `preview` (adapter member)
+#### `preview` (adapter `editor` member)
 
 ```ts
 interface PreviewConfig {
@@ -130,11 +155,13 @@ so do not be alarmed to find both in the build output.
 import appCssUrl from './app.css?url';
 
 export const cairn = defineAdapter({
-  // ...concepts, backend, sender, render...
-  preview: {
-    stylesheets: [appCssUrl],
-    bodyClass: 'bg-base-100',
-    containerClass: 'prose mx-auto',
+  // ...content, backend, email, rendering...
+  editor: {
+    preview: {
+      stylesheets: [appCssUrl],
+      bodyClass: 'bg-base-100',
+      containerClass: 'prose mx-auto',
+    },
   },
 });
 ```
@@ -150,7 +177,7 @@ export const cairn = defineAdapter({
 </svelte:head>
 ```
 
-#### `assets` (adapter member)
+#### `media` (adapter member)
 
 ```ts
 interface AssetConfig {
@@ -173,7 +200,7 @@ interface VariantSpec {
 }
 ```
 
-A site turns on R2-backed media by declaring `assets`; omitting it leaves media off. `bucketBinding`
+A site turns on R2-backed media by declaring `media`; omitting it leaves media off. `bucketBinding`
 names the R2 bucket bound to the Worker and is the one required field. `publicBase` is the delivery
 base path (default `/media`), and `urlForm` chooses whether the public URL carries the slug
 (`/media/<slug>.<hash>.<ext>`, the default) or stays opaque (`/media/<aa>/<hash>.<ext>`).
@@ -192,7 +219,7 @@ Content references a stored asset by a logical handle, `media:<slug>.<hash>` (or
 slug is cosmetic, so a rename never breaks a reference. At render, the handle rewrites to a delivery
 URL, and a variant becomes a `/cdn-cgi/image/<options>/...` transform over that path. See the
 [media storage explanation](../explanation/media-storage.md) for the full model. This grew from a
-reserved seam, so it is additive: a site that declares no `assets` is unchanged, and the author-facing
+reserved seam, so it is additive: a site that declares no `media` is unchanged, and the author-facing
 upload surface lands in a later phase on this substrate.
 
 #### `defineRegistry`
@@ -213,17 +240,15 @@ const registry = defineRegistry({ components: [callout, alert] });
 ```ts
 declare function normalizeConcepts(
   content: Record<string, ConceptConfig | undefined>,
-  urlPolicy?: Record<string, ConceptUrlPolicy | undefined>,
-  routing?: Readonly<Record<string, RoutingRule>>,
 ): ConceptDescriptor[];
 ```
 
-Normalize an adapter's declared concepts into uniform descriptors (seam 1). The URL policy comes
-from the YAML site-config, keyed by concept id, and each value defaults when the YAML omits it.
-`composeRuntime` calls it, so a site rarely calls it directly.
+Normalize an adapter's declared concepts into uniform descriptors (seam 1). Each concept declares its
+own routing and URL policy (`routing`, `permalink`, `datePrefix`), and each defaults when the concept
+omits it. `composeRuntime` calls it, so a site rarely calls it directly.
 
 ```ts
-const descriptors = normalizeConcepts(cairn.content, urlPolicyFrom(siteConfig));
+const descriptors = normalizeConcepts(cairn.content);
 ```
 
 #### `findConcept`
@@ -240,16 +265,6 @@ Look up a normalized concept by id, or `undefined` when the site does not enable
 ```ts
 const posts = findConcept(runtime.concepts, 'posts');
 ```
-
-#### `CONCEPT_ROUTING`
-
-```ts
-declare const CONCEPT_ROUTING: Readonly<Record<string, RoutingRule>>;
-```
-
-The concept-fixed routing table, keyed by concept id (spec section 7.2). Posts are dated feed
-entries; pages are plain navigable structure. It is not adapter config, and production passes it as
-the default `routing` to `normalizeConcepts`.
 
 ### Fields
 
@@ -494,19 +509,6 @@ import siteYaml from './site.config.yaml?raw';
 export const siteConfig = parseSiteConfig(siteYaml);
 ```
 
-#### `urlPolicyFrom`
-
-```ts
-declare function urlPolicyFrom(config: SiteConfig): Record<string, ConceptUrlPolicy>;
-```
-
-The per-concept URL policy from a parsed config, or an empty policy when the `content` key is
-absent.
-
-```ts
-const policy = urlPolicyFrom(siteConfig);
-```
-
 #### `extractMenu`
 
 ```ts
@@ -721,9 +723,9 @@ function signatures above reference these.
 | Name | Signature | Meaning |
 | --- | --- | --- |
 | `CairnAdapter` | `interface CairnAdapter` | The one seam the engine consumes, declared at `src/lib/cairn.config.ts`. |
-| `ConceptConfig` | `interface ConceptConfig<S>` | Per-site configuration for one content concept: dir, label, singular, schema, summaryFields. The optional `singular` names the create affordances ("New post") and defaults to `label`. |
+| `ConceptConfig` | `interface ConceptConfig<S>` | Per-site configuration for one content concept: dir, label, singular, fields, routing, permalink, datePrefix, summaryFields. The optional `singular` names the create affordances ("New post") and defaults to `label`; `routing`/`permalink`/`datePrefix` set the concept's URL policy. |
 | `ConceptDescriptor` | `interface ConceptDescriptor` | The engine-internal, uniform view of one concept after normalization, including the resolved `singular` (defaulted to `label`). |
-| `ConceptUrlPolicy` | `interface ConceptUrlPolicy` | A concept's permalink pattern and date-prefix granularity, set in the YAML config. |
+| `ConceptUrlPolicy` | `interface ConceptUrlPolicy` | A concept's permalink pattern and date-prefix granularity, declared per concept via `defineConcept`. |
 | `RoutingRule` | `interface RoutingRule` | Concept-fixed routing: routable, dated, inFeeds. |
 | `BackendConfig` | `interface BackendConfig` | The GitHub App backend a site reads from and commits to. |
 | `SenderConfig` | `interface SenderConfig` | Magic-link sender identity for Cloudflare Email Sending. |

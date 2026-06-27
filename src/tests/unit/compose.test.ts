@@ -6,11 +6,10 @@ import { testSiteConfig } from './_content-fixture.js';
 
 function adapter(): CairnAdapter {
   return {
-    siteName: 'T',
-    content: { pages: { dir: 'src/content/pages', schema: fieldset({}) } },
+    content: { pages: { dir: 'src/content/pages', routing: 'page', fields: fieldset({}) } },
     backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
-    sender: { from: 'cms@test' },
-    render: (md) => md,
+    email: { from: 'cms@test' },
+    rendering: { render: (md) => md },
   };
 }
 
@@ -42,7 +41,7 @@ describe('composeRuntime preview pass-through', () => {
       containerClass: 'prose mx-auto',
       byConcept: { posts: { bodyClass: 'post-body', containerClass: 'post-module' } },
     };
-    const runtime = composeRuntime({ adapter: { ...adapter(), preview }, siteConfig: testSiteConfig });
+    const runtime = composeRuntime({ adapter: { ...adapter(), editor: { preview } }, siteConfig: testSiteConfig });
     expect(runtime.preview).toBe(preview);
     expect(runtime.preview?.byConcept).toEqual({ posts: { bodyClass: 'post-body', containerClass: 'post-module' } });
   });
@@ -55,9 +54,6 @@ describe('composeRuntime preview pass-through', () => {
 describe('composeRuntime manifestPath', () => {
   it('defaults the manifest path', () => {
     expect(composeRuntime({ adapter: adapter(), siteConfig: testSiteConfig }).manifestPath).toBe('src/content/.cairn/index.json');
-  });
-  it('honors an adapter override', () => {
-    expect(composeRuntime({ adapter: { ...adapter(), manifestPath: 'content/.cairn/idx.json' }, siteConfig: testSiteConfig }).manifestPath).toBe('content/.cairn/idx.json');
   });
 });
 
@@ -78,9 +74,9 @@ describe('composeRuntime resolvedAssets', () => {
     const runtime = composeRuntime({ adapter: adapter(), siteConfig: testSiteConfig });
     expect(runtime.resolvedAssets).toEqual({ enabled: false });
   });
-  it('resolves a declared assets block into a filled config', () => {
-    const withAssets: CairnAdapter = { ...adapter(), assets: { bucketBinding: 'MEDIA_BUCKET' } };
-    const runtime = composeRuntime({ adapter: withAssets, siteConfig: testSiteConfig });
+  it('resolves a declared media block into a filled config', () => {
+    const withMedia: CairnAdapter = { ...adapter(), media: { bucketBinding: 'MEDIA_BUCKET' } };
+    const runtime = composeRuntime({ adapter: withMedia, siteConfig: testSiteConfig });
     expect(runtime.resolvedAssets.enabled).toBe(true);
     if (!runtime.resolvedAssets.enabled) throw new Error('expected enabled');
     expect(runtime.resolvedAssets.bucketBinding).toBe('MEDIA_BUCKET');
@@ -92,7 +88,7 @@ describe('composeRuntime resolvedAssets', () => {
 describe('composeRuntime supportContact', () => {
   it('carries the adapter supportContact onto the runtime', () => {
     expect(
-      composeRuntime({ adapter: { ...adapter(), supportContact: 'help@example.org' }, siteConfig: testSiteConfig }).supportContact,
+      composeRuntime({ adapter: { ...adapter(), editor: { supportContact: 'help@example.org' } }, siteConfig: testSiteConfig }).supportContact,
     ).toBe('help@example.org');
   });
 
@@ -104,12 +100,5 @@ describe('composeRuntime supportContact', () => {
 describe('composeRuntime mediaManifestPath', () => {
   it('defaults the media manifest path', () => {
     expect(composeRuntime({ adapter: adapter(), siteConfig: testSiteConfig }).mediaManifestPath).toBe('src/content/.cairn/media.json');
-  });
-  it('honors an adapter override', () => {
-    const runtime = composeRuntime({
-      adapter: { ...adapter(), mediaManifestPath: 'content/.cairn/m.json' },
-      siteConfig: testSiteConfig,
-    });
-    expect(runtime.mediaManifestPath).toBe('content/.cairn/m.json');
   });
 });

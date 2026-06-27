@@ -5,25 +5,25 @@ import { fieldset, type InferFieldset } from '../../lib/content/fieldset.js';
 import type { CairnAdapter } from '../../lib/content/types.js';
 
 const adapter = defineAdapter({
-  siteName: 'Test',
   content: {
     posts: {
       dir: 'src/content/posts',
-      schema: fieldset({
+      routing: 'feed',
+      fields: fieldset({
         title: fields.text({ label: 'Title', required: true }),
         date: fields.date({ label: 'Date' }),
       }),
     },
   },
   backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
-  sender: { from: 'noreply@test.example' },
-  render: (md) => md,
+  email: { from: 'noreply@test.example' },
+  rendering: { render: (md) => md },
 });
 
 describe('defineAdapter', () => {
   it('returns the adapter unchanged at runtime', () => {
     expect(adapter.content.posts?.dir).toBe('src/content/posts');
-    expect(Object.keys(adapter.content.posts?.schema.fields ?? {})).toEqual(['title', 'date']);
+    expect(Object.keys(adapter.content.posts?.fields.fields ?? {})).toEqual(['title', 'date']);
   });
 
   it('is assignable to CairnAdapter', () => {
@@ -31,7 +31,7 @@ describe('defineAdapter', () => {
   });
 
   it('preserves the concrete schema type for inference', () => {
-    expectTypeOf<InferFieldset<typeof adapter.content.posts.schema>>().toEqualTypeOf<{
+    expectTypeOf<InferFieldset<typeof adapter.content.posts.fields>>().toEqualTypeOf<{
       title: string;
       date?: string;
     }>();

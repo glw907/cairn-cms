@@ -6,26 +6,25 @@ import { normalizeConcepts } from '../../lib/content/concepts.js';
 import { fields } from '../../lib/content/fields.js';
 import { fieldset } from '../../lib/content/fieldset.js';
 
-const [posts] = normalizeConcepts(
-  {
-    posts: {
-      dir: 'src/content/posts',
-      schema: fieldset({
-        title: fields.text({ label: 'Title', required: true }),
-        date: fields.date({ label: 'Date' }),
-        description: fields.textarea({ label: 'Description' }),
-        image: fields.text({ label: 'Social image' }),
-        robots: fields.text({ label: 'Robots' }),
-        author: fields.text({ label: 'Author' }),
-      }),
-    },
+const [posts] = normalizeConcepts({
+  posts: {
+    dir: 'src/content/posts',
+    routing: 'feed',
+    permalink: '/:year/:month/:day/:slug',
+    fields: fieldset({
+      title: fields.text({ label: 'Title', required: true }),
+      date: fields.date({ label: 'Date' }),
+      description: fields.textarea({ label: 'Description' }),
+      image: fields.text({ label: 'Social image' }),
+      robots: fields.text({ label: 'Robots' }),
+      author: fields.text({ label: 'Author' }),
+    }),
   },
-  { posts: { permalink: '/:year/:month/:day/:slug' } },
-);
+});
 const [pages] = normalizeConcepts({
   pages: {
     dir: 'src/content/pages',
-    schema: fieldset({
+    fields: fieldset({
       title: fields.text({ label: 'Title', required: true }),
       robots: fields.text({ label: 'Robots' }),
     }),

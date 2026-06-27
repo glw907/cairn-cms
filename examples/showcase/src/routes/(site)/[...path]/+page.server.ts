@@ -7,9 +7,9 @@ export const prerender = true;
 
 const routes = createPublicRoutes({
   site,
-  render: cairn.render,
+  render: cairn.rendering.render,
   origin: ORIGIN,
-  siteName: cairn.siteName,
+  siteName: siteConfig.siteName,
   description: SITE_DESCRIPTION,
   defaultImage: ORIGIN + '/og/default.png',
   feeds: { rss: ORIGIN + '/feed.xml', json: ORIGIN + '/feed.json' },

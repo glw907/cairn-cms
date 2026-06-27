@@ -8,7 +8,8 @@ import type { ContentIndex, RawFile } from '../../lib/delivery/content-index.js'
 const [posts] = normalizeConcepts({
   posts: {
     dir: 'd',
-    schema: fieldset({
+    routing: 'feed',
+    fields: fieldset({
       title: fields.text({ label: 'Title' }),
       date: fields.date({ label: 'Date' }),
       tags: fields.multiselect({ label: 'Tags', options: ['a'] }),
@@ -77,18 +78,18 @@ describe('read-model tags default', () => {
 
 describe('content index slug', () => {
   it('derives a date-stripped slug and a non-doubled permalink for a dated concept', () => {
-    const [posts] = normalizeConcepts(
-      {
-        posts: {
-          dir: 'd',
-          schema: fieldset({
-            title: fields.text({ label: 'Title' }),
-            date: fields.date({ label: 'Date' }),
-          }),
-        },
+    const [posts] = normalizeConcepts({
+      posts: {
+        dir: 'd',
+        routing: 'feed',
+        permalink: '/:year/:month/:day/:slug',
+        datePrefix: 'day',
+        fields: fieldset({
+          title: fields.text({ label: 'Title' }),
+          date: fields.date({ label: 'Date' }),
+        }),
       },
-      { posts: { permalink: '/:year/:month/:day/:slug', datePrefix: 'day' } },
-    );
+    });
     const index = createContentIndex(
       [{ path: '/d/2026-05-31-snowball.md', raw: '---\ntitle: S\ndate: 2026-05-31\n---\n\nBody.' }],
       posts,
@@ -103,7 +104,7 @@ describe('summary fields', () => {
   const [withSummary] = normalizeConcepts({
     posts: {
       dir: 'p',
-      schema: fieldset({
+      fields: fieldset({
         title: fields.text({ label: 'Title' }),
         date: fields.date({ label: 'Date' }),
         description: fields.textarea({ label: 'Description' }),
@@ -132,7 +133,7 @@ describe('summary fields', () => {
   });
 
   it('yields an empty fields object when summaryFields is unset', () => {
-    const [plain] = normalizeConcepts({ pages: { dir: 'g', schema: fieldset({ title: fields.text({ label: 'Title' }) }) } });
+    const [plain] = normalizeConcepts({ pages: { dir: 'g', fields: fieldset({ title: fields.text({ label: 'Title' }) }) } });
     const plainIndex = createContentIndex([{ path: '/g/about.md', raw: '---\ntitle: About\n---\n\nAbout.' }], plain);
     expect(plainIndex.all()[0].fields).toEqual({});
   });
@@ -146,7 +147,7 @@ describe('fromGlob', () => {
 
 describe('createContentIndex validate-once reads', () => {
   const [trimmed] = normalizeConcepts({
-    posts: { dir: 'd', schema: fieldset({ title: fields.text({ label: 'Title', required: true }) }) },
+    posts: { dir: 'd', fields: fieldset({ title: fields.text({ label: 'Title', required: true }) }) },
   });
 
   it('stores the normalized data on the detail frontmatter', () => {
@@ -169,18 +170,18 @@ describe('createContentIndex validate-once reads', () => {
 });
 
 describe('createContentIndex degrades a date-token permalink miss to a problem', () => {
-  const [dated] = normalizeConcepts(
-    {
-      posts: {
-        dir: 'd',
-        schema: fieldset({
-          title: fields.text({ label: 'Title', required: true }),
-          date: fields.date({ label: 'Date', required: true }),
-        }),
-      },
+  const [dated] = normalizeConcepts({
+    posts: {
+      dir: 'd',
+      routing: 'feed',
+      permalink: '/:year/:month/:day/:slug',
+      datePrefix: 'day',
+      fields: fieldset({
+        title: fields.text({ label: 'Title', required: true }),
+        date: fields.date({ label: 'Date', required: true }),
+      }),
     },
-    { posts: { permalink: '/:year/:month/:day/:slug', datePrefix: 'day' } },
-  );
+  });
 
   it('records the missing-date entry and still indexes the valid one, without throwing', () => {
     let index!: ContentIndex;
@@ -202,7 +203,7 @@ describe('createContentIndex degrades a date-token permalink miss to a problem',
 
 describe('createContentIndex excludes invalid entries from the typed read', () => {
   const [posts] = normalizeConcepts({
-    posts: { dir: 'd', schema: fieldset({ title: fields.text({ label: 'Title', required: true }) }) },
+    posts: { dir: 'd', fields: fieldset({ title: fields.text({ label: 'Title', required: true }) }) },
   });
 
   it('keeps an invalid non-draft entry out of every read but records it', () => {

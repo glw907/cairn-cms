@@ -5,18 +5,16 @@ import { createContentIndex } from '../../lib/delivery/content-index.js';
 import { buildRssFeed, type FeedItem } from '../../lib/delivery/feeds.js';
 import { buildSitemap } from '../../lib/delivery/sitemap.js';
 
-// A synthetic third concept the engine has never heard of, with a custom dated pattern. A
-// routing table is injected so the concept is dated and ordered newest-first.
-const [news] = normalizeConcepts(
-  {
-    news: {
-      dir: 'src/content/news',
-      schema: fieldset({}),
-    },
+// A synthetic third concept the engine has never heard of, with a custom dated pattern. The concept
+// declares the feed routing so it is dated and ordered newest-first.
+const [news] = normalizeConcepts({
+  news: {
+    dir: 'src/content/news',
+    routing: 'feed',
+    permalink: '/news/:year/:month/:slug',
+    fields: fieldset({}),
   },
-  { news: { permalink: '/news/:year/:month/:slug' } },
-  { news: { routable: true, dated: true, inFeeds: true } },
-);
+});
 
 describe('delivery is concept-generic', () => {
   const index = createContentIndex(

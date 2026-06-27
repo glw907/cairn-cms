@@ -8,23 +8,23 @@ import { parseSiteConfig } from '../../lib/nav/site-config.js';
 import type { CairnAdapter } from '../../lib/content/types.js';
 
 const adapter = defineAdapter({
-  siteName: 'Test',
   content: {
     posts: {
       dir: 'src/content/posts',
-      schema: fieldset({
+      routing: 'feed',
+      fields: fieldset({
         title: fields.text({ label: 'Title', required: true }),
         date: fields.date({ label: 'Date' }),
       }),
     },
     pages: {
       dir: 'src/content/pages',
-      schema: fieldset({ title: fields.text({ label: 'Title', required: true }) }),
+      fields: fieldset({ title: fields.text({ label: 'Title', required: true }) }),
     },
   },
   backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
-  sender: { from: 'noreply@test.example' },
-  render: (md) => md,
+  email: { from: 'noreply@test.example' },
+  rendering: { render: (md) => md },
 });
 
 const config = parseSiteConfig('siteName: Test\nmenus:\n  primary: []\n');
@@ -70,20 +70,19 @@ describe('createSiteIndexes build-time guards', () => {
   });
 
   it('throws when a concept is named site, the reserved resolver key', () => {
-    // The static CairnAdapter.content fixes its keys to posts?/pages?, so a "site" concept is
-    // only reachable through the open record normalizeConcepts accepts (a future extension's
-    // content). The cast feeds the runtime guard exactly that otherwise-untypable input.
+    // `site` is the reserved resolver key. CairnAdapter.content is an open record, so a "site"
+    // concept is declarable; the build-time guard rejects it. The cast keeps the SiteGlobs key
+    // typing aligned for the createSiteIndexes call below.
     const siteAdapter = defineAdapter({
-      siteName: 'Test',
       content: {
         site: {
           dir: 'src/content/site',
-          schema: fieldset({ title: fields.text({ label: 'Title', required: true }) }),
+          fields: fieldset({ title: fields.text({ label: 'Title', required: true }) }),
         },
       } as CairnAdapter['content'],
       backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
-      sender: { from: 'noreply@test.example' },
-      render: (md) => md,
+      email: { from: 'noreply@test.example' },
+      rendering: { render: (md) => md },
     });
     expect(() =>
       createSiteIndexes(siteAdapter, config, { site: {} } as SiteGlobs<typeof siteAdapter>),

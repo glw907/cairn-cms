@@ -5,11 +5,10 @@ import { normalizeConcepts } from '../../lib/content/concepts.js';
 import { fieldset } from '../../lib/content/fieldset.js';
 import { fields } from '../../lib/content/fields.js';
 
-const [posts] = normalizeConcepts(
-  { posts: { dir: 'p', schema: fieldset({}) } },
-  { posts: { permalink: '/:year/:month/:day/:slug', datePrefix: 'day' } },
-);
-const [pages] = normalizeConcepts({ pages: { dir: 'g', schema: fieldset({}) } });
+const [posts] = normalizeConcepts({
+  posts: { dir: 'p', routing: 'feed', permalink: '/:year/:month/:day/:slug', datePrefix: 'day', fields: fieldset({}) },
+});
+const [pages] = normalizeConcepts({ pages: { dir: 'g', fields: fieldset({}) } });
 
 function site() {
   return createSiteResolver([
@@ -51,19 +50,19 @@ describe('createSiteResolver', () => {
     // A posts entry whose frontmatter holds `author: jane-doe` (a PAGES entry) and
     // `related: [a-post]` (another POST). A per-concept index cannot reach the pages entry from
     // the posts index; the cross-concept resolver can, which is the whole point of this layer.
-    const [postsRef, pagesRef] = normalizeConcepts(
-      {
-        posts: {
-          dir: 'p',
-          schema: fieldset({
-            author: fields.reference({ concept: 'pages', label: 'Author' }),
-            related: fields.array(fields.reference({ concept: 'posts', label: 'Related post' }), { label: 'Related' }),
-          }),
-        },
-        pages: { dir: 'g', schema: fieldset({}) },
+    const [postsRef, pagesRef] = normalizeConcepts({
+      posts: {
+        dir: 'p',
+        routing: 'feed',
+        permalink: '/:slug',
+        datePrefix: 'day',
+        fields: fieldset({
+          author: fields.reference({ concept: 'pages', label: 'Author' }),
+          related: fields.array(fields.reference({ concept: 'posts', label: 'Related post' }), { label: 'Related' }),
+        }),
       },
-      { posts: { permalink: '/:slug', datePrefix: 'day' } },
-    );
+      pages: { dir: 'g', fields: fieldset({}) },
+    });
     const s = createSiteResolver([
       {
         descriptor: postsRef,
@@ -96,19 +95,19 @@ describe('createSiteResolver', () => {
   });
 
   it('drops an unresolved reference id, leaving the array in target order', () => {
-    const [postsRef, pagesRef] = normalizeConcepts(
-      {
-        posts: {
-          dir: 'p',
-          schema: fieldset({
-            author: fields.reference({ concept: 'pages', label: 'Author' }),
-            related: fields.array(fields.reference({ concept: 'posts', label: 'Related post' }), { label: 'Related' }),
-          }),
-        },
-        pages: { dir: 'g', schema: fieldset({}) },
+    const [postsRef, pagesRef] = normalizeConcepts({
+      posts: {
+        dir: 'p',
+        routing: 'feed',
+        permalink: '/:slug',
+        datePrefix: 'day',
+        fields: fieldset({
+          author: fields.reference({ concept: 'pages', label: 'Author' }),
+          related: fields.array(fields.reference({ concept: 'posts', label: 'Related post' }), { label: 'Related' }),
+        }),
       },
-      { posts: { permalink: '/:slug', datePrefix: 'day' } },
-    );
+      pages: { dir: 'g', fields: fieldset({}) },
+    });
     const s = createSiteResolver([
       {
         descriptor: postsRef,
@@ -134,14 +133,10 @@ describe('createSiteResolver', () => {
   });
 
   it('throws on a permalink collision across concepts, naming both ids', () => {
-    const [p2] = normalizeConcepts(
-      { pages: { dir: 'g', schema: fieldset({}) } },
-      { pages: { permalink: '/dup' } },
-    );
-    const [q2] = normalizeConcepts(
-      { posts: { dir: 'p', schema: fieldset({}) } },
-      { posts: { permalink: '/dup' } },
-    );
+    const [p2] = normalizeConcepts({ pages: { dir: 'g', permalink: '/dup', fields: fieldset({}) } });
+    const [q2] = normalizeConcepts({
+      posts: { dir: 'p', routing: 'feed', permalink: '/dup', fields: fieldset({}) },
+    });
     expect(() =>
       createSiteResolver([
         { descriptor: p2, index: createContentIndex([{ path: '/g/a.md', raw: '---\ntitle: A\n---\n' }], p2) },

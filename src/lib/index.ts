@@ -27,7 +27,7 @@ export type {
   AdminPanel,
   FieldTypeDef,
 } from './content/types.js';
-export { CONCEPT_ROUTING, normalizeConcepts, findConcept } from './content/concepts.js';
+export { normalizeConcepts, findConcept, defineConcept } from './content/concepts.js';
 export { composeRuntime } from './content/compose.js';
 export type { ComposeInput } from './content/compose.js';
 export {
@@ -126,7 +126,6 @@ export { CommitConflictError } from './github/types.js';
 // Nav tree and site-config helpers (Plan 06).
 export {
   parseSiteConfig,
-  urlPolicyFrom,
   extractMenu,
   setMenu,
   validateNavTree,

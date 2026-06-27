@@ -9,45 +9,59 @@ import { siteDescriptors } from '../../lib/delivery/site-descriptors.js';
 describe('composeRuntime', () => {
   it('folds the adapter into a runtime carrying the normalized concepts and backend', () => {
     const runtime = composeRuntime({ adapter: testAdapter, siteConfig: testSiteConfig });
-    expect(runtime.siteName).toBe('Test');
     expect(runtime.concepts.map((c) => c.id)).toEqual(['posts', 'pages']);
     expect(runtime.backend).toEqual(testAdapter.backend);
     expect(runtime.render('x')).toBe('x');
+  });
+
+  it('sources siteName from the site config, not the adapter', () => {
+    const runtime = composeRuntime({
+      adapter: testAdapter,
+      siteConfig: { ...testSiteConfig, siteName: 'Sourced From Config' },
+    });
+    expect(runtime.siteName).toBe('Sourced From Config');
   });
 
   // Seam 2 contract: an extension folds in additively, the same way the adapter does.
   it('folds an extension concept in after the adapter concepts', () => {
     const fragments: ConceptConfig = {
       dir: 'src/content/fragments',
-      schema: fieldset({ title: fields.text({ label: 'Title' }) }),
+      fields: fieldset({ title: fields.text({ label: 'Title' }) }),
     };
     const extension: CairnExtension = { content: { fragments } };
     const runtime = composeRuntime({ adapter: testAdapter, siteConfig: testSiteConfig, extensions: [extension] });
     expect(runtime.concepts.map((c) => c.id)).toEqual(['posts', 'pages', 'fragments']);
   });
 
-  // Seam 4 contract: the asset slot passes through untouched.
-  it('passes the asset slot through, and omits it when absent', () => {
+  // Seam 4 contract: the media slot passes through untouched onto the runtime's `assets`.
+  it('passes the media slot through, and omits it when absent', () => {
     expect(composeRuntime({ adapter: testAdapter, siteConfig: testSiteConfig }).assets).toBeUndefined();
-    const withAssets: CairnAdapter = {
+    const withMedia: CairnAdapter = {
       ...testAdapter,
-      assets: { bucketBinding: 'MEDIA_BUCKET', publicBase: '/media' },
+      media: { bucketBinding: 'MEDIA_BUCKET', publicBase: '/media' },
     };
-    expect(composeRuntime({ adapter: withAssets, siteConfig: testSiteConfig }).assets).toEqual({ bucketBinding: 'MEDIA_BUCKET', publicBase: '/media' });
+    expect(composeRuntime({ adapter: withMedia, siteConfig: testSiteConfig }).assets).toEqual({ bucketBinding: 'MEDIA_BUCKET', publicBase: '/media' });
   });
 });
 
 describe('composeRuntime URL policy', () => {
-  it('derives the per-concept URL policy from the site config', () => {
-    const siteConfig = { siteName: 'Test', content: { posts: { permalink: '/:year/:slug', datePrefix: 'year' as const } } };
-    const runtime = composeRuntime({ adapter: testAdapter, siteConfig });
+  it('derives the per-concept URL policy from the concept declaration', () => {
+    const adapter: CairnAdapter = {
+      ...testAdapter,
+      content: {
+        ...testAdapter.content,
+        posts: { dir: 'src/content/posts', routing: 'feed', permalink: '/:year/:slug', datePrefix: 'year', fields: fieldset({}) },
+      },
+    };
+    const runtime = composeRuntime({ adapter, siteConfig: testSiteConfig });
     const posts = runtime.concepts.find((c) => c.id === 'posts')!;
     expect(posts.permalink).toBe('/:year/:slug');
+    expect(posts.datePrefix).toBe('year');
   });
 
-  it('applies the descriptor default when the site config names no policy', () => {
+  it('applies the descriptor default when the concept declares no policy', () => {
     const posts = composeRuntime({ adapter: testAdapter, siteConfig: testSiteConfig }).concepts.find((c) => c.id === 'posts')!;
-    expect(posts.permalink).toBeDefined();
+    expect(posts.permalink).toBe('/posts/:slug');
   });
 
   it('throws when no site config is supplied', () => {

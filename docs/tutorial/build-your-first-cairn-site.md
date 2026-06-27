@@ -112,42 +112,43 @@ The adapter is the one seam the engine consumes. It declares your content concep
 `Field Notes` has two concepts, the same two cairn ships first. `posts` are dated and `pages` are not. Each concept declares its fields with `fieldset` and the `fields.*` constructors. Create `src/lib/cairn.config.ts`:
 
 ```ts
-import { defineAdapter, fieldset, fields } from '@glw907/cairn-cms';
+import { defineAdapter, defineConcept, fieldset, fields } from '@glw907/cairn-cms';
 
 export const cairn = defineAdapter({
-  siteName: 'Field Notes',
   content: {
-    posts: {
+    posts: defineConcept({
       dir: 'src/content/posts',
       label: 'Posts',
       summaryFields: ['description'],
-      schema: fieldset({
+      routing: 'feed',
+      fields: fieldset({
         title: fields.text({ label: 'Title', required: true }),
         date: fields.date({ label: 'Date', required: true }),
         description: fields.textarea({ label: 'Description' }),
       }),
-    },
-    pages: {
+    }),
+    pages: defineConcept({
       dir: 'src/content/pages',
       label: 'Pages',
-      schema: fieldset({
+      routing: 'page',
+      fields: fieldset({
         title: fields.text({ label: 'Title', required: true }),
         description: fields.textarea({ label: 'Description' }),
       }),
-    },
+    }),
   },
   backend: { owner: 'you', repo: 'field-notes', branch: 'main', appId: '1', installationId: '2' },
-  sender: { from: 'cms@field-notes.test' },
+  email: { from: 'cms@field-notes.test' },
 });
 ```
 
-Three pieces are still missing from this adapter (the `render` method, the component registry, and the icon set). You add them in milestones 4 and 5, after the content exists. Until then the TypeScript compiler flags the missing `render`, so if you run a check now and see that error, you are on track.
+One piece is still missing from this adapter: the `rendering` group with its `render` method, the component registry, and the icon set. You add it in milestones 4 and 5, after the content exists. Until then the TypeScript compiler flags the missing `rendering`, so if you run a check now and see that error, you are on track.
 
 The `summaryFields: ['description']` line tells the home list and the SEO head which field to read for a post's summary. The `description` field feeds both.
 
 One declaration carries a lot of weight here. The record you pass to `fieldset` drives the editor form an author fills in, the validator that checks a save, and the inferred frontmatter type the rest of the engine reads, all from this one source. Each key is the frontmatter key, and its value is a `fields.*` descriptor. There is no second place to keep in sync. The rule that follows is that every frontmatter key your site reads must be declared in the schema. For the field types and the exact signatures, see [`defineAdapter`](../reference/core.md#defineadapter) and [`fieldset`](../reference/core.md#fieldset) in the core reference. For the task on its own, the [adapter and schema guide](../guides/define-an-adapter-and-schema.md) covers it.
 
-Notice what the adapter does not carry. The slug codec and the per-concept date granularity, `datePrefix`, do not live on the adapter. They live in the site's YAML url policy, which you set in milestone 6, so the site owner controls the permalink shape without touching code. For the id-to-slug split behind that, see [URL identity](../explanation/content-model.md#url-identity).
+Notice what milestone 2 leaves for later. Each concept declares its own URL policy through `defineConcept`: its `routing`, its `permalink`, and its date granularity `datePrefix`. You add the `permalink` and `datePrefix` in milestone 6, when you wire the delivery surface. For the id-to-slug split behind that, see [URL identity](../explanation/content-model.md#url-identity).
 
 ## Milestone 3: Add content
 
@@ -203,13 +204,12 @@ import { createRenderer, defineAdapter, fieldset, fields } from '@glw907/cairn-c
 const { renderMarkdown } = createRenderer();
 
 export const cairn = defineAdapter({
-  siteName: 'Field Notes',
   content: {
     // ... the posts and pages concepts from milestone 2
   },
   backend: { owner: 'you', repo: 'field-notes', branch: 'main', appId: '1', installationId: '2' },
-  sender: { from: 'cms@field-notes.test' },
-  render: (md, opts) => renderMarkdown(md, opts),
+  email: { from: 'cms@field-notes.test' },
+  rendering: { render: (md, opts) => renderMarkdown(md, opts) },
 });
 ```
 
@@ -272,15 +272,16 @@ const registry = defineRegistry({ components: [callout] });
 const { renderMarkdown } = createRenderer(registry);
 
 export const cairn = defineAdapter({
-  siteName: 'Field Notes',
   content: {
     // ... the posts and pages concepts from milestone 2
   },
   backend: { owner: 'you', repo: 'field-notes', branch: 'main', appId: '1', installationId: '2' },
-  sender: { from: 'cms@field-notes.test' },
-  render: (md, opts) => renderMarkdown(md, opts),
-  registry,
-  icons,
+  email: { from: 'cms@field-notes.test' },
+  rendering: {
+    render: (md, opts) => renderMarkdown(md, opts),
+    components: registry,
+    icons,
+  },
 });
 ```
 
@@ -308,19 +309,34 @@ The `[Don't forget water]` part fills the inline `title` slot, the `{tone="warni
 
 The content exists and renders, and no public page serves it yet. The delivery surface is the read model that turns your markdown into a home list, post and page permalinks, feeds, a sitemap, and a robots file. It lives on a separate package entry, `@glw907/cairn-cms/delivery`, so the public site imports it without pulling the admin in.
 
-Start with the site's URL policy, because the rest of the surface reads it. The slug codec and the per-concept date granularity live in a YAML site-config file, not on the adapter, so a site owner shapes permalinks without touching code. Create `src/lib/site.config.yaml`:
+Start with each concept's URL policy, because the rest of the surface reads it. A concept declares its `routing`, `permalink`, and date granularity in `defineConcept`, beside the fields they describe. Open `src/lib/cairn.config.ts` and add `permalink` and `datePrefix` to the concepts you declared in milestone 2:
+
+```ts
+posts: defineConcept({
+  dir: 'src/content/posts',
+  label: 'Posts',
+  summaryFields: ['description'],
+  routing: 'feed',
+  permalink: '/:year/:month/:day/:slug',
+  datePrefix: 'day',
+  fields: fieldset({ /* the post fields from milestone 2 */ }),
+}),
+pages: defineConcept({
+  dir: 'src/content/pages',
+  label: 'Pages',
+  routing: 'page',
+  permalink: '/:slug',
+  fields: fieldset({ /* the page fields from milestone 2 */ }),
+}),
+```
+
+The `posts` concept sets `datePrefix: day`, so a post's id keeps its full `2026-05-15-packing-list` stem while its slug strips the leading date to `packing-list`, and the `permalink` pattern dates the public path. The packing-list post serves at `/2026/05/15/packing-list`. A page carries no date, so the `about` page serves at `/about`. The two permalink shapes differ, which is the point of the per-concept policy. `defineConcept` validates each policy at declaration, so a bad permalink throws at module load.
+
+The site still carries a YAML config for its name and, later, its nav menus. Create `src/lib/site.config.yaml`:
 
 ```yaml
 siteName: Field Notes
-content:
-  posts:
-    permalink: /:year/:month/:day/:slug
-    datePrefix: day
-  pages:
-    permalink: /:slug
 ```
-
-The `posts` policy sets `datePrefix: day`, so a post's id keeps its full `2026-05-15-packing-list` stem while its slug strips the leading date to `packing-list`, and the `permalink` pattern dates the public path. The packing-list post serves at `/2026/05/15/packing-list`. A page carries no date, so the `about` page serves at `/about`. The two permalink shapes differ, which is the point of the per-concept policy.
 
 The adapter reads that YAML and exports the parsed config. Open `src/lib/cairn.config.ts`, import the YAML as raw text, and parse it with `parseSiteConfig`:
 
@@ -409,9 +425,9 @@ export const prerender = true;
 
 const routes = createPublicRoutes({
   site,
-  render: cairn.render,
+  render: cairn.rendering.render,
   origin: ORIGIN,
-  siteName: cairn.siteName,
+  siteName: siteConfig.siteName,
   description: SITE_DESCRIPTION,
   feeds: { rss: ORIGIN + '/feed.xml', json: ORIGIN + '/feed.json' },
 });
@@ -457,12 +473,12 @@ export const GET: RequestHandler = async () => {
       url: ORIGIN + p.permalink,
       date: p.date,
       summary: p.excerpt,
-      contentHtml: await cairn.render(posts!.byId(p.id)!.body, { resolve }),
+      contentHtml: await cairn.rendering.render(posts!.byId(p.id)!.body, { resolve }),
       tags: p.tags,
     })),
   );
   return rssResponse(
-    { title: cairn.siteName, description: SITE_DESCRIPTION, siteUrl: ORIGIN, feedUrl: ORIGIN + '/feed.xml' },
+    { title: siteConfig.siteName, description: SITE_DESCRIPTION, siteUrl: ORIGIN, feedUrl: ORIGIN + '/feed.xml' },
     items,
   );
 };
@@ -552,20 +568,16 @@ menus:
       url: /
     - label: About
       url: /about
-content:
-  posts:
-    permalink: /:year/:month/:day/:slug
-    datePrefix: day
-  pages:
-    permalink: /:slug
 ```
 
-Your site reads the menu at build time with `parseSiteConfig` and `extractMenu`, the same parse you already wired for the URL policy. A template pulls the `primary` menu out of the parsed config and renders one link per node. For the signatures, see [`parseSiteConfig` and `extractMenu`](../reference/core.md#parsesiteconfig) in the core reference.
+Your site reads the menu at build time with `parseSiteConfig` and `extractMenu`, the same parse you already wired for the site config. A template pulls the `primary` menu out of the parsed config and renders one link per node. For the signatures, see [`parseSiteConfig` and `extractMenu`](../reference/core.md#parsesiteconfig) in the core reference.
 
-The admin nav editor needs to know which menu in the YAML it edits, so tell the adapter. Open `src/lib/cairn.config.ts` and add a `navMenu` entry to `defineAdapter`, naming the config file, the menu, and how deep the tree may nest:
+The admin nav editor needs to know which menu in the YAML it edits, so tell the adapter. Open `src/lib/cairn.config.ts` and add a `nav` entry to the adapter's `editor` group, naming the config file, the menu, and how deep the tree may nest:
 
 ```ts
-  navMenu: { configPath: 'src/lib/site.config.yaml', menuName: 'primary', label: 'Navigation', maxDepth: 2 },
+  editor: {
+    nav: { configPath: 'src/lib/site.config.yaml', menuName: 'primary', label: 'Navigation', maxDepth: 2 },
+  },
 ```
 
 You do not hand-edit this YAML for every change. The admin carries a nav tree editor that reads this menu, lets an author reorder and rename its links, and commits the result back to the same file. You wire and exercise that nav editor in milestone 8. For why a page lives at a stable permalink that a menu link can point to, see [URL identity](../explanation/content-model.md#url-identity) in the content model.
@@ -602,7 +614,7 @@ const branches = new Map<string, Tree>([
       // The committed site config from milestone 7, so the nav editor has a menu to read.
       [
         'src/lib/site.config.yaml',
-        'siteName: Field Notes\nmenus:\n  primary:\n    - label: Home\n      url: /\n    - label: About\n      url: /about\ncontent:\n  posts:\n    permalink: /:year/:month/:day/:slug\n    datePrefix: day\n  pages:\n    permalink: /:slug\n',
+        'siteName: Field Notes\nmenus:\n  primary:\n    - label: Home\n      url: /\n    - label: About\n      url: /about\n',
       ],
       // The committed manifest, so the link picker can resolve a cairn: link to an existing post.
       [
@@ -696,7 +708,7 @@ Its page mounts the engine's `CairnAdmin`, which reads the discriminated view da
   let { data, form }: { data: AdminData; form: ActionData } = $props();
 </script>
 
-<CairnAdmin {data} {form} render={cairn.render} registry={cairn.registry} icons={cairn.icons} />
+<CairnAdmin {data} {form} render={cairn.rendering.render} registry={cairn.rendering.components} icons={cairn.rendering.icons} />
 ```
 
 That is the entire admin surface. The one route serves the concept lists at `/admin/posts` and `/admin/pages`, the editor at `/admin/<concept>/<id>`, the nav editor at `/admin/nav`, the sign-in screens, and the owner's editor management at `/admin/editors`, and it answers every form action those views post. You restate no route table and no action names, so when a release adds an action, the version bump alone delivers it. [The canonical admin mount](../reference/admin-routes.md) documents the URL set and the action vocabulary, and [the SvelteKit reference](../reference/sveltekit.md#createcairnadmin) has the `createCairnAdmin` signature.

@@ -39,7 +39,7 @@ export const actions = admin.actions;
   let { data, form }: { data: AdminData; form: ActionData } = $props();
 </script>
 
-<CairnAdmin {data} {form} render={cairn.render} registry={cairn.registry} icons={cairn.icons} />
+<CairnAdmin {data} {form} render={cairn.rendering.render} registry={cairn.rendering.components} icons={cairn.rendering.icons} />
 ```
 
 The composer builds the runtime once, and every server route that needs it (the admin mount,
@@ -77,7 +77,7 @@ The one route answers every admin URL. `createCairnAdmin`'s load parses `event.u
 | `/admin/<concept>` | list | One concept's entries, with create, delete, and publish-all. |
 | `/admin/<concept>/<id>` | edit | The entry editor. |
 | `/admin/editors` | editors | The owner-gated editor management. |
-| `/admin/nav` | nav | The nav tree editor. A 404 unless the adapter configures `navMenu`. |
+| `/admin/nav` | nav | The nav tree editor. A 404 unless the adapter configures `editor.nav`. |
 | `/admin/media` | media | The media library. |
 | `/admin/settings` | settings | The tidy settings screen. |
 | `/admin/help` | help | The Help home: getting started, the formatting reference, and the support hand-off. |
@@ -97,7 +97,7 @@ so a `save` posted to a list URL refuses rather than misfiring:
 | `confirm` | confirm | the token confirm |
 | `logout` | any parsed view | the session logout |
 | `create` | list | the entry create |
-| `save` | edit, nav | the entry save, or the nav save (404 without a `navMenu`) |
+| `save` | edit, nav | the entry save, or the nav save (404 without `editor.nav`) |
 | `publish` | edit | the entry publish |
 | `discard` | edit | the pending-edit discard |
 | `rename` | edit | the entry rename |

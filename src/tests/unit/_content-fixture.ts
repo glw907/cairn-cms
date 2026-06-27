@@ -29,22 +29,24 @@ export const postFields: NamedField[] = namedFields(postFieldset);
 export const pageFields: NamedField[] = namedFields(pageFieldset);
 
 export const testAdapter: CairnAdapter = {
-  siteName: 'Test',
   content: {
-    // posts omits `label` to exercise the default; pages overrides it.
+    // posts omits `label` to exercise the default; pages overrides it. posts declares the dated feed
+    // routing so every dated-behavior test riding this fixture sees a dated concept.
     posts: {
       dir: 'src/content/posts',
-      schema: postFieldset,
+      routing: 'feed',
+      fields: postFieldset,
     },
     pages: {
       label: 'Site Pages',
       dir: 'src/content/pages',
-      schema: pageFieldset,
+      routing: 'page',
+      fields: pageFieldset,
     },
   },
   backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
-  sender: { from: 'noreply@test.example' },
-  render: (md) => md,
+  email: { from: 'noreply@test.example' },
+  rendering: { render: (md) => md },
 };
 
 export const testSiteConfig: SiteConfig = { siteName: 'Test' };

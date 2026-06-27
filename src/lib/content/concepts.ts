@@ -1,29 +1,14 @@
-// cairn-cms: concept normalization (seam 1). The adapter declares concepts as
-// `content: { posts?, pages? }`; this turns each declared key into a uniform descriptor
-// (id, label, directory, concept-fixed routing, fields, validator) the admin reads. A
-// future Fragments concept attaches by adding one key under `content` and one routing
-// entry, with no reshape here.
+// cairn-cms: concept normalization (seam 1). The adapter declares concepts as an open `content`
+// record; this turns each declared key into a uniform descriptor (id, label, directory, declared
+// routing, fields, validator) the admin reads. A new concept attaches by adding one key under
+// `content` and declaring its own routing and URL policy, with no reshape here.
 import type { ConceptConfig, ConceptDescriptor, ConceptUrlPolicy, NamedField, RoutingRule } from './types.js';
 import type { Fieldset } from './fieldset.js';
-import { urlPolicyFrom, type SiteConfig } from '../nav/site-config.js';
 
 /** Re-attach each fieldset record key to its descriptor as `name`, the normalized `NamedField[]`. */
 function namedFields(schema: Fieldset): NamedField[] {
   return Object.entries(schema.fields).map(([name, descriptor]) => ({ name, ...descriptor }));
 }
-
-/**
- * Concept-fixed routing, keyed by concept id (spec §7.2). Posts are dated feed entries;
- * pages are plain navigable structure. Not in adapter config. A future Fragments adds one
- * entry here and one key under `content`.
- */
-export const CONCEPT_ROUTING: Readonly<Record<string, RoutingRule>> = {
-  posts: { routable: true, dated: true, inFeeds: true },
-  pages: { routable: true, dated: false, inFeeds: false },
-};
-
-/** Routing for a concept with no table entry: a plain, non-feed, routable page. */
-const DEFAULT_ROUTING: RoutingRule = { routable: true, dated: false, inFeeds: false };
 
 /** The named routing shorthands, each expanding to a concrete rule. */
 const ROUTING_SHORTHANDS: Readonly<Record<'feed' | 'page' | 'embedded', RoutingRule>> = {
@@ -36,6 +21,20 @@ const ROUTING_SHORTHANDS: Readonly<Record<'feed' | 'page' | 'embedded', RoutingR
 export function resolveRouting(routing: ConceptConfig['routing']): RoutingRule {
   if (routing === undefined) return ROUTING_SHORTHANDS.page;
   return typeof routing === 'string' ? ROUTING_SHORTHANDS[routing] : routing;
+}
+
+/**
+ * Declare a concept while preserving its fieldset type for typed reads, and validate its URL policy at
+ * declaration so a bad permalink or datePrefix fails at module load rather than at a defaulted render.
+ * Mirrors {@link defineAdapter}; the validation is the build-independent net for a concept with no entries.
+ */
+export function defineConcept<const C extends ConceptConfig>(concept: C): C {
+  validateUrlPolicy(
+    concept.label ?? concept.dir,
+    { permalink: concept.permalink, datePrefix: concept.datePrefix },
+    resolveRouting(concept.routing).dated,
+  );
+  return concept;
 }
 
 /** Title-case a concept id for the default sidebar label, e.g. "posts" to "Posts". */
@@ -86,30 +85,23 @@ export function validateUrlPolicy(id: string, policy: ConceptUrlPolicy, dated: b
 }
 
 /**
- * Normalize an adapter's declared concepts into uniform descriptors (seam 1). URL policy
- * (`permalink`, `datePrefix`) comes from the YAML site-config, passed here as `urlPolicy` keyed by
- * concept id; each value defaults when the YAML omits it (`/:slug` for Pages, `/<id>/:slug`
- * otherwise; `datePrefix` defaults to `day`). `routing` is injectable so a contract test can prove
- * a new concept attaches additively; production passes the default `CONCEPT_ROUTING`.
+ * Normalize an adapter's declared concepts into uniform descriptors (seam 1). Each concept declares its
+ * own routing (a shorthand or an explicit rule, resolved by `resolveRouting`) and URL policy
+ * (`permalink`, `datePrefix`) on the config; both default when omitted (`/:slug` for Pages, `/<id>/:slug`
+ * otherwise; `datePrefix` defaults to `day`). A new concept attaches by adding one key under `content`.
  */
 export function normalizeConcepts(
   content: Record<string, ConceptConfig | undefined>,
-  urlPolicy: Record<string, ConceptUrlPolicy | undefined> = {},
-  routing: Readonly<Record<string, RoutingRule>> = CONCEPT_ROUTING,
 ): ConceptDescriptor[] {
   const descriptors: ConceptDescriptor[] = [];
   const declaredConcepts = new Set(
     Object.keys(content).filter((key) => content[key] !== undefined),
   );
-  for (const key of Object.keys(urlPolicy)) {
-    if (!declaredConcepts.has(key)) {
-      throw new Error(`cairn: URL policy names concept "${key}", which is not declared under content`);
-    }
-  }
   for (const [id, config] of Object.entries(content)) {
     if (!config) continue;
+    const fs = config.fields;
     const summaryFields = config.summaryFields ?? [];
-    const declared = new Set(Object.keys(config.schema.fields));
+    const declared = new Set(Object.keys(fs.fields));
     const undeclared = summaryFields.find((key) => !declared.has(key));
     if (undeclared !== undefined) {
       throw new Error(
@@ -119,8 +111,8 @@ export function normalizeConcepts(
     // A reference (or array of reference) field names the concept it targets. Validate that concept at
     // declaration, so a typo fails loudly here rather than at the build's verifyReferences gate (or, in
     // the editor picker, as a silently empty target list). The check is the field descriptor's concept
-    // against the declared content keys, the same set the URL-policy check uses.
-    for (const [name, descriptor] of Object.entries(config.schema.fields)) {
+    // against the declared content keys.
+    for (const [name, descriptor] of Object.entries(fs.fields)) {
       const targetConcept =
         descriptor.type === 'reference'
           ? descriptor.concept
@@ -133,8 +125,8 @@ export function normalizeConcepts(
         );
       }
     }
-    const conceptRouting = routing[id] ?? DEFAULT_ROUTING;
-    const policy = urlPolicy[id] ?? {};
+    const conceptRouting = resolveRouting(config.routing);
+    const policy: ConceptUrlPolicy = { permalink: config.permalink, datePrefix: config.datePrefix };
     validateUrlPolicy(id, policy, conceptRouting.dated);
     const label = config.label ?? defaultLabel(id);
     descriptors.push({
@@ -145,25 +137,24 @@ export function normalizeConcepts(
       routing: conceptRouting,
       permalink: policy.permalink ?? defaultPermalink(id),
       datePrefix: policy.datePrefix ?? 'day',
-      fields: namedFields(config.schema),
-      schema: config.schema,
+      fields: namedFields(fs),
+      schema: fs,
       summaryFields,
-      validate: config.schema.validate,
+      validate: fs.validate,
     });
   }
   return descriptors;
 }
 
 /**
- * Resolve a site's concept descriptors from its content map and parsed site config. The admin runtime
- * (composeRuntime) and the delivery layer (siteDescriptors) both call this, so the per-concept URL
- * policy is derived once from the YAML and the runtime and delivery permalinks cannot diverge.
+ * Resolve a site's concept descriptors from its content map. The admin runtime (composeRuntime) and the
+ * delivery layer (siteDescriptors) both call this, so the per-concept routing and URL policy are derived
+ * once from the concept declarations and the runtime and delivery permalinks cannot diverge.
  */
 export function resolveConcepts(
   content: Record<string, ConceptConfig | undefined>,
-  siteConfig: SiteConfig,
 ): ConceptDescriptor[] {
-  return normalizeConcepts(content, urlPolicyFrom(siteConfig));
+  return normalizeConcepts(content);
 }
 
 /** Look up a normalized concept by id, or undefined when the site does not enable it. */

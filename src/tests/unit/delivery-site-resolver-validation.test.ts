@@ -8,7 +8,8 @@ import { fieldset } from '../../lib/content/fieldset.js';
 const descriptor = normalizeConcepts({
   posts: {
     dir: 'src/content/posts',
-    schema: fieldset({ title: fields.text({ label: 'Title', required: true }) }),
+    routing: 'feed',
+    fields: fieldset({ title: fields.text({ label: 'Title', required: true }) }),
   },
 })[0];
 

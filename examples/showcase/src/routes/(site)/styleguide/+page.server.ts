@@ -108,5 +108,5 @@ export const load: PageServerLoad = async () => ({
   // Render once, on the server, through the adapter. The same call the article route makes; an empty
   // opts takes the defaults, so the adapter's default public media resolver backs the render (the
   // showcase adapter's render literal types opts as a positional argument, so it is passed explicitly).
-  proseHtml: await cairn.render(SAMPLE, {}),
+  proseHtml: await cairn.rendering.render(SAMPLE, {}),
 });

@@ -15,7 +15,7 @@ describe('render resolveMedia opt', () => {
       forwarded = opts?.resolveMedia;
       return md;
     };
-    const render: CairnAdapter['render'] = (md, opts) => inner(md, { ...opts });
+    const render: CairnAdapter['rendering']['render'] = (md, opts) => inner(md, { ...opts });
 
     const resolveMedia: MediaResolve = (ref) => `/media/${ref.hash}.webp`;
     const out = await render('![x](media:a1b2c3d4e5f6a7b8)', { resolveMedia });

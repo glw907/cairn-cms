@@ -16,38 +16,43 @@ This guide assumes you already have a running cairn site and want to shape its c
 2. **Declare the concept set with `defineAdapter`.** Each key under `content` is one concept. The showcase declares two, `posts` and `pages`, each with a content directory and a label:
 
    ```ts
-   import { defineAdapter, fieldset, fields } from '@glw907/cairn-cms';
+   import { defineAdapter, defineConcept, fieldset, fields } from '@glw907/cairn-cms';
 
    export const cairn = defineAdapter({
-     siteName: 'Cairn Showcase',
      content: {
-       posts: {
+       posts: defineConcept({
          dir: 'src/content/posts',
          label: 'Posts',
          summaryFields: ['description'],
-         schema: fieldset({
+         routing: 'feed',
+         fields: fieldset({
            title: fields.text({ label: 'Title', required: true }),
            date: fields.date({ label: 'Date' }),
            description: fields.textarea({ label: 'Description' }),
            image: fields.image({ label: 'Hero image', seo: true }),
            author: fields.text({ label: 'Author' }),
          }),
-       },
-       pages: {
+       }),
+       pages: defineConcept({
          dir: 'src/content/pages',
          label: 'Pages',
-         schema: fieldset({
+         routing: 'page',
+         fields: fieldset({
            title: fields.text({ label: 'Title', required: true }),
            robots: fields.text({ label: 'Robots' }),
          }),
-       },
+       }),
      },
      backend: { owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' },
-     sender: { from: 'cms@showcase.test' },
-     render: (md, opts) => renderMarkdown(md, opts),
-     navMenu: { configPath: 'src/lib/site.config.yaml', menuName: 'primary', label: 'Navigation', maxDepth: 2 },
-     registry,
-     icons,
+     email: { from: 'cms@showcase.test' },
+     rendering: {
+       render: (md, opts) => renderMarkdown(md, opts),
+       components: registry,
+       icons,
+     },
+     editor: {
+       nav: { configPath: 'src/lib/site.config.yaml', menuName: 'primary', label: 'Navigation', maxDepth: 2 },
+     },
    });
    ```
 
@@ -57,7 +62,7 @@ This guide assumes you already have a running cairn site and want to shape its c
 
    The constructors cover the scalar field types (`text`, `textarea`, `number`, `select`, `multiselect`, `url`, `email`, `date`, `datetime`, `boolean`, `image`). A `select` takes a closed `options` list. A `multiselect` with an `options` list renders as checkboxes, and a `multiselect` with `creatable: true` renders as an open tag input. Every constructor accepts an optional `help` sentence the editor shows under the field. For the full list, the `required` flag, and the cross-field `options.refine` check, see [the core reference](../reference/core.md#fields).
 
-4. **Set the slug codec and the per-concept date granularity.** A dated entry's URL is derived from its filename stem, and how much of a leading date the slug strips is per-concept. The URL policy itself lives in your site's YAML config rather than the adapter (so the site owner controls the permalink shape without touching code). The showcase pairs its adapter with `examples/showcase/src/lib/site.config.yaml`, which the adapter reads through `navMenu.configPath`. For the id-to-slug split and the policy that resolves a permalink, see [URL identity](../explanation/content-model.md#url-identity) and [`permalink`](../reference/delivery-data.md#permalink).
+4. **Set each concept's routing and URL policy.** A concept declares its own `routing` (the `'feed'`, `'page'`, or `'embedded'` shorthand, or an explicit rule), `permalink`, and `datePrefix` through `defineConcept`. A dated entry's URL is derived from its filename stem, and `datePrefix` sets how much of a leading date the slug strips. `defineConcept` validates the policy at declaration, so a bad permalink throws at module load. For the id-to-slug split and the policy that resolves a permalink, see [URL identity](../explanation/content-model.md#url-identity) and [`permalink`](../reference/delivery-data.md#permalink).
 
 5. **Implement the `render` method.** Your adapter's `render` turns a concept's markdown into HTML. The showcase builds its renderer once from its component registry and forwards every call:
 
@@ -67,8 +72,8 @@ This guide assumes you already have a running cairn site and want to shape its c
    const registry = defineRegistry({ components: [callout, alert] });
    const { renderMarkdown } = createRenderer(registry);
 
-   // ...inside defineAdapter:
-   render: (md, opts) => renderMarkdown(md, opts),
+   // ...inside the adapter's rendering group:
+   rendering: { render: (md, opts) => renderMarkdown(md, opts), components: registry, icons },
    ```
 
    For the pipeline `createRenderer` assembles and how to register components, see [Configure rendering](./configure-rendering.md).
@@ -78,21 +83,23 @@ This guide assumes you already have a running cairn site and want to shape its c
    ```ts
    import siteCss from './site.css?url';
 
-   // ...inside defineAdapter:
-   preview: { stylesheets: [siteCss], containerClass: 'site-main' },
+   // ...inside the adapter's editor group:
+   editor: { preview: { stylesheets: [siteCss], containerClass: 'site-main' } },
    ```
 
    `containerClass` reproduces your content wrapper (the element your pages render entries into), so the preview takes the same measure and padding as the live page. `bodyClass` does the same for any classes your site puts on `<body>`, such as a theme root. When your concepts wrap content differently (posts inside a post module, pages inside a static-page wrapper), the optional `byConcept` map overrides either class per concept id, and an entry's preview picks the override for its own concept:
 
    ```ts
-   preview: {
-     stylesheets: [siteCss],
-     containerClass: 'static-page',
-     byConcept: { posts: { bodyClass: 'post-body', containerClass: 'post-module' } },
+   editor: {
+     preview: {
+       stylesheets: [siteCss],
+       containerClass: 'static-page',
+       byConcept: { posts: { bodyClass: 'post-body', containerClass: 'post-module' } },
+     },
    },
    ```
 
-   The frame's document pins a white body background as a deliberately overridable default, so if your site's ground is not white, state the body background in your own stylesheet. One rule comes with the idiom: reference the sheet only through `?url`, and have the site layout link the resolved URL from a `<svelte:head>` rather than importing the file statically. A static import folds the sheet into a CSS chunk whose name differs between the client and server builds, and the preview frame's link then 404s. The showcase's `site.css` header comment and [the core reference](../reference/core.md#preview-adapter-member) carry the full explanation.
+   The frame's document pins a white body background as a deliberately overridable default, so if your site's ground is not white, state the body background in your own stylesheet. One rule comes with the idiom: reference the sheet only through `?url`, and have the site layout link the resolved URL from a `<svelte:head>` rather than importing the file statically. A static import folds the sheet into a CSS chunk whose name differs between the client and server builds, and the preview frame's link then 404s. The showcase's `site.css` header comment and [the core reference](../reference/core.md#preview-adapter-editor-member) carry the full explanation.
 
    With the knob wired, editors get a design-accurate proof, and the Preview tab's width menu lets them check the page at tablet and phone widths too. Without it the preview still renders, unstyled, behind a one-line hint naming this option.
 

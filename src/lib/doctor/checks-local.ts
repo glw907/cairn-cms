@@ -5,11 +5,8 @@ import { fail, pass, skip } from './types.js';
 import type { CheckResult, DoctorCheck, DoctorContext } from './types.js';
 import { readWranglerConfig } from './wrangler-config.js';
 import { requireOrigin } from '../env.js';
-import { parseSiteConfig, urlPolicyFrom } from '../nav/site-config.js';
+import { parseSiteConfig } from '../nav/site-config.js';
 import type { SiteConfig } from '../nav/site-config.js';
-import { normalizeConcepts } from '../content/concepts.js';
-import { fieldset } from '../content/fieldset.js';
-import type { ConceptConfig } from '../content/types.js';
 
 const NO_WRANGLER: CheckResult = skip('no wrangler.jsonc or wrangler.toml found');
 
@@ -156,16 +153,11 @@ export const configSiteConfig: DoctorCheck = {
 		const text = await readSiteConfigText(ctx);
 		if (text === null) return skip(`no site.config.yaml found (looked in ${SITE_CONFIG_PATHS.join(', ')})`);
 		try {
-			const policy = urlPolicyFrom(parseSiteConfig(text));
-			// Run the engine's own URL-policy validation by declaring a synthetic empty concept
-			// per policy key. Routing is concept-fixed in the engine (CONCEPT_ROUTING, never the
-			// adapter), so the dated rules apply faithfully here. What a CLI cannot check without
-			// evaluating the adapter is whether each policy key names a concept the site declares.
-			const synthetic = Object.fromEntries(
-				Object.keys(policy).map((id): [string, ConceptConfig] => [id, { dir: '', schema: fieldset({}) }])
-			);
-			normalizeConcepts(synthetic, policy);
-			return pass('parsed and URL policy validated (the adapter concept set is not checkable from the CLI)');
+			// Parse-only. parseSiteConfig validates the root shape and, since Contract v2, hard-errors on a
+			// stale per-concept `content:` block (URL policy moved onto defineConcept). The per-concept URL
+			// policy is now validated at the concept declaration, which a CLI cannot reach without the adapter.
+			parseSiteConfig(text);
+			return pass('parsed (per-concept URL policy lives on the adapter concepts, not checkable from the CLI)');
 		} catch (err) {
 			return fail(err instanceof Error ? err.message : String(err));
 		}

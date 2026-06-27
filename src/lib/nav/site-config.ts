@@ -3,7 +3,6 @@
 // commits the file back through the GitHub-App pipeline. This module is pure: parse, validate, and
 // rewrite only. The engine returns data; each site renders the tree with its own markup.
 import { parse as parseYaml, parseDocument } from 'yaml';
-import type { ConceptUrlPolicy } from '../content/types.js';
 
 /** One navigation node. An omitted or empty `url` is a label-only grouping header; no `children` is a leaf. */
 export interface NavNode {
@@ -78,8 +77,6 @@ export interface SiteConfig {
   locale?: string;
   /** Named navigation menus, each a NavNode[] (normalized by extractMenu). */
   menus?: Record<string, unknown>;
-  /** Per-concept URL policy: the permalink pattern and date-prefix granularity, keyed by concept id. */
-  content?: Record<string, ConceptUrlPolicy>;
   /**
    * The editor spellcheck settings. The dialect is declared once per site (spec 1.2), so a British
    *  site loads the British word list and "colour" reads as correct. Today only US English ships, so an
@@ -284,6 +281,14 @@ export function parseSiteConfig(raw: string): SiteConfig {
   if (typeof siteName !== 'string' || !siteName.trim()) {
     throw new SiteConfigError('Site config needs a siteName');
   }
+  // Contract v2 moved per-concept URL policy out of the YAML and onto defineConcept. A leftover
+  // `content:` block here would silently do nothing while the concept defaulted its permalink, so a
+  // half-migrated site (one carrying a non-default datePrefix) would rewrite every post URL. Fail loud.
+  if ((parsed as SiteConfig).content !== undefined) {
+    throw new SiteConfigError(
+      'cairn: site config no longer carries per-concept URL policy; move permalink/datePrefix into defineConcept (Contract v2)',
+    );
+  }
   return parsed as SiteConfig;
 }
 
@@ -292,11 +297,6 @@ export function extractMenu(config: SiteConfig, name: string, maxDepth: number):
   const menu = config.menus?.[name];
   if (menu === undefined) return [];
   return validateNavTree(menu, maxDepth);
-}
-
-/** The per-concept URL policy from a parsed config, or an empty policy when the `content` key is absent. */
-export function urlPolicyFrom(config: SiteConfig): Record<string, ConceptUrlPolicy> {
-  return config.content ?? {};
 }
 
 /**

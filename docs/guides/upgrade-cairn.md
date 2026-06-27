@@ -339,7 +339,7 @@ preview: { stylesheets: [siteCss], containerClass: 'site-main' },
 
 Reference the sheet only through `?url` and link the resolved URL from the site layout's
 `<svelte:head>`; a static import of the same file breaks the frame's link, for the reason
-[the core reference](../reference/core.md#preview-adapter-member) explains. Without the knob the
+[the core reference](../reference/core.md#preview-adapter-editor-member) explains. Without the knob the
 preview renders unstyled markup behind a one-line hint, which is no worse than before.
 
 The editor also fixes its directive highlighting (labeled and attributed `:::` openers and fences

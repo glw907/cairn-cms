@@ -54,9 +54,9 @@ This guide assumes a running cairn site whose content you want to deliver. The w
 
    const routes = createPublicRoutes({
      site,
-     render: cairn.render,
+     render: cairn.rendering.render,
      origin: ORIGIN,
-     siteName: cairn.siteName,
+     siteName: siteConfig.siteName,
      description: SITE_DESCRIPTION,
      defaultImage: ORIGIN + '/og/default.png',
      feeds: { rss: ORIGIN + '/feed.xml', json: ORIGIN + '/feed.json' },
@@ -103,12 +103,12 @@ This guide assumes a running cairn site whose content you want to deliver. The w
          url: ORIGIN + p.permalink,
          date: p.date,
          summary: p.excerpt,
-         contentHtml: await cairn.render(posts!.byId(p.id)!.body, { resolve }),
+         contentHtml: await cairn.rendering.render(posts!.byId(p.id)!.body, { resolve }),
          tags: p.tags,
        })),
      );
      return rssResponse(
-       { title: cairn.siteName, description: SITE_DESCRIPTION, siteUrl: ORIGIN, feedUrl: ORIGIN + '/feed.xml' },
+       { title: siteConfig.siteName, description: SITE_DESCRIPTION, siteUrl: ORIGIN, feedUrl: ORIGIN + '/feed.xml' },
        items,
      );
    };

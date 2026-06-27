@@ -7,7 +7,6 @@ import {
   extractMenu,
   setMenu,
   setTidy,
-  urlPolicyFrom,
   dictionaryFileForDialect,
   DEFAULT_DIALECT,
 } from '../../lib/nav/site-config.js';
@@ -102,6 +101,16 @@ describe('parseSiteConfig', () => {
 
   it('leaves spellcheck undefined when the key is absent', () => {
     expect(parseSiteConfig('siteName: S\n').spellcheck).toBeUndefined();
+  });
+
+  it('throws on a stale per-concept content block, pointing to defineConcept (Contract v2)', () => {
+    expect(() =>
+      parseSiteConfig('siteName: S\ncontent:\n  posts:\n    permalink: /:year/:month/:slug\n    datePrefix: month\n'),
+    ).toThrow(/defineConcept/);
+  });
+
+  it('parses a content-free config', () => {
+    expect(parseSiteConfig('siteName: S\nmenus:\n  primary: []\n')).toMatchObject({ siteName: 'S' });
   });
 });
 
@@ -212,16 +221,5 @@ describe('setTidy', () => {
 
   it('throws when the root has no siteName', () => {
     expect(() => setTidy('description: x\n', { fixes: true })).toThrow(SiteConfigError);
-  });
-});
-
-describe('urlPolicyFrom', () => {
-  it('reads a per-concept content section', () => {
-    const cfg = parseSiteConfig('siteName: T\ncontent:\n  posts:\n    permalink: /:year/:month/:slug\n    datePrefix: month\n');
-    expect(urlPolicyFrom(cfg)).toEqual({ posts: { permalink: '/:year/:month/:slug', datePrefix: 'month' } });
-  });
-
-  it('returns an empty policy when content is absent', () => {
-    expect(urlPolicyFrom(parseSiteConfig('siteName: T\n'))).toEqual({});
   });
 });

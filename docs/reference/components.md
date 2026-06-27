@@ -56,7 +56,7 @@ fields. The showcase mounts it like this:
   let { data, form }: { data: AdminData; form: ActionData } = $props();
 </script>
 
-<CairnAdmin {data} {form} render={cairn.render} registry={cairn.registry} icons={cairn.icons} />
+<CairnAdmin {data} {form} render={cairn.rendering.render} registry={cairn.rendering.components} icons={cairn.rendering.icons} />
 ```
 
 ### `AdminLayout`
@@ -220,10 +220,10 @@ web-link dialog.
 </script>
 
 <EditPage
-  data={{ ...data, siteName: cairn.siteName }}
-  render={cairn.render}
-  registry={cairn.registry}
-  icons={cairn.icons}
+  data={{ ...data, siteName: siteConfig.siteName }}
+  render={cairn.rendering.render}
+  registry={cairn.rendering.components}
+  icons={cairn.rendering.icons}
 />
 ```
 
@@ -513,7 +513,7 @@ insert flow as before.
   {registry}
   insert={insertAtCursor}
   {icons}
-  render={cairn.render}
+  render={cairn.rendering.render}
   preview={data.preview}
 />
 ```

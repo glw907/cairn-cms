@@ -54,7 +54,7 @@ lazily, only for inputs the flags and environment left missing.
 
 When the site's Vite config wires the `cairnManifest` plugin, the doctor evaluates the configured
 adapter module through the site's own Vite resolution. It reads the from-address off
-`cairn.sender.from` and the repository off `cairn.backend.owner` and `cairn.backend.repo`. For the
+`cairn.email.from` and the repository off `cairn.backend.owner` and `cairn.backend.repo`. For the
 account id it falls back to the wrangler config's top-level `account_id`. A repo the doctor cannot
 read this way (no Vite config, no `cairnManifest` plugin, or an adapter that fails to load)
 degrades cleanly; the affected checks skip and their detail lines name the flag, the variable, and

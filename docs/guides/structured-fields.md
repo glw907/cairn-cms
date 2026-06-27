@@ -26,7 +26,7 @@ export const cairn = defineAdapter({
     posts: {
       dir: 'src/content/posts',
       label: 'Posts',
-      schema: fieldset({
+      fields: fieldset({
         title: fields.text({ label: 'Title', required: true }),
         // a list of records: each row is a flat object of leaves
         faq: fields.array(
@@ -41,7 +41,7 @@ export const cairn = defineAdapter({
         // a list of a single leaf
         gallery: fields.array(fields.image({ label: 'Image' }), { label: 'Gallery' }),
       }),
-      // ...backend, sender, render...
+      // ...backend, email, rendering...
     },
   },
 });
@@ -56,7 +56,7 @@ objects, and `gallery` serializes as a list of `media:` image values.
 An `object` groups leaf fields under one key without repeating. Give it a `label` for the group legend.
 
 ```ts
-schema: fieldset({
+fields: fieldset({
   title: fields.text({ label: 'Title', required: true }),
   meta: fields.object({
     label: 'Meta',

@@ -3,8 +3,8 @@
 // the graph. The full ./delivery barrel re-exports this and adds the route loaders.
 export { createContentIndex, fromGlob } from './content-index.js';
 export type { RawFile, ContentSummary, ContentEntry, ContentIndex, ContentProblem } from './content-index.js';
-export { createSiteResolver, buildLinkResolver } from './site-resolver.js';
-export type { SiteResolver, ConceptIndex } from './site-resolver.js';
+export { createSiteResolver, buildLinkResolver, resolveReferences } from './site-resolver.js';
+export type { SiteResolver, ConceptIndex, ResolvedReference } from './site-resolver.js';
 export { createSiteIndexes } from './site-indexes.js';
 export type { SiteIndexes, SiteGlobs } from './site-indexes.js';
 export { siteDescriptors } from './site-descriptors.js';

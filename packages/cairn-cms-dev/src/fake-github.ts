@@ -312,6 +312,11 @@ export function seedMediaLibrary(): void {
   // and tidy specs act on. No media reference, so it never touches the usage index.
   main.set(SEED_EDITOR.path, `---\ntitle: ${SEED_EDITOR.title}\ndate: 2026-06-09\n---\n${SEED_EDITOR.body}\n`);
 
+  // A seed pages entry: the reference e2e (golden-path.spec.ts) needs a pages target so the author
+  // reference picker (scoped to the pages concept) has something to pick. The manifest entry below
+  // lists it so editLoad's linkTargets surface it in the picker; the markdown backs its own editor.
+  main.set('src/content/pages/about.md', '---\ntitle: About\n---\nThe showcase about page.\n');
+
   // The content manifest on main: the seed post entry, carrying a non-empty summary (the office
   // triage spec asserts it) and a mediaRefs pointing at the used asset (so its where-used reads
   // published), plus the two Pass B entries whose mediaRefs point at first-light (so the usage index
@@ -359,6 +364,17 @@ export function seedMediaLibrary(): void {
         date: '2026-06-09',
         permalink: '/posts/copyedit',
         summary: SEED_EDITOR.body,
+        draft: false,
+        links: [],
+        mediaRefs: [],
+      },
+      // The pages target the reference e2e's author picker selects (scoped to the pages concept).
+      {
+        id: 'about',
+        concept: 'pages',
+        title: 'About',
+        permalink: '/about',
+        summary: 'The showcase about page.',
         draft: false,
         links: [],
         mediaRefs: [],

@@ -2,7 +2,7 @@
 title: The reading surface
 date: 2026-04-05
 description: A working tour of every element this theme styles, written as the markdown an author actually types.
-author: Showcase Author
+author: about
 image:
   src: https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1200&q=80
   alt: A trail of light through a green forest

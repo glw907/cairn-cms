@@ -123,7 +123,14 @@ export const cairn = defineAdapter({
         // validate-once read. Every frontmatter key a site reads must be in its schema.
         description: fields.textarea({ label: 'Description' }),
         image: fields.image({ label: 'Hero image', seo: true }),
-        author: fields.text({ label: 'Author' }),
+        // A single reference to a pages entry: the typed frontmatter author edge. The editor picks
+        // it from the pages concept, the build verifies it resolves, and the public route renders the
+        // resolved page title linked to its permalink (the reference e2e pins the round-trip and the
+        // resolved render end to end).
+        author: fields.reference({ concept: 'pages', label: 'Author' }),
+        // A many reference to other posts: array(reference) exercising the chip-list editor arm and
+        // the multi-edge extractor, delivered as a list of resolved targets.
+        related: fields.array(fields.reference({ concept: 'posts' }), { label: 'Related posts' }),
         // A closed select exercising a brand-new v2 scalar arm end to end: the editor renders a
         // <select>, the value round-trips through save and reload (the golden-path e2e pins it).
         status: fields.select({ label: 'Status', options: ['draft', 'published'], default: 'draft' }),

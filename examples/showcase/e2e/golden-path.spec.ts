@@ -502,6 +502,116 @@ test('the v2 status select round-trips: set it, save, reload, the value persists
   await expect(reloadedSelect).toHaveValue('published');
 });
 
+test('reference fields round-trip through the editor, commit their edges, and resolve on the public route', async ({
+  page,
+  request,
+}) => {
+  // The reference fields (posts.author -> pages, posts.related -> posts) live behind the Details
+  // slide-over. The seed manifest carries the About page (the author target) and a second post
+  // ("A later pass") for the related edge. A fresh entry per run keeps this self-contained under
+  // the reused local server (reuseExistingServer keeps the in-memory repo across runs).
+  const slug = `references-${Date.now()}`;
+
+  await page.goto('/admin/posts');
+
+  // Create the entry through the header dialog.
+  await page.locator('header').getByRole('button', { name: 'New Posts' }).click();
+  const createDialog = page.locator('dialog[aria-labelledby="cairn-create-dialog-title"]');
+  await expect(createDialog).toBeVisible();
+  await createDialog.locator('input[name="title"]').fill('References');
+  await createDialog.locator('input[name="slug"]').fill(slug);
+  await createDialog.getByRole('button', { name: 'Create' }).click();
+  await expect(page).toHaveURL(/new=1/, { timeout: 10_000 });
+  const id = new URL(page.url()).pathname.split('/').pop() ?? '';
+
+  // Required title plus a body so the save validates and commits the branch.
+  await page.locator('input[name="title"]').fill('References');
+  const editor = page.locator('.cm-content');
+  await editor.click();
+  await page.keyboard.type('A body for the reference round-trip.');
+  await expect(page.locator('input[name="body"]')).toHaveValue('A body for the reference round-trip.', {
+    timeout: 2000,
+  });
+
+  // Every field but the title lives behind the Details slide-over (closed by default), so open it.
+  await page.getByRole('button', { name: 'Details' }).click();
+
+  // Pick the author: the single reference renders a combobox-style trigger labelled by its field
+  // label, opening the EntryPicker scoped to the pages concept. The About page is the one target.
+  // Several EntryPicker dialogs share the same labelledby (the body link picker plus each reference
+  // field's picker), so scope to the one currently open via the [open] attribute the host sets.
+  await page.getByRole('button', { name: 'Author', exact: true }).click();
+  const authorPicker = page.locator('dialog[aria-labelledby="cairn-entry-picker-title"][open]');
+  await expect(authorPicker).toBeVisible();
+  await authorPicker.getByRole('button', { name: 'About' }).click();
+  // The trigger now shows the resolved target title, so the pick landed in the hidden input.
+  await expect(page.getByRole('button', { name: 'Author', exact: true })).toContainText('About');
+
+  // Add a related post: the array(reference) renders a chip list plus an "Add" trigger; pick a
+  // distinct seeded post so the edge is unambiguous.
+  await page.getByRole('button', { name: 'Add Related posts' }).click();
+  const relatedPicker = page.locator('dialog[aria-labelledby="cairn-entry-picker-title"][open]');
+  await expect(relatedPicker).toBeVisible();
+  await relatedPicker.getByRole('button', { name: 'A later pass' }).click();
+  // The chip carries the resolved title and its remove control.
+  await expect(page.getByRole('button', { name: 'Remove A later pass' })).toBeVisible();
+
+  // Save. frontmatterFromForm encodes the single id and the array's getAll list; the commit lands
+  // the entry markdown on the entry's pending branch (the manifest upsert rides the publish).
+  await page.locator('.navbar').getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page).toHaveURL(/saved=1/, { timeout: 10_000 });
+
+  // The committed entry markdown on the branch carries the reference frontmatter: the single author
+  // id and the related sequence, serialized from the picked targets.
+  const branch = `cairn/posts/${id}`;
+  const branchMd = await request.get(
+    `/test/branch-file?branch=${encodeURIComponent(branch)}&path=${encodeURIComponent(`src/content/posts/${id}.md`)}`,
+  );
+  expect(branchMd.ok()).toBe(true);
+  const md = (await branchMd.json()).content as string;
+  expect(md).toContain('author: about');
+  expect(md).toContain('2026-06-first-custom');
+
+  // Reload the editor from the list. The load reads the committed frontmatter back through
+  // formValues, and both reference arms render their persisted targets: the round-trip holds.
+  await page.goto(`/admin/posts/${id}`);
+  await page.getByRole('button', { name: 'Details' }).click();
+  await expect(page.getByRole('button', { name: 'Author', exact: true })).toContainText('About');
+  await expect(page.getByRole('button', { name: 'Remove A later pass' })).toBeVisible();
+
+  // Publish: the publish commit lands the body and the regenerated content manifest on main. The
+  // manifest entry carries the extracted reference edges (the extractor paired each id with its
+  // descriptor concept), so the committed manifest is the durable reference graph (a resolution bug
+  // that dropped or mis-typed an edge cannot pass CI).
+  await page.locator('.navbar').getByRole('button', { name: 'Publish', exact: true }).click();
+  await expect(page).toHaveURL(/published=1/, { timeout: 10_000 });
+  const mainManifest = await request.get(
+    `/test/branch-file?branch=main&path=${encodeURIComponent('src/content/.cairn/index.json')}`,
+  );
+  expect(mainManifest.ok()).toBe(true);
+  const manifest = JSON.parse((await mainManifest.json()).content) as {
+    entries: { id: string; references?: { field: string; concept: string; id: string }[] }[];
+  };
+  const entry = manifest.entries.find((e) => e.id === id);
+  expect(entry?.references).toEqual([
+    { field: 'author', concept: 'pages', id: 'about' },
+    { field: 'related', concept: 'posts', id: '2026-06-first-custom' },
+  ]);
+
+  // The public route resolves a reference to its target identity at the site-resolver layer. The
+  // seeded disk post /posts/hello sets `author: about` and `related: [2026-02-20-second]`, so the
+  // rendered page links the resolved author title to its permalink (the resolved render, not the
+  // raw id). This proves the delivery-side resolution, independent of the admin's in-repo edits.
+  await page.goto('/posts/hello');
+  const byline = page.getByTestId('post-author');
+  await expect(byline).toContainText('By');
+  const authorLink = byline.getByRole('link', { name: 'About' });
+  await expect(authorLink).toHaveAttribute('href', '/about');
+  // The related edge resolves to its target post's title, linked to its permalink.
+  const relatedNav = page.getByTestId('post-related');
+  await expect(relatedNav.getByRole('link', { name: 'A second post' })).toHaveAttribute('href', '/posts/second');
+});
+
 test('a non-cairn feature coexists with the admin (Mode 1)', async ({ page }) => {
   await page.goto('/calendar');
   await expect(page.getByRole('heading', { name: 'Calendar' })).toBeVisible();

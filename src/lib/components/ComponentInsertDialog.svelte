@@ -16,7 +16,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
    *  than inserting a bare template. Exported so a host deciding on its own guided-edit affordance
    *  (the edit page's Edit-block control) reads the same notion the dialog lists and chooses by. */
   export function hasSchema(def: ComponentDef): boolean {
-    return (def.attributes?.length ?? 0) > 0 || (def.slots?.length ?? 0) > 0;
+    return Object.keys(def.attributes ?? {}).length > 0 || (def.slots?.length ?? 0) > 0;
   }
   /** The registry's pickable components. A def is actionable when a schema opens the guided form or
    *  a template inserts directly; a def with neither is not listed. A `hidden` def is then dropped,
@@ -122,10 +122,12 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
   const emptyRequired = $derived.by(() => {
     if (!picked || !formValues) return [] as string[];
     const out: string[] = [];
-    for (const field of picked.attributes ?? []) {
+    for (const [name, field] of Object.entries(picked.attributes ?? {})) {
       if (!field.required || field.type === 'boolean') continue;
-      const v = formValues.attributes[field.key];
-      if (typeof v !== 'string' || v === '') out.push(field.label);
+      const v = formValues.attributes[name];
+      // A scalar attribute always carries a label; the `?? name` only satisfies the union type, whose
+      // object/array members have an optional label that checkComponentAttributes already rejects.
+      if (typeof v !== 'string' || v === '') out.push(field.label ?? name);
     }
     for (const slot of picked.slots ?? []) {
       if (!slot.required) continue;

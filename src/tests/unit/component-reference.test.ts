@@ -1,13 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { generateComponentReference } from '../../lib/render/component-reference.js';
-import { defineRegistry, type ComponentDef } from '../../lib/render/registry.js';
+import { defineComponent, defineRegistry } from '../../lib/render/registry.js';
+import { fields } from '../../lib/content/fields.js';
 
-const base = { build: (n: unknown) => n };
-const card: ComponentDef = {
+const base = { build: () => ({ type: 'element' as const, tagName: 'div', properties: {}, children: [] }) };
+const card = defineComponent({
   ...base, name: 'card', label: 'Card', description: 'A bordered content block.', use: 'Group related copy with a heading.',
-  attributes: [{ key: 'icon', label: 'Icon', type: 'icon' }],
+  attributes: { icon: fields.icon({ label: 'Icon' }) },
   slots: [{ name: 'title', label: 'Title', kind: 'inline' }, { name: 'body', label: 'Body', kind: 'markdown' }],
-} as ComponentDef;
+});
 
 describe('generateComponentReference', () => {
   const doc = generateComponentReference(defineRegistry({ components: [card] }), {

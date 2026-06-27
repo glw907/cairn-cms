@@ -3,19 +3,20 @@ import { h } from 'hastscript';
 import type { ElementContent } from 'hast';
 import { createRenderer } from '../../lib/render/pipeline.js';
 import { serializeComponent } from '../../lib/render/component-grammar.js';
-import { defineRegistry, type ComponentDef } from '../../lib/render/registry.js';
+import { defineComponent, defineRegistry } from '../../lib/render/registry.js';
+import { fields } from '../../lib/content/fields.js';
 
-const callout: ComponentDef = {
+const callout = defineComponent({
   name: 'callout',
   label: 'Callout',
   description: 'd',
-  attributes: [
-    { key: 'tone', label: 'Tone', type: 'select', required: true, options: ['note', 'warning'] },
-  ],
+  attributes: {
+    tone: fields.select({ label: 'Tone', required: true, options: ['note', 'warning'] }),
+  },
   slots: [
     { name: 'title', label: 'Title', kind: 'inline', required: true },
     { name: 'body', label: 'Body', kind: 'markdown' },
-    { name: 'points', label: 'Points', kind: 'repeatable', itemFields: [{ key: 'text', label: 'Item', type: 'text' }] },
+    { name: 'points', label: 'Points', kind: 'repeatable', itemFields: { text: fields.text({ label: 'Item' }) } },
   ],
   build: (ctx) =>
     h('aside', { className: ['callout', `callout-${String(ctx.attributes.tone)}`] }, [
@@ -23,7 +24,7 @@ const callout: ComponentDef = {
       h('div', { className: ['callout-body'] }, ctx.slot('body')),
       h('ul', { className: ['callout-points'] }, ctx.items('points').map((item: ElementContent[]) => h('li', item))),
     ]),
-};
+});
 const registry = defineRegistry({ components: [callout] });
 
 describe('slot render path', () => {

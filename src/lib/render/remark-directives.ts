@@ -62,8 +62,7 @@ export function remarkDirectiveStamp(registry: ComponentRegistry) {
       const def = registry.get(node.name);
       const attrs = node.attributes ?? {};
       const role = attrs.role || undefined;
-      const iconField = registry.iconField(node.name);
-      const iconKey = iconField?.key ?? 'icon';
+      const iconKey = registry.iconField(node.name) ?? 'icon';
       let icon = attrs[iconKey] || undefined;
       if (!icon && role) icon = registry.defaultIcon(node.name, role);
 
@@ -76,9 +75,9 @@ export function remarkDirectiveStamp(registry: ComponentRegistry) {
       // back to that default the same way a missing one does. data-attr-<key> survives to the
       // element; build() consumes it and returns a fresh element, so the marker never reaches the
       // published DOM.
-      for (const field of def?.attributes ?? []) {
-        const raw = field === iconField ? icon : attrs[field.key];
-        if (raw != null) properties[dataAttrProp(field.key)] = raw;
+      for (const name of Object.keys(def?.attributes ?? {})) {
+        const raw = name === iconKey ? icon : attrs[name];
+        if (raw != null) properties[dataAttrProp(name)] = raw;
       }
 
       const data = node.data ?? (node.data = {});

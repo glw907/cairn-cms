@@ -4,24 +4,25 @@ import remarkParse from 'remark-parse';
 import remarkDirective from 'remark-directive';
 import { visit } from 'unist-util-visit';
 import { remarkDirectiveStamp } from '../../lib/render/remark-directives.js';
-import { defineRegistry, type ComponentDef } from '../../lib/render/registry.js';
+import { defineComponent, defineRegistry } from '../../lib/render/registry.js';
+import { fields } from '../../lib/content/fields.js';
 import type { Root } from 'mdast';
 
-const callout: ComponentDef = {
+const callout = defineComponent({
   name: 'callout',
   label: 'Callout',
   description: 'd',
   build: (ctx) => ctx.node,
-  attributes: [
-    { key: 'tone', label: 'Tone', type: 'select', required: true, options: ['note', 'warning'] },
-    { key: 'icon', label: 'Icon', type: 'icon' },
-  ],
+  attributes: {
+    tone: fields.select({ label: 'Tone', required: true, options: ['note', 'warning'] }),
+    icon: fields.icon({ label: 'Icon' }),
+  },
   slots: [
     { name: 'title', label: 'Title', kind: 'inline', required: true },
     { name: 'body', label: 'Body', kind: 'markdown' },
-    { name: 'points', label: 'Points', kind: 'repeatable', itemFields: [{ key: 'text', label: 'Item', type: 'text' }] },
+    { name: 'points', label: 'Points', kind: 'repeatable', itemFields: { text: fields.text({ label: 'Item' }) } },
   ],
-};
+});
 const registry = defineRegistry({ components: [callout] });
 
 function stamp(md: string): Root {

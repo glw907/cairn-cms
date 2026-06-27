@@ -1,20 +1,21 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import ComponentForm from '../../lib/components/ComponentForm.svelte';
-import type { ComponentDef } from '../../lib/render/registry.js';
+import { defineComponent, type ComponentDef } from '../../lib/render/registry.js';
+import { fields } from '../../lib/content/fields.js';
 
-const base = { build: (n: unknown) => n, description: 'd', use: 'u' };
-const callout: ComponentDef = {
+const base = { build: () => ({ type: 'element' as const, tagName: 'div', properties: {}, children: [] }), description: 'd', use: 'u' };
+const callout = defineComponent({
   ...base, name: 'callout', label: 'Callout',
-  attributes: [
-    { key: 'tone', label: 'Tone', type: 'select', required: true, options: ['note', 'warning'] },
-    { key: 'pinned', label: 'Pinned', type: 'boolean' },
-  ],
+  attributes: {
+    tone: fields.select({ label: 'Tone', required: true, options: ['note', 'warning'] }),
+    pinned: fields.boolean({ label: 'Pinned' }),
+  },
   slots: [
     { name: 'title', label: 'Title', kind: 'inline', required: true },
     { name: 'body', label: 'Body', kind: 'markdown' },
   ],
-} as ComponentDef;
+});
 
 describe('ComponentForm fields', () => {
   it('renders a labeled field for each attribute and non-repeatable slot', async () => {
@@ -44,7 +45,7 @@ const grid: ComponentDef = {
   ...base, name: 'grid', label: 'Grid',
   slots: [
     { name: 'title', label: 'Title', kind: 'inline' },
-    { name: 'points', label: 'Points', kind: 'repeatable', itemFields: [{ key: 'text', label: 'Item', type: 'text' }] },
+    { name: 'points', label: 'Points', kind: 'repeatable', itemFields: { text: fields.text({ label: 'Item' }) } },
   ],
 } as ComponentDef;
 
@@ -156,7 +157,7 @@ const repeatable: ComponentDef = {
   slots: [
     {
       name: 'points', label: 'Point', kind: 'repeatable',
-      itemFields: [{ key: 'text', label: 'Item', type: 'text' }],
+      itemFields: { text: fields.text({ label: 'Item' }) },
       itemLabel: (item) => (typeof item.text === 'string' ? item.text.slice(0, 12) : ''),
     },
   ],
@@ -175,15 +176,15 @@ describe('ComponentForm itemLabel', () => {
   });
 });
 
-const previewCallout: ComponentDef = {
+const previewCallout = defineComponent({
   ...base, name: 'callout', label: 'Callout',
   preview: { attributes: { tone: 'note' }, slots: { title: 'Sample title', body: 'Sample body' } },
-  attributes: [{ key: 'tone', label: 'Tone', type: 'select', required: true, options: ['note', 'warning'] }],
+  attributes: { tone: fields.select({ label: 'Tone', required: true, options: ['note', 'warning'] }) },
   slots: [
     { name: 'title', label: 'Title', kind: 'inline', required: true },
     { name: 'body', label: 'Body', kind: 'markdown' },
   ],
-} as ComponentDef;
+});
 
 describe('ComponentForm preview seeding', () => {
   it('seeds the form from previewValues when the def declares a preview', async () => {

@@ -231,18 +231,18 @@ The floor has already cleaned that HTML, so the `{@html}` is safe for author-sup
 
 A component is a named block an author inserts in markdown that the registry turns into custom markup. `Field Notes` ships one, a `callout`, a highlighted note with an icon. An author writes it in a post body, and the renderer dispatches it to the markup you define.
 
-A component is one object that declares its `attributes`, its `slots`, and a `build(ctx)` function. `build` returns the hast for the block, reading attribute values off `ctx.attributes` and slot content off `ctx.slot(name)`. The `callout` has a `tone` attribute that switches its style, an `icon` attribute the editor's icon picker fills, a required inline `title`, and a markdown `body`. Add it to `src/lib/cairn.config.ts`, above the renderer:
+A component is one `defineComponent` call that declares its `attributes`, its `slots`, and a `build(ctx)` function. The `attributes` are a `fields.*` record, the same field vocabulary a concept schema uses, and `defineComponent` validates the component when the module loads. `build` returns the hast for the block, reading attribute values off `ctx.attributes` and slot content off `ctx.slot(name)`. The `callout` has a `tone` attribute that switches its style, an `icon` attribute the editor's icon picker fills, a required inline `title`, and a markdown `body`. Add it to `src/lib/cairn.config.ts`, before the renderer:
 
 ```ts
-import { createRenderer, defineRegistry, defineAdapter, fieldset, fields } from '@glw907/cairn-cms';
-import type { ComponentDef, IconSet } from '@glw907/cairn-cms';
+import { createRenderer, defineRegistry, defineComponent, defineAdapter, fieldset, fields } from '@glw907/cairn-cms';
+import type { IconSet } from '@glw907/cairn-cms';
 import { h } from 'hastscript';
 
 const icons: IconSet = {
   snowflake: 'M128 24v208M44 76l168 104M212 76L44 180',
 };
 
-const callout: ComponentDef = {
+const callout = defineComponent({
   name: 'callout',
   label: 'Callout',
   description: 'A highlighted note with an optional icon.',
@@ -252,18 +252,18 @@ const callout: ComponentDef = {
       h('p', { className: ['callout-title'] }, ctx.slot('title')),
       h('div', { className: ['callout-body'] }, ctx.slot('body')),
     ]),
-  attributes: [
-    { key: 'tone', label: 'Tone', type: 'select', required: true, options: ['note', 'warning'] },
-    { key: 'icon', label: 'Icon', type: 'icon' },
-  ],
+  attributes: {
+    tone: fields.select({ label: 'Tone', required: true, options: ['note', 'warning'] }),
+    icon: fields.icon({ label: 'Icon' }),
+  },
   slots: [
     { name: 'title', label: 'Title', kind: 'inline', required: true },
     { name: 'body', label: 'Body', kind: 'markdown' },
   ],
-};
+});
 ```
 
-Each key in the `icons` map is a name, and each value is the SVG path data for one glyph. The `icon` attribute is typed `'icon'`, so the admin editor renders a picker that lists those names, and an author chooses one without ever typing path data. One glyph is enough here to see the picker work. The showcase callout also carries a repeatable `points` slot, which the tutorial drops to stay focused; see `examples/showcase/src/lib/cairn.config.ts` for that repeatable-slot shape.
+Each key in the `icons` map is a name, and each value is the SVG path data for one glyph. The `icon` attribute uses `fields.icon()`, so the admin editor renders a picker that lists those names, and an author chooses one without ever typing path data. One glyph is enough here to see the picker work. The showcase callout also carries a repeatable `points` slot, which the tutorial drops to stay focused; see `examples/showcase/src/lib/cairn.config.ts` for that repeatable-slot shape.
 
 Build the registry from the component, then pass it to `createRenderer` and register it on the adapter so both the render path and the editor palette can see it:
 

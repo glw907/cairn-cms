@@ -1,13 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { buildComponentInsert } from '../../lib/render/component-insert.js';
-import type { ComponentDef } from '../../lib/render/registry.js';
+import { defineComponent } from '../../lib/render/registry.js';
+import { fields } from '../../lib/content/fields.js';
 
-const base = { build: (n: unknown) => n, description: 'd', use: 'u' };
-const callout: ComponentDef = {
+const base = { build: () => ({ type: 'element' as const, tagName: 'div', properties: {}, children: [] }), description: 'd', use: 'u' };
+const callout = defineComponent({
   ...base, name: 'callout', label: 'Callout',
-  attributes: [{ key: 'tone', label: 'Tone', type: 'select', required: true, options: ['note', 'warning'] }],
+  attributes: { tone: fields.select({ label: 'Tone', required: true, options: ['note', 'warning'] }) },
   slots: [{ name: 'title', label: 'Title', kind: 'inline', required: true }, { name: 'body', label: 'Body', kind: 'markdown' }],
-} as ComponentDef;
+});
 
 describe('buildComponentInsert', () => {
   it('returns serialized markdown when the values are valid', async () => {

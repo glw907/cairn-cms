@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { emptyValues, type AttributeField, type ComponentDef } from '../../lib/render/registry.js';
+import { emptyValues, type ComponentDef } from '../../lib/render/registry.js';
+import { fields, type FieldDescriptor } from '../../lib/content/fields.js';
 
 const cta: ComponentDef = {
   name: 'cta',
@@ -7,14 +8,14 @@ const cta: ComponentDef = {
   description: 'A highlighted action block.',
   use: 'Use to push the reader toward one next step.',
   build: (ctx) => ctx.node,
-  attributes: [
-    { key: 'icon', label: 'Icon', type: 'icon' },
-    { key: 'featured', label: 'Featured', type: 'boolean', default: false },
-  ],
+  attributes: {
+    icon: fields.icon({ label: 'Icon' }),
+    featured: fields.boolean({ label: 'Featured', default: false }),
+  },
   slots: [
     { name: 'title', label: 'Title', kind: 'inline', required: true },
     { name: 'body', label: 'Body', kind: 'markdown' },
-    { name: 'actions', label: 'Actions', kind: 'repeatable', itemFields: [{ key: 'text', label: 'Item', type: 'text' }] },
+    { name: 'actions', label: 'Actions', kind: 'repeatable', itemFields: { text: fields.text({ label: 'Item' }) } },
   ],
 };
 
@@ -35,7 +36,7 @@ describe('emptyValues', () => {
 describe('readonly attribute options', () => {
   it('accepts a frozen as-const options vocabulary', () => {
     const TONES = ['info', 'warning'] as const;
-    const field: AttributeField = { key: 'tone', label: 'Tone', type: 'select', options: TONES };
-    expect(field.options).toEqual(['info', 'warning']);
+    const attributes: Record<string, FieldDescriptor> = { tone: fields.select({ label: 'Tone', options: TONES }) };
+    expect((attributes.tone as { options: readonly string[] }).options).toEqual(['info', 'warning']);
   });
 });

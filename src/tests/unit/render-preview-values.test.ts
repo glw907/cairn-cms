@@ -1,9 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import {
+  defineComponent,
   emptyValues,
   previewValues,
   type ComponentDef,
 } from '../../lib/render/registry.js';
+import { fields, type TextField } from '../../lib/content/fields.js';
 
 const stub = (): ComponentDef['build'] => () => ({
   type: 'element',
@@ -46,26 +48,17 @@ describe('ComponentDef picker fields', () => {
     expect(def.preview).toBeUndefined();
   });
 
-  it('accepts pattern and validate on an attribute field', () => {
-    const def: ComponentDef = {
+  it('accepts a pattern string and a behavior validator on an attribute field', () => {
+    const def = defineComponent({
       name: 'link',
       label: 'Link',
       description: '',
       build: stub(),
-      attributes: [
-        {
-          key: 'href',
-          label: 'URL',
-          type: 'text',
-          pattern: { source: '^https?://', message: 'Must be an http(s) URL' },
-          validate: (value, all) =>
-            value === all.attributes.href ? null : 'mismatch',
-        },
-      ],
-    };
-    const field = def.attributes![0];
-    expect(field.pattern?.source).toBe('^https?://');
-    expect(field.validate?.('x', emptyValues(def))).toBe('mismatch');
+      attributes: { href: fields.text({ label: 'URL', pattern: '^https?://' }) },
+      behavior: { href: { validate: (value, siblings) => (value === siblings.href ? null : 'mismatch') } },
+    });
+    expect((def.attributes!.href as TextField).pattern).toBe('^https?://');
+    expect(def.attributeSchema).toBeDefined();
   });
 
   it('accepts itemLabel on a repeatable slot', () => {
@@ -90,27 +83,27 @@ describe('ComponentDef picker fields', () => {
 
 describe('previewValues', () => {
   it('returns emptyValues output when the def declares no preview', () => {
-    const def: ComponentDef = {
+    const def = defineComponent({
       name: 'plain',
       label: 'Plain',
       description: '',
       build: stub(),
-      attributes: [{ key: 'tone', label: 'Tone', type: 'text', default: 'note' }],
+      attributes: { tone: fields.text({ label: 'Tone', default: 'note' }) },
       slots: [{ name: 'body', label: 'Body', kind: 'markdown' }],
-    };
+    });
     expect(previewValues(def)).toEqual(emptyValues(def));
   });
 
   it('overlays the declared preview attributes and slots over the seeded base', () => {
-    const def: ComponentDef = {
+    const def = defineComponent({
       name: 'callout',
       label: 'Callout',
       description: '',
       build: stub(),
-      attributes: [
-        { key: 'tone', label: 'Tone', type: 'text', default: 'note' },
-        { key: 'dismissible', label: 'Dismissible', type: 'boolean' },
-      ],
+      attributes: {
+        tone: fields.text({ label: 'Tone', default: 'note' }),
+        dismissible: fields.boolean({ label: 'Dismissible' }),
+      },
       slots: [
         { name: 'title', label: 'Title', kind: 'inline' },
         { name: 'body', label: 'Body', kind: 'markdown' },
@@ -119,7 +112,7 @@ describe('previewValues', () => {
         attributes: { tone: 'warning' },
         slots: { title: 'Heads up' },
       },
-    };
+    });
     const values = previewValues(def);
     // overlaid
     expect(values.attributes.tone).toBe('warning');
@@ -130,7 +123,7 @@ describe('previewValues', () => {
   });
 
   it('carries a repeatable slot value through from preview.slots', () => {
-    const def: ComponentDef = {
+    const def = defineComponent({
       name: 'steps',
       label: 'Steps',
       description: '',
@@ -139,19 +132,19 @@ describe('previewValues', () => {
       preview: {
         slots: { items: ['One', 'Two'] },
       },
-    };
+    });
     expect(previewValues(def).slots.items).toEqual(['One', 'Two']);
   });
 
   it('does not mutate the emptyValues base', () => {
-    const def: ComponentDef = {
+    const def = defineComponent({
       name: 'callout',
       label: 'Callout',
       description: '',
       build: stub(),
-      attributes: [{ key: 'tone', label: 'Tone', type: 'text', default: 'note' }],
+      attributes: { tone: fields.text({ label: 'Tone', default: 'note' }) },
       preview: { attributes: { tone: 'warning' } },
-    };
+    });
     previewValues(def);
     expect(emptyValues(def).attributes.tone).toBe('note');
   });

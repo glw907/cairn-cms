@@ -4,33 +4,9 @@
 // parser, the render dispatch, and the editor never drift apart. The adapter references
 // `ComponentRegistry` from here.
 import type { Element, ElementContent } from 'hast';
-
-/** The input types a component attribute or repeatable item field can take. */
-export type FieldType = 'text' | 'select' | 'icon' | 'boolean';
-
-/** One `{key="value"}` attribute on a component directive, or one field of a repeatable item. */
-export interface AttributeField {
-  /** The attribute name as it appears in the directive, e.g. `icon`. */
-  key: string;
-  /** The form label. */
-  label: string;
-  type: FieldType;
-  required?: boolean;
-  /** Initial value; a string for text/select/icon, a boolean for boolean. */
-  default?: string | boolean;
-  /** Allowed values for `type: 'select'`. */
-  options?: readonly string[];
-  /** Helper text shown under the field. */
-  help?: string;
-  /** A RegExp `source` to validate the value against, plus the message to show on a mismatch. */
-  pattern?: { source: string; message: string };
-  /**
-   * A pure, browser-safe cross-field validator. Returns an error string, or null when valid.
-   *  Receives the field's value and the full {@link ComponentValues} so a rule can read sibling
-   *  fields. The picker wraps the call in try/catch so an author's throw never crashes the form.
-   */
-  validate?: (value: string | boolean, all: ComponentValues) => string | null;
-}
+import type { FieldDescriptor } from '../content/fields.js';
+import type { BehaviorTable, Fieldset } from '../content/fieldset.js';
+import { fieldset } from '../content/fieldset.js';
 
 export type SlotKind = 'markdown' | 'inline' | 'repeatable';
 
@@ -45,7 +21,7 @@ export interface SlotDef {
   required?: boolean;
   help?: string;
   /** For `kind: 'repeatable'`: the fields composing each list item (v1 uses the first field). */
-  itemFields?: AttributeField[];
+  itemFields?: Record<string, FieldDescriptor>;
   /**
    * For `kind: 'repeatable'`: derives a row's label from its item values and zero-based index.
    *  When it returns nothing, the picker falls back to `${label} ${index + 1}`.
@@ -95,8 +71,18 @@ export interface ComponentDef {
   defaultIconByRole?: Record<string, string>;
   /** One line on when to reach for this component; feeds the picker and the reference file. */
   use?: string;
-  /** The `{key="value"}` attributes this component accepts. */
-  attributes?: AttributeField[];
+  /** The `{key="value"}` attributes this component accepts, keyed by attribute name. */
+  attributes?: Record<string, FieldDescriptor>;
+  /**
+   * Per-attribute function-valued behavior (a cross-field `validate`), keyed by attribute name.
+   *  {@link defineComponent} bundles it into the attribute {@link Fieldset}.
+   */
+  behavior?: BehaviorTable;
+  /**
+   * The attribute validator {@link defineComponent} builds from `attributes` and `behavior`.
+   *  Engine-internal: the constructor sets it, and {@link validateComponent} runs it.
+   */
+  attributeSchema?: Fieldset;
   /** The named content regions this component accepts. */
   slots?: SlotDef[];
   /**
@@ -123,8 +109,8 @@ export interface ComponentRegistry {
   names: string[];
   get(name: string): ComponentDef | undefined;
   defaultIcon(name: string, role?: string): string | undefined;
-  /** The component's first `type:'icon'` attribute, or undefined when it declares none. */
-  iconField(name: string): AttributeField | undefined;
+  /** The name of the component's first `type:'icon'` attribute, or undefined when it declares none. */
+  iconField(name: string): string | undefined;
 }
 
 /**
@@ -137,12 +123,12 @@ export function dataAttrProp(key: string): string {
 }
 
 /**
- * A component's first `type:'icon'` attribute, or undefined when it declares none. Both the
- *  construction-time guard and the registry's `iconField` derive the icon field from this one
+ * The name of a component's first `type:'icon'` attribute, or undefined when it declares none. Both
+ *  the construction-time guard and the registry's `iconField` derive the icon field from this one
  *  predicate rather than spelling the `type === 'icon'` find twice.
  */
-function findIconField(def: ComponentDef): AttributeField | undefined {
-  return def.attributes?.find((field) => field.type === 'icon');
+function findIconField(def: ComponentDef): string | undefined {
+  return Object.entries(def.attributes ?? {}).find(([, field]) => field.type === 'icon')?.[0];
 }
 
 /**
@@ -209,8 +195,8 @@ export interface ComponentValues {
  */
 export function emptyValues(def: ComponentDef): ComponentValues {
   const attributes: Record<string, string | boolean> = {};
-  for (const field of def.attributes ?? []) {
-    attributes[field.key] = field.default ?? (field.type === 'boolean' ? false : '');
+  for (const [name, field] of Object.entries(def.attributes ?? {})) {
+    attributes[name] = field.default ?? (field.type === 'boolean' ? false : '');
   }
   const slots: Record<string, string | string[]> = {};
   for (const slot of def.slots ?? []) {
@@ -231,4 +217,29 @@ export function previewValues(def: ComponentDef): ComponentValues {
     attributes: { ...base.attributes, ...def.preview.attributes },
     slots: { ...base.slots, ...def.preview.slots },
   };
+}
+
+/** The descriptor types that serialize to a single directive-attribute string (decision 2). */
+const ATTRIBUTE_TYPES = new Set(['text', 'textarea', 'number', 'select', 'url', 'email', 'date', 'datetime', 'boolean', 'icon']);
+
+/** Reject an attribute type that cannot serialize to a single directive-attribute string (decision 2). */
+function checkComponentAttributes(name: string, attributes: Record<string, FieldDescriptor>): void {
+  for (const [key, field] of Object.entries(attributes)) {
+    if (!ATTRIBUTE_TYPES.has(field.type)) {
+      throw new Error(
+        `cairn: component "${name}" attribute "${key}" is type "${field.type}"; a directive attribute must be a single-value scalar (text, textarea, number, select, url, email, date, datetime, boolean, or icon).`,
+      );
+    }
+  }
+}
+
+/**
+ * Declare a site component, building its attribute validator from the `fields.*` descriptors and
+ *  validating the component at declaration. Mirrors {@link defineConcept}: a malformed attribute type
+ *  or pattern fails at module load. The built `attributeSchema` is what {@link validateComponent} runs.
+ */
+export function defineComponent<const D extends ComponentDef>(def: D): D & { attributeSchema: Fieldset } {
+  const attributes = def.attributes ?? {};
+  checkComponentAttributes(def.name, attributes);
+  return { ...def, attributeSchema: fieldset(attributes, { behavior: def.behavior }) };
 }

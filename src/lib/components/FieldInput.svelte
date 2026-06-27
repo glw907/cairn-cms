@@ -20,9 +20,11 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
   import ReferenceField from './ReferenceField.svelte';
   import ObjectGroupField from './ObjectGroupField.svelte';
   import RepeatableField from './RepeatableField.svelte';
+  import IconPicker from './IconPicker.svelte';
   import { isClosedMultiselect } from '../content/frontmatter.js';
   import type { ImageValue, NamedField } from '../content/types.js';
   import type { TextareaField, NumberField, SelectField, MultiselectField } from '../content/fields.js';
+  import type { IconSet } from '../render/glyph.js';
   import type { LinkTarget } from '../content/manifest.js';
   import type { MediaEntry } from '../media/manifest.js';
   import type { MediaLibraryEntry } from '../media/library-entry.js';
@@ -50,6 +52,8 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
     onuploaded: (record: MediaEntry) => void;
     /** Called when a hero's needs-alt status changes, keyed by the prefixed `name`. */
     onheroneedsalt: (name: string, needsAlt: boolean) => void;
+    /** The site's icon set, threaded to the icon arm's picker. Absent when the site ships none. */
+    icons?: IconSet;
   }
 
   let {
@@ -64,6 +68,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
     heroFieldRefs,
     onuploaded,
     onheroneedsalt,
+    icons,
   }: Props = $props();
 
   function str(v: unknown): string {
@@ -223,9 +228,23 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
 {:else if field.type === 'array' && field.item.type === 'reference'}
   <ReferenceField {field} value={(frontmatter[field.name] ?? []) as string[]} {targets} ondirty={markFieldsDirty} />
 {:else if field.type === 'object'}
-  <ObjectGroupField {field} {name} frontmatter={(frontmatter[field.name] ?? {}) as Record<string, unknown>} {markFieldsDirty} {mediaLibrary} {conceptId} {id} {heroFieldRefs} {targets} {onuploaded} {onheroneedsalt} />
+  <ObjectGroupField {field} {name} frontmatter={(frontmatter[field.name] ?? {}) as Record<string, unknown>} {markFieldsDirty} {mediaLibrary} {conceptId} {id} {heroFieldRefs} {targets} {onuploaded} {onheroneedsalt} {icons} />
 {:else if field.type === 'array' && field.item.type !== 'reference'}
-  <RepeatableField {field} {name} rows={(frontmatter[field.name] ?? []) as unknown[]} {markFieldsDirty} {mediaLibrary} {conceptId} {id} {heroFieldRefs} {targets} {onuploaded} {onheroneedsalt} />
+  <RepeatableField {field} {name} rows={(frontmatter[field.name] ?? []) as unknown[]} {markFieldsDirty} {mediaLibrary} {conceptId} {id} {heroFieldRefs} {targets} {onuploaded} {onheroneedsalt} {icons} />
+{:else if field.type === 'icon'}
+  <div class="flex flex-col gap-1">
+    <span class="text-sm font-medium">{field.label}</span>
+    <IconPicker
+      icons={icons ?? {}}
+      label={field.label}
+      value={typeof frontmatter[field.name] === 'string' ? (frontmatter[field.name] as string) : ''}
+      required={field.required ?? false}
+      onChange={(glyph) => {
+        frontmatter[field.name] = glyph;
+        markFieldsDirty();
+      }}
+    />
+  </div>
 {:else}
   <!-- The plain single-line text input arm: url, email, datetime, and the text fallback. They share
        one shape and differ only in the input type inputType() resolves. -->

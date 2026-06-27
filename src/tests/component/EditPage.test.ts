@@ -23,7 +23,8 @@ import EditPage from './EditPageDesk.svelte';
 import type { NamedField } from '../../lib/content/types.js';
 import type { LinkTarget } from '../../lib/content/manifest.js';
 import { createRenderer } from '../../lib/render/pipeline.js';
-import { defineRegistry, type ComponentDef } from '../../lib/render/registry.js';
+import { defineComponent, defineRegistry, type ComponentDef } from '../../lib/render/registry.js';
+import { fields } from '../../lib/content/fields.js';
 import { editorShortcuts } from '../../lib/components/editor-shortcuts.js';
 // The same module instance EditPage receives for $app/navigation via the project alias.
 import { beforeNavigateCallbacks } from './app-navigation.js';
@@ -2170,14 +2171,14 @@ describe('EditPage', () => {
     // A schema-bearing callout: an inline title slot and a required tone select. With no nested
     // slot the grammar uses a three-colon fence. The blocks below are round-trip safe (tone is a
     // declared key) or unsafe (a bogus undeclared attribute key).
-    const callout: ComponentDef = {
-      build: (n: unknown) => n,
+    const callout = defineComponent({
+      build: () => ({ type: 'element' as const, tagName: 'div', properties: {}, children: [] }),
       name: 'callout',
       label: 'Callout',
       description: 'A note.',
-      attributes: [{ key: 'tone', label: 'Tone', type: 'select', required: true, options: ['note'] }],
+      attributes: { tone: fields.select({ label: 'Tone', required: true, options: ['note'] }) },
       slots: [{ name: 'title', label: 'Title', kind: 'inline', required: true }],
-    } as ComponentDef;
+    });
     const calloutRegistry = defineRegistry({ components: [callout] });
 
     const SAFE_BLOCK = [':::callout[Heads up]{tone="note"}', ':::'].join('\n');

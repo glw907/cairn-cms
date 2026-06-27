@@ -32,6 +32,7 @@ whose `oninput` bubbles. An always-mounted polite live region announces add and 
   import type { LinkTarget } from '../content/manifest.js';
   import type { MediaEntry } from '../media/manifest.js';
   import type { MediaLibraryEntry } from '../media/library-entry.js';
+  import type { IconSet } from '../render/glyph.js';
   import type MediaHeroField from './MediaHeroField.svelte';
 
   interface Props {
@@ -57,6 +58,8 @@ whose `oninput` bubbles. An always-mounted polite live region announces add and 
     onuploaded: (record: MediaEntry) => void;
     /** Called when a hero's needs-alt status changes, keyed by the prefixed `name`. */
     onheroneedsalt: (name: string, needsAlt: boolean) => void;
+    /** The site's icon set, forwarded to each row's icon arm. */
+    icons?: IconSet;
   }
 
   let {
@@ -71,6 +74,7 @@ whose `oninput` bubbles. An always-mounted polite live region announces add and 
     heroFieldRefs,
     onuploaded,
     onheroneedsalt,
+    icons,
   }: Props = $props();
 
   /** One row of editable state: a stable id for keyed identity, and the row's current value. */
@@ -269,6 +273,7 @@ whose `oninput` bubbles. An always-mounted polite live region announces add and 
                   {heroFieldRefs}
                   {onuploaded}
                   {onheroneedsalt}
+                  {icons}
                 />
               {:else}
                 <FieldInput
@@ -283,6 +288,7 @@ whose `oninput` bubbles. An always-mounted polite live region announces add and 
                   {heroFieldRefs}
                   {onuploaded}
                   {onheroneedsalt}
+                  {icons}
                 />
               {/if}
             </div>

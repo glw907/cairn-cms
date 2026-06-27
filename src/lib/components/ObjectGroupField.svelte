@@ -17,6 +17,7 @@ matches the Details fieldset/legend recipe so it reads as one of the panel's gro
   import type { LinkTarget } from '../content/manifest.js';
   import type { MediaEntry } from '../media/manifest.js';
   import type { MediaLibraryEntry } from '../media/library-entry.js';
+  import type { IconSet } from '../render/glyph.js';
   import type MediaHeroField from './MediaHeroField.svelte';
 
   interface Props {
@@ -42,6 +43,8 @@ matches the Details fieldset/legend recipe so it reads as one of the panel's gro
     onuploaded: (record: MediaEntry) => void;
     /** Called when a hero's needs-alt status changes, keyed by the prefixed `name`. */
     onheroneedsalt: (name: string, needsAlt: boolean) => void;
+    /** The site's icon set, forwarded to each leaf's icon arm. */
+    icons?: IconSet;
   }
 
   let {
@@ -56,6 +59,7 @@ matches the Details fieldset/legend recipe so it reads as one of the panel's gro
     heroFieldRefs,
     onuploaded,
     onheroneedsalt,
+    icons,
   }: Props = $props();
 
   // Turn a field key into a sentence-case legend when the object carries no label of its own:
@@ -87,6 +91,7 @@ matches the Details fieldset/legend recipe so it reads as one of the panel's gro
       {heroFieldRefs}
       {onuploaded}
       {onheroneedsalt}
+      {icons}
     />
   {/each}
 </fieldset>

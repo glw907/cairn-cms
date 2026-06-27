@@ -3,6 +3,7 @@ import { h } from 'hastscript';
 import type { Element, ElementContent } from 'hast';
 import { createRenderer } from '../../lib/render/pipeline.js';
 import { defineRegistry, type ComponentContext } from '../../lib/render/registry.js';
+import { fields } from '../../lib/content/fields.js';
 import { glyph } from '../../lib/render/glyph.js';
 import {
   cardShell,
@@ -40,7 +41,7 @@ const registry = defineRegistry({
       label: 'Card',
       description: '',
       insertTemplate: '',
-      attributes: [{ key: 'icon', label: 'Icon', type: 'icon' }],
+      attributes: { icon: fields.icon({ label: 'Icon' }) },
       build: (ctx) => {
         const { head, rest } = fixtureHead(ctx, makeIcon);
         return cardShell(['card'], [head, h('div', { className: ['section-body'] }, rest)]);
@@ -51,7 +52,7 @@ const registry = defineRegistry({
       label: 'Grid',
       description: '',
       insertTemplate: '',
-      attributes: [{ key: 'icon', label: 'Icon', type: 'icon' }],
+      attributes: { icon: fields.icon({ label: 'Icon' }) },
       build: (ctx) => {
         const children = ctx.node.children as Element['children'];
         markFirstList(children);

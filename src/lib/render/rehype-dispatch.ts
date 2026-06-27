@@ -82,10 +82,10 @@ function transformChildren(children: ElementContent[], registry: ComponentRegist
 // 'true'/'false'; everything else is the literal string the author wrote.
 function readAttributes(node: Element, def: ComponentDef): Record<string, string | boolean> {
   const out: Record<string, string | boolean> = {};
-  for (const field of def.attributes ?? []) {
-    const value = strProp(node, dataAttrProp(field.key));
+  for (const [name, field] of Object.entries(def.attributes ?? {})) {
+    const value = strProp(node, dataAttrProp(name));
     if (value == null) continue;
-    out[field.key] = field.type === 'boolean' ? value === 'true' : value;
+    out[name] = field.type === 'boolean' ? value === 'true' : value;
   }
   return out;
 }

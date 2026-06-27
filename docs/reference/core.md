@@ -235,6 +235,43 @@ stamp plus the rehype dispatch) and the editor palette both read it.
 const registry = defineRegistry({ components: [callout, alert] });
 ```
 
+#### `defineComponent`
+
+```ts
+declare function defineComponent<const D extends ComponentDef>(def: D): D & { attributeSchema: Fieldset };
+```
+
+Declare one component while building its attribute validator from the `fields.*` descriptors, the
+component-level companion to `defineConcept`. A directive attribute is one flat string, so the
+attributes are a `fields.*` record of scalar leaves: `text`, `textarea`, `number`, `select`, `url`,
+`email`, `date`, `datetime`, `boolean`, and `icon`. An `object`, `array`, `reference`, or `image`
+attribute throws at declaration. It validates at declaration like `defineConcept`, so a bad type or a
+malformed pattern fails at module load rather than at first insert. The built `attributeSchema` is the
+`Fieldset` that `validateComponent` runs, so a component attribute and a concept field validate through
+identical code. A cross-field attribute rule lives in the co-bundled `behavior` table, keyed by
+attribute name.
+
+```ts
+const callout = defineComponent({
+  name: 'callout',
+  label: 'Callout',
+  description: 'A highlighted note with an optional icon.',
+  build: (ctx) =>
+    h('aside', { className: ['callout'] }, [
+      h('p', { className: ['callout-title'] }, ctx.slot('title')),
+      h('div', { className: ['callout-body'] }, ctx.slot('body')),
+    ]),
+  attributes: {
+    tone: fields.select({ label: 'Tone', required: true, options: ['note', 'tip', 'warning'] }),
+    icon: fields.icon({ label: 'Icon' }),
+  },
+  slots: [
+    { name: 'title', label: 'Title', kind: 'inline', required: true },
+    { name: 'body', label: 'Body', kind: 'markdown' },
+  ],
+});
+```
+
 #### `normalizeConcepts`
 
 ```ts
@@ -742,7 +779,6 @@ function signatures above reference these.
 | `ComposeInput` | `interface ComposeInput` | The input to `composeRuntime`: adapter, siteConfig, extensions. |
 | `AdminPanel` | `interface AdminPanel` | A site-defined admin screen contributed by an extension (Mode 2). |
 | `FieldTypeDef` | `interface FieldTypeDef` | A custom frontmatter field type contributed by an extension (Mode 2). |
-| `FieldType` | `type FieldType` | A component attribute or item field input type: text, select, icon, boolean. |
 | `NamedField` | `type NamedField` | A field descriptor with its frontmatter key re-attached as `name`, the normalized shape `ConceptDescriptor.fields` carries. |
 | `TextField` | `interface TextField` | A single-line text field with length and pattern rules. |
 | `TextareaField` | `interface TextareaField` | A multi-line text field with rows, length, and pattern rules. |
@@ -754,6 +790,7 @@ function signatures above reference these.
 | `DateField` | `interface DateField` | A `YYYY-MM-DD` date field with min and max. |
 | `DatetimeField` | `interface DatetimeField` | A naive-local `YYYY-MM-DDTHH:mm` minute-precision datetime field. |
 | `BooleanField` | `interface BooleanField` | A checkbox field; absent means false. |
+| `IconField` | `interface IconField` | A glyph chosen from the adapter's icon set; the stored value is the glyph's name. |
 | `ImageField` | `interface ImageField` | A hero image set in frontmatter, with an optional `seo` flag for the social card. |
 | `ObjectField` | `interface ObjectField` | A group of leaf fields stored as a nested object; the `label` is optional, since an array labels a row group. Holds only leaves, one level deep. |
 | `ReferenceField` | `interface ReferenceField` | A single typed edge to one entry of a named `concept`, stored as that target's permanent id. |
@@ -775,14 +812,13 @@ function signatures above reference these.
 | `ReferenceEdge` | `interface ReferenceEdge` | One typed frontmatter reference edge: the field, the target concept, and the target id. |
 | `InboundReference` | `interface InboundReference` | One inbound referencer: its identity plus the distinct fields through which it references the target. |
 | `ResolvedReference` | `interface ResolvedReference` | A reference edge resolved to its target's identity (id, concept, title, permalink, optional summary), for a route to render a linked target. |
-| `ComponentDef` | `interface ComponentDef` | A site component: how it inserts (editor) and how it renders (rehype). The optional `icon` and `group` place its picker row, `hidden` keeps it off the top-level picker, and `preview` is a sample that seeds the guided form and opts the configure step into the two-pane live preview. |
+| `ComponentDef` | `interface ComponentDef` | A site component: how it inserts (editor) and how it renders (rehype). Its `attributes` are a `fields.*` record of scalar leaves, with any cross-field rule in the co-bundled `behavior` table; `defineComponent` builds the `attributeSchema` from them. The optional `icon` and `group` place its picker row, `hidden` keeps it off the top-level picker, and `preview` is a sample that seeds the guided form and opts the configure step into the two-pane live preview. |
 | `ComponentRegistry` | `interface ComponentRegistry` | The single source the render pipeline and the editor palette both read. |
 | `ComponentValues` | `interface ComponentValues` | Guided-form values for one component: attribute and slot values. |
 | `ComponentValidation` | `type ComponentValidation` | A validation verdict: ok, or field-keyed error messages. |
 | `ComponentInsert` | `type ComponentInsert` | The outcome of preparing a form for insertion: markdown, or field errors. |
-| `AttributeField` | `interface AttributeField` | One `{key="value"}` attribute on a directive, or one repeatable item field. The optional `pattern` checks the value against a RegExp source with a message, and `validate` is a pure cross-field validator returning an error string or null. |
 | `SlotKind` | `type SlotKind` | A component slot kind: markdown, inline, repeatable. |
-| `SlotDef` | `interface SlotDef` | One named content region of a component. For a repeatable slot, the optional `itemLabel` derives a row's label from its item values and index, falling back to the indexed label. |
+| `SlotDef` | `interface SlotDef` | One named content region of a component. A repeatable slot's `itemFields` are a `fields.*` record of leaf descriptors (v1 uses the first), and the optional `itemLabel` derives a row's label from its item values and index, falling back to the indexed label. |
 | `IconSet` | `type IconSet` | A glyph name to SVG path-data map the site owns. |
 | `MakeIcon` | `type MakeIcon` | A site's icon factory: turn a stamped name and role into a hast element. |
 | `RendererOptions` | `interface RendererOptions` | The render pipeline's stagger, sanitize, and anchor controls. |

@@ -1,14 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import EditPage from '../../lib/components/EditPage.svelte';
-import { defineRegistry, type ComponentDef } from '../../lib/render/registry.js';
+import { defineComponent, defineRegistry } from '../../lib/render/registry.js';
+import { fields } from '../../lib/content/fields.js';
 
-const base = { build: (n: unknown) => n };
-const callout: ComponentDef = {
+const base = { build: () => ({ type: 'element' as const, tagName: 'div', properties: {}, children: [] }) };
+const callout = defineComponent({
   ...base, name: 'callout', label: 'Callout', description: 'A note.', use: 'Call out an idea.',
-  attributes: [{ key: 'tone', label: 'Tone', type: 'select', required: true, options: ['note'] }],
+  attributes: { tone: fields.select({ label: 'Tone', required: true, options: ['note'] }) },
   slots: [{ name: 'title', label: 'Title', kind: 'inline', required: true }],
-} as ComponentDef;
+});
 const registry = defineRegistry({ components: [callout] });
 
 const data = {

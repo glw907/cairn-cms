@@ -1,9 +1,9 @@
 // The showcase's adapter: the single seam the engine consumes. It declares one post-like concept,
 // a render that runs the engine pipeline, and a backend the dev GitHub double answers for.
-import { createRenderer, defineRegistry, fieldset, fields, defineAdapter, defineConcept, glyph, parseSiteConfig } from '@glw907/cairn-cms';
+import { createRenderer, defineRegistry, defineComponent, fieldset, fields, defineAdapter, defineConcept, glyph, parseSiteConfig } from '@glw907/cairn-cms';
 import { cardShell, headRow, iconSpan, strAttr } from '@glw907/cairn-cms/render';
 import { normalizeAssets, makeMediaResolver, readCommittedManifest } from '@glw907/cairn-cms/media';
-import type { ComponentDef, IconSet } from '@glw907/cairn-cms';
+import type { IconSet } from '@glw907/cairn-cms';
 import { h } from 'hastscript';
 import type { ElementContent } from 'hast';
 import siteYaml from './site.config.yaml?raw';
@@ -21,7 +21,7 @@ const icons: IconSet = {
   alert: 'M128 24 8 224h240L128 24Zm0 72v56m0 32v8',
 };
 
-const callout: ComponentDef = {
+const callout = defineComponent({
   name: 'callout',
   label: 'Callout',
   description: 'A highlighted note with an optional icon.',
@@ -43,20 +43,20 @@ const callout: ComponentDef = {
       h('div', { className: ['callout-body'] }, ctx.slot('body')),
       h('ul', { className: ['callout-points'] }, ctx.items('points').map((item: ElementContent[]) => h('li', item))),
     ]),
-  attributes: [
-    { key: 'tone', label: 'Tone', type: 'select', required: true, options: ['note', 'tip', 'warning'] },
-    { key: 'icon', label: 'Icon', type: 'icon' },
-  ],
+  attributes: {
+    tone: fields.select({ label: 'Tone', required: true, options: ['note', 'tip', 'warning'] }),
+    icon: fields.icon({ label: 'Icon' }),
+  },
   slots: [
     { name: 'title', label: 'Title', kind: 'inline', required: true },
     { name: 'body', label: 'Body', kind: 'markdown' },
-    { name: 'points', label: 'Points', kind: 'repeatable', itemFields: [{ key: 'text', label: 'Item', type: 'text' }] },
+    { name: 'points', label: 'Points', kind: 'repeatable', itemFields: { text: fields.text({ label: 'Item' }) } },
   ],
-};
+});
 
 const makeIcon = (name: string, role?: string) => iconSpan(glyph(name, icons), role);
 
-const alert: ComponentDef = {
+const alert = defineComponent({
   name: 'alert',
   label: 'Alert',
   description: 'A bordered note whose icon defaults from its role.',
@@ -73,17 +73,17 @@ const alert: ComponentDef = {
       h('div', { className: ['alert-body'] }, ctx.slot('body')),
     ]);
   },
-  attributes: [
-    { key: 'role', label: 'Role', type: 'select', options: ['note', 'caution'] },
-    { key: 'icon', label: 'Icon', type: 'icon' },
-  ],
+  attributes: {
+    role: fields.select({ label: 'Role', options: ['note', 'caution'] }),
+    icon: fields.icon({ label: 'Icon' }),
+  },
   slots: [
     // The title is required: headRow always emits an <h2>, so a titleless alert would render an empty
     // heading (axe empty-heading). Mirror the callout, whose title is required for the same reason.
     { name: 'title', label: 'Title', kind: 'inline', required: true },
     { name: 'body', label: 'Body', kind: 'markdown' },
   ],
-};
+});
 
 const registry = defineRegistry({ components: [callout, alert] });
 

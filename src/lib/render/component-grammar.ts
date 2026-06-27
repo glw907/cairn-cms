@@ -9,17 +9,17 @@ const COLON = ':';
 
 function attrBlock(def: ComponentDef, values: ComponentValues): string {
   const parts: string[] = [];
-  for (const field of def.attributes ?? []) {
-    const v = values.attributes[field.key];
+  for (const [name, field] of Object.entries(def.attributes ?? {})) {
+    const v = values.attributes[name];
     if (field.type === 'boolean') {
-      if (v === true) parts.push(`${field.key}="true"`);
+      if (v === true) parts.push(`${name}="true"`);
     } else if (typeof v === 'string' && v !== '') {
       // The directive attribute grammar (mdast-util-directive) treats a literal `"` as the value
       // terminator and decodes HTML entities, so a backslash escape does not survive a round-trip.
       // Encode `&` first (so existing entities are not double-decoded) then `"`; the parser decodes
       // both back. A backslash is literal in this grammar and needs no escaping.
       const escaped = v.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
-      parts.push(`${field.key}="${escaped}"`);
+      parts.push(`${name}="${escaped}"`);
     }
   }
   return parts.length ? `{${parts.join(' ')}}` : '';
@@ -103,10 +103,10 @@ function valuesFromRoot(root: (RootContent & DirectiveNode) | undefined, def: Co
   const values = emptyComponentValues(def);
   if (!root) return values;
 
-  for (const field of def.attributes ?? []) {
-    const raw = root.attributes?.[field.key];
-    if (field.type === 'boolean') values.attributes[field.key] = raw === 'true';
-    else if (typeof raw === 'string') values.attributes[field.key] = raw;
+  for (const [name, field] of Object.entries(def.attributes ?? {})) {
+    const raw = root.attributes?.[name];
+    if (field.type === 'boolean') values.attributes[name] = raw === 'true';
+    else if (typeof raw === 'string') values.attributes[name] = raw;
   }
 
   const titleSlot = slotByName(def, 'title');
@@ -181,7 +181,7 @@ export async function componentRoundTripSafety(markdown: string, def: ComponentD
   const root = findComponentRoot(markdown, def);
   if (!root) return { safe: false, reason: 'not-a-component' };
 
-  const declaredKeys = new Set((def.attributes ?? []).map((f) => f.key));
+  const declaredKeys = new Set(Object.keys(def.attributes ?? {}));
   for (const key of parseRawAttributeKeys(markdown, def)) {
     if (!declaredKeys.has(key)) return { safe: false, reason: 'unknown-attribute' };
   }
@@ -220,7 +220,7 @@ export async function parseComponentWithRawKeys(
 // here; the parse must overwrite only the fields actually present in the markdown.
 function emptyComponentValues(def: ComponentDef): ComponentValues {
   const attributes: Record<string, string | boolean> = {};
-  for (const f of def.attributes ?? []) attributes[f.key] = f.type === 'boolean' ? false : '';
+  for (const [name, field] of Object.entries(def.attributes ?? {})) attributes[name] = field.type === 'boolean' ? false : '';
   const slots: Record<string, string | string[]> = {};
   for (const s of def.slots ?? []) slots[s.name] = s.kind === 'repeatable' ? [] : '';
   return { attributes, slots };

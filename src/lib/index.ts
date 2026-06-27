@@ -52,6 +52,7 @@ export type {
   DateField,
   DatetimeField,
   BooleanField,
+  IconField,
   ImageField,
   ObjectField,
   ReferenceField,
@@ -93,12 +94,10 @@ export type { ReferenceEdge } from './content/references.js';
 // function ships from the /delivery subpath; this is the type a route reads off the resolved map.
 export type { ResolvedReference } from './delivery/site-resolver.js';
 // Render engine (Plan 04): generic directive pipeline; sites own the component registry.
-export { defineRegistry, emptyValues } from './render/registry.js';
+export { defineRegistry, defineComponent, emptyValues } from './render/registry.js';
 export type {
   ComponentDef,
   ComponentRegistry,
-  FieldType,
-  AttributeField,
   SlotKind,
   SlotDef,
   ComponentValues,

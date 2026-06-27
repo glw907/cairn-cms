@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { defineRegistry, type ComponentDef } from '../../lib/render/registry.js';
+import { fields } from '../../lib/content/fields.js';
 
 const card: ComponentDef = {
   name: 'card',
@@ -8,7 +9,7 @@ const card: ComponentDef = {
   insertTemplate: ':::card\n\n:::',
   build: (ctx) => ctx.node,
   defaultIconByRole: { caution: 'warning' },
-  attributes: [{ key: 'icon', label: 'Icon', type: 'icon' }],
+  attributes: { icon: fields.icon({ label: 'Icon' }) },
 };
 
 describe('defineRegistry', () => {
@@ -39,7 +40,7 @@ describe('defaultIcon engine fallback', () => {
           label: '',
           description: '',
           build: () => ({ type: 'element', tagName: 'div', properties: {}, children: [] }),
-          attributes: [{ key: 'icon', label: 'Icon', type: 'icon' }],
+          attributes: { icon: fields.icon({ label: 'Icon' }) },
         },
       ],
     });
@@ -55,7 +56,7 @@ describe('defaultIcon engine fallback', () => {
           description: '',
           build: () => ({ type: 'element', tagName: 'div', properties: {}, children: [] }),
           defaultIconByRole: { warning: 'siren' },
-          attributes: [{ key: 'icon', label: 'Icon', type: 'icon' }],
+          attributes: { icon: fields.icon({ label: 'Icon' }) },
         },
       ],
     });
@@ -70,7 +71,7 @@ describe('defaultIcon engine fallback', () => {
           label: '',
           description: '',
           build: () => ({ type: 'element', tagName: 'div', properties: {}, children: [] }),
-          attributes: [{ key: 'icon', label: 'Icon', type: 'icon' }],
+          attributes: { icon: fields.icon({ label: 'Icon' }) },
         },
       ],
     });
@@ -85,7 +86,7 @@ describe('defaultIcon engine fallback', () => {
           label: '',
           description: '',
           build: () => ({ type: 'element', tagName: 'div', properties: {}, children: [] }),
-          attributes: [{ key: 'x', label: 'X', type: 'text' }],
+          attributes: { x: fields.text({ label: 'X' }) },
         },
       ],
     });
@@ -94,7 +95,7 @@ describe('defaultIcon engine fallback', () => {
 });
 
 describe('registry.iconField', () => {
-  it('returns the first declared icon field (first-wins)', () => {
+  it('returns the first declared icon field name (first-wins)', () => {
     const reg = defineRegistry({
       components: [
         {
@@ -102,14 +103,14 @@ describe('registry.iconField', () => {
           label: '',
           description: '',
           build: () => ({ type: 'element', tagName: 'div', properties: {}, children: [] }),
-          attributes: [
-            { key: 'one', label: 'One', type: 'icon' },
-            { key: 'two', label: 'Two', type: 'icon' },
-          ],
+          attributes: {
+            one: fields.icon({ label: 'One' }),
+            two: fields.icon({ label: 'Two' }),
+          },
         },
       ],
     });
-    expect(reg.iconField('a')?.key).toBe('one');
+    expect(reg.iconField('a')).toBe('one');
   });
   it('returns undefined when no attribute is an icon field', () => {
     const reg = defineRegistry({
@@ -119,7 +120,7 @@ describe('registry.iconField', () => {
           label: '',
           description: '',
           build: () => ({ type: 'element', tagName: 'div', properties: {}, children: [] }),
-          attributes: [{ key: 'x', label: 'X', type: 'text' }],
+          attributes: { x: fields.text({ label: 'X' }) },
         },
       ],
     });
@@ -138,7 +139,7 @@ describe('defineRegistry icon guard', () => {
             description: '',
             build: () => ({ type: 'element', tagName: 'div', properties: {}, children: [] }),
             defaultIconByRole: { caution: 'leaf' },
-            attributes: [{ key: 'role', label: 'Role', type: 'select', options: ['caution'] }],
+            attributes: { role: fields.select({ label: 'Role', options: ['caution'] }) },
           },
         ],
       }),
@@ -174,7 +175,7 @@ describe('defineRegistry icon guard', () => {
             description: '',
             build: () => ({ type: 'element', tagName: 'div', properties: {}, children: [] }),
             defaultIconByRole: { caution: 'leaf' },
-            attributes: [{ key: 'icon', label: 'Icon', type: 'icon' }],
+            attributes: { icon: fields.icon({ label: 'Icon' }) },
           },
         ],
       }),

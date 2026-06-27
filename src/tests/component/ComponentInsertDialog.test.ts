@@ -2,21 +2,22 @@ import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
 import ComponentInsertDialog, { insertableDefs } from '../../lib/components/ComponentInsertDialog.svelte';
-import { defineRegistry, type ComponentDef, type ComponentValues } from '../../lib/render/registry.js';
+import { defineComponent, defineRegistry, type ComponentDef, type ComponentValues } from '../../lib/render/registry.js';
+import { fields } from '../../lib/content/fields.js';
 import { serializeComponent } from '../../lib/render/component-grammar.js';
 
-const base = { build: (n: unknown) => n };
-const schemaDef: ComponentDef = {
+const base = { build: () => ({ type: 'element' as const, tagName: 'div', properties: {}, children: [] }) };
+const schemaDef = defineComponent({
   ...base, name: 'callout', label: 'Callout', description: 'A highlighted note.', use: 'Call out one idea.',
   group: 'Callouts', icon: 'snowflake',
-  attributes: [{ key: 'tone', label: 'Tone', type: 'select', required: true, options: ['note', 'warning'] }],
+  attributes: { tone: fields.select({ label: 'Tone', required: true, options: ['note', 'warning'] }) },
   slots: [{ name: 'title', label: 'Title', kind: 'inline', required: true }],
-} as ComponentDef;
-const alertDef: ComponentDef = {
+});
+const alertDef = defineComponent({
   ...base, name: 'alert', label: 'Alert', description: 'A bordered note.', use: 'Flag a caution.',
   group: 'Callouts', icon: 'leaf',
-  attributes: [{ key: 'role', label: 'Role', type: 'select', options: ['caution'] }],
-} as ComponentDef;
+  attributes: { role: fields.select({ label: 'Role', options: ['caution'] }) },
+});
 const gridDef: ComponentDef = {
   ...base, name: 'grid', label: 'Grid', description: 'A responsive grid.', use: 'Lay tiles out.',
   group: 'Layout', insertTemplate: ':::grid\n:::',
@@ -182,17 +183,17 @@ describe('ComponentInsertDialog search', () => {
   });
 });
 
-const previewCallout: ComponentDef = {
+const previewCallout = defineComponent({
   ...base, name: 'callout', label: 'Callout', description: 'A highlighted note.', use: 'Call out one idea.',
   group: 'Callouts', icon: 'snowflake',
   preview: { attributes: { tone: 'note' }, slots: { title: 'Sample', body: 'Body text' } },
-  attributes: [{ key: 'tone', label: 'Tone', type: 'select', required: true, options: ['note', 'warning'] }],
+  attributes: { tone: fields.select({ label: 'Tone', required: true, options: ['note', 'warning'] }) },
   slots: [{ name: 'title', label: 'Title', kind: 'inline', required: true }],
-} as ComponentDef;
-const plainForm: ComponentDef = {
+});
+const plainForm = defineComponent({
   ...base, name: 'signup', label: 'Newsletter signup', description: 'An email capture.', use: 'Grow the list.',
-  attributes: [{ key: 'list', label: 'List', type: 'select', required: true, options: ['news'] }],
-} as ComponentDef;
+  attributes: { list: fields.select({ label: 'List', required: true, options: ['news'] }) },
+});
 
 describe('ComponentInsertDialog configure step', () => {
   it('shows two panes for a preview-declaring component', async () => {

@@ -3,6 +3,7 @@ import { h } from 'hastscript';
 import { defaultSchema } from 'hast-util-sanitize';
 import { createRenderer } from '../../lib/render/pipeline.js';
 import { defineRegistry } from '../../lib/render/registry.js';
+import { fields } from '../../lib/content/fields.js';
 import { manifestMediaResolver } from '../../lib/render/resolve-media.js';
 import type { Schema } from 'hast-util-sanitize';
 
@@ -161,10 +162,10 @@ describe('render sink guard (post-dispatch)', () => {
                 ...ctx.slot('body'),
               ],
             ),
-          attributes: [
-            { key: 'url', label: 'URL', type: 'text' },
-            { key: 'img', label: 'Image', type: 'text' },
-          ],
+          attributes: {
+            url: fields.text({ label: 'URL' }),
+            img: fields.text({ label: 'Image' }),
+          },
           slots: [{ name: 'body', label: 'Body', kind: 'markdown' }],
         },
       ],

@@ -55,7 +55,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
     values = working;
   });
 
-  const attributes = $derived(def.attributes ?? []);
+  const attributes = $derived(Object.entries(def.attributes ?? {}));
   const flatSlots = $derived((def.slots ?? []).filter((s) => s.kind !== 'repeatable'));
   const repeatableSlots = $derived((def.slots ?? []).filter((s) => s.kind === 'repeatable'));
 
@@ -107,7 +107,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
   function rowLabel(slot: (typeof repeatableSlots)[number], value: string, index: number): string {
     const fallback = `${slot.label} ${index + 1}`;
     if (!slot.itemLabel) return fallback;
-    const key = slot.itemFields?.[0]?.key ?? 'text';
+    const key = Object.keys(slot.itemFields ?? {})[0] ?? 'text';
     const derived = slot.itemLabel({ [key]: value }, index);
     return derived && derived.trim() ? derived : fallback;
   }
@@ -125,14 +125,34 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
     return typeof v === 'string' ? v : '';
   }
 
+  // The HTML input type for the text-fallback arm. ComponentForm has no dedicated number/date arm
+  // the way FieldInput does, so it folds those scalar types into the one fallback input; everything
+  // else renders a plain text box.
+  function inputType(type: string): string {
+    switch (type) {
+      case 'number':
+        return 'number';
+      case 'date':
+        return 'date';
+      case 'datetime':
+        return 'datetime-local';
+      case 'url':
+        return 'url';
+      case 'email':
+        return 'email';
+      default:
+        return 'text';
+    }
+  }
+
   // A required attribute is unmet only for a text/select/icon field left empty; a boolean is always
   // met (its false is a real choice). A required slot is unmet when its string is empty or its
   // repeatable list has no non-empty item. This drives the asterisk-marked fields, the disabled
   // Insert, and (through the bound `incomplete`) the dialog's incomplete preview state.
   const incompleteState = $derived.by(() => {
-    for (const field of attributes) {
+    for (const [name, field] of attributes) {
       if (!field.required || field.type === 'boolean') continue;
-      if (asString(field.key) === '') return true;
+      if (asString(name) === '') return true;
     }
     for (const slot of def.slots ?? []) {
       if (!slot.required) continue;
@@ -164,9 +184,9 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
   // next to the field meanwhile.
   const errors = $derived.by(() => {
     const out: Record<string, string> = {};
-    for (const field of attributes) {
-      if (field.required && field.type !== 'boolean' && touched[field.key] && asString(field.key) === '') {
-        out[field.key] = `${field.label} is required.`;
+    for (const [name, field] of attributes) {
+      if (field.required && field.type !== 'boolean' && touched[name] && asString(name) === '') {
+        out[name] = `${field.label} is required.`;
       }
     }
     for (const slot of def.slots ?? []) {
@@ -201,16 +221,16 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
 </script>
 
 <div class="flex flex-col gap-3" bind:this={formEl}>
-  {#each attributes as field (field.key)}
+  {#each attributes as [name, field] (name)}
     {#if field.type === 'boolean'}
       <label class="label cursor-pointer justify-start gap-2">
         <input
           class="checkbox checkbox-sm"
           type="checkbox"
-          aria-invalid={Boolean(errors[field.key])}
-          aria-describedby={errors[field.key] ? `err-${field.key}` : undefined}
-          checked={asBool(field.key)}
-          onchange={(e) => (working.attributes[field.key] = e.currentTarget.checked)}
+          aria-invalid={Boolean(errors[name])}
+          aria-describedby={errors[name] ? `err-${name}` : undefined}
+          checked={asBool(name)}
+          onchange={(e) => (working.attributes[name] = e.currentTarget.checked)}
         />
         <span class="text-sm">{field.label}</span>
       </label>
@@ -220,14 +240,14 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
         <select
           class="select"
           aria-required={field.required ? 'true' : undefined}
-          aria-invalid={Boolean(errors[field.key])}
-          aria-describedby={errors[field.key] ? `err-${field.key}` : undefined}
-          value={asString(field.key)}
+          aria-invalid={Boolean(errors[name])}
+          aria-describedby={errors[name] ? `err-${name}` : undefined}
+          value={asString(name)}
           onchange={(e) => {
-            working.attributes[field.key] = e.currentTarget.value;
-            markTouched(field.key);
+            working.attributes[name] = e.currentTarget.value;
+            markTouched(name);
           }}
-          onblur={() => markTouched(field.key)}
+          onblur={() => markTouched(name)}
         >
           {#if !field.required}<option value="">—</option>{/if}
           {#each field.options ?? [] as opt (opt)}<option value={opt}>{opt}</option>{/each}
@@ -239,9 +259,9 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
         <IconPicker
           {icons}
           label={field.label}
-          value={asString(field.key)}
+          value={asString(name)}
           required={field.required ?? false}
-          onChange={(name) => (working.attributes[field.key] = name)}
+          onChange={(glyph) => (working.attributes[name] = glyph)}
         />
       </div>
     {:else}
@@ -249,19 +269,20 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
         <span class="text-sm font-medium">{field.label}{#if field.required}<span data-testid="cairn-pk-req" class="text-error" aria-hidden="true">*</span>{/if}</span>
         <input
           class="input"
+          type={inputType(field.type)}
           aria-required={field.required ? 'true' : undefined}
-          aria-invalid={Boolean(errors[field.key])}
-          aria-describedby={errors[field.key] ? `err-${field.key}` : undefined}
-          value={asString(field.key)}
+          aria-invalid={Boolean(errors[name])}
+          aria-describedby={errors[name] ? `err-${name}` : undefined}
+          value={asString(name)}
           oninput={(e) => {
-            working.attributes[field.key] = e.currentTarget.value;
-            markTouched(field.key);
+            working.attributes[name] = e.currentTarget.value;
+            markTouched(name);
           }}
-          onblur={() => markTouched(field.key)}
+          onblur={() => markTouched(name)}
         />
       </label>
     {/if}
-    {#if errors[field.key]}<span id={`err-${field.key}`} role="alert" class="text-error text-xs">{errors[field.key]}</span>{/if}
+    {#if errors[name]}<span id={`err-${name}`} role="alert" class="text-error text-xs">{errors[name]}</span>{/if}
   {/each}
 
   {#each flatSlots as slot (slot.name)}

@@ -27,9 +27,10 @@ function componentSection(def: ComponentDef): string {
 /** Seed example values that show every declared field: an ellipsis for strings, one sample list item. */
 function exampleValues(def: ComponentDef): ComponentValues {
   const values = emptyValues(def);
-  for (const field of def.attributes ?? []) {
-    if (field.type === 'boolean') values.attributes[field.key] = false;
-    else values.attributes[field.key] = field.options?.[0] ?? '…';
+  for (const [name, field] of Object.entries(def.attributes ?? {})) {
+    if (field.type === 'boolean') values.attributes[name] = false;
+    else if (field.type === 'select') values.attributes[name] = field.options[0] ?? '…';
+    else values.attributes[name] = '…';
   }
   for (const slot of def.slots ?? []) {
     if (slot.kind === 'repeatable') values.slots[slot.name] = ['…'];

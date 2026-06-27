@@ -482,7 +482,7 @@ each def's `icon` beside its label when the icon set resolves it, and hides any 
 Past eight actionable components the catalog grows a search input that filters by label or
 description, with the arrow keys roaming the rows.
 
-A component that declares an icon attribute (`type: 'icon'`) can resolve a role to a default glyph.
+A component that declares an icon attribute with `fields.icon()` can resolve a role to a default glyph.
 The engine ships a fallback, `DEFAULT_ICON_BY_ROLE`, that covers the conventional admonition roles:
 `note`, `tip`, `important`, `warning`, `caution`, `info`, and `danger`. The fallback names a glyph
 key, so the site's IconSet must carry that key for the glyph to render. A component's own

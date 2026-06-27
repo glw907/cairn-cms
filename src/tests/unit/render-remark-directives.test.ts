@@ -5,27 +5,28 @@ import remarkDirective from 'remark-directive';
 import remarkRehype from 'remark-rehype';
 import rehypeStringify from 'rehype-stringify';
 import { remarkDirectiveStamp } from '../../lib/render/remark-directives.js';
-import { defineRegistry } from '../../lib/render/registry.js';
+import { defineComponent, defineRegistry } from '../../lib/render/registry.js';
+import { fields } from '../../lib/content/fields.js';
 
 const reg = defineRegistry({
   components: [
-    {
+    defineComponent({
       name: 'card',
       label: '',
       description: '',
       insertTemplate: '',
       build: (ctx) => ctx.node,
-      attributes: [{ key: 'icon', label: 'Icon', type: 'icon' }],
-    },
-    {
+      attributes: { icon: fields.icon({ label: 'Icon' }) },
+    }),
+    defineComponent({
       name: 'alert',
       label: '',
       description: '',
       insertTemplate: '',
       build: (ctx) => ctx.node,
       defaultIconByRole: { caution: 'warning' },
-      attributes: [{ key: 'icon', label: 'Icon', type: 'icon' }],
-    },
+      attributes: { icon: fields.icon({ label: 'Icon' }) },
+    }),
   ],
 });
 
@@ -70,5 +71,28 @@ describe('remarkDirectiveStamp', () => {
   it('drops a non-empty unclaimed label on a title-less component', async () => {
     const html = await run(':::card[Stray]\nbody\n:::');
     expect(html).not.toContain('Stray');
+  });
+});
+
+describe('icon attribute round-trip', () => {
+  it('stamps a fields.icon value and reads it back into the component context', async () => {
+    const { createRenderer } = await import('../../lib/render/pipeline.js');
+    const seen: Array<string | boolean | undefined> = [];
+    const iconReg = defineRegistry({
+      components: [
+        defineComponent({
+          name: 'badge',
+          label: '',
+          description: '',
+          build: (ctx) => {
+            seen.push(ctx.attributes.icon);
+            return ctx.node;
+          },
+          attributes: { icon: fields.icon({ label: 'Icon' }) },
+        }),
+      ],
+    });
+    await createRenderer(iconReg).renderMarkdown(':::badge{icon=flag}\nbody\n:::');
+    expect(seen[0]).toBe('flag');
   });
 });

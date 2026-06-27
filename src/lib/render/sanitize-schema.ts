@@ -23,7 +23,7 @@ export function buildSanitizeSchema(
   registry: ComponentRegistry,
   extend?: (defaults: Schema) => Schema,
 ): Schema {
-  const attrMarkers = registry.defs.flatMap((d) => (d.attributes ?? []).map((a) => dataAttrProp(a.key)));
+  const attrMarkers = registry.defs.flatMap((d) => Object.keys(d.attributes ?? {}).map((key) => dataAttrProp(key)));
   const markers = [...FIXED_MARKERS, ...attrMarkers];
   const attributes = defaultSchema.attributes ?? {};
   // defaultSchema's `a` entry carries a className tuple (`['className', 'data-footnote-backref']`)

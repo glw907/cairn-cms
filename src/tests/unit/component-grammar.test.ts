@@ -1,17 +1,18 @@
 import { describe, it, expect } from 'vitest';
 import { serializeComponent, parseComponent, componentRoundTripSafety } from '../../lib/render/component-grammar.js';
-import type { ComponentDef } from '../../lib/render/registry.js';
+import { defineComponent, type ComponentDef } from '../../lib/render/registry.js';
+import { fields } from '../../lib/content/fields.js';
 
-const base = { build: (n: unknown) => n, description: 'd', use: 'u' };
+const base = { build: () => ({ type: 'element' as const, tagName: 'div', properties: {}, children: [] }), description: 'd', use: 'u' };
 
-const card: ComponentDef = {
+const card = defineComponent({
   ...base, name: 'card', label: 'Card',
-  attributes: [{ key: 'icon', label: 'Icon', type: 'icon' }],
+  attributes: { icon: fields.icon({ label: 'Icon' }) },
   slots: [
     { name: 'title', label: 'Title', kind: 'inline' },
     { name: 'body', label: 'Body', kind: 'markdown' },
   ],
-} as ComponentDef;
+});
 
 describe('serializeComponent flat', () => {
   it('emits a title label, an attribute block, and the unmarked body', () => {
@@ -109,15 +110,15 @@ describe('serializeComponent escaping', () => {
   });
 });
 
-const cta: ComponentDef = {
+const cta = defineComponent({
   ...base, name: 'cta', label: 'CTA',
-  attributes: [{ key: 'icon', label: 'Icon', type: 'icon' }],
+  attributes: { icon: fields.icon({ label: 'Icon' }) },
   slots: [
     { name: 'title', label: 'Title', kind: 'inline' },
     { name: 'body', label: 'Body', kind: 'markdown' },
-    { name: 'actions', label: 'Actions', kind: 'repeatable', itemFields: [{ key: 'text', label: 'Item', type: 'text' }] },
+    { name: 'actions', label: 'Actions', kind: 'repeatable', itemFields: { text: fields.text({ label: 'Item' }) } },
   ],
-} as ComponentDef;
+});
 
 describe('serializeComponent nested slots', () => {
   it('uses a four-colon outer fence and nests a repeatable slot as a markdown list', () => {

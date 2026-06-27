@@ -1566,6 +1566,39 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       } satisfies DeleteRefusal);
     }
 
+    // Cross-branch reference gate (fail-closed). A strict reference index unions main's published edges
+    // and every open cairn/* branch; unlike the main-only body-link gate above, it does NOT degrade to
+    // allow when it cannot read, because the build's verifyReferences backstop only sees main. A
+    // transient branch-read failure that looked like "no references" would let a delete strand an
+    // inbound edge held in an unpublished draft, so refuse with a 503 rather than proceed.
+    let refIndex: Awaited<ReturnType<typeof buildReferenceIndex>>;
+    try {
+      refIndex = await buildReferenceIndex(runtime.backend, token, runtime.concepts, manifest, { strict: true });
+    } catch {
+      return fail(503, {
+        error: 'Could not verify where this entry is referenced. Try again.',
+        inboundLinks: [],
+        id,
+      } satisfies DeleteRefusal);
+    }
+    const refRows = refIndex.get(`${concept.id}/${id}`) ?? [];
+    if (refRows.length > 0) {
+      // Carry each referencing entry into the InboundLink shape the blockers list renders. A branch row
+      // has no permalink (the edit is unpublished), so default it to empty.
+      const referencingEntries: InboundLink[] = refRows.map((row) => ({
+        concept: row.concept,
+        id: row.id,
+        title: row.title,
+        permalink: row.permalink ?? '',
+      }));
+      const n = referencingEntries.length;
+      return fail(409, {
+        error: `Cannot delete ${id}: ${n} ${n === 1 ? 'entry references' : 'entries reference'} it.`,
+        inboundLinks: referencingEntries,
+        id,
+      } satisfies DeleteRefusal);
+    }
+
     // When the entry was never published (absent from main), the branch delete is the whole
     // operation; main has nothing to commit, so the only honest log record is the discard of
     // the pending edits.

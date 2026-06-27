@@ -545,6 +545,9 @@ describe('listDeleteAction', () => {
     const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
       calls.push({ url, init });
       const method = init?.method ?? 'GET';
+      // The cross-branch reference gate lists open branches via matching-refs; this double has no open
+      // branch, so it returns an empty ref list and the strict index resolves to no inbound references.
+      if (method === 'GET' && url.includes('/git/matching-refs/')) return json([]);
       if (method === 'GET' && url.includes('/contents/')) return new Response(manifestRaw, { status: 200 });
       if (method === 'DELETE' && url.includes('/git/refs/')) return new Response('Not Found', { status: 404 }); // no pending branch
       if (method === 'GET' && url.includes('/git/ref/')) return json({ object: { sha: 'head1' } });

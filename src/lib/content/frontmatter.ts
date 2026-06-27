@@ -64,6 +64,20 @@ export function frontmatterFromForm(
         data[field.name] = value;
         break;
       }
+      case 'reference': {
+        // One submitted id. An empty value means no edge, so omit the key (like the image arm)
+        // rather than committing a blank scalar the extractor would have to skip.
+        const id = String(form.get(field.name) ?? '').trim();
+        if (id !== '') data[field.name] = id;
+        break;
+      }
+      case 'array': {
+        // One submitted id per selected element. Drop empties and omit the key on an empty list,
+        // so a cleared array leaves no dead key in committed frontmatter.
+        const ids = form.getAll(field.name).map(String).map((id) => id.trim()).filter(Boolean);
+        if (ids.length > 0) data[field.name] = ids;
+        break;
+      }
       default:
         // FormData.get returns null for an absent field; normalize to an empty string so
         // a caller reading a text value never gets null.
@@ -178,6 +192,12 @@ export function formValues(
     // A hero is a nested object; the default String() arm would corrupt it to '[object Object]'.
     // Hand the stored object back as-is so the editor reads .src/.alt/.caption on open.
     else if (field.type === 'image') out[field.name] = value !== null && typeof value === 'object' ? value : undefined;
+    // A reference canonicalizes through the shared coercer: a YAML-parsed Date becomes its UTC-sliced
+    // id, never String(Date) timezone garbage.
+    else if (field.type === 'reference') out[field.name] = referenceIdFromValue(value);
+    // An array(reference) canonicalizes likewise: a lone scalar becomes a single-element list rather
+    // than dropping to [], and each element is UTC-sliced.
+    else if (field.type === 'array') out[field.name] = referenceIdsFromValue(value);
     // Every other type is a plain string input: a nullish value reads as empty, anything else
     // stringifies (a string passes through unchanged).
     else out[field.name] = value == null ? '' : String(value);

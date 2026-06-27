@@ -4,7 +4,7 @@
 // and returns field-keyed errors or normalized data. The adapter contract, the editor form, the
 // delivery inference, and the media extractor all read this.
 import type { FieldDescriptor, ImageValue } from './fields.js';
-import type { ValidationResult } from './types.js';
+import type { ValidationIssue, ValidationResult } from './types.js';
 import type { StandardInput, StandardSchemaV1 } from './standard-schema.js';
 import { datetimeInputValue, dateInputValue, isCalendarDate, referenceIdsFromValue } from './frontmatter.js';
 import { compilePattern, dateBoundsError, patternError, stringLengthError } from './field-rules.js';
@@ -93,35 +93,6 @@ type InferRecord<RR extends Record<string, FieldDescriptor>, R = RemoveIndex<RR>
 /** Extract the inferred frontmatter type from a `Fieldset`. */
 export type InferFieldset<S> = S extends Fieldset<infer R> ? InferRecord<R> : never;
 
-// Coerce one image value to the stored `{ src, alt, caption?, decorative? }` shape, ported from
-// validate.ts. Default a missing alt to empty (alt is debt, never a save block), trim and drop a
-// blank caption, keep decorative only when an explicit true, and drop the whole key when src is empty.
-// A required image with an empty src is the one error this arm raises.
-function coerceImage(
-  field: Extract<FieldDescriptor, { type: 'image' }>,
-  key: string,
-  value: unknown,
-  data: Record<string, unknown>,
-  errors: Record<string, string>,
-): void {
-  let src = '';
-  if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
-    const obj = value as Record<string, unknown>;
-    src = typeof obj.src === 'string' ? obj.src.trim() : '';
-    if (src !== '') {
-      const normalized: ImageValue = {
-        src,
-        alt: typeof obj.alt === 'string' ? obj.alt : '',
-      };
-      const caption = typeof obj.caption === 'string' ? obj.caption.trim() : '';
-      if (caption !== '') normalized.caption = caption;
-      if (obj.decorative === true) normalized.decorative = true;
-      data[key] = normalized;
-    }
-  }
-  if (field.required && src === '') errors[key] = `${field.label} is required`;
-}
-
 // Coerce a raw value to the trimmed string the empty check and constraints run on. A parsed value may
 // arrive from parseMarkdown, not only a form string: a Date on a date or datetime field, a JS number on
 // a number field. A finite 0 coerces to '0', never read as empty, since 0 is a real number a YAML scalar
@@ -134,30 +105,91 @@ function coerceToText(type: FieldDescriptor['type'], value: unknown): string {
   return '';
 }
 
-// Validate one descriptor against its raw value, writing into `data` or `errors`. Empty or absent is
-// "not provided" and is read BEFORE type coercion, uniformly: a required field errors, an optional
-// field drops (no key, no error). Only a non-empty value is coerced. boolean is the exception: true
-// stores true, anything else omits the key. number relies on the empty-first drop so an empty optional
-// number never becomes Number('') === 0.
+/** The outcome of validating one field: the stored value when present, plus any located issues. */
+interface FieldOutcome {
+  value?: unknown;
+  issues: ValidationIssue[];
+}
+
+// Build the structural key for a path by dropping numeric (row-index) segments, so a nested text
+// field's compiled pattern is found regardless of which row it sits in: ['faq', 2, 'code'] -> 'faq.code'.
+function structuralKey(path: (string | number)[]): string {
+  return path.filter((seg) => typeof seg === 'string').join('.');
+}
+
+// Validate one descriptor against its raw value and return its outcome. Empty or absent is
+// "not provided" and is read BEFORE type coercion, uniformly: a required field returns an issue, an
+// optional field drops (no value, no issue). Only a non-empty value is coerced. boolean is the
+// exception: true stores true, anything else omits the value. number relies on the empty-first drop so
+// an empty optional number never becomes Number('') === 0. A container (object, array) recurses one
+// level, appending the leaf key or element index to `path` for each nested issue.
 function validateField(
-  key: string,
+  path: (string | number)[],
   field: FieldDescriptor,
   value: unknown,
-  data: Record<string, unknown>,
-  errors: Record<string, string>,
   patterns: Map<string, RegExp>,
-): void {
-  // boolean: presence is the value; an unchecked or absent box omits the key (no draft: false noise).
+): FieldOutcome {
+  const label = field.label ?? '';
+
+  // object: validate each leaf one level down, assembling a nested object value and concatenating
+  // issues with the leaf key appended to the path. An empty (all-leaves-dropped) object omits the
+  // value; a required empty object is an error on the object's own path.
+  if (field.type === 'object') {
+    const obj: Record<string, unknown> = {};
+    const issues: ValidationIssue[] = [];
+    const raw = value !== null && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+    for (const [leafKey, leaf] of Object.entries(field.fields)) {
+      const outcome = validateField([...path, leafKey], leaf, raw[leafKey], patterns);
+      issues.push(...outcome.issues);
+      if ('value' in outcome) obj[leafKey] = outcome.value;
+    }
+    if (issues.length > 0) return { issues };
+    if (Object.keys(obj).length === 0) {
+      return field.required ? { issues: [{ path, message: `${label} is required` }] } : { issues: [] };
+    }
+    return { value: obj, issues };
+  }
+
+  // array: a reference item keeps the shipped id-list path; any other item recurses per element with
+  // the element index appended to the path. A required empty list errors on the array's own path.
+  if (field.type === 'array') {
+    if (field.item.type === 'reference') {
+      // array(reference): coerceToText returns '' for an array, so the empty-first drop below would
+      // silently lose an optional list or falsely error a required one. The canonicalizer coerces a
+      // lone scalar to one element and a Date element to its id. Each element must pass isValidId (the
+      // item's reference rule this phase); a required empty list errors; the value is set only when the
+      // list is non-empty.
+      const list = referenceIdsFromValue(value);
+      if (field.required && list.length === 0) return { issues: [{ path, message: `${label} is required` }] };
+      const invalid = list.find((id) => !isValidId(id));
+      if (invalid !== undefined) return { issues: [{ path, message: `${label} is not a valid reference` }] };
+      return list.length > 0 ? { value: list, issues: [] } : { issues: [] };
+    }
+    const elements = Array.isArray(value) ? value : [];
+    const out: unknown[] = [];
+    const issues: ValidationIssue[] = [];
+    elements.forEach((element, i) => {
+      const outcome = validateField([...path, i], field.item, element, patterns);
+      issues.push(...outcome.issues);
+      if ('value' in outcome) out.push(outcome.value);
+    });
+    if (issues.length > 0) return { issues };
+    if (out.length === 0) {
+      return field.required ? { issues: [{ path, message: `${label} is required` }] } : { issues: [] };
+    }
+    return { value: out, issues };
+  }
+
+  // boolean: presence is the value; an unchecked or absent box omits the value (no draft: false noise).
   if (field.type === 'boolean') {
-    if (value === true) data[key] = true;
-    return;
+    return value === true ? { value: true, issues: [] } : { issues: [] };
   }
 
   // multiselect: a string array; drop empties, reject an unknown value when options is closed. An empty
-  // list omits the key (a required empty errors); the array path is the one non-string coercion. A lone
-  // non-empty scalar (a single tag a YAML scalar carries) coerces to a single-element list, rather than
-  // dropping to [] and reading as "required" while present. An empty string or a non-string-non-array
-  // stays the empty list.
+  // list omits the value (a required empty errors); the array path is the one non-string coercion. A
+  // lone non-empty scalar (a single tag a YAML scalar carries) coerces to a single-element list, rather
+  // than dropping to [] and reading as "required" while present. An empty string or a
+  // non-string-non-array stays the empty list.
   if (field.type === 'multiselect') {
     let raw: string[];
     if (Array.isArray(value)) raw = value.map(String);
@@ -165,45 +197,38 @@ function validateField(
     else raw = [];
     const list = raw.map((v) => v.trim()).filter((v) => v !== '');
     if (field.required && list.length === 0) {
-      errors[key] = `${field.label} is required`;
-      return;
+      return { issues: [{ path, message: `${label} is required` }] };
     }
     const { options } = field;
     if (options) {
       const unknown = list.find((v) => !options.includes(v));
       if (unknown !== undefined) {
-        errors[key] = `${field.label} contains an unknown value: ${unknown}`;
-        return;
+        return { issues: [{ path, message: `${label} contains an unknown value: ${unknown}` }] };
       }
     }
-    if (list.length > 0) data[key] = list;
-    return;
+    return list.length > 0 ? { value: list, issues: [] } : { issues: [] };
   }
 
-  // image: the nested object arm, dropping the key on empty src.
+  // image: the nested object arm, dropping the value on empty src. Default a missing alt to empty (alt
+  // is debt, never a save block), trim and drop a blank caption, keep decorative only when an explicit
+  // true. A required image with an empty src is the one error this arm raises.
   if (field.type === 'image') {
-    coerceImage(field, key, value, data, errors);
-    return;
-  }
-
-  // array(reference): an early branch, NOT a post-coerce switch case. coerceToText returns '' for an
-  // array, so the empty-first drop below would silently lose an optional list or falsely error a
-  // required one. The canonicalizer coerces a lone scalar to one element and a Date element to its id.
-  // Each element must pass isValidId (the item's reference rule this phase); a required empty list
-  // errors; the key is stored only when the list is non-empty.
-  if (field.type === 'array') {
-    const list = referenceIdsFromValue(value);
-    if (field.required && list.length === 0) {
-      errors[key] = `${field.label} is required`;
-      return;
+    let src = '';
+    if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+      const obj = value as Record<string, unknown>;
+      src = typeof obj.src === 'string' ? obj.src.trim() : '';
+      if (src !== '') {
+        const normalized: ImageValue = {
+          src,
+          alt: typeof obj.alt === 'string' ? obj.alt : '',
+        };
+        const caption = typeof obj.caption === 'string' ? obj.caption.trim() : '';
+        if (caption !== '') normalized.caption = caption;
+        if (obj.decorative === true) normalized.decorative = true;
+        return { value: normalized, issues: [] };
+      }
     }
-    const invalid = list.find((id) => !isValidId(id));
-    if (invalid !== undefined) {
-      errors[key] = `${field.label} is not a valid reference`;
-      return;
-    }
-    if (list.length > 0) data[key] = list;
-    return;
+    return field.required && src === '' ? { issues: [{ path, message: `${label} is required` }] } : { issues: [] };
   }
 
   // Every other type is "not provided when empty" first, then coerced. `coerceToText` turns a parsed
@@ -211,74 +236,56 @@ function validateField(
   // datetime field, a number on a number field) is not read as empty.
   const text = coerceToText(field.type, value);
   if (text === '') {
-    if (field.required) errors[key] = `${field.label} is required`;
-    return;
+    return field.required ? { issues: [{ path, message: `${label} is required` }] } : { issues: [] };
   }
 
+  const key = structuralKey(path);
   switch (field.type) {
     case 'number': {
       const n = Number(text);
       // Reject NaN and the non-finite values Number() yields for "Infinity"/"1e400", which an
       // isNaN check alone would pass through and commit as a YAML .inf scalar.
-      if (!Number.isFinite(n)) errors[key] = `${field.label} must be a number`;
-      else if (field.integer && !Number.isInteger(n)) errors[key] = `${field.label} must be a whole number`;
-      else if (field.min != null && n < field.min) errors[key] = `${field.label} must be at least ${field.min}`;
-      else if (field.max != null && n > field.max) errors[key] = `${field.label} must be at most ${field.max}`;
-      else data[key] = n;
-      break;
+      if (!Number.isFinite(n)) return { issues: [{ path, message: `${label} must be a number` }] };
+      if (field.integer && !Number.isInteger(n)) return { issues: [{ path, message: `${label} must be a whole number` }] };
+      if (field.min != null && n < field.min) return { issues: [{ path, message: `${label} must be at least ${field.min}` }] };
+      if (field.max != null && n > field.max) return { issues: [{ path, message: `${label} must be at most ${field.max}` }] };
+      return { value: n, issues: [] };
     }
     case 'select': {
-      if (!field.options.includes(text)) errors[key] = `${field.label} contains an unknown value: ${text}`;
-      else data[key] = text;
-      break;
+      if (!field.options.includes(text)) return { issues: [{ path, message: `${label} contains an unknown value: ${text}` }] };
+      return { value: text, issues: [] };
     }
     case 'url': {
-      if (!URL_RE.test(text)) errors[key] = `${field.label} is not a valid URL`;
-      else data[key] = text;
-      break;
+      if (!URL_RE.test(text)) return { issues: [{ path, message: `${label} is not a valid URL` }] };
+      return { value: text, issues: [] };
     }
     case 'email': {
-      if (!EMAIL_RE.test(text)) errors[key] = `${field.label} is not a valid email address`;
-      else data[key] = text;
-      break;
+      if (!EMAIL_RE.test(text)) return { issues: [{ path, message: `${label} is not a valid email address` }] };
+      return { value: text, issues: [] };
     }
     case 'date': {
-      if (!isCalendarDate(text)) {
-        errors[key] = `${field.label} must be a valid date (YYYY-MM-DD)`;
-        break;
-      }
-      const boundsError = dateBoundsError(text, field, field.label);
-      if (boundsError != null) {
-        errors[key] = boundsError;
-        break;
-      }
-      data[key] = text;
-      break;
+      if (!isCalendarDate(text)) return { issues: [{ path, message: `${label} must be a valid date (YYYY-MM-DD)` }] };
+      const boundsError = dateBoundsError(text, field, label);
+      if (boundsError != null) return { issues: [{ path, message: boundsError }] };
+      return { value: text, issues: [] };
     }
     case 'reference': {
       // A scalar edge: the empty-first drop above already handled an absent optional, so a non-empty
       // value must be a valid id. An invalid token is a corrupted edge, not a coercible value.
-      if (!isValidId(text)) errors[key] = `${field.label} is not a valid reference`;
-      else data[key] = text;
-      break;
+      if (!isValidId(text)) return { issues: [{ path, message: `${label} is not a valid reference` }] };
+      return { value: text, issues: [] };
     }
     default: {
       // text, textarea, datetime: a trimmed non-empty string. text and textarea also enforce the
       // string-length and pattern constraints (v1 parity); datetime stays a plain string for now,
       // since its bounds are out of scope this pass and v1 has no datetime equivalent to match.
       if (field.type === 'text' || field.type === 'textarea') {
-        const lengthError = stringLengthError(text, field, field.label);
-        if (lengthError != null) {
-          errors[key] = lengthError;
-          break;
-        }
-        const formatError = patternError(text, patterns.get(key), field.label);
-        if (formatError != null) {
-          errors[key] = formatError;
-          break;
-        }
+        const lengthError = stringLengthError(text, field, label);
+        if (lengthError != null) return { issues: [{ path, message: lengthError }] };
+        const formatError = patternError(text, patterns.get(key), label);
+        if (formatError != null) return { issues: [{ path, message: formatError }] };
       }
-      data[key] = text;
+      return { value: text, issues: [] };
     }
   }
 }
@@ -347,22 +354,47 @@ export function fieldset<const R extends Record<string, FieldDescriptor>>(
   checkSeoImageFields(record);
   checkContainerNesting(record);
   // Compile each text/textarea pattern once at construction, so a malformed pattern fails loudly here
-  // (mirroring v1's compilePatterns) rather than on every save. Keyed by field name for validateField.
+  // (mirroring v1's compilePatterns) rather than on every save. Keyed by the structural path
+  // ('faq.code', 'address.zip') so a nested leaf's compiled pattern is found regardless of row index,
+  // recursing one level into an object and an array(object).
   const patterns = new Map<string, RegExp>();
-  for (const [key, field] of Object.entries(record)) {
-    if ((field.type === 'text' || field.type === 'textarea') && field.pattern != null) {
-      patterns.set(key, compilePattern(field.pattern, field.label));
+  const compilePatternsIn = (rec: Record<string, FieldDescriptor>, prefix: string[]): void => {
+    for (const [k, f] of Object.entries(rec)) {
+      if ((f.type === 'text' || f.type === 'textarea') && f.pattern != null) {
+        patterns.set([...prefix, k].join('.'), compilePattern(f.pattern, f.label));
+      } else if (f.type === 'object') {
+        compilePatternsIn(f.fields, [...prefix, k]);
+      } else if (f.type === 'array' && f.item.type === 'object') {
+        compilePatternsIn(f.item.fields, [...prefix, k]);
+      } else if (f.type === 'array' && (f.item.type === 'text' || f.item.type === 'textarea') && f.item.pattern != null) {
+        patterns.set([...prefix, k].join('.'), compilePattern(f.item.pattern, f.item.label));
+      }
     }
-  }
+  };
+  compilePatternsIn(record, []);
   const validate = (frontmatter: Record<string, unknown>, body: string): ValidationResult => {
     const data: Record<string, unknown> = {};
-    const errors: Record<string, string> = {};
+    const issues: ValidationIssue[] = [];
     for (const [key, field] of Object.entries(record)) {
-      validateField(key, field, frontmatter[key], data, errors, patterns);
+      const outcome = validateField([key], field, frontmatter[key], patterns);
+      issues.push(...outcome.issues);
+      if ('value' in outcome) data[key] = outcome.value;
     }
-    if (Object.keys(errors).length > 0) return { ok: false, errors };
+    if (issues.length > 0) {
+      // Back-compat: derive the flat errors map from the located issues, keying each top-level field by
+      // the first message that mentions it, so a consumer reading `errors[fieldName]` still works.
+      const errors: Record<string, string> = {};
+      for (const issue of issues) {
+        const top = String(issue.path[0]);
+        if (!(top in errors)) errors[top] = issue.message;
+      }
+      return { ok: false, errors, issues };
+    }
     const refined = options.refine?.(data, body);
-    return refined && Object.keys(refined).length > 0 ? { ok: false, errors: refined } : { ok: true, data };
+    if (refined && Object.keys(refined).length > 0) {
+      return { ok: false, errors: refined, issues: Object.entries(refined).map(([k, m]) => ({ path: [k], message: m })) };
+    }
+    return { ok: true, data };
   };
   const standard: StandardSchemaV1<StandardInput, Record<string, unknown>>['~standard'] = {
     version: 1,
@@ -372,7 +404,7 @@ export function fieldset<const R extends Record<string, FieldDescriptor>>(
       const result = validate(frontmatter ?? {}, body ?? '');
       return result.ok
         ? { value: result.data }
-        : { issues: Object.entries(result.errors).map(([key, message]) => ({ message, path: [key] })) };
+        : { issues: result.issues ?? Object.entries(result.errors).map(([key, message]) => ({ message, path: [key] })) };
     },
   };
   return { fields: record, behavior: {}, validate, '~standard': standard };

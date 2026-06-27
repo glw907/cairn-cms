@@ -27,14 +27,23 @@ export interface ImageValue {
   decorative?: boolean;
 }
 
+/** One validation failure located by a path: a top-level key, then a row index and/or a leaf sub-key. */
+export interface ValidationIssue {
+  /** The path to the failing field, e.g. ['faq', 0, 'question'] or ['address', 'city'] or ['title']. */
+  path: (string | number)[];
+  /** The author-facing message, naming the field's label. */
+  message: string;
+}
+
 /**
- * A validator's verdict. On success it carries the normalized frontmatter to commit; on
- * failure it carries field-keyed error messages (the empty key is a form-level error).
- * Invalid input bounces to the form and never reaches git (spec §7.4).
+ * A validator's verdict. On success it carries the normalized frontmatter to commit; on failure it
+ * carries field-keyed error messages (the empty key is a form-level error) and, additively, the
+ * located `issues` with multi-segment paths so the form can route a nested-container error to the
+ * right input. Invalid input bounces to the form and never reaches git (spec §7.4).
  */
 export type ValidationResult =
   | { ok: true; data: Record<string, unknown> }
-  | { ok: false; errors: Record<string, string> };
+  | { ok: false; errors: Record<string, string>; issues?: ValidationIssue[] };
 
 /**
  * A field descriptor with its frontmatter key re-attached as `name`. This is the normalized form

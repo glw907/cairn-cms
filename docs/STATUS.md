@@ -11,7 +11,7 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-27, latest): Contract v2 phase 3a (object/array containers) SHIPPED as 0.71.0 (merged to `main`, pushed, HELD UNPUBLISHED); NEXT = phase 3b (adapter restructure + concept model), a fresh-session brainstorm
+## Immediate next action (2026-06-27, latest): Contract v2 phase 3b (adapter restructure + concept model) PLAN WRITTEN + adversarially reviewed (findings folded); NEXT = EXECUTE the 3b plan
 
 **Contract v2 phase 3a (object/array containers) is complete and merged to `main`** as **0.71.0** (additive,
 minor). `fields.object()` and the generalized `fields.array` (a leaf or a flat object) ship capped at one level
@@ -39,14 +39,18 @@ points, the implementers, and 2685 passing tests all missed — `RepeatableField
 the wrong list (WCAG 2.4.3); fixed with instance-`root` scoping and a two-instance regression test, plus the
 misleading gallery hero copy (a `lead` prop + label-derived copy). code-simplifier applied 4 refinements.
 
-**NEXT: phase 3b — the adapter restructure + the concept model.** Phase 3 runs as a 3a→3b→3c series (Geoff's
-call, sized by verification surface); 3a (containers) is done. 3b restructures `CairnAdapter`/`CairnRuntime`
-into the six subsystem groups and opens the concept model: `defineConcept`, an open `content` record, declared
-routing replacing the hardcoded `CONCEPT_ROUTING` table, URL policy home from the YAML into `defineConcept`,
-and the `siteName` de-duplication. The open-concept machinery already exists in `composeRuntime` via
-`CairnExtension`; only the adapter's `content` type is closed. A NEW design needing its own fresh-session
-brainstorm. Then 3c: the field-system unification (`defineComponent`, the directive attributes onto `fields.*`,
-the data-vs-behavior split). Spec (the adapter + concept-model sections):
+**NEXT: EXECUTE the phase 3b plan** at `docs/superpowers/plans/2026-06-27-cairn-contract-v2-adapter-concept.md`.
+The plan is written and was adversarially reviewed by a find-then-verify workflow (18 confirmed findings, all
+folded into its **Review addendum R1-R7**: the complete grep-derived test-migration set, the positional-arg
+fold-in rule, the full published-docs set, the keep-the-public-delivery-signatures call, the dist-rebuild-before-
+gate step, and the precise barrel lines). **Method:** main-loop orchestrate-and-verify on a feature BRANCH off
+`main` (not a worktree, so any headless workflow agents keep the default cwd, per the 3a lesson); Task 1 is
+additive and gates green alone; Tasks 2-8 are ONE atomic compile unit gated once; Task 9 is the `0.72.0` bump +
+dist rebuild + from-scratch e2e. The held window becomes `0.69.0`-`0.72.0`. **Scope correction (sweep B1):** the
+restructure is `CairnAdapter`-only; `CairnRuntime` stays FLAT (the spec shows only the adapter in six groups;
+regrouping the runtime is ~5x blast radius with no payoff), and `composeRuntime` is the one mapping site. Then
+3c: the field-system unification (`defineComponent`, the directive attributes onto `fields.*`, the
+data-vs-behavior split). Spec (the adapter + concept-model sections):
 `docs/superpowers/specs/2026-06-25-cairn-contract-v2-design.md`. See [[cairn-site-contract-v2-opportunity]].
 
 **3a carry-forwards (filed in ROADMAP):** nested references inside containers (the corruption-prone nested-YAML

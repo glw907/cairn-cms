@@ -2,263 +2,87 @@
 
 All notable changes to this project are recorded here, most recent first.
 
-## 0.76.0
+## 0.9.0
 
 <!-- release-size: minor -->
 
-Content islands (Contract v2 phase 4b). A directive component opts into client interactivity, and a
-small Svelte-only client runtime mounts the site's live component over the static fallback the render
-pipeline emits. This is additive: a site that registers no island is byte-identical to before and never
-imports the runtime.
+The Contract v2 rollup, plus content islands. This is the first release of the `0.9.x` line, the pre-1.0
+series: cairn is still `0.x` and the contract may change again before a stable 1.0. It consolidates the
+unpublished `0.69.0`–`0.76.0` development window into one published release. The last published release was
+`0.68.0`, so a consumer crosses the whole window in a single jump and applies the "Consumers must" steps
+below; the granular per-phase history lives in `docs/STATUS.md` and the plan post-mortems.
 
-A component declares `hydrate?: boolean | 'visible'` on its `defineComponent`. With it set, the render
-pipeline wraps the component's `build()` output in an island boundary, a single `<div>` carrying the
-directive name in `data-cairn-island` and the component's declared scalar attributes as JSON in
-`data-cairn-props` (a `number` field is a JSON number, a `boolean` a JSON boolean, every other field a
-string). `true` mounts the island eagerly on first load and after every client-side navigation;
-`'visible'` adds `data-cairn-hydrate="visible"` and defers the mount to first intersection. The
-`build()` output becomes the no-JS fallback, so it stays the page's first paint and a no-JS reader's
-content.
+What changed. The field system unifies on the `fieldset({...})` record built from the `fields.*`
+constructors, the one live field system for concepts and directive components alike, with the leaf
+vocabulary (`text`, `textarea`, `number`, `select`, `multiselect`, `url`, `email`, `date`, `datetime`,
+`boolean`, `image`, `icon`, `reference`) plus the `object` and `array` containers. The adapter moves from
+flat keys into six subsystem groups (`content`, `backend`, `email`, `rendering`, `media`, `editor`), and a
+concept owns its own URL policy through `defineConcept`. The `backend` becomes a `Backend` interface behind
+a `githubApp(...)` provider, so content stays build-time over the committed manifest and no runtime database
+slips in. The `render` seam becomes the entry-aware `render({ body, concept?, frontmatter?, resolve?,
+resolveMedia? }) => Promise<string>`. Content islands add opt-in client interactivity over a static, no-JS
+fallback. References and structured fields arrive additively.
 
-The adapter registers the live components on a new `rendering.islands` field, keyed by directive name.
-`defineAdapter` fails closed at declaration when a `hydrate` component has no island entry or an island
-entry has no `hydrate` component, naming the offending directive.
+This is breaking. Consumers must, in order:
 
-A new `./islands` subpath exports `hydrateIslands(islands, root?)` and the `IslandRegistry` type. The
-runtime mounts each island with Svelte's own `mount()`/`unmount()` (cairn is Svelte-only by design),
-isolates a bad island (an unknown name, a malformed prop payload, or a component that throws leaves the
-static fallback in place), and is idempotent per navigation: it tears down the previous pass before it
-re-runs, so a layout calls it on `afterNavigate` without stacking duplicates.
+The field system (replaces the v1 `defineFields`):
 
-No consumer action is required. A site adds an island by setting `hydrate` on a component, registering
-the live component on `rendering.islands`, and calling `hydrateIslands` from a root layout on
-`afterNavigate`, gated on a non-empty registry so a static site ships none of the runtime. See the
-[islands reference](docs/reference/islands.md) and the [Add an island](docs/guides/add-an-island.md)
-guide.
-
-## 0.75.0
-
-<!-- release-size: minor -->
-
-The render seam (Contract v2 phase 4a). The adapter's `rendering.render` member changes from the
-positional `render(md, opts?) => string | Promise<string>` to the entry-aware
-`render({ body, concept?, frontmatter?, resolve?, resolveMedia? }) => Promise<string>`. The single
-object argument carries the markdown in `body` and the resolvers alongside it, and the new optional
-`concept` and `frontmatter` give a custom renderer the entry's context, so it can vary its output per
-concept or per frontmatter field. The component-insert preview, which has no entry, omits them. The
-shared `SiteRender` type is now a root-barrel export, so a site can type its `render` against it.
-
-The entrance ordinal (`data-rise`) becomes unconditional pipeline output. The rehype dispatch step
-stamps a document-order `data-rise` on every top-level primitive on every render, and the `stagger`
-flag leaves `createRenderer`, the pipeline, and the seam. The ordinal is inert without site CSS, so a
-site that drives an entrance cascade keeps its `[data-rise]` rules and a site that does not is
-unaffected. The attribute now appears in all rendered output, including prerendered pages and the
-syndication feeds' `contentHtml`, where a consumer that omitted `stagger` saw none before; it is inert
-there, so the only visible effect is on a consumer that snapshots rendered HTML. The editor preview
-document gains a `data-cairn-preview` marker on its root so a site can scope an entrance animation away
-from the preview, which runs the same pipeline.
-
-This is breaking within the `0.x` window. Consumers must: change the adapter `render` from
-`(md, opts) => ...` to `({ body, resolve, resolveMedia }) => ...`, read the markdown from `body`, and
-return a `Promise<string>` (a typical body is `renderMarkdown(body, { resolve, resolveMedia })`).
-Consumers must: drop any `stagger` option passed to `createRenderer` or the seam; `data-rise` is now
-always emitted and is inert without `[data-rise]` CSS.
-
-## 0.74.0
-
-<!-- release-size: minor -->
-
-The backend seam (Contract v2, the backend phase). The GitHub-App config blob becomes a `Backend`
-interface with a `githubApp(...)` default provider, and the local-development double stops
-monkeypatching global `fetch` to become a conforming `Backend`. The engine resolves one live
-`Backend` per request, so a different store such as GitLab, Gitea, or plain git can supply its own
-provider later without the engine changing. The interface is read, commit, and branch operations over
-files, never a query, so content querying stays build-time over the committed manifest and a runtime
-database can never sneak in behind the seam.
-
-The adapter's `backend` field changes from a plain object to a `githubApp({ ... })` call. The App's
-non-secret identity rides the provider; the private key stays the Worker secret, read at request time.
-The dev double now rides the per-request `event.locals.backend` channel that the dev-backend handle
-sets behind the existing dev fence, which is typed on `App.Locals` so the seam is a checked contract.
-
-The nav and tidy-settings writes, which land on the default branch and trigger a deploy, read the
-branch head before the file content and pass it as a fail-closed guard, so a concurrent same-file
-commit surfaces the reload-and-reapply prompt rather than a silent last-writer-wins.
-
-This is breaking within the `0.x` window. Consumers must: change the adapter's `backend` field from a
-`{ owner, repo, branch, appId, installationId }` object literal to `backend: githubApp({ ... })`,
-importing `githubApp` from `@glw907/cairn-cms`. Consumers must: drop any import of the removed
-`BackendConfig`, `RepoRef`, or `AppCredentials` types. Consumers must: replace any import of
-`GithubKeyEnv` (from the `/sveltekit` subpath) with `BackendEnv`. A site that only writes the standard
-adapter and never imported those types makes the one-line `backend` change and nothing else.
-
-Behavior note, no consumer action: the content-list and media-library load paths previously
-distinguished a token-mint failure (`Could not authenticate with GitHub`) from a read failure. The
-token mint is now lazy behind the first read, so both collapse to the single load-failure degrade.
-
-## 0.73.0
-
-<!-- release-size: minor -->
-
-The field-system unification (Contract v2 phase 3c). A directive component's attributes adopt the same
-`fields.*` vocabulary a concept schema uses, so the two parallel field systems collapse into one.
-`defineComponent` supersedes the bare `ComponentDef` object literal: it builds the attribute validator from
-the `fields.*` descriptors and validates the component at declaration, the component-level companion to
-`defineConcept`. A component attribute and a concept field now validate through identical `fieldset` code, so
-a component reaches the full leaf vocabulary it never had, including `number` bounds and `url`, `email`, and
-`date` formats. The `AttributeField` and `FieldType` types are removed.
-
-A new `fields.icon()` descriptor is first-class for both concepts and components. Its value is a glyph name
-from the adapter's icon set, and the editor renders the icon picker for it in a concept form as well as a
-component form. Most components and concepts declare no icon field; it is the exception, not a field every
-block carries.
-
-Function-valued attribute behavior moves off the descriptor into a co-bundled `behavior` table, keyed by
-attribute name, the same `BehaviorTable` a concept fieldset accepts. A cross-field rule is
-`behavior.validate(value, siblings)`, where `siblings` is the raw attribute record.
-
-This is breaking within the `0.x` window. Consumers must: declare each component's `attributes` as a
-`fields.*` record (was an `AttributeField[]` array), and a repeatable slot's `itemFields` the same way.
-Consumers must: wrap each component in `defineComponent({ ... })` so it carries the `attributeSchema` that
-`validateComponent` runs. Consumers must: move any cross-field attribute `validate` into the component's
-`behavior` table with the `validate(value, siblings)` signature, reading `siblings.min` rather than the old
-`all.attributes.min`. Consumers must: replace a `pattern: { source, message }` attribute with
-`fields.text({ pattern })` plus a `behavior.validate` for a custom message. Attribute validation now
-format-checks every value, so a hand-authored directive that previously saved with a malformed value (a
-non-numeric `number` attribute, say) now fails the save-path `validateComponent`. See [Upgrading
-cairn](docs/guides/upgrade-cairn.md) for the per-change actions.
-
-## 0.72.0
-
-<!-- release-size: minor -->
-
-The adapter restructure and the open concept model (Contract v2 phase 3b). `CairnAdapter` moves from 17
-flat keys into six subsystem groups: `content`, `backend`, `email` (was `sender`), `rendering` (the one
-`render`, plus `components` (was `registry`) and `icons`), `media` (was `assets`), and `editor` (the
-`preview`, the `nav` (was `navMenu`), and the `supportContact`). `content` opens to an arbitrary
-`Record<string, ConceptConfig>`, so a site declares any concept by adding one key. `CairnRuntime` stays
-flat; `composeRuntime` is the one place that maps the adapter groups onto it.
-
-A concept now owns its URL policy. `defineConcept` is a typed concept factory, the concept-level companion
-to `defineAdapter`, that preserves the fieldset type and validates the concept's `permalink` and
-`datePrefix` at declaration, so a bad shape throws at module load. Each concept declares its `routing` (the
-`'feed'`, `'page'`, or `'embedded'` shorthand, or an explicit rule), `permalink`, and `datePrefix` on the
-concept itself, and `ConceptConfig.schema` is renamed to `fields`. The engine drops the `CONCEPT_ROUTING`
-table (routing is concept-declared) and the `urlPolicyFrom` helper (URL policy left the YAML).
-
-The YAML site-config no longer carries a per-concept `content:` URL-policy block. `parseSiteConfig`
-hard-errors on a leftover `content:` block, pointing to `defineConcept`, so a half-migrated site cannot
-silently default-corrupt its permalinks. `siteName` moves out of the adapter and stays in the YAML, the one
-home for it; `composeRuntime` reads it from there. The dead `SiteConfig.url` field is removed.
-
-This is breaking within the `0.x` window. Consumers must: regroup the adapter into
-`content`/`backend`/`email`/`rendering`/`media`/`editor` (`sender`→`email`,
-`render`/`registry`/`icons`→`rendering.{render,components,icons}`, `assets`→`media`,
-`navMenu`/`preview`/`supportContact`→`editor.{nav,preview,supportContact}`). Consumers must: rename each
-concept's `schema:` to `fields:` and declare it through `defineConcept`. Consumers must: move
-`permalink`/`datePrefix` from the YAML `content:` block onto the concept via `defineConcept` (a leftover
-YAML `content:` block now throws), and declare each concept's routing with the routing shorthand. Consumers
-must: move `siteName` out of the adapter into the YAML site-config. See [Upgrading
-cairn](docs/guides/upgrade-cairn.md) for the per-change actions, and [Define an adapter and
-schema](docs/guides/define-an-adapter-and-schema.md) for the six-group shape.
-
-## 0.71.0
-
-<!-- release-size: minor -->
-
-Structured fields. A concept can now declare an `object` group and a generalized `array` list beside its
-leaf fields. `fields.object({ fields })` groups leaf fields under one frontmatter key, stored as a nested
-object, with an optional `label`. `fields.array(item, options?)` now repeats any leaf (a scalar, an
-`image`, or a `reference`) or a flat `object` of leaves, where it previously accepted only a reference
-item. Together they cover a labeled meta group, a repeatable gallery, and a list of small records such as
-an FAQ.
-
-The editor renders an `object` as a labeled group and a non-reference `array` as a repeatable-row editor
-with add, remove, and reorder, keyed so an in-progress edit survives a reorder or a remove. The optional
-`itemLabel` names each row from one leaf field key. An `array` of references keeps the reference picker
-unchanged. The save round-trips the whole structure: a clean row persists in order, an all-empty row is
-pruned.
-
-Validation and inference recurse exactly one level. `InferFieldset` infers an `object` as a record of its
-leaf value types and an `array` as a list of its item type. The validator reports a nested failure through
-the additive `issues` array on `ValidationResult`, each a `ValidationIssue` located by a multi-segment
-path (a row index, a leaf sub-key), while the flat `errors` map stays keyed by the top-level field for
-back-compat.
-
-Containers nest one level only, enforced loudly at the `fieldset()` call. An `object` holds only leaves,
-an `array` holds a leaf or a flat `object`, no field key may contain a dot, and a `reference` inside an
-`object` and an `seo` image inside any container are deferred. Model a row that wants its own structure as
-its own concept and link to it with a reference.
-
-The barrel adds the `ObjectField` and `ValidationIssue` interfaces; `fields.object` joins the `fields`
-namespace and `fields.array` relaxes its item rule.
-
-This release is additive. No consumer action is required: the container shapes sit beside the existing
-vocabulary, the shipped `array(reference)` and reference editor are unchanged, and a site that declares no
-container field is unchanged. To adopt them, see [Structured
-fields](docs/guides/structured-fields.md).
-
-## 0.70.0
-
-<!-- release-size: minor -->
-
-Reference fields. A concept can now declare a typed frontmatter edge to another entry with the new
-`fields.reference({ concept })` constructor, and a repeatable list of edges with
-`fields.array(fields.reference({ concept }))`. The stored value is the target's permanent id, so a
-target rename or slug change never breaks the link. The editor renders a picker over the target
-concept's entries in the Details panel, single as a combobox and many as a removable chip list.
-
-The graph stays correct end to end. Renaming a target repoints every inbound reference on `main` in
-one commit and refuses when a third-party open branch holds an inbound reference. Deleting a target
-refuses, fail-closed across every open branch, when anything still references it. The build's new
-`verifyReferences` gate fails on a dangling edge, naming the source entry, the field, and the missing
-target; references carry no prerender backstop, so this build gate is their only integrity authority.
-A save to a draft or absent target warns but never blocks. The public read model resolves an edge to
-its target's identity through the new `resolveReferences` on `/delivery`, so a route renders a
-reference as a link.
-
-The barrel adds `fields.reference`, `fields.array`, the `ReferenceField` and `ArrayField` interfaces,
-`ReferenceEdge`, `InboundReference`, `ResolvedReference`, and `verifyReferences`; `/delivery`
-re-exports `resolveReferences`.
-
-This release is additive. No consumer action is required: the new field types sit beside the existing
-vocabulary, and a site that declares no reference field is unchanged. To adopt references, see
-[Link content with references](docs/guides/link-content-with-references.md).
-
-## 0.69.0
-
-<!-- release-size: minor -->
-
-**Breaking.** The Contract v2 `fieldset` field system is now the one live field system. A concept's
-`schema` is a `fieldset({...})` record built from the `fields.*` constructors, replacing the v1
-`defineFields([...])` array. The two prior systems no longer coexist: v1 is removed.
-
-A concept declares its fields with `fieldset` and the `fields.*` constructors. The record key is the
-frontmatter key, so the per-field `name` property is gone. The eleven scalar constructors are `text`,
-`textarea`, `number`, `select`, `multiselect`, `url`, `email`, `date`, `datetime`, `boolean`, and
-`image`. A `select` takes a closed `options` list. A `multiselect` with an `options` list renders as
-checkboxes, and a `multiselect` with `creatable: true` renders as an open tag input that accepts an
-optional `placeholder`. A `datetime` field is naive-local, minute-precision (`YYYY-MM-DDTHH:mm`). The
-editor renders an arm per scalar, a fresh entry opens prefilled from each field's `default` (a `date`
-field's `'today'` resolves against a request-time clock), and the save path round-trips every arm.
-
-The barrel reclaims its v2 names. It exports the eleven `*Field` interfaces, `NamedField`, `fields`,
-`fieldset`, `initialValues`, `Fieldset`, `InferFieldset`, `FieldsetOptions`, and `BehaviorTable`, and
-drops `defineFields`, `ConceptSchema`, `Infer`, `InferFields`, `DefineFieldsOptions`,
-`FrontmatterField`, `TagsField`, and `FreeTagsField`.
-
-Consumers must:
-
-1. Move `schema` from `defineFields([...])` (an array) to `fieldset({...})` (a record).
-2. Drop the per-field `name` property. The record key is now the frontmatter key.
+1. Move each concept's `schema` from `defineFields([...])` (an array) to `fieldset({...})` (a record).
+2. Drop the per-field `name`; the record key is now the frontmatter key.
 3. Rename field help from `description` to `help`.
-4. Move a closed `tags` field to `fields.multiselect({ options: [...] })`.
-5. Move an open `freetags` field to `fields.multiselect({ creatable: true })`. Its `placeholder`
-   is preserved through the new optional `placeholder`.
-6. Preserve each field's frontmatter key, especially `tags`, or tag pages and feeds read empty.
-7. Extract a frontmatter type with `InferFieldset` (the v1 `Infer` is gone). The v2 `*Field`
-   interfaces carry the v2 shape: no `name`, and `help` not `description`.
-8. ecxc-ski and 907-life stay pinned to the prior version range until they cut over.
+4. Move a closed `tags` field to `fields.multiselect({ options: [...] })`, and an open `freetags` field to
+   `fields.multiselect({ creatable: true })` (its `placeholder` is preserved).
+5. Preserve each field's frontmatter key, especially `tags`, or tag pages and feeds read empty.
+6. Extract a frontmatter type with `InferFieldset`, and drop imports of the removed `defineFields`,
+   `ConceptSchema`, `Infer`, `InferFields`, `DefineFieldsOptions`, `FrontmatterField`, `TagsField`, and
+   `FreeTagsField`.
+
+The adapter and concepts:
+
+7. Regroup the adapter into `content`/`backend`/`email`/`rendering`/`media`/`editor` (`sender` to `email`,
+   `render`/`registry`/`icons` to `rendering.{render,components,icons}`, `assets` to `media`,
+   `navMenu`/`preview`/`supportContact` to `editor.{nav,preview,supportContact}`).
+8. Rename each concept's `schema:` to `fields:` and declare it through `defineConcept`.
+9. Move `permalink` and `datePrefix` from the YAML `content:` block onto the concept via `defineConcept`,
+   and declare each concept's routing with the routing shorthand. A leftover YAML `content:` block now
+   throws at `parseSiteConfig`.
+10. Move `siteName` out of the adapter into the YAML site-config.
+
+Directive components:
+
+11. Declare each component's `attributes` as a `fields.*` record (was an `AttributeField[]` array), a
+    repeatable slot's `itemFields` the same way, and wrap each component in `defineComponent({ ... })`.
+12. Move any cross-field attribute `validate` into the component's `behavior` table with the
+    `validate(value, siblings)` signature, reading `siblings.min` rather than `all.attributes.min`.
+13. Replace a `pattern: { source, message }` attribute with `fields.text({ pattern })` plus a
+    `behavior.validate` for a custom message, and drop imports of `AttributeField` and `FieldType`.
+    Attribute validation now format-checks every value, so a directive that previously saved a malformed
+    value now fails `validateComponent`.
+
+The backend:
+
+14. Change the adapter's `backend` from a `{ owner, repo, branch, appId, installationId }` object literal to
+    `backend: githubApp({ ... })`, importing `githubApp` from `@glw907/cairn-cms`. Drop imports of the
+    removed `BackendConfig`, `RepoRef`, and `AppCredentials`, and replace `GithubKeyEnv` (from the
+    `/sveltekit` subpath) with `BackendEnv`.
+
+The render seam:
+
+15. Change the adapter `render` from `(md, opts) => ...` to
+    `({ body, resolve, resolveMedia }) => ...`, read the markdown from `body`, and return a
+    `Promise<string>` (a typical body is `renderMarkdown(body, { resolve, resolveMedia })`). Drop any
+    `stagger` option; `data-rise` is now always emitted and is inert without `[data-rise]` CSS. The
+    attribute now appears in all rendered output, including the syndication feeds and prerendered pages,
+    so a consumer that snapshots rendered HTML sees it.
+
+Additive in this window, with no action required to keep working: reference fields (`fields.reference` and
+`fields.array(fields.reference(...))`), structured fields (`fields.object` and the generalized
+`fields.array`), and content islands (`hydrate` on a component, `rendering.islands`, and the `./islands`
+runtime). Adopt them through their guides: [references](docs/guides/link-content-with-references.md),
+[structured fields](docs/guides/structured-fields.md), and [islands](docs/guides/add-an-island.md).
+
+ecxc-ski and 907-life stay pinned to the prior version range until they cut over. See [Upgrading
+cairn](docs/guides/upgrade-cairn.md) for the per-change actions.
 
 ## 0.68.0
 

@@ -948,3 +948,50 @@ git commit -m "docs(islands): reference, guide, and changelog for phase 4b"
 **Placeholder scan:** none. Every code step carries the actual code. The two soft spots flagged inline for the implementer to confirm against the live code (the directive fence depth on the styleguide, and whether `page.goto` exercises the SPA path) are verification instructions with a concrete fallback, not missing content.
 
 **Type consistency:** `IslandRegistry = Record<string, Component<Record<string, unknown>>>` is defined once (Task 2, `src/lib/islands/types.ts`), imported by `content/types.ts` (Task 2) and re-exported by `islands/index.ts` (Task 3). `hydrateIslands(islands: IslandRegistry, root?: ParentNode)` is consistent between Task 3 (definition) and Task 4 (call). The boundary attribute names `data-cairn-island` / `data-cairn-props` / `data-cairn-hydrate` are consistent across Task 1 (emit), Task 3 (read), and Task 5 (assert). `serializeIslandProps`'s number coercion (Task 1) matches the Converter's `rate: number` prop (Task 4).
+
+---
+
+## Post-mortem (2026-06-28)
+
+**Shipped as `0.9.0`** (the renumbered Contract v2 rollup), merged to `main`. The held window
+(`0.69.0`–`0.76.0`, never published) was renumbered and consolidated into one published `0.9.0` release, the
+first of the pre-1.0 `0.9.x` line. Last published was `0.68.0`, so the public crosses the whole v2 contract
+in one jump; the eight held CHANGELOG entries collapsed into one `0.9.0` entry preserving every "Consumers
+must" step.
+
+**Built.** The islands layer exactly to plan: `hydrate?: boolean | 'visible'` on `ComponentDef`, the island
+boundary emitted in `rehypeDispatch` (typed scalar props in `data-cairn-props`, the `data-cairn-hydrate`
+marker for `'visible'`), `rendering.islands` with a fail-closed `assertIslandsConsistent` in `defineAdapter`,
+and the Svelte-only `hydrateIslands` runtime on a new `./islands` subpath (mount-and-replace, per-island
+error isolation, idempotent teardown across navigation). The showcase ships the converter flagship, wired
+through `afterNavigate` gated on a non-empty registry, rendered on `/styleguide`.
+
+**Verified (evidence).** `npm run check` 1211 files 0/0; `npm test` 2724 passed (257 files), exit 0;
+`check:comments`, `check:reference` (islands documented), `check:package` (the `./islands` subpath resolves
+on all four conditions, no `svelte` condition needed), `check:version` OK (minor → `0.9.0`); the
+from-scratch consumer build (`rm -rf examples/showcase/{node_modules,package-lock.json}`, fresh install,
+build) plus the 42-test Playwright e2e (3 new island tests: no-JS fallback, live mount, in-app re-mount).
+`code-simplifier` (one refinement, the single-field wrapper) and a four-lens reviewer fan-out (Svelte,
+auth/trust, a11y, plus the plan's adversarial pass) all folded.
+
+**Execution.** A `Workflow` ran the six plan tasks as sequential `cairn-implementer` dispatches plus a
+full-gate verify phase; the main loop then verified the gate independently, ran `code-simplifier` and the
+reviewer fan-out, folded the findings, and handled the renumber and release. The implementers correctly
+resolved the plan's inline "confirm against live code" notes (added the missing `/styleguide` nav link,
+adapted the e2e back-hop to the actual "Writing" link and a primary-nav scope, switched `append` to
+`appendChild` under NodeNext).
+
+**Durable lessons.**
+1. The adversarial-review-folded plan held up under workflow execution: the two MAJOR fixes (in-app SPA
+   navigation in the re-mount e2e, the three-colon empty-body fence plus a pipeline assertion) were exactly
+   the spots an unmonitored implementer would otherwise have gotten subtly wrong.
+2. A reviewer fan-out with no blockers still earns its keep: the a11y review turned the converter into a
+   real exemplar (stable input `aria-label`, a cleared-input `NaN` guard, an explicit `aria-live` output),
+   which matters because the showcase is the scaffolder template. `unmount(instance, { outro: false })` makes
+   teardown deterministic, and the prop-sink contract moved from a component comment to first-class doc
+   placement.
+3. Chase a warning to ground before attributing it: the `derived_inert` console warning surfaced during this
+   pass but the Svelte reviewer pinned it to pre-existing `CairnMediaLibrary` test teardown, not islands.
+4. The held-window-renumber is clean when the window was never published: the public sees `0.68.0 → 0.9.0`,
+   the granular per-phase history stays in STATUS and the post-mortems, and `check:version` computes the jump
+   as a single marked minor.

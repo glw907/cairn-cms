@@ -11,7 +11,38 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-27, latest): Contract v2 phase 4a (render-seam migration) SHIPPED as 0.75.0 (held), merged to `main`; NEXT = 4b islands (brainstorm)
+## Immediate next action (2026-06-28, latest): Contract v2 COMPLETE, released as 0.9.0 (renumbered rollup); NEXT = developer-extensibility brainstorm
+
+**The whole Contract v2 series is complete and released as `0.9.0`.** Phase 4b (islands), the last phase,
+landed and the held window (`0.69.0`–`0.76.0`, never published) was renumbered into one published `0.9.0`
+release, the first of the pre-1.0 `0.9.x` line. The eight held CHANGELOG entries consolidated into one
+`0.9.0` entry preserving every "Consumers must" step, so the public crosses `0.68.0` → `0.9.0` in one jump.
+Plan + post-mortem: `docs/superpowers/plans/2026-06-27-cairn-contract-v2-islands.md`.
+
+**Islands (4b).** `hydrate?: boolean | 'visible'` on `ComponentDef`; the island boundary emitted in
+`rehypeDispatch`; `rendering.islands` with a fail-closed consistency assertion; the Svelte-only
+`hydrateIslands` runtime on a new `./islands` subpath; the showcase converter flagship. Additive: a site
+with no island is byte-identical and never imports the runtime.
+
+**Verified.** `npm run check` 1211 0/0; `npm test` 2724 exit 0; `check:comments` + `check:reference` +
+`check:package` (the `./islands` subpath) + `check:version` (minor → `0.9.0`); `code-simplifier` (one
+refinement); a four-lens reviewer fan-out (Svelte, auth/trust, a11y, plus the plan's adversarial pass), all
+folded with no blockers; the from-scratch consumer build + 42-test e2e. Executed via a `Workflow` (six
+sequential `cairn-implementer` dispatches + a verify phase), with the main loop verifying the gate, running
+the reviews, and handling the renumber and release.
+
+**Release state.** `main` carries `0.9.0`. The GitHub Release / npm publish is the one remaining step (cut it
+as a pre-release so the dist-tag and notes signal the pre-1.0 line). The two sites (ecxc-ski, 907-life) stay
+caret-pinned at `0.68.x` until they cut over to v2.
+
+**NEXT = the developer-extensibility brainstorm** (a separate pass). The extending-developer persona is now a
+standing review lens (`CLAUDE.md` + `docs/internal/extending-developer-lens.md` + the ROADMAP initiative).
+Per Geoff, any contract or core-DX change for extensibility lands in this breaking pre-1.0 window, before
+adoption, ahead of a stable 1.0. Start the brainstorm from the aksailingclub dev docs
+(`~/Projects/aksailingclub-org/docs`): the club-site requirements (events, class lists, asset management,
+D1-backed custom features behind the admin) are the concrete target.
+
+## Prior next action (2026-06-27): Contract v2 phase 4a (render-seam migration) SHIPPED as 0.75.0 (held), merged to `main`; NEXT = 4b islands (brainstorm)
 
 **Contract v2 phase 4a (render-seam migration) is complete** as **0.75.0** (breaking-within-0.x, minor), merged to `main`
 and pushed, held unpublished. The `render` adapter seam moved to the entry-aware

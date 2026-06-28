@@ -15,12 +15,15 @@ here, so this file stays a forward view.
 
 ## Now
 
-- **The Contract v2 plan series.** Phases 3b (the adapter restructure, `0.72.0`), 3c (the field-system
-  unification onto `fields.*`, `0.73.0`), and the `Backend` seam (the GitHub-App config blob becomes a
-  `Backend` interface with a `githubApp(...)` provider; the dev double becomes a conforming `Backend`,
-  `0.74.0`) have all shipped, held unpublished. The one phase left is **render-as-component with opt-in
-  islands** (phase 4), the last and newest surface; no plan yet, brainstorm scope first. Specs:
-  `docs/superpowers/specs/2026-06-25-cairn-contract-v2-design.md` and the per-phase designs beside it.
+- **Developer extensibility (the next major initiative).** Now the active initiative, ahead of a stable 1.0.
+  Brainstorm first, grounded in the aksailingclub developer docs (`~/Projects/aksailingclub-org/docs`); the
+  club-site requirements (events, class lists, asset management, D1-backed custom features behind the admin)
+  are the concrete target, and Geoff is the first extending developer. Standing review lens and full baseline:
+  `docs/internal/extending-developer-lens.md` and the CLAUDE.md "extending-developer lens" dimension. Three
+  baseline gaps scope it: dashboard extension (Mode 2) is type-only and fail-silent, auth resolves only under
+  `/admin/**` with `resolveSession` sealed, and the public boundary is unenforced. Per Geoff, any contract or
+  core-DX change lands in the breaking pre-1.0 window, before adoption. (Moved up from "Considering"; the
+  former duplicate entry there is removed.)
 
 ## Next
 
@@ -118,19 +121,5 @@ here, so this file stays a forward view.
 
 ## Considering
 
-- **Developer extensibility (the next major initiative).** Earmarked as the next big initiative after the
-  Contract v2 rollup, and now a standing review lens (see `docs/internal/extending-developer-lens.md` and
-  the CLAUDE.md "extending-developer lens" dimension). The persona is a developer who launches a site fast,
-  then builds custom dashboard features and custom app features that reuse the editor login, and keeps
-  pulling cairn updates. Three baseline gaps scope it: (1) **dashboard extension is type-only and inert**:
-  `CairnExtension`/`AdminPanel`/`FieldTypeDef` are reserved types, `composeRuntime` collects the panels, and
-  nothing dispatches them (fail-silent), so the seam needs a real admin-panel dispatch path; (2) **auth is
-  admin-scoped and sealed**: the session resolves only under `/admin/**` and `resolveSession`/the role store
-  are un-exported, so a developer cannot put their own route behind the editor login without forking, and the
-  seam needs a public session-on-any-route helper plus a sanctioned route-gating affordance; (3) **the public
-  boundary is documented, not enforced, and upgrades are manual**: a deep import reaches any internal,
-  `attw`'s `internal-resolution-error` is muted, breaking changes ship under `minor`, and the held v2 window
-  forces a seven-release jump with silent failure modes, so the seam needs an enforced `exports` boundary and
-  a smoother cross-version upgrade story. (Supersedes the former "broader admin extension surface" bullet.)
 - **A third content concept (Fragments).** The fixed-concepts model leaves room for a Fragments concept
   beyond Posts and Pages, scoped when a production site needs it.

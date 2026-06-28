@@ -13,11 +13,16 @@ are welcome in the same pre-1.0 window and land before the stable 1.0. So the br
 forward-looking and willing to propose contract or DX changes, not just additive seams.
 
 **The proof site.** aksailingclub is the example site Geoff will use to prove the extensible-cairn concept
-(he is the first extending developer). It is in `~/Projects`: `aksailingclub-org` (carries extensive
-developer docs under `aksailingclub-org/docs`, the easiest way to understand its functionality) and
-`aksailingclub-sveltekit` (the SvelteKit form). Start the extensibility brainstorm by reading its developer
-docs to ground the real requirements (events, class lists, asset management, D1-backed custom features behind
-the admin), rather than designing the seam in the abstract.
+(he is the first extending developer). Its canonical documentation is the **handbook**:
+[handbook.aksailingclub.org](https://handbook.aksailingclub.org) (behind Cloudflare Access), sourced in the
+repo at `~/Projects/aksailingclub-org/handbook/content/` (Hugo, Hextra theme). Read the local source rather
+than the access-gated live site. The ops-dashboard sections
+(`handbook/content/technical/ops-dashboard/` and `handbook/content/user/ops-dashboard/`) describe the asset,
+waitlist, and payment management that is the concrete extend-the-admin target; the D1 schema is
+`~/Projects/aksailingclub-org/ops/schema.sql`. (The SvelteKit rebuild of that dashboard lives in
+`~/Projects/aksailingclub-sveltekit`.) Start the extensibility brainstorm there to ground the real
+requirements (events, class lists, asset management, D1-backed custom features behind the admin), rather than
+designing the seam in the abstract.
 
 ## The persona
 

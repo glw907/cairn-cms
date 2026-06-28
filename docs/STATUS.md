@@ -40,9 +40,10 @@ caret-pinned at `0.68.x` until they cut over to v2.
 **NEXT = the developer-extensibility brainstorm** (a separate pass). The extending-developer persona is now a
 standing review lens (`CLAUDE.md` + `docs/internal/extending-developer-lens.md` + the ROADMAP initiative).
 Per Geoff, any contract or core-DX change for extensibility lands in this breaking pre-1.0 window, before
-adoption, ahead of a stable 1.0. Start the brainstorm from the aksailingclub dev docs
-(`~/Projects/aksailingclub-org/docs`): the club-site requirements (events, class lists, asset management,
-D1-backed custom features behind the admin) are the concrete target.
+adoption, ahead of a stable 1.0. Start the brainstorm from the aksailingclub handbook
+(handbook.aksailingclub.org, behind Cloudflare Access; read the local source at
+`~/Projects/aksailingclub-org/handbook/content/`, the ops-dashboard sections): the club-site requirements
+(events, class lists, asset management, D1-backed custom features behind the admin) are the concrete target.
 
 ## Prior next action (2026-06-27): Contract v2 phase 4a (render-seam migration) SHIPPED as 0.75.0 (held), merged to `main`; NEXT = 4b islands (brainstorm)
 

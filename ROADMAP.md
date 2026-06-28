@@ -16,7 +16,8 @@ here, so this file stays a forward view.
 ## Now
 
 - **Developer extensibility (the next major initiative).** Now the active initiative, ahead of a stable 1.0.
-  Brainstorm first, grounded in the aksailingclub developer docs (`~/Projects/aksailingclub-org/docs`); the
+  Brainstorm first, grounded in the aksailingclub handbook (handbook.aksailingclub.org, sourced at
+  `~/Projects/aksailingclub-org/handbook/content/`, the ops-dashboard sections); the
   club-site requirements (events, class lists, asset management, D1-backed custom features behind the admin)
   are the concrete target, and Geoff is the first extending developer. Standing review lens and full baseline:
   `docs/internal/extending-developer-lens.md` and the CLAUDE.md "extending-developer lens" dimension. Three

@@ -2,13 +2,13 @@
 
 All notable changes to this project are recorded here, most recent first.
 
-## 0.9.0
+## 0.76.0
 
 <!-- release-size: minor -->
 
-The Contract v2 rollup, plus content islands. This is the first release of the `0.9.x` line, the pre-1.0
-series: cairn is still `0.x` and the contract may change again before a stable 1.0. It consolidates the
-unpublished `0.69.0`–`0.76.0` development window into one published release. The last published release was
+The Contract v2 rollup, plus content islands, published as one release. cairn is still `0.x` and the
+contract may change again before a stable 1.0. This consolidates the unpublished `0.69.0`–`0.75.0`
+development minors plus islands into one published `0.76.0` release. The last published release was
 `0.68.0`, so a consumer crosses the whole window in a single jump and applies the "Consumers must" steps
 below; the granular per-phase history lives in `docs/STATUS.md` and the plan post-mortems.
 

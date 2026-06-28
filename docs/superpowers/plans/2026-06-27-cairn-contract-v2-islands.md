@@ -953,11 +953,12 @@ git commit -m "docs(islands): reference, guide, and changelog for phase 4b"
 
 ## Post-mortem (2026-06-28)
 
-**Shipped as `0.9.0`** (the renumbered Contract v2 rollup), merged to `main`. The held window
-(`0.69.0`–`0.76.0`, never published) was renumbered and consolidated into one published `0.9.0` release, the
-first of the pre-1.0 `0.9.x` line. Last published was `0.68.0`, so the public crosses the whole v2 contract
-in one jump; the eight held CHANGELOG entries collapsed into one `0.9.0` entry preserving every "Consumers
-must" step.
+**Shipped as `0.76.0`** (the consolidated Contract v2 rollup), merged to `main`. The held window
+(`0.69.0`–`0.76.0`) ships as one published `0.76.0` release; the intermediate `0.69.0`–`0.75.0` minors stay
+unpublished history. Last published was `0.68.0`, so the public crosses the whole v2 contract in one jump;
+the held CHANGELOG entries collapsed into one `0.76.0` entry preserving every "Consumers must" step. (A
+"0.9 series" was raised and dropped mid-release: `0.9.0` and the entire sub-`0.68` range were already
+published in the pre-rebuild line, so the only valid rollup number is the held-window top.)
 
 **Built.** The islands layer exactly to plan: `hydrate?: boolean | 'visible'` on `ComponentDef`, the island
 boundary emitted in `rehypeDispatch` (typed scalar props in `data-cairn-props`, the `data-cairn-hydrate`
@@ -968,7 +969,7 @@ through `afterNavigate` gated on a non-empty registry, rendered on `/styleguide`
 
 **Verified (evidence).** `npm run check` 1211 files 0/0; `npm test` 2724 passed (257 files), exit 0;
 `check:comments`, `check:reference` (islands documented), `check:package` (the `./islands` subpath resolves
-on all four conditions, no `svelte` condition needed), `check:version` OK (minor → `0.9.0`); the
+on all four conditions, no `svelte` condition needed), `check:version` OK (minor → `0.76.0`); the
 from-scratch consumer build (`rm -rf examples/showcase/{node_modules,package-lock.json}`, fresh install,
 build) plus the 42-test Playwright e2e (3 new island tests: no-JS fallback, live mount, in-app re-mount).
 `code-simplifier` (one refinement, the single-field wrapper) and a four-lens reviewer fan-out (Svelte,
@@ -992,6 +993,7 @@ adapted the e2e back-hop to the actual "Writing" link and a primary-nav scope, s
    placement.
 3. Chase a warning to ground before attributing it: the `derived_inert` console warning surfaced during this
    pass but the Svelte reviewer pinned it to pre-existing `CairnMediaLibrary` test teardown, not islands.
-4. The held-window-renumber is clean when the window was never published: the public sees `0.68.0 → 0.9.0`,
-   the granular per-phase history stays in STATUS and the post-mortems, and `check:version` computes the jump
-   as a single marked minor.
+4. Verify the version is unpublished before promising a number: a package with continuous published history
+   (`0.1.0`→`0.68.0` here) has every low number taken, so a "renumber down" to `0.9.0` is impossible (it was
+   published years earlier). Check `npm view <pkg> versions`, not just the `latest` tag. The rollup ships as
+   `0.76.0` (the held-window top); the public sees `0.68.0 → 0.76.0` as a single marked minor.

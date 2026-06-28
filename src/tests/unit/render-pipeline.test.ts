@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { h } from 'hastscript';
 import { createRenderer } from '../../lib/render/pipeline.js';
 import { defineRegistry } from '../../lib/render/registry.js';
 
@@ -57,5 +58,28 @@ describe('createRenderer', () => {
     // Each checkbox names itself from the adjacent item text, in source order.
     expect(html).toMatch(/<input[^>]*type="checkbox"[^>]*aria-label="Write the draft"/);
     expect(html).toMatch(/<input[^>]*type="checkbox"[^>]*aria-label="Publish it"/);
+  });
+
+  it('emits an island boundary for an empty-body attribute-only hydrate directive', async () => {
+    const registry = defineRegistry({
+      components: [
+        {
+          name: 'converter',
+          label: '',
+          description: '',
+          hydrate: true,
+          attributes: { from: { type: 'text', label: 'From' } as never, rate: { type: 'number', label: 'Rate' } as never },
+          build: () => h('p', { className: ['fallback'] }, ['1 mi = 1.609 km']),
+        },
+      ],
+    });
+    const { renderMarkdown } = createRenderer(registry);
+    const html = await renderMarkdown(':::converter{from="mi" rate="1.609"}\n:::');
+    expect(html).toContain('data-cairn-island="converter"');
+    expect(html).toContain('class="fallback"');
+    // the number field is a JSON number in the escaped prop payload (rehypeStringify escapes the
+    // JSON double-quotes as the &#x22; hex entity, not &quot;); the absence of a quote before 1.609
+    // is what proves number coercion rather than a quoted string.
+    expect(html).toMatch(/data-cairn-props="[^"]*&#x22;rate&#x22;:1\.609/);
   });
 });

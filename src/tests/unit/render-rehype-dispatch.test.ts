@@ -71,6 +71,69 @@ describe('rehypeDispatch', () => {
     const out = markFirstList([h('p', ['x']), ul]);
     expect(out?.properties?.className).toContain('ec-grid');
   });
+
+  const islandReg = defineRegistry({
+    components: [
+      {
+        name: 'converter',
+        label: '',
+        description: '',
+        hydrate: true,
+        attributes: {
+          from: { type: 'text', label: 'From' } as never,
+          rate: { type: 'number', label: 'Rate' } as never,
+        },
+        build: () => h('p', { className: ['fallback'] }, ['1 mi = 1.609 km']),
+      },
+      {
+        name: 'tabs',
+        label: '',
+        description: '',
+        hydrate: 'visible',
+        attributes: { active: { type: 'text', label: 'Active' } as never },
+        build: () => h('div', { className: ['fallback'] }, ['tab']),
+      },
+    ],
+  });
+
+  it('wraps a hydrate component build output in an island boundary with typed props', () => {
+    const tree: Root = {
+      type: 'root',
+      children: [h('div', { dataPrimitive: 'converter', dataAttrFrom: 'mi', dataAttrRate: '1.609' }, [])],
+    } as Root;
+    rehypeDispatch(islandReg)(tree);
+    const boundary = tree.children[0] as Element;
+    expect(boundary.tagName).toBe('div');
+    expect(boundary.properties?.dataCairnIsland).toBe('converter');
+    // number field coerced to a JSON number; text field stays a string
+    expect(JSON.parse(boundary.properties?.dataCairnProps as string)).toEqual({ from: 'mi', rate: 1.609 });
+    // the build() output is the boundary's only child (the no-JS fallback)
+    const fallback = (boundary.children as Element[])[0];
+    expect(fallback.properties?.className).toContain('fallback');
+    // top-level entrance ordinal lands on the wrapper
+    expect(boundary.properties?.dataRise).toBe('0');
+    // an eager island carries no visible marker
+    expect(boundary.properties?.dataCairnHydrate).toBeUndefined();
+  });
+
+  it("marks a 'visible' island with data-cairn-hydrate", () => {
+    const tree: Root = {
+      type: 'root',
+      children: [h('div', { dataPrimitive: 'tabs', dataAttrActive: 'one' }, [])],
+    } as Root;
+    rehypeDispatch(islandReg)(tree);
+    const boundary = tree.children[0] as Element;
+    expect(boundary.properties?.dataCairnHydrate).toBe('visible');
+  });
+
+  it('leaves a non-hydrate component unwrapped', () => {
+    const tree: Root = {
+      type: 'root',
+      children: [h('div', { dataPrimitive: 'card' }, [h('h2', ['Title']), h('p', ['Body'])])],
+    } as Root;
+    rehypeDispatch(reg)(tree); // `reg` is the existing top-of-file card registry
+    expect((tree.children[0] as Element).properties?.dataCairnIsland).toBeUndefined();
+  });
 });
 
 function ctxWith(attributes: Record<string, string | boolean>): ComponentContext {

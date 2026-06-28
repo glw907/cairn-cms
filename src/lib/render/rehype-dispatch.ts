@@ -135,6 +135,40 @@ function partitionSlots(node: Element): {
   };
 }
 
+// Serialize a hydrate component's declared attributes into the island prop payload. A `number` field is
+// coerced from its stamped string to a JSON number here; a `boolean` already arrived as a real boolean
+// from readAttributes (which coerces 'true'/'false' upstream), and every other field stays the literal
+// string the author wrote. The result is JSON.stringify-ed into data-cairn-props and parsed on the client.
+function serializeIslandProps(
+  def: ComponentDef,
+  attributes: Record<string, string | boolean>,
+): Record<string, string | number | boolean> {
+  const out: Record<string, string | number | boolean> = {};
+  for (const [key, value] of Object.entries(attributes)) {
+    const type = def.attributes?.[key]?.type;
+    out[key] = type === 'number' && typeof value === 'string' ? Number(value) : value;
+  }
+  return out;
+}
+
+// Wrap a hydrate component's static fallback in its island boundary. The boundary carries the directive
+// name and the JSON prop payload; a 'visible' island also carries data-cairn-hydrate="visible". The
+// boundary attributes are inert data-* and survive both the sanitize floor (this runs after it) and the
+// sink guard (which strips only style/on*). The fallback is build()'s no-JS, first-paint representation.
+function islandBoundary(
+  name: string,
+  def: ComponentDef,
+  attributes: Record<string, string | boolean>,
+  fallback: Element,
+): Element {
+  const properties: Record<string, string> = {
+    dataCairnIsland: name,
+    dataCairnProps: JSON.stringify(serializeIslandProps(def, attributes)),
+  };
+  if (def.hydrate === 'visible') properties.dataCairnHydrate = 'visible';
+  return { type: 'element', tagName: 'div', properties, children: [fallback] };
+}
+
 function transformNode(node: Element, registry: ComponentRegistry): Element {
   node.children = transformChildren(node.children as ElementContent[], registry);
   const name = strProp(node, 'dataPrimitive');
@@ -147,7 +181,8 @@ function transformNode(node: Element, registry: ComponentRegistry): Element {
     items: parts.items,
     node,
   };
-  return def.build(ctx);
+  const built = def.build(ctx);
+  return def.hydrate ? islandBoundary(name!, def, ctx.attributes, built) : built;
 }
 
 /**

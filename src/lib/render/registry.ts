@@ -63,6 +63,14 @@ export interface ComponentDef {
    */
   build: (ctx: ComponentContext) => Element;
   /**
+   * Opt this directive into client hydration (phase 4b islands). `true` mounts the island eagerly on
+   *  first load and after client-side navigation; `'visible'` defers the mount to first intersection.
+   *  The engine wraps {@link ComponentDef.build}'s output in an island boundary, and the site registers
+   *  the live Svelte component under the same name on `rendering.islands`. Absent leaves the directive a
+   *  static, server-only component.
+   */
+  hydrate?: boolean | 'visible';
+  /**
    * Optional role-to-default-icon, e.g. `{ caution: 'warning' }`. Maps a free-string role to a
    *  glyph key in the site IconSet; choose a logically representative glyph and prefer glyphs
    *  distinct across roles so the picker stays scannable. Overrides the engine

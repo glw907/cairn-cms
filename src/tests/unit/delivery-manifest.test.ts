@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { githubApp } from '../../lib/index.js';
 import { buildSiteManifest } from '../../lib/delivery/manifest.js';
 import { buildLinkResolver } from '../../lib/delivery/site-resolver.js';
 import { createSiteIndexes } from '../../lib/delivery/site-indexes.js';
@@ -12,7 +13,7 @@ const adapter = defineAdapter({
     posts: { dir: 'src/content/posts', label: 'Posts', routing: 'feed', permalink: '/:year/:month/:slug', datePrefix: 'day', fields: fieldset({ title: fields.text({ label: 'Title' }), date: fields.date({ label: 'Date' }) }) },
     pages: { dir: 'src/content/pages', label: 'Pages', permalink: '/:slug', fields: fieldset({ title: fields.text({ label: 'Title' }) }) },
   },
-  backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
+  backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'a@b.c' },
   rendering: { render: (md) => md },
 });
@@ -30,7 +31,7 @@ const requiredTitleAdapter = defineAdapter({
     posts: { dir: 'src/content/posts', label: 'Posts', routing: 'feed', permalink: '/:year/:month/:slug', datePrefix: 'day', fields: fieldset({ title: fields.text({ label: 'Title', required: true }), date: fields.date({ label: 'Date' }) }) },
     pages: { dir: 'src/content/pages', label: 'Pages', permalink: '/:slug', fields: fieldset({ title: fields.text({ label: 'Title' }) }) },
   },
-  backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
+  backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'a@b.c' },
   rendering: { render: (md) => md },
 });

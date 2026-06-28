@@ -13,10 +13,8 @@
 // branch), so it reconstructs each edited entry's path from the branch name, reads that one file, and
 // runs the schema extractor directly.
 import type { ConceptDescriptor } from './types.js';
-import type { RepoRef } from '../github/types.js';
+import type { Backend } from '../github/backend.js';
 import type { Manifest } from './manifest.js';
-import { listBranches } from '../github/branches.js';
-import { readRaw } from '../github/repo.js';
 import { PENDING_PREFIX, parsePendingBranch } from './pending.js';
 import { findConcept } from './concepts.js';
 import { isValidId, filenameFromId } from './ids.js';
@@ -82,8 +80,7 @@ function push(index: ReferenceIndex, key: string, entry: ReferenceUsageEntry): v
  * caller already has rather than listing them a second time.
  */
 export async function buildReferenceIndex(
-  repo: RepoRef,
-  token: string,
+  backend: Backend,
   concepts: ConceptDescriptor[],
   manifest: Manifest,
   opts: BuildReferenceOptions = {},
@@ -107,7 +104,7 @@ export async function buildReferenceIndex(
 
   // The branch arm: read each open cairn/* branch's one edited file. The path is derivable from the
   // branch name, so no tree-listing is needed. The branch list is reused when the caller passes it.
-  const names = opts.branches ?? (await listBranches(repo, PENDING_PREFIX, token));
+  const names = opts.branches ?? (await backend.listBranches(PENDING_PREFIX));
   // Read the branches in parallel rather than one at a time, so the latency floor is one round trip
   // instead of N. workerd self-throttles to 6 simultaneous outbound connections, so this batch and
   // the load path's media-union and linker reads each stay under the limit; do NOT run this fan-out
@@ -125,7 +122,7 @@ export async function buildReferenceIndex(
 
       const path = `${concept.dir}/${filenameFromId(ref.id)}`;
       try {
-        const raw = await readRaw({ ...repo, branch: name }, path, token);
+        const raw = await backend.readFile(path, name);
         if (raw === null) return []; // The file is absent on the branch: nothing to extract.
         const { frontmatter } = parseMarkdown(raw);
         const fmTitle = frontmatter.title;

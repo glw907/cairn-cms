@@ -270,8 +270,11 @@ const backend = cairn?.backend ?? {};
 const email = cairn?.email ?? {};
 const media = cairn?.media ?? {};
 const facts = {};
-if (typeof backend.owner === 'string') facts.owner = backend.owner;
-if (typeof backend.repo === 'string') facts.repo = backend.repo;
+// The owner/repo identity is GitHub-specific, so it is read only off the github-app provider.
+if (backend.kind === 'github-app') {
+  if (typeof backend.owner === 'string') facts.owner = backend.owner;
+  if (typeof backend.repo === 'string') facts.repo = backend.repo;
+}
 if (typeof email.from === 'string') facts.from = email.from;
 if (typeof media.bucketBinding === 'string') facts.mediaBucketBinding = media.bucketBinding;
 export const result = JSON.stringify(facts);

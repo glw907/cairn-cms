@@ -1,8 +1,11 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { makeGithubBackend } from '../../lib/github/backend.js';
+import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from './_github-double.js';
 import { createCairnAdmin } from '../../lib/sveltekit/cairn-admin.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import { fieldset } from '../../lib/content/fieldset.js';
+const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
 function runtime(): CairnRuntime {
   const ok = () => ({ ok: true as const, data: {} });
@@ -12,7 +15,7 @@ function runtime(): CairnRuntime {
       { id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts', routing: { routable: true, dated: true, inFeeds: true }, permalink: '/posts/:slug', datePrefix: 'day', fields: [], schema: fieldset({}), summaryFields: [], validate: ok },
       { id: 'pages', label: 'Pages', singular: 'Pages', dir: 'src/content/pages', routing: { routable: true, dated: false, inFeeds: false }, permalink: '/:slug', datePrefix: 'day', fields: [], schema: fieldset({}), summaryFields: [], validate: ok },
     ],
-    backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
+    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     sender: { from: 'cms@test' },
     render: (md) => md,
     manifestPath: 'src/content/.cairn/index.json',
@@ -21,7 +24,9 @@ function runtime(): CairnRuntime {
   };
 }
 
-const deps = { mintToken: async () => 'tok' };
+// The dev double rides event.locals.backend; createCairnAdmin no longer takes a backend dep.
+const backend = makeGithubBackend(REPO, async () => 'tok');
+const deps = {};
 
 /** A D1 stand-in whose every statement lists the given editor rows; enough for editorsLoad. */
 function fakeDb(rows: { email: string; display_name: string; role: string }[]) {
@@ -37,7 +42,7 @@ function adminEvent(
   return {
     url: new URL(`https://t.example${pathname}${opts.search ?? ''}`),
     request: new Request(`https://t.example${pathname}`),
-    locals: { editor: opts.editor === undefined ? { email: 'e@t', displayName: 'E', role: 'editor' as const } : opts.editor },
+    locals: { editor: opts.editor === undefined ? { email: 'e@t', displayName: 'E', role: 'editor' as const } : opts.editor, backend },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x', AUTH_DB: opts.db } },
     cookies: { get: () => undefined, set: () => {}, delete: () => {} },
     setHeaders: (h: Record<string, string>) => Object.assign(headers, h),

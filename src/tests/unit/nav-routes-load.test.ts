@@ -1,7 +1,10 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { makeGithubBackend } from '../../lib/github/backend.js';
+import { githubApp } from '../../lib/index.js';
 import { createNavRoutes } from '../../lib/sveltekit/nav-routes.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import { fieldset } from '../../lib/content/fieldset.js';
+const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
 function runtime(navMenu: CairnRuntime['navMenu']): CairnRuntime {
   const ok = () => ({ ok: true as const, data: {} });
@@ -11,7 +14,7 @@ function runtime(navMenu: CairnRuntime['navMenu']): CairnRuntime {
       { id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts', routing: { routable: true, dated: true, inFeeds: true }, permalink: '/posts/:slug', datePrefix: 'day', fields: [], schema: fieldset({}), summaryFields: [], validate: ok },
       { id: 'pages', label: 'Pages', singular: 'Pages', dir: 'src/content/pages', routing: { routable: true, dated: false, inFeeds: false }, permalink: '/:slug', datePrefix: 'day', fields: [], schema: fieldset({}), summaryFields: [], validate: ok },
     ],
-    backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
+    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     sender: { from: 'cms@test' },
     render: (md) => md,
     manifestPath: 'src/content/.cairn/index.json',
@@ -22,7 +25,7 @@ function runtime(navMenu: CairnRuntime['navMenu']): CairnRuntime {
 }
 
 const NAV = { configPath: 'src/lib/site.config.yaml', menuName: 'primary', label: 'Primary nav', maxDepth: 2 };
-const deps = { mintToken: () => Promise.resolve('test-token') };
+const deps = { backend: makeGithubBackend(REPO, () => Promise.resolve('test-token'))};
 
 function loadEvent(search = '') {
   return {

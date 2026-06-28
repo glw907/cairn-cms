@@ -178,7 +178,7 @@ describe('readAdapterFacts', () => {
 		const dir = tempProject({
 			'vite.config.ts': PLUGIN_CONFIG,
 			'src/lib/cairn.config.ts': `export const cairn = {
-	backend: { owner: 'acme', repo: 'site', branch: 'main' },
+	backend: { kind: 'github-app', owner: 'acme', repo: 'site', branch: 'main' },
 	email: { from: 'cms@acme.test' },
 };
 export const siteConfig = {};
@@ -195,7 +195,7 @@ export const siteConfig = {};
 		const dir = tempProject({
 			'vite.config.ts': PLUGIN_CONFIG,
 			'src/lib/cairn.config.ts': `export const cairn = {
-	backend: { owner: 'acme', repo: 'site', branch: 'main' },
+	backend: { kind: 'github-app', owner: 'acme', repo: 'site', branch: 'main' },
 	email: { from: 'cms@acme.test' },
 	media: { bucketBinding: 'MEDIA_BUCKET' },
 };
@@ -214,7 +214,7 @@ export const siteConfig = {};
 		const dir = tempProject({
 			'vite.config.ts': PLUGIN_CONFIG,
 			'src/lib/cairn.config.ts': `export const cairn = {
-	backend: { owner: 'acme', repo: 42 },
+	backend: { kind: 'github-app', owner: 'acme', repo: 42 },
 };
 export const siteConfig = {};
 `,

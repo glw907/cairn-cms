@@ -1,8 +1,11 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { makeGithubBackend } from '../../lib/github/backend.js';
+import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from './_github-double.js';
 import { createCairnAdmin } from '../../lib/sveltekit/cairn-admin.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import { fieldset } from '../../lib/content/fieldset.js';
+const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
 function runtime(): CairnRuntime {
   const ok = () => ({ ok: true as const, data: {} });
@@ -12,7 +15,7 @@ function runtime(): CairnRuntime {
       { id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts', routing: { routable: true, dated: true, inFeeds: true }, permalink: '/posts/:slug', datePrefix: 'day', fields: [], schema: fieldset({}), summaryFields: [], validate: ok },
       { id: 'pages', label: 'Pages', singular: 'Pages', dir: 'src/content/pages', routing: { routable: true, dated: false, inFeeds: false }, permalink: '/:slug', datePrefix: 'day', fields: [], schema: fieldset({}), summaryFields: [], validate: ok },
     ],
-    backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
+    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     sender: { from: 'cms@test' },
     render: (md) => md,
     manifestPath: 'src/content/.cairn/index.json',
@@ -21,7 +24,9 @@ function runtime(): CairnRuntime {
   };
 }
 
-const deps = { mintToken: async () => 'tok' };
+// The dev double rides event.locals.backend; createCairnAdmin no longer takes a backend dep.
+const backend = makeGithubBackend(REPO, async () => 'tok');
+const deps = {};
 
 /** A scriptable D1 stand-in: `first()` answers from the substring-keyed map, `run()` and
  *  `batch()` resolve and record, so the auth and editor store calls execute for real. */
@@ -76,7 +81,7 @@ function actionEvent(
   return {
     url: new URL(`https://t.example${pathname}`),
     request: new Request(`https://t.example${pathname}`, { method: 'POST', body: new URLSearchParams(opts.form ?? {}) }),
-    locals: { editor: opts.editor === undefined ? { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } : opts.editor },
+    locals: { editor: opts.editor === undefined ? { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } : opts.editor, backend },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x', ...opts.env } },
     cookies: {
       get: (name: string) => opts.cookies?.[name],
@@ -423,12 +428,10 @@ describe('media bulk-delete, orphan-scan, and purge actions (composer wiring)', 
 
 describe('save on the nav view', () => {
   it('delegates to navSave when a navMenu is configured', async () => {
-    vi.stubGlobal('fetch', vi.fn(async (_url: string, init?: RequestInit) => {
-      if (init?.method === 'PUT') return new Response(JSON.stringify({ commit: { sha: 'abc' } }), { status: 200 });
-      const accept = String((init?.headers as Record<string, string> | undefined)?.Accept ?? '');
-      if (accept.includes('raw')) return new Response('siteName: S\nmenus:\n  primary: []\n', { status: 200 });
-      return new Response(JSON.stringify({ sha: 'old' }), { status: 200 });
-    }));
+    // navSave is a head-guarded atomic commit, so the stateful double seeds main with the YAML and
+    // answers the ref read, the head-guarded commit sequence, and the write.
+    const gh = new GithubDouble({ main: { 'src/lib/site.config.yaml': 'siteName: S\nmenus:\n  primary: []\n' } });
+    gh.install();
     const rt = runtime();
     rt.navMenu = { configPath: 'src/lib/site.config.yaml', menuName: 'primary', label: 'Primary nav', maxDepth: 2 };
     const admin = createCairnAdmin(rt, deps);
@@ -492,14 +495,9 @@ describe('settings view (Task 15)', () => {
   });
 
   it('saveSettings on the settings view reaches settingsSave (commits the conventions, redirects saved)', async () => {
-    // commitFile uses the contents PUT, which the GithubDouble does not model, so this stubs fetch
-    // directly the way nav-routes-save does: the raw read returns the YAML, the PUT lands the commit.
-    vi.stubGlobal('fetch', vi.fn(async (_url: string, init?: RequestInit) => {
-      if (init?.method === 'PUT') return new Response(JSON.stringify({ commit: { sha: 'abc' } }), { status: 200 });
-      const accept = String((init?.headers as Record<string, string> | undefined)?.Accept ?? '');
-      if (accept.includes('raw')) return new Response('siteName: S\ntidy:\n  enabled: true\n', { status: 200 });
-      return new Response(JSON.stringify({ sha: 'old' }), { status: 200 });
-    }));
+    // settingsSave is a head-guarded atomic commit, so the stateful double seeds main with the YAML
+    // and answers the ref read, the head-guarded commit sequence, and the write.
+    new GithubDouble({ main: { 'src/lib/site.config.yaml': 'siteName: S\ntidy:\n  enabled: true\n' } }).install();
     const admin = createCairnAdmin(tidyRuntime(), deps);
     const event = actionEvent('/admin/settings', { form: { conventions: '{"fixes":true,"oxfordComma":"always"}' } });
     await expectRedirect(admin.actions.saveSettings(event as never), '/admin/settings?saved=1');

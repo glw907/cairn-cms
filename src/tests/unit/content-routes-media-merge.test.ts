@@ -5,6 +5,8 @@
 // (decision 1, last-writer-wins by hash). With media off, the no-media path is byte-identical to
 // today: no media.json is ever touched.
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { makeGithubBackend } from '../../lib/github/backend.js';
+import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { serializeManifest } from '../../lib/content/manifest.js';
@@ -16,6 +18,7 @@ import {
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { ResolvedAssetConfig } from '../../lib/media/config.js';
 import { fieldset } from '../../lib/content/fieldset.js';
+const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
 const MANIFEST_PATH = 'src/content/.cairn/index.json';
 const MEDIA_PATH = 'src/content/.cairn/media.json';
@@ -46,7 +49,7 @@ function runtime(assets: ResolvedAssetConfig): CairnRuntime {
         validate: () => ({ ok: true as const, data: { title: 'Hi' } }),
       },
     ],
-    backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
+    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     sender: { from: 'cms@test' },
     render: (md) => md,
     manifestPath: MANIFEST_PATH,
@@ -55,7 +58,7 @@ function runtime(assets: ResolvedAssetConfig): CairnRuntime {
   };
 }
 
-const deps = { mintToken: () => Promise.resolve('test-token') };
+const deps = { backend: makeGithubBackend(REPO, () => Promise.resolve('test-token'))};
 
 /** A server-owned media record, the shape the upload action returns and the client re-posts. */
 function entry(hash: string, slug: string): MediaEntry {

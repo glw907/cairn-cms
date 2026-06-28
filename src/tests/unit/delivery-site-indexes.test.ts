@@ -1,4 +1,5 @@
 import { describe, it, expect, expectTypeOf } from 'vitest';
+import { githubApp } from '../../lib/index.js';
 import { createSiteIndexes } from '../../lib/delivery/site-indexes.js';
 import type { SiteGlobs } from '../../lib/delivery/site-indexes.js';
 import { defineAdapter } from '../../lib/content/adapter.js';
@@ -22,7 +23,7 @@ const adapter = defineAdapter({
       fields: fieldset({ title: fields.text({ label: 'Title', required: true }) }),
     },
   },
-  backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
+  backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'noreply@test.example' },
   rendering: { render: (md) => md },
 });
@@ -80,7 +81,7 @@ describe('createSiteIndexes build-time guards', () => {
           fields: fieldset({ title: fields.text({ label: 'Title', required: true }) }),
         },
       } as CairnAdapter['content'],
-      backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
+      backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
       email: { from: 'noreply@test.example' },
       rendering: { render: (md) => md },
     });

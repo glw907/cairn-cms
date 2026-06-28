@@ -12,10 +12,8 @@
 // notice and never blocks the editor or the publish. The scope splits by call site: the main arm at
 // edit-load (synchronous, no extra GitHub read per open) and the full cross-branch check at publish.
 import type { ConceptDescriptor } from './types.js';
-import type { RepoRef } from '../github/types.js';
+import type { Backend } from '../github/backend.js';
 import type { Manifest } from './manifest.js';
-import { listBranches } from '../github/branches.js';
-import { readRaw } from '../github/repo.js';
 import { PENDING_PREFIX, parsePendingBranch } from './pending.js';
 import { findConcept } from './concepts.js';
 import { isValidId, filenameFromId } from './ids.js';
@@ -90,8 +88,7 @@ export function mainAddressIndex(manifest: Manifest): AddressIndex {
  * publish. The branches are read in one Promise.all, the way buildUsageIndex reads them.
  */
 export async function buildAddressIndex(
-  repo: RepoRef,
-  token: string,
+  backend: Backend,
   concepts: ConceptDescriptor[],
   manifest: Manifest,
 ): Promise<AddressIndex> {
@@ -101,7 +98,7 @@ export async function buildAddressIndex(
 
   // The branch arm: read each open cairn/* branch's one edited file and resolve its permalink. The
   // path is derivable from the branch name, so no tree-listing is needed.
-  const names = await listBranches(repo, PENDING_PREFIX, token);
+  const names = await backend.listBranches(PENDING_PREFIX);
   const perBranch = await Promise.all(
     names.map(async (name): Promise<{ permalink: string; entry: AddressEntry } | null> => {
       // Resolve the branch name with the branch tooling's guard: a malformed name, an id that fails
@@ -113,7 +110,7 @@ export async function buildAddressIndex(
 
       const path = `${concept.dir}/${filenameFromId(ref.id)}`;
       try {
-        const raw = await readRaw({ ...repo, branch: name }, path, token);
+        const raw = await backend.readFile(path, name);
         if (raw === null) return null; // The file is absent on the branch: nothing to resolve.
         const { frontmatter } = parseMarkdown(raw);
         const fmTitle = frontmatter.title;

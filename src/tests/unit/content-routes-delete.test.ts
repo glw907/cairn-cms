@@ -1,9 +1,12 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { makeGithubBackend } from '../../lib/github/backend.js';
+import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { parseManifest, serializeManifest } from '../../lib/content/manifest.js';
 import type { CairnRuntime, ValidationResult } from '../../lib/content/types.js';
 import { fieldset } from '../../lib/content/fieldset.js';
+const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
 function runtime(validate: (fm: Record<string, unknown>, body: string) => ValidationResult): CairnRuntime {
   return {
@@ -20,7 +23,7 @@ function runtime(validate: (fm: Record<string, unknown>, body: string) => Valida
         validate,
       },
     ],
-    backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
+    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     sender: { from: 'cms@test' },
     render: (md) => md,
     manifestPath: 'src/content/.cairn/index.json',
@@ -29,7 +32,7 @@ function runtime(validate: (fm: Record<string, unknown>, body: string) => Valida
   };
 }
 
-const deps = { mintToken: () => Promise.resolve('test-token') };
+const deps = { backend: makeGithubBackend(REPO, () => Promise.resolve('test-token'))};
 
 function deleteEvent(id: string) {
   return {

@@ -16,11 +16,10 @@
 // injected, so the planner never imports the editor surface. It is internal, exported from no package
 // subpath, so it carries no reference page.
 import type { ConceptDescriptor } from '../content/types.js';
-import type { RepoRef } from '../github/types.js';
+import type { Backend } from '../github/backend.js';
 import type { Manifest } from '../content/manifest.js';
 import { findConcept } from '../content/concepts.js';
 import { filenameFromId } from '../content/ids.js';
-import { readRaw } from '../github/repo.js';
 import { buildUsageIndex } from './usage.js';
 
 /**
@@ -81,8 +80,7 @@ export interface RewritePlan<P = unknown> {
  * editor surface and node-safe; the only IO is the usage index build and the per-entry reads.
  */
 export async function planMediaRewrite<P = unknown>(args: {
-  backend: RepoRef;
-  token: string;
+  backend: Backend;
   concepts: ConceptDescriptor[];
   contentManifest: Manifest;
   hash: string;
@@ -90,7 +88,7 @@ export async function planMediaRewrite<P = unknown>(args: {
 }): Promise<RewritePlan<P>> {
   // Strict so an unverifiable branch read rejects here rather than degrading to an absent reference.
   // Do NOT wrap this: the throw is the fail-closed contract the apply relies on.
-  const index = await buildUsageIndex(args.backend, args.token, args.concepts, args.contentManifest, {
+  const index = await buildUsageIndex(args.backend, args.concepts, args.contentManifest, {
     strict: true,
   });
   const rows = index.get(args.hash) ?? [];
@@ -104,7 +102,7 @@ export async function planMediaRewrite<P = unknown>(args: {
       const concept = findConcept(args.concepts, row.concept);
       if (!concept) return null;
       const path = `${concept.dir}/${filenameFromId(row.id)}`;
-      const markdown = await readRaw(args.backend, path, args.token);
+      const markdown = await args.backend.readFile(path, args.backend.defaultBranch);
       if (markdown === null) return null;
       const result = args.transform(markdown);
       if (result.placements.length === 0) return null;

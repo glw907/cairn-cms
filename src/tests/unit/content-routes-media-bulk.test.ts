@@ -5,6 +5,8 @@
 // These tests use the same GithubDouble harness as the single-delete suite, with a multi-hash event
 // builder that repeats the `hash` field.
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { makeGithubBackend } from '../../lib/github/backend.js';
+import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import type { MediaBulkDeleteResult } from '../../lib/sveltekit/content-routes.js';
@@ -14,6 +16,7 @@ import { r2Key } from '../../lib/media/naming.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { ResolvedAssetConfig } from '../../lib/media/config.js';
 import { fieldset } from '../../lib/content/fieldset.js';
+const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
 const MANIFEST_PATH = 'src/content/.cairn/index.json';
 const MEDIA_PATH = 'src/content/.cairn/media.json';
@@ -47,7 +50,7 @@ function runtime(): CairnRuntime {
         validate: () => ({ ok: true as const, data: { title: 'Hi' } }),
       },
     ],
-    backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
+    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     sender: { from: 'cms@test' },
     render: (md) => md,
     manifestPath: MANIFEST_PATH,
@@ -56,7 +59,7 @@ function runtime(): CairnRuntime {
   };
 }
 
-const deps = { mintToken: () => Promise.resolve('test-token') };
+const deps = { backend: makeGithubBackend(REPO, () => Promise.resolve('test-token'))};
 
 const HASH_A = '0000000000000aaa';
 const HASH_B = '0000000000000bbb';

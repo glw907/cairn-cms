@@ -5,6 +5,7 @@
 // a factory the action calls with the resolved key, returning a structural client whose messages.create
 // the test stubs. The default factory (unset here) builds the real SDK client.
 import { describe, it, expect, vi } from 'vitest';
+import { githubApp } from '../../lib/index.js';
 import { createContentRoutes, type ContentEvent, type TidyClient } from '../../lib/sveltekit/content-routes.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { CookieJar } from '../../lib/sveltekit/types.js';
@@ -20,7 +21,7 @@ function runtime(overrides: Partial<CairnRuntime> = {}): CairnRuntime {
     siteName: 'Test Site',
     sender: { from: 'noreply@test', replyTo: 'noreply@test' },
     concepts: [],
-    backend: { owner: 'o', repo: 'r', branch: 'main', apiBase: 'https://api.github.com' },
+    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     manifestPath: 'src/content/.cairn/manifest.json',
     mediaManifestPath: 'src/content/.cairn/media.json',
     resolvedAssets: { enabled: false },

@@ -1,8 +1,11 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { makeGithubBackend } from '../../lib/github/backend.js';
+import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import { fieldset } from '../../lib/content/fieldset.js';
+const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
 function runtime(): CairnRuntime {
   const ok = () => ({ ok: true as const, data: {} });
@@ -12,7 +15,7 @@ function runtime(): CairnRuntime {
       { id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts', routing: { routable: true, dated: true, inFeeds: true }, permalink: '/posts/:slug', datePrefix: 'day', fields: [], schema: fieldset({}), summaryFields: [], validate: ok },
       { id: 'pages', label: 'Pages', singular: 'Pages', dir: 'src/content/pages', routing: { routable: true, dated: false, inFeeds: false }, permalink: '/:slug', datePrefix: 'day', fields: [], schema: fieldset({}), summaryFields: [], validate: ok },
     ],
-    backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
+    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     sender: { from: 'cms@test' },
     render: (md) => md,
     manifestPath: 'src/content/.cairn/index.json',
@@ -78,7 +81,7 @@ describe('layoutLoad', () => {
     gh.createBranch('cairn/pages/about', 'main');
     gh.createBranch('cairn/oops', 'main'); // malformed: no entry id, dropped by the parser
     gh.install();
-    const routes = createContentRoutes(runtime(), { mintToken: async () => 'tok' });
+    const routes = createContentRoutes(runtime(), { backend: makeGithubBackend(REPO, async () => 'tok')});
     const data = await routes.layoutLoad(event('/admin/posts', 'owner') as never);
     expect(data.pendingEntries).toEqual([
       { concept: 'pages', id: 'about' },
@@ -92,7 +95,7 @@ describe('layoutLoad', () => {
     gh.createBranch('cairn/widgets/x', 'main'); // concept this site does not configure
     gh.createBranch('cairn/posts/a%2fb', 'main'); // percent-escaped id fails the slug rule
     gh.install();
-    const routes = createContentRoutes(runtime(), { mintToken: async () => 'tok' });
+    const routes = createContentRoutes(runtime(), { backend: makeGithubBackend(REPO, async () => 'tok')});
     const data = await routes.layoutLoad(event('/admin/posts', 'owner') as never);
     expect(data.pendingEntries).toEqual([{ concept: 'posts', id: '2026-05-hello' }]);
   });
@@ -100,11 +103,11 @@ describe('layoutLoad', () => {
   it('degrades pendingEntries to null and logs github.unreachable when the token mint fails', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const routes = createContentRoutes(runtime(), {
-      mintToken: async () => {
+      backend: makeGithubBackend(REPO, async () => {
         // The real missing-secret failure from appCredentials; the message names the env var
         // and never carries PEM material, which the redaction assertion below pins.
         throw new Error('GITHUB_APP_PRIVATE_KEY_B64 is not configured');
-      },
+      }),
     });
     const data = await routes.layoutLoad(event('/admin/posts', 'owner') as never);
     expect(data.pendingEntries).toBeNull();

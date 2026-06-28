@@ -1,8 +1,11 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { makeGithubBackend } from '../../lib/github/backend.js';
+import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import { fieldset } from '../../lib/content/fieldset.js';
+const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
 function runtime(): CairnRuntime {
   const ok = () => ({ ok: true as const, data: {} });
@@ -11,7 +14,7 @@ function runtime(): CairnRuntime {
     concepts: [
       { id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts', routing: { routable: true, dated: true, inFeeds: true }, permalink: '/posts/:slug', datePrefix: 'day', fields: [], schema: fieldset({}), summaryFields: [], validate: ok },
     ],
-    backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
+    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     sender: { from: 'cms@test' },
     render: (md) => md,
     manifestPath: 'src/content/.cairn/index.json',
@@ -20,7 +23,7 @@ function runtime(): CairnRuntime {
   };
 }
 
-const deps = { mintToken: () => Promise.resolve('test-token') };
+const deps = { backend: makeGithubBackend(REPO, () => Promise.resolve('test-token'))};
 
 const MANIFEST_PATH = 'src/content/.cairn/index.json';
 
@@ -73,7 +76,7 @@ function makeEvent(opts: {
 describe('layoutLoad', () => {
   it('carries the editor email and resolves the theme from the cookie', async () => {
     stubNoRefs();
-    const routes = createContentRoutes(runtime(), { mintToken: async () => 'tok' });
+    const routes = createContentRoutes(runtime(), { backend: makeGithubBackend(REPO, async () => 'tok')});
     const event = makeEvent({
       pathname: '/admin/posts',
       editor: { email: 'ed@example.com', displayName: 'Ed', role: 'owner' },
@@ -86,7 +89,7 @@ describe('layoutLoad', () => {
 
   it('defaults the theme to light when no cookie is set', async () => {
     stubNoRefs();
-    const routes = createContentRoutes(runtime(), { mintToken: async () => 'tok' });
+    const routes = createContentRoutes(runtime(), { backend: makeGithubBackend(REPO, async () => 'tok')});
     const event = makeEvent({
       pathname: '/admin/posts',
       editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor' },
@@ -97,7 +100,7 @@ describe('layoutLoad', () => {
 
   it('ignores an unknown cookie value and falls back to light', async () => {
     stubNoRefs();
-    const routes = createContentRoutes(runtime(), { mintToken: async () => 'tok' });
+    const routes = createContentRoutes(runtime(), { backend: makeGithubBackend(REPO, async () => 'tok')});
     const event = makeEvent({
       pathname: '/admin/posts',
       editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor' },
@@ -108,7 +111,7 @@ describe('layoutLoad', () => {
 
   it('reads the collapsed nav groups from the cookie, url-decoded', async () => {
     stubNoRefs();
-    const routes = createContentRoutes(runtime(), { mintToken: async () => 'tok' });
+    const routes = createContentRoutes(runtime(), { backend: makeGithubBackend(REPO, async () => 'tok')});
     const event = makeEvent({
       pathname: '/admin/posts',
       editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor' },
@@ -119,7 +122,7 @@ describe('layoutLoad', () => {
 
   it('defaults collapsedNav to empty when no cookie is set', async () => {
     stubNoRefs();
-    const routes = createContentRoutes(runtime(), { mintToken: async () => 'tok' });
+    const routes = createContentRoutes(runtime(), { backend: makeGithubBackend(REPO, async () => 'tok')});
     const event = makeEvent({
       pathname: '/admin/posts',
       editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor' },
@@ -231,11 +234,13 @@ describe('listLoad', () => {
     expect(data.error).toMatch(/could not load/i);
   });
 
-  it('degrades to its own message when the token mint fails', async () => {
-    const routes = createContentRoutes(runtime(), { mintToken: async () => { throw new Error('no key'); } });
+  it('degrades to its load error when the token mint fails', async () => {
+    const routes = createContentRoutes(runtime(), { backend: makeGithubBackend(REPO, async () => { throw new Error('no key'); })});
     const data = await routes.listLoad(listEvent({ concept: 'posts' }) as never);
     expect(data.entries).toEqual([]);
-    expect(data.error).toMatch(/could not authenticate/i);
+    // The token mint is lazy inside the first read now, so a token failure lands in the one
+    // could-not-load degrade rather than the old separate auth tier.
+    expect(data.error).toMatch(/could not load/i);
   });
 
   it('surfaces a create-form error from the query', async () => {
@@ -567,7 +572,7 @@ describe('listDeleteAction', () => {
       entries: [{ id: '2026-05-01-hello', concept: 'posts', title: 'Hello', permalink: '/p/hello', draft: false, links: [] }],
     });
     commitFetch(manifest);
-    const routes = createContentRoutes(runtime(), { mintToken: async () => 'tok' });
+    const routes = createContentRoutes(runtime(), { backend: makeGithubBackend(REPO, async () => 'tok')});
     const event = deleteFormEvent({ id: '2026-05-01-hello' });
     try {
       await routes.listDeleteAction(event as never);
@@ -587,7 +592,7 @@ describe('listDeleteAction', () => {
       ],
     });
     const calls = commitFetch(manifest);
-    const routes = createContentRoutes(runtime(), { mintToken: async () => 'tok' });
+    const routes = createContentRoutes(runtime(), { backend: makeGithubBackend(REPO, async () => 'tok')});
     const event = deleteFormEvent({ id: '2026-05-01-hello' });
     const result = (await routes.listDeleteAction(event as never)) as unknown as {
       status: number; data: { error: string; inboundLinks: unknown[] };
@@ -600,7 +605,7 @@ describe('listDeleteAction', () => {
   });
 
   it('rejects an invalid id from the form with a 400', async () => {
-    const routes = createContentRoutes(runtime(), { mintToken: async () => 'tok' });
+    const routes = createContentRoutes(runtime(), { backend: makeGithubBackend(REPO, async () => 'tok')});
     const event = deleteFormEvent({ id: '../escape' });
     await expect(routes.listDeleteAction(event as never)).rejects.toMatchObject({ status: 400 });
   });

@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { githubApp } from '../../lib/index.js';
 import { render } from 'vitest-browser-svelte';
 import CairnAdmin from '../../lib/components/CairnAdmin.svelte';
 import { createCairnAdmin, type AdminData } from '../../lib/sveltekit/cairn-admin.js';
@@ -224,7 +225,7 @@ describe('form-action contract', () => {
         { id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts', routing: { routable: true, dated: true, inFeeds: true }, permalink: '/posts/:slug', datePrefix: 'day', fields: [], schema: fieldset({}), summaryFields: [], validate: ok },
         { id: 'pages', label: 'Pages', singular: 'Pages', dir: 'src/content/pages', routing: { routable: true, dated: false, inFeeds: false }, permalink: '/:slug', datePrefix: 'day', fields: [], schema: fieldset({}), summaryFields: [], validate: ok },
       ],
-      backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
+      backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
       sender: { from: 'cms@test' },
       render: (md) => md,
       manifestPath: 'src/content/.cairn/index.json',

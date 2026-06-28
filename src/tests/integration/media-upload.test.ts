@@ -3,6 +3,7 @@
 // the miniflare R2 bucket, with a constructed ContentEvent carrying the raw-body POST, the
 // X-Cairn-* headers, locals.editor, platform.env, and a fake cookie jar that returns the csrf cookie.
 import { env } from 'cloudflare:test';
+import { githubApp } from '../../lib/index.js';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createContentRoutes, type ContentEvent } from '../../lib/sveltekit/content-routes.js';
 import { r2Key, hashBytes, shortHash } from '../../lib/media/naming.js';
@@ -24,7 +25,7 @@ function runtime(overrides: Partial<CairnRuntime> = {}): CairnRuntime {
     siteName: 'Test Site',
     sender: { from: 'noreply@test', replyTo: 'noreply@test' },
     concepts: [],
-    backend: { owner: 'o', repo: 'r', branch: 'main', apiBase: 'https://api.github.com' },
+    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     manifestPath: 'src/content/.cairn/manifest.json',
     mediaManifestPath: 'src/content/.cairn/media.json',
     resolvedAssets: {

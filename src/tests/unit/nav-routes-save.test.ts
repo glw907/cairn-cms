@@ -1,13 +1,17 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { GithubDouble } from './_github-double.js';
+import { makeGithubBackend } from '../../lib/github/backend.js';
+import { githubApp } from '../../lib/index.js';
 import { createNavRoutes } from '../../lib/sveltekit/nav-routes.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
+const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
 function runtime(): CairnRuntime {
   const ok = () => ({ ok: true as const, data: {} });
   return {
     siteName: 'T',
     concepts: [],
-    backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
+    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     sender: { from: 'cms@test' },
     render: (md) => md,
     manifestPath: 'src/content/.cairn/index.json',
@@ -17,7 +21,7 @@ function runtime(): CairnRuntime {
   };
 }
 
-const deps = { mintToken: () => Promise.resolve('test-token') };
+const deps = { backend: makeGithubBackend(REPO, () => Promise.resolve('test-token'))};
 
 function saveEvent(treeJson: string) {
   const body = new URLSearchParams({ tree: treeJson });
@@ -34,16 +38,10 @@ afterEach(() => vi.restoreAllMocks());
 
 describe('navSave', () => {
   it('commits the menu with the session editor as author, then redirects to saved', async () => {
-    const calls: { url: string; init?: RequestInit }[] = [];
-    vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
-      calls.push({ url, init });
-      if (init?.method === 'PUT') return new Response(JSON.stringify({ commit: { sha: 'abc' } }), { status: 200 });
-      const accept = String((init?.headers as Record<string, string> | undefined)?.Accept ?? '');
-      if (accept.includes('raw')) {
-        return new Response('siteName: S\nmenus:\n  primary:\n    - label: Old\n', { status: 200 });
-      }
-      return new Response(JSON.stringify({ sha: 'old' }), { status: 200 });
-    }));
+    // The nav save is a head-guarded atomic commit (Git Data API), so the stateful double seeds
+    // main with the YAML and answers the ref read, the head-guarded commit sequence, and the write.
+    const gh = new GithubDouble({ main: { 'src/lib/site.config.yaml': 'siteName: S\nmenus:\n  primary:\n    - label: Old\n' } });
+    gh.install();
     const routes = createNavRoutes(runtime(), deps);
     try {
       await routes.navSave(saveEvent(JSON.stringify([{ label: 'Home', url: '/' }])) as never);
@@ -51,11 +49,12 @@ describe('navSave', () => {
     } catch (e) {
       expect((e as { location: string }).location).toBe('/admin/nav?saved=1');
     }
-    const put = calls.find((c) => c.init?.method === 'PUT')!;
-    expect(put.url).toContain('site.config.yaml');
-    const sent = JSON.parse(String(put.init!.body));
-    expect(sent.author).toEqual({ name: 'Ed Editor', email: 'ed@t' });
-    expect(sent).not.toHaveProperty('committer');
+    // The new YAML landed on main, carrying the new menu.
+    expect(gh.read('main', 'src/lib/site.config.yaml')).toContain('label: Home');
+    // The commit names the session editor as author, never a committer.
+    const commitPost = gh.calls.find((c) => c.method === 'POST' && c.url.endsWith('/git/commits'))!;
+    expect((commitPost.body as { author: unknown }).author).toEqual({ name: 'Ed Editor', email: 'ed@t' });
+    expect(commitPost.body).not.toHaveProperty('committer');
   });
 
   it('bounces an invalid tree back to the form and never commits', async () => {
@@ -78,14 +77,22 @@ describe('navSave', () => {
     await expect(routes.navSave(saveEvent(JSON.stringify([{ label: 'Home' }])) as never)).rejects.toMatchObject({ status: 404 });
   });
 
-  it('reports a 409 conflict as a reload prompt without overwriting', async () => {
-    vi.stubGlobal('fetch', vi.fn(async (_url: string, init?: RequestInit) => {
-      if (init?.method === 'PUT') return new Response('conflict', { status: 409 });
+  it('reports a head-moved conflict as a reload prompt without overwriting', async () => {
+    // The save is now head-guarded: navSave reads the head, then commit(expectedHead) re-reads it.
+    // Return a different head on the second ref read so the fail-closed commit raises
+    // CommitConflictError, which navSave maps to the reload prompt. The raw read serves the YAML.
+    let refReads = 0;
+    vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
+      const method = (init?.method ?? 'GET').toUpperCase();
       const accept = String((init?.headers as Record<string, string> | undefined)?.Accept ?? '');
-      if (accept.includes('raw')) {
+      if (method === 'GET' && accept.includes('raw')) {
         return new Response('siteName: S\nmenus:\n  primary:\n    - label: Old\n', { status: 200 });
       }
-      return new Response(JSON.stringify({ sha: 'old' }), { status: 200 });
+      if (method === 'GET' && url.includes('/git/ref/heads/')) {
+        refReads += 1;
+        return new Response(JSON.stringify({ object: { sha: refReads === 1 ? 'h1' : 'h2' } }), { status: 200 });
+      }
+      return new Response('{}', { status: 200 });
     }));
     const routes = createNavRoutes(runtime(), deps);
     try {

@@ -1,10 +1,13 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { makeGithubBackend } from '../../lib/github/backend.js';
+import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { CommitConflictError } from '../../lib/github/types.js';
 import { manifestEntryFromFile, serializeManifest } from '../../lib/content/manifest.js';
 import type { CairnRuntime, ValidationResult } from '../../lib/content/types.js';
 import { fieldset } from '../../lib/content/fieldset.js';
+const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
 function runtime(validate: (fm: Record<string, unknown>, body: string) => ValidationResult): CairnRuntime {
   return {
@@ -21,7 +24,7 @@ function runtime(validate: (fm: Record<string, unknown>, body: string) => Valida
         validate,
       },
     ],
-    backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
+    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     sender: { from: 'cms@test' },
     render: (md) => md,
     manifestPath: 'src/content/.cairn/index.json',
@@ -30,7 +33,7 @@ function runtime(validate: (fm: Record<string, unknown>, body: string) => Valida
   };
 }
 
-const deps = { mintToken: () => Promise.resolve('test-token') };
+const deps = { backend: makeGithubBackend(REPO, () => Promise.resolve('test-token'))};
 
 function saveEvent(id: string, form: Record<string, string>) {
   const body = new URLSearchParams(form);
@@ -194,7 +197,7 @@ describe('saveAction', () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })), {
-      mintToken: () => 'sync-token',
+      backend: makeGithubBackend(REPO, () => 'sync-token'),
     });
     try {
       await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'plain body' }) as never);
@@ -302,7 +305,7 @@ describe('saveAction', () => {
 
   it('matches a conflict by name even if the class identity differs', async () => {
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })), {
-      mintToken: () => Promise.resolve('t'),
+      backend: makeGithubBackend(REPO, () => Promise.resolve('t')),
     });
     // Manifest read returns 404 (empty), then the ref update throws a look-alike error carrying
     // the class name, to exercise the name-based branch.

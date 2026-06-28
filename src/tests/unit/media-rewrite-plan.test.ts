@@ -8,15 +8,17 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { GithubDouble } from './_github-double.js';
 import { planMediaRewrite } from '../../lib/media/rewrite-plan.js';
+import { makeGithubBackend } from '../../lib/github/backend.js';
 import { repointMediaRef, type RepointResult } from '../../lib/content/media-rewrite.js';
 import { serializeMarkdown } from '../../lib/content/frontmatter.js';
 import type { ConceptDescriptor } from '../../lib/content/types.js';
-import type { RepoRef } from '../../lib/github/types.js';
 import type { Manifest, ManifestEntry } from '../../lib/content/manifest.js';
 import { fieldset } from '../../lib/content/fieldset.js';
 
-const repo: RepoRef = { owner: 'o', repo: 'r', branch: 'main' };
+const repo = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 const token = 'test-token';
+// The planner now takes a live Backend; the GithubDouble still intercepts the same fetch URLs below.
+const backend = makeGithubBackend(repo, () => token);
 
 function postsConcept(): ConceptDescriptor {
   return {
@@ -83,8 +85,7 @@ describe('planMediaRewrite main entries', () => {
     gh.install();
 
     const plan = await planMediaRewrite({
-      backend: repo,
-      token,
+      backend,
       concepts: [postsConcept()],
       contentManifest: manifest([
         manifestEntry({ id: '2026-05-alpha', title: 'Alpha', mediaRefs: [OLD_HASH] }),
@@ -129,8 +130,7 @@ describe('planMediaRewrite main entries', () => {
     gh.install();
 
     const plan = await planMediaRewrite({
-      backend: repo,
-      token,
+      backend,
       concepts: [postsConcept()],
       contentManifest: manifest([
         manifestEntry({ id: '2026-05-alpha', title: 'Alpha', mediaRefs: [OLD_HASH] }),
@@ -160,8 +160,7 @@ describe('planMediaRewrite main entries', () => {
     gh.install();
 
     const plan = await planMediaRewrite({
-      backend: repo,
-      token,
+      backend,
       concepts: [postsConcept()],
       contentManifest: manifest([
         manifestEntry({ id: '2026-05-changed', title: 'Changed', mediaRefs: [OLD_HASH] }),
@@ -185,8 +184,7 @@ describe('planMediaRewrite main entries', () => {
     gh.install();
 
     const plan = await planMediaRewrite({
-      backend: repo,
-      token,
+      backend,
       concepts: [postsConcept()],
       contentManifest: manifest([
         manifestEntry({ id: '2026-05-alpha', title: 'Alpha', mediaRefs: [OLD_HASH] }),
@@ -226,8 +224,7 @@ describe('planMediaRewrite branch delta', () => {
     gh.install();
 
     const plan = await planMediaRewrite({
-      backend: repo,
-      token,
+      backend,
       concepts: [postsConcept()],
       contentManifest: manifest([manifestEntry({ id: '2026-05-alpha', title: 'Alpha', mediaRefs: [OLD_HASH] })]),
       hash: OLD_HASH,
@@ -254,8 +251,7 @@ describe('planMediaRewrite branch delta', () => {
     gh.install();
 
     const plan = await planMediaRewrite({
-      backend: repo,
-      token,
+      backend,
       concepts: [postsConcept()],
       contentManifest: manifest([manifestEntry({ id: '2026-05-alpha', title: 'Alpha', mediaRefs: [OLD_HASH] })]),
       hash: OLD_HASH,
@@ -297,8 +293,7 @@ describe('planMediaRewrite fail-closed', () => {
 
     await expect(
       planMediaRewrite({
-        backend: repo,
-        token,
+        backend,
         concepts: [postsConcept()],
         contentManifest: manifest([manifestEntry({ id: '2026-05-alpha', title: 'Alpha', mediaRefs: [OLD_HASH] })]),
         hash: OLD_HASH,

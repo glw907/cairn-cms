@@ -1,15 +1,13 @@
 // The admin nav-editing routes: the load and save a site's /admin/nav shim calls. A factory closes
-// over the composed runtime and the GitHub token mint, mirroring createContentRoutes, so the read
-// and commit paths are unit-testable against a fetch double with an injected token.
+// over the composed runtime, mirroring createContentRoutes, so the read and commit paths are
+// unit-testable against a fetch double behind an injected Backend.
 import { redirect, error } from '@sveltejs/kit';
-import { appCredentials, type GithubKeyEnv } from '../github/credentials.js';
-import { cachedInstallationToken } from '../github/signing.js';
-import { listMarkdown, readRaw, commitFile } from '../github/repo.js';
 import { isConflict } from '../github/types.js';
 import { log } from '../log/index.js';
 import { parseSiteConfig, extractMenu, validateNavTree, setMenu, type NavNode } from '../nav/site-config.js';
 import { requireSession } from './guard.js';
 import type { CairnRuntime } from '../content/types.js';
+import type { Backend } from '../github/backend.js';
 import type { ContentEvent } from './content-routes.js';
 
 /** One page option for the URL picker datalist. */
@@ -27,29 +25,35 @@ export interface NavLoadData {
   error: string | null;
 }
 
-/** Injectable dependencies; tests stub the token mint to avoid signing a real key. */
+/** Injectable dependencies; a test injects a live `Backend` so the read and commit paths run with no real token mint. */
 export interface NavRoutesDeps {
   /**
-   * Mint a GitHub App installation token from the Worker env. Defaults to the real signer.
-   *  A bare string works too; the routes await whatever comes back.
+   * Override the resolved content backend. A test injects a live `Backend` (a `makeGithubBackend`
+   *  over a fetch double) so the read and commit paths run with no real token mint. When set it
+   *  replaces the per-handler `locals.backend ?? runtime.backend.connect(env)` resolve.
    */
-  mintToken?: (env: GithubKeyEnv) => string | Promise<string>;
+  backend?: Backend;
 }
 
 /**
  *
  */
 export function createNavRoutes(runtime: CairnRuntime, deps: NavRoutesDeps = {}) {
-  const mintToken =
-    deps.mintToken ?? ((env: GithubKeyEnv) => cachedInstallationToken(appCredentials(runtime.backend, env)));
+  /**
+   * Resolve the live content backend for one request: the test seam, then the dev double's
+   *  `event.locals.backend`, then the production `runtime.backend.connect(env)`.
+   */
+  function resolveBackend(event: ContentEvent): Backend {
+    return deps.backend ?? (event.locals as { backend?: Backend }).backend ?? runtime.backend.connect(event.platform?.env ?? {});
+  }
 
   /** List page-like concepts (routable, not dated) for the URL picker. Best-effort per concept. */
-  async function pageOptions(token: string): Promise<NavPageOption[]> {
+  async function pageOptions(backend: Backend): Promise<NavPageOption[]> {
     const pageConcepts = runtime.concepts.filter((c) => c.routing.routable && !c.routing.dated);
     const lists = await Promise.all(
       pageConcepts.map(async (c) => {
         try {
-          const files = await listMarkdown(runtime.backend, c.dir, token);
+          const files = await backend.readEntries(c.dir, backend.defaultBranch);
           return files.map((f): NavPageOption => ({ label: f.id, url: `/${f.id}` }));
         } catch {
           return [];
@@ -67,17 +71,12 @@ export function createNavRoutes(runtime: CairnRuntime, deps: NavRoutesDeps = {})
     const maxDepth = config.maxDepth ?? 2;
     const menu = { name: config.menuName, label: config.label, maxDepth };
 
-    let token: string;
-    try {
-      token = await mintToken(event.platform?.env ?? {});
-    } catch {
-      return { menu, tree: [], pages: [], saved: false, error: 'Could not authenticate with GitHub.' };
-    }
+    const backend = resolveBackend(event);
 
     let tree: NavNode[] = [];
     let raw: string | null = null;
     try {
-      raw = await readRaw(runtime.backend, config.configPath, token);
+      raw = await backend.readFile(config.configPath, backend.defaultBranch);
     } catch {
       // An unreadable config degrades to an empty tree; the first save writes a clean menu.
       raw = null;
@@ -99,7 +98,7 @@ export function createNavRoutes(runtime: CairnRuntime, deps: NavRoutesDeps = {})
     return {
       menu,
       tree,
-      pages: await pageOptions(token),
+      pages: await pageOptions(backend),
       saved: event.url.searchParams.get('saved') === '1',
       error: event.url.searchParams.get('error'),
     };
@@ -121,18 +120,22 @@ export function createNavRoutes(runtime: CairnRuntime, deps: NavRoutesDeps = {})
       throw redirect(303, `/admin/nav?error=${encodeURIComponent(message)}`);
     }
 
-    const token = await mintToken(event.platform?.env ?? {});
-    const raw = await readRaw(runtime.backend, config.configPath, token);
+    const backend = resolveBackend(event);
+    const raw = await backend.readFile(config.configPath, backend.defaultBranch);
     if (raw === null) throw error(404, 'Site config not found');
 
     const commitFields = { concept: 'nav', id: 'site-config', editor: editor.email };
     try {
-      await commitFile(
-        runtime.backend,
-        config.configPath,
-        setMenu(raw, config.menuName, tree),
-        { message: `Update ${config.label.toLowerCase()}`, author: { name: editor.displayName, email: editor.email } },
-        token,
+      // The nav write lands on the default branch and triggers a deploy, so it is fail-closed: pass
+      // the read head as expectedHead, so a concurrent commit to the same config surfaces the
+      // reload-and-reapply prompt below rather than a silent last-writer-wins.
+      const head = await backend.branchHead(backend.defaultBranch);
+      await backend.commit(
+        backend.defaultBranch,
+        [{ path: config.configPath, content: setMenu(raw, config.menuName, tree) }],
+        { name: editor.displayName, email: editor.email },
+        `Update ${config.label.toLowerCase()}`,
+        head ?? undefined,
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {

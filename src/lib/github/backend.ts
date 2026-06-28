@@ -78,6 +78,15 @@ export interface GithubAppProvider extends BackendProvider {
   readonly installationId: string;
 }
 
+/**
+ * Narrow a provider to the GitHub App provider on its `kind` tag. The non-request readers (the
+ * health self-test, the build-time facts) call this before reading the GitHub-specific identity,
+ * since `BackendProvider.kind` is a bare string the compiler cannot narrow on its own.
+ */
+export function isGithubApp(provider: BackendProvider): provider is GithubAppProvider {
+  return provider.kind === 'github-app';
+}
+
 /** The non-secret GitHub App identity an adapter carries in source; the private key stays a Worker secret. */
 interface GithubAppConfig {
   owner: string;

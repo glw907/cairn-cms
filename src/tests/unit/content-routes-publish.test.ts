@@ -3,11 +3,14 @@
 // the manifest row upserted in one commit, and deletes the branch only when its head still
 // matches the commit the action made; discard deletes the branch and routes by main existence.
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { makeGithubBackend } from '../../lib/github/backend.js';
+import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { parseManifest, serializeManifest } from '../../lib/content/manifest.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import { fieldset } from '../../lib/content/fieldset.js';
+const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
 const MANIFEST_PATH = 'src/content/.cairn/index.json';
 const ENTRY_PATH = 'src/content/posts/2026-05-01-hi.md';
@@ -29,7 +32,7 @@ function runtime(): CairnRuntime {
         validate: () => ({ ok: true as const, data: { title: 'Hi' } }),
       },
     ],
-    backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
+    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     sender: { from: 'cms@test' },
     render: (md) => md,
     manifestPath: MANIFEST_PATH,
@@ -73,7 +76,7 @@ function pagesRuntime(): CairnRuntime {
   };
 }
 
-const deps = { mintToken: () => Promise.resolve('test-token') };
+const deps = { backend: makeGithubBackend(REPO, () => Promise.resolve('test-token'))};
 
 function actionEvent(id: string, form: Record<string, string> = {}) {
   return {

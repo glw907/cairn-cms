@@ -6,14 +6,16 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { GithubDouble } from './_github-double.js';
 import { buildUsageIndex } from '../../lib/media/usage.js';
+import { makeGithubBackend } from '../../lib/github/backend.js';
 import { serializeMarkdown } from '../../lib/content/frontmatter.js';
 import type { ConceptDescriptor } from '../../lib/content/types.js';
-import type { RepoRef } from '../../lib/github/types.js';
 import type { Manifest, ManifestEntry } from '../../lib/content/manifest.js';
 import { fieldset } from '../../lib/content/fieldset.js';
 
-const repo: RepoRef = { owner: 'o', repo: 'r', branch: 'main' };
+const repo = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 const token = 'test-token';
+// The helper now takes a live Backend; the GithubDouble still intercepts the same fetch URLs below.
+const backend = makeGithubBackend(repo, () => token);
 
 function postsConcept(): ConceptDescriptor {
   return {
@@ -72,8 +74,7 @@ describe('buildUsageIndex main arm', () => {
     gh.install();
 
     const index = await buildUsageIndex(
-      repo,
-      token,
+      backend,
       [postsConcept()],
       manifest([manifestEntry({ mediaRefs: [PUB_HASH] })]),
     );
@@ -94,8 +95,7 @@ describe('buildUsageIndex main arm', () => {
     gh.install();
 
     const index = await buildUsageIndex(
-      repo,
-      token,
+      backend,
       [postsConcept()],
       manifest([manifestEntry({ mediaRefs: [PUB_HASH] })]),
     );
@@ -117,7 +117,7 @@ describe('buildUsageIndex branch arm', () => {
     });
     gh.install();
 
-    const index = await buildUsageIndex(repo, token, [postsConcept()], manifest([]));
+    const index = await buildUsageIndex(backend, [postsConcept()], manifest([]));
 
     const rows = index.get(BRANCH_HASH);
     expect(rows).toHaveLength(1);
@@ -141,7 +141,7 @@ describe('buildUsageIndex branch arm', () => {
     });
     gh.install();
 
-    const index = await buildUsageIndex(repo, token, [postsConcept()], manifest([]));
+    const index = await buildUsageIndex(backend, [postsConcept()], manifest([]));
 
     expect(index.get(HERO_HASH)?.[0]).toMatchObject({
       id: '2026-05-hero',
@@ -161,7 +161,7 @@ describe('buildUsageIndex branch arm', () => {
     });
     gh.install();
 
-    const index = await buildUsageIndex(repo, token, [postsConcept()], manifest([]));
+    const index = await buildUsageIndex(backend, [postsConcept()], manifest([]));
 
     expect(index.get(DUP_HASH)).toHaveLength(1);
   });
@@ -179,8 +179,7 @@ describe('buildUsageIndex branch arm', () => {
     gh.install();
 
     const index = await buildUsageIndex(
-      repo,
-      token,
+      backend,
       [postsConcept()],
       // A published entry references the same bytes by the bare-hash form.
       manifest([manifestEntry({ id: '2026-05-pub', mediaRefs: [SHARED_HASH] })]),
@@ -203,7 +202,7 @@ describe('buildUsageIndex branch arm', () => {
     });
     gh.install();
 
-    const index = await buildUsageIndex(repo, token, [postsConcept()], manifest([]), {
+    const index = await buildUsageIndex(backend, [postsConcept()], manifest([]), {
       branches: ['cairn/posts/2026-05-draft'],
     });
 
@@ -228,7 +227,7 @@ describe('buildUsageIndex branch arm', () => {
       return realFetch(input, init);
     }));
 
-    const index = await buildUsageIndex(repo, token, [postsConcept()], manifest([]), {
+    const index = await buildUsageIndex(backend, [postsConcept()], manifest([]), {
       branches: ['cairn/posts/2026-05-ok', 'cairn/posts/2026-05-bad'],
     });
 
@@ -252,7 +251,7 @@ describe('buildUsageIndex branch arm', () => {
     }));
 
     await expect(
-      buildUsageIndex(repo, token, [postsConcept()], manifest([]), {
+      buildUsageIndex(backend, [postsConcept()], manifest([]), {
         branches: ['cairn/posts/2026-05-ok', 'cairn/posts/2026-05-bad'],
         strict: true,
       }),
@@ -270,7 +269,7 @@ describe('buildUsageIndex branch arm', () => {
     });
     gh.install();
 
-    const index = await buildUsageIndex(repo, token, [postsConcept()], manifest([]));
+    const index = await buildUsageIndex(backend, [postsConcept()], manifest([]));
 
     expect(index.get(SHARED_HASH)).toBeUndefined();
     // No read was attempted for the unconfigured branch path.

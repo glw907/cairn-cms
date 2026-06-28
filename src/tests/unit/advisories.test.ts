@@ -3,6 +3,7 @@
 // mirrors buildUsageIndex (it unions main's manifest with every open cairn/* branch) and gets a
 // fake-backend smoke test, including the fail-open skip of a branch whose read throws.
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { makeGithubBackend } from '../../lib/github/backend.js';
 import { GithubDouble } from './_github-double.js';
 import {
   addressCollision,
@@ -12,7 +13,6 @@ import {
 } from '../../lib/content/advisories.js';
 import { serializeMarkdown } from '../../lib/content/frontmatter.js';
 import type { ConceptDescriptor } from '../../lib/content/types.js';
-import type { RepoRef } from '../../lib/github/types.js';
 import type { Manifest, ManifestEntry } from '../../lib/content/manifest.js';
 import { fieldset } from '../../lib/content/fieldset.js';
 
@@ -80,8 +80,10 @@ describe('mainAddressIndex', () => {
   });
 });
 
-const repo: RepoRef = { owner: 'o', repo: 'r', branch: 'main' };
+const repo = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 const token = 'test-token';
+// The helper now takes a live Backend; the GithubDouble still intercepts the same fetch URLs below.
+const backend = makeGithubBackend(repo, () => token);
 
 function postsConcept(): ConceptDescriptor {
   return {
@@ -128,8 +130,7 @@ describe('buildAddressIndex', () => {
     gh.install();
 
     const index = await buildAddressIndex(
-      repo,
-      token,
+      backend,
       [postsConcept()],
       manifest([manifestEntry()]),
     );
@@ -160,7 +161,7 @@ describe('buildAddressIndex', () => {
       return realFetch(input, init);
     }));
 
-    const index = await buildAddressIndex(repo, token, [postsConcept()], manifest([]));
+    const index = await buildAddressIndex(backend, [postsConcept()], manifest([]));
 
     // The good branch resolved; the failed read degraded rather than sinking the build.
     expect(index.get('/news/ok')).toHaveLength(1);

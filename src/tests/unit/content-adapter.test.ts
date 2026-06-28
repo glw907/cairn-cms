@@ -1,4 +1,5 @@
 import { describe, it, expect, expectTypeOf } from 'vitest';
+import { githubApp } from '../../lib/index.js';
 import { defineAdapter } from '../../lib/content/adapter.js';
 import { fields } from '../../lib/content/fields.js';
 import { fieldset, type InferFieldset } from '../../lib/content/fieldset.js';
@@ -15,7 +16,7 @@ const adapter = defineAdapter({
       }),
     },
   },
-  backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
+  backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'noreply@test.example' },
   rendering: { render: (md) => md },
 });

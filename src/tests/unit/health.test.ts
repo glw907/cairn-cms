@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { githubApp } from '../../lib/index.js';
 import { healthLoad } from '../../lib/sveltekit/health.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 
@@ -6,7 +7,7 @@ function runtime(): CairnRuntime {
   return {
     siteName: 'T',
     concepts: [],
-    backend: { owner: 'o', repo: 'r', branch: 'main', appId: '123', installationId: '2' },
+    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '123', installationId: '2' }),
     sender: { from: 'cms@test' },
     render: (md) => md,
     manifestPath: 'src/content/.cairn/index.json',

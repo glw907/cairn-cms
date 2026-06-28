@@ -22,7 +22,7 @@ import { createEditorRoutes } from './editors-routes.js';
 import { createNavRoutes, type NavLoadData } from './nav-routes.js';
 import type { AuthBranding, SendMagicLink } from '../email.js';
 import type { AuthEnv, Editor } from '../auth/types.js';
-import type { GithubKeyEnv } from '../github/credentials.js';
+import type { BackendEnv } from '../github/credentials.js';
 import type { CairnRuntime } from '../content/types.js';
 import type { CookieJar, EventBase } from './types.js';
 
@@ -31,20 +31,20 @@ import type { CookieJar, EventBase } from './types.js';
  * (ContentEvent minus params, which the dispatcher synthesizes, plus RequestContext's cookies
  * and setHeaders). A real SvelteKit RequestEvent satisfies it.
  */
-export interface AdminEvent extends EventBase<GithubKeyEnv & AuthEnv> {
+export interface AdminEvent extends EventBase<BackendEnv & AuthEnv> {
   cookies: CookieJar;
   setHeaders(headers: Record<string, string>): void;
 }
 
 /**
  * Injectable dependencies. Branding defaults from the runtime's siteName and sender, so a
- *  site overrides it only to change the magic-link email identity; `send` and `mintToken`
- *  are the same seams the underlying factories take.
+ *  site overrides it only to change the magic-link email identity; `send` is the same seam the
+ *  underlying auth factory takes. The content backend rides `event.locals.backend` (the dev double)
+ *  or the adapter's provider, so it is not a dep here.
  */
 export interface CairnAdminDeps {
   branding?: AuthBranding;
   send?: SendMagicLink;
-  mintToken?: ContentRoutesDeps['mintToken'];
   /**
    * Build the Anthropic client for the tidy action. Forwarded to the content routes; a site that
    *  enables tidy injects a stub here to avoid a real network call. Defaults to the real SDK client.
@@ -83,13 +83,12 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
   };
   const auth = createAuthRoutes({ branding, send: deps.send });
   const content = createContentRoutes(runtime, {
-    mintToken: deps.mintToken,
     anthropic: deps.anthropic,
     tidyTimeoutMs: deps.tidyTimeoutMs,
   });
   const editors = createEditorRoutes();
   // The nav surface exists only when the site configures a menu; without one its view is a 404.
-  const nav = runtime.navMenu ? createNavRoutes(runtime, { mintToken: deps.mintToken }) : null;
+  const nav = runtime.navMenu ? createNavRoutes(runtime) : null;
 
   /**
    * Build the event a wrapped content load reads. The catch-all route carries only a rest
@@ -111,8 +110,8 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
 
   /**
    * Serve the admin view the pathname names, or a 404 for any shape the parser refuses.
-   *  The authed views run the layout load and the view load concurrently; both mint a GitHub
-   *  token, and the installation-token cache coalesces the mints into one signing.
+   *  The authed views run the layout load and the view load concurrently; both resolve the same
+   *  backend, and the installation-token cache coalesces their lazy mints into one signing.
    */
   async function load(event: AdminEvent): Promise<AdminData> {
     const view = parseAdminPath(event.url.pathname, runtime.concepts);

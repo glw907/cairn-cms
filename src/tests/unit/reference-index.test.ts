@@ -4,16 +4,18 @@
 // and extracts its reference edges. The map keys the TARGET pair `${concept}/${id}`, never an id alone,
 // since ids are unique only within a concept.
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { makeGithubBackend } from '../../lib/github/backend.js';
 import { GithubDouble } from './_github-double.js';
 import { buildReferenceIndex } from '../../lib/content/reference-index.js';
 import { serializeMarkdown } from '../../lib/content/frontmatter.js';
 import { fieldset } from '../../lib/content/fieldset.js';
 import type { ConceptDescriptor } from '../../lib/content/types.js';
-import type { RepoRef } from '../../lib/github/types.js';
 import type { Manifest, ManifestEntry } from '../../lib/content/manifest.js';
 
-const repo: RepoRef = { owner: 'o', repo: 'r', branch: 'main' };
+const repo = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 const token = 'test-token';
+// The helper now takes a live Backend; the GithubDouble still intercepts the same fetch URLs below.
+const backend = makeGithubBackend(repo, () => token);
 
 /** A posts concept whose `author` references a pages target and `related` references other posts. */
 function postsConcept(): ConceptDescriptor {
@@ -90,8 +92,7 @@ describe('buildReferenceIndex main arm', () => {
     gh.install();
 
     const index = await buildReferenceIndex(
-      repo,
-      token,
+      backend,
       [postsConcept(), pagesConcept()],
       manifest([
         manifestEntry({
@@ -117,7 +118,7 @@ describe('buildReferenceIndex main arm', () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
 
-    const index = await buildReferenceIndex(repo, token, [postsConcept(), pagesConcept()], manifest([]));
+    const index = await buildReferenceIndex(backend, [postsConcept(), pagesConcept()], manifest([]));
 
     expect(index.get('pages/jane-doe')).toBeUndefined();
   });
@@ -134,8 +135,7 @@ describe('buildReferenceIndex branch arm', () => {
     gh.install();
 
     const index = await buildReferenceIndex(
-      repo,
-      token,
+      backend,
       [postsConcept(), pagesConcept()],
       manifest([]),
     );
@@ -167,7 +167,7 @@ describe('buildReferenceIndex branch arm', () => {
     }));
 
     await expect(
-      buildReferenceIndex(repo, token, [postsConcept(), pagesConcept()], manifest([]), {
+      buildReferenceIndex(backend, [postsConcept(), pagesConcept()], manifest([]), {
         branches: ['cairn/posts/ok', 'cairn/posts/bad'],
         strict: true,
       }),
@@ -190,8 +190,7 @@ describe('buildReferenceIndex branch arm', () => {
     }));
 
     const index = await buildReferenceIndex(
-      repo,
-      token,
+      backend,
       [postsConcept(), pagesConcept()],
       manifest([]),
       { branches: ['cairn/posts/ok', 'cairn/posts/bad'] },
@@ -209,8 +208,7 @@ describe('buildReferenceIndex pair disambiguation', () => {
 
     // A post references posts/about (not pages/about). Both ids are "about".
     const index = await buildReferenceIndex(
-      repo,
-      token,
+      backend,
       [postsConcept(), pagesConcept()],
       manifest([
         manifestEntry({ id: 'about', concept: 'pages', title: 'About page', permalink: '/about' }),

@@ -5,6 +5,8 @@
 // a token-mint failure returns an error string with empty assets, and a read failure returns the
 // assets it could gather with an empty usage overlay rather than a thrown 500.
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { makeGithubBackend } from '../../lib/github/backend.js';
+import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import type { ContentFormFailure, MediaBulkFailure } from '../../lib/sveltekit/content-routes.js';
@@ -15,6 +17,7 @@ import { r2Key } from '../../lib/media/naming.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { ResolvedAssetConfig } from '../../lib/media/config.js';
 import { fieldset } from '../../lib/content/fieldset.js';
+const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
 const MANIFEST_PATH = 'src/content/.cairn/index.json';
 const MEDIA_PATH = 'src/content/.cairn/media.json';
@@ -48,7 +51,7 @@ function runtime(): CairnRuntime {
         validate: () => ({ ok: true as const, data: { title: 'Hi' } }),
       },
     ],
-    backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
+    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     sender: { from: 'cms@test' },
     render: (md) => md,
     manifestPath: MANIFEST_PATH,
@@ -57,7 +60,7 @@ function runtime(): CairnRuntime {
   };
 }
 
-const deps = { mintToken: () => Promise.resolve('test-token') };
+const deps = { backend: makeGithubBackend(REPO, () => Promise.resolve('test-token'))};
 
 const HASH_MAIN = '0000000000000aaa';
 const HASH_BRANCH = '0000000000000bbb';
@@ -213,12 +216,14 @@ describe('mediaLibraryLoad usage overlay', () => {
 describe('mediaLibraryLoad degrade paths', () => {
   it('returns an error and empty assets on a token-mint failure', async () => {
     const routes = createContentRoutes(runtime(), {
-      mintToken: () => {
+      backend: makeGithubBackend(REPO, () => {
         throw new Error('no key');
-      },
+      }),
     });
     const data = await routes.mediaLibraryLoad(libraryEvent() as never);
-    expect(data).toEqual({ assets: [], usage: {}, error: 'Could not authenticate with GitHub.', flash: null, flashError: null });
+    // The token mint is lazy inside the first read now, so a token failure lands in the one
+    // could-not-load-media degrade rather than the old separate auth tier.
+    expect(data).toEqual({ assets: [], usage: {}, error: 'Could not load media.', flash: null, flashError: null });
   });
 });
 

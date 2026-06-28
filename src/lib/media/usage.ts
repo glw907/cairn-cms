@@ -19,10 +19,8 @@
 // is therefore "found in N entries" / "no references found", never a bare "unused": absence of a row
 // means no reference was found, not a proof that none exists.
 import type { ConceptDescriptor } from '../content/types.js';
-import type { RepoRef } from '../github/types.js';
+import type { Backend } from '../github/backend.js';
 import type { Manifest } from '../content/manifest.js';
-import { listBranches } from '../github/branches.js';
-import { readRaw } from '../github/repo.js';
 import { PENDING_PREFIX, parsePendingBranch } from '../content/pending.js';
 import { findConcept } from '../content/concepts.js';
 import { isValidId, filenameFromId } from '../content/ids.js';
@@ -84,8 +82,7 @@ function push(index: UsageIndex, hash: string, entry: UsageEntry): void {
  * (the load path lists once for the media-union) rather than listing them a second time.
  */
 export async function buildUsageIndex(
-  repo: RepoRef,
-  token: string,
+  backend: Backend,
   concepts: ConceptDescriptor[],
   manifest: Manifest,
   opts: BuildUsageOptions = {},
@@ -108,7 +105,7 @@ export async function buildUsageIndex(
 
   // The branch arm: read each open cairn/* branch's one edited file. The path is derivable from the
   // branch name, so no tree-listing is needed. The branch list is reused when the caller passes it.
-  const names = opts.branches ?? (await listBranches(repo, PENDING_PREFIX, token));
+  const names = opts.branches ?? (await backend.listBranches(PENDING_PREFIX));
   // Read the branches in parallel rather than one at a time, so the latency floor is one round trip
   // instead of N. workerd self-throttles to 6 simultaneous outbound connections, so this batch and
   // the load path's media-union batch each stay under the limit; do NOT merge the two into one
@@ -125,7 +122,7 @@ export async function buildUsageIndex(
 
       const path = `${concept.dir}/${filenameFromId(ref.id)}`;
       try {
-        const raw = await readRaw({ ...repo, branch: name }, path, token);
+        const raw = await backend.readFile(path, name);
         if (raw === null) return []; // The file is absent on the branch: nothing to extract.
         const { frontmatter, body } = parseMarkdown(raw);
         const fmTitle = frontmatter.title;

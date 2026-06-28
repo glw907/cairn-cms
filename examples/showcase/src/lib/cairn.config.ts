@@ -1,6 +1,6 @@
 // The showcase's adapter: the single seam the engine consumes. It declares one post-like concept,
 // a render that runs the engine pipeline, and a backend the dev GitHub double answers for.
-import { createRenderer, defineRegistry, defineComponent, fieldset, fields, defineAdapter, defineConcept, glyph, parseSiteConfig } from '@glw907/cairn-cms';
+import { createRenderer, defineRegistry, defineComponent, fieldset, fields, defineAdapter, defineConcept, githubApp, glyph, parseSiteConfig } from '@glw907/cairn-cms';
 import { cardShell, headRow, iconSpan, strAttr } from '@glw907/cairn-cms/render';
 import { normalizeAssets, makeMediaResolver, readCommittedManifest } from '@glw907/cairn-cms/media';
 import type { IconSet } from '@glw907/cairn-cms';
@@ -161,7 +161,7 @@ export const cairn = defineAdapter({
       }),
     }),
   },
-  backend: { owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' },
+  backend: githubApp({ owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'cms@showcase.test' },
   // The media R2 binding. The fake R2 double rides platform.env in dev; a real site binds it in
   // wrangler.jsonc and mounts the /media delivery route.

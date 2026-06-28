@@ -2,6 +2,7 @@
 // minimal Pages form. Shared across the content-model unit tests so the field shapes
 // match what the editor and the validator rely on.
 import type { CairnAdapter, NamedField } from '../../lib/content/types.js';
+import { githubApp } from '../../lib/index.js';
 import type { Fieldset } from '../../lib/content/fieldset.js';
 import type { SiteConfig } from '../../lib/nav/site-config.js';
 import { fields } from '../../lib/content/fields.js';
@@ -44,7 +45,7 @@ export const testAdapter: CairnAdapter = {
       fields: pageFieldset,
     },
   },
-  backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
+  backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'noreply@test.example' },
   rendering: { render: (md) => md },
 };

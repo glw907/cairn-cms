@@ -35,7 +35,7 @@ export { parseAdminPath, type AdminView } from './admin-dispatch.js';
 export { createCairnAdmin, type CairnAdminDeps, type AdminData } from './cairn-admin.js';
 export { healthLoad, type HealthData } from './health.js';
 export type { RequestContext, CookieJar, HandleInput } from './types.js';
-// Re-exported here, not from root, so the public ContentRoutesDeps consumer can name it.
-export type { GithubKeyEnv } from '../github/credentials.js';
+// Re-exported here, not from root, so the consumer's app.d.ts Platform block can name it.
+export type { BackendEnv } from '../github/credentials.js';
 // Re-exported here, not just from root, so the app.d.ts Platform block can name it.
 export type { AuthEnv } from '../auth/types.js';

@@ -9,6 +9,7 @@
 // boundary to the editor form.
 import type { ComponentRegistry } from '../render/registry.js';
 import type { IconSet } from '../render/glyph.js';
+import type { BackendProvider } from '../github/backend.js';
 import type { DatePrefix } from './ids.js';
 import type { Fieldset } from './fieldset.js';
 import type { FieldDescriptor } from './fields.js';
@@ -94,16 +95,6 @@ export interface ConceptConfig<S extends Fieldset = Fieldset> {
 export interface ConceptUrlPolicy {
   permalink?: string;
   datePrefix?: DatePrefix;
-}
-
-/** The GitHub App backend a site reads from and commits to (spec §8). Plain data the GitHub engine (Plan 03) consumes. */
-export interface BackendConfig {
-  owner: string;
-  repo: string;
-  /** Commit target, e.g. "main". */
-  branch: string;
-  appId: string;
-  installationId: string;
 }
 
 /** Magic-link sender identity for Cloudflare Email Sending. */
@@ -196,8 +187,8 @@ export interface AssetConfig {
 export interface CairnAdapter {
   /** The site's concepts, keyed by id. Posts and pages are the documented defaults; a site may add more. */
   content: Record<string, ConceptConfig>;
-  /** The commit backend (the GitHub App today). */
-  backend: BackendConfig;
+  /** The commit backend provider, from `githubApp({ ... })` (the GitHub App today). */
+  backend: BackendProvider;
   /** The magic-link sender. */
   email: SenderConfig;
   /** The render subsystem: the one renderer, its directive vocabulary, and its icons. */
@@ -344,7 +335,8 @@ export interface CairnExtension {
 export interface CairnRuntime {
   siteName: string;
   concepts: ConceptDescriptor[];
-  backend: BackendConfig;
+  /** The commit backend provider, carried through from the adapter by `composeRuntime`. */
+  backend: BackendProvider;
   sender: SenderConfig;
   /** The support contact passed through from the adapter; the in-admin help reads it. Optional. */
   supportContact?: string;

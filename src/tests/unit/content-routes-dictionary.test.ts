@@ -6,6 +6,8 @@
 // conflict re-reads the new head, re-merges (order-independent), and retries once. The response is the
 // merged word list so the client reconciles its pending additions; a refusal rides a fail envelope.
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { makeGithubBackend } from '../../lib/github/backend.js';
+import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import type { DictionaryAddResult, DictionaryAddFailure } from '../../lib/sveltekit/content-routes.js';
@@ -13,6 +15,7 @@ import { parseDictionary, serializeDictionary } from '../../lib/content/site-dic
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { CookieJar } from '../../lib/sveltekit/types.js';
 import { fieldset } from '../../lib/content/fieldset.js';
+const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
 const DICT_PATH = 'src/content/.cairn/dictionary.txt';
 const CSRF = 'csrf-token-value-0123456789abcdef';
@@ -28,7 +31,7 @@ function runtime(over: Partial<CairnRuntime> = {}): CairnRuntime {
         permalink: '/posts/:slug', datePrefix: 'day', fields: [], schema: fieldset({}), summaryFields: [], validate: ok,
       },
     ],
-    backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
+    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     sender: { from: 'cms@test' },
     render: (md) => md,
     manifestPath: 'src/content/.cairn/index.json',
@@ -39,7 +42,7 @@ function runtime(over: Partial<CairnRuntime> = {}): CairnRuntime {
   };
 }
 
-const deps = { mintToken: () => Promise.resolve('test-token') };
+const deps = { backend: makeGithubBackend(REPO, () => Promise.resolve('test-token'))};
 
 function cookieJar(csrf: string | undefined): CookieJar {
   return {

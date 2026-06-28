@@ -5,11 +5,14 @@
 // in-memory GithubDouble so the manifest read, the branch cut, and the entry commit are real, and read
 // the warning off the success redirect's query string the way the editor surface does.
 import { describe, it, expect, afterEach, vi } from 'vitest';
+import { makeGithubBackend } from '../../lib/github/backend.js';
+import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from '../unit/_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import { fieldset } from '../../lib/content/fieldset.js';
 import { fields } from '../../lib/content/fields.js';
+const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
 const MANIFEST_PATH = 'src/content/.cairn/index.json';
 const POST_PATH = 'src/content/posts/my-post.md';
@@ -48,7 +51,7 @@ function runtime(): CairnRuntime {
         validate: () => ({ ok: true, data: {} }),
       },
     ],
-    backend: { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' },
+    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     sender: { from: 'cms@test' },
     render: (md) => md,
     manifestPath: MANIFEST_PATH,
@@ -57,7 +60,7 @@ function runtime(): CairnRuntime {
   } as CairnRuntime;
 }
 
-const deps = { mintToken: () => Promise.resolve('test-token') };
+const deps = { backend: makeGithubBackend(REPO, () => Promise.resolve('test-token'))};
 
 /** A save POST for posts/my-post setting `title` and an `author` reference id. */
 function saveEvent(author: string) {

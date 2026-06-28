@@ -13,11 +13,10 @@ import { deriveExcerpt } from '../content/excerpt.js';
 import { asString, entryIdentity } from '../content/identity.js';
 import { buildAddressIndex, mainAddressIndex, addressCollision, type AdvisoryNotice, type AddressEntry } from '../content/advisories.js';
 import { isValidId, slugify, filenameFromId, composeDatedId, slugFromId, renameId } from '../content/ids.js';
-import { appCredentials, type GithubKeyEnv } from '../github/credentials.js';
-import { listMarkdown, readRaw, commitFile, commitFiles, type FileChange } from '../github/repo.js';
-import { branchHeadSha, createBranch, deleteBranch, listBranches } from '../github/branches.js';
+import type { BackendEnv } from '../github/credentials.js';
+import type { Backend } from '../github/backend.js';
+import type { FileChange } from '../github/repo.js';
 import { PENDING_PREFIX, pendingBranch, parsePendingBranch } from '../content/pending.js';
-import { cachedInstallationToken } from '../github/signing.js';
 import { emptyManifest, manifestEntryFromFile, parseManifest, serializeManifest, upsertEntry, removeEntry, inboundLinks, inboundReferences, type Manifest, type LinkTarget, type InboundLink } from '../content/manifest.js';
 import { deriveGettingStarted, type GettingStarted } from '../content/getting-started.js';
 import { markdownReference, type MarkdownReferenceRow } from '../components/markdown-reference.js';
@@ -302,7 +301,7 @@ export interface HelpData {
 }
 
 /** The structural event the content routes read; a real SvelteKit RequestEvent satisfies it. */
-export interface ContentEvent extends EventBase<GithubKeyEnv> {
+export interface ContentEvent extends EventBase<BackendEnv> {
   params: Record<string, string>;
   /**
    * SvelteKit's cookie jar. The layout load reads the persisted admin theme and issues the CSRF
@@ -342,10 +341,12 @@ export interface TidyClient {
 
 export interface ContentRoutesDeps {
   /**
-   * Mint a GitHub App installation token from the Worker env. Defaults to the real signer.
-   *  A bare string works too; the routes await whatever comes back.
+   * Override the resolved content backend. A test injects a live `Backend` (a `makeGithubBackend`
+   *  over a fetch double, or an in-memory fake) so the read and commit paths run with no real token
+   *  mint. When set it replaces the per-handler `locals.backend ?? runtime.backend.connect(env)`
+   *  resolve; a production caller leaves it unset and the dev double rides `event.locals.backend`.
    */
-  mintToken?: (env: GithubKeyEnv) => string | Promise<string>;
+  backend?: Backend;
   /**
    * Build the Anthropic client for the tidy action from the resolved API key. Defaults to the real
    *  SDK client. Injected in tests so `messages.create` is stubbed and no network call (or real key)
@@ -659,8 +660,15 @@ function conceptOf(runtime: CairnRuntime, params: Record<string, string>): Conce
  *
  */
 export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDeps = {}) {
-  const mintToken =
-    deps.mintToken ?? ((env: GithubKeyEnv) => cachedInstallationToken(appCredentials(runtime.backend, env)));
+  /**
+   * Resolve the live content backend for one request. A test seam (`deps.backend`) wins, then the
+   *  dev double's `event.locals.backend`, then the production `runtime.backend.connect(env)`. The
+   *  GitHub provider mints and caches its installation token lazily behind `connect`, so a
+   *  per-request resolve re-signs only on a cache miss.
+   */
+  function resolveBackend(event: ContentEvent): Backend {
+    return deps.backend ?? (event.locals as { backend?: Backend }).backend ?? runtime.backend.connect(event.platform?.env ?? {});
+  }
 
   // The default Anthropic factory builds the real SDK client from the resolved key. Tests inject a fake
   // (deps.anthropic) so messages.create is stubbed and no network call or real key is ever needed. The
@@ -673,8 +681,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
    * Main's manifest, parsed. A missing file starts empty (a fresh repo before the first commit).
    *  Always read from main: pending branches carry no manifest copy.
    */
-  async function readManifest(token: string): Promise<Manifest> {
-    const raw = await readRaw(runtime.backend, runtime.manifestPath, token);
+  async function readManifest(backend: Backend): Promise<Manifest> {
+    const raw = await backend.readFile(runtime.manifestPath, backend.defaultBranch);
     return raw === null ? emptyManifest() : parseManifest(raw);
   }
 
@@ -722,8 +730,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     // than failing the whole admin shell or showing a wrong publish-all count.
     let pendingEntries: { concept: string; id: string }[] | null = null;
     try {
-      const token = await mintToken(event.platform?.env ?? {});
-      const names = await listBranches(runtime.backend, PENDING_PREFIX, token);
+      const backend = resolveBackend(event);
+      const names = await backend.listBranches(PENDING_PREFIX);
       pendingEntries = names.flatMap((name) => {
         const entry = pendingEntryOf(name);
         return entry ? [{ concept: entry.concept.id, id: entry.id }] : [];
@@ -756,9 +764,9 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     let manifest = emptyManifest();
     let pending: { concept: string; id: string }[] = [];
     try {
-      const token = await mintToken(event.platform?.env ?? {});
-      manifest = await readManifest(token);
-      const names = await listBranches(runtime.backend, PENDING_PREFIX, token);
+      const backend = resolveBackend(event);
+      manifest = await readManifest(backend);
+      const names = await backend.listBranches(PENDING_PREFIX);
       pending = names.flatMap((name) => {
         const entry = pendingEntryOf(name);
         return entry ? [{ concept: entry.concept.id, id: entry.id }] : [];
@@ -786,12 +794,12 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
    */
   async function summarize(
     file: { id: string; path: string },
-    token: string,
+    backend: Backend,
     status: EntrySummary['status'],
-    repo = runtime.backend,
+    ref = backend.defaultBranch,
   ): Promise<EntrySummary> {
     try {
-      const raw = await readRaw(repo, file.path, token);
+      const raw = await backend.readFile(file.path, ref);
       if (raw === null) return { id: file.id, title: file.id, date: null, draft: false, status, summary: null };
       const { frontmatter, body } = parseMarkdown(raw);
       const title = typeof frontmatter.title === 'string' && frontmatter.title.trim() ? frontmatter.title : file.id;
@@ -810,26 +818,23 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
    *  in the list instead of reading as a lost save. summarize degrades a failed or empty read to
    *  an id-only row, so a ghost ref still lists.
    */
-  function pendingRow(concept: ConceptDescriptor, id: string, status: EntrySummary['status'], token: string): Promise<EntrySummary> {
-    return summarize({ id, path: `${concept.dir}/${filenameFromId(id)}` }, token, status, {
-      ...runtime.backend,
-      branch: pendingBranch(concept.id, id),
-    });
+  function pendingRow(concept: ConceptDescriptor, id: string, status: EntrySummary['status'], backend: Backend): Promise<EntrySummary> {
+    return summarize({ id, path: `${concept.dir}/${filenameFromId(id)}` }, backend, status, pendingBranch(concept.id, id));
   }
 
   /**
    * The per-file crawl, kept only for a repo with no committed manifest yet: list main's files
    *  and read each one for its row, with edited and new rows reading branch-first.
    */
-  async function crawlEntries(concept: ConceptDescriptor, pendingIds: Set<string>, token: string): Promise<EntrySummary[]> {
-    const files = await listMarkdown(runtime.backend, concept.dir, token);
+  async function crawlEntries(concept: ConceptDescriptor, pendingIds: Set<string>, backend: Backend): Promise<EntrySummary[]> {
+    const files = await backend.readEntries(concept.dir, backend.defaultBranch);
     const entries = await Promise.all(
-      files.map((f) => (pendingIds.has(f.id) ? pendingRow(concept, f.id, 'edited', token) : summarize(f, token, 'published'))),
+      files.map((f) => (pendingIds.has(f.id) ? pendingRow(concept, f.id, 'edited', backend) : summarize(f, backend, 'published'))),
     );
     // A ref with no main file is a never-published entry; its row reads from its branch.
     const listed = new Set(files.map((f) => f.id));
     const newRows = await Promise.all(
-      [...pendingIds].filter((id) => !listed.has(id)).map((id) => pendingRow(concept, id, 'new', token)),
+      [...pendingIds].filter((id) => !listed.has(id)).map((id) => pendingRow(concept, id, 'new', backend)),
     );
     return [...entries, ...newRows];
   }
@@ -849,16 +854,11 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     const publishedAllRaw = event.url.searchParams.get('publishedAll');
     const publishedAll = publishedAllRaw !== null && /^\d+$/.test(publishedAllRaw) ? Number(publishedAllRaw) : null;
     const base = { conceptId: concept.id, label: concept.label, singular: concept.singular, dated: concept.routing.dated, formError, publishedAll };
-    let token: string;
-    try {
-      token = await mintToken(event.platform?.env ?? {});
-    } catch {
-      return { ...base, entries: [], error: 'Could not authenticate with GitHub.' };
-    }
+    const backend = resolveBackend(event);
     try {
       const [manifestRaw, refs] = await Promise.all([
-        readRaw(runtime.backend, runtime.manifestPath, token),
-        listBranches(runtime.backend, `${PENDING_PREFIX}${concept.id}/`, token),
+        backend.readFile(runtime.manifestPath, backend.defaultBranch),
+        backend.listBranches(`${PENDING_PREFIX}${concept.id}/`),
       ]);
       const pendingIds = new Set(
         refs.flatMap((name) => {
@@ -869,7 +869,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       // A repo with no committed manifest yet (a fresh site before its first publish) falls back
       // to the crawl; a manifest that parses but is empty is trusted as-is.
       if (manifestRaw === null) {
-        return { ...base, entries: await crawlEntries(concept, pendingIds, token), error: null };
+        return { ...base, entries: await crawlEntries(concept, pendingIds, backend), error: null };
       }
       // Newest id first, the same order the crawl's file listing produced.
       const rows = parseManifest(manifestRaw)
@@ -878,13 +878,13 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       const entries = await Promise.all(
         rows.map((e) =>
           pendingIds.has(e.id)
-            ? pendingRow(concept, e.id, 'edited', token)
+            ? pendingRow(concept, e.id, 'edited', backend)
             : { id: e.id, title: e.title, date: e.date ?? null, draft: e.draft, status: 'published' as const, summary: e.summary ?? null },
         ),
       );
       const listed = new Set(rows.map((e) => e.id));
       const newRows = await Promise.all(
-        [...pendingIds].filter((id) => !listed.has(id)).map((id) => pendingRow(concept, id, 'new', token)),
+        [...pendingIds].filter((id) => !listed.has(id)).map((id) => pendingRow(concept, id, 'new', backend)),
       );
       return { ...base, entries: [...entries, ...newRows], error: null };
     } catch {
@@ -913,30 +913,27 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     else if (event.url.searchParams.get('bulkDeleted') === '1') flash = 'bulkDeleted';
     else if (event.url.searchParams.get('orphansPurged') === '1') flash = 'orphansPurged';
     const flashError = event.url.searchParams.get('error');
-    let token: string;
-    try {
-      token = await mintToken(event.platform?.env ?? {});
-    } catch {
-      return { assets: [], usage: {}, error: 'Could not authenticate with GitHub.', flash, flashError };
-    }
+    const backend = resolveBackend(event);
 
     // Union the media manifest by hash: main's rows first, then any branch hash not already present.
     // Identical bytes share one row, so a hash on both branches prefers main's row. A failed or
     // absent branch read degrades to no rows for that branch (the tolerant parse yields {} on null).
     // The branch list is taken ONCE here and handed to buildUsageIndex below, so the load path does
     // not enumerate the open branches twice (the per-page subrequest budget is tight at ~25+ branches).
+    // The token mint is now lazy inside the first read, so a token or a network failure both land in
+    // this one degrade rather than the old separate could-not-authenticate tier.
     const union = new Map<string, MediaEntry>();
     let branchNames: string[] = [];
     try {
-      const mediaRaw = await readRaw(runtime.backend, runtime.mediaManifestPath, token);
+      const mediaRaw = await backend.readFile(runtime.mediaManifestPath, backend.defaultBranch);
       for (const [hash, e] of Object.entries(parseMediaManifest(parseMediaJson(mediaRaw)))) {
         union.set(hash, e);
       }
-      const names = await listBranches(runtime.backend, PENDING_PREFIX, token);
+      const names = await backend.listBranches(PENDING_PREFIX);
       branchNames = names;
       const branchManifests = await Promise.all(
         names.map((name) =>
-          readRaw({ ...runtime.backend, branch: name }, runtime.mediaManifestPath, token)
+          backend.readFile(runtime.mediaManifestPath, name)
             .then((raw) => parseMediaManifest(parseMediaJson(raw)))
             .catch(() => ({}) as Record<string, MediaEntry>),
         ),
@@ -957,11 +954,11 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     // here keeps the asset list intact with an empty overlay, since the screen still lists assets.
     let usage: Record<string, MediaUsageInfo> = {};
     try {
-      const manifestRaw = await readRaw(runtime.backend, runtime.manifestPath, token);
+      const manifestRaw = await backend.readFile(runtime.manifestPath, backend.defaultBranch);
       const manifest = manifestRaw === null ? emptyManifest() : parseManifest(manifestRaw);
       // Reuse the branch list from the media-union above; the Library DISPLAY keeps the default
       // best-effort behavior (a failed branch read degrades that one branch, not the screen).
-      const index = await buildUsageIndex(runtime.backend, token, runtime.concepts, manifest, { branches: branchNames });
+      const index = await buildUsageIndex(backend, runtime.concepts, manifest, { branches: branchNames });
       for (const [hash, entries] of index) {
         usage[hash] = { count: distinctEntryCount(entries), entries };
       }
@@ -993,11 +990,11 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       id = composeDatedId(date, slug, concept.datePrefix);
     }
 
-    const token = await mintToken(event.platform?.env ?? {});
-    const existing = await readRaw(runtime.backend, `${concept.dir}/${filenameFromId(id)}`, token);
+    const backend = resolveBackend(event);
+    const existing = await backend.readFile(`${concept.dir}/${filenameFromId(id)}`, backend.defaultBranch);
     if (existing !== null) return bounce('An entry with that slug already exists.');
     // A pending branch is an entry too (saved but not yet published); refuse to clobber it.
-    if ((await branchHeadSha(runtime.backend, pendingBranch(concept.id, id), token)) !== null) {
+    if ((await backend.branchHead(pendingBranch(concept.id, id))) !== null) {
       return bounce('An unpublished entry with that slug already exists.');
     }
 
@@ -1011,7 +1008,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     const id = event.params.id ?? '';
     if (!isValidId(id)) throw error(400, 'Invalid entry id');
     const isNew = event.url.searchParams.get('new') === '1';
-    const token = await mintToken(event.platform?.env ?? {});
+    const backend = resolveBackend(event);
     const datePrefix = concept.routing.dated ? concept.datePrefix : null;
     const path = `${concept.dir}/${filenameFromId(id)}`;
     // A pending entry reads branch-first: the editor shows the unpublished edits. The manifest
@@ -1028,16 +1025,16 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     // rejected read degrades to null so the edit never throws on a missing or unreadable dictionary;
     // the projection below treats null as an empty word list (the editor falls back to dialect-only).
     const [headSha, mainRaw, manifestRaw, mediaRaw, dictionaryRaw] = await Promise.all([
-      branchHeadSha(runtime.backend, branch, token),
-      readRaw(runtime.backend, path, token),
-      readRaw(runtime.backend, runtime.manifestPath, token),
+      backend.branchHead(branch),
+      backend.readFile(path, backend.defaultBranch),
+      backend.readFile(runtime.manifestPath, backend.defaultBranch),
       runtime.resolvedAssets.enabled
-        ? readRaw(runtime.backend, runtime.mediaManifestPath, token).catch(() => null)
+        ? backend.readFile(runtime.mediaManifestPath, backend.defaultBranch).catch(() => null)
         : Promise.resolve(null),
-      readRaw(runtime.backend, dictionaryFilePath(), token).catch(() => null),
+      backend.readFile(dictionaryFilePath(), backend.defaultBranch).catch(() => null),
     ]);
     const pending = headSha !== null;
-    const raw = pending ? await readRaw({ ...runtime.backend, branch }, path, token) : mainRaw;
+    const raw = pending ? await backend.readFile(path, branch) : mainRaw;
     if (raw === null && !isNew) throw error(404, 'Entry not found');
     const published = mainRaw !== null;
 
@@ -1204,7 +1201,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     draftLinks: string[];
     /** The absent-or-draft reference targets, for save's non-blocking reference warning. */
     referenceWarnings: string[];
-    token: string;
+    /** The backend this save resolved, so publish reuses it without a second resolve. */
+    backend: Backend;
     /**
      * The merged media.json change this save committed to the branch, when media is on and the
      *  post carried records. Publish reuses it verbatim so the main commit promotes the exact same
@@ -1240,7 +1238,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     }
 
     const markdown = serializeMarkdown(result.data, body);
-    const token = await mintToken(event.platform?.env ?? {});
+    const backend = resolveBackend(event);
 
     // Merge the editor's optimistic media records into the media manifest, gated on media being on
     // and at least one valid record posted. The base is read from the default branch (never the
@@ -1252,7 +1250,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     if (runtime.resolvedAssets.enabled) {
       const records = parseMediaEntries(form.get('media'));
       if (records.length > 0) {
-        const baseRaw = await readRaw(runtime.backend, runtime.mediaManifestPath, token);
+        const baseRaw = await backend.readFile(runtime.mediaManifestPath, backend.defaultBranch);
         let mediaManifest = parseMediaManifest(parseMediaJson(baseRaw));
         for (const record of records) {
           mediaManifest = upsertMediaEntry(mediaManifest, record);
@@ -1263,7 +1261,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
 
     // Upsert this entry's row into main's manifest in memory, for the link guard here and for
     // the publish commit. The save commits no manifest change; publish lands the upsert on main.
-    const manifest = await readManifest(token);
+    const manifest = await readManifest(backend);
     const row = manifestEntryFromFile(concept, { path, raw: markdown });
     const upserted = upsertEntry(manifest, row);
 
@@ -1308,27 +1306,29 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     // commit only the entry file there. Main stays untouched until publish, so the branch differs
     // from main at exactly this entry's path.
     const branch = pendingBranch(concept.id, id);
-    if ((await branchHeadSha(runtime.backend, branch, token)) === null) {
-      const mainHead = await branchHeadSha(runtime.backend, runtime.backend.branch, token);
+    if ((await backend.branchHead(branch)) === null) {
+      // The default-branch head read distinguishes a first save from a re-save; a null is the
+      // unreadable-default-branch case the create cannot recover from, so fail with the 500.
+      const mainHead = await backend.branchHead(backend.defaultBranch);
       if (mainHead === null) throw error(500, 'Cannot read the default branch');
-      await createBranch(runtime.backend, branch, mainHead, token);
+      await backend.createBranch(branch, backend.defaultBranch);
     }
 
     const commitFields = { concept: concept.id, id, editor: editor.email, branch };
     let branchSha: string;
     try {
-      branchSha = await commitFiles(
-        { ...runtime.backend, branch },
+      branchSha = await backend.commit(
+        branch,
         mediaChange ? [{ path, content: markdown }, mediaChange] : [{ path, content: markdown }],
-        { message: `Update ${concept.label.toLowerCase()}: ${id}`, author: { name: editor.displayName, email: editor.email } },
-        token,
+        { name: editor.displayName, email: editor.email },
+        `Update ${concept.label.toLowerCase()}: ${id}`,
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
       commitFailure(commitFields, err, `/admin/${concept.id}/${id}`,
         'This file changed since you opened it. Reload and reapply your edits.', { query: suffix });
     }
-    return { path, markdown, branch, branchSha, manifest: upserted, draftLinks, referenceWarnings, token, mediaChange };
+    return { path, markdown, branch, branchSha, manifest: upserted, draftLinks, referenceWarnings, backend, mediaChange };
   }
 
   /**
@@ -1367,7 +1367,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     if (!isValidId(id)) throw error(400, 'Invalid entry id');
     const held = await saveToBranch(event, editor, concept, id);
     if (!('branchSha' in held)) return held;
-    const { path, markdown, branch, branchSha, manifest, token, mediaChange } = held;
+    const { path, markdown, branch, branchSha, manifest, backend, mediaChange } = held;
 
     // The publish commit reuses the exact merged media.json saveToBranch already built (decision 1:
     // no re-read or re-merge here). Promote it to main alongside the body and the content manifest
@@ -1387,7 +1387,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     try {
       const { frontmatter } = parseMarkdown(markdown);
       address = entryIdentity(concept, path, frontmatter).permalink;
-      const addressIndex = await buildAddressIndex(runtime.backend, token, runtime.concepts, manifest);
+      const addressIndex = await buildAddressIndex(backend, runtime.concepts, manifest);
       collision = addressCollision(addressIndex, { concept: concept.id, id }, address);
     } catch (err) {
       // Fail open, the same as editLoad: a thrown index build degrades to no event and the publish
@@ -1398,11 +1398,11 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
 
     const commitFields = { concept: concept.id, id, editor: editor.email };
     try {
-      await commitFiles(
-        runtime.backend,
+      await backend.commit(
+        backend.defaultBranch,
         changes,
-        { message: `Publish ${concept.label.toLowerCase()}: ${id}`, author: { name: editor.displayName, email: editor.email } },
-        token,
+        { name: editor.displayName, email: editor.email },
+        `Publish ${concept.label.toLowerCase()}: ${id}`,
       );
       log.info('entry.published', { ...commitFields, batch: false });
       // Only after the publish lands: a diagnostic that a live address now has a new owner.
@@ -1422,8 +1422,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     // Only after the main commit lands, and only when the branch head is still the commit this
     // action made: a head that moved is a concurrent save, and deleting it would destroy edits.
     // No log event for the skip; the pending badge is the surface.
-    if ((await branchHeadSha(runtime.backend, branch, token)) === branchSha) {
-      await deleteBranch(runtime.backend, branch, token);
+    if ((await backend.branchHead(branch)) === branchSha) {
+      await backend.deleteBranch(branch);
     }
     throw redirect(303, `/admin/${concept.id}/${id}?published=1`);
   }
@@ -1438,12 +1438,12 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     const editor = requireSession(event);
     const first = runtime.concepts[0];
     if (!first) throw error(404, 'No content types configured');
-    const token = await mintToken(event.platform?.env ?? {});
+    const backend = resolveBackend(event);
     const listPage = `/admin/${first.id}`;
 
     // Each cairn/ ref names a pending entry; the shared predicate skips a stray ref rather
     // than failing the whole batch on it.
-    const names = await listBranches(runtime.backend, PENDING_PREFIX, token);
+    const names = await backend.listBranches(PENDING_PREFIX);
     const pending = names.flatMap((name) => {
       const entry = pendingEntryOf(name);
       return entry ? [{ ...entry, branch: name, path: `${entry.concept.dir}/${filenameFromId(entry.id)}` }] : [];
@@ -1456,15 +1456,15 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     // clean it up); it carries nothing to publish.
     const reads = await Promise.all(
       pending.map(async (entry) => {
-        const sha = await branchHeadSha(runtime.backend, entry.branch, token);
-        const raw = await readRaw({ ...runtime.backend, branch: entry.branch }, entry.path, token);
+        const sha = await backend.branchHead(entry.branch);
+        const raw = await backend.readFile(entry.path, entry.branch);
         return { ...entry, sha, raw };
       }),
     );
 
     // Fold main's manifest once over every row, so the batch lands content and index together,
     // the same shape as a single publish.
-    let next = await readManifest(token);
+    let next = await readManifest(backend);
     const changes: FileChange[] = [];
     const published: { concept: string; id: string; branch: string; sha: string }[] = [];
     for (const entry of reads) {
@@ -1481,11 +1481,11 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
 
     const noun = published.length === 1 ? 'entry' : 'entries';
     try {
-      await commitFiles(
-        runtime.backend,
+      await backend.commit(
+        backend.defaultBranch,
         changes,
-        { message: `Publish ${published.length} ${noun}`, author: { name: editor.displayName, email: editor.email } },
-        token,
+        { name: editor.displayName, email: editor.email },
+        `Publish ${published.length} ${noun}`,
       );
       for (const entry of published) {
         log.info('entry.published', { concept: entry.concept, id: entry.id, editor: editor.email, batch: true });
@@ -1509,8 +1509,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     // abort the remaining deletes.
     for (const entry of published) {
       try {
-        if ((await branchHeadSha(runtime.backend, entry.branch, token)) === entry.sha) {
-          await deleteBranch(runtime.backend, entry.branch, token);
+        if ((await backend.branchHead(entry.branch)) === entry.sha) {
+          await backend.deleteBranch(entry.branch);
         }
       } catch {
         // The entry is live; the straggler just shows as still pending until the next publish.
@@ -1528,12 +1528,12 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     const concept = conceptOf(runtime, event.params);
     const id = event.params.id ?? '';
     if (!isValidId(id)) throw error(400, 'Invalid entry id');
-    const token = await mintToken(event.platform?.env ?? {});
+    const backend = resolveBackend(event);
 
-    await deleteBranch(runtime.backend, pendingBranch(concept.id, id), token);
+    await backend.deleteBranch(pendingBranch(concept.id, id));
     log.info('entry.discarded', { concept: concept.id, id, editor: editor.email });
 
-    const onMain = await readRaw(runtime.backend, `${concept.dir}/${filenameFromId(id)}`, token);
+    const onMain = await backend.readFile(`${concept.dir}/${filenameFromId(id)}`, backend.defaultBranch);
     if (onMain !== null) throw redirect(303, `/admin/${concept.id}/${id}?discarded=1`);
     throw redirect(303, `/admin/${concept.id}`);
   }
@@ -1552,11 +1552,11 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     editor: Editor,
   ): Promise<ReturnType<typeof fail> | never> {
     const path = `${concept.dir}/${filenameFromId(id)}`;
-    const token = await mintToken(event.platform?.env ?? {});
+    const backend = resolveBackend(event);
 
     // An absent manifest degrades the inbound gate to "allow": with no manifest there is nothing to
     // check, and the build's cairn: backstop still catches any dangling token, mirroring saveAction.
-    const manifest = await readManifest(token);
+    const manifest = await readManifest(backend);
     const inbound = inboundLinks(manifest, concept.id, id);
     if (inbound.length) {
       return fail(409, {
@@ -1573,7 +1573,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     // inbound edge held in an unpublished draft, so refuse with a 503 rather than proceed.
     let refIndex: Awaited<ReturnType<typeof buildReferenceIndex>>;
     try {
-      refIndex = await buildReferenceIndex(runtime.backend, token, runtime.concepts, manifest, { strict: true });
+      refIndex = await buildReferenceIndex(backend, runtime.concepts, manifest, { strict: true });
     } catch {
       return fail(503, {
         error: 'Could not verify where this entry is referenced. Try again.',
@@ -1602,9 +1602,9 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     // When the entry was never published (absent from main), the branch delete is the whole
     // operation; main has nothing to commit, so the only honest log record is the discard of
     // the pending edits.
-    const onMain = await readRaw(runtime.backend, path, token);
+    const onMain = await backend.readFile(path, backend.defaultBranch);
     if (onMain === null) {
-      await deleteBranch(runtime.backend, pendingBranch(concept.id, id), token);
+      await backend.deleteBranch(pendingBranch(concept.id, id));
       log.info('entry.discarded', { concept: concept.id, id, editor: editor.email });
       throw redirect(303, `/admin/${concept.id}`);
     }
@@ -1612,14 +1612,14 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     const nextManifest = serializeManifest(removeEntry(manifest, concept.id, id));
     const commitFields = { concept: concept.id, id, editor: editor.email };
     try {
-      await commitFiles(
-        runtime.backend,
+      await backend.commit(
+        backend.defaultBranch,
         [
           { path, content: null },
           { path: runtime.manifestPath, content: nextManifest },
         ],
-        { message: `Delete ${concept.label.toLowerCase()}: ${id}`, author: { name: editor.displayName, email: editor.email } },
-        token,
+        { name: editor.displayName, email: editor.email },
+        `Delete ${concept.label.toLowerCase()}: ${id}`,
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
@@ -1631,7 +1631,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     // recoverable (it lists as a never-published row a discard can clean up), matching
     // publish's posture, so the entry's deletion still completes.
     try {
-      await deleteBranch(runtime.backend, pendingBranch(concept.id, id), token);
+      await backend.deleteBranch(pendingBranch(concept.id, id));
     } catch {
       // The entry is gone from main; the straggler shows as a pending row until discarded.
     }
@@ -1668,11 +1668,11 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     const concept = conceptOf(runtime, event.params);
     const id = event.params.id ?? '';
     if (!isValidId(id)) throw error(400, 'Invalid entry id');
-    const token = await mintToken(event.platform?.env ?? {});
+    const backend = resolveBackend(event);
 
     // Pending edits on the branch are keyed to the old id; renaming underneath them would strand
     // them, so refuse until the editor publishes or discards.
-    if ((await branchHeadSha(runtime.backend, pendingBranch(concept.id, id), token)) !== null) {
+    if ((await backend.branchHead(pendingBranch(concept.id, id))) !== null) {
       return fail(409, { error: 'This entry has unpublished edits. Publish or discard them, then rename.' } satisfies RenameFailure);
     }
 
@@ -1695,14 +1695,14 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     // Collision guard: refuse if a file already exists at the new path. This 409 covers two cases a
     // single readRaw cannot tell apart: a static collision with an existing entry, and a
     // concurrent-rename race where another editor renamed onto this path between load and submit.
-    const clobber = await readRaw(runtime.backend, newPath, token);
+    const clobber = await backend.readFile(newPath, backend.defaultBranch);
     if (clobber !== null) {
       return fail(409, { error: 'An entry with that slug already exists.' } satisfies RenameFailure);
     }
 
     const [entryRaw, manifest] = await Promise.all([
-      readRaw(runtime.backend, oldPath, token),
-      readManifest(token),
+      backend.readFile(oldPath, backend.defaultBranch),
+      readManifest(backend),
     ]);
     if (entryRaw === null) throw error(404, 'Entry not found');
 
@@ -1711,7 +1711,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     // rather than rename a still-referenced target and strand the inbound edge.
     let refIndex: Awaited<ReturnType<typeof buildReferenceIndex>>;
     try {
-      refIndex = await buildReferenceIndex(runtime.backend, token, runtime.concepts, manifest, { strict: true });
+      refIndex = await buildReferenceIndex(backend, runtime.concepts, manifest, { strict: true });
     } catch {
       return fail(409, { error: 'Could not verify references. Try again.' } satisfies RenameFailure);
     }
@@ -1789,7 +1789,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     for (const [linkerPath, repoint] of repoints) {
       const linkerConcept = findConcept(runtime.concepts, repoint.concept);
       if (!linkerConcept) continue;
-      let linkerRaw = await readRaw(runtime.backend, linkerPath, token);
+      let linkerRaw = await backend.readFile(linkerPath, backend.defaultBranch);
       if (linkerRaw === null) continue;
       if (repoint.hasLink) linkerRaw = rewriteCairnLink(linkerRaw, oldHref, newHref);
       for (const field of repoint.fields) {
@@ -1803,11 +1803,11 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
 
     const commitFields = { concept: concept.id, id: newId, editor: editor.email };
     try {
-      await commitFiles(
-        runtime.backend,
+      await backend.commit(
+        backend.defaultBranch,
         changes,
-        { message: `Rename ${concept.label.toLowerCase()}: ${id} to ${newId}`, author: { name: editor.displayName, email: editor.email } },
-        token,
+        { name: editor.displayName, email: editor.email },
+        `Rename ${concept.label.toLowerCase()}: ${id} to ${newId}`,
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
@@ -1979,7 +1979,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
    */
   async function mediaDeleteAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
     const editor = requireSession(event);
-    const token = await mintToken(event.platform?.env ?? {});
+    const backend = resolveBackend(event);
 
     const form = await event.request.formData();
     const hash = String(form.get('hash') ?? '');
@@ -1987,7 +1987,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
 
     // The asset must be committed on the default branch to be deletable here. A branch-only upload
     // (the common 2b case before publish) has no main row; removing it is a discard of the draft.
-    const manifest = parseMediaManifest(parseMediaJson(await readRaw(runtime.backend, runtime.mediaManifestPath, token)));
+    const manifest = parseMediaManifest(parseMediaJson(await backend.readFile(runtime.mediaManifestPath, backend.defaultBranch)));
     const row = manifest[hash];
     if (!row) {
       return fail(404, {
@@ -2004,7 +2004,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     // make a still-referenced asset look orphaned and skip the typed-slug confirm.
     let index: Awaited<ReturnType<typeof buildUsageIndex>>;
     try {
-      index = await buildUsageIndex(runtime.backend, token, runtime.concepts, await readManifest(token), { strict: true });
+      index = await buildUsageIndex(backend, runtime.concepts, await readManifest(backend), { strict: true });
     } catch {
       // Fail closed: we could not verify every place the asset is used, so refuse rather than risk
       // deleting bytes a branch still references.
@@ -2054,11 +2054,11 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     // Commit the manifest row removal FIRST. The order is load-bearing (see the docstring).
     const commitFields = { concept: 'media', id: hash, editor: editor.email };
     try {
-      await commitFiles(
-        runtime.backend,
+      await backend.commit(
+        backend.defaultBranch,
         [{ path: runtime.mediaManifestPath, content: serializeMediaManifest(removeMediaEntry(manifest, hash)) }],
-        { message: `Delete media: ${row.slug}`, author: { name: editor.displayName, email: editor.email } },
-        token,
+        { name: editor.displayName, email: editor.email },
+        `Delete media: ${row.slug}`,
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
@@ -2094,7 +2094,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
    */
   async function mediaBulkDelete(event: ContentEvent): Promise<ReturnType<typeof fail> | MediaBulkDeleteResult> {
     const editor = requireSession(event);
-    const token = await mintToken(event.platform?.env ?? {});
+    const backend = resolveBackend(event);
 
     // Read the selected hashes from the form. Accept the repeated `hash` field, falling back to a JSON
     // `hashes` array. Each value must match the 16-hex content-hash grammar; a malformed value is
@@ -2115,7 +2115,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     const selected = raw.filter((h) => MEDIA_HASH_RE.test(h));
 
     // Read the fresh media manifest (the deletable rows come from here, by hash).
-    const manifest = parseMediaManifest(parseMediaJson(await readRaw(runtime.backend, runtime.mediaManifestPath, token)));
+    const manifest = parseMediaManifest(parseMediaJson(await backend.readFile(runtime.mediaManifestPath, backend.defaultBranch)));
 
     // Resolve the R2 bucket before any write, so a media-off site or a missing binding refuses before
     // the commit, exactly like single delete.
@@ -2135,7 +2135,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     // mistaking a still-referenced asset for an orphan. Build exactly one index, never one per item.
     let index: Awaited<ReturnType<typeof buildUsageIndex>>;
     try {
-      index = await buildUsageIndex(runtime.backend, token, runtime.concepts, await readManifest(token), { strict: true });
+      index = await buildUsageIndex(backend, runtime.concepts, await readManifest(backend), { strict: true });
     } catch {
       return fail(503, { error: 'Could not verify where these assets are used. Try again.' } satisfies MediaBulkFailure);
     }
@@ -2152,11 +2152,11 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     for (const hash of plan.deletable) next = removeMediaEntry(next, hash);
     const commitFields = { concept: 'media', id: 'bulk', editor: editor.email };
     try {
-      await commitFiles(
-        runtime.backend,
+      await backend.commit(
+        backend.defaultBranch,
         [{ path: runtime.mediaManifestPath, content: serializeMediaManifest(next) }],
-        { message: `Delete ${plan.deletable.length} media assets`, author: { name: editor.displayName, email: editor.email } },
-        token,
+        { name: editor.displayName, email: editor.email },
+        `Delete ${plan.deletable.length} media assets`,
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
@@ -2202,7 +2202,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
    */
   async function mediaOrphanScan(event: ContentEvent): Promise<ReturnType<typeof fail> | OrphanScan> {
     requireSession(event);
-    const token = await mintToken(event.platform?.env ?? {});
+    const backend = resolveBackend(event);
 
     // Resolve the R2 binding. The reconcile lists the raw bucket directly, so keep the raw binding;
     // the MediaStore seam carries no list. A media-off site or a missing binding refuses the scan.
@@ -2217,7 +2217,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     }
 
     // Read the fresh media manifest for the reconcile's manifest side.
-    const manifest = parseMediaManifest(parseMediaJson(await readRaw(runtime.backend, runtime.mediaManifestPath, token)));
+    const manifest = parseMediaManifest(parseMediaJson(await backend.readFile(runtime.mediaManifestPath, backend.defaultBranch)));
 
     // THE detection-time fail-closed surface. The reconcile (an R2 list that must complete in full)
     // and the strict usage build (a branch read that must complete in full) are both unsafe to use
@@ -2227,7 +2227,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     let index: Awaited<ReturnType<typeof buildUsageIndex>>;
     try {
       reconcile = await runReconcile(rawBucket as unknown as ReconcileBucket, manifest);
-      index = await buildUsageIndex(runtime.backend, token, runtime.concepts, await readManifest(token), { strict: true });
+      index = await buildUsageIndex(backend, runtime.concepts, await readManifest(backend), { strict: true });
     } catch {
       return fail(503, { error: 'Could not check where files are used, so the scan was not run. Try again.' } satisfies MediaBulkFailure);
     }
@@ -2264,7 +2264,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
    */
   async function mediaPurgeOrphans(event: ContentEvent): Promise<ReturnType<typeof fail> | MediaOrphanPurgeResult> {
     const editor = requireSession(event);
-    const token = await mintToken(event.platform?.env ?? {});
+    const backend = resolveBackend(event);
 
     // Resolve the R2 binding, the same media-off / missing-binding refusals as the scan. The purge
     // deletes through the MediaStore seam, so wrap the raw binding.
@@ -2291,7 +2291,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     }
 
     // Re-derive fresh against the current manifest, so a key claimed since the scan is never purged.
-    const manifest = parseMediaManifest(parseMediaJson(await readRaw(runtime.backend, runtime.mediaManifestPath, token)));
+    const manifest = parseMediaManifest(parseMediaJson(await backend.readFile(runtime.mediaManifestPath, backend.defaultBranch)));
 
     // THE fail-closed gate for the whole batch: one shared strict cross-branch usage index, symmetric
     // with the scan and the bulk delete. STRICT mode rethrows a branch-read failure, so a transient
@@ -2299,7 +2299,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     // treated as a true orphan. Build exactly one index, never one per key.
     let index: Awaited<ReturnType<typeof buildUsageIndex>>;
     try {
-      index = await buildUsageIndex(runtime.backend, token, runtime.concepts, await readManifest(token), { strict: true });
+      index = await buildUsageIndex(backend, runtime.concepts, await readManifest(backend), { strict: true });
     } catch {
       return fail(503, { error: 'Could not verify where these files are used. Try again.' } satisfies MediaBulkFailure);
     }
@@ -2342,13 +2342,13 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
    */
   async function mediaUpdateAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
     const editor = requireSession(event);
-    const token = await mintToken(event.platform?.env ?? {});
+    const backend = resolveBackend(event);
 
     const form = await event.request.formData();
     const hash = String(form.get('hash') ?? '');
     if (!MEDIA_HASH_RE.test(hash)) throw error(400, 'Invalid media hash');
 
-    const manifest = parseMediaManifest(parseMediaJson(await readRaw(runtime.backend, runtime.mediaManifestPath, token)));
+    const manifest = parseMediaManifest(parseMediaJson(await backend.readFile(runtime.mediaManifestPath, backend.defaultBranch)));
     const row = manifest[hash];
     if (!row) {
       return fail(404, { error: 'That asset is not committed.' } satisfies MediaUpdateFailure);
@@ -2364,11 +2364,11 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     const edited: MediaEntry = { ...row, displayName: displayName || slug, slug, alt };
     const commitFields = { concept: 'media', id: hash, editor: editor.email };
     try {
-      await commitFiles(
-        runtime.backend,
+      await backend.commit(
+        backend.defaultBranch,
         [{ path: runtime.mediaManifestPath, content: serializeMediaManifest(upsertMediaEntry(manifest, edited)) }],
-        { message: `Update media: ${edited.slug}`, author: { name: editor.displayName, email: editor.email } },
-        token,
+        { name: editor.displayName, email: editor.email },
+        `Update media: ${edited.slug}`,
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
@@ -2425,8 +2425,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       return fail(400, { error: 'Invalid media hash.', hash: oldHash, usage: [], foundIn: 0 } satisfies MediaReplaceFailure);
     }
 
-    const token = await mintToken(event.platform?.env ?? {});
-    const contentManifest = await readManifest(token);
+    const backend = resolveBackend(event);
+    const contentManifest = await readManifest(backend);
     const newToken = replacementToken(slug, newHash);
 
     // Plan the rewrite. The planner runs buildUsageIndex in STRICT mode, so an unverifiable branch read
@@ -2435,8 +2435,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     let plan: Awaited<ReturnType<typeof planMediaRewrite<RepointPlacement>>>;
     try {
       plan = await planMediaRewrite<RepointPlacement>({
-        backend: runtime.backend,
-        token,
+        backend,
         concepts: runtime.concepts,
         contentManifest,
         hash: oldHash,
@@ -2485,7 +2484,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
    */
   async function mediaReplaceApply(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
     const editor = requireSession(event);
-    const token = await mintToken(event.platform?.env ?? {});
+    const backend = resolveBackend(event);
 
     const form = await event.request.formData();
     const oldHash = String(form.get('oldHash') ?? '');
@@ -2507,7 +2506,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
 
     // The old asset must be committed on main to be replaceable here. A branch-only upload has no main
     // row; it is replaced by editing its draft, not here.
-    const manifest = parseMediaManifest(parseMediaJson(await readRaw(runtime.backend, runtime.mediaManifestPath, token)));
+    const manifest = parseMediaManifest(parseMediaJson(await backend.readFile(runtime.mediaManifestPath, backend.defaultBranch)));
     const row = manifest[oldHash];
     if (!row) {
       return fail(404, {
@@ -2534,10 +2533,9 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     let plan: Awaited<ReturnType<typeof planMediaRewrite<RepointPlacement>>>;
     try {
       plan = await planMediaRewrite<RepointPlacement>({
-        backend: runtime.backend,
-        token,
+        backend,
         concepts: runtime.concepts,
-        contentManifest: await readManifest(token),
+        contentManifest: await readManifest(backend),
         hash: oldHash,
         transform: (md) => repointMediaRef(md, oldHash, newToken),
       });
@@ -2569,11 +2567,11 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
 
     const commitFields = { concept: 'media', id: oldHash, editor: editor.email };
     try {
-      await commitFiles(
-        runtime.backend,
+      await backend.commit(
+        backend.defaultBranch,
         changes,
-        { message: `Replace media: ${row.slug}`, author: { name: editor.displayName, email: editor.email } },
-        token,
+        { name: editor.displayName, email: editor.email },
+        `Replace media: ${row.slug}`,
       );
       log.info('media.replaced', { editor: editor.email, oldHash, newHash, affected: plan.affectedCount });
     } catch (err) {
@@ -2615,10 +2613,10 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       return fail(400, { error: 'Invalid media hash.' } satisfies MediaAltPropagateFailure);
     }
 
-    const token = await mintToken(event.platform?.env ?? {});
+    const backend = resolveBackend(event);
     // The default alt to propagate is the asset's manifest row value (set via mediaUpdateAction). An
     // asset with no committed row has no default alt to push, so refuse.
-    const mediaManifest = parseMediaManifest(parseMediaJson(await readRaw(runtime.backend, runtime.mediaManifestPath, token)));
+    const mediaManifest = parseMediaManifest(parseMediaJson(await backend.readFile(runtime.mediaManifestPath, backend.defaultBranch)));
     const row = mediaManifest[hash];
     if (!row) {
       return fail(404, { error: 'That asset is not committed.' } satisfies MediaAltPropagateFailure);
@@ -2626,12 +2624,11 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
 
     // Plan the fill. The planner runs strict, so an unverifiable branch read throws out of here; catch
     // it and fail closed, the same posture replace and delete take.
-    const contentManifest = await readManifest(token);
+    const contentManifest = await readManifest(backend);
     let plan: Awaited<ReturnType<typeof planMediaRewrite<AltPlacement>>>;
     try {
       plan = await planMediaRewrite<AltPlacement>({
-        backend: runtime.backend,
-        token,
+        backend,
         concepts: runtime.concepts,
         contentManifest,
         hash,
@@ -2676,7 +2673,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
    */
   async function mediaAltApply(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
     const editor = requireSession(event);
-    const token = await mintToken(event.platform?.env ?? {});
+    const backend = resolveBackend(event);
 
     const form = await event.request.formData();
     const hash = String(form.get('hash') ?? '');
@@ -2684,7 +2681,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     // The opt-in to also overwrite customized alts; absent (the default) leaves custom alts alone.
     const overwrite = form.get('overwrite') === 'on' || form.get('overwrite') === 'true';
 
-    const mediaManifest = parseMediaManifest(parseMediaJson(await readRaw(runtime.backend, runtime.mediaManifestPath, token)));
+    const mediaManifest = parseMediaManifest(parseMediaJson(await backend.readFile(runtime.mediaManifestPath, backend.defaultBranch)));
     const row = mediaManifest[hash];
     if (!row) {
       return fail(404, { error: 'That asset is not committed.' } satisfies MediaAltPropagateFailure);
@@ -2700,10 +2697,9 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     let plan: Awaited<ReturnType<typeof planMediaRewrite<AltPlacement>>>;
     try {
       plan = await planMediaRewrite<AltPlacement>({
-        backend: runtime.backend,
-        token,
+        backend,
         concepts: runtime.concepts,
-        contentManifest: await readManifest(token),
+        contentManifest: await readManifest(backend),
         hash,
         transform: (md) => fillAltForHash(md, hash, row.alt, { overwrite }),
       });
@@ -2720,11 +2716,11 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     const changes: FileChange[] = changed.map((e) => ({ path: e.path, content: e.newMarkdown }));
     const commitFields = { concept: 'media', id: hash, editor: editor.email };
     try {
-      await commitFiles(
-        runtime.backend,
+      await backend.commit(
+        backend.defaultBranch,
         changes,
-        { message: `Propagate alt: ${row.slug}`, author: { name: editor.displayName, email: editor.email } },
-        token,
+        { name: editor.displayName, email: editor.email },
+        `Propagate alt: ${row.slug}`,
       );
       log.info('media.alt_propagated', { editor: editor.email, hash, overwrite, written: changed.length });
     } catch (err) {
@@ -2751,24 +2747,24 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
    *  the canonical file back. Shared by the first attempt and the post-conflict retry, so both re-read
    *  the head and re-merge the same additions; the merge is order-independent, so a concurrent editor's
    *  word that already landed is preserved and the result is the same sorted set regardless of order.
-   *  Returns the merged word list. Throws CommitConflictError (via commitFiles) when the branch moves
-   *  under the commit, which the caller catches to retry once.
+   *  Returns the merged word list. Throws CommitConflictError (via backend.commit) when the branch
+   *  moves under the commit, which the caller catches to retry once.
    */
-  async function mergeAndCommitDictionary(token: string, additions: string[], editor: Editor): Promise<string[]> {
+  async function mergeAndCommitDictionary(backend: Backend, additions: string[], editor: Editor): Promise<string[]> {
     const path = dictionaryFilePath();
     // The existing file as its canonical sorted set, so a no-op add is detected against the same
     // normalization the commit would write (an already-sorted file never re-commits just to reorder).
-    const canonicalExisting = mergeDictionaryWords(parseDictionary(await readRaw(runtime.backend, path, token)), []);
+    const canonicalExisting = mergeDictionaryWords(parseDictionary(await backend.readFile(path, backend.defaultBranch)), []);
     const merged = mergeDictionaryWords(canonicalExisting, additions);
     // Nothing new (every addition was already present): skip the commit so an idempotent add never
     // pushes an empty commit that would redeploy the site. The merged set is still returned so the
     // client reconciles its pending additions away.
     if (merged.length === canonicalExisting.length) return merged;
-    await commitFiles(
-      runtime.backend,
+    await backend.commit(
+      backend.defaultBranch,
       [{ path, content: serializeDictionary(merged) }],
-      { message: `Add to dictionary: ${additions.join(', ')}`, author: { name: editor.displayName, email: editor.email } },
-      token,
+      { name: editor.displayName, email: editor.email },
+      `Add to dictionary: ${additions.join(', ')}`,
     );
     return merged;
   }
@@ -2821,8 +2817,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
   /**
    * Save the editor-tier tidy conventions: validate the posted block, then read-modify-commit it into
    *  the same committed YAML the nav editor writes, with the session editor as author. The transport is
-   *  the nav save's exactly: a form POST carrying the conventions JSON, the read-modify-commit through
-   *  `commitFile`, and a stale-SHA `isConflict` bounced back as a reload prompt. Only the conventions
+   *  the nav save's exactly: a form POST carrying the conventions JSON, a head-guarded
+   *  `backend.commit`, and a stale-head `isConflict` bounced back as a reload prompt. Only the conventions
    *  block is written (setTidy leaves `tidy.enabled` and `tidy.model` untouched), so an editor's save can
    *  never flip the developer-tier deploy facts. The save refuses before any commit when tidy is not
    *  enabled, so the gate state's absent editor tier can never be saved past.
@@ -2843,20 +2839,24 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     }
 
     const path = siteConfigPath();
-    const token = await mintToken(event.platform?.env ?? {});
-    const raw = await readRaw(runtime.backend, path, token);
+    const backend = resolveBackend(event);
+    const raw = await backend.readFile(path, backend.defaultBranch);
     if (raw === null) throw error(404, 'Site config not found');
     // Parse first so a malformed file fails before the write rather than committing onto a broken base.
     parseSiteConfig(raw);
 
     const commitFields = { concept: 'settings', id: 'tidy', editor: editor.email };
     try {
-      await commitFile(
-        runtime.backend,
-        path,
-        setTidy(raw, conventions),
-        { message: 'Update tidy settings', author: { name: editor.displayName, email: editor.email } },
-        token,
+      // The settings write lands on the default branch and triggers a deploy, so it is fail-closed:
+      // pass the read head as expectedHead, so a concurrent commit to the same config surfaces the
+      // reload-and-reapply prompt below rather than a silent last-writer-wins.
+      const head = await backend.branchHead(backend.defaultBranch);
+      await backend.commit(
+        backend.defaultBranch,
+        [{ path, content: setTidy(raw, conventions) }],
+        { name: editor.displayName, email: editor.email },
+        'Update tidy settings',
+        head ?? undefined,
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
@@ -2879,7 +2879,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
    *  `{ words }`. It reads the current file from the default branch, inserts the validated words in
    *  sorted order if absent (idempotent), and commits through the GitHub-App pipeline.
    *
-   *  The commit is SHA-guarded with commit-and-retry: commitFiles throws CommitConflictError when the
+   *  The commit is SHA-guarded with commit-and-retry: backend.commit throws CommitConflictError when the
    *  branch moved under it, which is caught here to re-read the new head, re-merge the same additions
    *  (the sorted insert is order-independent, so a concurrent editor's word is preserved), and retry
    *  once. The response is the merged word list, so the client drops the now-committed words from its
@@ -2916,10 +2916,10 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       return fail(400, { error: 'No valid word to add to the dictionary.' } satisfies DictionaryAddFailure);
     }
 
-    const token = await mintToken(event.platform?.env ?? {});
+    const backend = resolveBackend(event);
     const commitFields = { concept: 'dictionary', id: additions[0]!, editor: editor.email };
     try {
-      const words = await mergeAndCommitDictionary(token, additions, editor);
+      const words = await mergeAndCommitDictionary(backend, additions, editor);
       log.info('dictionary.added', { editor: editor.email, words: additions });
       return { words };
     } catch (err) {
@@ -2928,7 +2928,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       // retry once. The merge is order-independent, so a concurrent editor's word that landed in the
       // window is preserved and the two adds converge on the same sorted set.
       try {
-        const words = await mergeAndCommitDictionary(token, additions, editor);
+        const words = await mergeAndCommitDictionary(backend, additions, editor);
         log.info('dictionary.added', { editor: editor.email, words: additions, retried: true });
         return { words };
       } catch (retryErr) {
@@ -3058,7 +3058,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     return { corrected, model: message.model, usage: message.usage };
   }
 
-  return { layoutLoad, helpLoad, indexRedirect, listLoad, mediaLibraryLoad, settingsLoad, settingsSave, createAction, editLoad, saveAction, publishAction, publishAllAction, discardAction, deleteAction, listDeleteAction, renameAction, uploadAction, mediaDeleteAction, mediaBulkDelete, mediaOrphanScan, mediaPurgeOrphans, mediaUpdateAction, mediaReplacePreview, mediaReplaceApply, mediaAltPreview, mediaAltApply, addDictionaryWord, tidyAction, mintToken };
+  return { layoutLoad, helpLoad, indexRedirect, listLoad, mediaLibraryLoad, settingsLoad, settingsSave, createAction, editLoad, saveAction, publishAction, publishAllAction, discardAction, deleteAction, listDeleteAction, renameAction, uploadAction, mediaDeleteAction, mediaBulkDelete, mediaOrphanScan, mediaPurgeOrphans, mediaUpdateAction, mediaReplacePreview, mediaReplaceApply, mediaAltPreview, mediaAltApply, addDictionaryWord, tidyAction };
 }
 
 /**

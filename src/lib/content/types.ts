@@ -9,6 +9,7 @@
 // boundary to the editor form.
 import type { ComponentRegistry } from '../render/registry.js';
 import type { IconSet } from '../render/glyph.js';
+import type { IslandRegistry } from '../islands/types.js';
 import type { BackendProvider } from '../github/backend.js';
 import type { DatePrefix } from './ids.js';
 import type { Fieldset } from './fieldset.js';
@@ -219,6 +220,13 @@ export interface CairnAdapter {
     components?: ComponentRegistry;
     /** The site's glyph name to SVG path-data map, for the admin icon picker and the renderer. */
     icons?: IconSet;
+    /**
+     * The live Svelte components for hydrated directives, keyed by directive name (phase 4b islands).
+     *  Every component whose {@link ComponentDef.hydrate} is set needs an entry here, and every entry
+     *  needs a matching `hydrate` component; `defineAdapter` checks both. Absent leaves the site
+     *  static, and the island client runtime is never imported.
+     */
+    islands?: IslandRegistry;
   };
   /** R2-backed media (seam 4): the bucket binding and image variants. Absent leaves media off. */
   media?: AssetConfig;

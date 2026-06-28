@@ -70,8 +70,17 @@ interface Backend {
   /** Branch names under a prefix, sorted. (Was listBranches.) */
   listBranches(prefix: string): Promise<string[]>;
 
-  /** Commit a set of path changes atomically on a branch; returns the new commit sha. (Was commitFiles.) */
-  commit(branch: string, changes: FileChange[], author: CommitAuthor, message: string): Promise<string>;
+  /** Commit a set of path changes atomically on a branch; returns the new commit sha. (Was commitFiles.)
+   *  When `expectedHead` is given, the commit is fail-closed: it does not retry on a moved head and
+   *  throws CommitConflictError if the branch head is not `expectedHead`. Omitting it keeps the
+   *  head-merge retry the entry and publish paths rely on. */
+  commit(
+    branch: string,
+    changes: FileChange[],
+    author: CommitAuthor,
+    message: string,
+    expectedHead?: string,
+  ): Promise<string>;
 
   /** Create a branch at another branch's head. (Was createBranch, which took a resolved sha.) */
   createBranch(name: string, fromBranch: string): Promise<void>;
@@ -103,12 +112,32 @@ Each delta is forced by the code, not a preference.
   head is unmoved) both need a branch's head sha.
 - **`createBranch` takes a source branch, not a sha.** The current free function takes a resolved
   `fromSha` the caller fetches first. Moving the head resolution inside `createBranch` removes a caller
-  round-trip and matches the interface's by-name vocabulary.
+  round-trip and matches the interface's by-name vocabulary. The save path's current explicit failure
+  when the default branch is unreadable (a `null` head becomes a 500 "Cannot read the default branch")
+  must survive: `createBranch` throws a defined error when `fromBranch` has no head, and the save path
+  keeps its `branchHead(defaultBranch)` read (it needs the head anyway to tell a first save from a
+  re-save) and maps a null to that same 500.
 - **`commitFile` (single, contents API) is retired into `commit`.** The single-file YAML write the nav
-  editor uses goes through the batch path, which also upgrades it from the contents-API sha-409 to the
-  Git Data head non-fast-forward retry, so a concurrent nav edit is preserved rather than lost.
-- **`ref` is required on reads.** No implicit "current branch". The cross-branch usage index reads each
-  open `cairn/*` branch by name, and an explicit ref means nothing reads the wrong branch by accident.
+  editor uses goes through the batch path. This needs care, because the contents-API path the nav editor
+  uses today **detects** a same-file race: it passes the file's sha, a concurrent write to the same nav
+  config returns a 409, and the editor is told to reload and reapply. The batch path's head-merge retry
+  does **not** reproduce that: it rebuilds the tree on the new head and re-commits the editor's
+  stale-based content, so a same-file race would be a silent last-writer-wins, a regression on a write
+  that lands on the default branch and triggers a deploy. The fix is the optional `expectedHead` on
+  `commit`: the nav save reads the branch head, passes it, and a moved head fails closed with
+  `CommitConflictError`, preserving the existing reload-and-reapply prompt. The guard is head-based
+  rather than file-sha-based, so it is slightly stricter (a concurrent commit to an unrelated path also
+  trips it), which is safe and acceptable for the owner-only, low-concurrency nav edit. The entry and
+  publish paths omit `expectedHead` and keep the merge-retry.
+- **`ref` is required on reads, and a read is always authenticated.** No implicit "current branch": the
+  cross-branch usage index reads each open `cairn/*` branch by name, and an explicit ref means nothing
+  reads the wrong branch by accident. The `token?` parameter `readRaw`/`listMarkdown` carry for
+  anonymous public-repo reads is dropped; the token is always present behind `connect`. No build or
+  delivery path reads token-less (the build is git-local), so this removes an unused degree of freedom.
+- **The commit method preserves three behaviors `commitFiles` has today:** it rejects an empty change
+  set (an empty commit would trigger a deploy for no content change), maps a 422 tree-create to
+  `CommitConflictError`, and throws `CommitConflictError` after the retry budget. The in-memory double
+  mirrors the empty-set rejection so the publish e2e exercises the same contract.
 
 ## Construction: a provider the adapter holds
 
@@ -118,7 +147,7 @@ one given the env.
 
 ```ts
 interface BackendProvider {
-  /** A stable tag for the implementation, e.g. "github-app". For diagnostics and the doctor. */
+  /** A stable tag for the implementation, e.g. "github-app". The non-request readers narrow on it. */
   readonly kind: string;
   /** The default branch, surfaced before connect() so compose-time code can read it. */
   readonly branch: string;
@@ -127,26 +156,49 @@ interface BackendProvider {
   connect(env: BackendEnv): Backend;
 }
 
+/** The secret carrier connect() reads. Reuses GithubKeyEnv's shape; the in-memory backend ignores it. */
+interface BackendEnv {
+  GITHUB_APP_PRIVATE_KEY_B64?: string;
+}
+
+/** What githubApp() returns: the generic provider plus the GitHub App's non-secret identity facts. */
+interface GithubAppProvider extends BackendProvider {
+  readonly kind: 'github-app';
+  readonly owner: string;
+  readonly repo: string;
+  readonly appId: string;
+  readonly installationId: string;
+}
+
 function githubApp(config: {
   owner: string;
   repo: string;
   branch: string;
   appId: string;
   installationId: string;
-}): BackendProvider;
+}): GithubAppProvider;
 ```
 
 The adapter's `backend` field changes from a plain `{ owner, repo, branch, appId, installationId }`
 object to `backend: githubApp({ ... })`, a one-line consumer change. `appId` and `installationId` stay
 non-secret config carried in the adapter source; the private key stays the Worker secret, read inside
-`connect` and never in the adapter. `composeRuntime` carries the provider as `runtime.backend`.
+`connect` (and never in the adapter), keeping `appCredentials`' missing-secret `CairnError` contract.
+`composeRuntime` carries the provider as `runtime.backend`, typed `BackendProvider`.
 
 `connect(env)` is cheap: it returns a `Backend` whose methods mint the installation token on first use
 and reuse the existing module-level token cache (`cachedInstallationToken`). The cache and the RS256
-signing path are unchanged; they move behind the interface, not away.
+signing path are unchanged; they move behind the interface, not away. The token cache stays keyed by app
+identity, so a per-request `connect` re-signs only on a cache miss, not on every call.
 
-This provider shape is also what serves `cairn-doctor`, which connects from `process.env` rather than a
-Worker `platform.env`, and it is the shape a future `gitlab(...)` or `gitea(...)` returns.
+The provider exposes the GitHub App's non-secret identity (`owner`, `repo`, `appId`, `installationId`)
+because three readers outside the request path need it, covered next. These fields are inherently
+GitHub-specific; a future `gitlab(...)` or `gitea(...)` returns its own provider type with its own
+identity, and the GitHub-aware readers narrow on `kind === 'github-app'` before reading them.
+
+The doctor does **not** call `connect`. It keeps its own three-stage uncached reachability probe; what
+it shares with the provider is the identity config surface and the underlying signing path, not the live
+`Backend`. The earlier claim that the provider shape "serves the doctor" overstated the fit; the honest
+relationship is the shared config surface.
 
 ## How the engine reaches the backend
 
@@ -172,6 +224,47 @@ RS256 signer. With the interface, a test injects a fake `Backend` and asserts ag
 (`(event.locals as { backend?: Backend }).backend`). A production consumer never sets it and never
 declares it; only the dev double does. This keeps the consumer's type surface unchanged.
 
+`devBackendHandle` sets `locals.backend` only on the paths it already augments (`/admin` and `/media`),
+which are exactly the paths that call the backend. On any other path `locals.backend` is absent and the
+engine would fall back to `runtime.backend.connect(env)`, but no other path calls the backend, so the
+narrowing from the old blanket `fetch` patch to per-path injection is behavior-preserving. This is the
+one place the design trades the patch's global reach for explicit injection, and the trade is sound
+because the backend's call surface is confined to those two route trees.
+
+## Non-request readers of the backend identity
+
+Three readers touch the backend identity outside a request, where `locals.backend` cannot reach. Each
+is a GitHub-specific diagnostic, so each narrows on `kind === 'github-app'` and reads the provider's
+identity fields:
+
+- **The build-time adapter facts.** `vite/index.ts`'s `adapterFactsSource` evaluates the adapter in a
+  virtual module at build time and reads `backend.owner` and `backend.repo` to feed the doctor's
+  zero-config repo derivation. It reads them off the `GithubAppProvider` after the kind narrow.
+- **The signing self-test.** `sveltekit/health.ts` calls `signingSelfTest(runtime.backend.appId, key)`
+  to verify the PKCS#1-to-PKCS#8 conversion. It reads `appId` off the narrowed provider; the self-test
+  stays where it is, fed by the provider's `appId` and the env secret.
+- **The doctor's GitHub check.** It reads the identity config surface the same way, narrowing on kind.
+
+Folding the identity onto the provider, rather than hiding it, is what keeps these three compiling under
+the zero-warning `check` gate without a separate config object.
+
+## Public surface and the breaking export change
+
+The current public barrel (`src/lib/index.ts`) exports `BackendConfig`, and re-exports `RepoRef`,
+`RepoFile`, `CommitAuthor`, `AppCredentials`, and `CommitConflictError` from `github/types`, plus
+`GithubKeyEnv` from the sveltekit subpath. This phase changes that surface, a breaking export change the
+changelog must carry:
+
+- `BackendConfig` is removed; the adapter's `backend` field is a `BackendProvider` from `githubApp(...)`.
+- `RepoRef` and `AppCredentials` become internal to the GitHub implementation and leave the barrel.
+- `GithubKeyEnv` is replaced by `BackendEnv`.
+- New exports: `Backend`, `BackendProvider`, `GithubAppProvider`, `BackendEnv`, `githubApp`, and the
+  data types the interface names (`FileChange`, `RepoFile`, `CommitAuthor`, `CommitConflictError`,
+  `isConflict`), all from the new backend module.
+
+Each removal or rename gets a `Consumers must:` line: replace the `backend` object literal with the
+`githubApp(...)` call, and drop any import of `BackendConfig`/`RepoRef`/`AppCredentials`/`GithubKeyEnv`.
+
 ## The dev double becomes a conforming backend
 
 This is the phase's concrete payoff, and the part the dev fence governs.
@@ -179,7 +272,13 @@ This is the phase's concrete payoff, and the part the dev fence governs.
 `fake-github.ts` stops monkeypatching `fetch`. It becomes a `Backend` implementation over its existing
 in-memory branch map: seven methods, no URL reconciliation, no global mutation. `defaultBranch` is the
 seeded main. The branch-aware tree it already maintains for the publish workflow is exactly the state
-the interface needs.
+the interface needs. The commit method mirrors the real one's empty-change-set rejection so the e2e
+exercises the same contract.
+
+The in-memory store, the `lastCommit` recorder, and the `committedFile` accessor the `/test/*` fixture
+routes read stay **module-level process singletons**, as today. `connect()` returns a thin façade over
+that one shared store, not a fresh per-request instance, so a commit on one request is visible to the
+recorder route on the next. The dev `Backend` is the façade; the store is the singleton behind it.
 
 `devBackendHandle()` constructs the in-memory `Backend` and sets `event.locals.backend`. It already
 runs behind the three-layer fence (the build-foldable `dev` flag, the devDependency boundary, the
@@ -205,15 +304,24 @@ with no mid-migration green.
    tests red, make them green. Delete nothing yet, so the phase gates green at this step.
 2. **The atomic unit, gated once.** Retype the adapter `backend` field to `BackendProvider`, carry the
    provider through `composeRuntime`, migrate all consumers and their tests from `(repo, token)` to the
-   `Backend` object, add the `locals.backend` read, and retire `commitFile`, `fileSha`, and the
-   `mintToken` threading. Gate once at the end.
+   `Backend` object, add the `locals.backend` read, narrow the three non-request readers
+   (`vite/index.ts`, `health.ts`, the doctor) on `kind`, update the public barrel (remove
+   `BackendConfig`/`RepoRef`/`AppCredentials`/`GithubKeyEnv`, add the new exports), and retire
+   `commitFile`, `fileSha`, and the `mintToken` threading. This is the wide step: the consumer modules
+   are `content-routes.ts`, `nav-routes.ts`, `cairn-admin.ts`, `health.ts`, `media/usage.ts`,
+   `media/rewrite-plan.ts`, `media/naming.ts`, `content/reference-index.ts`, `content/advisories.ts`,
+   and `doctor/checks-github.ts`, plus the roughly thirty route tests that stub `deps.mintToken` and the
+   github unit tests (the commit, atomic-commit, branches, read, and double fixtures) that must be
+   rewritten or retired against the new interface. Gate once at the end.
 3. **The dev double.** Rewrite `fake-github.ts` to a conforming `Backend`; `devBackendHandle` sets
-   `locals.backend`; drop `installFakeGitHub` and the `fetch` patch. The showcase e2e is the gate.
+   `locals.backend`; drop `installFakeGitHub` and the `fetch` patch. Update the dev-fence build-grep
+   needle lists (`e2e.yml` and `scaffold.yml`) in lockstep: drop `installFakeGitHub` and add the names
+   of the new dev-backend exports the conforming `Backend` introduces. The showcase e2e is the gate.
 4. **Release.** Dist rebuild, from-scratch consumer build, the showcase publish round-trip e2e (the key
    gate, since it exercises save, branch, and publish through the new interface), the minor bump
    (breaking-within-0.x), the docs (the backend reference page, the adapter reference, the dev-package
-   guide, the changelog and upgrade guide with the `Consumers must:` line for the `backend` field), and
-   STATUS, ROADMAP, and the memory.
+   guide, the changelog and upgrade guide with a `Consumers must:` line per removed export and for the
+   `backend` field), and STATUS, ROADMAP, and the memory.
 
 The render seam and islands stay the separate, last phase (phase 4), unchanged by this one.
 
@@ -224,8 +332,11 @@ The render seam and islands stay the separate, last phase (phase 4), unchanged b
   `devBackendHandle`, so the engine never imports it. The `build/`-grep elimination check in the e2e
   workflow stays the proof.
 - **The publish round-trip.** Publish is orchestration over `commit` and `deleteBranch`, and the
-  sha-guarded delete depends on `branchHead` returning the same value the action read. The from-scratch
-  showcase e2e exercises create, save, and publish, so a regression here fails the release gate.
+  sha-guarded delete depends on `branchHead` returning the same value the action read. An audit of all
+  five lifecycle actions (single publish, publish-all, discard, rename, delete) confirmed none escapes
+  the seven-method interface: publish-all's cross-branch entry read maps to `readFile(path, branchName)`,
+  so the "read, commit, branch over files" line holds for the whole lifecycle. The from-scratch showcase
+  e2e exercises create, save, and publish, so a regression here fails the release gate.
 - **The cross-branch usage index.** It reads every open `cairn/*` branch with an explicit ref. The
   required `ref` parameter is the guard against a silent default-branch read that would under-count
   usage and let a delete proceed against a still-referenced asset.

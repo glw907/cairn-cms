@@ -6,7 +6,11 @@ import type { D1Database } from '@cloudflare/workers-types';
 import { resolvePrincipalRow } from './store.js';
 import { rolesToScopes } from './scopes.js';
 import { runAuthorize, type Authorize } from './authorize.js';
+import { log } from '../log/index.js';
 import type { Principal } from './types.js';
+
+/** The engine-reserved scope namespace a site authorize callback may not grant. */
+const RESERVED_SCOPE_PREFIX = 'admin:';
 
 /** What `resolvePrincipal` needs: the auth store binding, the optional site authorize callback, and the platform. */
 export interface ResolveDeps {
@@ -21,7 +25,13 @@ export async function resolvePrincipal(deps: ResolveDeps, id: string, now: numbe
   const row = await resolvePrincipalRow(deps.db, id, now);
   if (!row) return null;
   const adminScopes = row.tier === 'admin' && row.role ? rolesToScopes(row.role) : [];
-  const customScopes = await runAuthorize(deps.authorize, { email: row.email, platform: deps.platform }, deps.deadlineMs);
+  // A site authorize callback grants only its own custom scopes; the admin:* namespace is engine
+  // reserved, gated by the editor allowlist and the trust tier. Strip any reserved scope a callback
+  // returns (a bug or a compromised data source) so it can never mint admin, and log the drop.
+  const granted = await runAuthorize(deps.authorize, { email: row.email, platform: deps.platform }, deps.deadlineMs);
+  const reserved = granted.filter((s) => s.startsWith(RESERVED_SCOPE_PREFIX));
+  if (reserved.length) log.warn('auth.scope.reserved', { email: row.email, scopes: reserved.join(',') });
+  const customScopes = granted.filter((s) => !s.startsWith(RESERVED_SCOPE_PREFIX));
   return {
     email: row.email,
     displayName: row.displayName ?? row.email,

@@ -30,6 +30,13 @@ interface GateOpts extends GateDeps {
 /**
  * Resolve the logged-in principal on any route, or null. Reads nothing and queries no D1 when the
  * session cookie is absent. Memoizes on `locals.principal` so repeated calls in one request resolve once.
+ *
+ * WATCH (phase 2): under `/admin` the guard memoizes a principal resolved WITHOUT the developer
+ * `authorize` callback (admin scopes only). A later `loadPrincipal`/`requireScope` on that same
+ * `/admin` request returns that memoized principal, so a custom-scope check on an `/admin` route would
+ * see only admin scopes and 403 a legitimate holder. Phase 1 has no custom-scope `/admin` routes, so
+ * this is latent; the phase-2 admin-extension seam must resolve custom scopes explicitly (a fresh
+ * resolve, or a memoization keyed by whether authorize ran) rather than rely on the guard's principal.
  */
 export async function loadPrincipal(event: GateEvent, deps: GateDeps = {}): Promise<Principal | null> {
   if (event.locals.principal !== undefined) return event.locals.principal;

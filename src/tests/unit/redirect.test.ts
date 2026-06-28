@@ -12,6 +12,12 @@ describe('validateRedirect', () => {
       expect(validateRedirect(bad, origin)).toBeNull();
     }
   });
+  it('rejects dot-segment inputs that normalize to a protocol-relative path', () => {
+    // new URL('/..//evil', origin).pathname is '//evil', a protocol-relative Location off-origin.
+    for (const bad of ['/..//evil.com', '/.//evil.com', '/foo/../..//evil.com', '/%2e%2e//evil.com']) {
+      expect(validateRedirect(bad, origin)).toBeNull();
+    }
+  });
   it('rejects null and empty', () => {
     expect(validateRedirect(null, origin)).toBeNull();
     expect(validateRedirect('', origin)).toBeNull();

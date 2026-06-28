@@ -71,7 +71,10 @@ export function createFakeAuthDb(): FakeAuthDb {
 
     // checkAndIncrementRate's counter upsert (INSERT ... ON CONFLICT ... RETURNING count). The
     // engine reads res[1].results?.[0].count from the batch result, so yield a single count row of
-    // 1, which keeps the dev send path under any limit.
+    // 1, which keeps the dev send path under any limit. This is intentionally a constant stub, NOT an
+    // increment-faithful counter: the dev backend injects locals.principal directly and never walks the
+    // real send/rate path, so this arm is effectively dead in dev. A future dev/test that drives
+    // sendMagicLink would need a real per-bucket counter here to reproduce a rate-limited response.
     if (sql.includes('INSERT INTO auth_rate')) {
       return { ...none, row: { count: 1 }, rows: [{ count: 1 }], changes: 1 };
     }

@@ -19,5 +19,9 @@ export function validateRedirect(target: string | null, origin: string): string 
     return null;
   }
   if (url.origin !== origin) return null;
+  // Dot-segment inputs like `/..//evil` parse to a same-origin URL whose pathname normalizes to
+  // `//evil`; returned as a Location that is protocol-relative and navigates off-origin. Reject any
+  // result whose path still begins with a double slash after normalization.
+  if (url.pathname.startsWith('//')) return null;
   return url.pathname + url.search;
 }

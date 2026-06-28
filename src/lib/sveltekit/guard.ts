@@ -40,8 +40,12 @@ function isLocalHost(hostname: string): boolean {
 
 /**
  * The SvelteKit `Handle` that guards `/admin/**` and hardens admin responses. `config.authorize`
- * carries the adapter's `auth.authorize` callback; it resolves custom scopes on non-admin routes and
- * is deliberately not run to admit an admin request (admin scopes come from the allowlist alone).
+ * carries the adapter's `auth.authorize` callback, accepted here as the wiring channel; the guard
+ * deliberately does NOT invoke it (admin scopes come from the editor allowlist alone, which keeps
+ * third-party code off the admin hot path; the lazy test pins this). Off-`/admin` routes resolve
+ * custom scopes by calling `loadPrincipal`/`requireScope` with their own `authorize`. Having the guard
+ * populate custom scopes off `/admin` is a phase-2 concern (see the `/admin` memoization note in
+ * `scope-guards.ts`).
  */
 export function createAuthGuard(config: { authorize?: Authorize } = {}) {
   return async function handle({ event, resolve }: HandleInput): Promise<Response> {
@@ -126,7 +130,7 @@ export function createAuthGuard(config: { authorize?: Authorize } = {}) {
       const id = event.cookies.get(cookieName);
       // Lazy on /admin: pass authorize: undefined here. /admin needs only admin:* scopes, which come
       // from the allowlist row, so the developer callback (and its D1) is not run to admit an admin
-      // request. config.authorize stays on the non-admin path (the !isAdminPath block above).
+      // request. A custom-scope admin route resolves it explicitly via loadPrincipal (phase 2).
       const principal = id
         ? await resolvePrincipal({ db: env.AUTH_DB, authorize: undefined, platform: event.platform }, id, Date.now())
         : null;

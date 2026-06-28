@@ -27,6 +27,13 @@ describe('resolvePrincipal', () => {
     const p = await resolvePrincipal({ db: env.AUTH_DB, authorize, platform: undefined }, 'm2', now);
     expect(p).toMatchObject({ email: 'fan@x.io', tier: 'member', scopes: ['member'] });
   });
+  it('strips a reserved admin:* scope a callback returns, so it cannot mint admin', async () => {
+    await createSession(env.AUTH_DB, 'm4', 'sneaky@x.io', 'member', now + 1000, now);
+    const authorize = () => ['admin:owner', 'member'];
+    const p = await resolvePrincipal({ db: env.AUTH_DB, authorize, platform: undefined }, 'm4', now);
+    expect(p?.scopes).toEqual(['member']);
+    expect(p?.tier).toBe('member');
+  });
   it('returns a scopeless principal for an unentitled verified email', async () => {
     await createSession(env.AUTH_DB, 'm3', 'new@x.io', 'member', now + 1000, now);
     const p = await resolvePrincipal({ db: env.AUTH_DB, platform: undefined }, 'm3', now);

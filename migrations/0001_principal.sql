@@ -9,7 +9,9 @@ ALTER TABLE session ADD COLUMN auth_tier TEXT NOT NULL DEFAULT 'admin'
   CHECK (auth_tier IN ('admin', 'member'));
 
 -- Per-IP fixed-window counter for the now-public magic-link send. One row per (bucket, window).
-CREATE TABLE auth_rate (
+-- IF NOT EXISTS guards a hand-replay outside the migration tracker; the ADD COLUMN above cannot be
+-- made idempotent in SQLite, so rely on the d1_migrations tracker and never hand-replay this file.
+CREATE TABLE IF NOT EXISTS auth_rate (
   bucket TEXT NOT NULL,
   window_start INTEGER NOT NULL,
   count INTEGER NOT NULL,

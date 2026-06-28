@@ -66,7 +66,13 @@ function scrubSendError(err: unknown): string {
     .slice(0, 300);
 }
 
-/** The client IP for the rate bucket, from the Cloudflare-set header, with a logged degraded fallback. */
+/**
+ * The client IP for the rate bucket, from the Cloudflare-set header (unspoofable at the edge; never
+ * read `X-Forwarded-For`). WATCH: when the header is absent (local dev, a proxy that strips it) every
+ * caller collapses into one shared `unknown` bucket, so the limit throttles them together. That is the
+ * safe failure direction (over-throttle, and the throttle collapses into the neutral send result), not
+ * a spoof.
+ */
 function clientIp(event: RequestContext): string {
   return event.request.headers.get('cf-connecting-ip') ?? 'unknown';
 }
@@ -97,10 +103,16 @@ export async function mintSession(
 }
 
 /**
- * Issue a magic link to any email, per-IP rate-limited, persisting the server-authoritative tier and
- * the validated redirect with the token so neither rides the confirm URL. The neutral and send-ok
- * paths return the identical result, so the common case never leaks allowlist membership. branding
- * and send arrive through opts so this function closes over nothing from the factory.
+ * Issue a magic link, per-IP rate-limited, persisting the server-authoritative tier and the validated
+ * redirect with the token so neither rides the confirm URL. The neutral and send-ok paths return the
+ * identical result, so the common case never leaks allowlist membership. branding and send arrive
+ * through opts so this function closes over nothing from the factory.
+ *
+ * Phase 1 sends only to an allowlisted editor (the admin login). Open member self-service send needs a
+ * member confirm route (the link path is the admin confirm today), which lands with the member-routes
+ * phase; until then a non-editor email returns the neutral result without a send. The editor-versus-
+ * non-editor work asymmetry here is the accepted admin-login enumeration posture (the body is parity;
+ * timing is not), strictly weaker than the deliberate `throttled` signal below.
  */
 export async function sendMagicLink(
   event: RequestContext,
@@ -173,7 +185,9 @@ export async function confirmMagicLink(event: RequestContext): Promise<never> {
   if (!email) throw redirect(303, '/admin/login?error=expired');
   log.info('auth.token.confirmed', { email });
 
-  await mintSession(event, db, email, tier ?? 'admin');
+  // The token's tier is NOT NULL with a column default, so `tier` is always present here; the fallback
+  // is least-privilege (member) defense for the impossible null, never the privileged tier.
+  await mintSession(event, db, email, tier ?? 'member');
   log.info('auth.session.created', { email });
 
   // Re-validate the stored redirect against the origin only when one was persisted; the common path

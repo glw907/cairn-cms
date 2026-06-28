@@ -22,6 +22,7 @@ redaction stance.
 | `auth.session.destroyed` | info | A session is deleted at logout. | none |
 | `auth.authorize.failed` | error | The site's authorize callback threw or timed out; custom scopes are denied for this request. | `email`, `error` |
 | `auth.scope.denied` | warn | A `requireScope` or `requireAnyScope` call refuses an authenticated principal that lacks the requested scope. | `email`, `scope`, `path` |
+| `auth.scope.reserved` | warn | A site authorize callback returned one or more `admin:*` scopes; the engine reserves that namespace and dropped them. | `email`, `scopes` |
 | `commit.succeeded` | info | A content or nav commit lands. | `concept`, `id`, `editor`, `branch` on a save |
 | `commit.failed` | warn or error | A commit fails. `warn` with `reason: "conflict"` on a 409, `error` with `error` otherwise. | `concept`, `id`, `editor`, `reason` or `error`, `branch` on a save |
 | `config.invalid` | error | The nav editor's load reads a site config that does not parse or validate, and degrades to an empty tree. | `conditionId`, `error` |

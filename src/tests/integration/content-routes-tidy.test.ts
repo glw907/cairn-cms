@@ -9,9 +9,9 @@ import { githubApp } from '../../lib/index.js';
 import { createContentRoutes, type ContentEvent, type TidyClient } from '../../lib/sveltekit/content-routes.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { CookieJar } from '../../lib/sveltekit/types.js';
-import type { Editor } from '../../lib/auth/types.js';
+import type { Principal } from '../../lib/auth/types.js';
 
-const editor: Editor = { email: 'a@b.test', displayName: 'A Tester', role: 'owner' };
+const editor: Principal = { email: 'a@b.test', displayName: 'A Tester', scopes: ['admin:owner', 'admin:editor'], tier: 'admin' };
 const CSRF = 'csrf-token-value-0123456789abcdef';
 
 /** A minimal runtime with tidy enabled. Only the tidy config and backend the action reads are
@@ -61,7 +61,7 @@ function tidyEvent(opts: TidyOpts = {}): ContentEvent {
     url,
     params: { concept: 'posts', id: 'my-entry' },
     request: new Request(url, { method: 'POST', body, headers }),
-    locals: { editor: opts.hasEditor === false ? null : editor },
+    locals: { principal: opts.hasEditor === false ? null : editor },
     platform: { env: opts.platformEnv ?? { ANTHROPIC_API_KEY: 'sk-test-key' } },
     cookies: cookieJar(opts.cookieCsrf === undefined ? CSRF : opts.cookieCsrf),
   };

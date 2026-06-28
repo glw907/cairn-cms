@@ -144,7 +144,7 @@ function previewEvent(
     url,
     params: {},
     request: new Request(url, { method: 'POST', headers, body: JSON.stringify(payload) }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+    locals: { principal: { email: 'ed@t', displayName: 'Ed Editor', scopes: ['admin:editor'], tier: 'admin' } },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
     cookies: cookieJar('cookieCsrf' in opts ? opts.cookieCsrf : CSRF),
   };
@@ -161,7 +161,7 @@ function applyEvent(fields: { hash?: string; overwrite?: string; confirmSlug?: s
     url,
     params: {},
     request: new Request(url, { method: 'POST', body: form }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+    locals: { principal: { email: 'ed@t', displayName: 'Ed Editor', scopes: ['admin:editor'], tier: 'admin' } },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x', MEDIA_BUCKET: {} } },
   };
 }
@@ -289,7 +289,7 @@ describe('mediaAltPreview', () => {
       url,
       params: {},
       request: new Request(url, { method: 'POST', headers, body: '{ not json' }),
-      locals: { editor: { email: 'ed@t', displayName: 'Ed', role: 'editor' as const } },
+      locals: { principal: { email: 'ed@t', displayName: 'Ed', scopes: ['admin:editor'], tier: 'admin' } },
       platform: { env: {} },
       cookies: cookieJar(CSRF),
     };

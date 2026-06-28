@@ -55,7 +55,7 @@ function event() {
     url: new URL('https://test.example/admin/help'),
     params: {},
     request: new Request('https://test.example/admin/help'),
-    locals: { editor: { email: 'e@test', displayName: 'Ed', role: 'editor' as const } },
+    locals: { principal: { email: 'e@test', displayName: 'Ed', scopes: ['admin:editor'], tier: 'admin' } },
     platform: { env: {} },
   };
 }

@@ -102,6 +102,11 @@ A warning callout flags something the reader needs to be careful about before th
 :::alert[Check the date before you publish]{role=caution}
 An alert is a heavier signal than a callout, set in a bordered card with an icon. Save it for the rare note a reader must not miss.
 :::
+
+## Islands
+
+:::converter{from="mi" to="km" rate="1.609"}
+:::
 `;
 
 export const load: PageServerLoad = async () => ({

@@ -16,6 +16,7 @@ chrome; the look re-skins from `theme.css` with no edit here.
   const nav: NavItem[] = [
     { label: 'Writing', href: '/' },
     { label: 'Calendar', href: '/calendar' },
+    { label: 'Styleguide', href: '/styleguide' },
     { label: 'Admin', href: '/admin' },
   ];
 

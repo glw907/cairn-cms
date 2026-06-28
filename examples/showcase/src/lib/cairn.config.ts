@@ -6,6 +6,7 @@ import { normalizeAssets, makeMediaResolver, readCommittedManifest } from '@glw9
 import type { IconSet } from '@glw907/cairn-cms';
 import { h } from 'hastscript';
 import type { ElementContent } from 'hast';
+import Converter from '$lib/islands/Converter.svelte';
 import siteYaml from './site.config.yaml?raw';
 // The ?url import resolves the public chrome's stylesheet to its served URL (the hashed asset in
 // a build), so the editor's preview frame can link the same sheet the (site) layout loads. The
@@ -85,7 +86,27 @@ const alert = defineComponent({
   ],
 });
 
-const registry = defineRegistry({ components: [callout, alert] });
+// A hydrate (island) component: attribute-only, so its static fallback states the conversion and the live
+// component (Converter.svelte) adds the interactive input. The fallback is class-driven (no inline style),
+// because rehypeSinkGuard strips style/on* from build() output.
+const converter = defineComponent({
+  name: 'converter',
+  label: 'Unit converter',
+  description: 'A live two-way unit converter.',
+  hydrate: true,
+  insertTemplate: ':::converter{from="mi" to="km" rate="1.609"}\n:::',
+  attributes: {
+    from: fields.text({ label: 'From unit', required: true }),
+    to: fields.text({ label: 'To unit', required: true }),
+    rate: fields.number({ label: 'Rate', required: true }),
+  },
+  build: (ctx) =>
+    h('div', { className: ['island-converter-fallback'] }, [
+      h('p', [`1 ${strAttr(ctx, 'from') ?? ''} = ${strAttr(ctx, 'rate') ?? ''} ${strAttr(ctx, 'to') ?? ''}`]),
+    ]),
+});
+
+const registry = defineRegistry({ components: [callout, alert, converter] });
 
 // The real render path: parse markdown through the engine so registered components render.
 const { renderMarkdown } = createRenderer(registry);
@@ -173,6 +194,7 @@ export const cairn = defineAdapter({
       renderMarkdown(body, { resolve, resolveMedia: resolveMedia ?? publicMediaResolver }),
     components: registry,
     icons,
+    islands: { converter: Converter },
   },
   editor: {
     nav: { configPath: 'src/lib/site.config.yaml', menuName: 'primary', label: 'Navigation', maxDepth: 2 },

@@ -13,6 +13,20 @@ to keep pulling cairn updates without rework. They are the audience cairn courts
 shipping a small-to-medium site), and they are the case that breaks first when an extension seam is
 hand-wavy or the upgrade contract is thin.
 
+## Worked example: a club site
+
+aksailingclub.org is the canonical target (Geoff, 2026-06-27): a club site with events, class lists, and
+asset management beyond what Posts and Pages cover. The developer wants cairn for the content management,
+then to **extend the admin interface** with the custom functionality, the whole tool **idiomatic
+SvelteKit**, with **D1 as the backend for the custom features**. That shape sets the bar for the
+extensibility initiative: a custom admin screen (an events manager, a class roster) mounted into the cairn
+admin shell, reusing the editor login and the admin chrome, reading and writing its own D1 tables, while
+the content stays markdown-in-git. The standing rule that the backend interface never grows a `query()`
+method (content stays build-time over the manifest) does not block this: the custom feature owns its own D1
+binding directly, separate from cairn's content backend. This is the build-inside-the-admin half of cairn's
+two-extension-modes design (extend-the-admin alongside build-outside-it), the half that is currently
+reserved-but-inert (see the baseline below).
+
 ## The four sub-lenses
 
 Review questions to run against any design, spec, or plan:

@@ -58,8 +58,9 @@ The live component is a plain Svelte 5 component. Its props are the directive's 
 rules keep an island safe and stable:
 
 - Derive computed values with `$derived`, never `$effect`. An `$effect` reactivity loop hangs the mount.
-- Treat every prop as untrusted. The props are author-controlled; bind them to text only, and never pass
-  one to `{@html}`.
+- Treat every prop as untrusted. The props are author-controlled, so bind them to text only, and never
+  route one into a sink: `{@html}`, an `href` or `src` that could carry a `javascript:` scheme, or an
+  inline `style`.
 
 ```svelte
 <!-- src/lib/islands/Converter.svelte -->

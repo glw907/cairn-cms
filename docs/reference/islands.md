@@ -117,8 +117,11 @@ attributes are inert, so they survive both the sanitize floor and the sink guard
 The props in `data-cairn-props` are author-controlled and untrusted. They are
 HTML-attribute-escaped on emit by the pipeline's stringify step and `JSON.parse`-d in a try/catch on
 the client, which is safe against breakout only because the value never enters a script context. An
-island component must treat every prop as untrusted: bind props to text only, and never pass a prop to
-`{@html}`.
+island component must treat every prop as untrusted: bind props to text only, and never route a prop into
+a sink. The sinks to avoid are `{@html}`, an `href` or `src` that could carry a `javascript:` scheme, and
+an inline `style`. Islands widen the reach of an editor-written value from server-rendered HTML to a live
+client component, so this contract is the island author's to keep. The engine guarantees only that the
+prop arrives as escaped data.
 
 ### The fallback is first paint
 

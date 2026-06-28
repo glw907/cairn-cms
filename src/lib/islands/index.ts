@@ -13,14 +13,15 @@ export type { IslandRegistry } from './types.js';
 let mounted: Record<string, unknown>[] = [];
 let observers: IntersectionObserver[] = [];
 
-// Tear down the previous pass: unmount live instances and disconnect observers that never fired. Svelte's
-// unmount returns a promise (outro); we do not await it, the DOM node is discarded on navigation anyway.
+// Tear down the previous pass: unmount live instances and disconnect observers that never fired. unmount
+// runs with outro: false so teardown is synchronous and deterministic on navigation; an island declaring an
+// out: transition would otherwise linger and briefly double-render against the next pass's fresh mount.
 function teardown(): void {
   for (const o of observers) o.disconnect();
   observers = [];
   for (const instance of mounted) {
     try {
-      void unmount(instance);
+      void unmount(instance, { outro: false });
     } catch {
       // a component that throws on teardown must not block the rest
     }
@@ -30,6 +31,8 @@ function teardown(): void {
 
 // Mount one island over its boundary: parse props (try/catch, a malformed payload leaves the fallback),
 // clear the fallback, mount, and on a mount failure restore the fallback so the reader still sees content.
+// WATCH: props are trusted to equal the directive's declared scalar attributes (serializeIslandProps emits
+// only those). If a directive ever carries an attribute its island does not declare, this forwards it as-is.
 function mountIsland(node: Element, Comp: Component<Record<string, unknown>>): void {
   let props: Record<string, unknown>;
   try {
@@ -61,11 +64,13 @@ function observeIsland(node: Element, Comp: Component<Record<string, unknown>>):
 }
 
 /**
- * Mount each island in `root` (default `document`) over its server-rendered fallback. Call it on every
- *  client-side navigation: it tears down the previous pass first, so it is idempotent and leak-free. An
- *  eager island (`hydrate: true`) mounts at once; a `'visible'` island mounts on first intersection. An
- *  unknown directive name, a malformed prop payload, or a component that throws leaves the static fallback
- *  in place, so one bad island never breaks the page.
+ * Mount each island in `root` (default `document`) over its server-rendered fallback. Call it after each
+ *  client-side navigation, once the new DOM is in place (an `afterNavigate` callback): it tears down the
+ *  previous pass first, so it is idempotent and leak-free. An eager island (`hydrate: true`) mounts at once;
+ *  a `'visible'` island mounts on first intersection. An unknown directive name, a malformed prop payload,
+ *  or a component that throws leaves the static fallback in place, so one bad island never breaks the page.
+ *  Mount-and-replace clears the fallback, so an island whose fallback holds a focusable control should
+ *  restore focus itself; the shipped fallbacks are non-interactive.
  */
 export function hydrateIslands(islands: IslandRegistry, root: ParentNode = document): void {
   teardown();

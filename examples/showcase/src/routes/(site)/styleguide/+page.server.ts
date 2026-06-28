@@ -105,6 +105,10 @@ An alert is a heavier signal than a callout, set in a bordered card with an icon
 
 ## Islands
 
+An island is a directive that renders a static, no-JavaScript fallback on the server, then a small client
+runtime mounts a live Svelte component over it. The converter below shows its fallback first, then becomes
+interactive once the page hydrates.
+
 :::converter{from="mi" to="km" rate="1.609"}
 :::
 `;

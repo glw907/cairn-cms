@@ -39,6 +39,16 @@ describe('hydrateIslands', () => {
     expect(document.querySelector('[data-testid="fallback"]')?.textContent).toBe('fallback');
   });
 
+  it('renders a markup-bearing prop as literal text, never as HTML', () => {
+    // Locks the text-only prop contract: a prop carrying markup must reach the component as data and bind
+    // as escaped text, so a future fixture edit that routed a prop into a sink would fail this.
+    boundary({ label: '<b>x</b>' });
+    hydrateIslands({ echo: Echo });
+    const echo = document.querySelector('[data-testid="echo"]');
+    expect(echo?.textContent).toBe('<b>x</b>');
+    expect(echo?.querySelector('b')).toBeNull();
+  });
+
   it("defers a 'visible' island until intersection", () => {
     // Capture the IntersectionObserver callback so the test controls when intersection fires.
     let trigger: (() => void) | undefined;

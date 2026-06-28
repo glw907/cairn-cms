@@ -11,18 +11,36 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-27, latest): Contract v2 phase 4a (render-seam migration) PLANNED + reviewed, executing on `contract-v2-render-seam`
+## Immediate next action (2026-06-27, latest): Contract v2 phase 4a (render-seam migration) SHIPPED as 0.75.0 (held), merged to `main`; NEXT = 4b islands (brainstorm)
 
-**Phase 4 splits into 4a (render-seam migration, breaking) and 4b (islands, additive); both held.** 4a migrates the
-`render` adapter seam to the entry-aware `render({ body, concept?, frontmatter?, resolve?, resolveMedia? }): Promise<string>`
-and retires the `stagger` knob (the `data-rise` ordinal becomes unconditional pipeline output). Islands (4b) are additive
-on the settled seam and land after. **Per Geoff: do NOT release until the whole v2 series, islands included, is complete;**
-one rollup release closes the held window (now 0.69.0 through 0.75.0). Plan:
-`docs/superpowers/plans/2026-06-27-cairn-contract-v2-render-seam.md` (three tasks; a six-lens adversarial find-verify
-workflow confirmed 28/36 findings, all folded, dominant = the ~37-file test-stub blast radius from the seam retype).
-Method: main-loop orchestrate-and-verify on the `contract-v2-render-seam` branch off `main`, test-first per task, full gate
-per task; merge + push at the end, no release. Spec (source of truth, three render-seam prose points corrected this pass):
+**Contract v2 phase 4a (render-seam migration) is complete** as **0.75.0** (breaking-within-0.x, minor), merged to `main`
+and pushed, held unpublished. The `render` adapter seam moved to the entry-aware
+`render({ body, concept?, frontmatter?, resolve?, resolveMedia? }): Promise<string>` (the root-barrel `SiteRender` type),
+and the `stagger` knob is gone: the `data-rise` ordinal is now unconditional, with a `data-cairn-preview` marker so a site
+scopes an entrance animation away from the preview. Returning a Svelte component was rejected in the spec; interactivity
+rides on 4b islands. Plan + post-mortem: `docs/superpowers/plans/2026-06-27-cairn-contract-v2-render-seam.md`.
+
+**Verified.** `npm run check` 1206 0/0; `npm test` exit 0 at 2711; `check:comments` + the four doc gates + `check:version`
+(minor → 0.75.0); `code-simplifier` clean; the svelte + cloudflare-workers reviewer fan-out (two findings folded: the
+EditPage preview now threads concept/frontmatter so a custom renderer's preview matches its page; the changelog notes the
+unconditional `data-rise` in feed/prerendered output); and the load-bearing proof, a from-scratch consumer build plus the
+**39-test Playwright e2e**. Executed main-loop orchestrate-and-verify (three gated `cairn-implementer` dispatches),
+front-loaded by a six-lens adversarial find-verify workflow over the plan and spec (28/36 findings folded; dominant = the
+~37-file test-stub blast radius the `.render(` grep missed).
+
+**NEXT = phase 4b (islands), the last v2 phase.** Additive on the settled seam: `hydrate?: boolean` on `ComponentDef`, the
+`rendering.islands` adapter field, the boundary emission, the client runtime on a new `./islands` subpath. No plan yet;
+brainstorm scope first. The six 4b design carry-forwards (from the 4a review) are in the plan's "4b carry-forwards" block.
+**Per Geoff: do NOT release until the whole v2 series, islands included, is complete;** one rollup release closes the held
+window (now 0.69.0 through 0.75.0). Spec (source of truth):
 `docs/superpowers/specs/2026-06-25-cairn-contract-v2-design.md`.
+
+**Carry-forwards (filed in ROADMAP).** Still carried: the live `wrangler dev` admin smoke owed at the next site cutover
+(the 39-test e2e covers the `/admin` preview surface meanwhile); the silent-routing-trap watch (every dated `posts`
+concept must declare `routing: 'feed'`); the per-site URL-policy transcription watch; the `itemLabel`-as-function
+concept-array-editor pass; merge the two form renderers (`ComponentForm`/`FieldInput`); build-time icon-name validation;
+empty-icon-set as a doctor-detectable config error; nested references inside containers; the object-nested seo image; the
+nested-image needs-alt advisory; taxonomy/tag delivery; and the body-link cross-branch delete.
 
 ## Prior next action (2026-06-27): Contract v2 backend seam SHIPPED as 0.74.0 (held); render-as-component + islands was phase 4
 

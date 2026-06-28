@@ -366,3 +366,25 @@ Not plan tasks; the consolidation ritual. In order:
 **Placeholder scan:** none — every step carries the concrete edit.
 
 **Type consistency:** `SiteRender` is defined once (Task 2 Step 3) and referenced by name in every consumer. The fixture and the component stubs all resolve to `({ body }) => Promise.resolve(body)`. `data-rise` is `dataRise` in hast properties (Task 1) and `data-rise` in the DOM/CSS/docs.
+
+---
+
+## Post-mortem (2026-06-27)
+
+**Shipped as `0.75.0` (breaking-within-0.x, minor), held unpublished.** Merged to `main`; the v2 window now spans `0.69.0` through `0.75.0` and stays held until islands (4b) land, per Geoff. One rollup release closes the window.
+
+**Built.** The `render` adapter seam moved from the positional `render(md, opts?): string | Promise<string>` to the entry-aware `render({ body, concept?, frontmatter?, resolve?, resolveMedia? }): Promise<string>`, extracted as the root-barrel `SiteRender` type and documented in `core.md`. The `stagger` knob left `createRenderer`, the pipeline, and the seam; the `data-rise` entrance ordinal is now unconditional pipeline output. The preview document gained a `data-cairn-preview` marker on `<html>`. ~50 files migrated in one atomic compile unit, including ~37 test-stub files. The editor preview threads the full entry context (concept, frontmatter) so a custom entry-aware renderer's preview matches its page.
+
+**Verified (evidence).** `npm run check` 1206 files 0/0; `npm test` exit 0 at 2711; `check:comments` OK; the four doc gates + `check:version` (minor → 0.75.0); `code-simplifier` clean (no refinements); the svelte and cloudflare-workers reviewer fan-out (two findings folded); and the load-bearing proof, a from-scratch consumer build (`rm -rf examples/showcase/{node_modules,package-lock.json}`, fresh install, `npm run build`) plus the 39-test Playwright e2e, both green, the public render path now exercising the entry-aware seam.
+
+**Decisions locked.** The seam returns `Promise<string>`; returning a Svelte component was rejected in the spec (interactivity rides on 4b islands instead). `concept` and `frontmatter` are optional, because the standalone component-insert preview renders with no entry. `data-rise` is unconditional and inert without site CSS; the preview marker is the preview-vs-page hook. `SiteRender` is a public root-barrel export.
+
+**Execution.** Main-loop orchestrate-and-verify on `contract-v2-render-seam` off `main`. Three `cairn-implementer` (Sonnet) dispatches, one per task, each gated and its diff verified before the next. A six-lens adversarial find-verify workflow over the plan and spec ran first and confirmed 28 of 36 findings, all folded; it front-loaded the dominant scope gap rather than discovering it at the gate.
+
+**Durable lessons.**
+1. The adversarial-review-over-the-plan pattern (3b/3c) paid off again: it caught that the seam retype breaks ~37 test files stubbing `render: (md) => md`, not the 4 the draft named, and that the draft's `.render(` discovery grep matches call sites, not property definitions. Property-stub discovery needs `grep "render: ("`, never `.render(`.
+2. A destructure-only stub (`render: ({ body }) => ...`) in a bare object literal has no contextual type, so `{ body }` is implicit-any under the 0-warnings gate. Annotate with `Parameters<SiteRender>[0]` (the input shape itself, not a type hole).
+3. An entry-aware preview must thread the same entry context the public page passes, or a custom renderer's preview diverges from its page. The plan's minimal-EditPage decision missed this; the svelte reviewer caught it. The reviewer fan-out remains complementary to the pre-plan sweep.
+4. The showcase lockfile records the `file:../..` library version, so a library version bump must sync the showcase lockfile too (the showcase analog of the root self-version sync), or CI `npm ci` drifts.
+
+**Carry-forwards.** Phase 4b (islands) is the last v2 phase; its six design carry-forwards are recorded in this plan's "4b carry-forwards" block (the `defineComponent` delta is just `hydrate`, the fallback is class-driven through the sink guard, the prop-escaping contract, the mount-and-replace flash cost, the poll example is too thin, the `./islands` export condition). The live `wrangler dev` admin smoke stays owed at the next site cutover; the from-scratch e2e covers the `/admin` preview surface meanwhile.

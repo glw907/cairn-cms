@@ -118,7 +118,19 @@ here, so this file stays a forward view.
 
 ## Considering
 
-- **Broader admin extension surface.** Widen the `CairnExtension` seam so a site owner adds admin panels
-  and actions within a bounded namespace, alongside the existing build-outside-it path.
+- **Developer extensibility (the next major initiative).** Earmarked as the next big initiative after the
+  Contract v2 rollup, and now a standing review lens (see `docs/internal/extending-developer-lens.md` and
+  the CLAUDE.md "extending-developer lens" dimension). The persona is a developer who launches a site fast,
+  then builds custom dashboard features and custom app features that reuse the editor login, and keeps
+  pulling cairn updates. Three baseline gaps scope it: (1) **dashboard extension is type-only and inert**:
+  `CairnExtension`/`AdminPanel`/`FieldTypeDef` are reserved types, `composeRuntime` collects the panels, and
+  nothing dispatches them (fail-silent), so the seam needs a real admin-panel dispatch path; (2) **auth is
+  admin-scoped and sealed**: the session resolves only under `/admin/**` and `resolveSession`/the role store
+  are un-exported, so a developer cannot put their own route behind the editor login without forking, and the
+  seam needs a public session-on-any-route helper plus a sanctioned route-gating affordance; (3) **the public
+  boundary is documented, not enforced, and upgrades are manual**: a deep import reaches any internal,
+  `attw`'s `internal-resolution-error` is muted, breaking changes ship under `minor`, and the held v2 window
+  forces a seven-release jump with silent failure modes, so the seam needs an enforced `exports` boundary and
+  a smoother cross-version upgrade story. (Supersedes the former "broader admin extension surface" bullet.)
 - **A third content concept (Fragments).** The fixed-concepts model leaves room for a Fragments concept
   beyond Posts and Pages, scoped when a production site needs it.

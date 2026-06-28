@@ -14,6 +14,17 @@ This is a standalone repo at `~/Projects/cairn-cms`. It publishes to public npm 
 library's own development proves changes against `examples/showcase`, a self-contained SvelteKit
 site that consumes the package through the relative `file:../..` path.
 
+## Opinionated by design: Svelte-only, Cloudflare-only
+
+cairn is deliberately opinionated, and that is a standing design principle, not just today's scope. It
+targets **Svelte and Cloudflare** and does not try to serve a non-Svelte or non-Cloudflare universe. Do
+not add abstractions, interfaces, or indirection whose only purpose is portability across frameworks or
+hosts. Lean into the stack: the islands client runtime mounts with Svelte's own `mount()`/`unmount()`
+directly, with no framework-agnostic layer, and the engine reaches for Cloudflare primitives (D1, R2,
+Workers, Email) wherever they fit. A hard dependency on the stack is acceptable. "Out of scope" and "we
+don't accommodate that universe" are valid design answers. The full stack list and the scaffold-copy
+site-template direction are in the `cairn-scope-opinionated-stack` memory.
+
 ## How to run this project
 
 The work is a clean, test-first **rebuild** that began 2026-05-28. The canonical source of truth is
@@ -88,6 +99,21 @@ and the per-plan post-mortems, not in the roadmap.
 
 Two production sites depend on the package, so a stale doc costs real users. Treat the docs update as
 part of the work, not a chore after it. See the `docs-is-a-pass-dimension` memory.
+
+## The extending-developer lens (standing review dimension)
+
+Developer extensibility is cairn's next major initiative after the Contract v2 rollup, so the
+extending-developer persona is a standing critical lens for every design, spec, and plan review, the same
+way documentation and the roadmap are pass dimensions. The persona: a developer who launches a site fast on
+cairn, then builds custom dashboard features and custom app features that reuse the editor login, and keeps
+pulling cairn updates without rework. Review every substantial change against the four sub-lenses: can a
+developer (1) extend the dashboard through a supported seam, (2) reuse the editor login on their own routes,
+(3) depend on an enforced (not just documented) public boundary, and (4) upgrade across versions without
+hand-applied steps or silent failures? Prefer the choices that make this path easier; flag the ones that
+make it harder. The persona, the sub-lenses, and the current baseline (the seam is reserved-but-inert, auth
+is admin-scoped, the boundary is unenforced) are in
+[`docs/internal/extending-developer-lens.md`](docs/internal/extending-developer-lens.md), the starting point
+for the initiative.
 
 ## Watch items (conditional follow-ups)
 

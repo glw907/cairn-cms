@@ -373,29 +373,39 @@ the site's component over it.
 The authoring API is the already-shipped `defineComponent` constructor (landed in phase 3c, replacing the
 bare `ComponentDef` object literal) plus one new optional field. Its `attributes` are declared with the
 same `fields.*` primitives a concept uses, which is what makes the one-vocabulary claim concrete, and the
-4b delta is a single addition: `hydrate: true` on `ComponentDef` marks the directive as an island.
+4b delta is a single addition: `hydrate?: boolean | 'visible'` on `ComponentDef` marks the directive as an
+island. `true` mounts the island eagerly on first load and after client-side navigation; `'visible'` defers
+the mount to first intersection through an `IntersectionObserver`, a site-level (per-component-type) trigger
+choice rather than a per-author-instance one. cairn targets Svelte only, so the runtime mounts and unmounts
+the site's component with Svelte's own `mount()`/`unmount()` directly, with no framework-agnostic indirection.
 `build(ctx)` returns the HTML AST (hast) that the rehype render step emits:
 
 ```ts
-const poll = defineComponent({
-  name: 'poll',
-  label: 'Poll',
-  description: 'A reader poll.',
+const converter = defineComponent({
+  name: 'converter',
+  label: 'Unit converter',
+  description: 'A live two-way unit converter.',
   hydrate: true,
   attributes: {
-    question: fields.text({ label: 'Question', required: true }),
+    from: fields.text({ label: 'From unit', required: true }),
+    to:   fields.text({ label: 'To unit', required: true }),
+    rate: fields.number({ label: 'Rate', required: true }),
   },
-  build: (ctx) => /* static, no-JS fallback hast, rendered from ctx.attributes */,
+  build: (ctx) => /* static, class-driven fallback hast showing the seeded units and rate */,
 })
 
 // the adapter registers the client component for each island, by directive name
-rendering: { render, components, icons, islands: { poll: PollIsland } }
+rendering: { render, components, icons, islands: { converter: Converter } }
 ```
+
+The flagship is a unit converter, not the thin `poll` first sketched here: a poll cannot work from a single
+scalar (it needs options and a vote sink), whereas a converter is genuinely attribute-driven (the `from`,
+`to`, and `rate` scalars seed an interactive two-way input), so it is the honest v1 island.
 
 Render emits, for a `hydrate` directive, a boundary wrapping the static fallback:
 
 ```html
-<div data-cairn-island="poll" data-cairn-props='{"question":"Best trail?"}'>
+<div data-cairn-island="converter" data-cairn-props='{"from":"mi","to":"km","rate":1.609}'>
   <!-- build()'s static fallback: visible at first paint and for no-JS -->
 </div>
 ```
@@ -409,7 +419,14 @@ The data flow:
   `mount()`. This is mount-and-replace, not hydration: the component re-renders entirely from its props,
   and the `build()` fallback is the first-paint and no-JS representation, not data passed into the
   component. v1 islands are therefore attribute-driven (the props are the directive's declared
-  attributes); enhancing rich slot content in place is a later, larger design.
+  attributes); enhancing rich slot content in place is a later, larger design. The site calls
+  `hydrateIslands` from a root layout on `afterNavigate`, so one wiring covers first load and SPA
+  navigation; the runtime tracks live instances and `unmount()`s them before re-running, and wraps each
+  island's `JSON.parse` and `mount()` in a try/catch, so one malformed island leaves its fallback in place
+  and never breaks the page or its neighbors. The runtime is content-specific (it hardcodes the island
+  selector and a module-level instance registry); a future develop-the-dashboard extension seam would
+  reuse the *pattern* (parse props, clear, mount a Svelte component), not import this function, so v1
+  ships no shared export and does not generalize ahead of that seam's own design.
 
 Properties and their costs, stated plainly:
 

@@ -29,9 +29,10 @@ export async function resolvePrincipal(deps: ResolveDeps, id: string, now: numbe
   // reserved, gated by the editor allowlist and the trust tier. Strip any reserved scope a callback
   // returns (a bug or a compromised data source) so it can never mint admin, and log the drop.
   const granted = await runAuthorize(deps.authorize, { email: row.email, platform: deps.platform }, deps.deadlineMs);
-  const reserved = granted.filter((s) => s.startsWith(RESERVED_SCOPE_PREFIX));
+  const reserved: string[] = [];
+  const customScopes: string[] = [];
+  for (const scope of granted) (scope.startsWith(RESERVED_SCOPE_PREFIX) ? reserved : customScopes).push(scope);
   if (reserved.length) log.warn('auth.scope.reserved', { email: row.email, scopes: reserved.join(',') });
-  const customScopes = granted.filter((s) => !s.startsWith(RESERVED_SCOPE_PREFIX));
   return {
     email: row.email,
     displayName: row.displayName ?? row.email,

@@ -130,8 +130,9 @@ export async function sendMagicLink(
 
   // Per-IP fixed-window limit on the now-public send path, applied before any per-email cooldown.
   // The throttle collapses into the neutral signal so it never leaks membership or invites probing.
-  if (!(await checkAndIncrementRate(db, `ip:${clientIp(event)}`, Date.now(), SEND_RATE_WINDOW_MS, SEND_RATE_LIMIT))) {
-    log.warn('auth.link.rate_limited', { ip: clientIp(event) });
+  const ip = clientIp(event);
+  if (!(await checkAndIncrementRate(db, `ip:${ip}`, Date.now(), SEND_RATE_WINDOW_MS, SEND_RATE_LIMIT))) {
+    log.warn('auth.link.rate_limited', { ip });
     return { status: 'sent', sent: true };
   }
 

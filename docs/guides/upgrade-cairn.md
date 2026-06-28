@@ -752,3 +752,19 @@ The custom per-attribute pattern message is gone; the generic format message app
 Attribute validation now format-checks every value through the shared `fieldset` validator, so a
 hand-authored directive that previously saved with a malformed value (`count="abc"` on a `number`
 attribute, say) now fails the save-path `validateComponent`. This tightening is intended.
+
+## 0.74.0: the backend becomes an interface with a `githubApp(...)` provider (breaking)
+
+The adapter's `backend` field changes from a plain `{ owner, repo, branch, appId, installationId }`
+object to a `githubApp({ ... })` call, the default implementation of a new `Backend` interface. The
+local-development double becomes a conforming `Backend` on the per-request `event.locals.backend`
+channel, retiring its global-`fetch` patch.
+
+Consumers must: change the adapter's `backend` field from the object literal to
+`backend: githubApp({ owner, repo, branch, appId, installationId })`, importing `githubApp` from
+`@glw907/cairn-cms`. The field values are unchanged; only the wrapping call is new.
+
+Consumers must: drop any import of the removed `BackendConfig`, `RepoRef`, or `AppCredentials` types,
+and replace any import of `GithubKeyEnv` (from the `/sveltekit` subpath) with `BackendEnv`. A site that
+only writes the standard adapter and never imported those types makes the one-line `backend` change and
+nothing else.

@@ -252,7 +252,6 @@ declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutes
   mediaAltApply: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
   addDictionaryWord: (event: ContentEvent) => Promise<ActionFailure<unknown> | DictionaryAddResult>;
   tidyAction: (event: ContentEvent) => Promise<ActionFailure<unknown> | TidyResult>;
-  mintToken: (env: GithubKeyEnv) => string | Promise<string>;
 };
 ```
 
@@ -445,7 +444,7 @@ catch-all route.
 
 ```ts
 declare function healthLoad(
-  event: { platform?: { env?: GithubKeyEnv } },
+  event: { platform?: { env?: BackendEnv } },
   runtime: CairnRuntime,
 ): Promise<HealthData>;
 ```
@@ -487,7 +486,7 @@ imports the matching `*Data` type to type its `data` prop.
 | `MediaLibraryData` | `interface MediaLibraryData { assets: MediaLibraryEntry[]; usage: Record<string, MediaUsageInfo>; error: string \| null }` | The Media Library view's data: the assets unioned across the default branch and open `cairn/*` branches, the per-hash usage overlay (an asset with no key renders as "no references found"), and the degraded-load error. |
 | `HelpData` | `interface HelpData { gettingStarted: GettingStarted; reference: MarkdownReferenceRow[]; supportContact? }` | The Help home view's data: the getting-started progress derived from the committed manifest and the open pending branches (degrading to 0 of 3 when GitHub is unreachable), the markdown reference (the component curates by group), and the runtime's optional support contact. |
 | `ContentEvent` | `interface ContentEvent { url: URL; params; request: Request; locals: { editor? }; platform? }` | The structural event the content routes read; a real SvelteKit `RequestEvent` satisfies it. |
-| `ContentRoutesDeps` | `interface ContentRoutesDeps { mintToken?: (env: GithubKeyEnv) => string \| Promise<string>; anthropic?: (opts: { apiKey: string }) => TidyClient; tidyTimeoutMs?: number }` | Injectable dependencies for `createContentRoutes`; tests stub the token mint (a bare string return works either way), `anthropic` so the tidy action calls a stubbed model, and `tidyTimeoutMs` to assert the deadline path. |
+| `ContentRoutesDeps` | `interface ContentRoutesDeps { backend?: Backend; anthropic?: (opts: { apiKey: string }) => TidyClient; tidyTimeoutMs?: number }` | Injectable dependencies for `createContentRoutes`; tests inject a `Backend` so the read and commit paths run with no real token mint, `anthropic` so the tidy action calls a stubbed model, and `tidyTimeoutMs` to assert the deadline path. |
 | `SaveFailure` | `interface SaveFailure { error: string; brokenLinks: string[]; body: string }` | A blocked save or publish: the one-line summary, the cairn tokens that resolve to no entry, and the author's edited markdown for reseeding the editor. |
 | `DeleteRefusal` | `interface DeleteRefusal { error: string; inboundLinks: InboundLink[]; id: string }` | A refused delete: the one-line summary, the entries that still link to the refused one, and its id so a list marks the right row. |
 | `RenameFailure` | `interface RenameFailure { error: string }` | A refused rename (bad slug, collision, or pending edits): just the one-line summary. |
@@ -499,7 +498,7 @@ imports the matching `*Data` type to type its `data` prop.
 | `ContentFormFailure` | `type ContentFormFailure = Partial<SaveFailure & DeleteRefusal & RenameFailure & MediaDeleteRefusal & MediaUpdateFailure & MediaReplaceFailure & MediaAltPropagateFailure & MediaBulkFailure>` | The shape a route's single `form` export presents to a view component: whichever content action last failed, every field optional, `error` always set on a failure. The media refusals merge in too, so the Media Library's one `form` prop carries a `?/mediaDelete`, `?/mediaUpdate`, `?/mediaReplace`, or `?/mediaAltPropagate` refusal. |
 | `NavPageOption` | `interface NavPageOption { label: string; url: string }` | One page option for the nav editor's URL picker datalist. |
 | `NavLoadData` | `interface NavLoadData { menu: { name; label; maxDepth }; tree: NavNode[]; pages: NavPageOption[]; saved; error: string \| null }` | The nav editor's load data: the menu meta, the current tree, the page options, and the status flags. |
-| `NavRoutesDeps` | `interface NavRoutesDeps { mintToken?: (env: GithubKeyEnv) => string \| Promise<string> }` | Injectable dependencies for `createNavRoutes`; tests stub the token mint, and a bare string return works. |
+| `NavRoutesDeps` | `interface NavRoutesDeps { backend?: Backend }` | Injectable dependencies for `createNavRoutes`; tests inject a `Backend` so the read and commit paths run with no real token mint. |
 | `CairnAdminDeps` | `interface CairnAdminDeps { branding?: AuthBranding; send?: SendMagicLink; mintToken?: ContentRoutesDeps['mintToken']; anthropic?: ContentRoutesDeps['anthropic']; tidyTimeoutMs?: ContentRoutesDeps['tidyTimeoutMs'] }` | Injectable dependencies for `createCairnAdmin`. Branding defaults from the runtime's `siteName` and `sender`; `mintToken`, `anthropic`, and `tidyTimeoutMs` pass through to the wrapped content routes (the tidy action reads the latter two). |
 | `AdminData` | `type AdminData = { view: 'login' \| 'confirm'; page } \| { view: 'list' \| 'edit' \| 'editors' \| 'nav' \| 'media'; layout: LayoutData; page }` | One admin view's data, discriminated on `view` for the admin page component's switch. Each `page` is the matching per-surface load's return shape (`ListData`, `EditData`, `MediaLibraryData`, `NavLoadData`, the auth page data, or the editor list). |
 | `AdminView` | `type AdminView = { view: 'index' \| 'login' \| 'confirm' \| 'editors' \| 'nav' \| 'media' } \| { view: 'list'; concept } \| { view: 'edit'; concept; id }` | The parsed admin view `parseAdminPath` returns, discriminated for the dispatcher's switch. |
@@ -507,5 +506,5 @@ imports the matching `*Data` type to type its `data` prop.
 | `RequestContext` | `interface RequestContext { url; request; cookies: CookieJar; locals; platform?; setHeaders }` | The structural request the auth helpers read; a real SvelteKit `RequestEvent` satisfies it. |
 | `CookieJar` | `interface CookieJar { get; set; delete }` | The cookie accessor the auth helpers use, matching SvelteKit's `cookies`. |
 | `HandleInput` | `interface HandleInput { event: RequestContext; resolve(event): Promise<Response> \| Response }` | The argument the `createAuthGuard` handle receives, matching SvelteKit's `Handle` input. |
-| `GithubKeyEnv` | `interface GithubKeyEnv { GITHUB_APP_PRIVATE_KEY_B64?: string }` | The Worker secret the token mint reads; it types the `mintToken` parameter on `ContentRoutesDeps` and `healthLoad`. |
+| `BackendEnv` | `interface BackendEnv { GITHUB_APP_PRIVATE_KEY_B64?: string }` | The Worker secret carrier the backend provider's `connect` reads to mint the GitHub App token; it also types the `healthLoad` event env. |
 | `AuthEnv` | `interface AuthEnv { AUTH_DB?: D1Database; PUBLIC_ORIGIN?: string; EMAIL?: { send(message): Promise<void> }; CAIRN_DEV_BACKEND?: string \| boolean }` | The Cloudflare env shape the auth and email bindings live on: the D1 session store, the canonical confirmation-link origin, the Email Sending binding, and the `CAIRN_DEV_BACKEND` tripwire flag the guard reads. A site names it in its `app.d.ts` Platform block so `platform.env` carries these members. |

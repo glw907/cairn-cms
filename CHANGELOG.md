@@ -2,6 +2,38 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.74.0
+
+<!-- release-size: minor -->
+
+The backend seam (Contract v2, the backend phase). The GitHub-App config blob becomes a `Backend`
+interface with a `githubApp(...)` default provider, and the local-development double stops
+monkeypatching global `fetch` to become a conforming `Backend`. The engine resolves one live
+`Backend` per request, so a different store such as GitLab, Gitea, or plain git can supply its own
+provider later without the engine changing. The interface is read, commit, and branch operations over
+files, never a query, so content querying stays build-time over the committed manifest and a runtime
+database can never sneak in behind the seam.
+
+The adapter's `backend` field changes from a plain object to a `githubApp({ ... })` call. The App's
+non-secret identity rides the provider; the private key stays the Worker secret, read at request time.
+The dev double now rides the per-request `event.locals.backend` channel that the dev-backend handle
+sets behind the existing dev fence, which is typed on `App.Locals` so the seam is a checked contract.
+
+The nav and tidy-settings writes, which land on the default branch and trigger a deploy, read the
+branch head before the file content and pass it as a fail-closed guard, so a concurrent same-file
+commit surfaces the reload-and-reapply prompt rather than a silent last-writer-wins.
+
+This is breaking within the `0.x` window. Consumers must: change the adapter's `backend` field from a
+`{ owner, repo, branch, appId, installationId }` object literal to `backend: githubApp({ ... })`,
+importing `githubApp` from `@glw907/cairn-cms`. Consumers must: drop any import of the removed
+`BackendConfig`, `RepoRef`, or `AppCredentials` types. Consumers must: replace any import of
+`GithubKeyEnv` (from the `/sveltekit` subpath) with `BackendEnv`. A site that only writes the standard
+adapter and never imported those types makes the one-line `backend` change and nothing else.
+
+Behavior note, no consumer action: the content-list and media-library load paths previously
+distinguished a token-mint failure (`Could not authenticate with GitHub`) from a read failure. The
+token mint is now lazy behind the first read, so both collapse to the single load-failure degrade.
+
 ## 0.73.0
 
 <!-- release-size: minor -->

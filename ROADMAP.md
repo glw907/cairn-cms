@@ -15,12 +15,12 @@ here, so this file stays a forward view.
 
 ## Now
 
-- **The Contract v2 plan series.** Phase 3b (the adapter restructure into six subsystem groups plus the
-  concept model) shipped as `0.72.0`, and phase 3c (the field-system unification onto `fields.*`:
-  `defineComponent`, the directive attributes onto `fields.*`, the server-side per-field `behavior.validate`,
-  `fields.icon()` first-class) shipped as `0.73.0`, both held unpublished. Next is the `Backend` seam, then
-  render-as-component with opt-in islands. Spec:
-  `docs/superpowers/specs/2026-06-25-cairn-contract-v2-design.md`.
+- **The Contract v2 plan series.** Phases 3b (the adapter restructure, `0.72.0`), 3c (the field-system
+  unification onto `fields.*`, `0.73.0`), and the `Backend` seam (the GitHub-App config blob becomes a
+  `Backend` interface with a `githubApp(...)` provider; the dev double becomes a conforming `Backend`,
+  `0.74.0`) have all shipped, held unpublished. The one phase left is **render-as-component with opt-in
+  islands** (phase 4), the last and newest surface; no plan yet, brainstorm scope first. Specs:
+  `docs/superpowers/specs/2026-06-25-cairn-contract-v2-design.md` and the per-phase designs beside it.
 
 ## Next
 
@@ -45,6 +45,11 @@ here, so this file stays a forward view.
 
 ## Later
 
+- **Test the `commitFiles` retry-loop 422 branch.** The fetch-level `GithubDouble` always fast-forwards,
+  so the head-merge retry path (a concurrent commit moving the branch under an atomic commit, no
+  `expectedHead`) is never exercised. Give the double a concurrency-injection hook and a fast-forward
+  check so a test can drive the non-fast-forward retry. The fail-closed `expectedHead` path the backend
+  seam added is tested; this is the older retry branch, a pre-existing gap surfaced by the seam's review.
 - **Frontmatter field `description` channel.** Schema-authored per-field help rendered under the input,
   so the Details panel stops showing fields with no hint. Dovetails with the Contract v2 field work.
 - **Nested-image delivery: seo and needs-alt.** Allow `seo: true` on an image inside a top-level `object`

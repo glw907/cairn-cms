@@ -41,7 +41,7 @@ npm install -D tailwindcss @tailwindcss/vite
 npm install -D daisyui
 ```
 
-Later you will wire a dev backend and admin hooks that read `process.env` and decode base64 with `Buffer`, both Node globals. A site that installs cairn from the registry does not get the Node types transitively, so add them yourself:
+Later you will wire a dev backend and a server hook that reads `process.env`, a Node global. A site that installs cairn from the registry does not get the Node types transitively, so add them yourself:
 
 ```bash
 npm install -D @types/node
@@ -112,7 +112,7 @@ The adapter is the one seam the engine consumes. It declares your content concep
 `Field Notes` has two concepts, the same two cairn ships first. `posts` are dated and `pages` are not. Each concept declares its fields with `fieldset` and the `fields.*` constructors. Create `src/lib/cairn.config.ts`:
 
 ```ts
-import { defineAdapter, defineConcept, fieldset, fields } from '@glw907/cairn-cms';
+import { defineAdapter, defineConcept, fieldset, fields, githubApp } from '@glw907/cairn-cms';
 
 export const cairn = defineAdapter({
   content: {
@@ -137,7 +137,7 @@ export const cairn = defineAdapter({
       }),
     }),
   },
-  backend: { owner: 'you', repo: 'field-notes', branch: 'main', appId: '1', installationId: '2' },
+  backend: githubApp({ owner: 'you', repo: 'field-notes', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'cms@field-notes.test' },
 });
 ```
@@ -199,7 +199,7 @@ Your site has content now, and still no way to turn a markdown body into the HTM
 Build the renderer near the top of `src/lib/cairn.config.ts`, then point `render` at it:
 
 ```ts
-import { createRenderer, defineAdapter, fieldset, fields } from '@glw907/cairn-cms';
+import { createRenderer, defineAdapter, fieldset, fields, githubApp } from '@glw907/cairn-cms';
 
 const { renderMarkdown } = createRenderer();
 
@@ -207,7 +207,7 @@ export const cairn = defineAdapter({
   content: {
     // ... the posts and pages concepts from milestone 2
   },
-  backend: { owner: 'you', repo: 'field-notes', branch: 'main', appId: '1', installationId: '2' },
+  backend: githubApp({ owner: 'you', repo: 'field-notes', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'cms@field-notes.test' },
   rendering: { render: (md, opts) => renderMarkdown(md, opts) },
 });
@@ -234,7 +234,7 @@ A component is a named block an author inserts in markdown that the registry tur
 A component is one `defineComponent` call that declares its `attributes`, its `slots`, and a `build(ctx)` function. The `attributes` are a `fields.*` record, the same field vocabulary a concept schema uses, and `defineComponent` validates the component when the module loads. `build` returns the hast for the block, reading attribute values off `ctx.attributes` and slot content off `ctx.slot(name)`. The `callout` has a `tone` attribute that switches its style, an `icon` attribute the editor's icon picker fills, a required inline `title`, and a markdown `body`. Add it to `src/lib/cairn.config.ts`, before the renderer:
 
 ```ts
-import { createRenderer, defineRegistry, defineComponent, defineAdapter, fieldset, fields } from '@glw907/cairn-cms';
+import { createRenderer, defineRegistry, defineComponent, defineAdapter, fieldset, fields, githubApp } from '@glw907/cairn-cms';
 import type { IconSet } from '@glw907/cairn-cms';
 import { h } from 'hastscript';
 
@@ -275,7 +275,7 @@ export const cairn = defineAdapter({
   content: {
     // ... the posts and pages concepts from milestone 2
   },
-  backend: { owner: 'you', repo: 'field-notes', branch: 'main', appId: '1', installationId: '2' },
+  backend: githubApp({ owner: 'you', repo: 'field-notes', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'cms@field-notes.test' },
   rendering: {
     render: (md, opts) => renderMarkdown(md, opts),
@@ -584,89 +584,40 @@ You do not hand-edit this YAML for every change. The admin carries a nav tree ed
 
 ## Milestone 8: Run the admin locally with the dev backend
 
-The public site is complete. Now you bring up the admin, the editor where an author logs in, edits a post, inserts a component, adds an internal link, saves, and publishes. The admin needs two things a real deployment supplies, an authenticated editor and a GitHub App that commits the save, and you have neither on your machine yet. The backend guides set up the real ones, and milestone 10 points you at them. To run the loop locally first, you install a dev backend that stands in for both, copied from the showcase.
+The public site is complete. Now you bring up the admin, the editor where an author logs in, edits a post, inserts a component, adds an internal link, saves, and publishes. The admin needs two things a real deployment supplies, an authenticated editor and a GitHub App that commits the save, and you have neither on your machine yet. The backend guides set up the real ones, and milestone 10 points you at them. To run the loop locally first, you install `@glw907/cairn-cms-dev`, a dev backend that stands in for both.
 
-A loud warning before you copy anything. The dev backend is for local development only. It installs an authentication bypass that signs you in as a fixed editor with no email check, and it installs a fake GitHub that records commits in memory instead of pushing them to a real repository. Never set the `CAIRN_DEV_BACKEND` flag in a deployed environment. With the flag unset, both fixtures are inert, so they are safe to keep in the repository, and the flag itself is the live wire. The deploy guide replaces this fixture with the real GitHub App and D1 auth and drops the flag entirely.
+A loud warning before you wire it. The dev backend is for local development only. It mints an owner session with no email check, and it supplies an in-memory GitHub double that records commits in memory instead of pushing them to a real repository. Never set the `CAIRN_DEV_BACKEND` flag in a deployed environment. The dev package ships behind a three-layer fence: the build-foldable `dev` flag, the `devDependency` boundary, and an engine tripwire that fails closed if the flag reaches production. The flag itself is the live wire. The deploy guide replaces the dev backend with the real GitHub App and D1 auth and drops the flag entirely.
 
-### Copy the dev backend fixture
+### Install the dev backend
 
-The first file is the fake GitHub, and you copy it rather than write it. The cairn repository carries a complete double at [`packages/cairn-cms-dev/src/fake-github.ts`](../../packages/cairn-cms-dev/src/fake-github.ts); copy that file into your project as `src/lib/fake-github.ts`. The double intercepts `fetch` calls to `api.github.com` and answers them from an in-memory, branch-aware repo. It covers everything the engine asks of GitHub: the Contents API reads behind the editor, the Git Data atomic-commit sequence behind a save (the ref, commit, tree, and refs endpoints), the branch create, list, and delete calls behind the pending-branch publish flow, and the installation token exchange. Each fake branch holds its own file tree, so a save lands on the entry's `cairn/<concept>/<id>` branch, Publish copies the held content to `main`, and Discard deletes the branch, the same lifecycle a real deployment runs. The double also records the last commit it lands, which the showcase's own E2E suite asserts against.
+Install `@glw907/cairn-cms-dev` as a devDependency:
 
-The copied file seeds its fake repo with one showcase post. Replace that seed with the `Field Notes` content, so the admin lists your posts, the link picker can resolve them, and the nav editor can read your menu. In your copy, delete the `SEED_POST` constant along with its comment, and replace the `branches` initialization with this one:
-
-```ts
-const branches = new Map<string, Tree>([
-  [
-    'main',
-    new Map([
-      [
-        'src/content/posts/2026-05-01-first-trail.md',
-        '---\ntitle: First trail on the ridge\ndate: 2026-05-01\ndescription: A short walk up the ridge to open the season.\n---\nThe snow was gone by the first week of May.\n',
-      ],
-      [
-        'src/content/posts/2026-05-15-packing-list.md',
-        '---\ntitle: A weekend packing list\ndate: 2026-05-15\ndescription: What goes in the pack for an overnight on the ridge.\n---\nA weekend on the ridge needs less than you think.\n',
-      ],
-      [
-        'src/content/pages/about.md',
-        '---\ntitle: About Field Notes\ndescription: A small blog about walks on the ridge.\n---\nField Notes is a small blog about walks on the ridge above town.\n',
-      ],
-      // The committed site config from milestone 7, so the nav editor has a menu to read.
-      [
-        'src/lib/site.config.yaml',
-        'siteName: Field Notes\nmenus:\n  primary:\n    - label: Home\n      url: /\n    - label: About\n      url: /about\n',
-      ],
-      // The committed manifest, so the link picker can resolve a cairn: link to an existing post.
-      [
-        'src/content/.cairn/index.json',
-        JSON.stringify({
-          version: 1,
-          entries: [
-            { id: '2026-05-01-first-trail', concept: 'posts', title: 'First trail on the ridge', date: '2026-05-01', permalink: '/2026/05/01/first-trail', draft: false, links: [] },
-            { id: '2026-05-15-packing-list', concept: 'posts', title: 'A weekend packing list', date: '2026-05-15', permalink: '/2026/05/15/packing-list', draft: false, links: [] },
-            { id: 'about', concept: 'pages', title: 'About Field Notes', permalink: '/about', draft: false, links: [] },
-          ],
-        }),
-      ],
-    ]),
-  ],
-]);
+```bash
+npm install -D @glw907/cairn-cms-dev
 ```
 
-The seeded files mirror what milestones 3 through 7 put on disk, plus the manifest the build pipeline maintains. The admin reads through the GitHub API rather than from disk, so what the fake repo holds is what the editor shows.
+The package exports `devBackendHandle()`, a SvelteKit handle that wires the whole local backend in one call. It sets `event.locals.backend` to an in-memory `Backend`, and the engine resolves that ahead of the real `githubApp` provider you declared in the adapter, so the admin's reads, saves, and publishes run against memory rather than a real repository. The same handle mints the owner session and supplies the binding doubles, so the admin treats you as signed in with no email loop. This replaces the global-`fetch` patch the old dev backend installed.
 
-The second file is the auth bypass. It installs the fake GitHub once and, on any `/admin` request, sets `event.locals.editor` to a fixed editor so the engine treats you as signed in. With the flag unset it runs the engine's `createAuthGuard`, which resolves a real session and gates the admin. Create `src/hooks.server.ts`:
+The in-memory `Backend` is branch-aware. It covers the editor reads, the atomic-commit sequence behind a save, and the pending-branch publish lifecycle. A save lands on the entry's `cairn/<concept>/<id>` branch, Publish copies the held content to `main`, and Discard deletes the branch, the same lifecycle a real deployment runs. The double seeds its repo from your content on disk, so the admin lists the posts and pages you wrote in milestones 3 through 7, the link picker can resolve them, and the nav editor reads the menu you set.
+
+Wire the handle from `src/hooks.server.ts`, behind the build-foldable `dev` flag and the `CAIRN_DEV_BACKEND` opt-in. Import it dynamically so a production build drops it. With the flag unset, the hook is the engine's `createAuthGuard`, which resolves a real session and gates the admin. Create `src/hooks.server.ts`:
 
 ```ts
-// The site's server hook. The dev backend is for local development only and activates only when
-// CAIRN_DEV_BACKEND=1. With the flag unset this hook is the engine's auth guard, so the admin
-// requires a real session. Never set the flag in production: it bypasses authentication.
-import type { Handle } from '@sveltejs/kit';
+import { dev } from '$app/environment';
 import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
-import { installFakeGitHub } from '$lib/fake-github.js';
+import type { Handle } from '@sveltejs/kit';
 
-const DEV_BACKEND = process.env.CAIRN_DEV_BACKEND === '1';
-
-if (DEV_BACKEND) {
-  installFakeGitHub();
+let handle: Handle;
+if (dev && process.env.CAIRN_DEV_BACKEND === '1') {
+  const { devBackendHandle } = await import('@glw907/cairn-cms-dev');
+  handle = devBackendHandle();
+} else {
+  handle = createAuthGuard();
 }
-
-const guard = createAuthGuard();
-
-export const handle: Handle = async ({ event, resolve }) => {
-  if (DEV_BACKEND) {
-    if (event.url.pathname === '/admin' || event.url.pathname.startsWith('/admin/')) {
-      // The locked dev editor identity. A real session carries the same shape. The engine guard is
-      // bypassed in dev, so the per-load session check reads this editor straight from locals.
-      event.locals.editor = { email: 'you@example.com', displayName: 'You', role: 'owner' };
-    }
-    return resolve(event);
-  }
-  return guard({ event, resolve });
-};
+export { handle };
 ```
 
-In dev the hook signs you in and skips the guard, since the guard would resolve a session from a D1 database you have not set up yet. In production the flag is unset, so the hook is the engine's `createAuthGuard`, which gates every `/admin/**` path. For the guard, see [the SvelteKit reference](../reference/sveltekit.md#createauthguard).
+The `dev` guard and the dynamic `import()` fold away in a production build, so the deployed bundle holds no dev-backend code at all. In dev with the flag set, `devBackendHandle()` signs you in and injects the in-memory backend. In production the flag is unset, so the hook is the engine's `createAuthGuard`, which gates every `/admin/**` path. For the guard, see [the SvelteKit reference](../reference/sveltekit.md#createauthguard).
 
 ### Mount the admin
 
@@ -674,7 +625,8 @@ The whole admin mounts as one catch-all route pair plus a composer, three files 
 
 ```ts
 // Composes the runtime once and builds the single-mount admin. mintToken stubs the GitHub App
-// token mint so the admin runs in dev without a real App key; the fake GitHub answers for it.
+// token mint so the admin runs in dev without a real App key; the in-memory backend answers the
+// commits, so the token is never spent.
 import { composeRuntime } from '@glw907/cairn-cms';
 import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
 import { cairn, siteConfig } from './cairn.config.js';
@@ -748,17 +700,17 @@ Start the dev server with the flag set:
 CAIRN_DEV_BACKEND=1 npm run dev
 ```
 
-Open `/admin` in the browser. The dev auth bypass signs you in as `You`, so you land on the posts list with no login step, and both posts carry a Published badge, since the fake repo's `main` holds them and no pending branch exists yet. Click the packing-list post to open the editor. The page shows the document title at the top, the markdown body with its formatting toolbar, the remaining frontmatter fields from your schema grouped in the sidebar, and a Preview tab on the toolbar that renders the page the way the site will.
+Open `/admin` in the browser. The dev backend signs you in as `You`, so you land on the posts list with no login step, and both posts carry a Published badge, since the in-memory backend's `main` holds them and no pending branch exists yet. Click the packing-list post to open the editor. The page shows the document title at the top, the markdown body with its formatting toolbar, the remaining frontmatter fields from your schema grouped in the sidebar, and a Preview tab on the toolbar that renders the page the way the site will.
 
 Now author the callout through the component dialog instead of typing the directive by hand. Press Insert block in the toolbar, choose `Callout`, and fill its guided form. The form has a `Tone` select and an `Icon` field. The icon field renders a picker that lists your icon set, so choose `snowflake` from it, the one glyph you registered in milestone 5. Fill the title and the body, then insert. The dialog serializes the directive and drops it at the cursor, the same markup you wrote by hand earlier.
 
-Next add the internal link the packing-list post has been missing since milestone 3. Press Link to page in the toolbar, search for the first-trail post by its title, and choose it. The picker inserts a `cairn:posts/2026-05-01-first-trail` link at the cursor, the rot-proof token that survives a later rename of the target. Now save the post. The save commits to the entry's pending branch, `cairn/posts/2026-05-15-packing-list`, in the fake repo, and the header's save-state indicator flips to Saved. Nothing reaches `main` yet; back on the posts list, the row's badge reads Edited to say the live version and the held edits differ.
+Next add the internal link the packing-list post has been missing since milestone 3. Press Link to page in the toolbar, search for the first-trail post by its title, and choose it. The picker inserts a `cairn:posts/2026-05-01-first-trail` link at the cursor, the rot-proof token that survives a later rename of the target. Now save the post. The save commits to the entry's pending branch, `cairn/posts/2026-05-15-packing-list`, in the in-memory backend, and the header's save-state indicator flips to Saved. Nothing reaches `main` yet; back on the posts list, the row's badge reads Edited to say the live version and the held edits differ.
 
 Publishing is the deliberate second step. Return to the post and press Publish in the header. The engine copies the held markdown to `main`, updates the entry's manifest row in the same commit, and deletes the pending branch, so the badge returns to Published. On a deployed site that `main` commit is what triggers the rebuild and ships the change. The topbar also carries a "Publish site" button when entries are pending, which ships every held entry in one commit.
 
-Two more views are worth a visit. Open `/admin/nav` to see the `primary` menu you set in milestone 7 rendered as a reorderable tree, read from the site config you seeded into the fake repo. The editors view at `/admin/editors` manages the sign-in allowlist, and it works in dev through the same copy-the-fixture pattern as the fake GitHub: the cairn repository carries an in-memory stand-in for the D1 auth store at [`packages/cairn-cms-dev/src/fake-auth-db.ts`](../../packages/cairn-cms-dev/src/fake-auth-db.ts), and the showcase's `hooks.server.ts` injects it as `event.platform` on `/admin` requests in the same branch that sets the dev editor. Copy both pieces if you want the allowlist view running locally; on the deployed site the view reads the real `AUTH_DB` binding instead.
+Two more views are worth a visit. Open `/admin/nav` to see the `primary` menu you set in milestone 7 rendered as a reorderable tree, read from the site config the in-memory backend holds. The editors view at `/admin/editors` manages the sign-in allowlist, and it works in dev with no extra wiring: `devBackendHandle()` supplies a fake D1 auth store alongside the GitHub double, so the allowlist view runs against it out of the box. On the deployed site the view reads the real `AUTH_DB` binding instead.
 
-You now have the full author loop running on your machine: log in, edit, insert a component, add an internal link, save, and publish. The commits are fake. To make them real, you set up the production backend. [Set up the GitHub App](../guides/set-up-the-github-app.md) creates the App that commits to your repository. [Configure auth and D1](../guides/configure-auth-and-d1.md) sets up the magic-link login store. [Deploy to Cloudflare](../guides/deploy-to-cloudflare.md) swaps the dev fixture for the real GitHub App and D1 auth and drops the `CAIRN_DEV_BACKEND` flag.
+You now have the full author loop running on your machine: log in, edit, insert a component, add an internal link, save, and publish. The commits are fake. To make them real, you set up the production backend. [Set up the GitHub App](../guides/set-up-the-github-app.md) creates the App that commits to your repository. [Configure auth and D1](../guides/configure-auth-and-d1.md) sets up the magic-link login store. [Deploy to Cloudflare](../guides/deploy-to-cloudflare.md) swaps the dev backend for the real GitHub App and D1 auth and drops the `CAIRN_DEV_BACKEND` flag.
 
 ## Milestone 9: Confirm the internal link and regenerate the manifest
 
@@ -784,6 +736,6 @@ That lookup is what keeps an internal link rot-proof. The link stores a permanen
 
 `Field Notes` runs on your machine. To put it on the web with real logins and real commits, work through the four backend and deploy guides. [Set up the GitHub App](../guides/set-up-the-github-app.md) creates the App that commits to your repository. [Configure auth and D1](../guides/configure-auth-and-d1.md) sets up the magic-link login store. [Wire the delivery surface](../guides/wire-the-delivery-surface.md) revisits the public read model against the showcase. [Deploy to Cloudflare](../guides/deploy-to-cloudflare.md) ships the site.
 
-The deploy guides replace the dev backend with the real GitHub App and D1 auth and drop the `CAIRN_DEV_BACKEND` flag, so the bypass and the fake GitHub never reach production.
+The deploy guides replace the dev backend with the real GitHub App and D1 auth and drop the `CAIRN_DEV_BACKEND` flag, so the bypass and the in-memory backend never reach production.
 
 For the reasoning behind the design, read [the explanation arm](../explanation/README.md). For the full API surface, the [reference](../reference/README.md) is the source of truth.

@@ -443,3 +443,70 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 - **No second backend impl, no `query()`, media unchanged, auth unchanged** — honored by construction.
 - **Type consistency:** `connect(env: BackendEnv)`, `commit(..., expectedHead?)`, `kind: 'github-app'`,
   and `readEntries`/`readFile` names are used identically across Tasks 1-3.
+
+---
+
+## Post-mortem (2026-06-27)
+
+**Shipped** as 0.74.0 (held unpublished; window 0.69.0-0.74.0) on branch `contract-v2-backend-seam`
+off the 3c tip. The GitHub-App config blob is now a `Backend` interface with a `githubApp(...)`
+provider, every engine consumer resolves one live `Backend` per request, and the dev double is a
+conforming `Backend` on `event.locals.backend` rather than a global-`fetch` monkeypatch.
+
+**Built, in order:**
+- Task 1 (additive, `2579fce`): the `Backend`/`BackendProvider`/`GithubAppProvider`/`BackendEnv`
+  interfaces, `githubApp()`, and `makeGithubBackend(config, getToken)` with an injectable token getter.
+  `commitFiles` gained an optional `expectedHead` (refactored into `commitOnTree`/`commitOnHead`), the
+  fail-closed single-attempt guard. Gated green alone.
+- Task 2 (the atomic compile unit, `3615bd3`): retyped the adapter/runtime `backend` to
+  `BackendProvider`, added `resolveBackend(event)` and rewired ~50 backend call sites in
+  `content-routes.ts` plus `nav-routes.ts`, migrated the 4 cross-branch helpers to take a `Backend`,
+  narrowed the three non-request readers on `kind === 'github-app'` (added the `isGithubApp` guard),
+  deleted `BackendConfig`/`RepoRef`/`AppCredentials`/`commitFile`/`fileSha`/`mintToken`, renamed
+  `GithubKeyEnv`→`BackendEnv`, migrated the showcase, and migrated ~40 test files. One green checkpoint.
+- Task 3 (the dev double, `97044cf`): `fake-github.ts` became `createDevBackend(): Backend` over the
+  kept module-level store; `devBackendHandle` sets `locals.backend`; the `fetch` patch is gone; the
+  dev-fence grep needles updated (drop `installFakeGitHub`, add `createDevBackend`/`committedFile`).
+- Release: `code-simplifier` unified a duplicate `BackendEnv` (one refinement). The pass-end reviewer
+  fan-out (Cloudflare-Workers, web-auth-security, dev-fence, public-surface) confirmed 6 findings, all
+  minor; the load-bearing fixes folded: read the branch head BEFORE the config content in
+  nav/settings (closing a same-file silent-overwrite window), and typed `event.locals.backend` on
+  `EventBase` and the ambient `App.Locals` so the dev channel is a checked contract.
+
+**Verified:** `npm run check` 0/0 throughout, `npm test` exit 0 (2712), `check:comments` + all four doc
+gates + `check:version` (minor → 0.74.0), the four-lens reviewer fan-out, and the from-scratch consumer
+e2e (the publish round-trip exercises save/branch/publish through the new interface).
+
+**Durable lessons:**
+1. **The two adversarial reviews paid off again, both-necessary.** The spec review (18 findings) forced
+   the provider to expose the GitHub App identity facts for the three non-request readers (vite
+   adapterFacts, health signing self-test, doctor) and added `branchHead()` the sketch omitted. The
+   plan review (20 findings) caught that the real test seam is the fetch-level `GithubDouble`, not
+   `deps.mintToken` — which turned a feared 27-file fetch-script rewrite into a `deps.backend` swap via
+   the injectable token getter on `makeGithubBackend`, because the GitHub `Backend` still calls `fetch`
+   underneath the interface. Then the pass-end fan-out caught a same-file silent-overwrite window the
+   18+20 findings, the implementers, and 2712 tests all missed.
+2. **The fetch double lives BELOW the Backend seam, so it survives the migration untouched.** This is
+   the key that made the test migration cheap: a test injects `deps.backend = makeGithubBackend(repo,
+   () => 'test-token')` and the existing `GithubDouble.install()` and every fetch-URL assertion keep
+   working. The corollary: the `commitFiles` retry-loop 422 branch stays under-tested because the
+   double never simulates a non-fast-forward; that is a pre-existing gap, carried forward, not
+   introduced here.
+3. **A lazy token mint behind the seam collapses the two load-degrade tiers.** The list and media-library
+   loads previously split a token-mint failure from a read failure; the mint is now lazy inside the
+   first read, so both become one degrade. Documented in the changelog as a no-action behavior note.
+4. **Type the per-request injection channel.** `event.locals.backend` started as an inline structural
+   cast on both the engine read and the dev write; a mis-key would silently fall through to the real
+   provider. Typing it on `EventBase.locals` (engine) and the ambient `App.Locals` (consumers) makes
+   the dev-fence channel a checked contract. The engine's structural event types do NOT see the global
+   `App.Locals` augmentation, so the field had to be added to `EventBase` directly, not only ambient.
+
+**Carry-forwards (filed to ROADMAP):**
+- The `commitFiles` retry-loop 422 branch is under-tested: the `GithubDouble` does not enforce
+  fast-forward, so a test cannot drive a non-fast-forward retry. Enhancing the double (and adding a
+  concurrency-injection hook) is its own small test-debt task.
+- The dev double's `commit` rejects an empty change set with the literal `commitFiles: no changes to
+  commit` string; if that real-side message ever changes, the double must track it.
+
+**Next:** the render seam and islands (Contract v2 phase 4), the last and newest surface. No plan yet;
+brainstorm scope first.

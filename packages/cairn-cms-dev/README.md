@@ -48,7 +48,7 @@ Three independent layers keep the bypass out of production. The bypass ships onl
    the deployed bundle holds no dev-backend code. Gate every import from this package the same way:
    the package re-exports its whole surface from one module, so a single static `import` pulls the
    bypass into the build. Verify a release by grepping the built output for a bypass string such as
-   `installFakeGitHub`.
+   `createDevBackend` or `devBackendHandle`.
 2. The `devDependency` boundary. A production install with `npm ci --omit=dev` skips the package, so a
    forced import throws at runtime instead of bypassing.
 3. The engine tripwire. If `CAIRN_DEV_BACKEND` reaches a deployed runtime, cairn's auth guard refuses

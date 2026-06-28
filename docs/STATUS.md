@@ -11,7 +11,48 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-27, latest): Contract v2 phase 3c (field-system unification) SHIPPED as 0.73.0 (held); NEXT = the `Backend` seam
+## Immediate next action (2026-06-27, latest): Contract v2 backend seam SHIPPED as 0.74.0 (held); NEXT = render-as-component + islands (phase 4, the last v2 phase)
+
+**The Contract v2 backend seam is complete** as **0.74.0** (breaking within 0.x, minor). The GitHub-App
+config blob becomes a `Backend` interface with a `githubApp(...)` default provider. The engine resolves one
+live `Backend` per request (`event.locals.backend ?? runtime.backend.connect(env)`), and the
+local-development double becomes a conforming `Backend` on `event.locals.backend`, retiring its
+global-`fetch` monkeypatch. The interface is read, commit, and branch operations over files, never a query,
+so content querying stays build-time over the manifest and a runtime DB can never slip in behind the seam.
+The adapter's `backend` field changes from a `{ owner, repo, branch, appId, installationId }` object literal
+to `backend: githubApp({ ... })`; the App's non-secret identity rides the provider and the private key stays
+the Worker secret read at request time. Spec + plan + post-mortem:
+`docs/superpowers/specs/2026-06-27-cairn-contract-v2-backend-seam-design.md` and
+`docs/superpowers/plans/2026-06-27-cairn-contract-v2-backend-seam.md`.
+
+**Held unpublished (Geoff): do NOT publish until the whole Contract v2 series is complete.** No GitHub
+Release / npm publish is cut; the held window now spans **0.69.0 through 0.74.0** and rolls into one release
+when references → object/array → adapter/concept → field-unification → backend → render + islands all land.
+The two sites (ecxc-ski, 907-life) stay on the prior published range until then. **The one phase left is
+render-as-component + opt-in islands (phase 4)**, the last and newest surface; no plan yet, brainstorm scope
+first.
+
+**Verified.** `npm run check` 1206 files 0/0; `npm test` exit 0 at **2712**; `check:comments` + the four doc
+gates + `check:version` (minor → 0.74.0); the pass-end four-lens reviewer fan-out (Cloudflare-Workers,
+web-auth-security, dev-fence, public-surface; 6 minor findings, all folded); and the load-bearing proof, a
+from-scratch consumer build (`rm -rf examples/showcase/{node_modules,package-lock.json}`, fresh install,
+`npm run build`) with a CLEAN dev-fence elimination grep on the deployable `.svelte-kit/cloudflare` output,
+plus the **39-test Playwright e2e** (the create → save → publish round-trip runs through the new interface).
+Executed main-loop orchestrate-and-verify on `contract-v2-backend-seam` (off the 3c tip): Task 1 additive
+gated `cairn-implementer` (`2579fce`); Task 2 the atomic compile unit, ~50 backend call sites plus ~40 test
+files migrated, gated once (`3615bd3`); Task 3 the dev double (`97044cf`); then `code-simplifier`
+(`BackendEnv` unification) and the review fold (the nav/settings head-before-content guard window, typed
+`locals.backend`).
+
+**Durable lessons** (full detail in the plan post-mortem and the `cairn-site-contract-v2-opportunity` memory):
+the fetch double lives BELOW the Backend seam so it survives the migration untouched (the test migration is a
+`deps.backend = makeGithubBackend(repo, () => 'token')` swap, not a fetch-script rewrite, because the GitHub
+`Backend` still calls `fetch`); a lazy token mint behind the seam collapses the two load-degrade tiers into
+one; the per-request `locals.backend` channel must be typed on `EventBase` AND the ambient `App.Locals`
+(the engine's structural event types do not see the global augmentation); the two adversarial reviews plus
+the pass-end fan-out are all complementary and each caught what the others missed.
+
+## Prior next action (2026-06-27): Contract v2 phase 3c (field-system unification) SHIPPED as 0.73.0 (held)
 
 **Contract v2 phase 3c (field-system unification) is complete** as **0.73.0** (breaking within 0.x, minor). The
 two parallel field systems collapse into one: a directive component's `attributes` are a `fields.*` record

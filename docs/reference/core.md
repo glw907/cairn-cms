@@ -54,7 +54,7 @@ export const cairn = defineAdapter({
       }),
     }),
   },
-  backend: { owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' },
+  backend: githubApp({ owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'cms@showcase.test' },
   rendering: {
     render: (md, opts) => renderMarkdown(md, opts),
@@ -63,6 +63,26 @@ export const cairn = defineAdapter({
   },
 });
 ```
+
+#### `githubApp`
+
+```ts
+declare function githubApp(config: {
+  owner: string;
+  repo: string;
+  branch: string;
+  appId: string;
+  installationId: string;
+}): GithubAppProvider;
+```
+
+The default backend: a GitHub App over a repo branch, and the value the adapter's `backend` field
+takes. It carries the App's non-secret identity, the `owner`, `repo`, `appId`, and `installationId`.
+The private key stays the Worker secret `GITHUB_APP_PRIVATE_KEY_B64`, which the engine reads at request
+time and never from the adapter source. The engine resolves one live `Backend` per request from the
+provider, so a different store such as GitLab, Gitea, or plain git can supply its own provider later
+without the engine changing. The backend covers read, commit, and branch operations over files. It's
+deliberately not a query interface, so content querying stays build-time over the committed manifest.
 
 #### `defineConcept`
 
@@ -768,7 +788,11 @@ function signatures above reference these.
 | `ConceptDescriptor` | `interface ConceptDescriptor` | The engine-internal, uniform view of one concept after normalization, including the resolved `singular` (defaulted to `label`). |
 | `ConceptUrlPolicy` | `interface ConceptUrlPolicy` | A concept's permalink pattern and date-prefix granularity, declared per concept via `defineConcept`. |
 | `RoutingRule` | `interface RoutingRule` | Concept-fixed routing: routable, dated, inFeeds. |
-| `BackendConfig` | `interface BackendConfig` | The GitHub App backend a site reads from and commits to. |
+| `Backend` | `interface Backend` | The live, connected content store the engine resolves per request: read, commit, and branch operations over files, never a query. |
+| `BackendProvider` | `interface BackendProvider` | The adapter's `backend` value: carries the `kind` and default `branch`, and `connect(env)`s to a live `Backend`. |
+| `GithubAppProvider` | `interface GithubAppProvider` | What `githubApp(...)` returns: a `BackendProvider` plus the GitHub App's non-secret identity (`owner`, `repo`, `appId`, `installationId`). |
+| `BackendEnv` | `interface BackendEnv` | The Worker secret carrier `connect` reads, holding `GITHUB_APP_PRIVATE_KEY_B64`. |
+| `FileChange` | `interface FileChange` | One path change in a commit: write `content`, or delete the path when `content` is null. |
 | `SenderConfig` | `interface SenderConfig` | Magic-link sender identity for Cloudflare Email Sending. |
 | `NavMenuConfig` | `interface NavMenuConfig` | A git-committed YAML menu the nav editor manages. |
 | `PreviewConfig` | `interface PreviewConfig` | The live site's stylesheets and container classes for the edit page's preview frame, with optional per-concept wrapper overrides. |
@@ -831,7 +855,5 @@ function signatures above reference these.
 | `AuthBranding` | `interface AuthBranding` | Per-site identity for the magic-link email. |
 | `MagicLinkMessage` | `interface MagicLinkMessage` | The message a built magic-link email carries. |
 | `SendMagicLink` | `type SendMagicLink` | The injected send; production uses `cloudflareSend`. |
-| `RepoRef` | `interface RepoRef` | Repo coordinates pinned to a branch: owner, repo, branch. |
 | `RepoFile` | `interface RepoFile` | A markdown file in a concept directory: id, name, path. |
 | `CommitAuthor` | `interface CommitAuthor` | A commit author: the signed-in editor's name and email. |
-| `AppCredentials` | `interface AppCredentials` | What the App signer needs: app id, installation, and the base64 PEM. |

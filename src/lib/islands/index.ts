@@ -7,14 +7,10 @@ import type { IslandRegistry } from './types.js';
 
 export type { IslandRegistry } from './types.js';
 
-// One mounted island: the boundary node, the Svelte instance, and the fallback children we cleared, kept
-// so navigation can unmount cleanly. Module-level because a layout calls hydrateIslands once per navigation
-// and the previous pass must be torn down before the next.
-interface Mounted {
-  instance: Record<string, unknown>;
-}
-
-let mounted: Mounted[] = [];
+// The live Svelte instances of the current pass and the observers still waiting to fire, kept module-level
+// so the next pass can tear the previous one down. A layout calls hydrateIslands once per navigation, and
+// the previous mounts must unmount before the next mount over the same DOM.
+let mounted: Record<string, unknown>[] = [];
 let observers: IntersectionObserver[] = [];
 
 // Tear down the previous pass: unmount live instances and disconnect observers that never fired. Svelte's
@@ -22,9 +18,9 @@ let observers: IntersectionObserver[] = [];
 function teardown(): void {
   for (const o of observers) o.disconnect();
   observers = [];
-  for (const m of mounted) {
+  for (const instance of mounted) {
     try {
-      void unmount(m.instance);
+      void unmount(instance);
     } catch {
       // a component that throws on teardown must not block the rest
     }
@@ -44,8 +40,7 @@ function mountIsland(node: Element, Comp: Component<Record<string, unknown>>): v
   const fallback = [...node.childNodes];
   node.replaceChildren();
   try {
-    const instance = mount(Comp, { target: node as HTMLElement, props });
-    mounted.push({ instance });
+    mounted.push(mount(Comp, { target: node as HTMLElement, props }));
   } catch {
     node.replaceChildren(...fallback);
   }

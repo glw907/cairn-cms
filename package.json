@@ -78,6 +78,11 @@
       "types": "./dist/islands/index.d.ts",
       "default": "./dist/islands/index.js"
     },
+    "./extend": {
+      "types": "./dist/extend/index.d.ts",
+      "svelte": "./dist/extend/index.js",
+      "default": "./dist/extend/index.js"
+    },
     "./render": {
       "types": "./dist/render/authoring.d.ts",
       "svelte": "./dist/render/authoring.js",
@@ -111,6 +116,7 @@
       "types": "./dist/ambient.d.ts",
       "default": "./dist/ambient.js"
     },
+    "./internal/*": null,
     "./package.json": "./package.json"
   },
   "bin": {

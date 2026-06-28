@@ -11,6 +11,16 @@ a proof-of-concept; its requirements ground and validate the design but do not b
 illustrative, not exhaustive. Design the seam for the general case (a developer adds custom, D1-backed admin
 functionality to a content-managed site), and use aksailingclub as a concreteness check, not the spec.
 
+**Customizations must survive updates (Geoff, 2026-06-28).** A developer uses cairn as a framework and keeps
+pulling updates without their customizations breaking. That makes the extension surface a stability contract,
+not a convenience: a deliberate, narrow, versioned public API that cairn can evolve its internals behind
+freely, so an engine update never breaks a customization built on the seam. Once 1.0 lands, a breaking change
+to that extension API is a major-version event. This is the payoff the enforced-public-boundary and
+smooth-upgrade sub-lenses exist to deliver, and the pre-1.0 window is exactly when to get the contract right,
+because after 1.0 it cannot break. The corollary: keep the seam narrow and the internals private, so the
+surface a customization depends on is small, stable, and enforced rather than a developer reaching into
+engine internals that then churn.
+
 **Make the breaking changes now, before adoption (Geoff, 2026-06-27).** If extensibility needs to alter the
 site contract or the core developer DX, do it in the breaking pre-1.0 window, before anyone is using cairn,
 rather than after a stable release. The Contract v2 rollup shipped as `0.76.0` to `latest` via a `v0.76.0`

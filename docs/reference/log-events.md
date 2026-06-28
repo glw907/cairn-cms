@@ -15,7 +15,9 @@ redaction stance.
 | `auth.link.requested` | info | A magic-link request reaches `POST /admin/auth/request`. | `email` |
 | `auth.token.minted` | info | A token is issued for an allow-listed editor. | `email`, `expiresAt` |
 | `auth.link.send_failed` | error | The confirmation email send rejects. | `email`, `error`, `code`, `conditionId` |
+| `auth.link.rate_limited` | warn | A magic-link request exceeds the per-IP send limit; the request collapses into the neutral response and issues no token. | `ip` |
 | `auth.token.confirmed` | info | A valid token is consumed at `POST /admin/auth/confirm`. | `email` |
+| `auth.signin` | info | The server-only `signIn` seam mints a session for an externally verified email. | `email`, `tier` |
 | `auth.session.created` | info | A session row is created after a confirm. | `email` |
 | `auth.session.destroyed` | info | A session is deleted at logout. | none |
 | `auth.authorize.failed` | error | The site's authorize callback threw or timed out; custom scopes are denied for this request. | `email`, `error` |

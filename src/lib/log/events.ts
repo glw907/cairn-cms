@@ -4,6 +4,8 @@
 export type CairnLogEvent =
   | 'auth.link.requested'
   | 'auth.link.send_failed'
+  | 'auth.link.rate_limited'
+  | 'auth.signin'
   | 'auth.token.minted'
   | 'auth.token.confirmed'
   | 'auth.session.created'

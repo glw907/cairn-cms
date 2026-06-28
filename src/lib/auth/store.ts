@@ -19,11 +19,17 @@ export async function findEditor(db: D1Database, email: string): Promise<Editor 
   return row ? toEditor(row) : null;
 }
 
-/** Replace any prior token for this email with a fresh one, atomically. */
+/**
+ * Replace any prior token for this email with a fresh one, atomically. The token row carries the
+ * server-authoritative `tier` the confirmed session inherits and the validated `redirectTo` path, so
+ * neither rides the confirm URL where an attacker could forge them.
+ */
 export async function issueToken(
   db: D1Database,
   email: string,
   tokenHash: string,
+  tier: AuthTier,
+  redirectTo: string | null,
   expiresAt: number,
   now: number,
 ): Promise<void> {
@@ -31,8 +37,10 @@ export async function issueToken(
     // Replace this email's prior token, and sweep any expired token while here (no cron needed).
     db.prepare('DELETE FROM magic_token WHERE email = ? OR expires_at <= ?').bind(email, now),
     db
-      .prepare('INSERT INTO magic_token (token_hash, email, expires_at, created_at) VALUES (?, ?, ?, ?)')
-      .bind(tokenHash, email, expiresAt, now),
+      .prepare(
+        'INSERT INTO magic_token (token_hash, email, tier, redirect_to, expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+      )
+      .bind(tokenHash, email, tier, redirectTo, expiresAt, now),
   ]);
 }
 
@@ -46,15 +54,20 @@ export async function recentlyIssued(db: D1Database, email: string, since: numbe
 }
 
 /**
- * Consume a token in one atomic statement. A returned email means the token was present and
- * unexpired and is now gone, so the link is single-use by construction on strongly-consistent D1.
+ * Consume a token in one atomic statement, returning the email plus the server-authoritative tier
+ * and redirect target the row carried. A returned object means the token was present and unexpired
+ * and is now gone, so the link is single-use by construction on strongly-consistent D1.
  */
-export async function consumeToken(db: D1Database, tokenHash: string, now: number): Promise<string | null> {
+export async function consumeToken(
+  db: D1Database,
+  tokenHash: string,
+  now: number,
+): Promise<{ email: string; tier: AuthTier; redirectTo: string | null } | null> {
   const row = await db
-    .prepare('DELETE FROM magic_token WHERE token_hash = ? AND expires_at > ? RETURNING email')
+    .prepare('DELETE FROM magic_token WHERE token_hash = ? AND expires_at > ? RETURNING email, tier, redirect_to')
     .bind(tokenHash, now)
-    .first<{ email: string }>();
-  return row?.email ?? null;
+    .first<{ email: string; tier: AuthTier; redirect_to: string | null }>();
+  return row ? { email: row.email, tier: row.tier, redirectTo: row.redirect_to ?? null } : null;
 }
 
 /** Create a session row carrying its trust tier, set at mint time. */

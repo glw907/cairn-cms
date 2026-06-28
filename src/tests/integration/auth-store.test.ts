@@ -75,28 +75,42 @@ describe('last-owner guards (atomic)', () => {
 });
 
 describe('magic tokens (single-use by construction)', () => {
-  it('issues a token and consumes it exactly once', async () => {
+  it('issues a token and consumes it exactly once, returning its tier and redirect', async () => {
     await seedEditor('ed@x.dev', 'Ed', 'editor');
     const future = Date.now() + 10_000;
-    await issueToken(db, 'ed@x.dev', 'hash-1', future, Date.now());
-    expect(await consumeToken(db, 'hash-1', Date.now())).toBe('ed@x.dev');
+    await issueToken(db, 'ed@x.dev', 'hash-1', 'admin', '/admin/posts', future, Date.now());
+    expect(await consumeToken(db, 'hash-1', Date.now())).toEqual({
+      email: 'ed@x.dev',
+      tier: 'admin',
+      redirectTo: '/admin/posts',
+    });
     expect(await consumeToken(db, 'hash-1', Date.now())).toBeNull();
+  });
+
+  it('returns a null redirect when none was stored', async () => {
+    const future = Date.now() + 10_000;
+    await issueToken(db, 'fan@x.dev', 'hash-m', 'member', null, future, Date.now());
+    expect(await consumeToken(db, 'hash-m', Date.now())).toEqual({
+      email: 'fan@x.dev',
+      tier: 'member',
+      redirectTo: null,
+    });
   });
 
   it('refuses an expired token', async () => {
     await seedEditor('ed@x.dev', 'Ed', 'editor');
     const past = Date.now() - 10_000;
-    await issueToken(db, 'ed@x.dev', 'hash-2', past, Date.now());
+    await issueToken(db, 'ed@x.dev', 'hash-2', 'admin', null, past, Date.now());
     expect(await consumeToken(db, 'hash-2', Date.now())).toBeNull();
   });
 
   it('replaces a prior token for the same email', async () => {
     await seedEditor('ed@x.dev', 'Ed', 'editor');
     const future = Date.now() + 10_000;
-    await issueToken(db, 'ed@x.dev', 'old', future, Date.now());
-    await issueToken(db, 'ed@x.dev', 'new', future, Date.now());
+    await issueToken(db, 'ed@x.dev', 'old', 'admin', null, future, Date.now());
+    await issueToken(db, 'ed@x.dev', 'new', 'admin', null, future, Date.now());
     expect(await consumeToken(db, 'old', Date.now())).toBeNull();
-    expect(await consumeToken(db, 'new', Date.now())).toBe('ed@x.dev');
+    expect((await consumeToken(db, 'new', Date.now()))?.email).toBe('ed@x.dev');
   });
 });
 

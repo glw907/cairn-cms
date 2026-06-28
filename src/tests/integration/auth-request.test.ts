@@ -7,7 +7,11 @@ import type { MagicLinkMessage } from '../../lib/email.js';
 const db = env.AUTH_DB;
 
 beforeEach(async () => {
-  await db.batch([db.prepare('DELETE FROM magic_token'), db.prepare('DELETE FROM editor')]);
+  await db.batch([
+    db.prepare('DELETE FROM magic_token'),
+    db.prepare('DELETE FROM editor'),
+    db.prepare('DELETE FROM auth_rate'),
+  ]);
 });
 
 const branding = { siteName: 'Test', from: 'noreply@test.dev' };
@@ -86,7 +90,7 @@ describe('request hardening (Unit 4)', () => {
     const { issueToken } = await import('../../lib/auth/store.js');
     const { hashToken, generateToken } = await import('../../lib/auth/crypto.js');
     const old = Date.now() - 61_000; // older than the 60s cooldown, still inside the 10-min TTL
-    await issueToken(db, 'ed@x.dev', await hashToken(generateToken()), old + 600_000, old);
+    await issueToken(db, 'ed@x.dev', await hashToken(generateToken()), 'admin', null, old + 600_000, old);
     const { routes, sent } = routesWithSink();
     await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' } }));
     expect(sent).toHaveLength(1);
@@ -118,6 +122,41 @@ describe('request hardening (Unit 4)', () => {
     const result = await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' } }));
     expect(result).toEqual({ status: 'send_error', sent: false });
     expect(await countRows('magic_token')).toBe(1); // the token row was written before the send threw
+  });
+});
+
+describe('per-IP send rate limit (Task 8)', () => {
+  // Production keys the rate bucket on the Cloudflare-set cf-connecting-ip header, falling back to a
+  // logged `unknown` bucket when the header is absent. The harness Request sets no header, so each
+  // scenario builds its own event with a fresh IP to avoid cross-contaminating the single bucket.
+  function ipEvent(url: string, form: Record<string, string>, ip: string) {
+    return {
+      url: new URL(url),
+      request: new Request(url, { method: 'POST', body: new URLSearchParams(form), headers: { 'cf-connecting-ip': ip } }),
+      cookies: makeEvent({ url }).cookies,
+      locals: { principal: null },
+      platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: 'https://test.dev' } },
+      setHeaders: () => {},
+    };
+  }
+
+  it('allows five sends from one IP, then refuses the sixth without issuing a token', async () => {
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    const { routes, sent } = routesWithSink();
+    const url = 'https://test.dev/admin/auth/request';
+    const ip = '203.0.113.7';
+    for (let i = 0; i < 5; i++) {
+      // Clear the per-email cooldown so the limiter, not the cooldown, is what bites.
+      await db.prepare('DELETE FROM magic_token').run();
+      await routes.requestAction(ipEvent(url, { email: 'ed@x.dev' }, ip) as never);
+    }
+    expect(sent).toHaveLength(5);
+    await db.prepare('DELETE FROM magic_token').run();
+    const sixth = await routes.requestAction(ipEvent(url, { email: 'ed@x.dev' }, ip) as never);
+    // The throttle collapses into the neutral signal on the public path, and no token is written.
+    expect(sixth).toEqual({ status: 'sent', sent: true });
+    expect(await countRows('magic_token')).toBe(0);
+    expect(sent).toHaveLength(5);
   });
 });
 

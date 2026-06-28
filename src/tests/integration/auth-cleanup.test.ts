@@ -20,7 +20,7 @@ describe('lazy expired-row cleanup (Unit 6)', () => {
       .prepare('INSERT INTO magic_token (token_hash, email, expires_at, created_at) VALUES (?, ?, ?, ?)')
       .bind('stale-hash', 'old@x.dev', now - 1, now - 10_000)
       .run();
-    await issueToken(db, 'new@x.dev', 'fresh-hash', now + 600_000, now);
+    await issueToken(db, 'new@x.dev', 'fresh-hash', 'admin', null, now + 600_000, now);
     expect(await countRows('magic_token')).toBe(1);
   });
 

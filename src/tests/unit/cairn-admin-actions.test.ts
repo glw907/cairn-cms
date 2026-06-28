@@ -58,8 +58,15 @@ function fakeD1(firstResults: Record<string, unknown> = {}) {
       return stmt;
     },
     async batch(stmts: { sql: string; args: unknown[] }[]) {
-      for (const s of stmts) calls.push({ sql: s.sql, args: s.args });
-      return [];
+      // Mirror D1's per-statement result array. A statement whose sql matches a firstResults key
+      // returns that row in `results`; the rate-limit counter defaults to 1 (under the send limit).
+      return stmts.map((s) => {
+        calls.push({ sql: s.sql, args: s.args });
+        const key = Object.keys(firstResults).find((k) => s.sql.includes(k));
+        if (key) return { results: [firstResults[key]] };
+        if (s.sql.includes('auth_rate')) return { results: [{ count: 1 }] };
+        return { results: [] };
+      });
     },
   };
   return { db, calls };
@@ -169,7 +176,7 @@ describe('auth actions', () => {
   });
 
   it('confirm delegates on the confirm view: consumes the token, sets the session cookie, redirects', async () => {
-    const { db } = fakeD1({ 'DELETE FROM magic_token': { email: 'ed@t' } });
+    const { db } = fakeD1({ 'DELETE FROM magic_token': { email: 'ed@t', tier: 'admin', redirect_to: null } });
     const admin = createCairnAdmin(runtime(), deps);
     const event = actionEvent('/admin/auth/confirm', { editor: null, form: { token: 'tok' }, env: { AUTH_DB: db } });
     await expectRedirect(admin.actions.confirm(event as never), '/admin');

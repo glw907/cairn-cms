@@ -8,9 +8,14 @@ import { readRaw, listMarkdown, commitFiles } from './repo.js';
 import type { FileChange } from './repo.js';
 import { branchHeadSha, createBranch as createBranchRef, deleteBranch, listBranches } from './branches.js';
 import { appCredentials } from './credentials.js';
+import type { BackendEnv } from './credentials.js';
 import { cachedInstallationToken } from './signing.js';
 import { CommitConflictError } from './types.js';
 import type { CommitAuthor, RepoFile } from './types.js';
+
+// One BackendEnv declaration lives in credentials.js (the secret-channel owner). Re-export it here so
+// the seam and connect() name the same type the public root surfaces, with no duplicate declaration.
+export type { BackendEnv };
 
 /**
  * A live, connected content store pinned to a default branch. The GitHub implementation already
@@ -52,11 +57,6 @@ export interface Backend {
 
   /** Delete a branch; a missing branch is success. */
   deleteBranch(name: string): Promise<void>;
-}
-
-/** The secret carrier connect() reads. The in-memory dev backend ignores it. */
-export interface BackendEnv {
-  GITHUB_APP_PRIVATE_KEY_B64?: string;
 }
 
 /** The adapter's backend value: a provider that connect()s to a live Backend given the Worker env. */

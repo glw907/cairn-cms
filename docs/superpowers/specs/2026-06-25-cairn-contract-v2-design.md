@@ -340,7 +340,7 @@ The renderer is entry-aware and returns a string, with opt-in islands layered on
 The input carries the entry plus the resolvers the renderer needs:
 
 ```ts
-render({ concept, frontmatter, body, resolve, resolveMedia }): Promise<string>
+render({ body, concept?, frontmatter?, resolve?, resolveMedia? }): Promise<string>
 ```
 
 `resolve` rewrites `cairn:<concept>/<id>` links and resolved references to live permalinks, and
@@ -348,7 +348,8 @@ render({ concept, frontmatter, body, resolve, resolveMedia }): Promise<string>
 the editor preview passes manifest-backed ones, the split the References section depends on. These are
 not optional context: v2 makes resolution more load-bearing, because frontmatter references now resolve
 to a permalink and summary at delivery. The entrance-stagger ordinal moves into the pipeline (the
-directive stamp already owns the `data-rise` attribute), so the old `stagger` flag goes away. Page chrome
+rehype dispatch step already stamps the `data-rise` attribute; only the `stagger` guard goes away, leaving
+the ordinal unconditional), so the old `stagger` flag goes away. Page chrome
 (the title, the hero, the byline) stays the site's Svelte route, because for a design-led audience the
 chrome is a Svelte template the site owns, not output from a string renderer. The preview iframe previews
 the rendered content, the editor draws the hero and title from the frontmatter field values itself, and
@@ -369,10 +370,10 @@ Islands are the opt-in interactivity layer, and they don't change the string ret
 into hydration, render emits a boundary wrapping a static fallback, and a small client runtime mounts
 the site's component over it.
 
-The authoring API is the existing directive constructor with one new flag. `defineComponent` supersedes
-the previous `ComponentDef` object literal and keeps its fields (`label`, `description`, `attributes`,
-`slots`, `preview`); `attributes` are declared with the same `fields.*` primitives a concept uses, which
-is what makes the one-vocabulary claim concrete, and `hydrate: true` marks the directive as an island.
+The authoring API is the already-shipped `defineComponent` constructor (landed in phase 3c, replacing the
+bare `ComponentDef` object literal) plus one new optional field. Its `attributes` are declared with the
+same `fields.*` primitives a concept uses, which is what makes the one-vocabulary claim concrete, and the
+4b delta is a single addition: `hydrate: true` on `ComponentDef` marks the directive as an island.
 `build(ctx)` returns the HTML AST (hast) that the rehype render step emits:
 
 ```ts

@@ -18,8 +18,11 @@ The entrance ordinal (`data-rise`) becomes unconditional pipeline output. The re
 stamps a document-order `data-rise` on every top-level primitive on every render, and the `stagger`
 flag leaves `createRenderer`, the pipeline, and the seam. The ordinal is inert without site CSS, so a
 site that drives an entrance cascade keeps its `[data-rise]` rules and a site that does not is
-unaffected. The editor preview document gains a `data-cairn-preview` marker on its root so a site can
-scope an entrance animation away from the preview, which runs the same pipeline.
+unaffected. The attribute now appears in all rendered output, including prerendered pages and the
+syndication feeds' `contentHtml`, where a consumer that omitted `stagger` saw none before; it is inert
+there, so the only visible effect is on a consumer that snapshots rendered HTML. The editor preview
+document gains a `data-cairn-preview` marker on its root so a site can scope an entrance animation away
+from the preview, which runs the same pipeline.
 
 This is breaking within the `0.x` window. Consumers must: change the adapter `render` from
 `(md, opts) => ...` to `({ body, resolve, resolveMedia }) => ...`, read the markdown from `body`, and

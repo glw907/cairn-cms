@@ -1,3 +1,7 @@
+> **SUPERSEDED (2026-06-28), WRONG SCOPE MODEL, KEPT AS HISTORY ONLY.** This plan implemented an
+> identity/permissions substrate that is out of cairn's scope; the merge was reverted (`f8359cc`). See the
+> charter (`CLAUDE.md` "What cairn is" and `docs/internal/what-cairn-is-and-is-not.md`). Do not execute.
+
 # Developer Extensibility Phase 1: Identity Foundation Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

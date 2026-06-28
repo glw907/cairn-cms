@@ -1,3 +1,12 @@
+> **SUPERSEDED (2026-06-28), WRONG SCOPE MODEL, KEPT AS HISTORY ONLY.** This design built an
+> identity/permissions substrate (a `Principal` model, scopes, an `admin`/`member` trust tier, an
+> `authorize` callback, a session-minting `signIn`, member login) into the cairn engine. That is out of
+> cairn's scope: cairn owns a small owner/editor identity and gets out of the way; it is not an
+> auth/identity, membership, or permissions platform. The phase-1 implementation was reverted. The
+> canonical truth is the charter: `CLAUDE.md` "What cairn is" and
+> `docs/internal/what-cairn-is-and-is-not.md`. Extensibility will be re-derived lean against the charter.
+> Do not treat anything below as current.
+
 # cairn developer extensibility: design and rationale
 
 Status: design draft, 2026-06-28. Source of truth for the implementation plans that follow. This is

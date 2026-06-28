@@ -1,3 +1,10 @@
+> **SUPERSEDED by the charter (2026-06-28).** This lens framing ("broadly extensible framework", "reuse
+> the editor login") nudged an over-build: an extensibility effort grew an identity/permissions substrate
+> and member login into the engine, which was reverted. The canonical statement of cairn's purpose and the
+> corrected lens is now the charter: `CLAUDE.md` "What cairn is" and `what-cairn-is-and-is-not.md` (same
+> directory). The principle-adherence review pass decides whether to retire or rewrite this doc. Read the
+> charter first; treat the model below with suspicion.
+
 # The extending-developer lens
 
 A standing critical lens for cairn-cms design, spec, and plan review. Developer extensibility is cairn's

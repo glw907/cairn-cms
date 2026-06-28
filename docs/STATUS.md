@@ -11,56 +11,37 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-28, latest): developer-extensibility phase 1 (identity foundation) SHIPPED to `main` (unreleased); NEXT = phase 2 (admin-screen seam)
+## Immediate next action (2026-06-28, latest): developer-extensibility phase 1 REVERTED (wrong scope model); NEXT = the cairn principle-adherence review pass
 
-**Phase 1 is complete and merged to `main`** (merge `8b38076`, twelve TDD tasks), **not released** —
-`main` carries the unpublished phase-1 window on top of `0.76.0`. The plan is
-`docs/superpowers/plans/2026-06-28-cairn-extensibility-phase-1-identity.md`; the design spec (source of
-truth for phases 2-3) is `docs/superpowers/specs/2026-06-28-cairn-developer-extensibility-design.md`;
-competitive + MembershipWorks research is `docs/internal/2026-06-28-extensibility-competitive-research.md`.
+**The developer-extensibility work was built on a wrong understanding of cairn's purpose and is reverted.**
+The phase-1 "identity foundation" grew a principal/scopes/`admin`|`member`-trust-tier/`authorize`/`signIn`
+identity substrate and a member tier into the engine. That is out of scope: cairn owns a small owner/editor
+identity and gets out of the way; it is not an auth/identity, membership, or permissions platform. The
+phase-1 merge is reverted (`f8359cc`); `main` is back to a clean `0.76.0`. The corrected understanding is now
+the **canonical charter**: the `## What cairn is` block in `CLAUDE.md` and
+`docs/internal/what-cairn-is-and-is-not.md`. **Read the charter first.**
 
-**What shipped (phase 1).** `editor` generalized to a unified **principal** (email + display name +
-scopes + an `admin`|`member` trust tier); `admin:*` gated by the editor allowlist; a fail-closed,
-bounded, lazy-on-`/admin` developer `authorize` callback (reserved `admin:*` scopes stripped from its
-output); the server-only `signIn(verifiedEmail, {tier})` seam; `loadPrincipal`/`requireScope`/
-`requireAnyScope`/`hasScope` for any route; the guard resolving identity everywhere while `/admin`
-requires an admin-tier admin-scope session; CSRF/HTTPS/AUTH_DB hardening traveling off `/admin`; per-IP
-rate limiting; same-origin redirect validation; `forgetPrincipal`; the new auth log events; the enforced
-single `@glw907/cairn-cms/extend` subpath (boundary = wildcard-free exports + `./internal/*` deny) with a
-`check:extension-surface` snapshot gate. Hardened by an 8-lens spec review, a web-auth security review, a
-code-grounded plan review, a 3-specialist implementation review (one real open-redirect caught and fixed
-before it could ship on the frozen surface), and code-simplifier. Verified: `npm run check` 0/0;
-`npm test` 2771; all doc/package/extension-surface/version/dev-package gates green; from-scratch consumer
-build smoke green.
+**NEXT = the cairn principle-adherence review pass**, specced at
+`docs/superpowers/specs/2026-06-28-cairn-principle-adherence-review.md`: (A) finish unwinding the incorrect
+code, including removing the pre-existing inert extension scaffolding (`CairnExtension`/`AdminPanel`/
+`FieldTypeDef`, the `composeRuntime` slots, the sidebar stubs); (B) a whole-engine multi-agent audit of the
+existing code through the charter lens, calibrated to find only things to remove/simplify toward lean (a
+finding that proposes ADDING is itself a violation), producing a prioritized adherence report; (C) finish
+correcting the wrong-model docs. Triage: fix clear drift now, defer the rest. Full gate, merge to `main`,
+**no release**.
 
-**Phase 1 durable lessons.** A context-isolated implementer plan must edit the CLOSED type definitions
-that gate compilation, not just docs/ambient: the `CairnLogEvent` union (`src/lib/log/events.ts`) and the
-engine's structural `EventBase.locals` (`src/lib/sveltekit/types.ts`), which does NOT derive from
-`App.Locals`. The `attw internal-resolution-error` rule does NOT enforce the consumer-import boundary (the
-wildcard-free `exports` map does); credit the real mechanism. `resolveSession`'s inner JOIN to `editor`
-would silently log members out — resolution must LEFT JOIN. A site authorize callback must not be trusted
-to stay out of the `admin:*` namespace — strip it.
+**The lean extensibility REDESIGN is the SEPARATE pass that immediately follows this one** (Geoff,
+2026-06-28: redesign extensibility as soon as the adherence pass completes), against the charter and from
+clean context; it is queued and prioritized, but do NOT start it inside the adherence pass. The old
+extensibility design spec
+(`docs/superpowers/specs/2026-06-28-cairn-developer-extensibility-design.md`) and the phase-1 plan are
+**SUPERSEDED** (wrong model) and carry a superseded header; they remain only as history. The
+competitive-extensibility research (`docs/internal/2026-06-28-extensibility-competitive-research.md`) stays
+useful.
 
-**NEXT = phase 2 (the admin-screen seam):** publish `AdminShell` + `adminShellLoad` against a new minimal
-`AdminShellData` (NOT the internal `LayoutData`), the explicit `mode` prop, the shell a11y contract, the
-data-only `admin.nav` registration with a build-time `href` integrity gate, scope-gated sidebar rendering,
-a consumer-build shell smoke test, and retiring the inert `AdminPanel`/`composeRuntime` plumbing. Write the
-phase-2 plan just-in-time from the spec, then run the same flow (plan → adversarial review → implement →
-review → merge).
-
-**Phase-1 carry-forwards into phase 2 (must address):**
-- **Open member-send + a member confirm route.** Phase-1 `sendMagicLink` is editor-only and the confirm
-  link hardcodes `/admin/auth/confirm`; genuine member self-service login needs a configurable/member
-  confirm route. (The member-grade principal, `signIn`, and `authorize` foundations are in.)
-- **The `/admin` memoization-vs-custom-scope trap** (documented in `scope-guards.ts`): the guard memoizes a
-  principal resolved WITHOUT `authorize` under `/admin`, so a custom-scope check on an `/admin` route would
-  see admin scopes only and 403 a holder. Phase 2's admin extensions must resolve custom scopes explicitly.
-- **The `createAuthGuard({authorize})` param** is the reserved wiring channel the guard does not yet
-  consume; phase 2 decides how authorize flows for off-`/admin`/custom-scope resolution.
-- Deferred per spec: gated cairn CONTENT entries; `FieldTypeDef`/custom field types; auth schemes beyond
-  magic-link in cairn (the `signIn` seam is the channel).
-- Owed at the first site cutover: the live `wrangler dev` admin smoke; the two 0.68.x sites' migration to
-  the principal model (CHANGELOG carries the "Consumers must" list).
+**Durable lesson:** the premise check, "is this cairn's job, and is it the leanest form?", runs BEFORE the
+correctness/security checks, on every spec. The member/principal over-build passed correctness, security, and
+plan reviews because each checked the design within the wrong premise. See the charter.
 
 ## Prior next action (2026-06-28): Contract v2 COMPLETE, released as 0.76.0 (consolidated rollup); NEXT = developer-extensibility brainstorm
 

@@ -10,11 +10,11 @@ import { r2Key, hashBytes, shortHash } from '../../lib/media/naming.js';
 import { log } from '../../lib/log/index.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { CookieJar } from '../../lib/sveltekit/types.js';
-import type { Editor } from '../../lib/auth/types.js';
+import type { Principal } from '../../lib/auth/types.js';
 
 const bucket = env.MEDIA_BUCKET;
 
-const editor: Editor = { email: 'a@b.test', displayName: 'A Tester', role: 'owner' };
+const editor: Principal = { email: 'a@b.test', displayName: 'A Tester', scopes: ['admin:owner', 'admin:editor'], tier: 'admin' };
 
 const CSRF = 'csrf-token-value-0123456789abcdef';
 
@@ -87,7 +87,7 @@ function uploadEvent(opts: UploadOpts): ContentEvent {
     // A Uint8Array is a valid fetch body at runtime; the DOM lib's BodyInit predates the typed-array
     // overload, so cast through BodyInit to satisfy the constructor type.
     request: new Request(url, { method: 'POST', body: opts.bytes as unknown as BodyInit, headers }),
-    locals: { editor: opts.hasEditor === false ? null : editor },
+    locals: { principal: opts.hasEditor === false ? null : editor },
     platform: { env: opts.platformEnv ?? { MEDIA_BUCKET: bucket } },
     cookies: cookieJar(opts.cookieCsrf === undefined ? CSRF : opts.cookieCsrf),
   };

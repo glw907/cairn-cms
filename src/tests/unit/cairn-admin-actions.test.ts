@@ -58,8 +58,15 @@ function fakeD1(firstResults: Record<string, unknown> = {}) {
       return stmt;
     },
     async batch(stmts: { sql: string; args: unknown[] }[]) {
-      for (const s of stmts) calls.push({ sql: s.sql, args: s.args });
-      return [];
+      // Mirror D1's per-statement result array. A statement whose sql matches a firstResults key
+      // returns that row in `results`; the rate-limit counter defaults to 1 (under the send limit).
+      return stmts.map((s) => {
+        calls.push({ sql: s.sql, args: s.args });
+        const key = Object.keys(firstResults).find((k) => s.sql.includes(k));
+        if (key) return { results: [firstResults[key]] };
+        if (s.sql.includes('auth_rate')) return { results: [{ count: 1 }] };
+        return { results: [] };
+      });
     },
   };
   return { db, calls };
@@ -71,7 +78,7 @@ function actionEvent(
   pathname: string,
   opts: {
     form?: Record<string, string>;
-    editor?: { email: string; displayName: string; role: 'owner' | 'editor' } | null;
+    editor?: { email: string; displayName: string; scopes: string[]; tier: string } | null;
     env?: Record<string, unknown>;
     cookies?: Record<string, string>;
   } = {},
@@ -81,7 +88,7 @@ function actionEvent(
   return {
     url: new URL(`https://t.example${pathname}`),
     request: new Request(`https://t.example${pathname}`, { method: 'POST', body: new URLSearchParams(opts.form ?? {}) }),
-    locals: { editor: opts.editor === undefined ? { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } : opts.editor, backend },
+    locals: { principal: opts.editor === undefined ? { email: 'ed@t', displayName: 'Ed Editor', scopes: ['admin:editor'], tier: 'admin' } : opts.editor, backend },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x', ...opts.env } },
     cookies: {
       get: (name: string) => opts.cookies?.[name],
@@ -141,7 +148,7 @@ describe('path validation', () => {
     });
     gh.install();
     const admin = createCairnAdmin(runtime(), deps);
-    const event = actionEvent('/admin/help', { editor: { email: 'own@t', displayName: 'Own', role: 'owner' } });
+    const event = actionEvent('/admin/help', { editor: { email: 'own@t', displayName: 'Own', scopes: ['admin:owner', 'admin:editor'], tier: 'admin' } });
     await expectRedirect(admin.actions.publishAll(event as never), '/admin/posts?publishedAll=1');
   });
 
@@ -169,7 +176,7 @@ describe('auth actions', () => {
   });
 
   it('confirm delegates on the confirm view: consumes the token, sets the session cookie, redirects', async () => {
-    const { db } = fakeD1({ 'DELETE FROM magic_token': { email: 'ed@t' } });
+    const { db } = fakeD1({ 'DELETE FROM magic_token': { email: 'ed@t', tier: 'admin', redirect_to: null } });
     const admin = createCairnAdmin(runtime(), deps);
     const event = actionEvent('/admin/auth/confirm', { editor: null, form: { token: 'tok' }, env: { AUTH_DB: db } });
     await expectRedirect(admin.actions.confirm(event as never), '/admin');
@@ -266,7 +273,7 @@ describe('content actions', () => {
     });
     gh.install();
     const admin = createCairnAdmin(runtime(), deps);
-    const event = actionEvent('/admin/editors', { editor: { email: 'own@t', displayName: 'Own', role: 'owner' } });
+    const event = actionEvent('/admin/editors', { editor: { email: 'own@t', displayName: 'Own', scopes: ['admin:owner', 'admin:editor'], tier: 'admin' } });
     await expectRedirect(admin.actions.publishAll(event as never), '/admin/posts?publishedAll=1');
     expect(gh.read('main', 'src/content/posts/2026-05-01-hi.md')).toBe(raw);
   });
@@ -296,7 +303,7 @@ describe('content actions', () => {
         body: JSON.stringify({ text: 'teh trail', scope: 'document' }),
         headers: { 'content-type': 'text/plain', 'x-cairn-csrf': csrf },
       }),
-      locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+      locals: { principal: { email: 'ed@t', displayName: 'Ed Editor', scopes: ['admin:editor'], tier: 'admin' } },
       platform: { env: { ANTHROPIC_API_KEY: 'sk-test-key' } },
       cookies: {
         get: (name: string) => (name === '__Host-cairn_csrf' ? csrf : undefined),
@@ -447,7 +454,7 @@ describe('save on the nav view', () => {
 });
 
 describe('editor actions', () => {
-  const owner = { email: 'own@t', displayName: 'Own', role: 'owner' as const };
+  const owner = { email: 'own@t', displayName: 'Own', scopes: ['admin:owner', 'admin:editor'], tier: 'admin' };
 
   it('addEditor delegates on the editors view and inserts the row', async () => {
     const { db, calls } = fakeD1();

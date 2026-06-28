@@ -2,13 +2,15 @@
 // `export const handle = createAuthGuard()`. Events are typed structurally, so the engine
 // stays free of a site's App.* ambient types.
 import { redirect, error } from '@sveltejs/kit';
-import { resolveSession } from '../auth/store.js';
+import { resolvePrincipal } from '../auth/resolve.js';
 import { sessionCookieName } from '../auth/crypto.js';
+import { hasAdminScope, hasScope, ADMIN_OWNER } from '../auth/scopes.js';
 import { isUnsafeFormRequest, originMatches, validateCsrfToken, validateCsrfHeader } from './csrf.js';
 import { applySecurityHeaders } from './admin-response.js';
 import { renderConditionResponse, REASON_CONDITION } from './condition-response.js';
 import { log } from '../log/index.js';
-import type { Editor } from '../auth/types.js';
+import type { Authorize } from '../auth/authorize.js';
+import type { Principal } from '../auth/types.js';
 import type { HandleInput, RequestContext } from './types.js';
 
 /** The login page and the auth endpoints are public; everything else under /admin is gated. */
@@ -36,8 +38,16 @@ function isLocalHost(hostname: string): boolean {
   );
 }
 
-/** The SvelteKit `Handle` that guards `/admin/**` and hardens admin responses. */
-export function createAuthGuard() {
+/**
+ * The SvelteKit `Handle` that guards `/admin/**` and hardens admin responses. `config.authorize`
+ * carries the adapter's `auth.authorize` callback, accepted here as the wiring channel; the guard
+ * deliberately does NOT invoke it (admin scopes come from the editor allowlist alone, which keeps
+ * third-party code off the admin hot path; the lazy test pins this). Off-`/admin` routes resolve
+ * custom scopes by calling `loadPrincipal`/`requireScope` with their own `authorize`. Having the guard
+ * populate custom scopes off `/admin` is a phase-2 concern (see the `/admin` memoization note in
+ * `scope-guards.ts`).
+ */
+export function createAuthGuard(config: { authorize?: Authorize } = {}) {
   return async function handle({ event, resolve }: HandleInput): Promise<Response> {
     const { pathname } = event.url;
 
@@ -56,12 +66,23 @@ export function createAuthGuard() {
       );
     }
 
-    // Rule 2 - non-admin: restore the framework's strict Origin check the consumer disabled when
-    // they set checkOrigin: false to hand cairn the admin CSRF authority.
+    const cookieName = sessionCookieName(event.url.protocol === 'https:');
+    const hasSessionCookie = event.cookies.get(cookieName) != null;
+
+    // Rule 2 - non-admin: CSRF still applies to an unsafe form POST that carries a session cookie, so
+    // member form-actions are protected even though they live outside /admin. With no session cookie,
+    // restore the framework's strict Origin check the consumer disabled via checkOrigin: false.
     if (!isAdminPath(pathname)) {
-      if (isUnsafeFormRequest(event.request) && !originMatches(event)) {
-        log.warn('guard.rejected', { reason: 'origin', path: pathname });
-        return renderConditionResponse('auth.csrf-origin-mismatch');
+      if (isUnsafeFormRequest(event.request)) {
+        if (hasSessionCookie) {
+          if (!validateCsrfHeader(event) && !(await validateCsrfToken(event))) {
+            log.warn('guard.rejected', { reason: 'csrf', path: pathname });
+            return renderConditionResponse('auth.csrf-token-invalid');
+          }
+        } else if (!originMatches(event)) {
+          log.warn('guard.rejected', { reason: 'origin', path: pathname });
+          return renderConditionResponse('auth.csrf-origin-mismatch');
+        }
       }
       return resolve(event);
     }
@@ -106,10 +127,19 @@ export function createAuthGuard() {
     }
 
     if (!isPublicAdminPath(pathname)) {
-      const id = event.cookies.get(sessionCookieName(event.url.protocol === 'https:'));
-      const editor = id ? await resolveSession(env.AUTH_DB, id, Date.now()) : null;
-      if (!editor) throw redirect(303, '/admin/login');
-      event.locals.editor = editor;
+      const id = event.cookies.get(cookieName);
+      // Lazy on /admin: pass authorize: undefined here. /admin needs only admin:* scopes, which come
+      // from the allowlist row, so the developer callback (and its D1) is not run to admit an admin
+      // request. A custom-scope admin route resolves it explicitly via loadPrincipal (phase 2).
+      const principal = id
+        ? await resolvePrincipal({ db: env.AUTH_DB, authorize: undefined, platform: event.platform }, id, Date.now())
+        : null;
+      // /admin requires an admin-tier session carrying an admin scope. A member-tier session, or a
+      // scopeless principal, is bounced to login: the allowlist and tier are the structural gate.
+      if (!principal || principal.tier !== 'admin' || !hasAdminScope(principal)) {
+        throw redirect(303, '/admin/login');
+      }
+      event.locals.principal = principal;
     }
     const response = await resolve(event);
     applySecurityHeaders(response.headers);
@@ -118,19 +148,19 @@ export function createAuthGuard() {
 }
 
 /**
- * For a protected load/action: the session the guard already resolved, or a login redirect.
+ * For a protected load/action: the principal the guard already resolved, or a login redirect.
  *  The parameter is the minimal structural need (just `locals`), so every engine event shape
  *  (RequestContext, the content routes' ContentEvent) and a real RequestEvent all satisfy it.
  */
-export function requireSession(event: { locals: { editor?: Editor | null } }): Editor {
-  const editor = event.locals.editor;
-  if (!editor) throw redirect(303, '/admin/login');
-  return editor;
+export function requireSession(event: { locals: { principal?: Principal | null } }): Principal {
+  const principal = event.locals.principal;
+  if (!principal) throw redirect(303, '/admin/login');
+  return principal;
 }
 
 /** For the management surface: a signed-in owner, or 403 for an editor. */
-export function requireOwner(event: RequestContext): Editor {
-  const editor = requireSession(event);
-  if (editor.role !== 'owner') throw error(403, 'Owner access required');
-  return editor;
+export function requireOwner(event: RequestContext): Principal {
+  const principal = requireSession(event);
+  if (!hasScope(principal, ADMIN_OWNER)) throw error(403, 'Owner access required');
+  return principal;
 }

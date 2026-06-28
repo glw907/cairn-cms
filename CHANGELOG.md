@@ -2,6 +2,33 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## Unreleased
+
+<!-- release-size: minor -->
+
+Developer extensibility, phase 1: the identity foundation. cairn's editor-only, `/admin`-only
+magic-link auth becomes a unified principal model usable on any route. A `Principal` (`email`,
+`displayName`, `scopes`, `tier`) replaces the single-role `Editor` as the identity the engine reads.
+A session carries an `auth_tier` (`admin` or `member`) set at mint time; `admin:*` scopes are granted
+only to an admin-tier session whose email is in the editor allowlist, and custom scopes come from a
+new adapter `auth.authorize` callback, resolved live, lazily, and fail-closed. The guard resolves a
+principal on every route but enforces only `/admin`; developers gate their own routes with the new
+`requireScope`/`requireAnyScope`/`loadPrincipal` primitives, all re-exported from the enforced
+`@glw907/cairn-cms/extend` subpath. A server-only `signIn(verifiedEmail)` seam admits any externally
+verified mechanism, and the magic-link send is now rate-limited per IP.
+
+This is breaking. Consumers must, in order:
+
+1. Re-import `@glw907/cairn-cms/ambient` (it now declares `locals.principal`, replacing `locals.editor`).
+2. Replace every `locals.editor` read with `locals.principal`; an admin reads `principal.scopes` and
+   `principal.tier`, not `principal.role`.
+3. Update for the new return type: `requireSession` and `requireOwner` now return a `Principal` (was
+   `Editor`).
+4. Keep using `data.user.role` if you read it; it is still present, now derived from the principal's
+   scopes.
+5. Wire `auth.authorize` in the adapter only if you grant member or custom scopes, and pass
+   `createAuthGuard({ authorize })` so the guard resolves them on your routes.
+
 ## 0.76.0
 
 <!-- release-size: minor -->

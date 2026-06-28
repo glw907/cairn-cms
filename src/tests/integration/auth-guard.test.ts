@@ -40,7 +40,13 @@ function httpEvent(pathname: string, host = 'test.dev', cookies = makeCookies())
 
 function formEvent(
   pathname: string,
-  opts: { csrfCookie?: string; csrfField?: string; csrfHeader?: string; origin?: string } = {},
+  opts: {
+    csrfCookie?: string;
+    csrfField?: string;
+    csrfHeader?: string;
+    origin?: string;
+    sessionCookie?: string;
+  } = {},
 ): RequestContext {
   const url = `https://test.dev${pathname}`;
   const body = new URLSearchParams();
@@ -50,6 +56,7 @@ function formEvent(
   if (opts.csrfHeader !== undefined) headers['x-cairn-csrf'] = opts.csrfHeader;
   const cookieMap: Record<string, string> = {};
   if (opts.csrfCookie) cookieMap[csrfCookieName(true)] = opts.csrfCookie;
+  if (opts.sessionCookie) cookieMap[sessionCookieName(true)] = opts.sessionCookie;
   return {
     url: new URL(url),
     request: new Request(url, { method: 'POST', headers, body }),
@@ -62,7 +69,7 @@ function formEvent(
 
 async function seedSession(email: string): Promise<ReturnType<typeof makeCookies>> {
   await seedEditor(email, 'Ed', 'owner');
-  await createSession(db, 'sid-ok', email, Date.now() + 10_000, Date.now());
+  await createSession(db, 'sid-ok', email, 'admin', Date.now() + 10_000, Date.now());
   return makeCookies({ [sessionCookieName(true)]: 'sid-ok' });
 }
 
@@ -72,12 +79,17 @@ describe('guard (scenario 6)', () => {
     expect(r).toEqual({ status: 303, location: '/admin/login' });
   });
 
-  it('admits a valid session and populates locals.editor', async () => {
+  it('admits a valid session and populates locals.principal', async () => {
     const cookies = await seedSession('own@x.dev');
     const ev = event('/admin', cookies);
     const res = await handle({ event: ev, resolve: async () => OK });
     expect(res).toBe(OK);
-    expect(ev.locals.editor).toEqual({ email: 'own@x.dev', displayName: 'Ed', role: 'owner' });
+    expect(ev.locals.principal).toMatchObject({
+      email: 'own@x.dev',
+      displayName: 'Ed',
+      scopes: ['admin:owner', 'admin:editor'],
+      tier: 'admin',
+    });
   });
 
   it('lets the login and auth endpoints through without a session', async () => {
@@ -90,6 +102,46 @@ describe('guard (scenario 6)', () => {
   it('ignores non-admin paths', async () => {
     const res = await handle({ event: event('/about'), resolve: async () => OK });
     expect(res).toBe(OK);
+  });
+});
+
+describe('guard under the principal model', () => {
+  it('redirects a member-tier session away from /admin', async () => {
+    await createSession(db, 'mt', 'm@x.io', 'member', Date.now() + 1000, Date.now());
+    const ev = event('/admin', makeCookies({ [sessionCookieName(true)]: 'mt' }));
+    const r = await expectRedirect(() => handle({ event: ev, resolve: async () => OK }));
+    expect(r.location).toBe('/admin/login');
+  });
+
+  it('admits an admin-tier allowlisted session to /admin and sets locals.principal', async () => {
+    await seedEditor('boss@x.io', 'Boss', 'owner');
+    await createSession(db, 'at', 'boss@x.io', 'admin', Date.now() + 1000, Date.now());
+    const ev = event('/admin', makeCookies({ [sessionCookieName(true)]: 'at' }));
+    await handle({ event: ev, resolve: async () => OK });
+    expect(ev.locals.principal).toMatchObject({ email: 'boss@x.io', scopes: ['admin:owner', 'admin:editor'] });
+  });
+
+  it('enforces CSRF on a non-/admin unsafe POST that carries a session cookie', async () => {
+    await createSession(db, 'mc', 'm@x.io', 'member', Date.now() + 1000, Date.now());
+    const ev = formEvent('/account', { sessionCookie: 'mc' });
+    const res = await handle({ event: ev, resolve: async () => OK });
+    expect(res.status).toBe(403);
+  });
+
+  it('passes a non-/admin unsafe POST that carries a session cookie AND a valid CSRF token', async () => {
+    await createSession(db, 'mok', 'm@x.io', 'member', Date.now() + 1000, Date.now());
+    const ev = formEvent('/account', { csrfCookie: 'TOK', csrfField: 'TOK', sessionCookie: 'mok' });
+    const res = await handle({ event: ev, resolve: async () => OK });
+    expect(res).toBe(OK);
+  });
+
+  it('does not run the authorize callback to admit an admin-tier session to /admin (lazy on /admin)', async () => {
+    await seedEditor('lazy@x.io', 'L', 'owner');
+    await createSession(db, 'lz', 'lazy@x.io', 'admin', Date.now() + 1000, Date.now());
+    const spy = vi.fn(() => ['member']);
+    const ev = event('/admin', makeCookies({ [sessionCookieName(true)]: 'lz' }));
+    await createAuthGuard({ authorize: spy })({ event: ev, resolve: async () => OK });
+    expect(spy).not.toHaveBeenCalled();
   });
 });
 
@@ -210,7 +262,7 @@ describe('CSRF (cairn owns it)', () => {
     };
     const res = await handle({ event: ev, resolve: async () => OK });
     expect(res).toBe(OK);
-    expect(ev.locals.editor?.email).toBe('own@x.dev');
+    expect(ev.locals.principal?.email).toBe('own@x.dev');
   });
 
   it('passes an admin POST whose X-Cairn-CSRF header matches, with no form field (the upload path)', async () => {
@@ -241,7 +293,7 @@ describe('CSRF (cairn owns it)', () => {
       },
     });
     expect(res).toBe(OK);
-    expect(ev.locals.editor?.email).toBe('own@x.dev');
+    expect(ev.locals.principal?.email).toBe('own@x.dev');
     expect(seen).toEqual(new Uint8Array([0xff, 0xd8, 0xff]));
   });
 

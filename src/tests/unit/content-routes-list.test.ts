@@ -45,7 +45,7 @@ function listEvent(params: Record<string, string>, search = '') {
     url: new URL(`https://t.example/admin/posts${search}`),
     params,
     request: new Request('https://t.example'),
-    locals: { editor: { email: 'e@t', displayName: 'E', role: 'editor' as const } },
+    locals: { principal: { email: 'e@t', displayName: 'E', scopes: ['admin:editor'], tier: 'admin' } },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
   };
 }
@@ -60,14 +60,14 @@ function stubNoRefs() {
 /** A layout-load event with a settable editor, path, and cookie jar. */
 function makeEvent(opts: {
   pathname: string;
-  editor: { email: string; displayName: string; role: 'owner' | 'editor' };
+  editor: { email: string; displayName: string; scopes: string[]; tier: string };
   cookies?: Record<string, string>;
 }) {
   return {
     url: new URL(`https://t.example${opts.pathname}`),
     params: {},
     request: new Request('https://t.example'),
-    locals: { editor: opts.editor },
+    locals: { principal: opts.editor },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
     cookies: { get: (name: string) => opts.cookies?.[name], set: () => {}, delete: () => {} },
   };
@@ -79,7 +79,7 @@ describe('layoutLoad', () => {
     const routes = createContentRoutes(runtime(), { backend: makeGithubBackend(REPO, async () => 'tok')});
     const event = makeEvent({
       pathname: '/admin/posts',
-      editor: { email: 'ed@example.com', displayName: 'Ed', role: 'owner' },
+      editor: { email: 'ed@example.com', displayName: 'Ed', scopes: ['admin:owner', 'admin:editor'], tier: 'admin' },
       cookies: { 'cairn-admin-theme': 'cairn-admin-dark' },
     });
     const data = await routes.layoutLoad(event as never);
@@ -92,7 +92,7 @@ describe('layoutLoad', () => {
     const routes = createContentRoutes(runtime(), { backend: makeGithubBackend(REPO, async () => 'tok')});
     const event = makeEvent({
       pathname: '/admin/posts',
-      editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor' },
+      editor: { email: 'ed@example.com', displayName: 'Ed', scopes: ['admin:editor'], tier: 'admin' },
       cookies: {},
     });
     expect((await routes.layoutLoad(event as never)).theme).toBe('cairn-admin');
@@ -103,7 +103,7 @@ describe('layoutLoad', () => {
     const routes = createContentRoutes(runtime(), { backend: makeGithubBackend(REPO, async () => 'tok')});
     const event = makeEvent({
       pathname: '/admin/posts',
-      editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor' },
+      editor: { email: 'ed@example.com', displayName: 'Ed', scopes: ['admin:editor'], tier: 'admin' },
       cookies: { 'cairn-admin-theme': 'bogus' },
     });
     expect((await routes.layoutLoad(event as never)).theme).toBe('cairn-admin');
@@ -114,7 +114,7 @@ describe('layoutLoad', () => {
     const routes = createContentRoutes(runtime(), { backend: makeGithubBackend(REPO, async () => 'tok')});
     const event = makeEvent({
       pathname: '/admin/posts',
-      editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor' },
+      editor: { email: 'ed@example.com', displayName: 'Ed', scopes: ['admin:editor'], tier: 'admin' },
       cookies: { 'cairn-admin-nav-collapsed': `Core,${encodeURIComponent('Black & White')}` },
     });
     expect((await routes.layoutLoad(event as never)).collapsedNav).toEqual(['Core', 'Black & White']);
@@ -125,7 +125,7 @@ describe('layoutLoad', () => {
     const routes = createContentRoutes(runtime(), { backend: makeGithubBackend(REPO, async () => 'tok')});
     const event = makeEvent({
       pathname: '/admin/posts',
-      editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor' },
+      editor: { email: 'ed@example.com', displayName: 'Ed', scopes: ['admin:editor'], tier: 'admin' },
       cookies: {},
     });
     expect((await routes.layoutLoad(event as never)).collapsedNav).toEqual([]);
@@ -396,7 +396,7 @@ describe('createAction', () => {
       url: new URL('https://t.example/admin/posts'),
       params: { concept: 'posts' },
       request: new Request('https://t.example/admin/posts', { method: 'POST', body }),
-      locals: { editor: { email: 'e@t', displayName: 'E', role: 'editor' as const } },
+      locals: { principal: { email: 'e@t', displayName: 'E', scopes: ['admin:editor'], tier: 'admin' } },
       platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
     };
   }
@@ -467,7 +467,7 @@ describe('createAction', () => {
       url: new URL('https://t.example/admin/pages'),
       params: { concept: 'pages' },
       request: new Request('https://t.example/admin/pages', { method: 'POST', body }),
-      locals: { editor: { email: 'e@t', displayName: 'E', role: 'editor' as const } },
+      locals: { principal: { email: 'e@t', displayName: 'E', scopes: ['admin:editor'], tier: 'admin' } },
       platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
     };
   }
@@ -534,7 +534,7 @@ describe('listDeleteAction', () => {
       url: new URL('https://t.example/admin/posts'),
       params: { concept: 'posts' },
       request: new Request('https://t.example/admin/posts', { method: 'POST', body }),
-      locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+      locals: { principal: { email: 'ed@t', displayName: 'Ed Editor', scopes: ['admin:editor'], tier: 'admin' } },
       platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
     };
   }

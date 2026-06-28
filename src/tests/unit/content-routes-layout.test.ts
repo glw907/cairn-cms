@@ -25,11 +25,12 @@ function runtime(): CairnRuntime {
 }
 
 function event(pathname: string, role: 'owner' | 'editor') {
+  const scopes = role === 'owner' ? ['admin:owner', 'admin:editor'] : ['admin:editor'];
   return {
     url: new URL(`https://test.example${pathname}`),
     params: {},
     request: new Request('https://test.example'),
-    locals: { editor: { email: 'e@test', displayName: 'Ed', role } },
+    locals: { principal: { email: 'e@test', displayName: 'Ed', scopes, tier: 'admin' as const } },
     platform: { env: {} },
     cookies: {
       get: () => undefined,

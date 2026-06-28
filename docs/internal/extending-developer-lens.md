@@ -5,6 +5,20 @@ next major initiative after the Contract v2 rollup, so every pass from now on is
 question: does this change make the extending developer's path easier or harder? Prefer the choices that
 move toward it. Flag the choices that move away.
 
+**Make the breaking changes now, before adoption (Geoff, 2026-06-27).** If extensibility needs to alter the
+site contract or the core developer DX, do it in the breaking pre-1.0 window, before anyone is using cairn,
+rather than after a stable release. The v2 rollup ships as a beta (the `beta` npm tag, `latest` stays on the
+prior stable), which is the dogfooding vehicle, not wide adoption; further contract changes for extensibility
+are welcome in the same pre-1.0 window and land before the stable 1.0. So the brainstorm should be
+forward-looking and willing to propose contract or DX changes, not just additive seams.
+
+**The proof site.** aksailingclub is the example site Geoff will use to prove the extensible-cairn concept
+(he is the first extending developer). It is in `~/Projects`: `aksailingclub-org` (carries extensive
+developer docs under `aksailingclub-org/docs`, the easiest way to understand its functionality) and
+`aksailingclub-sveltekit` (the SvelteKit form). Start the extensibility brainstorm by reading its developer
+docs to ground the real requirements (events, class lists, asset management, D1-backed custom features behind
+the admin), rather than designing the seam in the abstract.
+
 ## The persona
 
 A developer who wants to launch a content-managed site fast on cairn, then build custom functionality on

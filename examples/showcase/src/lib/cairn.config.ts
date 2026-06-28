@@ -130,7 +130,7 @@ export const cairn = defineAdapter({
         author: fields.reference({ concept: 'pages', label: 'Author' }),
         // A many reference to other posts: array(reference) exercising the chip-list editor arm and
         // the multi-edge extractor, delivered as a list of resolved targets.
-        related: fields.array(fields.reference({ concept: 'posts' }), { label: 'Related posts' }),
+        related: fields.array(fields.reference({ concept: 'posts', label: 'Related post' }), { label: 'Related posts' }),
         // A closed select exercising a brand-new v2 scalar arm end to end: the editor renders a
         // <select>, the value round-trips through save and reload (the golden-path e2e pins it).
         status: fields.select({ label: 'Status', options: ['draft', 'published'], default: 'draft' }),

@@ -9,12 +9,13 @@ test('the spellcheck worker constructs, the dictionary loads, and check/suggest 
   page,
 }) => {
   // The worker streams the 1.5MB dictionary into wasm on first init, which is slower on CI's runner
-  // than the default 30s test budget, so raise the ceiling.
-  test.setTimeout(90_000);
+  // than the default 30s test budget, so raise the ceiling. CI retries (playwright.config) cover the
+  // rare run that still overruns.
+  test.setTimeout(120_000);
   await page.goto('/spike/spellcheck');
 
   // The worker streams the 1.5MB dictionary into wasm memory on first init, so allow generous time.
-  await expect(page.getByTestId('ready')).toHaveText('yes', { timeout: 60_000 });
+  await expect(page.getByTestId('ready')).toHaveText('yes', { timeout: 90_000 });
   await expect(page.getByTestId('status')).toHaveText('ready');
   await expect(page.getByTestId('error-detail')).toHaveText('');
 

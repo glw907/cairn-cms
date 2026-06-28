@@ -8,6 +8,10 @@ export default defineConfig({
   // read. Run the e2e suite on one worker so each spec reads back its own commit deterministically.
   workers: 1,
   fullyParallel: false,
+  // Retry on CI only. The spellcheck spike streams a 1.5MB dictionary into wasm on first init, which
+  // intermittently exceeds its budget on a loaded CI runner; a retry clears the transient slowness
+  // without weakening any assertion. Locally (reuseExistingServer) retries stay off for fast feedback.
+  retries: process.env.CI ? 2 : 0,
   // Run a production build with VITE_CAIRN_E2E=1 so the build-foldable e2e gate includes the dev
   // backend, then serve it with `preview`. A default build (no flag) folds the backend out; this
   // flagged build keeps it in for the specs, which exercise the real production output path.

@@ -11,7 +11,20 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-27, latest): Contract v2 backend seam SHIPPED as 0.74.0 (held); NEXT = render-as-component + islands (phase 4, the last v2 phase)
+## Immediate next action (2026-06-27, latest): Contract v2 phase 4a (render-seam migration) PLANNED + reviewed, executing on `contract-v2-render-seam`
+
+**Phase 4 splits into 4a (render-seam migration, breaking) and 4b (islands, additive); both held.** 4a migrates the
+`render` adapter seam to the entry-aware `render({ body, concept?, frontmatter?, resolve?, resolveMedia? }): Promise<string>`
+and retires the `stagger` knob (the `data-rise` ordinal becomes unconditional pipeline output). Islands (4b) are additive
+on the settled seam and land after. **Per Geoff: do NOT release until the whole v2 series, islands included, is complete;**
+one rollup release closes the held window (now 0.69.0 through 0.75.0). Plan:
+`docs/superpowers/plans/2026-06-27-cairn-contract-v2-render-seam.md` (three tasks; a six-lens adversarial find-verify
+workflow confirmed 28/36 findings, all folded, dominant = the ~37-file test-stub blast radius from the seam retype).
+Method: main-loop orchestrate-and-verify on the `contract-v2-render-seam` branch off `main`, test-first per task, full gate
+per task; merge + push at the end, no release. Spec (source of truth, three render-seam prose points corrected this pass):
+`docs/superpowers/specs/2026-06-25-cairn-contract-v2-design.md`.
+
+## Prior next action (2026-06-27): Contract v2 backend seam SHIPPED as 0.74.0 (held); render-as-component + islands was phase 4
 
 **The Contract v2 backend seam is complete** as **0.74.0** (breaking within 0.x, minor). The GitHub-App
 config blob becomes a `Backend` interface with a `githubApp(...)` default provider. The engine resolves one

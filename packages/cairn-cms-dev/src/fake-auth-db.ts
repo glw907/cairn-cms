@@ -20,8 +20,8 @@ interface EditorRow {
 
 /** What one statement execution yields; `run()` and `first()`/`all()` each read their slice. */
 interface ExecResult {
-  row: EditorRow | null;
-  rows: EditorRow[];
+  row: unknown;
+  rows: unknown[];
   changes: number;
 }
 
@@ -52,11 +52,29 @@ export function createFakeAuthDb(): FakeAuthDb {
     const sql = rawSql.replace(/\s+/g, ' ').trim();
     const none: ExecResult = { row: null, rows: [], changes: 0 };
 
-    // resolveSession: the fixture hook injects locals.editor directly and the engine guard is
-    // not installed in dev, so no session row ever exists. Answer null rather than throwing.
+    // resolvePrincipalRow: the fixture hook injects locals.principal directly and the engine guard
+    // is not installed in dev, so no session row ever exists. Answer null rather than throwing.
     // The fake db grants nothing on its own; the owner identity is minted by devBackendHandle's
-    // locals.editor write, not by this null session lookup.
-    if (sql.includes('FROM session s JOIN editor e')) return none;
+    // locals.principal write, not by this null session lookup.
+    if (sql.includes('FROM session s LEFT JOIN editor e')) return none;
+
+    // createSession: the tiered INSERT. No session is ever read back in dev, so record nothing and
+    // report a clean change. (Matched before the plain session DELETE arms below.)
+    if (sql.includes('INSERT INTO session')) return { ...none, changes: 1 };
+
+    // consumeToken: the single-use magic-link DELETE ... RETURNING. Dev never mints a real token, so
+    // there is nothing to consume; answer null (the route treats it as an invalid link).
+    if (sql.includes('DELETE FROM magic_token WHERE token_hash = ?')) return none;
+
+    // checkAndIncrementRate's window sweep: a no-op in dev (no rate rows persist here).
+    if (sql.includes('DELETE FROM auth_rate WHERE bucket = ?')) return none;
+
+    // checkAndIncrementRate's counter upsert (INSERT ... ON CONFLICT ... RETURNING count). The
+    // engine reads res[1].results?.[0].count from the batch result, so yield a single count row of
+    // 1, which keeps the dev send path under any limit.
+    if (sql.includes('INSERT INTO auth_rate')) {
+      return { ...none, row: { count: 1 }, rows: [{ count: 1 }], changes: 1 };
+    }
 
     // findEditor
     if (sql.includes('SELECT email, display_name, role FROM editor WHERE email = ?')) {
@@ -113,9 +131,16 @@ export function createFakeAuthDb(): FakeAuthDb {
     throw new Error(`fake-auth-db: unhandled SQL (extend the dispatch table): ${sql}`);
   }
 
-  function statement(sql: string): FakeStatement {
+  // Each prepared statement carries a `runInBatch` to surface the full exec result inside a batch.
+  // D1's batch returns a result per statement that bears both `meta.changes` and `results` (the rows
+  // a RETURNING clause produced), which checkAndIncrementRate reads as res[1].results?.[0].count.
+  interface BatchableStatement extends FakeStatement {
+    runInBatch(): { meta: { changes: number }; results: unknown[] };
+  }
+
+  function statement(sql: string): BatchableStatement {
     let bound: unknown[] = [];
-    const stmt: FakeStatement = {
+    const stmt: BatchableStatement = {
       bind(...args: unknown[]) {
         bound = args;
         return stmt;
@@ -129,6 +154,10 @@ export function createFakeAuthDb(): FakeAuthDb {
       async all<T>() {
         return { results: execute(sql, bound).rows as T[] };
       },
+      runInBatch() {
+        const res = execute(sql, bound);
+        return { meta: { changes: res.changes }, results: res.rows };
+      },
     };
     return stmt;
   }
@@ -136,10 +165,9 @@ export function createFakeAuthDb(): FakeAuthDb {
   return {
     prepare: statement,
     async batch(statements: FakeStatement[]) {
-      // Sequential, matching D1's transactional batch closely enough for this fixture.
-      const results: unknown[] = [];
-      for (const s of statements) results.push(await s.run());
-      return results;
+      // Sequential, matching D1's transactional batch closely enough for this fixture. Each element
+      // carries both meta.changes and the RETURNING rows, the slice the rate-limit check reads.
+      return statements.map((s) => (s as BatchableStatement).runInBatch());
     },
   };
 }
